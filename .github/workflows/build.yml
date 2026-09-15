@@ -14,15 +14,12 @@ on:
   release:
     types: [published]
 
-permissions:
-  id-token: write     
-  attestations: write   
-  contents: write      
-
 jobs:
   tests:
     name: tests (${{ matrix.game }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     env:
       SKIP_TESTS: ${{ github.event.inputs.skip_tests }}
@@ -89,7 +86,7 @@ jobs:
     - uses: actions/setup-python@v5
       if: ${{ env.SKIP_TESTS != 'true' }}
       with:
-        python-version: '3.13'
+        python-version: '3.14'
 
     - name: Install deps
       if: ${{ env.SKIP_TESTS != 'true' }}
@@ -133,17 +130,22 @@ jobs:
     needs: tests                 
     runs-on: windows-latest
     environment: REasy ENV
+    permissions:
+      id-token: write
+      attestations: write
+      contents: write
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
+        submodules: recursive
 
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.14'
 
     - name: Install dependencies
       run: pip install -r requirements.txt
@@ -167,7 +169,7 @@ jobs:
           $versionStr = ($input -like "v*") ? $input : "v$input"
         }
         
-        echo "version=$versionStr" >> $env:GITHUB_ENV
+        echo "release_version=$versionStr" >> $env:GITHUB_ENV
         
         $cleanVersion = $versionStr -replace '^v', ''
         $parts = $cleanVersion -split '\.'
@@ -183,10 +185,10 @@ jobs:
         $versionString = "$major.$minor.$patch.$build"
         echo "product_version=$versionString" >> $env:GITHUB_ENV
         
-        $reasyContent = Get-Content -Path "REasy.py" -Raw
+        $reasyContent = Get-Content -Path "app_config.py" -Raw
         $pythonVersion = "$major.$minor.$patch"
         $reasyContent = $reasyContent -replace 'CURRENT_VERSION\s*=\s*"[^"]+"', "CURRENT_VERSION = `"$pythonVersion`""
-        Set-Content -Path "REasy.py" -Value $reasyContent
+        Set-Content -Path "app_config.py" -Value $reasyContent
         
         $versionFile = Get-Content -Path "version.txt" -Raw
         
@@ -206,16 +208,11 @@ jobs:
         FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
 
-    - name: Attest Build Provenance
-      uses: actions/attest-build-provenance@v2.4.0
-      with:
-        subject-path: dist/REasy.exe
-
     - name: Upload unsigned artifact (for SignPath)
       id: upload_unsigned
       uses: actions/upload-artifact@v4
       with:
-        name: REasy-${{ env.version }}
+        name: REasy-${{ env.release_version }}
         path: dist/**
 
     - name: Submit signing request to SignPath (release cert)
@@ -237,20 +234,20 @@ jobs:
       shell: pwsh
       run: |
         Compress-Archive -Path reasy-signed\* `
-                        -DestinationPath "reasy-signed\REasy-${{ env.version }}.zip" `
+                        -DestinationPath "reasy-signed\REasy-${{ env.release_version }}.zip" `
                         -Force
                         
     - name: Upload ZIP to GitHub Release (SIGNED)
       uses: softprops/action-gh-release@v2
       with:
-        name: "REasy ${{ env.version }}"
-        tag_name: "${{ env.version }}"
-        files: "reasy-signed/REasy-${{ env.version }}.zip"
+        name: "REasy ${{ env.release_version }}"
+        tag_name: "${{ env.release_version }}"
+        files: "reasy-signed/REasy-${{ env.release_version }}.zip"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload ZIP artifact (SIGNED)
       uses: actions/upload-artifact@v4
       with:
-        name: REasy ${{ env.version }}
-        path: "reasy-signed/REasy-${{ env.version }}.zip"
+        name: REasy ${{ env.release_version }}
+        path: "reasy-signed/REasy-${{ env.release_version }}.zip"

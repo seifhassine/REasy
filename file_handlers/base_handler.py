@@ -9,9 +9,10 @@ class BaseFileHandler(QObject):
     def __init__(self):
         super().__init__()
         self.app = None
+        self.resource_context = None
+        self.filepath = ""
         self.refresh_tree_callback = None
         self.type_registry = None
-        self.dark_mode = False
         self.show_advanced = False
         self._modified = False
         
@@ -32,8 +33,15 @@ class BaseFileHandler(QObject):
         self.type_registry = TypeRegistry(json_path)
 
     def supports_editing(self) -> bool:
-        """Default to supporting editing"""
         return True
+
+    def supports_tree_editing(self) -> bool:
+        """Return whether the generic tree editor may call validate_edit/handle_edit."""
+        return False
+
+    def open_externally(self, filename=None, data=None, pak_source_path=None) -> bool:
+        """Open this format with the OS default app instead of an editor tab."""
+        return False
 
     def create_viewer(self):
         """Create and return a viewer instance - override in subclasses"""
@@ -65,27 +73,4 @@ class FileHandler(BaseFileHandler):
         """Rebuild the file and return its raw data."""
         pass
 
-    @abstractmethod
-    def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        """Populate the tree with a representation of this file."""
-        pass
 
-    @abstractmethod
-    def get_context_menu(self, tree, item, meta: dict):
-        """Return a context menu for the given tree row (or None)."""
-        pass
-
-    @abstractmethod
-    def handle_edit(self, meta: dict, new_val, old_val, item):
-        """Handle an edit for a given tree node."""
-        pass
-
-    @abstractmethod
-    def add_variables(self, target, prefix: str, count: int):
-        """Add new variables to the given target file object."""
-        pass
-
-    @abstractmethod
-    def update_strings(self):
-        """Update the internal string data."""
-        pass

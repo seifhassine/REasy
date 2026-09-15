@@ -6,21 +6,28 @@ embedded RSZ data structures found in SCN.19 files.
 """
 
 import traceback
-from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type, is_array_type
+from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type
+from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 from utils.id_manager import EmbeddedIdManager
 from file_handlers.pyside.tree_model import DataTreeBuilder
 from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info,
-    copy_embedded_rsz_header,
     create_embedded_userdata_info,
+    create_scn19_userdata_info,
     initialize_embedded_rsz_structures,
+    initialize_scn19_userdata_runtime,
     mark_parent_chain_modified,
     build_context_chain,
     update_embedded_references_for_shift
 )
-from file_handlers.rsz.utils.rsz_field_utils import update_references_with_mapping
-from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
+from file_handlers.rsz.utils.rsz_field_utils import (
+    collect_object_reference_values,
+    get_reference_id_and_type,
+    update_references_of_type,
+    update_references_with_mapping,
+)
+from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
 from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
 
 
@@ -40,16 +47,9 @@ class RszEmbeddedArrayOperations:
                 element._container_index = i - 1
             
         element = array_data.values[element_index]
-        
-        instance_id = 0
-        ref_type = None
-        if isinstance(element, ObjectData) and element.value > 0:
-            instance_id = element.value
-            ref_type = "object"
-        elif isinstance(element, UserDataData) and element.value > 0:
-            instance_id = element.value
-            ref_type = "userdata"
-            
+
+        instance_id, ref_type = get_reference_id_and_type(element)
+
         if instance_id > 0 and ref_type:
             target_context = getattr(array_data, '_owning_context', None)
             if not target_context:
@@ -162,11 +162,11 @@ class RszEmbeddedArrayOperations:
             )
         rui.embedded_rsz_header.object_count = len(rui.embedded_object_table)
         
-        self._validate_userdata_removal(userdata_id, rui)
+        self._validate_userdata_removal(userdata_id, rui, target_ud)
 
         rui.modified = True
         return True
-        
+
     def _delete_nested_userdata_structures(self, userdata_info):
         if hasattr(userdata_info, 'embedded_userdata_infos'):
             nested_userdata = list(userdata_info.embedded_userdata_infos)
@@ -212,14 +212,7 @@ class RszEmbeddedArrayOperations:
                 
             for _, fields in rui.embedded_instances.items():
                 if isinstance(fields, dict):
-                    for _, field_data in fields.items():
-                        if isinstance(field_data, UserDataData) and field_data.value == userdata_id:
-                            field_data.value = 0  
-                            
-                        elif is_array_type(field_data):
-                            for element in field_data.values:
-                                if isinstance(element, UserDataData) and element.value == userdata_id:
-                                    element.value = 0  
+                    update_references_of_type(fields, {userdata_id: 0}, UserDataData)
 
         if hasattr(rui, 'embedded_instance_hierarchy'):
             if userdata_id in rui.embedded_instance_hierarchy:
@@ -237,19 +230,26 @@ class RszEmbeddedArrayOperations:
         if hasattr(rui, '_rsz_userdata_set') and userdata_id in rui._rsz_userdata_set:
             rui._rsz_userdata_set.discard(userdata_id)
 
-    def _validate_userdata_removal(self, userdata_id, rui):
+    def _validate_userdata_removal(self, userdata_id, rui, removed_info=None):
         validation_errors = []
-        
-        if hasattr(rui, 'embedded_userdata_infos'):
-            for ud_info in rui.embedded_userdata_infos:
-                if ud_info.instance_id == userdata_id:
-                    validation_errors.append(f"UserData ID {userdata_id} still exists in embedded_userdata_infos")
-        
-        if hasattr(rui, '_rsz_userdata_dict') and userdata_id in rui._rsz_userdata_dict:
-            validation_errors.append(f"UserData ID {userdata_id} still exists in _rsz_userdata_dict")
-    
-        if hasattr(rui, '_rsz_userdata_set') and userdata_id in rui._rsz_userdata_set:
-            validation_errors.append(f"UserData ID {userdata_id} still exists in _rsz_userdata_set")
+
+        if removed_info is not None:
+            if removed_info in getattr(rui, 'embedded_userdata_infos', ()):
+                validation_errors.append("Removed UserData still exists in embedded_userdata_infos")
+            if removed_info in getattr(rui, '_rsz_userdata_dict', {}).values():
+                validation_errors.append("Removed UserData still exists in _rsz_userdata_dict")
+            if removed_info in getattr(rui, '_rsz_userdata_str_map', {}):
+                validation_errors.append("Removed UserData still exists in _rsz_userdata_str_map")
+        else:
+            if any(
+                info.instance_id == userdata_id
+                for info in getattr(rui, 'embedded_userdata_infos', ())
+            ):
+                validation_errors.append(f"UserData ID {userdata_id} still exists in embedded_userdata_infos")
+            if userdata_id in getattr(rui, '_rsz_userdata_dict', {}):
+                validation_errors.append(f"UserData ID {userdata_id} still exists in _rsz_userdata_dict")
+            if userdata_id in getattr(rui, '_rsz_userdata_set', ()):
+                validation_errors.append(f"UserData ID {userdata_id} still exists in _rsz_userdata_set")
         
         if validation_errors:
             print("[WARNING] UserData removal validation failed:")
@@ -265,8 +265,6 @@ class RszEmbeddedArrayOperations:
         nested.add(instance_id)
 
         self._cleanup_references_to_deleted_instances(nested, rui)
-        
-        min_deleted_id = min(nested)
         
         for d in nested:
             if d in rui.embedded_instances:
@@ -303,7 +301,7 @@ class RszEmbeddedArrayOperations:
                 if isinstance(children, list):
                     rui.embedded_instance_hierarchy[parent_id] = [c for c in children if c not in nested]
         
-        self._shift_embedded_instances_down(min_deleted_id, rui)
+        self._shift_embedded_instances_down(nested, rui)
 
         update_rsz_header_counts(rui)
         
@@ -320,139 +318,36 @@ class RszEmbeddedArrayOperations:
                 update_references_with_mapping(fields, {}, deleted_ids)
 
 
-    def _validate_embedded_references(self, rui):
-        if not hasattr(rui, 'embedded_instances'):
-            return
-            
-        instance_count = max(rui.embedded_instances.keys()) + 1 if rui.embedded_instances else 0
-        
-        if hasattr(rui, 'embedded_object_table'):
-            for i, ref_id in enumerate(rui.embedded_object_table):
-                if ref_id >= instance_count:
-                    print(f"Warning: Invalid reference {ref_id} in embedded object table entry {i} (max valid: {instance_count-1})")
-                    rui.embedded_object_table[i] = 0
-        
-        for instance_id, fields in rui.embedded_instances.items():
-            if not isinstance(fields, dict):
-                continue
-                
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData):
-                    ref_id = field_data.value
-                    if ref_id > 0 and ref_id >= instance_count:
-                        print(f"Warning: Invalid instance reference {ref_id} in field {field_name} (instance {instance_id})")
-                        field_data.value = 0
-                elif isinstance(field_data, UserDataData):
-                    ref_id = field_data.value
-                    if ref_id > 0:
-                        is_valid = False
-                        if hasattr(rui, 'embedded_userdata_infos'):
-                            is_valid = any(userdata.instance_id == ref_id 
-                                          for userdata in rui.embedded_userdata_infos)
-                        if not is_valid:
-                            pass
-                elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
-                    for i, element in enumerate(field_data.values):
-                        if isinstance(element, ObjectData):
-                            ref_id = element.value
-                            if ref_id > 0 and ref_id >= instance_count:
-                                print(f"Warning: Invalid reference {ref_id} in array {field_name}[{i}] (instance {instance_id})")
-                                element.value = 0
-                        elif isinstance(element, UserDataData):
-                            ref_id = element.value
-                            if ref_id > 0:
-                                is_valid = False
-                                if hasattr(rui, 'embedded_userdata_infos'):
-                                    is_valid = any(userdata.instance_id == ref_id 
-                                                  for userdata in rui.embedded_userdata_infos)
-                                if not is_valid:
-                                    pass
-
-    def _check_embedded_instance_referenced_elsewhere(self, instance_id, current_array, current_index, ref_type, rui):
-        if not hasattr(rui, 'embedded_instances') or not rui.embedded_instances:
-            return False
-        reference_count = 0
-        for i, item in enumerate(current_array.values):
-            if i == current_index:
-                continue
-            if ((ref_type == "object" and isinstance(item, ObjectData) and item.value == instance_id) or 
-                (ref_type == "userdata" and isinstance(item, UserDataData) and item.value == instance_id)):
-                reference_count += 1
-        for inst_id, fields in rui.embedded_instances.items():
-            if not isinstance(fields, dict):
-                continue
-            for fname, fdata in fields.items():
-                if fdata is current_array:
-                    continue
-                if is_reference_type(fdata) and fdata.value == instance_id:
-                    reference_count += 1
-                elif is_array_type(fdata):
-                    for elem in fdata.values:
-                        if ((ref_type == "object" and isinstance(elem, ObjectData) and elem.value == instance_id) or 
-                            (ref_type == "userdata" and isinstance(elem, UserDataData) and elem.value == instance_id)):
-                            reference_count += 1
-        return (reference_count > 0)
     
     def _collect_embedded_nested_objects(self, root_instance_id, rui):
-        nested_objects = set()
-        
-        if not hasattr(rui, 'embedded_instances'):
-            return nested_objects
-            
-        processed_ids = set()
-        
-        def explore_instance(instance_id):
-            if instance_id in processed_ids:
-                return
-            processed_ids.add(instance_id)
-            
-            if instance_id not in rui.embedded_instances or not isinstance(rui.embedded_instances[instance_id], dict):
-                return
-            fields = rui.embedded_instances[instance_id]
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value > 0:
-                    ref_id = field_data.value
-                    if ref_id != instance_id and ref_id not in processed_ids:
-                        if ref_id in rui.embedded_instances:
-                            nested_objects.add(ref_id)
-                            explore_instance(ref_id)
-                elif isinstance(field_data, UserDataData) and field_data.value > 0:
-                    pass
-                elif is_array_type(field_data):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            ref_id = element.value
-                            if ref_id != instance_id and ref_id not in processed_ids:
-                                if ref_id in rui.embedded_instances:
-                                    is_exclusive = self._is_exclusively_referenced_from(
-                                        ref_id, instance_id, rui
-                                    )
-                                    if is_exclusive:
-                                        nested_objects.add(ref_id)
-                                        explore_instance(ref_id)
-                        elif isinstance(element, UserDataData) and element.value > 0:
-                            pass
-        
-        explore_instance(root_instance_id)
-        return nested_objects
-    
+        return RszInstanceOperations.collect_owned_instances(
+            getattr(rui, "embedded_instances", {}),
+            root_instance_id,
+            reference_type_isolation=True,
+            valid_instance_ids=getattr(rui, "embedded_instances", {}),
+        )
+
     def _is_exclusively_referenced_from(self, instance_id, source_id, rui):
-        if not hasattr(rui, 'embedded_instances'):
+        if not hasattr(rui, "embedded_instances"):
             return True
-        
         for check_id, fields in rui.embedded_instances.items():
             if check_id == source_id or not isinstance(fields, dict):
                 continue
-            for _, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value == instance_id:
-                    return False
-                elif is_array_type(field_data):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value == instance_id:
-                            return False
+            if instance_id in collect_object_reference_values(
+                fields, positive_only=False
+            ):
+                return False
         return True
 
-    def create_array_element(self, element_type, array_data, top_rui, direct_update=False, array_item=None):
+    def create_array_element(
+        self,
+        element_type,
+        array_data,
+        top_rui,
+        direct_update=False,
+        array_item=None,
+        notify=True,
+    ):
         """Create array element with proper instance ordering in embedded contexts."""
         parent_context = getattr(array_data, '_owning_context', None)
         parent_instance_id = getattr(array_data, '_owning_instance_id', None)
@@ -494,7 +389,7 @@ class RszEmbeddedArrayOperations:
         if new_elem and direct_update and array_item and hasattr(self.viewer.tree, 'model'):
             self._add_element_to_ui_direct(array_item, new_elem)
         
-        if new_elem:
+        if new_elem and notify:
             from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self.viewer, "Element Added", f"New {element_type} created.")
         
@@ -531,134 +426,6 @@ class RszEmbeddedArrayOperations:
                     return True
         return False
         
-    def _create_new_embedded_userdata_for_array(self, type_id, type_info, element_type, array_data, parent_rui, parent_instance_id):
-        """
-        Create a new UserData element following the same pattern as ObjectData creation.
-        This ensures proper instance ordering in the parent embedded context.
-        """
-        from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-        from file_handlers.rsz.rsz_data_types import UserDataData
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-        from utils.id_manager import EmbeddedIdManager
-        
-        object_ops = RszObjectOperations(self.viewer)
-        
-        insertion_index = self._calculate_field_order_insertion_index(array_data, parent_rui, parent_instance_id)
-        
-        # For UserDataData, we need to:
-        # 1. Reserve space in the parent context for the UserDataData instance itself
-        # 2. Create the UserDataData's own embedded RSZ structure
-        
-        count_new = 1  
-        
-        id_shift = {}
-        for old_id in sorted(parent_rui.embedded_instances.keys()):
-            if old_id >= insertion_index:
-                id_shift[old_id] = old_id + count_new
-        
-        if id_shift:
-            new_instances = {}
-            for old_id, fields in parent_rui.embedded_instances.items():
-                new_id = id_shift.get(old_id, old_id)
-                new_instances[new_id] = fields
-            parent_rui.embedded_instances = new_instances
-            
-            if hasattr(parent_rui, 'embedded_instance_infos'):
-                max_new_id = max(id_shift.values()) if id_shift else insertion_index
-                while len(parent_rui.embedded_instance_infos) <= max_new_id:
-                    from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
-                    parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
-                
-                for old_id, new_id in sorted(id_shift.items(), reverse=True):
-                    if old_id < len(parent_rui.embedded_instance_infos):
-                        parent_rui.embedded_instance_infos[new_id] = parent_rui.embedded_instance_infos[old_id]
-                        parent_rui.embedded_instance_infos[old_id] = None
-            
-            from file_handlers.rsz.utils.rsz_embedded_utils import update_embedded_references_for_shift
-            update_embedded_references_for_shift(id_shift, parent_rui)
-            
-            if hasattr(parent_rui, 'embedded_userdata_infos'):
-                for ud in parent_rui.embedded_userdata_infos:
-                    if hasattr(ud, 'instance_id') and ud.instance_id in id_shift:
-                        ud.instance_id = id_shift[ud.instance_id]
-            
-            if hasattr(parent_rui, 'embedded_object_table'):
-                parent_rui.embedded_object_table = [
-                    id_shift.get(x, x) for x in parent_rui.embedded_object_table
-                ]
-        
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = insertion_index
-        userdata_info.type_id = type_id
-        userdata_info.crc = int(type_info.get("crc", "0"), 16)
-        userdata_info.name = element_type
-        userdata_info.value = element_type
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-        
-        if hasattr(parent_rui, 'embedded_rsz_header'):
-            userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-            copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-            
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.parsed_elements = {}
-            
-
-            userdata_info.id_manager = EmbeddedIdManager(insertion_index)
-            
-            userdata_info._rsz_userdata_dict = {}
-            userdata_info._rsz_userdata_set = set()
-            userdata_info._rsz_userdata_str_map = {}
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info._array_counters = {}
-            userdata_info.modified = False
-            
-            if type_info:
-                object_ops._create_embedded_instance_with_nested_objects(
-                    userdata_info, type_info, type_id, element_type
-                )
-        
-        if not hasattr(parent_rui, 'embedded_userdata_infos'):
-            parent_rui.embedded_userdata_infos = []
-        parent_rui.embedded_userdata_infos.append(userdata_info)
-        
-        parent_rui.embedded_instances[insertion_index] = {}
-        
-        if not hasattr(parent_rui, 'embedded_instance_infos'):
-            parent_rui.embedded_instance_infos = []
-        
-        while len(parent_rui.embedded_instance_infos) <= insertion_index:
-            from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
-        
-        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
-        instance_info = create_embedded_instance_info(type_id, self.type_registry)
-        parent_rui.embedded_instance_infos[insertion_index] = instance_info
-        
-        if hasattr(parent_rui, 'id_manager') and parent_rui.id_manager:
-            parent_rui.id_manager.register_instance(insertion_index)
-        
-        if hasattr(parent_rui, '_rsz_userdata_dict'):
-            parent_rui._rsz_userdata_dict[insertion_index] = userdata_info
-        if hasattr(parent_rui, '_rsz_userdata_set'):
-            parent_rui._rsz_userdata_set.add(insertion_index)
-        if hasattr(parent_rui, '_rsz_userdata_str_map'):
-            parent_rui._rsz_userdata_str_map[userdata_info] = element_type
-        
-        if hasattr(parent_rui, 'embedded_rsz_header'):
-            parent_rui.embedded_rsz_header.instance_count = len(parent_rui.embedded_instance_infos)
-            parent_rui.embedded_rsz_header.userdata_count = len(parent_rui.embedded_userdata_infos)
-        
-        userdata = UserDataData(insertion_index, "", element_type)
-        userdata._container_array = array_data
-        userdata._container_context = parent_rui
-        userdata._owning_userdata = userdata_info
-            
-        return userdata
 
     def _calculate_field_order_insertion_index(self, array_data, rui, parent_id):
         """
@@ -765,41 +532,6 @@ class RszEmbeddedArrayOperations:
        
         return insertion_index
     
-    def _find_instances_belonging_to_element(self, element_id, rui, boundary_id):
-        """
-        Find all instances that belong to a specific element.
-        This includes the element itself and any instances created between it and the boundary.
-        """
-        instances = [element_id]
-        
-        for inst_id in sorted(rui.embedded_instances.keys()):
-            if inst_id > element_id:
-                if boundary_id is None or inst_id < boundary_id:
-                    is_referenced_elsewhere = False
-                    
-                    for check_id, check_fields in rui.embedded_instances.items():
-                        if check_id == inst_id:
-                            continue
-                            
-                        for field_name, field_obj in check_fields.items():
-                            if is_reference_type(field_obj) and field_obj.value == inst_id:
-                                is_referenced_elsewhere = True
-                                break
-                            elif isinstance(field_obj, ArrayData):
-                                for elem in field_obj.values:
-                                    if is_reference_type(elem) and elem.value == inst_id:
-                                        is_referenced_elsewhere = True
-                                        break
-                        
-                        if is_referenced_elsewhere:
-                            break
-                    
-                    if not is_referenced_elsewhere:
-                        instances.append(inst_id)
-                else:
-                    break  # We've reached the boundary
-        
-        return instances
 
     def _find_parent_id_for_array(self, array_data, rui):
         
@@ -853,12 +585,14 @@ class RszEmbeddedArrayOperations:
                         return parent_id
         return None
 
-    def _shift_embedded_instances(self, insertion_index, rui, parent_instance_id=None):
-        """Shift instances >= insertion_index by 1, following the non-embedded pattern."""
+    def _shift_embedded_instances(
+        self, insertion_index, rui, parent_instance_id=None, count=1
+    ):
+        """Shift instances at or above an insertion point."""
         id_shift = {}
         for old_id in sorted(rui.embedded_instances.keys()):
             if old_id >= insertion_index:
-                id_shift[old_id] = old_id + 1
+                id_shift[old_id] = old_id + count
         
         if id_shift:
             new_instances = {}
@@ -885,65 +619,82 @@ class RszEmbeddedArrayOperations:
                 rui.embedded_instance_infos = new_instance_infos
             
             update_embedded_references_for_shift(id_shift, rui)
-            
-            if hasattr(rui, 'embedded_userdata_infos'):
-                for ud_info in rui.embedded_userdata_infos:
-                    if hasattr(ud_info, 'instance_id') and ud_info.instance_id in id_shift:
-                        ud_info.instance_id = id_shift[ud_info.instance_id]
-                
-                for ud_info in rui.embedded_userdata_infos:
-                    if hasattr(ud_info, 'embedded_instances'):
-                        ud_instance_ids = sorted(ud_info.embedded_instances.keys())
-                        if ud_instance_ids:
-                            min_internal = min(ud_instance_ids)
-                            max_internal = max(ud_instance_ids)
-                            
-                            for inst_id, fields in ud_info.embedded_instances.items():
-                                if isinstance(fields, dict):
-                                    for field_name, field_data in fields.items():
-                                        if hasattr(field_data, 'value') and isinstance(field_data.value, int) and field_data.value > 0:
-                                            if field_data.value < min_internal or field_data.value > max_internal:
-                                                if field_data.value in id_shift:
-                                                    field_data.value = id_shift[field_data.value]
-                                        elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
-                                            for i, element in enumerate(field_data.values):
-                                                if hasattr(element, 'value') and isinstance(element.value, int) and element.value > 0:
-                                                    if element.value < min_internal or element.value > max_internal:
-                                                        if element.value in id_shift:
-                                                            element.value = id_shift[element.value]
-            
-            if hasattr(rui, 'embedded_object_table'):
-                rui.embedded_object_table = [
-                    id_shift.get(x, x) for x in rui.embedded_object_table
-                ]
-            
-            if hasattr(rui, 'embedded_instance_hierarchy'):
-                new_hierarchy = {}
-                for parent_id, children in rui.embedded_instance_hierarchy.items():
-                    new_parent = id_shift.get(parent_id, parent_id)
-                    new_children = [id_shift.get(c, c) for c in children]
-                    new_hierarchy[new_parent] = new_children
-                rui.embedded_instance_hierarchy = new_hierarchy
-            
-            if hasattr(rui, '_array_counters'):
-                new_counters = {}
-                for instance_id, counter in rui._array_counters.items():
-                    new_id = id_shift.get(instance_id, instance_id)
-                    new_counters[new_id] = counter
-                rui._array_counters = new_counters
-            
-            if hasattr(rui, 'id_manager') and rui.id_manager:
-                if hasattr(rui.id_manager, '_instance_to_reasy'):
-                    new_instance_to_reasy = {}
-                    new_reasy_to_instance = {}
-                    
-                    for instance_id, reasy_id in rui.id_manager._instance_to_reasy.items():
-                        new_instance_id = id_shift.get(instance_id, instance_id)
-                        new_instance_to_reasy[new_instance_id] = reasy_id
-                        new_reasy_to_instance[reasy_id] = new_instance_id
-                    
-                    rui.id_manager._instance_to_reasy = new_instance_to_reasy
-                    rui.id_manager._reasy_to_instance = new_reasy_to_instance
+            self._remap_embedded_runtime_state(rui, id_shift)
+
+    @staticmethod
+    def _iter_direct_nested_references(fields):
+        if not isinstance(fields, dict):
+            return
+        for field_data in fields.values():
+            if is_reference_type(field_data):
+                yield field_data
+            elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
+                yield from (element for element in field_data.values
+                            if is_reference_type(element))
+
+    def _remap_embedded_runtime_state(self, rui, id_shift, deleted_ids=()):
+        deleted_ids = set(deleted_ids)
+        userdata_infos = getattr(rui, 'embedded_userdata_infos', ())
+        if not deleted_ids:
+            for info in userdata_infos:
+                if hasattr(info, 'instance_id') and info.instance_id in id_shift:
+                    info.instance_id = id_shift[info.instance_id]
+
+        for info in userdata_infos:
+            if deleted_ids and hasattr(info, 'instance_id') and info.instance_id in id_shift:
+                info.instance_id = id_shift[info.instance_id]
+            internal_ids = sorted(getattr(info, 'embedded_instances', ()))
+            if not internal_ids:
+                continue
+            min_internal, max_internal = internal_ids[0], internal_ids[-1]
+            for fields in info.embedded_instances.values():
+                for reference in self._iter_direct_nested_references(fields):
+                    value = reference.value
+                    if not isinstance(value, int) or value <= 0 or min_internal <= value <= max_internal:
+                        continue
+                    if value in id_shift:
+                        reference.value = id_shift[value]
+                    elif value in deleted_ids:
+                        reference.value = 0
+
+        if hasattr(rui, 'embedded_object_table'):
+            rui.embedded_object_table = [
+                0 if value in deleted_ids
+                else id_shift.get(value, value)
+                for value in rui.embedded_object_table
+            ]
+        if hasattr(rui, 'embedded_instance_hierarchy'):
+            if not deleted_ids:
+                rui.embedded_instance_hierarchy = RszInstanceOperations.remap_hierarchy(
+                    rui.embedded_instance_hierarchy, id_shift
+                )
+            else:
+                rui.embedded_instance_hierarchy = RszInstanceOperations.remap_hierarchy(
+                    rui.embedded_instance_hierarchy, id_shift, deleted_ids
+                )
+        if hasattr(rui, '_rsz_userdata_dict'):
+            rui._rsz_userdata_dict = {
+                id_shift.get(instance_id, instance_id): info
+                for instance_id, info in rui._rsz_userdata_dict.items()
+                if instance_id not in deleted_ids
+            }
+        if hasattr(rui, '_rsz_userdata_set'):
+            rui._rsz_userdata_set = {
+                id_shift.get(instance_id, instance_id)
+                for instance_id in rui._rsz_userdata_set
+                if instance_id not in deleted_ids
+            }
+        id_manager = getattr(rui, 'id_manager', None)
+        if id_manager and hasattr(id_manager, '_instance_to_reasy'):
+            id_manager._instance_to_reasy = {
+                id_shift.get(instance_id, instance_id): reasy_id
+                for instance_id, reasy_id in id_manager._instance_to_reasy.items()
+                if instance_id not in deleted_ids
+            }
+            id_manager._reasy_to_instance = {
+                reasy_id: instance_id
+                for instance_id, reasy_id in id_manager._instance_to_reasy.items()
+            }
 
     def _create_new_embedded_object_instance_for_array(
         self, type_id, type_info, element_type, array_data, rui, parent_id):
@@ -1182,90 +933,67 @@ class RszEmbeddedArrayOperations:
 
     def _add_element_to_ui_direct(self, array_item, element, embedded_context=None):
         model = self.viewer.tree.model()
-        if not model or not hasattr(array_item, 'raw'):
+        if not model or not hasattr(array_item, "raw"):
             return False
-        array_data = array_item.raw.get('obj') if isinstance(array_item.raw, dict) else None
+        raw = array_item.raw if isinstance(array_item.raw, dict) else {}
+        array_data = raw.get("obj")
         if not array_data or not hasattr(array_data, 'values'):
             return False
-        
+
         if not hasattr(array_data, '_array_id'):
             array_data._array_id = id(array_data)
-        
-        element_index = len(array_data.values) - 1
-        base_embedded_context = embedded_context
-        if not base_embedded_context and hasattr(element, '_container_context'):
-            base_embedded_context = element._container_context
+
+        base_embedded_context = (
+            embedded_context
+            or getattr(element, "_container_context", None)
+        )
         if not base_embedded_context:
             print("[ERROR] Could not find embedded context for array item")
             return False
-        parent_id = None
-        if hasattr(element, '_container_parent_id'):
-            parent_id = element._container_parent_id
-        if parent_id is None and hasattr(array_item.raw, 'parent_instance_id'):
-            parent_id = array_item.raw.get('parent_instance_id')
+
+        parent_id = getattr(element, "_container_parent_id", None)
         if parent_id is None:
             parent_id = self._find_parent_id_for_array(array_data, base_embedded_context)
             if parent_id:
-                array_item.raw['parent_instance_id'] = parent_id
+                raw["parent_instance_id"] = parent_id
 
-        if isinstance(element, ObjectData):
-            ref_id = element.value
-            embedded_context = base_embedded_context
-            if hasattr(element, '_owning_context'):
-                embedded_context = element._owning_context
-            if hasattr(embedded_context, 'embedded_instances') and ref_id in embedded_context.embedded_instances:
-                fields = embedded_context.embedded_instances.get(ref_id)
-                if isinstance(fields, dict) and 'embedded_rsz' in fields and fields.get('embedded_rsz') is not None:
-                    nested_rui = fields.get('embedded_rsz')
-                    node_data = self.viewer._create_direct_embedded_usr_node(f"{element_index}", nested_rui)
-                else:
-                    node_data = self._create_embedded_object_node_data(ref_id, element_index, element, embedded_context)
-            else:
-                node_data = self._create_embedded_object_node_data(ref_id, element_index, element, embedded_context)
-        elif isinstance(element, UserDataData):
-            ref_id = element.value
-            embedded_context = base_embedded_context
-            if hasattr(element, '_owning_context'):
-                embedded_context = element._owning_context
-            if hasattr(element, '_owning_userdata'):
-                userdata_info = element._owning_userdata
-                embedded_context = userdata_info.parent_userdata_rui
-            node_data = self._create_embedded_userdata_node_data(ref_id, element_index, element, embedded_context)
-        else:
-            node_data = DataTreeBuilder.create_data_node(
-                f"{element_index}: ", "", element.__class__.__name__, element
+        def create_node(index, value, context):
+            if hasattr(value, "_owning_context"):
+                context = value._owning_context
+            if isinstance(value, ObjectData):
+                fields = getattr(context, "embedded_instances", {}).get(value.value)
+                if isinstance(fields, dict) and fields.get("embedded_rsz") is not None:
+                    return self.viewer._create_direct_embedded_usr_node(
+                        str(index), fields["embedded_rsz"]
+                    )
+                return self._create_embedded_object_node_data(
+                    value.value, index, value, context
+                )
+            if isinstance(value, UserDataData):
+                owning_userdata = getattr(value, "_owning_userdata", None)
+                if owning_userdata is not None:
+                    context = owning_userdata.parent_userdata_rui
+                return self._create_embedded_userdata_node_data(
+                    value.value, index, value, context
+                )
+            return DataTreeBuilder.create_data_node(
+                f"{index}: ", "", value.__class__.__name__, value
             )
-        model.addChild(array_item, node_data)
-        array_index = model.getIndexFromItem(array_item)
-        self.viewer.tree.expand(array_index)
-        if len(array_item.children) > 0:
-            child_index = model.getIndexFromItem(array_item.children[-1])
-            self.viewer.tree.expand(child_index)
-            if child_index.isValid():
-                child_item = child_index.internalPointer()
-                if child_item:
-                    if not TreeWidgetFactory.should_skip_widget(child_item):
-                        name_text = child_item.data[0] if hasattr(child_item, 'data') and child_item.data else ""
-                        node_type = child_item.raw.get("type", "") if isinstance(child_item.raw, dict) else ""
-                        data_obj = child_item.raw.get("obj", None) if isinstance(child_item.raw, dict) else None
-                        widget_container = TreeWidgetFactory.create_widget(
-                            node_type, data_obj, name_text, self.viewer.tree,
-                            self.viewer.tree.parent_modified_callback if hasattr(self.viewer.tree, 'parent_modified_callback') else None
-                        )
-                        if widget_container:
-                            self.viewer.tree.setIndexWidget(child_index, widget_container)
-        return True
-    
-    def _create_embedded_userdata_node_data(self, ref_id, index, element, embedded_context):
-        type_name = f"UserData[{ref_id}]"
-        userdata_rui = None
-        if hasattr(embedded_context, 'embedded_userdata_infos'):
-            for userdata_info in embedded_context.embedded_userdata_infos:
-                if userdata_info.instance_id == ref_id:
-                    userdata_rui = userdata_info
-                    if hasattr(userdata_info, 'name') and userdata_info.name:
-                        type_name = userdata_info.name
-                    break
+
+        return append_array_element_node(
+            self.viewer,
+            array_item,
+            element,
+            embedded_context=base_embedded_context,
+            node_factory=create_node,
+            initialize_widget=True,
+            expand_child=True,
+            respect_deferred=False,
+            model=model,
+            widget_factory=TreeWidgetFactory,
+        )
+
+    def _create_embedded_reference_node_data(self, index, element, embedded_context, type_name):
         node_data = DataTreeBuilder.create_data_node(
             f"{index}: ({type_name})",
             "",
@@ -1277,6 +1005,21 @@ class RszEmbeddedArrayOperations:
         node_data["domain_id"] = getattr(embedded_context, 'instance_id', 0)
         node_data["embedded_context"] = embedded_context
         node_data["context_chain"] = context_chain
+        return node_data, context_chain
+
+    def _create_embedded_userdata_node_data(self, ref_id, index, element, embedded_context):
+        type_name = f"UserData[{ref_id}]"
+        userdata_rui = None
+        if hasattr(embedded_context, 'embedded_userdata_infos'):
+            for userdata_info in embedded_context.embedded_userdata_infos:
+                if userdata_info.instance_id == ref_id:
+                    userdata_rui = userdata_info
+                    if hasattr(userdata_info, 'name') and userdata_info.name:
+                        type_name = userdata_info.name
+                    break
+        node_data, context_chain = self._create_embedded_reference_node_data(
+            index, element, embedded_context, type_name
+        )
         if userdata_rui and hasattr(userdata_rui, 'embedded_instances'):
             root_instance_id = None
             if hasattr(userdata_rui, 'embedded_object_table') and userdata_rui.embedded_object_table:
@@ -1304,17 +1047,9 @@ class RszEmbeddedArrayOperations:
                     type_info = self.viewer.type_registry.get_type_info(type_id)
                     if type_info and "name" in type_info:
                         type_name = type_info["name"]
-        node_data = DataTreeBuilder.create_data_node(
-            f"{index}: ({type_name})",
-            "",
-            element.__class__.__name__, 
-            element
+        node_data, context_chain = self._create_embedded_reference_node_data(
+            index, element, embedded_context, type_name
         )
-        context_chain = build_context_chain(embedded_context)
-        node_data["embedded"] = True
-        node_data["domain_id"] = getattr(embedded_context, 'instance_id', 0)
-        node_data["embedded_context"] = embedded_context
-        node_data["context_chain"] = context_chain
         node_data["instance_id"] = ref_id
         node_data["children"] = []
         if hasattr(embedded_context, 'embedded_instances'):
@@ -1450,19 +1185,7 @@ class RszEmbeddedArrayOperations:
                 ctx.modified = True
         self.viewer.mark_modified()
 
-    def _create_userdata_element_fixed(self, element_type, array_data, parent_rui):
-        """Create UserDataData element with proper ordering."""
-        type_info, type_id = self.type_registry.find_type_by_name(element_type)
-        if not type_info:
-            return None
-        
-        parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
-        if parent_instance_id is None:
-            parent_context, parent_instance_id = self._find_deep_owner_of_array(parent_rui, array_data)
-            if parent_instance_id is None:
-                return None
-            parent_rui = parent_context
-        
+    def _prepare_userdata_array_owner(self, array_data, parent_rui, parent_instance_id):
         if hasattr(array_data, '_owning_instance_id') and array_data._owning_instance_id != parent_instance_id:
             array_data._owning_instance_id = parent_instance_id
         if hasattr(array_data, '_owning_context') and array_data._owning_context != parent_rui:
@@ -1474,37 +1197,8 @@ class RszEmbeddedArrayOperations:
                 if field_obj is array_data:
                     array_data._owning_field_name = field_name
                     break
-        
-        insertion_index = self._calculate_insertion_index(array_data, parent_rui, parent_instance_id)
 
-        self._shift_embedded_instances(insertion_index, parent_rui, parent_instance_id)
-        
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = insertion_index
-        userdata_info.type_id = type_id
-        userdata_info.name = element_type
-        userdata_info.value = element_type
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-        
-        if hasattr(parent_rui, 'embedded_rsz_header'):
-            userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-            copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-            
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info.id_manager = EmbeddedIdManager(insertion_index)
-            
-            self._populate_embedded_rsz_fixed(userdata_info, type_info, type_id)
-            
-            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
-            userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
-            userdata_info.data_size = len(userdata_info.data)
-        
+    def _register_userdata_in_parent(self, parent_rui, insertion_index, userdata_info):
         parent_rui.embedded_instances[insertion_index] = {}
         
         if not hasattr(parent_rui, 'embedded_instance_infos'):
@@ -1514,10 +1208,10 @@ class RszEmbeddedArrayOperations:
             parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
         
         if insertion_index < len(parent_rui.embedded_instance_infos):
-            parent_rui.embedded_instance_infos[insertion_index] = create_embedded_instance_info(type_id, self.type_registry)
+            parent_rui.embedded_instance_infos[insertion_index] = create_embedded_instance_info(userdata_info.type_id, self.type_registry)
         else:
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(type_id, self.type_registry))
-        
+            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(userdata_info.type_id, self.type_registry))
+
         if not hasattr(parent_rui, 'embedded_userdata_infos'):
             parent_rui.embedded_userdata_infos = []
         parent_rui.embedded_userdata_infos.append(userdata_info)
@@ -1529,7 +1223,47 @@ class RszEmbeddedArrayOperations:
             parent_rui._rsz_userdata_dict[insertion_index] = userdata_info
         if hasattr(parent_rui, '_rsz_userdata_set'):
             parent_rui._rsz_userdata_set.add(insertion_index)
-        
+        if hasattr(parent_rui, '_rsz_userdata_str_map'):
+            parent_rui._rsz_userdata_str_map[userdata_info] = getattr(
+                userdata_info, 'name', getattr(userdata_info, 'value', '')
+            )
+
+    def _create_userdata_element_fixed(self, element_type, array_data, parent_rui):
+        """Create UserDataData element with proper ordering."""
+        type_info, type_id = self.type_registry.find_type_by_name(element_type)
+        if not type_info:
+            return None
+
+        parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
+        if parent_instance_id is None:
+            parent_context, parent_instance_id = self._find_deep_owner_of_array(parent_rui, array_data)
+            if parent_instance_id is None:
+                return None
+            parent_rui = parent_context
+
+        self._prepare_userdata_array_owner(array_data, parent_rui, parent_instance_id)
+
+        insertion_index = self._calculate_insertion_index(array_data, parent_rui, parent_instance_id)
+
+        self._shift_embedded_instances(insertion_index, parent_rui, parent_instance_id)
+
+        userdata_info = create_scn19_userdata_info(insertion_index, type_id, element_type, parent_rui)
+
+        if hasattr(parent_rui, 'embedded_rsz_header'):
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                parent_rui.embedded_rsz_header,
+                insertion_index,
+            )
+
+            self._populate_embedded_rsz_fixed(userdata_info, type_info, type_id)
+
+            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
+            userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
+            userdata_info.data_size = len(userdata_info.data)
+
+        self._register_userdata_in_parent(parent_rui, insertion_index, userdata_info)
+
         element = UserDataData(insertion_index, "", element_type)
         element._owning_userdata = userdata_info
         
@@ -1639,7 +1373,12 @@ class RszEmbeddedArrayOperations:
                     mark_parent_chain_modified(parent_rui, self.viewer)
                 return element
             elif orig_type and element_type == "ObjectData":
-                return self._create_new_embedded_object_instance_for_array(
+                graph = elem_data.get("object_graph", {})
+                if graph.get("context_type") == "embedded_object":
+                    return self._paste_embedded_object_graph(
+                        elem_data, array_data, parent_rui
+                    )
+                element = self._create_new_embedded_object_instance_for_array(
                     self.type_registry.find_type_by_name(orig_type)[1],
                     self.type_registry.find_type_by_name(orig_type)[0],
                     orig_type,
@@ -1647,8 +1386,85 @@ class RszEmbeddedArrayOperations:
                     parent_rui,
                     self._find_parent_id_for_array(array_data, parent_rui)
                 )
+                return element
             
             return None
+
+    def _paste_embedded_object_graph(self, elem_data, array_data, rui):
+        """Insert a copied embedded object graph with remapped relative IDs."""
+        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+
+        graph = elem_data["object_graph"]
+        entries = sorted(graph.get("instances", ()), key=lambda item: item["id"])
+        if not entries:
+            return None
+
+        parent_id = self._find_parent_id_for_array(array_data, rui)
+        insertion_index = self._calculate_field_order_insertion_index(
+            array_data, rui, parent_id
+        )
+        shift = len(entries)
+        self._shift_embedded_instances(
+            insertion_index, rui, parent_id, count=shift
+        )
+        id_mapping = {
+            entry["id"]: insertion_index + index
+            for index, entry in enumerate(entries)
+        }
+
+        if not getattr(rui, "id_manager", None):
+            rui.id_manager = EmbeddedIdManager(getattr(rui, "instance_id", 0))
+            for instance_id in rui.embedded_instances:
+                rui.id_manager.register_instance(instance_id)
+
+        def restore_external_ids(value, payload):
+            if not isinstance(payload, dict):
+                return
+            if payload.get("is_external_ref") and is_reference_type(value):
+                if value.value >= insertion_index:
+                    value.value += shift
+            elif isinstance(value, ArrayData):
+                for child, child_payload in zip(
+                    value.values, payload.get("values", ())
+                ):
+                    restore_external_ids(child, child_payload)
+
+        for entry in entries:
+            instance_id = id_mapping[entry["id"]]
+            fields = {}
+            for field_name, payload in entry.get("fields", {}).items():
+                field = RszArrayClipboard._deserialize_field_with_relative_mapping(
+                    payload, id_mapping, {}, randomize_guids=False
+                )
+                restore_external_ids(field, payload)
+                if isinstance(field, ArrayData):
+                    field._owning_context = rui
+                    field._owning_instance_id = instance_id
+                    field._owning_field = field_name
+                    field._container_context = rui
+                    field._container_parent_id = instance_id
+                    field._container_field = field_name
+                fields[field_name] = field
+            rui.embedded_instances[instance_id] = fields
+
+            info = create_embedded_instance_info(entry.get("type_id", 0), self.type_registry)
+            info.crc = entry.get("crc", info.crc)
+            rui.embedded_instance_infos[instance_id] = info
+
+            rui.id_manager.register_instance(instance_id)
+
+        root_id = id_mapping[graph["root_id"]]
+        root = ObjectData(root_id, elem_data.get("orig_type", ""))
+        root._container_array = array_data
+        root._container_index = len(array_data.values)
+        root._container_context = rui
+        root._container_parent_id = parent_id
+        array_data.values.append(root)
+
+        self._update_array_counters(array_data, rui)
+        update_rsz_header_counts(rui)
+        mark_parent_chain_modified(rui, self.viewer)
+        return root
 
     def _paste_userdata_with_full_content(self, elem_data, array_data, parent_rui):
         """Paste UserDataData with full embedded content."""
@@ -1657,80 +1473,45 @@ class RszEmbeddedArrayOperations:
         parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
         if parent_instance_id is None:
             return None
-        
-        if hasattr(array_data, '_owning_instance_id') and array_data._owning_instance_id != parent_instance_id:
-            array_data._owning_instance_id = parent_instance_id
-        if hasattr(array_data, '_owning_context') and array_data._owning_context != parent_rui:
-            array_data._owning_context = parent_rui
-        
-        if parent_instance_id in parent_rui.embedded_instances:
-            parent_fields = parent_rui.embedded_instances[parent_instance_id]
-            for field_name, field_obj in parent_fields.items():
-                if field_obj is array_data:
-                    array_data._owning_field_name = field_name
-                    break
-        
+
+        self._prepare_userdata_array_owner(array_data, parent_rui, parent_instance_id)
+
         insertion_index = self._calculate_insertion_index(array_data, parent_rui, parent_instance_id)
         
         self._shift_embedded_instances(insertion_index, parent_rui, parent_instance_id)
         
-        userdata_info = Scn19RSZUserDataInfo()
-        userdata_info.instance_id = insertion_index
-        userdata_info.type_id = embedded_data["type_id"]
-        userdata_info.name = embedded_data["name"]
-        userdata_info.value = embedded_data["name"]
-        userdata_info.parent_userdata_rui = parent_rui
-        userdata_info.data = b""
-        userdata_info.data_size = 0
-        
+        userdata_info = create_scn19_userdata_info(
+            insertion_index,
+            embedded_data["type_id"],
+            embedded_data["name"],
+            parent_rui,
+        )
+
         if hasattr(parent_rui, 'embedded_rsz_header'):
-            userdata_info.embedded_rsz_header = type(parent_rui.embedded_rsz_header)()
-            copy_embedded_rsz_header(parent_rui.embedded_rsz_header, userdata_info.embedded_rsz_header)
-            
-            userdata_info.embedded_instances = {}
-            userdata_info.embedded_instance_infos = []
-            userdata_info.embedded_userdata_infos = []
-            userdata_info.embedded_object_table = []
-            userdata_info.embedded_instance_hierarchy = {}
-            userdata_info.id_manager = EmbeddedIdManager(insertion_index)
-            
+            initialize_scn19_userdata_runtime(
+                userdata_info,
+                parent_rui.embedded_rsz_header,
+                insertion_index,
+            )
+
             self._restore_embedded_content(userdata_info, embedded_data)
             
             from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
             userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
             userdata_info.data_size = len(userdata_info.data)
-        
-        parent_rui.embedded_instances[insertion_index] = {}
-        
-        if not hasattr(parent_rui, 'embedded_instance_infos'):
-            parent_rui.embedded_instance_infos = []
-            
-        while len(parent_rui.embedded_instance_infos) <= insertion_index:
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(0, self.type_registry))
-        
-        if insertion_index < len(parent_rui.embedded_instance_infos):
-            parent_rui.embedded_instance_infos[insertion_index] = create_embedded_instance_info(userdata_info.type_id, self.type_registry)
-        else:
-            parent_rui.embedded_instance_infos.append(create_embedded_instance_info(userdata_info.type_id, self.type_registry))
-        
-        if not hasattr(parent_rui, 'embedded_userdata_infos'):
-            parent_rui.embedded_userdata_infos = []
-        parent_rui.embedded_userdata_infos.append(userdata_info)
-        
-        if hasattr(parent_rui, 'id_manager'):
-            parent_rui.id_manager.register_instance(insertion_index)
-        
-        if hasattr(parent_rui, '_rsz_userdata_dict'):
-            parent_rui._rsz_userdata_dict[insertion_index] = userdata_info
-        if hasattr(parent_rui, '_rsz_userdata_set'):
-            parent_rui._rsz_userdata_set.add(insertion_index)
-        
+
+        self._register_userdata_in_parent(parent_rui, insertion_index, userdata_info)
+
         element = UserDataData(insertion_index, "", elem_data.get("orig_type", ""))
         element._owning_userdata = userdata_info
         
         array_data.values.append(element)
         element._container_array = array_data
+        element._container_index = len(array_data.values) - 1
         element._container_context = parent_rui
+
+        self._update_array_counters(array_data, parent_rui)
+        update_rsz_header_counts(parent_rui)
         
         self._verify_and_fix_references(parent_rui, parent_instance_id)
         
@@ -1927,91 +1708,45 @@ class RszEmbeddedArrayOperations:
         
         return instance_to_field
 
-    def _shift_embedded_instances_down(self, deleted_id, rui):
-        """Shift instances > deleted_id down by 1 to fill the gap."""
-        id_shift = {}
-        for old_id in sorted(rui.embedded_instances.keys()):
-            if old_id > deleted_id:
-                id_shift[old_id] = old_id - 1
+    def _shift_embedded_instances_down(self, deleted_ids, rui):
+        """Compact the embedded ID space after one or more deletions."""
+        deleted_ids = {deleted_ids} if isinstance(deleted_ids, int) else set(deleted_ids)
+        deleted_sorted = sorted(deleted_ids)
+        id_shift = {
+            old_id: old_id - sum(value < old_id for value in deleted_sorted)
+            for old_id in rui.embedded_instances
+            if any(value < old_id for value in deleted_sorted)
+        }
         
         new_instances = {}
         for old_id, fields in rui.embedded_instances.items():
-            if old_id == deleted_id:
+            if old_id in deleted_ids:
                 continue 
             new_id = id_shift.get(old_id, old_id)
             new_instances[new_id] = fields
         rui.embedded_instances = new_instances
         
-        if hasattr(rui, 'embedded_instance_infos') and deleted_id < len(rui.embedded_instance_infos):
-            new_instance_infos = []
-            for i in range(len(rui.embedded_instance_infos)):
-                if i < deleted_id:
-                    new_instance_infos.append(rui.embedded_instance_infos[i])
-                elif i > deleted_id:
-                    new_instance_infos.append(rui.embedded_instance_infos[i])
-            
-            rui.embedded_instance_infos = new_instance_infos
+        if hasattr(rui, 'embedded_instance_infos'):
+            rui.embedded_instance_infos = [
+                info for index, info in enumerate(rui.embedded_instance_infos)
+                if index not in deleted_ids
+            ]
+
+        array_registry = getattr(rui, '_array_registry', None)
+        if array_registry is not None:
+            removed_arrays = {
+                array_id for array_id, owner_id in array_registry.items()
+                if owner_id in deleted_ids
+            }
+            rui._array_registry = {
+                array_id: owner_id
+                for array_id, owner_id in array_registry.items()
+                if array_id not in removed_arrays
+            }
+            array_counters = getattr(rui, '_array_counters', None)
+            if array_counters is not None:
+                for array_id in removed_arrays:
+                    array_counters.pop(array_id, None)
         
         update_embedded_references_for_shift(id_shift, rui)
-        
-        if hasattr(rui, 'embedded_userdata_infos'):
-            for ud in rui.embedded_userdata_infos:
-                if hasattr(ud, 'instance_id') and ud.instance_id in id_shift:
-                    ud.instance_id = id_shift[ud.instance_id]
-                
-                if hasattr(ud, 'embedded_instances'):
-                    ud_instance_ids = sorted(ud.embedded_instances.keys())
-                    if ud_instance_ids:
-                        min_internal = min(ud_instance_ids)
-                        max_internal = max(ud_instance_ids)
-                        parent_instance_ids = set(rui.embedded_instances.keys())
-                        
-                        for nested_id, nested_fields in ud.embedded_instances.items():
-                            if isinstance(nested_fields, dict):
-                                for field_name, field_data in nested_fields.items():
-                                    if hasattr(field_data, 'value') and isinstance(field_data.value, int) and field_data.value > 0:
-                                        if field_data.value < min_internal or field_data.value > max_internal:
-                                            if field_data.value in parent_instance_ids:
-                                                if field_data.value in id_shift:
-                                                    field_data.value = id_shift[field_data.value]
-                                                elif field_data.value == deleted_id:
-                                                    field_data.value = 0
-                                    elif isinstance(field_data, ArrayData) and hasattr(field_data, 'values'):
-                                        for i, element in enumerate(field_data.values):
-                                            if hasattr(element, 'value') and isinstance(element.value, int) and element.value > 0:
-                                                if element.value < min_internal or element.value > max_internal:
-                                                    if element.value in parent_instance_ids:
-                                                        if element.value in id_shift:
-                                                            element.value = id_shift[element.value]
-                                                        elif element.value == deleted_id:
-                                                            element.value = 0
-        
-        if hasattr(rui, 'embedded_object_table'):
-            rui.embedded_object_table = [
-                id_shift.get(x, x) if x != deleted_id else 0 for x in rui.embedded_object_table
-            ]
-        
-        if hasattr(rui, 'embedded_instance_hierarchy'):
-            new_hierarchy = {}
-            for parent_id, children in rui.embedded_instance_hierarchy.items():
-                if parent_id == deleted_id:
-                    continue
-                new_parent = id_shift.get(parent_id, parent_id)
-                new_children = [id_shift.get(c, c) for c in children if c != deleted_id]
-                new_hierarchy[new_parent] = new_children
-            rui.embedded_instance_hierarchy = new_hierarchy
-        
-        if hasattr(rui, 'id_manager') and rui.id_manager:
-            if hasattr(rui.id_manager, '_instance_to_reasy'):
-                new_instance_to_reasy = {}
-                new_reasy_to_instance = {}
-                
-                for instance_id, reasy_id in rui.id_manager._instance_to_reasy.items():
-                    if instance_id == deleted_id:
-                        continue 
-                    new_instance_id = id_shift.get(instance_id, instance_id)
-                    new_instance_to_reasy[new_instance_id] = reasy_id
-                    new_reasy_to_instance[reasy_id] = new_instance_id
-                
-                rui.id_manager._instance_to_reasy = new_instance_to_reasy
-                rui.id_manager._reasy_to_instance = new_reasy_to_instance
+        self._remap_embedded_runtime_state(rui, id_shift, deleted_ids)

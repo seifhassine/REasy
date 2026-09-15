@@ -6,25 +6,25 @@ from PySide6.QtWidgets import (
 class TemplateExportDialog(QDialog):
     def __init__(self, parent=None, gameobject_name="GameObject"):
         super().__init__(parent)
-        self.setWindowTitle("Export GameObject Template")
+        self.setWindowTitle(self.tr("Export GameObject Template"))
         self.resize(400, 300)
         
         main_layout = QVBoxLayout(self)
         
         name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel("Template Name:"))
+        name_layout.addWidget(QLabel(self.tr("Template Name:")))
         self.name_edit = QLineEdit(gameobject_name)
         name_layout.addWidget(self.name_edit)
         main_layout.addLayout(name_layout)
         
         tags_layout = QHBoxLayout()
-        tags_layout.addWidget(QLabel("Tags:"))
+        tags_layout.addWidget(QLabel(self.tr("Tags:")))
         self.tags_edit = QLineEdit()
-        self.tags_edit.setPlaceholderText("Enter tags separated by commas")
+        self.tags_edit.setPlaceholderText(self.tr("Enter tags separated by commas"))
         tags_layout.addWidget(self.tags_edit)
         main_layout.addLayout(tags_layout)
         
-        main_layout.addWidget(QLabel("Description:"))
+        main_layout.addWidget(QLabel(self.tr("Description:")))
         self.description_edit = QTextEdit()
         main_layout.addWidget(self.description_edit)
         

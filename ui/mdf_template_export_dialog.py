@@ -20,29 +20,31 @@ class MdfTemplateExportDialog(QDialog):
 
     def __init__(self, parent=None, default_name: str = "", mmtr_path: str = "") -> None:
         super().__init__(parent)
-        self.setWindowTitle("Export MDF Template")
+        self.setWindowTitle(self.tr("Export MDF Template"))
         self.resize(420, 260)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
 
         if mmtr_path:
-            layout.addWidget(QLabel(f"MMTR Path: {mmtr_path}"))
+            layout.addWidget(QLabel(self.tr("MMTR Path: {path}").format(path=mmtr_path)))
 
         form = QFormLayout()
         form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.name_edit = QLineEdit(default_name)
-        self.name_edit.setPlaceholderText("Template name")
-        form.addRow("Name", self.name_edit)
+        self.name_edit.setPlaceholderText(self.tr("Template name"))
+        form.addRow(self.tr("Name"), self.name_edit)
 
         self.tags_edit = QLineEdit()
-        self.tags_edit.setPlaceholderText("Comma separated tags")
-        form.addRow("Tags", self.tags_edit)
+        self.tags_edit.setPlaceholderText(self.tr("Comma separated tags"))
+        form.addRow(self.tr("Tags"), self.tags_edit)
 
         self.description_edit = QTextEdit()
-        self.description_edit.setPlaceholderText("Add an optional description for this template")
+        self.description_edit.setPlaceholderText(
+            self.tr("Add an optional description for this template")
+        )
         self.description_edit.setAcceptRichText(False)
-        form.addRow("Description", self.description_edit)
+        form.addRow(self.tr("Description"), self.description_edit)
 
         layout.addLayout(form)
 
@@ -58,7 +60,9 @@ class MdfTemplateExportDialog(QDialog):
     def _on_accept(self) -> None:
         name = (self.name_edit.text() or "").strip()
         if not name:
-            QMessageBox.warning(self, "Export Template", "Template name is required.")
+            QMessageBox.warning(
+                self, self.tr("Export Template"), self.tr("Template name is required.")
+            )
             return
         self.accept()
 

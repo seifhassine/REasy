@@ -1,7 +1,6 @@
-import os
 import json
-
 import traceback
+
 from abc import ABC, abstractmethod
 from typing import Dict, Set, Any, Tuple, List
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
@@ -10,6 +9,11 @@ from file_handlers.rsz.rsz_data_types import (
 )
 from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszInstanceInfo
 from file_handlers.rsz.utils.rsz_guid_utils import process_gameobject_ref_data
+from file_handlers.rsz.utils.rsz_field_utils import (
+    collect_object_reference_values,
+    collect_userdata_reference_values,
+    iter_field_references,
+)
 
 
 class RszClipboardBase(ABC):
@@ -23,27 +27,21 @@ class RszClipboardBase(ABC):
         return RszClipboardUtils.get_type_clipboard_directory(self.get_clipboard_type())
     
     def get_json_name(self, viewer):
-        if hasattr(viewer, 'parent') and callable(viewer.parent):
-            return RszClipboardUtils.get_json_name(viewer)
-        elif hasattr(viewer, 'handler') and hasattr(viewer.handler, 'type_registry') and hasattr(viewer.handler.type_registry, 'json_path'):
-            import os
-            return os.path.basename(viewer.handler.type_registry.json_path).split(".")[0]
-        return None
+        return RszClipboardUtils.get_json_name(viewer)
     
     def get_clipboard_file(self, viewer):
         """Get the clipboard file path for this clipboard type"""
-        json_name = self.get_json_name(viewer)
-        base_name = os.path.splitext(json_name)[0] if json_name else "default"
-        
-        return os.path.join(
+        return RszClipboardUtils.format_clipboard_file(
             self.get_clipboard_directory(),
-            f"{base_name}-{self.get_clipboard_type()}-clipboard.json"
+            self.get_json_name(viewer),
+            self.get_clipboard_type(),
+            default_name="default",
         )
     
     def has_clipboard_data(self, viewer):
         """Check if clipboard data exists"""
         clipboard_file = self.get_clipboard_file(viewer)
-        return os.path.exists(clipboard_file)
+        return RszClipboardUtils.has_clipboard_data(clipboard_file)
     
     def get_clipboard_data(self, viewer):
         clipboard_file = self.get_clipboard_file(viewer)
@@ -52,20 +50,19 @@ class RszClipboardBase(ABC):
     def save_clipboard_data(self, viewer, data):
         clipboard_file = self.get_clipboard_file(viewer)
         try:
-            with open(clipboard_file, 'w') as f:
-                json.dump(data, f, indent=2, default=RszClipboardUtils.json_serializer)
+            with open(clipboard_file, "w") as stream:
+                json.dump(
+                    data,
+                    stream,
+                    indent=2,
+                    default=RszClipboardUtils.json_serializer,
+                )
             return True
-        except Exception as e:
-            print(f"Error saving clipboard data: {str(e)}")
+        except Exception as exc:
+            print(f"Error saving clipboard data: {exc}")
             traceback.print_exc()
             return False
 
-    def create_instance_mappings(self) -> Tuple[Dict[int, int], Dict[int, int], Dict[bytes, bytes]]:
-        """Create empty mappings for instance IDs, userdata IDs, and GUIDs"""
-        instance_mapping = {}
-        userdata_mapping = {}
-        guid_mapping = {}
-        return instance_mapping, userdata_mapping, guid_mapping
     
     def serialize_hierarchy(self, viewer, root_instances: List[int], additional_instances: Set[int] = None, 
                           embedded_context=None) -> Dict[str, Any]:
@@ -235,7 +232,6 @@ class RszClipboardBase(ABC):
         by UserDataData fields but weren't marked as userdata during serialization.
         Also removes duplicate SCN19RSZUserDataInfo entries.
         """
-        from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData, ObjectData
         from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
         
         if hasattr(viewer.scn, 'rsz_userdata_infos'):
@@ -266,13 +262,7 @@ class RszClipboardBase(ABC):
             if instance_id not in viewer.scn.parsed_elements:
                 continue
             fields = viewer.scn.parsed_elements[instance_id]
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, ObjectData) and field_data.value > 0:
-                    instances_to_scan.add(field_data.value)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            instances_to_scan.add(element.value)
+            instances_to_scan.update(collect_object_reference_values(fields))
         
         #  scan all relevant instances for UserDataData references
         for instance_id in instances_to_scan:
@@ -280,14 +270,9 @@ class RszClipboardBase(ABC):
                 continue
                 
             fields = viewer.scn.parsed_elements[instance_id]
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData) and field_data.value > 0:
-                    userdata_referenced_instances.add(field_data.value)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value > 0:
-                            userdata_referenced_instances.add(element.value)
-                elif isinstance(field_data, ObjectData) and field_data.value > 0:
+            userdata_referenced_instances.update(collect_userdata_reference_values(fields))
+            for field_data in fields.values():
+                if isinstance(field_data, ObjectData) and field_data.value > 0:
                     self._check_nested_userdata_refs(viewer, field_data.value, userdata_referenced_instances, set())
         
         # Ensure each UserDataData-referenced instance has a SCN19RSZUserDataInfo
@@ -359,42 +344,24 @@ class RszClipboardBase(ABC):
     
     def _check_nested_userdata_refs(self, viewer, instance_id, userdata_refs, visited):
         """Recursively check nested objects for UserDataData references"""
-        from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData, ObjectData
-        
         if instance_id in visited or instance_id not in viewer.scn.parsed_elements:
             return
         
         visited.add(instance_id)
         fields = viewer.scn.parsed_elements[instance_id]
         
-        for field_name, field_data in fields.items():
-            if isinstance(field_data, UserDataData) and field_data.value > 0:
-                userdata_refs.add(field_data.value)
-            elif isinstance(field_data, ArrayData):
-                for element in field_data.values:
-                    if isinstance(element, UserDataData) and element.value > 0:
-                        userdata_refs.add(element.value)
-                    elif isinstance(element, ObjectData) and element.value > 0:
-                        self._check_nested_userdata_refs(viewer, element.value, userdata_refs, visited)
-            elif isinstance(field_data, ObjectData) and field_data.value > 0:
-                self._check_nested_userdata_refs(viewer, field_data.value, userdata_refs, visited)
+        userdata_refs.update(collect_userdata_reference_values(fields))
+        for ref_id in collect_object_reference_values(fields):
+            self._check_nested_userdata_refs(viewer, ref_id, userdata_refs, visited)
     
     def _cleanup_orphaned_userdata_infos(self, viewer):
         """Remove orphaned SCN19RSZUserDataInfo entries that aren't referenced by any UserDataData"""
-        from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData
-        
         if not hasattr(viewer.scn, 'rsz_userdata_infos'):
             return
         
         referenced_instances = set()
         for instance_id, fields in viewer.scn.parsed_elements.items():
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData) and field_data.value > 0:
-                    referenced_instances.add(field_data.value)
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value > 0:
-                            referenced_instances.add(element.value)
+            referenced_instances.update(collect_userdata_reference_values(fields))
         
         cleaned_infos = []
         removed_count = 0
@@ -460,6 +427,58 @@ class RszClipboardBase(ABC):
         
         return nested_instances, userdata_refs
     
+    def _has_embedded_rsz(self, viewer):
+        return hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz
+
+    def _embedded_userdata_info(self, viewer, instance_id):
+        if instance_id <= 0:
+            return None
+        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+        userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, instance_id)
+        if userdata_rui and hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
+            return userdata_rui
+        return None
+
+    def _serialize_regular_field(self, field_data, relative_id_mapping):
+        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+        if relative_id_mapping:
+            mapping_keys = set(relative_id_mapping.keys())
+            return RszArrayClipboard._serialize_field_with_mapping(
+                field_data, relative_id_mapping, mapping_keys, set()
+            )
+        return RszArrayClipboard._serialize_element(field_data)
+
+    def _serialize_field_for_clipboard(self, viewer, field_data, relative_id_mapping):
+        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+
+        if (
+            isinstance(field_data, UserDataData)
+            and self._has_embedded_rsz(viewer)
+            and self._embedded_userdata_info(viewer, field_data.value)
+        ):
+            return RszArrayClipboard._serialize_userdata_with_graph(field_data, viewer, None)
+
+        if isinstance(field_data, ArrayData) and self._has_embedded_rsz(viewer):
+            has_embedded_userdata = any(
+                isinstance(element, UserDataData)
+                and self._embedded_userdata_info(viewer, element.value)
+                for element in field_data.values
+            )
+            if has_embedded_userdata:
+                return {
+                    "type": "ArrayData",
+                    "values": [
+                        RszArrayClipboard._serialize_userdata_with_graph(element, viewer, None)
+                        if isinstance(element, UserDataData) and self._embedded_userdata_info(viewer, element.value)
+                        else self._serialize_regular_field(element, relative_id_mapping)
+                        for element in field_data.values
+                    ],
+                    "orig_type": field_data.orig_type,
+                    "element_type": field_data.element_class.__name__ if field_data.element_class else ""
+                }
+
+        return self._serialize_regular_field(field_data, relative_id_mapping)
+    
     def serialize_instance_data(self, viewer, instance_id, relative_id_mapping=None) -> Dict[str, Any]:
         """Serialize instance data including type info and fields
         
@@ -488,109 +507,10 @@ class RszClipboardBase(ABC):
         
         if instance_id in viewer.scn.parsed_elements:
             fields = viewer.scn.parsed_elements[instance_id]
-            from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
-            from file_handlers.rsz.rsz_data_types import UserDataData
-            
-            if relative_id_mapping:
-                for field_name, field_data in fields.items():
-                    if isinstance(field_data, UserDataData) and field_data.value > 0:
-                        userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, field_data.value)
-                        
-                        has_embedded_rsz = False
-                        if userdata_rui:
-                            if hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
-                                has_embedded_rsz = True
-                        
-                        if has_embedded_rsz and hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz:
-                            instance_data["fields"][field_name] = RszArrayClipboard._serialize_userdata_with_graph(
-                                field_data, viewer, None
-                            )
-                            continue
-                    elif isinstance(field_data, ArrayData):
-                        has_embedded_userdata = False
-                        
-                        for element in field_data.values:
-                            if isinstance(element, UserDataData) and element.value > 0:
-                                userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, element.value)
-                                if userdata_rui and hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
-                                    has_embedded_userdata = True
-                                    break
-                        
-                        if has_embedded_userdata and hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz:
-                            array_data = {
-                                "type": "ArrayData",
-                                "values": [],
-                                "orig_type": field_data.orig_type,
-                                "element_type": field_data.element_class.__name__ if field_data.element_class else ""
-                            }
-                            
-                            for element in field_data.values:
-                                if isinstance(element, UserDataData) and element.value > 0:
-                                    userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, element.value)
-                                    if userdata_rui and hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
-                                        array_data["values"].append(RszArrayClipboard._serialize_userdata_with_graph(element, viewer, None))
-                                    else:
-                                        array_data["values"].append(RszArrayClipboard._serialize_field_with_mapping(
-                                            element, relative_id_mapping, set(relative_id_mapping.keys()), set()
-                                        ))
-                                else:
-                                    array_data["values"].append(RszArrayClipboard._serialize_field_with_mapping(
-                                        element, relative_id_mapping, set(relative_id_mapping.keys()), set()
-                                    ))
-                            
-                            instance_data["fields"][field_name] = array_data
-                            continue
-                    
-                    instance_data["fields"][field_name] = RszArrayClipboard._serialize_field_with_mapping(
-                        field_data, relative_id_mapping, set(relative_id_mapping.keys()), set()
-                    )
-            else:
-                for field_name, field_data in fields.items():
-                    if isinstance(field_data, UserDataData) and field_data.value > 0:
-                        userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, field_data.value)
-                        
-                        has_embedded_rsz = False
-                        if userdata_rui:
-                            if hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
-                                has_embedded_rsz = True
-
-                        if has_embedded_rsz and hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz:
-                            instance_data["fields"][field_name] = RszArrayClipboard._serialize_userdata_with_graph(
-                                field_data, viewer, None
-                            )
-                            continue
-                    elif isinstance(field_data, ArrayData):
-                        has_embedded_userdata = False
-                        
-                        for element in field_data.values:
-                            if isinstance(element, UserDataData) and element.value > 0:
-                                userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, element.value)
-                                if userdata_rui and hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
-                                    has_embedded_userdata = True
-                                    break
-                        
-                        if has_embedded_userdata and hasattr(viewer.scn, 'has_embedded_rsz') and viewer.scn.has_embedded_rsz:
-                            array_data = {
-                                "type": "ArrayData",
-                                "values": [],
-                                "orig_type": field_data.orig_type,
-                                "element_type": field_data.element_class.__name__ if field_data.element_class else ""
-                            }
-                            
-                            for element in field_data.values:
-                                if isinstance(element, UserDataData) and element.value > 0:
-                                    userdata_rui = RszArrayClipboard._find_userdata_info_by_instance_id(viewer, element.value)
-                                    if userdata_rui and hasattr(userdata_rui, 'embedded_instances') and userdata_rui.embedded_instances:
-                                        array_data["values"].append(RszArrayClipboard._serialize_userdata_with_graph(element, viewer, None))
-                                    else:
-                                        array_data["values"].append(RszArrayClipboard._serialize_element(element))
-                                else:
-                                    array_data["values"].append(RszArrayClipboard._serialize_element(element))
-                            
-                            instance_data["fields"][field_name] = array_data
-                            continue
-                    
-                    instance_data["fields"][field_name] = RszArrayClipboard._serialize_element(field_data)
+            for field_name, field_data in fields.items():
+                instance_data["fields"][field_name] = self._serialize_field_for_clipboard(
+                    viewer, field_data, relative_id_mapping
+                )
         
         userdata_info = RszClipboardUtils.check_userdata_info(viewer, instance_id)
         if userdata_info:
@@ -621,7 +541,7 @@ class RszClipboardBase(ABC):
         Handles regular instances, string-based userdata, and embedded RSZ userdata
         """
         type_id = instance_data.get("type_id", 0)
-        crc = instance_data.get("crc", 0)
+        crc = viewer._parse_crc_value(instance_data.get("crc", 0))
         
         if type_id <= 0:
             print(f"Warning: Invalid type ID for instance {instance_data.get('id', 'unknown')}")
@@ -677,9 +597,9 @@ class RszClipboardBase(ABC):
             """Track UserData references with their embedded context"""
             context_id = getattr(embedded_context, 'instance_id', 0) if embedded_context else 0
             
-            for field_name, field_data in fields.items():
-                if isinstance(field_data, UserDataData) and field_data.value > 0:
-                    key = (field_data.value, context_id)
+            for ref_obj in iter_field_references(fields):
+                if isinstance(ref_obj, UserDataData) and ref_obj.value > 0:
+                    key = (ref_obj.value, context_id)
                     if key not in global_userdata_refs:
                         global_userdata_refs[key] = 0
                         userdata_contexts[key] = {
@@ -687,18 +607,6 @@ class RszClipboardBase(ABC):
                             'context_type': 'embedded' if embedded_context else 'main'
                         }
                     global_userdata_refs[key] += 1
-                    
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, UserDataData) and element.value > 0:
-                            key = (element.value, context_id)
-                            if key not in global_userdata_refs:
-                                global_userdata_refs[key] = 0
-                                userdata_contexts[key] = {
-                                    'context_id': context_id,
-                                    'context_type': 'embedded' if embedded_context else 'main'
-                                }
-                            global_userdata_refs[key] += 1
         
         def scan_instance_tree(instance_id, embedded_context=None):
             """Recursively scan instance tree for UserData references"""
@@ -728,14 +636,9 @@ class RszClipboardBase(ABC):
                         for embedded_inst_id in userdata_rui.embedded_instances:
                             if embedded_inst_id > 0:  # Skip null instance
                                 scan_instance_tree(embedded_inst_id, None)
-                
-                elif isinstance(field_data, ObjectData) and field_data.value > 0:
-                    scan_instance_tree(field_data.value, embedded_context)
-                    
-                elif isinstance(field_data, ArrayData):
-                    for element in field_data.values:
-                        if isinstance(element, ObjectData) and element.value > 0:
-                            scan_instance_tree(element.value, embedded_context)
+
+            for ref_id in collect_object_reference_values(fields):
+                scan_instance_tree(ref_id, embedded_context)
         
         if scan_gameobjects and hasattr(viewer.scn, 'gameobjects'):
             for go in viewer.scn.gameobjects:
@@ -780,6 +683,9 @@ class RszClipboardBase(ABC):
     
     def setup_userdata_for_pasted_instance(self, viewer, instance_id, hash_value, string_value):
         """Create userdata entries for a pasted instance"""
+        if instance_id < 0:
+            return False
+
         if not hasattr(viewer.scn, '_rsz_userdata_set'):
             viewer.scn._rsz_userdata_set = set()
         if not hasattr(viewer.scn, '_rsz_userdata_dict'):
@@ -834,6 +740,70 @@ class RszClipboardBase(ABC):
                 viewer.scn._userdata_str_map[new_ui] = string_value
 
         return True
+
+    def _is_embedded_userdata_payload(self, field_data):
+        return (
+            "object_graph" in field_data
+            and field_data.get("object_graph", {}).get("context_type") == "embedded_rsz"
+        )
+
+    def _remap_object_data(self, field_data, instance_mapping, userdata_mapping):
+        value = field_data.get("value", 0)
+        orig_type = field_data.get("orig_type", "")
+        if value in userdata_mapping:
+            return ObjectData(userdata_mapping.get(value), orig_type)
+        return ObjectData(instance_mapping.get(value, value), orig_type)
+
+    def _remap_userdata_data(self, field_data, instance_mapping, userdata_mapping, viewer=None, field_name=None):
+        value = field_data.get("value", 0)
+        string = field_data.get("string", "")
+        orig_type = field_data.get("orig_type", "")
+
+        if value in userdata_mapping:
+            return UserDataData(userdata_mapping.get(value), string, orig_type)
+
+        if value in instance_mapping:
+            result = UserDataData(instance_mapping[value], string, orig_type)
+        else:
+            if field_name is not None:
+                print(f"WARNING: UserDataData field '{field_name}' references instance {value} which wasn't created during paste")
+                print(f"  Available in instance_mapping: {value in instance_mapping}")
+                print(f"  Available in userdata_mapping: {value in userdata_mapping}")
+            result = UserDataData(value, string, orig_type)
+
+        if viewer is not None and not string and hasattr(viewer.scn, '_rsz_userdata_set'):
+            final_value = result.value
+            if final_value in viewer.scn._rsz_userdata_set and hasattr(viewer.scn, 'rsz_userdata_infos'):
+                for rui in viewer.scn.rsz_userdata_infos:
+                    if rui.instance_id == final_value:
+                        if hasattr(rui, 'value') and rui.value:
+                            result.string = rui.value
+                        break
+        return result
+
+    def _create_embedded_userdata_element(self, viewer, field_data, userdata_mapping, embedded_context=None):
+        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+
+        original_userdata_value = field_data.get("value", 0)
+        pre_allocated_instance_id = userdata_mapping.get(original_userdata_value) if userdata_mapping else None
+
+        if pre_allocated_instance_id:
+            userdata_element = RszArrayClipboard._create_rsz_userdata_info_for_existing_instance(
+                viewer, field_data, pre_allocated_instance_id
+            )
+        else:
+            userdata_element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
+                viewer, field_data, embedded_context
+            )
+
+        if (
+            userdata_element
+            and userdata_mapping is not None
+            and original_userdata_value > 0
+            and not pre_allocated_instance_id
+        ):
+            userdata_mapping[original_userdata_value] = userdata_element.value
+        return userdata_element
     
     def deserialize_fields_with_remapping(self, fields_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids=True, viewer=None, context_id_mapping=None, context_id_offset=0, type_name=""):
         """Deserialize fields with instance/userdata/GUID remapping"""
@@ -845,65 +815,27 @@ class RszClipboardBase(ABC):
             field_type = field_data.get("type", "")
             
             if field_type == "ObjectData":
-                value = field_data.get("value", 0)
-                orig_type = field_data.get("orig_type", "")
-                
-                if value in userdata_mapping:
-                    new_value = userdata_mapping.get(value)
-                    new_fields[field_name] = ObjectData(new_value, orig_type)
-                else:
-                    new_value = instance_mapping.get(value, value)
-                    new_fields[field_name] = ObjectData(new_value, orig_type)
+                new_fields[field_name] = self._remap_object_data(
+                    field_data, instance_mapping, userdata_mapping
+                )
                     
             elif field_type == "UserDataData":
-                if "object_graph" in field_data and field_data.get("object_graph", {}).get("context_type") == "embedded_rsz":
-                    
-                    original_userdata_value = field_data.get("value", 0)
-                    
-                    pre_allocated_instance_id = userdata_mapping.get(original_userdata_value) if userdata_mapping else None
-                    
-                    if pre_allocated_instance_id:
-                        userdata_element = RszArrayClipboard._create_rsz_userdata_info_for_existing_instance(
-                            viewer, field_data, pre_allocated_instance_id
-                        )
-                    else:
-                        userdata_element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
-                            viewer, field_data, None  # No embedded context - create standalone
-                        )
-                    
+                if self._is_embedded_userdata_payload(field_data):
+                    userdata_element = self._create_embedded_userdata_element(
+                        viewer, field_data, userdata_mapping, None
+                    )
                     if userdata_element:
                         new_fields[field_name] = userdata_element
-                        if original_userdata_value > 0 and not pre_allocated_instance_id:
-                            userdata_mapping[original_userdata_value] = userdata_element.value
                     else:
                         raise RuntimeError(f"Failed to process embedded RSZ for field '{field_name}' - this would corrupt the file")
                 else:
-                    value = field_data.get("value", 0)
-                    string = field_data.get("string", "")
-                    orig_type = field_data.get("orig_type", "")
-                    
-                    if value in userdata_mapping:
-                        new_index = userdata_mapping.get(value)
-                        new_fields[field_name] = UserDataData(new_index, string, orig_type)
-                    else:
-                        if value in instance_mapping:
-                            new_value = instance_mapping[value]
-                            new_fields[field_name] = UserDataData(new_value, string, orig_type)
-                        else:
-                            print(f"WARNING: UserDataData field '{field_name}' references instance {value} which wasn't created during paste")
-                            print(f"  Available in instance_mapping: {value in instance_mapping}")
-                            print(f"  Available in userdata_mapping: {value in userdata_mapping}")
-                            # Use the original value, which will likely be invalid
-                            new_fields[field_name] = UserDataData(value, string, orig_type)
-                        
-                        final_value = new_fields[field_name].value
-                        if final_value in viewer.scn._rsz_userdata_set if hasattr(viewer.scn, '_rsz_userdata_set') else False:
-                            if not string and hasattr(viewer.scn, 'rsz_userdata_infos'):
-                                for rui in viewer.scn.rsz_userdata_infos:
-                                    if rui.instance_id == final_value:
-                                        if hasattr(rui, 'value') and rui.value:
-                                            new_fields[field_name].string = rui.value
-                                        break
+                    new_fields[field_name] = self._remap_userdata_data(
+                        field_data,
+                        instance_mapping,
+                        userdata_mapping,
+                        viewer=viewer,
+                        field_name=field_name,
+                    )
                     
             elif field_type == "GameObjectRefData":
                 new_fields[field_name] = self._deserialize_gameobject_ref(field_data, guid_mapping, randomize_guids)
@@ -913,7 +845,10 @@ class RszClipboardBase(ABC):
                     field_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids, viewer
                 )
             else:
-                element = RszArrayClipboard._deserialize_element(field_data, None, guid_mapping, randomize_guids)
+                element = RszArrayClipboard._deserialize_element(
+                    field_data, None, guid_mapping, randomize_guids,
+                    on_resource_deserialized=getattr(getattr(viewer, "tree", None), "_on_resource_name_changed", None),
+                )
                 if element:
                     new_fields[field_name] = element
         
@@ -929,7 +864,6 @@ class RszClipboardBase(ABC):
     
     def process_embedded_rsz_fields(self, viewer, fields_dict, embedded_context=None, userdata_mapping=None):
         """Process fields that need embedded RSZ deserialization"""
-        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
         from file_handlers.rsz.rsz_data_types import UserDataData
         
         if not hasattr(self, '_processed_embedded_rsz'):
@@ -954,27 +888,16 @@ class RszClipboardBase(ABC):
                 
                 self._processed_embedded_rsz.add(original_userdata_value)
                 
-                pre_allocated_instance_id = userdata_mapping.get(original_userdata_value) if userdata_mapping else None
-                
-                if pre_allocated_instance_id:
-                    userdata_element = RszArrayClipboard._create_rsz_userdata_info_for_existing_instance(
-                        viewer, field_data, pre_allocated_instance_id
-                    )
-                else:
-                    if self.get_clipboard_type() in ["gameobject", "component"]:
-                        userdata_element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
-                            viewer, field_data, None  # None = main file context
-                        )
-                    else:
-                        userdata_element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
-                            viewer, field_data, embedded_context
-                        )
+                embedded_target_context = (
+                    None if self.get_clipboard_type() in ["gameobject", "component"]
+                    else embedded_context
+                )
+                userdata_element = self._create_embedded_userdata_element(
+                    viewer, field_data, userdata_mapping, embedded_target_context
+                )
                 
                 if userdata_element:
                     fields_dict[field_name] = userdata_element
- 
-                    if userdata_mapping is not None and original_userdata_value > 0 and not pre_allocated_instance_id:
-                        userdata_mapping[original_userdata_value] = userdata_element.value
                 else:
                     error_msg = f"Failed to deserialize embedded RSZ for field '{field_name}' - this would corrupt the file if we fallback to simple UserData"
                     print(error_msg)
@@ -990,10 +913,6 @@ class RszClipboardBase(ABC):
     
     def _deserialize_array_with_remapping(self, field_data, instance_mapping, userdata_mapping, guid_mapping, randomize_guids=True, viewer=None):
         """Deserialize an ArrayData field with remapping"""
-        from file_handlers.rsz.rsz_data_types import (
-            ArrayData, ObjectData, UserDataData, GameObjectRefData, 
-            get_type_class
-        )
         from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
         
         values = field_data.get("values", [])
@@ -1011,69 +930,37 @@ class RszClipboardBase(ABC):
             value_type = value_data.get("type", "")
             
             if value_type == "ObjectData":
-                ref_id = value_data.get("value", 0)
-                value_orig_type = value_data.get("orig_type", "")
-                
-                if ref_id in userdata_mapping:
-                    new_ref_id = userdata_mapping.get(ref_id)
-                    new_array.values.append(ObjectData(new_ref_id, value_orig_type))
-                else:
-                    new_ref_id = instance_mapping.get(ref_id, ref_id)
-                    new_array.values.append(ObjectData(new_ref_id, value_orig_type))
+                new_array.values.append(
+                    self._remap_object_data(value_data, instance_mapping, userdata_mapping)
+                )
                     
             elif value_type == "UserDataData":
-                if "object_graph" in value_data and value_data.get("object_graph", {}).get("context_type") == "embedded_rsz":
-                    
-                    original_userdata_value = value_data.get("value", 0)
-                    pre_allocated_instance_id = userdata_mapping.get(original_userdata_value) if userdata_mapping else None
-                    
-                    if pre_allocated_instance_id:
-                        userdata_element = RszArrayClipboard._create_rsz_userdata_info_for_existing_instance(
-                            viewer, value_data, pre_allocated_instance_id
-                        )
-                    else:
-                        userdata_element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
-                            viewer, value_data, None
-                        )
-                    
+                if self._is_embedded_userdata_payload(value_data):
+                    userdata_element = self._create_embedded_userdata_element(
+                        viewer, value_data, userdata_mapping, None
+                    )
                     if userdata_element:
                         new_array.values.append(userdata_element)
-                        if original_userdata_value > 0 and not pre_allocated_instance_id:
-                            userdata_mapping[original_userdata_value] = userdata_element.value
                     else:
                         raise ValueError("Failed to deserialize embedded RSZ UserData")
                 else:
                     # Simple UserDataData without embedded RSZ
-                    value = value_data.get("value", 0)
-                    string = value_data.get("string", "")
-                    value_orig_type = value_data.get("orig_type", "")
-                    
-                    if value in userdata_mapping:
-                        new_index = userdata_mapping.get(value)
-                        new_array.values.append(UserDataData(new_index, string, value_orig_type))
-                    else:
-                        new_index = instance_mapping.get(value, value)
-                        new_array.values.append(UserDataData(new_index, string, value_orig_type))
+                    new_array.values.append(
+                        self._remap_userdata_data(value_data, instance_mapping, userdata_mapping)
+                    )
                   
             elif value_type == "GameObjectRefData":
                 new_array.values.append(self._deserialize_gameobject_ref(value_data, guid_mapping, randomize_guids))
             else:
-                element = RszArrayClipboard._deserialize_element(value_data, element_class)
+                element = RszArrayClipboard._deserialize_element(
+                    value_data, element_class,
+                    on_resource_deserialized=getattr(getattr(viewer, "tree", None), "_on_resource_name_changed", None),
+                )
                 if element:
                     new_array.values.append(element)
                     
         return new_array
     
-    def update_userdata_references(self, fields, userdata_mapping):
-        """Update UserDataData references with correct userdata mapping"""
-        for _, field_data in fields.items():
-            if isinstance(field_data, UserDataData) and field_data.value in userdata_mapping:
-                field_data.value = userdata_mapping[field_data.value]
-            
-            elif isinstance(field_data, ArrayData):
-                for element in field_data.values:
-                    if isinstance(element, UserDataData) and element.value in userdata_mapping:
-                        element.value = userdata_mapping[element.value]
     
     def _collect_embedded_rsz_instances(self, rui, viewer):
         """Recursively collect all instance IDs from embedded RSZ structures"""

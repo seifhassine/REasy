@@ -29,12 +29,51 @@ class RszClipboardUtils:
     
     @staticmethod
     def get_json_name(widget):
-        parent = widget.parent()
-        if hasattr(parent, 'handler') and hasattr(parent.handler, 'type_registry') and hasattr(parent.handler.type_registry, 'json_path'):
-            return os.path.basename(parent.handler.type_registry.json_path).split(".")[0]
-        elif hasattr(widget, 'handler') and hasattr(widget.handler, 'type_registry') and hasattr(widget.handler.type_registry, 'json_path'):
-            return os.path.basename(widget.handler.type_registry.json_path).split(".")[0]
+        parent_getter = getattr(widget, 'parent', None)
+        parent = parent_getter() if callable(parent_getter) else None
+
+        for candidate in (parent, widget):
+            handler = getattr(candidate, 'handler', None)
+            type_registry = getattr(handler, 'type_registry', None)
+            if type_registry is None or not hasattr(type_registry, 'json_path'):
+                continue
+
+            json_path = type_registry.json_path
+            if json_path is not None:
+                return os.path.basename(json_path).split(".")[0]
+
         return None
+
+    @staticmethod
+    def format_clipboard_file(
+        directory,
+        json_name,
+        clipboard_type,
+        filename_template="{name}-{type}-clipboard.json",
+        default_name=None,
+    ):
+        if not json_name and default_name is not None:
+            json_name = default_name
+        base_name = os.path.splitext(json_name)[0]
+        return os.path.join(
+            directory,
+            filename_template.format(name=base_name, type=clipboard_type),
+        )
+
+    @staticmethod
+    def has_clipboard_data(clipboard_file):
+        return os.path.exists(clipboard_file)
+
+    @staticmethod
+    def write_clipboard_data(clipboard_file, data):
+        """Write JSON using the legacy RSZ clipboard encoding and error behavior."""
+        with open(clipboard_file, "w") as stream:
+            json.dump(
+                data,
+                stream,
+                indent=2,
+                default=RszClipboardUtils.json_serializer,
+            )
 
     @staticmethod
     def load_clipboard_data(clipboard_file):
@@ -92,6 +131,5 @@ class RszClipboardUtils:
                     userdata_info["userdata_string"] = viewer.scn._rsz_userdata_str_map[rui]
                 
                 return userdata_info
-        
+
         return None
-    

@@ -1,24 +1,18 @@
-from setuptools import setup, Extension
 import os
+from setuptools import setup, Extension
 
+
+compile_args = ['/O2'] if os.name == 'nt' else ['-O3']
 ext_modules = []
-
-if os.path.exists('native/fast_pakresolve.c'):
-    ext_modules.append(
-        Extension(
-            'fast_pakresolve',
-            sources=['native/fast_pakresolve.c'],
-            extra_compile_args=['/O2'] if os.name == 'nt' else ['-O3']
+for module_name in ('fast_pakresolve', 'fast_string_scan', 'fastmesh'):
+    source_path = f'native/{module_name}.c'
+    if os.path.exists(source_path):
+        ext_modules.append(
+            Extension(
+                module_name,
+                sources=[source_path],
+                extra_compile_args=compile_args,
+            )
         )
-    )
-
-if os.path.exists('native/fastmesh.c'):
-    ext_modules.append(
-        Extension(
-            'fastmesh',
-            sources=['native/fastmesh.c'],
-            extra_compile_args=['/O2'] if os.name == 'nt' else ['-O3']
-        )
-    )
 
 setup(name='reasy-native', version='0.1.0', ext_modules=ext_modules)

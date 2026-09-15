@@ -11,6 +11,8 @@ class MotbankViewer(QWidget):
 
 	def __init__(self, handler):
 		super().__init__()
+		self.setObjectName("motbankViewer")
+		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 		self.handler = handler
 		self._modified = False
 		self._setup_ui()
@@ -54,9 +56,9 @@ class MotbankViewer(QWidget):
 		layout.addWidget(self.table)
 
 		btns = QHBoxLayout()
-		self.add_btn = QPushButton("Add")
+		self.add_btn = QPushButton(self.tr("Add"))
 		self.add_btn.clicked.connect(self._on_add)
-		self.del_btn = QPushButton("Delete")
+		self.del_btn = QPushButton(self.tr("Delete"))
 		self.del_btn.clicked.connect(self._on_delete)
 		btns.addWidget(self.add_btn)
 		btns.addWidget(self.del_btn)

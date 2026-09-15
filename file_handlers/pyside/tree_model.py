@@ -1,4 +1,4 @@
-
+from utils.number_format import format_display_value
 
 class DataTreeBuilder:
     """Generic tree data builder with format utilities"""
@@ -7,7 +7,7 @@ class DataTreeBuilder:
     def create_data_node(title, value="", node_type=None, obj=None, children=None):
         """Create a standard data node"""
         node = {
-            "data": [title, str(value)],
+            "data": [title, format_display_value(value)],
             "children": children or []
         }
         if node_type:

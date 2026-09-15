@@ -1,7 +1,9 @@
 import struct
-from typing import Optional, Dict, Any
-import os
+from typing import Optional
+
 from file_handlers.base_handler import BaseFileHandler
+from utils.resource_file_utils import resource_version_from_path
+
 from .cfil_file import CfilFile, CFIL_MAGIC
 
 
@@ -23,7 +25,7 @@ class CfilHandler(BaseFileHandler):
 
     def read(self, data: bytes):
         f = CfilFile()
-        version = int(os.path.splitext(self.filepath.lower())[1][1:]) if self.filepath else 0
+        version = resource_version_from_path(self.filepath or "", "cfil") or 0
         if not f.read(data, version):
             raise ValueError("Failed to parse CFIL")
         self.cfil = f
@@ -35,21 +37,6 @@ class CfilHandler(BaseFileHandler):
         result = self.cfil.write()
         self.modified = False
         return result
-
-    def populate_treeview(self, tree, parent_item, metadata_map: dict):
-        pass
-
-    def get_context_menu(self, tree, item, meta: dict):
-        return None
-
-    def handle_edit(self, meta: Dict[str, Any], new_val, old_val, item):
-        pass
-
-    def add_variables(self, target, prefix: str, count: int):
-        pass
-
-    def update_strings(self):
-        pass
 
     def create_viewer(self):
         try:

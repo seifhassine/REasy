@@ -7,11 +7,17 @@ from PySide6.QtWidgets import (
 	QMessageBox, QToolButton, QStyle, QStackedWidget
 )
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
-from PySide6.QtCore import Qt, Signal, QSize, QPoint
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSize, QPoint
 from utils.hash_util import murmur3_hash_utf16le
+from utils.number_format import format_display_value
 from .mdf_clipboard import MdfClipboard
 from .mdf_template_manager import MdfTemplateManager
 from ui.mdf_template_export_dialog import MdfTemplateExportDialog
+from ui.widgets_utils import get_color_preview_brush
+
+
+COPY_MATERIALS_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Copy Materials")
+EXPORT_TEMPLATE_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Export Template")
 
 
 class MdfViewer(QWidget):
@@ -19,11 +25,37 @@ class MdfViewer(QWidget):
 
 	def __init__(self, handler):
 		super().__init__()
+		self.setObjectName("mdfViewer")
+		self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
 		self.handler = handler
 		self._modified = False
 		self._current_index = -1  # Currently displayed material index
 		self._setup_ui()
 		self._populate()
+
+	def _get_existing_material_names(self, exclude_index: int = -1) -> set:
+		m = self.handler.mdf
+		if not m:
+			return set()
+		names = set()
+		for i, mat in enumerate(m.materials):
+			if i != exclude_index:
+				names.add(mat.header.mat_name or "")
+		return names
+
+	def _generate_unique_material_name(self, base_name: str, existing_names: set) -> str:
+		if base_name not in existing_names:
+			return base_name
+		counter = 1
+		while True:
+			new_name = f"{base_name} ({counter})"
+			if new_name not in existing_names:
+				return new_name
+			counter += 1
+
+	def _check_duplicate_material_name(self, name: str, exclude_index: int = -1) -> bool:
+		existing_names = self._get_existing_material_names(exclude_index)
+		return name in existing_names
 
 	@property
 	def modified(self):
@@ -47,6 +79,12 @@ class MdfViewer(QWidget):
 		self.version_edit.setMaximumWidth(80)
 		self.version_edit.textChanged.connect(self._on_version_changed)
 		head.addWidget(self.version_edit)
+		self.meshlet_check = QCheckBox(self.tr("Meshlet Material"))
+		self.meshlet_check.setToolTip(
+			self.tr("Sets bit 0 of the MDF header options field.")
+		)
+		self.meshlet_check.stateChanged.connect(self._on_meshlet_changed)
+		head.addWidget(self.meshlet_check)
 		head.addStretch(1)
 		layout.addLayout(head)
 
@@ -59,7 +97,7 @@ class MdfViewer(QWidget):
 		flt = QHBoxLayout()
 		flt.setSpacing(6)
 		self.filter_edit = QLineEdit()
-		self.filter_edit.setPlaceholderText("Filter materials...")
+		self.filter_edit.setPlaceholderText(self.tr("Filter materials..."))
 		self.filter_edit.textChanged.connect(self._on_filter_changed)
 		flt.addWidget(self.filter_edit, 1)
 		flt.addStretch()
@@ -69,38 +107,38 @@ class MdfViewer(QWidget):
 		toolbar.setSpacing(4)
 		self.add_btn = self._create_material_tool_button(
 			self._make_toolbar_icon("add", QColor(74, 144, 226)),
-			"Add a new material",
-			"Add",
+			self.tr("Add a new material"),
+			self.tr("Add"),
 			self._on_add_material,
 		)
 		self.del_btn = self._create_material_tool_button(
 			QStyle.SP_TrashIcon,
-			"Delete selected material(s)",
-			"Delete",
+			self.tr("Delete selected material(s)"),
+			self.tr("Delete"),
 			self._on_delete_material,
 		)
 		self.copy_btn = self._create_material_tool_button(
 			self._make_toolbar_icon("copy", QColor(95, 185, 125)),
-			"Copy selected material(s) to clipboard",
-			"Copy",
+			self.tr("Copy selected material(s) to clipboard"),
+			self.tr("Copy"),
 			self._on_copy_materials,
 		)
 		self.paste_btn = self._create_material_tool_button(
 			self._make_toolbar_icon("paste", QColor(255, 193, 79)),
-			"Paste material(s) from clipboard",
-			"Paste",
+			self.tr("Paste material(s) from clipboard"),
+			self.tr("Paste"),
 			self._on_paste_materials,
 		)
 		self.export_btn = self._create_material_tool_button(
 			self._make_toolbar_icon("export", QColor(153, 102, 255)),
-			"Export selected material as template",
-			"Export",
+			self.tr("Export selected material as template"),
+			self.tr("Export"),
 			self._on_export_material,
 		)
 		self.template_btn = self._create_material_tool_button(
 			self._make_toolbar_icon("templates", QColor(233, 89, 80)),
-			"Open the MDF template manager",
-			"Templates",
+			self.tr("Open the MDF template manager"),
+			self.tr("Templates"),
 			self._open_template_manager,
 		)
 		for btn in (
@@ -115,7 +153,7 @@ class MdfViewer(QWidget):
 		toolbar.addStretch(1)
 		left_v.addLayout(toolbar)
 		self.materials_table = QTableWidget(0, 1)
-		self.materials_table.setHorizontalHeaderLabels(["Materials"])
+		self.materials_table.setHorizontalHeaderLabels([self.tr("Materials")])
 		self.materials_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
 		self.materials_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.materials_table.setSelectionBehavior(QAbstractItemView.SelectRows)
@@ -160,6 +198,12 @@ class MdfViewer(QWidget):
 		self.bake_texture_spin.setRange(0, 2147483647)
 		self.bake_texture_spin.valueChanged.connect(self._on_bake_texture_changed)
 		ov.addWidget(self.bake_texture_spin, 3, 1)
+		self.ukn_label = QLabel("Unknown 64")
+		ov.addWidget(self.ukn_label, 3, 2)
+		self.ukn_edit = QLineEdit()
+		self.ukn_edit.setPlaceholderText("0 (or 0x...)" )
+		self.ukn_edit.textChanged.connect(self._on_ukn_changed)
+		ov.addWidget(self.ukn_edit, 3, 3)
 		self.flags_group = QGroupBox("Material Flags")
 		fg = QGridLayout(self.flags_group)
 		self._flags1_names = [
@@ -211,30 +255,32 @@ class MdfViewer(QWidget):
 		
 		ov.addWidget(self.flags_group, 4, 0, 1, 4)
 		ov.setRowStretch(5, 1)
-		self.tabs.addTab(overview, "Overview")
+		self.tabs.addTab(overview, self.tr("Overview"))
 
 		textures_tab = QWidget()
 		tg = QGridLayout(textures_tab)
 		self.textures_table = QTableWidget(0, 3)
-		self.textures_table.setHorizontalHeaderLabels(["Type", "Path", "Locked 🔒"])
-		self._set_header_tooltip(self.textures_table, 2, 
+		self.textures_table.setHorizontalHeaderLabels([
+			self.tr("Type"), self.tr("Path"), self.tr("Locked 🔒")
+		])
+		self._set_header_tooltip(self.textures_table, 2, self.tr(
 			"Write-Protection Flag\n\n"
 			"• Locked = 0 (Unchecked): Texture CAN be modified at runtime via setTexture()\n"
 			"• Locked ≠ 0 (Checked): Texture CANNOT be modified at runtime\n\n"
-			"When locked, the engine will skip texture updates and keep the original value.")
+			"When locked, the engine will skip texture updates and keep the original value."))
 		self.textures_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 		self.textures_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
 		self.textures_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 		self.textures_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.textures_table.itemChanged.connect(self._on_texture_changed)
 		tg.addWidget(self.textures_table, 0, 0, 1, 3)
-		self.tex_add_btn = QPushButton("Add")
-		self.tex_del_btn = QPushButton("Delete")
+		self.tex_add_btn = QPushButton(self.tr("Add"))
+		self.tex_del_btn = QPushButton(self.tr("Delete"))
 		self.tex_add_btn.clicked.connect(self._on_add_texture)
 		self.tex_del_btn.clicked.connect(self._on_delete_texture)
 		tg.addWidget(self.tex_add_btn, 1, 1)
 		tg.addWidget(self.tex_del_btn, 1, 2)
-		self.tabs.addTab(textures_tab, "Textures")
+		self.tabs.addTab(textures_tab, self.tr("Textures"))
 
 		params_tab = QWidget()
 		pg = QGridLayout(params_tab)
@@ -245,33 +291,33 @@ class MdfViewer(QWidget):
 		self.params_stack = QStackedWidget()
 		pg.addWidget(self.params_stack, 1, 0, 1, 3)
 		
-		self.par_add_btn = QPushButton("Add")
-		self.par_add_above_btn = QPushButton("Add Above")
-		self.par_del_btn = QPushButton("Delete")
+		self.par_add_btn = QPushButton(self.tr("Add"))
+		self.par_add_above_btn = QPushButton(self.tr("Add Above"))
+		self.par_del_btn = QPushButton(self.tr("Delete"))
 		self.par_add_btn.clicked.connect(self._on_add_param)
 		self.par_add_above_btn.clicked.connect(self._on_add_param_above)
 		self.par_del_btn.clicked.connect(self._on_delete_param)
 		pg.addWidget(self.par_add_btn, 2, 0)
 		pg.addWidget(self.par_add_above_btn, 2, 1)
 		pg.addWidget(self.par_del_btn, 2, 2)
-		self.tabs.addTab(params_tab, "Parameters")
+		self.tabs.addTab(params_tab, self.tr("Parameters"))
 
 		gpbf_tab = QWidget()
 		gg = QGridLayout(gpbf_tab)
 		self.gpbf_table = QTableWidget(0, 2)
-		self.gpbf_table.setHorizontalHeaderLabels(["Name", "Data"])
+		self.gpbf_table.setHorizontalHeaderLabels([self.tr("Name"), self.tr("Data")])
 		self.gpbf_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
 		self.gpbf_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
 		self.gpbf_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.gpbf_table.itemChanged.connect(self._on_gpbf_changed)
 		gg.addWidget(self.gpbf_table, 0, 0, 1, 3)
-		self.gpbf_add_btn = QPushButton("Add")
-		self.gpbf_del_btn = QPushButton("Delete")
+		self.gpbf_add_btn = QPushButton(self.tr("Add"))
+		self.gpbf_del_btn = QPushButton(self.tr("Delete"))
 		self.gpbf_add_btn.clicked.connect(self._on_add_gpbf)
 		self.gpbf_del_btn.clicked.connect(self._on_delete_gpbf)
 		gg.addWidget(self.gpbf_add_btn, 1, 1)
 		gg.addWidget(self.gpbf_del_btn, 1, 2)
-		self.gpbf_tab_idx = self.tabs.addTab(gpbf_tab, "GPU Buffers")
+		self.gpbf_tab_idx = self.tabs.addTab(gpbf_tab, self.tr("GPU Buffers"))
 
 		self.shaderLODRedirects_tab = QWidget()
 		tx = QGridLayout(self.shaderLODRedirects_tab)
@@ -287,13 +333,14 @@ class MdfViewer(QWidget):
 		self.shaderLODRedirects_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.shaderLODRedirects_table.itemChanged.connect(self._on_shaderLODRedirects_changed)
 		tx.addWidget(self.shaderLODRedirects_table, 1, 0, 1, 3)
-		self.shaderLODRedirects_tab_idx = self.tabs.addTab(self.shaderLODRedirects_tab, "Shader LOD Redirects")
+		self.shaderLODRedirects_tab_idx = self.tabs.addTab(
+			self.shaderLODRedirects_tab, self.tr("Shader LOD Redirects")
+		)
 
 		self.materials_table.itemSelectionChanged.connect(self._on_select_material)
 
 	def _set_header_tooltip(self, table: QTableWidget, column: int, tooltip: str):
 		"""Set a tooltip for a specific column header."""
-		header = table.horizontalHeader()
 		model = table.model()
 		if model:
 			model.setHeaderData(column, Qt.Horizontal, tooltip, Qt.ToolTipRole)
@@ -381,6 +428,9 @@ class MdfViewer(QWidget):
 		self.version_edit.blockSignals(True)
 		self.version_edit.setText(str(self._current_file_version()))
 		self.version_edit.blockSignals(False)
+		self.meshlet_check.blockSignals(True)
+		self.meshlet_check.setChecked(bool(m.header.meshlet_material))
+		self.meshlet_check.blockSignals(False)
 		self._update_version_dependent_tabs()
 		self._refresh_materials_list()
 		if self.materials_table.rowCount() > 0:
@@ -427,6 +477,15 @@ class MdfViewer(QWidget):
 			self._refresh_material_row(current_row)
 		self._refresh_details_for_current_material()
 
+	def _on_meshlet_changed(self, state: int):
+		m = self.handler.mdf
+		if not m:
+			return
+		enabled = state == Qt.Checked.value
+		if m.header.meshlet_material != enabled:
+			m.header.meshlet_material = enabled
+			self.modified = True
+
 	def _refresh_material_row(self, r: int):
 		m = self.handler.mdf
 		if not m or not (0 <= r < len(m.materials)):
@@ -454,6 +513,31 @@ class MdfViewer(QWidget):
 		i = rows[0].row()
 		m.materials[i].header.BakeTextureArraySize = value
 		self.modified = True
+
+	def _on_ukn_changed(self, text: str):
+		rows = self.materials_table.selectionModel().selectedRows()
+		m = self.handler.mdf
+		if not m or not rows or m.layout == "onimusha_wots":
+			return
+		i = rows[0].row()
+		text = (text or "").strip()
+		if not text:
+			value = 0
+		else:
+			try:
+				value = int(text, 0)
+			except ValueError:
+				return
+		value = max(0, min(value, 0xFFFFFFFFFFFFFFFF))
+		header = m.materials[i].header
+		current_value = header.ukn_re7 if self._current_file_version() == 6 else header.ukn
+		if current_value != value:
+			if self._current_file_version() == 6:
+				header.ukn_re7 = value
+			else:
+				header.ukn = value
+			self.modified = True
+
 	def _on_flags_changed(self, *_):
 		rows = self.materials_table.selectionModel().selectedRows()
 		m = self.handler.mdf
@@ -463,10 +547,7 @@ class MdfViewer(QWidget):
 		h = m.materials[i].header
 		version = self._current_file_version()
 		
-		alpha = 0
-		for bit, cb in enumerate(self.flags1_checks):
-			if cb.isChecked():
-				alpha |= (1 << bit)
+		alpha = self._checked_flag_bits(self.flags1_checks)
 		
 		if version >= 31:
 			if self.transparent_zpostpass_check.isChecked():
@@ -476,16 +557,10 @@ class MdfViewer(QWidget):
 			alpha |= (self.tess_spin.value() & 0x3F) << 10
 		
 		alpha |= (self.phong_spin.value() & 0xFF) << 16
-		
-		for bit, cb in enumerate(self.flags2_checks):
-			if cb.isChecked():
-				alpha |= (1 << (24 + bit))
+		alpha |= self._checked_flag_bits(self.flags2_checks, start_bit=24)
 		
 		if version >= 31:
-			for bit, cb in enumerate(self.flags3_checks):
-				if cb.isChecked():
-					alpha |= (1 << (32 + bit))
-			
+			alpha |= self._checked_flag_bits(self.flags3_checks, start_bit=32)
 			bias = self.transparent_priority_bias_spin.value()
 			if bias < 0:
 				bias = (1 << 8) + bias
@@ -493,6 +568,14 @@ class MdfViewer(QWidget):
 		
 		h.material_flags = alpha
 		self.modified = True
+
+	@staticmethod
+	def _checked_flag_bits(checks, start_bit: int = 0) -> int:
+		return sum(
+			1 << (start_bit + bit)
+			for bit, checkbox in enumerate(checks)
+			if checkbox.isChecked()
+		)
 
 	def _update_flags_ui(self, h):
 		alpha = int(h.material_flags)
@@ -568,9 +651,21 @@ class MdfViewer(QWidget):
 		idx = self._get_current_index()
 		if not m or not (0 <= idx < len(m.materials)):
 			return
+		
+		if self._check_duplicate_material_name(text, exclude_index=idx):
+			QMessageBox.warning(
+				self,
+				self.tr("Duplicate Material Name"),
+				self.tr(
+					"A material with the name '{name}' already exists.\n"
+					"Please use a unique name for each material."
+				).format(name=text),
+			)
+		
 		h = m.materials[idx].header
 		h.mat_name = text
 		self.matname_hash_label.setText(f"0x{murmur3_hash_utf16le(text):08x}")
+		self._refresh_material_row(idx)
 		self.modified = True
 
 	def _get_current_index(self) -> int:
@@ -648,7 +743,11 @@ class MdfViewer(QWidget):
 		try:
 			from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
 		except ImportError:
-			QMessageBox.warning(self, "Template Manager", "Template manager UI is unavailable.")
+			QMessageBox.warning(
+				self,
+				self.tr("Template Manager"),
+				self.tr("Template manager UI is unavailable."),
+			)
 			return
 		dlg = MdfTemplateManagerDialog(self, viewer=self)
 		dlg.template_imported.connect(self._on_template_imported)
@@ -657,12 +756,29 @@ class MdfViewer(QWidget):
 	def _on_template_imported(self, material, metadata):
 		if material is None:
 			return
+		
+		material_name = material.header.mat_name or ""
+		if self._check_duplicate_material_name(material_name):
+			QMessageBox.warning(
+				self,
+				self.tr("Import Template"),
+				self.tr(
+					"Cannot import template: A material with the name '{name}' already exists.\n"
+					"Please rename the existing material first or use a different template."
+				).format(name=material_name),
+			)
+			return
+		
 		inserted = self._insert_materials([material])
 		if inserted:
 			name = "Template"
 			if isinstance(metadata, dict):
 				name = metadata.get("name") or metadata.get("id") or name
-			QMessageBox.information(self, "Import Template", f"Imported template '{name}'.")
+			QMessageBox.information(
+				self,
+				self.tr("Import Template"),
+				self.tr("Imported template '{name}'.").format(name=name),
+			)
 
 	def _clear_params_cache(self):
 		"""Clear all cached parameter tables. Called when materials list is mutated."""
@@ -682,12 +798,15 @@ class MdfViewer(QWidget):
 		while self.params_stack.count() <= mat_index:
 			idx = self.params_stack.count()
 			table = QTableWidget(0, 8)
-			table.setHorizontalHeaderLabels(["Name", "CompCount", "Locked 🔒", "X", "Y", "Z", "W", "Color"])
-			self._set_header_tooltip(table, 2, 
+			table.setHorizontalHeaderLabels([
+				self.tr("Name"), "CompCount", self.tr("Locked 🔒"),
+				"X", "Y", "Z", "W", self.tr("Color"),
+			])
+			self._set_header_tooltip(table, 2, self.tr(
 				"Write-Protection Flag\n\n"
 				"• Locked = 0 (Unchecked): Parameter CAN be modified at runtime via setFloat()\n"
 				"• Locked ≠ 0 (Checked): Parameter CANNOT be modified at runtime\n\n"
-				"When locked, the engine will skip parameter updates and keep the original value.")
+				"When locked, the engine will skip parameter updates and keep the original value."))
 			table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
 			table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
 			table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
@@ -722,6 +841,9 @@ class MdfViewer(QWidget):
 			self.matname_hash_label.setText("0x00000000")
 			self.bake_texture_label.setVisible(False)
 			self.bake_texture_spin.setVisible(False)
+			self.ukn_label.setVisible(False)
+			self.ukn_edit.setVisible(False)
+			self.ukn_edit.setText("0")
 			self._update_table_rows(self.textures_table, 0)
 			if self.params_stack.count() > 0:
 				self.params_stack.setCurrentIndex(0)
@@ -759,6 +881,28 @@ class MdfViewer(QWidget):
 			self.bake_texture_label.setVisible(False)
 			self.bake_texture_spin.setVisible(False)
 			self.bake_texture_spin.blockSignals(False)
+
+		onimusha_layout = m.layout == "onimusha_wots"
+		self.ukn_edit.setReadOnly(onimusha_layout)
+		if version == 6 or version >= 51:
+			if onimusha_layout:
+				self.ukn_edit.setText(str(md.header.parameter_value_count))
+				self.ukn_label.setText(self.tr("Parameter float slots"))
+			elif version == 6:
+				self.ukn_edit.setText(str(md.header.ukn_re7))
+				self.ukn_label.setText(self.tr("Unknown RE7 64"))
+			else:
+				self.ukn_edit.setText(str(md.header.ukn))
+				self.ukn_label.setText(self.tr("Unknown 64"))
+			self.ukn_label.setVisible(True)
+			self.ukn_edit.setVisible(True)
+			self.ukn_edit.blockSignals(False)
+		else:
+			self.ukn_edit.blockSignals(True)
+			self.ukn_edit.setText("0")
+			self.ukn_label.setVisible(False)
+			self.ukn_edit.setVisible(False)
+			self.ukn_edit.blockSignals(False)
 		
 		self._update_flags_ui(md.header)
 		
@@ -796,40 +940,52 @@ class MdfViewer(QWidget):
 		for i in range(4):
 			item = QTableWidgetItem("")
 			if 0 <= i < p.component_count:
-				item.setText(str(values[i]))
+				item.setText(format_display_value(values[i]))
 				item.setFlags(item.flags() | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
 			else:
 				item.setText("")
 				item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
 			table.setItem(row, 3 + i, item)
 		
-		name_lower = (p.name or "").lower()
-		is_color = (name_lower.endswith("color") or name_lower.endswith("color1") or name_lower.endswith("color2") 
-				  or name_lower.endswith("color3")) and p.component_count in (3, 4)
-		
-		color_item = QTableWidgetItem("")
-		if is_color:
-			rgb = [values[0], values[1], values[2]]
-			alpha = values[3] if p.component_count == 4 else 1.0
-			def clamp01(v):
-				try:
-					return max(0.0, min(1.0, float(v)))
-				except Exception:
-					return 0.0
-			R = int(clamp01(rgb[0]) * 255)
-			G = int(clamp01(rgb[1]) * 255)
-			B = int(clamp01(rgb[2]) * 255)
-			A = int(clamp01(alpha) * 255)
-			qcol = QColor(R, G, B, A)
-			color_item.setBackground(qcol)
-			if p.component_count == 4:
-				color_item.setToolTip(f"RGBA: {R},{G},{B},{A}")
-			else:
-				color_item.setToolTip(f"RGB: {R},{G},{B}")
-			color_item.setFlags((color_item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
+		table.setItem(row, 7, self._parameter_color_item(p, values))
+
+	def _parameter_color_item(self, parameter, values) -> QTableWidgetItem:
+		item = QTableWidgetItem("")
+		name = (parameter.name or "").lower()
+		is_color = (
+			"color" in name
+			and parameter.component_count in (3, 4)
+		)
+		if not is_color:
+			item.setFlags(
+				(item.flags() | Qt.ItemIsEnabled)
+				& ~(Qt.ItemIsEditable | Qt.ItemIsSelectable)
+			)
+			return item
+
+		red, green, blue = (
+			int(self._clamp01(value) * 255)
+			for value in values[:3]
+		)
+		alpha_value = values[3] if parameter.component_count == 4 else 1.0
+		alpha = int(self._clamp01(alpha_value) * 255)
+		item.setBackground(get_color_preview_brush(red, green, blue, alpha))
+		if parameter.component_count == 4:
+			item.setToolTip(f"RGBA: {red},{green},{blue},{alpha}")
 		else:
-			color_item.setFlags((color_item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-		table.setItem(row, 7, color_item)
+			item.setToolTip(f"RGB: {red},{green},{blue}")
+		item.setFlags(
+			(item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+			& ~Qt.ItemIsEditable
+		)
+		return item
+
+	@staticmethod
+	def _clamp01(value) -> float:
+		try:
+			return max(0.0, min(1.0, float(value)))
+		except Exception:
+			return 0.0
 
 	def _refresh_gpbf_table(self, md):
 		self.gpbf_table.blockSignals(True)
@@ -956,7 +1112,14 @@ class MdfViewer(QWidget):
 		for n in names:
 			ln = n.lower()
 			if ln.startswith("layercolor_"):
-				idx = 0 if "red" in ln else 1 if "green" in ln else 2 if "blue" in ln else -1
+				if "red" in ln:
+					idx = 0
+				elif "green" in ln:
+					idx = 1
+				elif "blue" in ln:
+					idx = 2
+				else:
+					idx = -1
 				cur_seg.append(idx)
 			else:
 				if cur_seg:
@@ -971,11 +1134,11 @@ class MdfViewer(QWidget):
 				if idx in (0,1,2):
 					key = idx
 					if key in seen_colors:
-						msg.append("LayerColor: Only one of each (Red, Green, Blue) is allowed.")
+						msg.append(self.tr("LayerColor: Only one of each (Red, Green, Blue) is allowed."))
 					else:
 						seen_colors.add(key)
 		if len(segments) > 1:
-			msg.append("LayerColor: Only one RGB sequence is allowed.")
+			msg.append(self.tr("LayerColor: Only one RGB sequence is allowed."))
 		for seg in segments:
 			prev_idx = None
 			for idx in seg:
@@ -988,7 +1151,7 @@ class MdfViewer(QWidget):
 					prev_idx = idx
 					continue
 				if idx > prev_idx and (idx - prev_idx) > 1:
-					msg.append("LayerColor: Only Green may be between Red and Blue.")
+					msg.append(self.tr("LayerColor: Only Green may be between Red and Blue."))
 				prev_idx = idx
 
 		if msg:
@@ -1173,9 +1336,7 @@ class MdfViewer(QWidget):
 			arr[idx] = float(val)
 			p.parameter = tuple(arr)
 			name_lower = (p.name or "").lower()
-			if ((name_lower.endswith("color") or name_lower.endswith("color1") or 
-				 name_lower.endswith("color2") or name_lower.endswith("color3")) 
-				and p.component_count in (3, 4)):
+			if "color" in name_lower and p.component_count in (3, 4):
 				table.blockSignals(True)
 				self._populate_param_row_in_table(table, pi, p)
 				table.blockSignals(False)
@@ -1271,8 +1432,7 @@ class MdfViewer(QWidget):
 		p = md.parameters[pi]
 		name_lower = (p.name or "").lower()
 		is_layer = name_lower.startswith("layercolor_")
-		is_normal_color = (name_lower.endswith("color") or name_lower.endswith("color1") or 
-						   name_lower.endswith("color2") or name_lower.endswith("color3")) and p.component_count in (3, 4)
+		is_normal_color = "color" in name_lower and p.component_count in (3, 4)
 
 		if is_normal_color and not is_layer:
 			x, y, z, w = p.parameter
@@ -1353,6 +1513,15 @@ class MdfViewer(QWidget):
 		val = item.text()
 		try:
 			if c == 0:
+				if self._check_duplicate_material_name(val, exclude_index=r):
+					QMessageBox.warning(
+						self,
+						self.tr("Duplicate Material Name"),
+						self.tr(
+							"A material with the name '{name}' already exists.\n"
+							"Please use a unique name for each material."
+						).format(name=val),
+					)
 				h.mat_name = val
 			elif c == 1:
 				h.shader_type = int(val)
@@ -1371,14 +1540,20 @@ class MdfViewer(QWidget):
 		if not m:
 			return
 		from .mdf_file import MatData
-		m.materials.append(MatData())
+		
+		existing_names = self._get_existing_material_names()
+		new_name = self._generate_unique_material_name("Material", existing_names)
+		
+		mat = MatData()
+		mat.header.mat_name = new_name
+		m.materials.append(mat)
 		
 		self._clear_params_cache()
 		
 		self.materials_table.blockSignals(True)
 		r = self.materials_table.rowCount()
 		self.materials_table.insertRow(r)
-		for c, txt in enumerate(["", "0", "0", "0", "0"]):
+		for c, txt in enumerate([new_name, "0", "0", "0", "0"]):
 			self.materials_table.setItem(r, c, QTableWidgetItem(txt))
 		self.materials_table.blockSignals(False)
 		self.modified = True
@@ -1402,24 +1577,36 @@ class MdfViewer(QWidget):
 			return
 		selected = self.materials_table.selectionModel().selectedRows()
 		if not selected:
-			QMessageBox.information(self, "Copy Materials", "Select at least one material to copy.")
+			QMessageBox.information(
+				self, self.tr(COPY_MATERIALS_TITLE), self.tr("Select at least one material to copy.")
+			)
 			return
 		indices = sorted(idx.row() for idx in selected)
 		materials = [m.materials[i] for i in indices if 0 <= i < len(m.materials)]
 		if not materials:
-			QMessageBox.warning(self, "Copy Materials", "No valid materials selected for copying.")
+			QMessageBox.warning(
+				self,
+				self.tr(COPY_MATERIALS_TITLE),
+				self.tr("No valid materials selected for copying."),
+			)
 			return
 		MdfClipboard.copy_materials(
 			materials,
 			self._current_file_version(),
 			self._current_file_name(),
 		)
-		QMessageBox.information(self, "Copy Materials", f"Copied {len(materials)} material(s) to clipboard.")
+		QMessageBox.information(
+			self,
+			self.tr(COPY_MATERIALS_TITLE),
+			self.tr("Copied {count} material(s) to clipboard.").format(count=len(materials)),
+		)
 
 	def _on_export_material(self):
 		material, file_version, source_name = self.get_material_export_context()
 		if material is None:
-			QMessageBox.information(self, "Export Template", "Select a material to export.")
+			QMessageBox.information(
+				self, self.tr(EXPORT_TEMPLATE_TITLE), self.tr("Select a material to export.")
+			)
 			return
 		default_name = material.header.mat_name
 		mmtr_path = material.header.mmtr_path
@@ -1438,14 +1625,14 @@ class MdfViewer(QWidget):
 		if not result.get("success"):
 			QMessageBox.warning(
 				self,
-				"Export Template",
-				result.get("message", "Failed to export template."),
+				self.tr(EXPORT_TEMPLATE_TITLE),
+				result.get("message") or self.tr("Failed to export template."),
 			)
 			return
 		QMessageBox.information(
 			self,
-			"Export Template",
-			f"Template '{data['name']}' exported successfully.",
+			self.tr(EXPORT_TEMPLATE_TITLE),
+			self.tr("Template '{name}' exported successfully.").format(name=data["name"]),
 		)
 
 	def _on_paste_materials(self):
@@ -1455,8 +1642,23 @@ class MdfViewer(QWidget):
 		target_version = self._current_file_version()
 		materials, metadata = MdfClipboard.load_materials(target_version)
 		if not materials:
-			QMessageBox.warning(self, "Paste Materials", "Clipboard does not contain MDF material data.")
+			QMessageBox.warning(
+				self,
+				self.tr("Paste Materials"),
+				self.tr("Clipboard does not contain MDF material data."),
+			)
 			return
+		
+		existing_names = self._get_existing_material_names()
+		renamed_count = 0
+		for mat in materials:
+			original_name = mat.header.mat_name or ""
+			unique_name = self._generate_unique_material_name(original_name, existing_names)
+			if unique_name != original_name:
+				mat.header.mat_name = unique_name
+				renamed_count += 1
+			existing_names.add(unique_name)
+		
 		selected = self.materials_table.selectionModel().selectedRows()
 		insert_at = len(m.materials)
 		if selected:
@@ -1465,10 +1667,15 @@ class MdfViewer(QWidget):
 		source_name = metadata.get("source_file_name") if isinstance(metadata, dict) else ""
 		source_version = metadata.get("source_file_version") if isinstance(metadata, dict) else None
 		if not source_name:
-			source_name = "Unknown file"
-		msg_version = str(source_version) if source_version else "unknown"
-		QMessageBox.information(
-			self,
-			"Paste Materials",
-			f"Pasted {inserted} material(s) from {source_name} (version {msg_version}).",
-		)
+			source_name = self.tr("Unknown file")
+		msg_version = str(source_version) if source_version else self.tr("unknown")
+		
+		msg = self.tr(
+			"Pasted {count} material(s) from {source} (version {version})."
+		).format(count=inserted, source=source_name, version=msg_version)
+		if renamed_count > 0:
+			msg += "\n\n" + self.tr(
+				"{count} material(s) were renamed to avoid duplicate names."
+			).format(count=renamed_count)
+		
+		QMessageBox.information(self, self.tr("Paste Materials"), msg)

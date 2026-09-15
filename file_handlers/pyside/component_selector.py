@@ -4,22 +4,25 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget,
 class ComponentSelectorDialog(QDialog):
     """Dialog for selecting a component type with filtering and autocomplete"""
     
-    def __init__(self, parent=None, type_registry=None, required_parent_name=None):
+    def __init__(self, parent=None, type_registry=None, required_parent_name=None, include_parent=False):
         super().__init__(parent)
         self.type_registry = type_registry
         self.selected_component = None
         self.required_parent_name = required_parent_name
+        self.include_parent = include_parent
         
-        self.setWindowTitle("Add Component")
+        self.setWindowTitle(self.tr("Add Component"))
         self.resize(500, 400)
         
         layout = QVBoxLayout(self)
         
-        self.status_label = QLabel("Loading components...")
+        self.status_label = QLabel(self.tr("Loading components..."))
         layout.addWidget(self.status_label)
         
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Type component name (e.g. 'chainsaw.GmOptionSleep')")
+        self.search_input.setPlaceholderText(
+            self.tr("Type component name (e.g. 'chainsaw.GmOptionSleep')")
+        )
         layout.addWidget(self.search_input)
         
         self.component_list = QListWidget()
@@ -37,40 +40,44 @@ class ComponentSelectorDialog(QDialog):
         self.component_list.itemDoubleClicked.connect(self.accept)
         
         self.search_input.setFocus()
+
+    def _should_include_component(self, type_info):
+        if not isinstance(type_info, dict) or "name" not in type_info:
+            return False
+
+        type_name = type_info["name"]
+        if not isinstance(type_name, str) or not type_name:
+            return False
+        if (
+            type_name.startswith("System.")
+            or ".Collections." in type_name
+            or "[]" in type_name
+        ):
+            return False
+
+        if not self.required_parent_name:
+            return bool(type_info["fields"])
+        if type_name == self.required_parent_name:
+            return self.include_parent
+
+        parents = self.type_registry.getTypeParents(type_name)
+        return self.required_parent_name in parents
         
     def _load_component_types(self):
         """Extract all component types from the type registry"""
-        self.all_component_types = []
-        
-        registry_dict = self.type_registry.registry
-        count = 0
-        for _, type_info in registry_dict.items():
-            if isinstance(type_info, dict) and "name" in type_info:
-                type_name = type_info["name"]
-                if not isinstance(type_name, str) or not type_name:
-                    continue
-                    
-                # Skip system and collection types
-                if (type_name.startswith("System.") or 
-                    ".Collections." in type_name or 
-                    "[]" in type_name):
-                    continue
-                    
-                if self.required_parent_name:
-                    parents = self.type_registry.getTypeParents(type_name)
-                    if self.required_parent_name in parents:
-                        self.all_component_types.append(type_name)
-                        count += 1
-                    continue
-
-                # Only add types with fields (likely to be valid components)
-                if type_info["fields"]:
-                    self.all_component_types.append(type_name)
-                    count += 1
+        self.all_component_types = [
+            type_info["name"]
+            for type_info in self.type_registry.registry.values()
+            if self._should_include_component(type_info)
+        ]
         
         self.all_component_types.sort()
         
-        self.status_label.setText(f"Found {count} component types")
+        self.status_label.setText(
+            self.tr("Found {count} component types").format(
+                count=len(self.all_component_types)
+            )
+        )
         self.populate_component_list("")
         
     def on_text_changed(self, text):
@@ -96,9 +103,19 @@ class ComponentSelectorDialog(QDialog):
             self.component_list.setCurrentRow(0)
             
         if self.required_parent_name:
-            self.status_label.setText(f"Showing {len(matching_types)} matches out of {len(self.all_component_types)} components")
+            self.status_label.setText(
+                self.tr("Showing {matches} matches out of {total} components").format(
+                    matches=len(matching_types),
+                    total=len(self.all_component_types),
+                )
+            )
         else:
-            self.status_label.setText(f"Showing first {len(matching_types)} matches out of {len(self.all_component_types)} components")
+            self.status_label.setText(
+                self.tr("Showing first {matches} matches out of {total} components").format(
+                    matches=len(matching_types),
+                    total=len(self.all_component_types),
+                )
+            )
         
     def get_selected_component(self):
         """Return the selected component type name"""

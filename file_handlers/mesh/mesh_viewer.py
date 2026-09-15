@@ -1,544 +1,622 @@
 from __future__ import annotations
 
-import time
+from collections import deque
+from contextlib import suppress
 
-from PySide6.QtCore import Qt, Signal, QTimer
-from PySide6.QtGui import QSurfaceFormat
-from PySide6.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QSizePolicy,
-    QLabel,
-    QSpinBox,
-    QFrame,
-    QHBoxLayout,
-    QComboBox,
-    QDoubleSpinBox,
-)
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
 import numpy as np
-from OpenGL.arrays import vbo
+from ui.scene.scene_preview import ScenePreviewWidget
 from OpenGL.GL import (
-    glClearColor,
-    glClear,
-    GL_COLOR_BUFFER_BIT,
-    GL_DEPTH_BUFFER_BIT,
-    glEnable,
-    glDisable,
-    GL_DEPTH_TEST,
-    glRotatef,
-    glTranslatef,
-    glScalef,
-    glLoadIdentity,
-    glMatrixMode,
-    GL_PROJECTION,
-    GL_MODELVIEW,
-    glViewport,
-    glLightfv,
-    GL_LIGHTING,
-    GL_LIGHT0,
-    GL_POSITION,
-    GL_COLOR_MATERIAL,
-    GL_CULL_FACE,
-    glCullFace,
-    glFrontFace,
-    GL_BACK,
-    GL_CCW,
-    GL_NORMALIZE,
-    glEnableClientState,
-    glDisableClientState,
-    glVertexPointer,
-    glNormalPointer,
-    glColorPointer,
-    glColor4f,
-    glDrawElements,
-    GL_TRIANGLES,
-    GL_LINES,
-    GL_FLOAT,
-    GL_UNSIGNED_INT,
-    GL_VERTEX_ARRAY,
-    GL_NORMAL_ARRAY,
-    GL_COLOR_ARRAY,
-    GL_ELEMENT_ARRAY_BUFFER,
     GL_BLEND,
-    glPolygonMode,
-    GL_FRONT_AND_BACK,
-    GL_LINE,
+    GL_CULL_FACE,
+    GL_DEPTH_TEST,
     GL_FILL,
-    glLineWidth,
-    glShadeModel,
-    GL_SMOOTH,
-    glDepthMask,
-    GL_AMBIENT,
-    GL_DIFFUSE,
+    GL_FLOAT,
+    GL_FRAGMENT_SHADER,
+    GL_FRONT_AND_BACK,
+    GL_LIGHTING,
+    GL_ONE_MINUS_SRC_ALPHA,
+    GL_QUADS,
+    GL_SRC_ALPHA,
+    GL_TEXTURE_2D,
+    GL_TEXTURE_COORD_ARRAY,
+    GL_VERTEX_ARRAY,
+    GL_VERTEX_SHADER,
+    glBindTexture,
+    glBlendFunc,
+    glColor4f,
+    glDeleteProgram,
+    glDeleteTextures,
+    glDisable,
+    glDisableClientState,
+    glDisableVertexAttribArray,
+    glDrawArrays,
+    glEnable,
+    glEnableClientState,
+    glEnableVertexAttribArray,
+    glGenTextures,
+    glGetAttribLocation,
+    glGetUniformLocation,
+    glPolygonMode,
+    glTexCoordPointer,
+    glUniform1i,
+    glUniform2f,
+    glUseProgram,
+    glVertexAttribPointer,
+    glVertexPointer,
 )
-from OpenGL.GLU import gluPerspective
+from OpenGL.GL.shaders import compileProgram, compileShader
+from PySide6.QtCore import QObject, Qt, Signal, QTimer
+from PySide6.QtGui import QFontMetrics, QImage, QPainter, QPixmap
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QPushButton,
+    QSizePolicy,
+    QSplitter,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
+from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY
+from settings import save_settings
+from ui.scene.mesh_scene import build_mesh_scene
+from ui.scene.scene_buffers import mesh_bounds_points
+from .material_session import MeshMaterialCollection, MeshMaterialSession
+
+BONE_LABEL_VERTEX_SHADER = """
+#version 120
+attribute vec2 labelOffset;
+uniform vec2 viewport;
+varying vec2 labelTexCoord;
+
+void main()
+{
+    vec4 clip = gl_ModelViewProjectionMatrix * gl_Vertex;
+    labelTexCoord = gl_MultiTexCoord0.st;
+    if (clip.w <= 0.0 || clip.z < -clip.w || clip.z > clip.w) {
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+        return;
+    }
+    vec2 ndcOffset = vec2(labelOffset.x * 2.0 / viewport.x, -labelOffset.y * 2.0 / viewport.y) * clip.w;
+    clip.xy += ndcOffset;
+    gl_Position = clip;
+}
+"""
+
+BONE_LABEL_FRAGMENT_SHADER = """
+#version 120
+uniform sampler2D labelTexture;
+varying vec2 labelTexCoord;
+
+void main()
+{
+    gl_FragColor = texture2D(labelTexture, labelTexCoord);
+}
+"""
 
 
 class MeshViewer(QWidget):
     modified_changed = Signal(bool)
+    VERTEX_COLORS_SETTINGS_KEY = "mesh_viewer_use_vertex_colors"
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("meshViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
+        self._material_panel_visible = False
+        self._material_table_populated = False
         self._layout = QVBoxLayout(self)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.gl_widget = None
-        if self.handler and getattr(self.handler, "mesh", None):
-            self.gl_widget = _MeshGLWidget(self.handler.mesh)
-            self._layout.addWidget(self.gl_widget, 1)
-
-
-class _MeshGLWidget(QOpenGLWidget):
-    def __init__(self, mesh):
-        fmt = QSurfaceFormat()
-        fmt.setDepthBufferSize(24)
-        fmt.setSwapInterval(0)
-        fmt.setVersion(2, 1)
-        fmt.setProfile(QSurfaceFormat.CompatibilityProfile)
-        fmt.setRenderableType(QSurfaceFormat.OpenGL)
-        QSurfaceFormat.setDefaultFormat(fmt)
-        super().__init__()
-        self.setFormat(fmt)
-
-        self.mesh = mesh
-        self.rot_x = 0.0
-        self.rot_y = 0.0
-        self.distance = 3.0
-        self.last_pos = None
-        self.fps = 0.0
-        self._frame_count = 0
-        self._last_time = time.time()
-        self._timer = QTimer(self)
-        self._timer.setTimerType(Qt.PreciseTimer)
-        self._timer.timeout.connect(self.update)
-        self._fps_limit = 60
-        self._timer.start(int(1000 / self._fps_limit))
-        self._wireframe = False
-        self._lighting = True
-        self.wireframe_mode = "off"
-        self.lighting_mode = "fixed"
-        self.line_width = 1.5
-        self.cull_enabled = True
-        self.depth_enabled = True
-        self.color_source = "vertex"
-        self.ambient = 0.35
-        self.diffuse = 0.65
-        self._last_lighting_mode = "fixed"
-        self._last_wf_mode = "lines_overlay"
-
-        self.overlay = QFrame(self)
-        self.overlay.setStyleSheet(
-            "background-color: rgba(0, 0, 0, 160); color: #39ff14;"
-        )
-        olayout = QVBoxLayout(self.overlay)
-        olayout.setContentsMargins(4, 4, 4, 4)
-        self.fps_label = QLabel("0 FPS", self.overlay)
-        olayout.addWidget(self.fps_label)
-
-        limit_layout = QHBoxLayout()
-        limit_layout.addWidget(QLabel("Limit", self.overlay))
-        self.fps_spin = QSpinBox(self.overlay)
-        self.fps_spin.setRange(0, 240)
-        self.fps_spin.setFixedWidth(50)
-        self.fps_spin.valueChanged.connect(self._change_fps_limit)
-        limit_layout.addWidget(self.fps_spin)
-        self.fps_spin.setValue(self._fps_limit)
-        olayout.addLayout(limit_layout)
-
-        row1 = QHBoxLayout()
-        row1.addWidget(QLabel("WF Mode", self.overlay))
-        self.wf_combo = QComboBox(self.overlay)
-        self.wf_combo.addItems(["off", "polygon", "lines_depth", "lines_overlay"])
-        self.wf_combo.setCurrentText(self.wireframe_mode)
-        self.wf_combo.currentTextChanged.connect(self._set_wireframe_mode)
-        row1.addWidget(self.wf_combo)
-        row1.addWidget(QLabel("Line", self.overlay))
-        self.line_spin = QDoubleSpinBox(self.overlay)
-        self.line_spin.setRange(0.5, 8.0)
-        self.line_spin.setSingleStep(0.1)
-        self.line_spin.setValue(self.line_width)
-        self.line_spin.valueChanged.connect(self._set_line_width)
-        row1.addWidget(self.line_spin)
-        olayout.addLayout(row1)
-
-        row2 = QHBoxLayout()
-        row2.addWidget(QLabel("Light", self.overlay))
-        self.light_combo = QComboBox(self.overlay)
-        self.light_combo.addItems(["off", "fixed", "software"])
-        self.light_combo.setCurrentText(self.lighting_mode)
-        self.light_combo.currentTextChanged.connect(self._set_lighting_mode)
-        row2.addWidget(self.light_combo)
-        row2.addWidget(QLabel("Amb", self.overlay))
-        self.amb_spin = QDoubleSpinBox(self.overlay)
-        self.amb_spin.setRange(0.0, 1.0)
-        self.amb_spin.setSingleStep(0.05)
-        self.amb_spin.setValue(self.ambient)
-        self.amb_spin.valueChanged.connect(self._set_ambient)
-        row2.addWidget(self.amb_spin)
-        row2.addWidget(QLabel("Diff", self.overlay))
-        self.diff_spin = QDoubleSpinBox(self.overlay)
-        self.diff_spin.setRange(0.0, 1.0)
-        self.diff_spin.setSingleStep(0.05)
-        self.diff_spin.setValue(self.diffuse)
-        self.diff_spin.valueChanged.connect(self._set_diffuse)
-        row2.addWidget(self.diff_spin)
-        olayout.addLayout(row2)
-
-        self.overlay.adjustSize()
-        self.overlay.move(10, 10)
-
-        mb = mesh.mesh_buffer
-        self.vertices = np.array(mb.positions, dtype=np.float32).reshape(-1, 3)
-        self.normals = (
-            np.array(mb.normals, dtype=np.float32).reshape(-1, 3)
-            if mb.normals
-            else None
-        )
-        if self.normals is not None:
-            lengths = np.linalg.norm(self.normals, axis=1)
-            safe_normals = np.zeros_like(self.normals, dtype=np.float32)
-            np.divide(self.normals, lengths[:, np.newaxis], out=safe_normals, where=lengths[:, np.newaxis] > 0)
-            invalid_mask = ~np.isfinite(safe_normals).all(axis=1)
-            if np.any(invalid_mask):
-                safe_normals[invalid_mask] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
-            self.normals = safe_normals
-        self.colors = (
-            np.array(mb.colors, dtype=np.uint8).reshape(-1, 4).astype(np.float32) / 255.0
-            if mb.colors
-            else None
-        )
-        if self.colors is None or len(self.colors) != len(self.vertices):
-            self.base_colors = np.ones((len(self.vertices), 4), dtype=np.float32)
+        self._build_ui()
+        mesh = getattr(self.handler, "mesh", None)
+        if mesh and getattr(mesh, "mesh_buffer", None) and mesh.mesh_buffer.positions:
+            try:
+                self.gl_widget = _MeshGLWidget(
+                    mesh,
+                    self._settings_store(),
+                    use_vertex_colors=self._setting_bool(self.VERTEX_COLORS_SETTINGS_KEY),
+                )
+                self.gl_widget.texture_quality_changed.connect(self._on_texture_quality_changed)
+                self.preview_splitter.insertWidget(0, self.gl_widget)
+                self.preview_splitter.setStretchFactor(0, 4)
+                self.preview_splitter.setStretchFactor(1, 2)
+            except Exception as e:
+                self.preview_splitter.insertWidget(
+                    0, QLabel(self.tr("Failed to create viewer: {}").format(e))
+                )
         else:
-            self.base_colors = self.colors.copy()
-
-        idx_list: list[int] = []
-        if mesh.meshes:
-            for m in mesh.meshes:
-                if not m.lods:
-                    continue
-                lod0 = m.lods[0]
-                for mg in lod0.mesh_groups:
-                    for sm in mg.submeshes:
-                        start = sm.faces_index_offset
-                        end = start + sm.indices_count
-                        base = sm.verts_index_offset
-                        idx_list.extend(base + idx for idx in mb.faces[start:end])
-        if not idx_list:
-            idx_list = list(mb.faces)
-        self.indices = np.array(idx_list, dtype=np.uint32)
-
-        if len(self.indices) % 3 == 0:
-            tris_edges = np.concatenate([
-                self.indices.reshape(-1, 3)[:, [0, 1]],
-                self.indices.reshape(-1, 3)[:, [1, 2]],
-                self.indices.reshape(-1, 3)[:, [2, 0]],
-            ], axis=0)
-            self.indices_lines = tris_edges.astype(np.uint32).reshape(-1)
-        else:
-            self.indices_lines = self.indices.copy()
-
-        mins = self.vertices.min(axis=0)
-        maxs = self.vertices.max(axis=0)
-        self.center = (mins + maxs) / 2.0
-        extent = float(np.max(maxs - mins))
-        self.scale = 1.0 / extent if extent else 1.0
-
-        self.vbo_vertices = None
-        self.vbo_normals = None
-        self.vbo_colors = None
-        self.vbo_indices = None
-        self.vbo_indices_lines = None
-        self._normals_generated = False
-        self._colors_dirty = True
-
-    def _compute_lit_colors(self) -> np.ndarray:
-        if self.normals is None or not np.isfinite(self.normals).all():
-            normals_used = np.tile(np.array([0.0, 0.0, 1.0], dtype=np.float32), (len(self.vertices), 1))
-        else:
-            normals_used = self.normals
-        light_dir = np.array([0.4, 0.8, 0.4], dtype=np.float32)
-        light_dir /= np.linalg.norm(light_dir) if np.linalg.norm(light_dir) != 0 else 1.0
-        ambient = 0.45
-        diffuse_scale = 0.55
-        intensity = np.clip((normals_used @ light_dir) * diffuse_scale + ambient, 0.0, 1.0).astype(np.float32)
-        lit = self.base_colors.copy()
-        lit[:, :3] *= intensity[:, np.newaxis]
-        lit[:, 3] = 1.0
-        return lit
-
-    def _ensure_color_vbo_for_current_mode(self):
-        base = self.base_colors if self.color_source == "vertex" else np.ones((len(self.vertices), 4), dtype=np.float32)
-        apply_lighting = (self.lighting_mode == "software" and self._lighting) or (not self._lighting)
-        if apply_lighting:
-            if self.normals is None or not np.isfinite(self.normals).all():
-                normals_used = np.tile(np.array([0.0, 0.0, 1.0], dtype=np.float32), (len(self.vertices), 1))
-            else:
-                normals_used = self.normals
-            light_dir = np.array([0.4, 0.8, 0.4], dtype=np.float32)
-            n = np.linalg.norm(light_dir)
-            light_dir = light_dir / (n if n != 0 else 1.0)
-            ambient = float(self.ambient)
-            diffuse_scale = float(self.diffuse)
-            intensity = np.clip((normals_used @ light_dir) * diffuse_scale + ambient, 0.0, 1.0).astype(np.float32)
-            colors_now = base.copy()
-            colors_now[:, :3] *= intensity[:, np.newaxis]
-            colors_now[:, 3] = 1.0
-        else:
-            colors_now = base
-        self.vbo_colors = vbo.VBO(colors_now)
-        self._colors_dirty = False
-
-    def _cleanup_gl(self):
-        self.makeCurrent()
-        if self.vbo_indices_lines is not None:
-            self.vbo_indices_lines.delete()
-            self.vbo_indices_lines = None
-        if self.vbo_indices is not None:
-            self.vbo_indices.delete()
-            self.vbo_indices = None
-        if self.vbo_colors is not None:
-            self.vbo_colors.delete()
-            self.vbo_colors = None
-        if self.vbo_normals is not None:
-            self.vbo_normals.delete()
-            self.vbo_normals = None
-        if self.vbo_vertices is not None:
-            self.vbo_vertices.delete()
-            self.vbo_vertices = None
-        self.doneCurrent()
-
-    def _ensure_normals_vbo_for_lighting(self):
-        if self.vbo_normals is not None:
-            return
-        if self.normals is not None and np.isfinite(self.normals).all():
-            self.vbo_normals = vbo.VBO(self.normals)
-            return
-        if len(self.indices) % 3 == 0 and len(self.vertices) > 0:
-            tris = self.indices.reshape(-1, 3)
-            v0 = self.vertices[tris[:, 0]]
-            v1 = self.vertices[tris[:, 1]]
-            v2 = self.vertices[tris[:, 2]]
-            edge1 = v1 - v0
-            edge2 = v2 - v0
-            face_normals = np.cross(edge1, edge2)
-            vertex_normals = np.zeros_like(self.vertices, dtype=np.float32)
-            np.add.at(vertex_normals, tris[:, 0], face_normals)
-            np.add.at(vertex_normals, tris[:, 1], face_normals)
-            np.add.at(vertex_normals, tris[:, 2], face_normals)
-            lengths_v = np.linalg.norm(vertex_normals, axis=1)
-            safe_vertex_normals = np.zeros_like(vertex_normals, dtype=np.float32)
-            np.divide(
-                vertex_normals,
-                lengths_v[:, np.newaxis],
-                out=safe_vertex_normals,
-                where=lengths_v[:, np.newaxis] > 0,
+            self.preview_splitter.insertWidget(
+                0, QLabel(self.tr("No mesh buffer data available to display"))
             )
-            invalid_v = ~np.isfinite(safe_vertex_normals).all(axis=1)
-            if np.any(invalid_v):
-                safe_vertex_normals[invalid_v] = np.array([0.0, 0.0, 1.0], dtype=np.float32)
-            self.normals = safe_vertex_normals.astype(np.float32)
-            self.vbo_normals = vbo.VBO(self.normals)
-            self._normals_generated = True
+        quality = getattr(self.gl_widget, "texture_quality", DEFAULT_TEXTURE_QUALITY)
+        self._materials = MeshMaterialCollection(self.gl_widget, parent=self)
+        self._material_session = MeshMaterialSession(
+            self.handler,
+            texture_quality=quality,
+            parent=self._materials,
+        )
+        self._material_session.reset.connect(self._on_material_reset)
+        self._material_session.status_changed.connect(
+            self._on_material_status_changed
+        )
+        self._materials.add("mesh", self._material_session, start=False)
+        self._reload_materials()
 
-    def initializeGL(self):
-        glClearColor(0.1, 0.1, 0.1, 1.0)
-        glDisable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_LIGHT0)
-        glEnable(GL_COLOR_MATERIAL)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
-        glFrontFace(GL_CCW)
-        glEnable(GL_NORMALIZE)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (1.0, 1.0, 1.0, 1.0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (0.3, 0.3, 0.3, 1.0))
+    def _build_ui(self):
+        top = QHBoxLayout()
+        self.mdf_label = QLabel(self.tr("MDF: unresolved"))
+        self.mdf_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        top.addWidget(self.mdf_label, 1)
+        self.vertex_colors_check = QCheckBox(self.tr("Vertex colors"))
+        self.vertex_colors_check.setToolTip(
+            self.tr("Multiply textured preview by mesh vertex colors")
+        )
+        self.vertex_colors_check.setChecked(self._setting_bool(self.VERTEX_COLORS_SETTINGS_KEY))
+        self.vertex_colors_check.toggled.connect(self._on_vertex_colors_toggled)
+        top.addWidget(self.vertex_colors_check)
+        self.panel_toggle_btn = QPushButton(self.tr("Show texture panel"))
+        self.panel_toggle_btn.clicked.connect(self._toggle_material_panel)
+        top.addWidget(self.panel_toggle_btn)
+        self._layout.addLayout(top)
 
-        ctx = self.context()
-        ctx.aboutToBeDestroyed.connect(self._cleanup_gl)
+        self.preview_splitter = QSplitter(Qt.Horizontal, self)
+        self._layout.addWidget(self.preview_splitter, 1)
 
-        self.vbo_vertices = vbo.VBO(self.vertices)
-        self.vbo_indices = vbo.VBO(self.indices, target=GL_ELEMENT_ARRAY_BUFFER)
-        if self.indices_lines is not None and len(self.indices_lines) > 0:
-            self.vbo_indices_lines = vbo.VBO(self.indices_lines, target=GL_ELEMENT_ARRAY_BUFFER)
-        if self.normals is not None:
-            self.vbo_normals = vbo.VBO(self.normals)
-        self._ensure_color_vbo_for_current_mode()
+        self.material_panel = QWidget(self)
+        side_layout = QVBoxLayout(self.material_panel)
+        side_layout.setContentsMargins(0, 0, 0, 0)
+        side_layout.addWidget(QLabel(self.tr("Resolved material textures")))
+        self.material_table = QTableWidget(0, 5, self.material_panel)
+        self.material_table.setHorizontalHeaderLabels(
+            [
+                self.tr("Mesh"),
+                "MDF",
+                self.tr("Type"),
+                self.tr("Texture"),
+                self.tr("Status"),
+            ]
+        )
+        self.material_table.setSelectionBehavior(QTableWidget.SelectRows)
+        self.material_table.setSelectionMode(QTableWidget.SingleSelection)
+        self.material_table.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.material_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.material_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.material_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        self.material_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.Stretch)
+        self.material_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.material_table.itemSelectionChanged.connect(self._update_texture_preview)
+        side_layout.addWidget(self.material_table, 1)
 
-    def resizeGL(self, w: int, h: int):
-        glViewport(0, 0, w, max(h, 1))
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        aspect = w / h if h else 1.0
-        gluPerspective(45.0, aspect, 0.1, 100.0)
-        glMatrixMode(GL_MODELVIEW)
-        self.overlay.move(10, 10)
+        self.texture_preview = QLabel(
+            self.tr("Select a material to preview its texture.")
+        )
+        self.texture_preview.setAlignment(Qt.AlignCenter)
+        self.texture_preview.setMinimumHeight(220)
+        self.texture_preview.setWordWrap(True)
+        side_layout.addWidget(self.texture_preview)
 
-    def _apply_render_state(self):
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
+        self.preview_splitter.addWidget(self.material_panel)
+        self.material_panel.hide()
 
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
-            glEnable(GL_LIGHT0)
-            glEnable(GL_COLOR_MATERIAL)
-            glEnable(GL_NORMALIZE)
-            glShadeModel(GL_SMOOTH)
-            glLightfv(GL_LIGHT0, GL_DIFFUSE, (self.diffuse, self.diffuse, self.diffuse, 1.0))
-            glLightfv(GL_LIGHT0, GL_AMBIENT, (self.ambient, self.ambient, self.ambient, 1.0))
+    def _settings_store(self) -> dict | None:
+        app = getattr(self.handler, "app", None)
+        settings = getattr(app, "settings", None) if app is not None else None
+        return settings if isinstance(settings, dict) else None
+
+    def _setting_bool(self, key: str) -> bool:
+        settings = self._settings_store()
+        return bool(settings.get(key, False)) if settings is not None else False
+
+    def _save_bool_setting(self, key: str, value: bool):
+        settings = self._settings_store()
+        if settings is not None:
+            settings[key] = bool(value)
+            save_settings(settings)
+
+    def _on_texture_quality_changed(self, quality: str):
+        self._materials.set_texture_quality(quality)
+
+    def _on_vertex_colors_toggled(self, checked: bool):
+        self._save_bool_setting(self.VERTEX_COLORS_SETTINGS_KEY, checked)
+        if self.gl_widget:
+            self.gl_widget.set_vertex_colors_enabled(checked)
+
+    def _reload_materials(self):
+        self._material_session.reload()
+
+    def _on_material_reset(self):
+        resolved_mdf = self._material_session.resolved_mdf
+        if resolved_mdf:
+            self.mdf_label.setText(
+                self.tr("MDF: {path}").format(path=resolved_mdf.path)
+            )
         else:
-            glDisable(GL_LIGHTING)
-            glDisable(GL_LIGHT0)
+            self.mdf_label.setText(self.tr("MDF: not found"))
+        self._material_table_populated = False
+        if self._material_panel_visible:
+            self._populate_material_table()
 
-        if self.wireframe_mode == "polygon":
-            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-            glLineWidth(self.line_width)
-        else:
-            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            glLineWidth(1.0)
-
-    def paintGL(self):
-        glDisable(GL_BLEND)
-        self._apply_render_state()
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        glLoadIdentity()
-        glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
-        glTranslatef(0.0, 0.0, -self.distance)
-        glRotatef(self.rot_x, 1.0, 0.0, 0.0)
-        glRotatef(self.rot_y, 0.0, 1.0, 0.0)
-        glScalef(self.scale, self.scale, self.scale)
-        glTranslatef(-self.center[0], -self.center[1], -self.center[2])
-        glColor4f(1.0, 1.0, 1.0, 1.0)
-
-        if self.vbo_vertices is not None:
-            self.vbo_vertices.bind()
-            glEnableClientState(GL_VERTEX_ARRAY)
-            glVertexPointer(3, GL_FLOAT, 0, None)
-
-            glDisableClientState(GL_NORMAL_ARRAY)
-            glDisableClientState(GL_COLOR_ARRAY)
-
-            bound_normals = False
-            used_color_array = False
-            if self.lighting_mode == "fixed":
-                self._ensure_normals_vbo_for_lighting()
-                if self.vbo_normals is not None:
-                    self.vbo_normals.bind()
-                    glEnableClientState(GL_NORMAL_ARRAY)
-                    glNormalPointer(GL_FLOAT, 0, None)
-                    bound_normals = True
-            else:
-                if self._colors_dirty or self.vbo_colors is None:
-                    self._ensure_color_vbo_for_current_mode()
-                if self.vbo_colors is not None:
-                    self.vbo_colors.bind()
-                    glEnableClientState(GL_COLOR_ARRAY)
-                    glColorPointer(4, GL_FLOAT, 0, None)
-                    used_color_array = True
-
-            self.vbo_indices.bind()
-            glDrawElements(GL_TRIANGLES, len(self.indices), GL_UNSIGNED_INT, None)
-            self.vbo_indices.unbind()
-
-            if self.vbo_indices_lines is not None and self.wireframe_mode in ("lines_depth", "lines_overlay"):
-                if used_color_array:
-                    glDisableClientState(GL_COLOR_ARRAY)
-                    self.vbo_colors.unbind()
-                    used_color_array = False
-                if bound_normals:
-                    glDisableClientState(GL_NORMAL_ARRAY)
-                    self.vbo_normals.unbind()
-                    bound_normals = False
-                was_lighting = (self.lighting_mode == "fixed")
-                if was_lighting:
-                    glDisable(GL_LIGHTING)
-                glDisable(GL_CULL_FACE)
-                glLineWidth(self.line_width)
-                glColor4f(0.2, 1.0, 0.2, 1.0)
-                if self.wireframe_mode == "lines_overlay":
-                    glDisable(GL_DEPTH_TEST)
-                    glDepthMask(False)
-                self.vbo_indices_lines.bind()
-                glDrawElements(GL_LINES, len(self.indices_lines), GL_UNSIGNED_INT, None)
-                self.vbo_indices_lines.unbind()
-                if self.wireframe_mode == "lines_overlay":
-                    glDepthMask(True)
-                    glEnable(GL_DEPTH_TEST)
-                glEnable(GL_CULL_FACE)
-                if was_lighting:
-                    glEnable(GL_LIGHTING)
-
-            if used_color_array:
-                glDisableClientState(GL_COLOR_ARRAY)
-                self.vbo_colors.unbind()
-            if bound_normals:
-                glDisableClientState(GL_NORMAL_ARRAY)
-                self.vbo_normals.unbind()
-            glDisableClientState(GL_VERTEX_ARRAY)
-            self.vbo_vertices.unbind()
-
-        now = time.time()
-        self._frame_count += 1
-        elapsed = now - self._last_time
-        if elapsed >= 1.0:
-            self.fps = self._frame_count / elapsed
-            self._frame_count = 0
-            self._last_time = now
-            self.fps_label.setText(f"{self.fps:.1f} FPS")
-
-    def mousePressEvent(self, event):
-        self.last_pos = event.position()
-
-    def mouseMoveEvent(self, event):
-        if self.last_pos is None:
+    def _on_material_status_changed(self):
+        if not self._material_table_populated:
             return
-        dx = event.position().x() - self.last_pos.x()
-        dy = event.position().y() - self.last_pos.y()
-        if event.buttons() & Qt.LeftButton:
-            self.rot_x += dy * 0.5
-            self.rot_y += dx * 0.5
-            if self._fps_limit == 0:
-                self.update()
-        self.last_pos = event.position()
+        for row, binding in enumerate(self._material_session.bindings):
+            if row >= self.material_table.rowCount():
+                break
+            for column, value in (
+                (3, binding.resolved_texture_path or binding.texture_path),
+                (4, binding.status),
+            ):
+                item = self.material_table.item(row, column)
+                if item is not None:
+                    item.setText(value)
+                    item.setToolTip(value)
 
-    def wheelEvent(self, event):
-        delta = event.angleDelta().y() / 120.0
-        self.distance *= 0.9 ** delta
-        if self._fps_limit == 0:
+    def _toggle_material_panel(self):
+        self._material_panel_visible = not self._material_panel_visible
+        if self._material_panel_visible:
+            self.material_panel.show()
+            self.panel_toggle_btn.setText(self.tr("Hide texture panel"))
+            if not self._material_table_populated:
+                self._populate_material_table()
+        else:
+            self.material_panel.hide()
+            self.panel_toggle_btn.setText(self.tr("Show texture panel"))
+
+    def _populate_material_table(self):
+        table = self.material_table
+        bindings = self._material_session.bindings
+        table.setRowCount(len(bindings))
+        for row, binding in enumerate(bindings):
+            values = [
+                binding.mesh_material_name,
+                binding.mdf_material_name,
+                binding.texture_type,
+                binding.texture_path or binding.resolved_texture_path,
+                binding.status,
+            ]
+            for col, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setToolTip(value)
+                table.setItem(row, col, item)
+        if table.rowCount():
+            table.selectRow(0)
+        else:
+            self.texture_preview.setText(self.tr("No material mappings found."))
+        self._material_table_populated = True
+
+    def _update_texture_preview(self):
+        row = self.material_table.currentRow()
+        bindings = self._material_session.bindings
+        if row < 0 or row >= len(bindings):
+            self.texture_preview.setPixmap(QPixmap())
+            self.texture_preview.setText(
+                self.tr("Select a material to preview its texture.")
+            )
+            return
+
+        binding = bindings[row]
+        if not binding.resolved_texture_path and not binding.texture_path:
+            self.texture_preview.setPixmap(QPixmap())
+            self.texture_preview.setText(binding.status)
+            return
+
+        image = self._material_session.preview_image(binding)
+        if not image or image.isNull():
+            self.texture_preview.setPixmap(QPixmap())
+            self.texture_preview.setText(f"{binding.status}\n{binding.resolved_texture_path}")
+            return
+
+        scaled = QPixmap.fromImage(image).scaled(
+            320,
+            320,
+            Qt.KeepAspectRatio,
+            Qt.SmoothTransformation,
+        )
+        self.texture_preview.setText("")
+        self.texture_preview.setPixmap(scaled)
+        self.texture_preview.setToolTip(binding.resolved_texture_path)
+
+class _MeshGLWidget(ScenePreviewWidget):
+    def __init__(self, mesh, settings: dict | None = None, *, use_vertex_colors: bool = False):
+        self.mesh = mesh
+        self._bone_label_texture_id = None
+        self._bone_label_centers_vbo = None
+        self._bone_label_offsets_vbo = None
+        self._bone_label_texcoords_vbo = None
+        self._bone_label_shader = None
+        self._bone_label_offset_attr = -1
+        self._bone_label_viewport_uniform = -1
+        self._bone_label_texture_uniform = -1
+        super().__init__(
+            controls="mesh",
+            settings=settings,
+            initial_rotation=(0.0, 0.0),
+            initial_distance=3.0,
+            background=(0.1, 0.1, 0.1, 1.0),
+        )
+        self.set_vertex_colors_enabled(use_vertex_colors, refresh=False)
+        self.set_scene(build_mesh_scene(mesh, key="mesh"))
+        self._bone_labels, self._bone_points = self._build_bone_label_points()
+        self._bone_label_atlas, bone_label_rects = self._build_bone_label_atlas()
+        (
+            self._bone_label_centers,
+            self._bone_label_offsets,
+            self._bone_label_texcoords,
+        ) = self._build_bone_label_quad_arrays(bone_label_rects)
+        self._bone_label_vertex_count = len(self._bone_label_centers)
+
+    def set_vertex_colors_enabled(self, enabled: bool, *, refresh: bool = True):
+        color_source = "vertex" if enabled else ""
+        if self.color_source == color_source:
+            return
+        self.color_source = color_source
+        self._colors_dirty = True
+        if refresh:
             self.update()
 
-    def _change_fps_limit(self, value: int):
-        self._fps_limit = value
-        interval = 0 if value == 0 else int(1000 / value)
-        self._timer.setInterval(interval)
+    def _build_bone_label_points(self) -> tuple[list[str], np.ndarray]:
+        joint_count = int(getattr(self.mesh, "joint_count", 0) or 0)
+        if joint_count <= 0:
+            return [], np.zeros((0, 3), dtype=np.float32)
+        matrices = list(getattr(self.mesh, "world_matrices", None) or getattr(self.mesh, "local_matrices", None) or [])
+        if not matrices:
+            return [], np.zeros((0, 3), dtype=np.float32)
+        names = list(getattr(self.mesh, "names", []) or [])
+        bone_indices = list(getattr(self.mesh, "bone_indices", []) or [])
 
-    def _set_wireframe_mode(self, mode: str):
-        self.wireframe_mode = mode
-        self.makeCurrent()
-        self._apply_render_state()
-        self.doneCurrent()
-        self.update()
+        labels: list[str] = []
+        points = np.zeros((joint_count, 3), dtype=np.float32)
+        for i in range(joint_count):
+            matrix = matrices[i]
+            points[i] = (matrix[12], matrix[13], matrix[14])
+            if i < len(bone_indices) and 0 <= bone_indices[i] < len(names):
+                labels.append(names[bone_indices[i]])
+            else:
+                labels.append(f"bone_{i}")
+        return labels, points
 
-    def _set_lighting_mode(self, mode: str):
-        self.lighting_mode = mode
-        self._colors_dirty = True
-        self.makeCurrent()
-        self._apply_render_state()
-        self.doneCurrent()
-        self.update()
+    def _build_bone_label_atlas(self) -> tuple[QImage | None, list[tuple[int, int, int, int]]]:
+        if not self._bone_labels:
+            return None, []
+        metrics = QFontMetrics(self.font())
+        max_width = 2048
+        label_sizes = [
+            (max(1, metrics.horizontalAdvance(label) + 2), max(1, metrics.height() + 2))
+            for label in self._bone_labels
+        ]
+        atlas_width = min(max_width, max(width for width, _ in label_sizes))
+        atlas_width = max(atlas_width, min(max_width, 512))
+        x = y = row_height = 0
+        rects: list[tuple[int, int, int, int]] = []
+        for width, height in label_sizes:
+            if x and x + width > atlas_width:
+                x = 0
+                y += row_height
+                row_height = 0
+            rects.append((x, y, width, height))
+            x += width
+            row_height = max(row_height, height)
 
-    def _set_line_width(self, value: float):
-        self.line_width = float(value)
-        self.update()
+        atlas = QImage(atlas_width, max(1, y + row_height), QImage.Format.Format_RGBA8888)
+        atlas.fill(Qt.transparent)
+        painter = QPainter(atlas)
+        painter.setRenderHint(QPainter.TextAntialiasing, True)
+        painter.setPen(Qt.yellow)
+        for label, (x, y, _width, _height) in zip(self._bone_labels, rects):
+            painter.drawText(x + 1, y + metrics.ascent() + 1, label)
+        painter.end()
+        return atlas, rects
 
-    def _set_ambient(self, value: float):
-        self.ambient = float(value)
-        self._colors_dirty = True
-        self.update()
+    def _build_bone_label_quad_arrays(
+        self,
+        rects: list[tuple[int, int, int, int]],
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        if self._bone_label_atlas is None or not rects:
+            empty2 = np.zeros((0, 2), dtype=np.float32)
+            return np.zeros((0, 3), dtype=np.float32), empty2, empty2
 
-    def _set_diffuse(self, value: float):
-        self.diffuse = float(value)
-        self._colors_dirty = True
-        self.update()
+        atlas_w = max(1, self._bone_label_atlas.width())
+        atlas_h = max(1, self._bone_label_atlas.height())
+        centers = np.repeat(self._bone_points[:len(rects)], 4, axis=0).astype(np.float32, copy=False)
+        offsets = np.empty((len(rects) * 4, 2), dtype=np.float32)
+        texcoords = np.empty_like(offsets)
+        for i, (rx, ry, rw, rh) in enumerate(rects):
+            base = i * 4
+            offsets[base:base + 4] = (
+                (4.0, -rh - 4.0),
+                (rw + 4.0, -rh - 4.0),
+                (rw + 4.0, -4.0),
+                (4.0, -4.0),
+            )
+            u0, v0 = rx / atlas_w, ry / atlas_h
+            u1, v1 = (rx + rw) / atlas_w, (ry + rh) / atlas_h
+            texcoords[base:base + 4] = ((u0, v0), (u1, v0), (u1, v1), (u0, v1))
+        return centers, offsets, texcoords
+
+    def _after_gl_initialized(self):
+        try:
+            self._sync_bone_label_gl_resources()
+        except Exception as exc:
+            print(f"Bone label GL setup failed: {exc}")
+
+    def _after_scene_draw(self):
+        self._draw_bone_labels_gl()
+
+    def _cleanup_extra_gl(self):
+        if self._bone_label_texture_id is not None:
+            with suppress(Exception):
+                glDeleteTextures([self._bone_label_texture_id])
+            self._bone_label_texture_id = None
+        for name in ("_bone_label_centers_vbo", "_bone_label_offsets_vbo", "_bone_label_texcoords_vbo"):
+            self._dispose_vbo(getattr(self, name))
+            setattr(self, name, None)
+        if self._bone_label_shader is not None:
+            with suppress(Exception):
+                glDeleteProgram(self._bone_label_shader)
+            self._bone_label_shader = None
+
+    def _sync_bone_label_gl_resources(self):
+        if self._bone_label_texture_id is None and self._bone_label_atlas is not None:
+            self._bone_label_texture_id = glGenTextures(1)
+            self._upload_qimage_texture(self._bone_label_texture_id, self._bone_label_atlas)
+        if self._bone_label_shader is None and self._bone_label_vertex_count > 0:
+            self._bone_label_shader = compileProgram(
+                compileShader(BONE_LABEL_VERTEX_SHADER, GL_VERTEX_SHADER),
+                compileShader(BONE_LABEL_FRAGMENT_SHADER, GL_FRAGMENT_SHADER),
+            )
+            self._bone_label_offset_attr = glGetAttribLocation(self._bone_label_shader, "labelOffset")
+            self._bone_label_viewport_uniform = glGetUniformLocation(self._bone_label_shader, "viewport")
+            self._bone_label_texture_uniform = glGetUniformLocation(self._bone_label_shader, "labelTexture")
+        if self._bone_label_centers_vbo is None and self._bone_label_vertex_count > 0:
+            self._bone_label_centers_vbo = self._array_vbo(self._bone_label_centers)
+            self._bone_label_offsets_vbo = self._array_vbo(self._bone_label_offsets)
+            self._bone_label_texcoords_vbo = self._array_vbo(self._bone_label_texcoords)
+
+    def _draw_bone_labels_gl(self):
+        if (
+            not self.show_bone_labels
+            or self._bone_label_texture_id is None
+            or self._bone_label_shader is None
+            or self._bone_label_offset_attr < 0
+            or self._bone_label_vertex_count <= 0
+            or self._bone_label_centers_vbo is None
+            or self._bone_label_offsets_vbo is None
+            or self._bone_label_texcoords_vbo is None
+        ):
+            return
+        w = max(1, self.width())
+        h = max(1, self.height())
+
+        glDisable(GL_DEPTH_TEST)
+        glDisable(GL_LIGHTING)
+        glDisable(GL_CULL_FACE)
+        glEnable(GL_BLEND)
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
+        glEnable(GL_TEXTURE_2D)
+        glBindTexture(GL_TEXTURE_2D, self._bone_label_texture_id)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
+        glColor4f(1.0, 1.0, 1.0, 1.0)
+        glUseProgram(self._bone_label_shader)
+        glUniform2f(self._bone_label_viewport_uniform, float(w), float(h))
+        glUniform1i(self._bone_label_texture_uniform, 0)
+
+        glEnableClientState(GL_VERTEX_ARRAY)
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY)
+        glEnableVertexAttribArray(self._bone_label_offset_attr)
+        self._bone_label_centers_vbo.bind()
+        glVertexPointer(3, GL_FLOAT, 0, None)
+        self._bone_label_texcoords_vbo.bind()
+        glTexCoordPointer(2, GL_FLOAT, 0, None)
+        self._bone_label_offsets_vbo.bind()
+        glVertexAttribPointer(self._bone_label_offset_attr, 2, GL_FLOAT, False, 0, None)
+        glDrawArrays(GL_QUADS, 0, self._bone_label_vertex_count)
+        self._bone_label_offsets_vbo.unbind()
+        self._bone_label_texcoords_vbo.unbind()
+        self._bone_label_centers_vbo.unbind()
+        glDisableVertexAttribArray(self._bone_label_offset_attr)
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
+        glDisableClientState(GL_VERTEX_ARRAY)
+
+        glUseProgram(0)
+        glBindTexture(GL_TEXTURE_2D, 0)
+        glDisable(GL_TEXTURE_2D)
+        glDisable(GL_BLEND)
+        glEnable(GL_DEPTH_TEST)
+        glEnable(GL_CULL_FACE)
+        if self.lighting_mode == "fixed":
+            glEnable(GL_LIGHTING)
+
+
+class MeshThumbnailRenderer(QObject):
+    """Queue hidden framebuffer captures through the regular mesh renderer."""
+
+    rendered = Signal(object, QImage)
+
+    def __init__(
+        self, settings: dict | None = None, size: int = 160,
+        widget_parent=None, parent=None,
+    ):
+        super().__init__(parent)
+        self._settings = settings if isinstance(settings, dict) else {}
+        self._size = size
+        self._widget_parent = widget_parent
+        self._queue = deque()
+        self._widget: ScenePreviewWidget | None = None
+        self._token = None
+
+    def enqueue(self, token, mesh, profiles, images):
+        self._queue.append((token, mesh, profiles, images))
+        if self._token is None:
+            QTimer.singleShot(0, self._start_next)
+
+    def cancel(self):
+        self._queue.clear()
+        self._token = None
+        if self._widget is not None:
+            self._widget.hide()
+
+    def close(self):
+        self.cancel()
+        if self._widget is not None:
+            self._widget.close()
+            self._widget.deleteLater()
+            self._widget = None
+
+    def _start_next(self):
+        if self._token is not None or not self._queue:
+            return
+        self._token, mesh, profiles, images = self._queue.popleft()
+        widget = self._ensure_widget()
+        widget.show()
+        scene = build_mesh_scene(mesh)
+        widget.set_scene(scene)
+        points = mesh_bounds_points(scene)
+        if len(points):
+            mins, maxs = points.min(axis=0), points.max(axis=0)
+            widget.center = (mins + maxs) * .5
+            widget.scale = 1.0 / max(float(np.max(maxs - mins)), 1e-6)
+            widget.distance = 1.55
+        widget.rot_y = -25.0
+        widget.set_material_profiles(profiles)
+        widget.set_material_images(images)
+        QTimer.singleShot(0, self._capture)
+
+    def _ensure_widget(self):
+        if self._widget is not None:
+            return self._widget
+        widget = ScenePreviewWidget(
+            self._widget_parent,
+            controls="mesh",
+            settings=self._settings,
+            initial_rotation=(0.0, 0.0),
+            initial_distance=3.0,
+            background=(0.1, 0.1, 0.1, 1.0),
+        )
+        widget.color_source = (
+            "vertex" if self._settings.get("mesh_viewer_use_vertex_colors", False) else ""
+        )
+        if self._widget_parent is None:
+            widget.setWindowFlags(Qt.Tool | Qt.FramelessWindowHint)
+            widget.setAttribute(Qt.WA_ShowWithoutActivating, True)
+        widget.setAttribute(Qt.WA_DontShowOnScreen, True)
+        widget.resize(self._size, self._size)
+        widget.show_bone_labels = False
+        widget.show()
+        self._widget = widget
+        return widget
+
+    def _capture(self):
+        widget, token = self._widget, self._token
+        if widget is None or token is None:
+            return
+        image = widget.grabFramebuffer()
+        widget.hide()
+        self._token = None
+        self.rendered.emit(token, image.copy() if not image.isNull() else QImage())
+        QTimer.singleShot(0, self._start_next)

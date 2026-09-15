@@ -91,8 +91,10 @@ class MsgHandler(BaseFileHandler):
         self.raw_data = bytearray(self.raw_data)
         struct.pack_into("<I", self.raw_data, 16, len(self.entries))
         struct.pack_into("<I", self.raw_data, 20, len(self.userParamTypes))
+        struct.pack_into("<I", self.raw_data, 24, len(self.useLanguages))
         self.header["messageCount"] = len(self.entries)
         self.header["userParamCount"] = len(self.userParamTypes)
+        self.header["languageDataCount"] = len(self.useLanguages)
         
         if self._by_hash(self.header["version"]):
             for entry in self.entries:
@@ -324,28 +326,20 @@ class MsgHandler(BaseFileHandler):
             return False
             
         if ftype == "uuid":
-            try:
-                uuid.UUID(new)
-                return True
-            except ValueError:
-                return False
+            return self._is_convertible(new, uuid.UUID)
         if ftype == "name":
             return bool(new)
         if ftype == "SoundID":
-            try:
-                int(new)
-                return True
-            except ValueError:
-                return False
+            return self._is_convertible(new, int)
         if ftype == "attribute":
             aidx = meta.get("attr_index", -1)
             if not (0 <= aidx < len(self.userParamTypes)):
                 return False
             atype = self.userParamTypes[aidx]
-            try:
-                return atype == 0 and int(new) or atype == 1 and float(new) or True
-            except ValueError:
-                return False
+            return self._is_convertible(
+                new,
+                lambda value: self._convert_attribute_value(atype, value),
+            )
         return True
 
     def handle_edit(self, meta: Dict[str, Any], new: str, _old: str, *_):
@@ -355,13 +349,7 @@ class MsgHandler(BaseFileHandler):
         if ftype == "uuid":
             entry["uuid"] = new.lower()
         elif ftype == "name":
-            entry["name"] = new
-            if self._by_hash(self.header["version"]):
-                if new:
-                    name_bytes = new.encode("utf-16le")
-                    entry["nameHash"] = murmur3_hash(name_bytes)
-                else:
-                    entry["nameHash"] = 0
+            self._set_entry_name(entry, new)
         elif ftype == "SoundID":
             entry["SoundID"] = int(new) if new else 0
         elif ftype == "content":
@@ -369,16 +357,29 @@ class MsgHandler(BaseFileHandler):
         elif ftype == "attribute":
             aidx = meta["attr_index"]
             atype = self.userParamTypes[aidx]
-            if atype == 0:
-                entry["attributes"][aidx] = int(new)
-            elif atype == 1:
-                entry["attributes"][aidx] = float(new)
-            else:
-                entry["attributes"][aidx] = new
+            entry["attributes"][aidx] = self._convert_attribute_value(atype, new)
         elif ftype == "attribute_name":
             aidx = meta.get("attr_index")
             if aidx is not None and 0 <= aidx < len(self.userParamNames):
                 self.userParamNames[aidx] = new
+
+    @staticmethod
+    def _is_convertible(value, converter) -> bool:
+        try:
+            converter(value)
+            return True
+        except ValueError:
+            return False
+
+    @staticmethod
+    def _convert_attribute_value(param_type: int, value):
+        converter = {0: int, 1: float}.get(param_type)
+        return converter(value) if converter else value
+
+    def _set_entry_name(self, entry: Dict[str, Any], name: str):
+        entry["name"] = name
+        if self._by_hash(self.header["version"]):
+            entry["nameHash"] = murmur3_hash(name.encode("utf-16le")) if name else 0
 
     def _parse_header(self) -> Dict[str, Any]:
         r = self.raw_data
@@ -419,17 +420,41 @@ class MsgHandler(BaseFileHandler):
     def _by_hash(version: int) -> bool:
         return version > 15 and version != 0x2022033D
 
+    @classmethod
+    def decrypt_for_search(cls, data: bytes | bytearray) -> bytes | bytearray:
+        if not cls.can_handle(data) or len(data) < 40:
+            return data
+
+        try:
+            version = struct.unpack_from("<I", data, 0)[0]
+            if not cls._is_encrypted(version):
+                return data
+
+            data_offset = struct.unpack_from("<Q", data, 32)[0]
+        except (struct.error, TypeError, ValueError):
+            return data
+
+        if data_offset < 40 or data_offset >= len(data):
+            return data
+
+        raw = bytes(data)
+        decrypted_pool = cls._decrypt_pool(raw[data_offset:])
+        return raw[:data_offset] + decrypted_pool
+
+    @classmethod
+    def _decrypt_pool(cls, encrypted: bytes | bytearray) -> bytes:
+        decrypted = bytearray(len(encrypted))
+        previous_cipher_byte = 0
+        for index, cipher_byte in enumerate(encrypted):
+            decrypted[index] = cipher_byte ^ previous_cipher_byte ^ cls._KEY[index & 0xF]
+            previous_cipher_byte = cipher_byte
+        return bytes(decrypted)
+
     def _decrypt_string_pool(self):
         if not self.is_encrypted or self.header["data_offset"] is None:
             return
         off = self.header["data_offset"]
-        enc = self.raw_data[off:]
-        dec = bytearray(len(enc))
-        prev = 0
-        for i, c in enumerate(enc):
-            dec[i] = c ^ prev ^ self._KEY[i & 0xF]
-            prev = c
-        self._pool = bytes(dec)
+        self._pool = self._decrypt_pool(self.raw_data[off:])
 
     def _encrypt(self) -> bytes:
         if not self.is_encrypted or self.header["data_offset"] is None:
@@ -533,6 +558,112 @@ class MsgHandler(BaseFileHandler):
             
         self.entries.append(new)
 
+    def to_json_dict(self) -> Dict[str, Any]:
+        return {
+            "version": self.header.get("version"),
+            "languages": [{"code": code, "name": self.get_language_name(code)} for code in self.useLanguages],
+            "user_params": [
+                {"name": name, "type": param_type}
+                for name, param_type in zip(self.userParamNames, self.userParamTypes)
+            ],
+            "entries": [
+                {
+                    "uuid": entry.get("uuid", ""),
+                    "name": entry.get("name", ""),
+                    "SoundID": entry.get("SoundID", 0),
+                    "content": list(entry.get("content", [])),
+                    "attributes": list(entry.get("attributes", [])),
+                }
+                for entry in self.entries
+            ],
+        }
+
+    def export_json(self, path: str) -> None:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(self.to_json_dict(), f, ensure_ascii=False, indent=2)
+
+    def import_json(self, path: str) -> None:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        self.load_json_dict(data)
+
+    def load_json_dict(self, data: Dict[str, Any]) -> None:
+        languages = data.get("languages")
+        if languages is not None:
+            self.useLanguages = [lang["code"] if isinstance(lang, dict) else lang for lang in languages]
+
+        user_params = data.get("user_params")
+        if user_params is not None:
+            self.userParamNames = [param.get("name", "") for param in user_params]
+            self.userParamTypes = [param.get("type", 2) for param in user_params]
+
+        entries = data.get("entries", [])
+        normalized_entries: List[Dict[str, Any]] = []
+        for idx, entry in enumerate(entries):
+            entry_name = entry.get("name", "")
+            content = entry.get("content", [])
+            attrs = entry.get("attributes", [])
+            normalized_content = self._normalize_content(content)
+            normalized_attrs = self._normalize_attributes(attrs)
+
+            new_entry = {
+                "uuid": entry.get("uuid", str(uuid.uuid4())).lower(),
+                "SoundID": int(entry.get("SoundID", 0)) if entry.get("SoundID", 0) else 0,
+                "name": entry_name,
+                "content": normalized_content,
+                "attributes": normalized_attrs,
+            }
+
+            if self._by_hash(self.header["version"]):
+                if entry_name:
+                    name_bytes = entry_name.encode("utf-16le")
+                    new_entry["nameHash"] = murmur3_hash(name_bytes)
+                else:
+                    new_entry["nameHash"] = 0
+            else:
+                new_entry["index"] = idx
+
+            normalized_entries.append(new_entry)
+
+        self.entries = normalized_entries
+        self.header["messageCount"] = len(self.entries)
+        self.header["userParamCount"] = len(self.userParamTypes)
+        self.header["languageDataCount"] = len(self.useLanguages)
+
+    def _normalize_content(self, content: List[Any]) -> List[str]:
+        normalized = [str(item) if item is not None else "" for item in content]
+        target_len = len(self.useLanguages)
+        if len(normalized) < target_len:
+            normalized.extend([""] * (target_len - len(normalized)))
+        return normalized[:target_len]
+
+    def _normalize_attributes(self, attrs: List[Any]) -> List[Any]:
+        normalized = [
+            self._normalize_attribute_value(atype, value)
+            for atype, value in zip(self.userParamTypes, attrs)
+        ]
+        normalized.extend(
+            self._default_attribute_value(atype)
+            for atype in self.userParamTypes[len(normalized):]
+        )
+        return normalized
+
+    @classmethod
+    def _normalize_attribute_value(cls, param_type: int, value):
+        if param_type in (-1, 2):
+            return "" if value is None else str(value)
+        if param_type in (0, 1):
+            return (
+                cls._convert_attribute_value(param_type, value)
+                if value not in (None, "")
+                else cls._default_attribute_value(param_type)
+            )
+        return None
+
+    @staticmethod
+    def _default_attribute_value(param_type: int):
+        return {-1: "", 2: "", 0: 0, 1: 0.0}.get(param_type)
+
     def remove_entry(self, idx: int):
         if 0 <= idx < len(self.entries):
             self.entries.pop(idx)
@@ -550,7 +681,12 @@ class MsgHandler(BaseFileHandler):
         self.userParamNames.append(name)
         self.userParamTypes.append(param_type)
         
-        default_value = "" if param_type in (-1, 2) else (0 if param_type == 0 else 0.0)
+        if param_type in (-1, 2):
+            default_value = ""
+        elif param_type == 0:
+            default_value = 0
+        else:
+            default_value = 0.0
         for entry in self.entries:
             entry["attributes"].append(default_value)
     

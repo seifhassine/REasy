@@ -3,17 +3,19 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QLabel, QRadioButton, QDialo
 
 class SelectSourceDialog(QDialog):
     def __init__(self, parent, game_name: str,
-                 unpacked_checked: bool = True,
-                 paks_checked: bool = False):
+                 unpacked_checked: bool = False,
+                 paks_checked: bool = True):
         super().__init__(parent)
-        self.setWindowTitle("Project Source")
-        self._rb_unpacked = QRadioButton("Unpacked game directory (natives/*)")
-        self._rb_paks     = QRadioButton("Game directory containing .pak files")
+        self.setWindowTitle(self.tr("Project Source"))
+        self._rb_unpacked = QRadioButton(self.tr("Unpacked game directory (natives/*)"))
+        self._rb_paks     = QRadioButton(self.tr("Game directory containing .pak files"))
         self._rb_unpacked.setChecked(bool(unpacked_checked))
         self._rb_paks.setChecked(bool(paks_checked))
 
         lay = QVBoxLayout(self)
-        lay.addWidget(QLabel(f"Choose project source for {game_name}:"))
+        lay.addWidget(QLabel(
+            self.tr("Choose project source for {game}:").format(game=game_name)
+        ))
         lay.addWidget(self._rb_unpacked)
         lay.addWidget(self._rb_paks)
 
@@ -27,7 +29,7 @@ class SelectSourceDialog(QDialog):
 
     @staticmethod
     def prompt(parent, game_name: str,
-               unpacked_checked: bool = True,
-               paks_checked: bool = False) -> bool | None:
+               unpacked_checked: bool = False,
+               paks_checked: bool = True) -> bool | None:
         dlg = SelectSourceDialog(parent, game_name, unpacked_checked, paks_checked)
         return dlg.choose_paks() if dlg.exec() == QDialog.Accepted else None

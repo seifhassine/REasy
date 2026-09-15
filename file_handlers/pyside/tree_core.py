@@ -3,8 +3,9 @@ Consolidated tree infrastructure that handles both eager and lazy-loading approa
 """
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel
-from PySide6.QtWidgets import QAbstractItemView, QStyledItemDelegate
-from typing import Callable, Optional, Any
+from typing import Callable, Any
+from utils.number_format import format_display_value
+
 class DeferredChildBuilder:
     __slots__ = ('builder_func', 'context', '_built', '_children')
     
@@ -19,9 +20,6 @@ class DeferredChildBuilder:
             self._children = self.builder_func(self.context) if self.context else self.builder_func()
             self._built = True
         return self._children or []
-    
-    def is_built(self) -> bool:
-        return self._built
     
     def reset(self):
         self._built = False
@@ -143,10 +141,10 @@ class TreeModel(QAbstractItemModel):
         item = index.internalPointer()
         if role == Qt.DisplayRole:
             txt = item.data[0] if isinstance(item.data, (list, tuple)) else item.data
-            return str(txt)
+            return format_display_value(txt)
         if role == Qt.UserRole:
             val = item.data[1] if isinstance(item.data, (list, tuple)) and len(item.data) > 1 else ""
-            return str(val)
+            return format_display_value(val)
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -238,30 +236,3 @@ class TreeModel(QAbstractItemModel):
         self.endRemoveRows()
         return True
 
-class TreeStyleDelegate(QStyledItemDelegate):
-    """Style delegate for tree items"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.default_row_height = 24 
-        
-    def sizeHint(self, option, index):
-        """Ensure consistent row height for all items"""
-        size = super().sizeHint(option, index)
-        
-        # Get the tree view if available
-        tree_view = self.parent()
-        if tree_view and hasattr(tree_view, 'default_row_height'):
-            self.default_row_height = tree_view.default_row_height
-            
-        size.setHeight(self.default_row_height)
-        return size
-
-
-class AdvancedTreeDelegate(QAbstractItemView):
-    """Base delegate for more advanced tree rendering"""
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self._model = None
-
-    def sizeHintForRow(self, row):
-        return 24

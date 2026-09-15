@@ -4,6 +4,19 @@ from PySide6.QtCore import QObject, QUrl, QUrlQuery, Signal
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
 from PySide6.QtWidgets import QMessageBox
 
+
+def _translated_text(response_data: str) -> str:
+    json_data = json.loads(response_data)
+    if not isinstance(json_data, list) or not json_data:
+        return ""
+    segments = json_data[0] if isinstance(json_data[0], list) else []
+    return "".join(
+        segment[0]
+        for segment in segments
+        if isinstance(segment, list) and segment and isinstance(segment[0], str)
+    )
+
+
 class TranslationManager(QObject):
     """Utility class for translating text using Google Translate API"""
     
@@ -58,25 +71,8 @@ class TranslationManager(QObject):
         
         try:
             response_data = reply.readAll().data().decode('utf-8')
-            json_data = json.loads(response_data)
-            
-            # The response format is a nested array where each entry contains a translated segment.
-            translation = ""
-            if json_data and isinstance(json_data, list) and json_data:
-                segments = json_data[0] if isinstance(json_data[0], list) else []
-                translated_parts = []
-                for segment in segments:
-                    if isinstance(segment, list) and segment:
-                        part = segment[0]
-                        if isinstance(part, str):
-                            translated_parts.append(part)
-                if translated_parts:
-                    translation = "".join(translated_parts)
-
-            if translation:
-                self.translation_completed.emit(translation, self.current_context)
-            else:
-                self.translation_completed.emit("", self.current_context)
+            translation = _translated_text(response_data)
+            self.translation_completed.emit(translation, self.current_context)
 
         except Exception as e:
             print(f"Error processing translation: {str(e)}")
@@ -239,9 +235,6 @@ class TranslationBatcher(QObject):
                 marker = self._build_marker(0)
                 line = f"{marker} {text}" if text else marker
                 line_length = len(line)
-                if line_length > self.char_limit:
-                    overflow_skipped += 1
-                    continue
                 projected = line_length
 
             current_entries.append(entry)

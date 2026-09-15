@@ -241,9 +241,6 @@ class RszCommunityTemplateManager:
             return {"success": False, "message": f"Storage upload failed: {msg}"}
         return {"success": True, "meta": r.json()}
     
-    @classmethod
-    def _get_session_with_retry(cls):
-        return cls._session()
     
     @classmethod
     def get_api_base_url(cls) -> str:
@@ -285,7 +282,7 @@ class RszCommunityTemplateManager:
         "RE7", "RE7 RT", "RE8", "RE Resistance",
         "RE4", "Onimusha 2",
         "Street Fighter 6", "Devil May Cry 5",
-        "Monster Hunter Rise", "Monster Hunter Wilds",
+        "Monster Hunter Rise", "Monster Hunter Wilds", "Monster Hunter Stories 3", "Pragmata",
         "Dragon Dogma 2"}
         if game not in ALLOWED:
             return {"success": False, "message": "Unknown game id."}

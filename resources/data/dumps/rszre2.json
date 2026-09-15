@@ -650615,7 +650615,7 @@
 				"native": true,
 				"original_type": "via.motion.Motion.DrawTarget",
 				"size": 4,
-				"type": "Object"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -650624,7 +650624,7 @@
 				"native": true,
 				"original_type": "via.motion.Motion.DrawTarget",
 				"size": 4,
-				"type": "Object"
+				"type": "S32"
 			}
 		],
 		"name": "via.motion.Motion",

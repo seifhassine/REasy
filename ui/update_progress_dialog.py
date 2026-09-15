@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QProcess
+from PySide6.QtCore import QProcess
 from PySide6.QtGui import QTextCursor
 from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QProgressBar, QPushButton
 from PySide6.QtWidgets import QApplication
@@ -8,7 +8,7 @@ import os
 class UpdateProgressDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Updating REasy…")
+        self.setWindowTitle(self.tr("Updating REasy…"))
         self.resize(720, 420)
 
         self._process = QProcess(self)
@@ -29,10 +29,10 @@ class UpdateProgressDialog(QDialog):
         self._progress.setRange(0, 0)
         self._progress.setValue(0)
 
-        self._cancel_button = QPushButton("Cancel", self)
+        self._cancel_button = QPushButton(self.tr("Cancel"), self)
         self._cancel_button.clicked.connect(self._on_cancel)
 
-        self._close_button = QPushButton("Close", self)
+        self._close_button = QPushButton(self.tr("Close"), self)
         self._close_button.setEnabled(False)
         self._close_button.clicked.connect(self.accept)
 
@@ -71,27 +71,33 @@ class UpdateProgressDialog(QDialog):
         if len(text) and not text.endswith("\n"):
             text += "\n"
         for line in text.splitlines(True):
-            if line.startswith("PROGRESS "):
-                try:
-                    pct = int(line.split()[1])
-                    self._progress.setRange(0, 100)
-                    self._progress.setValue(max(0, min(100, pct)))
-                except Exception:
-                    pass
-            elif line.startswith("STAGED "):
-                self._staged_path = line.split(" ", 1)[1].strip()
-                if self._staged_path and self._script_path and self._target_dir:
-                    self._on_apply()
-                    return
-            elif line.startswith("TARGET "):
+            if self._handle_output_line(line):
+                return
+
+    def _handle_output_line(self, line: str) -> bool:
+        if line.startswith("PROGRESS "):
+            try:
+                pct = int(line.split()[1])
+                self._progress.setRange(0, 100)
+                self._progress.setValue(max(0, min(100, pct)))
+            except Exception:
                 pass
-            elif line.strip() == "READY":
-                pass
-            else:
-                if line.strip():
-                    self._log.moveCursor(QTextCursor.End)
-                    self._log.insertPlainText(line)
-                    self._log.moveCursor(QTextCursor.End)
+            return False
+
+        if line.startswith("STAGED "):
+            self._staged_path = line.split(" ", 1)[1].strip()
+            if self._staged_path and self._script_path and self._target_dir:
+                self._on_apply()
+                return True
+            return False
+
+        if line.startswith("TARGET ") or line.strip() == "READY":
+            return False
+        if line.strip():
+            self._log.moveCursor(QTextCursor.End)
+            self._log.insertPlainText(line)
+            self._log.moveCursor(QTextCursor.End)
+        return False
 
     def _on_finished(self, exit_code: int, exit_status):
         self._progress.setRange(0, 1)
@@ -99,9 +105,13 @@ class UpdateProgressDialog(QDialog):
         self._cancel_button.setEnabled(False)
         self._close_button.setEnabled(True)
         if exit_code == 0:
-            self._log.append("\nStaging completed.")
+            self._log.append("\n" + self.tr("Staging completed."))
         else:
-            self._log.append(f"\nUpdate failed with code {exit_code}. See log above for details.")
+            self._log.append(
+                "\n" + self.tr("Update failed with code {exit_code}. See log above for details.").format(
+                    exit_code=exit_code
+                )
+            )
 
     def _on_cancel(self):
         if self._process and self._process.state() == QProcess.Running:

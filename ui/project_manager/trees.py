@@ -1,10 +1,26 @@
 from __future__ import annotations
 import os
 from PySide6.QtCore   import Qt
-from PySide6.QtGui    import QDragEnterEvent
 from PySide6.QtWidgets import QTreeView, QAbstractItemView, QMessageBox
 
-class _DndTree(QTreeView):
+class _UrlDragTree(QTreeView):
+    """Accept URL drag events and defer all other events to Qt."""
+
+    @staticmethod
+    def _handle_url_drag(event, fallback):
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            fallback(event)
+
+    def dragEnterEvent(self, event):
+        self._handle_url_drag(event, super().dragEnterEvent)
+
+    def dragMoveEvent(self, event):
+        self._handle_url_drag(event, super().dragMoveEvent)
+
+
+class _DndTree(_UrlDragTree):
     """Readonly system‑files view – drag‑only."""
     def __init__(self):
         super().__init__()
@@ -12,21 +28,8 @@ class _DndTree(QTreeView):
         self.setAcceptDrops(False)
         self.setDragDropMode(QAbstractItemView.DragOnly)
 
-    def _accept(self, e: QDragEnterEvent):     
-        return e.mimeData().hasUrls()
 
-    def dragEnterEvent(self, e):
-        if self._accept(e):
-            e.acceptProposedAction()
-        else:
-            super().dragEnterEvent(e)
-    def dragMoveEvent(self, e):
-        if self._accept(e):
-            e.acceptProposedAction()
-        else:
-            super().dragMoveEvent(e)
-
-class _DropTree(QTreeView):
+class _DropTree(_UrlDragTree):
     """Project‑Files tree – accepts all URL drops, but only copies in‑folder items."""
     def __init__(self, mgr):
         super().__init__()
@@ -38,18 +41,6 @@ class _DropTree(QTreeView):
     def _inside_unpacked(self, path: str) -> bool:
         up = os.path.abspath(self.mgr.unpacked_dir or "")
         return up and os.path.abspath(path).startswith(up + os.sep)
-
-    def dragEnterEvent(self, e: QDragEnterEvent):
-        if e.mimeData().hasUrls():
-            e.acceptProposedAction()
-        else:
-            super().dragEnterEvent(e)
-
-    def dragMoveEvent(self, e: QDragEnterEvent):
-        if e.mimeData().hasUrls():
-            e.acceptProposedAction()
-        else:
-            super().dragMoveEvent(e)
 
     def dropEvent(self, e):
         if not e.mimeData().hasUrls():

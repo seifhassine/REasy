@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing   import Callable
+import threading
 
 from PySide6.QtCore    import Qt, Signal, QObject
 from PySide6.QtWidgets import (
@@ -22,12 +23,12 @@ class DownloadStatusDialog(QDialog):
         self.resize(360, 120)
 
         lay = QVBoxLayout(self)
-        self._lbl  = QLabel("Starting…", self)
+        self._lbl  = QLabel(self.tr("Starting…"), self)
         self._prog = QProgressBar(self)
         self._prog.setRange(0, 100)
         self._prog.setValue(0)
 
-        self._close_btn = QPushButton("Close", self, enabled=False)
+        self._close_btn = QPushButton(self.tr("Close"), self, enabled=False)
         self._close_btn.clicked.connect(self.accept)
 
         lay.addWidget(self._lbl)
@@ -46,14 +47,24 @@ class DownloadStatusDialog(QDialog):
 
     def _on_done(self):
         self._close_btn.setEnabled(True)
-        self._lbl.setText(self._lbl.text() + " – finished.")
+        self._lbl.setText(self._lbl.text() + self.tr(" – finished."))
 
 
 def run_with_progress(parent, title: str,
                       download_fn: Callable[[_Bridge], None]) -> None:
     dlg = DownloadStatusDialog(title, parent)
-    try:
-        download_fn(dlg.bridge)
-    finally:
-        dlg.bridge.done.emit()
+    err: list[Exception] = []
+
+    def _runner():
+        try:
+            download_fn(dlg.bridge)
+        except Exception as e:
+            err.append(e)
+        finally:
+            dlg.bridge.done.emit()
+
+    t = threading.Thread(target=_runner, daemon=True)
+    t.start()
     dlg.exec()
+    if err:
+        raise err[0]

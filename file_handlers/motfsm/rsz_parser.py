@@ -103,19 +103,19 @@ class RSZFieldValue:
             elif type_lower == "s32":
                 handler.write_int32(int(self.value))
             elif type_lower == "u16":
-                handler.write_uint16(int(self.value))
+                handler.write('<H', int(self.value))
             elif type_lower == "s16":
                 handler.write_int16(int(self.value))
             elif type_lower == "u8":
-                handler.write_uint8(int(self.value))
+                handler.write('<B', int(self.value))
             elif type_lower == "s8":
-                handler.write_int8(int(self.value))
+                handler.write('<b', int(self.value))
             elif type_lower == "f32":
                 handler.write_float(float(self.value))
             elif type_lower == "f64":
-                handler.write_double(float(self.value))
+                handler.write('<d', float(self.value))
             elif type_lower == "bool":
-                handler.write_bool(bool(self.value))
+                handler.write('<?', bool(self.value))
             # String is more complex, skip for now
         finally:
             # Restore position

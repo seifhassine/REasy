@@ -1,5 +1,4 @@
 from __future__ import annotations
-import json
 from pathlib import Path
 
 from PySide6.QtCore    import Qt
@@ -9,42 +8,32 @@ from PySide6.QtWidgets import (
     QPushButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox
 )
 
-class ProjectSettingsDialog(QDialog):
-    CONFIG_NAME = ".reasy_project.json"
+from .project_config import load_project_config, save_project_config
 
+
+class ProjectSettingsDialog(QDialog):
     def __init__(self, project_dir: Path, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("Fluffy Settings"))
         self.setModal(True)
         self.project_dir = project_dir
-        self.cfg_path    = project_dir / self.CONFIG_NAME
-
-        if self.cfg_path.exists():
-            try:
-                self.cfg = json.loads(self.cfg_path.read_text())
-            except Exception:
-                self.cfg = {}
-        else:
-            self.cfg = {}
+        self.cfg = load_project_config(project_dir)
 
         layout = QVBoxLayout(self)
         form = QFormLayout()
         layout.addLayout(form)
 
-        self.name_edit = QLineEdit(self.cfg.get("name", project_dir.name))
-        form.addRow(self.tr("Mod Name:"), self.name_edit)
-
-        self.desc_edit = QLineEdit(self.cfg.get("description", ""))
-        form.addRow(self.tr("Description:"), self.desc_edit)
-
-        self.auth_edit = QLineEdit(self.cfg.get("author", ""))
-        form.addRow(self.tr("Author:"), self.auth_edit)
-
-        self.ver_edit  = QLineEdit(self.cfg.get("version", "v1.0"))
-        form.addRow(self.tr("Version:"), self.ver_edit)
-
-        self.pak_edit = QLineEdit(self.cfg.get("pak_name", project_dir.name))
-        form.addRow(self.tr("PAK File Name:"), self.pak_edit)
+        fields = (
+            ("name_edit", self.tr("Mod Name:"), "name", project_dir.name),
+            ("desc_edit", self.tr("Description:"), "description", ""),
+            ("auth_edit", self.tr("Author:"), "author", ""),
+            ("ver_edit", self.tr("Version:"), "version", "v1.0"),
+            ("pak_edit", self.tr("PAK File Name:"), "pak_name", project_dir.name),
+        )
+        for attr, label, key, default in fields:
+            edit = QLineEdit(self.cfg.get(key, default))
+            setattr(self, attr, edit)
+            form.addRow(label, edit)
 
         self.bundle_chk = QCheckBox(self.tr("Build PAK instead of loose folders in Fluffy ZIP"))
         self.bundle_chk.setChecked(self.cfg.get("bundle_pak", False))
@@ -81,12 +70,25 @@ class ProjectSettingsDialog(QDialog):
             "Images (*.png *.jpg *.jpeg *.bmp)")
         if not fn:
             return
-        self.pic_edit.setText(fn)
+        self.pic_edit.setText(self._stored_screenshot_path(Path(fn)))
         self._reload_preview()
 
+    def _stored_screenshot_path(self, path: Path) -> str:
+        try:
+            return str(path.resolve().relative_to(self.project_dir.resolve()))
+        except (OSError, RuntimeError, ValueError):
+            return str(path)
+
+    def _screenshot_path(self) -> Path | None:
+        text = self.pic_edit.text().strip()
+        if not text:
+            return None
+        path = Path(text)
+        return path if path.is_absolute() else self.project_dir / path
+
     def _reload_preview(self):
-        pic_path = Path(self.pic_edit.text().strip())
-        if pic_path.is_file():
+        pic_path = self._screenshot_path()
+        if pic_path and pic_path.is_file():
             pix = QPixmap(str(pic_path))
             self.preview.setPixmap(pix.scaled(
                 self.preview.size(),
@@ -96,9 +98,8 @@ class ProjectSettingsDialog(QDialog):
             self.preview.clear()
 
     def _save(self):
-        self.cfg["bundle_pak"] = self.bundle_chk.isChecked()
-
         self.cfg.update({
+            "bundle_pak":  self.bundle_chk.isChecked(),
             "name":        self.name_edit.text().strip(),
             "description": self.desc_edit.text().strip(),
             "author":      self.auth_edit.text().strip(),
@@ -108,7 +109,7 @@ class ProjectSettingsDialog(QDialog):
         })
 
         try:
-            self.cfg_path.write_text(json.dumps(self.cfg, indent=2))
+            save_project_config(self.project_dir, self.cfg)
         except Exception as e:
             QMessageBox.critical(self, self.tr("Save failed"), str(e))
             return

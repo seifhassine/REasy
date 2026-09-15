@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from io import BytesIO
-
-from PySide6.QtCore import Qt, Signal, QPoint, QTimer
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QPoint, QTimer
+import numpy as np
 from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QScrollArea,
-    QFileDialog, QMessageBox, QInputDialog, QSlider
+    QFileDialog, QMessageBox, QSlider
 )
 
-from PIL import Image
-PIL_OK = True
+from .texture_decoder import decode_dds_mip, decode_tex_mip
+
+_EXPORT_TEX_TITLE = QT_TRANSLATE_NOOP("TexViewer", "Export TEX")
+
 
 class DraggableLabel(QLabel):
     def __init__(self, parent=None):
@@ -69,9 +70,14 @@ class TexViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("texViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self._modified = False
         self.zoom_level = 1.0
+        self.source_rgba = b""
+        self.source_width = 0
+        self.source_height = 0
         self.original_pixmap = None
         self.is_initial_load = True
         self._setup_ui()
@@ -91,32 +97,32 @@ class TexViewer(QWidget):
         layout = QVBoxLayout(self)
 
         top = QHBoxLayout()
-        top.addWidget(QLabel("Image:"))
+        top.addWidget(QLabel(self.tr("Image:")))
         self.image_index = QSpinBox()
         self.image_index.setMinimum(0)
         self.image_index.valueChanged.connect(self._refresh)
         top.addWidget(self.image_index)
 
-        top.addWidget(QLabel("Mip:"))
+        top.addWidget(QLabel(self.tr("Mip:")))
         self.mip_index = QSpinBox()
         self.mip_index.setMinimum(0)
         self.mip_index.valueChanged.connect(self._refresh)
         top.addWidget(self.mip_index)
 
-        self.reload_btn = QPushButton("Reload")
+        self.reload_btn = QPushButton(self.tr("Reload"))
         self.reload_btn.clicked.connect(self._refresh)
         top.addWidget(self.reload_btn)
 
-        top.addWidget(QLabel("Channel:"))
+        top.addWidget(QLabel(self.tr("Channel:")))
         self.channel_box = QComboBox()
-        self.channel_box.addItems(["RGBA", "R", "G", "B", "A", "RGB", "RG", "BA"])
-        self.channel_box.currentIndexChanged.connect(self._refresh)
+        self.channel_box.addItems(["RGBA", "R", "G", "B", "A", "RGB"])
+        self.channel_box.currentIndexChanged.connect(self._apply_channel_filter)
         top.addWidget(self.channel_box)
         top.addStretch()
         layout.addLayout(top)
 
         zoom_layout = QHBoxLayout()
-        zoom_layout.addWidget(QLabel("Zoom:"))
+        zoom_layout.addWidget(QLabel(self.tr("Zoom:")))
         self.zoom_slider = QSlider(Qt.Horizontal)
         self.zoom_slider.setMinimum(10)
         self.zoom_slider.setMaximum(500)
@@ -128,7 +134,7 @@ class TexViewer(QWidget):
         self.zoom_label = QLabel("100%")
         self.zoom_label.setMinimumWidth(50)
         zoom_layout.addWidget(self.zoom_label)
-        self.fit_btn = QPushButton("Fit to Window")
+        self.fit_btn = QPushButton(self.tr("Fit to Window"))
         self.fit_btn.clicked.connect(self._fit_to_window)
         zoom_layout.addWidget(self.fit_btn)
         self.reset_zoom_btn = QPushButton("100%")
@@ -152,18 +158,13 @@ class TexViewer(QWidget):
         layout.addWidget(self.scroll)
 
         exp = QHBoxLayout()
-        self.export_dds_btn = QPushButton("Export DDS")
+        self.export_dds_btn = QPushButton(self.tr("Export DDS"))
         self.export_dds_btn.clicked.connect(self._export_dds)
         exp.addWidget(self.export_dds_btn)
 
-        self.export_tex_btn = QPushButton("Export TEX")
-        self.export_tex_btn.clicked.connect(self._export_tex)
-        exp.addWidget(self.export_tex_btn)
         exp.addStretch()
         layout.addLayout(exp)
 
-        if not PIL_OK:
-            self.info_label.setText("Pillow + pillow-dds not installed. Cannot display images.")
 
     def _populate(self):
         t = getattr(self.handler, 'tex', None)
@@ -171,9 +172,8 @@ class TexViewer(QWidget):
         is_tex = bool(t)
         is_dds = raw[:4] == b'DDS '
 
-        if hasattr(self, 'export_dds_btn') and hasattr(self, 'export_tex_btn'):
-            self.export_dds_btn.setVisible(is_tex)
-            self.export_tex_btn.setVisible(is_dds)
+        self.export_dds_btn.setVisible(is_tex)
+        #self.export_tex_btn.setVisible(is_dds)
 
         self.image_index.blockSignals(True)
         self.mip_index.blockSignals(True)
@@ -182,15 +182,11 @@ class TexViewer(QWidget):
             self.image_index.setMaximum(max(0, t.header.image_count - 1))
             self.mip_index.setMaximum(max(0, t.header.mip_count - 1))
         elif is_dds:
-            try:
-                import struct as _st
-                mip_count = _st.unpack_from('<I', raw, 28)[0]
-                self.image_index.setMaximum(0)
-                self.image_index.setEnabled(False)
-                self.mip_index.setMaximum(max(0, mip_count - 1))
-            except Exception:
-                self.image_index.setMaximum(0)
-                self.mip_index.setMaximum(0)
+            import struct
+            mip_count = struct.unpack_from('<I', raw, 28)[0] if len(raw) >= 32 else 1
+            self.image_index.setMaximum(0)
+            self.image_index.setEnabled(False)
+            self.mip_index.setMaximum(max(0, mip_count - 1))
         else:
             self.image_index.setMaximum(0)
             self.mip_index.setMaximum(0)
@@ -200,85 +196,92 @@ class TexViewer(QWidget):
         self._refresh()
 
     def _refresh(self):
-        if not PIL_OK:
-            return
         img_idx = self.image_index.value()
         mip_idx = self.mip_index.value()
+        t = getattr(self.handler, 'tex', None)
+        if t:
+            try:
+                decoded = decode_tex_mip(t, img_idx, mip_idx)
+                from .dxgi import describe_format
+                d = describe_format(t.header.format)
+                fmt_info = f" | {d['name']} | {'BC' if d['compressed'] else 'RGB'} | {d['bits_per_pixel']}bpp"
+                self.info_label.setText(f"{decoded.width}x{decoded.height}{fmt_info}")
+                self.source_rgba = decoded.rgba
+                self.source_width = decoded.width
+                self.source_height = decoded.height
+                self._apply_channel_filter()
+            except Exception as e:
+                self.info_label.setText(self.tr("Failed to decode TEX mip: {error}").format(error=e))
+                self.source_rgba = b""
+                self.source_width = 0
+                self.source_height = 0
+                self.original_pixmap = None
+                self.img_label.clear()
+            return
+
         dds = b""
-        if hasattr(self.handler, 'build_dds_bytes_for_viewing'):
-            try:
-                dds = self.handler.build_dds_bytes_for_viewing(img_idx)
-            except Exception:
-                dds = b""
-        elif hasattr(self.handler, 'build_dds_bytes'):
-            try:
-                dds = self.handler.build_dds_bytes(img_idx)
-            except Exception:
-                dds = b""
-        if not dds:
-            raw = getattr(self.handler, 'raw_data', b"")
-            if raw[:4] == b'DDS ':
-                dds = raw
+        if hasattr(self.handler, 'build_dds_bytes'):
+            dds = self.handler.build_dds_bytes(img_idx)
+        elif getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ':
+            dds = self.handler.raw_data
         if not dds:
             return
         try:
-            if hasattr(self.handler, 'build_dds_bytes_for_viewing'):
-                im = Image.open(BytesIO(dds))
-            else:
-                from .dds import convert_dds_for_pil_compatibility
-                compatible_dds = convert_dds_for_pil_compatibility(dds)
-                im = Image.open(BytesIO(compatible_dds))
-            for _ in range(mip_idx):
-                if im.width <= 1 and im.height <= 1:
-                    break
-                im = im.reduce(2)
-            fmt_info = ""
-            t = getattr(self.handler, 'tex', None)
-            raw = getattr(self.handler, 'raw_data', b"")
-            if t and getattr(t, 'header', None):
-                try:
-                    from .dxgi import describe_format
-                    d = describe_format(t.header.format)
-                    fmt_info = f" | {d['name']} | {'BC' if d['compressed'] else 'RGB'} | {d['bits_per_pixel']}bpp"
-                except Exception:
-                    pass
-            self.info_label.setText(f"{im.width}x{im.height}{fmt_info}")
-            rgba = im.convert('RGBA')
-            ch = self.channel_box.currentText() if hasattr(self, 'channel_box') else 'RGBA'
-            if ch != 'RGBA':
-                bands = rgba.split()
-                r, g, b, a = bands
-                if ch == 'R':
-                    rgba = Image.merge('RGBA', (r, r.point(lambda _: 0), r.point(lambda _: 0), a))
-                elif ch == 'G':
-                    rgba = Image.merge('RGBA', (g.point(lambda _: 0), g, g.point(lambda _: 0), a))
-                elif ch == 'B':
-                    rgba = Image.merge('RGBA', (b.point(lambda _: 0), b.point(lambda _: 0), b, a))
-                elif ch == 'A':
-                    rgba = Image.merge('RGBA', (a, a, a, a))
-                elif ch == 'RGB':
-                    rgba = Image.merge('RGBA', (r, g, b, a))
-                elif ch == 'RG':
-                    rgba = Image.merge('RGBA', (r, g, g.point(lambda _: 0), a))
-                elif ch == 'BA':
-                    rgba = Image.merge('RGBA', (b, a, b, a))
-            qimg = QImage(rgba.tobytes(), rgba.width, rgba.height, QImage.Format_RGBA8888)
-            self.original_pixmap = QPixmap.fromImage(qimg)
-            if self.is_initial_load:
-                self.is_initial_load = False
-                QTimer.singleShot(0, self._fit_to_window)
-            else:
-                self._apply_zoom()
-            
-            if hasattr(self, 'export_dds_btn') and hasattr(self, 'export_tex_btn'):
-                t = getattr(self.handler, 'tex', None)
-                raw = getattr(self.handler, 'raw_data', b"")
-                self.export_dds_btn.setVisible(bool(t))
-                self.export_tex_btn.setVisible(raw[:4] == b'DDS ')
+            decoded = decode_dds_mip(dds, mip_idx, img_idx)
+            self.info_label.setText(f"{decoded.width}x{decoded.height}")
+            self.source_rgba = decoded.rgba
+            self.source_width = decoded.width
+            self.source_height = decoded.height
+            self._apply_channel_filter()
+            self.export_dds_btn.setVisible(bool(t))
+            #self.export_tex_btn.setVisible(getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ')
         except Exception as e:
-            self.info_label.setText(f"Failed to decode: {e}")
-            self.img_label.clear()
+            self.info_label.setText(self.tr("Failed to decode: {error}").format(error=e))
+            self.source_rgba = b""
+            self.source_width = 0
+            self.source_height = 0
             self.original_pixmap = None
+            self.img_label.clear()
+
+    def _apply_channel_filter(self):
+        if not self.source_rgba or self.source_width <= 0 or self.source_height <= 0:
+            return
+        ch = self.channel_box.currentText()
+        filtered_raw = self.source_rgba if ch == 'RGBA' else self._filter_channels(self.source_rgba, ch)
+        filtered = QPixmap.fromImage(
+            QImage(filtered_raw, self.source_width, self.source_height, QImage.Format_RGBA8888).copy()
+        )
+        self.original_pixmap = filtered
+        if self.is_initial_load:
+            self.is_initial_load = False
+            QTimer.singleShot(0, self._fit_to_window)
+        else:
+            self._apply_zoom()
+
+    @staticmethod
+    def _filter_channels(raw: bytes, channel: str) -> bytes:
+        px = np.frombuffer(raw, dtype=np.uint8).reshape((-1, 4))
+        out = np.empty_like(px)
+
+        if channel == 'R':
+            out[:, :3] = px[:, [0, 0, 0]]
+            out[:, 3] = 255
+        elif channel == 'G':
+            out[:, :3] = px[:, [1, 1, 1]]
+            out[:, 3] = 255
+        elif channel == 'B':
+            out[:, :3] = px[:, [2, 2, 2]]
+            out[:, 3] = 255
+        elif channel == 'A':
+            out[:, :3] = px[:, [3, 3, 3]]
+            out[:, 3] = 255
+        elif channel == 'RGB':
+            out[:, :3] = px[:, :3]
+            out[:, 3] = 255
+        else:
+            raise ValueError(f"Unsupported channel filter: {channel}")
+
+        return out.tobytes()
 
     def _on_zoom_changed(self, value):
         self.zoom_level = value / 100.0
@@ -327,91 +330,21 @@ class TexViewer(QWidget):
         self.zoom_slider.setValue(100)
 
     def _export_dds(self):
-        try:
-            from PySide6.QtWidgets import QFileDialog
-            t = self.handler
-            from .dds import DDS_MAGIC
-            raw = getattr(t, 'raw_data', b"")
-            is_dds = raw[:4] == DDS_MAGIC.to_bytes(4, 'little')
-            if is_dds:
-                return
-            if hasattr(t, 'build_dds_bytes'):
-                dds = t.build_dds_bytes(self.image_index.value() if hasattr(self, 'image_index') else 0)
-            else:
-                dds = b""
-            if not dds:
-                return
-            path, _ = QFileDialog.getSaveFileName(self, "Save DDS", "", "DDS files (*.dds)")
-            if path:
-                with open(path, 'wb') as f:
-                    f.write(dds)
-        except Exception:
-            pass
+        from .dds import DDS_MAGIC
 
-    def _export_tex(self):
-        try:
-            if hasattr(self.handler, 'tex') and self.handler.tex:
-                return
+        raw = getattr(self.handler, 'raw_data', b"")
+        if raw[:4] == DDS_MAGIC.to_bytes(4, 'little'):
+            return
 
-            from .dds import DDS_MAGIC
-            if hasattr(self.handler, 'raw_data') and self.handler.raw_data[:4] == DDS_MAGIC.to_bytes(4, 'little'):
-                from .tex_file import TexFile
-                dds_bytes = getattr(self.handler, 'raw_data', b"")
-                if not dds_bytes:
-                    QMessageBox.warning(self, "Export TEX", "No DDS data loaded.")
-                    return
-                import struct as _st
-                size = _st.unpack_from('<I', dds_bytes, 4)[0]
-                height = _st.unpack_from('<I', dds_bytes, 12)[0]
-                width = _st.unpack_from('<I', dds_bytes, 16)[0]
-                mip_count = _st.unpack_from('<I', dds_bytes, 28)[0]
-                fmt = _st.unpack_from('<I', dds_bytes, 128)[0]
+        dds = self.handler.build_dds_bytes(self.image_index.value())
+        if not dds:
+            QMessageBox.warning(self, self.tr("Export DDS"), self.tr("No TEX data loaded."))
+            return
 
-                data = dds_bytes[148:]
-                levels = []
-                w = width
-                h = height
-                for i in range(mip_count):
-                    if w == 0 or h == 0:
-                        break
-                    from .dxgi import top_mip_size_bytes
-                    lvl_size = top_mip_size_bytes(fmt, w, h)
-                    levels.append(data[:lvl_size])
-                    data = data[lvl_size:]
-                    w = max(1, w >> 1)
-                    h = max(1, h >> 1)
+        path, _ = QFileDialog.getSaveFileName(self, self.tr("Save DDS"), "", "DDS files (*.dds)")
+        if not path:
+            return
 
-                pitches = []
-                w = width
-                for i in range(len(levels)):
-                    from .dxgi import get_block_size_bytes, get_bits_per_pixel
-                    bs = get_block_size_bytes(fmt)
-                    if bs:
-                        blocks_w = (w + 3) // 4
-                        pitches.append(blocks_w * bs)
-                    else:
-                        pitches.append(w * (get_bits_per_pixel(fmt) // 8))
-                    w = max(1, w >> 1)
-
-                version, ok = QInputDialog.getInt(self, "TEX Version", "Enter TEX version (e.g., 190820018 for RE3):", 28, 1, 2000000000, 1)
-                if not ok:
-                    return
-                tex_bytes = TexFile.build_tex_bytes_from_dds(
-                    fmt,
-                    width,
-                    height,
-                    levels,
-                    pitches_override=pitches,
-                    version_override=version,
-                )
-                path, _ = QFileDialog.getSaveFileName(self, "Save TEX", "", "TEX files (*.tex)")
-                if path:
-                    with open(path, 'wb') as f:
-                        f.write(tex_bytes)
-                else:
-                    QMessageBox.information(self, "Export TEX", "Save cancelled.")
-            else:
-                QMessageBox.warning(self, "Export TEX", "Open a DDS file first.")
-        except Exception as e:
-            QMessageBox.critical(self, "Export TEX failed", str(e))
+        with open(path, 'wb') as f:
+            f.write(dds)
 

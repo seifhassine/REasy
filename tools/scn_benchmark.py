@@ -1,4 +1,3 @@
-import os
 import sys
 import time
 import psutil
@@ -7,6 +6,7 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 from file_handlers.rsz.rsz_file import RszFile
+from utils.app_paths import resolve_cli_path
 
 def format_size(size):
     """Convert bytes to human readable format"""
@@ -117,11 +117,11 @@ def benchmark_scn(file_path):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Benchmark SCN file parsing")
-    parser.add_argument("file_path", help="Path to the SCN file")
+    parser.add_argument("file_path", type=resolve_cli_path, help="Path to the SCN file")
 
     args = parser.parse_args()
 
-    if not os.path.exists(args.file_path):
+    if not args.file_path.is_file():
         print(f"Error: File {args.file_path} not found")
         sys.exit(1)
 

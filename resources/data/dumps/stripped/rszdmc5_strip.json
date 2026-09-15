@@ -249081,7 +249081,7 @@
 				"array": false,
 				"name": "ColorCube0",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
 				"type": "Resource"
 			},
@@ -249090,7 +249090,7 @@
 				"array": false,
 				"name": "ColorCube1",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
 				"type": "Resource"
 			},
@@ -249108,7 +249108,7 @@
 				"array": false,
 				"name": "ColorCube2",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
 				"type": "Resource"
 			},
@@ -298695,7 +298695,7 @@
 				"array": false,
 				"name": "CollisionFilter",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.CollisionFilterResourceHolder",
 				"size": 4,
 				"type": "Resource"
 			}
@@ -496206,7 +496206,7 @@
 				"array": false,
 				"name": "ParentUserData",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.physics.UserData",
 				"size": 4,
 				"type": "Object"
 			}
@@ -627289,7 +627289,7 @@
 				"native": true,
 				"original_type": "via.motion.Motion.DrawTarget",
 				"size": 4,
-				"type": "Object"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -627298,7 +627298,7 @@
 				"native": true,
 				"original_type": "via.motion.Motion.DrawTarget",
 				"size": 4,
-				"type": "Object"
+				"type": "S32"
 			}
 		],
 		"name": "via.motion.Motion",

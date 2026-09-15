@@ -1,0 +1,377 @@
+import os
+import shutil
+from pathlib import Path
+
+from PySide6.QtCore import QCoreApplication, QSignalBlocker, QTimer, Qt
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtWidgets import QFileDialog, QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
+
+from .project_sessions import ProjectSessionManager
+
+
+class ProjectWorkspaceController:
+    def __init__(self, host, notebook, tab_lookup, group_host=None):
+        self.host = host
+        self.sessions = ProjectSessionManager(notebook, tab_lookup, group_host)
+        self.group_host = group_host
+        self._scene_icon = self._make_scene_icon()
+        self._tab_order = []
+
+        self.toolbar = QToolBar(self.tr("Projects"), host)
+        self.toolbar.setObjectName("projectWorkspaceBar")
+        self.toolbar.setMovable(False)
+        self.toolbar.setContextMenuPolicy(Qt.PreventContextMenu)
+        self.toolbar.toggleViewAction().setVisible(False)
+        self.toolbar.hide()
+
+        self.tab_bar = QTabBar(self.toolbar)
+        self.tab_bar.setObjectName("projectWorkspaceTabs")
+        self.tab_bar.setDocumentMode(True)
+        self.tab_bar.setDrawBase(False)
+        self.tab_bar.setMovable(True)
+        self.tab_bar.setExpanding(False)
+        self.tab_bar.setElideMode(Qt.ElideMiddle)
+        self.tab_bar.setUsesScrollButtons(True)
+        self.tab_bar.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
+        self.tab_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.tab_bar.setMinimumHeight(32)
+        self.tab_bar.currentChanged.connect(self._on_tab_changed)
+        self.tab_bar.tabMoved.connect(self._on_tab_moved)
+        self.toolbar.addWidget(self.tab_bar)
+        self.host.addToolBar(Qt.TopToolBarArea, self.toolbar)
+        notebook.currentChanged.connect(lambda _index: self._sync_tabs())
+        notebook.tabBar().tabMoved.connect(self.sessions.capture_active_order)
+        notebook.tabReattached.connect(self.sessions.capture_active_order)
+        if group_host is not None:
+            group_host.layoutChanged.connect(self._on_editor_layout_changed)
+        self.apply_style()
+
+    def _on_editor_layout_changed(self):
+        self.sessions.capture_active_order()
+        self._sync_tabs()
+
+    def apply_style(self):
+        colors = self.host._build_theme_colors()
+        accent = colors["accent"]
+        bar_bg, tab_bg, hover_bg = colors["tab_bar_bg"], colors["surface"], colors["surface_hover"]
+        foreground, muted = colors["text"], colors["text_muted"]
+        self.toolbar.setStyleSheet(f"""
+            QToolBar#projectWorkspaceBar {{ background: {bar_bg}; border: none;
+                border-bottom: 1px solid {colors['border_subtle']}; padding: 0px 4px; spacing: 0; }}
+            QTabBar#projectWorkspaceTabs {{ background: {bar_bg}; border: none; padding-left: 2px; }}
+            QTabBar#projectWorkspaceTabs::tab {{ background: transparent; color: {muted};
+                border: 1px solid transparent; padding: 4px 10px;
+                min-width: 120px; max-width: 250px; min-height: 16px;
+                margin: 2px 1px 2px 0px; border-radius: 7px; }}
+            QTabBar#projectWorkspaceTabs::tab:hover:!selected {{ background: {hover_bg}; color: {foreground}; }}
+            QTabBar#projectWorkspaceTabs::tab:selected {{ background: {tab_bg}; color: {foreground};
+                border-color: {colors['border']}; border-left: 2px solid {accent}; font-weight: 600; }}
+            QToolButton#projectTabClose {{ background: transparent; color: {muted}; border: none;
+                border-radius: 7px; font-size: 15px; font-weight: 500; }}
+            QToolButton#projectTabClose:hover {{ background: {colors['surface_active']}; color: {foreground}; }}
+        """)
+
+    def _close_button(self, callback, tip):
+        button = QToolButton(self.tab_bar)
+        button.setObjectName("projectTabClose")
+        button.setText("×")
+        button.setToolTip(tip)
+        button.setFixedSize(18, 18)
+        button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, self.toolbar, callback))
+        return button
+
+    @staticmethod
+    def _make_scene_icon() -> QIcon:
+        pixmap = QPixmap(16, 16)
+        pixmap.fill(Qt.transparent)
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(QPen(QColor("#cfd8e3"), 1.4))
+        painter.setBrush(QColor("#1f2a36"))
+        painter.drawRoundedRect(2, 5, 12, 8, 2, 2)
+        painter.drawEllipse(6, 7, 4, 4)
+        painter.drawLine(5, 5, 8, 2)
+        painter.drawLine(8, 2, 11, 5)
+        painter.end()
+        return QIcon(pixmap)
+
+    @staticmethod
+    def tr(text: str) -> str:
+        return QCoreApplication.translate("ProjectWorkspaceController", text)
+
+    def is_active(self, project_dir) -> bool:
+        return ProjectSessionManager.key_for(project_dir) == self.sessions.active_key
+
+    def _warn(self, title, message):
+        QMessageBox.warning(self.host, title, message)
+
+    def open(self, project_path: Path | str, game: str | None = None) -> bool:
+        project_path = Path(project_path).resolve()
+        if not project_path.is_dir():
+            self._warn(
+                self.tr("Project not found"),
+                self.tr("That project folder no longer exists."),
+            )
+            return False
+
+        game = game or self.host.proj_dock.infer_project_game(project_path)
+        if not game:
+            self._warn(
+                self.tr("Invalid selection"),
+                self.tr("This folder is not a recognized REasy project."),
+            )
+            return False
+
+        self.activate(project_path, game)
+        return True
+
+    def activate(self, path: Path | str, game: str | None = None, on_loaded=None):
+        path = str(Path(path).resolve())
+        dock = self.host.proj_dock
+        session = self.sessions.ensure_project(path, game or dock.infer_project_game(path))
+        dialog = self.host._shared_find_dialog
+        if session.key != self.sessions.active_key and dialog:
+            try:
+                dialog.close()
+            except RuntimeError:
+                self.host._shared_find_dialog = None
+        self.sessions.activate(session.key)
+        self._sync_tabs()
+
+        self.host.current_project = session.path
+        self.host.current_game = session.game
+        dock.current_game = session.game
+        if session.game:
+            self.host.settings["last_game"] = session.game
+            self.host.settings["game_version"] = session.game
+        dock.sync_project_rsz_json(path, session.game, prompt_to_change_current=False)
+        self.host.update_from_app_settings()
+        self.host.save_settings()
+        dock.show()
+        self.host._shrink_project_dock()
+        dock.set_project(path, on_loaded)
+        self.host.status_bar.showMessage(
+            self.tr("Project: {name}").format(name=os.path.basename(path)), 3000
+        )
+        return session
+
+    def change_folder(self) -> bool:
+        session = self.sessions.get(self.sessions.active_key)
+        if not session or not session.path:
+            return False
+        if session.tabs:
+            QMessageBox.information(
+                self.host,
+                self.tr("Project has open tabs"),
+                self.tr("Close all tabs of this project before changing its folder."),
+            )
+            return False
+
+        old_path = Path(session.path)
+        chosen = QFileDialog.getExistingDirectory(
+            self.host,
+            self.tr('Select the new folder for project "{name}"').format(name=old_path.name),
+            str(old_path),
+            QFileDialog.ShowDirsOnly,
+        )
+        if not chosen:
+            return False
+        new_path = Path(chosen)
+        old_key = ProjectSessionManager.key_for(old_path)
+        new_key = ProjectSessionManager.key_for(new_path)
+        if new_key == old_key:
+            return False
+        try:
+            new_path.relative_to(old_path)
+        except ValueError:
+            pass
+        else:
+            QMessageBox.warning(
+                self.host,
+                self.tr("Invalid folder"),
+                self.tr("The new folder cannot be inside the current project folder."),
+            )
+            return False
+        try:
+            old_path.relative_to(new_path)
+        except ValueError:
+            pass
+        else:
+            QMessageBox.warning(
+                self.host,
+                self.tr("Invalid folder"),
+                self.tr("The new folder cannot contain the current project folder."),
+            )
+            return False
+
+        renamed = self.sessions.rename_project(old_key, new_path)
+        if renamed is None:
+            return False
+        self.activate(renamed.path, renamed.game)
+        self.host.proj_dock.discard_project_state(str(old_path))
+        self.host.status_bar.showMessage(
+            self.tr("Project folder changed to: {path}").format(path=renamed.path), 5000
+        )
+        return True
+
+    def focus_open_tab(self, tab) -> bool:
+
+        session = self.sessions.session_for_tab(tab)
+        if session is None or getattr(tab, "_workspace_hidden", False):
+            return False
+
+        if session is not self.sessions.get(self.sessions.active_key):
+            if session.path:
+                self.activate(session.path, session.game)
+            else:
+                self.sessions.activate(None)
+                self.host.current_project = self.host.current_game = None
+                self.host.proj_dock.set_project(None)
+                self.host.proj_dock.hide()
+                self._sync_tabs()
+
+        widget = getattr(tab, "notebook_widget", None)
+        notebook = self.sessions.notebook_for(widget)
+        index = notebook.indexOf(widget) if notebook is not None else -1
+        if index != -1:
+            notebook.setCurrentIndex(index)
+            if self.group_host is not None:
+                self.group_host.activate_page(widget)
+            ensure_loaded = getattr(getattr(tab, "preview", None), "ensure_loaded", None)
+            if callable(ensure_loaded):
+                ensure_loaded()
+            self._sync_tabs()
+            return True
+
+        windows = self.sessions.windows_for([tab])
+        for window in windows:
+            window.show()
+            window.raise_()
+            window.activateWindow()
+        self._sync_tabs()
+        return bool(windows)
+
+    def delete_project(self, project_path: Path) -> bool:
+        key = ProjectSessionManager.key_for(project_path)
+        session = self.sessions.get(key)
+        if self._scene_blocks_project_close(project_path):
+            return False
+        if session and not self.host._confirm_tabs_close(session.tabs, apply_discards=False):
+            return False
+        try:
+            shutil.rmtree(project_path)
+        except Exception as exc:
+            QMessageBox.critical(self.host, self.tr("Delete failed"), str(exc))
+            return False
+        if session:
+            self.close(key, confirm=False, record_history=False)
+        return True
+
+    def close(self, key: str | None = None, *, confirm=True, record_history=True) -> bool:
+        key = key or self.sessions.active_key
+        session = self.sessions.get(key)
+        if not key or not session:
+            return False
+        if self._scene_blocks_project_close(session.path):
+            return False
+        if confirm and not self.host._confirm_tabs_close(session.tabs):
+            return False
+
+        was_active = key == self.sessions.active_key
+        for tab in list(session.tabs):
+            self.host._close_tab_object(tab, record_history=record_history)
+        next_session = self.sessions.remove_project(key)
+
+        if was_active and next_session:
+            self.activate(next_session.path, next_session.game)
+            self.host.proj_dock.discard_project_state(session.path)
+            return True
+        if was_active:
+            self.sessions.activate(None)
+            self.host.current_project = self.host.current_game = None
+            self.host.proj_dock.set_project(None)
+            self.host.proj_dock.hide()
+            self.host.status_bar.showMessage(self.tr("Project closed"), 3000)
+
+        self.host.proj_dock.discard_project_state(session.path)
+        self._sync_tabs()
+        return True
+
+    def _scene_blocks_project_close(self, project_path) -> bool:
+        scenes = getattr(self.host, "scenes", None)
+        scene = scenes.scene_using_project(str(project_path)) if scenes and project_path else None
+        if scene is None:
+            return False
+        message = self.tr(
+            'Scene "{}" contains SCNs from this project. Delete the scene first.'
+        ).format(scene.title)
+        QMessageBox.information(self.host, self.tr("Scene uses project"), message)
+        return True
+
+    def _tab_index(self, data) -> int:
+        return next((i for i in range(self.tab_bar.count()) if self.tab_bar.tabData(i) == data), -1)
+
+    def _ordered_entries(self, entries):
+        by_data = {entry[0]: entry for entry in entries}
+        order = [data for data in self._tab_order if data in by_data]
+        order.extend(data for data in by_data if data not in order)
+        self._tab_order = order
+        return [by_data[data] for data in order]
+
+    def _on_tab_moved(self, _from: int, _to: int) -> None:
+        self._tab_order = [
+            self.tab_bar.tabData(index)
+            for index in range(self.tab_bar.count())
+        ]
+
+    def _sync_tabs(self):
+        scenes = getattr(self.host, "scenes", None)
+        scene_tabs = scenes.tabs() if scenes else ()
+        project_icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
+        entries = self._ordered_entries([
+            (session.key, project_icon, session.title, session.path, lambda key=session.key: self.close(key), self.tr("Close project"))
+            for session in self.sessions.project_sessions()
+        ] + [
+            (("scene", scene), self._scene_icon, scene.title, scene.title, lambda scene=scene: self.host.scenes.close_scene(scene), self.tr("Close scene"))
+            for scene in scene_tabs
+        ])
+        current = self.host.tabs.get(self.sessions.current_widget())
+        active_data = ("scene", current) if current in scene_tabs else self.sessions.active_key
+
+        with QSignalBlocker(self.tab_bar):
+            wanted = {data for data, *_ in entries}
+            for index in reversed(range(self.tab_bar.count())):
+                if self.tab_bar.tabData(index) not in wanted:
+                    self.tab_bar.removeTab(index)
+            for target, (data, icon, title, tip, callback, close_tip) in enumerate(entries):
+                index = self._tab_index(data)
+                if index == -1:
+                    index = self.tab_bar.insertTab(target, icon, title)
+                    self.tab_bar.setTabData(index, data)
+                    self.tab_bar.setTabButton(index, QTabBar.RightSide, self._close_button(callback, close_tip))
+                elif index != target:
+                    self.tab_bar.moveTab(index, target)
+                    index = target
+                self.tab_bar.setTabIcon(index, icon)
+                self.tab_bar.setTabText(index, title)
+                self.tab_bar.setTabToolTip(index, tip)
+                if data == active_data:
+                    self.tab_bar.setCurrentIndex(index)
+        fullscreen = any(scene.is_view_fullscreen() for scene in scene_tabs)
+        self.toolbar.setVisible(self.tab_bar.count() > 0 and not fullscreen)
+        self.host._refresh_homepage()
+
+    def activate_current_project_tab(self) -> None:
+        data = self.tab_bar.tabData(self.tab_bar.currentIndex())
+        if not isinstance(data, tuple) and (session := self.sessions.get(data)) and session.path:
+            self.activate(session.path, session.game)
+
+    def _on_tab_changed(self, index: int):
+        data = self.tab_bar.tabData(index)
+        if isinstance(data, tuple) and data[0] == "scene":
+            self.host.scenes.focus(data[1])
+            return
+        key = data
+        if key and key != self.sessions.active_key:
+            session = self.sessions.get(key)
+            self.activate(session.path, session.game)

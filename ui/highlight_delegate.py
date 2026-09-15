@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QStyledItemDelegate
 from PySide6.QtGui import QPalette
 
+from ui.highlight_utils import model_index_row_path
+
 
 class HighlightDelegate(QStyledItemDelegate):
     def __init__(self, highlight_manager=None, parent=None):
@@ -11,7 +13,7 @@ class HighlightDelegate(QStyledItemDelegate):
     def paint(self, painter, option, index):
         should_highlight = False
         if self.highlight_manager and index.isValid():
-            item_id = self._get_index_identifier(index)
+            item_id = model_index_row_path(index)
             should_highlight = self.highlight_manager.is_item_highlighted(item_id)
         
         if should_highlight:
@@ -21,14 +23,6 @@ class HighlightDelegate(QStyledItemDelegate):
             super().paint(painter, modified_option, index)
         else:
             super().paint(painter, option, index)
-    
-    def _get_index_identifier(self, index):
-        path = []
-        current = index
-        while current.isValid():
-            path.append(current.row())
-            current = current.parent()
-        return tuple(reversed(path))
     
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)

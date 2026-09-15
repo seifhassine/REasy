@@ -82,6 +82,3 @@ class RszViewerNameHelper:
                 return self.scn.get_rsz_userdata_string(rui)
         return ""
         
-    def set_last_added_object(self, obj):
-        """Set the last added object for type name optimization"""
-        self._last_added_object = obj

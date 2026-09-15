@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Union
 import uuid
 
 from utils.binary_handler import BinaryHandler
@@ -8,7 +7,7 @@ from utils.binary_handler import BinaryHandler
 
 class FileHandler(BinaryHandler):
 
-    def __init__(self, data: Union[bytes, bytearray], offset: int = 0):
+    def __init__(self, data: bytes | bytearray, offset: int = 0):
         super().__init__(data, offset)
 
     def align(self, alignment: int):

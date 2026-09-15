@@ -2,10 +2,9 @@ from enum import IntEnum, IntFlag
 from dataclasses import dataclass
 import struct
 import uuid
-from typing import Optional, Any, Union, List, Type
+from typing import Optional, Type
 
 UVAR_MAGIC = 0x72617675  # 'uvar'
-UVAR_EXTENSION = ".uvar"
 
 class NodeValueType(IntEnum):
     Unknown = 0

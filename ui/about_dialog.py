@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from app_config import CURRENT_VERSION
+
 
 class AboutDialog(QDialog):
     def __init__(self, parent=None):
@@ -13,7 +15,6 @@ class AboutDialog(QDialog):
         self.setFixedSize(450, 250)
         layout = QVBoxLayout(self)
 
-        from REasy import CURRENT_VERSION
         title_label = QLabel(self.tr("REasy Editor v{version}").format(version=CURRENT_VERSION))
         title_label.setStyleSheet("font-size: 16pt; font-weight: bold;text-align: center;")
         layout.addWidget(title_label, alignment=Qt.AlignHCenter)

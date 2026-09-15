@@ -7,6 +7,18 @@ import tempfile
 from pathlib import Path
 
 
+def project_python_files(project_root: Path) -> list[str]:
+    """Return tracked and unignored Python sources in stable order."""
+    result = subprocess.run(
+        ["git", "ls-files", "--cached", "--others", "--exclude-standard", "--", "*.py"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return sorted(filter(None, result.stdout.splitlines()))
+
+
 def find_lupdate() -> str:
     cand = shutil.which("pyside6-lupdate") or shutil.which("lupdate")
     if cand:
@@ -34,24 +46,18 @@ def main() -> None:
     ts_dir = project_root / "resources" / "i18n"
     ts_dir.mkdir(parents=True, exist_ok=True)
     
-    source_files = []
-    for py_file in sorted(project_root.rglob("*.py")):
-        if "__pycache__" in py_file.parts:
-            continue
-        source_files.append(str(py_file.relative_to(project_root)))
+    source_files = project_python_files(project_root)
     
     if not source_files:
         print("No source files found.")
         return
     
     exe = find_lupdate()
-    lupdate_options = []
-    if args.no_obsolete:
-        lupdate_options.append("-no-obsolete")
+    lupdate_options = ["-no-obsolete"] if args.no_obsolete else []
     if args.verbose:
         lupdate_options.append("-verbose")
     
-    ts_files = list(ts_dir.glob("*.ts"))
+    ts_files = sorted(ts_dir.glob("*.ts"))
     if not ts_files:
         ts_files = [ts_dir / "REasy_zh-CN.ts"]
 

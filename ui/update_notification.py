@@ -1,21 +1,19 @@
 import threading
-import requests
 import os
 import subprocess
 import sys
-from PySide6.QtCore import QTimer, QUrl
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, QUrl
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
 
+AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
+    "UpdateNotificationManager", "Auto Update"
+)
+
+
 def is_windows() -> bool:
     return os.name == "nt"
-
-def windows_version_str() -> str:
-    if not is_windows():
-        return ""
-    v = sys.getwindowsversion()
-    return f"{v.major}.{v.minor}.{v.build}"
 
 class UpdateNotificationManager:
     def __init__(self, main_window, current_version):
@@ -27,8 +25,8 @@ class UpdateNotificationManager:
         self._update_check_timer = None
         self._auto_update_prompted = False
 
-        self._check_update_thread = threading.Thread(target=self.check_for_updates, daemon=True)
-        self._check_update_thread.start()
+        QTimer.singleShot(1000, lambda: threading.Thread(
+            target=self.check_for_updates, daemon=True).start())
 
         self._update_check_timer = QTimer(main_window)
         self._update_check_timer.timeout.connect(self._periodic_update_check)
@@ -38,6 +36,8 @@ class UpdateNotificationManager:
 
     def check_for_updates(self):
         try:
+            import requests
+
             resp = requests.get(
                 "https://api.github.com/repos/seifhassine/REasy/releases/latest",
                 timeout=5,
@@ -79,9 +79,15 @@ class UpdateNotificationManager:
                 self._update_check_timer.stop()
                 self._update_check_timer = None
 
-            update_menu = QMenu("🔶 NEW VERSION AVAILABLE", self.main_window)
+            update_menu = QMenu(
+                QCoreApplication.translate("UpdateNotificationManager", "🔶 NEW VERSION AVAILABLE"),
+                self.main_window,
+            )
 
-            update_action = QAction("View on Github", self.main_window)
+            update_action = QAction(
+                QCoreApplication.translate("UpdateNotificationManager", "View on Github"),
+                self.main_window,
+            )
             font = update_action.font()
             font.setBold(True)
             update_action.setFont(font)
@@ -90,7 +96,10 @@ class UpdateNotificationManager:
             update_menu.addAction(update_action)
 
             if is_windows() and getattr(sys, 'frozen', False):
-                auto_update_action = QAction("Auto-Download and Update", self.main_window)
+                auto_update_action = QAction(
+                    QCoreApplication.translate("UpdateNotificationManager", "Auto-Download and Update"),
+                    self.main_window,
+                )
                 auto_update_action.triggered.connect(self._confirm_and_start_auto_update)
                 update_menu.addAction(auto_update_action)
 
@@ -105,11 +114,16 @@ class UpdateNotificationManager:
         try:
             if not is_windows() or not getattr(sys, 'frozen', False):
                 return
-            version_str = self.latest_version or "a new version"
+            version_str = self.latest_version or QCoreApplication.translate(
+                "UpdateNotificationManager", "a new version"
+            )
             reply = QMessageBox.question(
                 self.main_window,
-                "Auto Update",
-                f"{version_str} is available.\nDo you want to auto-download and update now?",
+                QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
+                QCoreApplication.translate(
+                    "UpdateNotificationManager",
+                    "{version} is available.\nDo you want to auto-download and update now?",
+                ).format(version=version_str),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.Yes,
             )
@@ -120,11 +134,16 @@ class UpdateNotificationManager:
 
     def _confirm_and_start_auto_update(self):
         try:
-            version_str = self.latest_version or "the latest version"
+            version_str = self.latest_version or QCoreApplication.translate(
+                "UpdateNotificationManager", "the latest version"
+            )
             reply = QMessageBox.question(
                 self.main_window,
-                "Auto Update",
-                f"Do you want to auto-download and update to {version_str}?",
+                QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
+                QCoreApplication.translate(
+                    "UpdateNotificationManager",
+                    "Do you want to auto-download and update to {version}?",
+                ).format(version=version_str),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.Yes,
             )
@@ -153,7 +172,10 @@ class UpdateNotificationManager:
             exe_name = os.path.basename(sys.executable) if getattr(sys, 'frozen', False) else 'REasy.exe'
             dlg.start_with_powershell_script(script_path, cwd=repo_root, target_dir=repo_root, exe_name=exe_name)
         else:
-            dlg._log.append("Auto-update script not found. Opening releases page instead.")
+            dlg._log.append(QCoreApplication.translate(
+                "UpdateNotificationManager",
+                "Auto-update script not found. Opening releases page instead.",
+            ))
             self.open_latest_release_page()
         dlg.exec()
 
@@ -169,8 +191,11 @@ class UpdateNotificationManager:
                 def notify_missing():
                     QMessageBox.warning(
                         self.main_window,
-                        "Auto Update",
-                        "Auto-update script not found. Opening releases page instead.")
+                        QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
+                        QCoreApplication.translate(
+                            "UpdateNotificationManager",
+                            "Auto-update script not found. Opening releases page instead.",
+                        ))
                     self.open_latest_release_page()
                 QTimer.singleShot(0, notify_missing)
                 return
@@ -188,19 +213,32 @@ class UpdateNotificationManager:
                 if result.returncode == 0:
                     QMessageBox.information(
                         self.main_window,
-                        "Auto Update",
-                        "Update completed successfully. Please restart REasy to apply changes.")
+                        QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
+                        QCoreApplication.translate(
+                            "UpdateNotificationManager",
+                            "Update completed successfully. Please restart REasy to apply changes.",
+                        ))
                 else:
-                    msg = result.stderr.strip() or result.stdout.strip() or "Unknown error"
+                    msg = result.stderr.strip() or result.stdout.strip() or QCoreApplication.translate(
+                        "UpdateNotificationManager", "Unknown error"
+                    )
                     QMessageBox.critical(
                         self.main_window,
-                        "Auto Update Failed",
-                        f"The update failed with code {result.returncode}.\n\nDetails:\n{msg}")
+                        QCoreApplication.translate("UpdateNotificationManager", "Auto Update Failed"),
+                        QCoreApplication.translate(
+                            "UpdateNotificationManager",
+                            "The update failed with code {return_code}.\n\nDetails:\n{details}",
+                        ).format(return_code=result.returncode, details=msg))
             QTimer.singleShot(0, notify_done)
-        except Exception as e:
+        except Exception as exc:
+            error = str(exc)
+
             def notify_error():
                 QMessageBox.critical(
                     self.main_window,
-                    "Auto Update Error",
-                    f"An unexpected error occurred during update.\n\n{e}")
+                    QCoreApplication.translate("UpdateNotificationManager", "Auto Update Error"),
+                    QCoreApplication.translate(
+                        "UpdateNotificationManager",
+                        "An unexpected error occurred during update.\n\n{error}",
+                    ).format(error=error))
             QTimer.singleShot(0, notify_error)

@@ -2,26 +2,43 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from typing import List
-import time
+from contextlib import contextmanager
 
-from PySide6.QtCore import Qt, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QPoint, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QSize
 
 
 from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
 
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
-	QFileDialog, QLineEdit, QCheckBox,
-	QMessageBox, QTreeView, QAbstractItemView
+	QFileDialog, QLineEdit, QCheckBox, QComboBox, QInputDialog,
+	QMessageBox, QTreeView, QListView, QAbstractItemView, QMenu, QApplication,
+	QSlider, QStackedWidget, QStyle, QToolButton
 )
 
-from settings import load_settings
+from settings import DEFAULT_SETTINGS, load_settings
+from app_config import GAMES
+
 from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
-from ui.widgets_utils import create_list_file_help_widget
+from ui.project_manager.constants import BASE_DIR
+from ui.project_manager.pak_file_lists import (
+	choose_pak_list_file, find_suggested_pak_list_paths_for_directory,
+	game_for_pak_list_path, read_pak_list_file,
+)
+from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
+from utils.resource_file_utils import resource_context_for_app
+
+
+DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
+INDEX_FAILED_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Index failed")
+UNKNOWN_PATH_PREFIX = "__Unknown/"
 
 
 class PakBrowserDialog(QDialog):
+	_ITEM_EXTRACT_PATH_ROLE = Qt.UserRole + 32
+	_ITEM_IS_DIR_ROLE = Qt.UserRole + 33
+
 	def __init__(self, parent=None):
 		super().__init__(parent)
 		self.setWindowTitle(self.tr("PAK Browser"))
@@ -29,7 +46,9 @@ class PakBrowserDialog(QDialog):
 		lay = QVBoxLayout(self)
 
 		settings = getattr(parent, 'settings', None) or load_settings()
-		highlight_color = settings.get("tree_highlight_color", "#ff851b")
+		highlight_color = settings.get(
+			"tree_highlight_color", DEFAULT_SETTINGS["tree_highlight_color"]
+		)
 		self._highlight_color = QColor(highlight_color)
 
 		top = QHBoxLayout()
@@ -39,6 +58,17 @@ class PakBrowserDialog(QDialog):
 		self.dir_edit.setPlaceholderText(self.tr("Game directory (optional, for scan)"))
 		top.addWidget(self.dir_edit, 1)
 		top.addWidget(QPushButton(self.tr("Browse…"), clicked=self._choose_dir))
+		top.addWidget(QLabel(self.tr("Game:")))
+		self.game_combo = QComboBox(self)
+		self.game_combo.addItems(GAMES)
+		initial_game = str(
+			getattr(parent, "current_game", "")
+			or settings.get("game_version", "")
+			or GAMES[0]
+		)
+		if initial_game in GAMES:
+			self.game_combo.setCurrentText(initial_game)
+		top.addWidget(self.game_combo)
 		self.ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs (not 100% accurate)"), self)
 		self.ignore_mods_cb.setChecked(True)
 		self.ignore_mods_cb.toggled.connect(self._on_ignore_mods_toggled)
@@ -47,8 +77,9 @@ class PakBrowserDialog(QDialog):
 
 		row2 = QHBoxLayout()
 		lay.addLayout(row2)
-		row2.addWidget(QLabel(self.tr("PAK files (ordered):")))
+		row2.addWidget(QLabel(self.tr("PAK files:")))
 		row2.addStretch(1)
+		row2.addWidget(QPushButton(self.tr("Load .list…"), clicked=self._load_list_file))
 		row2.addWidget(QPushButton(self.tr("Add PAK…"),   clicked=self._add_paks))
 		row2.addWidget(QPushButton(self.tr("Remove"),     clicked=self._remove_paks))
 		row2.addWidget(QPushButton(self.tr("Move Up"),    clicked=lambda: self._move_selected(-1)))
@@ -62,14 +93,16 @@ class PakBrowserDialog(QDialog):
 		lay.addLayout(mid)
 		mid.addWidget(QLabel(self.tr("Filter:")))
 		self.filter_edit = QLineEdit(self)
-		self.filter_edit.setPlaceholderText(self.tr("Search (supports regex) - shows flat list; clear for tree view"))
+		self.filter_edit.setPlaceholderText(self.tr("Search (supports regex)"))
 		self._filter_timer = QTimer(self)
 		self._filter_timer.setSingleShot(True)
+		self._filter_timer.setInterval(180)
 		self._filter_timer.timeout.connect(self._apply_filter_now)
 		self.filter_edit.textChanged.connect(self._on_filter_text_changed)
 		mid.addWidget(self.filter_edit, 1)
 		self.show_unknown_cb = QCheckBox(self.tr("Include unknown entries"))
 		self.show_unknown_cb.setChecked(False)
+		self.show_unknown_cb.toggled.connect(self._on_show_unknown_toggled)
 		mid.addWidget(self.show_unknown_cb)
 		
 		self.show_only_valid_cb = QCheckBox(self.tr("Show only valid files"))
@@ -77,14 +110,54 @@ class PakBrowserDialog(QDialog):
 		self.show_only_valid_cb.toggled.connect(self._on_show_only_valid_toggled)
 		mid.addWidget(self.show_only_valid_cb)
 
-		list_container, _ = create_list_file_help_widget(button_callback=self._load_list_file)
-		mid.addLayout(list_container)
+		self.icon_size_slider = QSlider(Qt.Horizontal, self)
+		self.icon_size_slider.setRange(48, 160)
+		self.icon_size_slider.setValue(88)
+		self.icon_size_slider.setTracking(False)
+		self.icon_size_slider.setFixedWidth(90)
+		self.icon_size_slider.setToolTip(self.tr("Icon size"))
+		self.icon_size_slider.valueChanged.connect(self._set_icon_size)
+		self.icon_size_slider.hide()
+		mid.addWidget(self.icon_size_slider)
+		self.view_mode_btn = QToolButton(self)
+		self.view_mode_btn.setCheckable(True)
+		self.view_mode_btn.setAutoRaise(True)
+		self.view_mode_btn.toggled.connect(self._set_view_mode)
+		mid.addWidget(self.view_mode_btn)
+		self._update_view_mode_button(False)
 
 		self.tree = QTreeView(self)
 		self.tree.setUniformRowHeights(True)
 		self.tree.setSelectionMode(QAbstractItemView.ExtendedSelection)
 		self.tree.setHeaderHidden(True)
-		lay.addWidget(self.tree, 3)
+		self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
+		self.tree.customContextMenuRequested.connect(self._show_tree_context_menu)
+		self.tree.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
+		self.tree.viewport().customContextMenuRequested.connect(self._show_tree_context_menu)
+		self.tree.doubleClicked.connect(self._open_tree_entry)
+		self.icon_view = QListView(self)
+		self.icon_view.setViewMode(QListView.IconMode)
+		self.icon_view.setResizeMode(QListView.Adjust)
+		self.icon_view.setMovement(QListView.Static)
+		self.icon_view.setSelectionMode(QAbstractItemView.ExtendedSelection)
+		self._set_icon_size(self.icon_size_slider.value())
+		self.icon_view.setWordWrap(True)
+		self.icon_view.viewport().setContextMenuPolicy(Qt.CustomContextMenu)
+		self.icon_view.viewport().customContextMenuRequested.connect(self._show_icon_context_menu)
+		self.icon_view.doubleClicked.connect(self._open_icon_entry)
+		self._thumbnail_provider = PakThumbnailProvider(thumbnail_cache_directory(), settings, self)
+		self._icon_model = PakIconModel(self._thumbnail_provider, self)
+		self.icon_view.setModel(self._icon_model)
+		self._thumbnail_timer = QTimer(self)
+		self._thumbnail_timer.setSingleShot(True)
+		self._thumbnail_timer.timeout.connect(self._request_visible_thumbnails)
+		self.icon_view.verticalScrollBar().valueChanged.connect(self._schedule_visible_thumbnails)
+		self.icon_view.horizontalScrollBar().valueChanged.connect(self._schedule_visible_thumbnails)
+		self._icon_directory = ""
+		self.view_stack = QStackedWidget(self)
+		self.view_stack.addWidget(self.tree)
+		self.view_stack.addWidget(self.icon_view)
+		lay.addWidget(self.view_stack, 3)
 		self._tree_model = None
 		self._flat_model: QStringListModel | None = None
 		self._flat_model_valid_only: QStringListModel | None = None
@@ -100,7 +173,7 @@ class PakBrowserDialog(QDialog):
 		out.addWidget(self.out_edit, 1)
 		out.addWidget(QPushButton(self.tr("Choose…"), clicked=self._choose_out))
 		out.addStretch(1)
-		self.dump_valid_btn = QPushButton(self.tr("Dump Valid Paths"), clicked=self._dump_valid_files)
+		self.dump_valid_btn = QPushButton(self.tr(DUMP_VALID_PATHS_TITLE), clicked=self._dump_valid_files)
 		self.dump_valid_btn.setVisible(False)
 		self.dump_valid_btn.setStyleSheet(f"QPushButton {{ background-color: {self._highlight_color.name()}; color: white; }}")
 		out.addWidget(self.dump_valid_btn)
@@ -115,52 +188,88 @@ class PakBrowserDialog(QDialog):
 		self._cached_show_valid = False
 		self._cached_show_unknown = False
 		self._cache_outdated = False
-		self.show_unknown_cb.toggled.connect(lambda _=False: self._recompute_display())
+		self.game_combo.currentTextChanged.connect(self._on_resolution_game_changed)
+		self._scanned_root = ""
+		self._loading_depth = 0
+		self.loading_label = QLabel(self)
+		self.loading_label.setStyleSheet(f"color: {self._highlight_color.name()}; font-weight: 600;")
+		self.loading_label.setVisible(False)
+		lay.addWidget(self.loading_label)
 
+	@contextmanager
+	def _loading(self, message: str):
+		self._loading_depth += 1
+		if self._loading_depth == 1:
+			self.loading_label.setText(message)
+			self.loading_label.setVisible(True)
+			QApplication.setOverrideCursor(Qt.WaitCursor)
+			QApplication.processEvents()
+		try:
+			yield
+		finally:
+			self._loading_depth = max(0, self._loading_depth - 1)
+			if self._loading_depth == 0:
+				self.loading_label.setVisible(False)
+				QApplication.restoreOverrideCursor()
+				QApplication.processEvents()
 
 	def _choose_dir(self):
 		d = QFileDialog.getExistingDirectory(self, self.tr("Select Game Directory"))
 		if d:
 			self.dir_edit.setText(d)
+			self._scan_dir()
+			self._prompt_auto_list_from_directory(d)
 
 	def _scan_dir(self):
 		root = self.dir_edit.text().strip()
 		if not root:
 			QMessageBox.information(self, self.tr("Scan"), self.tr("Select a directory to scan."))
 			return
-		paks = scan_pak_files(root, ignore_mod_paks=self.ignore_mods_cb.isChecked())
+		with self._loading(self.tr("Scanning PAK files...")):
+			paks = scan_pak_files(root, ignore_mod_paks=self.ignore_mods_cb.isChecked())
 		if not paks:
 			QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
 			return
-		
 
+		normalized_root = os.path.normcase(os.path.abspath(root))
+		if self._scanned_root and normalized_root != self._scanned_root:
+			# File lists and their resolved cache belong to a specific game. Keeping
+			# them across a folder switch makes the new reader resolve old-game paths.
+			self._thumbnail_provider.cancel_pending()
+			self._base_paths = []
+			self._all_manifest_paths = []
+			self._valid_paths = set()
+			self._cached_reader = None
+			self._icon_directory = ""
+		self._scanned_root = normalized_root
+
+		self._cache_outdated = True
 		old_paks = [self.pak_list.item(i).text() for i in range(self.pak_list.count())]
 		if paks == old_paks and self._cached_reader:
 
-			self._recompute_display()
+			self._refresh_index()
 			return
 		
 		self.pak_list.clear()
 		for p in paks:
 			self.pak_list.addItem(p)
 		self._refresh_index()
-		if not self._base_paths and not self.ignore_mods_cb.isChecked():
-			manifest_only = self._auto_merge_manifest()
-			if manifest_only:
-				self._base_paths = manifest_only
-				self._refresh_index()
-		self._recompute_display()
 
 	def _on_ignore_mods_toggled(self, checked: bool):
 		root = self.dir_edit.text().strip()
 		if root and os.path.isdir(root):
 			self._scan_dir()
 			return
-		if not checked and not self._base_paths:
-			manifest_only = self._auto_merge_manifest()
-			if manifest_only:
-				self._base_paths = manifest_only
 		self._refresh_index()
+
+	def _on_resolution_game_changed(self, _game: str):
+		self._thumbnail_provider.cancel_pending()
+		self._cached_reader = None
+		self._valid_paths = set()
+		self._cache_outdated = True
+		if self._selected_paks():
+			with self._loading(self.tr("Applying game PAK rules...")):
+				self._refresh_index()
 
 	def _add_paks(self):
 		files, _ = QFileDialog.getOpenFileNames(self, self.tr("Add PAK files"), filter=self.tr("PAK files (*.pak)"))
@@ -169,11 +278,6 @@ class PakBrowserDialog(QDialog):
 				self.pak_list.addItem(f)
 		if files:
 			self._refresh_index()
-			if not self._base_paths and not self.ignore_mods_cb.isChecked():
-				manifest_only = self._auto_merge_manifest()
-				if manifest_only:
-					self._base_paths = manifest_only
-					self._refresh_index()
 
 	def _remove_paks(self):
 		for it in self.pak_list.selectedItems():
@@ -201,12 +305,28 @@ class PakBrowserDialog(QDialog):
 		if d:
 			self.out_edit.setText(d)
 	
-	def _on_show_only_valid_toggled(self):
-		self._update_dump_button_visibility()
-		self._apply_filter_now()
+	def _on_show_unknown_toggled(self, _checked: bool):
+		with self._loading(self.tr("Updating file list...")):
+			try:
+				if self.show_unknown_cb.isChecked():
+					self._ensure_cache(full=True)
+			except Exception as e:
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
+				return
+			self._recompute_display()
+
+	def _on_show_only_valid_toggled(self, _checked: bool):
+		with self._loading(self.tr("Updating file list...")):
+			try:
+				if self.show_only_valid_cb.isChecked():
+					self._ensure_cache(validate=True)
+			except Exception as e:
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
+				return
+			self._recompute_display()
 
 	def _on_filter_text_changed(self, _=None):
-		self._filter_timer.start(120)
+		self._filter_timer.start()
 
 	def _apply_filter(self):
 		self._apply_filter_now()
@@ -219,6 +339,7 @@ class PakBrowserDialog(QDialog):
 			model.setHorizontalHeaderLabels([self.tr("Paths")])
 			self.tree.setModel(model)
 			self._tree_model = model
+			self._rebuild_icon_model()
 			return
 		
 		if text:
@@ -237,6 +358,7 @@ class PakBrowserDialog(QDialog):
 			self._filter_proxy.setFilterRegularExpression(pat)
 			self.tree.setModel(self._filter_proxy)
 			self._tree_model = None
+			self._rebuild_icon_model()
 			return
 		
 		if hasattr(self, '_cached_tree_model') and self._cached_tree_model:
@@ -244,6 +366,7 @@ class PakBrowserDialog(QDialog):
 				self._cached_show_unknown == self.show_unknown_cb.isChecked()):
 				self.tree.setModel(self._cached_tree_model)
 				self._tree_model = self._cached_tree_model
+				self._rebuild_icon_model()
 				return
 		
 		model = QStandardItemModel()
@@ -253,7 +376,7 @@ class PakBrowserDialog(QDialog):
 		for p in self._all_manifest_paths:
 			p_lower = p.lower()
 			if self.show_only_valid_cb.isChecked():
-				if not p.startswith("__Unknown/") and p_lower not in self._valid_paths:
+				if not p.startswith(UNKNOWN_PATH_PREFIX) and p_lower not in self._valid_paths:
 					continue
 			parts = p.split('/')
 			node = root
@@ -286,7 +409,8 @@ class PakBrowserDialog(QDialog):
 				item = QStandardItem(display_name)
 				item.setEditable(False)
 				full = prefix + name
-				item.setData(full if not child else None)
+				item.setData(full, self._ITEM_EXTRACT_PATH_ROLE)
+				item.setData(bool(child), self._ITEM_IS_DIR_ROLE)
 				parent.appendRow(item)
 				if child:
 					build(item, child, full + "/", False)
@@ -298,6 +422,7 @@ class PakBrowserDialog(QDialog):
 		self._cached_tree_model = model
 		self._cached_show_valid = self.show_only_valid_cb.isChecked()
 		self._cached_show_unknown = self.show_unknown_cb.isChecked()
+		self._rebuild_icon_model()
 
 
 	def _build_flat_models(self):
@@ -308,7 +433,7 @@ class PakBrowserDialog(QDialog):
 		self._flat_model.setStringList(list(self._all_manifest_paths))
 		valid_only = []
 		for p in self._all_manifest_paths:
-			if p.startswith("__Unknown/"):
+			if p.startswith(UNKNOWN_PATH_PREFIX):
 				valid_only.append(p)
 				continue
 			if p.lower() in self._valid_paths:
@@ -317,6 +442,148 @@ class PakBrowserDialog(QDialog):
 			self._flat_model_valid_only = QStringListModel(self)
 		self._flat_model_valid_only.setStringList(valid_only)
 		self._update_dump_button_visibility()
+
+	def _set_view_mode(self, icons: bool):
+		self.view_stack.setCurrentIndex(int(icons))
+		self.icon_size_slider.setVisible(icons)
+		self._update_view_mode_button(icons)
+		if icons:
+			self._rebuild_icon_model()
+
+	def _update_view_mode_button(self, icons: bool):
+		style = QApplication.style()
+		pixmap = QStyle.SP_FileDialogDetailedView if icons else QStyle.SP_FileDialogListView
+		self.view_mode_btn.setIcon(style.standardIcon(pixmap))
+		self.view_mode_btn.setToolTip(
+			self.tr("Switch to tree view") if icons else self.tr("Switch to icons view")
+		)
+
+	def _set_icon_size(self, size: int):
+		if not hasattr(self, "icon_view"):
+			return
+		self.icon_view.setIconSize(QSize(size, size))
+		self.icon_view.setGridSize(QSize(size + 32, size + 48))
+		self._schedule_visible_thumbnails()
+
+	def _schedule_visible_thumbnails(self):
+		if hasattr(self, "_thumbnail_timer") and self.view_stack.currentWidget() is self.icon_view:
+			self._thumbnail_timer.start(50)
+
+	def _request_visible_thumbnails(self):
+		viewport = self.icon_view.viewport()
+		step_x = max(24, self.icon_view.gridSize().width() // 2)
+		step_y = max(24, self.icon_view.gridSize().height() // 2)
+		indexes = {
+			self.icon_view.indexAt(QPoint(x, y))
+			for y in range(0, viewport.height() + step_y, step_y)
+			for x in range(0, viewport.width() + step_x, step_x)
+		}
+		for index in indexes:
+			if index.isValid() and not index.data(self._ITEM_IS_DIR_ROLE):
+				self._thumbnail_provider.request(index.data(self._ITEM_EXTRACT_PATH_ROLE))
+
+	def resizeEvent(self, event):
+		super().resizeEvent(event)
+		self._schedule_visible_thumbnails()
+
+	def closeEvent(self, event):
+		self._thumbnail_provider.close()
+		super().closeEvent(event)
+
+	def _filtered_icon_entries(self, paths, text):
+		pattern = QRegularExpression(text)
+		if not pattern.isValid():
+			pattern = QRegularExpression(QRegularExpression.escape(text))
+		pattern.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
+		return [
+			PakIconEntry(path.rsplit("/", 1)[-1], path)
+			for path in paths if pattern.match(path).hasMatch()
+		]
+
+	def _directory_icon_entries(self, paths):
+		prefix = f"{self._icon_directory}/" if self._icon_directory else ""
+		directories: dict[str, PakIconEntry] = {}
+		files = []
+		for path in paths:
+			if prefix and not path.startswith(prefix):
+				continue
+			remainder = path[len(prefix):]
+			if "/" in remainder:
+				name = remainder.split("/", 1)[0]
+				folder = prefix + name
+				directories.setdefault(folder, PakIconEntry(name, folder, True))
+			elif remainder:
+				files.append(PakIconEntry(remainder, path))
+		entries = sorted(directories.values(), key=lambda entry: entry.label.lower())
+		entries += sorted(files, key=lambda entry: entry.label.lower())
+		if self._icon_directory:
+			parent = self._icon_directory.rpartition("/")[0]
+			entries.insert(0, PakIconEntry("..", parent, True))
+		return entries
+
+	def _rebuild_icon_model(self):
+		paths = list(self._iter_display_paths())
+		text = self.filter_edit.text().strip()
+		if text:
+			entries = self._filtered_icon_entries(paths, text)
+		else:
+			entries = self._directory_icon_entries(paths)
+		self._thumbnail_provider.set_source(
+			self._current_reader(),
+			self._selected_paks(),
+			self._base_paths,
+			resource_context_for_app(self.parent()),
+		)
+		self._thumbnail_provider.cancel_pending()
+		self._icon_model.set_entries(entries)
+		self._schedule_visible_thumbnails()
+
+	def _open_icon_entry(self, index):
+		if not index.isValid():
+			return
+		path = index.data(self._ITEM_EXTRACT_PATH_ROLE) or ""
+		if index.data(self._ITEM_IS_DIR_ROLE):
+			self._icon_directory = path
+			self._rebuild_icon_model()
+		elif path:
+			self._open_file_entry(path)
+
+	def _open_tree_entry(self, index):
+		if not index.isValid() or index.data(self._ITEM_IS_DIR_ROLE):
+			return
+		model = self.tree.model()
+		if isinstance(model, (QSortFilterProxyModel, QStringListModel)):
+			path = index.data(Qt.DisplayRole)
+		else:
+			path = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+		if isinstance(path, str) and path:
+			self._open_file_entry(path)
+
+	def _open_file_entry(self, path: str) -> bool:
+		try:
+			reader = self._current_reader()
+			if reader is None:
+				return False
+			context = resource_context_for_app(self.parent())
+			if context is not None:
+				context = context.with_pak_reader(reader)
+			entry = (
+				int(path.split("/", 1)[1], 16)
+				if path.startswith(UNKNOWN_PATH_PREFIX)
+				else path
+			)
+			stream = reader.get_file(entry)
+			if stream:
+				self.parent().add_tab(
+					path,
+					stream.read(),
+					pak_source_path=path,
+					resource_context=context,
+				)
+			return bool(stream)
+		except Exception as e:
+			QMessageBox.critical(self, self.tr("Open failed"), str(e))
+			return False
 
 	def _selected_paks(self) -> List[str]:
 		return [self.pak_list.item(i).text() for i in range(self.pak_list.count())]
@@ -329,10 +596,50 @@ class PakBrowserDialog(QDialog):
 			return []
 		return CachedPakReader.read_manifest(paks)
 
-	def _update_from_cache(self):
-		if not self._cached_reader:
-			return
-		self._recompute_display()
+
+	def _current_reader(self) -> CachedPakReader | None:
+		paks = self._selected_paks()
+		if not paks:
+			self._cached_reader = None
+			self._cache_outdated = False
+			return None
+
+		game = self.game_combo.currentText().strip()
+		r = self._cached_reader if isinstance(self._cached_reader, CachedPakReader) else None
+		if r is None or not r.matches_source(paks, game=game) or self._cache_outdated:
+			r = CachedPakReader.from_paks(paks, game=game)
+			if self._base_paths:
+				r.add_files(*self._base_paths)
+			self._cached_reader = r
+			self._cache_outdated = False
+		return r
+
+	def _ensure_cache(self, *, full: bool = False, validate: bool = False) -> CachedPakReader | None:
+		r = self._current_reader()
+		if r is None:
+			self._valid_paths = set()
+			return None
+
+		known = sorted(set(self._base_paths))
+		if full:
+			self._ensure_full_cache(r, known)
+		elif validate:
+			if not known:
+				self._valid_paths = set()
+				return r
+			self._ensure_validation_cache(r, known)
+
+		if full or validate:
+			self._valid_paths = {p.lower() for p in r.cached_paths(include_unknown=False)}
+		return r
+
+	@staticmethod
+	def _ensure_full_cache(reader, known):
+		reader.prepare(known, full=True)
+
+	@staticmethod
+	def _ensure_validation_cache(reader, known):
+		reader.prepare(known, full=False)
 
 	def _refresh_index(self):
 		paks = self._selected_paks()
@@ -343,46 +650,23 @@ class PakBrowserDialog(QDialog):
 			self._cache_outdated = False
 			self._apply_filter()
 			return
-		
-		if self._cached_reader and self._cached_reader.pak_file_priority == paks and not self._cache_outdated:
-			if self._base_paths:
-				try:
-					self._cached_reader.assign_paths(self._base_paths)
-					self._valid_paths = set()
-					if self._cached_reader._cache:
-						all_cached = self._cached_reader.cached_paths(include_unknown=True)
-						self._valid_paths = {p.lower() for p in all_cached}
-					self._recompute_display()
-					return
-				except RuntimeError:
-					pass
-		
-		r = CachedPakReader()
-		r.pak_file_priority = paks
-		try:
 
-			known = list(set(self._base_paths)) if self._base_paths else []
-			if not known and not self.ignore_mods_cb.isChecked():
+		try:
+			if not self._base_paths and not self.ignore_mods_cb.isChecked():
 				manifest_only = self._auto_merge_manifest()
 				if manifest_only:
-					known = manifest_only
-			if known:
-				r.add_files(*known)
-				r.cache_entries(assign_paths=True)
-			else:
+					self._base_paths = sorted(set(p.lower() for p in manifest_only))
 
-				r.cache_entries(assign_paths=False)
+			if self.show_unknown_cb.isChecked():
+				self._ensure_cache(full=True)
+			elif self.show_only_valid_cb.isChecked():
+				self._ensure_cache(validate=True)
+			else:
+				self._valid_paths = set()
 		except Exception as e:
-			QMessageBox.critical(self, self.tr("Index failed"), str(e))
+			QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
 			return
-		self._cached_reader = r
-		self._cache_outdated = False
-		
-		self._valid_paths = set()
-		if self._cached_reader and self._cached_reader._cache:
-			all_cached = self._cached_reader.cached_paths(include_unknown=True)
-			self._valid_paths = {p.lower() for p in all_cached}
-		
+
 		self._recompute_display()
 
 	def _recompute_display(self):
@@ -394,7 +678,7 @@ class PakBrowserDialog(QDialog):
 			cached = self._cached_reader.cached_paths(include_unknown=True)
 			unknowns = []
 			for p in cached:
-				if p.startswith("__Unknown/") and p.lower() not in base_set:
+				if p.startswith(UNKNOWN_PATH_PREFIX) and p.lower() not in base_set:
 					unknowns.append(p)
 
 			self._all_manifest_paths = sorted(base_set) + unknowns
@@ -405,81 +689,151 @@ class PakBrowserDialog(QDialog):
 		self._apply_filter_now()
 
 	def _load_list_file(self):
-		path, _ = QFileDialog.getOpenFileName(self, self.tr("Open list file"), filter=self.tr("List files (*.list *.txt);;All files (*)") )
+		path = choose_pak_list_file(self)
 		if not path:
 			return
-		_profile = os.getenv("REASY_PROFILE", "0").lower() in ("1", "true", "yes", "on")
-		_sections = []
-		_t0 = time.perf_counter()
-		try:
-			with open(path, "r", encoding="utf-8") as f:
-				items = [ln.strip().replace("\\", "/").lower() for ln in f if ln.strip()]
-		except Exception as e:
-			QMessageBox.critical(self, "Read failed", str(e))
-			return
-		_t1 = time.perf_counter()
-		if _profile:
-			_sections.append(("Read & normalize .list", ( _t1 - _t0 ) * 1000.0))
+		self._load_list_file_from_path(path)
 
-		_t2a = time.perf_counter()
-		manifest_paths = self._auto_merge_manifest()
-		_t2b = time.perf_counter()
-		if _profile:
-			_sections.append(("Read manifest (if any)", ( _t2b - _t2a ) * 1000.0))
-		
-		merged = sorted(set(items) | set(p.lower() for p in manifest_paths))
-		self._base_paths = merged
-
-		_t3a = time.perf_counter()
-		if self._cached_reader:
+	def _load_list_file_from_path(self, path: str):
+		with self._loading(self.tr("Loading list file...")):
 			try:
-				self._cached_reader.assign_paths(self._base_paths)
-				self._valid_paths = set()
-				if self._cached_reader._cache:
-					all_cached = self._cached_reader.cached_paths(include_unknown=True)
-					self._valid_paths = {p.lower() for p in all_cached}
-			except Exception:
-				self._refresh_index()
-		else:
+				items = read_pak_list_file(path)
+			except Exception as e:
+				QMessageBox.critical(self, self.tr("Read failed"), str(e))
+				return
+
+		list_game = game_for_pak_list_path(path)
+		if list_game and list_game != self.game_combo.currentText():
+			was_blocked = self.game_combo.blockSignals(True)
+			try:
+				self.game_combo.setCurrentText(list_game)
+			finally:
+				self.game_combo.blockSignals(was_blocked)
+
+		with self._loading(self.tr("Resolving list entries...")):
+			manifest_paths = self._auto_merge_manifest()
+			self._base_paths = sorted(set(items) | {p.lower() for p in manifest_paths})
+			self._cached_reader = None
+			self._valid_paths = set()
+			self._cache_outdated = False
 			self._refresh_index()
-		_t3b = time.perf_counter()
-		if _profile:
-			_sections.append(("Resolve names (assign/index)", ( _t3b - _t3a ) * 1000.0))
-		self._recompute_display()
-		_t4 = time.perf_counter()
-		if _profile:
-			_sections.append(("Build UI model", ( _t4 - _t3b ) * 1000.0))
-			_total = sum(ms for _, ms in _sections)
-			msg = "\n".join(f"{name}: {ms:.2f} ms" for name, ms in _sections)
-			msg += f"\nTotal: {_total:.2f} ms"
-			QMessageBox.information(self, self.tr("Profile – Load .list"), msg)
+
+	def _prompt_auto_list_from_directory(self, directory_path: str):
+		suggestions = find_suggested_pak_list_paths_for_directory(directory_path, BASE_DIR)
+		if not suggestions:
+			return
+		choices = [str(p) for p in suggestions]
+		selected, ok = QInputDialog.getItem(
+			self,
+			self.tr("Suggested List File"),
+			self.tr("Detected game folder name. Choose a list file to load:"),
+			choices,
+			0,
+			False,
+		)
+		if ok and selected:
+			self._load_list_file_from_path(selected)
 
 	def _extract_selected(self):
 		targets = self._collect_selected_paths()
 		self._extract(targets)
 
 	def _extract_all(self):
-		targets = list(self._all_manifest_paths)
+		targets = list(self._iter_display_paths())
 		self._extract(targets)
 
+	def _selected_icon_paths(self) -> List[str]:
+		return [
+			index.data(self._ITEM_EXTRACT_PATH_ROLE)
+			for index in self.icon_view.selectedIndexes()
+			if not index.data(self._ITEM_IS_DIR_ROLE)
+		]
+
+	def _selected_flat_paths(self) -> List[str]:
+		paths = []
+		for index in self.tree.selectedIndexes():
+			value = index.data(Qt.DisplayRole)
+			if isinstance(value, str) and value:
+				paths.append(value)
+		return paths
+
+	def _selected_tree_paths(self) -> List[str]:
+		paths = []
+		for index in self.tree.selectedIndexes():
+			if index.data(self._ITEM_IS_DIR_ROLE):
+				continue
+			value = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+			if isinstance(value, str) and value:
+				paths.append(value)
+		return paths
+
 	def _collect_selected_paths(self) -> List[str]:
-		paths: List[str] = []
+		if self.view_stack.currentWidget() is self.icon_view:
+			return self._selected_icon_paths()
 		model = self.tree.model()
 		if model is None:
-			return paths
+			return []
 		if isinstance(model, (QSortFilterProxyModel, QStringListModel)):
-			for idx in self.tree.selectedIndexes():
-				val = idx.data(Qt.DisplayRole)
-				if isinstance(val, str) and val:
-					paths.append(val)
-			return paths
+			return self._selected_flat_paths()
 		if isinstance(model, QStandardItemModel):
-			for idx in self.tree.selectedIndexes():
-				item = model.itemFromIndex(idx)
-				data = item.data()
-				if isinstance(data, str) and data:
-					paths.append(data)
-		return paths
+			return self._selected_tree_paths()
+		return []
+
+	def _iter_display_paths(self):
+		for p in self._all_manifest_paths:
+			if not self.show_only_valid_cb.isChecked():
+				yield p
+				continue
+			if p.startswith(UNKNOWN_PATH_PREFIX) or p.lower() in self._valid_paths:
+				yield p
+
+	def _show_tree_context_menu(self, pos):
+		sender = self.sender()
+		if sender is self.tree:
+			vpos = self.tree.viewport().mapFrom(self.tree, pos)
+		else:
+			vpos = pos
+		index = self.tree.indexAt(vpos)
+		if not index.isValid():
+			return
+		is_dir = bool(index.data(self._ITEM_IS_DIR_ROLE))
+		if not is_dir:
+			return
+		folder_path = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+		if not isinstance(folder_path, str) or not folder_path:
+			return
+		menu = QMenu(self)
+		action = menu.addAction(self.tr("Extract Folder"))
+		chosen = menu.exec(self.tree.viewport().mapToGlobal(vpos))
+		if chosen != action:
+			return
+		prefix = folder_path + "/"
+		targets = [p for p in self._iter_display_paths() if p.startswith(prefix)]
+		self._extract(targets)
+
+	def _show_icon_context_menu(self, pos):
+		index = self.icon_view.indexAt(pos)
+		if not index.isValid():
+			if self._icon_directory and not self.filter_edit.text().strip():
+				menu = QMenu(self)
+				up = menu.addAction(self.tr("Up"))
+				if menu.exec(self.icon_view.viewport().mapToGlobal(pos)) == up:
+					self._icon_directory = self._icon_directory.rpartition("/")[0]
+					self._rebuild_icon_model()
+			return
+		if not index.data(self._ITEM_IS_DIR_ROLE):
+			return
+		folder = index.data(self._ITEM_EXTRACT_PATH_ROLE)
+		menu = QMenu(self)
+		open_action = menu.addAction(self.tr("Open Folder"))
+		extract_action = None if index.data(Qt.DisplayRole) == ".." else menu.addAction(self.tr("Extract Folder"))
+		chosen = menu.exec(self.icon_view.viewport().mapToGlobal(pos))
+		if chosen == open_action:
+			self._icon_directory = folder
+			self._rebuild_icon_model()
+		elif extract_action is not None and chosen == extract_action:
+			prefix = folder + "/"
+			self._extract([p for p in self._iter_display_paths() if p.startswith(prefix)])
 
 	def _update_dump_button_visibility(self):
 		show = (self.show_only_valid_cb.isChecked() and 
@@ -489,19 +843,69 @@ class PakBrowserDialog(QDialog):
 	
 	def _dump_valid_files(self):
 		if not self._flat_model_valid_only or self._flat_model_valid_only.rowCount() == 0:
-			QMessageBox.information(self, self.tr("Dump Valid Paths"), self.tr("No valid paths to dump."))
+			QMessageBox.information(self, self.tr(DUMP_VALID_PATHS_TITLE), self.tr("No valid paths to dump."))
+			return
+		valid_paths = [p for p in self._flat_model_valid_only.stringList() if not p.startswith(UNKNOWN_PATH_PREFIX)]
+		if not valid_paths:
+			QMessageBox.information(self, self.tr(DUMP_VALID_PATHS_TITLE), self.tr("No valid paths to dump."))
 			return
 		path, _ = QFileDialog.getSaveFileName(self, self.tr("Save valid paths list"), "valid_paths.list", self.tr("List files (*.list *.txt);;All files (*)"))
 		if not path:
 			return
 		try:
-			valid_paths = self._flat_model_valid_only.stringList()
 			with open(path, "w", encoding="utf-8") as f:
 				for p in valid_paths:
 					f.write(p + "\n")
 			QMessageBox.information(self, self.tr("Success"), self.tr("Dumped {count} valid path(s) to:\n{path}").format(count=len(valid_paths), path=path))
 		except Exception as e:
 			QMessageBox.critical(self, self.tr("Write failed"), str(e))
+
+	def _run_extraction_with_progress(self, reader_getter, outdir_getter, targets: List[str], missing: List[str]):
+		from ui.extraction_progress_dialog import ExtractionProgressDialog
+		from threading import Thread
+
+		progress_dialog = ExtractionProgressDialog(len(targets), self)
+		extraction_error = [None]
+		extraction_count = [0]
+
+		def do_extraction():
+			try:
+				reader = reader_getter()
+				extraction_count[0] = reader.extract_files_to(
+					outdir_getter(),
+					targets,
+					missing_files=missing,
+					progress_dialog=progress_dialog
+				)
+				progress_dialog.signals.extraction_complete.emit()
+			except Exception as e:
+				extraction_error[0] = e
+				progress_dialog.signals.extraction_error.emit(str(e))
+
+		extraction_thread = Thread(target=do_extraction)
+		extraction_thread.start()
+
+		progress_dialog.exec()
+		extraction_thread.join(timeout=2.0)
+
+		if extraction_error[0]:
+			QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
+			return None
+
+		if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
+			QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
+			return None
+
+		return extraction_count[0]
+
+	def _append_missing_paths_message(self, msg: str, missing: List[str]) -> str:
+		if missing:
+			msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
+			if len(missing) > 50:
+				msg += "\n… " + self.tr("and {count} more").format(
+					count=len(missing) - 50
+				)
+		return msg
 	
 	def _extract(self, targets: List[str]):
 		if not targets:
@@ -517,115 +921,50 @@ class PakBrowserDialog(QDialog):
 			return
 		Path(outdir).mkdir(parents=True, exist_ok=True)
 
-		if self._cache_outdated:
-			self._refresh_index()
-		
-		if any(t.startswith("__Unknown/") for t in targets):
+		if any(t.startswith(UNKNOWN_PATH_PREFIX) for t in targets):
 
-			rc = self._cached_reader if isinstance(self._cached_reader, CachedPakReader) else None
-			if not rc:
-				rc = CachedPakReader()
-				rc.pak_file_priority = paks
-				try:
-
-					rc.cache_entries(assign_paths=False)
-				except Exception as e:
-					QMessageBox.critical(self, self.tr("Index failed"), str(e))
-					return
-			missing: List[str] = []
-			
-			from ui.extraction_progress_dialog import ExtractionProgressDialog
-			progress_dialog = ExtractionProgressDialog(len(targets), self)
-			
-			from threading import Thread
-			extraction_error = [None]
-			extraction_count = [0]
-			
-			def do_extraction():
-				try:
-					extraction_count[0] = rc.extract_files_to(
-						self.out_edit.text().strip(), 
-						targets, 
-						missing_files=missing,
-						progress_dialog=progress_dialog
-					)
-					progress_dialog.signals.extraction_complete.emit()
-				except Exception as e:
-					extraction_error[0] = e
-					progress_dialog.signals.extraction_error.emit(str(e))
-			
-			extraction_thread = Thread(target=do_extraction)
-			extraction_thread.start()
-			
-			result = progress_dialog.exec()
-			extraction_thread.join(timeout=2.0)
-			
-			if extraction_error[0]:
-				QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
-				return
-			
-			if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
-				QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
-				return
-			
-			count = extraction_count[0]
-			msg = self.tr("Extracted {count} file(s) to:\n{dest}").format(count=count, dest=self.out_edit.text().strip())
-			if missing:
-				msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
-				if len(missing) > 50:
-					msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
-			QMessageBox.information(self, self.tr("Done"), msg)
-			return
-
-
-		r = CachedPakReader()
-		r.pak_file_priority = paks
-		missing: List[str] = []
-		
-		from ui.extraction_progress_dialog import ExtractionProgressDialog
-		progress_dialog = ExtractionProgressDialog(len(targets), self)
-		
-		from threading import Thread
-		extraction_error = [None]
-		extraction_count = [0]
-		
-		def do_extraction():
 			try:
-				if self._cached_reader and isinstance(self._cached_reader, CachedPakReader):
-					r._cache = self._cached_reader._cache
-					_r = r
-				else:
-					_r = r
-				extraction_count[0] = _r.extract_files_to(
-					outdir, 
-					targets, 
-					missing_files=missing,
-					progress_dialog=progress_dialog
-				)
-				progress_dialog.signals.extraction_complete.emit()
+				rc = self._ensure_cache(full=True)
 			except Exception as e:
-				extraction_error[0] = e
-				progress_dialog.signals.extraction_error.emit(str(e))
-		
-		extraction_thread = Thread(target=do_extraction)
-		extraction_thread.start()
-		
-		result = progress_dialog.exec()
-		extraction_thread.join(timeout=2.0)
-		
-		if extraction_error[0]:
-			QMessageBox.critical(self, self.tr("Extract failed"), str(extraction_error[0]))
-			return
-		
-		if progress_dialog.cancelled and progress_dialog.completed_files < progress_dialog.total_files:
-			QMessageBox.information(self, self.tr("Cancelled"), self.tr("Extraction was cancelled"))
-			return
-		
-		count = extraction_count[0]
-		msg = f"{self.tr('Extracted')} {count} {self.tr('file(s) to:')}\n{outdir}"
-		if missing:
-			msg += f"\n\n{self.tr('Missing paths (not found in PAKs):')}\n" + "\n".join(missing[:50])
-			if len(missing) > 50:
-				msg += f"\n… {self.tr('and')} {len(missing) - 50} {self.tr('more')}"
-		QMessageBox.information(self, self.tr("Done"), msg)
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
+				return
+			if not rc:
+				QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), self.tr("Could not build PAK index."))
+				return
+			missing: List[str] = []
+			count = self._run_extraction_with_progress(
+				lambda: rc,
+				lambda: self.out_edit.text().strip(),
+				targets,
+				missing
+			)
+			if count is None:
+				return
 
+			msg = self.tr("Extracted {count} file(s) to:\n{dest}").format(count=count, dest=self.out_edit.text().strip())
+			QMessageBox.information(self, self.tr("Done"), self._append_missing_paths_message(msg, missing))
+			return
+
+		try:
+			r = self._ensure_cache(validate=True)
+		except Exception as e:
+			QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), str(e))
+			return
+		if not r:
+			QMessageBox.critical(self, self.tr(INDEX_FAILED_TITLE), self.tr("Could not build PAK index."))
+			return
+		missing: List[str] = []
+
+		count = self._run_extraction_with_progress(
+			lambda: r,
+			lambda: outdir,
+			targets,
+			missing
+		)
+		if count is None:
+			return
+
+		msg = self.tr("Extracted {count} file(s) to:\n{dest}").format(
+			count=count, dest=outdir
+		)
+		QMessageBox.information(self, self.tr("Done"), self._append_missing_paths_message(msg, missing))

@@ -20,14 +20,16 @@ class ExtractionProgressDialog(QDialog):
         self.cancelled = False
         self.signals = ProgressSignals()
         
-        self.setWindowTitle("Extracting Files")
+        self.setWindowTitle(self.tr("Extracting Files"))
         self.setModal(True)
         self.setMinimumWidth(400)
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         
         layout = QVBoxLayout()
         
-        self.status_label = QLabel(f"Extracting {total_files:,} files...")
+        self.status_label = QLabel(
+            self.tr("Extracting {total_files:,} files...").format(total_files=total_files)
+        )
         layout.addWidget(self.status_label)
         
         self.progress_bar = QProgressBar()
@@ -35,15 +37,19 @@ class ExtractionProgressDialog(QDialog):
         self.progress_bar.setValue(0)
         layout.addWidget(self.progress_bar)
         
-        self.details_label = QLabel("0 / {:,} files".format(total_files))
+        self.details_label = QLabel(
+            self.tr("{completed_files:,} / {total_files:,} files").format(
+                completed_files=0, total_files=total_files
+            )
+        )
         layout.addWidget(self.details_label)
         
-        self.time_label = QLabel("Time elapsed: 00:00")
+        self.time_label = QLabel(self.tr("Time elapsed: 00:00"))
         layout.addWidget(self.time_label)
         
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        self.cancel_button = QPushButton("Cancel")
+        self.cancel_button = QPushButton(self.tr("Cancel"))
         self.cancel_button.clicked.connect(self.cancel_extraction)
         button_layout.addWidget(self.cancel_button)
         layout.addLayout(button_layout)
@@ -67,18 +73,26 @@ class ExtractionProgressDialog(QDialog):
         self.progress_bar.setValue(self.completed_files)
         
         percent = (self.completed_files * 100) // self.total_files
-        self.details_label.setText(f"{self.completed_files:,} / {self.total_files:,} files ({percent}%)")
+        self.details_label.setText(self.tr(
+            "{completed_files:,} / {total_files:,} files ({percent}%)"
+        ).format(
+            completed_files=self.completed_files,
+            total_files=self.total_files,
+            percent=percent,
+        ))
         
         if self.completed_files >= self.total_files:
-            self.status_label.setText("Extraction complete!")
-            self.cancel_button.setText("Close")
+            self.status_label.setText(self.tr("Extraction complete!"))
+            self.cancel_button.setText(self.tr("Close"))
     
     def update_elapsed_time(self):
         elapsed_ms = self.elapsed_timer.elapsed()
         elapsed_sec = elapsed_ms // 1000
         minutes = elapsed_sec // 60
         seconds = elapsed_sec % 60
-        self.time_label.setText(f"Time elapsed: {minutes:02d}:{seconds:02d}")
+        self.time_label.setText(self.tr(
+            "Time elapsed: {minutes:02d}:{seconds:02d}"
+        ).format(minutes=minutes, seconds=seconds))
     
     def cancel_extraction(self):
         if self.completed_files >= self.total_files:
@@ -94,19 +108,23 @@ class ExtractionProgressDialog(QDialog):
         elapsed_sec = elapsed_ms // 1000
         minutes = elapsed_sec // 60
         seconds = elapsed_sec % 60
-        self.time_label.setText(f"Time elapsed: {minutes:02d}:{seconds:02d}")
+        self.time_label.setText(self.tr(
+            "Time elapsed: {minutes:02d}:{seconds:02d}"
+        ).format(minutes=minutes, seconds=seconds))
         
-        self.status_label.setText("Extraction complete!")
-        self.cancel_button.setText("Close")
+        self.status_label.setText(self.tr("Extraction complete!"))
+        self.cancel_button.setText(self.tr("Close"))
         self.progress_bar.setValue(self.total_files)
-        self.details_label.setText(f"{self.total_files:,} / {self.total_files:,} files (100%)")
+        self.details_label.setText(self.tr(
+            "{completed_files:,} / {total_files:,} files (100%)"
+        ).format(completed_files=self.total_files, total_files=self.total_files))
         self.completed_files = self.total_files
     
     @Slot(str)
     def on_extraction_error(self, error_msg: str):
         self.update_timer.stop()
-        self.status_label.setText(f"Error: {error_msg}")
-        self.cancel_button.setText("Close")
+        self.status_label.setText(self.tr("Error: {error}").format(error=error_msg))
+        self.cancel_button.setText(self.tr("Close"))
     
     def closeEvent(self, event):
         if self.completed_files < self.total_files:

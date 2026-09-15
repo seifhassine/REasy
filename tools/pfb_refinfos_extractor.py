@@ -5,13 +5,14 @@ import sys
 import argparse
 import json
 from collections import defaultdict
-from typing import Dict, Set, List
+from typing import Dict, List
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from file_handlers.rsz.rsz_file import RszFile
+from utils.app_paths import resolve_cli_path
 from utils.type_registry import TypeRegistry
 
 
@@ -63,6 +64,19 @@ def build_property_map_for_file(filepath: str, type_registry: TypeRegistry):
     return pairs
 
 
+def _serialize_mapping(mapping):
+    return {
+        type_name: {
+            str(property_id): {
+                "files": sorted(data["files"]),
+                "array_ids": sorted(data["array_ids"]),
+            }
+            for property_id, data in property_map.items()
+        }
+        for type_name, property_map in mapping.items()
+    }
+
+
 def aggregate(root: str, registry_json: str):
     type_registry = TypeRegistry(registry_json) if registry_json else None
 
@@ -78,28 +92,19 @@ def aggregate(root: str, registry_json: str):
         except Exception as ex:
             print(f"[warn] Failed {fp}: {ex}")
 
-    result = {}
-    for t, prop_map in mapping.items():
-        result[t] = {}
-        for pid, data in prop_map.items():
-            result[t][str(pid)] = {
-                'files': sorted(list(data['files'])),
-                'array_ids': sorted(list(data['array_ids']))
-            }
-    return result
+    return _serialize_mapping(mapping)
 
 
 def main():
     parser = argparse.ArgumentParser(description='Map PFB GameObjectRefInfo property IDs to component type names and list file occurrences.')
-    parser.add_argument('path', help='Directory to scan or a single PFB file')
-    parser.add_argument('--registry', '-r', help='Path to RSZ type registry JSON for type name resolution')
-    parser.add_argument('--output', '-o', help='Output JSON file; if omitted, prints to stdout')
+    parser.add_argument('path', type=resolve_cli_path, help='Directory to scan or a single PFB file')
+    parser.add_argument('--registry', '-r', type=resolve_cli_path, help='Path to RSZ type registry JSON for type name resolution')
+    parser.add_argument('--output', '-o', type=resolve_cli_path, help='Output JSON file; if omitted, prints to stdout')
     parser.add_argument('--pretty', action='store_true', help='Pretty-print JSON')
 
     args = parser.parse_args()
 
     if os.path.isfile(args.path):
-        root = os.path.dirname(args.path)
         single_file = os.path.abspath(args.path)
         type_registry = TypeRegistry(args.registry) if args.registry else None
         mapping: Dict[str, Dict[int, dict]] = defaultdict(lambda: defaultdict(lambda: { 'files': set(), 'array_ids': set() }))
@@ -110,14 +115,7 @@ def main():
                 mapping[type_name][prop_id]['array_ids'].add(array_idx)
         except Exception as ex:
             print(f"[warn] Failed {single_file}: {ex}")
-        result = {}
-        for t, prop_map in mapping.items():
-            result[t] = {}
-            for pid, data in prop_map.items():
-                result[t][str(pid)] = {
-                    'files': sorted(list(data['files'])),
-                    'array_ids': sorted(list(data['array_ids']))
-                }
+        result = _serialize_mapping(mapping)
     else:
         result = aggregate(args.path, args.registry)
 

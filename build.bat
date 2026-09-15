@@ -1,80 +1,40 @@
 @echo off
-REM ***********************************************
-REM Build script for REasy Editor (64-bit only)
-REM ***********************************************
+setlocal
+cd /d "%~dp0"
 
-REM Check Python 3.12+
-python -c "import sys; exit(0 if sys.version_info >= (3,12) else 1)" 2>nul
-if errorlevel 1 (
-    echo ERROR: Python 3.12+ required!
-    pause
-    exit /b 1
-)
-echo Python 3.12+ detected - OK
-echo.
+set "PY=.venv\Scripts\python.exe"
+set "GDEFLATE_DLL=.cache\gdeflate\libGDeflate.dll"
+set "PYTHONNOUSERSITE=1"
 
-echo Building 64-bit version...
+if exist build rmdir /S /Q build || exit /b 1
+if exist dist rmdir /S /Q dist || exit /b 1
 
-REM Clean up previous build artifacts if any
-if exist build rmdir /S /Q build
-if exist dist rmdir /S /Q dist
-
-REM Build using PyInstaller with version file
-pip install -r requirements.txt
-
-REM Pre-build native extension into site-packages so PyInstaller can collect it
-python setup.py build_ext --inplace
-python scripts\compile_qm.py
-python -m PyInstaller --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
-  --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
-  --hidden-import fastmesh --collect-binaries fastmesh ^
-  REasy.py
-  
-xcopy /E /I /Y resources dist\resources
-rmdir /S /Q dist\resources\data\dumps
-rmdir /S /Q dist\resources\patches
-if not exist dist\resources\i18n mkdir dist\resources\i18n
-xcopy /Y /I resources\i18n\ dist\resources\i18n\
-copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png"
-if not exist dist\resources\scripts mkdir dist\resources\scripts
-copy "scripts\auto_update.ps1" "dist\resources\scripts\auto_update.ps1"
-copy "resources\data\dumps\rszre4.json" "dist\rszre4.json"
-copy "resources\data\dumps\rszre2.json" "dist\rszre2.json"
-copy "resources\data\dumps\rszre2rt.json" "dist\rszre2rt.json"
-copy "resources\data\dumps\rszdmc5.json" "dist\rszdmc5.json"
-copy "resources\data\dumps\rszsf6.json" "dist\rszsf6.json"
-copy "resources\data\dumps\rszre8.json" "dist\rszre8.json"
-copy "resources\data\dumps\rszre7.json" "dist\rszre7.json"
-copy "resources\data\dumps\rszre7rt.json" "dist\rszre7rt.json"
-copy "resources\data\dumps\rszre3.json" "dist\rszre3.json"
-copy "resources\data\dumps\rszre3rt.json" "dist\rszre3rt.json"
-copy "resources\data\dumps\rszreresistance.json" "dist\rszreresistance.json"
-copy "resources\data\dumps\rszmhwilds.json" "dist\rszmhwilds.json"
-copy "resources\data\dumps\rszo2.json" "dist\rszo2.json"
-copy "resources\data\dumps\rszdd2.json" "dist\rszdd2.json"
-copy "resources\data\dumps\rszmhrise.json" "dist\rszmhrise.json"
-
-
-
-if errorlevel 1 (
-    echo 64-bit build FAILED.
-    pause
-    goto end
-)
-
-REM Rename the generated executable to include _x64
-if exist dist\REasy.exe (
-    move /Y dist\REasy.exe dist\REasy.exe
+if /I "%GITHUB_ACTIONS%"=="true" (
+  set "PY=python"
+  call "%~dp0prepare_env.bat" -UseCurrentPython || exit /b 1
 ) else (
-    echo Could not find dist\REasy.exe after 64-bit build.
-    pause
-    goto end
+  set "PATH=%CD%\.venv\Scripts;%PATH%"
+  call "%~dp0prepare_env.bat" || exit /b 1
 )
-echo 64-bit build succeeded.
 
-echo.
-echo The executable is located in the "dist" folder as:
-echo    REasy.exe  (64-bit)
-pause
+"%PY%" -c "import runpy, sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); runpy.run_module('PyInstaller', run_name='__main__')" --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
+  --collect-submodules file_handlers ^
+  --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
+  --hidden-import fast_string_scan --collect-binaries fast_string_scan ^
+  --hidden-import fastmesh --collect-binaries fastmesh ^
+  --hidden-import texture2ddecoder --collect-all texture2ddecoder ^
+  --add-binary "%GDEFLATE_DLL%;tools\runtimes\win-x64\native" ^
+  REasy.py || exit /b 1
 
-:end
+xcopy /E /I /Y resources dist\resources || exit /b 1
+if exist dist\resources\data\dumps rmdir /S /Q dist\resources\data\dumps
+if exist dist\resources\patches rmdir /S /Q dist\resources\patches
+if not exist dist\resources\i18n mkdir dist\resources\i18n
+xcopy /Y /I resources\i18n\ dist\resources\i18n\ || exit /b 1
+copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png" || exit /b 1
+if not exist dist\resources\scripts mkdir dist\resources\scripts
+copy "scripts\auto_update.ps1" "dist\resources\scripts\auto_update.ps1" || exit /b 1
+copy "resources\data\dumps\*.json" dist\ || exit /b 1
+
+if not exist dist\REasy.exe exit /b 1
+echo Built dist\REasy.exe

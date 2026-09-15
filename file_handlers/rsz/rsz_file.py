@@ -3,16 +3,26 @@ import uuid
 import sys
 from types import MappingProxyType
 from file_handlers.rsz.rsz_data_types import (
-    StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
+    Int4Data, Int4ColorData, StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
     ColorData, ObjectData, U32Data, UserDataData, Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, GameObjectRefData,
     GuidData, StringData, ResourceData, RuntimeTypeData, OBBData, RawBytesData, CapsuleData, AABBData, AreaData,
     ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, AreaDataOld, get_type_class, 
-    NON_ARRAY_PARSERS
+    RectData, NON_ARRAY_PARSERS, LazyRawValues
 )
 from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
 from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
 from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
+from file_handlers.rsz.rsz_build_utils import (
+    calculate_wstring_offsets,
+    pad_to_alignment,
+    write_prefab_info_table,
+    write_resource_info_table,
+    write_resource_userdata_tables,
+    write_scn_gameobjects,
+    write_userdata_info_table,
+    write_wstring_entries,
+)
 from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
 _STRUCT_DEFINITIONS = {
@@ -25,6 +35,7 @@ _STRUCT_DEFINITIONS = {
     "2float": "<2f",
     "2int": "<2i",
     "3int": "<3i",
+    "4int": "<4i",
     "sbyte": "<b",
     "ubyte": "<B",
     "4ubyte": "<4B",
@@ -51,6 +62,7 @@ pack_3double = _PACKERS["3double"]
 pack_2float = _PACKERS["2float"]
 pack_2int = _PACKERS["2int"]
 pack_3int = _PACKERS["3int"]
+pack_4int = _PACKERS["4int"]
 pack_sbyte = _PACKERS["sbyte"]
 pack_ubyte = _PACKERS["ubyte"]
 pack_4ubyte = _PACKERS["4ubyte"]
@@ -72,6 +84,7 @@ unpack_3double = _UNPACKERS["3double"]
 unpack_2float  = _UNPACKERS["2float"]
 unpack_2int    = _UNPACKERS["2int"]
 unpack_3int    = _UNPACKERS["3int"]
+unpack_4int    = _UNPACKERS["4int"]
 unpack_sbyte   = _UNPACKERS["sbyte"]
 unpack_ubyte   = _UNPACKERS["ubyte"]
 unpack_4ubyte  = _UNPACKERS["4ubyte"]
@@ -168,9 +181,6 @@ class _NonArrayFieldParser:
         self._align_in_place(align or self.field_align or 1)
         return self.pos
 
-    def _slice_bytes(self, start, end):
-        return self.data[start:end]
-
     def read_value(self, unpack_func, size, align=None):
         pos = self.pos
         if align and align > 1:
@@ -259,6 +269,7 @@ for _name, _func in (
     ("unpack_3double", unpack_3double),
     ("unpack_2int", unpack_2int),
     ("unpack_3int", unpack_3int),
+    ("unpack_4int", unpack_4int),
     ("unpack_4ubyte", unpack_4ubyte),
     ("unpack_16float", unpack_16float),
     ("unpack_20float", unpack_20float),
@@ -440,7 +451,6 @@ class RszResourceInfo:
 class RszPrefabInfo:
     __slots__ = ("string_offset","parent_id")
     SIZE = 8
-    SIZE = 8
     def __init__(self):
         self.string_offset = 0
         self.parent_id = 0
@@ -520,6 +530,40 @@ class RszInstanceInfo:
 # Main Rsz File Parser
 ########################################
 
+class TypeRegistryValidationError(ValueError):
+    """Raised when optional RSZ type-registry validation finds mismatches."""
+
+    def __init__(self, issues):
+        self.issues = issues
+        super().__init__("RSZ type registry validation failed. Please make sure you selected the correct RSZ dump (rszxxx.json)")
+
+
+_LAZY_PRIMITIVE_ARRAY_THRESHOLD = 128
+_LAZY_STRUCT_ARRAY_THRESHOLD = 4096
+
+_LAZY_PRIMITIVE_ARRAY_TYPES = frozenset({
+    S8Data, U8Data, BoolData,
+    S16Data, U16Data,
+    S32Data, U32Data,
+    S64Data, U64Data,
+    F32Data, F64Data,
+})
+
+_FIXED_STRUCT_FIELD_TYPES = frozenset({
+    S8Data, U8Data, BoolData,
+    S16Data, U16Data,
+    S32Data, U32Data,
+    S64Data, U64Data,
+    F32Data, F64Data,
+    Vec2Data, Float2Data, PointData, SizeData, RangeData, RangeIData,
+    Int2Data, Uint2Data, Float3Data, PositionData, Int3Data, Int4Data,
+    Int4ColorData, Uint3Data, Float4Data, QuaternionData, ColorData,
+    Vec3Data, Vec3ColorData, Vec4Data, Mat4Data, OBBData, RawBytesData,
+    CapsuleData, AABBData, RectData, AreaData, AreaDataOld, GuidData,
+    GameObjectRefData,
+})
+
+
 class RszFile:
 
     def __init__(self):
@@ -573,10 +617,11 @@ class RszFile:
         self._parser_pool = []
         self._prepared_field_defs = set()
         self._type_info_cache = {}
+        self._registry_validation_enabled = False
 
 
-    def read(self, data: bytes, skip_data: bool = False):
-        # Use memoryview for efficient slicing operations
+    def _initialize_read_context(self, data: bytes):
+        """Reset parsing state shared by full and headless RSZ readers."""
         self.full_data = memoryview(data)
         self._current_offset = 0
         self._parser_pool.clear()
@@ -588,10 +633,16 @@ class RszFile:
         self.is_pfb16 = False
         
         self._path_lower = (self.filepath or "").lower()
-        self._is_16 = self._path_lower.endswith(".16")
-        self._is_18 = self._path_lower.endswith(".18")
-        self._is_19 = self._path_lower.endswith(".19")
+        self._is_16 = self._path_lower.endswith((".16", ".16.x64", ".16.stm"))
+        self._is_18 = self._path_lower.endswith((".18", ".18.x64", ".18.stm"))
+        self._is_19 = self._path_lower.endswith((".19", ".19.x64", ".19.stm"))
         self._is_scn_new = self._is_18 or self._is_19
+        self.is_headless = False
+
+    def read(self, data: bytes, skip_data: bool = False, validate_type_registry: bool = False):
+        # Use memoryview for efficient slicing operations
+        self._initialize_read_context(data)
+        self._registry_validation_enabled = validate_type_registry
 
         if data[:4] == b'USR\x00':
             self.is_usr = True
@@ -640,7 +691,7 @@ class RszFile:
         self._parse_gameobjects(data)
         self._parse_gameobject_ref_infos(data)
         
-        if self.filepath.lower().endswith('.16'):
+        if self._is_16:
             from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
             self._current_offset = parse_pfb16_resources(self, data)
         else:
@@ -655,14 +706,14 @@ class RszFile:
         """Parse standard SCN file structure"""
         self._parse_gameobjects(data)
         self._parse_folder_infos(data)
-        if self.filepath.lower().endswith('.18'):
+        if self._is_18:
             _parse_scn_18_resource_infos(self)
         else:
             self._parse_resource_infos(data)
         
         self._parse_prefab_infos(data)
         # SCN.19 format doesn't have userdata_infos
-        if not (self.filepath.lower().endswith('.19') or self.filepath.lower().endswith('.18')):
+        if not self._is_scn_new:
             self._parse_userdata_infos(data)
         self._parse_blocks()
         self._parse_rsz_section(data, skip_data)
@@ -738,6 +789,27 @@ class RszFile:
             self.userdata_infos.append(ui)
         self._current_offset = _align(self._current_offset, 16)
 
+    def _load_offset_strings(self, items, setter, *, base_offset=0):
+        """Load strings addressed by each item's ``string_offset``.
+
+        The returned offset is the end of the final item's string, or ``None``
+        when the final item has no string. This preserves the standard RSZ
+        userdata alignment behavior, which is based on the final table entry.
+        """
+        final_string_end = None
+        for item in items:
+            if item.string_offset == 0:
+                final_string_end = None
+                continue
+
+            value, final_string_end = read_wstring(
+                self.full_data,
+                base_offset + item.string_offset,
+                1000,
+            )
+            setter(item, sys.intern(value))
+        return final_string_end
+
     def _parse_blocks(self):
 
         self._prefab_str_map.clear()
@@ -747,26 +819,14 @@ class RszFile:
         # Batch process all strings instead of one-by-one
         if not (self._is_18 and self.is_scn):
             self._resource_str_map.clear()
-            for ri in self.resource_infos:
-                if (ri.string_offset != 0):
-                    s, _ = read_wstring(self.full_data, ri.string_offset, 1000)
-                    s = sys.intern(s)
-                    self.set_resource_string(ri, s)
-                
-        for pi in self.prefab_infos:
-            if (pi.string_offset != 0):
-                s, _ = read_wstring(self.full_data, pi.string_offset, 1000)
-                s = sys.intern(s)
-                self.set_prefab_string(pi, s)
-                
-        for ui in self.userdata_infos:
-            if (ui.string_offset != 0):
-                s, _ = read_wstring(self.full_data, ui.string_offset, 1000)
-                s = sys.intern(s)
-                self.set_userdata_string(ui, s)
+            self._load_offset_strings(self.resource_infos, self.set_resource_string)
 
-    def _parse_rsz_section(self, data, skip_data = False):
-        self._current_offset = self.header.data_offset
+        self._load_offset_strings(self.prefab_infos, self.set_prefab_string)
+        self._load_offset_strings(self.userdata_infos, self.set_userdata_string)
+
+    def _parse_rsz_section_core(self, data: bytes, rsz_base_offset: int, skip_data: bool = False):
+        """Parse an RSZ section located at a given base offset."""
+        self._current_offset = rsz_base_offset
 
         self.rsz_header = RszRSZHeader()
         self._current_offset = self.rsz_header.parse(data, self._current_offset)
@@ -790,9 +850,9 @@ class RszFile:
         }
 
         # Continue with rest of RSZ section parsing
-        self._current_offset = self.header.data_offset + self.rsz_header.instance_offset
-
-        # Parse Instance Infos –that has instance_count entries (8 bytes each)
+        self._current_offset = rsz_base_offset + self.rsz_header.instance_offset
+        
+        self.instance_infos = []
         for _ in range(self.rsz_header.instance_count):
             ii = RszInstanceInfo()
             self._current_offset = ii.parse(data, self._current_offset)
@@ -801,16 +861,17 @@ class RszFile:
             self.instance_infos.append(ii)
 
         self._warm_type_registry_cache()
+        self._validate_instance_types_against_registry()
 
         # Only parse userdata if v>3
         if self.rsz_header.version > 3:
-            self._current_offset = self.header.data_offset + self.rsz_header.userdata_offset
+            self._current_offset = rsz_base_offset + self.rsz_header.userdata_offset
             if self._is_19 or (self._is_18 and self.is_scn):
                 self._parse_scn19_rsz_userdata(data, skip_data)
             elif self._is_16:
                 self._current_offset = parse_pfb16_rsz_userdata(self, data, skip_data)
             else:
-                self._parse_standard_rsz_userdata(data)
+                self._parse_standard_rsz_userdata(data, rsz_base_offset)
         
         self.data = self.full_data[self._current_offset:]
         
@@ -819,6 +880,9 @@ class RszFile:
 
         file_offset_of_data = self._current_offset
         self._instance_base_mod = file_offset_of_data % 16
+        
+    def _parse_rsz_section(self, data, skip_data = False):
+        self._parse_rsz_section_core(data, self.header.data_offset, skip_data)
 
     def _warm_type_registry_cache(self):
         """Preload type information for all parsed instance infos."""
@@ -839,28 +903,132 @@ class RszFile:
         for type_id in type_ids:
             cache[type_id] = type_registry.get_type_info(type_id)
 
-    def _parse_standard_rsz_userdata(self, data):
+    def _refresh_instance_crcs(self):
+        if not self.type_registry:
+            return
+        for instance in self.instance_infos:
+            type_info = self.type_registry.get_type_info(instance.type_id)
+            if type_info:
+                instance.crc = int(type_info.get("crc", "0"), 16)
+
+    def _parse_standard_rsz_userdata(self, data, rsz_base_offset=None):
         """Parse standard RSZ userdata entries (16 bytes each)"""
+        base_offset = self.header.data_offset if rsz_base_offset is None else rsz_base_offset
         self.rsz_userdata_infos = []
         for _ in range(self.rsz_header.userdata_count):
             rui = RSZUserDataInfo()
             self._current_offset = rui.parse(data, self._current_offset)
-            if rui.string_offset != 0:
-                abs_offset = self.header.data_offset + rui.string_offset
-                s, _ = read_wstring(self.full_data, abs_offset, 1000)
-                s = sys.intern(s)
-                self.set_rsz_userdata_string(rui, s)
             self.rsz_userdata_infos.append(rui)
-            
-        last_str_offset = self.rsz_userdata_infos[-1].string_offset if self.rsz_userdata_infos else 0
-        if last_str_offset:
-            abs_offset = self.header.data_offset + last_str_offset
-            s, new_offset = read_wstring(self.full_data, abs_offset, 1000)
-            _ = sys.intern(s)
-        else:
+
+        new_offset = self._load_offset_strings(
+            self.rsz_userdata_infos,
+            self.set_rsz_userdata_string,
+            base_offset=base_offset,
+        )
+        if new_offset is None:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
 
+    def read_headless(self, data: bytes, skip_data: bool = False, validate_type_registry: bool = False):
+        """Read a headless RSZ payload without an outer file header/tables."""
+        self._initialize_read_context(data)
+        self._registry_validation_enabled = validate_type_registry
+        self.is_headless = True
+        self.header = None
+        self.is_usr = False
+        self.is_pfb = False
+        self.is_scn = False
+        self.is_pfb16 = False
+
+        self.gameobjects = []
+        self.folder_infos = []
+        self.resource_infos = []
+        self.prefab_infos = []
+        self.userdata_infos = []
+        self.gameobject_ref_infos = []
+
+        self._parse_rsz_section_core(data, 0, skip_data)
+        self._parse_instances(data, skip_data)
+
+    def _validate_instance_types_against_registry(
+        self,
+        instance_infos=None,
+        *,
+        label="Instance",
+    ):
+        """Validate read instance type IDs/CRCs against the active type registry."""
+        if not self._registry_validation_enabled or not self.type_registry:
+            return
+
+        instance_infos = self.instance_infos if instance_infos is None else instance_infos
+        issues = []
+        type_cache = self._type_info_cache
+        get_type_info = self.type_registry.get_type_info
+
+        for index, instance in enumerate(instance_infos):
+            if index == 0 or instance is None:
+                continue
+            type_id = instance.type_id
+            if not type_id:
+                continue
+
+            type_info = type_cache.get(type_id)
+            if type_info is None:
+                type_info = get_type_info(type_id)
+                type_cache[type_id] = type_info
+            if not type_info:
+                issues.append(
+                    f"{label} {index}: type 0x{type_id:08X} is missing from the type registry"
+                )
+                continue
+
+            try:
+                registry_crc = int(str(type_info.get("crc")), 16) & 0xFFFFFFFF
+            except (TypeError, ValueError):
+                continue
+
+            file_crc = instance.crc & 0xFFFFFFFF
+            if file_crc == registry_crc or int.from_bytes(file_crc.to_bytes(4, "little"), "big") == registry_crc:
+                continue
+
+            issues.append(
+                f"{label} {index}: type 0x{type_id:08X} ({type_info.get('name', '<unnamed>')}) CRC mismatch "
+                f"(file=0x{file_crc:08X}, registry=0x{registry_crc:08X})"
+            )
+
+        if issues:
+            raise TypeRegistryValidationError(issues)
+
+    def validate_type_registry_state(self):
+        """Strictly validate current main and embedded instance metadata."""
+        previous = self._registry_validation_enabled
+        self._registry_validation_enabled = True
+        try:
+            self._validate_instance_types_against_registry()
+            pending = [
+                (f"userdata[{index}]", userdata)
+                for index, userdata in enumerate(self.rsz_userdata_infos)
+            ]
+            while pending:
+                path, userdata = pending.pop()
+                embedded_infos = getattr(userdata, "embedded_instance_infos", None)
+                if embedded_infos is not None:
+                    self._validate_instance_types_against_registry(
+                        embedded_infos,
+                        label=f"Embedded {path} instance",
+                    )
+                pending.extend(
+                    (
+                        f"{path}/userdata[{index}]",
+                        nested,
+                    )
+                    for index, nested in enumerate(
+                        getattr(userdata, "embedded_userdata_infos", ()) or ()
+                    )
+                )
+        finally:
+            self._registry_validation_enabled = previous
+        
     def _parse_scn19_rsz_userdata(self, data, skip_data = False):
         """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
         self.has_embedded_rsz = True
@@ -868,6 +1036,142 @@ class RszFile:
 
     def get_rsz_userdata_string(self, rui):
         return self._rsz_userdata_str_map.get(rui, "")
+
+    @staticmethod
+    def _aligned_pos(pos: int, align: int, base_mod: int) -> int:
+        if align <= 1:
+            return pos
+        rem = (pos + base_mod) % align
+        return pos if rem == 0 else pos + (align - rem)
+
+    @classmethod
+    def _skip_repeated_fixed_values(cls, pos: int, count: int, field_size: int, field_align: int, base_mod: int) -> int:
+        if count <= 0:
+            return pos
+        if field_align <= 1:
+            return pos + count * field_size
+        first = cls._aligned_pos(pos, field_align, base_mod)
+        if field_size % field_align == 0:
+            return first + count * field_size
+        current = pos
+        for _ in range(count):
+            current = cls._aligned_pos(current, field_align, base_mod) + field_size
+        return current
+
+    def _fixed_struct_layout(self, fields_def: list):
+        if not fields_def:
+            return None
+        self._prepare_field_definitions(fields_def)
+        max_align = 1
+        for field in fields_def:
+            (
+                _field_name,
+                rsz_type,
+                _fsize,
+                field_align,
+                is_array,
+                _original_type,
+                _parser_func,
+                _default_element_class,
+            ) = field["_parse_cache"]
+            if is_array or rsz_type not in _FIXED_STRUCT_FIELD_TYPES:
+                return None
+            max_align = max(max_align, field_align)
+        return max_align
+
+    def _skip_fixed_structs(self, pos: int, count: int, fields_def: list, base_mod: int) -> int:
+        current = pos
+        for _ in range(count):
+            for field in fields_def:
+                (
+                    _field_name,
+                    _rsz_type,
+                    fsize,
+                    field_align,
+                    _is_array,
+                    _original_type,
+                    _parser_func,
+                    _default_element_class,
+                ) = field["_parse_cache"]
+                current = self._aligned_pos(current, field_align, base_mod) + fsize
+        return current
+
+    def _lazy_primitive_values(
+        self,
+        count: int,
+        raw_start: int,
+        raw_end: int,
+        field_size: int,
+        field_align: int,
+        original_type: str,
+        parser_func,
+        element_class,
+        base_mod: int,
+    ):
+        raw = self.data[raw_start:raw_end]
+        raw_copy_safe = base_mod == 0 and field_align <= 4
+
+        def materialize():
+            parser = _NonArrayFieldParser(self)
+            parser.reset_context(
+                base_mod,
+                [],
+                lambda _idx, _parent: None,
+                lambda _candidate: False,
+                None,
+                self._rsz_userdata_dict,
+                self._rsz_userdata_str_map,
+            )
+            parser.data = self.data
+            parser.field_size = field_size
+            parser.field_align = field_align
+            parser.original_type = original_type
+            values = []
+            append = values.append
+            pos = raw_start
+            for _ in range(count):
+                parser.configure(pos, field_size, field_align, original_type)
+                append(parser_func(parser))
+                pos = parser.pos
+            return values
+
+        return LazyRawValues(count, materialize, raw, raw_copy_safe)
+
+    def _lazy_struct_values(
+        self,
+        count: int,
+        raw_start: int,
+        raw_end: int,
+        parse_start: int,
+        struct_fields_def: list,
+        current_instance_index: int,
+        original_type: str,
+        max_align: int,
+        base_mod: int,
+    ):
+        raw = self.data[raw_start:raw_end]
+        raw_copy_safe = base_mod == 0 and max_align <= 4
+
+        def materialize():
+            struct_values = []
+            current_pos = parse_start
+            parsed_elements = self.parsed_elements.setdefault(current_instance_index, {})
+            for _ in range(count):
+                struct_element = {}
+                self.parsed_elements[current_instance_index] = struct_element
+                next_pos = self.parse_instance_fields(
+                    offset=current_pos,
+                    fields_def=struct_fields_def,
+                    current_instance_index=current_instance_index,
+                )
+                if next_pos <= current_pos or not struct_element:
+                    break
+                struct_values.append(struct_element)
+                current_pos = next_pos
+            self.parsed_elements[current_instance_index] = parsed_elements
+            return struct_values
+
+        return LazyRawValues(count, materialize, raw, raw_copy_safe)
 
     def _parse_instances(self, data, skip = False):
         """Parse instance data with optimizations"""
@@ -899,6 +1203,10 @@ class RszFile:
             if type_info is None and type_registry:
                 type_info = type_registry.get_type_info(inst.type_id)
                 type_cache[inst.type_id] = type_info
+            if not type_info:
+                raise TypeRegistryValidationError([
+                    f"Instance {idx}: type 0x{inst.type_id:08X} is missing from the type registry"
+                ])
             fields_def = type_info.get("fields", [])
             
             if not fields_def:
@@ -923,8 +1231,8 @@ class RszFile:
             return
 
         cache = self._rsz_type_cache
-        NON_ARRAY_PARSERS_get = NON_ARRAY_PARSERS.get
-        RawBytesData_parse = RawBytesData.parse
+        non_array_parsers_get = NON_ARRAY_PARSERS.get
+        raw_bytes_data_parse = RawBytesData.parse
         
         for field in fields_def:
             if "_parse_cache" in field:
@@ -955,8 +1263,8 @@ class RszFile:
                 rsz_type = get_type_class(*key)
                 cache[key] = rsz_type
 
-            parser_func = NON_ARRAY_PARSERS_get(rsz_type, RawBytesData_parse)
-            default_element_cls = rsz_type if parser_func is not RawBytesData_parse else RawBytesData
+            parser_func = non_array_parsers_get(rsz_type, raw_bytes_data_parse)
+            default_element_cls = rsz_type if parser_func is not raw_bytes_data_parse else RawBytesData
 
             field["_parse_cache"] = (
                 field_name or "<unnamed>",
@@ -982,6 +1290,11 @@ class RszFile:
                 out.extend(b'\x00')
             count = len(data_obj.values)
             out.extend(pack_uint(count))
+            raw_values = getattr(data_obj.values, "raw_bytes_if_available", None)
+            raw_bytes = raw_values() if raw_values else None
+            if raw_bytes is not None:
+                out.extend(raw_bytes)
+                return
             if count:
                 original_type = getattr(data_obj, "orig_type", None)
                 if original_type and self.type_registry:
@@ -1000,6 +1313,11 @@ class RszFile:
 
             count = len(data_obj.values)
             out.extend(pack_uint(count))
+            raw_values = getattr(data_obj.values, "raw_bytes_if_available", None)
+            raw_bytes = raw_values() if raw_values else None
+            if raw_bytes is not None:
+                out.extend(raw_bytes)
+                return
             
             for element in data_obj.values:
                 while (len(out) - base_mod) % field_align != 0:
@@ -1046,6 +1364,8 @@ class RszFile:
                     out.extend(pack_3double(element.x, element.y, element.z))
                 elif isinstance(element, Int3Data):
                     out.extend(pack_3int(element.x, element.y, element.z))
+                elif isinstance(element, Int4Data) or isinstance(element, Int4ColorData):
+                    out.extend(pack_4int(element.x, element.y, element.z, element.w))
                 elif isinstance(element, Uint3Data):
                     out.extend(pack_uint(element.x))
                     out.extend(pack_uint(element.y))
@@ -1141,6 +1461,9 @@ class RszFile:
                     out.extend(pack_float(0.0))
                     out.extend(pack_3float(element.max.x, element.max.y, element.max.z))
                     out.extend(pack_float(0.0))
+                    
+                elif isinstance(element, RectData):
+                    out.extend(pack_4float(element.min_x, element.min_y, element.max_x, element.max_y))
 
                 elif isinstance(element, AreaData):
                     out.extend(pack_2float(element.p0.x, element.p0.y))
@@ -1206,6 +1529,8 @@ class RszFile:
                 out.extend(pack_3double(data_obj.x, data_obj.y, data_obj.z))
             elif isinstance(data_obj, Int3Data):
                 out.extend(pack_3int(data_obj.x, data_obj.y, data_obj.z))
+            elif isinstance(data_obj, Int4Data) or isinstance(data_obj, Int4ColorData):
+                out.extend(pack_4int(data_obj.x, data_obj.y, data_obj.z, data_obj.w))
             elif isinstance(data_obj, Uint3Data):
                 out.extend(pack_uint(data_obj.x))
                 out.extend(pack_uint(data_obj.y))
@@ -1292,6 +1617,9 @@ class RszFile:
                 out.extend(pack_3float(data_obj.max.x, data_obj.max.y, data_obj.max.z))
                 out.extend(pack_float(0.0))
 
+            elif isinstance(data_obj, RectData):
+                out.extend(pack_4float(data_obj.min_x, data_obj.min_y, data_obj.max_x, data_obj.max_y))
+
             elif isinstance(data_obj, AreaData):
                 out.extend(pack_2float(data_obj.p0.x, data_obj.p0.y))
                 out.extend(pack_2float(data_obj.p1.x, data_obj.p1.y))
@@ -1351,6 +1679,38 @@ class RszFile:
         """Get resources dynamically based on resource fields"""
         resources = []
 
+        def _add_resource(value):
+            val = value.rstrip("\0")
+            if val and val not in resources:
+                resources.append(val)
+
+        def _collect_from_fields(fields, fields_def):
+            for field_def in fields_def:
+                field_name = field_def["name"]
+                data_obj = fields.get(field_name)
+                if not data_obj:
+                    continue
+                _collect_from_field(data_obj, field_def)
+
+        def _collect_from_field(data_obj, field_def):
+            field_type = str(field_def.get("type", "")).casefold()
+            if field_type == "resource":
+                if not field_def.get("array", False):
+                    _add_resource(data_obj.value)
+                else:
+                    for elem in data_obj.values:
+                        _add_resource(elem.value)
+                return
+
+            if field_type == "struct" and isinstance(data_obj, StructData):
+                struct_type_name = field_def.get("original_type") or getattr(data_obj, "orig_type", "")
+                if struct_type_name and self.type_registry:
+                    struct_info, _ = self.type_registry.find_type_by_name(struct_type_name)
+                    if struct_info:
+                        struct_fields_def = struct_info.get("fields", [])
+                        for struct_fields in data_obj.values:
+                            _collect_from_fields(struct_fields, struct_fields_def)
+                            
         def _collect_segment(parsed_elements, instance_infos, userdata_infos):
             by_instance = {}
             for rui in userdata_infos or []:
@@ -1361,39 +1721,24 @@ class RszFile:
                 if fields is not None:
                     inst_info = instance_infos[instance_id]
                     type_info = self.type_registry.get_type_info(inst_info.type_id)
-                    name = type_info.get("name", [])
-                    fields_def = type_info.get("fields", [])
+                    if type_info:
+                        name = type_info.get("name", [])
+                        fields_def = type_info.get("fields", [])
 
-                    if name == "via.Prefab":
-                        f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
-                        if fields[f0].value:
-                            val = fields[f1].value.rstrip("\0")
-                            if val and val not in resources:
-                                resources.append(val)
+                        if name == "via.Prefab" or name == "app.global.ResourcePrefab":
+                            f0, f1 = fields_def[0]["name"], fields_def[1]["name"]
+                            if fields[f0].value:
+                                val = fields[f1].value.rstrip("\0")
+                                if val and val not in resources:
+                                    resources.append(val)
 
-                    elif name == "via.Folder":
-                        f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
-                        if fields[f4].value:
-                            val = fields[f5].value.rstrip("\0")
-                            if val and val not in resources:
-                                resources.append(val)
+                        elif name == "via.Folder":
+                            f4, f5 = fields_def[4]["name"], fields_def[5]["name"]
+                            if fields[f4].value:
+                                _add_resource(fields[f5].value)
 
-                    else:
-                        for fd in fields_def:
-                            if fd["type"] == "Resource":
-                                fn = fd["name"]
-                                data_obj = fields.get(fn)
-                                if not data_obj:
-                                    continue
-                                if not fd.get("array", False):
-                                    val = data_obj.value.rstrip("\0")
-                                    if val and val not in resources:
-                                        resources.append(val)
-                                else:
-                                    for elem in data_obj.values:
-                                        val = elem.value.rstrip("\0")
-                                        if val and val not in resources:
-                                            resources.append(val)
+                        else:
+                            _collect_from_fields(fields, fields_def)
 
                 for rui in by_instance.get(instance_id, []):
                     _collect_segment(
@@ -1402,7 +1747,7 @@ class RszFile:
                         getattr(rui, "embedded_userdata_infos", None),
                     )
 
-        if getattr(self, "is_scn", False) and (self.filepath.lower().endswith(".19") or self.filepath.lower().endswith('.18')):
+        if getattr(self, "is_scn", False) and self._is_scn_new:
             _collect_segment(self.parsed_elements, self.instance_infos, self.rsz_userdata_infos)
         else:
             _collect_segment(self.parsed_elements, self.instance_infos, None)
@@ -1427,19 +1772,21 @@ class RszFile:
             self.set_resource_string(ri, resource_path)
 
     def build(self, special_align_enabled = False) -> bytes:
+        self._refresh_instance_crcs()
+
         if self.auto_resource_management:
             self.rebuild_resources()
 
         if self.is_usr:
             return self._build_usr(special_align_enabled)
         elif self.is_pfb:
-            if self.filepath.lower().endswith('.16'):
+            if self.is_pfb16:
                 return build_pfb_16(self, special_align_enabled)
             else:
                 return self._build_pfb(special_align_enabled)
-        elif self.filepath.lower().endswith('.19'):
-                    return build_scn_19(self, special_align_enabled)
-        elif self.filepath.lower().endswith('.18'):
+        elif self._is_19:
+            return build_scn_19(self, special_align_enabled)
+        elif self._is_18:
             return build_scn_18(self, special_align_enabled)
                 
         self.header.info_count = len(self.gameobjects)
@@ -1471,29 +1818,19 @@ class RszFile:
         )
 
         # 2) Write gameobjects
-        for go in self.gameobjects:
-            out += go.guid
-            out += struct.pack("<i", go.id)
-            out += struct.pack("<i", go.parent_id)
-            out += struct.pack("<H", go.component_count)
-            out += struct.pack("<h", go.ukn)
-            out += struct.pack("<i", go.prefab_id) 
+        write_scn_gameobjects(out, self.gameobjects, prefab_before_ukn=False)
 
         # 3) Align and write folder infos, recording folder_tbl offset
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         folder_tbl_offset = len(out)
         for fi in self.folder_infos:
             out += struct.pack("<ii", fi.id, fi.parent_id)
 
         # 4) Align and prepare for resource infos
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         resource_info_tbl_offset = len(out)
         
         # Calculate new string offsets for resource strings
-        resource_strings_offset = 0
-        new_resource_offsets = {}
         current_offset = resource_info_tbl_offset + len(self.resource_infos) * 8  # Each resource info is 8 bytes
         
         # Align to 16 after resource infos
@@ -1508,115 +1845,44 @@ class RszFile:
         # Skip userdata infos table
         current_offset += len(self.userdata_infos) * 16  # Each userdata info is 16 bytes
         
-        # Begin calculating string offsets
-        resource_strings_offset = current_offset
-        
-        for ri in self.resource_infos:
-            resource_string = self._resource_str_map.get(ri, "")
-            if resource_string:
-                new_resource_offsets[ri] = resource_strings_offset
-                resource_strings_offset += len(resource_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_resource_offsets[ri] = 0
-        
-        # Calculate prefab string offsets
-        prefab_strings_offset = resource_strings_offset
-        new_prefab_offsets = {}
-        
-        for pi in self.prefab_infos:
-            prefab_string = self._prefab_str_map.get(pi, "")
-            if prefab_string:
-                new_prefab_offsets[pi] = prefab_strings_offset
-                prefab_strings_offset += len(prefab_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_prefab_offsets[pi] = 0
-        
-        # Calculate userdata string offsets
-        userdata_strings_offset = prefab_strings_offset
-        new_userdata_offsets = {}
-        
-        for ui in self.userdata_infos:
-            userdata_string = self._userdata_str_map.get(ui, "")
-            if userdata_string:
-                new_userdata_offsets[ui] = userdata_strings_offset
-                userdata_strings_offset += len(userdata_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_userdata_offsets[ui] = 0
+        new_resource_offsets, current_offset = calculate_wstring_offsets(
+            self.resource_infos, self._resource_str_map, current_offset
+        )
+        new_prefab_offsets, current_offset = calculate_wstring_offsets(
+            self.prefab_infos, self._prefab_str_map, current_offset
+        )
+        new_userdata_offsets, _ = calculate_wstring_offsets(
+            self.userdata_infos, self._userdata_str_map, current_offset
+        )
         
         # Now write resource infos with updated offsets
-        for ri in self.resource_infos:
-            ri.string_offset = new_resource_offsets[ri]
-            out += struct.pack("<II", ri.string_offset, ri.reserved)
+        write_resource_info_table(out, self.resource_infos, new_resource_offsets)
 
         # 5) Align and write prefab infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         prefab_info_tbl_offset = len(out)
-        for pi in self.prefab_infos:
-            pi.string_offset = new_prefab_offsets[pi]
-            out += struct.pack("<II", pi.string_offset, pi.parent_id)
+        write_prefab_info_table(out, self.prefab_infos, new_prefab_offsets)
 
         # 6) Align and write user data infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         userdata_info_tbl_offset = len(out)
-        for ui in self.userdata_infos:
-            ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
-
-        # Write strings in order of their offsets
-        string_entries = []
-        
-        # Only collect string entries that have calculated offsets
-        for ri, offset in new_resource_offsets.items():
-            if offset:
-                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for pi, offset in new_prefab_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._prefab_str_map.get(pi, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for ui, offset in new_userdata_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
-        
-        # Sort by offset
-        string_entries.sort(key=lambda x: x[0])
-        
-        # Write strings in order
-        current_offset = string_entries[0][0] if string_entries else len(out)
-        while len(out) < current_offset:
-            out += b"\x00"
-            
-        for offset, string_data in string_entries:
-            while len(out) < offset:
-                out += b"\x00"
-            out += string_data
+        write_userdata_info_table(out, self.userdata_infos, new_userdata_offsets)
+        write_wstring_entries(
+            out,
+            (new_resource_offsets, self._resource_str_map),
+            (new_prefab_offsets, self._prefab_str_map),
+            (new_userdata_offsets, self._userdata_str_map),
+        )
 
         # 9) Write RSZ header/tables/userdata
         if self.rsz_header:
             # Ensure RSZ header starts on 16-byte alignment
             if(special_align_enabled):
-                while len(out) % 16 != 0:
-                    out += b"\x00"
+                pad_to_alignment(out)
                 
             rsz_start = len(out)
             self.header.data_offset = rsz_start
 
-            # Calculate sizes
-            object_table_size = self.rsz_header.object_count * 4
-            instance_info_size = len(self.instance_infos) * 8
-            
-            # Calculate offsets relative to RSZ section start
-            instance_info_offset = self.rsz_header.SIZE + object_table_size  # After header and object table
-            
-            # Userdata offset comes after instance infos
-            userdata_offset = instance_info_offset + instance_info_size
-            
-            # Data offset comes after userdata section, and needs 16-byte alignment
-            data_offset = userdata_offset + (len(self.rsz_userdata_infos) * 16)  # Each userdata entry is 16 bytes
-            data_offset = _align(data_offset, 16)
-            
             # Write RSZ header with corrected offsets
             rsz_header_bytes = struct.pack(
                 "<5I I Q Q Q",
@@ -1641,8 +1907,7 @@ class RszFile:
 
             # Align to 16 bytes first and calculate relative instance offset
             if(special_align_enabled):
-                while len(out) % 16 != 0:
-                    out += b"\x00"
+                pad_to_alignment(out)
                 
             new_instance_offset = len(out) - rsz_start  # Calculate offset relative to RSZ start
             
@@ -1651,8 +1916,7 @@ class RszFile:
 
 
             # Align to 16 at end
-            while len(out) % 16 != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
 
             new_userdata_offset = len(out) - rsz_start 
 
@@ -1670,8 +1934,7 @@ class RszFile:
                 out += string_data
                 struct.pack_into("<Q", out, rsz_start + entry_offset + 8, current_string_offset)
             # 9e) Align before instance data block and compute new data offset
-            while (len(out) % 16) != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
             new_data_offset = len(out) - rsz_start
 
             # 9f) Update the RSZ header with correct counts and relative offsets.
@@ -1691,8 +1954,7 @@ class RszFile:
 
         # 10) Write instance data
 
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
             
         # Write actual instance data block
         instance_data = self._write_instance_data()
@@ -1749,153 +2011,17 @@ class RszFile:
             self.header.reserved  
         )
 
-        # 2) Calculate offsets for string tables
-        resource_info_tbl = _align(len(out), 16)
-        resource_info_size = len(self.resource_infos) * 8  # Each resource info is 8 bytes
-        
-        userdata_info_tbl = _align(resource_info_tbl + resource_info_size, 16)
-        userdata_info_size = len(self.userdata_infos) * 16  # Each userdata info is 16 bytes
-        
-        # Calculate string positions
-        string_start = _align(userdata_info_tbl + userdata_info_size, 16)
-        current_offset = string_start
-        
-        # Calculate resource string offsets
-        new_resource_offsets = {}
-        for ri in self.resource_infos:
-            resource_string = self._resource_str_map.get(ri, "")
-            if resource_string:
-                new_resource_offsets[ri] = current_offset
-                current_offset += len(resource_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_resource_offsets[ri] = 0
-        
-        # Calculate userdata string offsets
-        new_userdata_offsets = {}
-        for ui in self.userdata_infos:
-            userdata_string = self._userdata_str_map.get(ui, "")
-            if userdata_string:
-                new_userdata_offsets[ui] = current_offset
-                current_offset += len(userdata_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_userdata_offsets[ui] = 0
-        
-        # Align to 16 bytes and write resource info table
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        resource_info_tbl = len(out)
-        
-        for ri in self.resource_infos:
-            ri.string_offset = new_resource_offsets[ri]
-            out += struct.pack("<II", ri.string_offset, ri.reserved)
-
-        # Align to 16 bytes and write userdata info table
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        userdata_info_tbl = len(out)
-        
-        for ui in self.userdata_infos:
-            ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
-
-        # Write strings in order of their offsets
-        string_entries = []
-        
-        for ri, offset in new_resource_offsets.items():
-            if offset:
-                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for ui, offset in new_userdata_offsets.items():
-            if offset:
-                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
-        
-        # Sort by offset
-        string_entries.sort(key=lambda x: x[0])
-        
-        # Write strings in order
-        current_offset = string_entries[0][0] if string_entries else len(out)
-        while len(out) < current_offset:
-            out += b"\x00"
-            
-        for offset, string_data in string_entries:
-            while len(out) < offset:
-                out += b"\x00"
-            out += string_data
+        resource_info_tbl, userdata_info_tbl = write_resource_userdata_tables(
+            out,
+            self.resource_infos,
+            self._resource_str_map,
+            self.userdata_infos,
+            self._userdata_str_map,
+        )
 
         # 6) RSZ Section
         if self.rsz_header:
-            if special_align_enabled:
-                while len(out) % 16 != 0:
-                    out += b"\x00"
-                    
-            rsz_start = len(out)
-            self.header.data_offset = rsz_start
-
-            # Write RSZ header with placeholder offsets
-            rsz_header_bytes = struct.pack(
-                "<5I I Q Q Q",
-                self.rsz_header.magic,
-                self.rsz_header.version,
-                self.rsz_header.object_count,
-                len(self.instance_infos),
-                len(self.rsz_userdata_infos),
-                self.rsz_header.reserved,
-                0,  # instance_offset - will update later
-                0,  # data_offset - will update later 
-                0   # userdata_offset - will update later
-            )
-            out += rsz_header_bytes
-
-            # Write object table
-            for obj_id in self.object_table:
-                out += struct.pack("<i", obj_id)
-
-            # Add 8 null bytes before instance infos (no 16-byte alignment)
-            new_instance_offset = len(out) - rsz_start
-            
-            for inst in self.instance_infos:
-                out += struct.pack("<II", inst.type_id, inst.crc)
-
-            # Write userdata at 16-byte alignment
-            while len(out) % 16 != 0:
-                out += b"\x00"
-            new_userdata_offset = len(out) - rsz_start
-
-            # Write userdata entries and strings
-            userdata_entries = []
-            for rui in self.rsz_userdata_infos:
-                entry_offset = len(out) - rsz_start
-                out += struct.pack("<IIQ", rui.instance_id, rui.hash, 0)
-                userdata_entries.append((entry_offset, rui))
-
-            for entry_offset, rui in userdata_entries:
-                string_offset = len(out) - rsz_start
-                string_data = self.get_rsz_userdata_string(rui).encode("utf-16-le") + b"\x00\x00"
-                out += string_data
-                struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
-
-            # Write instance data at 16-byte alignment
-            while len(out) % 16 != 0:
-                out += b"\x00"
-            new_data_offset = len(out) - rsz_start
-            
-            instance_data = self._write_instance_data()
-            out += instance_data
-
-            # Update RSZ header with actual offsets
-            new_rsz_header = struct.pack(
-                "<5I I Q Q Q",
-                self.rsz_header.magic,
-                self.rsz_header.version, 
-                self.rsz_header.object_count,
-                len(self.instance_infos),
-                len(self.rsz_userdata_infos),
-                self.rsz_header.reserved,
-                new_instance_offset,
-                new_data_offset,
-                new_userdata_offset
-            )
-            out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
+            self._build_rsz_section(out, special_align_enabled)
 
         # 7) Update USR header
         header_bytes = struct.pack(
@@ -1950,78 +2076,13 @@ class RszFile:
         for gori in self.gameobject_ref_infos:
             out += struct.pack("<4i", gori.object_id, gori.property_id, gori.array_index, gori.target_id)
         
-        # Calculate string offsets
-        resource_info_tbl = _align(len(out), 16)
-        resource_info_size = len(self.resource_infos) * 8  # Each resource info is 8 bytes
-        
-        userdata_info_tbl = _align(resource_info_tbl + resource_info_size, 16)
-        userdata_info_size = len(self.userdata_infos) * 16  # Each userdata info is 16 bytes
-        
-        # Calculate string positions
-        string_start = _align(userdata_info_tbl + userdata_info_size, 16)
-        current_offset = string_start
-        
-        # Calculate resource string offsets
-        new_resource_offsets = {}
-        for ri in self.resource_infos:
-            resource_string = self._resource_str_map.get(ri, "")
-            if resource_string:
-                new_resource_offsets[ri] = current_offset
-                current_offset += len(resource_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_resource_offsets[ri] = 0
-        
-        # Calculate userdata string offsets
-        new_userdata_offsets = {}
-        for ui in self.userdata_infos:
-            userdata_string = self._userdata_str_map.get(ui, "")
-            if userdata_string:
-                new_userdata_offsets[ui] = current_offset
-                current_offset += len(userdata_string.encode('utf-16-le')) + 2  # +2 for null terminator
-            else:
-                new_userdata_offsets[ui] = 0
-        
-        # 4) Align and write resource infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        resource_info_tbl = len(out)
-        
-        for ri in self.resource_infos:
-            ri.string_offset = new_resource_offsets[ri]
-            out += struct.pack("<II", ri.string_offset, ri.reserved)
-
-        # 5) Align and write userdata infos with updated offsets
-        while len(out) % 16 != 0:
-            out += b"\x00"
-        userdata_info_tbl = len(out)
-        
-        for ui in self.userdata_infos:
-            ui.string_offset = new_userdata_offsets[ui]
-            out += struct.pack("<IIQ", ui.hash, 0, ui.string_offset)
-
-        # Write strings in order of their offsets
-        string_entries = []
-        
-        for ri, offset in new_resource_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._resource_str_map.get(ri, "").encode("utf-16-le") + b"\x00\x00"))
-                
-        for ui, offset in new_userdata_offsets.items():
-            if offset: 
-                string_entries.append((offset, self._userdata_str_map.get(ui, "").encode("utf-16-le") + b"\x00\x00"))
-        
-        # Sort by offset
-        string_entries.sort(key=lambda x: x[0])
-        
-        # Write strings in order
-        current_offset = string_entries[0][0] if string_entries else len(out)
-        while len(out) < current_offset:
-            out += b"\x00"
-            
-        for offset, string_data in string_entries:
-            while len(out) < offset:
-                out += b"\x00"
-            out += string_data
+        resource_info_tbl, userdata_info_tbl = write_resource_userdata_tables(
+            out,
+            self.resource_infos,
+            self._resource_str_map,
+            self.userdata_infos,
+            self._userdata_str_map,
+        )
 
         # 8) Build the common RSZ section
         self._build_rsz_section(out, special_align_enabled)
@@ -2044,16 +2105,16 @@ class RszFile:
 
         return bytes(out)
     
-    def _build_rsz_section(self, out: bytearray, special_align_enabled = False):
+    def _build_rsz_section(self, out: bytearray, special_align_enabled = False, update_header_data_offset: bool = True):
         """Build the RSZ section that's common to all file formats.
         Returns the rsz_start position."""
         # Ensure RSZ header starts on 16-byte alignment
         if special_align_enabled:
-            while len(out) % 16 != 0:
-                out += b"\x00"
+            pad_to_alignment(out)
                 
         rsz_start = len(out)
-        self.header.data_offset = rsz_start
+        if update_header_data_offset and self.header is not None:
+            self.header.data_offset = rsz_start
 
         # Write RSZ header with placeholder offsets
         rsz_header_bytes = struct.pack(
@@ -2080,8 +2141,7 @@ class RszFile:
             out += struct.pack("<II", inst.type_id, inst.crc)
 
         # Write userdata at 16-byte alignment
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         new_userdata_offset = len(out) - rsz_start
 
         # Write userdata entries and strings
@@ -2098,8 +2158,7 @@ class RszFile:
             struct.pack_into("<Q", out, rsz_start + entry_offset + 8, string_offset)
 
         # Write instance data at 16-byte alignment
-        while len(out) % 16 != 0:
-            out += b"\x00"
+        pad_to_alignment(out)
         new_data_offset = len(out) - rsz_start
         
         instance_data = self._write_instance_data()
@@ -2120,6 +2179,57 @@ class RszFile:
         )
         out[rsz_start:rsz_start + self.rsz_header.SIZE] = new_rsz_header
 
+    def build_headless(self, special_align_enabled = False) -> bytes:
+        """Build a headless RSZ payload (RSZ section only, no outer file header/tables)."""
+        self._refresh_instance_crcs()
+        if self.rsz_header:
+            self.rsz_header.object_count = len(self.object_table)
+            self.rsz_header.instance_count = len(self.instance_infos)
+            self.rsz_header.userdata_count = len(self.rsz_userdata_infos)
+
+        out = bytearray()
+        self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
+        return bytes(out)
+
+    def build_validated(self, special_align_enabled=False) -> bytes:
+        """Build and strictly verify a stable parse/build round trip."""
+        self.validate_type_registry_state()
+        is_headless = self.header is None
+        modified_states = []
+        pending_userdata = list(self.rsz_userdata_infos)
+        while pending_userdata:
+            userdata = pending_userdata.pop()
+            if hasattr(userdata, "modified"):
+                modified_states.append((userdata, bool(userdata.modified)))
+            pending_userdata.extend(
+                getattr(userdata, "embedded_userdata_infos", ()) or ()
+            )
+
+        try:
+            output = (
+                self.build_headless(special_align_enabled)
+                if is_headless
+                else self.build(special_align_enabled)
+            )
+        finally:
+            for userdata, modified in modified_states:
+                userdata.modified = modified
+
+        verified = RszFile()
+        verified.type_registry = self.type_registry
+        verified.game_version = self.game_version
+        verified.filepath = self.filepath
+        verified.auto_resource_management = self.auto_resource_management
+        if is_headless:
+            verified.read_headless(output, validate_type_registry=True)
+            rebuilt = verified.build_headless(special_align_enabled)
+        else:
+            verified.read(output, validate_type_registry=True)
+            rebuilt = verified.build(special_align_enabled)
+        if rebuilt != output:
+            raise ValueError("RSZ validation failed: rebuilt bytes are not stable.")
+        return output
+    
     def get_resource_string(self, ri):
         """Get resource string with special handling for PFB.16 format"""
         if self.is_pfb16:
@@ -2136,9 +2246,6 @@ class RszFile:
     
     def get_prefab_string(self, pi):
         return self._prefab_str_map.get(pi, "")
-    
-    def get_userdata_string(self, ui):
-        return self._userdata_str_map.get(ui, "")
     
     def set_resource_string(self, ri, new_string: str):
         """Set resource string with special handling for PFB.16 format"""
@@ -2243,21 +2350,40 @@ class RszFile:
                             if struct_type_info:
                                 struct_fields_def = struct_type_info.get("fields", [])
                                 current_pos = _align(current_pos, field_align)
-                                temp_parsed = parsed_elements
-                                for _ in range(count):
-                                    struct_element = {}
-                                    self.parsed_elements[current_instance_index] = struct_element
-                                    next_pos = self.parse_instance_fields(
-                                        offset=current_pos,
-                                        fields_def=struct_fields_def,
-                                        current_instance_index=current_instance_index,
+                                layout = self._fixed_struct_layout(struct_fields_def)
+                                if count >= _LAZY_STRUCT_ARRAY_THRESHOLD and layout is not None:
+                                    raw_start = pos
+                                    raw_end = self._skip_fixed_structs(
+                                        current_pos, count, struct_fields_def, base_mod
                                     )
-                                    if next_pos > current_pos and struct_element:
-                                        struct_values.append(struct_element)
-                                        current_pos = next_pos
-                                    else:
-                                        break
-                                self.parsed_elements[current_instance_index] = temp_parsed
+                                    struct_values = self._lazy_struct_values(
+                                        count,
+                                        raw_start,
+                                        raw_end,
+                                        current_pos,
+                                        struct_fields_def,
+                                        current_instance_index,
+                                        original_type,
+                                        max(layout, field_align),
+                                        base_mod,
+                                    )
+                                    current_pos = raw_end
+                                else:
+                                    temp_parsed = parsed_elements
+                                    for _ in range(count):
+                                        struct_element = {}
+                                        self.parsed_elements[current_instance_index] = struct_element
+                                        next_pos = self.parse_instance_fields(
+                                            offset=current_pos,
+                                            fields_def=struct_fields_def,
+                                            current_instance_index=current_instance_index,
+                                        )
+                                        if next_pos > current_pos and struct_element:
+                                            struct_values.append(struct_element)
+                                            current_pos = next_pos
+                                        else:
+                                            break
+                                    self.parsed_elements[current_instance_index] = temp_parsed
                                 pos = current_pos
                         data_obj = StructData(struct_values, original_type)
 
@@ -2277,7 +2403,7 @@ class RszFile:
                                 set_parent(candidate, current_instance_index)
                             else:
                                 raw_values.append(raw_value)
-                            for i in range(1, count):
+                            for _ in range(1, count):
                                 configure_pos(pos, field_align)
                                 candidate, raw_value = read_value_with_raw(parser_unpack_uint, fsize)
                                 pos = non_array_parser.pos
@@ -2303,6 +2429,24 @@ class RszFile:
                     else:
                         if count == 0:
                             data_obj = ArrayData([], default_element_class, original_type)
+                        elif count >= _LAZY_PRIMITIVE_ARRAY_THRESHOLD and rsz_type in _LAZY_PRIMITIVE_ARRAY_TYPES:
+                            raw_start = pos
+                            raw_end = self._skip_repeated_fixed_values(
+                                pos, count, fsize, field_align, base_mod
+                            )
+                            values = self._lazy_primitive_values(
+                                count,
+                                raw_start,
+                                raw_end,
+                                fsize,
+                                field_align,
+                                original_type,
+                                parser_func,
+                                default_element_class,
+                                base_mod,
+                            )
+                            pos = raw_end
+                            data_obj = ArrayData(values, default_element_class, original_type)
                         elif count == 1:
                             configure(pos, fsize, field_align, original_type)
                             value = parser_func(non_array_parser)

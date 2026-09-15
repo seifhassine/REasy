@@ -8,27 +8,45 @@ of instances with a given type ID.
 import os
 import sys
 import argparse
+import re
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
+from file_handlers.rsz.rsz_data_types import _ValueData
+from services.backup_store import create_backup
+from utils.app_paths import resolve_cli_path
 from utils.type_registry import TypeRegistry
+from utils.number_format import format_display_value, format_float_sequence
+
+RSZ_EXTENSIONS = {'.scn', '.pfb', '.user'}
+
+
+def is_rsz_path(path):
+    return any(suffix.lower() in RSZ_EXTENSIONS for suffix in Path(path).suffixes)
+
+
+def _registered_field_name(field_identifier, type_info):
+    if not isinstance(field_identifier, int) or not type_info or "fields" not in type_info:
+        return field_identifier
+    fields = type_info["fields"]
+    return fields[field_identifier]["name"] if 0 <= field_identifier < len(fields) else None
+
 
 def scan_file(filepath, type_id, field_identifier, type_registry, failures):
-    if not os.path.isfile(filepath):
-        return []
-        
-    if not os.path.getsize(filepath):
+    path = Path(filepath)
+    if not path.is_file():
         return []
 
     try:
-        with open(filepath, 'rb') as f:
-            data = f.read()
-    except Exception:
+        data = path.read_bytes()
+    except OSError:
+        failures.append(filepath)
         return []
 
     valid_signatures = [b"SCN\x00", b"USR\x00", b"PFB\x00"]
     if len(data) < 4 or data[:4] not in valid_signatures:
+        failures.append(filepath)
         return []
 
     from file_handlers.rsz.rsz_file import RszFile
@@ -46,36 +64,86 @@ def scan_file(filepath, type_id, field_identifier, type_registry, failures):
     found_values = []
     
     type_info = type_registry.get_type_info(type_id)
-    
+
     for idx, instance in enumerate(rsz_file.instance_infos):
-        if instance.type_id == type_id:
-            if idx in rsz_file.parsed_elements:
-                fields = rsz_file.parsed_elements[idx]
-                
-                if field_identifier is None:
-                    if type_info and "fields" in type_info:
-                        for field in type_info["fields"]:
-                            field_name = field["name"]
-                            if field_name in fields:
-                                value = fields[field_name]
-                                found_values.append((filepath, idx, field_name, value))
-                else:
-                    field_name = field_identifier
-                    if isinstance(field_identifier, int):
-                        if type_info and "fields" in type_info:
-                            if 0 <= field_identifier < len(type_info["fields"]):
-                                field_name = type_info["fields"][field_identifier]["name"]
-                            else:
-                                return []
-                                
-                    if not field_name:
-                        return []
-                        
-                    if field_name in fields:
-                        value = fields[field_name]
-                        found_values.append((filepath, idx, field_name, value))
+        if instance.type_id != type_id or idx not in rsz_file.parsed_elements:
+            continue
+        fields = rsz_file.parsed_elements[idx]
+        if field_identifier is None:
+            found_values.extend(
+                (filepath, idx, field_name, value)
+                for field_name, value in fields.items()
+            )
+            continue
+
+        field_name = _registered_field_name(field_identifier, type_info)
+        if not field_name:
+            return []
+        if field_name in fields:
+            found_values.append((filepath, idx, field_name, fields[field_name]))
     
     return found_values
+
+
+def value_matches(data, text):
+    if not text or not isinstance(data, _ValueData):
+        return False
+    value = data.value
+    return (
+        text.casefold() in value.casefold()
+        if isinstance(value, str)
+        else format_display_value(value).casefold() == text.casefold()
+    )
+
+
+def _replace_scalar(data, find, replacement):
+    if not value_matches(data, find):
+        return False
+    value = data.value
+    if isinstance(value, str):
+        data.value = re.sub(re.escape(find), lambda _match: replacement, value, flags=re.I)
+    elif isinstance(value, bool):
+        values = {'true': True, '1': True, 'false': False, '0': False}
+        if replacement.casefold() not in values:
+            raise ValueError("Boolean replacements must be true, false, 1, or 0")
+        data.value = values[replacement.casefold()]
+    elif isinstance(value, (int, float)):
+        data.value = type(value)(replacement)
+    else:
+        return False
+    return data.value != value
+
+
+def replace_file_values(
+    filepath, type_id, field_name, find, replacement, type_registry, instance_ids
+):
+    from file_handlers.rsz.rsz_file import RszFile
+
+    path = Path(filepath)
+    original = path.read_bytes()
+    rsz_file = RszFile()
+    rsz_file.type_registry = type_registry
+    rsz_file.filepath = str(path)
+    rsz_file.read(original)
+    metadata = type_registry.registry.get("metadata", {})
+    rsz_file.auto_resource_management = any(
+        metadata.get(key) for key in ("complete", "resources_identified")
+    )
+
+    replaced = 0
+    infos = rsz_file.instance_infos
+    for instance_id in instance_ids:
+        if instance_id >= len(infos) or infos[instance_id].type_id != type_id:
+            continue
+        field = rsz_file.parsed_elements.get(instance_id, {}).get(field_name)
+        replaced += bool(field and _replace_scalar(field, find, replacement))
+
+    if replaced:
+        rebuilt = rsz_file.build()
+        create_backup(path, original)
+        path.write_bytes(rebuilt)
+    return replaced
+
 
 def scan_directory(directory, type_id, field_identifier, type_registry, recursive=True):
     if not os.path.isdir(directory):
@@ -84,18 +152,13 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
     results = []
     path = Path(directory)
     candidate_files = []
-    total_files_found = 0
     matches_found = 0
     
     try:
         file_iter = path.rglob('*') if recursive else path.glob('*')
         for filepath in file_iter:
-            if filepath.is_file():
-                filename = filepath.name.lower()
-                is_match = any(filename.endswith(ext) or ('.' + filename.split('.')[-2]) == ext 
-                              for ext in ['.scn', '.pfb', '.user'])
-                if is_match:
-                    candidate_files.append(filepath)
+            if filepath.is_file() and is_rsz_path(filepath):
+                candidate_files.append(filepath)
     except Exception:
         return []
     
@@ -132,7 +195,7 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
 def format_value(value):
     """Format a field value for display"""
     if hasattr(value, 'value'):
-        return str(value.value)
+        return format_display_value(value.value)
     elif hasattr(value, 'values'):
         if not value.values:
             return "[]"
@@ -146,57 +209,57 @@ def format_value(value):
     elif hasattr(value, 'x') and hasattr(value, 'y'):
         if hasattr(value, 'z'):
             if hasattr(value, 'w'):
-                return f"({value.x}, {value.y}, {value.z}, {value.w})"
-            return f"({value.x}, {value.y}, {value.z})"
-        return f"({value.x}, {value.y})"
+                return f"({format_float_sequence((value.x, value.y, value.z, value.w))})"
+            return f"({format_float_sequence((value.x, value.y, value.z))})"
+        return f"({format_float_sequence((value.x, value.y))})"
     elif hasattr(value, 'r') and hasattr(value, 'g') and hasattr(value, 'b'):
         if hasattr(value, 'a'):
-            return f"RGBA({value.r}, {value.g}, {value.b}, {value.a})"
-        return f"RGB({value.r}, {value.g}, {value.b})"
+            return f"RGBA({format_float_sequence((value.r, value.g, value.b, value.a))})"
+        return f"RGB({format_float_sequence((value.r, value.g, value.b))})"
     elif hasattr(value, 'guid_str'):
         return value.guid_str
     elif hasattr(value, 'min') and hasattr(value, 'max'):
         if isinstance(value.min, (float, int)) and isinstance(value.max, (float, int)):
-            return f"Range({value.min}, {value.max})"
+            return f"Range({format_float_sequence((value.min, value.max))})"
         else:
             min_value = format_value(value.min)
             max_value = format_value(value.max)
             return f"Range({min_value}, {max_value})"
     elif hasattr(value, 'width') and hasattr(value, 'height'):
-        return f"Size({value.width}, {value.height})"
+        return f"Size({format_float_sequence((value.width, value.height))})"
     elif hasattr(value, 'min_x') and hasattr(value, 'max_x'):
-        return f"Rect({value.min_x}, {value.min_y}, {value.max_x}, {value.max_y})"
+        return f"Rect({format_float_sequence((value.min_x, value.min_y, value.max_x, value.max_y))})"
     elif hasattr(value, 'center') and hasattr(value, 'radius'):
         center_str = format_value(value.center)
-        return f"Sphere({center_str}, {value.radius})"
+        return f"Sphere({center_str}, {format_display_value(value.radius)})"
     elif hasattr(value, 'start') and hasattr(value, 'end'):
         start_str = format_value(value.start)
         end_str = format_value(value.end)
         if hasattr(value, 'radius'): 
-            return f"Capsule(start:{start_str}, end:{end_str}, radius:{value.radius})"
+            return f"Capsule(start:{start_str}, end:{end_str}, radius:{format_display_value(value.radius)})"
         return f"LineSegment(start:{start_str}, end:{end_str})"
     elif hasattr(value, 'position') and hasattr(value, 'direction'):
         pos_str = format_value(value.position)
         dir_str = format_value(value.direction)
         if hasattr(value, 'angle') and hasattr(value, 'distance'):  
-            return f"Cone(pos:{pos_str}, dir:{dir_str}, angle:{value.angle}, distance:{value.distance})"
+            return f"Cone(pos:{pos_str}, dir:{dir_str}, angle:{format_display_value(value.angle)}, distance:{format_display_value(value.distance)})"
         return f"Direction(pos:{pos_str}, dir:{dir_str})"
     elif hasattr(value, 'center') and hasattr(value, 'radius') and hasattr(value, 'height'): 
         center_str = format_value(value.center)
-        return f"Cylinder(center:{center_str}, radius:{value.radius}, height:{value.height})"
+        return f"Cylinder(center:{center_str}, radius:{format_display_value(value.radius)}, height:{format_display_value(value.height)})"
     elif hasattr(value, 'type_name'): 
         return f"Type({value.type_name})"
-    return str(value)
+    return format_display_value(value)
 
 def main():
     parser = argparse.ArgumentParser(description='Find all possible values of a specific field in RSZ files')
-    parser.add_argument('--dir', '-d', required=True, help='Directory to scan')
+    parser.add_argument('--dir', '-d', type=resolve_cli_path, required=True, help='Directory to scan')
     parser.add_argument('--type-id', '-t', required=True, help='Type ID to search for (hex or decimal)')
     parser.add_argument('--field', '-f', help='Field name or index to extract (if not specified, will scan all fields)')
-    parser.add_argument('--json-dir', '-j', help='Path to JSON type data (file or directory)', default='res/type_data')
+    parser.add_argument('--json-dir', '-j', type=resolve_cli_path, help='Path to JSON type data (file or directory)', default='res/type_data')
     parser.add_argument('--recursive', '-r', action='store_true', help='Scan directories recursively')
     parser.add_argument('--limit', '-l', type=int, default=10, help='Maximum examples to show for each value')
-    parser.add_argument('--output', '-o', help='Output file for results (default: stdout)')
+    parser.add_argument('--output', '-o', type=resolve_cli_path, help='Output file for results (default: stdout)')
     parser.add_argument('--verbose', '-v', action='store_true', help='Show detailed information')
     
     args = parser.parse_args()

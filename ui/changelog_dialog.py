@@ -3,18 +3,11 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QPixmap, QPainter, QLinearGradient, QColor, QDesktopServices
 from PySide6.QtWidgets import (QDialog, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, 
                                QScrollArea, QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect)
-import sys
-from pathlib import Path
 from ui.styles import get_color_scheme
+from utils.app_paths import application_root
 
-def _get_base_dir() -> Path:
-    if getattr(sys, "frozen", False):
-        return Path(sys.argv[0]).resolve().parent
-    else:
-        return Path(__file__).resolve().parent.parent
-    
 class _IllustrationPanel(QFrame):
-    def __init__(self, dark_mode: bool, image_path: str, parent: QWidget | None = None):
+    def __init__(self, image_path: str, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("IllustrationPanel")
         self.setMinimumWidth(200)
@@ -38,14 +31,14 @@ class _IllustrationPanel(QFrame):
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(40)
         shadow.setOffset(0, 0)
-        shadow.setColor(Qt.black if dark_mode else Qt.gray)
+        shadow.setColor(Qt.black)
         self.image_label.setGraphicsEffect(shadow)
 
-        colors = get_color_scheme(dark_mode)
+        colors = get_color_scheme()
 
         self._bg_start = QColor(colors['bg'])
-        highlight = colors.get('highlight', '#ff851b')
-        self._bg_end = QColor(highlight) if isinstance(highlight, str) else QColor(255, 133, 27)
+        highlight = colors.get('highlight', '#00aaff')
+        self._bg_end = QColor(highlight) if isinstance(highlight, str) else QColor(0, 170, 255)
 
         self.setStyleSheet("QFrame#IllustrationPanel { border: none; }")
 
@@ -110,17 +103,17 @@ class _IllustrationPanel(QFrame):
 
 
 class ChangelogDialog(QDialog):
-    def __init__(self, parent: QWidget | None, version: str, dark_mode: bool):
+    def __init__(self, parent: QWidget | None, version: str):
         super().__init__(parent)
-        self.setWindowTitle(f"What’s new in REasy v{version}")
+        self.setWindowTitle(self.tr("What’s new in REasy v{version}").format(version=version))
         self.setModal(True)
         self.resize(820, 520)
         self.setMinimumSize(720, 480)
 
-        colors = get_color_scheme(dark_mode)
+        colors = get_color_scheme()
         self._apply_stylesheet(colors)
 
-        base_dir = _get_base_dir()
+        base_dir = application_root()
         print(base_dir)
         image_path_candidates = [
             base_dir / "resources" / "images" / "reasy_guy.png",
@@ -133,7 +126,7 @@ class ChangelogDialog(QDialog):
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        left = _IllustrationPanel(dark_mode, image_path)
+        left = _IllustrationPanel(image_path)
         root.addWidget(left)
 
         right_container = QWidget()
@@ -141,8 +134,10 @@ class ChangelogDialog(QDialog):
         right_layout.setContentsMargins(24, 16, 24, 16)
         right_layout.setSpacing(10)
 
-        title = QLabel(f"<span style='font-size:18pt; font-weight:700;'>What’s new in REasy v{version}</span>")
-        subtitle = QLabel("Thanks for updating! Here are the highlights:")
+        title = QLabel(self.tr(
+            "<span style='font-size:18pt; font-weight:700;'>What’s new in REasy v{version}</span>"
+        ).format(version=version))
+        subtitle = QLabel(self.tr("Thanks for updating! Here are the highlights:"))
         subtitle.setStyleSheet("opacity: 0.85;")
         right_layout.addWidget(title)
         right_layout.addWidget(subtitle)
@@ -159,17 +154,52 @@ class ChangelogDialog(QDialog):
         scroll_layout.setSpacing(8)
 
         changes = [
-            ("New", "Support for 'Area' type from older games."),
+            # New
+            ("New", self.tr(
+                "Added full sound modding support for RE2 RT, RE3 RT, and RE7 RT."
+            )),
+            ("New", self.tr("MSG files now include a Sound Scan button. Sound preview is now available wherever applicable.")),
+            ("New", self.tr("New sound sources can now be added to BNK and PCK files.")),
+            ("New", self.tr("Sound banks can now be searched by source ID.")),
+            ("New", self.tr(
+                "Added quality, codec, and compression settings for sound replacements "
+                "and additions."
+            )),
+            ("New", self.tr(
+                "Users are now warned when saving a sound file while other affected "
+                "files are open."
+            )),
+            ("New", self.tr("Added support for WCP, WCST, WGS, and WSS files.")),
+            ("New", self.tr("Added Spanish and Russian translations.")),
 
-            ("Improved", "Identified all unknown Data fields in RE3 RSZ dump."),
-            ("Improved", "When opening CTRL+F search, the text search box will now be auto-focused."),
-            ("Improved", "Navigating between materials was slow in MDF files. Refactored relevant code to improve performance."),
-            ("Improved", "Identified all unknown Data fields in DMC5 RSZ dump."),
-            ("Improved", "Added over 15.000 entries to SF6 file list thanks to @ShangLi, @BrewedVFX, @Nanden and @Sleepy Scrub"), 
+            # Improved
+            ("Improved", self.tr("Improved performance during sound editing.")),
+            ("Improved", self.tr(
+                "New sounds now automatically adjust their duration and fade curves."
+            )),
 
-            ("Fixed", "Onimusha 2 RSZ dump."),
-            ("Fixed", "Saving of .msg files from older games was corrupting messages."),
-            ("Fixed", "RSZ: 'Size' data type was not supported in copy/paste operations."),
+            # Updated
+            ("Updated", self.tr(
+                "<b>General UI overhaul:</b> refined the workbench to feel more fluid "
+                "and VS Code-like."
+            )),
+            ("Updated", self.tr("Added a search bar to the Project Files tab.")),
+            ("Updated", self.tr("Added a bookmarks system.")),
+            ("Updated", self.tr("Project folders can now be changed.")),
+            ("Updated", self.tr(
+                "MOV files can now be opened through the operating system."
+            )),
+
+            # Fixed
+            ("Fixed", self.tr("Fixed sound replacement issues.")),
+            ("Fixed", self.tr(
+                "8-bit WAV files are now rejected instead of becoming silent tracks."
+            )),
+            ("Fixed", self.tr("Fixed RE9 RSZ dump issues.")),
+            ("Fixed", self.tr("Fixed AI Assistant failures while editing RSZ files.")),
+            ("Fixed", self.tr(
+                "Fixed resource links failing to resolve files stored in PAKs."
+            )),
         ]
         for tag, text in changes:
             item = self._create_change_item(tag, text)
@@ -179,16 +209,16 @@ class ChangelogDialog(QDialog):
 
         buttons_row = QHBoxLayout()
 
-        github_btn = QPushButton("⭐ Star on GitHub")
+        github_btn = QPushButton(self.tr("⭐ Star on GitHub"))
         github_btn.setObjectName("GitHubButton")
         github_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy")))
         github_btn.setCursor(Qt.PointingHandCursor)
         buttons_row.addWidget(github_btn)
         
         buttons_row.addStretch(1)
-        view_btn = QPushButton("View release notes…")
+        view_btn = QPushButton(self.tr("View release notes…"))
         view_btn.clicked.connect(lambda: QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy/releases")))
-        close_btn = QPushButton("Let’s go!")
+        close_btn = QPushButton(self.tr("Let’s go!"))
         close_btn.clicked.connect(self.accept)
         buttons_row.addWidget(view_btn)
         buttons_row.addWidget(close_btn)
@@ -205,7 +235,14 @@ class ChangelogDialog(QDialog):
         layout.setContentsMargins(12, 10, 12, 10)
         layout.setSpacing(12)
 
-        pill = QLabel(tag)
+        tag_labels = {
+            "New": self.tr("New"),
+            "Updated": self.tr("Updated"),
+            "Improved": self.tr("Improved"),
+            "Fixed": self.tr("Fixed"),
+            "Planned": self.tr("Planned"),
+        }
+        pill = QLabel(tag_labels.get(tag, tag))
         pill.setObjectName("TagPill")
         pill.setAlignment(Qt.AlignCenter)
         pill.setMinimumWidth(88)
@@ -216,7 +253,7 @@ class ChangelogDialog(QDialog):
         desc.setWordWrap(True)
         desc.setOpenExternalLinks(True)
 
-        layout.addWidget(pill)
+        layout.addWidget(pill, 0, Qt.AlignTop)
         layout.addWidget(desc, 1)
         return container
 
@@ -224,7 +261,7 @@ class ChangelogDialog(QDialog):
         bg = colors['bg']
         fg = colors['fg']
         border = colors['border']
-        highlight = colors['highlight'] if isinstance(colors['highlight'], str) else '#ff851b'
+        highlight = colors['highlight'] if isinstance(colors['highlight'], str) else '#00aaff'
         self.setStyleSheet(f"""
             QDialog {{ background-color: {bg}; color: {fg}; }}
             QLabel {{ color: {fg}; }}
@@ -257,6 +294,9 @@ class ChangelogDialog(QDialog):
             QLabel#TagPill[tagName="improved"] {{
                 background-color: #f39c12;
             }}
+            QLabel#TagPill[tagName="updated"] {{
+                background-color: #1034A6;
+            }}
             QLabel#TagPill[tagName="fixed"] {{
                 background-color: #e74c3c;
             }}
@@ -265,7 +305,7 @@ class ChangelogDialog(QDialog):
             }}
             QPushButton#GitHubButton {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 {highlight}, stop:1 rgba(255, 133, 27, 0.8));
+                    stop:0 {highlight}, stop:1 rgba(0, 170, 255, 0.8));
                 color: white;
                 border: none;
                 padding: 8px 14px;
@@ -274,10 +314,10 @@ class ChangelogDialog(QDialog):
             }}
             QPushButton#GitHubButton:hover {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(255, 153, 51, 1.0), stop:1 {highlight});
+                    stop:0 rgba(51, 187, 255, 1.0), stop:1 {highlight});
             }}
             QPushButton#GitHubButton:pressed {{
                 background: qlineargradient(x1:0, y1:0, x2:0, y2:1,
-                    stop:0 rgba(255, 133, 27, 0.9), stop:1 rgba(255, 133, 27, 0.7));
+                    stop:0 rgba(0, 170, 255, 0.9), stop:1 rgba(0, 170, 255, 0.7));
             }}
         """)

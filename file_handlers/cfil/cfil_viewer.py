@@ -1,9 +1,25 @@
 import uuid
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem,
     QHeaderView, QLabel, QPushButton, QLineEdit, QSpinBox, QFrame, QMessageBox, QFileDialog, QGroupBox
 )
+
+
+TEXT_FILE_FILTER = "Text Files (*.txt);;All Files (*)"
+IMPORT_IDS_TITLE = QT_TRANSLATE_NOOP("CfilViewer", "Import IDs")
+
+
+class _TreeCellWidget(QWidget):
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setAutoFillBackground(False)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, True)
+
+    def paintEvent(self, event):
+        event.accept()
 
 
 class CfilViewer(QWidget):
@@ -11,6 +27,8 @@ class CfilViewer(QWidget):
 
     def __init__(self, handler):
         super().__init__()
+        self.setObjectName("cfilViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self.mask_tree = None
         self.mat_attr_tree = None
@@ -36,7 +54,7 @@ class CfilViewer(QWidget):
         header_frame = QFrame()
         header_layout = QVBoxLayout(header_frame)
         title_row = QHBoxLayout()
-        title = QLabel("🧩 CFIL Editor")
+        title = QLabel(self.tr("🧩 CFIL Editor"))
         title_row.addWidget(title)
         title_row.addStretch()
         header_layout.addLayout(title_row)
@@ -60,7 +78,7 @@ class CfilViewer(QWidget):
         self.status_edit = QLineEdit()
         self.status_edit.setPlaceholderText("0")
         self.status_edit.setMaximumWidth(150)
-        self.status_tooltip = (
+        self.status_tooltip = self.tr(
             "Format compatibility flag:\n\n"
             "• 0 = Modern CFIL format (no legacy processing)\n"
             "• 1+ = Legacy format (requires additional material attribute handling)\n\n"
@@ -93,12 +111,12 @@ class CfilViewer(QWidget):
         mask_group_layout = QVBoxLayout(self.mask_group)
         
         mask_bar = QHBoxLayout()
-        self.add_mask_btn = QPushButton("➕ Add")
-        self.del_mask_btn = QPushButton("🗑️ Remove")
-        self.up_mask_btn = QPushButton("⬆️ Move Up")
-        self.down_mask_btn = QPushButton("⬇️ Move Down")
-        self.import_mask_btn = QPushButton("Import")
-        self.export_mask_btn = QPushButton("Export")
+        self.add_mask_btn = QPushButton(self.tr("➕ Add"))
+        self.del_mask_btn = QPushButton(self.tr("🗑️ Remove"))
+        self.up_mask_btn = QPushButton(self.tr("⬆️ Move Up"))
+        self.down_mask_btn = QPushButton(self.tr("⬇️ Move Down"))
+        self.import_mask_btn = QPushButton(self.tr("Import"))
+        self.export_mask_btn = QPushButton(self.tr("Export"))
         mask_bar.addWidget(self.add_mask_btn)
         mask_bar.addWidget(self.del_mask_btn)
         mask_bar.addWidget(self.up_mask_btn)
@@ -110,7 +128,7 @@ class CfilViewer(QWidget):
         
         self.mask_tree = QTreeWidget()
         self.mask_tree.setColumnCount(2)
-        self.mask_tree.setHeaderLabels(["Item", "Value"])
+        self.mask_tree.setHeaderLabels([self.tr("Item"), self.tr("Value")])
         header = self.mask_tree.header()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
@@ -122,12 +140,12 @@ class CfilViewer(QWidget):
         mat_attr_group_layout = QVBoxLayout(self.mat_attr_group)
         
         mat_attr_bar = QHBoxLayout()
-        self.add_mat_attr_btn = QPushButton("➕ Add")
-        self.del_mat_attr_btn = QPushButton("🗑️ Remove")
-        self.up_mat_attr_btn = QPushButton("⬆️ Move Up")
-        self.down_mat_attr_btn = QPushButton("⬇️ Move Down")
-        self.import_mat_attr_btn = QPushButton("Import")
-        self.export_mat_attr_btn = QPushButton("Export")
+        self.add_mat_attr_btn = QPushButton(self.tr("➕ Add"))
+        self.del_mat_attr_btn = QPushButton(self.tr("🗑️ Remove"))
+        self.up_mat_attr_btn = QPushButton(self.tr("⬆️ Move Up"))
+        self.down_mat_attr_btn = QPushButton(self.tr("⬇️ Move Down"))
+        self.import_mat_attr_btn = QPushButton(self.tr("Import"))
+        self.export_mat_attr_btn = QPushButton(self.tr("Export"))
         mat_attr_bar.addWidget(self.add_mat_attr_btn)
         mat_attr_bar.addWidget(self.del_mat_attr_btn)
         mat_attr_bar.addWidget(self.up_mat_attr_btn)
@@ -139,7 +157,7 @@ class CfilViewer(QWidget):
         
         self.mat_attr_tree = QTreeWidget()
         self.mat_attr_tree.setColumnCount(2)
-        self.mat_attr_tree.setHeaderLabels(["Item", "Value"])
+        self.mat_attr_tree.setHeaderLabels([self.tr("Item"), self.tr("Value")])
         header = self.mat_attr_tree.header()
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
@@ -183,12 +201,12 @@ class CfilViewer(QWidget):
         
         if cfil.version == 3:
             self.mask_group.setTitle("Mask IDs")
-            self.import_mask_btn.setText("Import")
-            self.export_mask_btn.setText("Export")
+            self.import_mask_btn.setText(self.tr("Import"))
+            self.export_mask_btn.setText(self.tr("Export"))
         else:
             self.mask_group.setTitle("Mask GUIDs")
-            self.import_mask_btn.setText("Import")
-            self.export_mask_btn.setText("Export")
+            self.import_mask_btn.setText(self.tr("Import"))
+            self.export_mask_btn.setText(self.tr("Export"))
         
         self.layer_index_spin.blockSignals(True)
         self.layer_index_spin.setValue(cfil.layer_index)
@@ -225,7 +243,7 @@ class CfilViewer(QWidget):
                 self.mat_attr_tree.setItemWidget(it, 1, widget)
 
     def _create_guid_widget(self, guid: uuid.UUID, index: int, attr_name: str):
-        row_widget = QWidget()
+        row_widget = _TreeCellWidget()
         row_layout = QHBoxLayout(row_widget)
         row_layout.setContentsMargins(0, 2, 0, 2)
         row_layout.setSpacing(4)
@@ -260,7 +278,7 @@ class CfilViewer(QWidget):
         """Show detailed information about the status field"""
         QMessageBox.information(
             self,
-            "Status Field Information",
+            self.tr("Status Field Information"),
             self.status_tooltip
         )
 
@@ -280,7 +298,11 @@ class CfilViewer(QWidget):
                 cfil.status = value
                 self._mark_modified()
         except Exception:
-            QMessageBox.warning(self, "Invalid Value", "Please enter a valid uint32 value (0-4294967295 or 0x0-0xFFFFFFFF).")
+            QMessageBox.warning(
+                self,
+                self.tr("Invalid Value"),
+                self.tr("Please enter a valid uint32 value (0-4294967295 or 0x0-0xFFFFFFFF)."),
+            )
     
     def _on_material_id_guid_edited(self):
         cfil = self.handler.cfil
@@ -292,7 +314,7 @@ class CfilViewer(QWidget):
                 cfil.materialIdGuid = new_guid
                 self._mark_modified()
         except Exception:
-            QMessageBox.warning(self, "Invalid GUID", "Please enter a valid GUID.")
+            QMessageBox.warning(self, self.tr("Invalid GUID"), self.tr("Please enter a valid GUID."))
             self.material_id_guid_edit.setText(str(cfil.materialIdGuid))
     
     def _on_layer_guid_edited(self):
@@ -305,7 +327,7 @@ class CfilViewer(QWidget):
                 cfil.layerGuid = new_guid
                 self._mark_modified()
         except Exception:
-            QMessageBox.warning(self, "Invalid GUID", "Please enter a valid GUID.")
+            QMessageBox.warning(self, self.tr("Invalid GUID"), self.tr("Please enter a valid GUID."))
             self.layer_guid_edit.setText(str(cfil.layerGuid))
 
     def _on_layer_index_changed(self, value: int):
@@ -317,7 +339,7 @@ class CfilViewer(QWidget):
             self._mark_modified()
 
     def _import_guids(self, guid_list: list, title: str):
-        path, _ = QFileDialog.getOpenFileName(self, title, "", "Text Files (*.txt);;All Files (*)")
+        path, _ = QFileDialog.getOpenFileName(self, title, "", TEXT_FILE_FILTER)
         if not path:
             return
         try:
@@ -337,12 +359,12 @@ class CfilViewer(QWidget):
                 self._mark_modified()
                 self._refresh_ui_from_model()
             else:
-                QMessageBox.information(self, title, "No new entries to import.")
+                QMessageBox.information(self, title, self.tr("No new entries to import."))
         except Exception as e:
-            QMessageBox.critical(self, title, f"Failed to import: {e}")
+            QMessageBox.critical(self, title, self.tr("Failed to import: {error}").format(error=e))
 
     def _export_guids(self, guid_list: list, title: str, default_filename: str):
-        path, _ = QFileDialog.getSaveFileName(self, title, default_filename, "Text Files (*.txt);;All Files (*)")
+        path, _ = QFileDialog.getSaveFileName(self, title, default_filename, TEXT_FILE_FILTER)
         if not path:
             return
         try:
@@ -350,44 +372,67 @@ class CfilViewer(QWidget):
                 for g in guid_list:
                     f.write(str(g) + "\n")
         except Exception as e:
-            QMessageBox.critical(self, title, f"Failed to export: {e}")
+            QMessageBox.critical(self, title, self.tr("Failed to export: {error}").format(error=e))
 
     def _on_import_masks(self):
         cfil = self.handler.cfil
         if not cfil:
             return
         if cfil.version == 3:
-            path, _ = QFileDialog.getOpenFileName(self, "Import IDs", "", "Text Files (*.txt);;All Files (*)")
+            path, _ = QFileDialog.getOpenFileName(
+                self,
+                self.tr(IMPORT_IDS_TITLE),
+                "",
+                TEXT_FILE_FILTER,
+            )
             if not path:
                 return
             try:
                 with open(path, 'r', encoding='utf-8') as f:
                     content = f.read()
-                appended = 0
-                for part in content.replace(',', ' ').replace(';', ' ').split():
-                    try:
-                        val = int(part, 10)
-                        if 0 <= val <= 255:
-                            cfil.mask_ids.append(val)
-                            appended += 1
-                    except Exception:
-                        pass
-                if appended > 0:
+                values = self._parse_mask_ids(content)
+                cfil.mask_ids.extend(values)
+                if values:
                     self._mark_modified()
                     self._refresh_ui_from_model()
                 else:
-                    QMessageBox.information(self, "Import IDs", "No new entries to import.")
+                    QMessageBox.information(
+                        self,
+                        self.tr(IMPORT_IDS_TITLE),
+                        self.tr("No new entries to import."),
+                    )
             except Exception as e:
-                QMessageBox.critical(self, "Import IDs", f"Failed to import: {e}")
+                QMessageBox.critical(
+                    self,
+                    self.tr(IMPORT_IDS_TITLE),
+                    self.tr("Failed to import: {error}").format(error=e),
+                )
         else:
-            self._import_guids(cfil.mask_guids, "Import Mask GUIDs")
+            self._import_guids(cfil.mask_guids, self.tr("Import Mask GUIDs"))
+
+    @staticmethod
+    def _parse_mask_ids(content: str) -> list[int]:
+        values = []
+        for part in content.replace(',', ' ').replace(';', ' ').split():
+            try:
+                value = int(part, 10)
+            except ValueError:
+                continue
+            if 0 <= value <= 255:
+                values.append(value)
+        return values
 
     def _on_export_masks(self):
         cfil = self.handler.cfil
         if not cfil:
             return
         if cfil.version == 3:
-            path, _ = QFileDialog.getSaveFileName(self, "Export IDs", "mask_ids.txt", "Text Files (*.txt);;All Files (*)")
+            path, _ = QFileDialog.getSaveFileName(
+                self,
+                self.tr("Export IDs"),
+                "mask_ids.txt",
+                TEXT_FILE_FILTER,
+            )
             if not path:
                 return
             try:
@@ -395,9 +440,13 @@ class CfilViewer(QWidget):
                     for mid in cfil.mask_ids:
                         f.write(str(mid) + "\n")
             except Exception as e:
-                QMessageBox.critical(self, "Export IDs", f"Failed to export: {e}")
+                QMessageBox.critical(
+                    self,
+                    self.tr("Export IDs"),
+                    self.tr("Failed to export: {error}").format(error=e),
+                )
         else:
-            self._export_guids(cfil.mask_guids, "Export Mask GUIDs", "mask_guids.txt")
+            self._export_guids(cfil.mask_guids, self.tr("Export Mask GUIDs"), "mask_guids.txt")
 
     def _on_add_mask(self):
         cfil = self.handler.cfil
@@ -507,10 +556,14 @@ class CfilViewer(QWidget):
         cfil = self.handler.cfil
         if not cfil or cfil.version == 3:
             return
-        self._import_guids(cfil.materialAttributeGuids, "Import Material Attribute GUIDs")
+        self._import_guids(cfil.materialAttributeGuids, self.tr("Import Material Attribute GUIDs"))
     
     def _on_export_mat_attrs(self):
         cfil = self.handler.cfil
         if not cfil or cfil.version == 3:
             return
-        self._export_guids(cfil.materialAttributeGuids, "Export Material Attribute GUIDs", "material_attr_guids.txt")
+        self._export_guids(
+            cfil.materialAttributeGuids,
+            self.tr("Export Material Attribute GUIDs"),
+            "material_attr_guids.txt",
+        )

@@ -64,6 +64,14 @@ class TypeRegistryPatcher:
         self._save_cache()
         
         return patched_registry
+
+    def get_cached_registry(self):
+        current_timestamp = self._get_file_timestamp(self.registry_path)
+        cache_key = str(current_timestamp)
+        if cache_key in self.cache:
+            print(f"Using cached patches for {self.registry_path}")
+            return self.cache[cache_key]
+        return None
     
     def _patch_fields(self, fields):
         seen_names = {}

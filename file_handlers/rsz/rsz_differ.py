@@ -1,4 +1,5 @@
 import tempfile
+from itertools import islice
 from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from pathlib import Path
@@ -7,6 +8,14 @@ from file_handlers.rsz.rsz_file import RszFile, RszGameObject, RszFolderInfo
 from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
 from utils.hex_util import guid_le_to_str
+from utils.number_format import format_display_value, format_float_sequence, format_full_float
+
+
+def _rsz_kind(rsz_file: RszFile) -> str:
+    if rsz_file.is_usr:
+        return "USR"
+    return "PFB" if rsz_file.is_pfb else "SCN"
+
 
 @dataclass
 class GameObjectDiff:
@@ -130,11 +139,6 @@ class RszDiffer:
             instance_id = rsz_file.object_table[gameobject.id]
             return name_helper.get_gameobject_name(instance_id, default_name)
         return default_name
-
-    def get_all_instances(self, rsz_file: RszFile) -> Dict[int, Any]:
-        if hasattr(rsz_file, 'parsed_elements'):
-            return rsz_file.parsed_elements
-        return {}
 
     def get_gameobject_instances(self, rsz_file: RszFile, gameobject: RszGameObject) -> List[Tuple[int, Any]]:
         instances = []
@@ -467,97 +471,6 @@ class RszDiffer:
 
         return changes
 
-    def compare_embedded_instances_data(self, emb1, emb2, rsz1: RszFile, rsz2: RszFile, prefix: str) -> List[str]:
-
-        changes = []
-
-        if isinstance(emb1, dict) and isinstance(emb2, dict):
-            all_keys = set(emb1.keys()) | set(emb2.keys())
-
-            for key in sorted(all_keys):
-                if key not in emb1:
-                    changes.append(f"{prefix}.inst[{key}] added in file 2")
-                elif key not in emb2:
-                    changes.append(f"{prefix}.inst[{key}] removed in file 2")
-                else:
-                    inst1 = emb1[key]
-                    inst2 = emb2[key]
-                    inst_changes = self.compare_single_embedded_instance(inst1, inst2, rsz1, rsz2, f"{prefix}.inst[{key}]")
-                    changes.extend(inst_changes)
-
-        elif isinstance(emb1, list) and isinstance(emb2, list):
-            if len(emb1) != len(emb2):
-                changes.append(f"{prefix} instance count: {len(emb1)} → {len(emb2)}")
-
-            for i, (inst1, inst2) in enumerate(zip(emb1, emb2)):
-                inst_changes = self.compare_single_embedded_instance(inst1, inst2, rsz1, rsz2, f"{prefix}.inst[{i}]")
-                changes.extend(inst_changes)
-
-        return changes
-
-    def compare_single_embedded_instance(self, inst1, inst2, rsz1: RszFile, rsz2: RszFile, prefix: str) -> List[str]:
-
-        changes = []
-
-        type1 = getattr(inst1, 'type_id', None)
-        type2 = getattr(inst2, 'type_id', None)
-
-        if type1 != type2:
-            changes.append(f"{prefix} type: {type1} → {type2}")
-            return changes
-
-        data1 = None
-        data2 = None
-
-        if hasattr(inst1, 'data'):
-            data1 = inst1.data
-        if hasattr(inst2, 'data'):
-            data2 = inst2.data
-
-        if data1 is None and hasattr(inst1, 'instance_id'):
-            inst_id = inst1.instance_id
-            if inst_id and inst_id >= 0:
-                data1 = rsz1.parsed_elements.get(inst_id)
-
-        if data2 is None and hasattr(inst2, 'instance_id'):
-            inst_id = inst2.instance_id
-            if inst_id and inst_id >= 0:
-                data2 = rsz2.parsed_elements.get(inst_id)
-
-        if data1 is None and hasattr(inst1, 'fields'):
-            data1 = inst1.fields
-        if data2 is None and hasattr(inst2, 'fields'):
-            data2 = inst2.fields
-
-        if data1 is None and hasattr(inst1, '__dict__'):
-            data1 = {k: v for k, v in inst1.__dict__.items()
-                    if not k.startswith('_') and k not in ['type_id', 'instance_id']}
-        if data2 is None and hasattr(inst2, '__dict__'):
-            data2 = {k: v for k, v in inst2.__dict__.items()
-                    if not k.startswith('_') and k not in ['type_id', 'instance_id']}
-
-        if data1 and data2:
-            if isinstance(data1, dict) and isinstance(data2, dict):
-                field_changes = self.compare_parsed_data(data1, data2, prefix, 0, max_changes=10, in_embedded=True)
-                if field_changes:
-                    type_name = f"Type_{type1}" if type1 else "Unknown"
-                    if rsz1.type_registry and type1:
-                        type_info = rsz1.type_registry.get_type_info(type1)
-                        if type_info:
-                            type_name = type_info.get('name', type_name)
-
-                    changes.append(f"{prefix} ({type_name}):")
-                    for fc in field_changes[:5]:
-                        changes.append(f"  • {fc}")
-            else:
-                if data1 != data2:
-                    changes.append(f"{prefix} data changed")
-        elif data1 and not data2:
-            changes.append(f"{prefix} data removed in file 2")
-        elif not data1 and data2:
-            changes.append(f"{prefix} data added in file 2")
-
-        return changes
 
     def instance_has_embedded_data(self, data: dict) -> bool:
 
@@ -578,30 +491,6 @@ class RszDiffer:
                     return True
 
         return False
-
-    def compare_embedded_instance_fields(self, data1: dict, data2: dict, inst_id: int, rsz1: RszFile, rsz2: RszFile) -> List[str]:
-
-        changes = []
-        inst_name = self.get_instance_name(rsz1, inst_id)
-
-        for field_name in data1.keys() | data2.keys():
-            if 'embedded' in field_name.lower() or 'userdata' in field_name.lower():
-                val1 = data1.get(field_name)
-                val2 = data2.get(field_name)
-
-                if val1 != val2:
-                    if val1 is None:
-                        changes.append(f"[{inst_name}] {field_name} added in file 2")
-                    elif val2 is None:
-                        changes.append(f"[{inst_name}] {field_name} removed in file 2")
-                    else:
-                        field_changes = self.compare_field_values(val1, val2, field_name, 0, in_embedded=True)
-                        if field_changes:
-                            changes.append(f"[{inst_name}] {field_name}:")
-                            for fc in field_changes[:3]:
-                                changes.append(f"  • {fc}")
-
-        return changes
 
     def get_nested_embedded_instance_changes(self, ud1, ud2, rsz1: RszFile, rsz2: RszFile) -> Dict:
 
@@ -831,41 +720,6 @@ class RszDiffer:
 
         return changes
 
-    def compare_embedded_instance_data(self, userdata_list1, userdata_list2, rsz1, rsz2, parent_inst_id: int) -> List[str]:
-
-        changes = []
-
-        for i, (ud1, ud2) in enumerate(zip(userdata_list1, userdata_list2)):
-
-            if hasattr(ud1, 'hash') and hasattr(ud2, 'hash'):
-                if ud1.hash != ud2.hash:
-                    changes.append(f"embedded[{i}] hash changed")
-
-            str1 = rsz1._rsz_userdata_str_map.get(ud1, "") if hasattr(rsz1, '_rsz_userdata_str_map') else ""
-            str2 = rsz2._rsz_userdata_str_map.get(ud2, "") if hasattr(rsz2, '_rsz_userdata_str_map') else ""
-
-            if str1 != str2:
-                if len(str1) > 30 or len(str2) > 30:
-                    changes.append(f"embedded[{i}] data changed")
-                else:
-                    changes.append(f"embedded[{i}]: '{str1}' → '{str2}'")
-
-            if hasattr(ud1, 'referenced_instance_id') and hasattr(ud2, 'referenced_instance_id'):
-                ref_id1 = ud1.referenced_instance_id
-                ref_id2 = ud2.referenced_instance_id
-
-                if ref_id1 != ref_id2:
-                    changes.append(f"embedded[{i}] references different instance: {ref_id1} → {ref_id2}")
-                elif ref_id1 >= 0:
-                    data1 = rsz1.parsed_elements.get(ref_id1, {})
-                    data2 = rsz2.parsed_elements.get(ref_id2, {})
-
-                    if data1 and data2:
-                        field_changes = self.compare_parsed_data(data1, data2, f"embedded[{i}]", 0, max_changes=2)
-                        changes.extend(field_changes)
-
-        return changes
-
     def compare_all_instances(self, rsz1: RszFile, rsz2: RszFile) -> List[Dict]:
         instance_diffs = []
 
@@ -1001,51 +855,6 @@ class RszDiffer:
 
         return changes[:max_changes]
 
-    def compare_instances(self, inst1, inst2, path: str, depth: int = 0, max_depth: int = 5) -> List[str]:
-        changes = []
-
-        if depth > max_depth:
-            return changes
-
-        type_name1 = inst1.type_info.name if hasattr(inst1, 'type_info') else 'Unknown'
-        type_name2 = inst2.type_info.name if hasattr(inst2, 'type_info') else 'Unknown'
-
-        if type_name1 != type_name2:
-            changes.append(f"{path} type: {type_name1} → {type_name2}")
-            return changes[:10]
-
-        if hasattr(inst1, 'data') and hasattr(inst2, 'data'):
-            field_changes = self.compare_data_fields(inst1.data, inst2.data, path, depth)
-            changes.extend(field_changes)
-
-        return changes[:20]
-
-    def compare_data_fields(self, data1, data2, path: str, depth: int, in_embedded: bool = False) -> List[str]:
-        changes = []
-
-        if hasattr(data1, 'fields') and hasattr(data2, 'fields'):
-            fields1 = data1.fields
-            fields2 = data2.fields
-
-            all_fields = set(fields1.keys()) | set(fields2.keys())
-
-            for field in sorted(all_fields):
-                if field in ['m_GameObject', 'm_Transform', 'm_Parent', 'm_Children']:
-                    continue
-
-                field_path = f"{path}.{field}"
-                val1 = fields1.get(field)
-                val2 = fields2.get(field)
-
-                if field not in fields1:
-                    changes.append(f"{field_path}: [missing] → {self.get_field_value_string(val2)}")
-                elif field not in fields2:
-                    changes.append(f"{field_path}: {self.get_field_value_string(val1)} → [missing]")
-                else:
-                    field_changes = self.compare_field_values(val1, val2, field_path, depth + 1, in_embedded)
-                    changes.extend(field_changes)
-
-        return changes
 
     def compare_field_values(self, val1, val2, path: str, depth: int, in_embedded: bool = False) -> List[str]:
         changes = []
@@ -1061,7 +870,7 @@ class RszDiffer:
             ArrayData, StructData, ObjectData, ResourceData, UserDataData,
             BoolData, StringData, Float2Data, Float3Data, Float4Data,
             Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData, Mat4Data,
-            Int2Data, Int3Data, Int4Data, Uint2Data, Uint3Data,
+            Int2Data, Int3Data, Int4Data, Int4ColorData, Uint2Data, Uint3Data,
             S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
             F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
             PositionData, RangeData, RangeIData, OBBData, AABBData, CapsuleData,
@@ -1108,7 +917,7 @@ class RszDiffer:
             if val1.x != val2.x or val1.y != val2.y or val1.z != val2.z:
                 changes.append(f"{path}: ({val1.x}, {val1.y}, {val1.z}) → ({val2.x}, {val2.y}, {val2.z})")
 
-        elif isinstance(val1, (Float4Data, Vec4Data, QuaternionData, Int4Data)):
+        elif isinstance(val1, (Float4Data, Vec4Data, QuaternionData, Int4Data, Int4ColorData)):
             if val1.x != val2.x or val1.y != val2.y or val1.z != val2.z or val1.w != val2.w:
                 changes.append(f"{path}: ({val1.x}, {val1.y}, {val1.z}, {val1.w}) → ({val2.x}, {val2.y}, {val2.z}, {val2.w})")
                 
@@ -1193,14 +1002,14 @@ class RszDiffer:
             if len(val1.values) != len(val2.values):
                 changes.append(f"{path}: array size {len(val1.values)} → {len(val2.values)}")
             else:
-                for i, (elem1, elem2) in enumerate(list(zip(val1.values, val2.values))[:10]):
+                for i, (elem1, elem2) in enumerate(islice(zip(val1.values, val2.values), 10)):
                     changes.extend(self.compare_field_values(elem1, elem2, f"{path}[{i}]", depth + 1, in_embedded))
 
         elif isinstance(val1, StructData):
             if len(val1.values) != len(val2.values):
                 changes.append(f"{path}: struct count {len(val1.values)} → {len(val2.values)}")
             else:
-                for i, (struct1, struct2) in enumerate(list(zip(val1.values, val2.values))[:5]):
+                for i, (struct1, struct2) in enumerate(islice(zip(val1.values, val2.values), 5)):
                     for key in set(struct1.keys()) | set(struct2.keys()):
                         if key in struct1 and key in struct2:
                             changes.extend(self.compare_field_values(struct1[key], struct2[key], f"{path}[{i}].{key}", depth + 1, in_embedded))
@@ -1216,24 +1025,6 @@ class RszDiffer:
 
         return changes
 
-    def compare_arrays(self, arr1, arr2, path: str, depth: int, in_embedded: bool = False) -> List[str]:
-        changes = []
-
-        len1 = len(arr1) if hasattr(arr1, '__len__') else 0
-        len2 = len(arr2) if hasattr(arr2, '__len__') else 0
-
-        if len1 != len2:
-            changes.append(f"{path}: array size {len1} → {len2}")
-
-        min_len = min(len1, len2, 5)
-        for i in range(min_len):
-            item1 = arr1[i] if i < len1 else None
-            item2 = arr2[i] if i < len2 else None
-            item_changes = self.compare_field_values(item1, item2, f"{path}[{i}]", depth + 1, in_embedded)
-            changes.extend(item_changes)
-
-        return changes
-
     def format_value(self, value) -> str:
         if value is None:
             return "null"
@@ -1242,16 +1033,14 @@ class RszDiffer:
         if isinstance(value, float):
             if abs(value) < 1e-12:
                 return "0"
-            elif abs(value) < 0.0001 or abs(value) > 100000:
-                return f"{value:.6e}"
-            else:
-                formatted = f"{value:.6f}".rstrip('0').rstrip('.')
-                return formatted if formatted else "0"
+            return format_full_float(value)
         if isinstance(value, str):
-            return f'"{value[:50]}..."' if len(value) > 50 else f'"{value}"' if value else '""'
+            if len(value) > 50:
+                return f'"{value[:50]}..."'
+            return f'"{value}"' if value else '""'
         if isinstance(value, int):
             return str(value)
-        return str(value)[:100]
+        return format_display_value(value)[:100]
 
     def get_field_value_string(self, value) -> str:
         if value is None:
@@ -1261,7 +1050,7 @@ class RszDiffer:
             ArrayData, StructData, ObjectData, ResourceData, UserDataData,
             BoolData, StringData, Float2Data, Float3Data, Float4Data,
             Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData,
-            Int2Data, Int3Data, Int4Data, Uint2Data, Uint3Data,
+            Int2Data, Int3Data, Int4Data, Int4ColorData, Uint2Data, Uint3Data,
             S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
             F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
             PositionData, RangeData, RangeIData, AABBData, OBBData, CapsuleData,
@@ -1285,39 +1074,40 @@ class RszDiffer:
         elif isinstance(value, GuidData):
             return f"GUID: {value.guid_str}"
         elif isinstance(value, (Float2Data, Vec2Data, Int2Data, Uint2Data)):
-            return f"({value.x}, {value.y})"
+            return f"({format_float_sequence((value.x, value.y))})"
         elif isinstance(value, (Float3Data, Vec3Data, PositionData, Int3Data, Uint3Data)):
-            return f"({value.x}, {value.y}, {value.z})"
-        elif isinstance(value, (Float4Data, Vec4Data, QuaternionData, Int4Data)):
-            return f"({value.x}, {value.y}, {value.z}, {value.w})"
+            return f"({format_float_sequence((value.x, value.y, value.z))})"
+        elif isinstance(value, (Float4Data, Vec4Data, QuaternionData, Int4Data, Int4ColorData)):
+            return f"({format_float_sequence((value.x, value.y, value.z, value.w))})"
         elif isinstance(value, ColorData):
-            return f"Color({value.r}, {value.g}, {value.b}, {value.a})"
+            return f"Color({format_float_sequence((value.r, value.g, value.b, value.a))})"
         elif isinstance(value, (RangeData, RangeIData)):
-            return f"Range[{value.min}, {value.max}]"
+            return f"Range[{format_float_sequence((value.min, value.max))}]"
         elif isinstance(value, AABBData):
-            return f"AABB[({value.min.x:.2f}, {value.min.y:.2f}, {value.min.z:.2f})-({value.max.x:.2f}, {value.max.y:.2f}, {value.max.z:.2f})]"
+            return f"AABB[({format_float_sequence((value.min.x, value.min.y, value.min.z))})-({format_float_sequence((value.max.x, value.max.y, value.max.z))})]"
         elif isinstance(value, OBBData):
-            return f"OBB[{', '.join(f'{v:.2f}' for v in value.values[:6])}...]"
+            return f"OBB[{format_float_sequence(value.values[:6])}...]"
         elif isinstance(value, CapsuleData):
-            return f"Capsule[({value.start.x:.2f}, {value.start.y:.2f}, {value.start.z:.2f})-({value.end.x:.2f}, {value.end.y:.2f}, {value.end.z:.2f}), r={value.radius:.2f}]"
+            return f"Capsule[({format_float_sequence((value.start.x, value.start.y, value.start.z))})-({format_float_sequence((value.end.x, value.end.y, value.end.z))}), r={format_display_value(value.radius)}]"
         elif isinstance(value, SphereData):
-            return f"Sphere[({value.center.x:.2f}, {value.center.y:.2f}, {value.center.z:.2f}), r={value.radius:.2f}]"
+            return f"Sphere[({format_float_sequence((value.center.x, value.center.y, value.center.z))}), r={format_display_value(value.radius)}]"
         elif isinstance(value, CylinderData):
-            return f"Cylinder[({value.center.x:.2f}, {value.center.y:.2f}, {value.center.z:.2f}), r={value.radius:.2f}, h={value.height:.2f}]"
+            return f"Cylinder[({format_float_sequence((value.center.x, value.center.y, value.center.z))}), r={format_display_value(value.radius)}, h={format_display_value(value.height)}]"
         elif isinstance(value, ConeData):
-            return f"Cone[pos:({value.position.x:.2f}, {value.position.y:.2f}, {value.position.z:.2f}), angle={value.angle:.2f}, dist={value.distance:.2f}]"
+            return f"Cone[pos:({format_float_sequence((value.position.x, value.position.y, value.position.z))}), angle={format_display_value(value.angle)}, dist={format_display_value(value.distance)}]"
         elif isinstance(value, LineSegmentData):
-            return f"LineSegment[({value.start.x:.2f}, {value.start.y:.2f}, {value.start.z:.2f})-({value.end.x:.2f}, {value.end.y:.2f}, {value.end.z:.2f})]"
+            return f"LineSegment[({format_float_sequence((value.start.x, value.start.y, value.start.z))})-({format_float_sequence((value.end.x, value.end.y, value.end.z))})]"
         elif isinstance(value, AreaData) or isinstance(value, AreaDataOld):
-            return f"Area[p0:({value.p0.x:.2f}, {value.p0.y:.2f}), p1:({value.p1.x:.2f}, {value.p1.y:.2f}), h={value.height:.2f}]"
+            return f"Area[p0:({format_float_sequence((value.p0.x, value.p0.y))}), p1:({format_float_sequence((value.p1.x, value.p1.y))}), h={format_display_value(value.height)}]"
         elif isinstance(value, RectData):
-            return f"Rect[({value.min_x:.2f}, {value.min_y:.2f})-({value.max_x:.2f}, {value.max_y:.2f})]"
+            return f"Rect[({format_float_sequence((value.min_x, value.min_y))})-({format_float_sequence((value.max_x, value.max_y))})]"
         elif isinstance(value, PointData):
-            return f"Point({value.x:.2f}, {value.y:.2f}, {value.z:.2f})"
+            coords = (value.x, value.y, value.z) if hasattr(value, "z") else (value.x, value.y)
+            return f"Point({format_float_sequence(coords)})"
         elif isinstance(value, SizeData):
-            return f"Size[{value.width:.2f}x{value.height:.2f}]"
+            return f"Size[{format_display_value(value.width)}x{format_display_value(value.height)}]"
         elif isinstance(value, Vec3ColorData):
-            return f"Color({value.x:.3f}, {value.y:.3f}, {value.z:.3f})"
+            return f"Color({format_float_sequence((value.x, value.y, value.z))})"
         elif isinstance(value, RuntimeTypeData):
             return f"RuntimeType[{value.value}]"
         elif isinstance(value, RawBytesData):
@@ -1495,8 +1285,8 @@ class RszDiffer:
 
         rsz1, rsz2 = self.load_rsz_files(file1_data, file2_data, file1_path, file2_path)
 
-        type1 = 'USR' if rsz1.is_usr else 'PFB' if rsz1.is_pfb else 'SCN'
-        type2 = 'USR' if rsz2.is_usr else 'PFB' if rsz2.is_pfb else 'SCN'
+        type1 = _rsz_kind(rsz1)
+        type2 = _rsz_kind(rsz2)
 
         if type1 != type2:
             raise ValueError(f"Mismatched RSZ file types: {type1} vs {type2}")

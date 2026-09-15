@@ -1,13 +1,29 @@
 import importlib
+import importlib.util
 import os
 import sys
 import tempfile
 import shutil
 from pathlib import Path
 
+
 def _build_native_module(module_name):
+    src = Path(__file__).resolve().parent.parent / 'native' / f'{module_name}.c'
     try:
-        return importlib.import_module(module_name)
+        spec = importlib.util.find_spec(module_name)
+        origin = Path(spec.origin) if spec is not None and spec.origin else None
+        compiled_is_current = (
+            src.exists()
+            and origin is not None
+            and origin.exists()
+            and origin.stat().st_mtime >= src.stat().st_mtime
+        )
+        if (
+            module_name in sys.modules
+            or not src.exists()
+            or compiled_is_current
+        ):
+            return importlib.import_module(module_name)
     except Exception:
         pass
 
@@ -17,7 +33,6 @@ def _build_native_module(module_name):
     except Exception:
         return None
 
-    src = Path(__file__).resolve().parent.parent / 'native' / f'{module_name}.c'
     if not src.exists():
         return None
 
@@ -66,6 +81,10 @@ def _build_native_module(module_name):
 
 def ensure_fast_pakresolve():
     return _build_native_module('fast_pakresolve')
+
+
+def ensure_fast_string_scan():
+    return _build_native_module('fast_string_scan')
 
 
 def ensure_fastmesh():

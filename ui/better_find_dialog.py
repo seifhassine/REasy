@@ -1,11 +1,16 @@
 import os
 from shiboken6 import isValid
-from PySide6.QtCore import Qt, QModelIndex, QTimer
+from PySide6.QtCore import QCoreApplication, Qt, QModelIndex, QTimer
 from PySide6.QtWidgets import (
     QDockWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
     QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
     QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView, QMainWindow
 )
+
+from utils.number_format import format_display_value, format_float_sequence
+
+
+ADVANCED_INFO_LABEL = "Advanced Information"
 
 
 class BetterFindDialog(QDockWidget):
@@ -20,7 +25,7 @@ class BetterFindDialog(QDockWidget):
         for sp in widget.findChildren(QSpinBox):
             vals.append(str(sp.value()))
         for sp in widget.findChildren(QDoubleSpinBox):
-            vals.append(str(sp.value()))
+            vals.append(format_display_value(sp.value()))
 
         for chk in widget.findChildren(QCheckBox):
             vals.append(str(chk.isChecked()))
@@ -56,7 +61,7 @@ class BetterFindDialog(QDockWidget):
 
                 # numeric scalars
                 if hasattr(obj, "value"):
-                    return str(obj.value)
+                    return format_display_value(obj.value)
 
                 # vectors / ranges
                 if all(hasattr(obj, attr) for attr in ("x", "y")):
@@ -65,10 +70,10 @@ class BetterFindDialog(QDockWidget):
                         coords.append(obj.z)
                     if hasattr(obj, "w"):
                         coords.append(obj.w)
-                    return "(" + ", ".join(f"{c:.6g}" for c in coords) + ")"
+                    return f"({format_float_sequence(coords, 6)})"
 
                 if hasattr(obj, "values") and isinstance(obj.values, (list, tuple)):
-                    return " ".join(str(v) for v in obj.values)
+                    return format_float_sequence(obj.values, separator=" ")
 
         # fall-back (second column of the node’s data list))
         if hasattr(item, "data") and isinstance(item.data, (list, tuple)) and len(item.data) > 1:
@@ -142,7 +147,7 @@ class BetterFindDialog(QDockWidget):
     # GUI
     # ------------------------------------------------------------------ #
     def __init__(self, file_tab=None, parent=None, shared_mode=False):
-        super().__init__("Find in Tree", parent)
+        super().__init__(QCoreApplication.translate("BetterFindDialog", "Find in Tree"), parent)
 
         self.setObjectName("better_find_dialog")
         self.setAllowedAreas(Qt.AllDockWidgetAreas)
@@ -164,8 +169,6 @@ class BetterFindDialog(QDockWidget):
         self.shared_mode = shared_mode
         self.file_tab = file_tab
         self.app = file_tab.app if file_tab else None
-        self.dark_mode = self.app.dark_mode if self.app and hasattr(self.app, 'dark_mode') else False
-        
         self._tree_for_tab = None
 
         self.results = []
@@ -196,6 +199,9 @@ class BetterFindDialog(QDockWidget):
         opts.addWidget(self.opt_both)
         self.case_box = QCheckBox(self.tr("Case sensitive"))
         opts.addWidget(self.case_box)
+        self.include_advanced_box = QCheckBox(self.tr("Include Advanced Information"))
+        self.include_advanced_box.setChecked(True)
+        opts.addWidget(self.include_advanced_box)
         opts.addStretch()
         root.addLayout(opts)
 
@@ -237,6 +243,18 @@ class BetterFindDialog(QDockWidget):
         self._apply_theme()
         self.search_entry.setFocus()
 
+    def _record_match(self, name: str, value: str, full_path: str, rows):
+        self.results.append({
+            "path": full_path,
+            "name": name,
+            "value": value,
+            "rows": list(rows),
+        })
+        display = f"{name}: {value}" if value else name
+        if full_path.count(" > ") >= 3:
+            display = "…" + display
+        self.result_list.addItem(display)
+
     def find_all(self):
         search_text = self.search_entry.text().strip()
         if not search_text:
@@ -257,9 +275,15 @@ class BetterFindDialog(QDockWidget):
             self.status.setText(self.tr("Tree has no model"))
             return
 
-        case  = self.case_box.isChecked()
-        mode  = "name" if self.opt_name.isChecked() else "value" if self.opt_value.isChecked() else "both"
-        needle= search_text if case else search_text.lower()
+        case = self.case_box.isChecked()
+        if self.opt_name.isChecked():
+            mode = "name"
+        elif self.opt_value.isChecked():
+            mode = "value"
+        else:
+            mode = "both"
+        needle = search_text if case else search_text.lower()
+        include_advanced = self.include_advanced_box.isChecked()
 
         self.results.clear()
         self.result_list.clear()
@@ -291,6 +315,8 @@ class BetterFindDialog(QDockWidget):
                 if item is None:
                     return
                 name = str(item.text(0) or "")
+                if not include_advanced and not names_path and name == ADVANCED_INFO_LABEL:
+                    return
                 cmp_name = name if case else name.lower()
 
                 raw_val = str(item.text(1) or "")
@@ -319,14 +345,7 @@ class BetterFindDialog(QDockWidget):
 
                     full_path = " > ".join(names_path + [name]) if names_path else name
                     rows = self._row_path(tree.indexFromItem(item, 0))
-                    self.results.append({
-                        "path": full_path, "name": name,
-                        "value": value_blob, "rows": rows
-                    })
-                    disp = f"{name}: {value_blob}" if value_blob else name
-                    if len(full_path.split(" > ")) > 3:
-                        disp = "…" + disp
-                    self.result_list.addItem(disp)
+                    self._record_match(name, value_blob, full_path, rows)
 
                 for r in range(item.childCount()):
                     child = item.child(r)
@@ -353,6 +372,8 @@ class BetterFindDialog(QDockWidget):
 
                 def walk_items(item, rows_path, names_path):
                     name = get_item_name(item)
+                    if not include_advanced and not names_path and name == ADVANCED_INFO_LABEL:
+                        return
                     cmp_name = name if case else name.lower()
 
                     match_name = (mode in ("both", "name")) and (needle in cmp_name)
@@ -386,14 +407,7 @@ class BetterFindDialog(QDockWidget):
                             value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
 
                         full_path = " > ".join(names_path + [name]) if names_path else name
-                        self.results.append({
-                            "path": full_path, "name": name,
-                            "value": value_blob, "rows": rows_path[:]
-                        })
-                        disp = f"{name}: {value_blob}" if value_blob else name
-                        if len(full_path.split(" > ")) > 3:
-                            disp = "…" + disp
-                        self.result_list.addItem(disp)
+                        self._record_match(name, value_blob, full_path, rows_path)
 
                     child_count = item.child_count()
                     if child_count:
@@ -424,6 +438,8 @@ class BetterFindDialog(QDockWidget):
                             continue
 
                         name = str(idx0.data(Qt.DisplayRole) or "")
+                        if not include_advanced and not path and name == ADVANCED_INFO_LABEL:
+                            continue
                         item = idx0.internalPointer()
 
                         cmp_name = name if case else name.lower()
@@ -454,14 +470,9 @@ class BetterFindDialog(QDockWidget):
                                 value_blob = " ".join(v for v in (widget_vals + [raw_val]) if v).strip()
 
                             full_path = f"{path} > {name}" if path else name
-                            self.results.append({
-                                "path": full_path, "name": name,
-                                "value": value_blob, "rows": self._row_path(idx0)
-                            })
-                            disp = f"{name}: {value_blob}" if value_blob else name
-                            if len(full_path.split(" > ")) > 3:
-                                disp = "…" + disp
-                            self.result_list.addItem(disp)
+                            self._record_match(
+                                name, value_blob, full_path, self._row_path(idx0)
+                            )
 
                         if model.hasChildren(idx0):
                             next_path = f"{path} > {name}" if path else name
@@ -470,7 +481,9 @@ class BetterFindDialog(QDockWidget):
                 walk(QModelIndex(), "")
 
         if self.results:
-            self.status.setText(f"Found {len(self.results)} matches")
+            self.status.setText(
+                self.tr("Found {count} matches").format(count=len(self.results))
+            )
             self._select(0)
         else:
             self.status.setText(self.tr("No matches found"))
@@ -481,9 +494,9 @@ class BetterFindDialog(QDockWidget):
         
         self.current_index = i
         res = self.results[i]
-        self.preview.setPlainText(
-            f"Path:  {res['path']}\nName:  {res['name']}\nValue: {res['value']}"
-        )
+        self.preview.setPlainText(self.tr(
+            "Path:  {path}\nName:  {name}\nValue: {value}"
+        ).format(path=res["path"], name=res["name"], value=res["value"]))
         self.result_list.setCurrentRow(i)
 
         idx = self._index_from_rows(res["rows"])
@@ -496,7 +509,9 @@ class BetterFindDialog(QDockWidget):
                 except RuntimeError:
                     self.invalidate_cached_tree()
 
-        self.status.setText(f"Result {i+1} of {len(self.results)}")
+        self.status.setText(self.tr("Result {current} of {total}").format(
+            current=i + 1, total=len(self.results)
+        ))
 
     def find_next(self):
         if not self.results: 
@@ -524,11 +539,13 @@ class BetterFindDialog(QDockWidget):
             self.result_list.clear()
             self.current_index = -1
             self.preview.clear()
-            self.status.setText("Tab switched - search cleared")
+            self.status.setText(self.tr("Tab switched - search cleared"))
             # Update window title to show current tab
             if file_tab and hasattr(file_tab, 'filename'):
-                tab_name = os.path.basename(file_tab.filename) if file_tab.filename else "Untitled"
-                self.setWindowTitle(f"Find in Tree - {tab_name}")
+                tab_name = os.path.basename(file_tab.filename) if file_tab.filename else self.tr("Untitled")
+                self.setWindowTitle(
+                    self.tr("Find in Tree - {tab_name}").format(tab_name=tab_name)
+                )
             else:
                 self.setWindowTitle(self.tr("Find in Tree"))
 
@@ -546,35 +563,18 @@ class BetterFindDialog(QDockWidget):
         except RuntimeError:
             pass
     
-    def set_dark_mode(self, dark_mode):
-        self.dark_mode = dark_mode
-        self._apply_theme()
-    
     def _apply_theme(self):
-        if self.dark_mode:
-            colors = {
-                "bg": "#2b2b2b",
-                "fg": "#ffffff",
-                "input_bg": "#3b3b3b",
-                "list_bg": "#353535",
-                "border": "#555555",
-                "highlight": "#ff851b",
-                "button_bg": "#404040",
-                "button_hover": "#4a4a4a",
-                "selection": "rgba(255, 133, 27, 0.3)"
-            }
-        else:
-            colors = {
-                "bg": "#f5f5f5",
-                "fg": "#000000",
-                "input_bg": "#ffffff",
-                "list_bg": "#ffffff",
-                "border": "#cccccc",
-                "highlight": "#ff851b",
-                "button_bg": "#e0e0e0",
-                "button_hover": "#d0d0d0",
-                "selection": "rgba(255, 133, 27, 0.2)"
-            }
+        colors = {
+            "bg": "#2b2b2b",
+            "fg": "#ffffff",
+            "input_bg": "#3b3b3b",
+            "list_bg": "#353535",
+            "border": "#555555",
+            "highlight": "#00aaff",
+            "button_bg": "#404040",
+            "button_hover": "#4a4a4a",
+            "selection": "rgba(0, 170, 255, 0.3)"
+        }
         
         self.setStyleSheet(f"""
             QDockWidget#better_find_dialog {{

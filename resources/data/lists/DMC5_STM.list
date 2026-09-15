@@ -2970,6 +2970,9 @@ natives/x64/character/guimodel/wp01_001_gui/wp01_001_01_gui_albm.tex.11
 natives/x64/character/guimodel/wp01_001_gui/wp01_001_01_gui_atos.tex.11
 natives/x64/character/guimodel/wp01_001_gui/wp01_001_01_gui_nrmr.tex.11
 natives/x64/character/guimodel/wp01_001_gui/wp01_001_01_guimatrial.mdf2.10
+natives/x64/character/guimodel/wp01_001_gui/wp01_001_gui_albm.tex.11
+natives/x64/character/guimodel/wp01_001_gui/wp01_001_gui_atos.tex.11
+natives/x64/character/guimodel/wp01_001_gui/wp01_001_gui_nrmr.tex.11
 natives/x64/character/guimodel/wp01_003_gui/wp01_003_gui_albm.tex.11
 natives/x64/character/guimodel/wp01_003_gui/wp01_003_gui_atos.tex.11
 natives/x64/character/guimodel/wp01_003_gui/wp01_003_gui_nrmr.tex.11
@@ -32380,7 +32383,10 @@ natives/x64/props/mesh/textures/sm0175_waterfall_nrmr.tex.11
 natives/x64/props/mesh/textures/sm0175_waterfall_transice_alba.tex.11
 natives/x64/props/mesh/textures/sm0175_waterfall_transice_nrmr.tex.11
 natives/x64/props/mesh/textures/sm0176_cerberusfloor01_01drye_alba.tex.11
+natives/x64/props/mesh/textures/sm0176_cerberusfloor01_01drye_atos.tex.11
+natives/x64/props/mesh/textures/sm0176_cerberusfloor01_01iceb_albm.tex.11
 natives/x64/props/mesh/textures/sm0176_cerberusfloor01_01iceb_atos.tex.11
+natives/x64/props/mesh/textures/sm0176_cerberusfloor01_01iceb_nrmr.tex.11
 natives/x64/props/mesh/textures/sm0176_cerberusfloor01_adry_albm.tex.11
 natives/x64/props/mesh/textures/sm0176_cerberusfloor01_adry_nrmr.tex.11
 natives/x64/props/mesh/textures/sm0176_cerberusfloor01_adrye_atos.tex.11
@@ -34610,6 +34616,7 @@ natives/x64/props/mesh/textures/sm1133_ceilinglight_a_albm.tex.11
 natives/x64/props/mesh/textures/sm1133_ceilinglight_a_atos.tex.11
 natives/x64/props/mesh/textures/sm1133_ceilinglight_a_nrmr.tex.11
 natives/x64/props/mesh/textures/sm1134_malphasrock_albm.tex.11
+natives/x64/props/mesh/textures/sm1134_malphasrock_atos.tex.11
 natives/x64/props/mesh/textures/sm1134_malphasrock_nrmr.tex.11
 natives/x64/props/mesh/textures/sm1139_qliphoth_nearview_albm.tex.11
 natives/x64/props/mesh/textures/sm1139_qliphoth_nearview_detail_nrmr.tex.11
@@ -47823,6 +47830,9 @@ natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_00_gui_nrmr.tex.1
 natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_01_gui_albm.tex.11
 natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_01_gui_atos.tex.11
 natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_01_gui_nrmr.tex.11
+natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_gui_albm.tex.11
+natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_gui_atos.tex.11
+natives/x64/streaming/character/guimodel/wp01_001_gui/wp01_001_gui_nrmr.tex.11
 natives/x64/streaming/character/guimodel/wp01_003_gui/wp01_003_gui_albm.tex.11
 natives/x64/streaming/character/guimodel/wp01_003_gui/wp01_003_gui_atos.tex.11
 natives/x64/streaming/character/guimodel/wp01_003_gui/wp01_003_gui_nrmr.tex.11
@@ -52973,7 +52983,10 @@ natives/x64/streaming/props/mesh/textures/sm0175_waterfall_nrmr.tex.11
 natives/x64/streaming/props/mesh/textures/sm0175_waterfall_transice_alba.tex.11
 natives/x64/streaming/props/mesh/textures/sm0175_waterfall_transice_nrmr.tex.11
 natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_01drye_alba.tex.11
+natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_01drye_atos.tex.11
+natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_01iceb_albm.tex.11
 natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_01iceb_atos.tex.11
+natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_01iceb_nrmr.tex.11
 natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_adry_albm.tex.11
 natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_adry_nrmr.tex.11
 natives/x64/streaming/props/mesh/textures/sm0176_cerberusfloor01_adrye_atos.tex.11
@@ -55203,6 +55216,7 @@ natives/x64/streaming/props/mesh/textures/sm1133_ceilinglight_a_albm.tex.11
 natives/x64/streaming/props/mesh/textures/sm1133_ceilinglight_a_atos.tex.11
 natives/x64/streaming/props/mesh/textures/sm1133_ceilinglight_a_nrmr.tex.11
 natives/x64/streaming/props/mesh/textures/sm1134_malphasrock_albm.tex.11
+natives/x64/streaming/props/mesh/textures/sm1134_malphasrock_atos.tex.11
 natives/x64/streaming/props/mesh/textures/sm1134_malphasrock_nrmr.tex.11
 natives/x64/streaming/props/mesh/textures/sm1139_qliphoth_nearview_albm.tex.11
 natives/x64/streaming/props/mesh/textures/sm1139_qliphoth_nearview_detail_nrmr.tex.11
@@ -57358,6 +57372,7 @@ natives/x64/streaming/ui/mesh/ui1011/tex/hud_hp_glass_nrmr.tex.11
 natives/x64/streaming/ui/mesh/ui1011/tex/hud_nero_hp_glass_atos.tex.11
 natives/x64/streaming/ui/mesh/ui1011/tex/hud_nero_hp_glass_nrmr.tex.11
 natives/x64/streaming/ui/mesh/ui1011/tex/pl0010_02_emissive_alba.tex.11
+natives/x64/streaming/ui/mesh/ui1011/tex/tdt_gaugeout_albm.tex.11
 natives/x64/streaming/ui/mesh/ui1011/tex/tdt_gaugeout_atos.tex.11
 natives/x64/streaming/ui/mesh/ui1011/tex/tdt_gaugeout_nrmr.tex.11
 natives/x64/streaming/ui/mesh/ui1013/tex/hud_arm_glass_atos.tex.11
@@ -57456,6 +57471,8 @@ natives/x64/systems/develop/shadereditor/sphere.mesh.1808282334
 natives/x64/systems/develop/shape.sdf.1808168797
 natives/x64/systems/dynamics/default.def.5
 natives/x64/systems/effect/chijiiwa_pat128_msk1.tex.11
+natives/x64/systems/effect/chijiiwa_pat256_msk1.tex.11
+natives/x64/systems/effect/chijiiwa_pat512_msk1.tex.11
 natives/x64/systems/effect/defaultparticlerefract.mmtr.1808168797
 natives/x64/systems/effect/defaultprimitivemesh.mmtr.1808168797
 natives/x64/systems/effect/defaultprimitivemesh_pbr.mdf2.10
@@ -57495,15 +57512,21 @@ natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_00.mesh.1
 natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_00ce.mcol.3017
 natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_00ct.mcol.3017
 natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_alb.tex.11
+natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_albm.tex.11
 natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_nrm.tex.11
+natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_a_nrmr.tex.11
 natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_alb.tex.11
+natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_albm.tex.11
 natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_nrm.tex.11
+natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_nrmr.tex.11
+natives/x64/systems/rendering/materialeditor/st0000/sm00018_vfxdevtest_b_rgh.tex.11
 natives/x64/systems/rendering/materialeditor/st0000/sm00024.pfb.16
 natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_00.mdf2.10
 natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_00.mesh.1808282334
 natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_00ce.mcol.3017
 natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_00ct.mcol.3017
 natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_alb.tex.11
+natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_albm.tex.11
 natives/x64/systems/rendering/materialeditor/st0000/sm00024_vfxlooktable_met.tex.11
 natives/x64/systems/rendering/materialeditor/st0000/st0000_00_00.lprb.3
 natives/x64/systems/rendering/materialeditor/st0000/st0000_00_00.prb.9
@@ -57659,6 +57682,7 @@ natives/x64/ui/gui/ui0000/tex/ui0016_00_iam.tex.11
 natives/x64/ui/gui/ui0000/tex/ui0016_01_iam.tex.11
 natives/x64/ui/gui/ui0000/tex/ui0017.uvs.7
 natives/x64/ui/gui/ui0000/tex/ui0017_00_iam.tex.11
+natives/x64/ui/gui/ui0000/tex/ui0017_01_iam.tex.11
 natives/x64/ui/gui/ui0000/tex/ui0020_atos.tex.11
 natives/x64/ui/gui/ui0000/tex/ui0020_noise_alp.tex.11
 natives/x64/ui/gui/ui0000/tex/ui0021.uvs.7
@@ -59140,6 +59164,7 @@ natives/x64/ui/gui/ui2000/tex/ui2016_00_iam.tex.11
 natives/x64/ui/gui/ui2000/tex/ui2030_albm.tex.11
 natives/x64/ui/gui/ui2000/tex/ui2030_atos.tex.11
 natives/x64/ui/gui/ui2000/tex/ui2030_iam.tex.11
+natives/x64/ui/gui/ui2000/tex/ui2030_nrm.tex.11
 natives/x64/ui/gui/ui2000/tex/ui2030_nrmr.tex.11
 natives/x64/ui/gui/ui2000/tex/ui2031.uvs.7
 natives/x64/ui/gui/ui2000/tex/ui2031_iam.tex.11
@@ -60186,6 +60211,7 @@ natives/x64/ui/mesh/ui1011/tex/hud_nero_hp_glass_atos.tex.11
 natives/x64/ui/mesh/ui1011/tex/hud_nero_hp_glass_nrmr.tex.11
 natives/x64/ui/mesh/ui1011/tex/pl0010_02_emissive_alba.tex.11
 natives/x64/ui/mesh/ui1011/tex/smoke_00_im.tex.11
+natives/x64/ui/mesh/ui1011/tex/tdt_gaugeout_albm.tex.11
 natives/x64/ui/mesh/ui1011/tex/tdt_gaugeout_atos.tex.11
 natives/x64/ui/mesh/ui1011/tex/tdt_gaugeout_nrmr.tex.11
 natives/x64/ui/mesh/ui1011/tex/truedeviltriggergauge.mdf2.10
@@ -69370,6 +69396,7 @@ natives/x64/vfx/marksystem/decal/decal_pl0120_000_00.tml.27
 natives/x64/vfx/marksystem/decal/decal_pl0200_000_00.pfb.16
 natives/x64/vfx/marksystem/decal/decal_pl0200_000_01.pfb.16
 natives/x64/vfx/marksystem/decal/decal_pl0300_000_00.pfb.16
+natives/x64/vfx/marksystem/decal/decal_pl0300_000_01.pfb.16
 natives/x64/vfx/marksystem/decal/decal_scar_swd_000_00.pfb.16
 natives/x64/vfx/marksystem/decal/decal_scar_swd_000_00.tml.27
 natives/x64/vfx/marksystem/decal/decal_stab_common_000_00.pfb.16
@@ -69572,6 +69599,7 @@ natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m16_300/mesh_03_cs_vertexmaterial_00_
 natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m16_300/mesh_03_cs_vertexmesh_00_01.mesh.1808282334
 natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m16_300/mesh_03_cs_vertextexture_00_00.tex.11
 natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m16_300/mesh_03_cs_vertextexture_00_00_nrm.tex.11
+natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m16_300/mesh_03_cs_vertextexture_01_00.tex.11
 natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m18_100/mesh_03_cs_flowmap_00_00_nrm.tex.11
 natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m18_100/mesh_03_cs_noise_00_00.tex.11
 natives/x64/vfx/mesh/mesh_cutscene/mesh_cs_m18_100/mesh_03_cs_noise_00_01.tex.11
@@ -69821,6 +69849,9 @@ natives/x64/vfx/mesh/mesh_props/sm0401/mesh_03_props_sm0401_000_00.mesh.18082823
 natives/x64/vfx/mesh/mesh_props/sm0401/mesh_03_props_sm0401_000_01.mesh.1808282334
 natives/x64/vfx/mesh/mesh_props/sm0401/mesh_03_props_sm0401_000_02.mesh.1808282334
 natives/x64/vfx/mesh/mesh_props/sm0401/mesh_03_props_sm0401_000_03.mesh.1808282334
+natives/x64/vfx/mesh/mesh_props/sm0542/mesh_03_props_sm0542_000_00.mdf2.10
+natives/x64/vfx/mesh/mesh_props/sm0542/mesh_03_props_sm0542_000_00.mesh.1808282334
+natives/x64/vfx/mesh/mesh_props/sm0542/mesh_03_props_sm0542_000_00_msk1.tex.11
 natives/x64/vfx/mesh/mesh_props/sm0542/mesh_03_props_sm0542_001_00_msk1.tex.11
 natives/x64/vfx/mesh/mesh_props/sm0542/mesh_03_props_sm0542_001_01.mdf2.10
 natives/x64/vfx/mesh/mesh_props/sm0542/mesh_03_props_sm0542_001_01.mesh.1808282334
@@ -70852,5 +70883,3 @@ natives/x64/vfx/zone/zone_location18/zone.scn.19
 natives/x64/vfx/zone/zone_location23/zone.scn.19
 natives/x64/vfx/zone/zone_location39/zone.scn.19
 natives/x64/vfx/zone/zone_location40/zone.scn.19
-preliminary.list
-result.list

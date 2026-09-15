@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
-                              QGridLayout, QLabel, QComboBox, QPushButton, QCheckBox, QSizePolicy,
+                              QGridLayout, QLabel, QComboBox, QCheckBox, QSizePolicy,
                               QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
-from PySide6.QtCore import Signal, Qt, QRegularExpression, QTimer
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer
 from PySide6.QtGui import (
     QDoubleValidator,
     QRegularExpressionValidator,
@@ -13,9 +13,148 @@ from PySide6.QtGui import (
 )
 import uuid
 import re
+import os
+import math
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
+from ui.widgets_utils import ColorPreviewButton
+from utils.number_format import format_display_value, format_full_float
+
+
+_COMPONENT_LABEL_STYLE = """
+    QLabel {
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+"""
+
+_COMPONENT_INPUT_STYLE = """
+    QLineEdit {
+        margin: 0;
+        padding: 1px 2px;
+        border: 1px solid #888888;
+    }
+    QLineEdit:focus {
+        border: 1px solid #aaaaaa;
+    }
+    QLineEdit[invalid="true"] {
+        border: 1px solid red;
+    }
+"""
+
+_INVALID_BORDER_STYLE = "border: 1px solid red;"
+_INDENTED_INPUT_STYLE = "margin-left: 6px;"
+
+ADD_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Add Resource")
+OPEN_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Open Resource")
+
+
+def _set_invalid_state(widget, invalid):
+    widget.setProperty("invalid", invalid)
+    widget.style().unpolish(widget)
+    widget.style().polish(widget)
+
+
+def _create_component_inputs(grid, components, validator_factory, input_width):
+    inputs = []
+    last_index = len(components) - 1
+    for i, comp in enumerate(components):
+        label = QLabel(comp)
+        label.setFixedWidth(8)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet(_COMPONENT_LABEL_STYLE)
+
+        line_edit = QLineEdit()
+        line_edit.setValidator(validator_factory())
+        line_edit.setFixedWidth(input_width)
+        line_edit.setFixedHeight(20)
+        line_edit.setProperty("component", comp.lower())
+        line_edit.setStyleSheet(_COMPONENT_INPUT_STYLE)
+
+        col_offset = (i * 3) + 2
+        grid.addWidget(label, 0, col_offset)
+        grid.addWidget(line_edit, 0, col_offset + 1)
+        if i < last_index:
+            grid.setColumnMinimumWidth(col_offset + 2, 3)
+        inputs.append(line_edit)
+    return inputs
+
+
+def _double_validator(decimals=None):
+    validator = QDoubleValidator()
+    if decimals is not None:
+        validator.setDecimals(decimals)
+    return validator
+
+
+def _rgba_dialog_result(parent, initial_color):
+    dlg = QColorDialog(initial_color, parent)
+    dlg.setOption(QColorDialog.DontUseNativeDialog, True)
+    dlg.setOption(QColorDialog.ShowAlphaChannel, True)
+
+    hex_edit = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
+    if not hex_edit:
+        for widget in dlg.findChildren(QLineEdit):
+            if widget.placeholderText().startswith("#") or widget.text().startswith("#"):
+                hex_edit = widget
+                break
+
+    if hex_edit:
+        hex_edit.setInputMask("")
+        hex_edit.setMaxLength(9)
+        hex_edit.setPlaceholderText("#RRGGBBAA")
+        hex_edit.setValidator(QRegularExpressionValidator(QRegularExpression(r"^#[0-9A-Fa-f]{8}$")))
+
+    def write_html(color):
+        if not hex_edit:
+            return
+        text = f"#{color.red():02X}{color.green():02X}{color.blue():02X}{color.alpha():02X}"
+        QTimer.singleShot(0, lambda t=text: (
+            hex_edit.blockSignals(True),
+            hex_edit.setText(t),
+            hex_edit.blockSignals(False))
+        )
+
+    write_html(initial_color)
+    dlg.currentColorChanged.connect(write_html)
+
+    for slider in dlg.findChildren(QSlider):
+        if slider.minimum() == 0 and slider.maximum() == 255:
+            slider.valueChanged.connect(
+                lambda value, d=dlg: write_html(d.currentColor().withAlpha(value))
+            )
+            break
+
+    if hex_edit:
+        def on_hex(text: str):
+            try:
+                if len(text) == 7 or len(text) == 9:
+                    r, g, b = int(text[1:3], 16), int(text[3:5], 16), int(text[5:7], 16)
+                    a = int(text[7:9], 16)
+                else:
+                    return
+                dlg.setCurrentColor(QColor(r, g, b, a))
+            except Exception:
+                pass
+        hex_edit.textChanged.connect(on_hex)
+
+    if not dlg.exec_():
+        return None
+
+    final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
+    if final:
+        return (
+            int(final[1:3], 16),
+            int(final[3:5], 16),
+            int(final[5:7], 16),
+            int(final[7:9], 16),
+        )
+
+    color = dlg.currentColor()
+    return color.red(), color.green(), color.blue(), color.alpha()
+
 
 class BaseValueWidget(QWidget):
     modified_changed = Signal(bool)
@@ -32,9 +171,8 @@ class BaseValueWidget(QWidget):
 
     def mark_modified(self):
         """Mark data as modified and notify"""
-        if not self._modified:
-            self._modified = True
-            self.modified_changed.emit(True)
+        self._modified = True
+        self.modified_changed.emit(True)
 
     def get_data(self):
         return self._data
@@ -78,9 +216,7 @@ class VectorClipboardMixin:
         )
 
     def _format_clipboard_value(self, value):
-        if isinstance(value, float):
-            return f"{value:.{self.clipboard_precision}g}"
-        return str(value)
+        return format_display_value(value, self.clipboard_precision)
 
     def _convert_clipboard_token(self, token):
         return float(token)
@@ -141,17 +277,21 @@ class VectorClipboardMixin:
         self.setValues(values)
         self._on_value_changed()
 
-class SizeInput(VectorClipboardMixin, BaseValueWidget):
+class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
     valueChanged = Signal(tuple)
+
+    fields = ()
+    input_width = 100
+    precision = 8
 
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
         self.inputs = []
-        for i, coord in enumerate(['width', 'height']):
+        for coord in self.fields:
             line_edit = QLineEdit()
             line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
+            line_edit.setFixedWidth(self.input_width)
             line_edit.setProperty("coord", coord)
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
@@ -164,18 +304,19 @@ class SizeInput(VectorClipboardMixin, BaseValueWidget):
             self.set_data(data)
             
         for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+            input_field.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
         if not self._data:
             return
-        values = [self._data.x, self._data.y]
+        values = self._data_values()
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+            input_field.setText(format_full_float(val, self.precision))
+            input_field.setStyleSheet("")
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
         
     def getValues(self):
         return tuple(float(input_field.text() or "0") for input_field in self.inputs)
@@ -185,214 +326,51 @@ class SizeInput(VectorClipboardMixin, BaseValueWidget):
             return
         
         try:
-            new_values = []
+            new_values = tuple(self._parse_input_value(input_field) for input_field in self.inputs)
+            self._set_data_values(new_values)
             for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-': 
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.width = new_values[0]
-            self._data.height = new_values[1]
-            
+                input_field.setStyleSheet("")
             self.valueChanged.emit(new_values)
             self.mark_modified()
         except ValueError:
-            pass
-
-class Vec2Input(VectorClipboardMixin, BaseValueWidget):
-    valueChanged = Signal(tuple)
-
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, coord in enumerate(['x', 'y']):
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
-            line_edit.setProperty("coord", coord)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-
-        self._setup_clipboard_buttons()
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
-
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
-
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-        
-    def getValues(self):
-        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
             for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-': 
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.x = new_values[0]
-            self._data.y = new_values[1]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass
+                try:
+                    self._parse_input_value(input_field)
+                    input_field.setStyleSheet("")
+                except ValueError:
+                    input_field.setStyleSheet(_INVALID_BORDER_STYLE)
 
-class Vec3Input(VectorClipboardMixin, BaseValueWidget):
-    valueChanged = Signal(tuple)
+    def _data_values(self):
+        return tuple(getattr(self._data, field) for field in self.fields)
 
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
+    def _set_data_values(self, values):
+        for field, value in zip(self.fields, values):
+            setattr(self._data, field, value)
 
-        self.inputs = []
-        for i, coord in enumerate(['x', 'y', 'z']):
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
-            line_edit.setProperty("coord", coord)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
+    def _parse_input_value(self, input_field):
+        text = input_field.text().strip()
+        if text in {"", "-", "+", ".", "-.", "+."}:
+            raise ValueError("Incomplete float")
+        value = float(text)
+        if not math.isfinite(value):
+            raise ValueError("Non-finite float")
+        return value
 
-        # Add clipboard helpers and stretch to keep widgets left-aligned
-        self._setup_clipboard_buttons()
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+class SizeInput(FloatVectorInput):
+    fields = ("width", "height")
 
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-        
-    def getValues(self):
-        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-': 
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.x = new_values[0]
-            self._data.y = new_values[1]
-            self._data.z = new_values[2]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass  # Ignore invalid input during typing
 
-class Vec4Input(VectorClipboardMixin, BaseValueWidget):
-    valueChanged = Signal(tuple)
+class Vec2Input(FloatVectorInput):
+    fields = ("x", "y")
 
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, coord in enumerate(['x', 'y', 'z', 'w']):
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(100)
-            line_edit.setProperty("coord", coord)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
 
-        # a stretch at the end to push widgets left
-        self._setup_clipboard_buttons()
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+class Vec3Input(FloatVectorInput):
+    fields = ("x", "y", "z")
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z, self._data.w]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}")
 
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-            
-    def getValues(self):
-        return tuple(float(input_field.text() or "0") for input_field in self.inputs)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-            
-            new_values = tuple(new_values)
-            
-            self._data.x = new_values[0]
-            self._data.y = new_values[1]
-            self._data.z = new_values[2]
-            self._data.w = new_values[3]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass 
+class Vec4Input(FloatVectorInput):
+    fields = ("x", "y", "z", "w")
 
 class GuidInput(BaseValueWidget):
     valueChanged = Signal(str)
@@ -548,7 +526,7 @@ class GuidInput(BaseValueWidget):
         else:
             cursor_snapshot = self.line_edit.cursorPosition()
             self._remember_pending_guid(formatted, cursor_snapshot)
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
 
     def update_display(self):
         if not self._data:
@@ -578,7 +556,7 @@ class GuidInput(BaseValueWidget):
         if is_valid:
             self.line_edit.setStyleSheet("")
         else:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
 
 class OverwriteGuidLineEdit(QLineEdit):
     def __init__(self, guid_widget, parent=None):
@@ -697,7 +675,7 @@ class NumberInput(BaseValueWidget):
                     self.mark_modified()
                 self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
 
 class F32Input(NumberInput):
     def __init__(self, parent=None):
@@ -713,7 +691,7 @@ class F32Input(NumberInput):
         
     def update_display(self):
         if self._data and hasattr(self._data, 'value'):
-            self.line_edit.setText(f"{self._data.value:.8g}") 
+            self.line_edit.setText(format_full_float(self._data.value, 8))
 
 class F64Input(NumberInput):
     def __init__(self, parent=None):
@@ -729,7 +707,7 @@ class F64Input(NumberInput):
 
     def update_display(self):
         if self._data and hasattr(self._data, 'value'):
-            self.line_edit.setText(f"{self._data.value:.17g}")
+            self.line_edit.setText(format_full_float(self._data.value, 17))
 
 class S32Input(NumberInput):
     def __init__(self, parent=None):
@@ -747,19 +725,26 @@ class S32Input(NumberInput):
             self.line_edit.setText(str(self._data.value))
 
 
-class Int3Input(BaseValueWidget):
+class IntVectorInput(BaseValueWidget):
     valueChanged = Signal(tuple)
-    
+
+    fields = ()
+    minimum = None
+    maximum = None
+    range_name = "integer"
+    input_width = 100
+    max_length = 12
+
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
         self.inputs = []
-        for i, _ in enumerate(['x', 'y', 'z']):
+        for _ in self.fields:
             line_edit = QLineEdit()
             validator = QIntValidator()
             line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
+            line_edit.setMaxLength(self.max_length)
+            line_edit.setFixedWidth(self.input_width)
             line_edit.setAlignment(Qt.AlignLeft)
             self.layout.addWidget(line_edit)
             self.inputs.append(line_edit)
@@ -770,14 +755,24 @@ class Int3Input(BaseValueWidget):
             self.set_data(data)
             
         for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+            input_field.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
         if not self._data:
             return
-        values = [self._data.x, self._data.y, self._data.z]
+        values = self._data_values()
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+            input_field.setText(str(int(val)))
+
+    def setValues(self, values):
+        for input_field, val in zip(self.inputs, values):
+            input_field.setText(str(int(val)))
+
+    def getValues(self):
+        try:
+            return tuple(int(input_field.text() or "0") for input_field in self.inputs)
+        except ValueError:
+            return tuple(0 for _ in self.inputs)
 
     def _on_value_changed(self):
         if not self._data:
@@ -786,245 +781,78 @@ class Int3Input(BaseValueWidget):
         try:
             new_values = []
             valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
+
+            for input_field in self.inputs:
                 try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value > 2147483647:
-                        raise ValueError("Out of Int32 range")
+                    value = self._parse_input_value(input_field.text())
                     input_field.setStyleSheet("")
                         
                 except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
+                    input_field.setStyleSheet(_INVALID_BORDER_STYLE)
                     valid_input = False
                     value = 0
                     
                 new_values.append(value)
             
             if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                self._data.z = new_values[2]
-                
-                self.valueChanged.emit(tuple(new_values))
+                new_values = tuple(new_values)
+                self._set_data_values(new_values)
+                self.valueChanged.emit(new_values)
                 self.mark_modified()
 
         except Exception as e:
-            print(f"Error in Int3Input._on_value_changed: {e}")
+            print(f"Error in {self.__class__.__name__}._on_value_changed: {e}")
 
-class Int2Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+    def _data_values(self):
+        return tuple(getattr(self._data, field) for field in self.fields)
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
+    def _set_data_values(self, values):
+        for field, value in zip(self.fields, values):
+            setattr(self._data, field, value)
 
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value > 2147483647:
-                        raise ValueError("Out of Int32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
+    def _parse_input_value(self, text):
+        if not text or text == "-":
+            value = 0
+        else:
+            value = int(text)
 
-        except Exception as e:
-            print(f"Error in Int2Input._on_value_changed: {e}")
-
-class Uint2Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
-
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
-
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value < 0 or value > 4294967295:
-                        raise ValueError("Out of U32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
-
-        except Exception as e:
-            print(f"Error in Uint2Input._on_value_changed: {e}")
+        if self.minimum is not None and value < self.minimum:
+            raise ValueError(f"Out of {self.range_name} range")
+        if self.maximum is not None and value > self.maximum:
+            raise ValueError(f"Out of {self.range_name} range")
+        return value
 
 
-class Uint3Input(BaseValueWidget):
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.inputs = []
-        for i, _ in enumerate(['x', 'y', 'z']):
-            line_edit = QLineEdit()
-            validator = QIntValidator()
-            line_edit.setValidator(validator)
-            line_edit.setMaxLength(12)
-            line_edit.setFixedWidth(100)
-            line_edit.setAlignment(Qt.AlignLeft)
-            self.layout.addWidget(line_edit)
-            self.inputs.append(line_edit)
-            
-        self.layout.addStretch()
-            
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed) 
+class SignedIntVectorInput(IntVectorInput):
+    minimum = -2147483648
+    maximum = 2147483647
+    range_name = "Int32"
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.x, self._data.y, self._data.z]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(int(val))) 
 
-    def _on_value_changed(self):
-        if not self._data:
-            return
-        
-        try:
-            new_values = []
-            valid_input = True
-            
-            for i, input_field in enumerate(self.inputs):
-                text = input_field.text()
-                try:
-                    if not text or text == '-': 
-                        value = 0
-                    else:
-                        value = int(text)
-                        
-                    if value < 0 or value > 4294967295:
-                        raise ValueError("Out of U32 range")
-                    input_field.setStyleSheet("")
-                        
-                except ValueError:
-                    input_field.setStyleSheet("border: 1px solid red;")
-                    valid_input = False
-                    value = 0
-                    
-                new_values.append(value)
-            
-            if valid_input:
-                self._data.x = new_values[0]
-                self._data.y = new_values[1]
-                self._data.z = new_values[2]
-                
-                self.valueChanged.emit(tuple(new_values))
-                self.mark_modified()
+class UnsignedIntVectorInput(IntVectorInput):
+    minimum = 0
+    maximum = 4294967295
+    range_name = "U32"
 
-        except Exception as e:
-            print(f"Error in Uint3Input._on_value_changed: {e}")
+
+class Int3Input(SignedIntVectorInput):
+    fields = ("x", "y", "z")
+
+
+class Int2Input(SignedIntVectorInput):
+    fields = ("x", "y")
+
+
+class Int4Input(SignedIntVectorInput):
+    fields = ("x", "y", "z", "w")
+
+
+class Uint2Input(UnsignedIntVectorInput):
+    fields = ("x", "y")
+
+
+class Uint3Input(UnsignedIntVectorInput):
+    fields = ("x", "y", "z")
 
 class U32Input(NumberInput):
     def __init__(self, parent=None):
@@ -1132,39 +960,24 @@ class U8Input(NumberInput):
         if self._data and hasattr(self._data, 'value'):
             self.line_edit.setText(str(self._data.value))
 
-    def _on_text_changed(self, text):
-        if not self._data or not text:
-            return
-            
-        try:
-            value = self.validate_and_convert(text)
-            if value is not None:
-                old_value = self._data.value
-                self._data.value = value
-                if old_value != value:
-                    self.valueChanged.emit(value)
-                    self.mark_modified()
-                self.line_edit.setStyleSheet("")
-        except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+class BoundsInput(BaseValueWidget):
+    valueChanged = Signal(tuple)
 
-class AABBInput(BaseValueWidget):
-    valueChanged = Signal(tuple) 
-
-    _LABEL_W  = 33                 
-    _FIELD_W  = 75
+    _COMPONENTS = ()
+    _LABEL_W = 33
+    _FIELD_W = 75
 
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
 
         grid = QGridLayout()
         grid.setContentsMargins(0, 0, 0, 0)
-        grid.setHorizontalSpacing(2)     
+        grid.setHorizontalSpacing(2)
         grid.setVerticalSpacing(2)
         grid.setAlignment(Qt.AlignLeft)
         self.layout.addLayout(grid)
 
-        for i, name in enumerate("XYZ", 1):
+        for i, name in enumerate(self._COMPONENTS, 1):
             hdr = QLabel(name)
             hdr.setAlignment(Qt.AlignCenter)
             grid.addWidget(hdr, 0, i)
@@ -1176,7 +989,7 @@ class AABBInput(BaseValueWidget):
             grid.addWidget(lbl, row_idx, 0)
 
             edits = []
-            for col in range(1, 4):
+            for col in range(1, len(self._COMPONENTS) + 1):
                 le = QLineEdit()
                 le.setValidator(QDoubleValidator())
                 le.setFixedWidth(self._FIELD_W)
@@ -1185,8 +998,8 @@ class AABBInput(BaseValueWidget):
                 edits.append(le)
             return edits
 
-        self.min_edits = make_row(1, "Min:")
-        self.max_edits = make_row(2, "Max:")
+        self.min_edits = make_row(1, self.tr("Min:"))
+        self.max_edits = make_row(2, self.tr("Max:"))
 
         self.layout.addStretch()
 
@@ -1199,36 +1012,65 @@ class AABBInput(BaseValueWidget):
     def update_display(self):
         if not self._data:
             return
-        mins = (self._data.min.x, self._data.min.y, self._data.min.z)
-        maxs = (self._data.max.x, self._data.max.y, self._data.max.z)
-        for le, val in zip(self.min_edits, mins):
-            le.setText(f"{val:.8g}")
-        for le, val in zip(self.max_edits, maxs):
-            le.setText(f"{val:.8g}")
-            
+        for le, val in zip(self.min_edits + self.max_edits, self._data_values()):
+            le.setText(format_full_float(val, 8))
+
     def setValues(self, values):
-        if len(values) != 6:
+        if len(values) != self._value_count:
             return
         for le, v in zip(self.min_edits + self.max_edits, values):
-            le.setText(str(v))
+            le.setText(format_display_value(v))
 
     def getValues(self):
         try:
             return tuple(float(le.text() or "0") for le in (self.min_edits + self.max_edits))
         except ValueError:
-            return (0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+            return (0.0,) * self._value_count
 
     def _on_value_changed(self):
         if not self._data:
             return
         try:
             vals = [float(le.text() or "0") for le in (self.min_edits + self.max_edits)]
-            (self._data.min.x, self._data.min.y, self._data.min.z,
-             self._data.max.x, self._data.max.y, self._data.max.z) = vals
+            self._set_data_values(vals)
             self.valueChanged.emit(tuple(vals))
             self.mark_modified()
         except ValueError:
-            pass  
+            pass
+
+    @property
+    def _value_count(self):
+        return len(self._COMPONENTS) * 2
+
+    def _data_values(self):
+        raise NotImplementedError()
+
+    def _set_data_values(self, values):
+        raise NotImplementedError()
+
+
+class AABBInput(BoundsInput):
+    _COMPONENTS = "XYZ"
+
+    def _data_values(self):
+        return (
+            self._data.min.x, self._data.min.y, self._data.min.z,
+            self._data.max.x, self._data.max.y, self._data.max.z,
+        )
+
+    def _set_data_values(self, values):
+        (self._data.min.x, self._data.min.y, self._data.min.z,
+         self._data.max.x, self._data.max.y, self._data.max.z) = values
+
+
+class RectInput(BoundsInput):
+    _COMPONENTS = "XY"
+
+    def _data_values(self):
+        return self._data.min_x, self._data.min_y, self._data.max_x, self._data.max_y
+
+    def _set_data_values(self, values):
+        self._data.min_x, self._data.min_y, self._data.max_x, self._data.max_y = values
 
 
 class OBBInput(BaseValueWidget):
@@ -1278,12 +1120,12 @@ class OBBInput(BaseValueWidget):
         for row in range(5):
             for col in range(4):
                 idx = row * 4 + col
-                self.inputs[row][col].setText(f"{values[idx]:.8g}") 
+                self.inputs[row][col].setText(format_full_float(values[idx], 8))
 
     def setValues(self, values):
         flat_inputs = [input_field for row in self.inputs for input_field in row]
         for input_field, val in zip(flat_inputs, values):
-            input_field.setText(str(val))
+            input_field.setText(format_display_value(val))
             
     def getValues(self):
         try:
@@ -1383,7 +1225,7 @@ class HexBytesInput(BaseValueWidget):
                 self.text_field.setPalette(self.normal_palette)
         except Exception as e:
             print(f"Error displaying raw bytes data: {e}")
-            self.text_field.setText("[Error displaying data]")
+            self.text_field.setText(self.tr("[Error displaying data]"))
     
     def set_data(self, data):
         if not data or not isinstance(data, RawBytesData):
@@ -1523,7 +1365,7 @@ class StringInput(BaseValueWidget):
         
         if isinstance(self._data, ResourceData):
             if self.resource_indicator is None:
-                self.resource_indicator = QLabel("Resource")
+                self.resource_indicator = QLabel(self.tr("Resource"))
                 self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
                 self.layout.addWidget(self.resource_indicator)
             
@@ -1537,10 +1379,10 @@ class StringInput(BaseValueWidget):
             
             if self.add_open_button is None:
                 self.add_open_button = QToolButton()
-                self.add_open_button.setText(self.tr("Add & Open"))
-                self.add_open_button.setToolTip(self.tr("Add resource file to project and open it"))
-                self.add_open_button.setFixedWidth(85)
-                self.add_open_button.clicked.connect(self._on_add_open_clicked)
+                self.add_open_button.setText(self.tr("Add"))
+                self.add_open_button.setToolTip(self.tr("Add resource file to project"))
+                self.add_open_button.setFixedWidth(50)
+                self.add_open_button.clicked.connect(self._on_add_clicked)
                 self.layout.addWidget(self.add_open_button)
             
             self.layout.addStretch()
@@ -1552,18 +1394,55 @@ class StringInput(BaseValueWidget):
         if self.open_button is None:
             return
         
-        self.open_button.setToolTip("Open resource file")
+        self.open_button.setToolTip(self.tr("Open resource file"))
         
         if self.add_open_button:
-            self.add_open_button.setToolTip("Add resource file to project and open it")
+            self.add_open_button.setToolTip(self.tr("Add resource file to project"))
 
-    def _get_app_window(self):
+    def _get_handler(self):
         widget = self
         while widget:
-            if hasattr(widget, 'handler') and hasattr(widget.handler, 'app'):
-                return widget.handler.app
+            handler = getattr(widget, "handler", None)
+            if handler is not None and hasattr(handler, "app"):
+                return handler
             widget = widget.parent()
         return None
+
+    def _get_app_window(self):
+        return getattr(self._get_handler(), "app", None)
+
+    def _get_resource_context(self, app_window):
+        from utils.resource_file_utils import (
+            resource_context_for_app,
+            resource_context_for_handler,
+        )
+
+        handler = self._get_handler()
+        context = resource_context_for_handler(handler) if handler is not None else None
+        project_dir = str(getattr(context, "project_dir", "") or "")
+        game = str(
+            getattr(context, "game", "")
+            or getattr(handler, "game_version", "")
+            or ""
+        )
+
+        # Refresh through the owning project, not whichever Project Browser tab
+        # happens to be active. This also picks up a reader rebuilt since the
+        # document was opened.
+        refreshed = resource_context_for_app(
+            app_window,
+            project_dir=project_dir or None,
+            game=game,
+        )
+        if refreshed is not None and (
+            context is None
+            or refreshed.pak_cached_reader is not None
+            or context.pak_cached_reader is None
+        ):
+            context = refreshed
+            if handler is not None:
+                handler.resource_context = refreshed
+        return context
 
     def _on_open_clicked(self):
         if not isinstance(self._data, ResourceData):
@@ -1571,159 +1450,237 @@ class StringInput(BaseValueWidget):
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, self.tr("Open Resource"), self.tr("Resource path is empty"))
+            QMessageBox.information(self, self.tr(OPEN_RESOURCE_TITLE), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, self.tr("Open Resource"), self.tr("Unable to access application window"))
+            QMessageBox.warning(self, self.tr(OPEN_RESOURCE_TITLE), self.tr("Unable to access application window"))
             return
         
-        if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, self.tr("Open Resource"),
+        context = self._get_resource_context(app_window)
+        if context is None or not context.project_dir:
+            QMessageBox.information(self, self.tr(OPEN_RESOURCE_TITLE),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
-        self._open_resource_file(app_window, resource_path, add_to_project=False)
+        self._open_resource_file(
+            app_window,
+            resource_path,
+            context,
+            add_to_project=False,
+        )
     
-    def _on_add_open_clicked(self):
+    def _on_add_clicked(self):
         if not isinstance(self._data, ResourceData):
             return
         
         resource_path = self._data.value.rstrip('\x00')
         if not resource_path:
-            QMessageBox.information(self, self.tr("Add & Open Resource"), self.tr("Resource path is empty"))
+            QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE), self.tr("Resource path is empty"))
             return
         
         app_window = self._get_app_window()
         if not app_window:
-            QMessageBox.warning(self, self.tr("Add & Open Resource"), self.tr("Unable to access application window"))
+            QMessageBox.warning(self, self.tr(ADD_RESOURCE_TITLE), self.tr("Unable to access application window"))
             return
         
-        if not hasattr(app_window, 'proj_dock') or not app_window.proj_dock.project_dir:
-            QMessageBox.information(self, self.tr("Add & Open Resource"),
+        context = self._get_resource_context(app_window)
+        if context is None or not context.project_dir:
+            QMessageBox.information(self, self.tr(ADD_RESOURCE_TITLE),
                 self.tr('You are not in project mode. Please open a project ("File" > "New Mod/Open Project")'))
             return
         
-        self._open_resource_file(app_window, resource_path, add_to_project=True)
-
-    def _open_resource_file(self, app_window, resource_path, add_to_project=False):
-        from utils.resource_file_utils import (
-            find_resource_in_paks, 
-            find_resource_in_filesystem,
-            get_path_prefix_for_game,
-            copy_resource_to_project
+        self._open_resource_file(
+            app_window,
+            resource_path,
+            context,
+            add_to_project=True,
         )
+
+    def _open_resource_file(
+        self,
+        app_window,
+        resource_path,
+        context,
+        add_to_project=False,
+    ):
+        from utils.resource_file_utils import copy_resource_to_project
         
         proj_dock = app_window.proj_dock
-        
         if add_to_project:
-            project_dir = proj_dock.project_dir
-            if not project_dir:
-                QMessageBox.information(self, self.tr("Add & Open Resource"), 
-                    self.tr("No project is currently open."))
+            if not context.project_dir:
+                QMessageBox.information(
+                    self,
+                    self.tr(ADD_RESOURCE_TITLE),
+                    self.tr("No project is currently open."),
+                )
                 return
-            
-            path_prefix = get_path_prefix_for_game(app_window.current_game)
-            
-            dest_path = copy_resource_to_project(
-                resource_path, 
-                project_dir,
-                proj_dock.unpacked_dir,
-                path_prefix,
-                proj_dock._pak_cached_reader,
-                proj_dock._pak_selected_paks
-            )
-            
-            if dest_path:
-                try:
-                    with open(dest_path, "rb") as f:
-                        data = f.read()
-                    app_window.add_tab(dest_path, data)
-                    
-                    if hasattr(proj_dock, '_refresh_proj'):
-                        proj_dock._refresh_proj()
-                    
-                    QMessageBox.information(self, self.tr("Add & Open Resource"), 
-                        f"File added to project and opened:\n{dest_path}")
-                except Exception as e:
-                    QMessageBox.critical(self, self.tr("Add & Open Resource"), 
-                        f"File was added but failed to open:\n{str(e)}")
-            else:
-                QMessageBox.critical(self, self.tr("Add & Open Resource"), 
-                    f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
-            return
-        
-        file_data = None
-        file_path = None
-        
-        pak_result = find_resource_in_paks(
-            resource_path,
-            proj_dock._pak_cached_reader,
-            proj_dock._pak_selected_paks
-        )
-        if pak_result:
-            file_path, file_data = pak_result
-        
-        if not file_data:
-            path_prefix = get_path_prefix_for_game(app_window.current_game)
-            fs_result = find_resource_in_filesystem(
+            self._add_resource_to_project(
+                proj_dock,
                 resource_path,
-                proj_dock.unpacked_dir,
-                path_prefix
+                context,
+                copy_resource_to_project,
             )
-            if fs_result:
-                file_path, file_data = fs_result
-        
-        if file_data:
-            app_window.add_tab(file_path, file_data)
-        else:
-            QMessageBox.critical(self, self.tr("Open Resource"),
-                f"Error: Resource file not found.\n\nResource: {resource_path}\n\nSearched in both PAK files and system files.")
+            return
+
+        self._open_resolved_resource(
+            app_window,
+            resource_path,
+            context,
+        )
+
+    def _add_resource_to_project(
+        self,
+        proj_dock,
+        resource_path,
+        context,
+        copy_resource_to_project,
+    ):
+        project_dir = context.project_dir
+        overwrite_state = {"asked": False, "accepted": False}
+
+        def _confirm_overwrite(dest_path: str) -> bool:
+            overwrite_state["asked"] = True
+            accepted = True
+            if hasattr(proj_dock, "_confirm_project_overwrite"):
+                accepted = proj_dock._confirm_project_overwrite(
+                    dest_path, self
+                )
+            overwrite_state["accepted"] = accepted
+            return accepted
+
+        dest_path = copy_resource_to_project(
+            resource_path,
+            project_dir,
+            context.unpacked_dir,
+            context.path_prefix,
+            context.pak_cached_reader,
+            should_overwrite=_confirm_overwrite,
+            selection_parent=self,
+        )
+        if dest_path:
+            same_active_project = (
+                bool(proj_dock.project_dir)
+                and os.path.normcase(os.path.abspath(proj_dock.project_dir))
+                == os.path.normcase(os.path.abspath(project_dir))
+            )
+            if same_active_project and hasattr(proj_dock, '_refresh_proj'):
+                proj_dock._refresh_proj()
+            QMessageBox.information(
+                self,
+                self.tr(ADD_RESOURCE_TITLE),
+                self.tr("File added to project:\n{}").format(dest_path),
+            )
+            return
+        if overwrite_state["asked"] and not overwrite_state["accepted"]:
+            return
+        QMessageBox.critical(
+            self,
+            self.tr(ADD_RESOURCE_TITLE),
+            self.tr(
+                "Error: Resource file not found.\n\nResource: {}\n\n"
+                "Searched in both PAK files and system files."
+            ).format(resource_path),
+        )
+
+    def _open_resolved_resource(
+        self,
+        app_window,
+        resource_path,
+        context,
+    ):
+        resolved = context.resolve(
+            resource_path,
+            self,
+        )
+        if resolved:
+            file_path, file_data = resolved
+            tab = app_window.add_tab(
+                file_path,
+                file_data,
+                pak_source_path=(
+                    file_path if not os.path.isabs(file_path) else None
+                ),
+                pak_project_dir=context.project_dir,
+                resource_context=context,
+            )
+            if tab and not os.path.isabs(file_path):
+                app_window.attach_pak_source_tab(
+                    tab, file_path, context.project_dir
+                )
+            return
+        QMessageBox.critical(
+            self,
+            self.tr(OPEN_RESOURCE_TITLE),
+            self.tr(
+                "Error: Resource file not found.\n\nResource: {}\n\n"
+                "Searched in both PAK files and system files."
+            ).format(resource_path),
+        )
 
     def _on_text_changed(self, text):
-        if self._data:
-            self._data.value = text
-            self.valueChanged.emit(text)
-            self.mark_modified()
-            
-            fm = QFontMetrics(self.line_edit.font())
-            text_width = fm.horizontalAdvance(text) + 10
-            new_width = max(text_width, self.minimum_width)
-            self.line_edit.setFixedWidth(new_width)
-            
-            if hasattr(self._data, "is_gameobject_or_folder_name") and self._data.is_gameobject_or_folder_name:
-                if isinstance(self._data.is_gameobject_or_folder_name, dict):
-                    node_dict = self._data.is_gameobject_or_folder_name
-                    
-                    current_name = node_dict["data"][0]
-                    id_part = current_name[current_name.find("(ID:"):] if "(ID:" in current_name else ""
-                    new_node_name = f"{text} {id_part}"
-                    node_dict["data"][0] = new_node_name
-                    
-                    parent_widget = self
-                    tree_view = None
-                    while parent_widget and not tree_view:
-                        parent_widget = parent_widget.parent()
-                        if hasattr(parent_widget, 'tree'):
-                            tree_view = parent_widget.tree
-                        elif isinstance(parent_widget, QTreeView):
-                            tree_view = parent_widget
-                        
-                    if tree_view and tree_view.model():
-                        model = tree_view.model()
-                        
-                        for visible_item in tree_view.findChildren(QLabel):
-                            if "(ID:" in visible_item.text() and visible_item.text().endswith(id_part):
-                                visible_item.setText(new_node_name)
-                        
-                        for i in range(model.rowCount()):
-                            parent_index = model.index(i, 0)
-                            for j in range(model.rowCount(parent_index)):
-                                child_index = model.index(j, 0, parent_index)
-                                tree_view.update(child_index)
-                        
-                        tree_view.repaint()
+        if not self._data:
+            return
+
+        self._data.value = text
+        self.valueChanged.emit(text)
+        self.mark_modified()
+        fm = QFontMetrics(self.line_edit.font())
+        text_width = fm.horizontalAdvance(text) + 10
+        self.line_edit.setFixedWidth(max(text_width, self.minimum_width))
+        self._sync_bound_node_name(text)
+
+    def _sync_bound_node_name(self, text):
+        node_dict = getattr(
+            self._data, "is_gameobject_or_folder_name", None
+        )
+        if not isinstance(node_dict, dict):
+            return
+
+        current_name = node_dict["data"][0]
+        id_part = (
+            current_name[current_name.find("(ID:"):]
+            if "(ID:" in current_name
+            else ""
+        )
+        new_node_name = f"{text} {id_part}"
+        node_dict["data"][0] = new_node_name
+
+        tree_view = self._find_tree_view()
+        if tree_view and tree_view.model():
+            self._refresh_bound_node_name(
+                tree_view, new_node_name, id_part
+            )
+
+    def _find_tree_view(self):
+        parent_widget = self
+        tree_view = None
+        while parent_widget and not tree_view:
+            parent_widget = parent_widget.parent()
+            if hasattr(parent_widget, 'tree'):
+                tree_view = parent_widget.tree
+            elif isinstance(parent_widget, QTreeView):
+                tree_view = parent_widget
+        return tree_view
+
+    @staticmethod
+    def _refresh_bound_node_name(tree_view, new_node_name, id_part):
+        model = tree_view.model()
+        for visible_item in tree_view.findChildren(QLabel):
+            if (
+                "(ID:" in visible_item.text()
+                and visible_item.text().endswith(id_part)
+            ):
+                visible_item.setText(new_node_name)
+
+        for row in range(model.rowCount()):
+            parent_index = model.index(row, 0)
+            for child_row in range(model.rowCount(parent_index)):
+                tree_view.update(
+                    model.index(child_row, 0, parent_index)
+                )
+        tree_view.repaint()
 
 class UserDataInput(BaseValueWidget):
     valueChanged = Signal(str) 
@@ -1771,27 +1728,9 @@ class UserDataInput(BaseValueWidget):
         if getattr(scn, 'has_embedded_rsz', False):
             return
 
-        current_instance_id = getattr(self._data, 'value', 0) or 0
-        default_type_name = None
-        default_string = getattr(self._data, 'string', '') or ''
-
-        if current_instance_id > 0 and current_instance_id < len(scn.instance_infos):
-            try:
-                type_id = scn.instance_infos[current_instance_id].type_id
-                if viewer.type_registry:
-                    tinfo = viewer.type_registry.get_type_info(type_id)
-                    if tinfo and 'name' in tinfo:
-                        default_type_name = tinfo['name']
-            except Exception:
-                pass
-            try:
-                rui = scn._rsz_userdata_dict.get(current_instance_id)
-                if rui:
-                    default_string = scn._rsz_userdata_str_map.get(rui, default_string)
-            except Exception:
-                pass
-        else:
-            default_type_name = getattr(self._data, 'orig_type', '') or ''
+        default_type_name, default_string = self._get_userdata_defaults(
+            viewer, scn
+        )
 
         new_string, ok = QInputDialog.getText(
             self,
@@ -1803,16 +1742,9 @@ class UserDataInput(BaseValueWidget):
         if not ok:
             return
 
-        type_dialog = ComponentSelectorDialog(self, viewer.type_registry, required_parent_name="via.UserData")
-        type_dialog.setWindowTitle(self.tr("Select UserData Instance Type"))
-        if default_type_name:
-            try:
-                type_dialog.search_input.setText(default_type_name)
-            except Exception:
-                pass
-        if not type_dialog.exec_():
-            return
-        selected_type = type_dialog.get_selected_component()
+        selected_type = self._select_userdata_type(
+            viewer, default_type_name
+        )
         if not selected_type:
             return
 
@@ -1822,6 +1754,54 @@ class UserDataInput(BaseValueWidget):
                 self.line_edit.setText(new_string)
         except Exception:
             pass
+
+    def _get_userdata_defaults(self, viewer, scn):
+        current_instance_id = getattr(self._data, 'value', 0) or 0
+        default_string = getattr(self._data, 'string', '') or ''
+        if not 0 < current_instance_id < len(scn.instance_infos):
+            return (
+                getattr(self._data, 'orig_type', '') or '',
+                default_string,
+            )
+
+        default_type_name = None
+        try:
+            type_id = scn.instance_infos[current_instance_id].type_id
+            if viewer.type_registry:
+                type_info = viewer.type_registry.get_type_info(type_id)
+                if type_info and 'name' in type_info:
+                    default_type_name = type_info['name']
+        except Exception:
+            pass
+        try:
+            userdata_info = scn._rsz_userdata_dict.get(
+                current_instance_id
+            )
+            if userdata_info:
+                default_string = scn._rsz_userdata_str_map.get(
+                    userdata_info, default_string
+                )
+        except Exception:
+            pass
+        return default_type_name, default_string
+
+    def _select_userdata_type(self, viewer, default_type_name):
+        type_dialog = ComponentSelectorDialog(
+            self,
+            viewer.type_registry,
+            required_parent_name="via.UserData",
+        )
+        type_dialog.setWindowTitle(
+            self.tr("Select UserData Instance Type")
+        )
+        if default_type_name:
+            try:
+                type_dialog.search_input.setText(default_type_name)
+            except Exception:
+                pass
+        if not type_dialog.exec_():
+            return None
+        return type_dialog.get_selected_component()
 
 class BoolInput(BaseValueWidget):
     valueChanged = Signal(bool)
@@ -1833,6 +1813,7 @@ class BoolInput(BaseValueWidget):
         self.checkbox.setFixedWidth(20)
         self.checkbox.setStyleSheet("""
             QCheckBox {
+                background-color: transparent;
                 padding: 2px;
             }
             QCheckBox::indicator {
@@ -1854,7 +1835,7 @@ class BoolInput(BaseValueWidget):
             self.valueChanged.emit(bool(state))
             self.mark_modified()
 
-class RangeInput(BaseValueWidget):
+class BaseRangeInput(BaseValueWidget):
     valueChanged = Signal(tuple)
     
     def __init__(self, data=None, parent=None):
@@ -1863,7 +1844,9 @@ class RangeInput(BaseValueWidget):
         self.layout.setSpacing(4)
         
         self.inputs = []
-        for i, name in enumerate(['Min', 'Max']):
+        for i, (name, property_name) in enumerate(
+            [(self.tr("Min"), "min"), (self.tr("Max"), "max")]
+        ):
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
@@ -1875,9 +1858,9 @@ class RangeInput(BaseValueWidget):
             container_layout.addWidget(label)
             
             line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
+            line_edit.setValidator(self._create_validator())
             line_edit.setFixedWidth(80)
-            line_edit.setProperty("name", name.lower())
+            line_edit.setProperty("name", property_name)
             line_edit.setAlignment(Qt.AlignLeft)
             line_edit.setStyleSheet("margin-left: 2px;")
             container_layout.addWidget(line_edit)
@@ -1897,127 +1880,78 @@ class RangeInput(BaseValueWidget):
         for input_field in self.inputs:
             input_field.textEdited.connect(self._on_value_changed)
 
+    def _create_validator(self):
+        return QDoubleValidator()
+
+    def _format_display_value(self, value):
+        return format_full_float(value, 8)
+
+    def _format_set_value(self, value):
+        return format_display_value(value)
+
+    def _parse_value(self, text):
+        if not text or text == "-":
+            return 0.0
+        return float(text)
+
+    def _fallback_values(self):
+        return (0.0, 0.0)
+
     def update_display(self):
         if not self._data:
             return
         values = [self._data.min, self._data.max]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.8g}") 
+            input_field.setText(self._format_display_value(val))
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-            
+            input_field.setText(self._format_set_value(val))
+
     def getValues(self):
         try:
-            return tuple(float(input_field.text() or "0") for input_field in self.inputs)
+            return tuple(self._parse_value(input_field.text()) for input_field in self.inputs)
         except ValueError:
-            return (0.0, 0.0)
-        
+            return self._fallback_values()
+
     def _on_value_changed(self):
         if not self._data:
             return
             
         try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    new_values.append(0.0)
-                else:
-                    new_values.append(float(text))
-                
-            new_values = tuple(new_values)
+            new_values = tuple(self._parse_value(input_field.text()) for input_field in self.inputs)
             self._data.min = new_values[0]
             self._data.max = new_values[1]
             
             self.valueChanged.emit(new_values)
             self.mark_modified()
         except ValueError:
-            pass 
+            pass
 
-class RangeIInput(BaseValueWidget):
+
+class RangeInput(BaseRangeInput):
+    pass
+
+
+class RangeIInput(BaseRangeInput):
     """Widget for editing integer range values"""
-    valueChanged = Signal(tuple)
-    
-    def __init__(self, data=None, parent=None):
-        super().__init__(parent)
-        
-        self.layout.setSpacing(4)
-        
-        self.inputs = []
-        for i, name in enumerate(['Min', 'Max']):
-            container = QWidget()
-            container_layout = QHBoxLayout(container)
-            container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.setSpacing(2)
-            
-            label = QLabel(name)
-            label.setFixedWidth(33)
-            label.setStyleSheet("padding-right: 2px;")
-            container_layout.addWidget(label)
-            
-            line_edit = QLineEdit()
-            line_edit.setValidator(QIntValidator())
-            line_edit.setFixedWidth(80)
-            line_edit.setProperty("name", name.lower())
-            line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 2px;")
-            container_layout.addWidget(line_edit)
-            
-            if i == 0:
-                container.setFixedWidth(120)
-                container.setStyleSheet("margin-right: 6px;")
-            
-            self.layout.addWidget(container)
-            self.inputs.append(line_edit)
-        
-        self.layout.addStretch(1)
-        
-        if data:
-            self.set_data(data)
-            
-        for input_field in self.inputs:
-            input_field.textEdited.connect(self._on_value_changed)
 
-    def update_display(self):
-        if not self._data:
-            return
-        values = [self._data.min, self._data.max]
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
+    def _create_validator(self):
+        return QIntValidator()
 
-    def setValues(self, values):
-        for input_field, val in zip(self.inputs, values):
-            input_field.setText(str(val))
-            
-    def getValues(self):
-        try:
-            return tuple(int(input_field.text() or "0") for input_field in self.inputs)
-        except ValueError:
-            return (0, 0)
-        
-    def _on_value_changed(self):
-        if not self._data:
-            return
-            
-        try:
-            new_values = []
-            for input_field in self.inputs:
-                text = input_field.text()
-                if not text or text == '-':
-                    new_values.append(0)
-                else:
-                    new_values.append(int(text))
-            
-            new_values = tuple(new_values)
-            self._data.min = new_values[0]
-            self._data.max = new_values[1]
-            
-            self.valueChanged.emit(new_values)
-            self.mark_modified()
-        except ValueError:
-            pass 
+    def _format_display_value(self, value):
+        return str(value)
+
+    def _format_set_value(self, value):
+        return str(value)
+
+    def _parse_value(self, text):
+        if not text or text == "-":
+            return 0
+        return int(text)
+
+    def _fallback_values(self):
+        return (0, 0)
 
 class EnumInput(BaseValueWidget):
     """Widget for editing enum values with dropdown selection"""
@@ -2118,7 +2052,7 @@ class EnumInput(BaseValueWidget):
                 
             self.line_edit.setStyleSheet("")
         except ValueError:
-            self.line_edit.setStyleSheet("border: 1px solid red;")
+            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
             
     def _on_combo_changed(self, index):
         """Update value when an enum option is selected"""
@@ -2182,7 +2116,7 @@ class Mat4Input(BaseValueWidget):
         for row in range(4):
             for col in range(4):
                 idx = row * 4 + col  
-                self.inputs[row][col].setText(f"{values[idx]:.8g}")
+                self.inputs[row][col].setText(format_full_float(values[idx], 8))
 
     def _on_value_changed(self):
         """Handle input changes and update the data model"""
@@ -2214,7 +2148,7 @@ class Mat4Input(BaseValueWidget):
         for row in range(4):
             for col in range(4):
                 idx = row * 4 + col
-                self.inputs[row][col].setText(str(values[idx]))
+                self.inputs[row][col].setText(format_display_value(values[idx]))
     
     def getValues(self):
         """Get all values as a flat list"""
@@ -2227,12 +2161,14 @@ class Mat4Input(BaseValueWidget):
 
 class ColorInput(BaseValueWidget):
     valueChanged = Signal(tuple)
+    channel_attrs = ("r", "g", "b", "a")
     
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.color_button = QPushButton()
+        self.color_button = ColorPreviewButton()
         self.color_button.setFixedSize(24, 24)
+        self.color_button.setHasAlpha(True)
         self.color_button.clicked.connect(self._show_color_dialog)
         
         grid = QGridLayout()
@@ -2242,47 +2178,9 @@ class ColorInput(BaseValueWidget):
         grid.addWidget(self.color_button, 0, 0)
         grid.setColumnMinimumWidth(1, 6) 
 
-        self.inputs = []
-        for i, comp in enumerate(['R', 'G', 'B', 'A']):
-            label = QLabel(comp)
-            label.setFixedWidth(8)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                QLabel {
-                    margin: 0;
-                    padding: 0;
-                    border: none;
-                }
-            """)
-            
-            line_edit = QLineEdit()
-            validator = QIntValidator(0, 255)
-            line_edit.setValidator(validator)
-            line_edit.setFixedWidth(28) 
-            line_edit.setFixedHeight(20)
-            line_edit.setProperty("component", comp.lower())
-            line_edit.setStyleSheet("""
-                QLineEdit {
-                    margin: 0;
-                    padding: 1px 2px;
-                    border: 1px solid #888888;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #aaaaaa;
-                }
-                QLineEdit[invalid="true"] {
-                    border: 1px solid red;
-                }
-            """)
-            
-            col_offset = (i * 3) + 2
-            grid.addWidget(label, 0, col_offset)
-            grid.addWidget(line_edit, 0, col_offset + 1)
-            
-            if i < 3: 
-                grid.setColumnMinimumWidth(col_offset + 2, 3)
-                
-            self.inputs.append(line_edit)
+        self.inputs = _create_component_inputs(
+            grid, ["R", "G", "B", "A"], lambda: QIntValidator(0, 255), 28
+        )
         
         self.layout.addLayout(grid)
         self.layout.addStretch()
@@ -2299,44 +2197,13 @@ class ColorInput(BaseValueWidget):
             return
             
         try:
-            values = []
-            valid = True
-            
-            for input_field in self.inputs:
-                text = input_field.text().strip()
-                
-                try:
-                    if text == '' or text == '-':
-                        value = 0
-                    else:
-                        value = int(text)
-                        if value < 0 or value > 255:
-                            valid = False
-                            value = max(0, min(255, value))  # Clamp value
-                except ValueError:
-                    valid = False
-                    value = 0
-                
-                values.append(value)
-                
-                input_field.setProperty("invalid", not valid)
-                input_field.style().unpolish(input_field)
-                input_field.style().polish(input_field)
-                
-                if not valid:
-                    input_field.setText(str(value))
-            
-            self._data.r = values[0]
-            self._data.g = values[1]
-            self._data.b = values[2]
-            self._data.a = values[3]
-            
+            values, valid = self._validated_channel_values()
+            self._set_channel_values(values)
             self._update_color_button()
-            
+
             if valid:
                 self.valueChanged.emit(tuple(values))
                 self.mark_modified()
-                
         except ValueError:
             pass
 
@@ -2344,7 +2211,7 @@ class ColorInput(BaseValueWidget):
         if not self._data:
             return
             
-        values = [self._data.r, self._data.g, self._data.b, self._data.a]
+        values = self._channel_values()
         for input_field, val in zip(self.inputs, values):
             input_field.setText(str(val))
             
@@ -2354,89 +2221,22 @@ class ColorInput(BaseValueWidget):
         """Update the color button appearance based on current RGBA values"""
         if not self._data:
             return
-            
-        r = int(self._data.r)
-        g = int(self._data.g)
-        b = int(self._data.b)
-        a = int(self._data.a)
-        
-        alpha_normalized = a / 255.0
-        
-        self.color_button.setStyleSheet(
-            f"background-color: rgba({r}, {g}, {b}, {alpha_normalized}); border: 1px solid #888888;"
-        )
+
+        self.color_button.setColor(*(int(value) for value in self._channel_values()))
     
     def _show_color_dialog(self):
-            if not self._data:
-                return
+        if not self._data:
+            return
 
-            init = QColor(self._data.r, self._data.g, self._data.b, self._data.a)
+        result = _rgba_dialog_result(self, QColor(*self._channel_values()))
+        if result is None:
+            return
 
-            dlg = QColorDialog(init, self)
-            dlg.setOption(QColorDialog.DontUseNativeDialog, True)
-            dlg.setOption(QColorDialog.ShowAlphaChannel,    True)
+        self._set_channel_values(result)
+        self.update_display()
+        self.valueChanged.emit(result)
+        self.mark_modified()
 
-            hex_edit: QLineEdit | None = dlg.findChild(QLineEdit, "qt_color_hexLineEdit")
-            if not hex_edit:
-                for w in dlg.findChildren(QLineEdit):
-                    if w.placeholderText().startswith("#") or w.text().startswith("#"):
-                        hex_edit = w
-                        break
-
-            if hex_edit:
-                hex_edit.setInputMask("")             
-                hex_edit.setMaxLength(9)              
-                hex_edit.setPlaceholderText("#RRGGBBAA")
-                rx  = QRegularExpression(r"^#[0-9A-Fa-f]{8}$")
-                hex_edit.setValidator(QRegularExpressionValidator(rx))
-
-            def write_html(c: QColor):
-                if not hex_edit:
-                    return
-                text = f"#{c.red():02X}{c.green():02X}{c.blue():02X}{c.alpha():02X}"
-
-                QTimer.singleShot(0, lambda t=text: (
-                    hex_edit.blockSignals(True),
-                    hex_edit.setText(t),
-                    hex_edit.blockSignals(False))
-                )
-
-            write_html(init)
-            dlg.currentColorChanged.connect(write_html)  
-
-            for sld in dlg.findChildren(QSlider):
-                if sld.minimum() == 0 and sld.maximum() == 255:
-                    sld.valueChanged.connect(
-                        lambda v, d=dlg: write_html(d.currentColor().withAlpha(v))
-                    )
-                    break
-            
-            excepted = False
-            if hex_edit:
-                    def on_hex(text: str):
-                        try:
-                            if len(text) == 7 or len(text) == 9:  
-                                r,g,b = int(text[1:3],16), int(text[3:5],16), int(text[5:7],16)
-                                a     = int(text[7:9],16)
-                            else:
-                                return
-                            dlg.setCurrentColor(QColor(r,g,b,a))
-                        except Exception:
-                            excepted = True
-                    hex_edit.textChanged.connect(on_hex)
-
-            if dlg.exec_() and not excepted:
-                    final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
-                    if final:
-                        r,g,b,a = int(final[1:3],16), int(final[3:5],16), int(final[5:7],16), int(final[7:9],16)
-                    else:
-                        c = dlg.currentColor()
-                        r,g,b,a = c.red(), c.green(), c.blue(), c.alpha()
-
-                    self._data.r, self._data.g, self._data.b, self._data.a = r, g, b, a
-                    self.update_display()
-                    self.valueChanged.emit((r,g,b,a))
-                    self.mark_modified()
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
             input_field.setText(str(val))
@@ -2457,22 +2257,50 @@ class ColorInput(BaseValueWidget):
             values = []
             for input_field in self.inputs:
                 text = input_field.text()
-                if not text or text == '-':
-                    values.append(0)
-                else:
-                    values.append(max(0, min(255, int(text))))
-            
-            self._data.r = values[0]
-            self._data.g = values[1]
-            self._data.b = values[2]
-            self._data.a = values[3]
-            
+                values.append(0 if not text or text == '-' else max(0, min(255, int(text))))
+
+            self._set_channel_values(values)
             self._update_color_button()
             
             self.valueChanged.emit(tuple(values))
             self.mark_modified()
         except ValueError:
             pass 
+
+    def _channel_values(self):
+        return [getattr(self._data, attr) for attr in self.channel_attrs]
+
+    def _set_channel_values(self, values):
+        for attr, value in zip(self.channel_attrs, values):
+            setattr(self._data, attr, value)
+
+    def _validated_channel_values(self):
+        values = []
+        valid = True
+        for input_field in self.inputs:
+            text = input_field.text().strip()
+            try:
+                if text == '' or text == '-':
+                    value = 0
+                else:
+                    value = int(text)
+                    if value < 0 or value > 255:
+                        valid = False
+                        value = max(0, min(255, value))
+            except ValueError:
+                valid = False
+                value = 0
+
+            values.append(value)
+            _set_invalid_state(input_field, not valid)
+            if not valid:
+                input_field.setText(format_display_value(value))
+        return values, valid
+
+
+class Int4ColorInput(ColorInput):
+    """Color widget for Int4ColorData objects that store channels as x/y/z/w."""
+    channel_attrs = ("x", "y", "z", "w")
 
 class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     """Widget for editing Vec3 RGB color values as floats"""
@@ -2483,8 +2311,9 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
 
-        self.color_button = QPushButton()
+        self.color_button = ColorPreviewButton()
         self.color_button.setFixedSize(24, 24)
+        self.color_button.setHasAlpha(False)
         self.color_button.clicked.connect(self._show_color_dialog)
         
         grid = QGridLayout()
@@ -2494,48 +2323,9 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         grid.addWidget(self.color_button, 0, 0)
         grid.setColumnMinimumWidth(1, 6)
 
-        self.inputs = []
-        for i, comp in enumerate(['R', 'G', 'B']):
-            label = QLabel(comp)
-            label.setFixedWidth(8)
-            label.setAlignment(Qt.AlignCenter)
-            label.setStyleSheet("""
-                QLabel {
-                    margin: 0;
-                    padding: 0;
-                    border: none;
-                }
-            """)
-            
-            line_edit = QLineEdit()
-            validator = QDoubleValidator()
-            validator.setDecimals(6)
-            line_edit.setValidator(validator)
-            line_edit.setFixedWidth(60)
-            line_edit.setFixedHeight(20)
-            line_edit.setProperty("component", comp.lower())
-            line_edit.setStyleSheet("""
-                QLineEdit {
-                    margin: 0;
-                    padding: 1px 2px;
-                    border: 1px solid #888888;
-                }
-                QLineEdit:focus {
-                    border: 1px solid #aaaaaa;
-                }
-                QLineEdit[invalid="true"] {
-                    border: 1px solid red;
-                }
-            """)
-            
-            col_offset = (i * 3) + 2
-            grid.addWidget(label, 0, col_offset)
-            grid.addWidget(line_edit, 0, col_offset + 1)
-            
-            if i < 2:
-                grid.setColumnMinimumWidth(col_offset + 2, 3)
-                
-            self.inputs.append(line_edit)
+        self.inputs = _create_component_inputs(
+            grid, ["R", "G", "B"], lambda: _double_validator(6), 60
+        )
         
         self.layout.addLayout(grid)
         self._setup_clipboard_buttons()
@@ -2570,12 +2360,10 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
                 
                 values.append(value)
                 
-                input_field.setProperty("invalid", not valid)
-                input_field.style().unpolish(input_field)
-                input_field.style().polish(input_field)
+                _set_invalid_state(input_field, not valid)
                 
                 if not valid:
-                    input_field.setText(str(value))
+                    input_field.setText(format_display_value(value))
             
             self._data.x = values[0]
             self._data.y = values[1]
@@ -2596,7 +2384,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
             
         values = [self._data.x, self._data.y, self._data.z]
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.6g}")
+            input_field.setText(format_full_float(val, 6))
             
         self._update_color_button()
     
@@ -2610,9 +2398,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         g = max(0, min(1, float(self._data.y))) * 255
         b = max(0, min(1, float(self._data.z))) * 255
         
-        self.color_button.setStyleSheet(
-            f"background-color: rgb({int(r)}, {int(g)}, {int(b)}); border: 1px solid #888888;"
-        )
+        self.color_button.setColor(int(r), int(g), int(b), 255)
     
     def _show_color_dialog(self):
         """Open color picker dialog and update values if user selects a color"""
@@ -2627,7 +2413,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         initial_color = QColor(r, g, b)
         
         dialog = QColorDialog(initial_color, self)
-        dialog.setWindowTitle("Select Color")
+        dialog.setWindowTitle(self.tr("Select Color"))
         dialog.setOption(QColorDialog.ShowAlphaChannel, False)  # No alpha channel
         
         if dialog.exec_():
@@ -2644,7 +2430,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
     
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
-            input_field.setText(f"{val:.6g}")
+            input_field.setText(format_full_float(val, 6))
         self._update_color_button()
     
     def getValues(self):
@@ -2690,9 +2476,9 @@ class CapsuleInput(BaseValueWidget):
         grid.setAlignment(Qt.AlignLeft)
         self.layout.addLayout(grid)
         
-        grid.addWidget(QLabel("Start:"), 0, 0, alignment=Qt.AlignRight)
-        grid.addWidget(QLabel("End:"), 1, 0, alignment=Qt.AlignRight)
-        grid.addWidget(QLabel("Radius:"), 2, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel(self.tr("Start:")), 0, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel(self.tr("End:")), 1, 0, alignment=Qt.AlignRight)
+        grid.addWidget(QLabel(self.tr("Radius:")), 2, 0, alignment=Qt.AlignRight)
         
         self.start_inputs = []
         for i, coord in enumerate(['X', 'Y', 'Z']):
@@ -2702,7 +2488,7 @@ class CapsuleInput(BaseValueWidget):
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(80)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 6px;") 
+            line_edit.setStyleSheet(_INDENTED_INPUT_STYLE)
             grid.addWidget(line_edit, 0, (i*2)+2)
             self.start_inputs.append(line_edit)
             
@@ -2714,7 +2500,7 @@ class CapsuleInput(BaseValueWidget):
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(80)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 6px;") 
+            line_edit.setStyleSheet(_INDENTED_INPUT_STYLE)
             grid.addWidget(line_edit, 1, (i*2)+2)
             self.end_inputs.append(line_edit)
             
@@ -2722,7 +2508,7 @@ class CapsuleInput(BaseValueWidget):
         self.radius_input.setValidator(QDoubleValidator())
         self.radius_input.setFixedWidth(80)
         self.radius_input.setAlignment(Qt.AlignLeft)
-        self.radius_input.setStyleSheet("margin-left: 6px;")
+        self.radius_input.setStyleSheet(_INDENTED_INPUT_STYLE)
         grid.addWidget(self.radius_input, 2, 2)
         
         self.layout.addStretch()
@@ -2742,15 +2528,15 @@ class CapsuleInput(BaseValueWidget):
         if hasattr(self._data, 'start') and hasattr(self._data.start, 'x'):
             start_values = [self._data.start.x, self._data.start.y, self._data.start.z]
             for input_field, val in zip(self.start_inputs, start_values):
-                input_field.setText(f"{val:.8g}")
+                input_field.setText(format_full_float(val, 8))
                 
         if hasattr(self._data, 'end') and hasattr(self._data.end, 'x'):
             end_values = [self._data.end.x, self._data.end.y, self._data.end.z]
             for input_field, val in zip(self.end_inputs, end_values):
-                input_field.setText(f"{val:.8g}")
+                input_field.setText(format_full_float(val, 8))
                 
         if hasattr(self._data, 'radius'):
-            self.radius_input.setText(f"{self._data.radius:.8g}")
+            self.radius_input.setText(format_full_float(self._data.radius, 8))
 
     def _on_value_changed(self):
         """Handle input changes and update the data model"""
@@ -2802,12 +2588,12 @@ class CapsuleInput(BaseValueWidget):
             return
             
         for i, val in enumerate(values[:3]):
-            self.start_inputs[i].setText(str(val))
+            self.start_inputs[i].setText(format_display_value(val))
             
         for i, val in enumerate(values[3:6]):
-            self.end_inputs[i].setText(str(val))
+            self.end_inputs[i].setText(format_display_value(val))
             
-        self.radius_input.setText(str(values[6]))
+        self.radius_input.setText(format_display_value(values[6]))
     
     def getValues(self):
         """Get all values as a tuple (start_x, start_y, start_z, end_x, end_y, end_z, radius)"""
@@ -2900,7 +2686,7 @@ class AreaInput(BaseValueWidget):
             self._data.height, self._data.bottom
         ]
         for inp, v in zip(self.inputs, vals):
-            inp.setText(f"{v:.8g}")
+            inp.setText(format_full_float(v, 8))
 
     def _on_value_changed(self):
         if not self._data:

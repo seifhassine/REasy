@@ -1,0 +1,127 @@
+from typing import Any
+
+from file_handlers.base_handler import BaseFileHandler
+from file_handlers.sound.sound_profile import sound_profile_for_handler
+from utils.resource_file_utils import resource_version_from_path
+from .wel_file import WELFile, WELEventEntry
+from PySide6.QtGui import QStandardItem
+
+
+class WelHandler(BaseFileHandler):
+    def __init__(self):
+        super().__init__()
+        self.filepath: str = ""
+        self.wel: WELFile | None = None
+
+    @classmethod
+    def can_handle(cls, data: bytes) -> bool:
+        # WEL has no magic value; routed by extension in file_handlers.factory.
+        return False
+
+    def supports_editing(self) -> bool:
+        return True
+
+    def read(self, data: bytes):
+        profile = sound_profile_for_handler(self)
+        version = resource_version_from_path(self.filepath, "wel")
+        if profile is None or version not in profile.wel_versions:
+            game = profile.display_name if profile else "this game"
+            raise ValueError(
+                f"WEL version {version or 'unknown'} is not supported for {game}"
+            )
+
+        parsed = WELFile()
+        if not parsed.read(data):
+            raise ValueError("Failed to parse WEL file")
+
+        self.wel = parsed
+        self.modified = False
+
+    def rebuild(self) -> bytes:
+        if not self.wel:
+            return b""
+        self.modified = False
+        return self.wel.write()
+
+    def populate_treeview(self, tree, parent_item, metadata_map: dict):
+        if not self.wel:
+            return
+
+        from PySide6.QtGui import QStandardItem, QStandardItemModel
+
+        model = QStandardItemModel()
+        model.setHorizontalHeaderLabels(["Field", "Value"])
+
+        header_item = QStandardItem("header")
+        model.appendRow([header_item, QStandardItem("")])
+        header_item.appendRow([QStandardItem("bankPathRaw (decoded UTF-16)"), QStandardItem(self.wel.bank_path)])
+
+        model.appendRow([QStandardItem("eventCount"), QStandardItem(str(len(self.wel.events)))])
+
+        events_root = QStandardItem("events")
+        model.appendRow([events_root, QStandardItem(str(len(self.wel.events)))])
+
+        for idx, event in enumerate(self.wel.events):
+            event_item = QStandardItem(f"[{idx}]")
+            events_root.appendRow([event_item, QStandardItem("")])
+            self._append_event(event_item, event)
+
+        if self.wel.trailing_data:
+            model.appendRow([QStandardItem("trailing_data_bytes"), QStandardItem(str(len(self.wel.trailing_data)))])
+
+        tree.setModel(model)
+        tree.expandToDepth(2)
+
+    def _append_event(self, parent, event: WELEventEntry):
+
+        def add(name: str, value: Any):
+            parent.appendRow([QStandardItem(name), QStandardItem(str(value))])
+
+        for field in (
+            "mTriggerId",
+            "mEventId",
+            "mJointHash",
+            "mGameObjectHash",
+            "mTracking",
+            "mRotation",
+        ):
+            add(field, getattr(event, field))
+
+        priority_item = QStandardItem("mPriority")
+        parent.appendRow([priority_item, QStandardItem("")])
+        priority = event.mPriority
+        for field in (
+            "mId1",
+            "mId2",
+            "mId3",
+            "mBookingTimer",
+            "mFlangingTimer",
+            "mGlobalId",
+            "mLimit",
+            "mPriority",
+            "mMode",
+            "mReleaseTime",
+        ):
+            priority_item.appendRow([QStandardItem(field), QStandardItem(str(getattr(priority, field)))])
+
+        for field in (
+            "mDisableObsOcl",
+            "mUpdateObsOcl",
+            "mDisableMaxObsOclDistance",
+            "mEnableSpaceFeature",
+            "mWaitUntilFinished",
+            "mListenerMask",
+        ):
+            add(field, getattr(event, field))
+
+        free_area_item = QStandardItem("mFreeArea (16 game-side slots)")
+        parent.appendRow([free_area_item, QStandardItem("")])
+        for index, value in enumerate(event.mFreeArea.slots):
+            free_area_item.appendRow([QStandardItem(f"slot[{index}]"), QStandardItem(str(value))])
+
+    def create_viewer(self):
+        from .wel_viewer import WelViewer
+
+        viewer = WelViewer(self)
+        viewer.modified_changed.connect(self.modified_changed.emit)
+        return viewer

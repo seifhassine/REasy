@@ -155,6 +155,7 @@ def propagate_file(input_json: str, out: Optional[str] = None):
         )
     print(f"Wrote propagated JSON to: {out}")
 
+
 def main():
     fire.Fire({
         "strip": strip_file,

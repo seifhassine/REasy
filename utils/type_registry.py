@@ -6,16 +6,28 @@ class TypeRegistry:
     def __init__(self, json_path: str):
         self.json_path = json_path
         patcher = TypeRegistryPatcher(json_path)
-        
-        with open(json_path, "r") as f:
-            raw_registry = json.load(f)
-        
-        self.registry = patcher.patch_registry(raw_registry)
+
+        cached_registry = patcher.get_cached_registry()
+        if cached_registry is not None:
+            self.registry = cached_registry
+        else:
+            with open(json_path, "r") as f:
+                raw_registry = json.load(f)
+
+            self.registry = patcher.patch_registry(raw_registry)
         
         self._name_to_info = {}
-        for info in self.registry.values():
+        self._name_to_type_id = {}
+        for type_key, info in self.registry.items():
             if isinstance(info, dict) and "name" in info:
-                self._name_to_info[info["name"]] = info
+                name = info["name"]
+                if name in self._name_to_info:
+                    continue
+                self._name_to_info[name] = info
+                try:
+                    self._name_to_type_id[name] = int(type_key, 16)
+                except (TypeError, ValueError):
+                    self._name_to_type_id[name] = None
 
         self._type_id_cache = {}
 
@@ -58,11 +70,10 @@ class TypeRegistry:
         Look up type info and ID by name.
         Returns a tuple of (type_info, type_id) or (None, None) if not found.
         """
-        for type_key, info in self.registry.items():
-            if info.get("name") == type_name:
-                type_id = int(type_key, 16)
-                return info, type_id
-        return None, None
+        info = self._name_to_info.get(type_name)
+        if info is None:
+            return None, None
+        return info, self._name_to_type_id.get(type_name)
 
     def getTypeParents(self, type_name: str) -> list:
         """

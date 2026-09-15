@@ -442,8 +442,8 @@ class BHVTNode:
 
         # Priority and attributes
         handler.write_int32(self.priority)
-        handler.write_uint16(self.node_attribute)
-        handler.write_uint16(self.work_flags)
+        handler.write('<H', self.node_attribute)
+        handler.write('<H', self.work_flags)
 
         # FSM-specific fields
         if self.is_fsm:
@@ -455,8 +455,8 @@ class BHVTNode:
             for tag in self.tags:
                 handler.write_uint32(tag)
 
-            handler.write_uint8(self.is_branch)
-            handler.write_uint8(self.is_end)
+            handler.write('<B', self.is_branch)
+            handler.write('<B', self.is_end)
 
         # States (interleaved)
         handler.write_int32(len(self.states))

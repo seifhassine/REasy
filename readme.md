@@ -1,4 +1,4 @@
-# REasy Editor v0.5.9 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
+# REasy Editor v0.7.7 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
 
 <p align="center">
   <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
@@ -10,18 +10,13 @@
 **REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and editing of some RE Engine files. It also includes miscellaneous tools to speed up your work. 
 Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBANK, MESH and CFIL files.
 
-REasy GUI is currently available in English and Chinese (limited) 
+REasy GUI is currently available in English and Chinese.
 
 
 <br>
 <br>
-
 <p align="center">
-   <img src="https://github.com/user-attachments/assets/64a84918-ad58-47ee-8186-e0e7a5a1ace0" alt="REasy Editor Logo" width=70%">
-</p>
-
-<p align="center">
-<img alt="image" src="https://github.com/user-attachments/assets/19ca472b-8578-495a-852e-a8ddc924b06c"  width=70%/>
+<img alt="image" src="https://github.com/user-attachments/assets/1ec4648a-a10d-4b5f-aed5-a654995a5d32"  width=70%/>
 </p>
 
 <br>
@@ -33,21 +28,28 @@ REasy GUI is currently available in English and Chinese (limited)
 <div align="center">
 
 <sub><sup>Note: Below formats are listed according to source code. The release archive may be outdated and might not yet support them.</sup></sub>  
+<sub><sup>Note 2: Many formats are not supported in RE7 non-rt.</sup></sub>  
 | File Type | Support | Tested On |
 |-----------|---------|-----------|
 | UVAR      | ✅       | Most Titles  |
-| RCOL      | ❌ <sub><sup>[temporarily disabled]</sup></sub>       | RE4       |
-| SCN       | ✅       | Most titles       |
-| User       | ✅       |Most titles       |
-| PFB       | ✅       | Most titles      |
-| MSG       | ✅       | RE4      |
-| MESH (3D Viewing)       | ✅ <sub><sup>[MHWilds NOT SUPPORTED]</sup></sub>       | RE4, RE2      |
+| RCOL      | ✅    <sub><sup>[RE7, Wilds NOT SUPPORTED]</sup></sub>   | Most titles       |
+| SCN/PFB/User       | ✅       | Most titles       |
+| LPRB/PRB       | ✅ <sub><sup>[Read-only probe data; SCN OBB transform editing]</sup></sub>      |  Most titles      |
+| MSG       | ✅       | Most titles      |
+| MESH (3D Viewing)       | ✅ <sub><sup>[RE7, KGPG NOT SUPPORTED]</sup></sub>       | Most titles      |
 | PAK       | ✅       | Most titles      |
 | CFIL       | ✅       | Most titles      |
 | MOTBANK       | ✅       | Most titles      |
 | MCAMBANK       | ✅       | Most titles      |
 | TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
 | MDF       | ✅       |    Most titles   |
+| BNK/PCK       | ✅       |Main titles moddable, rest are read-only|
+| WEL       | ✅       |    Most titles|
+| WCC/WCP/WCST/WGS/WSS/WCSW/WCSS/WCSA/WCSF       | ✅       |    Most titles |
+| UVS       | ✅       |    Most titles   |
+| CLIP/TML/UCURVE       | ✅       |    Most titles (up to Pragmata)  |
+| MOTLIST       | DMC5 Previewing Only       |    DMC5  |
+| GUI       | ✅      |    DMC5  |
 | CDEF       | Coming Soon       |       |
 | EFX       | Coming Soon       |       |
   
@@ -60,7 +62,7 @@ REasy GUI is currently available in English and Chinese (limited)
   - Support for single entry extraction.
   - Regex search in the file list is supported. 
  
-- **3D Mesh Inspecting**
+- **3D Scene Viewing and Editing**
   
 - **RSZ Extended File Viewing and Editing:**  
   - User, PFB and SCN files are supported with advanced editing.
@@ -85,10 +87,14 @@ REasy GUI is currently available in English and Chinese (limited)
 - **Project Manager:**
  
   Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
+
+- **AI Assistant:**
+
+  For now, supports DeepSeek API or a local OpenAI-compatible server such as LM Studio. It can navigate projects, tabs, and PAK files, and inspect or edit MDF and MSG files through REasy. 
+
+  Local servers are restricted to loopback addresses. DeepSeek keys can be used for the current session, loaded from `DEEPSEEK_API_KEY`, or stored in the operating system keyring (not tested on Linux). Chat messages and requested editor context are sent to the selected provider.
   
 -  **Backup System for Files**
-
--  **Dark Mode**  
 
 
 
@@ -122,9 +128,14 @@ REasy GUI is currently available in English and Chinese (limited)
 
 - Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
 
+- The first build requires Git and network access to initialize GDeflateNet and fetch the pinned GDeflateCore sources. Later builds reuse the cached native build.
+
 - Python 3.12+ is required.
 
 - If build.bat complains about not having 3.12+, then run python --version to check which version is being used by default.
+
+- If you want to run REasy.py, make sure you either use the `run_reasy.bat` batch script or `python setup.py build_ext --inplace
+` beforehand.
 
 If you want to run REasy on Linux and encounter the error "Aborted" on launch, try installing libxcb-cursor0 using apt-get. 
 
@@ -138,9 +149,13 @@ If you want to run REasy on Linux and encounter the error "Aborted" on launch, t
 
 @don on Discord for helping out with .exe debugging related stuff.
 
-@shadowcookie for consulting with misc. stuff as well as many updated file format structures. 
+@shadowcookie for consulting with misc. stuff as well as many updated file format structures (REE Lib). 
 
 @Ekey - PAK file decryption algorithms
+
+@NSACloud for the MPLY flags on MHWILDS+ 
+
+@brewedenhell for contributions to the [Wiki](https://github.com/seifhassine/REasy-Wiki/tree/main)
 
 ## Support REasy:
 
@@ -157,7 +172,19 @@ This project uses **[PySide6](https://pypi.org/project/PySide6/)** (Qt for Pytho
 For more information, see:  
 - [Qt Licensing Information](https://www.qt.io/licensing/)  
 - [LGPL v3 License Text](https://www.gnu.org/licenses/lgpl-3.0.html)
-  
+
+## Explicit Content Attribution
+
+REasy requests that it not be credited, attributed, or otherwise identified as a tool used to create sexually explicit, pornographic, or otherwise NSFW content.
+
+## Responsible Use
+
+REasy is intended for lawful modding, research, and preservation, primarily in offline and single-player environments. The project does not support cheating, unfair advantages in online games, interference with anti-cheat or online services, or unauthorized distribution of copyrighted material.
+
+Related issues, contributions, or content may be removed from REasy-controlled platforms. REasy is not affiliated with or endorsed by Capcom. Users are responsible for complying with applicable laws and game terms.
+
+This policy does not modify the rights granted under the MIT License.
+
 ## Sponsors
 <table>
  <tbody>
