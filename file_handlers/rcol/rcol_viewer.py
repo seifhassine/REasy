@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
 
 from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table, remove_from_object_table
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
 from utils.id_manager import IdManager
 
@@ -1200,14 +1201,9 @@ class RcolViewer(QWidget):
         legacy_request_start_indices, legacy_group_base_min_indices = self._legacy_request_shape_start_indices()
 
         inserted_value = object_table[appended_object_index]
-        object_ops = self._get_headless_object_operations()
-        if object_ops:
-            object_ops._insert_into_object_table(insert_index, inserted_value)
-            shifted_old_index = appended_object_index + (1 if insert_index <= appended_object_index else 0)
-            object_ops._remove_from_object_table(shifted_old_index)
-        else:
-            inserted_value = object_table.pop(appended_object_index)
-            object_table.insert(insert_index, inserted_value)
+        insert_into_object_table(self.rcol.rsz, insert_index, inserted_value)
+        shifted_old_index = appended_object_index + (1 if insert_index <= appended_object_index else 0)
+        remove_from_object_table(self.rcol.rsz, shifted_old_index)
 
         # Every object-table index at/after insertion point shifts by +1.
         if self.handler.file_version < 25:
@@ -1250,15 +1246,11 @@ class RcolViewer(QWidget):
         legacy_request_start_indices, legacy_group_base_min_indices = self._legacy_request_shape_start_indices()
 
         root_instance_id = object_table[object_index]
-        object_ops = self._get_headless_object_operations()
         embedded_viewer = self._embedded_headless_viewer
         if embedded_viewer and root_instance_id > 0:
             embedded_viewer.array_operations._delete_instance_and_children(root_instance_id)
 
-        if object_ops:
-            object_ops._remove_from_object_table(object_index)
-        else:
-            object_table.pop(object_index)
+        remove_from_object_table(self.rcol.rsz, object_index)
 
         # Every object-table index after the removed index shifts by -1.
         if self.handler.file_version < 25:
@@ -1406,7 +1398,9 @@ class RcolViewer(QWidget):
             if new_instance_id > 0:
                 pending_insertions.append((object_index, new_instance_id))
 
-        for object_index, instance_id in sorted(pending_insertions, key=lambda item: item[0], reverse=True):
+        # These are final destination indices; insert from left to right so the
+        # new request's shape entries stay contiguous ahead of following groups.
+        for object_index, instance_id in sorted(pending_insertions, key=lambda item: item[0]):
             object_table = self.rcol.rsz.object_table
             object_table.append(instance_id)
             self._insert_root_object_id_at(object_index, len(object_table) - 1)
@@ -2252,24 +2246,31 @@ class RcolViewer(QWidget):
         if should_remove_shape_objects:
             target_indices.extend(self._get_request_shape_object_indices(request_set))
 
-        for object_index in sorted(set(target_indices), reverse=True):
+        removed_indices = sorted(set(target_indices))
+        if self.handler.file_version < 25:
+            shape_windows = {id(rs): self._get_request_shape_object_indices(rs) for rs in self.rcol.request_sets}
+            group_bases = [[shape.info.user_data_index for shape in group.shapes] for group in self.rcol.groups]
+            if should_remove_shape_objects and same_group_requests[0] is request_set:
+                # The first request owns the group's base shape entries. Promote
+                # the next request's complete window when that owner is removed.
+                group_bases[request_set.info.group_index] = shape_windows[id(same_group_requests[1])]
+
+        for object_index in reversed(removed_indices):
             self._remove_request_root_object_id_at(object_index)
         del self.rcol.request_sets[request_index]
 
         if self.handler.file_version < 25:
-            deleted_shape_offset = int(getattr(request_set.info, "shape_offset", 0) or 0)
-            target_group_index = request_set.info.group_index
-            if 0 <= target_group_index < len(self.rcol.groups):
-                removed_group_shape_count = len(self.rcol.groups[target_group_index].shapes)
-            else:
-                removed_group_shape_count = len(request_set.group.shapes) if request_set.group else 0
+            def shifted(index):
+                return index - sum(removed < index for removed in removed_indices)
+
+            for group, indices in zip(self.rcol.groups, group_bases):
+                for shape, index in zip(group.shapes, indices):
+                    shape.info.user_data_index = shifted(index)
             for remaining_request in self.rcol.request_sets:
-                info = remaining_request.info
-                if info.group_index != target_group_index:
-                    continue
-                current_offset = int(getattr(info, "shape_offset", 0) or 0)
-                if current_offset > deleted_shape_offset:
-                    info.shape_offset = current_offset - removed_group_shape_count
+                indices = shape_windows[id(remaining_request)]
+                if indices:
+                    base = remaining_request.group.shapes[0].info.user_data_index
+                    remaining_request.info.shape_offset = shifted(indices[0]) - base
 
         self._refresh_structure(
             NavPayload(kind="request_sets"),
