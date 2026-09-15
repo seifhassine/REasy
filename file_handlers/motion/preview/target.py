@@ -1,12 +1,27 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import numpy as np
 
 from file_handlers.mesh.mesh_handler import MeshHandler
 from utils.resource_file_utils import ResourceResolutionContext
 
 from ..evaluation.mesh_adapter import rig_from_re_engine_mesh
 from ..evaluation.model import Rig
+
+
+@dataclass(frozen=True, slots=True)
+class PreviewMeshPart:
+    key: str
+    mesh: object
+    rig: Rig
+    handler: MeshHandler
+    mdf_path: str = ''
+    parent_joint: str = ''
+    local_transform: np.ndarray | None = None
+    weapon_role: str = ''
+    attachment_options: tuple = ()
+    weapon_motions: tuple = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -17,6 +32,7 @@ class RigPreviewTarget:
     rig: Rig
     mesh: object | None = None
     handler: MeshHandler | None = None
+    parts: tuple[PreviewMeshPart, ...] = ()
 
 
 def motion_target_from_mesh_handler(

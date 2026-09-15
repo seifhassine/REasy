@@ -10,11 +10,17 @@ from .resolution import TreeMotionReferenceStrategy
 
 
 @dataclass(frozen=True, slots=True)
-class EntityMotionSupport:
-    """Composition metadata for one game's entity-motion preview."""
+class MotionPreviewSupport:
+    """Format, sampling and reference rules for a standalone motion preview."""
 
     format_codec: MotionFormatCodec
     evaluation: MotionEvaluationProfile
     tree_references: TreeMotionReferenceStrategy
+
+
+@dataclass(frozen=True, slots=True)
+class EntityMotionSupport(MotionPreviewSupport):
+    """Preview rules plus a game's entity runtime integration."""
+
     backend: EntityMotionBackend
     catalog_reader: MotionListCatalogReader | None = None

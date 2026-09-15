@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from utils.hash_util import murmur3_hash_utf16le
 
-from ..mot.model import Joint
+from ..mot.model import Joint, Motion
 from .binding import JointBindingStrategy
 from .model import RigJoint, Vector3
 from .sampling import (
@@ -26,6 +26,7 @@ class MotionEvaluationProfile:
     joint_binding: JointBindingStrategy
     source_preview_scale: Vector3
     property_name_hash: Callable[[str], int] | None = None
+    authored_frame_rate: Callable[[Motion], float] | None = None
 
 
 @dataclass(frozen=True, slots=True)

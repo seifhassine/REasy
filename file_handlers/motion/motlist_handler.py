@@ -49,6 +49,12 @@ class MotListHandler(BaseFileHandler):
         return result
 
     def create_viewer(self):
+        from .mhr_storage import MhrMotList
+        if isinstance(self.model, MhrMotList):
+            from .preview.mhr_editor import MhrMotListEditor
+            viewer = MhrMotListEditor(self)
+            viewer.modified_changed.connect(self.modified_changed.emit)
+            return viewer
         from .preview.widget import MotListPreviewWidget
 
         viewer = MotListPreviewWidget(self)

@@ -52,6 +52,7 @@ class MotListPreviewWidget(QWidget):
     """Interactive MOT preview backed by a game-specific evaluation profile."""
 
     modified_changed = Signal(bool)
+    motion_changed = Signal(object)
 
     def __init__(
         self,
@@ -182,6 +183,7 @@ class MotListPreviewWidget(QWidget):
         self.viewport = viewport_factory(
             self.viewport_pane,
             controls="rcol",
+            left_drag_pan=True,
             settings=settings if isinstance(settings, dict) else None,
         )
         self.viewport.setMinimumHeight(320)
@@ -277,12 +279,14 @@ class MotListPreviewWidget(QWidget):
         if motion is None:
             self._clear_scene(self.tr("No motion is selected."))
             return
+        self.motion_changed.emit(motion)
         self.controller.clear()
         try:
             if self._using_source_rig or self._target is None:
                 rig = rig_from_motion_skeleton(
                     motion,
                     scale=self.evaluation_profile.source_preview_scale,
+                    joint_binding=self.evaluation_profile.joint_binding,
                 )
                 scale = ", ".join(f"{value:g}" for value in self.evaluation_profile.source_preview_scale)
                 rig_description = self.tr("MOT source skeleton (profile scale {scale})").format(scale=scale)
@@ -309,7 +313,16 @@ class MotListPreviewWidget(QWidget):
         self._target_material_session = None
         self._target = target
         self._using_source_rig = False
-        if target.handler is not None:
+        if target.parts:
+            resource_cache, upload_cache = {}, {}
+            for part in target.parts:
+                session = MeshMaterialSession(
+                    part.handler, explicit_mdf_path=part.mdf_path,
+                    material_scope=part.key, resource_cache=resource_cache, upload_cache=upload_cache,
+                    parse_in_subprocess=False,
+                    texture_quality=self._materials.texture_quality, parent=self._materials)
+                self._materials.add(part.key, session)
+        elif target.handler is not None:
             self._target_material_session = MeshMaterialSession(
                 target.handler,
                 texture_quality=self._materials.texture_quality,
@@ -322,6 +335,9 @@ class MotListPreviewWidget(QWidget):
 
     def use_source_rig(self) -> None:
         self._using_source_rig = True
+        if self._target is not None and self._target.parts:
+            for part in self._target.parts:
+                self._materials.set_enabled(part.key, False)
         if self._target_material_session is not None:
             self._materials.set_enabled("target", False)
         self.playback.stop()
@@ -331,6 +347,9 @@ class MotListPreviewWidget(QWidget):
         if self._target is None:
             return
         self._using_source_rig = False
+        if self._target.parts:
+            for part in self._target.parts:
+                self._materials.set_enabled(part.key, True)
         if self._target_material_session is not None:
             self._materials.set_enabled("target", True)
         self.playback.stop()

@@ -6,7 +6,7 @@ from ..mot.model import Motion
 from .model import Rig, RigJoint, Transform, Vector3
 
 
-def rig_from_motion_skeleton(motion: Motion, *, scale: Vector3) -> Rig:
+def rig_from_motion_skeleton(motion: Motion, *, scale: Vector3, joint_binding=None) -> Rig:
     """Create an explicit standalone preview rig from MOT joint defaults.
 
     MOT v65 has no joint default scale, so callers must choose a scale rather
@@ -41,5 +41,6 @@ def rig_from_motion_skeleton(motion: Motion, *, scale: Vector3) -> Rig:
             name=joint.name,
             parent_index=parent_index,
             rest=Transform(joint.translation, joint.rotation, scale),
+            binding_key=joint_binding.motion_key(joint) if joint_binding is not None else None,
         ))
     return Rig(result)

@@ -275,6 +275,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         parent=None,
         *,
         controls: str = "scene",
+        left_drag_pan: bool = False,
         settings: dict | None = None,
         initial_rotation: tuple[float, float] = (20.0, -30.0),
         initial_distance: float = 8.0,
@@ -286,6 +287,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
         self._settings = settings if isinstance(settings, dict) else None
         self._controls = controls
+        self._camera_drag_buttons = Qt.RightButton | (Qt.LeftButton if left_drag_pan else Qt.NoButton)
         self._background = background
         self._init_orbit_camera(
             rot_x=float(initial_rotation[0]),
@@ -1322,6 +1324,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 return
             if self._hover_detect_down:
                 self._queue_scene_pick("click", self._screen_pos(event))
+            elif self._camera_drag_buttons & Qt.LeftButton:
+                self._lock_scene_cursor(event.globalPosition().toPoint())
+                event.accept()
+                return
             else:
                 self.object_clicked.emit("")
             self._set_gizmo_hover(self._pick_gizmo_axis(self._screen_pos(event)))
@@ -1340,7 +1346,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if self._controls == "mesh":
             return super().mouseMoveEvent(event)
         buttons = event.buttons()
-        if not (buttons & Qt.RightButton):
+        if not (buttons & self._camera_drag_buttons):
             self._update_scene_hover(self._screen_pos(event)) if self._hover_detect_down else self._set_hover_key("")
             self._unlock_scene_cursor()
             return event.accept()
@@ -1363,7 +1369,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         if self._controls == "mesh":
             return super().mouseReleaseEvent(event)
-        if not (event.buttons() & Qt.RightButton):
+        if not (event.buttons() & self._camera_drag_buttons):
             self._unlock_scene_cursor()
         event.accept()
 
@@ -1469,6 +1475,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _move_scene_camera(self, dx: float, dy: float, buttons) -> None:
         if buttons & Qt.RightButton:
             self.freecam.look(dx, dy, self.camera_look)
+        elif buttons & self._camera_drag_buttons & Qt.LeftButton:
+            distance = max(float(np.linalg.norm(self.freecam.pos - self.center)), self.extent * 0.01)
+            units_per_pixel = 2.0 * distance * np.tan(np.deg2rad(22.5)) / max(self.height(), 1)
+            self.freecam.move_local(np.array((-dx, dy, 0.0), dtype=np.float32) * units_per_pixel)
 
     def _lock_scene_cursor(self, pos) -> None:
         self._cursor_lock_pos = pos

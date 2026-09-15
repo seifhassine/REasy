@@ -106,6 +106,11 @@ class MotionPreviewController:
         root_motion_mode: RuntimeRootMotionMode | None = None,
     ) -> bool:
         self.clear()
+        if self.evaluation_profile.authored_frame_rate is not None:
+            self.sampling_policy = replace(
+                self.evaluation_profile.sampling_policy,
+                frames_per_second=self.evaluation_profile.authored_frame_rate(motion),
+            )
         if (
             root_motion_mode is not None
             and (

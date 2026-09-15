@@ -23,6 +23,9 @@ PREFERRED_ALBEDO_TEXTURE_TYPES: tuple[str, ...] = (
     "BaseDielectricMapBase",
     "BaseAlphaMap",
     "BaseShiftMap",
+    "BaseMap",
+    "FaceBaseMap",
+    "Face_BaseDielectricMap",
 )
 
 
