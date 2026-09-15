@@ -21,7 +21,7 @@ from file_handlers.rsz.rsz_file import RszFile
 from utils.type_registry import TypeRegistry
 
 
-def make_fixture(*, all_states=False):
+def make_fixture(*, all_states=False, compact=False, version=43, empty_events=False):
     node = b"".join([
         struct.pack("<IIIiI", 0x1234, 0, 0, -1, 0),
         struct.pack("<iIIi", 1, 0x1111, 2, 0),
@@ -30,22 +30,25 @@ def make_fixture(*, all_states=False):
         struct.pack("<iHH", 7, 0x20, 0),
         struct.pack("<IIiBB", 0x3333, 0x4444, 0, 1, 0),
         struct.pack("<iiiIiIII", 1, 1, 0, 22, -1, 33, 44, 55),
-        struct.pack("<iiiIiI", 1, 1, 0, 66, -1, 77),
+        (struct.pack("<iIIi", 1, 0 if empty_events else 0x12345678, 66, -1) if compact
+         else struct.pack("<iiIiI", 1, 0, 66, -1, 77) if empty_events
+         else struct.pack("<iiiIiI", 1, 1, 0, 66, -1, 77)),
         (struct.pack("<iIiIIii", 1, 0x1234, -1, 0x80000001, 2, -1, -1)
          if all_states else struct.pack("<ii", 0, -1)),
     ])
     nodes = struct.pack("<I", 1) + node + struct.pack("<II", 0, 0)
-    block_offset = (152 + len(nodes) + 15) & ~15
+    header_size = 144 if compact else 152
+    block_offset = (header_size + len(nodes) + 15) & ~15
     # Empty RSZ views share one physical block, including its NULL instance.
     rsz = struct.pack("<4s5I3Q", b"RSZ\0", 16, 0, 1, 0, 0, 48, 64, 56) + bytes(16)
     name = "Fixture\0".encode("utf-16le")
     strings_offset = block_offset + len(rsz)
     other_offset = strings_offset + 4 + len(name)
-    offsets = [152] + [block_offset] * 11 + [strings_offset] + [other_offset] * 5
-    tree = struct.pack("<II18Q", 0x54564842, 0, *offsets) + nodes
+    offsets = [header_size] + [block_offset] * 11 + [strings_offset] + [other_offset] * (4 if compact else 5)
+    tree = struct.pack(f"<II{len(offsets)}Q", 0x54564842, 0, *offsets) + nodes
     tree += bytes(block_offset - len(tree)) + rsz
     tree += struct.pack("<I", len(name) // 2) + name + bytes(16)
-    return struct.pack("<II8x4Q3I", 43, 0x3273666D, 64, 0, 0, 60, 0, 0, 0) + struct.pack("<I", len(tree)) + tree
+    return struct.pack("<II8x4Q3I", version, 0x3273666D, 64, 0, 0, 60, 0, 0, 0) + struct.pack("<I", len(tree)) + tree
 
 
 class FieldTests(unittest.TestCase):
@@ -115,13 +118,42 @@ class MotfsmIntegrationTests(unittest.TestCase):
         reread.read(doc.rebuild())
         self.assertEqual(reread.bhvt.nodes[0].priority, 42)
 
-    def test_rejects_unsupported_version_and_truncation(self):
-        data = bytearray(make_fixture())
-        struct.pack_into("<I", data, 0, 42)
-        with self.assertRaisesRegex(ValueError, "version 42"):
-            MotfsmFile().read(data)
+    def test_version_is_metadata_and_layout_is_structural(self):
+        for compact in (False, True):
+            for version in (31, 43, 999):
+                with self.subTest(compact=compact, version=version):
+                    data = make_fixture(compact=compact, version=version)
+                    doc = MotfsmFile()
+                    doc.read(data)
+                    self.assertEqual(doc.version, version)
+                    self.assertEqual(doc.layout.transition_event_lists, not compact)
+                    self.assertEqual(doc.layout.transition_state_ex, not compact)
+                    self.assertEqual(doc.rebuild(), data)
+                    if compact:
+                        self.assertEqual(doc.bhvt.nodes[0].transitions[0].mStartTransitionEvent.values, [0x12345678])
+
+    def test_malformed_structure_returns_parse_error(self):
         with self.assertRaises(ValueError):
             MotfsmFile().read(make_fixture()[:-1])
+        data = bytearray(make_fixture())
+        struct.pack_into('<I', data, 64 + 152, 0xFFFFFFFF)
+        with self.assertRaisesRegex(ValueError, 'Cannot parse BHVT node layout'):
+            MotfsmFile().read(data)
+        data = bytearray(make_fixture())
+        offset = 64 + struct.unpack_from('<Q', data, 64 + 16)[0]
+        data[offset:offset+4] = b'FAIL'
+        with self.assertRaisesRegex(ValueError, 'Invalid RSZ signature'):
+            MotfsmFile().read(data)
+
+    def test_empty_event_slots_do_not_require_a_version_guess(self):
+        for compact in (False, True):
+            with self.subTest(compact=compact):
+                data = make_fixture(compact=compact, version=999, empty_events=True)
+                doc = MotfsmFile()
+                doc.read(data)
+                self.assertIsNone(doc.layout.transition_event_lists)
+                self.assertEqual(doc.layout.transition_state_ex, not compact)
+                self.assertEqual(doc.rebuild(), data)
 
     def test_all_states_native_columns(self):
         data = make_fixture(all_states=True)
@@ -228,6 +260,30 @@ class MotfsmIntegrationTests(unittest.TestCase):
 
 
 class SharedRszTests(unittest.TestCase):
+    def test_headless_alignment_uses_absolute_file_position(self):
+        fields = [
+            {"name": name, "type": kind, "size": size, "align": align,
+             "array": False, "native": False, "original_type": ""}
+            for name, kind, size, align in [('lead', 'U32', 4, 4), ('vector', 'Vec3', 16, 16)]
+        ]
+        schema = {'1': {'name': 'Fixture', 'crc': '1', 'fields': fields}}
+        payload = struct.pack('<4s5I3Q', b'RSZ\0', 16, 1, 2, 0, 0, 56, 80, 72)
+        payload += struct.pack('<I', 1) + bytes(4) + struct.pack('<4I', 0, 0, 1, 1) + bytes(8)
+        payload += struct.pack('<I4x4f', 7, 1.0, 2.0, 3.0, 0.0)
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'fixture.json'
+            path.write_text(json.dumps(schema), encoding='utf-8')
+            with contextlib.redirect_stdout(io.StringIO()):
+                registry = TypeRegistry(str(path))
+            parsed = RszFile()
+            parsed.type_registry = registry
+            spans = []
+            parsed.field_observer = lambda idx, fd, obj, start, end: spans.append((fd['name'], start, end))
+            parsed.read_headless(payload, validate_type_registry=True, absolute_offset=8)
+            vector = parsed.parsed_elements[1]['vector']
+            self.assertEqual((vector.x, vector.y, vector.z), (1.0, 2.0, 3.0))
+            self.assertEqual(spans, [('lead', 0, 4), ('vector', 8, 24)])
+
     def test_string_count_and_field_spans_use_shared_cursor(self):
         fields = [
             {"name": name, "type": kind, "size": size, "align": align,

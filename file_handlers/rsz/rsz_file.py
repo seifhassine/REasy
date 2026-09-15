@@ -619,11 +619,13 @@ class RszFile:
         self._type_info_cache = {}
         self._registry_validation_enabled = False
         self.field_observer = None
+        self._absolute_offset = 0
 
 
     def _initialize_read_context(self, data: bytes):
         """Reset parsing state shared by full and headless RSZ readers."""
         self.full_data = memoryview(data)
+        self._absolute_offset = 0
         self._current_offset = 0
         self._parser_pool.clear()
         self._prepared_field_defs.clear()
@@ -880,7 +882,7 @@ class RszFile:
         self._rsz_userdata_set = set(self._rsz_userdata_dict.keys())
 
         file_offset_of_data = self._current_offset
-        self._instance_base_mod = file_offset_of_data % 16
+        self._instance_base_mod = (self._absolute_offset + file_offset_of_data) % 16
         
     def _parse_rsz_section(self, data, skip_data = False):
         self._parse_rsz_section_core(data, self.header.data_offset, skip_data)
@@ -930,9 +932,11 @@ class RszFile:
             new_offset = self._current_offset
         self._current_offset = _align(new_offset, 16)
 
-    def read_headless(self, data: bytes, skip_data: bool = False, validate_type_registry: bool = False):
+    def read_headless(self, data: bytes, skip_data: bool = False, validate_type_registry: bool = False,
+                      *, absolute_offset: int = 0):
         """Read a headless RSZ payload without an outer file header/tables."""
         self._initialize_read_context(data)
+        self._absolute_offset = absolute_offset
         self._registry_validation_enabled = validate_type_registry
         self.is_headless = True
         self.header = None

@@ -15,6 +15,7 @@ from file_handlers.motfsm.fields import SCALAR_FORMATS
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.motfsm_handler import MotfsmHandler
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.factory import get_handler_for_data
 
 CORPUS = Path(__file__).parent / 'TESTFILE'
 
@@ -186,6 +187,67 @@ class MotfsmCorpusTests(unittest.TestCase):
         finally:
             viewer.close()
             viewer.deleteLater()
+
+
+@unittest.skipUnless((CORPUS / 'pl0100.motfsm2.31').is_file(), 'DMC5 sample not installed')
+class Dmc5DetectionTests(unittest.TestCase):
+    def test_detects_layout_and_registry_without_filename_hint(self):
+        source = (CORPUS / 'pl0100.motfsm2.31').read_bytes()
+        handler = get_handler_for_data(source, 'renamed.bin')
+        handler.read(source)
+        doc = handler.motfsm
+        self.assertEqual(doc.node_count, 1543)
+        self.assertFalse(doc.layout.transition_event_lists)
+        self.assertFalse(doc.layout.transition_state_ex)
+        self.assertEqual(Path(doc.type_registry.json_path).name, 'rszdmc5.json')
+        self.assertEqual(doc.rebuild(), source)
+
+    def test_affected_blocks_report_type_details(self):
+        doc = MotfsmFile()
+        doc.read((CORPUS / 'pl0100.motfsm2.31').read_bytes())
+        for name in ('actions', 'conditions', 'expression_tree_conditions'):
+            with self.subTest(block=name), self.assertRaisesRegex(ValueError, 'RSZ type/CRC mismatches.*rszdmc5.json'):
+                doc.rsz_blocks.get_block(name).get_instance(1)
+
+    def test_parseable_blocks_and_node_edit_roundtrip(self):
+        path = CORPUS / 'pl0100.motfsm2.31'
+        source = path.read_bytes()
+        doc = MotfsmFile()
+        doc.read(source)
+        expected = bytearray(source)
+        checks = []
+        for name in BLOCK_NAMES:
+            if name in ('actions', 'conditions', 'expression_tree_conditions'):
+                continue  # Their incompatible type definitions are tested separately.
+            block = doc.rsz_blocks.get_block(name)
+            selected = None
+            for index in range(1, block.instance_count):
+                instance = block.get_instance(index)
+                for field in instance.fields:
+                    if field.binding is not None and field.binding.type_name == 'bool' and selected is None:
+                        selected = (index, field.name, field.binding)
+            if selected:
+                index, field_name, binding = selected
+                doc.edit_field(binding, not binding.value)
+                struct.pack_into('<?', expected, binding.offset, binding.value)
+                checks.append((name, index, field_name, binding.value))
+        priority = doc.bindings.get(doc.bhvt.nodes[0], 'priority')
+        doc.edit_field(priority, priority.value ^ 1)
+        struct.pack_into('<i', expected, priority.offset, priority.value)
+        output = doc.rebuild()
+        self.assertEqual(output, bytes(expected))
+        with tempfile.TemporaryDirectory(prefix='reasy-dmc5-test-') as folder:
+            saved = Path(folder) / 'renamed.bin'
+            saved.write_bytes(output)
+            reread = MotfsmFile()
+            reread.read(saved.read_bytes())
+            self.assertEqual(reread.bhvt.nodes[0].priority, priority.value)
+            for name, index, field_name, value in checks:
+                instance = reread.rsz_blocks.get_block(name).get_instance(index)
+                field = next(f for f in instance.fields if f.name == field_name)
+                self.assertEqual(field.value, value)
+            self.assertEqual(reread.rebuild(), output)
+        self.assertEqual(path.read_bytes(), source)
 
 
 if __name__ == '__main__':

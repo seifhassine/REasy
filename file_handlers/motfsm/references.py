@@ -1,4 +1,4 @@
-"""Typed MHRise BHVT references, resolved through native identity tables."""
+"""Typed BHVT references, resolved through native identity tables."""
 
 
 class References:
@@ -65,7 +65,7 @@ class References:
                 block = self.document.rsz_blocks.get_block(block_name)
                 for object_index, instance_index in enumerate(block.object_table):
                     fields = block.file.parsed_elements[instance_index]
-                    # MHRise's via.behaviortree.Action base field from its dump.
+                    # via.behaviortree.Action's base ID field in the type dump.
                     action_id = fields["v1_ID"].value
                     key = (action_id, extensions[object_index])
                     if key in identities:

@@ -1,22 +1,20 @@
-"""MHRise v43 MOTFSM container and BHVT layout."""
-from dataclasses import dataclass, field
-from functools import lru_cache
-from pathlib import Path
+"""MOTFSM containers with structural BHVT layout detection."""
+from dataclasses import dataclass, field, replace
 import struct
 
-from utils.app_paths import resource_path
-from utils.type_registry import TypeRegistry
 from .fields import FieldBindings, SCALAR_FORMATS
 from .rsz_adapter import RSZBlocks, BLOCK_NAMES
 from .references import References
+from .registry_detection import detect_registry
 
 MOTFSM_MAGIC = 0x3273666D
 BHVT_MAGIC = 0x54564842
 
 
-@lru_cache(maxsize=4)
-def _load_registry(path, modified_ns, size):
-    return TypeRegistry(path)
+@dataclass(frozen=True)
+class NodeLayout:
+    transition_event_lists: bool | None
+    transition_state_ex: bool
 
 
 @dataclass
@@ -153,7 +151,6 @@ class _Reader:
 
 class MotfsmFile:
     EXTENSION = ".motfsm2"
-    VERSION = 43
 
     def __init__(self):
         self.source = b""
@@ -163,6 +160,8 @@ class MotfsmFile:
         self.bindings = FieldBindings(b"")
         self._registry_path = ""
         self._type_registry = None
+        self._registry_detected = False
+        self.layout = None
         self.references = References(self)
 
     @staticmethod
@@ -172,16 +171,13 @@ class MotfsmFile:
     def set_rsz_type_info_path(self, path):
         self._registry_path = str(path)
         self._type_registry = None
+        self._registry_detected = False
 
     @property
     def type_registry(self):
-        if self._type_registry is None:
-            path = Path(self._registry_path) if self._registry_path else Path(
-                resource_path("resources/data/dumps/rszmhrise.json", required=True)
-            )
-            path = path.resolve()
-            stat = path.stat()
-            self._type_registry = _load_registry(str(path), stat.st_mtime_ns, stat.st_size)
+        if not self._registry_detected:
+            self._type_registry = detect_registry(self.source, self.rsz_blocks, self._registry_path)
+            self._registry_detected = True
         return self._type_registry
 
     def read(self, data):
@@ -189,10 +185,10 @@ class MotfsmFile:
             raise ValueError("Invalid MOTFSM header")
         self.source = bytes(data)
         self.bindings = FieldBindings(self.source)
+        self._type_registry = None
+        self._registry_detected = False
         header = _Reader(self, 0, len(data))
         self.version, magic = header.read("II")
-        if self.version != self.VERSION:
-            raise ValueError(f"Unsupported MOTFSM version {self.version}; expected MHRise v43")
         header.read("Q")
         (self.tree_data_offset, self.transition_map_tbl_offset,
          self.transition_data_tbl_offset, self.tree_info_ptr) = header.read("4Q")
@@ -204,18 +200,52 @@ class MotfsmFile:
         if reader.read("I") != BHVT_MAGIC:
             raise ValueError("Invalid BHVT magic")
         reader.read("I")
+        node_offset = struct.unpack_from('<Q', self.source, reader.pos)[0]
+        if node_offset % 8 or node_offset < 8 + 17 * 8 or node_offset > self.tree_data_size:
+            raise ValueError("Invalid BHVT header extent")
+        offset_count = (node_offset - 8) // 8
         names = ("nodes",) + BLOCK_NAMES + (
             "strings", "resource_paths", "userdata_paths", "variables",
-            "base_variables", "reference_prefab_game_objects",
+            "base_variables",
         )
-        offsets = {name: self.tree_data_offset + reader.read("Q") for name in names}
+        if offset_count >= 18:
+            names += ("reference_prefab_game_objects",)
+        names += tuple(f"section_{i}" for i in range(18, offset_count))
+        relative_offsets = {name: reader.read("Q") for name in names}
+        offsets = {name: self.tree_data_offset + offset for name, offset in relative_offsets.items() if offset}
+        if any(name not in offsets for name in ("nodes", "strings") + BLOCK_NAMES):
+            raise ValueError("Missing BHVT node, string or RSZ section")
         if any(not reader.pos <= offset < tree_end for offset in offsets.values()):
             raise ValueError("BHVT section offset outside tree")
         self.bhvt = BHVT(self.tree_data_offset, offsets)
         section_starts = sorted(set(offsets.values()) | {tree_end})
         ends = {offset: section_starts[index + 1] for index, offset in enumerate(section_starts[:-1])}
         self.rsz_blocks = RSZBlocks(self, [offsets[name] for name in BLOCK_NAMES], ends)
-        self._read_nodes(_Reader(self, offsets["nodes"], ends[offsets["nodes"]]))
+        candidates, failures = [], []
+        for event_lists in (True, False):
+            self.bindings = FieldBindings(self.source)
+            self.bhvt = BHVT(self.tree_data_offset, offsets)
+            layout = NodeLayout(event_lists, offset_count >= 18)
+            try:
+                self._read_nodes(_Reader(self, offsets["nodes"], ends[offsets["nodes"]]), layout)
+                candidates.append((layout, self.bhvt, self.bindings))
+            except (ValueError, struct.error) as exc:
+                failures.append(f"{'list' if event_lists else 'scalar'} events: {exc}")
+        if not candidates:
+            raise ValueError("Cannot parse BHVT node layout: " + "; ".join(failures))
+        if len(candidates) > 1:
+            # Zero event slots encode both an empty list and a null scalar hash.
+            # Accept this only when every other parsed value agrees; preserve the
+            # empty slots without claiming to know their unobservable encoding.
+            scalar_nodes = [replace(node, transitions=[replace(transition,
+                mStartTransitionEvent=IndexList([] if transition.mStartTransitionEvent.values == [0]
+                    else transition.mStartTransitionEvent.values)) for transition in node.transitions])
+                for node in candidates[1][1].nodes]
+            if candidates[0][1].nodes != scalar_nodes:
+                raise ValueError("Ambiguous BHVT node layout")
+            layout, tree, bindings = candidates[0]
+            candidates = [(replace(layout, transition_event_lists=None), tree, bindings)]
+        self.layout, self.bhvt, self.bindings = candidates[0]
         self.references.invalidate()
         return True
 
@@ -232,7 +262,7 @@ class MotfsmFile:
             pass
         return self.source[begin:string.pos - 2].decode("utf-16le")
 
-    def _read_nodes(self, reader):
+    def _read_nodes(self, reader, layout):
         for _ in range(reader.count(48)):
             node = BHVTNode()
             reader.columns([node], (("id_hash", "u32"), ("ex_id", "u32")))
@@ -258,11 +288,16 @@ class MotfsmFile:
                 state.mStates.values = reader.list("s32")
             reader.columns(node.states, (("mTransitions", "u32"), ("TransitionConditions", "s32"),
                 ("TransitionMaps", "u32"), ("mTransitionAttributes", "u32"), ("mStatesEx", "u32")))
-            node.transitions = [Transition() for _ in range(reader.count(16))]
+            node.transitions = [Transition() for _ in range(reader.count(12))]
             for transition in node.transitions:
-                transition.mStartTransitionEvent.values = reader.list("s32")
-            reader.columns(node.transitions, (("mStartState", "u32"), ("mStartStateTransition", "s32"),
-                                               ("mStartStateEx", "u32")))
+                if layout.transition_event_lists:
+                    transition.mStartTransitionEvent.values = reader.list("s32")
+                else:
+                    transition.mStartTransitionEvent.values = [0]
+                    reader.scalar(transition.mStartTransitionEvent.values, 0, "u32")
+            reader.columns(node.transitions, (("mStartState", "u32"), ("mStartStateTransition", "s32")))
+            if layout.transition_state_ex:
+                reader.columns(node.transitions, (("mStartStateEx", "u32"),))
             if not node.has_reference_tree:
                 node.all_states = [AllState() for _ in range(reader.count(20))]
                 reader.columns(node.all_states, (("mAllState", "u32"), ("mAllTransition", "s32"),

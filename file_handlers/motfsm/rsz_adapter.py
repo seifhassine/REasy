@@ -1,7 +1,8 @@
 """MOTFSM views of the shared RSZ reader. No independent field-layout parser."""
 from dataclasses import dataclass
+import struct
 
-from file_handlers.rsz.rsz_file import RszFile
+from file_handlers.rsz.rsz_file import RszFile, TypeRegistryValidationError
 from file_handlers.rsz.utils.rsz_field_utils import VALUE_COMPONENTS
 from .fields import SCALAR_FORMATS
 
@@ -81,18 +82,29 @@ class RSZBlock:
         self.end = end
         self._file = None
         self._instances = {}
+        if end - offset < 8 or document.source[offset:offset + 4] != b'RSZ\0':
+            raise ValueError(f"Invalid RSZ signature in {name} at 0x{offset:X}")
+        version = struct.unpack_from('<I', document.source, offset + 4)[0]
+        if end - offset < (32 if version < 4 else 48):
+            raise ValueError(f"Truncated RSZ header in {name} at 0x{offset:X}")
 
     @property
     def file(self):
         if self._file is None:
-            if self.offset % 16:
-                raise ValueError(f"Unaligned MHRise RSZ block: {self.name}")
             parsed = _ObservedRszFile()
             parsed.type_registry = self.document.type_registry
-            parsed.game_version = "MHRise"
-            parsed.read_headless(
-                self.document.source[self.offset:self.end], validate_type_registry=True,
-            )
+            parsed.game_version = ""
+            try:
+                parsed.read_headless(
+                    self.document.source[self.offset:self.end], validate_type_registry=True,
+                    absolute_offset=self.offset,
+                )
+            except TypeRegistryValidationError as exc:
+                details = '; '.join(exc.issues[:3])
+                raise ValueError(f"{self.name}: {len(exc.issues)} RSZ type/CRC mismatches in "
+                                 f"{parsed.type_registry.json_path}: {details}") from exc
+            except (struct.error, IndexError) as exc:
+                raise ValueError(f"Cannot parse {self.name} RSZ at 0x{self.offset:X}: {exc}") from exc
             if parsed._current_offset != parsed.rsz_header.data_offset:
                 raise ValueError(f"RSZ data offset mismatch in {self.name}")
             if any(not 0 <= i < len(parsed.instance_infos) for i in parsed.object_table):
@@ -111,7 +123,7 @@ class RSZBlock:
     def get_class_name(self, index):
         if not 0 <= index < self.instance_count:
             raise IndexError(f"Invalid {self.name} instance: {index}")
-        if index == 0:
+        if index == 0 or self.file.instance_infos[index].type_id == 0:
             return "NULL"
         return self.document.type_registry.get_type_info(self.file.instance_infos[index].type_id)["name"]
 
@@ -127,7 +139,7 @@ class RSZBlock:
         span = parsed.instance_spans.get(index)
         start, end = (data_base + span[0], data_base + span[1]) if span else (None, None)
         fields = []
-        if index and not userdata:
+        if index and type_id and not userdata:
             definition = self.document.type_registry.get_type_info(type_id)
             for fd in definition.get("fields", []):
                 value = parsed.parsed_elements[index][fd["name"]]

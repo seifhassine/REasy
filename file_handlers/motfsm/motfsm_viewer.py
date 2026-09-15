@@ -227,8 +227,13 @@ class MotfsmViewer(QWidget):
                 item.summary = lambda transition=transition, i=i: (f"[{i}] → " + self._node_name(
                     self.motfsm.references.node_index(transition.mStartState, transition.mStartStateEx)), "")
                 item.update_summary()
-                self._list(item, "mStartTransitionEvent", transition.mStartTransitionEvent.values, "transition_events")
-                self._fields(item, transition, ("mStartState", "mStartStateTransition", "mStartStateEx"))
+                if self.motfsm.layout.transition_event_lists is not False:
+                    self._list(item, "mStartTransitionEvent", transition.mStartTransitionEvent.values, "transition_events")
+                else:
+                    self._field(item, transition.mStartTransitionEvent.values, 0, name="mStartTransitionEvent")
+                self._fields(item, transition, ("mStartState", "mStartStateTransition"))
+                if self.motfsm.layout.transition_state_ex:
+                    self._field(item, transition, "mStartStateEx")
                 self._node_link(item, transition, "mStartState", "mStartStateEx")
                 self._object_link(item, "conditions", lambda transition=transition: transition.mStartStateTransition)
         if node.is_fsm:
