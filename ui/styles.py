@@ -52,16 +52,19 @@ def get_main_stylesheet(colors: dict) -> str:
         QMainWindow, QDialog, QWidget {{
             background-color: {colors['window_bg']}; color: {colors['text']};
         }}
-        QTreeView, QTreeWidget, QTableView, QListWidget {{
+        QTreeView, QTreeWidget, QTableView, QListView, QListWidget {{
             background-color: {colors['sidebar_bg']}; color: {colors['text']};
             border: 1px solid {colors['border_subtle']};
             outline: none;
+            selection-color: {colors['text']};
+            selection-background-color: {colors['selection']};
         }}
         QTreeView::item:hover, QTreeWidget::item:hover, QTableView::item:hover,
-        QListWidget::item:hover {{ background-color: {colors['surface_hover']}; }}
+        QListView::item:hover, QListWidget::item:hover {{ background-color: {colors['surface_hover']}; }}
         QTreeView::item:selected, QTreeWidget::item:selected,
-        QTableView::item:selected, QListWidget::item:selected {{
+        QTableView::item:selected, QListView::item:selected, QListWidget::item:selected {{
             background-color: {colors['selection']};
+            color: {colors['text']};
         }}
         QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox {{
             background-color: {colors['input_bg']}; color: {colors['text']};

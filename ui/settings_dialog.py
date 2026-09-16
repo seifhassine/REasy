@@ -142,7 +142,7 @@ class SettingsDialog(QDialog):
         general_layout.addLayout(theme_color_layout)
 
         self.debug_box = QCheckBox(self.tr("Show Debug Console"))
-        self.debug_box.setChecked(self.settings.get("show_debug_console", True))
+        self.debug_box.setChecked(self.settings.get("show_debug_console", False))
         general_layout.addWidget(self.debug_box)
 
         self.rsz_advanced_box = QCheckBox(

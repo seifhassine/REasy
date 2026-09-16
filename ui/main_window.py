@@ -11,7 +11,6 @@ from ui.file_tab import FileTab, UNSAVED_CHANGES_STR
 from ui.guid_converter import create_guid_converter_dialog
 from ui.about_dialog import AboutDialog
 from ui.outdated_files_dialog import OutdatedFilesDialog
-from ui.update_notification import UpdateNotificationManager
 from ui.rsz_differ_dialog import RszDifferDialog
 from ui.file_list_generator_dialog import FileListGeneratorDialog
 from ui.rsz_enum_prompt import RszEnumPromptController
@@ -27,7 +26,6 @@ from PySide6.QtCore import (
     Qt,
     QTimer,
     QUrl,
-    QSize,
 )
 from PySide6.QtGui import (
     QIcon,
@@ -35,9 +33,6 @@ from PySide6.QtGui import (
     QKeySequence,
     QDesktopServices,
     QColor,
-    QPainter,
-    QPen,
-    QPixmap,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -54,16 +49,14 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QListWidget,
     QListWidgetItem,
-    QToolButton,
     QDockWidget,
 )
 
 from ui.console_logger import ConsoleWidget, ConsoleRedirector
-from ui.ai.chat_dock import AiChatDock
 from ui.breadcrumbs import BreadcrumbBar
 from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 from ui.editor_groups import EditorGroupHost
-from ui.directory_search import search_directory_for_type
+from ui.directory_search import search_project
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.homepage import HomePageStack, HomePageWidget
 from ui.scene.opengl_setup import create_surface_anchor
@@ -165,9 +158,6 @@ class REasyEditorApp(QMainWindow):
         self.scene_menu = None
         self.scenes = _LazySceneController(self)
 
-        self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
-        self._update_menu = None
-
         self.highlight_menu_controller = HighlightMenuController(self)
 
         self._create_menus()
@@ -190,86 +180,31 @@ class REasyEditorApp(QMainWindow):
         self.output_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self.output_dock.setWidget(self.console_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.output_dock)
-        self.output_dock.setVisible(self.settings.get("show_debug_console", True))
-        self.output_dock.visibilityChanged.connect(self.output_action.setChecked)
-        self.output_dock.visibilityChanged.connect(
-            lambda visible: self.settings.__setitem__("show_debug_console", bool(visible))
-        )
+        output_visible = bool(self.settings.get("show_debug_console", False))
+        self.output_dock.setVisible(output_visible)
 
         self.project_workspace = ProjectWorkspaceController(
             self, self.notebook, self.tabs, self.editor_groups
         )
-        self.ai_chat_dock = AiChatDock(self)
-        self.addDockWidget(Qt.RightDockWidgetArea, self.ai_chat_dock)
-        self._ai_chat_visibility_tracking = False
-        ai_chat_visible = bool(self.settings.get("show_ai_chat", False))
-        ai_chat_action = QAction(self.tr("AI Assistant"), self)
-        self.ai_chat_action = ai_chat_action
-        ai_chat_action.setText(self.tr("AI Assistant"))
-        ai_chat_action.setObjectName("view_ai_chat")
-        ai_chat_action.setCheckable(True)
-        ai_chat_action.setChecked(ai_chat_visible)
-        ai_chat_action.setShortcut(
-            QKeySequence(
-                self.settings.get("keyboard_shortcuts", {}).get(
-                    "view_ai_chat",
-                    DEFAULT_SETTINGS["keyboard_shortcuts"]["view_ai_chat"],
-                )
-            )
-        )
-        self.view_menu.addSeparator()
-        self.view_menu.addAction(ai_chat_action)
-        self.ai_chat_dock.setVisible(ai_chat_visible)
-        ai_chat_action.triggered.connect(
-            self._on_ai_chat_action_triggered
-        )
-
-        self.ai_chat_button = QToolButton(self.menuBar())
-        self.ai_chat_button.setObjectName("aiAssistantMenuButton")
-        self.ai_chat_button.setText(self.tr("AI"))
-        self.ai_chat_button.setAccessibleName(self.tr("AI Assistant"))
-        self.ai_chat_button.setToolTip(
-            self.tr("Show or hide AI Assistant")
-        )
-        self.ai_chat_button.setCheckable(True)
-        self.ai_chat_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.ai_chat_button.setIconSize(QSize(12, 12))
-        self.ai_chat_button.setFixedHeight(18)
-        self.ai_chat_button.setChecked(ai_chat_visible)
-        self.ai_chat_button.clicked.connect(
-            lambda _checked=False: ai_chat_action.trigger()
-        )
-        self.ai_chat_dock.visibilityChanged.connect(
-            self._sync_ai_chat_controls
-        )
-        self.menuBar().setCornerWidget(
-            self.ai_chat_button,
-            Qt.TopRightCorner,
-        )
-        self._apply_ai_menu_button_style()
-        self._ai_chat_visibility_tracking = True
-        app = QApplication.instance()
-        if app is not None:
-            app.aboutToQuit.connect(
-                self._stop_ai_chat_visibility_tracking
-            )
-
-        if self.settings.get("show_debug_console", True):
-            sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
-            sys.stderr = ConsoleRedirector(self.console_widget, sys.stderr)
-            print("Debug console started.")
+        self._stdout_redirector = ConsoleRedirector(self.console_widget, sys.stdout)
+        self._stderr_redirector = ConsoleRedirector(self.console_widget, sys.stderr)
+        sys.stdout = self._stdout_redirector
+        sys.stderr = self._stderr_redirector
 
         self.resize(1160, 920)
 
         self._apply_style(self._build_theme_colors())
         self._restore_window_layout()
+        self.output_dock.setVisible(output_visible)
+        self.output_action.setChecked(output_visible)
+        self.output_dock.visibilityChanged.connect(self.output_action.setChecked)
+        self.output_dock.visibilityChanged.connect(
+            lambda visible: self.settings.__setitem__("show_debug_console", bool(visible))
+        )
         QTimer.singleShot(120, self._restore_workbench_session)
 
         self.setAcceptDrops(True)
 
-        last_seen = self.settings.get("last_seen_version", "")
-        if last_seen != CURRENT_VERSION:
-            QTimer.singleShot(600, self._show_changelog_if_needed)
         self._refresh_homepage()
 
     def _refresh_homepage(self):
@@ -360,16 +295,9 @@ class REasyEditorApp(QMainWindow):
     def _internal_drag(self, event):
         return event.mimeData().hasFormat("application/x-qabstractitemmodeldatalist")
 
-    def _show_changelog_if_needed(self):
-        last_seen = self.settings.get("last_seen_version", "")
-        if last_seen != CURRENT_VERSION:
-            self.show_changelog()
-
     def show_changelog(self):
         dialog = ChangelogDialog(self, CURRENT_VERSION)
         dialog.exec()
-        self.settings["last_seen_version"] = CURRENT_VERSION
-        save_settings(self.settings)
 
     def dragEnterEvent(self, event):
         if self._internal_drag(event):
@@ -410,7 +338,6 @@ class REasyEditorApp(QMainWindow):
 
     def _create_menus(self):
         menubar = self.menuBar()
-        self.update_notification.update_update_menu(force=True, menubar=menubar)
         configured_shortcuts = self.settings.get("keyboard_shortcuts", {})
 
         def shortcut(name):
@@ -476,30 +403,7 @@ class REasyEditorApp(QMainWindow):
         find_menu = menubar.addMenu(self.tr("Find"))
 
         add_action(find_menu, self.tr("Find"), self.open_find_dialog, "find_search")
-        add_action(
-            find_menu,
-            self.tr("Search Directory for GUID"),
-            self.search_directory_for_guid,
-            "find_search_guid",
-        )
-        add_action(
-            find_menu,
-            self.tr("Search Directory for Text"),
-            self.search_directory_for_text,
-            "find_search_text",
-        )
-        add_action(
-            find_menu,
-            self.tr("Search Directory for Number"),
-            self.search_directory_for_number,
-            "find_search_number",
-        )
-        add_action(
-            find_menu,
-            self.tr("Search Directory for Hex"),
-            self.search_directory_for_hex,
-            "find_search_hex",
-        )
+        add_action(find_menu, self.tr("Project Search…"), self.open_project_search, "find_project_search")
         add_action(
             find_menu,
             self.tr("Find/Replace RSZ Field Value"),
@@ -518,12 +422,12 @@ class REasyEditorApp(QMainWindow):
             view_menu,
             self.tr("Toggle Output"),
             lambda: self.toggle_debug_console(
-                not self.settings.get("show_debug_console", True)
+                not self.output_dock.isVisible()
             ),
             "view_debug_console",
         )
         self.output_action.setCheckable(True)
-        self.output_action.setChecked(bool(self.settings.get("show_debug_console", True)))
+        self.output_action.setChecked(bool(self.settings.get("show_debug_console", False)))
         view_menu.addSeparator()
         add_action(
             view_menu,
@@ -539,35 +443,29 @@ class REasyEditorApp(QMainWindow):
         )
 
         self.scene_menu = menubar.addMenu(self.tr("Scene"))
+        self.scene_menu.menuAction().setVisible(False)
         self.scene_menu.aboutToShow.connect(lambda: self.scenes.populate_scene_menu(self.scene_menu))
 
         tools_menu = menubar.addMenu(self.tr("Tools"))
-        add_action(tools_menu, self.tr("GUID Converter"), self.open_guid_converter)
-        add_action(tools_menu, self.tr("Hash Calculator"), self.open_hash_calculator)
-        add_action(
-            tools_menu,
-            self.tr("Outdated Files Detector"),
-            self.open_outdated_files_detector,
-        )
         add_action(tools_menu, self.tr("RSZ Diff Viewer"), self.open_rsz_differ)
         add_action(tools_menu, self.tr("PAK Browser"), self.open_pak_browser)
-        add_action(tools_menu, self.tr("File List Generator"), self.open_file_list_generator)
-
-        tools_menu.addSeparator()
 
         add_action(
             tools_menu,
             self.tr("CSV Extractor (RSZ Data Matcher)"),
             self.open_rsz_csv_extractor,
         )
+        tools_menu.addSeparator()
+        advanced = tools_menu.addMenu(self.tr("Advanced Tools"))
+        add_action(advanced, self.tr("GUID Converter"), self.open_guid_converter)
+        add_action(advanced, self.tr("Hash Calculator"), self.open_hash_calculator)
+        add_action(advanced, self.tr("File List Generator"), self.open_file_list_generator)
+        add_action(advanced, self.tr("Outdated Files Detector"), self.open_outdated_files_detector)
 
         help_menu = menubar.addMenu(self.tr("Help"))
         add_action(help_menu, self.tr("About"), self.show_about)
         add_action(help_menu, self.tr("What's new?"), self.show_changelog)
         add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki)
-
-        donate_menu = menubar.addMenu(self.tr("Donate"))
-        add_action(donate_menu, self.tr("Support REasy"), self.show_donate_dialog)
 
         self.highlight_menu_controller.create_menu(menubar)
 
@@ -761,105 +659,15 @@ class REasyEditorApp(QMainWindow):
     def _apply_style(self, colors):
         self.setStyleSheet(get_main_stylesheet(colors))
         self.home_widget.set_theme(colors, self._theme_accent_color().name())
-        self._apply_ai_menu_button_style()
-        if hasattr(self, "ai_chat_dock"):
-            self.ai_chat_dock.apply_theme()
         if hasattr(self, "project_workspace"):
             self.project_workspace.apply_style()
 
-    def _apply_ai_menu_button_style(self):
-        if not hasattr(self, "ai_chat_button"):
-            return
-        accent = self._theme_accent_color().name()
-        self.ai_chat_button.setIcon(self._make_ai_bot_icon(accent))
-        self.ai_chat_button.setStyleSheet(
-            f"""
-            QToolButton#aiAssistantMenuButton {{
-                background: transparent;
-                color: #c4c4c4;
-                border: 1px solid transparent;
-                border-radius: 6px;
-                padding: 0px 8px;
-                margin: 0px 6px 0px 4px;
-                min-height: 0px;
-                font-weight: 600;
-            }}
-            QToolButton#aiAssistantMenuButton:hover,
-            QToolButton#aiAssistantMenuButton:checked {{
-                background: {accent};
-                color: white;
-                border-color: {accent};
-            }}
-            """
-        )
-
-    @staticmethod
-    def _make_ai_bot_icon(accent: str) -> QIcon:
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        outline = QPen(QColor("#c4cdd8"), 1.2)
-        painter.setPen(outline)
-        painter.setBrush(QColor("#1f2b38"))
-        painter.drawRoundedRect(3, 5, 10, 8, 2, 2)
-        painter.drawLine(8, 2, 8, 5)
-        painter.drawEllipse(7, 1, 2, 2)
-        painter.drawLine(2, 9, 3, 9)
-        painter.drawLine(13, 9, 14, 9)
-
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(accent))
-        painter.drawEllipse(5, 8, 2, 2)
-        painter.drawEllipse(9, 8, 2, 2)
-        painter.end()
-        return QIcon(pixmap)
-
-    def _on_ai_chat_action_triggered(self, visible: bool):
-        visible = bool(visible)
-        self.ai_chat_dock.setVisible(visible)
-        self._sync_ai_chat_controls(visible)
-
-    def _sync_ai_chat_controls(self, visible: bool):
-        visible = bool(visible)
-        if self.ai_chat_button.isChecked() != visible:
-            self.ai_chat_button.setChecked(visible)
-        if self.ai_chat_action.isChecked() != visible:
-            self.ai_chat_action.setChecked(visible)
-        if (
-            self._ai_chat_visibility_tracking
-            and self.settings.get("show_ai_chat", False) != visible
-        ):
-            self.settings["show_ai_chat"] = visible
-            self.save_settings()
-
-    def _stop_ai_chat_visibility_tracking(self):
-        self._ai_chat_visibility_tracking = False
-
     def toggle_debug_console(self, show: bool):
-        if hasattr(self, "console_widget"):
-            if hasattr(self, "output_dock"):
-                self.output_dock.setVisible(show)
-                if show:
-                    self.output_dock.raise_()
-            else:
-                self.console_widget.setVisible(show)
-
-            if show:
-                if isinstance(sys.stdout, ConsoleRedirector):
-                    return
-                sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
-                sys.stderr = ConsoleRedirector(self.console_widget, sys.stderr)
-                print("Debug console started.")
-            else:
-                if hasattr(sys.stdout, "original_stream"):
-                    sys.stdout = sys.stdout.original_stream
-                if hasattr(sys.stderr, "original_stream"):
-                    sys.stderr = sys.stderr.original_stream
-
-            self.settings["show_debug_console"] = show
-            self.save_settings()
+        self.output_dock.setVisible(show)
+        if show:
+            self.output_dock.raise_()
+        self.settings["show_debug_console"] = show
+        self.save_settings()
 
     def split_active_editor(self, orientation=Qt.Horizontal):
         page = self.editor_groups.active_page()
@@ -892,7 +700,6 @@ class REasyEditorApp(QMainWindow):
             "session": self._capture_workbench_session(),
         })
         self.settings["show_debug_console"] = bool(self.output_dock.isVisible())
-        self.settings["show_ai_chat"] = bool(self.ai_chat_dock.isVisible())
         self.save_settings()
 
     def _capture_workbench_session(self) -> dict:
@@ -1102,14 +909,15 @@ class REasyEditorApp(QMainWindow):
                 self._record_tabs_closed_on_shutdown()
         else:
             self._record_tabs_closed_on_shutdown()
-        self._stop_ai_chat_visibility_tracking()
-        if hasattr(self, "ai_chat_dock"):
-            self.ai_chat_dock.shutdown()
         for tab in list(self.tabs.values()):
             try:
                 tab.cleanup()
             except Exception as exc:
                 print(f"Warning: Error cleaning up tab during shutdown: {exc}")
+        if sys.stdout is self._stdout_redirector:
+            sys.stdout = self._stdout_redirector.original_stream
+        if sys.stderr is self._stderr_redirector:
+            sys.stderr = self._stderr_redirector.original_stream
         event.accept()
 
     def update_from_app_settings(self):
@@ -1163,17 +971,8 @@ class REasyEditorApp(QMainWindow):
             "_rsz_differ_dialog", lambda: RszDifferDialog(self, game_version, json_path)
         )
 
-    def search_directory_for_number(self):
-        search_directory_for_type(self, 'number')
-
-    def search_directory_for_text(self):
-        search_directory_for_type(self, 'text')
-
-    def search_directory_for_guid(self):
-        search_directory_for_type(self, 'guid')
-
-    def search_directory_for_hex(self):
-        search_directory_for_type(self, 'hex')
+    def open_project_search(self):
+        search_project(self)
 
     def open_rsz_field_value_finder(self):
         """Open the RSZ field value finder window."""
@@ -1652,27 +1451,6 @@ class REasyEditorApp(QMainWindow):
 
     def show_wiki(self):
         QDesktopServices.openUrl(QUrl("https://github.com/seifhassine/REasy-Wiki"))
-
-    def show_donate_dialog(self):
-        dialog = QDialog(self)
-        dialog.setWindowTitle(self.tr("Support REasy Editor"))
-        layout = QVBoxLayout(dialog)
-
-        thank_you_label = QLabel(self.tr("Thank you for your feedback and support!\nYour contributions help keep this project going."))
-        thank_you_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(thank_you_label)
-
-        link_label = QLabel('<a href="https://linktr.ee/seifhassine">https://linktr.ee/seifhassine</a>')
-        link_label.setAlignment(Qt.AlignCenter)
-        link_label.setOpenExternalLinks(True)
-        layout.addWidget(link_label)
-
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok)
-        buttons.accepted.connect(dialog.accept)
-        layout.addWidget(buttons)
-
-        dialog.setMinimumWidth(300)
-        dialog.exec()
 
     def on_restore_backup(self):
         """Show dialog with available backups for the current file"""

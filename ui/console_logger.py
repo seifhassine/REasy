@@ -35,8 +35,6 @@ class ConsoleWidget(QPlainTextEdit):
         self.setContentsMargins(0, 0, 0, 0)  
         self.setStyleSheet("""
             QPlainTextEdit {
-                background-color: #000000;
-                color: #00FF00;
                 font-family: 'Consolas', 'Courier New', monospace;
                 font-size: 10pt;
                 margin: 0;

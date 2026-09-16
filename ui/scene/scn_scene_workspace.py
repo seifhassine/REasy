@@ -1294,8 +1294,13 @@ class ScnSceneController:
 
     def refresh_actions(self) -> None:
         menu = getattr(self.app, "scene_menu", None)
-        if menu is not None and menu.isVisible():
-            self.populate_scene_menu(menu)
+        if menu is not None:
+            tab = self.app.get_active_tab()
+            document = getattr(getattr(tab, "handler", None), "rsz_file", None)
+            relevant = isinstance(tab, ScnSceneTab) or bool(getattr(document, "is_scn", False))
+            menu.menuAction().setVisible(relevant)
+            if menu.isVisible():
+                self.populate_scene_menu(menu)
 
     def refresh_buttons(self) -> None:
         for tab in self.app.tabs.values():

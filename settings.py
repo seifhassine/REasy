@@ -2,41 +2,16 @@ import os
 import json
 from copy import deepcopy
 
-from services.ai.chat_service import (
-    AI_PROVIDER_CONFIGS,
-    DEEPSEEK_PROVIDER,
-    LOCAL_PROVIDER,
-    get_ai_provider_config,
-    normalize_context_window,
-    thinking_config_for_model,
-)
-
 SETTINGS_FILE = os.path.join(os.getcwd(), "settings.json")
-AI_FILE_ACTION_MODES = frozenset({"review", "request", "scoped_autopilot"})
 SHORTCUT_SCHEME_VERSION = 2
 LEGACY_SHORTCUT_DEFAULTS = {
-    "find_search_guid": "Ctrl+G",
-    "find_search_text": "Ctrl+T",
-    "find_search_number": "Ctrl+N",
     "view_prev_tab": "PgDown",
     "view_next_tab": "PgUp",
     "view_debug_console": "Ctrl+Shift+D",
-    "view_ai_chat": "Ctrl+Shift+A",
 }
 DEFAULT_SETTINGS = {
     "rcol_json_path": "", 
-    "show_debug_console": True,
-    "show_ai_chat": True,
-    "ai_provider": DEEPSEEK_PROVIDER.id,
-    "deepseek_model": DEEPSEEK_PROVIDER.default_model,
-    "deepseek_context_window_tokens": 0,
-    "deepseek_thinking_mode": "enabled",
-    "deepseek_reasoning_effort": "high",
-    "local_ai_endpoint": LOCAL_PROVIDER.default_endpoint,
-    "local_ai_model": LOCAL_PROVIDER.default_model,
-    "local_ai_context_window_tokens": 0,
-    "ai_file_action_mode": "review",
-    "ai_file_autopilot_trash": False,
+    "show_debug_console": False,
     "show_rsz_advanced": True,
     "game_version": "RE4",  # Default game version
     "backup_on_save": True,
@@ -54,15 +29,11 @@ DEFAULT_SETTINGS = {
         "file_close_tab": "Ctrl+W",
         "file_reopen_closed": "Ctrl+Shift+T",
         "find_search": "Ctrl+F",
-        "find_search_guid": "Ctrl+Alt+G",
-        "find_search_text": "Ctrl+Alt+T",
-        "find_search_number": "Ctrl+Alt+N",
-        "find_search_hex": "Ctrl+Alt+H",
+        "find_project_search": "Ctrl+Shift+F",
         "find_rsz_field_value": "Ctrl+Alt+R",
         "view_prev_tab": "Ctrl+PgUp",
         "view_next_tab": "Ctrl+PgDown",
         "view_debug_console": "Ctrl+Shift+U",
-        "view_ai_chat": "Ctrl+Alt+A",
         "editor_split_right": "Ctrl+\\",
         "editor_split_down": "Ctrl+Alt+\\"
     },
@@ -79,7 +50,6 @@ DEFAULT_SETTINGS = {
     "verify_rsz_crc_on_open": True,
     "save_workspace_on_close": True,
     "recently_closed_files": [],
-    "last_seen_version": "",
     "enum_prompt_checked_json_path": "",
     "renderer_texture_quality": "balanced",
     "mesh_viewer_fps_limit": 60,
@@ -102,7 +72,7 @@ def normalize_settings(settings=None):
         normalized["renderer_texture_quality"] = "high"
 
     for key, value in settings.items():
-        if key == "dark_mode":
+        if key in ("dark_mode", "last_seen_version"):
             continue
         if key == "wwise_install_paths":
             normalized[key] = (
@@ -122,7 +92,7 @@ def normalize_settings(settings=None):
                 shortcut_scheme = 1
             legacy_scheme = shortcut_scheme < SHORTCUT_SCHEME_VERSION
             for name, shortcut in value.items():
-                if name == "view_dark_mode":
+                if name in ("view_dark_mode", "view_ai_chat", "find_search_guid", "find_search_text", "find_search_number", "find_search_hex"):
                     continue
                 if legacy_scheme and LEGACY_SHORTCUT_DEFAULTS.get(name) == shortcut:
                     shortcut = DEFAULT_SETTINGS["keyboard_shortcuts"].get(name, shortcut)
@@ -137,58 +107,6 @@ def normalize_settings(settings=None):
 
     normalized["shortcut_scheme_version"] = SHORTCUT_SCHEME_VERSION
 
-    normalized["ai_provider"] = get_ai_provider_config(
-        normalized["ai_provider"]
-    ).id
-    for provider in AI_PROVIDER_CONFIGS.values():
-        normalized[provider.context_setting] = normalize_context_window(
-            normalized[provider.context_setting]
-        )
-        for key, fallback in (
-            (provider.model_setting, provider.default_model),
-            (provider.endpoint_setting, provider.default_endpoint),
-        ):
-            if key is None:
-                continue
-            value = normalized[key]
-            normalized[key] = (
-                value.strip()
-                if isinstance(value, str) and value.strip()
-                else fallback
-            )
-        thinking = thinking_config_for_model(
-            provider,
-            normalized[provider.model_setting],
-        )
-        if thinking is None:
-            continue
-        for key, allowed, fallback in (
-            (
-                provider.thinking_mode_setting,
-                thinking.modes,
-                thinking.default_mode,
-            ),
-            (
-                provider.reasoning_effort_setting,
-                thinking.reasoning_efforts,
-                thinking.default_reasoning_effort,
-            ),
-        ):
-            if key is None:
-                continue
-            value = str(normalized.get(key, "")).strip().casefold()
-            normalized[key] = value if value in allowed else fallback
-    file_action_mode = str(
-        normalized.get("ai_file_action_mode", "review")
-    ).strip().casefold()
-    normalized["ai_file_action_mode"] = (
-        file_action_mode
-        if file_action_mode in AI_FILE_ACTION_MODES
-        else "review"
-    )
-    normalized["ai_file_autopilot_trash"] = (
-        normalized.get("ai_file_autopilot_trash") is True
-    )
     return normalized
 
 

@@ -241,10 +241,9 @@ def _find_resource_in_root(
         return None
 
     entries = _get_dir_entries(dir_path) if cache_entries else os.listdir(dir_path)
-    target_file = next(
-        (os.path.join(dir_path, f) for f in entries if f == base_name or f.startswith(base_name + ".")),
-        None,
-    )
+    exact = next((f for f in entries if f.casefold() == base_name), None)
+    match = exact or next((f for f in entries if f.casefold().startswith(base_name + ".")), None)
+    target_file = os.path.join(dir_path, match) if match else None
     if not target_file:
         return None
 
