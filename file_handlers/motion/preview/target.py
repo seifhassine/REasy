@@ -33,6 +33,7 @@ class RigPreviewTarget:
     mesh: object | None = None
     handler: MeshHandler | None = None
     parts: tuple[PreviewMeshPart, ...] = ()
+    default_weapon_hold: tuple = ()
 
 
 def motion_target_from_mesh_handler(

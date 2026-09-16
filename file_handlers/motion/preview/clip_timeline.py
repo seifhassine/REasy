@@ -100,6 +100,7 @@ class ClipTimelineView(QAbstractScrollArea):
     def __init__(self, commit, parent=None):
         super().__init__(parent)
         self.commit = commit
+        self.read_only = False
         self.lanes = []
         self.end_frame = 1.0
         self.playhead = 0.0
@@ -224,7 +225,7 @@ class ClipTimelineView(QAbstractScrollArea):
         self.selection_changed.emit(lane, key)
         if x >= self.LABEL_WIDTH:
             mode = 'key' if key else 'start' if abs(x-self.x_at(lane.prop.start_frame)) <= 6 else 'end' if abs(x-self.x_at(lane.prop.end_frame)) <= 6 else 'move'
-            if key is not None or self.x_at(lane.prop.start_frame)-6 <= x <= self.x_at(lane.prop.end_frame)+6:
+            if not self.read_only and (key is not None or self.x_at(lane.prop.start_frame)-6 <= x <= self.x_at(lane.prop.end_frame)+6):
                 self.drag = ClipEditDrag(lane, key, mode, self.frame_at(x))
             else:
                 self.seeking = True

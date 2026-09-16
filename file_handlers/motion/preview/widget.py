@@ -77,6 +77,7 @@ class MotListPreviewWidget(QWidget):
         self._target: RigPreviewTarget | None = None
         self._target_material_session: MeshMaterialSession | None = None
         self._using_source_rig = True
+        self.target_retarget = None
         self._cleaned = False
         root_path = str(getattr(handler, "filepath", "") or handler.model.name)
         self._catalog = MotionPreviewCatalog(
@@ -195,7 +196,7 @@ class MotListPreviewWidget(QWidget):
         self.workspace.add_pane(self.rig_pane, 0)
         self.workspace.splitter.setSizes([330, 900, 290])
 
-    def _populate_motions(self) -> None:
+    def _populate_motions(self, *, reset_camera=True) -> None:
         previous = self.current_entry
         previous_key = self._entry_key(previous) if previous is not None else None
         resolution = self._catalog.refresh()
@@ -235,7 +236,7 @@ class MotListPreviewWidget(QWidget):
                 message = f"{message}  {'  '.join(self._catalog.messages)}"
             self._clear_scene(message)
         else:
-            self._load_current_motion(reset_camera=True)
+            self._load_current_motion(reset_camera=reset_camera)
 
     @staticmethod
     def _entry_key(entry: PreviewMotionEntry) -> tuple[str, int, int | None]:
@@ -297,6 +298,7 @@ class MotListPreviewWidget(QWidget):
             if not self.controller.load(
                 motion,
                 rig,
+                retarget=None if self._using_source_rig else self.target_retarget,
                 deformation_targets=(
                     deformation_targets if not self._using_source_rig else ()
                 ),
@@ -308,7 +310,8 @@ class MotListPreviewWidget(QWidget):
         except (MotionPreviewError, ValueError) as exc:
             self._clear_scene(str(exc))
 
-    def set_target(self, target: RigPreviewTarget) -> None:
+    def set_target(self, target: RigPreviewTarget, *, retarget=None) -> None:
+        self.target_retarget = retarget
         self._materials.clear()
         self._target_material_session = None
         self._target = target

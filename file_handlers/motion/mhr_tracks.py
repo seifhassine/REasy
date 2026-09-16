@@ -68,13 +68,15 @@ def decode_values(c: ReadContext, offset: int, count: int, family: TrackFamily,
     else:
         raise MotionParseError(f"{c.label}: unsupported v495 {family.name} compression 0x{mode:02X}")
     if not np.isfinite(values).all():
-        raise MotionParseError(f"{c.label}: non-finite v495 track values")
+        raise MotionParseError(
+            f"{c.label}: non-finite values for {family.name} compression 0x{mode:02X} "
+            f"(count={count}, values@0x{offset:X}, params@0x{parameter_offset:X})")
     if rotation and values.shape[1] == 3:
         values = np.column_stack((values, np.sqrt(np.maximum(0, 1 - np.sum(values*values, axis=1)))))
     return [tuple(row) for row in values.tolist()]
 
 
-def decode_track(c: ReadContext, offset: int, base: int, family: TrackFamily) -> KeyTrack:
+def decode_track(c: ReadContext, offset: int, base: int, family: TrackFamily, *, values_decoder=decode_values) -> KeyTrack:
     c.require(offset, 20, "v495 track header")
     flags, count, frames, values, params = struct.unpack_from('<5I', c.data, offset)
     solver = 0x112 if family == TrackFamily.QUATERNION else 0xF2
@@ -95,7 +97,7 @@ def decode_track(c: ReadContext, offset: int, base: int, family: TrackFamily) ->
     parameter_free = mode == 0 or (family == TrackFamily.QUATERNION and mode in (0xC0, 0x41, 0x42, 0x43)) or (family == TrackFamily.VECTOR3 and mode == 0x44)
     if not params and not parameter_free:
         raise MotionParseError(f"{c.label}: missing unpack parameters")
-    return KeyTrack(family, times, decode_values(c, base + values, count, family, mode, base + params))
+    return KeyTrack(family, times, values_decoder(c, base + values, count, family, mode, base + params))
 
 
 def encode_track(track: KeyTrack) -> tuple[int, bytes, bytes]:

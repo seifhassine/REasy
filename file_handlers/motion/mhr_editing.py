@@ -47,7 +47,7 @@ def _copy_skeleton(source, anchor, destination):
 
 
 def duplicate_slot(document, source_index, motion_id, *, name=None):
-    """Append an independent MOT, skeleton and slot overrides; retain old slots.
+    """Append an independent MOT payload and slot overrides; retain old slots.
 
     Materialize pending edits first so all copied native offsets describe the
     same byte image. The returned document owns its new relocation bindings.
@@ -66,19 +66,19 @@ def duplicate_slot(document, source_index, motion_id, *, name=None):
     pointers, rows = struct.unpack_from('<QQ', source, 16)
     count = len(model.slots)
     base = struct.unpack_from('<Q', source, pointers+source_index*8)[0]
-    _, end, shared = next(span for span in model.motion_spans if span[0] == base)
+    _, end, _shared = next(span for span in model.motion_spans if span[0] == base)
     payload = bytearray(source[base:end])
-    if shared:
-        anchor = next(start for start, _, is_shared in reversed(model.motion_spans)
-                      if start <= base and not is_shared)
-        skeleton, joint_count = _copy_skeleton(source, anchor, len(payload))
-        struct.pack_into('<Q', payload, 16, len(payload))
-        struct.pack_into('<H', payload, 112, joint_count)
-        payload.extend(skeleton)
+    # Native payloads share the file's rig (pointers[0] >= size); only the single
+    # 001_Loop anchor owns a skeleton.  A shared copy stays shared, which keeps
+    # the duplicate position independent without inventing a second anchor.
     struct.pack_into('<I', payload, 12, len(payload))
 
     row = bytearray(source[rows+source_index*72:rows+(source_index+1)*72])
     struct.pack_into('<H', row, 8, motion_id)
+    # Slot +0x0C carries private per-motion data.  Native files never repeat a
+    # nonzero value across motions, and inheriting it makes the engine reject the
+    # new slot (the pose collapses to a T-pose), so a new motion starts at zero.
+    struct.pack_into('<I', row, 12, 0)
     row.extend(bytes(8))
     override_table = struct.unpack_from('<Q', row)[0]
     override_count = row[23]

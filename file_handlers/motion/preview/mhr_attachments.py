@@ -15,7 +15,9 @@ def weapon_hold_properties(motion):
     return found
 
 
-def weapon_attachment(part, properties, frame):
+def weapon_attachment(part, properties, frame, *, default_properties=()):
+    if not properties:
+        properties = dict(default_properties)
     if not part.weapon_role or not properties:
         return part.parent_joint, part.local_transform
     wanted = 2 if part.weapon_role == 'main' else 3  # AttachMain / AttachSub

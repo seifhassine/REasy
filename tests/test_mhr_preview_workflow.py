@@ -17,6 +17,8 @@ from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE
 from file_handlers.motion.preview.controller import MotionPreviewController
 from file_handlers.motion.preview.skinning import build_shared_rig_deformer
 from file_handlers.motion.preview.weapon_motion import select_weapon_motion, WeaponMotionPlayer
+from file_handlers.motion.preview.target import PreviewMeshPart
+from file_handlers.motion.evaluation.model import Rig
 from file_handlers.mesh.material_session import MeshMaterialSession
 from ui.scene.mesh_scene import build_mesh_scene
 
@@ -25,6 +27,21 @@ CORPUS = Path(__file__).parent/'TESTFILE/natives/STM/player/mot'
 
 
 class AttachmentTransformTests(unittest.TestCase):
+    def test_default_hold_is_only_used_without_authored_properties(self):
+        options = tuple((hand, joint, np.eye(4)) for hand, joint in
+                        (('left', 'L_Weapon_00'), ('right', 'R_Weapon_00'), ('body', 'Spine_01')))
+        part = PreviewMeshPart('weapon', None, Rig([]), None, parent_joint='R_Weapon_00',
+                               weapon_role='main', attachment_options=options)
+        default = (('left', ClipProperty('_leftWp', ClipPropertyType.S32, keys=[ClipKey(0, value=2)])),
+                   ('right', ClipProperty('_rightWp', ClipPropertyType.S32, keys=[ClipKey(0, value=1)])))
+        authored = {'left': ClipProperty('_leftWp', ClipPropertyType.S32,
+                                        keys=[ClipKey(0, value=1), ClipKey(10, value=2)])}
+        self.assertEqual(weapon_attachment(part, {}, 500, default_properties=default)[0], 'L_Weapon_00')
+        self.assertEqual(weapon_attachment(part, authored, 0, default_properties=default)[0], 'Spine_01')
+        self.assertEqual(weapon_attachment(part, authored, 10, default_properties=default)[0], 'L_Weapon_00')
+        self.assertEqual(weapon_attachment(part, {}, 0)[0], 'R_Weapon_00')
+        self.assertEqual([(k.frame, k.value) for k in authored['left'].keys], [(0, 1), (10, 2)])
+
     def test_matches_native_attachment_euler_matrix(self):
         # Independent scalar equations from the native Euler-to-matrix helper
         # called by PlayerWeaponCtrl.updateConstParam (row-vector storage).
@@ -150,6 +167,7 @@ class NativePreviewTests(unittest.TestCase):
         for family in WEAPON_PRESETS:
             with self.subTest(weapon=family):
                 target = self.assets.load(family)
+                self.assertTrue(target.default_weapon_hold)
                 joints = {joint.name for joint in target.rig.joints}
                 for part in target.parts:
                     if part.parent_joint:
@@ -183,8 +201,30 @@ class NativePreviewTests(unittest.TestCase):
         self.assertGreater(float(np.linalg.norm(after-before)), .01)
         weapon = next(part for part in target.parts if part.weapon_role == 'main')
         properties = weapon_hold_properties(motion)
-        self.assertEqual(weapon_attachment(weapon, properties, 0)[0], 'Spine_01')
-        self.assertEqual(weapon_attachment(weapon, properties, 20)[0], 'L_Weapon_00')
+        self.assertEqual(weapon_attachment(weapon, properties, 0, default_properties=target.default_weapon_hold)[0], 'Spine_01')
+        self.assertEqual(weapon_attachment(weapon, properties, 20, default_properties=target.default_weapon_hold)[0], 'L_Weapon_00')
+
+    def test_missing_weapon_hold_uses_the_native_idle_template(self):
+        target = self.assets.load('longsword')
+        path = CORPUS/'plw_LongSword_100.motlist.528'
+        source = path.read_bytes()
+        document = MHR_MOTION_FORMAT_CODEC.parse(source)
+        idle = next(s.payload.value for s in document.slots
+                    if s.payload is not None and s.payload.value.name.lower().endswith('_001_loop'))
+        native = weapon_hold_properties(idle)
+        self.assertEqual({hand: asdict(prop) for hand, prop in target.default_weapon_hold},
+                         {hand: asdict(prop) for hand, prop in native.items()})
+        for part in target.parts:
+            if not part.weapon_role:
+                continue
+            expected_option = 'left' if part.weapon_role == 'main' else 'body'
+            expected_joint, expected_matrix = next((joint, matrix) for option, joint, matrix
+                                                   in part.attachment_options if option == expected_option)
+            for frame in (0, idle.end_frame/2, idle.end_frame+100):
+                joint, matrix = weapon_attachment(part, {}, frame, default_properties=target.default_weapon_hold)
+                self.assertEqual(joint, expected_joint)
+                np.testing.assert_array_equal(matrix, expected_matrix)
+        self.assertEqual(MHR_MOTION_FORMAT_CODEC.write(document), source)
 
     def test_prefab_weapon_motion_deforms_locally_and_special_bank_is_explicit(self):
         part = self.assets.weapon('gunlance', 'gl_lan001', 'left')

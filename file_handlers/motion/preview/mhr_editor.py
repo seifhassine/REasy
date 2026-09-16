@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QSplitter, QTreeView,
 
 from ..mhr_storage import Field, Group
 from ..mhr_editing import duplicate_slot, next_motion_id
+from ..mhr_import import default_motion_name
 from .resolution import MotionListDocument
 from .widget import MotListPreviewWidget
 from .assembly_renderer import MotionAssemblyRenderer
@@ -140,11 +141,13 @@ class FieldTreeModel(QAbstractItemModel):
 class MhrMotListEditor(QWidget):
     modified_changed = Signal(bool)
 
-    def __init__(self, handler, *, viewport_factory=None):
+    def __init__(self, handler, *, viewport_factory=None, read_only=False, compact=False, assets=None):
         super().__init__()
         self.handler = handler
+        self.read_only = read_only
+        self._emitting_edit = False
         self.document = handler.model
-        self._assets = None
+        self._assets = assets
         self._asset_loader = None
         self._pending_resource_directory = ''
         self._cleaned = False
@@ -165,6 +168,7 @@ class MhrMotListEditor(QWidget):
         preview_page.addWidget(self.preview)
         timeline_page = QSplitter(Qt.Orientation.Horizontal, self)
         self.timeline = ClipTimeline(self._commit_timeline, self)
+        self.timeline.view.read_only = read_only
         timeline_page.addWidget(self.timeline)
         self.timeline_inspector = QTreeView(self)
         self.timeline_inspector.setMinimumWidth(260)
@@ -193,7 +197,31 @@ class MhrMotListEditor(QWidget):
         self.preview.rig_pane.add_widget(self.resource_directory_button)
         self.weapon_combo.currentIndexChanged.connect(lambda _: self._load_default_target())
         self._sync_timeline()
+        if read_only:
+            self.duplicate_button.hide()
+            self.timeline_inspector.setEditTriggers(QTreeView.NoEditTriggers)
+        if compact:
+            self.preview.animation_pane.hide()
+            self.preview.rig_pane.hide()
+            self.preview.workspace.top_bar.hide()
+            self.preview.viewport_pane.add_widget(self.preview.playback)
+            self.timeline_inspector.hide()
+            preview_page.setSizes([280, 150])
+        handler.document_changed.connect(self._external_document_changed)
         QTimer.singleShot(0, self._load_default_target)
+
+    def _external_document_changed(self):
+        if self._emitting_edit or self._cleaned:
+            return
+        frame = self.preview.controller.current_frame
+        self.document = self.handler.model
+        self._index_fields()
+        root = self.preview._catalog.root
+        self.preview._catalog.root = MotionListDocument(root.path, self.document)
+        self.preview.playback.stop()
+        self.preview._populate_motions(reset_camera=False)
+        self.preview.playback._on_frame_changed(frame)
+        self._sync_timeline()
 
     def _index_fields(self):
         self._fields_by_owner = {}
@@ -215,7 +243,8 @@ class MhrMotListEditor(QWidget):
         motion_id.setObjectName('newMotionId')
         motion_id.setRange(0, 0xFFFF)
         motion_id.setValue(suggested_id)
-        name = QLineEdit(self.preview.current_motion.name+'_copy', dialog)
+        native_name = default_motion_name(self.document, suggested_id) or self.preview.current_motion.name
+        name = QLineEdit(native_name, dialog)
         name.setObjectName('newMotionName')
         form.addRow(self.tr('Motion ID'), motion_id)
         form.addRow(self.tr('Name'), name)
@@ -382,6 +411,11 @@ class MhrMotListEditor(QWidget):
         self.preview.playback._on_frame_changed(frame)
         self._sync_timeline()
         self.modified_changed.emit(True)
+        self._emitting_edit = True
+        try:
+            self.handler.document_changed.emit()
+        finally:
+            self._emitting_edit = False
 
     def cleanup(self):
         self._cleaned = True

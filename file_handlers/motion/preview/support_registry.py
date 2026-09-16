@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from ..dmc5_codec import DMC5_MOTION_FORMAT_CODEC
 from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
+from ..wilds_codec import WILDS_MOTION_FORMAT_CODEC
+from dataclasses import replace
 from ..evaluation.mhr import MHR_EVALUATION_PROFILE
 from ..evaluation import DMC5_EVALUATION_PROFILE
 from ..format_codec import MotionFormatCodec
@@ -30,7 +32,11 @@ class MhrTreeMotionReferences:
 MHR_MOTION_PREVIEW_SUPPORT = MotionPreviewSupport(
     MHR_MOTION_FORMAT_CODEC, MHR_EVALUATION_PROFILE, MhrTreeMotionReferences(),
 )
-MOTION_PREVIEW_SUPPORTS = (*ENTITY_MOTION_SUPPORTS, MHR_MOTION_PREVIEW_SUPPORT)
+WILDS_EVALUATION_PROFILE = replace(MHR_EVALUATION_PROFILE, name='Monster Hunter Wilds')
+WILDS_MOTION_PREVIEW_SUPPORT = MotionPreviewSupport(
+    WILDS_MOTION_FORMAT_CODEC, WILDS_EVALUATION_PROFILE, MhrTreeMotionReferences(),
+)
+MOTION_PREVIEW_SUPPORTS = (*ENTITY_MOTION_SUPPORTS, MHR_MOTION_PREVIEW_SUPPORT, WILDS_MOTION_PREVIEW_SUPPORT)
 
 
 def entity_motion_support_for_game(

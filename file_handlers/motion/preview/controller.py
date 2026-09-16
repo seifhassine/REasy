@@ -49,6 +49,7 @@ class MotionPreviewController:
         self._root_motion_mode: RuntimeRootMotionMode | None = None
         self._root_cycle: tuple[EvaluatedPose, EvaluatedPose] | None = None
         self._static_snapshot: tuple[RootDisplayMode, MotionPreviewSnapshot] | None = None
+        self._retarget = None
         self.current_frame = 0.0
         self._layer_clock_frame = 0.0
         self.speed = 1.0
@@ -80,6 +81,7 @@ class MotionPreviewController:
         return "; ".join(errors)
 
     def clear(self) -> None:
+        self._retarget = None
         self.motion = None
         self.rig = None
         self.binding = None
@@ -104,6 +106,7 @@ class MotionPreviewController:
         layers: tuple[MotionLayer, ...] | list[MotionLayer] = (),
         deformation_targets: tuple[DeformationTarget, ...] = (),
         root_motion_mode: RuntimeRootMotionMode | None = None,
+        retarget=None,
     ) -> bool:
         self.clear()
         if self.evaluation_profile.authored_frame_rate is not None:
@@ -133,7 +136,9 @@ class MotionPreviewController:
         self.layers = tuple(layers)
         self._deformation_targets = tuple(deformation_targets)
         self._root_motion_mode = root_motion_mode
-        self.binding = bind_motion(motion, rig, self.binding_strategy)
+        self._retarget = retarget
+        self.binding = (retarget.bind(motion, rig) if retarget is not None
+                        else bind_motion(motion, rig, self.binding_strategy))
         self._root_by_joint = rig.root_indices
         if self.binding.has_errors:
             return False
@@ -145,11 +150,11 @@ class MotionPreviewController:
         if self.binding is None or self.binding.has_errors:
             self._evaluator = None
             return
-        base = MotionEvaluator(
-            self.binding,
-            self.sampling_policy,
-            self.pose_composition_policy,
-        )
+        if self._retarget is None:
+            base = MotionEvaluator(self.binding, self.sampling_policy, self.pose_composition_policy)
+        else:
+            base = self._retarget.evaluator(self.binding, self.sampling_policy,
+                                           self.pose_composition_policy, self.binding_strategy)
         self._evaluator = (
             LayeredPoseEvaluator(base, self.layers, self.binding_strategy)
             if self.layers else base

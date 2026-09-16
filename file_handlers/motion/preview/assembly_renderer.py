@@ -61,7 +61,8 @@ class MotionAssemblyRenderer(MotionPreviewRenderer):
             player = None
             part_snapshot = snapshot
             if part.parent_joint:
-                joint, local = weapon_attachment(part, self._hold_properties, snapshot.frame)
+                joint, local = weapon_attachment(part, self._hold_properties, snapshot.frame,
+                                                 default_properties=target.default_weapon_hold)
                 joint_index = indices[joint]
                 draw.transform_matrix = self._attachment_matrix(snapshot, joint_index, local)
                 choice = select_weapon_motion(part.weapon_motions, self._motion_id,
@@ -102,7 +103,8 @@ class MotionAssemblyRenderer(MotionPreviewRenderer):
         transforms = {}
         for part, draw, deformer, joint_index, player in self._parts:
             if joint_index is not None:
-                joint, local = weapon_attachment(part, self._hold_properties, snapshot.frame)
+                joint, local = weapon_attachment(part, self._hold_properties, snapshot.frame,
+                                                 default_properties=self._target.default_weapon_hold)
                 index = next(i for i, value in enumerate(self._target.rig.joints) if value.name == joint)
                 transforms[part.key] = self._attachment_matrix(snapshot, index, local)
             if deformer is None:

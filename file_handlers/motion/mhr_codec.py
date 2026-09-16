@@ -24,8 +24,11 @@ MHR_PROFILE = replace(DMC5_PROFILE, name='Monster Hunter Rise / Sunbreak',
     mot_clip=replace(DMC5_PROFILE.mot_clip, version=43, header_size=112, node_size=40,
                      property_size=72, key_size=32))
 
-
 class MhrParser:
+    container_version = 528
+    motion_version = 495
+    decode_track = staticmethod(decode_track)
+
     def __init__(self, data, label):
         self.c = ReadContext.from_bytes(data, label)
         self.model = MhrMotList('', source=bytes(data))
@@ -71,7 +74,9 @@ class MhrParser:
 
     def parse(self):
         c, model = self.c, self.model
-        header = Group('MOTLIST 528')
+        if c.u32(0) != self.container_version or c.bytes(4, 4) != b'mlst':
+            raise MotionParseError(f'{c.label}: expected MOTLIST {self.container_version}')
+        header = Group(f'MOTLIST {self.container_version}')
         model.groups.append(header)
         self.field(c, header, 'Version', 0, 'I', editable=False)
         self.field(c, header, 'Flags', 8, 'Q')
@@ -123,20 +128,28 @@ class MhrParser:
             if bool(overrides) != bool(override_count):
                 raise MotionParseError(f'{c.label}: inconsistent slot override table')
             c.require(overrides, override_count*8, 'slot override pointers')
-            for j in range(override_count):
-                w = self.pointer(c, group, f'Override {j} pointer', overrides+j*8)
-                sg = Group(f'Override {j}')
-                group.children.append(sg)
-                slot.overrides.append(self.sequence(c, w, 0, sg))
+            self.read_overrides(c, overrides, override_count, slot, group)
         return model
+
+    def read_overrides(self, c, table, count, slot, group):
+        for j in range(count):
+            wrapper = self.pointer(c, group, f'Override {j} pointer', table+j*8)
+            child = Group(f'Override {j}')
+            group.children.append(child)
+            slot.overrides.append(self.sequence(c, wrapper, 0, child))
+
+    def check_auxiliary(self, c, base, pointers):
+        if any(pointers[i] for i in (2, 3, 5, 6, 7)):
+            raise MotionParseError(f'{c.label}: unsupported nonempty MOT auxiliary section')
 
     def motion(self, c, base, end, group):
         if c.bytes(base+4, 4) == b'mtre':
-            raise MotionParseError(f'{c.label}: Motion Tree {c.u32(base)} is not supported by the MHR motion editor')
-        c.require(base, 128, 'MOT 495 header')
-        if c.u32(base) != 495 or c.bytes(base+4, 4) != b'mot ':
-            raise MotionParseError(f'{c.label}: expected MOT 495')
-        header = Group('Header')
+            raise MotionParseError(f'{c.label}: Motion Tree {c.u32(base)} is not supported by the MOT {self.motion_version} preview')
+        mot_version = c.u32(base)
+        c.require(base, 128, f'MOT {mot_version} header')
+        if mot_version != self.motion_version or c.bytes(base+4, 4) != b'mot ':
+            raise MotionParseError(f'{c.label}: expected MOT {self.motion_version}')
+        header = Group(f'Header (MOT {mot_version})')
         group.children.append(header)
         self.field(c, header, 'Version', base, 'I', editable=False)
         self.field(c, header, 'Flags', base+8, 'I')
@@ -146,8 +159,7 @@ class MhrParser:
              'Sequences', 'Joint map', 'Extra data', 'Reserved pointer 0x48', 'Append data', 'Name'))]
         for i in range(10):
             self.relocation(c, base+16+i*8, base)
-        if any(ptrs[i] for i in (2, 3, 5, 6, 7)):
-            raise MotionParseError(f'{c.label}: unsupported nonempty MOT auxiliary section')
+        self.check_auxiliary(c, base, ptrs)
         motion = MhrMotion(c.utf16_z(base+ptrs[9])[0])
         self.string(c, header, 'Name', base+ptrs[9], motion, 'name')
         for offset, label, attr in ((96, 'End frame', 'end_frame'),
@@ -214,7 +226,7 @@ class MhrParser:
             for bit, attr, family in ((1, 'translation', TrackFamily.VECTOR3),
                                        (2, 'rotation', TrackFamily.QUATERNION), (4, 'scale', TrackFamily.VECTOR3)):
                 if flags & bit:
-                    track = decode_track(c, cursor, base, family)
+                    track = self.decode_track(c, cursor, base, family)
                     for offset in (8, 12, 16):
                         self.relocation(c, cursor+offset, base, 'I')
                     setattr(node, attr, track)
@@ -222,18 +234,7 @@ class MhrParser:
                     self.model.tracks.append(binding)
                     ng.children.append(binding)
                     cursor += 20
-        if sequence_count:
-            c.require(base+ptrs[4], sequence_count*8, 'sequence pointers')
-            sequences = Group('Sequences')
-            group.children.append(sequences)
-            for i in range(sequence_count):
-                self.relocation(c, base+ptrs[4]+i*8, base)
-                w = base+c.u64(base+ptrs[4]+i*8)
-                sg = Group(f'Sequence {i}')
-                sequences.children.append(sg)
-                sequence = self.sequence(c, w, base, sg)
-                sg.name = f'{i}: {sequence.category.name}'
-                motion.sequences.append(sequence)
+        self.read_sequences(c, base, ptrs[4], sequence_count, motion, group)
         if ptrs[8]:
             ag = Group('Append header')
             group.children.append(ag)
@@ -241,6 +242,21 @@ class MhrParser:
                 self.field(c, ag, f'Value {i}', base+ptrs[8]+i*8, 'Q', editable=False if i == 0 else True)
             self.relocation(c, base+ptrs[8], base+ptrs[8])
         return motion
+
+    def read_sequences(self, c, base, table, count, motion, group):
+        if not count:
+            return
+        c.require(base+table, count*8, 'sequence pointers')
+        sequences = Group('Sequences')
+        group.children.append(sequences)
+        for i in range(count):
+            self.relocation(c, base+table+i*8, base)
+            wrapper = base+c.u64(base+table+i*8)
+            child = Group(f'Sequence {i}')
+            sequences.children.append(child)
+            sequence = self.sequence(c, wrapper, base, child)
+            child.name = f'{i}: {sequence.category.name}'
+            motion.sequences.append(sequence)
 
     def read_skeleton(self, c, base, offset, count, parent):
         group = Group('Skeleton')

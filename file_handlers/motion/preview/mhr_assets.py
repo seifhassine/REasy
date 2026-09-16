@@ -21,6 +21,7 @@ from utils.hash_util import murmur3_hash_utf16le
 from ..evaluation.mesh_adapter import rig_from_re_engine_mesh
 from .target import PreviewMeshPart, RigPreviewTarget
 from .weapon_motion import WeaponMotion
+from .mhr_attachments import weapon_hold_properties
 from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
 
 
@@ -75,11 +76,13 @@ def find_rise_installation() -> Path | None:
 
 def preview_context(handler, directory='') -> ResourceResolutionContext:
     context = handler.resource_context
-    if not directory and context is not None and context.game.lower() in ('mhrise', 'mhr'):
+    if not directory and context is not None and context.game.lower() in ('mhrise', 'mhr') and (context.pak_cached_reader is not None or context.unpacked_dir):
         return context
     configured = (handler.app.settings.get('mhr_preview_game_directory', '') if handler.app is not None else '')
     root = Path(directory or configured) if directory or configured else find_rise_installation()
     if root is None:
+        if context is not None and context.project_dir:
+            return context
         raise ValueError('Select the Monster Hunter Rise game directory to load preview assets.')
     paks = sorted(str(p) for p in root.glob('*.pak'))
     if not paks and not (root/'natives').is_dir():
@@ -88,7 +91,8 @@ def preview_context(handler, directory='') -> ResourceResolutionContext:
     if paks:
         paths = resource_path('resources/data/lists/MHR_STM.list').read_text(encoding='utf-8').splitlines()
         reader = CachedPakReader.from_paks(paks, game='MHRise').prepare(paths)
-    return ResourceResolutionContext(unpacked_dir=str(root), pak_cached_reader=reader, game='MHRise')
+    return ResourceResolutionContext(project_dir=context.project_dir if context is not None else '',
+                                     unpacked_dir=str(root), pak_cached_reader=reader, game='MHRise')
 
 
 def attachment_transform(position, rotation) -> np.ndarray:
@@ -120,6 +124,7 @@ class MhrPreviewAssets:
         self._weapons = {}
         self._weapon_definitions = {}
         self._motion_banks = {}
+        self._default_weapon_holds = {}
         self._registry = None
 
     def resource(self, path):
@@ -217,6 +222,20 @@ class MhrPreviewAssets:
         self._weapons[identity] = part
         return part
 
+    def default_weapon_hold(self, family):
+        if family not in self._default_weapon_holds:
+            path = f'player/mot/plw_{family}_100.motlist.528'
+            document = MHR_MOTION_FORMAT_CODEC.parse(self.resource(path)[1], label=path)
+            motions = {id(slot.payload.value): slot.payload.value for slot in document.slots
+                       if slot.payload is not None and slot.payload.value.name.lower().endswith('_001_loop')}
+            if len(motions) != 1:
+                raise ValueError(f'{path}: expected one native 001_Loop weapon-hold template')
+            properties = weapon_hold_properties(next(iter(motions.values())))
+            if not properties:
+                raise ValueError(f'{path}: native 001_Loop has no WeaponHold')
+            self._default_weapon_holds[family] = tuple(properties.items())
+        return self._default_weapon_holds[family]
+
     def load(self, family=None, *, weapon_only=False, motion_list_name='', required_bones=()):
         if weapon_only:
             if family not in WEAPON_PRESETS:
@@ -262,7 +281,9 @@ class MhrPreviewAssets:
         parts.append(PreviewMeshPart('face', handler.mesh, face_rig, handler, base+'.mdf2.23'))
         for name, hand in WEAPON_PRESETS.get(family, ()):
             parts.append(self.weapon(family, name, hand))
-        return RigPreviewTarget('MHR · Hunter PL001'+(' · '+family if family else ''), rig, parts=tuple(parts))
+        default_hold = self.default_weapon_hold(family) if family in WEAPON_PRESETS else ()
+        return RigPreviewTarget('MHR · Hunter PL001'+(' · '+family if family else ''), rig,
+                                parts=tuple(parts), default_weapon_hold=default_hold)
 
 
 class MhrAssetLoader(QThread):
