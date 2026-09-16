@@ -1,5 +1,6 @@
 from dataclasses import asdict
 from pathlib import Path
+import math
 import sys
 import unittest
 
@@ -10,7 +11,7 @@ from file_handlers.motion.mot_clip.model import ClipKey, ClipProperty, ClipPrope
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.preview.clip_timeline import ClipLane, ClipTimelineView, move_timeline_item, sequence_lanes
 from file_handlers.motion.preview.mhr_assets import (MhrPreviewAssets, WEAPON_PRESETS,
-    find_rise_installation, preview_context, weapon_family)
+    find_rise_installation, preview_context, weapon_family, attachment_transform)
 from file_handlers.motion.preview.mhr_attachments import weapon_attachment, weapon_hold_properties
 from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE
 from file_handlers.motion.preview.controller import MotionPreviewController
@@ -21,6 +22,23 @@ from ui.scene.mesh_scene import build_mesh_scene
 
 
 CORPUS = Path(__file__).parent/'TESTFILE/natives/STM/player/mot'
+
+
+class AttachmentTransformTests(unittest.TestCase):
+    def test_matches_native_attachment_euler_matrix(self):
+        # Independent scalar equations from the native Euler-to-matrix helper
+        # called by PlayerWeaponCtrl.updateConstParam (row-vector storage).
+        for angles in ((0., 0., 0.), (.3, -.8, 1.2), (-1.5, 3.1, 1.6)):
+            with self.subTest(angles=angles):
+                sx, sy, sz = map(math.sin, angles)
+                cx, cy, cz = map(math.cos, angles)
+                native = np.array(((sx*sy*sz+cy*cz, sz*cx, sx*sz*cy-sy*cz),
+                                   (sx*sy*cz-sz*cy, cx*cz, sx*cy*cz+sy*sz),
+                                   (sy*cx, -sx, cx*cy)))
+                position = (.2, -.4, .7)
+                matrix = attachment_transform(position, angles)
+                np.testing.assert_allclose(matrix[:3, :3], native.T, atol=1e-7)
+                np.testing.assert_allclose(matrix[:3, 3], position, atol=1e-7)
 
 
 class TimelineTests(unittest.TestCase):

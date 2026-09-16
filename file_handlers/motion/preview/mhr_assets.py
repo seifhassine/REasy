@@ -98,7 +98,8 @@ def attachment_transform(position, rotation) -> np.ndarray:
     ry = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
     rz = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
     matrix = np.eye(4, dtype=np.float32)
-    matrix[:3, :3] = rz @ ry @ rx
+    # PlayerWeaponCtrl.updateConstParam uses the engine's Z-X-Y Euler order.
+    matrix[:3, :3] = ry @ rx @ rz
     matrix[:3, 3] = position
     return matrix
 
