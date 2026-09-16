@@ -148,7 +148,8 @@ class StructuralCorpusTests(unittest.TestCase):
         tab = FileTab(notebook, filename='LongSword.motfsm2.43', data=source)
         notebook.addTab(tab.notebook_widget, 'LongSword')
         handler = tab.handler
-        viewer = tab.viewer
+        tab.viewer.tabs.setCurrentWidget(tab.viewer.fields)
+        viewer = tab.viewer.fields
         try:
             doc = handler.motfsm
             index = next(i for i, n in enumerate(doc.bhvt.nodes) if len(n.actions) == 2)

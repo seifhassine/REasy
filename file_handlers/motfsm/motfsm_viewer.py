@@ -56,10 +56,12 @@ class FieldEditorDelegate(QStyledItemDelegate):
 class MotfsmViewer(QWidget):
     modified_changed = Signal(bool)
 
-    def __init__(self, handler):
+    def __init__(self, handler, *, selection_only=False):
         super().__init__()
         self.handler = handler
         self.motfsm = handler.motfsm
+        self.selection_only = selection_only
+        self._selection = None
         self._editing_item = None
         self._refresh_timer = QTimer(self)
         self._refresh_timer.setSingleShot(True)
@@ -73,8 +75,8 @@ class MotfsmViewer(QWidget):
         self.tree.setColumnWidth(1, 300)
         self.tree.header().setSectionResizeMode(QHeaderView.Interactive)
         self.tree.header().setStretchLastSection(False)
-        self.tree.setItemDelegateForColumn(1, FieldEditorDelegate(self.tree))
-        self.tree.setEditTriggers(QTreeWidget.NoEditTriggers)
+        self.tree.setItemDelegate(FieldEditorDelegate(self.tree))
+        self.tree.setEditTriggers(QTreeWidget.DoubleClicked | QTreeWidget.SelectedClicked | QTreeWidget.EditKeyPressed)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._context_menu)
         self.tree.itemExpanded.connect(self._expand)
@@ -82,10 +84,14 @@ class MotfsmViewer(QWidget):
         layout.addWidget(self.tree)
         self.handler.modified_changed.connect(self.modified_changed.emit)
         self.handler.document_changed.connect(self._reload_tree)
+        self.handler.field_changed.connect(lambda _: self._refresh_timer.start())
         self._build_tree()
 
     def _build_tree(self):
         with QSignalBlocker(self.tree):
+            if self.selection_only:
+                self._build_selection()
+                return
             root = _Item(self.tree, ["BHVT", "", "Structure"])
             self._lazy(root, f"Nodes ({self.motfsm.node_count})", self._load_nodes)
             blocks = _Item(root, ["RSZ Blocks", "", ""])
@@ -93,6 +99,39 @@ class MotfsmViewer(QWidget):
                 label = ''.join(word.title() for word in name.split('_'))
                 self._lazy(blocks, label, lambda item, name=name: self._load_block(item, name))
             root.setExpanded(True)
+
+    def show_node(self, index):
+        self._selection = ('node', index, None)
+        self._show_selection()
+
+    def show_edge(self, edge):
+        self._selection = (edge.kind, edge.source, edge.position)
+        self._show_selection()
+
+    def _show_selection(self):
+        self._refresh_timer.stop()
+        self._editing_item = None
+        with QSignalBlocker(self.tree):
+            self.tree.clear()
+            self._build_selection()
+
+    def _build_selection(self):
+        if self._selection is None:
+            return
+        kind, index, position = self._selection
+        node = self.motfsm.get_node_by_index(index)
+        root = _Item(self.tree, [f'[{index}] {node.name}', '', 'Node' if kind == 'node' else kind])
+        if kind == 'node':
+            self._load_node(root, index)
+        elif kind == 'child':
+            self._load_child(root, node.children[position])
+        elif kind == 'state':
+            self._load_state(root, node.states[position])
+        elif kind == 'start':
+            self._load_transition(root, node.transitions[position])
+        elif kind == 'all':
+            self._load_all_state(root, node.all_states[position])
+        root.setExpanded(True)
 
     def _reload_tree(self):
         expanded = []
@@ -202,6 +241,8 @@ class MotfsmViewer(QWidget):
         return item
 
     def _node_link(self, parent, owner, hash_name, ex_name):
+        if hash_name == 'parent':
+            return self._link(parent, "→ View Parent Node", lambda: self.motfsm.references.parent_index(owner), "node")
         return self._link(parent, "→ View Target Node", lambda: self.motfsm.references.node_index(
             getattr(owner, hash_name), getattr(owner, ex_name)), "node")
 
@@ -236,10 +277,10 @@ class MotfsmViewer(QWidget):
 
     def _load_node(self, parent, index):
         node = self.motfsm.get_node_by_index(index)
-        self._field(parent, node, "id_hash")
-        details = _Item(parent, ["Node Details", "", ""])
-        self._fields(details, node, ("ex_id", "name", "parent", "parent_ex", "priority",
-            "node_attribute", "work_flags", "is_fsm", "has_reference_tree", "reference_tree_index"))
+        self._fields(parent, node, ("name", "priority", "work_flags"))
+        details = _Item(parent, ["Advanced", "", ""])
+        self._fields(details, node, ("id_hash", "ex_id", "parent", "parent_ex",
+            "node_attribute", "is_fsm", "has_reference_tree", "reference_tree_index"))
         self._node_link(details, node, "parent", "parent_ex")
         if node.children:
             children = _Item(parent, [f"Children ({len(node.children)})", "", ""])
@@ -248,9 +289,7 @@ class MotfsmViewer(QWidget):
                 item.summary = lambda child=child, i=i: (f"[{i}] " + self._node_name(
                     self.motfsm.references.node_index(child.id_hash, child.ex_id)), "")
                 item.update_summary()
-                self._fields(item, child, ("id_hash", "ex_id", "condition_id"))
-                self._node_link(item, child, "id_hash", "ex_id")
-                self._object_link(item, "conditions", lambda child=child: child.condition_id)
+                self._load_child(item, child)
         actions = _Item(parent, [f"Actions ({len(node.actions)})", "", ""])
         actions.action_node_index = index
         for i, action in enumerate(node.actions):
@@ -281,15 +320,7 @@ class MotfsmViewer(QWidget):
                 item.summary = lambda transition=transition, i=i: (f"[{i}] → " + self._node_name(
                     self.motfsm.references.node_index(transition.mStartState, transition.mStartStateEx)), "")
                 item.update_summary()
-                if self.motfsm.layout.transition_event_lists is not False:
-                    self._list(item, "mStartTransitionEvent", transition.mStartTransitionEvent.values, "transition_events")
-                else:
-                    self._field(item, transition.mStartTransitionEvent.values, 0, name="mStartTransitionEvent")
-                self._fields(item, transition, ("mStartState", "mStartStateTransition"))
-                if self.motfsm.layout.transition_state_ex:
-                    self._field(item, transition, "mStartStateEx")
-                self._node_link(item, transition, "mStartState", "mStartStateEx")
-                self._object_link(item, "conditions", lambda transition=transition: transition.mStartStateTransition)
+                self._load_transition(item, transition)
         if node.is_fsm:
             fsm = _Item(parent, ["FSM Fields", "", ""])
             self._fields(fsm, node, ("name_hash", "fullname_hash", "is_branch", "is_end"))
@@ -298,8 +329,27 @@ class MotfsmViewer(QWidget):
             all_states = _Item(parent, [f"AllStates ({len(node.all_states)})", "", ""])
             for i, state in enumerate(node.all_states):
                 item = _Item(all_states, [f"[{i}]", "", "AllState"])
-                self._fields(item, state, ("mAllState", "mAllTransition", "mAllTransitionID",
-                                           "mAllStateEx", "mAllTransitionAttributes"))
+                self._load_all_state(item, state)
+
+    def _load_child(self, item, child):
+        self._fields(item, child, ("id_hash", "ex_id", "condition_id"))
+        self._node_link(item, child, "id_hash", "ex_id")
+        self._object_link(item, "conditions", lambda: child.condition_id)
+
+    def _load_transition(self, item, transition):
+        if self.motfsm.layout.transition_event_lists is not False:
+            self._list(item, "mStartTransitionEvent", transition.mStartTransitionEvent.values, "transition_events")
+        else:
+            self._field(item, transition.mStartTransitionEvent.values, 0, name="mStartTransitionEvent")
+        self._fields(item, transition, ("mStartState", "mStartStateTransition"))
+        if self.motfsm.layout.transition_state_ex:
+            self._field(item, transition, "mStartStateEx")
+        self._node_link(item, transition, "mStartState", "mStartStateEx")
+        self._object_link(item, "conditions", lambda: transition.mStartStateTransition)
+
+    def _load_all_state(self, item, state):
+        self._fields(item, state, ("mAllState", "mAllTransition", "mAllTransitionID",
+                                   "mAllStateEx", "mAllTransitionAttributes"))
 
     def _load_state(self, parent, state):
         self._list(parent, "mStates", state.mStates.values, "transition_events")
@@ -320,19 +370,21 @@ class MotfsmViewer(QWidget):
     def _load_instance(self, parent, instance):
         parent.setText(1, f"RSZ[{instance.index}]: {instance.class_name.split('.')[-1]}")
         parent.setText(2, instance.class_name)
-        _Item(parent, ["Class", instance.class_name, ""])
         if instance.is_userdata:
             _Item(parent, ["Type", "UserData (external)", ""])
             return
+        advanced = _Item(parent, ["Advanced", "", ""])
+        _Item(advanced, ["Class", instance.class_name, ""])
+        _Item(advanced, ["RSZ instance", instance.index, ""])
         if instance.start_offset is not None:
-            _Item(parent, ["Offset", f"0x{instance.start_offset:X}", ""])
-            _Item(parent, ["Size", instance.size, "bytes"])
-        fields = _Item(parent, [f"Fields ({len(instance.fields)})", "", ""])
+            _Item(advanced, ["Offset", f"0x{instance.start_offset:X}", ""])
+            _Item(advanced, ["Size", instance.size, "bytes"])
         for field in instance.fields:
+            target = advanced if field.name == 'v1_ID' else parent
             if field.binding is not None:
-                self._field(fields, field.binding.owner, field.binding.attribute, name=field.name)
+                self._field(target, field.binding.owner, field.binding.attribute, name=field.name)
             else:
-                item = _Item(fields, [field.name, field.value, field.type_name])
+                item = _Item(target, [field.name, field.value, field.type_name])
                 item.setToolTip(0, f"Offset: 0x{field.offset:X}, Size: {field.size}")
 
     def _context_menu(self, position):

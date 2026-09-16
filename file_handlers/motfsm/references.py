@@ -14,6 +14,14 @@ class References:
     def node_index(self, id_hash, ex_id):
         if (id_hash & 0xFFFFFFFF) in (0, 0xFFFFFFFF):
             return None
+        return self._node_identity(id_hash, ex_id)
+
+    def parent_index(self, node):
+        if node.parent & 0xFFFFFFFF == 0xFFFFFFFF:
+            return None
+        return self._node_identity(node.parent, node.parent_ex)
+
+    def _node_identity(self, id_hash, ex_id):
         if self._nodes is None:
             self._nodes = {}
             for index, node in enumerate(self.document.bhvt.nodes):
