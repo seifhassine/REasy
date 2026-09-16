@@ -31,6 +31,27 @@ Run them with the repository virtual environment:
 
 ## Tools
 
+### Effects (`.pfb.17`)
+
+* `dump_pfb.py` – PFB/SCN/USR structure dump: type histogram, the `EPVStandardData.Elements` table
+  (ID, `.efx` path, joint, offset/rotation, variant group) and a regex search over string fields.
+* `add_pfb_element.py` – add one element by **deep-cloning** an existing one: the element itself plus
+  the sub-structures that live in its Object arrays - `via.effect.script.EPVDataElement.GroupInfo`
+  (`GroupInfoList`), `via.effect.script.GroupNameParameter` (`GroupNameParameters`),
+  `via.effect.script.EffectCustomExternParameter` (`ExternParameters`) and
+  `via.effect.script.EffectManager.LODInfo` (`LODLevels`).  Gives the clone a new `ID`, a fresh GUID
+  and optionally a rotation tweak (`--rotate-delta 0,0,10` = roll about the front-back axis,
+  `--rotate X,Y,Z` = absolute).  Verifies every pre-existing element (in array order, duplicates
+  included) is untouched and that nothing but ID/rotation/GUID differs from the source.
+
+  **Instance order matters.**  The RSZ instance table is written "referencee first": an instance
+  follows everything it points at, so the container root (`via.effect.script.EPVStandardData`, which
+  references every element through its `Elements` array) is always the **last** instance - true in
+  every native PFB and in hand-made ones.  A new element appended *behind* the root is invisible to
+  the game: `containerID=150, element=99` stays silent while the untouched element 15 plays normally,
+  with no field differing between the two.  The tool therefore inserts the cloned subtree at the
+  root's current index (children, then the element, then the root) and asserts the root is still last.
+
 ### Motions (`.motlist.528`)
 
 * `copy_clip_sequences.py` – copy whole CLIP sequences (e.g. `SOUND`, `VFX`) from one motion into
@@ -41,6 +62,11 @@ Run them with the repository virtual environment:
   the inline trigger id. Nothing moves, so the file keeps its size. **Never delete a loop's stop
   event**: skip ids that the culling (footstep/movement) tracks also use.
 * `dump_clip.py` – decoded CLIP tree per motion (nodes, properties, frames, key values).
+* `set_clip_effect_id.py` – retarget a string-valued CLIP key in place (e.g. a `VFXRangeTrack`
+  `EffectId`): the CLIP keeps string values in its own pool and a key's `payload` indexes it, so a
+  same-length replacement is a few bytes of surgery.  Shared storage is detected and refused.
+  Effect IDs are `"<provider>-<elementID>"`: prefix 0 = `epvs-prg` (program/FSM effects, where
+  `PlayerFsm2ActionSetEffect._ElementID` also resolves), 50 = `epvs-mot`, 100 = another provider.
 * `dump_sequence_layout.py` – byte layout of a motion's sequence region (wrapper/clip/tracks spans).
 
 ### FSM (`.motfsm2.43`)
