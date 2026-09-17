@@ -18,6 +18,7 @@ class Re4SoundProfile(ReEngineSbnkSoundProfile):
         "Resident Evil 4 Remake", "Biohazard RE:4", "RE4 Remake", "RE4R",
     )
     bank_versions = frozenset({140})
+    split_sbnk_roles = True
     required_year = 2021
     required_major = 1
     recommended_version = "2021.1.14.8108"
