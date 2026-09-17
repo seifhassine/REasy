@@ -284,7 +284,6 @@ class REasyEditorApp(QMainWindow):
 
     def _on_active_page_changed(self, page=None):
         self._update_highlight_menu_visibility()
-        self.scenes.refresh_actions()
         self.scenes.refresh_buttons()
         self._refresh_homepage()
         tab = self.tabs.get(page) if page is not None else self.get_active_tab()
@@ -642,7 +641,7 @@ class REasyEditorApp(QMainWindow):
             if not folder:
                 return
 
-            if not self.proj_dock.has_valid_paks(folder, ignore_mod_paks=True):
+            if not self.proj_dock.has_valid_paks(folder):
                 QMessageBox.warning(self, self.tr("Invalid game folder"), self.tr("No .pak files found in the selected directory."))
                 return
 
@@ -1339,7 +1338,6 @@ class REasyEditorApp(QMainWindow):
             notebook.setCurrentWidget(tab.notebook_widget)
             self._refresh_document_titles()
             self._update_highlight_menu_visibility()
-            self.scenes.refresh_actions()
             self.scenes.refresh_buttons()
             self._refresh_homepage()
             self._on_active_page_changed(tab.notebook_widget)
@@ -1385,7 +1383,6 @@ class REasyEditorApp(QMainWindow):
         if tab is self.get_active_tab():
             self.breadcrumbs.bind_tab(tab)
         self.scenes.attach_tab_document(tab)
-        self.scenes.refresh_actions()
         self.scenes.refresh_buttons()
 
     def get_active_tab(self):
@@ -1635,7 +1632,6 @@ class REasyEditorApp(QMainWindow):
         tab.cleanup()
         self._refresh_document_titles()
         self._check_and_close_shared_find_dialog()
-        self.scenes.refresh_actions()
         self.scenes.refresh_buttons()
         self._refresh_homepage()
 

@@ -28,6 +28,7 @@ from ui.project_manager.pak_file_lists import (
 )
 from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
 from utils.resource_file_utils import resource_context_for_app
+from file_handlers.pak.utils import any_pak_modded
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
@@ -69,10 +70,16 @@ class PakBrowserDialog(QDialog):
 		if initial_game in GAMES:
 			self.game_combo.setCurrentText(initial_game)
 		top.addWidget(self.game_combo)
-		self.ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs (not 100% accurate)"), self)
-		self.ignore_mods_cb.setChecked(True)
-		self.ignore_mods_cb.toggled.connect(self._on_ignore_mods_toggled)
-		top.addWidget(self.ignore_mods_cb)
+		self.mod_warning = QLabel(self.tr(
+			"⚠ Modded PAKs detected in the game folder (mod payloads or "
+			"invalidated entries). Please disable your mods and rescan."))
+		self.mod_warning.setWordWrap(True)
+		self.mod_warning.setStyleSheet(
+			"color: #ff6b6b; font-weight: 600; background: rgba(255,80,80,0.10); "
+			"border: 1px solid rgba(255,80,80,0.35); border-radius: 4px; padding: 6px 8px;"
+		)
+		self.mod_warning.hide()
+		lay.addWidget(self.mod_warning)
 		top.addWidget(QPushButton(self.tr("Scan"), clicked=self._scan_dir))
 
 		row2 = QHBoxLayout()
@@ -226,7 +233,8 @@ class PakBrowserDialog(QDialog):
 			QMessageBox.information(self, self.tr("Scan"), self.tr("Select a directory to scan."))
 			return
 		with self._loading(self.tr("Scanning PAK files...")):
-			paks = scan_pak_files(root, ignore_mod_paks=self.ignore_mods_cb.isChecked())
+			paks = scan_pak_files(root)
+
 		if not paks:
 			QMessageBox.information(self, self.tr("Scan"), self.tr("No .pak files found."))
 			return
@@ -253,13 +261,6 @@ class PakBrowserDialog(QDialog):
 		self.pak_list.clear()
 		for p in paks:
 			self.pak_list.addItem(p)
-		self._refresh_index()
-
-	def _on_ignore_mods_toggled(self, checked: bool):
-		root = self.dir_edit.text().strip()
-		if root and os.path.isdir(root):
-			self._scan_dir()
-			return
 		self._refresh_index()
 
 	def _on_resolution_game_changed(self, _game: str):
@@ -643,6 +644,7 @@ class PakBrowserDialog(QDialog):
 
 	def _refresh_index(self):
 		paks = self._selected_paks()
+		self.mod_warning.setVisible(any_pak_modded(paks))
 		if not paks:
 			self._cached_reader = None
 			self._valid_paths = set()
@@ -652,11 +654,6 @@ class PakBrowserDialog(QDialog):
 			return
 
 		try:
-			if not self._base_paths and not self.ignore_mods_cb.isChecked():
-				manifest_only = self._auto_merge_manifest()
-				if manifest_only:
-					self._base_paths = sorted(set(p.lower() for p in manifest_only))
-
 			if self.show_unknown_cb.isChecked():
 				self._ensure_cache(full=True)
 			elif self.show_only_valid_cb.isChecked():

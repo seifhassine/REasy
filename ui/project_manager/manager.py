@@ -16,7 +16,7 @@ from PySide6.QtGui import (
     QStandardItemModel,
 )
 from PySide6.QtWidgets import (
-    QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
+    QAbstractItemView, QComboBox, QDialog, QDialogButtonBox,
     QDockWidget, QFileDialog, QFileSystemModel, QFrame, QHeaderView,
     QHBoxLayout, QLabel, QLineEdit, QMenu, QMessageBox, QProgressBar,
     QPushButton, QSizePolicy, QStyle, QTextEdit, QToolButton, QTreeView,
@@ -24,9 +24,9 @@ from PySide6.QtWidgets import (
 )
 
 from app_config import GAMES, GAME_NATIVE_PATHS
-from file_handlers.pak import scan_pak_files
+from file_handlers.pak import scan_all_pak_files, scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
-from file_handlers.pak.utils import guess_extension_from_header
+from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header
 from services.file_operations import FileOperationError, FolderFileOperations
 from tools.fluffy_exporter import create_fluffy_zip
 from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
@@ -293,10 +293,16 @@ class ProjectManager(QDockWidget):
         self.pak_list_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         self.pak_list_label.setMinimumSize(10, 20)
         pak_bar.addWidget(self.pak_list_label, 1)
-        self.pak_ignore_mods_cb = QCheckBox(self.tr("Ignore mod PAKs"))
-        self.pak_ignore_mods_cb.setChecked(True)
-        self.pak_ignore_mods_cb.setToolTip(self.tr("Not 100% accurate"))
-        pak_bar.addWidget(self.pak_ignore_mods_cb)
+        self._mod_paks_found = False
+        self.mod_warning = QLabel("")
+        self.mod_warning.setWordWrap(True)
+        self.mod_warning.setStyleSheet(
+            "color: #ff6b6b; font-weight: 600; background: rgba(255,80,80,0.10); "
+            "border: 1px solid rgba(255,80,80,0.35); border-radius: 4px; padding: 6px 8px;"
+        )
+        self.mod_warning.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.mod_warning.hide()
+        lay.addWidget(self.mod_warning)
         self._update_path_label()
 
         # Project header: name + export actions (always visible)
@@ -764,13 +770,11 @@ class ProjectManager(QDockWidget):
     def expected_native_tuple(self, game: str | None = None) -> tuple[str, ...]:
         return GAME_NATIVE_PATHS.get(game or (self.current_game or ""), ())
 
-    def has_valid_paks(self, path: str | None, ignore_mod_paks: bool | None = None) -> bool:
+    def has_valid_paks(self, path: str | None) -> bool:
         if not path:
             return False
         try:
-            ignore = self.pak_ignore_mods_cb.isChecked() if ignore_mod_paks is None else ignore_mod_paks
-            paks = scan_pak_files(path, ignore_mod_paks=ignore)
-            return bool(paks)
+            return bool(scan_pak_files(path))
         except Exception:
             return False
 
@@ -785,6 +789,10 @@ class ProjectManager(QDockWidget):
         self._update_tab_controls_state()
         self._update_path_label()
         self._update_placeholders()
+        if tab == "pak":
+            self._refresh_mod_warning()
+        elif getattr(self, "mod_warning", None) is not None:
+            self.mod_warning.setVisible(False)
 
     def switch_tab(self, tab: str):
         self._switch_tab(tab)
@@ -819,7 +827,7 @@ class ProjectManager(QDockWidget):
         on_pak = (self._active_tab == "pak")
         on_proj = (self._active_tab == "proj")
         for w in (self.btn_scan_paks, self.btn_load_list, self.pak_list_label,
-                  self.pak_ignore_mods_cb, self.pak_filter_edit):
+                  self.pak_filter_edit):
             w.setVisible(on_pak)
             w.setEnabled(on_pak and self.tree_pak.isEnabled())
         self.proj_filter_edit.setVisible(on_proj)
@@ -852,6 +860,7 @@ class ProjectManager(QDockWidget):
         self.pak_dir = None
         self._set_pak_list_display(None)
         self.tree_pak.setModel(None)
+        self._refresh_mod_warning()
 
         self.unpacked_dir = None
         self.model_sys.setRootPath("")
@@ -894,7 +903,6 @@ class ProjectManager(QDockWidget):
             "tree_model": self._pak_tree_model,
             "filter_proxy": self._pak_filter_proxy,
             "filter_text": self.pak_filter_edit.text(),
-            "ignore_mods": self.pak_ignore_mods_cb.isChecked(),
             "index_dirty": self._pak_index_dirty,
             "scroll_value": self.tree_pak.verticalScrollBar().value(),
             "signature": (self._path_key(self.pak_dir), signature),
@@ -928,7 +936,6 @@ class ProjectManager(QDockWidget):
             self._pak_filter_proxy = state.get("filter_proxy")
             self._pak_flat_model = self._pak_filter_proxy.sourceModel()
             self.unpacked_dir = unpacked_dir
-            self.pak_ignore_mods_cb.setChecked(state.get("ignore_mods", True))
             self._set_pak_list_display(self._pak_list_path)
             previous = self.pak_filter_edit.blockSignals(True)
             self.pak_filter_edit.setText(state.get("filter_text", ""))
@@ -1080,12 +1087,26 @@ class ProjectManager(QDockWidget):
         if hasattr(self, "loading_overlay"):
             self.loading_overlay.setGeometry(self.widget().rect())
 
+    def _refresh_mod_warning(self):
+        try:
+            candidates = scan_all_pak_files(self.pak_dir) if self.pak_dir else ()
+        except Exception:
+            candidates = ()
+        self._mod_paks_found = any_pak_modded(candidates)
+        if self._mod_paks_found:
+            self.mod_warning.setText(self.tr(
+                "⚠ Modded PAKs detected in the game folder (mod payloads or "
+                "invalidated entries). Please disable your mods and rescan."
+            ))
+        self.mod_warning.setVisible(self._active_tab == "pak" and self._mod_paks_found)
+
     def _scan_paks(self, rebuild: bool = True):
         if not self.pak_dir:
             QMessageBox.information(self, self.tr("Scan"), self.tr("Select a game directory first."))
             return
+        self._refresh_mod_warning()
         try:
-            paks = scan_pak_files(self.pak_dir, ignore_mod_paks=self.pak_ignore_mods_cb.isChecked())
+            paks = scan_pak_files(self.pak_dir)
         except Exception as e:
             QMessageBox.critical(self, self.tr("Scan failed"), str(e))
             return
@@ -1220,8 +1241,7 @@ class ProjectManager(QDockWidget):
         if not pak_dir or not list_path:
             return {}
         base_paths = read_pak_list_file(list_path)
-        ignore_mods = self.pak_ignore_mods_cb.isChecked() if self._path_key(project_dir) == self._path_key(self.project_dir) else True
-        paks = scan_pak_files(pak_dir, ignore_mod_paks=ignore_mods)
+        paks = scan_pak_files(pak_dir)
         reader = CachedPakReader.from_paks(
             paks,
             game=cfg.get("game") or self.current_game,
@@ -1234,7 +1254,6 @@ class ProjectManager(QDockWidget):
             "reader": reader,
             "tree_model": None,
             "filter_proxy": self._new_pak_filter_proxy(),
-            "ignore_mods": ignore_mods,
             "unpacked_dir": unpacked_dir,
             "signature": (self._path_key(pak_dir), self._pak_signature(paks, list_path)),
         }

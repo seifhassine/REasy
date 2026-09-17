@@ -41,6 +41,7 @@ from PySide6.QtWidgets import (
     QTabWidget,
     QTableWidget,
     QTableWidgetItem,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -278,10 +279,15 @@ class SoundViewer(QWidget):
         self._selected_flow_node = (None, None)
         self._event_filter_initialized = False
         self._temp_dir = tempfile.mkdtemp(prefix="reasy_sound_")
+        self._rep_settings_host = QWidget()
+        self._settings_dialog = None
         self._current_audio: tuple[str | None, str | None] = (None, None)
+        self._decoded_cache: dict[int, tuple] = {}
         self._preview_audio_path = None
         self._channel_audio_path = None
         self._preview_source_id = None
+        self._resume_position_ms = 0
+        self._stopped_source_id = None
         self._duration_ms = 0
         self._is_seeking = False
         self._active_ms = []
@@ -521,6 +527,16 @@ class SoundViewer(QWidget):
         button.clicked.connect(callback)
         return button
 
+    def _make_tool_btn(self, icon, callback, tooltip, *, enabled=True):
+        button = QToolButton()
+        button.setIcon(self.style().standardIcon(icon))
+        button.setEnabled(enabled)
+        button.clicked.connect(callback)
+        button.setToolTip(tooltip)
+        button.setAutoRaise(True)
+        button.setFixedSize(30, 30)
+        return button
+
     def _setup_ui(self):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
@@ -701,6 +717,8 @@ class SoundViewer(QWidget):
         card = QFrame()
         card.setFrameShape(QFrame.Shape.StyledPanel)
         card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(8, 6, 8, 6)
+        card_layout.setSpacing(4)
         self.source_title = QLabel(self.tr("Select a media source"))
         self.source_title.setStyleSheet("font-weight: 600;")
         self.source_help = QLabel("")
@@ -713,12 +731,18 @@ class SoundViewer(QWidget):
         card_layout.addWidget(self.source_usage)
         media_layout.addWidget(card)
 
+        settings_layout = QVBoxLayout(self._rep_settings_host)
+        settings_layout.setContentsMargins(0, 0, 0, 0)
         import_row = QHBoxLayout()
         import_row.setSpacing(12)
 
-        rate_column = QVBoxLayout()
-        rate_column.setSpacing(2)
-        rate_column.addWidget(QLabel(self.tr("WAV import rate")))
+        def import_control(label, combo):
+            caption = QLabel(label)
+            caption.setStyleSheet(_MUTED_TEXT_STYLE)
+            combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+            import_row.addWidget(caption)
+            import_row.addWidget(combo)
+
         self.sample_rate_combo = QComboBox()
         self.sample_rate_combo.addItem(
             self.tr("Match original WEM (Recommended)"),
@@ -731,13 +755,8 @@ class SoundViewer(QWidget):
             "Matching the original keeps the game's storage and runtime profile. "
             "A codec-required rate, such as RE4 WEM Opus at 48 kHz, always wins."
         ))
-        self.sample_rate_combo.setMinimumWidth(140)
-        rate_column.addWidget(self.sample_rate_combo)
-        import_row.addLayout(rate_column, 1)
+        import_control(self.tr("Rate"), self.sample_rate_combo)
 
-        codec_column = QVBoxLayout()
-        codec_column.setSpacing(2)
-        codec_column.addWidget(QLabel(self.tr("WAV Import Codec")))
         self.codec_combo = QComboBox()
         self.codec_combo.currentIndexChanged.connect(
             self._on_encoding_codec_changed
@@ -746,13 +765,8 @@ class SoundViewer(QWidget):
             "Match the original WEM for safest replacement, or explicitly choose "
             "another codec supported by this game's Wwise version."
         ))
-        self.codec_combo.setMinimumWidth(140)
-        codec_column.addWidget(self.codec_combo)
-        import_row.addLayout(codec_column, 1)
+        import_control(self.tr("Codec"), self.codec_combo)
 
-        quality_column = QVBoxLayout()
-        quality_column.setSpacing(2)
-        quality_column.addWidget(QLabel(self.tr("Encoding quality")))
         self.quality_combo = QComboBox()
         for label, value in (
             (self.tr("Current default (Recommended)"), None),
@@ -765,11 +779,10 @@ class SoundViewer(QWidget):
             "10; WEM Opus uses 32, 64, 128, and 256. PCM and ADPCM have no "
             "adjustable compression quality."
         ))
-        self.quality_combo.setMinimumWidth(140)
-        quality_column.addWidget(self.quality_combo)
-        import_row.addLayout(quality_column, 1)
+        import_control(self.tr("Quality"), self.quality_combo)
+        import_row.addStretch()
 
-        media_layout.addLayout(import_row)
+        settings_layout.addLayout(import_row)
 
         self.advanced_compression_group = QGroupBox(self.tr("Advanced compression"))
         self.advanced_compression_group.setCheckable(True)
@@ -837,18 +850,24 @@ class SoundViewer(QWidget):
         advanced.addWidget(self.advanced_compression_note, 5, 0, 1, 3)
         advanced.setColumnStretch(2, 1)
         group_layout.addWidget(self.advanced_compression_host)
-        media_layout.addWidget(self.advanced_compression_group)
+        settings_layout.addWidget(self.advanced_compression_group)
+        settings_layout.addStretch()
         self.advanced_compression_group.toggled.connect(
             self._sync_advanced_compression_controls
         )
         self._populate_encoding_controls()
 
-        self.play_btn = self._make_btn(self.tr("Preview"), QStyle.SP_MediaPlay, self._on_play, enabled=False)
-        self.stop_btn = self._make_btn(self.tr("Stop"), QStyle.SP_MediaStop, self._on_stop, enabled=False)
+        self.play_btn = self._make_tool_btn(QStyle.SP_MediaPlay, self._on_play, self.tr("Play"), enabled=False)
+        self.stop_btn = self._make_tool_btn(QStyle.SP_MediaStop, self._on_stop, self.tr("Stop"), enabled=False)
+        self.rep_settings_btn = self._make_btn(
+            self.tr("Replacement Settings…"), QStyle.SP_FileDialogInfoView,
+            self._on_replacement_settings,
+        )
         self.rep_wem = self._make_btn(self.tr("Replace Audio…"), QStyle.SP_BrowserReload, self._on_replace, enabled=False)
         self.rep_wem.setToolTip(self.tr(
-            "WAV import uses the codec, quality, and sample-rate controls above. "
-            "The defaults match the original WEM. WAV metadata wins when provided; "
+            "WAV import uses the codec, quality, and sample-rate settings from "
+            "Replacement Settings. The defaults match the original WEM. WAV "
+            "metadata wins when provided; "
             "otherwise REasy inherits the original loops, cue points, and marker "
             "labels and verifies the authored WEM."
         ))
@@ -866,9 +885,8 @@ class SoundViewer(QWidget):
         actions_flow = FlowLayout()
         actions_flow.setSpacing(6)
         for button in (
-            self.play_btn, self.stop_btn, self.rep_wem,
-            self.meta_wem, self.exp_wem, self.exp_wav,
-            self.rep_bulk, self.exp_all, self.add_audio_source,
+            self.rep_settings_btn, self.rep_wem, self.meta_wem, self.exp_wem,
+            self.exp_wav, self.rep_bulk, self.exp_all, self.add_audio_source,
         ):
             actions_flow.addWidget(button)
         media_layout.addLayout(actions_flow)
@@ -992,48 +1010,81 @@ class SoundViewer(QWidget):
         self._bank_chunk_editor = None
         return page
 
+    def _on_replacement_settings(self):
+        if self._settings_dialog is None:
+            dialog = QDialog(self)
+            dialog.setWindowTitle(self.tr("Replacement Settings"))
+            layout = QVBoxLayout(dialog)
+            layout.addWidget(self._rep_settings_host)
+            row = QHBoxLayout()
+            row.addStretch()
+            row.addWidget(self._make_btn(
+                self.tr("Close"), QStyle.SP_DialogCloseButton, dialog.hide,
+            ))
+            layout.addLayout(row)
+            self._settings_dialog = dialog
+        self._settings_dialog.show()
+        self._settings_dialog.raise_()
+        self._settings_dialog.activateWindow()
+
     def _build_preview_controls(self):
         group = QGroupBox(self.tr("Preview controls"))
         layout = QVBoxLayout(group)
-        position = QHBoxLayout()
+        layout.setSpacing(4)
+        bar = QHBoxLayout()
+        bar.setSpacing(6)
+        bar.addWidget(self.play_btn)
+        bar.addWidget(self.stop_btn)
+        bar.addSpacing(4)
         self.pos_cur = QLabel("0:00")
         self.pos_slider = QSlider(Qt.Horizontal)
         self.pos_slider.setEnabled(False)
         self.pos_tot = QLabel("0:00")
-        position.addWidget(self.pos_cur)
-        position.addWidget(self.pos_slider, 1)
-        position.addWidget(self.pos_tot)
-        layout.addLayout(position)
-        options = QHBoxLayout()
-        options.addWidget(QLabel(self.tr("Volume")))
-        self.vol_slider = QSlider(Qt.Horizontal)
-        self.vol_slider.setRange(0, 100)
-        self.vol_slider.setValue(70)
-        self.vol_slider.setMaximumWidth(180)
-        options.addWidget(self.vol_slider)
-        options.addWidget(QLabel(self.tr("Speed")))
-        self.speed_combo = QComboBox()
-        for speed in (0.50, 0.75, 1.00, 1.25, 1.50, 2.00):
-            self.speed_combo.addItem(f"{speed:.2f}×", speed)
-        self.speed_combo.setCurrentIndex(2)
-        options.addWidget(self.speed_combo)
-        options.addWidget(QLabel(self.tr("Listen")))
-        self.channel_combo = QComboBox()
-        self.channel_combo.addItem(self.tr("Mix"), -1)
-        self.channel_combo.setEnabled(False)
-        self.channel_combo.setToolTip(
-            self.tr("Preview the complete mix or solo one channel; audio data is not modified.")
-        )
-        options.addWidget(self.channel_combo)
+        for label in (self.pos_cur, self.pos_tot):
+            label.setStyleSheet(_MUTED_TEXT_STYLE)
+        bar.addWidget(self.pos_cur)
+        bar.addWidget(self.pos_slider, 1)
+        bar.addWidget(self.pos_tot)
+        bar.addSpacing(8)
         self.skip_btn = self._make_btn(
             self.tr("Skip Silence"),
             QStyle.SP_MediaSkipForward,
             self._on_skip,
             enabled=False,
         )
-        options.addWidget(self.skip_btn)
-        options.addStretch()
-        layout.addLayout(options)
+        self.skip_btn.setToolTip(self.tr("Jump to the next activity segment."))
+        bar.addWidget(self.skip_btn)
+        self.channel_combo = QComboBox()
+        self.channel_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+        self.channel_combo.addItem(self.tr("Mix"), -1)
+        self.channel_combo.setEnabled(False)
+        self.channel_combo.setToolTip(
+            self.tr("Preview the complete mix or solo one channel; audio data is not modified.")
+        )
+        bar.addWidget(self.channel_combo)
+        self.speed_slider = QSlider(Qt.Horizontal)
+        self.speed_slider.setRange(50, 200)
+        self.speed_slider.setValue(100)
+        self.speed_slider.setSingleStep(25)
+        self.speed_slider.setPageStep(25)
+        self.speed_slider.setFixedWidth(90)
+        self.speed_slider.setToolTip(self.tr("Playback speed (50%–200%)."))
+        self.speed_label = QLabel("1.00×")
+        self.speed_label.setStyleSheet(_MUTED_TEXT_STYLE)
+        bar.addWidget(self.speed_slider)
+        bar.addWidget(self.speed_label)
+        self.vol_slider = QSlider(Qt.Horizontal)
+        self.vol_slider.setRange(0, 100)
+        self.vol_slider.setValue(70)
+        self.vol_slider.setFixedWidth(90)
+        self.vol_slider.setToolTip(self.tr("Volume."))
+        volume_icon = QLabel()
+        volume_icon.setPixmap(
+            self.style().standardIcon(QStyle.SP_MediaVolume).pixmap(14, 14)
+        )
+        bar.addWidget(volume_icon)
+        bar.addWidget(self.vol_slider)
+        layout.addLayout(bar)
         self.waveform = WaveformWidget()
         layout.addWidget(self.waveform)
         return group
@@ -1052,6 +1103,13 @@ class SoundViewer(QWidget):
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.itemSelectionChanged.connect(self._on_sel)
         self.table.itemDoubleClicked.connect(self._on_dbl)
+        # Rows are sorted in _populate: QTableWidget's built-in sorting drops
+        # Python-owned items under PySide6, emptying moved rows.
+        header.setSectionsClickable(True)
+        header.setSortIndicatorShown(False)
+        header.sectionClicked.connect(self._on_header_clicked)
+        self._sort_column, self._sort_order = 0, False
+        self._style_sort_header()
         return self.table
 
     def _setup_player(self):
@@ -1060,7 +1118,7 @@ class SoundViewer(QWidget):
         self.audio_out.setVolume(0.7)
         self.player.setAudioOutput(self.audio_out)
         self.vol_slider.valueChanged.connect(lambda value: self.audio_out.setVolume(value / 100))
-        self.speed_combo.currentIndexChanged.connect(lambda index: self.player.setPlaybackRate(float(self.speed_combo.itemData(index))))
+        self.speed_slider.valueChanged.connect(self._on_speed_changed)
         self.channel_combo.currentIndexChanged.connect(self._on_channel_changed)
         self.pos_slider.sliderPressed.connect(lambda: setattr(self, "_is_seeking", True))
         self.pos_slider.sliderReleased.connect(self._on_seek_done)
@@ -1078,6 +1136,11 @@ class SoundViewer(QWidget):
         self.pos_slider.setEnabled(bool(self._duration_ms))
         self.pos_tot.setText(self._fmt_ms(self._duration_ms))
 
+    def _on_speed_changed(self, value):
+        rate = value / 100
+        self.player.setPlaybackRate(rate)
+        self.speed_label.setText(f"{rate:.2f}×")
+
     def _on_position(self, milliseconds):
         if self._cleanup_done:
             return
@@ -1094,7 +1157,10 @@ class SoundViewer(QWidget):
 
     def _on_waveform_seek(self, permille):
         if self._duration_ms:
-            self.player.setPosition(permille * self._duration_ms // 1000)
+            position = permille * self._duration_ms // 1000
+            self.player.setPosition(position)
+            if self.player.playbackState() == QMediaPlayer.PlaybackState.StoppedState:
+                self._resume_position_ms = position  # Play starts from here.
 
     def _on_skip(self):
         next_start = next(
@@ -1112,12 +1178,22 @@ class SoundViewer(QWidget):
     def _on_state(self, state):
         if self._cleanup_done:
             return
+        active = state != QMediaPlayer.PlaybackState.StoppedState
+        self.stop_btn.setEnabled(active)
         playing = state == QMediaPlayer.PlaybackState.PlayingState
-        self.stop_btn.setEnabled(playing)
-        if not playing and state == QMediaPlayer.PlaybackState.StoppedState:
-            self.pos_slider.setValue(0)
-            self.pos_cur.setText("0:00")
-            self.waveform.set_position(0.0)
+        self.play_btn.setIcon(
+            self.style().standardIcon(
+                QStyle.SP_MediaPause if playing else QStyle.SP_MediaPlay
+            )
+        )
+        self.play_btn.setToolTip(self.tr("Pause") if playing else self.tr("Play"))
+        if not active:
+            position = self._resume_position_ms
+            self.pos_slider.setValue(position)
+            self.pos_cur.setText(self._fmt_ms(position))
+            self.waveform.set_position(
+                position / self._duration_ms if self._duration_ms else 0.0
+            )
 
     def _selected(self):
         row = self.table.currentRow()
@@ -1193,8 +1269,9 @@ class SoundViewer(QWidget):
             self.player.setSource(QUrl())
         except RuntimeError:
             pass
-        for path in {*self._current_audio, self._channel_audio_path}:
-            self._remove_file(path)
+        # Decoded media lives in _decoded_cache until the file is re-parsed or
+        # the viewer closes, so replays never re-run vgmstream.
+        self._remove_file(self._channel_audio_path)
         self._current_audio = (None, None)
         self._preview_audio_path = None
         self._channel_audio_path = None
@@ -1309,12 +1386,10 @@ class SoundViewer(QWidget):
         self.channel_combo.setEnabled(channels > 1)
         self.channel_combo.blockSignals(False)
 
-    def _start_preview(self, wav_path, *, keep_position=False):
-        position = self.player.position() if keep_position else 0
+    def _start_preview(self, wav_path, *, start_ms=0):
         self._preview_audio_path = wav_path
         self.player.setSource(QUrl.fromLocalFile(wav_path))
-        if position:
-            self.player.setPosition(position)
+        self.player.setPosition(start_ms)
         self.player.play()
         self._queue_waveform(wav_path)
         self.status.setText(
@@ -1341,27 +1416,43 @@ class SoundViewer(QWidget):
             return
         self._remove_file(self._channel_audio_path)
         self._channel_audio_path = new_path if new_path != mix_path else None
-        self._start_preview(new_path, keep_position=True)
+        self._start_preview(new_path, start_ms=self.player.position())
+
+    def _cached_audio(self, track):
+        """Return the cached decoded pair for ``track``, decoding once on demand."""
+
+        if track.source_id not in self._decoded_cache:
+            try:
+                self._decoded_cache[track.source_id] = self._decode_track(track)
+            except (OSError, ValueError) as exc:
+                QMessageBox.warning(self, self.tr("Preview Error"), str(exc))
+                self._decoded_cache[track.source_id] = (None, None)
+        return self._decoded_cache[track.source_id]
 
     def _on_play(self):
         selected = self._require_track(self.tr("Playback"))
         if not selected:
             return
-        self._cleanup_audio()
         _, track = selected
-        self.status.setText(self.tr("Decoding source {id}…").format(id=track.source_id))
-        try:
-            self._current_audio = self._decode_track(track)
-        except (OSError, ValueError) as exc:
-            QMessageBox.warning(self, self.tr("Preview Error"), str(exc))
-            self.status.setText(self.tr("Decode failed."))
+        active = self.player.playbackState() != QMediaPlayer.PlaybackState.StoppedState
+        if self._preview_source_id == track.source_id and active:
+            paused = self.player.playbackState() == QMediaPlayer.PlaybackState.PausedState
+            self.player.play() if paused else self.player.pause()  # Toggle.
             return
+        if self._preview_source_id != track.source_id:
+            self._cleanup_audio()
+            if self._stopped_source_id != track.source_id:
+                self._resume_position_ms = 0
+        self._stopped_source_id = None
+        self.status.setText(self.tr("Decoding source {id}…").format(id=track.source_id))
+        self._current_audio = self._cached_audio(track)
         if not self._current_audio[1]:
             self.status.setText(self.tr("Decode failed."))
             return
         self._preview_source_id = track.source_id
         self._configure_channels(self._current_audio[1])
-        self._start_preview(self._current_audio[1])
+        self._start_preview(self._current_audio[1], start_ms=self._resume_position_ms)
+        self._resume_position_ms = 0
 
     def _queue_waveform(self, wav_path):
         self._waveform_job += 1
@@ -1406,8 +1497,17 @@ class SoundViewer(QWidget):
         )
 
     def _on_stop(self):
+        self._resume_position_ms = self.player.position()
+        self._stopped_source_id = self._preview_source_id  # Play resumes here.
         self._cleanup_audio()
         self.status.clear()
+
+    def _purge_decoded_cache(self):
+        for paths in self._decoded_cache.values():
+            for path in paths:
+                self._remove_file(path)
+        self._decoded_cache.clear()
+        self._stopped_source_id = None
 
     @staticmethod
     def _save_path(parent, title, default, extension, file_filter):
@@ -1519,7 +1619,28 @@ class SoundViewer(QWidget):
             for value in temporary:
                 self._remove_file(value)
 
+    def _ensure_modding_allowed(self, action):
+        """Block sound modding outside a project with the PAK directory configured."""
+        context = getattr(self.handler, "resource_context", None)
+        app = getattr(self.handler, "app", None)
+        project = getattr(app, "proj_dock", None) if app else None
+        pak_dir = str(getattr(project, "pak_dir", "") or "")
+        if not (getattr(context, "project_dir", "") and pak_dir):
+            QMessageBox.warning(
+                self,
+                self.tr("{action} blocked").format(action=action),
+                self.tr(
+                    "Modding requires an active REasy project and a configured PAK "
+                    "directory. Open the Project Browser, create/open a project and "
+                    "set the game folder (PAKs)."
+                ),
+            )
+            return False
+        return True
+
     def _on_edit_wem_metadata(self):
+        if not self._ensure_modding_allowed(self.tr("Loop / Markers")):
+            return
         selected = self._require_track(self.tr("Loop / Markers"), require_available=False)
         if not selected:
             return
@@ -2060,6 +2181,8 @@ class SoundViewer(QWidget):
         }.get(kind)
 
     def _on_replace(self):
+        if not self._ensure_modding_allowed(self.tr("Replace")):
+            return
         selected = self._require_track(self.tr("Replace"), require_available=False)
         if not selected:
             return
@@ -2169,6 +2292,8 @@ class SoundViewer(QWidget):
             QMessageBox.warning(self, self.tr("Replace Error"), str(exc))
 
     def _on_add_audio_source(self):
+        if not self._ensure_modding_allowed(self.tr("Add Audio Source")):
+            return
         if not self._parse_result:
             return
         is_pck = self._parse_result.container_type.lower() == "pck"
@@ -2250,6 +2375,8 @@ class SoundViewer(QWidget):
             })
 
     def _on_bulk_replace(self):
+        if not self._ensure_modding_allowed(self.tr("Bulk Replace")):
+            return
         directory = QFileDialog.getExistingDirectory(self, self.tr("Select Replacement Folder"), "")
         if not directory:
             return
@@ -2417,6 +2544,7 @@ class SoundViewer(QWidget):
     def _apply_result(self, result):
         self._refresh_sound_profile(result)
         self._resolved_media.clear()
+        self._purge_decoded_cache()
         self._parse_result = result
         self._parsed_tracks = result.tracks
         self._update_role_banner(result)
@@ -4184,6 +4312,21 @@ class SoundViewer(QWidget):
             )
         )
 
+    def _on_header_clicked(self, column):
+        if column == self._sort_column:
+            self._sort_order = not self._sort_order
+        else:
+            self._sort_column, self._sort_order = column, False
+        self._style_sort_header()
+        self._populate(self._parsed_tracks)
+
+    def _style_sort_header(self):
+        for column in range(len(_COLUMNS)):
+            item = self.table.horizontalHeaderItem(column)
+            font = item.font()
+            font.setBold(column == self._sort_column)
+            item.setFont(font)
+
     def _populate(self, tracks):
         selected = self._selected()[1]
         selected_id = selected.source_id if selected else None
@@ -4196,10 +4339,10 @@ class SoundViewer(QWidget):
         needle = self.source_search.text().strip()
         if needle:
             visible = [track for track in visible if needle in str(track.source_id)]
-        self._visible_tracks = visible
         self.table.blockSignals(True)
         self.table.setRowCount(0)
         selected_row = -1
+        prepared = []
         media_path = (
             self.handler.filepath or getattr(self.handler, "filename", "")
             if self._is_media_bank(self._parse_result) else None
@@ -4215,12 +4358,22 @@ class SoundViewer(QWidget):
                 if wem else None
             )
             location, guidance = self._track_status(track)
-            duration = (
-                self.tr("Full media in PCK") if split_prefetch else
-                self._fmt_duration(metadata.duration_seconds)
-                if metadata and track.payload_complete else
-                self.tr("Partial") if track.available else "—"
-            )
+            duration, duration_key = (self.tr("Partial") if track.available else "—"), float("inf")
+            if split_prefetch:
+                # The event bank holds only a prefetch stub; measure the full
+                # streamed media instead of showing a placeholder.
+                try:
+                    full = parse_wem_metadata(self._complete_media(track), track.plugin_id, track.media_kind)
+                except Exception:
+                    full = None
+                if full and full.duration_seconds is not None:
+                    duration, duration_key = self._fmt_duration(full.duration_seconds), full.duration_seconds
+                else:
+                    duration = self.tr("Full media in PCK")
+            elif metadata and track.payload_complete:
+                duration = self._fmt_duration(metadata.duration_seconds)
+                if metadata.duration_seconds is not None:
+                    duration_key = metadata.duration_seconds
             format_text = self.tr("Prefetch fragment") if split_prefetch else " · ".join(
                 value for value in (
                     metadata.codec if metadata else "",
@@ -4242,22 +4395,30 @@ class SoundViewer(QWidget):
                 )
             if not used_by:
                 used_by = self.tr("Not resolved")
+            prepared.append((
+                (track.index, track.source_id, location, duration_key, format_text.casefold(), used_by),
+                (str(track.index), str(track.source_id), location, duration, format_text, used_by),
+                guidance,
+                "\n".join(used_by_values),
+                track,
+            ))
+        prepared.sort(
+            key=lambda value: value[0][self._sort_column],
+            reverse=self._sort_order,
+        )
+        self._visible_tracks = [value[4] for value in prepared]
+        for keys, cells, guidance, used_by_tooltip, track in prepared:
             row = self.table.rowCount()
             self.table.insertRow(row)
-            for column, value in enumerate((str(track.index), str(track.source_id), location, duration, format_text, used_by)):
-                item = QTableWidgetItem(value)
-                tooltip = (
-                    guidance if column == 2 else
-                    "\n".join(used_by_values) if column == 5 and used_by_values else
-                    value
-                )
-                item.setToolTip(tooltip)
-                if column == 1:
+            for col, text in enumerate(cells):
+                item = QTableWidgetItem(text)
+                item.setToolTip(used_by_tooltip if col == 5 and used_by_tooltip else guidance if col == 2 else text)
+                if col == 1:
                     item.setData(Qt.UserRole, track.source_id)
-                self.table.setItem(row, column, item)
+                self.table.setItem(row, col, item)
             if track.source_id == selected_id:
                 selected_row = row
-        if selected_row < 0 and visible:
+        if selected_row < 0 and prepared:
             selected_row = 0
         if selected_row >= 0:
             self.table.selectRow(selected_row)

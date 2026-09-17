@@ -206,7 +206,7 @@ def choose_search_source(parent, search_type):
     return "pak" if selected == options[1] else "directory"
 
 
-def ask_ignore_mod_paks(parent):
+def ask_include_mod_paks(parent):
     choices = [
         QCoreApplication.translate("DirectorySearch", "Include mod PAKs"),
         QCoreApplication.translate("DirectorySearch", "Ignore mod PAKs"),
@@ -221,7 +221,7 @@ def ask_ignore_mod_paks(parent):
     )
     if not ok:
         return None
-    return selected == choices[1]
+    return selected == choices[0]
 
 
 def ask_pak_game(parent):
@@ -394,14 +394,18 @@ def search_pak_common(
     matcher,
     ptitle,
     rtext,
-    ignore_mod_paks=False,
+    include_mod_paks=True,
     game=None,
 ):
     """Search files contained in all detected PAKs in a directory."""
-    from file_handlers.pak import scan_pak_files
+    from file_handlers.pak import scan_all_pak_files, scan_pak_files
     from file_handlers.pak.reader import CachedPakReader
 
-    paks = scan_pak_files(directory, ignore_mod_paks=ignore_mod_paks)
+    paks = (
+        scan_all_pak_files(directory)
+        if include_mod_paks
+        else scan_pak_files(directory)
+    )
     if not paks:
         QMessageBox.information(
             parent,
@@ -564,8 +568,8 @@ def search_directory_for_type(parent, search_type, source_mode=None):
             progress_title = QCoreApplication.translate(
                 "DirectorySearch", "PAK {search_type} Search Progress"
             ).format(search_type=_search_type_label(search_type))
-            ignore_mod_paks = ask_ignore_mod_paks(parent)
-            if ignore_mod_paks is None:
+            include_mod_paks = ask_include_mod_paks(parent)
+            if include_mod_paks is None:
                 return
             game = ask_pak_game(parent)
             if game is None:
@@ -576,7 +580,7 @@ def search_directory_for_type(parent, search_type, source_mode=None):
                 matcher,
                 progress_title,
                 rtext,
-                ignore_mod_paks=ignore_mod_paks,
+                include_mod_paks=include_mod_paks,
                 game=game,
             )
         else:

@@ -6,6 +6,7 @@ import os
 from typing import Any, Dict, List, Optional
 
 from file_handlers.base_handler import BaseFileHandler
+from utils.app_paths import resource_path
 from file_handlers.msg.msg_viewer import MsgViewer
 from utils.hash_util import murmur3_hash
 
@@ -37,10 +38,8 @@ class MsgHandler(BaseFileHandler):
         }
             
         try:
-            current_dir = os.path.dirname(os.path.abspath(__file__))
-            json_path = os.path.join(current_dir, "..", "..", "resources", "data", "enums", "shared_sdk.json")
-            json_path = os.path.normpath(json_path)
-            
+            json_path = resource_path("resources/data/enums/shared_sdk.json")
+
             if os.path.exists(json_path):
                 with open(json_path, 'r', encoding='utf-8') as f:
                     data = json.load(f)
