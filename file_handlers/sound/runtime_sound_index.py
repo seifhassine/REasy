@@ -39,6 +39,12 @@ _SOUND_PATH = re.compile(r"\.(?:s?bnk|s?pck)\.\d+\.(?:x64|stm)(?:\.|$)", re.I)
 _BANK_PATH = re.compile(r"\.s?bnk\.\d+\.(?:x64|stm)(?:\.|$)", re.I)
 _PACKAGE_PATH = re.compile(r"\.s?pck\.\d+\.(?:x64|stm)(?:\.|$)", re.I)
 _STRUCTURAL_CHUNKS = frozenset({b"BKHD", b"DIDX", b"HIRC"})
+_LOCALE = re.compile(r"\.(?:x64|stm)\.([a-z0-9]+)$")
+
+
+def _locale_suffix(path: str) -> str:
+    match = _LOCALE.search(resource_key(path))
+    return match.group(1) if match else ""
 _EXECUTOR = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sound-index")
 _HANDLES: weakref.WeakKeyDictionary = weakref.WeakKeyDictionary()
 _HANDLES_LOCK = threading.Lock()
@@ -250,8 +256,9 @@ class RuntimeSoundIndex:
         )
 
     def prefetch_media_banks(self, source_id: int, bank_path: str) -> tuple[str, ...]:
-        if not self.split_roles:
-            return ()
+        """Return the banks whose DIDX holds the prefetch data for a source.
+        """
+
         source_id = int(source_id) & 0xFFFFFFFF
         current = resource_key(bank_path)
         if not any(
@@ -259,25 +266,49 @@ class RuntimeSoundIndex:
             for bank, stream_type in self.banks_by_source.get(source_id, ())
         ):
             return ()
-        family = _split_bank_family(current, self.game)
-        return tuple(
+        holders = [
             path for path in self.embedded_by_source.get(source_id, ())
-            if path != current and _split_bank_family(path, self.game) == family
-        )
+            if path != current
+        ]
+        if not holders:
+            return ()
+        family = _split_bank_family(current, self.game)
+        matched = [
+            path for path in holders
+            if _split_bank_family(path, self.game) == family
+        ]
+        if matched:
+            return tuple(matched)
+        locale = _locale_suffix(current)
+        localized = [path for path in holders if _locale_suffix(path) == locale]
+        if len(localized) == 1:
+            return tuple(localized)
+        return ()
 
     def prefetch_event_banks(self, source_id: int, media_path: str) -> tuple[str, ...]:
-        if not self.split_roles:
-            return ()
+        """Return banks declaring prefetch for a source.
+        """
+
         current = resource_key(media_path)
-        family = _split_bank_family(current, self.game)
-        return tuple(dict.fromkeys(
+        declarers = [
             bank
             for bank, stream_type in self.banks_by_source.get(
                 int(source_id) & 0xFFFFFFFF, ()
             )
             if stream_type == 1 and bank != current
-            and _split_bank_family(bank, self.game) == family
-        ))
+        ]
+        if not declarers:
+            return ()
+        family = _split_bank_family(current, self.game)
+        matched = [
+            bank for bank in declarers
+            if _split_bank_family(bank, self.game) == family
+        ]
+        if matched:
+            return tuple(dict.fromkeys(matched))
+        locale = _locale_suffix(current)
+        localized = [bank for bank in declarers if _locale_suffix(bank) == locale]
+        return tuple(dict.fromkeys(localized)) if len(localized) == 1 else ()
 
     def source_event_banks(self, source_id: int, media_path: str) -> tuple[str, ...]:
         source_id = int(source_id) & 0xFFFFFFFF
