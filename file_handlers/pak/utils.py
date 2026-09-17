@@ -227,17 +227,7 @@ def _scan_pak_candidates(directory: str | os.PathLike) -> List[str]:
     return results
 
 
-def scan_pak_files(
-    directory: str | os.PathLike, ignore_mod_paks: bool = True
-) -> List[str]:
-    """Discover official PAKs, skipping mod PAKs unless the caller wants them.
-
-    `ignore_mod_paks` is kept because callers outside this module still select
-    the vanilla corpus with it, and a mod-free scan is what a default scan
-    already means.
-    """
-    if not ignore_mod_paks:
-        return scan_all_pak_files(directory)
+def scan_pak_files(directory: str | os.PathLike) -> List[str]:
     return [pak for pak in _scan_pak_candidates(directory) if not is_mod_pak(pak)]
 
 
