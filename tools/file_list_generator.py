@@ -315,6 +315,8 @@ class ExePathExtractor:
         return strings
 
     def extract_paths_from_binary_file(self, file_path, progress_callback=None, source_label="binary file"):
+        from file_handlers.pak.utils import normalize_pak_path
+
         self.collected_paths.clear()
 
         if progress_callback:
@@ -337,7 +339,7 @@ class ExePathExtractor:
 
         base_paths = set()
         for s in strings:
-            path = s.replace('\\', '/').lstrip('@')
+            path = normalize_pak_path(s).lstrip('@')
             if ':' in path:
                 path = path.split(':')[-1]
             path = path.lstrip('@')
@@ -361,7 +363,7 @@ class ExePathExtractor:
 
         for base in base_paths:
             if not base.startswith(NATIVE_PREFIX):
-                base = self.path_prefix + base
+                base = normalize_pak_path(self.path_prefix + base)
 
             parts = base.split('.')
             if len(parts) >= 2:
@@ -909,6 +911,7 @@ class PathCollector:
 
     def _process_entry(self, entry, f):
         from file_handlers.pak.pakfile import _read_entry_raw
+        from file_handlers.pak.utils import normalize_pak_path
         
         if self.should_skip_entry(entry):
             return 0, 0
@@ -925,11 +928,11 @@ class PathCollector:
             for string in extracted_strings:
                 if self.filter_path_by_extensions(string):
                     strings_matched += 1
-                    path_normalized = string.replace('\\', '/')
+                    path_normalized = normalize_pak_path(string)
                     if path_normalized.startswith('@'):
                         path_normalized = path_normalized[1:]
                     if not path_normalized.lower().startswith(NATIVE_PREFIX):
-                        path_normalized = self.path_prefix + path_normalized
+                        path_normalized = normalize_pak_path(self.path_prefix + path_normalized)
                     
                     parts = path_normalized.split('.')
                     if len(parts) >= 2:
@@ -947,7 +950,7 @@ class PathCollector:
     
     def collect_from_pak_files(self, pak_directory, progress_callback=None):
         try:
-            from file_handlers.pak import scan_pak_files, PakFile
+            from file_handlers.pak import scan_all_pak_files, PakFile
             
             if not os.path.exists(pak_directory):
                 return False, f"Directory not found: {pak_directory}", 0
@@ -959,7 +962,7 @@ class PathCollector:
                 if should_stop:
                     return True, None, len(self.collected_paths)
             
-            pak_files = scan_pak_files(pak_directory, ignore_mod_paks=False)
+            pak_files = scan_all_pak_files(pak_directory)
             if not pak_files:
                 return False, "No .pak files found in directory", 0
             
@@ -1023,6 +1026,8 @@ class PathCollector:
             return False, f"Unexpected error: {e}", 0
     
     def add_from_list_file(self, list_file_path):
+        from file_handlers.pak.utils import normalize_pak_path
+
         if not os.path.exists(list_file_path):
             return False, f"List file not found: {list_file_path}"
         
@@ -1037,6 +1042,7 @@ class PathCollector:
                     if not path_without_version:
                         continue
 
+                    path_without_version = normalize_pak_path(path_without_version)
                     versions = self.extension_versions.get(extension, set())
                     if versions:
                         for version in versions:
@@ -1050,7 +1056,7 @@ class PathCollector:
     
 
     def _collect_pak_hashes(self, pak_directory, progress_callback=None):
-        from file_handlers.pak import scan_pak_files, PakFile
+        from file_handlers.pak import scan_all_pak_files, PakFile
 
         if not os.path.exists(pak_directory):
             return False, f"Directory not found: {pak_directory}", set()
@@ -1058,7 +1064,7 @@ class PathCollector:
         if progress_callback:
             progress_callback("Scanning PAK files for hashes...", 0, 1)
 
-        pak_files = scan_pak_files(pak_directory, ignore_mod_paks=False)
+        pak_files = scan_all_pak_files(pak_directory)
         if not pak_files:
             return False, "No .pak files found in directory", set()
 
