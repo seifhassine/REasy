@@ -2,8 +2,32 @@
 #include <Python.h>
 #include <stdint.h>
 
+static int is_ascii_printable(uint8_t value) {
+	return value >= 0x20 && value <= 0x7E;
+}
+
 static int is_utf8_candidate_byte(uint8_t value) {
-	return (value >= 0x20 && value <= 0x7E) || value >= 0x80;
+	return is_ascii_printable(value) || value >= 0x80;
+}
+
+#define ASCII_STRING_MIN_LENGTH 4
+
+static int ascii_string_ends_at(const uint8_t* data, Py_ssize_t i) {
+	if (i == 0 || !is_ascii_printable(data[i - 1])) {
+		return 0;
+	}
+
+	Py_ssize_t start = i;
+	while (start > 0 && is_ascii_printable(data[start - 1])) start--;
+	if (i - start + 1 < ASCII_STRING_MIN_LENGTH) {
+		return 0;
+	}
+	return start == 0 || data[start - 1] == 0;
+}
+
+static int is_utf16_run_start(const uint8_t* data, Py_ssize_t i) {
+	return is_ascii_printable(data[i]) && data[i + 1] == 0 &&
+		!ascii_string_ends_at(data, i);
 }
 
 static int unicode_is_printable(PyObject* value) {
@@ -72,7 +96,7 @@ static PyObject* extract_strings(PyObject* self, PyObject* args) {
 	for (Py_ssize_t parity = 0; parity <= 1; ++parity) {
 		Py_ssize_t i = parity;
 		while (i <= data_length - min_bytes) {
-			if (!(data[i] >= 32 && data[i] <= 126 && data[i + 1] == 0)) {
+			if (!is_utf16_run_start(data, i)) {
 				i += 2;
 				continue;
 			}
