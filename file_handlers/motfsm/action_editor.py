@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
 )
 
 
-def value_text(value):
-    return str(value)
+from .formatting import value_text, rsz_value_text
+from .value_editor import choices, combo, fill_combo
 
 
 class ActionTableModel(QAbstractTableModel):
@@ -76,23 +76,23 @@ class ActionTableModel(QAbstractTableModel):
             return f'{action.key.file}\n{action.key.block}[{action.key.instance}]\n0x{action.id_hash:08X}, ex={action.ex_id}'
         if role in (Qt.DisplayRole, Qt.EditRole):
             if field is not None:
-                return value_text(field.value)
-            return {'type': action.class_name, 'id': str(action.id_hash), 'ex': str(action.ex_id),
+                return rsz_value_text(field)
+            return {'type': action.class_name, 'id': value_text('id_hash', action.id_hash), 'ex': str(action.ex_id),
                     'users': str(len(self.access.users(action.key)))}[kind]
 
     def flags(self, index):
         flags = super().flags(index)
         field = self.field(index)
-        if field is not None and field.binding is not None:
+        if field is not None and not field.is_array and not field.children:
             flags |= Qt.ItemIsEditable
         return flags
 
     def setData(self, index, value, role=Qt.EditRole):
         field = self.field(index)
-        if role != Qt.EditRole or field is None or field.binding is None:
+        if role != Qt.EditRole or field is None or field.is_array or field.children:
             return False
         try:
-            self.access.edit_field(field.binding, value)
+            self.access.edit_rsz_field(field, value)
         except ValueError as exc:
             self.edit_failed.emit(str(exc))
             return False
@@ -102,22 +102,22 @@ class ActionTableModel(QAbstractTableModel):
 class ActionValueDelegate(QStyledItemDelegate):
     def createEditor(self, parent, option, index):
         field = index.model().field(index)
-        if field is not None and field.binding is not None and field.binding.type_name == 'bool':
-            editor = QComboBox(parent)
-            editor.addItems(['True', 'False'])
+        if field is not None and choices(field):
+            editor = combo(parent, choices(field), field.value)
             editor.activated.connect(lambda _: self.commitData.emit(editor))
             return editor
         return super().createEditor(parent, option, index)
 
     def setEditorData(self, editor, index):
         if isinstance(editor, QComboBox):
-            editor.setCurrentText(index.data(Qt.EditRole))
+            field = index.model().field(index)
+            fill_combo(editor, choices(field), field.value)
         else:
             super().setEditorData(editor, index)
 
     def setModelData(self, editor, model, index):
         if isinstance(editor, QComboBox):
-            model.setData(index, editor.currentText())
+            model.setData(index, editor.currentData())
         else:
             super().setModelData(editor, model, index)
 
@@ -246,6 +246,7 @@ class ActionEditor(QWidget):
         self.form.setContentsMargins(0, 6, 4, 6)
         self.form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
         self.form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        self.form.setFormAlignment(Qt.AlignTop | Qt.AlignLeft)
         self.scroll.setWidget(self.property_container)
         prop_layout.addWidget(self.scroll, 1)
         self.advanced_button = QToolButton(self)
@@ -397,19 +398,21 @@ class ActionEditor(QWidget):
         for field in self.access.instance(self.selected_key).fields:
             if field.name == 'v1_ID':
                 continue
-            if field.binding is None:
-                editor = QLabel(value_text(field.value), self)
-                editor.setTextInteractionFlags(Qt.TextSelectableByMouse)
-                editor.setWordWrap(True)
-            elif field.binding.type_name == 'bool':
-                editor = QComboBox(self)
-                editor.addItems(['True', 'False'])
+            if field.is_array or field.reference or field.children:
+                from .motfsm_viewer import MotfsmViewer
+                editor = MotfsmViewer(self.handler, selection_only=True)
+                editor.show_rsz_field(field)
+                self._size_structure(editor, field)
+                editor.tree.setColumnWidth(0, 160)
+                editor.tree.setColumnWidth(1, 140)
+            elif choices(field):
+                editor = combo(self, choices(field), field.value)
                 editor.activated.connect(lambda _, name=field.name: self._commit_property(name))
             else:
                 editor = QLineEdit(self)
                 editor.editingFinished.connect(lambda name=field.name: self._commit_property(name))
             editor.setObjectName('fsm_' + field.name)
-            editor.setToolTip(field.type_name)
+            editor.setToolTip(field.native_type)
             self.editors[field.name] = editor
             self.form.addRow(field.name, editor)
         self._filter_properties(self.property_search.text())
@@ -436,19 +439,27 @@ class ActionEditor(QWidget):
             if name not in self.editors:
                 continue
             editor = self.editors[name]
+            if field.is_array or field.reference or field.children:
+                self._size_structure(editor, field)
+                continue
             with QSignalBlocker(editor):
                 if isinstance(editor, QComboBox):
-                    editor.setCurrentText(value_text(field.value))
-                elif not isinstance(editor, QLineEdit) or editor.text() != value_text(field.value):
-                    editor.setText(value_text(field.value))
+                    fill_combo(editor, choices(field), field.value)
+                elif editor.text() != rsz_value_text(field):
+                    editor.setText(rsz_value_text(field))
+
+    @staticmethod
+    def _size_structure(editor, field):
+        scalar_array = field.is_array and all(child.binding and not child.reference for child in field.children)
+        editor.setFixedHeight(min(280, 80+24*len(field.children)) if scalar_array else 240)
 
     def _commit_property(self, name):
         if self.selected_key is None:
             return
         editor = self.editors[name]
-        value = editor.currentText() if isinstance(editor, QComboBox) else editor.text()
+        value = editor.currentData() if isinstance(editor, QComboBox) else editor.text()
         try:
-            self.access.edit_field(self.access.fields(self.selected_key)[name].binding, value)
+            self.access.edit_rsz_field(self.access.fields(self.selected_key)[name], value)
         except ValueError as exc:
             self._edit_failed(str(exc))
         self._refresh_properties()

@@ -2358,7 +2358,7 @@ class RszFile:
                                 struct_fields_def = struct_type_info.get("fields", [])
                                 current_pos = _align(current_pos, field_align)
                                 layout = self._fixed_struct_layout(struct_fields_def)
-                                if count >= _LAZY_STRUCT_ARRAY_THRESHOLD and layout is not None:
+                                if count >= _LAZY_STRUCT_ARRAY_THRESHOLD and layout is not None and self.field_observer is None:
                                     raw_start = pos
                                     raw_end = self._skip_fixed_structs(
                                         current_pos, count, struct_fields_def, base_mod
@@ -2436,7 +2436,7 @@ class RszFile:
                     else:
                         if count == 0:
                             data_obj = ArrayData([], default_element_class, original_type)
-                        elif count >= _LAZY_PRIMITIVE_ARRAY_THRESHOLD and rsz_type in _LAZY_PRIMITIVE_ARRAY_TYPES:
+                        elif count >= _LAZY_PRIMITIVE_ARRAY_THRESHOLD and rsz_type in _LAZY_PRIMITIVE_ARRAY_TYPES and self.field_observer is None:
                             raw_start = pos
                             raw_end = self._skip_repeated_fixed_values(
                                 pos, count, fsize, field_align, base_mod
@@ -2454,6 +2454,17 @@ class RszFile:
                             )
                             pos = raw_end
                             data_obj = ArrayData(values, default_element_class, original_type)
+                        elif self.field_observer is not None:
+                            values = []
+                            element_definition = dict(field, array=False)
+                            for element_index in range(count):
+                                start = _align(pos, field_align)
+                                configure(pos, fsize, field_align, original_type)
+                                value = parser_func(non_array_parser)
+                                pos = non_array_parser.pos
+                                values.append(value)
+                                self.field_observer(current_instance_index, element_definition, value, start, pos)
+                            data_obj = ArrayData(values, type(values[0]), original_type)
                         elif count == 1:
                             configure(pos, fsize, field_align, original_type)
                             value = parser_func(non_array_parser)

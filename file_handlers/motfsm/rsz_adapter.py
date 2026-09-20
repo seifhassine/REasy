@@ -1,9 +1,10 @@
 """MOTFSM views of the shared RSZ reader. No independent field-layout parser."""
-from dataclasses import dataclass
+from dataclasses import dataclass, field as member
 import struct
 
 from file_handlers.rsz.rsz_file import RszFile, TypeRegistryValidationError
 from file_handlers.rsz.utils.rsz_field_utils import VALUE_COMPONENTS
+from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, StructData, ArrayData
 from .fields import SCALAR_FORMATS
 
 
@@ -41,11 +42,47 @@ class RSZField:
     size: int
     is_array: bool
     binding: object = None
+    block: object = None
+    definition: dict = member(default_factory=dict)
+    path: tuple = ()
+    _children: list | None = None
+    instance_index: int | None = None
+
+    @property
+    def children(self):
+        if self._children is None:
+            self._children = self.block.field_children(self) if self.block else []
+        for child in self._children:
+            child.instance_index = self.instance_index
+        return self._children
+
+    @property
+    def reference(self):
+        return isinstance(self.data, (ObjectData, UserDataData))
+
+    @property
+    def native_type(self):
+        return self.definition.get('original_type') or self.type_name
+
+    @property
+    def enum_values(self):
+        if self.is_array or self.reference or self.binding is None or self.binding.type_name not in (
+                's8', 'u8', 's16', 'u16', 's32', 'u32', 's64', 'u64'):
+            return []
+        from utils.enum_manager import registry_enums
+        return registry_enums(self.block.document.type_registry.json_path).get(self.native_type, [])
+
+    def resolve(self):
+        if not self.reference or self.data.value == 0:
+            return None
+        return self.block.get_instance(self.data.value)
 
     @property
     def value(self):
         if self.is_array:
             return f"array[{len(self.data.values)}]"
+        if isinstance(self.data, dict):
+            return self.type_name
         if hasattr(self.data, "value"):
             value = self.data.value
             return value.rstrip("\0") if isinstance(value, str) else value
@@ -56,6 +93,19 @@ class RSZField:
             return tuple(getattr(self.data, name) for name in components)
         if hasattr(self.data, "raw_bytes"):
             return self.data.raw_bytes.hex()
+        if hasattr(self.data, 'values'):
+            return list(self.data.values)
+        compound = {'AABBData': ('min', 'max'), 'CapsuleData': ('start', 'end', 'radius'),
+                    'AreaData': ('p0', 'p1', 'p2', 'p3', 'height', 'bottom'),
+                    'AreaDataOld': ('p0', 'p1', 'p2', 'p3', 'height', 'bottom')}
+        names = compound.get(type(self.data).__name__)
+        if names:
+            result = {}
+            for name in names:
+                value = getattr(self.data, name)
+                components = VALUE_COMPONENTS.get(type(value).__name__)
+                result[name] = [getattr(value, c) for c in components] if components else value
+            return result
         return f"<{self.type_name}:{self.size}b>"
 
 
@@ -68,6 +118,7 @@ class RSZInstance:
     end_offset: int | None
     fields: list
     is_userdata: bool = False
+    block: object = None
 
     @property
     def size(self):
@@ -143,21 +194,43 @@ class RSZBlock:
             definition = self.document.type_registry.get_type_info(type_id)
             for fd in definition.get("fields", []):
                 value = parsed.parsed_elements[index][fd["name"]]
-                first, last = parsed.field_spans[id(value)]
-                scalar = fd["type"].lower()
-                binding = None
-                if not fd["array"] and scalar in SCALAR_FORMATS:
-                    binding = self.document.bindings.bind(
-                        value, "value", data_base + first, scalar, name=fd["name"],
-                    )
-                    if binding.size != last - first:
-                        raise ValueError(f"Unexpected scalar span in {self.name}.{fd['name']}")
-                fields.append(RSZField(fd["name"], fd["type"], value, data_base + first,
-                                       last - first, fd["array"], binding))
+                item = self.make_field(fd, value, (fd['name'],))
+                item.instance_index = index
+                fields.append(item)
         instance = RSZInstance(index, type_id, self.get_class_name(index),
-                               start, end, fields, userdata)
+                               start, end, fields, userdata, self)
         self._instances[index] = instance
         return instance
+
+    def make_field(self, definition, value, path):
+        span = self.file.field_spans.get(id(value))
+        offset, size = (self.offset+self.file._current_offset+span[0], span[1]-span[0]) if span else (0, 0)
+        scalar = 'u32' if isinstance(value, (ObjectData, UserDataData)) else definition['type'].lower()
+        binding = None
+        if not definition['array'] and scalar in SCALAR_FORMATS and span:
+            binding = self.document.bindings.bind(value, 'value', offset, scalar, name='.'.join(map(str, path)))
+            if binding.size != size:
+                raise ValueError(f'Unexpected scalar span in {self.name}.{path}')
+        return RSZField(str(path[-1]), definition['type'], value,
+                        offset, size, definition['array'] or isinstance(value, ArrayData), binding, self, definition, path)
+
+    def field_children(self, field):
+        if isinstance(field.data, StructData):
+            definition, _ = self.document.type_registry.find_type_by_name(field.data.orig_type)
+            if definition is None:
+                raise ValueError(f'Unknown struct type {field.data.orig_type}')
+            result = []
+            for index, values in enumerate(field.data.values):
+                children = [self.make_field(fd, values[fd['name']], (*field.path, index, fd['name']))
+                            for fd in definition['fields']]
+                result.append(RSZField(f'[{index}]', field.data.orig_type, values, field.offset, 0,
+                                       False, block=self, path=(*field.path, index), _children=children))
+            return result
+        if field.is_array:
+            definition = dict(field.definition, array=False)
+            return [self.make_field(definition, value, (*field.path, index))
+                    for index, value in enumerate(field.data.values)]
+        return []
 
     def get_object(self, index):
         if not 0 <= index < len(self.object_table):

@@ -187,12 +187,17 @@ class MotfsmIntegrationTests(unittest.TestCase):
             nodes = viewer.tree.topLevelItem(0).child(0)
             nodes.setExpanded(True)
             nodes.child(0).setExpanded(True)
-            details = nodes.child(0).child(1)
-            rows = {details.child(i).text(0): details.child(i) for i in range(details.childCount())}
+            node_item = nodes.child(0)
+            rows = {node_item.child(i).text(0): node_item.child(i) for i in range(node_item.childCount())}
+            advanced = rows['Advanced']
+            rows.update({advanced.child(i).text(0): advanced.child(i) for i in range(advanced.childCount())})
             self.assertFalse(rows['name'].flags() & Qt.ItemIsEditable)
             self.assertFalse(rows['is_fsm'].flags() & Qt.ItemIsEditable)
+            self.assertEqual(rows['work_flags'].text(1), '0')
+            self.assertEqual(rows['id_hash'].text(1), f'0x{handler.motfsm.bhvt.nodes[0].id_hash:08X}')
             rows['work_flags'].setText(1, '1')
             self.app.processEvents()
+            self.assertEqual(rows['work_flags'].text(1), '1')
             self.assertTrue(viewer.modified)
             self.assertIn(True, changes)
             saved = handler.rebuild()

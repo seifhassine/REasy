@@ -14,37 +14,11 @@ from PySide6.QtWidgets import QApplication, QInputDialog, QMessageBox, QTabWidge
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
 from file_handlers.motfsm.motfsm_handler import MotfsmHandler
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
-from file_handlers.uvar.base_model import FileHandler
-from file_handlers.uvar.uvar_file import UVarFile
 from test_motfsm_integration import make_fixture
 from test_motfsm_corpus import CORPUS, unique_files
 
 
-def variable_snapshot(document):
-    source, base = document.source, document.tree_data_offset
-    table = document.bhvt.offsets['base_variables']
-    count = struct.unpack_from('<I', source, table)[0]
-    roots = [document.bhvt.offsets['variables']]
-    roots += [base + struct.unpack_from('<Q', source, table + 4 + i * 8)[0] for i in range(count)]
-    result = []
-    for root in roots:
-        reader = FileHandler(source, offset=base)
-        reader.seek(root)
-        uvar = UVarFile()
-        uvar.do_read(reader)
-        variables = []
-        for variable in uvar.variables:
-            expression = variable.expression
-            nodes = [] if expression is None else [
-                (n.name, n.node_id, [(p.name_hash, p.raw_type_code, p.value) for p in n.parameters])
-                for n in expression.nodes]
-            relations = [] if expression is None else [vars(r) for r in expression.relations]
-            variables.append((variable.guid, variable.name, variable.type, variable.flags,
-                              variable.name_hash, variable.value, nodes, relations))
-        result.append((uvar.header.version, uvar.header.name, uvar.header.uvar_hash,
-                       variables, uvar.hash_data.guids, uvar.hash_data.guid_map,
-                       uvar.hash_data.name_hashes, uvar.hash_data.name_hash_map))
-    return result
+from file_handlers.motfsm.validation import variable_snapshot
 
 
 class StructuralGoldenTests(unittest.TestCase):
@@ -95,20 +69,24 @@ class StructuralCorpusTests(unittest.TestCase):
             doc.read(source)
             variables = variable_snapshot(doc)
             nodes = [n for n in doc.bhvt.nodes if len(n.actions) >= 2][:2]
-            self.assertEqual(len(nodes), 2)
+            self.assertTrue(nodes, f'{path.name} has no node with editable Action references')
             originals = [n.actions[:] for n in nodes]
-            # Two different splices: +24 then -8 guarantees true tail relocation.
-            nodes[0].actions += [Action(a.id_hash, a.ex_id) for a in originals[0][:1] * 3]
-            del nodes[1].actions[0]
+            # Exercise independent splices when the file has multiple Action owners.
+            added = 3 if len(nodes) > 1 else 4
+            nodes[0].actions += [Action(a.id_hash, a.ex_id) for a in originals[0][:1] * added]
+            if len(nodes) > 1:
+                del nodes[1].actions[0]
             growth_output = doc.rebuild()
-            self.assertEqual(len(growth_output) - len(source), 16)
+            growth = added*8 - (8 if len(nodes) > 1 else 0)
+            self.assertEqual(len(growth_output) - len(source), growth)
             for mode in ('growth', 'shrink'):
                 with self.subTest(file=path.name, mode=mode):
                     if mode == 'shrink':
                         nodes[0].actions = originals[0][2:]
-                        nodes[1].actions = originals[1]
+                        if len(nodes) > 1:
+                            nodes[1].actions = originals[1]
                     output = doc.rebuild()
-                    self.assertEqual(len(output) - len(source), 16 if mode == 'growth' else -16)
+                    self.assertEqual(len(output) - len(source), growth if mode == 'growth' else -16)
                     reread = MotfsmFile()
                     reread.read(output)
                     self.assertEqual(reread.bhvt.nodes, doc.bhvt.nodes)
@@ -133,7 +111,8 @@ class StructuralCorpusTests(unittest.TestCase):
                         saved = Path(folder) / path.name
                         saved.write_bytes(output)
                         self.assertEqual(saved.read_bytes(), output)
-            nodes[0].actions, nodes[1].actions = originals
+            for node, actions in zip(nodes, originals):
+                node.actions = actions
             self.assertEqual(doc.rebuild(), source)
             self.assertEqual(path.read_bytes(), source)
             print(f'{path.name}: grew/shrank, RSZ and UVAR preserved', flush=True)

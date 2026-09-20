@@ -2,6 +2,8 @@
 from dataclasses import dataclass, fields, is_dataclass
 import os
 import struct
+import copy
+import json
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, Signal
@@ -69,7 +71,7 @@ class _FieldCommand(QUndoCommand):
         self.access._apply_field(self.address, self.before)
 
 
-class _ReferencesCommand(QUndoCommand):
+class _DocumentCommand(QUndoCommand):
     def __init__(self, access, node_index, before, after, prepared, label):
         super().__init__(label)
         self.access, self.node_index = access, node_index
@@ -94,11 +96,7 @@ class FsmDocument(QObject):
         self._addresses = {}
         self._actions = None
         self._users = None
-        self._edited = set()
-        self._dirty = set()
-        self._references_dirty = False
-        self._saved = self._read(handler._saved_source)
-        self._saved_actions = self._action_lists(self.document)
+        self._transitions = None
 
     @property
     def document(self):
@@ -109,10 +107,6 @@ class FsmDocument(QObject):
         document.set_rsz_type_info_path(self.document._registry_path)
         document.read(source)
         return document
-
-    @staticmethod
-    def _action_lists(document):
-        return tuple(tuple((a.id_hash, a.ex_id) for a in n.actions) for n in document.bhvt.nodes)
 
     def _index(self):
         if self._actions is None:
@@ -192,46 +186,61 @@ class FsmDocument(QObject):
                 block = self.document.rsz_blocks.get_block(name)
                 for index, instance in block._instances.items():
                     for field in instance.fields:
-                        if field.binding is not None:
-                            self._addresses[id(field.binding)] = ('rsz', block.name, index, field.name)
+                        self._map_rsz(field, block.name, index)
         return self._addresses[id(binding)]
+
+    def _map_rsz(self, field, block, index):
+        if field.binding is not None:
+            self._addresses[id(field.binding)] = ('rsz', block, index, *field.path)
+        for child in field.children:
+            self._map_rsz(child, block, index)
+
+    @staticmethod
+    def field_address(field):
+        return ('rsz', field.block.name, field.instance_index, *field.path)
+
+    def rsz_field(self, address, document=None):
+        document = document or self.document
+        _, block, index, *path = address
+        children = document.rsz_blocks.get_block(block).get_instance(index).fields
+        for position, part in enumerate(path):
+            field = next(f for f in children if f.path[-1] == part)
+            if position != len(path)-1:
+                children = field.children
+        return field
 
     def binding(self, address, document=None):
         document = document or self.document
         if address[0] == 'rsz':
-            _, block, index, name = address
-            instance = document.rsz_blocks.get_block(block).get_instance(index)
-            return next(field.binding for field in instance.fields if field.name == name)
+            return self.rsz_field(address, document).binding
         owner = document.bhvt
         for part in address[1:-1]:
             owner = owner[part] if isinstance(part, int) else getattr(owner, part)
         return document.bindings.get(owner, address[-1])
 
     def edit_field(self, binding, text):
+        address = self.address(binding)
+        if address[0] == 'rsz':
+            field = self.rsz_field(address)
+            member = next((m for m in field.enum_values if m['name'] == str(text)), None)
+            if member is not None:
+                text = member['value']
         encoded = binding.encode(binding.parse(text))
         if encoded == binding.encode(binding.value):
             return
-        address = self.address(binding)
         value = struct.unpack('<' + SCALAR_FORMATS[binding.type_name], encoded)[0]
+        if address[0] == 'rsz':
+            field = self.rsz_field(address)
+            if field.reference:
+                from file_handlers.rsz.utils.rsz_field_utils import validate_reference_type
+                validate_reference_type(self.document.type_registry, field.block.file.instance_infos,
+                                        field.data.orig_type, value)
         self.undo_stack.push(_FieldCommand(self, address, binding.value, value, binding.name))
-
-    def _track_field(self, address):
-        binding, saved = self.binding(address), self.binding(address, self._saved)
-        if binding.encode(binding.value) == saved.encode(saved.value):
-            self._dirty.discard(address)
-        else:
-            self._dirty.add(address)
 
     def _apply_field(self, address, value):
         binding = self.binding(address)
         self.document.edit_field(binding, value)
-        self._edited.add(address)
-        # Newly inserted reference slots have no field in the saved document.
-        if 'actions' in address and address[0] == 'bhvt':
-            self._references_dirty = self._action_lists(self.document) != self._saved_actions
-        else:
-            self._track_field(address)
-        self.handler.modified = bool(self._dirty) or self._references_dirty
+        self.handler.modified = self.document.rebuild() != self.handler._saved_source
         change = DocumentChange(address)
         if change.references_changed:
             self._actions = self._users = None
@@ -250,19 +259,139 @@ class FsmDocument(QObject):
             candidate = self._read(after)
         finally:
             node.actions = original
-        self.undo_stack.push(_ReferencesCommand(self, node_index, before, after, candidate, label))
+        self.undo_stack.push(_DocumentCommand(self, node_index, before, after, candidate, label))
 
     def _apply_document(self, source, node_index, prepared=None):
         self.handler.motfsm = prepared if prepared is not None else self._read(source)
         self._addresses.clear()
         self._actions = self._users = None
-        for address in self._edited:
-            if not (address[0] == 'bhvt' and 'actions' in address):
-                self._track_field(address)
-        self._references_dirty = self._action_lists(self.document) != self._saved_actions
-        self.handler.modified = bool(self._dirty) or self._references_dirty
+        self._transitions = None
+        self.handler.modified = self.document.rebuild() != self.handler._saved_source
         self.handler.document_changed.emit()
         self.changed.emit(DocumentChange(node_index=node_index))
+
+    def _change_rsz(self, field, mutate, label):
+        from .serialization import splice_document
+        from .validation import variable_snapshot
+        address = self.field_address(field)
+        before = self.document.rebuild()
+        document = self._read(before)
+        target = self.rsz_field(address, document)
+        block = target.block
+        baseline = block.file.build_validated()
+        padding = block.end-block.offset-len(baseline)
+        if padding < 0 or document.source[block.offset:block.end] != baseline+bytes(padding):
+            raise ValueError('RSZ writer does not reproduce the original block')
+        mutate(document, target)
+        data = block.file.build_validated()
+        after = bytes(splice_document(document, [(block.offset, block.end, data+bytes((-len(data)) % 16))]))
+        if after == before:
+            return
+        prepared = self._read(after)
+        if prepared.rebuild() != after:
+            raise ValueError('RSZ candidate does not rebuild identically')
+        if prepared.bhvt.nodes != document.bhvt.nodes:
+            raise ValueError('RSZ edit changed the BHVT node graph')
+        if variable_snapshot(prepared) != variable_snapshot(document):
+            raise ValueError('RSZ edit changed UVAR data')
+        if (before[document.transition_map_tbl_offset:document.transition_map_tbl_offset+document.transition_map_count*8]
+                != after[prepared.transition_map_tbl_offset:prepared.transition_map_tbl_offset+prepared.transition_map_count*8]
+                or before[document.transition_data_tbl_offset:] != after[prepared.transition_data_tbl_offset:]):
+            raise ValueError('RSZ edit changed transition tables')
+        for name in BLOCK_NAMES:
+            previous, current = document.rsz_blocks.get_block(name), prepared.rsz_blocks.get_block(name)
+            if previous is block:
+                if current.file.build_validated() != data:
+                    raise ValueError('RSZ block differs after reopening')
+            elif before[previous.offset:previous.end] != after[current.offset:current.end]:
+                raise ValueError(f'RSZ edit changed unrelated {name} data')
+        self.undo_stack.push(_DocumentCommand(self, None, before, after, prepared, label))
+
+    def edit_rsz_field(self, field, text):
+        if field.binding:
+            return self.edit_field(field.binding, text)
+        from file_handlers.rsz.utils.rsz_field_utils import coerce_field_value
+        value = text if isinstance(field.value, str) else json.loads(text)
+        if value == field.value:
+            return
+        def mutate(document, target):
+            native = target.block.file
+            replacement = coerce_field_value(target.data, value, instance_infos=native.instance_infos,
+                userdata_strings={i: native._rsz_userdata_str_map[v] for i, v in native._rsz_userdata_dict.items()},
+                registry=document.type_registry, label=field.name, allow_references=True)
+            owner = native.parsed_elements[target.instance_index]
+            for part in target.path[:-1]:
+                owner = owner[part] if isinstance(owner, dict) else owner.values[part]
+            if isinstance(owner, dict):
+                owner[target.path[-1]] = replacement
+            else:
+                owner.values[target.path[-1]] = replacement
+        self._change_rsz(field, mutate, f'Edit {field.name}')
+
+    def transition_fields(self, address):
+        from .transitions import TransitionTables
+        if self._transitions is None:
+            self._transitions = TransitionTables(self.document)
+        tables = self._transitions
+        index = tables.resolve(self.binding(address).value)
+        return index, tables.fields(index) if index is not None else []
+
+    def edit_transition(self, address, name, value):
+        from .transitions import edit_state_transition, TransitionTables, patch_record
+        from .validation import variable_snapshot
+        before = self.document.rebuild()
+        document = self._read(before)
+        binding = self.binding(address, document)
+        tables = TransitionTables(document)
+        index = tables.resolve(binding.value)
+        if index is None:
+            raise ValueError('This state has no transition-data record')
+        expected = patch_record(tables, index, name, value)
+        after = edit_state_transition(document, binding, name, value)
+        if after == before:
+            return
+        prepared = self._read(after)
+        saved = TransitionTables(prepared)
+        saved_index = saved.resolve(self.binding(address, prepared).value)
+        if saved.record(saved_index)[4:] != expected[4:] or prepared.rebuild() != after:
+            raise ValueError('Transition settings did not survive serialization')
+        # All original data records except a privately owned edited record stay exact.
+        for i in range(document.transition_data_count):
+            if i != saved_index and saved.record(i) != tables.record(i):
+                raise ValueError('Transition edit changed an unrelated data record')
+        if variable_snapshot(prepared) != variable_snapshot(document):
+            raise ValueError('Transition edit changed UVAR data')
+        self.undo_stack.push(_DocumentCommand(self, address[2], before, after, prepared, f'Edit {name}'))
+
+    def change_array(self, field, operation, position=None):
+        from file_handlers.rsz.rsz_data_types import ArrayData
+        from file_handlers.rsz.utils.rsz_field_utils import create_default_field_value, create_field_value_from_definition
+        def mutate(document, target):
+            if not target.is_array:
+                raise ValueError('Selected field is not an array')
+            values = list(target.data.values)
+            if operation in ('duplicate', 'remove'):
+                if position is None or not 0 <= position < len(values):
+                    raise ValueError('Array element index is out of range')
+                if operation == 'duplicate':
+                    values.insert(position+1, copy.deepcopy(values[position]))
+                else:
+                    del values[position]
+            elif operation == 'add':
+                if values:
+                    values.append(copy.deepcopy(values[-1]))
+                elif isinstance(target.data, ArrayData):
+                    values.append(create_default_field_value(target.data.element_class, target.data.orig_type,
+                                                            field_size=target.definition['size']))
+                else:
+                    definition, _ = document.type_registry.find_type_by_name(target.data.orig_type)
+                    if definition is None:
+                        raise ValueError(f'Unknown struct type {target.data.orig_type}')
+                    values.append({fd['name']: create_field_value_from_definition(fd)[1] for fd in definition['fields']})
+            else:
+                raise ValueError(f'Unknown array operation: {operation}')
+            target.data.values = values
+        self._change_rsz(field, mutate, f'{operation.title()} {field.name} element')
 
     def add_reference(self, node_index, id_hash, ex_id):
         if self.document.references.action(id_hash, ex_id) is None:
@@ -278,10 +407,5 @@ class FsmDocument(QObject):
         self.replace_actions(node_index, actions, 'Remove Action reference')
 
     def mark_saved(self):
-        self._saved = self._read(self.handler._saved_source)
-        self._saved_actions = self._action_lists(self.document)
-        self._edited.clear()
-        self._dirty.clear()
-        self._references_dirty = False
         self.undo_stack.setClean()
         self.handler.modified = False

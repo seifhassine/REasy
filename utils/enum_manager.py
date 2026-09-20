@@ -1,5 +1,19 @@
 import json
 import os
+from functools import lru_cache
+from pathlib import Path
+
+
+@lru_cache(maxsize=None)
+def registry_enums(registry_path):
+    """A document-scoped enum catalog, independent of the active UI game's singleton."""
+    stem = Path(registry_path).stem.lower()
+    if not stem.startswith('rsz'):
+        return {}
+    path = Path(__file__).resolve().parents[1] / 'resources/data/enums' / f'{stem[3:]}_enums.json'
+    if not path.is_file():
+        return {}
+    return json.loads(path.read_text(encoding='utf-8'))
 
 class EnumManager:
     """Manages enum definitions loaded from JSON"""

@@ -12,6 +12,8 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBAN
 
 REasy GUI is currently available in English and Chinese.
 
+The FSM editor resolves node, condition, and transition-event references inline. All parsed array types use the same expandable property tree, including object references, structs, and nested arrays. Typed element edits and array add/duplicate/remove operations support undo/redo and verified native RSZ serialization.
+
 
 <br>
 <br>

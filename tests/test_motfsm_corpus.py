@@ -177,7 +177,7 @@ class MotfsmCorpusTests(unittest.TestCase):
             state_item = states.child(0)
             state_item.setExpanded(True)
             condition = next(state_item.child(i) for i in range(state_item.childCount()) if state_item.child(i).text(0) == 'TransitionConditions')
-            link = next(state_item.child(i) for i in range(state_item.childCount()) if state_item.child(i).text(0) == '→ View conditions')
+            link = condition
             link.setExpanded(True)
             self.assertIn('IsAirouMatatabi', link.text(1))
             condition.setText(1, '1073741825')
