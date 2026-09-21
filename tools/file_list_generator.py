@@ -423,9 +423,11 @@ class PathCollector:
         self.improver_mode = ImproverMode(improver_mode)
         self._linked_dual_tail_values = {}
         self._linked_dual_tail_context_cache = {}
+        self._linked_repeat_values = {}
         self._processed_numeric_replacement_families = None
         self._processed_power_of_two_families = None
         self._processed_linked_dual_tail_families = None
+        self._processed_linked_repeat_families = None
         self._numeric_structure_values = {}
         self._numeric_structure_context_cache = {}
         self._smart_number_values_cache = {}
@@ -541,12 +543,7 @@ class PathCollector:
         return value > 0 and (value & (value - 1)) == 0
 
     def _get_numeric_replacement_groups(self, stem, source_extension=None):
-        numeric_search_stem = (
-            self._split_tex_stem_variant(stem)[0]
-            if source_extension == 'tex'
-            else stem
-        )
-        matches = list(re.finditer(r'\d+', numeric_search_stem))
+        matches = self._iter_numeric_matches(stem, source_extension)
         if not matches:
             return []
 
@@ -712,12 +709,7 @@ class PathCollector:
         if cache_key in self._linked_dual_tail_context_cache:
             return self._linked_dual_tail_context_cache[cache_key]
 
-        numeric_search_stem = (
-            self._split_tex_stem_variant(stem)[0]
-            if source_extension == 'tex'
-            else stem
-        )
-        matches = list(re.finditer(r'\d+', numeric_search_stem))
+        matches = self._iter_numeric_matches(stem, source_extension)
         if len(matches) < 2:
             self._linked_dual_tail_context_cache[cache_key] = None
             return None
@@ -804,6 +796,81 @@ class PathCollector:
                 if generated >= max_combinations:
                     return
 
+    def _iter_numeric_matches(self, stem, source_extension=None):
+        numeric_search_stem = (
+            self._split_tex_stem_variant(stem)[0]
+            if source_extension == 'tex'
+            else stem
+        )
+        return list(re.finditer(r'\d+', numeric_search_stem))
+
+    def _segment_start(self, stem, match):
+        return stem.rfind('/', 0, match.start()) + 1
+
+    def _segment_shape(self, stem, match):
+        start = self._segment_start(stem, match)
+        end = stem.find('/', start)
+        segment = stem[start:] if end == -1 else stem[start:end]
+        return re.sub(r'\d+', lambda item: f"{{d{len(item.group(0))}}}", segment)
+
+    def _get_linked_repeat_groups(self, stem, source_extension=None):
+        matches = self._iter_numeric_matches(stem, source_extension)
+        if len(matches) < 2:
+            return []
+
+        matches_by_signature = defaultdict(list)
+        for match in matches:
+            signature = (match.group(0), match.start() - self._segment_start(stem, match))
+            matches_by_signature[signature].append(match)
+
+        groups = [
+            (tuple(group_matches), group_matches[0].group(0))
+            for group_matches in matches_by_signature.values()
+            if len(group_matches) > 1
+        ]
+        groups.sort(key=lambda item: item[0][0].start())
+        return groups
+
+    def _linked_repeat_value_key(self, stem, match, extension):
+        return (
+            extension,
+            self._segment_shape(stem, match),
+            match.start() - self._segment_start(stem, match),
+            len(match.group(0)),
+        )
+
+    def _build_linked_repeat_values(self, entries):
+        values = defaultdict(set)
+        for stem, extension in entries:
+            for match in self._iter_numeric_matches(stem, extension):
+                key = self._linked_repeat_value_key(stem, match, extension)
+                values[key].add(int(match.group(0)))
+        return values
+
+    def _remove_match_group_number(self, stem, matches):
+        candidate = stem
+        for match in reversed(matches):
+            candidate = f"{candidate[:match.start() - 1]}{candidate[match.end():]}"
+        return candidate
+
+    def _iter_linked_repeat_candidates(self, stem, matches, token, source_extension=None):
+        observed_values = set()
+        for match in matches:
+            observed_values.update(
+                self._linked_repeat_values.get(
+                    self._linked_repeat_value_key(stem, match, source_extension),
+                    (),
+                )
+            )
+
+        for value in self._iter_smart_number_values(token, observed_values, True):
+            yield self._replace_match_group_number(stem, matches, value)
+
+        # The same id is also written without the extra component (`gm001_000_commonparam`
+        # and `gm001_commonparam`), so probe dropping it from every occurrence at once.
+        if all(match.start() > 0 and stem[match.start() - 1] == '_' for match in matches):
+            yield self._remove_match_group_number(stem, matches)
+
     def _iter_numeric_stem_combinations(self, stem, family_scope=None, source_extension=None):
         replacement_groups = self._get_numeric_replacement_groups(stem, source_extension)
         if not replacement_groups:
@@ -837,6 +904,25 @@ class PathCollector:
                 is_filename_group
             ):
                 candidate = self._replace_match_group_number(stem, matches, value)
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield candidate
+
+        processed_linked_repeat_families = self._processed_linked_repeat_families
+        for linked_matches, linked_token in self._get_linked_repeat_groups(stem, source_extension):
+            family_key = self._numeric_replacement_group_family_key(stem, linked_matches)[0]
+            scoped_linked_repeat_key = (source_extension, family_scope, family_key)
+            if processed_linked_repeat_families is not None:
+                if scoped_linked_repeat_key in processed_linked_repeat_families:
+                    continue
+                processed_linked_repeat_families.add(scoped_linked_repeat_key)
+
+            for candidate in self._iter_linked_repeat_candidates(
+                stem,
+                linked_matches,
+                linked_token,
+                source_extension
+            ):
                 if candidate not in seen:
                     seen.add(candidate)
                     yield candidate
@@ -1105,12 +1191,8 @@ class PathCollector:
             stem_iter = (stem,)
 
         for candidate_stem in stem_iter:
-            for suffix, suffix_extension in suffix_infos:
-                yield (
-                    f"{candidate_stem}.{suffix}",
-                    candidate_stem,
-                    suffix_extension
-                )
+            for suffix, _ in suffix_infos:
+                yield f"{candidate_stem}.{suffix}"
 
     def _get_improver_suffix_infos(self, extension, suffix_info_cache):
         suffix_infos = suffix_info_cache.get(extension)
@@ -1156,7 +1238,7 @@ class PathCollector:
                 )
 
             for candidate_stem in candidate_stems:
-                yield f"{candidate_stem}.{suffix}", candidate_stem, suffix_extension
+                yield f"{candidate_stem}.{suffix}"
 
     def _iter_mode_candidates(self, stem, extension, suffix_info_cache, tex_source_stems=None):
         if self.improver_mode is ImproverMode.TEX_MDF2_MESH_SWAPS:
@@ -1191,9 +1273,11 @@ class PathCollector:
             uses_numeric_generation = self.improver_mode is ImproverMode.NUMERIC
             if not uses_numeric_generation:
                 self._linked_dual_tail_values = {}
+                self._linked_repeat_values = {}
             else:
                 self._linked_dual_tail_context_cache.clear()
                 self._linked_dual_tail_values = self._build_linked_dual_tail_values(entries)
+                self._linked_repeat_values = self._build_linked_repeat_values(entries)
 
             ok, error, pak_hashes = self._collect_pak_hashes(pak_directory, progress_callback)
             if not ok:
@@ -1202,6 +1286,7 @@ class PathCollector:
             self._processed_numeric_replacement_families = set() if uses_numeric_generation else None
             self._processed_power_of_two_families = set() if uses_numeric_generation else None
             self._processed_linked_dual_tail_families = set() if uses_numeric_generation else None
+            self._processed_linked_repeat_families = set() if uses_numeric_generation else None
             self._numeric_structure_values = (
                 self._build_numeric_structure_values(entries) if uses_numeric_generation else {}
             )
@@ -1209,9 +1294,6 @@ class PathCollector:
             try:
                 validated_paths = set()
                 generated_candidates = 0
-                remaining_entries_by_extension = defaultdict(set)
-                for remaining_stem, remaining_extension in entries:
-                    remaining_entries_by_extension[remaining_extension].add(remaining_stem)
                 suffix_info_cache = {}
                 processed_tex_mdf2_mesh_candidates = set()
                 tex_variant_bases = set()
@@ -1257,10 +1339,6 @@ class PathCollector:
                     return True
 
                 for idx, (stem, extension) in enumerate(entries, 1):
-                    remaining_stems = remaining_entries_by_extension.get(extension)
-                    if not remaining_stems or stem not in remaining_stems:
-                        continue
-
                     entry_tex_source_stems = None
                     if tex_source_stems and extension == 'tex':
                         tex_family_base, _ = self._split_tex_stem_variant(stem)
@@ -1269,10 +1347,9 @@ class PathCollector:
                         tex_variant_bases.add(tex_family_base)
                         entry_tex_source_stems = tex_source_stems
 
-                    remaining_stems.discard(stem)
                     generated_in_entry = 0
 
-                    for candidate, candidate_stem, candidate_extension in self._iter_mode_candidates(
+                    for candidate in self._iter_mode_candidates(
                         stem,
                         extension,
                         suffix_info_cache,
@@ -1282,10 +1359,6 @@ class PathCollector:
                             if candidate in processed_tex_mdf2_mesh_candidates:
                                 continue
                             processed_tex_mdf2_mesh_candidates.add(candidate)
-
-                        remaining_candidate_stems = remaining_entries_by_extension.get(candidate_extension)
-                        if remaining_candidate_stems:
-                            remaining_candidate_stems.discard(candidate_stem)
 
                         generated_candidates += 1
                         generated_in_entry += 1
@@ -1328,9 +1401,11 @@ class PathCollector:
                 return True, None, stats, validated_paths
             finally:
                 self._linked_dual_tail_context_cache.clear()
+                self._linked_repeat_values = {}
                 self._processed_numeric_replacement_families = None
                 self._processed_power_of_two_families = None
                 self._processed_linked_dual_tail_families = None
+                self._processed_linked_repeat_families = None
                 self._numeric_structure_values = {}
                 self._numeric_structure_context_cache.clear()
                 self._smart_number_values_cache.clear()
