@@ -18,6 +18,7 @@ class RszEnumPromptController:
         ("mhst3", "MHST3"), 
         ("pragmata", "Pragmata"), 
         ("kunitsugami", "KunitsuGami"),
+        ("drdr", "DRDR"),
         ("dmc5", "DMC5"), 
         ("sf6", "SF6"), 
         ("dd2", "DD2"), 

@@ -23,6 +23,7 @@ GAMES = (
     "DD2",
     "Pragmata",
     "KunitsuGami",
+    "DRDR",
 )
 
 _X64_GAMES = frozenset({"RE2", "RE7", "DMC5"})

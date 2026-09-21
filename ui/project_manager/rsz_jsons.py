@@ -24,6 +24,7 @@ DEFAULT_RSZ_JSONS: dict[str, str] = {
     "RE9": "rszre9.json",
     "REResistance": "rszreresistance.json",
     "KunitsuGami": "rszkunitsugami.json",
+    "DRDR": "rszdrdr.json",
 }
 
 

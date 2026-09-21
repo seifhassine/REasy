@@ -69,6 +69,7 @@ PAK_LIST_SPECS = (
         ("RESIDENT EVIL requiem BIOHAZARD requiem",),
     ),
     PakListSpec("KunitsuGami", "KUNITSUGAMI_STM.list", ("KunitsuGami",)),
+    PakListSpec("DRDR", "DRDR_STM.list", ("DEAD RISING DELUXE REMASTER",)),
 )
 
 DEFAULT_PAK_FILE_LISTS: dict[str, str] = {

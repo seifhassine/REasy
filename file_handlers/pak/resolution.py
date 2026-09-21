@@ -116,6 +116,7 @@ _GAME_PROFILES = {
     "o2": _PROFILES["modern"],
     "onimushawots": _PROFILES["modern"],
     "re9": _PROFILES["modern_roots_first"],
+    "drdr": _PROFILES["numbered"],
 }
 
 
