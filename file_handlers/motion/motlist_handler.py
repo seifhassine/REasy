@@ -28,10 +28,15 @@ class MotListHandler(BaseFileHandler):
     def read(self, data: bytes) -> None:
         facade = MotListFile(require_motion_format(data))
         facade.read(data, label=self.filepath or "MOTLIST")
+        self.adopt_document(facade, data)
+
+    def adopt_document(self, facade, data, *, notify=True):
+        """Install an already parsed document on the handler's UI thread."""
         self.motlist_file = facade
         self.raw_data = data
         self.modified = False
-        self.document_changed.emit()
+        if notify:
+            self.document_changed.emit()
 
     @property
     def model(self):

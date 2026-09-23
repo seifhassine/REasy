@@ -52,6 +52,14 @@ Thumbs.db
 !/tests/test_editor_shell.py
 !/tests/test_motfsm_corpus.py
 !/tests/test_motfsm_rebuild.py
+!/tests/test_fsm_cli.py
+!/tests/test_resource_cli.py
+!/tests/test_move_cli.py
+!/tests/test_clip_cli.py
+!/tests/test_clip_graph_v43.py
+!/tests/test_clip_structure.py
+!/tests/test_file_live_reload.py
+!/tests/test_motion_reload_preview.py
 !/tests/test_rcol_editing.py
 !/tests/test_scn_scene_editing.py
 resources/i18n/REasy_zh-CN.qm

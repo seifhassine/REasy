@@ -6,7 +6,7 @@ import os
 import uuid
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSignalBlocker
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSignalBlocker, QTimer
 from PySide6.QtWidgets import (
     QComboBox,
     QDockWidget,
@@ -108,6 +108,8 @@ class RcolViewer(QWidget):
         self.path_label: QLabel | None = None
         self.detail_form: QFormLayout | None = None
         self._detail_host: QWidget | None = None
+        self._request_userdata_viewer = None
+        self._request_userdata_handler = None
         self._embedded_headless_viewer: QWidget | None = None
         self._embedded_headless_handler: RszHandler | None = None
         self._headless_status: QLabel | None = None
@@ -207,13 +209,20 @@ class RcolViewer(QWidget):
         right_layout.addWidget(self.path_label)
 
         scroll = QScrollArea()
+        self._detail_scroll = scroll
         scroll.setWidgetResizable(True)
         self._detail_host = QWidget()
         self.detail_form = QFormLayout(self._detail_host)
         self.detail_form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
         self.detail_form.setVerticalSpacing(8)
+        self.detail_form.setFormAlignment(Qt.AlignTop)
         scroll.setWidget(self._detail_host)
         right_layout.addWidget(scroll)
+        self._request_userdata_host = QWidget(right_panel)
+        self._request_userdata_layout = QVBoxLayout(self._request_userdata_host)
+        self._request_userdata_layout.setContentsMargins(0, 0, 0, 0)
+        self._request_userdata_host.hide()
+        right_layout.addWidget(self._request_userdata_host, 1)
 
         splitter.addWidget(right_panel)
         splitter.setSizes([420, 860])
@@ -275,6 +284,7 @@ class RcolViewer(QWidget):
         self._headless_body.setSpacing(0)
         headless_panel.addWidget(headless_body_host, 1)
         self._preview_tabs.addTab(headless_tab, "RSZ")
+        self._preview_tabs.currentChanged.connect(self._on_preview_tab_changed)
 
         self.setStyleSheet(
             """
@@ -307,6 +317,7 @@ class RcolViewer(QWidget):
         self._on_preview_dock_top_level_changed(dock.isFloating())
 
     def cleanup(self):
+        self._clear_request_userdata()
         materials, self._mesh_materials = self._mesh_materials, None
         if materials is not None:
             materials.clear()
@@ -898,11 +909,36 @@ class RcolViewer(QWidget):
         return True
 
     def _clear_detail(self):
+        self._clear_request_userdata()
+        self._detail_scroll.setMinimumHeight(0)
+        self._detail_scroll.setMaximumHeight(16777215)
         while self.detail_form.count():
             item = self.detail_form.takeAt(0)
             widget = item.widget()
             if widget:
                 widget.deleteLater()
+
+    def _clear_request_userdata(self):
+        viewer = self._request_userdata_viewer
+        if viewer is not None:
+            viewer.cleanup()
+            self._request_userdata_layout.removeWidget(viewer)
+            viewer.hide()
+            viewer.deleteLater()
+            self._request_userdata_viewer = None
+        handler = self._request_userdata_handler
+        if handler is not None:
+            handler.deleteLater()
+            self._request_userdata_handler = None
+        self._request_userdata_host.hide()
+
+    def _on_preview_tab_changed(self, index):
+        if index == 1:
+            self._refresh_headless_region()
+        else:
+            payload = self._current_payload()
+            if payload is not None and payload.kind == 'request_set':
+                self._render_payload(payload)
 
     def _render_payload(self, payload: NavPayload):
         if not self._is_payload_valid(payload):
@@ -1775,8 +1811,25 @@ class RcolViewer(QWidget):
 
         linked_group = request_set.group
         self._row_text("Linked Shape Count", str(len(linked_group.shapes) if linked_group else 0))
-        associated_objects = self._get_request_set_object_entries(payload.request_index)
-        self._row_multiline_text("Associated Objects", associated_objects, max_lines=12)
+        roots = []
+        for instance in (request_set.instance, *(request_set.shape_userdata or [])):
+            instance_id = self._extract_instance_id(instance)
+            if instance_id is not None and instance_id > 0 and instance_id not in roots:
+                roots.append(instance_id)
+        if self.rcol.rsz is not None and roots:
+            viewer, handler = self._create_headless_viewer(instance_roots=roots)
+            viewer.data_changed.connect(lambda changed, source=viewer: self._on_userdata_changed(source, changed))
+            self._request_userdata_viewer, self._request_userdata_handler = viewer, handler
+            self._request_userdata_layout.addWidget(viewer)
+            self._request_userdata_host.show()
+            viewer.tree.expandToDepth(0)
+            QTimer.singleShot(0, self._fit_request_header)
+
+    def _fit_request_header(self):
+        if self._request_userdata_viewer is not None:
+            self.detail_form.invalidate()
+            self.detail_form.activate()
+            self._detail_scroll.setFixedHeight(self.detail_form.sizeHint().height() + 12)
 
 
     def _render_ignore_tags_overview(self, _payload: NavPayload):
@@ -1821,8 +1874,12 @@ class RcolViewer(QWidget):
             item = self._headless_body.takeAt(0)
             widget = item.widget()
             if widget:
-                widget.setParent(None)
+                if widget is self._embedded_headless_viewer:
+                    widget.cleanup()
+                widget.hide()
                 widget.deleteLater()
+        if self._embedded_headless_handler is not None:
+            self._embedded_headless_handler.deleteLater()
         self._embedded_headless_viewer = None
         self._embedded_headless_handler = None
 
@@ -1833,16 +1890,7 @@ class RcolViewer(QWidget):
             return
 
         try:
-            rsz_handler = RszHandler()
-            rsz_handler.app = getattr(self.handler, "app", None)
-            rsz_handler.show_advanced = True
-            rsz_handler.filepath = (getattr(self.handler, "filepath", "") or "") + ".wcc"
-            rsz_handler.type_registry = self.rcol.type_registry
-            rsz_handler.rsz_file = self.rcol.rsz
-            rsz_handler.id_manager = IdManager.instance()
-            if rsz_handler.app and hasattr(rsz_handler.app, "settings"):
-                rsz_handler.set_game_version(rsz_handler.app.settings.get("game_version", "RE4"))
-            viewer = rsz_handler.create_viewer()
+            viewer, rsz_handler = self._create_headless_viewer()
         except Exception as exc:
             self._headless_body.addWidget(
                 QLabel(self.tr("Failed to build headless RSZ region: {}").format(exc))
@@ -1855,10 +1903,28 @@ class RcolViewer(QWidget):
             )
             return
 
-        viewer.modified_changed.connect(lambda changed: self._mark_modified() if changed else None)
+        viewer.data_changed.connect(lambda changed, source=viewer: self._on_userdata_changed(source, changed))
         self._embedded_headless_viewer = viewer
         self._embedded_headless_handler = rsz_handler
         self._headless_body.addWidget(viewer)
+
+    def _create_headless_viewer(self, *, instance_roots=None):
+        rsz_handler = RszHandler()
+        rsz_handler.app = getattr(self.handler, 'app', None)
+        rsz_handler.show_advanced = instance_roots is None
+        rsz_handler.filepath = (getattr(self.handler, 'filepath', '') or '') + '.wcc'
+        rsz_handler.type_registry = self.rcol.type_registry
+        rsz_handler.rsz_file = self.rcol.rsz
+        rsz_handler.id_manager = IdManager.instance()
+        if rsz_handler.app and hasattr(rsz_handler.app, 'settings'):
+            rsz_handler.set_game_version(rsz_handler.app.settings.get('game_version', 'RE4'))
+        return rsz_handler.create_viewer(instance_roots=instance_roots), rsz_handler
+
+    def _on_userdata_changed(self, source, changed):
+        self._mark_modified()
+        for viewer in (self._request_userdata_viewer, self._embedded_headless_viewer):
+            if viewer is not None and viewer is not source and changed is not None:
+                viewer.tree.refresh_widgets_for([changed])
 
 
     # ---------- Data operations ----------

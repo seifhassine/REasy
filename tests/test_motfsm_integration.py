@@ -21,14 +21,14 @@ from file_handlers.rsz.rsz_file import RszFile
 from utils.type_registry import TypeRegistry
 
 
-def make_fixture(*, all_states=False, compact=False, version=43, empty_events=False):
+def make_fixture(*, all_states=False, compact=False, version=43, empty_events=False, tags=()):
     node = b"".join([
         struct.pack("<IIIiI", 0x1234, 0, 0, -1, 0),
         struct.pack("<iIIi", 1, 0x1111, 2, 0),
         struct.pack("<iiii", -1, 1, 0, -1),
         struct.pack("<iII", 1, 0x2222, 0),
         struct.pack("<iHH", 7, 0x20, 0),
-        struct.pack("<IIiBB", 0x3333, 0x4444, 0, 1, 0),
+        struct.pack("<IIi", 0x3333, 0x4444, len(tags)) + struct.pack(f'<{len(tags)}I', *tags) + struct.pack('<BB', 1, 0),
         struct.pack("<iiiIiIII", 1, 1, 0, 22, -1, 33, 44, 55),
         (struct.pack("<iIIi", 1, 0 if empty_events else 0x12345678, 66, -1) if compact
          else struct.pack("<iiIiI", 1, 0, 66, -1, 77) if empty_events
@@ -96,6 +96,95 @@ class MotfsmIntegrationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
+
+    def test_node_details_columns_fit_contents_and_remain_draggable(self):
+        from PySide6.QtCore import QPoint
+        from PySide6.QtTest import QTest
+        from PySide6.QtWidgets import QHeaderView
+        from file_handlers.motfsm.motfsm_viewer import MotfsmViewer
+        handler = MotfsmHandler()
+        handler.read(make_fixture())
+        viewer = MotfsmViewer(handler, selection_only=True)
+        viewer.resize(1200, 600)
+        viewer.show_node(0)
+        viewer.show()
+        try:
+            self.app.processEvents()
+            header = viewer.tree.header()
+            self.assertFalse(header.stretchLastSection())
+            self.assertTrue(all(header.sectionResizeMode(i) == QHeaderView.Interactive for i in range(3)))
+            self.assertLess(sum(header.sectionSize(i) for i in range(3)), viewer.tree.viewport().width())
+            original = header.sectionSize(0)
+            boundary = header.sectionViewportPosition(1)
+            start = QPoint(boundary - 1, header.height() // 2)
+            stop = start + QPoint(80, 0)
+            QTest.mousePress(header.viewport(), Qt.LeftButton, pos=start)
+            QTest.mouseMove(header.viewport(), stop)
+            QTest.mouseRelease(header.viewport(), Qt.LeftButton, pos=stop)
+            self.app.processEvents()
+            self.assertGreater(header.sectionSize(0), original + 50)
+            dragged = header.sectionSize(0)
+            viewer.resize(1450, 600)
+            self.app.processEvents()
+            self.assertEqual(header.sectionSize(0), dragged)
+            root = viewer.tree.topLevelItem(0)
+            advanced = next(root.child(i) for i in range(root.childCount()) if root.child(i).text(0) == 'Advanced')
+            advanced.child(0).setText(0, 'Long native field name ' * 8)
+            advanced.setExpanded(True)
+            QTest.qWait(20)
+            self.assertEqual(header.sectionResizeMode(0), QHeaderView.Interactive)
+            self.assertGreater(header.sectionSize(0), dragged)
+        finally:
+            viewer.close()
+            viewer.deleteLater()
+
+    def test_tag_names_use_document_enums_and_keep_unknown_values(self):
+        from file_handlers.motfsm.motfsm_viewer import MotfsmViewer
+        from file_handlers.motfsm.tag_names import tag_names
+        registry = str(Path(__file__).resolve().parents[1] / 'resources/data/dumps/rszmhrise.json')
+        self.assertIn('snow.player.Situation.IkLegOn', tag_names(registry)[219556196])
+        self.assertIn('snow.player.GunLanceTag.Shot', tag_names(registry)[569242813])
+        source = make_fixture(tags=(219556196, 569242813, 0xFEDCBA98))
+        handler = MotfsmHandler()
+        handler.motfsm.set_rsz_type_info_path(registry)
+        handler.app = SimpleNamespace(settings={'rcol_json_path': registry})
+        handler.read(source)
+        viewer = MotfsmViewer(handler, selection_only=True)
+        try:
+            viewer.show_node(0)
+            root = viewer.tree.topLevelItem(0)
+            tags = next(root.child(i) for i in range(root.childCount()) if root.child(i).text(0) == 'Tags (3)')
+            self.assertEqual(tags.child(0).text(0), '[0] IkLegOn')
+            self.assertEqual(tags.child(1).text(0), '[1] Shot')
+            self.assertEqual(tags.child(2).text(0), '[2]')
+            self.assertIn('0xFEDCBA98', tags.child(2).text(1))
+            self.assertEqual(tags.child(0).toolTip(0), 'snow.player.Situation.IkLegOn')
+            self.assertEqual(handler.rebuild(), source)
+        finally:
+            viewer.close()
+            viewer.deleteLater()
+
+    def test_node_tags_are_visible_without_expanding_fsm_fields(self):
+        from file_handlers.motfsm.motfsm_viewer import MotfsmViewer
+        for tags in ((), (7, 0xFEDCBA98, 7)):
+            with self.subTest(tags=tags):
+                source = make_fixture(tags=tags)
+                handler = MotfsmHandler()
+                handler.read(source)
+                viewer = MotfsmViewer(handler, selection_only=True)
+                try:
+                    viewer.show_node(0)
+                    root = viewer.tree.topLevelItem(0)
+                    group = next(root.child(i) for i in range(root.childCount())
+                                 if root.child(i).text(0) == f'Tags ({len(tags)})')
+                    self.assertFalse(group.isExpanded())
+                    self.assertEqual(group.childCount(), len(tags))
+                    self.assertEqual([group.child(i).binding.value for i in range(group.childCount())], list(tags))
+                    self.assertTrue(all(group.child(i).text(1) for i in range(group.childCount())))
+                    self.assertEqual(handler.rebuild(), source)
+                finally:
+                    viewer.close()
+                    viewer.deleteLater()
 
     def test_golden_node_spans_and_exact_roundtrip(self):
         data = make_fixture()

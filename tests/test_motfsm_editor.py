@@ -512,7 +512,11 @@ class FsmEditorTests(unittest.TestCase):
         workspace.resize(1400, 900)
         workspace.show()
         panel = workspace.actions
-        self.assertIs(workspace.tabs.currentWidget(), panel)
+        self.assertIs(workspace.tabs.currentWidget(), workspace.graph_page)
+        self.assertEqual(workspace.graph_page.orientation(), Qt.Horizontal)
+        self.assertEqual(workspace.node_details.orientation(), Qt.Vertical)
+        self.assertEqual(workspace.node_details.count(), 2)
+        workspace.tabs.setCurrentWidget(panel)
         panel.select_action(action.key)
         self.app.processEvents()
         editor = panel.editors[field.name]
@@ -533,6 +537,12 @@ class FsmEditorTests(unittest.TestCase):
         panel.jump_button.click()
         self.assertIs(workspace.tabs.currentWidget(), workspace.graph_page)
         self.assertEqual(workspace.selected, target.node_index)
+        root = workspace.inspector.tree.topLevelItem(0)
+        groups = {root.child(i).text(0).split(' (', 1)[0]: root.child(i)
+                  for i in range(root.childCount())}
+        for name in ('Actions', 'States', 'Children', 'Transitions', 'AllStates'):
+            if name in groups:
+                self.assertFalse(groups[name].isExpanded(), name)
         self.assertTrue(workspace.view.node_items[target.node_index].isSelected())
         workspace.undo_action.trigger()
         QTest.qWait(100)

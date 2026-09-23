@@ -12,6 +12,10 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBAN
 
 REasy GUI is currently available in English and Chinese.
 
+For agent workflows, run `.\.venv\Scripts\python.exe -m tools --help` from the repository root.
+The [resource CLI](tools/cli/README.md) provides typed JSON queries, verified edits, dry runs, and batch plans for FSM, motion/CLIP, PFB/RSZ, RCOL, and EFX.
+For Rise MOTLIST 528, it supports structural CLIP sequence, node, property, and key copy/delete, including slot overrides and cross-file donors.
+
 The FSM editor resolves node, condition, and transition-event references inline. All parsed array types use the same expandable property tree, including object references, structs, and nested arrays. Typed element edits and array add/duplicate/remove operations support undo/redo and verified native RSZ serialization.
 
 

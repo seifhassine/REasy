@@ -18,6 +18,8 @@ from PySide6.QtWidgets import (
 
 from file_handlers.factory import get_handler_for_data, is_handler_type
 from services.backup_store import create_backup, find_backups
+from services.file_change_monitor import FileChangeMonitor
+from services.motion_document_loader import MotionDocumentLoader
 from ui.better_find_dialog import BetterFindDialog
 from ui.highlight_delegate import HighlightDelegate
 from ui.highlight_manager import HighlightManager
@@ -51,6 +53,16 @@ class FileTab:
         self.pak_source_path: str | None = pak_source_path
         self.pak_project_dir: str | None = pak_project_dir
         self.pak_data_loader = None
+        self.loading = False
+        self._closed = False
+        self._external_data = None
+        self._external_prompt_open = False
+        self._local_source_path = os.path.abspath(filename) if filename and os.path.isfile(filename) else ''
+        self._file_monitor = FileChangeMonitor(self.notebook_widget)
+        self._file_monitor.changed.connect(self._external_file_changed)
+        self._file_monitor.failed.connect(self._monitor_failed)
+        self._motion_loader = MotionDocumentLoader(
+            self.notebook_widget, self._motion_document_ready, self._motion_document_failed)
 
         layout = QVBoxLayout(self.notebook_widget)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -88,7 +100,7 @@ class FileTab:
         self.initial_load_complete = False
 
         if data is not None:
-            self.initial_load_complete = self.load_file(filename, data, handler=handler)
+            self.load_file(filename, data, handler=handler)
 
     @staticmethod
     def tr(text: str) -> str:
@@ -180,7 +192,15 @@ class FileTab:
         except Exception as e:
             raise ValueError(f"Handler setup failed: {e}")
 
-    def load_file(self, filename, data, *, replace_scene_document=False, handler=None):
+    def load_file(self, filename, data, *, replace_scene_document=False, handler=None, _motion_document=None):
+        if _motion_document is None and bytes(data[4:8]) == b'mlst':
+            handler = handler or get_handler_for_data(data, filename or '')
+            if is_handler_type(handler, 'MotListHandler'):
+                return self._queue_motion_load(filename, data, handler, replace_scene_document)
+        if _motion_document is None and self.loading:
+            self._motion_loader.cancel()
+            self.loading = False
+            self.notebook_widget.setEnabled(True)
         layout = self.notebook_widget.layout()
         suppress_error_dialog = False
 
@@ -200,6 +220,8 @@ class FileTab:
                     self.handler.read(data, validate_type_registry=self.app.settings.get("verify_rsz_crc_on_open", True))
                     if self.app and hasattr(self.app, "scenes"):
                         self.app.scenes.attach_tab_document(self, replace=replace_scene_document)
+                elif _motion_document is not None:
+                    self.handler.adopt_document(_motion_document, data)
                 else:
                     self.handler.read(data)
             except Exception as e:
@@ -235,6 +257,7 @@ class FileTab:
                 )
 
             self.initial_load_complete = True
+            self._accept_disk_version(data)
             return True
 
         except Exception as e:
@@ -253,6 +276,83 @@ class FileTab:
                     self.tr("Failed to load file: {error}").format(error=e),
                 )
             return False
+
+    def _queue_motion_load(self, filename, data, handler=None, replace_scene_document=True, *, clear_source=False):
+        if filename and os.path.isfile(filename):
+            self._local_source_path = os.path.abspath(filename)
+        self.loading = True
+        self.notebook_widget.setEnabled(False)
+        if self.app and getattr(self.app, 'status_bar', None):
+            self.app.status_bar.showMessage(self.tr('Loading: {path}').format(path=filename))
+        self._motion_loader.submit(bytes(data), filename or 'MOTLIST',
+                                   (filename, handler, replace_scene_document, clear_source))
+        return True
+
+    def _motion_document_ready(self, document, data, context):
+        filename, handler, replace_scene_document, clear_source = context
+        try:
+            reload_document = getattr(self.viewer, 'reload_document', None)
+            if (callable(reload_document) and self.handler.motlist_file.codec is document.codec):
+                reload_document(document, data)
+                self.filename = filename
+                self.handler.filepath = filename or ''
+                success = True
+            else:
+                success = self.load_file(filename, data, handler=handler,
+                                         replace_scene_document=replace_scene_document, _motion_document=document)
+            if success:
+                if clear_source:
+                    self.pak_source_path = self.pak_data_loader = None
+                self.modified = False
+                self.initial_load_complete = True
+                self._accept_disk_version(data)
+                self.update_tab_title()
+                if self.app and getattr(self.app, 'get_active_tab', lambda: None)() is self:
+                    self.app._on_active_page_changed(self.notebook_widget)
+                if self.app and getattr(self.app, 'status_bar', None):
+                    self.app.status_bar.showMessage(self.tr('Loaded: {filename}').format(filename=filename), 2000)
+        except Exception as exc:
+            self._motion_document_failed(str(exc), context)
+        finally:
+            self.loading = False
+            self.notebook_widget.setEnabled(True)
+
+    def _motion_document_failed(self, message, _context):
+        self.loading = False
+        self.notebook_widget.setEnabled(True)
+        QMessageBox.critical(self.notebook_widget, self.tr('Error'),
+                             self.tr('Failed to load file: {error}').format(error=message))
+
+    def _accept_disk_version(self, data):
+        self._external_data = None
+        if self.filename and (os.path.isfile(self.filename) or os.path.abspath(self.filename) == self._local_source_path):
+            self._local_source_path = os.path.abspath(self.filename)
+            self._file_monitor.accept(self.filename, data)
+        else:
+            self._file_monitor.close()
+
+    def _monitor_failed(self, message):
+        if self.app and getattr(self.app, 'status_bar', None):
+            self.app.status_bar.showMessage(message, 5000)
+
+    def _external_file_changed(self, data):
+        if self._closed:
+            return
+        self._external_data = data
+        if self._external_prompt_open:
+            return
+        if not self.loading and (self.modified or getattr(self.handler, 'modified', False)):
+            self._external_prompt_open = True
+            try:
+                answer = QMessageBox.question(
+                    self.notebook_widget, self.tr(UNSAVED_CHANGES_STR),
+                    self.tr('File changed on disk. Reload and discard unsaved edits?'),
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            finally:
+                self._external_prompt_open = False
+            if answer != QMessageBox.Yes:
+                return
+        self._reload_from_data(self._external_data)
 
     def refresh_tree(self):
         if not self.handler:
@@ -434,6 +534,8 @@ class FileTab:
         return dialog.exec() == save
 
     def _reload_from_data(self, data: bytes, filename: str | None = None) -> bool:
+        if self.loading or is_handler_type(self.handler, 'MotListHandler') or bytes(data[4:8]) == b'mlst':
+            return self._queue_motion_load(filename or self.filename, data, clear_source=filename is not None)
         if not self.load_file(
             filename or self.filename, data, replace_scene_document=True
         ):
@@ -449,10 +551,20 @@ class FileTab:
         return True
 
     def handle_file_save(self, file_path):
+        if self.loading:
+            return False
         was_modified = bool(
             self.modified or getattr(self.handler, "modified", False)
         )
         try:
+            if (self._file_monitor.path and self._path_key(file_path) == self._path_key(self._file_monitor.path)
+                    and self._file_monitor.differs_from_disk()):
+                answer = QMessageBox.question(
+                    self.notebook_widget, self.tr('File changed on disk'),
+                    self.tr("Overwrite the disk version with this editor's changes?"),
+                    QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if answer != QMessageBox.Yes:
+                    return False
             related = {}
             related_outputs = getattr(self.handler, "related_output_targets", None)
             if callable(related_outputs):
@@ -511,6 +623,7 @@ class FileTab:
             self.pak_source_path = None
             self.pak_data_loader = None
             self.modified = False
+            self._accept_disk_version(data)
             self.update_tab_title()
             if self.app and hasattr(self.app, "scenes"):
                 self.app.scenes.document_store.clear_handler(self.handler)
@@ -609,7 +722,8 @@ class FileTab:
             if ans == QMessageBox.Cancel:
                 return
             if ans == QMessageBox.Yes:
-                self.on_save()
+                if not self.on_save():
+                    return
 
         try:
             data = self._read_reload_data()
@@ -725,7 +839,11 @@ class FileTab:
                 for i in range(layout.count()):
                     item = layout.itemAt(i)
                     if item.widget() == target:
-                        target.setParent(None)
+                        # Keep Qt ownership until DeferredDelete destroys the viewer.
+                        # Detaching a Python-backed FSM workspace here races wrapper
+                        # collection against its native child/model destruction.
+                        layout.removeWidget(target)
+                        target.hide()
                         break
 
             if target:
@@ -762,6 +880,9 @@ class FileTab:
 
     def cleanup(self):
         """Release resources held by this tab to avoid lingering memory use."""
+        self._closed = True
+        self._file_monitor.close()
+        self._motion_loader.close()
         try:
             if self.viewer:
                 self._cleanup_viewer()

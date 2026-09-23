@@ -11,7 +11,7 @@ from utils.hash_util import murmur3_hash_utf16le
 from .binary import ReadContext, pad_to_alignment
 from .errors import MotionWriteError
 from .evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
-from .evaluation.wilds_retarget import WILDS_TO_RISE
+from .evaluation.wilds_retarget import wilds_to_rise
 from .evaluation.binding import bind_motion
 from .evaluation.sampling import MotionEvaluator
 from .evaluation.math3d import decompose_row_srt
@@ -79,8 +79,10 @@ def bake_ik_goal_tracks(poses, rig, *, goal_sources=IK_GOAL_SOURCES):
 
 
 def idle_template(document):
-    candidates = {id(slot.payload): index for index, slot in enumerate(document.slots)
-                  if slot.payload and slot.payload.value.name.lower().endswith('_001_loop')}
+    candidates = {}
+    for index, slot in enumerate(document.slots):
+        if slot.payload and slot.payload.value.name.lower().endswith('_001_loop'):
+            candidates.setdefault(id(slot.payload), index)
     if len(candidates) != 1:
         raise MotionWriteError('The hold template must contain one native 001_Loop motion')
     return next(iter(candidates.values()))
@@ -170,7 +172,27 @@ def _hold_sequence(document, index, origin, end_frame):
     return out
 
 
-def bake_motion(source_motion, rig, hold_document, *, name=None):
+def _bake_frames(source_motion, rig):
+    end = source_motion.end_frame
+    if not math.isfinite(end) or end < 0 or math.ceil(end) > 0xFFFFFFFF:
+        raise MotionWriteError('Source duration is outside the native key-frame range')
+    if not 0 < source_motion.frames_per_second <= 0xFFFFFFFF:
+        raise MotionWriteError('Source frame rate must be a positive native integer')
+    if not 0 < len(rig.joints) <= 0xFFFF:
+        raise MotionWriteError('Target rig exceeds the MOT 495 joint limit')
+    return list(range(math.ceil(end)+1))
+
+
+def bake_motion(source_motion, rig, hold_document, *, name=None, family=None):
+    frames = _bake_frames(source_motion, rig)
+    retarget = wilds_to_rise(family)
+    binding = retarget.bind(source_motion, rig)
+    evaluator = retarget.evaluator(binding, PROFILE.sampling_policy, PROFILE.pose_composition_policy, PROFILE.joint_binding)
+    poses = [evaluator.sample_frame(frame, wrap_looping=False) for frame in frames]
+    return bake_evaluated_motion(source_motion, poses, rig, hold_document, name=name)
+
+
+def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None):
     """Return one MOT 495 payload that follows the native v528 layout.
 
     Native payloads keep the animation block at ``+0x80``, the sequences after
@@ -180,19 +202,12 @@ def bake_motion(source_motion, rig, hold_document, *, name=None):
     position independent because the internal pointers are payload relative.
     """
     end = source_motion.end_frame
-    if not math.isfinite(end) or end < 0 or math.ceil(end) > 0xFFFFFFFF:
-        raise MotionWriteError('Source duration is outside the native key-frame range')
-    if source_motion.frames_per_second <= 0:
-        raise MotionWriteError('Source frame rate must be positive')
+    frames = _bake_frames(source_motion, rig)
+    if len(poses) != len(frames):
+        raise MotionWriteError('Evaluated poses must cover every output frame')
     count = len(rig.joints)
-    if not 0 < count <= 0xFFFF:
-        raise MotionWriteError('Target rig exceeds the MOT 495 joint limit')
     template_index = idle_template(hold_document)
     template_base, _ = _template_offsets(hold_document, template_index)
-    binding = WILDS_TO_RISE.bind(source_motion, rig)
-    evaluator = WILDS_TO_RISE.evaluator(binding, PROFILE.sampling_policy, PROFILE.pose_composition_policy, PROFILE.joint_binding)
-    frames = list(range(math.ceil(end)+1))
-    poses = [evaluator.sample_frame(frame, wrap_looping=False) for frame in frames]
     goals = bake_ik_goal_tracks(poses, rig)
     name = source_motion.name if name is None else name
     if not name or '\0' in name:
@@ -207,7 +222,7 @@ def bake_motion(source_motion, rig, hold_document, *, name=None):
     for index, joint in enumerate(rig.joints):
         struct.pack_into('<HHII', out, node_table+index*12, index, (0xFF << 8) | channels[index],
                          murmur3_hash_utf16le(joint.name), record_offset)
-        for channel, (attribute, family) in enumerate((('translation', TrackFamily.VECTOR3),
+        for channel, (attribute, track_family) in enumerate((('translation', TrackFamily.VECTOR3),
                 ('rotation', TrackFamily.QUATERNION), ('scale', TrackFamily.VECTOR3))):
             if not channels[index] & (1 << channel):
                 continue
@@ -220,7 +235,7 @@ def bake_motion(source_motion, rig, hold_document, *, name=None):
                 values = [getattr(pose.local_transforms[index], attribute) for pose in poses]
             array = np.asarray(values, dtype=np.float32)
             constant = np.all(array == array[0])
-            track = KeyTrack(family, [0] if constant else frames,
+            track = KeyTrack(track_family, [0] if constant else frames,
                              [tuple(value) for value in (array[:1] if constant else array)])
             flags, frame_data, value_data = encode_track(track)
             pad_to_alignment(out, 4)
@@ -249,21 +264,34 @@ def bake_motion(source_motion, rig, hold_document, *, name=None):
     return bytes(out)
 
 
-def import_motion(document, source_motion, rig, hold_document, motion_id, *, replace_existing=False, name=None):
+def import_motion(document, source_motion, rig, hold_document, motion_id, *, replace_existing=False,
+                  name=None, family=None):
+    validate_import_target(document, motion_id, replace_existing=replace_existing)
+    payload = bake_motion(source_motion, rig, hold_document, family=family,
+                          name=default_motion_name(document, motion_id) if name is None else name)
+    return install_motion(document, payload, hold_document, motion_id, replace_existing=replace_existing)
+
+
+def validate_import_target(document, motion_id, *, replace_existing=False):
+    if isinstance(motion_id, bool) or not isinstance(motion_id, int) or not 0 <= motion_id <= 0xFFFF:
+        raise MotionWriteError('Target MotionID must be an unsigned 16-bit integer')
+    matches = [i for i, slot in enumerate(document.slots) if slot.motion_id == motion_id]
+    if len(matches) > 1:
+        raise MotionWriteError(f'Target MotionID {motion_id} is ambiguous')
+    if bool(matches) != replace_existing:
+        raise MotionWriteError(f'Target MotionID {motion_id} '+('already exists; request replacement explicitly' if matches else 'does not exist for replacement'))
+    return matches
+
+
+def install_motion(document, payload, hold_document, motion_id, *, replace_existing=False):
     """Append or replace one slot, detaching aliases and preserving other slots.
 
     Run :func:`verify_native_contract` on the result before shipping a file: the
     engine-side rules it checks (slot +0x0C, native layout, IK goal convention)
     are invisible to the preview model.
     """
-    if isinstance(motion_id, bool) or not isinstance(motion_id, int) or not 0 <= motion_id <= 0xFFFF:
-        raise MotionWriteError('Target MotionID must be an unsigned 16-bit integer')
     model = CODEC.parse(CODEC.write(document), label='before motion import')
-    matches = [i for i, slot in enumerate(model.slots) if slot.motion_id == motion_id]
-    if len(matches) > 1:
-        raise MotionWriteError(f'Target MotionID {motion_id} is ambiguous')
-    if bool(matches) != replace_existing:
-        raise MotionWriteError(f'Target MotionID {motion_id} '+('already exists; request replacement explicitly' if matches else 'does not exist for replacement'))
+    matches = validate_import_target(model, motion_id, replace_existing=replace_existing)
     raw = model.source
     pointers, rows = struct.unpack_from('<QQ', raw, 16)
     count = len(model.slots)
@@ -279,8 +307,6 @@ def import_motion(document, source_motion, rig, hold_document, motion_id, *, rep
     # to a T-pose, so a new motion starts from the neutral value.
     struct.pack_into('<I', row, 12, 0)
     row[23] = 0
-    payload = bake_motion(source_motion, rig, hold_document,
-                          name=default_motion_name(model, motion_id) if name is None else name)
     insertions = []
     recovered = None
     if matches:
@@ -333,27 +359,36 @@ def import_motion(document, source_motion, rig, hold_document, motion_id, *, rep
     else:
         struct.pack_into('<I', output, 48, count+1)
         struct.pack_into('<Q', output, blocks['pointer'], blocks['motion'])
-    return CODEC.parse(bytes(output), label='imported MOTLIST 528')
+    from .mhr_editing import order_slots
+    return order_slots(CODEC.parse(bytes(output), label='imported MOTLIST 528'))
 
 
-def verify_imported_motion(source_motion, imported_motion, rig):
+def verify_imported_motion(source_motion, imported_motion, rig, *, family=None):
     """Check every baked deform frame against the existing preview evaluator.
 
     The IK goal joints are control bones: an import deliberately replaces their
     authored values with the native goal convention, so they are excluded here
     and covered by :func:`verify_native_contract` instead.
     """
+    retarget = wilds_to_rise(family)
+    source = retarget.evaluator(retarget.bind(source_motion, rig), PROFILE.sampling_policy,
+                                PROFILE.pose_composition_policy, PROFILE.joint_binding)
+    poses = [source.sample_frame(frame, wrap_looping=False) for frame in range(math.ceil(source_motion.end_frame)+1)]
+    return verify_evaluated_motion(source_motion, poses, imported_motion, rig)
+
+
+def verify_evaluated_motion(source_motion, poses, imported_motion, rig):
     if (source_motion.end_frame, source_motion.looping, source_motion.frames_per_second) != (
             imported_motion.end_frame, imported_motion.looping, imported_motion.frames_per_second):
         raise MotionWriteError('Imported motion timing differs from the source')
-    source = WILDS_TO_RISE.evaluator(WILDS_TO_RISE.bind(source_motion, rig), PROFILE.sampling_policy,
-                                    PROFILE.pose_composition_policy, PROFILE.joint_binding)
+    if len(poses) != math.ceil(source_motion.end_frame)+1:
+        raise MotionWriteError('Verification poses must cover every output frame')
     target = MotionEvaluator(bind_motion(imported_motion, rig, PROFILE.joint_binding),
                              PROFILE.sampling_policy, PROFILE.pose_composition_policy)
     deform = np.asarray([joint.name not in IK_GOAL_SOURCES for joint in rig.joints], dtype=bool)
     max_error = 0.0
-    for frame in range(math.ceil(source_motion.end_frame)+1):
-        expected = np.asarray(source.sample_frame(frame, wrap_looping=False).world_matrices).reshape(-1, 4, 4)[deform]
+    for frame, pose in enumerate(poses):
+        expected = np.asarray(pose.world_matrices).reshape(-1, 4, 4)[deform]
         actual = np.asarray(target.sample_frame(frame, wrap_looping=False).world_matrices).reshape(-1, 4, 4)[deform]
         error = float(np.max(np.abs(expected-actual)))
         max_error = max(max_error, error)
@@ -369,6 +404,8 @@ def verify_native_contract(document, motion_id, imported_motion, rig, *, goals=I
     or confirmed in game; the preview evaluator checks none of them, which is why
     an import can look perfect in REasy and still collapse to a T-pose.
     """
+    from .mhr_editing import validate_slot_order
+    validate_slot_order(document)
     pointers, rows = struct.unpack_from('<QQ', document.source, 16)
     slots = [index for index, slot in enumerate(document.slots) if slot.motion_id == motion_id]
     if len(slots) != 1:

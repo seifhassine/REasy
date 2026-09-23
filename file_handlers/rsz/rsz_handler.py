@@ -178,7 +178,7 @@ class RszHandler(BaseFileHandler):
         )
         return reply == QMessageBox.Yes
         
-    def create_viewer(self):
+    def create_viewer(self, *, instance_roots=None):
         """Create a new viewer instance"""
         viewer = RszViewer()
         viewer.scn = self.rsz_file
@@ -186,6 +186,7 @@ class RszHandler(BaseFileHandler):
         viewer.type_registry = self.type_registry
         viewer.game_version = self.game_version
         viewer.show_advanced = self.show_advanced
+        viewer.instance_roots = tuple(instance_roots) if instance_roots is not None else None
         
         if hasattr(self, 'highlight_manager') and self.highlight_manager:
             viewer.tree.highlight_manager = self.highlight_manager
@@ -282,6 +283,7 @@ class RszHandler(BaseFileHandler):
 
 class RszViewer(QWidget):
     modified_changed = Signal(bool)
+    data_changed = Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -307,6 +309,7 @@ class RszViewer(QWidget):
         self.name_helper = None
         self.object_operations = None
         self.lazy_builder = None
+        self.instance_roots = None
 
     def add_preview_tab(self, widget: QWidget, label: str) -> None:
         """Add a format preview while keeping this viewer as the RSZ editor."""
@@ -339,6 +342,7 @@ class RszViewer(QWidget):
             app = getattr(self.handler, "app", None)
             if app is not None and hasattr(app, "scenes"):
                 app.scenes.mark_stale(self.handler, changed_obj)
+        self.data_changed.emit(changed_obj)
 
     @property
     def modified(self):
@@ -529,6 +533,9 @@ class RszViewer(QWidget):
     def _build_tree_data(self):
         root_dict = DataTreeBuilder.create_data_node("SCN_File", "")
         root_dict["type"] = "root"
+        if self.instance_roots is not None:
+            self._add_headless_data_block(root_dict)
+            return root_dict
         if getattr(self.scn, "is_headless", False):
             file_type = "WCC"
         elif self.scn.is_usr:
@@ -980,7 +987,8 @@ class RszViewer(QWidget):
     def _add_headless_data_block(self, parent_dict):
         """Build a headless RSZ hierarchy from object-table roots and parsed instance links."""
         nodes = {}
-        for instance_id, _inst_info in enumerate(self.scn.instance_infos):
+        instance_ids = self.instance_roots if self.instance_roots is not None else range(len(self.scn.instance_infos))
+        for instance_id in instance_ids:
             if instance_id == 0:
                 continue
             fields = self.scn.parsed_elements.get(instance_id)
@@ -1008,7 +1016,7 @@ class RszViewer(QWidget):
         seen_roots = set()
 
         # For headless RSZ, object table entries are the preferred roots
-        for instance_id in self.scn.object_table:
+        for instance_id in self.instance_roots if self.instance_roots is not None else self.scn.object_table:
             if instance_id in nodes and instance_id not in seen_roots:
                 ordered_roots.append(instance_id)
                 seen_roots.add(instance_id)

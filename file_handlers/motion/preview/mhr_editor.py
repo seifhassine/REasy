@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from dataclasses import replace
 from enum import IntEnum
 
 from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, Signal, QSignalBlocker, QTimer
@@ -11,11 +12,13 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QSplitter, QTreeView,
 from ..mhr_storage import Field, Group
 from ..mhr_editing import duplicate_slot, next_motion_id
 from ..mhr_import import default_motion_name
+from ..mhr_bake import bake_segments
+from .mhr_bake_dialog import MotionBakeDialog
 from .resolution import MotionListDocument
 from .widget import MotListPreviewWidget
 from .assembly_renderer import MotionAssemblyRenderer
 from .clip_timeline import ClipTimeline
-from .mhr_assets import MhrAssetLoader, WEAPON_PRESETS, weapon_family
+from .mhr_assets import MhrAssetLoader, MhrPreviewAssets, WEAPON_PRESETS, weapon_family
 from .weapon_motion import select_weapon_motion
 
 
@@ -150,6 +153,7 @@ class MhrMotListEditor(QWidget):
         self._assets = assets
         self._asset_loader = None
         self._pending_resource_directory = ''
+        self._preview_weapon_family = None
         self._cleaned = False
         self._weapon_motion_controls = {}
         self._index_fields()
@@ -160,6 +164,9 @@ class MhrMotListEditor(QWidget):
         self.duplicate_button = QPushButton(self.tr('Duplicate animation…'), self)
         self.duplicate_button.clicked.connect(self._duplicate_animation)
         self.preview.animation_pane.add_widget(self.duplicate_button)
+        self.bake_button = QPushButton(self.tr('Bake segments…'), self)
+        self.bake_button.clicked.connect(self._bake_animation)
+        self.preview.animation_pane.add_widget(self.bake_button)
         self.preview._scene_renderer = MotionAssemblyRenderer(self.preview.viewport)
         self.preview.motion_changed.connect(self._set_preview_motion)
         if self.preview.current_motion is not None:
@@ -199,6 +206,7 @@ class MhrMotListEditor(QWidget):
         self._sync_timeline()
         if read_only:
             self.duplicate_button.hide()
+            self.bake_button.hide()
             self.timeline_inspector.setEditTriggers(QTreeView.NoEditTriggers)
         if compact:
             self.preview.animation_pane.hide()
@@ -216,12 +224,36 @@ class MhrMotListEditor(QWidget):
         frame = self.preview.controller.current_frame
         self.document = self.handler.model
         self._index_fields()
+        target = self.preview._target
+        family = weapon_family(self.document.name)
+        if (target is not None and target.default_weapon_hold and family == self._preview_weapon_family
+                and self.document.name.casefold() == f'plw_{family}_100'.casefold()):
+            properties = MhrPreviewAssets.document_weapon_hold(self.document)
+            if properties is not None:
+                self.preview._target = replace(target, default_weapon_hold=properties)
         root = self.preview._catalog.root
         self.preview._catalog.root = MotionListDocument(root.path, self.document)
         self.preview.playback.stop()
         self.preview._populate_motions(reset_camera=False)
         self.preview.playback._on_frame_changed(frame)
         self._sync_timeline()
+
+    def reload_document(self, document, data):
+        old_document, old_data = self.handler.motlist_file, self.handler.raw_data
+        was_modified = self.handler.modified
+        self.handler.adopt_document(document, data, notify=False)
+        try:
+            self._external_document_changed()
+        except Exception:
+            self.handler.adopt_document(old_document, old_data, notify=False)
+            self.handler.modified = was_modified
+            self._external_document_changed()
+            raise
+        self._emitting_edit = True
+        try:
+            self.handler.document_changed.emit()
+        finally:
+            self._emitting_edit = False
 
     def _index_fields(self):
         self._fields_by_owner = {}
@@ -274,7 +306,32 @@ class MhrMotListEditor(QWidget):
         result = duplicate_slot(self.document, entry.slot_index, motion_id, name=name)
         self.document = result
         self._index_fields()
-        self._accept_document_edit(result, selected_slot=len(result.slots)-1)
+        selected = next(i for i, slot in enumerate(result.slots) if slot.motion_id == motion_id)
+        self._accept_document_edit(result, selected_slot=selected)
+
+    def _bake_animation(self):
+        entry = self.preview.current_entry
+        if entry is None or entry.source_list_name != self.document.name or self.document.slots[entry.slot_index].payload is None:
+            QMessageBox.warning(self, self.tr('Bake segments'), self.tr('Select an embedded animation to replace.'))
+            return
+        dialog = MotionBakeDialog(self.document, entry.motion_id, self.bake_current_motion, self)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def bake_current_motion(self, segments, *, align_waist=True, blend_frames=3):
+        if self.read_only:
+            raise ValueError('This motion list is read-only.')
+        entry = self.preview.current_entry
+        if entry is None or entry.source_list_name != self.document.name or self.document.slots[entry.slot_index].payload is None:
+            raise ValueError('Select an embedded animation to replace.')
+        motion_id = entry.motion_id
+        result, ranges = bake_segments(self.document, segments, motion_id, replace_existing=True,
+                                      align_waist=align_waist, blend_frames=blend_frames)
+        self.document = result
+        self._index_fields()
+        selected = next(i for i, slot in enumerate(result.slots) if slot.motion_id == motion_id)
+        self._accept_document_edit(result, selected_slot=selected)
+        return ranges
 
     def _set_preview_motion(self, motion):
         entry = self.preview.current_entry
@@ -346,6 +403,7 @@ class MhrMotListEditor(QWidget):
         self.weapon_combo.setEnabled(False)
         self.preview.rig_label.setText(self.tr('Loading hunter and weapon…'))
         self._pending_resource_directory = directory
+        self._pending_weapon_family = family
         loader = MhrAssetLoader(self.handler, family, assets=None if directory else self._assets,
                                 directory=directory, weapon_only=weapon_only, parent=self)
         self._asset_loader = loader
@@ -361,6 +419,12 @@ class MhrMotListEditor(QWidget):
 
     def _default_target_loaded(self, assets, target):
         if self._cleaned: return
+        family = weapon_family(self.document.name)
+        self._preview_weapon_family = self._pending_weapon_family
+        if family == self._preview_weapon_family and family and self.document.name.casefold() == f'plw_{family}_100'.casefold():
+            properties = MhrPreviewAssets.document_weapon_hold(self.document)
+            if properties is not None:
+                target = replace(target, default_weapon_hold=properties)
         self._assets = assets
         self.handler.resource_context = assets.context
         self.preview._catalog.resources.resource_context = assets.context

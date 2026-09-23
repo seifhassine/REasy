@@ -4,6 +4,8 @@ from pathlib import Path
 import struct
 import unittest
 
+import numpy as np
+
 from file_handlers.motion.errors import MotionWriteError
 from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
 from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC as WILDS
@@ -13,12 +15,18 @@ from file_handlers.motion.mhr_import import (import_motion, verify_imported_moti
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.preview.mhr_assets import MhrPreviewAssets, preview_context, find_rise_installation
 from file_handlers.motion.preview.mhr_attachments import weapon_hold_properties
-from tools.import_wilds_motion import motion_mapping
+from file_handlers.motion.evaluation.binding import bind_motion
+from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
+from file_handlers.motion.evaluation.sampling import MotionEvaluator
+from file_handlers.motion.evaluation.wilds_retarget import wilds_to_rise
+from tools.cli.formats.wilds_import import motion_mapping
 
 
 CORPUS = Path(__file__).parent/'TESTFILE'
 RISE_PATH = CORPUS/'natives/STM/player/mot/plw_LongSword_100.motlist.528'
 WILDS_PATH = CORPUS/'Weapon/Wp03/wp03_00/wp03_00.motlist.992'
+SHIELD_RISE_PATH = CORPUS/'natives/STM/player/mot/plw_ChargeAxe_100.motlist.528'
+SHIELD_WILDS_PATH = CORPUS/'Weapon/Wp09/wp09_00/wp09_00.motlist.992'
 
 
 def motion_value(motion):
@@ -161,13 +169,27 @@ class ImportTests(unittest.TestCase):
         self.assertEqual(size % 16, 0)
         self.assertEqual(result.slots[index].payload.value.name, f'{self.target.name}_{motion_id}')
 
+    def test_import_inserts_an_unused_lower_id_in_sorted_order(self):
+        used = {slot.motion_id for slot in self.target.slots}
+        motion_id = next(i for i in range(1, max(used)) if i not in used)
+        result = import_motion(self.target, self.short_motion, self.rig, self.target, motion_id)
+        self.assertEqual([slot.motion_id for slot in result.slots], sorted([*used, motion_id]))
+        by_id = {slot.motion_id: slot for slot in result.slots}
+        for original in self.target.slots:
+            if original.payload:
+                self.assertEqual(motion_value(original.payload.value), motion_value(by_id[original.motion_id].payload.value))
+        verify_native_contract(result, motion_id, by_id[motion_id].payload.value, self.rig)
+
     def test_import_does_not_inherit_the_template_private_slot_field(self):
         template_index = idle_template(self.target)
         template_id = self.target.slots[template_index].motion_id
         _, _, _, _ = self.payload_layout(self.target, template_id)
         pointers, rows = struct.unpack_from('<QQ', self.target.source, 16)
         inherited = struct.unpack_from('<I', self.target.source, rows+template_index*72+12)[0]
-        self.assertNotEqual(inherited, 0, 'the 001_Loop template must expose the trap this guards against')
+        aliases = [i for i, slot in enumerate(self.target.slots)
+                   if slot.payload is self.target.slots[template_index].payload]
+        self.assertEqual(template_index, min(aliases))
+        self.assertNotEqual(self.target.slots[template_index].tag_hash, 0)
         motion_id = next_motion_id(self.target)
         result = import_motion(self.target, self.short_motion, self.rig, self.target, motion_id)
         index, _, _, _ = self.payload_layout(result, motion_id)
@@ -194,6 +216,39 @@ class ImportTests(unittest.TestCase):
                 parent = self.rig.joints[parent].parent_index
         error = verify_imported_motion(self.motion, imported, self.rig)
         self.assertLess(error, 2e-5)
+
+    def test_shielded_import_bakes_the_wilds_shield_into_the_rise_carrier(self):
+        if not SHIELD_RISE_PATH.is_file() or not SHIELD_WILDS_PATH.is_file():
+            self.skipTest('Charge axe import corpus absent')
+        target = RISE.parse(SHIELD_RISE_PATH.read_bytes(), label=SHIELD_RISE_PATH.name)
+        source = WILDS.parse(SHIELD_WILDS_PATH.read_bytes(), label=SHIELD_WILDS_PATH.name)
+        motion = min((slot.payload.value for slot in source.slots
+                      if slot.payload and slot.payload.value.end_frame >= 10),
+                     key=lambda item: item.end_frame)
+        motion_id = next_motion_id(target)
+        # A shielded family drives R_Weapon_00 from the forearm shield, not the hand.
+        result = import_motion(target, motion, self.rig, target, motion_id, family='chargeaxe')
+        imported = next(slot.payload.value for slot in result.slots if slot.motion_id == motion_id)
+        self.assertLess(verify_imported_motion(motion, imported, self.rig, family='chargeaxe'), 2e-5)
+        verify_native_contract(result, motion_id, imported, self.rig)
+
+        retarget = wilds_to_rise('chargeaxe')
+        evaluator = retarget.evaluator(retarget.bind(motion, self.rig), PROFILE.sampling_policy,
+                                       PROFILE.pose_composition_policy, PROFILE.joint_binding)
+        baked = MotionEvaluator(bind_motion(imported, self.rig, PROFILE.joint_binding),
+                                PROFILE.sampling_policy, PROFILE.pose_composition_policy)
+        carrier = next(i for i, joint in enumerate(self.rig.joints) if joint.name == 'R_Weapon_00')
+        shield = next(i for i, joint in enumerate(evaluator.source_rig.joints) if joint.name == 'R_Shield')
+        for frame in (0, motion.end_frame*.5, motion.end_frame):
+            source_world = np.asarray(evaluator.source.sample_frame(frame, wrap_looping=False).world_matrices).reshape(-1, 4, 4)
+            expected = source_world[shield].copy()
+            expected[3, :3] *= evaluator.translation_scale
+            actual = np.asarray(baked.sample_frame(frame, wrap_looping=False).world_matrices).reshape(-1, 4, 4)[carrier]
+            np.testing.assert_allclose(actual, expected, atol=1e-4)
+        # The hand carrier is a different joint, so the unparameterized retarget
+        # must reject the shielded bake instead of silently accepting it.
+        with self.assertRaisesRegex(MotionWriteError, 'differs at frame'):
+            verify_imported_motion(motion, imported, self.rig)
 
     def test_default_motion_name_follows_native_convention(self):
         self.assertEqual(default_motion_name(self.target, 777), f'{self.target.name}_777')

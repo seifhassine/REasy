@@ -406,8 +406,10 @@ class MhrParser:
             count = self.field(c, eg, 'Interval count', r+6, 'h', editable=False)
             values = self.pointer(c, eg, 'Intervals', r+8, base)
             for j in range(count):
-                self.field(c, eg, f'Begin {j}', values+j*8, 'f')
-                self.field(c, eg, f'Span {j}', values+j*8+4, 'I')
+                interval = parsed.clip.extra_ranges[i].intervals[j]
+                self.field(c, eg, f'Begin {j}', values+j*8, 'f', owner=interval,
+                           attr='begin_frame' if interval.begin_frame is not None else None)
+                self.field(c, eg, f'Span {j}', values+j*8+4, 'I', owner=interval, attr='frame_span')
 
     def key_value(self, c, group, record, kind, sections):
         key, raw = record.key, record.payload

@@ -7,6 +7,30 @@ from .errors import MotionWriteError
 from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
 
 
+def validate_slot_order(document):
+    ids = [slot.motion_id for slot in document.slots]
+    if any(left >= right for left, right in zip(ids, ids[1:])):
+        raise MotionWriteError('MotionIDs must be unique and strictly increasing in the slot table')
+
+
+def order_slots(document):
+    """Sort slot rows and their parallel pointers without moving MOT payloads."""
+    source = CODEC.write(document)
+    model = CODEC.parse(source)
+    ids = [slot.motion_id for slot in model.slots]
+    if len(set(ids)) != len(ids):
+        raise MotionWriteError('Duplicate MotionIDs in the slot table')
+    order = sorted(range(len(ids)), key=ids.__getitem__)
+    pointers, rows = struct.unpack_from('<QQ', source, 16)
+    output = bytearray(source)
+    for destination, original in enumerate(order):
+        output[pointers+destination*8:pointers+(destination+1)*8] = source[pointers+original*8:pointers+(original+1)*8]
+        output[rows+destination*72:rows+(destination+1)*72] = source[rows+original*72:rows+(original+1)*72]
+    result = CODEC.parse(bytes(output))
+    validate_slot_order(result)
+    return result
+
+
 def next_motion_id(document):
     used = {slot.motion_id for slot in document.slots}
     candidate = max(used, default=-1)+1
@@ -47,7 +71,7 @@ def _copy_skeleton(source, anchor, destination):
 
 
 def duplicate_slot(document, source_index, motion_id, *, name=None):
-    """Append an independent MOT payload and slot overrides; retain old slots.
+    """Append an independent MOT payload and insert its slot in MotionID order.
 
     Materialize pending edits first so all copied native offsets describe the
     same byte image. The returned document owns its new relocation bindings.
@@ -155,4 +179,4 @@ def duplicate_slot(document, source_index, motion_id, *, name=None):
     if name is not None:
         result.slots[-1].payload.value.name = name
         result = CODEC.parse(CODEC.write(result), label='named duplicated slot')
-    return result
+    return order_slots(result)

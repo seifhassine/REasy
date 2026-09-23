@@ -1,6 +1,5 @@
 """MOT 932 source-rig playback and an explicit Rise hunter retarget target."""
 from dataclasses import replace
-import re
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QPushButton
@@ -8,19 +7,15 @@ from PySide6.QtWidgets import QPushButton
 from .widget import MotListPreviewWidget
 from .mhr_assets import MhrAssetLoader
 from .assembly_renderer import MotionAssemblyRenderer
-from ..evaluation.wilds_retarget import WILDS_TO_RISE
-
-
-# Native Wilds weapon classes; this differs from Rise's weapon ordering.
-WILDS_WEAPONS = ('greatsword', 'shortsword', 'dualblades', 'longsword', 'hammer',
-                 'horn', 'lance', 'gunlance', 'slashaxe', 'chargeaxe',
-                 'insectglaive', 'bow', 'heavybowgun', 'lightbowgun')
+from ..evaluation.wilds_retarget import wilds_to_rise
+from ..wilds_weapons import WILDS_WEAPONS, wilds_weapon_family  # WILDS_WEAPONS stays importable here
 
 
 class WildsPreview(MotListPreviewWidget):
     def __init__(self, handler, *, viewport_factory=None):
         self._asset_loader = None
         self._assets = None
+        self._family = None
         super().__init__(handler, **({'viewport_factory': viewport_factory} if viewport_factory is not None else {}))
         self._scene_renderer = MotionAssemblyRenderer(self.viewport)
         self.motion_changed.connect(lambda motion: self._scene_renderer.set_motion(motion))
@@ -33,13 +28,13 @@ class WildsPreview(MotListPreviewWidget):
     def load_rise_target(self):
         if self._cleaned or self._asset_loader is not None:
             return
-        name = self.handler.model.name
-        match = re.match(r'wp(\d{2})(?:_|$)', name, re.IGNORECASE)
-        if match is None or int(match[1]) >= len(WILDS_WEAPONS):
+        family = wilds_weapon_family(self.handler.model.name)
+        if family is None:
             self._show_error(self.tr('Select a Wilds hunter weapon MOTLIST for Rise retargeting.'))
             return
+        self._family = family
         self.retarget_button.setEnabled(False)
-        loader = MhrAssetLoader(self.handler, WILDS_WEAPONS[int(match[1])], assets=self._assets, parent=self)
+        loader = MhrAssetLoader(self.handler, family, assets=self._assets, parent=self)
         self._asset_loader = loader
         loader.loaded.connect(self._rise_loaded)
         loader.failed.connect(self._rise_failed)
@@ -49,7 +44,8 @@ class WildsPreview(MotListPreviewWidget):
     def _rise_loaded(self, assets, target):
         if not self._cleaned:
             self._assets = assets
-            self.set_target(replace(target, label='Wilds → '+target.label), retarget=WILDS_TO_RISE)
+            self.set_target(replace(target, label='Wilds → '+target.label),
+                            retarget=wilds_to_rise(self._family))
 
     def _rise_failed(self, message):
         if not self._cleaned:

@@ -97,12 +97,18 @@ class MotfsmViewer(QWidget):
         self.tree.setColumnWidth(0, 500)
         self.tree.setColumnWidth(1, 300)
         self.tree.header().setSectionResizeMode(QHeaderView.Interactive)
-        self.tree.header().setStretchLastSection(True)
+        self.tree.header().setStretchLastSection(not selection_only)
+        self._column_resize_timer = QTimer(self)
+        self._column_resize_timer.setSingleShot(True)
+        self._column_resize_timer.timeout.connect(self._fit_columns)
         self.tree.setItemDelegate(FieldEditorDelegate(self.tree))
         self.tree.setEditTriggers(QTreeWidget.DoubleClicked | QTreeWidget.SelectedClicked | QTreeWidget.EditKeyPressed)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self._context_menu)
         self.tree.itemExpanded.connect(self._expand)
+        if selection_only:
+            self.tree.itemExpanded.connect(self._schedule_column_fit)
+            self.tree.itemCollapsed.connect(self._schedule_column_fit)
         self.tree.itemChanged.connect(self._item_changed)
         layout.addWidget(self.tree)
         self.handler.modified_changed.connect(self.modified_changed.emit)
@@ -141,6 +147,15 @@ class MotfsmViewer(QWidget):
         with QSignalBlocker(self.tree):
             self.tree.clear()
             self._build_selection()
+        self._schedule_column_fit()
+
+    def _schedule_column_fit(self, *_):
+        if self.selection_only:
+            self._column_resize_timer.start(0)
+
+    def _fit_columns(self):
+        for column in range(self.tree.columnCount()):
+            self.tree.resizeColumnToContents(column)
 
     def _build_selection(self):
         if self._selection is None:
@@ -212,6 +227,7 @@ class MotfsmViewer(QWidget):
                     self.tree.setCurrentItem(item)
         self.tree.horizontalScrollBar().setValue(horizontal)
         self.tree.verticalScrollBar().setValue(vertical)
+        self._schedule_column_fit()
 
     @property
     def modified(self):
@@ -326,6 +342,26 @@ class MotfsmViewer(QWidget):
     def _node_name(self, index):
         return self.motfsm.get_node_by_index(index).name if index is not None else "None"
 
+    def _tags(self, parent, node):
+        from .tag_names import tag_names
+        group = self._list(parent, 'Tags', node.tags)
+        if not node.tags:
+            return group
+        registry = self.motfsm.type_registry
+        registry_path = registry.json_path if registry is not None else self.motfsm._registry_path
+        names = tag_names(registry_path) if registry_path else {}
+        for index in range(group.childCount()):
+            item = group.child(index)
+            def summary(item=item, index=index):
+                value = item.binding.value
+                resolved = names.get(value, ())
+                label = ' / '.join(dict.fromkeys(name.rsplit('.', 1)[-1] for name in resolved))
+                item.setToolTip(0, '\n'.join(resolved) if resolved else f'0x{value:08X}')
+                return f'[{index}] {label}' if label else f'[{index}]', f'{value} (0x{value:08X})'
+            item.summary = summary
+            item.update_summary()
+        return group
+
     def _action_name(self, action):
         instance = self.motfsm.references.action(action.id_hash, action.ex_id)
         return instance.class_name.split('.')[-1] if instance is not None else "None"
@@ -377,9 +413,9 @@ class MotfsmViewer(QWidget):
                 item.update_summary()
                 self._load_transition(item, transition)
         if node.is_fsm:
+            self._tags(parent, node)
             fsm = _Item(parent, ["FSM Fields", "", ""])
             self._fields(fsm, node, ("name_hash", "fullname_hash", "is_branch", "is_end"))
-            self._list(fsm, "Tags", node.tags)
         if node.all_states:
             all_states = _Item(parent, [f"AllStates ({len(node.all_states)})", "", ""])
             for i, state in enumerate(node.all_states):

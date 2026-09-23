@@ -3,9 +3,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import math
+import os
 from pathlib import Path
 import re
 import sys
+from threading import RLock
+from types import SimpleNamespace
 
 import numpy as np
 from PySide6.QtCore import QThread, Signal
@@ -126,11 +129,33 @@ class MhrPreviewAssets:
         self._motion_banks = {}
         self._default_weapon_holds = {}
         self._registry = None
+        self._local_sources = {}
+
+    @staticmethod
+    def _stamp(path):
+        try:
+            stat = os.stat(path)
+            return stat.st_mtime_ns, stat.st_size, stat.st_ino
+        except FileNotFoundError:
+            return None
+
+    def is_current(self):
+        return all(self._stamp(path) == stamp for path, stamp in self._local_sources.items())
 
     def resource(self, path):
         result = self.context.resolve(path, allow_selection_dialog=False)
         if result is None:
             raise ValueError(f'Missing preview resource: {path}')
+        resolved = result[0]
+        if os.path.isabs(resolved):
+            self._local_sources[resolved] = self._stamp(resolved)
+        if self.context.project_dir:
+            relative = path.replace('\\', '/').lstrip('/')
+            prefix = self.context.path_prefix.strip('/')
+            if not relative.lower().startswith(prefix.lower() + '/'):
+                relative = prefix + '/' + relative
+            candidate = os.path.join(self.context.project_dir, *relative.split('/'))
+            self._local_sources[candidate] = self._stamp(candidate)
         return result
 
     def _read_mesh(self, path):
@@ -222,21 +247,32 @@ class MhrPreviewAssets:
         self._weapons[identity] = part
         return part
 
-    def default_weapon_hold(self, family):
+    def default_weapon_hold(self, family, document=None):
+        if document is not None and document.name.casefold() == f'plw_{family}_100'.casefold():
+            properties = self.document_weapon_hold(document)
+            if properties is not None:
+                return properties
         if family not in self._default_weapon_holds:
             path = f'player/mot/plw_{family}_100.motlist.528'
             document = MHR_MOTION_FORMAT_CODEC.parse(self.resource(path)[1], label=path)
-            motions = {id(slot.payload.value): slot.payload.value for slot in document.slots
-                       if slot.payload is not None and slot.payload.value.name.lower().endswith('_001_loop')}
-            if len(motions) != 1:
-                raise ValueError(f'{path}: expected one native 001_Loop weapon-hold template')
-            properties = weapon_hold_properties(next(iter(motions.values())))
-            if not properties:
-                raise ValueError(f'{path}: native 001_Loop has no WeaponHold')
-            self._default_weapon_holds[family] = tuple(properties.items())
+            properties = self.document_weapon_hold(document)
+            if properties is None:
+                raise ValueError(f'{path}: expected one native 001_Loop with WeaponHold')
+            self._default_weapon_holds[family] = properties
         return self._default_weapon_holds[family]
 
-    def load(self, family=None, *, weapon_only=False, motion_list_name='', required_bones=()):
+    @staticmethod
+    def document_weapon_hold(document):
+        motions = {id(slot.payload.value): slot.payload.value for slot in document.slots
+                   if slot.payload is not None and slot.payload.value.name.lower().endswith('_001_loop')}
+        if len(motions) != 1:
+            return None
+        properties = weapon_hold_properties(next(iter(motions.values())))
+        if not properties:
+            return None
+        return tuple(properties.items())
+
+    def load(self, family=None, *, weapon_only=False, motion_list_name='', required_bones=(), document=None):
         if weapon_only:
             if family not in WEAPON_PRESETS:
                 raise ValueError('Select a weapon for this weapon-motion list.')
@@ -281,9 +317,28 @@ class MhrPreviewAssets:
         parts.append(PreviewMeshPart('face', handler.mesh, face_rig, handler, base+'.mdf2.23'))
         for name, hand in WEAPON_PRESETS.get(family, ()):
             parts.append(self.weapon(family, name, hand))
-        default_hold = self.default_weapon_hold(family) if family in WEAPON_PRESETS else ()
+        default_hold = self.default_weapon_hold(family, document) if family in WEAPON_PRESETS else ()
         return RigPreviewTarget('MHR · Hunter PL001'+(' · '+family if family else ''), rig,
                                 parts=tuple(parts), default_weapon_hold=default_hold)
+
+
+class MhrPreviewAssetCache:
+    """Application-owned decoded resources, isolated by resource source selection."""
+    def __init__(self):
+        self.lock = RLock()
+        self._entries = {}
+
+    def get(self, handler, directory=''):
+        context = handler.resource_context
+        settings = handler.app.settings if handler.app is not None else {}
+        key = (context, os.path.normcase(os.path.abspath(directory)) if directory else '',
+               settings.get('mhr_preview_game_directory', ''))
+        with self.lock:
+            assets = self._entries.get(key)
+            if assets is None or not assets.is_current():
+                assets = MhrPreviewAssets(preview_context(handler, directory))
+                self._entries[key] = assets
+            return assets
 
 
 class MhrAssetLoader(QThread):
@@ -293,6 +348,14 @@ class MhrAssetLoader(QThread):
     def __init__(self, handler, family, *, assets=None, directory='', weapon_only=False, parent=None):
         super().__init__(parent)
         self.handler, self.family, self.assets, self.directory = handler, family, assets, directory
+        owner = handler.app if handler.app is not None else handler
+        if not hasattr(owner, '_mhr_preview_asset_cache'):
+            owner._mhr_preview_asset_cache = MhrPreviewAssetCache()
+        self._cache = owner._mhr_preview_asset_cache
+        self._source = SimpleNamespace(resource_context=handler.resource_context,
+            app=SimpleNamespace(settings={'mhr_preview_game_directory': handler.app.settings.get('mhr_preview_game_directory', '')})
+            if handler.app is not None else None)
+        self._document = handler.model
         self.weapon_only = weapon_only
         self.motion_list_name = handler.model.name
         self.required_bones = frozenset(node.joint.binding_hash
@@ -301,12 +364,16 @@ class MhrAssetLoader(QThread):
 
     def run(self):
         try:
-            assets = self.assets or MhrPreviewAssets(preview_context(self.handler, self.directory))
-            target = assets.load(self.family, weapon_only=self.weapon_only,
-                                 motion_list_name=self.motion_list_name, required_bones=self.required_bones)
-            for handler, rig in assets._meshes.values():
-                if handler.thread() == QThread.currentThread():
-                    handler.moveToThread(self.parent().thread())
+            with self._cache.lock:
+                assets = self.assets if self.assets is not None and self.assets.is_current() else self._cache.get(self._source, self.directory)
+                try:
+                    target = assets.load(self.family, weapon_only=self.weapon_only,
+                                         motion_list_name=self.motion_list_name, required_bones=self.required_bones,
+                                         document=self._document)
+                finally:
+                    for handler, rig in assets._meshes.values():
+                        if handler.thread() == QThread.currentThread():
+                            handler.moveToThread(self.parent().thread())
             self.loaded.emit(assets, target)
         except (ValueError, OSError, KeyError) as exc:
             self.failed.emit(str(exc))

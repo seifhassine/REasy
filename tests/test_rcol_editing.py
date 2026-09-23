@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
-from PySide6.QtWidgets import QApplication, QMessageBox
+from PySide6.QtWidgets import QApplication, QMessageBox, QLineEdit
 from file_handlers.rcol.rcol_handler import RcolHandler
 from file_handlers.rcol.rcol_viewer import NavPayload
 from file_handlers.rcol.shape_types import ShapeType
@@ -98,6 +98,74 @@ class RcolEditingTests(unittest.TestCase):
             reopened = read_rcol(path, saved.read_bytes())
             self.assertEqual(reopened.rebuild(), saved.read_bytes())
             return reopened.rcol
+
+    def test_request_panel_edits_its_own_rsz_fields_and_roundtrips(self):
+        path = CORPUS / 'LongSword.rcol.20'
+        with self.viewer(path) as (handler, viewer):
+            viewer.resize(1400, 900)
+            viewer.show()
+            before = request_values(handler.rcol)
+            index = next(i for i, request in enumerate(handler.rcol.request_sets)
+                         if request.instance != i and '_Power' in handler.rcol.rsz.parsed_elements.get(request.instance, {}))
+            request = handler.rcol.request_sets[index]
+            viewer._select_and_render(NavPayload(kind='request_set', request_index=index))
+            self.app.processEvents()
+            scoped = viewer._request_userdata_viewer
+            self.assertIs(scoped.scn, handler.rcol.rsz)
+            self.assertEqual(scoped.instance_roots[0], request.instance)
+            self.assertIn(request.info.name, viewer.path_label.text())
+            self.assertGreater(viewer._detail_scroll.height(), 60)
+            self.assertLess(viewer._detail_scroll.height(), 200)
+            field = handler.rcol.rsz.parsed_elements[request.instance]['_Power']
+            editors = scoped.tree._refresh_widgets_by_data[id(field)]
+            editor = next(e for e in editors if e.findChildren(QLineEdit))
+            line = editor.findChildren(QLineEdit)[0]
+            value = field.value + 7
+            line.setText(str(value))
+            line.editingFinished.emit()
+            self.assertEqual(field.value, value)
+            self.assertTrue(handler.modified)
+            self.assertTrue(viewer.modified)
+            reopened = self.roundtrip(handler, path)
+            self.assertEqual(reopened.rsz.parsed_elements[reopened.request_sets[index].instance]['_Power'].value, value)
+            after = request_values(reopened)
+            for key, original in before.items():
+                if key != request.info.id:
+                    self.assertEqual(after[key], original)
+            # A save clears the outer dirty flag; the next edit must set it again.
+            viewer.modified = handler.modified = False
+            line.setText(str(value + 1))
+            line.editingFinished.emit()
+            self.assertTrue(viewer.modified)
+            self.assertTrue(handler.modified)
+            self.assertEqual(field.value, value + 1)
+
+    def test_request_selection_tracks_roots_and_full_rsz_changes(self):
+        path = CORPUS / 'LongSword.rcol.20'
+        with self.viewer(path) as (handler, viewer):
+            viewer.resize(1400, 900)
+            viewer.show()
+            for index in (0, 1, 26, 2, 26):
+                viewer._select_and_render(NavPayload(kind='request_set', request_index=index))
+                self.app.processEvents()
+                scoped = viewer._request_userdata_viewer
+                request = handler.rcol.request_sets[index]
+                self.assertEqual(scoped.instance_roots[0], request.instance)
+                self.assertEqual(scoped.tree.model().rowCount(), len(scoped.instance_roots))
+                self.assertIn(request.info.name, viewer.path_label.text())
+            field = handler.rcol.rsz.parsed_elements[request.instance]['_Power']
+            viewer._preview_tabs.setCurrentIndex(1)
+            self.app.processEvents()
+            full = viewer._embedded_headless_viewer
+            self.assertIsNone(full.instance_roots)
+            field.value += 3
+            full.mark_modified(field)
+            scoped = viewer._request_userdata_viewer
+            editor = next(e for e in scoped.tree._refresh_widgets_by_data[id(field)] if e.findChildren(QLineEdit))
+            self.assertEqual(editor.findChildren(QLineEdit)[0].text(), str(field.value))
+            viewer._preview_tabs.setCurrentIndex(0)
+            self.app.processEvents()
+            self.assertIs(viewer._request_userdata_viewer.scn, handler.rcol.rsz)
 
     def test_add_shape_and_request_preserve_all_existing_userdata(self):
         for path in sorted(CORPUS.glob('*.rcol.20')):

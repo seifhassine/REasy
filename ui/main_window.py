@@ -1121,7 +1121,7 @@ class REasyEditorApp(QMainWindow):
                 pak_project_dir=self._source_project_dir(filename, pak_project_dir),
                 handler=handler,
             )
-            if data is not None and not tab.initial_load_complete:
+            if data is not None and not (tab.initial_load_complete or tab.loading):
                 if tab.notebook_widget:
                     tab.notebook_widget.deleteLater()
                 return None

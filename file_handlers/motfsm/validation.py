@@ -29,3 +29,24 @@ def variable_snapshot(document):
                        variables, uvar.hash_data.guids, uvar.hash_data.guid_map,
                        uvar.hash_data.name_hashes, uvar.hash_data.name_hash_map))
     return result
+
+
+def snapshot_without_relations(snapshot):
+    """Drop the heuristic relation reads; the UVAR relation array is sized by a terminator, so a
+    document shift can legitimately change how far it reads while the data itself is unchanged."""
+    return [(version, name, uvar_hash,
+             [(v[0], v[1], v[2], v[3], v[4], v[5], v[6]) for v in variables],
+             guids, guid_map, name_hashes, name_hash_map)
+            for version, name, uvar_hash, variables, guids, guid_map, name_hashes, name_hash_map
+            in snapshot]
+
+
+def assert_uvar_stable(before, after, allow_drift=False):
+    """Strict UVAR comparison, with the known heuristic-relation false alarm distinguished."""
+    if allow_drift:
+        print('  note: UVAR snapshot equality skipped (--allow-uvar-drift)')
+        return
+    if before == after:
+        return
+    assert snapshot_without_relations(before) == snapshot_without_relations(after), 'UVAR data changed'
+    print('  note: UVAR snapshot differs only in the heuristic relation reads; data is identical')
