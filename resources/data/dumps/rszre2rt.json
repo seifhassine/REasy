@@ -800665,7 +800665,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 16,
-				"type": "F32"
+				"type": "Vec3"
 			}
 		],
 		"name": "via.physics.CylinderShape",
