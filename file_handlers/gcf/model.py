@@ -10,10 +10,15 @@ class FontSlotMapping:
     language_name: str = field(compare=False)
     slot_index: int
     slot_name: str = field(compare=False)
-    # Native order is candidate/path first, then slot, then language.
     asset_paths: tuple[str | None, ...]
-    # GCF v15 stores a Float2, indexed by the same candidate argument.
-    adjust_scale: tuple[float, float]
+    adjust_scale: tuple[float, ...]
+
+    def scale_for(self, candidate_index: int) -> float:
+        if not self.adjust_scale:
+            return 1.0
+        if candidate_index < len(self.adjust_scale):
+            return self.adjust_scale[candidate_index]
+        return self.adjust_scale[-1]
 
 
 @dataclass
@@ -39,6 +44,8 @@ class GcfLayout:
     message_assets_offset: int
     asset_language_triplets_offset: int
     localize_assets_offset: int
+    aux_assets_offset: int | None = None
+    aux_tail_offset: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,11 +71,13 @@ class GcfData:
     font_slots: list[FontSlotMapping] = field(default_factory=list)
     message_section_reserved: int = 0
     message_asset_paths: list[str | None] = field(default_factory=list)
-    # Native DMC5 code relocates this table but exposes no accessor or consumer.
-    # The three floats therefore remain deliberately unnamed and lossless.
     asset_language_triplets: list[AssetLanguageTriplet] = field(default_factory=list)
     localize_section_reserved: int = 0
     localize_assets: list[LocalizeAsset] = field(default_factory=list)
+    font_slot_list_paths: list[str | None] = field(default_factory=list)
+    extra_root_floats: tuple[float, ...] = ()
+    aux_asset_paths: list[str | None] = field(default_factory=list)
+    aux_tail_asset_paths: list[str | None] = field(default_factory=list)
 
     @property
     def delay_language_font_load(self) -> bool:
@@ -86,7 +95,6 @@ class GcfData:
         index = language * self.font_slot_count + slot
         mapping = self.font_slots[index]
         if (mapping.language_index, mapping.slot_index) != (language, slot):
-            # Keep lookup correct if an editor reorders records.
             for mapping in self.font_slots:
                 if (mapping.language_index, mapping.slot_index) == (language, slot):
                     return mapping
@@ -96,6 +104,13 @@ class GcfData:
     def iter_resource_references(self) -> Iterator[GcfResourceReference]:
         if self.icon_font_asset_path:
             yield GcfResourceReference("icon_font", self.icon_font_asset_path)
+        for language_index, path in enumerate(self.font_slot_list_paths):
+            if path:
+                yield GcfResourceReference(
+                    "font_slot_list",
+                    path,
+                    language_index=language_index,
+                )
         for mapping in self.font_slots:
             for candidate, path in enumerate(mapping.asset_paths):
                 if path:
@@ -106,6 +121,9 @@ class GcfData:
                         mapping.slot_index,
                         candidate,
                     )
+        for path in (*self.aux_asset_paths, *self.aux_tail_asset_paths):
+            if path:
+                yield GcfResourceReference("aux_asset", path)
         for path in self.message_asset_paths:
             if path:
                 yield GcfResourceReference("message", path)
@@ -116,4 +134,3 @@ class GcfData:
                     asset.path,
                     asset_language_slot=asset.slot,
                 )
-

@@ -90,15 +90,28 @@ class IftHandler(BaseFileHandler):
         add("fontSize", data.font_size)
         add("reserved", f"0x{data.reserved:08X}")
         add("uvSequencePath", data.uv_sequence_path)
-        entries = add("entries", len(data.entries))
-        for index, entry in enumerate(data.entries):
-            item = add(f"[{index}] {entry.name}", "", entries)
-            add("uvSequenceNo", entry.uv_sequence_no, item)
-            add("uvPatternNo", entry.uv_pattern_no, item)
-            add("width", entry.width, item)
-            add("height", entry.height, item)
-            add("sourceOffset", f"0x{entry.source_offset:X}", item)
-            add("nameOffset", f"0x{entry.name_offset:X}", item)
+        for label, table in (("entries", data.entries), ("auxEntries", data.aux_entries)):
+            if not table and label != "entries":
+                continue
+            node = add(label, len(table))
+            for index, entry in enumerate(table):
+                item = add(f"[{index}] {entry.name}", "", node)
+                add("uvSequenceNo", entry.uv_sequence_no, item)
+                add("uvPatternNo", entry.uv_pattern_no, item)
+                add("width", entry.width, item)
+                add("height", entry.height, item)
+                add("sourceOffset", f"0x{entry.source_offset:X}", item)
+                add("nameOffset", f"0x{entry.name_offset:X}", item)
+        if data.aux_path or data.groups:
+            add("auxPath", data.aux_path)
+        if data.groups:
+            groups = add("groups", len(data.groups))
+            for index, group in enumerate(data.groups):
+                item = add(f"[{index}] {group.name}", "", groups)
+                for sub_index, sub in enumerate(group.subs):
+                    sub_item = add(f"[{sub_index}] {sub.name_a} | {sub.name_b}", "", item)
+                    add("width", sub.width, sub_item)
+                    add("blobSize", len(sub.blob), sub_item)
         tree.setModel(model)
         tree.expandToDepth(1)
 

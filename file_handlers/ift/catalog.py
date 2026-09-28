@@ -39,8 +39,6 @@ def icon_font_catalog_profile(gcf_version: int) -> IconFontCatalogProfile:
 
 
 class IconFontCatalog:
-    """Resolve a GCF icon font through IFT and its companion UVS atlas."""
-
     def __init__(
         self,
         icon_font_path: str,

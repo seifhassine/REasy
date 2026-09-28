@@ -12,7 +12,14 @@ from .codec import (
 )
 from .ift_file import IftFile
 from .ift_handler import IftHandler
-from .model import IconGlyph, IftAtlasValidation, IftData, IftEntry
+from .model import (
+    IconGlyph,
+    IftAtlasValidation,
+    IftData,
+    IftEntry,
+    IftGroup,
+    IftSubRecord,
+)
 from .profiles import (
     IFT_MAGIC,
     IFT_PROFILES,
@@ -35,8 +42,10 @@ __all__ = [
     "IftEntry",
     "IftFile",
     "IftFormatError",
+    "IftGroup",
     "IftHandler",
     "IftProfile",
+    "IftSubRecord",
     "decode_ift",
     "encode_ift",
     "icon_font_catalog_profile",

@@ -1,4 +1,4 @@
-from .codec import GCF_CODECS, decode_gcf, encode_gcf
+from .codec import GCF_CODECS, decode_gcf, encode_gcf, gcf_codec
 from .gcf_file import GcfFile, parse_gcf, parse_gcf_file
 from .gcf_handler import GcfHandler
 from .model import (
@@ -34,6 +34,7 @@ __all__ = [
     "LocalizeAsset",
     "decode_gcf",
     "encode_gcf",
+    "gcf_codec",
     "parse_gcf",
     "parse_gcf_file",
 ]

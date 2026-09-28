@@ -15,6 +15,21 @@ class IftEntry:
 
 
 @dataclass
+class IftSubRecord:
+    name_a: str
+    name_b: str
+    blob: bytes = b""
+    width: int = 0
+    reserved: int = 0
+
+
+@dataclass
+class IftGroup:
+    name: str
+    subs: list[IftSubRecord] = field(default_factory=list)
+
+
+@dataclass
 class IftData:
     version: int
     descent: float
@@ -22,7 +37,14 @@ class IftData:
     reserved: int
     uv_sequence_path: str
     entries: list[IftEntry]
-    uv_sequence_path_offset: int = field(default=0, compare=False)
+    extra_floats: tuple[float, float] = (0.0, 1.0)
+    aux_path: str = ""
+    aux_entries: list[IftEntry] = field(default_factory=list)
+    groups: list[IftGroup] = field(default_factory=list)
+
+    @property
+    def all_entries(self) -> list[IftEntry]:
+        return [*self.entries, *self.aux_entries]
 
 
 @dataclass(frozen=True, slots=True)

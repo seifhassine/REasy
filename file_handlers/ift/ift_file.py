@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from copy import deepcopy
 from typing import TYPE_CHECKING, Callable
 
 from .codec import decode_ift, encode_ift
@@ -14,8 +13,6 @@ if TYPE_CHECKING:
 class IftFile:
     def __init__(self) -> None:
         self.model: IftData | None = None
-        self.raw_data = b""
-        self._original: IftData | None = None
 
     @staticmethod
     def can_handle(data: bytes) -> bool:
@@ -29,15 +26,10 @@ class IftFile:
 
     def read(self, data: bytes) -> bool:
         self.model = decode_ift(bytes(data))
-        self._original = deepcopy(self.model)
-        self.raw_data = bytes(data)
         return True
 
     def write(self) -> bytes:
-        model = self.require_model()
-        if self._original is not None and model == self._original:
-            return self.raw_data
-        return encode_ift(model)
+        return encode_ift(self.require_model())
 
     def require_model(self) -> IftData:
         if self.model is None:
@@ -48,7 +40,7 @@ class IftFile:
         if not name:
             return None
         return next(
-            (entry for entry in self.require_model().entries if entry.name == name),
+            (entry for entry in self.require_model().all_entries if entry.name == name),
             None,
         )
 
@@ -97,7 +89,7 @@ class IftFile:
         return lambda name: self.resolve(name, uvs)
 
     def validate_uvs(self, uvs: "UvsFile") -> IftAtlasValidation:
-        entries = self.require_model().entries
+        entries = self.require_model().all_entries
         invalid: list[str] = []
         used: set[tuple[int, int]] = set()
         for entry in entries:

@@ -68,6 +68,16 @@ class GcfHandler(BaseFileHandler):
         add("slots", data.font_slot_count, dimensions)
         add("pathsPerSlot", data.font_asset_path_count, dimensions)
 
+        if data.extra_root_floats:
+            floats = add("rootFloats", "")
+            for index, value in enumerate(data.extra_root_floats):
+                add(f"[{index}]", value, floats)
+
+        if data.font_slot_list_paths:
+            slot_lists = add("fontSlotLists", len(data.font_slot_list_paths))
+            for index, path in enumerate(data.font_slot_list_paths):
+                add(f"[{index}]", path or "", slot_lists)
+
         fonts = add("fontSlots", len(data.font_slots))
         for mapping in data.font_slots:
             item = add(
@@ -91,6 +101,13 @@ class GcfHandler(BaseFileHandler):
                 (triplet.value_0, triplet.value_1, triplet.value_2),
                 triplets,
             )
+
+        if data.aux_asset_paths or data.aux_tail_asset_paths:
+            aux = add("auxAssets", "")
+            for index, path in enumerate(data.aux_asset_paths):
+                add(f"[{index}]", path or "", aux)
+            for index, path in enumerate(data.aux_tail_asset_paths):
+                add(f"tail[{index}]", path or "", aux)
 
         localize = add("localizeAssets", len(data.localize_assets))
         add("reserved", f"0x{data.localize_section_reserved:08X}", localize)

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 IFT_MAGIC = b"IFNT"
 
 
@@ -19,7 +18,8 @@ class IftProfile:
 
 
 IFT_PROFILES: dict[int, IftProfile] = {
-    1: IftProfile(1, IFT_MAGIC, 0x20, 0x18),
+    version: IftProfile(version, IFT_MAGIC, header_size, 0x18)
+    for version, header_size in ((1, 0x20), (3, 0x28), (4, 0x28), (7, 0x38))
 }
 
 

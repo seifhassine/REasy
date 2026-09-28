@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
+import os
 
 from file_handlers.gcf.model import FontSlotMapping, GcfData
 from file_handlers.oft.oft_file import OftFile
 from utils.resource_file_utils import (
     ResourceDataLoader,
+    ResourceResolutionContext,
 )
 
-from .glyphs import DMC5_GUI_GLYPH_POLICY, GlyphFallbackPolicy
+from .glyphs import DMC5_GUI_GLYPH_POLICY, GlyphFallbackPolicy, GlyphResolution
 from .sfnt import SfntFont, SfntGlyphMetric
 
 
@@ -87,6 +90,34 @@ class FontSlotFaces:
     faces: tuple[FontFaceAsset, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class ResolvedGlyph:
+    """One codepoint resolved to a face and glyph of a font slot."""
+
+    resolution: GlyphResolution
+    face: FontFaceAsset | None
+    vertical: bool = False
+
+    @property
+    def missing(self) -> bool:
+        return self.face is None or self.resolution.missing
+
+    @property
+    def glyph_id(self) -> int:
+        if self.vertical and self.resolution.vertical_glyph_id is not None:
+            return self.resolution.vertical_glyph_id
+        return self.resolution.glyph_id
+
+    def advance(self, pixel_size: float) -> float:
+        """Pixel advance at ``pixel_size`` (height for vertical text)."""
+
+        if self.missing or self.face is None:
+            return 0.0
+        return self.face.scaled_advance(
+            self.glyph_id, pixel_size, vertical=self.vertical
+        )
+
+
 class GuiFontCatalog:
     """Compose a GCF font-slot table with versioned OFT/SFNT resources."""
 
@@ -104,6 +135,33 @@ class GuiFontCatalog:
         self.strict = bool(strict)
         self._font_cache: dict[str, SfntFont] = {}
         self._slot_cache: dict[tuple[int, int], FontSlotFaces] = {}
+
+    @classmethod
+    def from_asset_root(
+        cls,
+        config: GcfData,
+        asset_root: str | os.PathLike[str],
+        *,
+        profile: FontCatalogProfile | None = None,
+        strict: bool = True,
+        path_prefixes: Sequence[str] = ("natives/x64", "natives/stm"),
+    ) -> "GuiFontCatalog":
+        """Build a catalog that resolves fonts below a filesystem asset root."""
+
+        root = os.fspath(asset_root)
+        contexts = [
+            ResourceResolutionContext(unpacked_dir=root, path_prefix=prefix)
+            for prefix in path_prefixes
+        ]
+
+        def loader(path: str) -> tuple[str, bytes] | None:
+            for context in contexts:
+                resolved = context.resolve(path, allow_selection_dialog=False)
+                if resolved is not None:
+                    return resolved
+            return None
+
+        return cls(config, loader, profile=profile, strict=strict)
 
     def _candidate_paths(self, asset_path: str) -> tuple[str, ...]:
         normalized, platform_variant = normalize_font_resource_path(asset_path)
@@ -147,13 +205,7 @@ class GuiFontCatalog:
             loaded = self._load_font(asset_path)
             if loaded is None:
                 continue
-            try:
-                adjustment = mapping.adjust_scale[candidate_index]
-            except IndexError as exc:
-                raise FontCatalogError(
-                    f"slot {mapping.language_name}/{mapping.slot_name} has no "
-                    f"scale for candidate {candidate_index}"
-                ) from exc
+            adjustment = mapping.scale_for(candidate_index)
             normalized, platform_variant = normalize_font_resource_path(asset_path)
             resource_name, font = loaded
             faces.append(
@@ -170,3 +222,40 @@ class GuiFontCatalog:
         result = FontSlotFaces(mapping, tuple(faces))
         self._slot_cache[key] = result
         return result
+
+    def preload_configured_faces(self) -> tuple[FontFaceAsset, ...]:
+        """Load every distinct font resource referenced by the slot table."""
+
+        unique: dict[str, FontFaceAsset] = {}
+        for language in range(self.config.language_count):
+            for slot in range(self.config.font_slot_count):
+                for face in self.slot_faces(language, slot).faces:
+                    unique.setdefault(face.normalized_asset_path, face)
+        return tuple(unique.values())
+
+    def resolve_glyph(
+        self,
+        language: int,
+        slot: int,
+        codepoint: int,
+        *,
+        vertical: bool = False,
+    ) -> ResolvedGlyph:
+        """Resolve one codepoint through the slot's face fallback chain."""
+
+        faces = self.slot_faces(language, slot).faces
+        if not faces:
+            return ResolvedGlyph(
+                GlyphResolution(int(codepoint), None, 0, None, None, None),
+                None,
+                vertical,
+            )
+        resolution = self.profile.glyph_policy.resolve(
+            codepoint,
+            [face.font.best_cmap for face in faces],
+            vertical_substitutions=[
+                face.font.vertical_substitutions for face in faces
+            ],
+        )
+        face = None if resolution.face_index is None else faces[resolution.face_index]
+        return ResolvedGlyph(resolution, face, vertical)
