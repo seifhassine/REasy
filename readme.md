@@ -166,6 +166,11 @@ If you appreciate my work and would like to support the development of the tool,
 REasy is under MIT license.
 You are wlecome to contribute to the project. I am currently active and will review PRs.
 
+## On AI-assisted contributions:
+
+All contributions are welcome as long as they are thoroughly curated and reviewed by a human. Please make sure the code is clean, functional and accompanied with thorough correctness tests.
+Please do not work on more than one file format or submodule at a time when submitting a AI-assisted contribution. 
+
 ## Third-Party Components
 
 This project uses **[PySide6](https://pypi.org/project/PySide6/)** (Qt for Python), licensed under **LGPL version 3**.
