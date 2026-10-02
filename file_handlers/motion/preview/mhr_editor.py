@@ -167,6 +167,9 @@ class MhrMotListEditor(QWidget):
         self.bake_button = QPushButton(self.tr('Bake segments…'), self)
         self.bake_button.clicked.connect(self._bake_animation)
         self.preview.animation_pane.add_widget(self.bake_button)
+        self.bake_lmt_button = QPushButton(self.tr('Bake LMT segments…'), self)
+        self.bake_lmt_button.clicked.connect(self._bake_lmt_animation)
+        self.preview.animation_pane.add_widget(self.bake_lmt_button)
         self.preview._scene_renderer = MotionAssemblyRenderer(self.preview.viewport)
         self.preview.motion_changed.connect(self._set_preview_motion)
         if self.preview.current_motion is not None:
@@ -207,6 +210,7 @@ class MhrMotListEditor(QWidget):
         if read_only:
             self.duplicate_button.hide()
             self.bake_button.hide()
+            self.bake_lmt_button.hide()
             self.timeline_inspector.setEditTriggers(QTreeView.NoEditTriggers)
         if compact:
             self.preview.animation_pane.hide()
@@ -333,6 +337,44 @@ class MhrMotListEditor(QWidget):
         self._accept_document_edit(result, selected_slot=selected)
         return ranges
 
+    def _bake_lmt_animation(self):
+        from .lmt_bake_dialog import LmtBakeDialog, load_lmt_source
+        path, _ = QFileDialog.getOpenFileName(self, self.tr('LMT animation source'), '', 'LMT (*.lmt)')
+        if not path:
+            return
+        try:
+            path, source = load_lmt_source(path)
+        except (ValueError, OSError) as exc:
+            QMessageBox.warning(self, self.tr('Bake LMT segments'), str(exc))
+            return
+        entry = self.preview.current_entry
+        selected_id = entry.motion_id if entry is not None else next_motion_id(self.document)
+        dialog = LmtBakeDialog(self.document, selected_id, path, source, self.bake_lmt_motion, self)
+        dialog.exec()
+        dialog.deleteLater()
+
+    def bake_lmt_motion(self, sources, segments, motion_id, *, replace_existing=False, align_waist=True, blend_frames=3):
+        from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
+        from ..wilds_bake import bake_lmt_segments
+        family = weapon_family(self.document.name)
+        if self.read_only or not self.document.name.lower().startswith('plw_') or family is None:
+            raise ValueError('LMT baking requires an editable Rise hunter motion list')
+        if self._assets is None:
+            raise ValueError('Load the Rise hunter resources before baking LMT segments')
+        _, rig = self._assets.mesh('player/mod/m/bone/m_shadow.mesh.2109148288')
+        hold = self.document
+        if self.document.name.lower() != f'plw_{family}_100':
+            path = f'player/mot/plw_{family}_100.motlist.528'
+            hold = MHR_MOTION_FORMAT_CODEC.parse(self._assets.resource(path)[1], label=path)
+        result, details = bake_lmt_segments(self.document, sources, segments, rig, hold, motion_id,
+                                            replace_existing=replace_existing, family=family,
+                                            align_waist=align_waist, blend_frames=blend_frames)
+        self.document = result
+        self._index_fields()
+        selected = next(i for i, slot in enumerate(result.slots) if slot.motion_id == motion_id)
+        self._accept_document_edit(result, selected_slot=selected)
+        return details
+
     def _set_preview_motion(self, motion):
         entry = self.preview.current_entry
         motion_id = entry.motion_id if entry is not None else None
@@ -366,6 +408,9 @@ class MhrMotListEditor(QWidget):
         self.preview._render()
 
     def _sync_timeline(self, *_):
+        self.bake_lmt_button.setEnabled(not self.read_only and self._assets is not None
+                                        and self.document.name.lower().startswith('plw_')
+                                        and weapon_family(self.document.name) is not None)
         entry = self.preview.current_entry
         slot = self.document.slots[entry.slot_index] if entry is not None and entry.source_list_name == self.document.name else None
         self.duplicate_button.setEnabled(slot is not None and slot.payload is not None)
@@ -437,6 +482,7 @@ class MhrMotListEditor(QWidget):
             self.preview._populate_motions()
         self._configure_weapon_motion_controls(target)
         self.preview.set_target(target)
+        self._sync_timeline()
 
     def _default_target_failed(self, message):
         if self._cleaned: return

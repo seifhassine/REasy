@@ -26,6 +26,15 @@ class MotionSegment:
     speed: float = 1.0
     root_transform: str | None = None
     root_translation_scale: float = 1.0
+    source: str | None = None
+
+
+@dataclass(frozen=True)
+class PoseTransition:
+    motion_id: int
+    frame: float
+    frames: int
+    source: str | None = None
 
 
 CHANNELS = (('translation', TrackFamily.VECTOR3),

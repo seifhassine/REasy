@@ -10,7 +10,7 @@ def run(args):
     handler.filepath = str(args.source)
     handler.init_type_registry(str(args.registry))
     handler.read(args.source.read_bytes())
-    rcol, rows = handler.rcol, []
+    rcol, rows, enums = handler.rcol, [], {}
     for index in select(rcol, args):
         request = rcol.request_sets[index]
         info = request.info
@@ -18,7 +18,8 @@ def run(args):
         rows.append({'index': index, 'id': info.id, 'field0': info.field0, 'name': info.name,
                      'group_index': info.group_index, 'group_name': group.info.name,
                      'shape_offset': info.shape_offset,
-                     'fields': fields_record(rcol.rsz.parsed_elements[rcol.rsz.object_table[index]]),
+                     'fields': fields_record(rcol.rsz.parsed_elements[rcol.rsz.object_table[index]],
+                                            rcol.rsz.type_registry, enums),
                      'shapes': [{'name': shape.info.name, 'guid': guid_le_to_str(shape.info.guid),
                                  'joint': shape.info.primary_joint_name_str} for shape in group.shapes]})
-    return {'source': str(args.source.resolve()), 'request_count': len(rcol.request_sets), 'requests': rows}
+    return {'source': str(args.source.resolve()), 'request_count': len(rcol.request_sets), 'requests': rows, 'enums': enums}

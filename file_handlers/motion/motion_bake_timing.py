@@ -34,7 +34,8 @@ def sample_schedule(motions, segments, *, root_transform='relative'):
         step = speed * motion.frames_per_second / BAKE_FPS
         exact_duration = (end-start)/step
         duration = math.ceil(exact_duration)
-        continuous = (previous is not None and previous.motion_id == segment.motion_id and previous.end == segment.start
+        continuous = (previous is not None and previous.source == segment.source
+                      and previous.motion_id == segment.motion_id and previous.end == segment.start
                       and (previous.root_transform or root_transform) == (segment.root_transform or root_transform))
         output_start = len(samples)-int(continuous)
         output_end = output_start+duration
@@ -46,5 +47,7 @@ def sample_schedule(motions, segments, *, root_transform='relative'):
                        'join': 'continuous' if continuous else 'adjacent', 'source_step': float(step),
                        'duration_rounding_frames': float(duration-exact_duration),
                        'root_transform': segment.root_transform, 'root_translation_scale': factor})
+        if segment.source is not None:
+            ranges[-1]['source'] = segment.source
         previous = segment
     return samples, ranges

@@ -6,6 +6,10 @@ shared instance because that would change every user.  This command clones the r
 repoints the selected state's index at the copy, so the state becomes the only user and the copy can
 be edited afterwards (or immediately through `--set`).
 
+With `--clear` it instead **removes** the matching events from the selected states
+(`mStates.values` filtered), which is how a freshly cloned derivation drops the turning / setup
+options it inherited from its template.
+
 """
 import copy
 
@@ -24,6 +28,8 @@ def configure(parser):
     parser.add_argument('--states', required=True, help='state positions: 0-9 or 0,2,5')
     parser.add_argument('--class', dest='klass', required=True, help='event class name or suffix')
     parser.add_argument('--set', action='append', default=[], metavar='FIELD=VALUE')
+    parser.add_argument('--clear', action='store_true',
+                        help='remove the matching events from the selected states instead of copying them')
 
 
 def run(args):
@@ -66,10 +72,44 @@ def run(args):
         old_object = values[slot]
         old_instance = doc.references.object_instance(EVENTS_BLOCK, old_object)
         shared = users.get(old_instance.index, set())
-        if len(shared) <= 1:
+        if len(shared) <= 1 and not args.clear:
             print(f'  {node.name}[{position}]: {old_instance.class_name.rsplit(".", 1)[-1]} is already private, skipped')
             continue
+        if args.clear:
+            plan.append((position, slot, old_object, old_instance, sorted(shared)))
+            continue
         plan.append((position, slot, old_object, old_instance, sorted(shared)))
+    if args.clear:
+        removed = 0
+        for position, slot, old_object, old_instance, _shared in plan:
+            values = list(node.states[position].mStates.values)
+            values = [raw for raw in values if raw != old_object]
+            node.states[position].mStates.values = values
+            print(f'  {node.name}[{position}]: removed {old_instance.class_name.rsplit(".", 1)[-1]} '
+                  f'(object {old_object}), {len(values)} event(s) left')
+            removed += 1
+        nodes_start = doc.bhvt.offsets['nodes']
+        node_tail = min(offset for offset in doc.bhvt.offsets.values() if offset >= doc.bhvt.node_data_end)
+        nodes_data = serialize_nodes(doc)
+        nodes_data += bytes((node_tail - nodes_start - len(nodes_data)) % 16)
+        output = bytes(splice_document(doc, [(nodes_start, node_tail, nodes_data)]))
+        verified = MotfsmFile()
+        original = MotfsmFile()
+        verified.read(output)
+        original.read(source)
+        assert verified.bhvt.nodes == doc.bhvt.nodes, 'reopened node table differs from the authored model'
+        check = verified.bhvt.nodes[resolve_node(verified, args.node)]
+        for position, _slot, _old, _inst, _shared in plan:
+            left = [doc.references.object_instance(EVENTS_BLOCK, raw)
+                    for raw in check.states[position].mStates.values]
+            assert not any(ev is not None and args.klass in (
+                ev.class_name, (ev.class_name or '').rsplit('.', 1)[-1]) for ev in left),                 f'{node.name}[{position}] still references {args.klass}'
+        for name in BLOCK_NAMES:
+            old_block, new_block = original.rsz_blocks.get_block(name), verified.rsz_blocks.get_block(name)
+            assert output[new_block.offset:new_block.end] == source[old_block.offset:old_block.end],                 f'{name} changed unexpectedly'
+        print(f'  verified {removed} event(s) cleared; every other block unchanged')
+        return output
+
     if not plan:
         raise ValueError('Nothing to copy')
 

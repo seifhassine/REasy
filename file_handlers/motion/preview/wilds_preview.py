@@ -12,12 +12,14 @@ from ..wilds_weapons import WILDS_WEAPONS, wilds_weapon_family  # WILDS_WEAPONS 
 
 
 class WildsPreview(MotListPreviewWidget):
+    weapon_family = staticmethod(wilds_weapon_family)
+    attachment_resolver = None
     def __init__(self, handler, *, viewport_factory=None):
         self._asset_loader = None
         self._assets = None
         self._family = None
         super().__init__(handler, **({'viewport_factory': viewport_factory} if viewport_factory is not None else {}))
-        self._scene_renderer = MotionAssemblyRenderer(self.viewport)
+        self._scene_renderer = MotionAssemblyRenderer(self.viewport, attachment_resolver=self.attachment_resolver)
         self.motion_changed.connect(lambda motion: self._scene_renderer.set_motion(motion))
         self._scene_renderer.set_motion(self.current_motion)
         self.retarget_button = QPushButton(self.tr('Retarget to Rise hunter'), self)
@@ -28,9 +30,9 @@ class WildsPreview(MotListPreviewWidget):
     def load_rise_target(self):
         if self._cleaned or self._asset_loader is not None:
             return
-        family = wilds_weapon_family(self.handler.model.name)
+        family = self.weapon_family(self.handler.model.name)
         if family is None:
-            self._show_error(self.tr('Select a Wilds hunter weapon MOTLIST for Rise retargeting.'))
+            self._show_error(self.tr('Select a hunter weapon animation list for Rise retargeting.'))
             return
         self._family = family
         self.retarget_button.setEnabled(False)

@@ -74,15 +74,16 @@ def build_parser():
                 from .formats import motion_bake
                 sub = mutation_parser(commands, 'bake', 'Bake frame ranges and speeds into one animation slot')
                 motion_bake.configure(sub)
-                sub.set_defaults(run=motion_bake.run, extra_inputs=lambda args: (args.donor, args.hold_template))
+                sub.set_defaults(run=motion_bake.run, extra_inputs=motion_bake.extra_inputs)
                 sub = mutation_parser(commands, 'duplicate', 'Duplicate an animation slot through the native writer')
                 motion.configure_duplicate(sub)
                 sub.set_defaults(run=motion.duplicate)
                 from .formats import wilds_import
-                sub = mutation_parser(commands, 'import-wilds', 'Import selected Wilds animations into a Rise motion list')
-                wilds_import.configure(sub)
-                sub.set_defaults(run=wilds_import.run,
-                                 extra_inputs=lambda args: (args.donor, args.hold_template))
+                for command, title in (('import-wilds', 'Wilds'), ('import-lmt', 'XX LMT')):
+                    sub = mutation_parser(commands, command, f'Import selected {title} animations into a Rise motion list')
+                    wilds_import.configure(sub)
+                    sub.set_defaults(run=wilds_import.run,
+                                     extra_inputs=lambda args: (args.donor, args.hold_template, args.skeleton))
             else:
                 for name in ('dump', 'layout'):
                     sub = read_parser(commands, name, 'Inspect CLIP trees' if name == 'dump' else 'Inspect sequence byte layout')

@@ -133,3 +133,4 @@ class Motion:
     character_path: str | None = None
     sync_points: list[SyncPointGrid] = field(default_factory=list)
     append: MotionAppend | None = None
+    loop_start_frame: float = 0.0

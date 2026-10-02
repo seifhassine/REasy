@@ -55,6 +55,10 @@ is edited. Shared Action instances remain shared. `dump` reports their users.
 | `batch` | Apply several edits and publish one final candidate |
 
 `node-clone` and `attack-clone` copy leaf-shaped nodes, not arbitrary subtrees.
+They copy an existing selector into a private object by default and preserve `-1`
+when the template has none. `--selector leaf` explicitly drops the selector.
+`selector_id` is a selectors object-table index, not an RSZ instance index;
+the editor rejects unresolved selector references on edit and save.
 Their native layout/graph verification remains mandatory. Every cloned state gets a
 fresh map ID. Chainsaw `_HitId` and PlayerHitAction2 `_hitIndex` both reference RCOL
 `field0`; authoring `id` and table position are separate. `--request` is an alias for
@@ -70,6 +74,11 @@ require `--allow-shared`; `state-add-event` can create an independent event firs
 Query results contain `matched`, `returned`, and `nodes`. Action records include identity,
 class, typed values, editable field names, and reference users. Numeric values remain JSON
 numbers; node/Action selector identities are hex strings.
+
+Instance `field_details` adds recursive typed RSZ values, native types, and enum
+names while preserving the existing `fields` maps. Used enum definitions appear
+once in the top-level `enums` map. Unknown enum values remain numeric and carry
+`enum_matched: false`; text Action output shows known names alongside raw values.
 
 Every editing command requires `-o OUTPUT_FILE`. The source cannot be overwritten.
 The candidate is verified before atomic replacement of the output file. The JSON result

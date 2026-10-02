@@ -1204,7 +1204,7 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2* *.sbnk* *.spck* *.wel* *.mov*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;Sound Files (*.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;All Files (*.*)"
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.motlist* *.lmt *.tex* *.mesh* *.mdf2* *.sbnk* *.spck* *.wel* *.mov*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;Sound Files (*.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;All Files (*.*)"
         )
         if not fn:
             return

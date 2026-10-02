@@ -3,6 +3,7 @@ from __future__ import annotations
 from .dmc5_codec import DMC5_MOTION_FORMAT_CODEC
 from .mhr_codec import MHR_MOTION_FORMAT_CODEC
 from .wilds_codec import WILDS_MOTION_FORMAT_CODEC
+from .lmt_codec import LMT_MOTION_FORMAT_CODEC
 from .errors import MotionParseError
 from .format_codec import MotionFormatCodec
 
@@ -11,6 +12,7 @@ MOTION_FORMAT_CODECS: tuple[MotionFormatCodec, ...] = (
     DMC5_MOTION_FORMAT_CODEC,
     MHR_MOTION_FORMAT_CODEC,
     WILDS_MOTION_FORMAT_CODEC,
+    LMT_MOTION_FORMAT_CODEC,
 )
 
 

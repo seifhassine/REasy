@@ -1,10 +1,10 @@
-"""Import selected MOTLIST 992 motions into a new MOTLIST 528 file.
+"""Import selected Wilds MOTLIST or XX LMT motions into MOTLIST 528.
 
 Run with REasy's Python environment. --motion takes SOURCE_ID[:TARGET_ID] and
-can be repeated. --replace requires explicit, existing target IDs. Bone animation,
-the baked IK goals (native goal convention) and the native 001_Loop WeaponHold are
-exported; CLIP 85 is not. Output follows the native v528 payload layout, and both
-the deform pose and the engine-side contract are verified before publication.
+can be repeated. --replace requires explicit, existing target IDs. XX imports
+convert known main-weapon events into WeaponHold and preserve other target CLIPs
+on replacement. Wilds imports retain the native idle hold; CLIP 85 is not converted.
+Native poses, IK goals and the imported hold timeline are verified before writing.
 """
 from __future__ import annotations
 
@@ -16,6 +16,8 @@ import sys
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
 from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
 from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC as WILDS
+from file_handlers.motion.lmt_codec import LMT_MOTION_FORMAT_CODEC as LMT
+from file_handlers.motion.format_registry import require_motion_format
 from file_handlers.motion.mhr_editing import next_motion_id
 from file_handlers.motion.mhr_import import import_motion, verify_imported_motion, verify_native_contract
 from file_handlers.motion.motlist_handler import MotListHandler
@@ -39,7 +41,8 @@ from tools.cli.runtime import EditResult
 
 
 def configure_donor(parser, *, required=True):
-    parser.add_argument('--donor', required=required, type=Path, help='source Wilds MOTLIST 992')
+    parser.add_argument('--donor', required=required, type=Path, help='source Wilds MOTLIST 992 or XX LMT v67')
+    parser.add_argument('--skeleton', type=Path, help='override the bundled XX hunter rig with a MOD v230 (LMT sources only)')
     parser.add_argument('--game-dir', default='', help='Rise installation or unpacked natives directory; defaults to the Steam installation')
     parser.add_argument('--hold-template', type=Path, help='528 file containing 001_Loop; defaults to the target weapon family in Rise game resources')
 
@@ -47,23 +50,33 @@ def configure_donor(parser, *, required=True):
 def configure(parser):
     configure_donor(parser)
     parser.add_argument('--motion', required=True, action='append', type=motion_mapping, metavar='SOURCE_ID[:TARGET_ID]')
-    parser.add_argument('--replace', action='store_true', help='replace each explicitly named existing target MotionID')
+    parser.add_argument('--replace', action='store_true', help='replace existing target MotionIDs; LMT imports preserve other target CLIP tracks')
     parser.add_argument('--name', help='override the imported name, for a single motion only')
 
 
 def load_inputs(args):
-    source = WILDS.parse(args.donor.read_bytes(), label=str(args.donor))
+    raw = args.donor.read_bytes()
+    codec = require_motion_format(raw)
+    if codec not in (WILDS, LMT):
+        raise MotionParseError('Donor must be Wilds MOTLIST 992 or XX LMT v67')
+    skeleton = getattr(args, 'skeleton', None)
+    if skeleton is not None and codec is not LMT:
+        raise MotionParseError('--skeleton requires an LMT donor')
+    source = codec.parse(raw, label=str(args.donor), **({'skeleton_data': skeleton.read_bytes()} if skeleton else {}))
+    target, rig, hold, family, hold_path = load_target(args)
+    # The source weapon family selects the Wilds carrier mapping.
+    attach = wilds_weapon_family(source.name) or family
+    if attach != family:
+        print(f'note: {source.name} is a {attach} list, so the target weapon carriers'
+              f' follow the source motion rather than the {family} target family', file=sys.stderr)
+    return source, target, rig, hold, attach, hold_path
+
+
+def load_target(args):
     target = RISE.parse(args.source.read_bytes(), label=str(args.source))
     family = weapon_family(target.name)
     if not target.name.lower().startswith('plw_') or family is None:
         raise MotionWriteError('Target must be a Rise hunter weapon motion list (plw_...)')
-    # The source motion's own weapon class selects the weapon carriers: a
-    # shielded model drives R_Weapon_00 from R_Shield, not from the hand.
-    attach = wilds_weapon_family(source.name) or family
-    if attach != family:
-        print(f'note: {source.name} is a {attach} list, so the target weapon carriers'
-              f' follow the source motion rather than the {family} target family',
-              file=sys.stderr)
     assets = MhrPreviewAssets(preview_context(MotListHandler(), args.game_dir))
     _, rig = assets.mesh('player/mod/m/bone/m_shadow.mesh.2109148288')
     if args.hold_template:
@@ -72,7 +85,7 @@ def load_inputs(args):
         hold_path = f'player/mot/plw_{family}_100.motlist.528'
         hold_data = assets.resource(hold_path)[1]
     hold = RISE.parse(hold_data, label=hold_path)
-    return source, target, rig, hold, attach, hold_path
+    return target, rig, hold, family, hold_path
 
 
 def run(args):
@@ -101,12 +114,15 @@ def run(args):
     report = []
     for source_id, target_id, motion in imported:
         result = next(slot.payload.value for slot in reopened.slots if slot.motion_id == target_id)
-        error = verify_imported_motion(motion, result, rig, family=attach)
+        error = verify_imported_motion(motion, result, rig, family=attach, hold_document=hold)
         contract = verify_native_contract(reopened, target_id, result, rig)
         report.append(dict(source_id=source_id, target_id=target_id, attach_family=attach,
                            name=result.name,
                            end_frame=result.end_frame, fps=result.frames_per_second,
                            looping=result.looping, max_matrix_error=error,
                            max_ik_goal_error=contract))
+    from file_handlers.motion.lmt_codec import LmtDocument
+    events = ('LMT main-weapon events converted to WeaponHold; other target CLIP tracks preserved on replacement'
+              if isinstance(source, LmtDocument) else 'Only native 001_Loop WeaponHold; source events are not converted')
     return EditResult(data, dict(mode='replace' if args.replace else 'append', hold_template=hold_path, imported=report,
-                                 events='Only native 001_Loop WeaponHold; source CLIP 85 is not converted'))
+                                 events=events))

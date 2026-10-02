@@ -23,7 +23,8 @@ class MotListHandler(BaseFileHandler):
 
     def supports_editing(self) -> bool:
         from .wilds_codec import WILDS_MOTION_FORMAT_CODEC
-        return self.motlist_file is not None and self.motlist_file.codec is not WILDS_MOTION_FORMAT_CODEC
+        from .lmt_codec import LMT_MOTION_FORMAT_CODEC
+        return self.motlist_file is not None and self.motlist_file.codec not in (WILDS_MOTION_FORMAT_CODEC, LMT_MOTION_FORMAT_CODEC)
 
     def read(self, data: bytes) -> None:
         facade = MotListFile(require_motion_format(data))
@@ -59,6 +60,10 @@ class MotListHandler(BaseFileHandler):
         return result
 
     def create_viewer(self):
+        from .lmt_codec import LMT_MOTION_FORMAT_CODEC
+        if self.motlist_file.codec is LMT_MOTION_FORMAT_CODEC:
+            from .preview.lmt_preview import LmtPreview
+            return LmtPreview(self)
         from .wilds_codec import WILDS_MOTION_FORMAT_CODEC
         if self.motlist_file.codec is WILDS_MOTION_FORMAT_CODEC:
             from .preview.wilds_preview import WildsPreview

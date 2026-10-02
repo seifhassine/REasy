@@ -79,3 +79,32 @@ def blend_poses(poses, rig, ranges, *, align_waist=True, blend_frames=3):
                                           rotation=rotations[frame], scale=scales[frame])
     return [compose_evaluated_pose(rig, pose.frame, tuple(values), pose.node_weights)
             for pose, values in zip(poses, local, strict=True)], windows
+
+
+def append_pose_transition(poses, rig, target, frame_count):
+    """Append new frames approaching a pose, keeping Root at the current endpoint."""
+    from .motion_root import root_index
+    if isinstance(frame_count, bool) or not isinstance(frame_count, int) or frame_count <= 0:
+        raise MotionWriteError('Transition frames must be a positive integer')
+    start = poses[-1]
+    if start.frame + frame_count > 0xFFFFFFFF:
+        raise MotionWriteError('Transition exceeds the native frame range')
+    root = root_index(rig.joints)
+    output = list(poses)
+    for step in range(1, frame_count+1):
+        t = step/frame_count
+        amount = t*t*(3-2*t)
+        transforms = []
+        for index, (left, right) in enumerate(zip(start.local_transforms, target.local_transforms, strict=True)):
+            if index == root:
+                transforms.append(left)
+            elif step == frame_count:
+                transforms.append(right)
+            else:
+                transforms.append(replace(left,
+                    translation=tuple(a+(b-a)*amount for a, b in zip(left.translation, right.translation, strict=True)),
+                    rotation=interpolate_quaternion(left.rotation, right.rotation, amount, RotationInterpolation.SHORTEST_SLERP),
+                    scale=tuple(a+(b-a)*amount for a, b in zip(left.scale, right.scale, strict=True))))
+        weights = tuple(a+(b-a)*amount for a, b in zip(start.node_weights, target.node_weights, strict=True))
+        output.append(compose_evaluated_pose(rig, start.frame+step, tuple(transforms), weights))
+    return output

@@ -30,6 +30,7 @@ CALC_LV_SUFFIX = 'LongSwordCalcLv'
 TRANSITION_DATA_SIZE = 36
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from tools.fsm.common import resolve_node, node_string
+from file_handlers.motfsm.selectors import clone_selector
 
 
 def configure(parser):
@@ -50,7 +51,7 @@ def configure(parser):
     parser.add_argument('--calc-lv-from', default='atk_127', help='node owning the CalcLv template')
     parser.add_argument('--calc-lv-after', default='AddLv',
                         help='the dropped action (class substring) whose slot the CalcLv action takes')
-    parser.add_argument('--selector', choices=('leaf', 'clone'), default='leaf')
+    parser.add_argument('--selector', choices=('leaf', 'clone'), default='clone')
     parser.add_argument('--allow-no-motion', action='store_true',
                         help='template may have no PlayerPlayMotion2 action (pure branch node)')
 
@@ -302,12 +303,11 @@ def run(args):
 
     # ---------------------------------------------------------------- selector
     selectors_block, new_selector_id = None, -1
-    if args.selector == 'clone':
+    if args.selector == 'clone' and template.selector_id & 0xFFFFFFFF != 0xFFFFFFFF:
         selectors_block = doc.rsz_blocks.get_block('selectors')
         assert block_padding_is_zero(selectors_block), 'selectors block has non-zero padding'
-        template_selector = doc.references.object_instance('selectors', template.selector_id & 0xFFFFFFFF)
-        _, new_selector_id = clone_block_object(selectors_block, template_selector.index)
-        print(f'  new selector {template_selector.class_name} object={new_selector_id}')
+        new_selector_id = clone_selector(doc, template.selector_id)
+        print(f'  new selector object={new_selector_id}')
 
     # ---------------------------------------------------------------- new node record
     strings_start = doc.bhvt.offsets['strings']

@@ -332,12 +332,17 @@ class MotfsmFile:
     def edit_field(self, binding, value):
         if self.bindings.get(binding.owner, binding.attribute) is not binding:
             raise ValueError("Field does not belong to this document")
+        if isinstance(binding.owner, BHVTNode) and binding.attribute == 'selector_id':
+            from .selectors import resolve_selector
+            resolve_selector(self, value)
         binding.set_value(value)
         self.references.invalidate()
 
     def rebuild(self):
         if not self.source:
             raise ValueError("No MOTFSM data loaded")
+        from .selectors import validate_selectors
+        validate_selectors(self)
         from .rebuild import rebuild_actions
         return rebuild_actions(self)
 

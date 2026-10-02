@@ -9,22 +9,7 @@ from file_handlers.rsz.rsz_data_types import ArrayData, ObjectData, UserDataData
 from utils.type_registry import TypeRegistry
 from tools.fsm.common import integer
 from tools.cli.runtime import MHR_REGISTRY
-
-
-def scalar(field):
-    if isinstance(field, ArrayData):
-        return [scalar(item) for item in field.values]
-    for attribute in ('value', 'guid_str'):
-        if hasattr(field, attribute):
-            value = getattr(field, attribute)
-            return value.rstrip('\0') if isinstance(value, str) else value
-    if hasattr(field, 'raw_bytes'):
-        return field.raw_bytes.hex()
-    from file_handlers.rsz.utils.rsz_field_utils import VALUE_COMPONENTS
-    components = VALUE_COMPONENTS.get(type(field).__name__)
-    if components:
-        return {name: getattr(field, name) for name in components}
-    raise ValueError(f'No structured value representation for {type(field).__name__}')
+from tools.rsz_inspection import scalar, fields_record
 
 
 def load(path, registry):
@@ -41,13 +26,6 @@ def type_name(rsz, index):
     return definition['name'] if definition else f'0x{type_id:08X}'
 
 
-def fields_record(fields):
-    return {name: {'type': type(value).__name__, 'value': scalar(value),
-                   'reference': isinstance(value, (ObjectData, UserDataData)) or
-                   (isinstance(value, ArrayData) and value.element_class in (ObjectData, UserDataData))}
-            for name, value in fields.items()}
-
-
 def configure_query(parser):
     parser.add_argument('--registry', type=Path, default=MHR_REGISTRY)
     parser.add_argument('--class', dest='klass', help='class name substring')
@@ -58,7 +36,7 @@ def configure_query(parser):
     parser.add_argument('--limit', type=integer, default=40)
 
 
-def records(rsz, args):
+def records(rsz, args, enums):
     if args.limit < 0:
         raise ValueError('--limit must be nonnegative')
     pattern = re.compile(args.strings) if args.strings else None
@@ -76,7 +54,7 @@ def records(rsz, args):
             fields = {k: v for k, v in fields.items() if k == args.field}
             if not fields:
                 continue
-        row = fields_record(fields)
+        row = fields_record(fields, rsz.type_registry, enums)
         if pattern:
             row = {k: v for k, v in row.items() if any(isinstance(item, str) and pattern.search(item)
                    for item in (v['value'] if isinstance(v['value'], list) else [v['value']]))}
@@ -89,11 +67,12 @@ def records(rsz, args):
 
 def query(args):
     rsz = load(args.source, TypeRegistry(str(args.registry)))
-    found = records(rsz, args)
+    enums = {}
+    found = records(rsz, args, enums)
     return {'source': str(args.source.resolve()), 'instance_count': len(rsz.instance_infos),
             'object_table': list(rsz.object_table),
             'types': dict(Counter(type_name(rsz, i) for i in range(1, len(rsz.instance_infos)))),
-            'matched': len(found), 'instances': found[:args.limit]}
+            'matched': len(found), 'instances': found[:args.limit], 'enums': enums}
 
 
 def scan(args):
@@ -106,12 +85,12 @@ def scan(args):
     else:
         raise ValueError(f'Input does not exist: {args.source}')
     registry = TypeRegistry(str(args.registry))
-    matched, found = 0, []
+    matched, found, enums = 0, [], {}
     for path in paths:
-        rows = records(load(path, registry), args)
+        rows = records(load(path, registry), args, enums)
         matched += len(rows)
         found.extend(dict(row, file=str(path.resolve())) for row in rows[:max(0, args.limit - len(found))])
-    return {'source': str(args.source.resolve()), 'files_scanned': len(paths), 'matched': matched, 'instances': found}
+    return {'source': str(args.source.resolve()), 'files_scanned': len(paths), 'matched': matched, 'instances': found, 'enums': enums}
 
 
 def elements(args):
@@ -119,13 +98,13 @@ def elements(args):
     roots = [i for i in rsz.parsed_elements if type_name(rsz, i) == 'via.effect.script.EPVStandardData']
     if len(roots) != 1:
         raise ValueError(f'Expected one effect container, found {len(roots)}')
-    rows = []
+    rows, enums = [], {}
     for position, item in enumerate(rsz.parsed_elements[roots[0]]['Elements'].values):
         fields = rsz.parsed_elements[item.value]
         if args.element_id is None or fields['ID'].value == args.element_id:
             rows.append({'position': position, 'instance': item.value, 'id': fields['ID'].value,
-                         'fields': fields_record(fields)})
-    return {'source': str(args.source.resolve()), 'root': roots[0], 'elements': rows}
+                         'fields': fields_record(fields, rsz.type_registry, enums)})
+    return {'source': str(args.source.resolve()), 'root': roots[0], 'elements': rows, 'enums': enums}
 
 
 def references(args):

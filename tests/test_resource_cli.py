@@ -113,6 +113,43 @@ class NativeResourceCliTests(unittest.TestCase):
             self.assertEqual(after[:-1], before)
             self.assertEqual(after[-1]['name'], 'cli_added_request')
 
+    def test_rcol_enum_metadata_matches_native_catalog(self):
+        from utils.enum_manager import registry_enums
+        result = self.invoke(['rcol', 'query', self.rcol_path])
+        catalog = registry_enums(str(MHR_REGISTRY))
+        found = 0
+        for request in result['requests']:
+            for row in request['fields'].values():
+                if 'enum_name' not in row:
+                    continue
+                found += 1
+                self.assertEqual(result['enums'][row['native_type']], catalog[row['native_type']])
+                expected = [m['name'] for m in catalog[row['native_type']] if m['value'] == row['enum_value']]
+                self.assertEqual(row['enum_names'], expected)
+                self.assertIsInstance(row['value'], int)
+        self.assertGreater(found, 0)
+
+    def test_rsz_query_and_scan_expose_client_enum_meanings(self):
+        from utils.enum_manager import registry_enums
+        from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
+        from unittest.mock import patch
+        from utils.enum_manager import EnumManager
+        rsz = load(self.pfb_path, TypeRegistry(str(MHR_REGISTRY)))
+        catalog = registry_enums(str(MHR_REGISTRY))
+        instance, name, value = next(
+            (i, name, value) for i, fields in rsz.parsed_elements.items() for name, value in fields.items()
+            if getattr(value, 'orig_type', '') in catalog and isinstance(getattr(value, 'value', None), int))
+        with patch.object(EnumManager.instance(), 'get_enum_values', side_effect=lambda t: catalog.get(t, [])):
+            normalized, native_type, members = TreeWidgetFactory._normalize_enum_data(value)
+        expected = [m['name'] for m in members if m['value'] == normalized.value]
+        for command in ('query', 'scan'):
+            result = self.invoke(['rsz', command, self.pfb_path, '--instance', instance, '--field', name])
+            field = result['instances'][0]['fields'][name]
+            self.assertEqual(field['value'], value.value)
+            self.assertEqual(field['native_type'], native_type)
+            self.assertEqual(field['enum_names'], expected)
+            self.assertEqual(result['enums'][native_type], members)
+
     def test_motion_duplicate_and_cross_group_batch(self):
         source_slot = next(slot for slot in self.model.slots if slot.payload is not None and
                            any(sequence.category.name == 'SOUND' and any(

@@ -3,8 +3,10 @@ from __future__ import annotations
 from ..dmc5_codec import DMC5_MOTION_FORMAT_CODEC
 from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
 from ..wilds_codec import WILDS_MOTION_FORMAT_CODEC
+from ..lmt_codec import LMT_MOTION_FORMAT_CODEC
 from dataclasses import replace
 from ..evaluation.mhr import MHR_EVALUATION_PROFILE
+from ..evaluation.sampling import RotationInterpolation
 from ..evaluation import DMC5_EVALUATION_PROFILE
 from ..format_codec import MotionFormatCodec
 from ..runtime.dmc5 import DMC5_ENTITY_MOTION_BACKEND
@@ -36,7 +38,12 @@ WILDS_EVALUATION_PROFILE = replace(MHR_EVALUATION_PROFILE, name='Monster Hunter 
 WILDS_MOTION_PREVIEW_SUPPORT = MotionPreviewSupport(
     WILDS_MOTION_FORMAT_CODEC, WILDS_EVALUATION_PROFILE, MhrTreeMotionReferences(),
 )
-MOTION_PREVIEW_SUPPORTS = (*ENTITY_MOTION_SUPPORTS, MHR_MOTION_PREVIEW_SUPPORT, WILDS_MOTION_PREVIEW_SUPPORT)
+LMT_MOTION_PREVIEW_SUPPORT = MotionPreviewSupport(
+    LMT_MOTION_FORMAT_CODEC, replace(MHR_EVALUATION_PROFILE, name='Monster Hunter XX',
+        sampling_policy=replace(MHR_EVALUATION_PROFILE.sampling_policy,
+                                rotation_interpolation=RotationInterpolation.SHORTEST_SLERP)), MhrTreeMotionReferences(),
+)
+MOTION_PREVIEW_SUPPORTS = (*ENTITY_MOTION_SUPPORTS, MHR_MOTION_PREVIEW_SUPPORT, WILDS_MOTION_PREVIEW_SUPPORT, LMT_MOTION_PREVIEW_SUPPORT)
 
 
 def entity_motion_support_for_game(

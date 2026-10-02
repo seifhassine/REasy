@@ -93,7 +93,7 @@ def _template_offsets(document, index):
     return struct.unpack_from('<Q', document.source, pointers+index*8)[0], rows+index*72
 
 
-def _hold_sequence(document, index, origin, end_frame):
+def _hold_sequence(document, index, origin, end_frame, *, hold_keys=None):
     """Copy only the native WeaponHold node, preserving its wire metadata.
 
     The supported template is the flat, constant hold track from 001_Loop.
@@ -142,11 +142,23 @@ def _hold_sequence(document, index, origin, end_frame):
         data = bytearray(raw[record.offset:record.offset+72])
         struct.pack_into('<ff', data, 0, record.prop.start_frame*ratio, record.prop.end_frame*ratio)
         struct.pack_into('<Q', data, 32, key_count)
+        values = hold_keys.get(record.prop.name) if hold_keys is not None else None
+        if values is not None:
+            struct.pack_into('<H', data, 40, len(values))
         out.extend(data)
-        key_count += len(record.prop.keys)
+        key_count += len(values) if values is not None else len(record.prop.keys)
     offsets['keys'] = len(out)
     key_records = {id(record.key): record for record in parsed.keys}
     for record in props:
+        values = hold_keys.get(record.prop.name) if hold_keys is not None else None
+        if values is not None:
+            template = key_records[id(record.prop.keys[0])].offset
+            for frame, value in values:
+                data = bytearray(raw[template:template+32])
+                struct.pack_into('<ffI', data, 0, frame, 0., 1)
+                struct.pack_into('<qQ', data, 16, value, 0)
+                out.extend(data)
+            continue
         for key in record.prop.keys:
             offset = key_records[id(key)].offset
             data = bytearray(raw[offset:offset+32])
@@ -183,16 +195,26 @@ def _bake_frames(source_motion, rig):
     return list(range(math.ceil(end)+1))
 
 
-def bake_motion(source_motion, rig, hold_document, *, name=None, family=None):
+def bake_motion(source_motion, rig, hold_document, *, name=None, family=None, sequence_source=None):
     frames = _bake_frames(source_motion, rig)
-    retarget = wilds_to_rise(family)
+    retarget = source_retarget(source_motion, hold_document, family)
     binding = retarget.bind(source_motion, rig)
     evaluator = retarget.evaluator(binding, PROFILE.sampling_policy, PROFILE.pose_composition_policy, PROFILE.joint_binding)
     poses = [evaluator.sample_frame(frame, wrap_looping=False) for frame in frames]
-    return bake_evaluated_motion(source_motion, poses, rig, hold_document, name=name)
+    return bake_evaluated_motion(source_motion, poses, rig, hold_document, name=name, sequence_source=sequence_source)
 
 
-def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None):
+def source_retarget(motion, hold_document, family=None):
+    from .lmt_codec import LmtMotion
+    if isinstance(motion, LmtMotion):
+        from .evaluation.lmt_retarget import LmtToRise
+        if hold_document is None:
+            raise MotionWriteError('XX retargeting requires a native 001_Loop hold template')
+        return LmtToRise(hold_document.slots[idle_template(hold_document)].payload.value)
+    return wilds_to_rise(family)
+
+
+def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None, sequence_source=None, hold_keys=None):
     """Return one MOT 495 payload that follows the native v528 layout.
 
     Native payloads keep the animation block at ``+0x80``, the sequences after
@@ -201,6 +223,8 @@ def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None
     anchor being the 001_Loop template payload (``size == 0``).  Everything is
     position independent because the internal pointers are payload relative.
     """
+    if source_motion.looping and source_motion.loop_start_frame:
+        raise MotionWriteError('Rise MOT 495 cannot preserve an LMT loop starting after frame zero; trim the intro before baking')
     end = source_motion.end_frame
     frames = _bake_frames(source_motion, rig)
     if len(poses) != len(frames):
@@ -208,6 +232,8 @@ def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None
     count = len(rig.joints)
     template_index = idle_template(hold_document)
     template_base, _ = _template_offsets(hold_document, template_index)
+    if hold_keys is None:
+        hold_keys = lmt_hold_keys(source_motion, hold_document)
     goals = bake_ik_goal_tracks(poses, rig)
     name = source_motion.name if name is None else name
     if not name or '\0' in name:
@@ -248,9 +274,24 @@ def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None
             record_offset += 20
         pad_to_alignment(out, 16)
     sequence_table = len(out)
-    out.extend(bytes(16))
-    struct.pack_into('<Q', out, sequence_table, len(out))
-    out.extend(_hold_sequence(hold_document, template_index, len(out), end))
+    records = []
+    if sequence_source is not None:
+        from .mhr_structure import Owner, _clone
+        donor, donor_id = sequence_source
+        records = Owner(donor, donor_id, 'motion').records
+    from .lmt_import import is_weapon_hold
+    has_hold = any(is_weapon_hold(node.node) for record in records for node in record.parsed.nodes)
+    sequence_count = len(records) + int(not has_hold)
+    if sequence_count > 255:
+        raise MotionWriteError('Imported sequence count exceeds the native byte limit')
+    out.extend(bytes(sequence_count*8))
+    pad_to_alignment(out, 16)
+    for index, record in enumerate(records):
+        struct.pack_into('<Q', out, sequence_table+index*8, len(out))
+        out.extend(_clone(donor, record, len(out), 0))
+    if not has_hold:
+        struct.pack_into('<Q', out, sequence_table+len(records)*8, len(out))
+        out.extend(_hold_sequence(hold_document, template_index, len(out), end, hold_keys=hold_keys))
     name_offset = len(out)
     out.extend(name.encode('utf-16le')+b'\0\0')
     pad_to_alignment(out, 16)
@@ -259,7 +300,7 @@ def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None
     for field, value in ((16, size), (24, node_table), (48, sequence_table), (88, name_offset)):
         struct.pack_into('<Q', out, field, value)
     struct.pack_into('<4fHHBB', out, 96, end, 0.0 if source_motion.looping else -1.0,
-                     source_motion.raw_start_frame, source_motion.raw_end_frame, count, count, 1, 0)
+                     source_motion.raw_start_frame, source_motion.raw_end_frame, count, count, sequence_count, 0)
     struct.pack_into('<I', out, 120, source_motion.frames_per_second)
     return bytes(out)
 
@@ -267,9 +308,26 @@ def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None
 def import_motion(document, source_motion, rig, hold_document, motion_id, *, replace_existing=False,
                   name=None, family=None):
     validate_import_target(document, motion_id, replace_existing=replace_existing)
+    hold_keys = lmt_hold_keys(source_motion, hold_document)
+    preserve_clips = replace_existing and hold_keys is not None
+    if preserve_clips:
+        from .lmt_import import rewrite_hold_clips
+        document = rewrite_hold_clips(document, motion_id, hold_keys, source_motion.end_frame)
     payload = bake_motion(source_motion, rig, hold_document, family=family,
-                          name=default_motion_name(document, motion_id) if name is None else name)
-    return install_motion(document, payload, hold_document, motion_id, replace_existing=replace_existing)
+                          name=default_motion_name(document, motion_id) if name is None else name,
+                          sequence_source=(document, motion_id) if preserve_clips else None)
+    return install_motion(document, payload, hold_document, motion_id, replace_existing=replace_existing,
+                          preserve_overrides=preserve_clips)
+
+
+def lmt_hold_keys(motion, hold_document):
+    from .lmt_codec import LmtMotion
+    if not isinstance(motion, LmtMotion):
+        return None
+    from .lmt_events import weapon_hold_keys
+    from .preview.mhr_attachments import weapon_hold_properties
+    hold = hold_document.slots[idle_template(hold_document)].payload.value
+    return weapon_hold_keys(motion, weapon_hold_properties(hold))
 
 
 def validate_import_target(document, motion_id, *, replace_existing=False):
@@ -283,7 +341,7 @@ def validate_import_target(document, motion_id, *, replace_existing=False):
     return matches
 
 
-def install_motion(document, payload, hold_document, motion_id, *, replace_existing=False):
+def install_motion(document, payload, hold_document, motion_id, *, replace_existing=False, preserve_overrides=False):
     """Append or replace one slot, detaching aliases and preserving other slots.
 
     Run :func:`verify_native_contract` on the result before shipping a file: the
@@ -354,6 +412,11 @@ def install_motion(document, payload, hold_document, motion_id, *, replace_exist
         struct.pack_into('<H', output, relocated(start)+112, joints)
     if matches:
         index = matches[0]
+        if preserve_overrides:
+            original_row = rows+index*72
+            overrides = struct.unpack_from('<Q', raw, original_row)[0]
+            struct.pack_into('<Q', row, 0, relocated(overrides) if overrides else 0)
+            row[23] = raw[original_row+23]
         struct.pack_into('<Q', output, relocated(pointers+index*8), blocks['motion'])
         output[relocated(rows+index*72):relocated(rows+index*72)+72] = row
     else:
@@ -363,14 +426,16 @@ def install_motion(document, payload, hold_document, motion_id, *, replace_exist
     return order_slots(CODEC.parse(bytes(output), label='imported MOTLIST 528'))
 
 
-def verify_imported_motion(source_motion, imported_motion, rig, *, family=None):
+def verify_imported_motion(source_motion, imported_motion, rig, *, family=None, hold_document=None):
     """Check every baked deform frame against the existing preview evaluator.
 
     The IK goal joints are control bones: an import deliberately replaces their
     authored values with the native goal convention, so they are excluded here
     and covered by :func:`verify_native_contract` instead.
     """
-    retarget = wilds_to_rise(family)
+    from .lmt_import import verify_weapon_hold
+    verify_weapon_hold(source_motion, imported_motion, hold_document)
+    retarget = source_retarget(source_motion, hold_document, family)
     source = retarget.evaluator(retarget.bind(source_motion, rig), PROFILE.sampling_policy,
                                 PROFILE.pose_composition_policy, PROFILE.joint_binding)
     poses = [source.sample_frame(frame, wrap_looping=False) for frame in range(math.ceil(source_motion.end_frame)+1)]

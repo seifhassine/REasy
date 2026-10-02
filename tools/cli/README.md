@@ -41,6 +41,21 @@ The existing GUI support libraries and format-validation fixtures remain under `
 
 No command deploys a candidate to a game automatically. Read-back verification and game behavior are separate checks.
 
+### RSZ field metadata
+
+`rsz query/scan`, `pfb elements`, and `rcol query` retain numeric `value`, storage
+`type`, and `reference`, and include `native_type`. Enum fields also report
+`enum_name`, all matching aliases in `enum_names`, `enum_value`, and `enum_matched`.
+Unknown values retain their raw number with a null name and `enum_matched: false`;
+combined bit flags are not guessed. As in the client, signed/unsigned 32-bit enum
+matches are recognized without changing the stored `value`.
+
+The top-level `enums` map contains the used types' member definitions, selected
+from the document registry rather than the GUI's active game. Arrays and embedded
+structs expose recursive `items` records and `count` alongside their raw values.
+FSM queries/dumps expose the same metadata in each instance's `field_details`,
+while retaining the existing `fields`, `field_types`, and `native_types` maps.
+
 ## Examples
 
 ### Bake animation ranges
@@ -115,7 +130,7 @@ This example appends Gunlance 620: 295 frames 38–67 at 1.6× with Root cleared
 aligning waist rotations and blending three frames on each side of the cut:
 
 ```powershell
-.\.venv\Scripts\python.exe -m tools motion bake tests/TESTFILE/natives/STM/player/mot/plw_GunLance_100.motlist.528 --donor tests/TESTFILE/Weapon/Wp07/wp07_00/wp07_00.motlist.992 --hold-template tests/TESTFILE/natives/STM/player/mot/plw_GunLance_100.motlist.528 --target 620 --segment 295 38 67 1.6 --segment 296 30 80 1.6 --segment 296 80 end 1 --segment-root-transform identity relative relative --waist-rotation align --blend-frames 3 -o out/plw_GunLance_100.motlist.528 --json
+.\.venv\Scripts\python.exe -m tools motion bake C:/myproj/Assets/ModSources/natives/STM/player/mot/plw_GunLance_100.motlist.528 --donor C:/myproj/Assets/ModSources/Weapon/Wp07/wp07_00/wp07_00.motlist.992 --hold-template C:/myproj/Assets/ModSources/natives/STM/player/mot/plw_GunLance_100.motlist.528 --target 620 --segment 295 38 67 1.6 --segment 296 30 80 1.6 --segment 296 80 end 1 --segment-root-transform identity relative relative --waist-rotation align --blend-frames 3 -o out/plw_GunLance_100.motlist.528 --json
 ```
 
 The output ranges are 0–19, 20–52 and 52–169 at 60 FPS (2.816667 seconds). The first
@@ -129,6 +144,56 @@ Root transforms are processed after retargeting; world matrices and native IK go
 are rebuilt from the adjusted pose. Only the native WeaponHold sequence is installed;
 source CLIP 85 events and existing target events are not carried into a donor import.
 This command does not change FSM/RCOL, deploy to the game, or create a playback link.
+
+### Bake LMT segments from multiple files
+
+Use repeated `--lmt-source NAME PATH` declarations and `--segment NAME:MOTION START END SPEED`.
+Sources must be XX LMT v67; they cannot be combined with `--donor` or other formats.
+Names are case-sensitive and start with a letter, followed by letters, digits, `_` or `-`.
+Each segment uses its own source file's MotionID; equal IDs in different files remain distinct.
+Frame ranges are inclusive; `end` selects the source animation's final frame.
+
+From the REasy project directory, this appends a short test composite of regular and hunter-art clips:
+
+```powershell
+$py = '.\.venv\Scripts\python.exe'
+$target = 'C:/myproj/REasy/tests/TESTFILE/natives/STM/player/mot/plw_SlashAxe_100.motlist.528'
+& $py -m tools motion query 'C:/myproj/REasy/tests/TESTFILE/xx/slashaxe.lmt' --motion 122 --json
+& $py -m tools motion bake $target `
+  --lmt-source base 'C:/myproj/REasy/tests/TESTFILE/xx/slashaxe.lmt' `
+  --lmt-source arts 'C:/myproj/REasy/tests/TESTFILE/xx/slashaxe_hunterart.lmt' `
+  --segment base:122 32 36 1 --segment arts:1 0 4 2 `
+  --target next --hold-template $target --blend-frames 1 `
+  -o 'C:/myproj/REasy/.cache/lmt-composite/plw_SlashAxe_100.motlist.528' --dry-run --json
+```
+
+`--target next` allocates a free ID. To replace an existing animation, use its numeric
+`--target ID --replace`; `next` and `--replace` cannot be combined. Remove `--dry-run`
+to publish the verified output. Inputs are never overwritten, including every named LMT source.
+The JSON report includes resolved source aliases, per-segment source/output frame ranges,
+resulting MotionID, duration, blend windows, and pose/IK verification errors.
+The command also works inside a `motion batch` argument-array plan.
+
+The XX hunter rig is bundled; `--skeleton` optionally overrides it for all LMT sources.
+The target's weapon family selects its native `001_Loop` template unless `--hold-template`
+is supplied. Known main-weapon events become WeaponHold keys at the sampled output times;
+sub-weapon bindings keep their native template states. Replacement preserves the target's
+other CLIP tracks and overrides with their existing timing. New slots do not inherit extra
+sound/effect/camera tracks. `--segment-root-transform`, `--segment-root-translation-scale`,
+`--waist-rotation` and `--blend-frames` use the same policies as the GUI LMT baker.
+
+To append generated transition frames after all source segments, add
+`--transition-to base:1 0 10`. This adds exactly 10 new frames leading to source
+`base` MotionID 1 frame 0. Existing frames are not trimmed or overlapped. Local
+translation/scale use smoothstep interpolation and rotations use shortest-path
+SLERP; the final Root transform stays fixed, so the character settles at its
+current position. The last added frame reaches the target pose for every non-Root
+joint. WeaponHold retains the outgoing state during the transition and takes the
+reference pose's state on its last frame. The JSON `transition` record reports
+the reference and generated frame range. With a single `--donor`, use a plain
+MotionID instead of `NAME:MOTION`. This is independent of `--blend-frames` and
+`--waist-rotation`; use `--blend-frames 0 --waist-rotation authored` to leave the
+source segments' body rotations unaltered.
 
 ### Other resource operations
 

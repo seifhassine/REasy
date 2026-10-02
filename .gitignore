@@ -44,6 +44,8 @@ Thumbs.db
 !/tests/test_mhr_motlist.py
 !/tests/test_wilds_motion.py
 !/tests/test_wilds_import.py
+!/tests/test_lmt_motion.py
+!/tests/test_lmt_bake.py
 !/tests/test_mhr_preview_workflow.py
 !/tests/test_motfsm_integration.py
 !/tests/test_motfsm_graph.py

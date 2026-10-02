@@ -229,6 +229,9 @@ class FsmDocument(QObject):
         if encoded == binding.encode(binding.value):
             return
         value = struct.unpack('<' + SCALAR_FORMATS[binding.type_name], encoded)[0]
+        if address[0] == 'bhvt' and address[-1] == 'selector_id':
+            from .selectors import resolve_selector
+            resolve_selector(self.document, value)
         if address[0] == 'rsz':
             field = self.rsz_field(address)
             if field.reference:

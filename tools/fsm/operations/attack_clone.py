@@ -4,7 +4,7 @@ Fully independent clone, following REE-Content-Editor's BhvtEditing / BHVTNode.C
   * new node record, new name string, new Action instances, new Condition instances
   * new transition-event instances (transition_events is 1:1 with states in the source)
   * new transition map entry + cloned TransitionData (also 1:1 in the source)
-  * selector: a childless node owns no selector (3794/3795 leaves use -1); --selector=clone copies one
+  * selector: copy the template selector when present; --selector=leaf explicitly removes it
 Children and start transitions are dropped by request (leaf-node shape, like the game's own
 attack leaves such as atk_109_1).
 
@@ -25,6 +25,7 @@ TRANSITION_DATA_SIZE = 36          # id, data, exitFrame, startFrame, interpolat
 HEADER_MAP_COUNT, HEADER_DATA_COUNT = 48, 52
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from tools.fsm.common import resolve_node, node_string
+from file_handlers.motfsm.selectors import clone_selector
 
 
 def configure(parser):
@@ -35,7 +36,7 @@ def configure(parser):
     parser.add_argument('--name', required=True)
     parser.add_argument('--motion', type=int, required=True)
     parser.add_argument('--keep-hit-index', type=int, required=True)
-    parser.add_argument('--selector', choices=('leaf', 'clone'), default='leaf')
+    parser.add_argument('--selector', choices=('leaf', 'clone'), default='clone')
 
 
 def run(args):
@@ -230,12 +231,11 @@ def run(args):
 
     # ---------------------------------------------------------------- selector
     selectors_block, new_selector_id = None, -1
-    if args.selector == 'clone':
+    if args.selector == 'clone' and template.selector_id & 0xFFFFFFFF != 0xFFFFFFFF:
         selectors_block = doc.rsz_blocks.get_block('selectors')
         assert block_padding_is_zero(selectors_block), 'selectors block has non-zero padding'
-        template_selector = doc.references.object_instance('selectors', template.selector_id & 0xFFFFFFFF)
-        _, new_selector_id = clone_block_object(selectors_block, template_selector.index)
-        print(f'  new selector {template_selector.class_name} object={new_selector_id}')
+        new_selector_id = clone_selector(doc, template.selector_id)
+        print(f'  new selector object={new_selector_id}')
 
     # ---------------------------------------------------------------- new node record
     strings_start = doc.bhvt.offsets['strings']
@@ -386,7 +386,7 @@ def run(args):
     assert [s.mTransitions for s in clone.states] == [s.mTransitions for s in template.states], 'derivation target changed'
     assert not clone.children and not clone.transitions
     assert clone.selector_id == new_selector_id
-    if args.selector == 'clone':
+    if args.selector == 'clone' and template.selector_id & 0xFFFFFFFF != 0xFFFFFFFF:
         assert clone.selector_id != template.selector_id, 'selector is still shared with the template'
     old_events = original.rsz_blocks.get_block('transition_events')
     old_event_objects = len(old_events.object_table)

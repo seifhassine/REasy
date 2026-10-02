@@ -14,8 +14,10 @@ from .weapon_motion import WeaponMotionPlayer, select_weapon_motion
 class MotionAssemblyRenderer(MotionPreviewRenderer):
     """Multiple skinned armor parts and joint-attached weapon meshes."""
 
-    def __init__(self, viewport):
+    def __init__(self, viewport, *, attachment_resolver=None):
         super().__init__(viewport)
+        self._attachment_resolver = attachment_resolver
+        self._motion = None
         self._parts = []
         self._hold_properties = {}
         self._last_frame = None
@@ -24,11 +26,19 @@ class MotionAssemblyRenderer(MotionPreviewRenderer):
         self.weapon_selections = {}
 
     def set_motion(self, motion, motion_id=None):
+        self._motion = motion
         self._hold_properties = weapon_hold_properties(motion)
         self._motion_id = motion_id
         self._source_fps = motion.frames_per_second
         self._skeleton = None
         self._last_frame = None
+
+    def _weapon_attachment(self, part, frame):
+        if self._attachment_resolver is not None:
+            return self._attachment_resolver(part, self._motion, frame,
+                                             default_properties=self._target.default_weapon_hold)
+        return weapon_attachment(part, self._hold_properties, frame,
+                                 default_properties=self._target.default_weapon_hold)
 
     def set_weapon_selection(self, part_key, selection):
         self.weapon_selections[part_key] = selection
@@ -61,8 +71,7 @@ class MotionAssemblyRenderer(MotionPreviewRenderer):
             player = None
             part_snapshot = snapshot
             if part.parent_joint:
-                joint, local = weapon_attachment(part, self._hold_properties, snapshot.frame,
-                                                 default_properties=target.default_weapon_hold)
+                joint, local = self._weapon_attachment(part, snapshot.frame)
                 joint_index = indices[joint]
                 draw.transform_matrix = self._attachment_matrix(snapshot, joint_index, local)
                 choice = select_weapon_motion(part.weapon_motions, self._motion_id,
@@ -103,8 +112,7 @@ class MotionAssemblyRenderer(MotionPreviewRenderer):
         transforms = {}
         for part, draw, deformer, joint_index, player in self._parts:
             if joint_index is not None:
-                joint, local = weapon_attachment(part, self._hold_properties, snapshot.frame,
-                                                 default_properties=self._target.default_weapon_hold)
+                joint, local = self._weapon_attachment(part, snapshot.frame)
                 index = next(i for i, value in enumerate(self._target.rig.joints) if value.name == joint)
                 transforms[part.key] = self._attachment_matrix(snapshot, index, local)
             if deformer is None:

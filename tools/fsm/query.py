@@ -4,9 +4,10 @@ from dataclasses import asdict
 from file_handlers.motfsm.graph_model import MotfsmGraph
 from .common import identity, resolve_node
 from .editing import open_document
+from tools.rsz_inspection import field_record
 
 
-def instance_record(instance):
+def instance_record(instance, enums):
     if instance is None:
         return None
     return {
@@ -14,6 +15,9 @@ def instance_record(instance):
         'fields': {field.name: field.value for field in instance.fields},
         'field_types': {field.name: field.type_name for field in instance.fields},
         'native_types': {field.name: getattr(field.data, 'orig_type', '') for field in instance.fields},
+        'field_details': {field.name: field_record(
+            field.data, instance.block.document.type_registry, enums, native_type=field.native_type)
+            for field in instance.fields},
         'editable_fields': [field.name for field in instance.fields if field.binding is not None],
     }
 
@@ -25,7 +29,7 @@ def inspect(args):
     graph = MotfsmGraph(doc)
     detail = args.command == 'dump'
     selected = {resolve_node(doc, s) for s in args.node} if args.node else None
-    users = {}
+    users, enums = {}, {}
     for index, node in enumerate(graph.nodes):
         for position, ref in enumerate(node.actions):
             users.setdefault((ref.id_hash, ref.ex_id), []).append({'node': index, 'position': position})
@@ -57,7 +61,7 @@ def inspect(args):
             record['actions'] = []
             for position, (ref, instance) in enumerate(actions):
                 row = {'position': position, 'identity': identity(ref),
-                       'users': users[(ref.id_hash, ref.ex_id)], 'instance': instance_record(instance)}
+                       'users': users[(ref.id_hash, ref.ex_id)], 'instance': instance_record(instance, enums)}
                 record['actions'].append(row)
         if args.states or detail:
             record['relations'] = []
@@ -65,19 +69,19 @@ def inspect(args):
                 row = asdict(edge)
                 row['target_identity'] = identity(graph.nodes[edge.target]) if edge.target is not None else None
                 row['target_path'] = graph.path(edge.target) if edge.target is not None else None
-                row['condition_instance'] = instance_record(doc.references.object_instance('conditions', edge.condition))
+                row['condition_instance'] = instance_record(doc.references.object_instance('conditions', edge.condition), enums)
                 record['relations'].append(row)
         if detail:
             record['node'] = asdict(node)
             record['node'].pop('_action_span')
             record['state_events'] = [
                 {'state': position, 'events': [
-                    {'reference': raw, 'instance': instance_record(doc.references.object_instance('transition_events', raw))}
+                    {'reference': raw, 'instance': instance_record(doc.references.object_instance('transition_events', raw), enums)}
                     for raw in state.mStates.values]}
                 for position, state in enumerate(node.states)]
             record['start_events'] = [
                 {'transition': position, 'events': [
-                    {'reference': raw, 'instance': instance_record(doc.references.object_instance('transition_events', raw))}
+                    {'reference': raw, 'instance': instance_record(doc.references.object_instance('transition_events', raw), enums)}
                     for raw in transition.mStartTransitionEvent.values]}
                 for position, transition in enumerate(node.transitions)]
             record['incoming'] = [asdict(edge) for edge in graph.incoming[index]]
@@ -86,7 +90,7 @@ def inspect(args):
     if args.limit is not None:
         matches = matches[:args.limit]
     return {'source': str(args.source.resolve()), 'total_nodes': len(graph.nodes),
-            'matched': count, 'returned': len(matches), 'nodes': matches}
+            'matched': count, 'returned': len(matches), 'nodes': matches, 'enums': enums}
 
 
 def render(result):
@@ -98,7 +102,9 @@ def render(result):
             print(f'  action[{action["position"]}] {action["identity"]} {instance["class"] if instance else "None"}')
             if instance:
                 for name, value in instance['fields'].items():
-                    print(f'    {name} = {value}')
+                    detail = instance['field_details'][name]
+                    label = detail.get('enum_name')
+                    print(f'    {name} = {label} ({value})' if label is not None else f'    {name} = {value}')
         for edge in node.get('relations', []):
             condition = edge['condition_instance']
             print(f'  {edge["kind"]}[{edge["position"]}] -> {edge["target_path"]} '

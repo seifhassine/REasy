@@ -63,7 +63,10 @@ def resolve_motion_frame(
         else wrap_looping
     )
     if motion.looping and should_wrap and end > 0.0:
-        return frame % end
+        start = motion.loop_start_frame
+        if start and frame < end:
+            return max(0.0, frame)
+        return start + (frame-start) % (end-start)
     return min(max(frame, 0.0), end)
 
 

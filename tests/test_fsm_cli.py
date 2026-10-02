@@ -114,6 +114,25 @@ class NativeCliTests(unittest.TestCase):
         self.assertIn('v4_MotionID', action['editable_fields'])
         self.assertIn('incoming', record)
 
+    def test_dump_enum_metadata_matches_client_field_display(self):
+        from file_handlers.motfsm.formatting import rsz_value_text
+        for node in self.doc.bhvt.nodes:
+            for position, reference in enumerate(node.actions):
+                instance = self.doc.references.action(reference.id_hash, reference.ex_id)
+                if instance is None:
+                    continue
+                for field in instance.fields:
+                    if not any(m['value'] == field.value for m in field.enum_values):
+                        continue
+                    result = self.invoke(['dump', self.path, '--node', identity(node)])
+                    detail = result['nodes'][0]['actions'][position]['instance']['field_details'][field.name]
+                    self.assertEqual(detail['value'], field.value)
+                    self.assertEqual(detail['native_type'], field.native_type)
+                    self.assertEqual(detail['enum_name'], rsz_value_text(field))
+                    self.assertEqual(result['enums'][field.native_type], field.enum_values)
+                    return
+        self.fail('Native FSM has no enum-valued Action field')
+
     def test_scalar_edit_changes_only_native_binding_and_noop_succeeds(self):
         original = self.path.read_bytes()
         field = next(f for f in self.instance.fields if f.name == 'v4_MotionID')

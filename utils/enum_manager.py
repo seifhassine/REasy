@@ -10,7 +10,8 @@ def registry_enums(registry_path):
     stem = Path(registry_path).stem.lower()
     if not stem.startswith('rsz'):
         return {}
-    path = Path(__file__).resolve().parents[1] / 'resources/data/enums' / f'{stem[3:]}_enums.json'
+    game = {'mhwilds': 'mhws'}.get(stem[3:], stem[3:])
+    path = Path(__file__).resolve().parents[1] / 'resources/data/enums' / f'{game}_enums.json'
     if not path.is_file():
         return {}
     return json.loads(path.read_text(encoding='utf-8'))
