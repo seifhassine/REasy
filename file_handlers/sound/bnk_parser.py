@@ -74,6 +74,8 @@ _CROSS_BANK_BUS_ROLES = frozenset({
     "reflections bus",
     "output bus",
     "ducked bus",
+    "action bus target",
+    "exception bus",
 })
 
 # Wwise music transition rules use 0xFFFFFFFF as the "Any" source/destination
@@ -400,7 +402,7 @@ def compatible_hirc_reference_types(
         # (e.g. 0xE611314A in init), so a device is a valid output target in
         # addition to the bus types.
         return frozenset(bus_types) | devices
-    if role == "ducked bus":
+    if role in {"ducked bus", "action bus target", "exception bus"}:
         return frozenset(bus_types)
     if role == "audio device":
         return devices
@@ -413,6 +415,8 @@ def compatible_hirc_reference_types(
     if role in {"stinger segment", "transition segment", "playlist segment"}:
         return frozenset({0x0A})
     if role in {"transition source", "transition destination"}:
+        return _MUSIC_HIERARCHY_TYPES
+    if role == "decision leaf" and owner.type_id == 0x0C:
         return _MUSIC_HIERARCHY_TYPES
     if role in {"playlist item", "switch assignment", "switch child", "layer child"}:
         return _ACTOR_CHILD_TYPES
@@ -1068,10 +1072,14 @@ def _decode_hirc_payload(
     known_ids = set(by_id)
     obj.bank_version = bank_version
     obj.type_name = _hirc_type_name(obj.type_id, bank_version)
-    if bank_version in {132, 135, 140, 145, 150}:
+    if bank_version in {120, 132, 135, 140, 145, 150}:
         obj.structure = parse_structured_object(obj.type_id, obj.payload, bank_version)
     if obj.type_id == 0x04:
-        obj.event_action_ids = _parse_event_action_ids(obj.payload)
+        if obj.structure and obj.structure.complete:
+            obj.event_action_ids = tuple(int(field.value) for field in obj.structure.fields
+                                         if field.reference_role == "event action")
+        else:
+            obj.event_action_ids = _parse_event_action_ids(obj.payload)
     elif obj.type_id == 0x01:
         obj.property_bundle = _parse_property_bundle(
             obj.payload, 4, has_ranges=False, kind="state",
@@ -1419,8 +1427,14 @@ def _action_target_kind(type_key: int, bank_version: int | None = None) -> str:
 def _parse_action_exceptions(
     payload: bytes,
     offset: int,
+    bank_version: int | None = None,
 ) -> tuple[tuple[tuple[int, bool], ...], int] | None:
-    parsed = _read_varuint(payload, offset)
+    if bank_version == 120:
+        if offset + 4 > len(payload):
+            return None
+        parsed = (struct.unpack_from('<I', payload, offset)[0], offset + 4)
+    else:
+        parsed = _read_varuint(payload, offset)
     if parsed is None:
         return None
     count, pos = parsed
@@ -1470,11 +1484,13 @@ def _decode_action(obj: HircObject) -> None:
         )
     elif type_key in {0x0100, 0x0200, 0x0300, 0x2200}:
         specific_size = 2 if type_key in {0x0100, 0x0200, 0x0300} else 1
+        if obj.bank_version == 120 and type_key == 0x0100:
+            specific_size = 1
         if pos + specific_size > len(payload):
             return
         flags = payload[pos]
         specific_flags = payload[pos + 1] if specific_size == 2 else None
-        parsed = _parse_action_exceptions(payload, pos + specific_size)
+        parsed = _parse_action_exceptions(payload, pos + specific_size, obj.bank_version)
         if parsed is None:
             return
         exceptions, end = parsed
@@ -1491,7 +1507,7 @@ def _decode_action(obj: HircObject) -> None:
             end=end,
         )
     elif type_key in {0x0600, 0x0700} and pos < len(payload):
-        parsed = _parse_action_exceptions(payload, pos + 1)
+        parsed = _parse_action_exceptions(payload, pos + 1, obj.bank_version)
         if parsed is None:
             return
         exceptions, end = parsed
@@ -1500,7 +1516,7 @@ def _decode_action(obj: HircObject) -> None:
             exceptions=exceptions, end=end,
         )
     elif type_key in _ACTION_SET_VALUE_TYPES and pos + 14 <= len(payload):
-        parsed = _parse_action_exceptions(payload, pos + 14)
+        parsed = _parse_action_exceptions(payload, pos + 14, obj.bank_version)
         if parsed is None:
             return
         exceptions, end = parsed
@@ -1514,7 +1530,7 @@ def _decode_action(obj: HircObject) -> None:
             exceptions=exceptions, end=end,
         )
     elif type_key in {0x1300, 0x1400} and pos + 15 <= len(payload):
-        parsed = _parse_action_exceptions(payload, pos + 15)
+        parsed = _parse_action_exceptions(payload, pos + 15, obj.bank_version)
         if parsed is None:
             return
         exceptions, end = parsed
@@ -1539,7 +1555,7 @@ def _decode_action(obj: HircObject) -> None:
         {0x3300, 0x3400, 0x3500, 0x3600, 0x3700}
         if (obj.bank_version or 0) >= 150 else {0x1A00, 0x1B00}
     ) and pos + 2 <= len(payload):
-        parsed = _parse_action_exceptions(payload, pos + 2)
+        parsed = _parse_action_exceptions(payload, pos + 2, obj.bank_version)
         if parsed is None:
             return
         exceptions, end = parsed
@@ -1549,7 +1565,7 @@ def _decode_action(obj: HircObject) -> None:
             exceptions=exceptions, end=end,
         )
     elif type_key == 0x1E00 and pos + 14 <= len(payload):
-        parsed = _parse_action_exceptions(payload, pos + 14)
+        parsed = _parse_action_exceptions(payload, pos + 14, obj.bank_version)
         if parsed is None:
             return
         exceptions, end = parsed
@@ -2109,8 +2125,9 @@ def _pack_varuint(value: int) -> bytes:
     return bytes(group | (0x80 if index < len(groups) - 1 else 0) for index, group in enumerate(groups))
 
 
-def _pack_event_payload(object_id: int, action_ids: tuple[int, ...]) -> bytes:
-    out = bytearray(struct.pack("<I", object_id) + _pack_varuint(len(action_ids)))
+def _pack_event_payload(object_id: int, action_ids: tuple[int, ...], bank_version=None) -> bytes:
+    count = struct.pack('<I', len(action_ids)) if bank_version == 120 else _pack_varuint(len(action_ids))
+    out = bytearray(struct.pack("<I", object_id) + count)
     if action_ids:
         out += struct.pack(f"<{len(action_ids)}I", *action_ids)
     return bytes(out)
@@ -2163,6 +2180,21 @@ def create_stop_action_payload(
         6,  # apply to state transitions and dynamic sequences
         0,  # exception-list count (varuint)
     )
+
+
+def create_set_rtpc_action_payload(object_id: int, parameter_id: int, value: float,
+                                   *, game_object: bool = False) -> bytes:
+    """Create a v140 SetGameParameter Action (0x1302 global, 0x1303 object).
+
+    Independent absolute value, no randomization/fade, bypass interpolation.
+    Defaults for newly registered parameters belong in Init's STMG chunk;
+    this action initializes a parameter only when its Event executes.
+    """
+    if not math.isfinite(float(value)):
+        raise ValueError('RTPC value must be finite')
+    return struct.pack('<IHIBBBBBB3fB', _object_id(object_id),
+        0x1303 if game_object else 0x1302, _object_id(parameter_id),
+        0, 0, 0, 4, 1, 1, float(value), 0.0, 0.0, 0)
 
 
 def patch_hirc_reference(obj: HircObject, offset: int, target_id: int) -> bytes:
@@ -2247,9 +2279,9 @@ def set_action_fields(
     return bytes(payload)
 
 
-def _pack_action_exceptions(exceptions) -> bytes:
+def _pack_action_exceptions(exceptions, bank_version=None) -> bytes:
     values = tuple(exceptions)
-    out = bytearray(_pack_varuint(len(values)))
+    out = bytearray(struct.pack('<I', len(values)) if bank_version == 120 else _pack_varuint(len(values)))
     for object_id, is_bus in values:
         out += struct.pack(
             "<IB", _object_id(object_id, allow_zero=True), int(bool(is_bus))
@@ -2278,11 +2310,13 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
             _u32(settings.bank_id or 0, "Bank ID"),
         )
     elif settings.kind in {"stop", "pause", "resume"}:
-        out += struct.pack("<BB", fade_flags, int(settings.stop_flags or 0) & 0xFF)
-        out += _pack_action_exceptions(settings.exceptions)
+        out += struct.pack('<B', fade_flags)
+        if not (obj.bank_version == 120 and settings.kind == 'stop'):
+            out += struct.pack('<B', int(settings.stop_flags or 0) & 0xff)
+        out += _pack_action_exceptions(settings.exceptions, obj.bank_version)
     elif settings.kind in {"reset_playlist", "mute"}:
         out += struct.pack("<B", fade_flags)
-        out += _pack_action_exceptions(settings.exceptions)
+        out += _pack_action_exceptions(settings.exceptions, obj.bank_version)
     elif settings.kind == "set_value":
         values = (settings.value, settings.minimum, settings.maximum)
         if any(value is None or not math.isfinite(float(value)) for value in values):
@@ -2291,7 +2325,7 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
             "<BB3f", fade_flags, int(settings.value_meaning or 0) & 0xFF,
             *map(float, values),
         )
-        out += _pack_action_exceptions(settings.exceptions)
+        out += _pack_action_exceptions(settings.exceptions, obj.bank_version)
     elif settings.kind == "game_parameter":
         values = (settings.value, settings.minimum, settings.maximum)
         if any(value is None or not math.isfinite(float(value)) for value in values):
@@ -2300,13 +2334,13 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
             "<BBB3f", fade_flags, int(bool(settings.bypass_transition)),
             int(settings.value_meaning or 0) & 0xFF, *map(float, values),
         )
-        out += _pack_action_exceptions(settings.exceptions)
+        out += _pack_action_exceptions(settings.exceptions, obj.bank_version)
     elif settings.kind == "bypass_fx":
         out += struct.pack(
             "<BB", int(bool(settings.bypass)),
             _u8(settings.target_mask or 0, "Target effect mask"),
         )
-        out += _pack_action_exceptions(settings.exceptions)
+        out += _pack_action_exceptions(settings.exceptions, obj.bank_version)
     elif settings.kind == "seek":
         values = (settings.value, settings.minimum, settings.maximum)
         if any(value is None or not math.isfinite(float(value)) for value in values):
@@ -2315,7 +2349,7 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
             "<B3fB", int(bool(settings.relative_to_duration)),
             *map(float, values), int(bool(settings.snap_to_marker)),
         )
-        out += _pack_action_exceptions(settings.exceptions)
+        out += _pack_action_exceptions(settings.exceptions, obj.bank_version)
     elif settings.kind in {"state", "switch"}:
         out += struct.pack(
             "<II", _u32(settings.group_id or 0, "Group ID"),
@@ -3361,7 +3395,7 @@ def _edit_hirc_chunk(
             raise ValueError(
                 f"Event {event_id} references missing/non-Action objects: {invalid}"
             )
-        payload = _pack_event_payload(event_id, actions)
+        payload = _pack_event_payload(event_id, actions, bank_version)
         if existing is None:
             existing = HircObject(
                 len(objects) + 1, 0x04, "Event", event_id, payload, 0

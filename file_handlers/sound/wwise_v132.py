@@ -1,8 +1,9 @@
-"""Exact editable layouts for the modern Wwise banks used by RE Engine games.
+"""Exact editable layouts for World and RE Engine Wwise banks.
 
 The original public API is retained for Wwise v132 compatibility. The same
 compact reader covers RE8's v135, MHRise/RE4's v140, MHWilds/RE9's v145,
 and Pragmata/Onimusha: Way of the Sword's v150 structures.
+World's v120 playback structures use explicit legacy count/state/position layouts.
 """
 
 from __future__ import annotations
@@ -374,6 +375,19 @@ def _properties(r: _Reader, *, kind: str = "object", ranges: bool = True) -> Non
 
 def _state_properties(r: _Reader, names: dict[int, str] | None = None) -> None:
     names = names or property_names("state", r.version)
+    if r.version == 120:
+        with r.section("State groups"):
+            count = r.scalar("Group count", "u32", editable=False)
+            for index in range(count):
+                with r.section(f"{index + 1}"):
+                    r.scalar("State group", "u32", id_kind="state_group")
+                    r.scalar("Synchronization", "u8", enum=_SYNC)
+                    states = r.scalar("State count", "u16", editable=False)
+                    for state in range(states):
+                        with r.section(f"State {state + 1}"):
+                            r.scalar("State", "u32", id_kind="state_value")
+                            r.scalar("State object", "u32", id_kind="hirc", reference_role="state object")
+        return
     with r.section("State properties"):
         count = r.var("Property count", editable=False)
         for index in range(count):
@@ -520,6 +534,20 @@ def _metadata(r: _Reader, *, node: bool) -> None:
 
 def _positioning(r: _Reader) -> None:
     with r.section("Positioning"):
+        if r.version == 120:
+            flags = r.flags("Routing", (("Override parent positioning", 0),
+                ("Legacy 2D next flag", 1), ("Legacy 2D flag", 2),
+                ("Listener-relative routing", 3)))
+            if not (flags & 1 and flags & 8):
+                return
+            spatial = r.flags("3D flags", (("Legacy position type", 0, 2),
+                ("Hold emitter position and orientation", 3),
+                ("Hold listener orientation", 4), ("Loop 3D automation path", 5)))
+            r.scalar("Attenuation", "u32", id_kind="hirc", reference_role="attenuation")
+            if spatial & 3 == 1:
+                return
+            _positioning_path(r)
+            return
         flags = r.flags("Routing", (
             ("Override parent positioning", 0),
             ("Listener-relative routing", 1),
@@ -547,25 +575,29 @@ def _positioning(r: _Reader) -> None:
         position_type = (flags >> 5) & 0x03
         if position_type == 0:
             return
-        r.scalar("Path mode", "u8", enum=_PATH_MODE)
-        r.scalar("Transition time (ms)", "i32")
-        vertex_count = r.scalar("Vertex count", "u32", editable=False)
-        def vertex(_index):
-            r.scalar("X", "f32")
-            r.scalar("Y", "f32")
-            r.scalar("Z", "f32")
-            r.scalar("Duration (ms)", "i32")
-        _items(r, "Path vertices", vertex_count, vertex)
-        item_count = r.scalar("Path count", "u32", editable=False)
-        def path(_index):
-            r.scalar("First vertex", "u32")
-            r.scalar("Vertex count", "u32", editable=False)
-        _items(r, "Paths", item_count, path)
-        def ranges(_index):
-            r.scalar("X random range", "f32")
-            r.scalar("Y random range", "f32")
-            r.scalar("Z random range", "f32")
-        _items(r, "Path randomization", item_count, ranges)
+        _positioning_path(r)
+
+
+def _positioning_path(r: _Reader) -> None:
+    r.scalar("Path mode", "u8", enum=_PATH_MODE)
+    r.scalar("Transition time (ms)", "i32")
+    vertex_count = r.scalar("Vertex count", "u32", editable=False)
+    def vertex(_index):
+        r.scalar("X", "f32")
+        r.scalar("Y", "f32")
+        r.scalar("Z", "f32")
+        r.scalar("Duration (ms)", "i32")
+    _items(r, "Path vertices", vertex_count, vertex)
+    item_count = r.scalar("Path count", "u32", editable=False)
+    def path(_index):
+        r.scalar("First vertex", "u32")
+        r.scalar("Vertex count", "u32", editable=False)
+    _items(r, "Paths", item_count, path)
+    def ranges(_index):
+        r.scalar("X random range", "f32")
+        r.scalar("Y random range", "f32")
+        r.scalar("Z random range", "f32")
+    _items(r, "Path randomization", item_count, ranges)
 
 
 def _aux(r: _Reader) -> None:
@@ -750,8 +782,9 @@ def _transitions(r: _Reader) -> None:
 def _state(r: _Reader) -> None:
     names = property_names("state", r.version)
     with r.section("State values"):
-        count = r.scalar("Value count", "u16", editable=False)
-        ids = [r.scalar(f"Value {index + 1} property", "u16", enum=names, editable=False) for index in range(count)]
+        storage = "u8" if r.version == 120 else "u16"
+        count = r.scalar("Value count", storage, editable=False)
+        ids = [r.scalar(f"Value {index + 1} property", storage, enum=names, editable=False) for index in range(count)]
         for prop_id in ids:
             r.scalar(f"{names.get(prop_id, f'Property 0x{prop_id:04X}')} value", "f32")
 
@@ -771,21 +804,28 @@ def _action(r: _Reader) -> None:
         if r.version >= 150 else
         {0x1500, 0x1600, 0x1700, 0x2100, 0x2300}
     )
+    target_field = len(r.fields)
     r.scalar(
         "Target", "u32", id_kind=external_kind or ("event" if is_event else "hirc"),
         reference_role=("event target" if is_event else "action target")
         if external_kind is None else "",
     )
-    r.flags("Target flags", (("Target is a bus", 0),))
+    bus_flags = r.flags("Target flags", (("Target is a bus", 0),))
+    if bus_flags & 1 and external_kind is None and not is_event:
+        r.fields[target_field] = replace(r.fields[target_field], reference_role="action bus target")
     _properties(r)
 
     def exceptions():
         with r.section("Exceptions"):
-            count = r.var("Exception count", editable=False)
+            count = (r.scalar("Exception count", "u32", editable=False)
+                     if r.version == 120 else r.var("Exception count", editable=False))
             for index in range(count):
                 with r.section(f"{index + 1}"):
+                    object_field = len(r.fields)
                     r.scalar("Object", "u32", id_kind="hirc", reference_role="exception")
-                    r.scalar("Object is a bus", "u8", enum=_BOOL)
+                    is_bus = r.scalar("Object is a bus", "u8", enum=_BOOL)
+                    if is_bus:
+                        r.fields[object_field] = replace(r.fields[object_field], reference_role="exception bus")
 
     if target_kind in {0x0400, 0x0500, 0x2300}:
         r.flags("Play fade", (("Fade curve", 0, 5, _CURVE),))
@@ -794,7 +834,7 @@ def _action(r: _Reader) -> None:
             r.scalar("Required bank type", "u32", enum=_BANK_TYPE)
     elif target_kind in {0x0100, 0x0200, 0x0300, 0x2200}:
         r.flags("Fade", (("Fade curve", 0, 5, _CURVE),))
-        if target_kind != 0x2200:
+        if target_kind != 0x2200 and not (r.version == 120 and target_kind == 0x0100):
             labels = (
                 (("Apply to state transitions", 1), ("Apply to dynamic sequences", 2))
                 if target_kind == 0x0100 else
@@ -862,7 +902,8 @@ def _action(r: _Reader) -> None:
 
 def _event(r: _Reader) -> None:
     with r.section("Actions"):
-        count = r.var("Action count", editable=False)
+        count = (r.scalar("Action count", "u32", editable=False)
+                 if r.version == 120 else r.var("Action count", editable=False))
         for index in range(count):
             r.scalar(
                 f"Action {index + 1}", "u32", id_kind="hirc",
@@ -1692,6 +1733,9 @@ def parse_structured_object(
     try:
         reader.scalar("Object ID", "u32", editable=False, visible=False)
         parser = _PARSERS.get(int(type_id))
+        if version == 120:
+            parser = {0x12: _fx, 0x13: _fx, 0x14: _bus,
+                      0x15: _envelope, 0x16: _envelope}.get(int(type_id), parser)
         if parser is None:
             raise _LayoutError(
                 f"HIRC type 0x{int(type_id):02X} has no v{version} layout"

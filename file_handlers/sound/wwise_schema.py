@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-STRUCTURED_BANK_VERSIONS = frozenset({125, 132, 135, 140, 145, 150})
+STRUCTURED_BANK_VERSIONS = frozenset({120, 125, 132, 135, 140, 145, 150})
 _WWISE_SILENCE_PLUGIN_ID = 0x00650002
 
 # Built-in IDs used by RE3. Effect/source/device names below come from the
@@ -53,6 +53,8 @@ _HIRC_TYPES_132 = {
     0x16: "Time Modulator",
 }
 _HIRC_LAYOUTS = {
+    120: (_HIRC_TYPES, frozenset({0x08, 0x14}),
+          frozenset({0x12, 0x13}), frozenset({0x15, 0x16})),
     125: (
         _HIRC_TYPES,
         frozenset({0x08, 0x14}),
