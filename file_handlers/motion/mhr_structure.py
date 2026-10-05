@@ -74,6 +74,8 @@ class Owner:
         if scope == 'motion':
             if self.slot.payload is None:
                 raise MotionWriteError(f'MotionID {motion_id} has no embedded MOT')
+            if not hasattr(self.slot.payload.value,'sequences'):
+                raise MotionWriteError('MTRE sequences must use slot override scope')
             self.base = struct.unpack_from('<Q', raw, pointers + self.index * 8)[0]
             self.pointer_offset, self.count_offset = self.base + 48, self.base + 116
             self.sequences = self.slot.payload.value.sequences
@@ -279,8 +281,8 @@ def verify(document, output, expected, *, motion_id, scope):
         edits_payload = scope == 'motion' and before.payload is target.slot.payload
         for left, right, changed in (
                 (before.overrides, after.overrides, scope == 'override' and before is target.slot),
-                (before.payload.value.sequences if before.payload else [],
-                 after.payload.value.sequences if after.payload else [], edits_payload)):
+                (getattr(before.payload.value,'sequences',[]) if before.payload else [],
+                 getattr(after.payload.value,'sequences',[]) if after.payload else [], edits_payload)):
             wanted = expected if changed else [snapshot(s) for s in left]
             if [snapshot(s) for s in right] != wanted:
                 raise MotionWriteError(f'Sequence graph mismatch in MotionID {before.motion_id}')
@@ -357,6 +359,9 @@ def copy_sequences(document, source_id, target_id, *, categories=None, positions
     document = materialize(document)
     donor = materialize(donor) if donor is not None else document
     document = private_motion(document, target_id, target_scope)
+    from .mhr_batch import detach_sequence
+    for index in range(len(Owner(document,target_id,target_scope).records)):
+        document=detach_sequence(document,target_id,sequence=index,scope=target_scope)
     source, target = Owner(donor, source_id, source_scope), Owner(document, target_id, target_scope)
     selected = source.select(categories=categories, positions=positions)
     duration = None
@@ -392,6 +397,9 @@ def copy_sequences(document, source_id, target_id, *, categories=None, positions
 def delete_sequences(document, motion_id, *, categories=None, positions=None, scope='motion'):
     document = materialize(document)
     document = private_motion(document, motion_id, scope)
+    from .mhr_batch import detach_sequence
+    for index in range(len(Owner(document,motion_id,scope).records)):
+        document=detach_sequence(document,motion_id,sequence=index,scope=scope)
     owner = Owner(document, motion_id, scope)
     selected = set(owner.select(categories=categories, positions=positions))
     return _edit_sequences(document, owner, [i for i in range(len(owner.records)) if i not in selected],
@@ -406,6 +414,8 @@ def edit_clip(document, motion_id, *, sequence=None, category=None, scope='motio
     document = materialize(document)
     original = document
     document = private_motion(document, motion_id, scope)
+    from .mhr_batch import detach_sequence
+    document=detach_sequence(document,motion_id,sequence=sequence,category=category,scope=scope)
     owner = Owner(document, motion_id, scope)
     record = owner.one(sequence=sequence, category=category)
     graph = ClipGraph(document.source, record.parsed)

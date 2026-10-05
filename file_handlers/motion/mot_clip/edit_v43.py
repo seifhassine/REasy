@@ -168,6 +168,9 @@ class ClipGraph:
         nodes = [self.clip.root]
         child_ranges = {}
         for node in nodes:
+            if id(node) in child_ranges:raise ValueError('CLIP node has a cycle or shared owner')
+            if node.start_frame or node.end_frame or any(node.root_guid) or any(node.extra_guid):
+                raise ValueError('CLIP 43 node has no frame/GUID fields')
             child_ranges[id(node)] = len(nodes)
             nodes.extend(node.children)
         props = []
@@ -176,6 +179,7 @@ class ClipGraph:
             prop_ranges[id(node)] = len(props)
             props.extend(node.properties)
         for prop in props:
+            if id(prop) in prop_ranges:raise ValueError('CLIP property has a cycle or shared owner')
             prop_ranges[id(prop)] = len(props)
             props.extend(prop.children)
         keys, lasts, speeds = [], [], []
@@ -199,20 +203,29 @@ class ClipGraph:
             return index
         def template(item):
             return bytearray(self._templates[id(item)])
+        from utils.hash_util import murmur3_hash, murmur3_hash_utf16le
+        def name_hash(record,value):
+            struct.pack_into('<II',record,8,murmur3_hash(value.encode('utf-8')),murmur3_hash_utf16le(value))
         node_bytes, prop_bytes = bytearray(), bytearray()
         for node in nodes:
             record = template(node)
+            name_hash(record,node.name)
             struct.pack_into('<HH', record, 0, len(node.children), len(node.properties))
             struct.pack_into('<QQQ', record, 16, string(node.name, True), child_ranges[id(node)], prop_ranges[id(node)])
             node_bytes.extend(record)
         for prop in props:
             record = template(prop)
+            if record[45]!=int(prop.property_type):raise ValueError('Changing CLIP property type requires a native template')
+            name_hash(record,prop.name)
+            struct.pack_into('<h',record,42,prop.array_index)
             struct.pack_into('<ff', record, 0, _frame(prop.start_frame), _frame(prop.end_frame))
             struct.pack_into('<Q', record, 16, string(prop.name))
             container = prop.property_type in CONTAINER_PROPERTY_TYPES
             struct.pack_into('<QH', record, 32, prop_ranges[id(prop)] if container else member_ranges[id(prop)], len(prop.children) if container else len(prop.keys))
             struct.pack_into('<B', record, 44, len(prop.speed_points))
-            record[47] = (record[47] & ~4) | (4 if prop.last_key is not None else 0)
+            record[47]=sum(bit for bit,enabled in ((1,prop.enum_closed),(2,prop.set_after_end_frame),
+                (4,prop.last_key is not None),(8,prop.restoration),(16,prop.set_delegate_enable),
+                (32,prop.prev_diff_frame_set),(64,prop.next_diff_frame_set),(128,prop.prev_key_value_set)) if enabled)
             if prop.last_key is not None:
                 struct.pack_into('<Q', record, 48, last_indices[id(prop)])
             struct.pack_into('<Q', record, 56, speed_ranges[id(prop)])
@@ -226,20 +239,34 @@ class ClipGraph:
             if id(curve) not in curve_indices:
                 pool, size = (hermite, 16) if isinstance(curve, HermiteCurve) else (bezier, 32)
                 curve_indices[id(curve)] = len(pool) // size
-                pool.extend(self._templates[id(curve)])
+                record=bytearray(self._templates[id(curve)])
+                struct.pack_into('<'+str(size//4)+'f',record,0,*curve.values)
+                pool.extend(record)
             return curve_indices[id(curve)]
         def key_bytes(items):
             result = bytearray()
             for key, kind in items:
                 record = template(key)
                 struct.pack_into('<f', record, 0, _frame(key.frame))
+                struct.pack_into('<fB',record,4,_frame(key.rate),int(key.interpolation))
+                record[9]=(record[9]&~1)|int(key.offset_frame)
                 if kind in ASCII_VALUE_PROPERTY_TYPES:
                     struct.pack_into('<Q', record, 16, string(key.value))
                 elif kind in UTF16_VALUE_PROPERTY_TYPES:
                     struct.pack_into('<Q', record, 16, string(key.value, True))
                 elif kind == ClipPropertyType.PATH_POINT3D:
                     struct.pack_into('<Q', record, 16, len(owords) // 16)
-                    owords.extend(self._values[id(key)])
+                    value=bytearray(self._values[id(key)])
+                    struct.pack_into('<3f',value,0,*key.value)
+                    owords.extend(value)
+                elif kind not in (ClipPropertyType.ACTION,ClipPropertyType.UNKNOWN):
+                    fmt={ClipPropertyType.BOOL:'B',ClipPropertyType.S8:'b',ClipPropertyType.U8:'B',
+                         ClipPropertyType.S16:'h',ClipPropertyType.U16:'H',ClipPropertyType.S32:'i',
+                         ClipPropertyType.U32:'I',ClipPropertyType.S64:'q',ClipPropertyType.U64:'Q',
+                         ClipPropertyType.F32:'d',ClipPropertyType.F64:'d'}[kind]
+                    struct.pack_into('<'+fmt,record,16,key.value)
+                elif key.value is not None:
+                    raise ValueError('ACTION/UNKNOWN keys have no editable scalar value')
                 struct.pack_into('<Q', record, 24, curve_index(key))
                 result.extend(record)
             return result
@@ -248,9 +275,11 @@ class ClipGraph:
         for speed in speeds:
             record = template(speed)
             struct.pack_into('<f', record, 0, _frame(speed.frame))
+            struct.pack_into('<fI',record,4,_frame(speed.rate),int(speed.interpolation))
             struct.pack_into('<Q', record, 16, curve_index(speed))
             speed_data.extend(record)
         output = bytearray(self._header)
+        struct.pack_into('<f',output,8,_frame(self.clip.total_frame))
         struct.pack_into('<III', output, 12, len(nodes), len(props), len(keys))
         sections = []
         def append(data, alignment=1):

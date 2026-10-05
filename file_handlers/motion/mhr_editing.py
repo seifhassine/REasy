@@ -86,6 +86,13 @@ def duplicate_slot(document, source_index, motion_id, *, name=None):
     slot = model.slots[source_index]
     if slot.payload is None:
         raise MotionWriteError('Source slot has no embedded motion')
+    from .mhr_tree import RiseTree,build_tree
+    if isinstance(slot.payload.value,RiseTree):
+        from copy import deepcopy
+        from .mhr_batch import install_payload
+        tree=deepcopy(slot.payload.value)
+        if name is not None:tree.name=name
+        return install_payload(model,build_tree(tree),motion_id,template_id=slot.motion_id)
     source = model.source
     pointers, rows = struct.unpack_from('<QQ', source, 16)
     count = len(model.slots)

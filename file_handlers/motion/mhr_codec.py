@@ -8,12 +8,13 @@ from .binary import ReadContext
 from .errors import MotionParseError
 from .profiles import DMC5_PROFILE
 from .mot.model import Motion, Skeleton, Joint, AnimationNode, TrackFamily
-from .mot_list.model import EmbeddedPayload, MotionSlot, MotionSlotType
+from .mot_list.model import EmbeddedPayload, MotionSlot, MotionSlotType, MotionSlotFlags
 from .sequence.model import SequenceData, SequenceCategory, SequenceTrack
 from .mot_clip.model import (CONTAINER_PROPERTY_TYPES, ASCII_VALUE_PROPERTY_TYPES,
                              UTF16_VALUE_PROPERTY_TYPES, ClipPropertyType)
 from .mot_clip.parser_v43 import CompactClipV43Parser
-from .mhr_storage import MhrMotList, MhrJoint, MhrMotion, Relocation, Field, Group, TrackBinding, write_document
+from .mhr_storage import (MhrMotList, MhrJoint, MhrMotion, MhrSyncPointGrid, MhrFrameCurve, MhrSequenceTrack,
+                          Relocation, Field, Group, TrackBinding, write_document, auxiliary_shape, motion_shape, clip_shape, slot_shape)
 from .mhr_tracks import decode_track
 
 
@@ -22,7 +23,8 @@ MHR_PROFILE = replace(DMC5_PROFILE, name='Monster Hunter Rise / Sunbreak',
     mot=replace(DMC5_PROFILE.mot, version=495, header_size=128, sequence_wrapper_size=64,
                 tracks_data_size=28, sequence_categories=frozenset(range(10))),
     mot_clip=replace(DMC5_PROFILE.mot_clip, version=43, header_size=112, node_size=40,
-                     property_size=72, key_size=32))
+                     property_size=72, key_size=32),
+    mot_tree=replace(DMC5_PROFILE.mot_tree,version=14))
 
 class MhrParser:
     container_version = 528
@@ -35,6 +37,9 @@ class MhrParser:
         self.clip_parser = CompactClipV43Parser(MHR_PROFILE)
         self.skeleton = None
         self.joint_hashes = {}
+        self.sequence_cache = {}
+        self.clip_cache = {}
+        self.metadata_cache = {}
 
     def field(self, c, group, name, offset, fmt, *, owner=None, attr=None, editable=True):
         c.require(offset, struct.calcsize('<'+fmt), name)
@@ -110,7 +115,11 @@ class MhrParser:
         model.groups.append(slots)
         for i, address in enumerate(addresses):
             r = rows+i*72
-            slot = MotionSlot(c.u16(r+8), MotionSlotType.MOT, payloads.get(address))
+            try: kind=MotionSlotType(c.u8(r+20))
+            except ValueError as exc: raise MotionParseError(f'{c.label}: unsupported slot payload type') from exc
+            if address and ((kind==MotionSlotType.MOT_TREE)!=(c.bytes(address+4,4)==b'mtre')):
+                raise MotionParseError(f'{c.label}: slot type disagrees with embedded payload')
+            slot = MotionSlot(c.u16(r+8), kind, payloads.get(address))
             model.slots.append(slot)
             group = Group(f'[{i}] Motion ID {slot.motion_id}')
             slots.children.append(group)
@@ -120,7 +129,7 @@ class MhrParser:
             self.field(c, group, 'Unknown 0x0C', r+12, 'I')
             slot.tag_hash = self.field(c, group, 'Tag hash', r+16, 'I', owner=slot, attr='tag_hash')
             self.field(c, group, 'Type', r+20, 'B', editable=False)
-            self.field(c, group, 'Flags 0x15', r+21, 'B')
+            slot.flags=MotionSlotFlags(self.field(c, group, 'Flags 0x15', r+21, 'B', owner=slot,attr='flags'))
             self.field(c, group, 'Flags 0x16', r+22, 'B')
             override_count = self.field(c, group, 'Override count', r+23, 'B', editable=False)
             for j in range(24, 72, 4):
@@ -129,6 +138,7 @@ class MhrParser:
                 raise MotionParseError(f'{c.label}: inconsistent slot override table')
             c.require(overrides, override_count*8, 'slot override pointers')
             self.read_overrides(c, overrides, override_count, slot, group)
+        model.slot_bindings=slot_shape(model)
         return model
 
     def read_overrides(self, c, table, count, slot, group):
@@ -139,12 +149,84 @@ class MhrParser:
             slot.overrides.append(self.sequence(c, wrapper, 0, child))
 
     def check_auxiliary(self, c, base, pointers):
-        if any(pointers[i] for i in (2, 3, 5, 6, 7)):
-            raise MotionParseError(f'{c.label}: unsupported nonempty MOT auxiliary section')
+        if any(pointers[i] for i in (2, 3)) or c.u16(base+124):
+            raise MotionParseError(f'{c.label}: unsupported MOT property/custom track section')
+
+    def read_auxiliary(self, c, base, pointers, motion, group):
+        if pointers[5]:
+            motion.character_path = self.string(c, group, 'JMAP path', base+pointers[5], motion, 'character_path')
+        for pointer, count, label in ((pointers[6], c.u8(base+117), 'Sync'),
+                                       (pointers[7], c.u16(base+118), 'Frame/scalar curve')):
+            if bool(pointer) != bool(count):
+                raise MotionParseError(f'{c.label}: {label} pointer/count mismatch')
+            c.require(base+pointer, count*8, label+' table')
+        for i in range(c.u8(base+117)):
+            r = self.pointer(c, group, f'Sync {i}', base+pointers[6]+i*8, base)
+            blocks, points, start, stop = struct.unpack_from('<4B', c.data, r)
+            if not blocks or not points:
+                raise MotionParseError(f'{c.label}: invalid sync grid dimensions')
+            n = blocks*points+1
+            c.require(r+4, n*4, 'Sync frames')
+            grid = MhrSyncPointGrid(blocks, points, [c.f32(r+4+j*4) for j in range(n)], start, stop)
+            motion.sync_points.append(grid)
+            for offset, name, attr in ((0, 'Blocks', 'block_count'), (1, 'Points', 'point_count'),
+                                       (2, 'Start block', 'start'), (3, 'End block', 'end')):
+                self.field(c, group, f'Sync {i} {name}', r+offset, 'B', owner=grid, attr=attr, editable=False)
+            for j, value in enumerate(grid.frames):
+                # Array scalar fields bind through a lightweight indexed owner.
+                self.array_field(c, group, f'Sync {i} frame {j}', r+4+j*4, 'f', grid.frames, j)
+        for i in range(c.u16(base+118)):
+            r = self.pointer(c, group, f'Frame curve {i}', base+pointers[7]+i*8, base)
+            n = c.u32(r)
+            c.require(r+4, n*8, 'Frame/scalar curve points')
+            curve = MhrFrameCurve([list(struct.unpack_from('<2f', c.data, r+4+j*8)) for j in range(n)])
+            motion.frame_curves.append(curve)
+            for j, point in enumerate(curve.points):
+                self.array_field(c, group, f'Frame curve {i} frame {j}', r+4+j*8, 'f', point, 0)
+                self.array_field(c, group, f'Frame curve {i} scalar {j}', r+8+j*8, 'f', point, 1)
+        if pointers[8]:
+            from .mot.parser import MotV65Parser
+            # MotionAppend retains its own pointer base in both versions.
+            append_base = base+pointers[8]
+            motion.append, _ = MotV65Parser._parse_append(self, c, append_base)
+            self.relocation(c, append_base, append_base)
+            self.relocation(c, append_base+8, append_base)
+            table = append_base+c.u64(append_base)
+            for i, cls in enumerate(motion.append.classes):
+                r = table+i*32
+                self.relocation(c, r, append_base)
+                self.relocation(c, r+8, append_base)
+                self.field(c, group, 'Append class hash', r+24, 'I', owner=cls, attr='name_hash')
+                self.field(c, group, 'Append authored ID', r+28, 'I', owner=cls, attr='authored_id')
+                for j, prop in enumerate(cls.properties):
+                    p = append_base+c.u64(r)+j*16
+                    self.field(c, group, 'Append property hash', p+8, 'I', owner=prop, attr='name_hash')
+                    if prop.property_type.value == 15:
+                        self.relocation(c, p, append_base)
+                        self.string(c, group, 'Append string', append_base+c.u64(p), prop, 'value')
+                    else:
+                        self.field(c, group, 'Append scalar', p, 'i' if prop.property_type.value == 7 else 'I', owner=prop, attr='value')
+                for j, array in enumerate(cls.arrays):
+                    p = append_base+c.u64(r+8)+j*24
+                    self.field(c, group, 'Append array hash', p+8, 'I', owner=array, attr='name_hash')
+                    self.relocation(c, p, append_base)
+                    values = append_base+c.u64(p)
+                    fmt = {7:'i', 8:'I', 10:'Q'}[array.property_type.value]
+                    for k in range(len(array.values)):
+                        self.array_field(c, group, 'Append array value', values+k*struct.calcsize(fmt), fmt, array.values, k)
+            remaps = append_base+c.u64(append_base+8)
+            for i, remap in enumerate(motion.append.remaps):
+                self.field(c, group, 'Requested hash', remaps+i*8, 'I', owner=remap, attr='requested_hash')
+                self.field(c, group, 'Stored hash', remaps+i*8+4, 'I', owner=remap, attr='stored_hash')
+
+    def array_field(self, c, group, name, offset, fmt, values, index):
+        from .mhr_auxiliary import ArrayValue
+        return self.field(c, group, name, offset, fmt, owner=ArrayValue(values, index), attr='value')
 
     def motion(self, c, base, end, group):
         if c.bytes(base+4, 4) == b'mtre':
-            raise MotionParseError(f'{c.label}: Motion Tree {c.u32(base)} is not supported by the MOT {self.motion_version} preview')
+            from .mhr_tree import parse_tree
+            return parse_tree(self, c, base, end, group)
         mot_version = c.u32(base)
         c.require(base, 128, f'MOT {mot_version} header')
         if mot_version != self.motion_version or c.bytes(base+4, 4) != b'mot ':
@@ -155,8 +237,8 @@ class MhrParser:
         self.field(c, header, 'Flags', base+8, 'I')
         size = self.field(c, header, 'MOT size', base+12, 'I', editable=False)
         ptrs = [self.field(c, header, label, base+16+i*8, 'Q', editable=False) for i, label in enumerate(
-            ('Skeleton', 'Animation nodes', 'Reserved pointer 0x20', 'Reserved pointer 0x28',
-             'Sequences', 'Joint map', 'Extra data', 'Reserved pointer 0x48', 'Append data', 'Name'))]
+            ('Skeleton', 'Animation nodes', 'Property tracks', 'Custom keys',
+             'Sequences', 'JMAP path', 'Sync grids', 'Frame/scalar curves', 'MotionAppend', 'Name'))]
         for i in range(10):
             self.relocation(c, base+16+i*8, base)
         self.check_auxiliary(c, base, ptrs)
@@ -177,7 +259,8 @@ class MhrParser:
         node_count = self.field(c, header, 'Animation node count', base+114, 'H', editable=False)
         sequence_count = self.field(c, header, 'Sequence count', base+116, 'B', editable=False)
         self.field(c, header, 'Sync count', base+117, 'B', editable=False)
-        for offset in (118, 124, 126):
+        self.field(c,header,'Frame curve count',base+118,'H',editable=False)
+        for offset in (124, 126):
             self.field(c, header, f'Unknown 0x{offset:02X}', base+offset, 'H')
         motion.frames_per_second = self.field(c, header, 'Frame rate', base+120, 'I', owner=motion, attr='frames_per_second')
         if not motion.frames_per_second:
@@ -235,12 +318,9 @@ class MhrParser:
                     ng.children.append(binding)
                     cursor += 20
         self.read_sequences(c, base, ptrs[4], sequence_count, motion, group)
-        if ptrs[8]:
-            ag = Group('Append header')
-            group.children.append(ag)
-            for i in range(4):
-                self.field(c, ag, f'Value {i}', base+ptrs[8]+i*8, 'Q', editable=False if i == 0 else True)
-            self.relocation(c, base+ptrs[8], base+ptrs[8])
+        self.read_auxiliary(c, base, ptrs, motion, group)
+        self.model.auxiliary_shapes.append((motion,auxiliary_shape(motion)))
+        self.model.motion_shapes.append((motion,motion_shape(motion)))
         return motion
 
     def read_sequences(self, c, base, table, count, motion, group):
@@ -305,6 +385,11 @@ class MhrParser:
         return Skeleton(joints), hashes
 
     def sequence(self, c, wrapper, base, group):
+        cached=self.sequence_cache.get((wrapper,base))
+        if cached:
+            sequence,children=cached
+            group.children.extend(children)
+            return sequence
         c.require(wrapper, 64, 'sequence wrapper')
         name = self.pointer(c, group, 'Name pointer', wrapper, base)
         if name:
@@ -318,6 +403,7 @@ class MhrParser:
         for offset in range(40, 64, 4):
             self.field(c, group, f'Unknown 0x{offset:02X}', wrapper+offset, 'I')
         parsed = self.clip_parser.parse_result(c, clip_offset, tracks, pointer_base=base)
+        parsed=self.clip_cache.setdefault((clip_offset,base),parsed)
         clip_group = Group('CLIP 43')
         group.children.append(clip_group)
         self.clip_fields(c, parsed, clip_group)
@@ -332,7 +418,12 @@ class MhrParser:
             metadata.children.append(tg)
             values = [self.field(c, tg, 'Authored ID' if j == 0 else f'Filter page {j-1}', tracks+i*28+j*4, 'I')
                       for j in range(7)]
-            seq.tracks.append(SequenceTrack(*values[:4]))
+            track=self.metadata_cache.setdefault(tracks+i*28,MhrSequenceTrack(*values))
+            seq.tracks.append(track)
+            for j,item in enumerate(tg.children):
+                item.owner,item.attribute=track,'authored_id' if j==0 else f'filter_page{j-1}'
+        self.sequence_cache[(wrapper,base)]=(seq,list(group.children))
+        self.model.clip_shapes.append((parsed.clip,clip_shape(parsed.clip)))
         return seq
 
     def clip_fields(self, c, parsed, group):

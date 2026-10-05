@@ -104,6 +104,17 @@ class ClipGraphTests(unittest.TestCase):
         self.assertEqual(parsed.speed_points, [])
         self.assertEqual(parsed.clip.extra_ranges, [])
 
+    def test_curve_value_edits_are_emitted(self):
+        graph=self.graph()
+        graph.properties[0].keys[0].curve.values=(5,6,7,8)
+        self.assertEqual(self.reopen(graph)[1].hermite_curves[0].values,(5,6,7,8))
+
+    def test_cycles_and_shared_ownership_are_rejected(self):
+        graph=self.graph();graph.clip.root.children.append(graph.clip.root)
+        with self.assertRaisesRegex(ValueError,'cycle'):graph.build(origin_offset=0,pointer_base=0)
+        graph=self.graph();graph.nodes[1].properties.append(graph.properties[0])
+        with self.assertRaisesRegex(ValueError,'shared owner'):graph.build(origin_offset=0,pointer_base=0)
+
     def test_property_and_key_edits(self):
         graph, donor = self.graph(), self.graph()
         graph.copy_property(donor, 0, node_index=1, shift=1)
