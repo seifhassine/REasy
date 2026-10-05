@@ -106,6 +106,7 @@ class BHVT:
     action_ex_ids: list = field(default_factory=list)
     static_action_ex_ids: list = field(default_factory=list)
     node_data_end: int = field(default=0, repr=False, compare=False)
+    string_pool: bytes = field(default=b'', repr=False)
 
 
 class _Reader:
@@ -249,6 +250,10 @@ class MotfsmFile:
             layout, tree, bindings = candidates[0]
             candidates = [(replace(layout, transition_event_lists=None), tree, bindings)]
         self.layout, self.bhvt, self.bindings = candidates[0]
+        strings = offsets['strings']
+        units = struct.unpack_from('<I', self.source, strings)[0]
+        self.bhvt.string_pool = self.source[strings + 4:strings + 4 + units * 2]
+        self._section_ends = ends
         self.references.invalidate()
         return True
 
@@ -343,13 +348,37 @@ class MotfsmFile:
             raise ValueError("No MOTFSM data loaded")
         from .selectors import validate_selectors
         validate_selectors(self)
-        from .rebuild import rebuild_actions
-        return rebuild_actions(self)
+        from .serialization import rebuild_graph
+        return rebuild_graph(self)
+
+    def build_validated(self):
+        """Write, reopen and verify the complete native graph and preserved tail."""
+        from .validation import validate_graph, verify_graph_write
+        validate_graph(self)
+        output = self.rebuild()
+        reopened = MotfsmFile()
+        reopened.set_rsz_type_info_path(self._registry_path)
+        reopened.read(output)
+        validate_graph(reopened)
+        verify_graph_write(self, reopened)
+        if reopened.rebuild() != output:
+            raise ValueError('MOTFSM second build is not stable')
+        return output
+
+    def graph_editor(self):
+        from .editing import GraphEditor
+        return GraphEditor(self)
 
     def accept_changes(self):
         output = self.rebuild()
-        if output != self.bindings.rebuild():
+        fields = self.bindings._fields.values()
+        stale = any((isinstance(b.attribute, int) and b.attribute >= len(b.owner)) or
+                    (b.layout_mask and (b.value ^ b.original_value) & b.layout_mask) for b in fields)
+        if stale or output != self.bindings.rebuild():
             self.read(output)
         else:
             self.source = output
-            self.bindings.accept_changes(self.source)
+            self.bindings.accept_changes(output)
+            for block in self.rsz_blocks.blocks.values():
+                if block._file is not None:
+                    block._original_state = block.native_state()

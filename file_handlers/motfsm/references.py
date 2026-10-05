@@ -34,8 +34,9 @@ class References:
             raise IndexError(f"Unknown node identity: 0x{id_hash:08X}, ex={ex_id}")
         return self._nodes[key]
 
-    def state_target(self, id_hash):
-        # State links carry a hash; mStatesEx remains separate raw metadata.
+    def state_target(self, id_hash, owner=None):
+        # Unique hashes can link outside the state group. Repeated hashes resolve
+        # among the owner's siblings; mStatesEx is not the target ex_id.
         if id_hash in (0, 0xFFFFFFFF):
             return None
         if self._node_hashes is None:
@@ -43,6 +44,10 @@ class References:
             for index, node in enumerate(self.document.bhvt.nodes):
                 self._node_hashes.setdefault(node.id_hash, []).append(index)
         matches = self._node_hashes.get(id_hash, [])
+        if owner is not None and len(matches) > 1:
+            matches = [i for i in matches if
+                       (self.document.bhvt.nodes[i].parent, self.document.bhvt.nodes[i].parent_ex)
+                       == (owner.parent, owner.parent_ex)]
         if len(matches) > 1:
             raise ValueError(f"Ambiguous state target hash: 0x{id_hash:08X}")
         if not matches:
@@ -50,6 +55,8 @@ class References:
         return matches[0]
 
     def object_instance(self, block_name, raw):
+        if not isinstance(raw, int) or not -0x80000000 <= raw <= 0xFFFFFFFF:
+            raise ValueError(f'Invalid BHVT object reference: {raw}')
         raw &= 0xFFFFFFFF
         if raw == 0xFFFFFFFF:
             return None
@@ -77,9 +84,13 @@ class References:
                 ("static_actions", self.document.bhvt.static_action_ex_ids),
             ):
                 block = self.document.rsz_blocks.get_block(block_name)
+                if len(extensions) != len(block.object_table):
+                    raise ValueError(f'{block_name} extension table count does not match RSZ object table')
                 for object_index, instance_index in enumerate(block.object_table):
                     fields = block.file.parsed_elements[instance_index]
                     # via.behaviortree.Action's base ID field in the type dump.
+                    if 'v1_ID' not in fields:
+                        raise ValueError(f'{block_name} object {object_index} has no native Action ID field')
                     action_id = fields["v1_ID"].value
                     key = (action_id, extensions[object_index])
                     if key in identities:

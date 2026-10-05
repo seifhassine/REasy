@@ -24,7 +24,7 @@ class MotfsmHandler(BaseFileHandler):
         return MotfsmFile.can_handle(data)
 
     def supports_editing(self) -> bool:
-        """Support scalar edits and node Action reference changes."""
+        """Support native field and validated graph edits."""
         return True
 
     def read(self, data: bytes):
@@ -64,6 +64,9 @@ class MotfsmHandler(BaseFileHandler):
 
     def remove_action_reference(self, node_index, action_index):
         self.editor_document.remove_reference(node_index, action_index)
+
+    def change_graph(self, mutate, label='Edit FSM graph'):
+        self.editor_document.change_graph(mutate, label)
 
     def mark_saved(self):
         self.motfsm.accept_changes()

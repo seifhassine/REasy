@@ -104,9 +104,11 @@ class FieldBindings:
     def modified(self):
         return any(binding.modified for binding in self._fields.values())
 
-    def rebuild(self):
+    def rebuild(self, exclude_ranges=()):
         output = bytearray(self.source)
         for binding in self._fields.values():
+            if any(start <= binding.offset < end for start, end in exclude_ranges):
+                continue
             encoded = binding.encode(binding.value)
             if encoded != binding.original_bytes:
                 output[binding.offset:binding.offset + binding.size] = encoded

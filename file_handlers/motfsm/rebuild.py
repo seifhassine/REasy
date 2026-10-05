@@ -1,4 +1,4 @@
-"""Rebuild node Action columns and relocate typed BHVT pointers.
+"""Relocate typed BHVT pointers for the native graph writer.
 
 RSZ offsets are block-relative. Moving the entire tail by a multiple of 16
 keeps both their pointers and their absolute alignment valid.
@@ -120,53 +120,3 @@ class BhvtPointers:
                 if target:
                     self.uvar(target)
         return self.slots
-
-
-def rebuild_actions(document):
-    patched = document.bindings.rebuild()
-    changes = []
-    for node in document.bhvt.nodes:
-        start, end = node._action_span
-        values = [action.id_hash for action in node.actions] + [action.ex_id for action in node.actions]
-        try:
-            encoded = struct.pack(f'<{1 + len(values)}I', len(node.actions), *values)
-        except struct.error as exc:
-            raise ValueError(f'Invalid Action reference in node {node.name}: {exc}') from exc
-        if encoded != patched[start:end]:
-            changes.append((start, end, encoded))
-    if not changes:
-        return patched
-
-    growth = sum(len(data) - (end - start) for start, end, data in changes)
-    node_end = document.bhvt.node_data_end
-    tail = min(offset for offset in document.bhvt.offsets.values() if offset >= node_end)
-    old_padding = tail - node_end
-    new_padding = (old_padding - growth) % 16
-    delta = growth + new_padding - old_padding
-    # Preserve padding bytes where possible, including unchanged nonzero padding.
-    padding = patched[node_end:tail]
-    padding = (bytes(max(0, new_padding - len(padding))) + padding)[-new_padding:] if new_padding else b''
-    changes.append((node_end, tail, padding))
-    output = bytearray()
-    cursor = 0
-    for start, end, data in changes:
-        output.extend(patched[cursor:start])
-        output.extend(data)
-        cursor = end
-    output.extend(patched[cursor:])
-    if delta:
-        pointers = BhvtPointers(document).collect()
-        for slot in pointers:
-            value = struct.unpack_from('<Q', patched, slot)[0]
-            target = document.tree_data_offset + value
-            if value and target >= tail:
-                value += delta
-            new_slot = slot + delta if slot >= tail else slot
-            struct.pack_into('<Q', output, new_slot, value)
-        for slot in (16, 24, 32, 40):
-            value = struct.unpack_from('<Q', patched, slot)[0]
-            struct.pack_into('<Q', output, slot, value + delta if value >= tail else value)
-        info = document.tree_info_ptr
-        struct.pack_into('<I', output, info + delta if info >= tail else info,
-                         document.tree_data_size + delta)
-    return bytes(output)

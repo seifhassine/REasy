@@ -1,11 +1,31 @@
 """MOTFSM views of the shared RSZ reader. No independent field-layout parser."""
 from dataclasses import dataclass, field as member
 import struct
+import pickle
+from collections.abc import Mapping
 
 from file_handlers.rsz.rsz_file import RszFile, TypeRegistryValidationError
 from file_handlers.rsz.utils.rsz_field_utils import VALUE_COMPONENTS
 from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, StructData, ArrayData
 from .fields import SCALAR_FORMATS
+
+
+def native_value_state(value):
+    """Deterministic typed values, without class registries or object addresses."""
+    if value is None or isinstance(value, (str, int, bool, bytes)):
+        return value
+    if isinstance(value, float):
+        return ('float', struct.pack('<d', value))
+    if isinstance(value, type):
+        return ('class', value.__module__, value.__qualname__)
+    if isinstance(value, Mapping):
+        return tuple((k, native_value_state(v)) for k, v in value.items())
+    if isinstance(value, (list, tuple)):
+        return tuple(native_value_state(v) for v in value)
+    from file_handlers.rsz.rsz_data_types import LazyRawValues
+    if isinstance(value, LazyRawValues):
+        return tuple(native_value_state(v) for v in value)
+    return (type(value).__name__, native_value_state(vars(value)))
 
 
 BLOCK_NAMES = (
@@ -133,6 +153,7 @@ class RSZBlock:
         self.end = end
         self._file = None
         self._instances = {}
+        self._original_state = None
         if end - offset < 8 or document.source[offset:offset + 4] != b'RSZ\0':
             raise ValueError(f"Invalid RSZ signature in {name} at 0x{offset:X}")
         version = struct.unpack_from('<I', document.source, offset + 4)[0]
@@ -161,7 +182,20 @@ class RSZBlock:
             if any(not 0 <= i < len(parsed.instance_infos) for i in parsed.object_table):
                 raise ValueError(f"Invalid object table in {self.name}")
             self._file = parsed
+            self._original_state = self.native_state()
         return self._file
+
+    def native_state(self):
+        """Only writer inputs; exclude reader spans, hierarchy and UI caches."""
+        native = self._file
+        return pickle.dumps(([(i.type_id, i.crc) for i in native.instance_infos],
+                             native.object_table, native_value_state(native.parsed_elements),
+                             [(u.instance_id, u.hash, native.get_rsz_userdata_string(u))
+                              for u in native.rsz_userdata_infos]), protocol=4)
+
+    @property
+    def modified(self):
+        return self._file is not None and self.native_state() != self._original_state
 
     @property
     def instance_count(self):

@@ -264,6 +264,16 @@ class FsmDocument(QObject):
             node.actions = original
         self.undo_stack.push(_DocumentCommand(self, node_index, before, after, candidate, label))
 
+    def change_graph(self, mutate, label='Edit FSM graph'):
+        """One undoable, validated structural edit through the native GraphEditor."""
+        before = self.document.build_validated()
+        candidate = self._read(before)
+        mutate(candidate.graph_editor())
+        after = candidate.build_validated()
+        if after != before:
+            prepared = self._read(after)
+            self.undo_stack.push(_DocumentCommand(self, None, before, after, prepared, label))
+
     def _apply_document(self, source, node_index, prepared=None):
         self.handler.motfsm = prepared if prepared is not None else self._read(source)
         self._addresses.clear()
