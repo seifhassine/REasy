@@ -327,7 +327,7 @@ class FsmStructureTests(unittest.TestCase):
         # State references show their native targets before expansion.
         doc = self.handler.motfsm
         owner, state = next((n, s) for n in doc.bhvt.nodes for s in n.states
-                            if s.mStates.values and doc.references.state_target(s.mTransitions) is not None)
+                            if s.mStates.values and doc.references.state_target(s.mTransitions, s.mTransitionAttributes) is not None)
         viewer = MotfsmViewer(self.handler, selection_only=True)
         self.addCleanup(viewer.close)
         viewer.show_node(doc.bhvt.nodes.index(owner))
@@ -336,7 +336,7 @@ class FsmStructureTests(unittest.TestCase):
         item = group.child(owner.states.index(state))
         viewer._expand(item)
         target = next(item.child(i) for i in range(item.childCount()) if item.child(i).text(0) == 'mTransitions')
-        target_name = doc.bhvt.nodes[doc.references.state_target(state.mTransitions)].name
+        target_name = doc.bhvt.nodes[doc.references.state_target(state.mTransitions, state.mTransitionAttributes)].name
         self.assertIn(target_name, target.text(1))
         viewer._expand(target)
         self.assertGreater(target.childCount(), 1)

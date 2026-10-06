@@ -109,9 +109,9 @@ def state_target(args):
     target = doc.bhvt.nodes[target_index]
     if not 0 <= args.state < len(node.states):
         raise ValueError(f'State index out of range: {args.state}')
-    if doc.references.state_target(target.id_hash) != target_index:
-        raise ValueError('This target identity cannot be represented by a state hash')
-    return save_edits(doc, [(doc.bindings.get(node.states[args.state], 'mTransitions'), target.id_hash)])
+    state = node.states[args.state]
+    return save_edits(doc, [(doc.bindings.get(state, 'mTransitions'), target.id_hash),
+                           (doc.bindings.get(state, 'mTransitionAttributes'), target.ex_id)])
 
 
 def event_edit(args):
@@ -120,7 +120,7 @@ def event_edit(args):
     node = doc.bhvt.nodes[index]
     if args.incoming:
         selected = {(n, s) for n, other in enumerate(doc.bhvt.nodes) for s, state in enumerate(other.states)
-                    if state.mTransitions == node.id_hash}
+                    if (state.mTransitions, state.mTransitionAttributes) == (node.id_hash, node.ex_id)}
     else:
         positions = state_indexes(args.states)
         if any(position >= len(node.states) for position in positions):

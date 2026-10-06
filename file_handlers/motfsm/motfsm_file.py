@@ -41,7 +41,7 @@ class State:
     mTransitions: int = 0
     TransitionConditions: int = -1
     TransitionMaps: int = 0
-    mTransitionAttributes: int = 0
+    mTransitionAttributes: int = 0  # Target node extension ID; legacy field name.
     mStatesEx: int = 0
 
 

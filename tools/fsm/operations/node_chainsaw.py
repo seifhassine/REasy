@@ -310,6 +310,7 @@ def run(args):
                            tags=list(end_template.tags), is_branch=end_template.is_branch,
                            is_end=end_template.is_end, states=[], transitions=[], all_states=[],
                            reference_tree_index=end_template.reference_tree_index)
+        run_state.mTransitionAttributes = new_end.ex_id
         new_normal = None
         new_normal = None
         if normal_ids[order] is not None:
@@ -452,7 +453,7 @@ def run(args):
         for reference in node.actions:
             verified.references.action(reference.id_hash, reference.ex_id)
         for state in node.states:
-            verified.references.state_target(state.mTransitions)
+            verified.references.state_target(state.mTransitions, state.mTransitionAttributes)
             if state.TransitionConditions & 0xFFFFFFFF != 0xFFFFFFFF:
                 verified.references.object_instance('conditions', state.TransitionConditions & 0xFFFFFFFF)
         for transition in node.transitions:

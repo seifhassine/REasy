@@ -188,16 +188,33 @@ class NativeGraphWriterTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Invalid .* slot'):
             e.clone_object('conditions', 0x80000000)
 
-    def test_duplicate_state_hashes_resolve_in_their_owner_group(self):
+    def test_duplicate_state_hashes_resolve_by_exact_extension(self):
         e = self.doc.graph_editor()
         groups = [e.add_node(BHVTNode(id_hash=i, name=f'group{i}'), 0) for i in (10, 20)]
         states = [e.add_node(BHVTNode(id_hash=30, ex_id=i, name='state'), parent) for i, parent in enumerate(groups)]
         for index in states:
             e.connect_state(index, index, metadata=0)
         self.doc.build_validated()
-        self.assertEqual(self.doc.references.state_target(30, self.doc.bhvt.nodes[states[1]]), states[1])
-        with self.assertRaisesRegex(ValueError, 'Ambiguous'):
-            self.doc.references.state_target(30)
+        self.assertEqual(self.doc.references.state_target(30, 0), states[0])
+        self.assertEqual(self.doc.references.state_target(30, 1), states[1])
+        with self.assertRaisesRegex(IndexError, 'ex=2'):
+            self.doc.references.state_target(30, 2)
+
+    def test_state_target_extension_survives_write_and_wrong_extension_blocks_save(self):
+        e = self.doc.graph_editor()
+        source = e.add_node(BHVTNode(id_hash=10, name='source'), 0)
+        target = e.add_node(BHVTNode(id_hash=20, ex_id=9, name='target'), 0)
+        state = e.connect_state(source, target, metadata=999)
+        self.assertEqual(state.mTransitionAttributes, 9)
+        raw = self.doc.build_validated()
+        reopened = MotfsmFile(); reopened.set_rsz_type_info_path(self.doc._registry_path); reopened.read(raw)
+        saved = reopened.bhvt.nodes[source].states[0]
+        self.assertEqual(saved.mStatesEx, 999)
+        self.assertEqual(reopened.references.state_target(saved.mTransitions, saved.mTransitionAttributes), target)
+        self.assertEqual(reopened.build_validated(), raw)
+        reopened.edit_field(reopened.bindings.get(saved, 'mTransitionAttributes'), 0)
+        with self.assertRaisesRegex(ValueError, 'Unknown node identity.*ex=0'):
+            reopened.build_validated()
 
     def test_shared_userdata_survives_owned_graph_clone_and_instance_compaction(self):
         doc = fixture(self.folder.name, userdata=True)

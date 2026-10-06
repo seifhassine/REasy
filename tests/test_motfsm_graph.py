@@ -28,12 +28,13 @@ def graph_document():
     root.children = [ChildNode(10, 0, -1), ChildNode(20, 2, -1)]
     root.transitions = [Transition(mStartState=10)]
     first.children = [ChildNode(30, 0, -1)]
-    first.states = [State(mTransitions=20, TransitionConditions=3, mStatesEx=999)]
+    first.states = [State(mTransitions=20, TransitionConditions=3, mTransitionAttributes=2, mStatesEx=999)]
     second.states = [State(mTransitions=10)]
     second.all_states = [AllState(mAllState=30, mAllTransition=0x40000001)]
     leaf.states = [State(mTransitions=30)]
     doc = MotfsmFile()
     doc.bhvt = BHVT(0, {}, [root, first, second, leaf])
+    doc.transition_map_count = 0
     return doc
 
 
@@ -63,17 +64,32 @@ class GraphModelTests(unittest.TestCase):
         self.assertEqual(set(graph.columns(1, visible, edges, 'neighbors')), set(visible))
         self.assertEqual(doc.bhvt, before)
 
-    def test_unresolved_and_ambiguous_references_stay_visible(self):
+    def test_exact_extensions_resolve_and_missing_extensions_stay_visible(self):
         doc = graph_document()
         doc.bhvt.nodes[1].states.append(State(mTransitions=0xDEAD))
+        doc.bhvt.nodes[1].states.append(State(mTransitions=20, mTransitionAttributes=9))
         doc.bhvt.nodes.append(BHVTNode(id_hash=20, ex_id=3, name='different', parent=0))
         graph = MotfsmGraph(doc)
         broken = [edge for edge in graph.outgoing[1] if edge.error]
         self.assertEqual(len(broken), 2)
         self.assertTrue(all(edge.target is None for edge in broken))
-        self.assertIn('Ambiguous', broken[0].error)
+        self.assertEqual(doc.references.state_target(20, 2), 2)
+        self.assertEqual(doc.references.state_target(20, 3), 4)
+        self.assertIn('Unknown', broken[0].error)
         self.assertIn('Unknown', broken[1].error)
         self.assertIn(broken[1], graph.subgraph(1, 'neighbors')[1])
+
+    def test_unique_hash_with_wrong_extension_is_not_accepted(self):
+        doc = graph_document()
+        with self.assertRaisesRegex(IndexError, 'ex=0'):
+            doc.references.state_target(20, 0)
+
+    def test_state_creator_derives_extension_from_the_selected_target(self):
+        doc = graph_document()
+        state = doc.graph_editor().connect_state(1, 2, metadata=999)
+        self.assertEqual((state.mTransitions, state.mTransitionAttributes), (20, 2))
+        self.assertEqual(state.mStatesEx, 999)
+        self.assertEqual(doc.references.state_target(state.mTransitions, state.mTransitionAttributes), 2)
 
 
 class GraphInteractionTests(unittest.TestCase):

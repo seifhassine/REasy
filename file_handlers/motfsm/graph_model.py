@@ -44,7 +44,7 @@ class MotfsmGraph:
                            lambda child=child: document.references.node_index(child.id_hash, child.ex_id))
             for position, state in enumerate(node.states):
                 self._edge(index, 'state', position, state.TransitionConditions,
-                           lambda state=state, node=node: document.references.state_target(state.mTransitions, node))
+                           lambda state=state: document.references.state_target(state.mTransitions, state.mTransitionAttributes))
             for position, transition in enumerate(node.transitions):
                 self._edge(index, 'start', position, transition.mStartStateTransition,
                            lambda transition=transition: document.references.node_index(transition.mStartState, transition.mStartStateEx))

@@ -121,7 +121,7 @@ class MotfsmCorpusTests(unittest.TestCase):
         self.assertIsNotNone(doc.references.action(0x1683F002, 0))
         state = doc.bhvt.nodes[3].states[0]
         self.assertEqual(state.mStatesEx, 1)
-        self.assertEqual(doc.references.state_target(state.mTransitions), 1)
+        self.assertEqual(doc.references.state_target(state.mTransitions, state.mTransitionAttributes), 1)
 
     def test_all_native_references_resolve(self):
         for path in unique_files():
@@ -134,7 +134,7 @@ class MotfsmCorpusTests(unittest.TestCase):
                     node_refs.add((node.parent, node.parent_ex))
                     node_refs.update((child.id_hash, child.ex_id) for child in node.children)
                     node_refs.update((tr.mStartState, tr.mStartStateEx) for tr in node.transitions)
-                    state_refs.update(state.mTransitions for state in node.states)
+                    state_refs.update((state.mTransitions, state.mTransitionAttributes) for state in node.states)
                     action_refs.update((action.id_hash, action.ex_id) for action in node.actions)
                     object_refs['selectors'].update((node.selector_id, node.selector_caller_condition_id))
                     object_refs['selector_callers'].update(node.selector_callers)
@@ -148,9 +148,9 @@ class MotfsmCorpusTests(unittest.TestCase):
                 for id_hash, ex_id in node_refs:
                     if id_hash not in (0, 0xFFFFFFFF):
                         self.assertIsNotNone(doc.references.node_index(id_hash, ex_id))
-                for id_hash in state_refs:
+                for id_hash, ex_id in state_refs:
                     if id_hash not in (0, 0xFFFFFFFF):
-                        self.assertIsNotNone(doc.references.state_target(id_hash))
+                        self.assertIsNotNone(doc.references.state_target(id_hash, ex_id))
                 for id_hash, ex_id in action_refs:
                     if id_hash not in (0, 0xFFFFFFFF):
                         self.assertIsNotNone(doc.references.action(id_hash, ex_id))

@@ -90,7 +90,7 @@ def validate_graph(document):
             for raw in node.selector_callers:
                 document.references.object_instance('selector_callers', raw)
             for state in node.states:
-                document.references.state_target(state.mTransitions, node)
+                document.references.state_target(state.mTransitions, state.mTransitionAttributes)
                 condition(state.TransitionConditions)
                 events(state.mStates.values)
                 if tables:

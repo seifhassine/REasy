@@ -8,7 +8,6 @@ class References:
 
     def invalidate(self):
         self._nodes = None
-        self._node_hashes = None
         self._actions = None
 
     def node_index(self, id_hash, ex_id):
@@ -34,25 +33,8 @@ class References:
             raise IndexError(f"Unknown node identity: 0x{id_hash:08X}, ex={ex_id}")
         return self._nodes[key]
 
-    def state_target(self, id_hash, owner=None):
-        # Unique hashes can link outside the state group. Repeated hashes resolve
-        # among the owner's siblings; mStatesEx is not the target ex_id.
-        if id_hash in (0, 0xFFFFFFFF):
-            return None
-        if self._node_hashes is None:
-            self._node_hashes = {}
-            for index, node in enumerate(self.document.bhvt.nodes):
-                self._node_hashes.setdefault(node.id_hash, []).append(index)
-        matches = self._node_hashes.get(id_hash, [])
-        if owner is not None and len(matches) > 1:
-            matches = [i for i in matches if
-                       (self.document.bhvt.nodes[i].parent, self.document.bhvt.nodes[i].parent_ex)
-                       == (owner.parent, owner.parent_ex)]
-        if len(matches) > 1:
-            raise ValueError(f"Ambiguous state target hash: 0x{id_hash:08X}")
-        if not matches:
-            raise IndexError(f"Unknown state target hash: 0x{id_hash:08X}")
-        return matches[0]
+    def state_target(self, id_hash, ex_id):
+        return self.node_index(id_hash, ex_id)
 
     def object_instance(self, block_name, raw):
         if not isinstance(raw, int) or not -0x80000000 <= raw <= 0xFFFFFFFF:

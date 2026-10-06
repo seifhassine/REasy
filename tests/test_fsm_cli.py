@@ -204,7 +204,7 @@ class NativeCliTests(unittest.TestCase):
         event_choice = None
         for index, node in enumerate(doc.bhvt.nodes):
             for position, state in enumerate(node.states):
-                target = doc.references.state_target(state.mTransitions)
+                target = doc.references.state_target(state.mTransitions, state.mTransitionAttributes)
                 condition = doc.references.object_instance('conditions', state.TransitionConditions)
                 if target is not None and condition is not None:
                     if sum(s.mTransitions == state.mTransitions for s in node.states) == 1:

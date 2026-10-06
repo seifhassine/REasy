@@ -421,7 +421,7 @@ def run(args):
         for reference in node.actions:
             verified.references.action(reference.id_hash, reference.ex_id)
         for state in node.states:
-            verified.references.state_target(state.mTransitions)
+            verified.references.state_target(state.mTransitions, state.mTransitionAttributes)
             if state.TransitionConditions & 0xFFFFFFFF != 0xFFFFFFFF:
                 verified.references.object_instance('conditions', state.TransitionConditions & 0xFFFFFFFF)
         for state in node.all_states:

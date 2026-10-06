@@ -177,7 +177,7 @@ for n in verified.bhvt.nodes:
         verified.references.object_instance('conditions',child.condition_id)
     for a in n.actions: verified.references.action(a.id_hash,a.ex_id)
     for s in n.states:
-        verified.references.state_target(s.mTransitions)
+        verified.references.state_target(s.mTransitions, s.mTransitionAttributes)
         verified.references.object_instance('conditions',s.TransitionConditions)
 assert verified.rebuild() == output
 assert TARGET.read_bytes() == source

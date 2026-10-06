@@ -135,7 +135,7 @@ class GraphEditor:
         for i, other in enumerate(self.document.bhvt.nodes):
             if other is node:
                 continue
-            targets = [self.document.references.state_target(s.mTransitions, other) for s in other.states]
+            targets = [self.document.references.state_target(s.mTransitions, s.mTransitionAttributes) for s in other.states]
             targets += [self.document.references.node_index(t.mStartState, t.mStartStateEx) for t in other.transitions]
             targets += [self.document.references.node_index(s.mAllState, s.mAllStateEx) for s in other.all_states]
             if index in targets:
@@ -148,18 +148,17 @@ class GraphEditor:
         self._invalidate()
 
     def connect_state(self, index, target_index, *, condition=-1, transition_map=0,
-                      events=(), attributes=0, metadata=0):
+                      events=(), metadata=0):
         node, target = self.document.get_node_by_index(index), self.document.get_node_by_index(target_index)
         self._invalidate()
-        if self.document.references.state_target(target.id_hash, node) != target_index:
-            raise ValueError('State hash does not uniquely identify the requested target in this state group')
+        self.document.references.state_target(target.id_hash, target.ex_id)
         self.document.references.object_instance('conditions', condition)
         for raw in events:
             self.document.references.object_instance('transition_events', raw)
         from .transitions import TransitionTables
         if self.document.transition_map_count or transition_map:
             TransitionTables(self.document).resolve(transition_map)
-        state = State(IndexList(list(events)), target.id_hash, condition, transition_map, attributes, metadata)
+        state = State(IndexList(list(events)), target.id_hash, condition, transition_map, target.ex_id, metadata)
         node.states.append(state)
         return state
 

@@ -88,7 +88,7 @@ class MoveCliTests(unittest.TestCase):
         different = next(i for i, target in enumerate(self.fsm.bhvt.nodes)
                          if target.id_hash not in (0, 0xFFFFFFFF)
                          and all(s.mTransitions != target.id_hash for s in node.states)
-                         and self.fsm.references.state_target(target.id_hash) == i)
+                         and self.fsm.references.state_target(target.id_hash, target.ex_id) == i)
         with tempfile.TemporaryDirectory() as folder:
             output = Path(folder) / self.fsm_path.name
             self.invoke(['fsm', 'state-add', self.fsm_path, '-o', output, '--node', f'index:{index}',

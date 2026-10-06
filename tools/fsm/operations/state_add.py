@@ -65,7 +65,7 @@ def run(args):
     node = nodes[node_index(args.node)]
     target = nodes[node_index(args.target)]
     assert target.id_hash not in (0, 0xFFFFFFFF)
-    assert all(state.mTransitions != target.id_hash for state in node.states), \
+    assert all((state.mTransitions, state.mTransitionAttributes) != (target.id_hash, target.ex_id) for state in node.states), \
         f'{node.name} already derives to {target.name}'
 
 
@@ -83,8 +83,9 @@ def run(args):
     template_node = nodes[node_index(args.template_from)] if args.template_from else node
     template_state = args.template_state
     if template_state is None and args.template_target:
-        wanted = nodes[node_index(args.template_target)].id_hash
-        matches = [i for i, state in enumerate(template_node.states) if state.mTransitions == wanted]
+        wanted = nodes[node_index(args.template_target)]
+        matches = [i for i, state in enumerate(template_node.states)
+                   if (state.mTransitions, state.mTransitionAttributes) == (wanted.id_hash, wanted.ex_id)]
         if len(matches) != 1:
             raise SystemExit(f'{template_node.name} has {len(matches)} derivations to {args.template_target}')
         template_state = matches[0]
@@ -226,6 +227,7 @@ def run(args):
     new_state = copy.deepcopy(template)
     new_state.TransitionConditions = new_condition_raw
     new_state.mTransitions = target.id_hash
+    new_state.mTransitionAttributes = target.ex_id
     new_state.TransitionMaps = new_map_id
     new_state.mStates.values = new_event_objects
     node.states.insert(insertion, new_state)
@@ -290,7 +292,7 @@ def run(args):
         for reference in current.actions:
             verified.references.action(reference.id_hash, reference.ex_id)
         for state in current.states:
-            verified.references.state_target(state.mTransitions)
+            verified.references.state_target(state.mTransitions, state.mTransitionAttributes)
             if state.TransitionConditions & 0xFFFFFFFF != 0xFFFFFFFF:
                 verified.references.object_instance('conditions', state.TransitionConditions & 0xFFFFFFFF)
 
@@ -320,7 +322,7 @@ def run(args):
                                      f'{seen[state.TransitionMaps]} vs {(state.mTransitions, n.name, i)}')
             seen[state.TransitionMaps] = (state.mTransitions, n.name, i)
     assert clone_state.mStates.values == new_event_objects, 'transition events were not re-created'
-    assert clone_state.mTransitionAttributes == template.mTransitionAttributes
+    assert clone_state.mTransitionAttributes == target.ex_id
     assert clone_state.mStatesEx == template.mStatesEx
     verified_condition = verified.references.object_instance('conditions', clone_state.TransitionConditions & 0xFFFFFFFF)
     assert verified_condition is not None and verified_condition.class_name == template_condition.class_name
