@@ -1444,6 +1444,17 @@ class RszArrayClipboard:
                 
             return result
         
+        elif isinstance(field_data, StructData):
+            return {
+                "type": "StructData",
+                "orig_type": field_data.orig_type,
+                "values": [
+                    {name: RszArrayClipboard._serialize_field_with_mapping(
+                        value, id_mapping, nested_ids, external_refs, embedded_context
+                    ) for name, value in fields.items()}
+                    for fields in field_data.values
+                ],
+            }
         elif isinstance(field_data, ArrayData):
             result = {
                 "type": "ArrayData",
@@ -2025,6 +2036,14 @@ class RszArrayClipboard:
             else:
                 return GameObjectRefData(guid_str, None, orig_type)
             
+        elif field_type == "StructData":
+            values = [
+                {name: RszArrayClipboard._deserialize_field_with_relative_mapping(
+                    value, id_mapping, guid_mapping, randomize_guids
+                ) for name, value in fields.items()}
+                for fields in field_data.get("values", [])
+            ]
+            return StructData(values, field_data.get("orig_type", ""))
         elif field_type == "ArrayData":
             values = field_data.get("values", [])
             orig_type = field_data.get("orig_type", "")
@@ -2217,7 +2236,12 @@ class RszArrayClipboard:
             return LineSegmentData(start, end, orig_type)
         
         elif element_type == "StructData":
-            values = element_data.get("values", [])
+            values = [
+                {name: RszArrayClipboard._deserialize_element(
+                    value, None, guid_mapping, randomize_guids, on_resource_deserialized
+                ) for name, value in fields.items()}
+                for fields in element_data.get("values", [])
+            ]
             return StructData(values, orig_type)
             
         elif element_type == "RawBytesData":
