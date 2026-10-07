@@ -46553,6 +46553,7 @@ natives/stm/_chainsaw/appsystem/character/ch2common/motion/fsm/ch2commonarm.motf
 natives/stm/_chainsaw/appsystem/character/ch2common/motion/fsm/ch2commonjack.motfsm2.43
 natives/stm/_chainsaw/appsystem/character/ch2common/motion/fsm/ch2commonupperbodyadd.motfsm2.43
 natives/stm/_chainsaw/appsystem/character/ch2common/motion/list/cha_general.motlist.663
+natives/stm/_chainsaw/appsystem/character/ch2common/userdata/animation/ch2commonanimationcontroluserdata.user.2
 natives/stm/_chainsaw/appsystem/character/ch2common/userdata/animation/ch2commoniklookat2unituserdata.user.2
 natives/stm/_chainsaw/appsystem/character/ch2common/userdata/ch2commonbattleparam.user.2
 natives/stm/_chainsaw/appsystem/character/ch2common/userdata/ch2commonintelligentactionpropertyuserdata.user.2
@@ -56409,6 +56410,7 @@ natives/stm/_chainsaw/character/ch/chd5/chd501/10/chd501_10.mdf2.32
 natives/stm/_chainsaw/character/ch/chd5/chd501/10/chd501_10.mesh.221108797
 natives/stm/_chainsaw/character/ch/chd5/chd5z1/joint/chd5z1.skeleton.5
 natives/stm/_chainsaw/character/ch/chd6/chd600.fbxskel.5
+natives/stm/_chainsaw/character/ch/chd6/chd600/00/chd600_00.mesh.221108797
 natives/stm/_chainsaw/character/ch/chd6/chd600/00/chd600_00_chain_albd.tex.143221013
 natives/stm/_chainsaw/character/ch/chd6/chd600/00/chd600_00_chain_atoc.tex.143221013
 natives/stm/_chainsaw/character/ch/chd6/chd600/00/chd600_00_chain_nrmr.tex.143221013
@@ -78731,6 +78733,9 @@ natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_00.mesh.2211087
 natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_00_e.mcol.20021
 natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_00_mat.mdf2.32
 natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_00_t.mcol.20021
+natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_01.mesh.221108797
+natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_01_mat.mdf2.32
+natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_534/sm80_534_02_e.mcol.20021
 natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_537/sm80_537_00.mesh.221108797
 natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_537/sm80_537_00_e.mcol.20021
 natives/stm/_chainsaw/environment/sm/sm8x/sm80/sm80_537/sm80_537_00_mat.mdf2.32
@@ -110395,6 +110400,7 @@ natives/stm/_chainsaw/postprocess/posteffect/loc22/colorcube/st22_923_hall_ver10
 natives/stm/_chainsaw/postprocess/posteffect/loc22/colorcube/st22_924_barvator_ver6.tex.143221013
 natives/stm/_chainsaw/postprocess/posteffect/loc40/colorcube/c-6720-log_lut.tex.143221013
 natives/stm/_chainsaw/postprocess/posteffect/loc43/colorcube/c-6730-log_c-8430_20_lut.tex.143221013
+natives/stm/_chainsaw/postprocess/posteffect/loc43/userdata/loc43_globalvolumetricfog_chp2_1.user.2
 natives/stm/_chainsaw/postprocess/posteffect/loc43/userdata/loc43_tonemapping_chp2_1.user.2
 natives/stm/_chainsaw/postprocess/posteffect/loc43/userdata/loc43_volumetricfog_chp2_1.user.2
 natives/stm/_chainsaw/postprocess/posteffect/loc45/userdata/loc45_colorcorrect_chp1_3.user.2

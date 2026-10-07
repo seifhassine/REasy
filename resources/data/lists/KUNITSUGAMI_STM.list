@@ -12815,6 +12815,7 @@ natives/stm/environment/st/st31/ground/ground.scn.21
 natives/stm/environment/st/st31/ground/texturelist/developloc31ground_p0p0.gtl.1759051791
 natives/stm/environment/st/st31/st31_001/st31_001.mesh.240306278
 natives/stm/environment/st/st31/st31_001/st31_001.sdftex.1759051780
+natives/stm/environment/st/st31/st31_001/st31_001_e.mcol.24021
 natives/stm/environment/st/st31/st31_001/st31_001_fol_bush_edit.fol.230913255
 natives/stm/environment/st/st31/st31_001/st31_001_fol_bush_edit_effectdefault.mcol.24021
 natives/stm/environment/st/st31/st31_001/st31_001_fol_bush_edit_terraincamerapass.mcol.24021
@@ -12875,9 +12876,12 @@ natives/stm/environment/st/st34/st34_000/st34_000_00_t.mcol.24021
 natives/stm/environment/st/st34/st34_000/st34_000_fol_bush_edit.fol.230913255
 natives/stm/environment/st/st34/st34_000/st34_000_fol_bush_edit_effectdefault.mcol.24021
 natives/stm/environment/st/st34/st34_000/st34_000_fol_bush_edit_terraincamerapass.mcol.24021
+natives/stm/environment/st/st34/st34_000/st34_000_mat.mdf2.40
 natives/stm/environment/st/st34/st34_002/st34_002.mesh.240306278
 natives/stm/environment/st/st34/st34_002/st34_002.sdftex.1759051780
 natives/stm/environment/st/st34/st34_002/st34_002_00_t.mcol.24021
+natives/stm/environment/st/st34/st34_002/st34_002_mat.mdf2.40
+natives/stm/environment/st/st34/st34_002/st34_002_t.mcol.24021
 natives/stm/environment/st/st34/st34_003/st34_003.mesh.240306278
 natives/stm/environment/st/st34/st34_003/st34_003.sdftex.1759051780
 natives/stm/environment/st/st34/st34_003/st34_003_00.mesh.240306278
@@ -12886,6 +12890,9 @@ natives/stm/environment/st/st34/st34_003/st34_003_00_c.mcol.24021
 natives/stm/environment/st/st34/st34_003/st34_003_00_e.mcol.24021
 natives/stm/environment/st/st34/st34_003/st34_003_00_mat.mdf2.40
 natives/stm/environment/st/st34/st34_003/st34_003_00_t.mcol.24021
+natives/stm/environment/st/st34/st34_003/st34_003_e.mcol.24021
+natives/stm/environment/st/st34/st34_003/st34_003_mat.mdf2.40
+natives/stm/environment/st/st34/st34_003/st34_003_t.mcol.24021
 natives/stm/environment/st/st35/foliagearea00.fol.230913255
 natives/stm/environment/st/st35/foliagearea01.fol.230913255
 natives/stm/environment/st/st35/foliagearea02.fol.230913255
@@ -13117,6 +13124,7 @@ natives/stm/environment/st/st88/st88_001/st88_001_00_t.mcol.24021
 natives/stm/environment/st/st89/st89_001/st89_001_00.mesh.240306278
 natives/stm/environment/st/st89/st89_001/st89_001_00.sdftex.1759051780
 natives/stm/environment/st/st89/st89_001/st89_001_00_mat.mdf2.40
+natives/stm/environment/st/st89/st89_001/st89_001_00_t.mcol.24021
 natives/stm/environment/texture/sm01_004_a_albd.tex.231106777
 natives/stm/environment/texture/sm01_004_a_nrmr.tex.231106777
 natives/stm/environment/texture/sm02_017_a_albd.tex.231106777
@@ -22006,7 +22014,10 @@ natives/stm/streaming/environment/st/st31/st31_001/st31_001.mesh.240306278
 natives/stm/streaming/environment/st/st31/st31_002/st31_002.mesh.240306278
 natives/stm/streaming/environment/st/st32/st32_000/st32_000_00.mesh.240306278
 natives/stm/streaming/environment/st/st33/st33_001/st33_001_00.mesh.240306278
+natives/stm/streaming/environment/st/st34/st34_000/st34_000.mesh.240306278
 natives/stm/streaming/environment/st/st34/st34_000/st34_000_00.mesh.240306278
+natives/stm/streaming/environment/st/st34/st34_002/st34_002.mesh.240306278
+natives/stm/streaming/environment/st/st34/st34_003/st34_003.mesh.240306278
 natives/stm/streaming/environment/st/st34/st34_003/st34_003_00.mesh.240306278
 natives/stm/streaming/environment/st/st35/st35_000/st35_000.mesh.240306278
 natives/stm/streaming/environment/st/st36/st36_001/st36_001.mesh.240306278

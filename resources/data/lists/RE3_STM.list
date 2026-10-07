@@ -1104,20 +1104,6 @@ natives/stm/escape/character/player/common/animation/list/ge_tree.motlist.99
 natives/stm/escape/character/player/common/animation/list/hld_tree.motlist.99
 natives/stm/escape/character/player/common/animation/list/lcm_tree.motlist.99
 natives/stm/escape/character/player/common/animation/list/spt_tree.motlist.99
-natives/stm/escape/character/player/common/behaviortree/common/npc_common_thk.bhvt.34
-natives/stm/escape/character/player/common/behaviortree/userver/npcbtvariableshub.uvar.2
-natives/stm/escape/character/player/common/joint/female_joint.fbxskel.3
-natives/stm/escape/character/player/common/joint/male_joint.fbxskel.3
-natives/stm/escape/character/player/common/joint/male_joint_8030.fbxskel.3
-natives/stm/escape/character/player/common/joint/pl_common.jmap.11
-natives/stm/escape/character/player/common/joint/pl_common_8030.jmap.11
-natives/stm/escape/character/player/common/joint/pl_dummy_joint.jcns.12
-natives/stm/escape/character/player/common/joint/pl_expression.jmap.11
-natives/stm/escape/character/player/common/joint/pl_expression_5000.jmap.11
-natives/stm/escape/character/player/common/joint/pl_male_dummy_joint.jcns.12
-natives/stm/escape/character/player/pl0000/animation/bank/barehand.motbank.3
-natives/stm/escape/character/player/pl0000/animation/bank/wp0200.motbank.3
-natives/stm/escape/character/player/pl0000/animation/bank/wp0300.motbank.3
 natives/stm/escape/character/player/common/behaviortree/common/act/npc_common_act_climbdown.bhvt.34
 natives/stm/escape/character/player/common/behaviortree/common/act/npc_common_act_climbup.bhvt.34
 natives/stm/escape/character/player/common/behaviortree/common/act/npc_common_act_passthrough.bhvt.34
@@ -7636,6 +7622,7 @@ natives/stm/escape/leveldesign/fsm/opening1/scenario/ceilingcrack.fsmv2.34
 natives/stm/escape/leveldesign/fsm/opening1/scenario/coughing_001.fsmv2.34
 natives/stm/escape/leveldesign/fsm/opening1/scenario/deadendcontrol.fsmv2.34
 natives/stm/escape/leveldesign/fsm/opening1/scenario/dirty.fsmv2.34
+natives/stm/escape/leveldesign/fsm/opening1/scenario/message001.fsmv2.34
 natives/stm/escape/leveldesign/fsm/opening1/scenario/message002.fsmv2.34
 natives/stm/escape/leveldesign/fsm/opening1/scenario/message003.fsmv2.34
 natives/stm/escape/leveldesign/fsm/opening1/scenario/message004.fsmv2.34
@@ -12989,6 +12976,7 @@ natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/animati
 natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_00ce.mcol.9018
 natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_00ms.mesh.1902042334
 natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_00ms_mat.mdf2.13
+natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_01ce.mcol.9018
 natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_01md.mesh.1902042334
 natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_01md_mat.mdf2.13
 natives/stm/escape/setmodel/sm4x_gimmick/sm42/sm42_519_es_metalbridge01b/sm42_519_es_metalbridge01b_02ce.mcol.9018
@@ -22133,6 +22121,7 @@ natives/stm/escape/sound/wwise/wp_bullet_material_hit.bnk.2.stm
 natives/stm/escape/sound/wwise/wp_mtr_cartridge_brass.bnk.2.stm
 natives/stm/escape/sound/wwise/wp_mtr_cartridge_plastic.bnk.2.stm
 natives/stm/escape/sound/wwise/wwiseids.wid.2
+natives/stm/escape/sound/wwisefreearealist.wfa.2
 natives/stm/escape/sound/wwisememorysettings.wms.5
 natives/stm/escape/sound/wwiseplugins.wpi.3
 natives/stm/escape/ui/bg/plane.mdf2.13
@@ -29759,6 +29748,7 @@ natives/stm/re_engine_library/vfx_library/decal/blood_bdc/decal_capcom_blood_bdc
 natives/stm/re_engine_library/vfx_library/decal/marksystem/decal_capcom_blood_0000.pfb.17
 natives/stm/re_engine_library/vfx_library/decal/marksystem/decal_capcom_burnt_0002.pfb.17
 natives/stm/re_engine_library/vfx_library/effecteditor/efd_explosion/efd_capcom_explosion_00_l_0000.efx.2228526
+natives/stm/re_engine_library/vfx_library/effecteditor/efd_explosion/efd_capcom_explosion_00_m_0000_0.efx.2228526
 natives/stm/re_engine_library/vfx_library/effecteditor/efd_explosion/efd_capcom_explosion_00_m_0000_1.efx.2228526
 natives/stm/re_engine_library/vfx_library/effecteditor/efd_explosion/efd_capcom_explosion_00_m_0000_2.efx.2228526
 natives/stm/re_engine_library/vfx_library/lensflare/lensflareasset/lensflare_capcom_asset_0002.lfa.4
@@ -40244,6 +40234,8 @@ natives/stm/systems/develop/shadereditor/sphere.mesh.1902042334
 natives/stm/systems/develop/shape.sdf.1905100741
 natives/stm/systems/dynamics/default.def.5
 natives/stm/systems/effect/chijiiwa_pat128_msk1.tex.190820018
+natives/stm/systems/effect/chijiiwa_pat256_msk1.tex.190820018
+natives/stm/systems/effect/chijiiwa_pat512_msk1.tex.190820018
 natives/stm/systems/effect/defaultparticlerefract.mmtr.1905100741
 natives/stm/systems/effect/defaultprimitivemastermaterial.mmtr.1905100741
 natives/stm/systems/effect/defaultprimitivemesh.mmtr.1905100741
@@ -40392,4 +40384,3 @@ natives/stm/vfx/mesh/mesh_stage/mesh_wastewater/mesh_0002_rpd_st3_635_shallowwat
 natives/stm/vfx/mesh/mesh_stage/mesh_wastewater/mesh_0002_rpd_st3_635_shallowwater_0000/mesh_0002_rpd_st3_634_shallowwater_0000_03_00_msk1.tex.190820018
 natives/stm/vfx/mesh/mesh_stage/mesh_wastewater/mesh_0002_rpd_st3_635_shallowwater_0000/mesh_0002_rpd_st3_634_shallowwater_0000_03_01_msk1.tex.190820018
 natives/stm/vfx/mesh_chain/chain_common/chain_0002_common_liquid_0000/chain_0002_common_liquid_0000_00.mdf2.13
-natives/stm/escape/sound/wwisefreearealist.wfa.2
