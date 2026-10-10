@@ -21114,6 +21114,9 @@ natives/stm/mastermaterial/master/tiling.mmtr.220128762
 natives/stm/mastermaterial/master/weapon_default.mmtr.220128762
 natives/stm/mastermaterial/master/weapon_emissive.mmtr.220128762
 natives/stm/message/activity_mes.msg.17
+natives/stm/message/ambassader_gamescom.msg.17
+natives/stm/message/ambassador_mes.msg.17
+natives/stm/message/ambassador_tu_mes.msg.17
 natives/stm/message/ch00_scenario_mes.msg.17
 natives/stm/message/ch01_scenario_mes.msg.17
 natives/stm/message/ch03_scenario_mes.msg.17
