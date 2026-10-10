@@ -233,6 +233,8 @@ def main():
                         help="Force patching even when field counts differ (requires --crc)")
     parser.add_argument("--only-versioned-source-fields", action="store_true",
                         help="Only patch types whose source field names are exclusively v0, v1, v2, ...")
+    parser.add_argument("--no-prune", action="store_true",
+                        help="Disable pruning of patch template file")
 
     args = parser.parse_args()
 
@@ -274,9 +276,12 @@ def main():
         print(f"Pruning {patcher.deleted_empty_field_types} types with empty fields from patch file...")
 
     if need_prune:
-        if not patcher.save_pruned_patch():
-            sys.exit(1)
-        print("Patch file updated.")
+        if not args.no_prune:
+            if not patcher.save_pruned_patch():
+                sys.exit(1)
+            print("Patch file updated.")
+        else:
+            print("Patch file pruning skipped.")
 
     summary = patcher.get_summary()
     print("\nPatching complete!")
