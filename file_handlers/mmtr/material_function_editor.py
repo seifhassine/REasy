@@ -391,7 +391,7 @@ class MaterialFunctionDialog(QDialog):
             asset = self.editor.asset()
             if self.validate_replacement is not None:
                 self.validate_replacement(asset)
-        except (ShaderGraphError, ValueError) as exc:
+        except ValueError as exc:
             self.editor._show_message(str(exc))
             return
         self.result_asset = asset
@@ -451,7 +451,7 @@ class MaterialBranchDialog(QDialog):
                     other[identity].properties = deepcopy(node).properties
                 else:
                     target.project.graph.add_node(node.kind, x=node.x, y=node.y, properties=deepcopy(node).properties)
-            source._defaults = {identity: None for identity in ports}
+            source._defaults = dict.fromkeys(ports)
             target._defaults = dict(source._defaults)
             target.scene.rebuild()
             target._populate_palette()
@@ -465,7 +465,7 @@ class MaterialBranchDialog(QDialog):
             properties = branch_properties(*(editor.asset() for editor in self.editors), name=self.branch_name)
             if self.validate_replacement:
                 self.validate_replacement(properties)
-        except (ShaderGraphError, ValueError) as exc:
+        except ValueError as exc:
             self.editors[self.tabs.currentIndex()]._show_message(str(exc))
             return
         self.result_properties = properties

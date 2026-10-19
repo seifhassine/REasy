@@ -333,7 +333,7 @@ def _container(profile: TexCookProfile, source: TextureSource, flags_word: int) 
         for level in range(source.mip_count):
             width, height = source.dimensions(level)
             slices = source.slices(level)
-            natural_size, natural_pitch, row_step = natural_mip_layout(
+            _natural_size, natural_pitch, row_step = natural_mip_layout(
                 source.dxgi_format, width, height
             )
             pitch = source.row_pitches[image * source.mip_count + level]

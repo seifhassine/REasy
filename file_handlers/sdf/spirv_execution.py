@@ -58,7 +58,7 @@ def _patch_control_points(native):
     for item in native.inputs:
         if item.built_in is not None:
             continue
-        head, separator, tail = item.value_type.partition('[')
+        _head, separator, tail = item.value_type.partition('[')
         if not separator:
             continue
         lengths.add(int(tail.split(']', 1)[0]))

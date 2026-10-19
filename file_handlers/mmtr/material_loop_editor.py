@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QScrollArea, QTabWidget, QVBoxLayout, QWidget
-from file_handlers.sdf.shader_graph import ShaderGraphError
 from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES
 from .material_function_editor import apply_buttons, function_canvas
 from .material_loop import loop_body, loop_properties
@@ -72,7 +71,7 @@ class MaterialLoopDialog(QDialog):
             properties = loop_properties(self.editor.asset(), list(self.states.items()), self.continuation)
             if self.validate_replacement:
                 self.validate_replacement(properties)
-        except (ShaderGraphError, ValueError) as exc:
+        except ValueError as exc:
             self.editor._show_message(str(exc))
             self.tabs.setCurrentIndex(0)
             return

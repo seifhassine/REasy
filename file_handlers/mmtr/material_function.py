@@ -89,7 +89,7 @@ class MaterialFunctionPin:
                 )
             try:
                 shader_value_literal(self.value_type, self.default)
-            except (ShaderGraphError, ValueError, OverflowError) as exc:
+            except (ValueError, OverflowError) as exc:
                 raise MaterialFunctionError(f'{self.name} has an invalid default value: {exc}') from exc
             scalar = float if is_float_type(self.value_type) else bool if self.value_type.startswith('bool') else int
             values = tuple(scalar(value) for value in self.default)
@@ -558,7 +558,7 @@ def _validate_material_function(asset: MaterialFunctionAsset) -> tuple[ShaderGra
                 )
             )
         adjacency[source.node_id].add(target.node_id)
-    indegree = {node_id: 0 for node_id in adjacency}
+    indegree = dict.fromkeys(adjacency, 0)
     for targets in adjacency.values():
         for target in targets:
             indegree[target] += 1

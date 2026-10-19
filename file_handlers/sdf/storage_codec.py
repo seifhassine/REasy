@@ -27,7 +27,7 @@ def unpack_ir_storage(text: object, max_bytes: int, label: str) -> str:
         packed = base64.b64decode(encoded, altchars=b"-_", validate=True)
         decompressor = zlib.decompressobj()
         raw = decompressor.decompress(packed, max_bytes + 1)
-    except (UnicodeEncodeError, ValueError, zlib.error) as exc:
+    except (ValueError, zlib.error) as exc:
         raise ShaderGraphError(f"{label} are invalid.") from exc
     if (
         len(raw) > max_bytes

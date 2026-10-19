@@ -102,7 +102,7 @@ class DeferredPasses:
 
     def entry(self, stage: str, resource) -> tuple | None:
         role = self.catalog.bound[stage].get(resource.name)
-        return None if role is None else self._entry(role, resource)
+        return None if role is None else self._entry(role)
 
     def bound(self, stage: str, name: str) -> int | None:
         role = self.catalog.bound[stage].get(name)
@@ -111,7 +111,7 @@ class DeferredPasses:
     def arguments(self, transform: int) -> tuple[int, int]:
         return self.held[self.catalog.arguments_role], transform * self.catalog.arguments
 
-    def _entry(self, role: str, resource) -> tuple:
+    def _entry(self, role: str) -> tuple:
         held, form = self.held[role], self.catalog.roles[role].format
         if form is not None:
             return 0, form, held
@@ -129,7 +129,7 @@ class DeferredPasses:
                 if resource.input_type == "structured-buffer":
                     entry = (0, 0, contract.structured_buffer(resource.name).byte_size, self.held[role])
                 else:
-                    entry = self._entry(role, resource)
+                    entry = self._entry(role)
                 tables.append((kind, *place, dimension, visibility, (entry,)))
                 continue
             found = engine(contract, resource)

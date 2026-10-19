@@ -149,7 +149,7 @@ def _read(kind, payload):
 
 
 def _validate_snapshot(kind, root):
-    from .material_function import MAX_FUNCTION_DEPTH, MaterialFunctionError, _parse_function_snapshot
+    from .material_function import MAX_FUNCTION_DEPTH, _parse_function_snapshot
     from .material_branch import _parse_branch
     from .material_loop import _parse_loop
     parsers = {'branch': _parse_branch, 'repeat': _parse_loop, 'material_function': _parse_function_snapshot}
@@ -188,7 +188,7 @@ def _validate_snapshot(kind, root):
                         children[key].append(_key(node['kind'], node['properties']))
                         pending.append((node['kind'], node['properties'], depth + 1, False))
         return _Snapshot(validated[_key(kind, root)], validated, heights, root)
-    except (ShaderGraphError, MaterialFunctionError):
+    except ShaderGraphError:
         raise
     except (KeyError, TypeError, ValueError) as exc:
         raise ShaderGraphError(f'Invalid embedded material region: {exc}') from exc

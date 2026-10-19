@@ -37,16 +37,9 @@ class BinaryHandler:
             yield
         finally:
             self.position = saved
-            
-    @contextmanager
-    def seek_jump_back(self, pos: int):
-        saved = self.position
-        try:
-            self.seek(pos)
-            yield
-        finally:
-            self.position = saved
-    
+
+    seek_jump_back = seek_temp
+
     def skip(self, count: int):
         self.position += count
         

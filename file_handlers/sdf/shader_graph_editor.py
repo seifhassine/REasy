@@ -134,7 +134,7 @@ def _wide_integer_control(value_type, value, update):
         try:
             number = int(control.text(), 10)
             shader_value_literal(value_type.rstrip('234'), [number])
-        except (ValueError, ShaderGraphError):
+        except ValueError:
             control.setStyleSheet('QLineEdit { border: 1px solid #e07070; }')
             return
         control.setStyleSheet('')
@@ -2193,7 +2193,6 @@ class SdfShaderGraphEditor(QWidget):
         return target.programs[program_index]
 
     def _replacement_issues(self, candidate, bytecode, targets):
-        from .dxc import DxcError
         from file_handlers.mmtr.material_implementation import (
             implementation_contract, implementation_execution, _check_interpolation)
         from file_handlers.mmtr.surface_meaning import shader_bytes
@@ -2214,7 +2213,7 @@ class SdfShaderGraphEditor(QWidget):
                 _check_interpolation(reference, candidate)
                 if implementation_execution(native) != execution:
                     raise ShaderGraphError('The replacement changes native early-depth execution.')
-            except (ShaderGraphError, ValueError, DxcError) as exc:
+            except ValueError as exc:
                 compatible = False
                 issues.append(('error', scope, str(exc)))
         return issues, compatible
@@ -2287,7 +2286,7 @@ class SdfShaderGraphEditor(QWidget):
                     reflected = enrich_dxil_shader(reflected, result.bytecode)
                 candidate = implementation_contract(ShaderContract.from_shader(reflected), result.bytecode)
             all_issues, compatible = self._replacement_issues(candidate, result.bytecode, targets)
-        except (ShaderGraphError, ValueError, DxcError) as exc:
+        except ValueError as exc:
             self._show_compile_failure(str(exc))
             return
         if result.diagnostics:

@@ -454,7 +454,7 @@ class MmtrMaterialEditor(QWidget):
         if self._coverage.uncovered_keys:
             try:
                 material_program_contract(document, *self._coverage.uncovered_keys[0])
-            except (MaterialProjectError, ShaderGraphError, ValueError) as exc:
+            except ValueError as exc:
                 self._contract_error = str(exc)
         if keys:
             target_index, program_index, role = keys[0]
@@ -469,7 +469,7 @@ class MmtrMaterialEditor(QWidget):
                         program_index,
                         role,
                     )
-                except (MaterialProjectError, ShaderGraphError, ValueError) as exc:
+                except ValueError as exc:
                     self._contract_error = str(exc)
 
     def _unavailable_interface_note(self) -> str:
@@ -2081,7 +2081,7 @@ class MmtrMaterialEditor(QWidget):
                 y=center.y(),
                 properties=material_function_node_properties(asset),
             )
-        except (MaterialFunctionError, ShaderGraphError) as exc:
+        except ShaderGraphError as exc:
             QMessageBox.critical(self, self.tr("Function import failed"), str(exc))
             return
         self._select_new_node(node)

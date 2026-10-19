@@ -127,7 +127,7 @@ def named_texture_reads(splits: tuple[ChannelSplit, ...], names: dict[int, str])
     result = []
     for split in splits:
         channel = split.channel
-        name = names.get(int(channel.semantic[1:])) if channel.scope == "read" and channel.semantic[:1] == "@" else None
+        name = names.get(int(channel.semantic[1:])) if channel.scope == "read" and channel.semantic.startswith("@") else None
         if name is not None:
             split = replace(split, channel=replace(channel, semantic=name),
                             stores=tuple(replace(store, semantic=name) for store in split.stores))
@@ -203,7 +203,7 @@ def channel_label(channel: SurfaceChannel) -> str:
     stage = "" if channel.stage == "pixel" else f"{channel.stage.title()} "
     lanes = "".join("xyzw"[lane] for lane in channel.lanes)
     if channel.scope == "read":
-        texture = (f"Material texture at byte {channel.semantic[1:]}" if channel.semantic[:1] == "@"
+        texture = (f"Material texture at byte {channel.semantic[1:]}" if channel.semantic.startswith("@")
                    else channel.semantic)
         return f"{stage}{texture} as read"
     if channel.scope == "buffer":

@@ -98,7 +98,7 @@ def stage_declarations(contract):
         raise ShaderGraphError('Geometry behavior needs its native primitive declarations.')
     execution.validate_stage('geometry')
     streams = execution.output_streams
-    if not set(field.stream for field in contract.outputs) <= set(streams):
+    if not {field.stream for field in contract.outputs} <= set(streams):
         raise ShaderGraphError('Geometry vertex interfaces disagree with declared output streams.')
     declarations = []
     for stream in streams:

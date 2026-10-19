@@ -66,9 +66,7 @@ def native_input_usage(document):
     if "usage" in cache:
         return cache["usage"]
 
-    from file_handlers.sdf.dxc import DxcError, disassemble_dxil, enrich_dxil_shader
-    from file_handlers.sdf.shader_graph import ShaderGraphError
-    from file_handlers.sdf.spirv import SpirvError
+    from file_handlers.sdf.dxc import disassemble_dxil, enrich_dxil_shader
     from .profiles.re_engine_bindless_material import material_input_accesses
 
     profile = document.profile.shader_graph_profile
@@ -114,7 +112,7 @@ def native_input_usage(document):
                         if any(r.name in arena_names for r in contract.resources):
                             bindless = True
                             parameters_complete = textures_complete = False
-                    except (SpirvError, ShaderGraphError, ValueError):
+                    except ValueError:
                         parameters_complete = textures_complete = False
                     continue
                 if shader.binary_format != "dxbc-container" or shader.reflection is None:
@@ -149,7 +147,7 @@ def native_input_usage(document):
                     ranges.update((offset, offset + 4) for offset in words)
                     indirect.update((access.byte_offset - prefix, access.dimension)
                                     for access in texture_accesses if access.byte_offset >= prefix)
-                except (DxcError, ShaderGraphError, ValueError):
+                except ValueError:
                     parameters_complete = textures_complete = False
     inputs = MaterialInputUsage(tuple(sorted(ranges)), frozenset(textures),
                                 parameters_complete and bool(seen), textures_complete and bool(seen))

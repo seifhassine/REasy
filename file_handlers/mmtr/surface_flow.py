@@ -98,7 +98,7 @@ def parallel_signatures(flow: NativeFlow) -> list[int]:
             result[component[0]] = interned.setdefault(key(component[0], result.__getitem__), len(interned))
             continue
         members = set(component)
-        colours = {index: 0 for index in component}
+        colours = dict.fromkeys(component, 0)
         while True:
             local: dict[tuple, int] = {}
             updated = {index: local.setdefault(key(index, lambda item: (
@@ -253,7 +253,7 @@ def recovered_surface_flow(ir_kind: str, ir, contract) -> NativeFlow:
 
 
 def _tail_shape(flow: NativeFlow, frontier, roots) -> tuple:
-    shapes: dict[int, int] = {item: 0 for item in frontier}
+    shapes: dict[int, int] = dict.fromkeys(frontier, 0)
     interned: dict[tuple, int] = {("input",): 0}
     pending = list(roots)
     while pending:

@@ -60,7 +60,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
     buffers = {d.variable_id: contract.buffer(d.name) for d in native.descriptors if d.descriptor_kind == 'constant-buffer'}
     from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
     patch_ids = patch_interface_ids(native, module.decorations)
-    input_rows, output_rows, undeclared_ids = spirv_interface_rows(native, contract, patch_ids)
+    input_rows, output_rows, _undeclared_ids = spirv_interface_rows(native, contract, patch_ids)
     interface_rows = {**input_rows, **output_rows}
     interfaces = {identifier: rows[0] for identifier, rows in interface_rows.items()}
     output_ids = {item.variable_id for item in native.outputs if item.variable_id not in patch_ids}

@@ -560,7 +560,7 @@ class ShaderContract:
                         else binding.sample_count
                     )
                     byte_size = max(0, next_offset - member.byte_offset)
-                    declaration, graph_type, _array_length, _matrix = (
+                    _declaration, graph_type, _array_length, _matrix = (
                         _dxbc_variable_declaration(member.variable_type)
                     )
                     expected_width = _type_width(graph_type or "")
@@ -1959,7 +1959,7 @@ def _validate_graph(graph: ShaderGraph, contract: ShaderContract) -> tuple[Shade
         adjacency[source.node_id].add(target.node_id)
         reverse_adjacency[target.node_id].add(source.node_id)
 
-    indegree = {identity: 0 for identity in adjacency}
+    indegree = dict.fromkeys(adjacency, 0)
     for targets in adjacency.values():
         for target in targets:
             indegree[target] += 1

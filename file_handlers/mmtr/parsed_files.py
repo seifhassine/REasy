@@ -5,11 +5,8 @@ from collections.abc import Callable, Hashable
 from dataclasses import dataclass
 import hashlib
 import threading
-from typing import TypeVar
 
 from settings import DEFAULT_SETTINGS
-
-T = TypeVar("T")
 
 # A parsed file takes about 3x its size in memory (measured 3.1 to 3.3x on RE4 and RE9 masters and light-pass files).
 COST_PER_BYTE = 3
@@ -34,7 +31,7 @@ class _ParsedFiles:
             self._budget = budget
             self._trim()
 
-    def take(self, key: tuple, cost: int, parse: Callable[[], T]) -> T:
+    def take[T](self, key: tuple, cost: int, parse: Callable[[], T]) -> T:
         """Each call must be matched by a ``give_back`` of the key."""
         while True:
             with self._lock:
@@ -92,7 +89,7 @@ class Lease:
         self._found: dict[tuple, object] = {}
         self._keys: list[tuple] = []
 
-    def parsed(self, path: str, data: bytes, parse: Callable[..., T], *arguments: Hashable) -> T:
+    def parsed[T](self, path: str, data: bytes, parse: Callable[..., T], *arguments: Hashable) -> T:
         name = (path, parse.__module__, parse.__qualname__, arguments)
         if name not in self._found:
             key = (hashlib.sha256(data).digest(), *name[1:])

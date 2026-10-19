@@ -21,7 +21,7 @@ _LABEL = re.compile(r"^(?:; <label>:(?P<comment>\d+)|(?P<name>[-$._A-Za-z0-9]+):
 _SCALAR = re.compile(r"\b(half|float|double|i1|i8|i16|i32|i64)\b")
 _TARGETS = re.compile(r"label (%[-$._A-Za-z0-9]+)")
 _INCOMING = re.compile(r"\[\s*([^,\]]+?)\s*,\s*(%[-$._A-Za-z0-9]+)\s*\]")
-_LITERAL_ARGUMENTS = re.compile(r"\b(i1|i8|i16|i32|i64|half|float|double) (-?[0-9][0-9a-fA-FxX.e+-]*|true|false|undef)")
+_LITERAL_ARGUMENTS = re.compile(r"\b(i1|i8|i16|i32|i64|half|float|double) (-?[0-9][0-9a-fA-FxX.+-]*|true|false|undef)")
 _OUTPUT_OPCODES = {5: "output", 106: "patch"}
 _DISCARD_OPCODE = 82
 # The first stored value's argument of rawBufferStore, bufferStore and textureStore; textureStore's are components.
@@ -78,7 +78,7 @@ def _control_flow(statements):
             successors[block] = set()
         if text.startswith(("br ", "switch ")):
             successors[block].update(_TARGETS.findall(text))
-            if text.startswith("switch ") or text.startswith("br i1 "):
+            if text.startswith(("switch ", "br i1 ")):
                 conditions[block] = _SSA.findall(text.split(",", 1)[0])[0]
     return blocks, successors, conditions, _dominators(blocks, successors)
 
@@ -142,7 +142,7 @@ def call_access(lines: list[str]) -> dict[str, str]:
 
 def dxil_flow(assembly: str, contract) -> NativeFlow:
     lines = assembly.splitlines()
-    metadata, begin, end, statements = _entry(lines)
+    metadata, begin, _end, statements = _entry(lines)
     types = {match["name"] for line in lines if (match := _TYPE.match(line))}
     access = call_access(lines)
     outputs = {}
@@ -194,7 +194,7 @@ def dxil_flow(assembly: str, contract) -> NativeFlow:
             literal = _LITERAL_ARGUMENTS.findall(body[callee.end():])
             operation = int(literal[0][1]) if name.startswith("dx.op.") and literal and literal[0][1].lstrip("-").isdigit() else None
             arguments = operands_of(body)
-            if name.startswith("dx.op.storeOutput") or name.startswith("dx.op.storePatchConstant"):
+            if name.startswith(("dx.op.storeOutput", "dx.op.storePatchConstant")):
                 scope = _OUTPUT_OPCODES.get(operation)
                 tail = body[callee.end():].rsplit(")", 1)[0].split(",")
                 if scope is None or len(tail) != 5:

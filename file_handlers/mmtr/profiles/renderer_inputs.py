@@ -293,7 +293,7 @@ def engine_resource_value_type(resource):
         return None
     try:
         return resource_value_type(resource)
-    except (ShaderGraphError, ValueError):
+    except ValueError:
         return None
 
 

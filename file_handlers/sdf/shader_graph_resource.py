@@ -122,9 +122,9 @@ def resource_properties(node):
 def resource_pins(node, contract):
     from .shader_graph import ShaderPin
     element, array = resource_properties(node)
-    return ((*((ShaderPin('table', 'Descriptor Table', array, 'input', True),) if array else ()),
-             ShaderPin('index', 'Descriptor Index', 'uint', 'input', True),
-             ShaderPin('value', 'Resource', element, 'output')))
+    return (*((ShaderPin('table', 'Descriptor Table', array, 'input', True),) if array else ()),
+            ShaderPin('index', 'Descriptor Index', 'uint', 'input', True),
+            ShaderPin('value', 'Resource', element, 'output'))
 
 
 def _heap_name(node):

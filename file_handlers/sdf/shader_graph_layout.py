@@ -15,7 +15,7 @@ def arrange_shader_graph(graph, contract=None, *, width_provider=lambda _node: 3
     remaining = {identity: len(items) for identity, items in parents.items()}
     order = {identity: index for index, identity in enumerate(nodes)}
     ready = deque(identity for identity, count in remaining.items() if not count)
-    ranks = {identity: 0 for identity in ready}
+    ranks = dict.fromkeys(ready, 0)
     while ready:
         identity = ready.popleft()
         for child in sorted(children[identity], key=order.__getitem__):

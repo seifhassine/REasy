@@ -404,7 +404,6 @@ def reflect_spirv(module: bytes, *, entry_point: str | None = None) -> SpirvRefl
         members: list[SpirvBlockMember] = []
         if value_type is not None:
             opcode, values = value_type
-            image_type_id = value_type_id
             if opcode == 26:
                 kind, register_class = "sampler", "s"
             elif opcode == 27 and len(values) == 1:

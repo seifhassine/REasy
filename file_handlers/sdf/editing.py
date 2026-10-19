@@ -921,7 +921,7 @@ class SdfBinaryEditor:
         self._replacement_resource_table_offsets = {
             cache_key: offsets
             for cache_key, offsets in self._replacement_resource_table_offsets.items()
-            if not max(offsets[0], new_offset) < min(
+            if max(offsets[0], new_offset) >= min(
                 offsets[0] + len(cache_key[-1]) * layout.binding_descriptor_size,
                 new_offset + size,
             )

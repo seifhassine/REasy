@@ -4260,9 +4260,7 @@ class MeshFile:
                         main_lods_by_offset[int(offset)]
                         for offset in layer.lod_offsets
                     ]
-                layer.vertex_bases_by_buffer = {
-                    buffer_index: 0 for buffer_index in used_buffers
-                }
+                layer.vertex_bases_by_buffer = dict.fromkeys(used_buffers, 0)
                 layer.payloads = {
                     buffer_index: mesh_buffer.buffer_payloads[buffer_index]
                     for buffer_index in used_buffers

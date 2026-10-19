@@ -201,7 +201,7 @@ def group_implementation_routes(document, routes, owners):
             contract = material_program_contract(document, *route,
                 allow_unreflected_material_fields=True)
             contract_key = _cached_contract_fingerprint(contract, fingerprints)
-        except (ShaderGraphError, ValueError):
+        except ValueError:
             contract_key = route
         owner = owners.get(route)
         owner_hash = None
@@ -329,7 +329,7 @@ def _retain_contract_bindings(bytecode, reflected, contract):
         return bytecode, reflected
     try:
         retained = _rebuilt_dxil(bytecode, reflected, contract)
-    except (ShaderGraphError, DxcError, ValueError):
+    except ValueError:
         return bytecode, reflected  # Callers' ABI checks report the dropped binding.
     return retained, enrich_dxil_shader(parse_dxbc(retained), retained)
 

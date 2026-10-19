@@ -22,7 +22,6 @@ from .profiles import (
     LAYOUT_INLINE,
     LAYOUT_LEGACY,
     LAYOUT_STORED,
-    TexCookProfile,
     TexFormatError,
     tex_profile,
 )
@@ -177,10 +176,10 @@ class TexFile:
                 f"under its {_LAYOUT_NAMES[profile.layout]} layout"
             )
         self.layout = profile.layout
-        self._assert_invariants(profile)
+        self._assert_invariants()
         return True
 
-    def _assert_invariants(self, profile: TexCookProfile) -> None:
+    def _assert_invariants(self) -> None:
         header = self.header
         if header.swizzle_control != -1:
             raise TexFormatError(

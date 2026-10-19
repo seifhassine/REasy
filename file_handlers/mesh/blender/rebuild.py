@@ -133,7 +133,7 @@ class _BlenderObject:
                 color_names.index(entry["active_color"]) if entry.get("active_color") in color_names else 0)
             self.color_domain = colors[chosen][1]
             self.colors = np.clip(np.rint(arrays[prefix + f"color{chosen}"] * 255.0), 0, 255).astype(np.uint8)
-        attributes = {name: domain for name, domain in entry.get("attributes", [])}
+        attributes = dict(entry.get("attributes", []))
         self.vertex_ids = (arrays[prefix + "reasy_vertex"].astype(np.int64)
                            if attributes.get("reasy_vertex") == "POINT" else None)
         self.corner_ids = (arrays[prefix + "reasy_corner"].astype(np.int64)

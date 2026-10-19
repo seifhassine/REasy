@@ -256,7 +256,7 @@ class LocalValueState(dict):
     def __init__(self, values=(), **kwargs):
         fresh = not hasattr(self, '_local')
         dict.__init__(self, values, **kwargs)
-        self._local = ({key: None for key in values._local}
+        self._local = (dict.fromkeys(values._local)
                        if fresh and type(values) is LocalValueState and not kwargs else
                        {key: None for key in self if LocalArrays.is_cell(key)})
 

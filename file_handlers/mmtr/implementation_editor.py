@@ -19,7 +19,7 @@ from .material_editor import (
     extract_selected_function, import_material_function, material_function_root, save_material_function,
 )
 from .material_function import (
-    MaterialFunctionError, expand_material_function_node, material_function_node_properties,
+    expand_material_function_node, material_function_node_properties,
 )
 from .material_implementation import (
     MaterialProgramImplementation, group_implementation_routes, implementation_contract, implementation_execution,
@@ -221,7 +221,7 @@ class MaterialImplementationDialog(QDialog):
             for name in ("recover", "new_body"):
                 self._buttons[name].setEnabled(self._contract.stage in SHADER_GRAPH_STAGES and shader.binary_format in {"dxbc-container", "spirv-module"})
             self._body_actions(existing is not None)
-        except (ShaderGraphError, ValueError) as exc:
+        except ValueError as exc:
             self.status.setText(str(exc))
             self.empty.setText(str(exc))
 
@@ -276,7 +276,7 @@ class MaterialImplementationDialog(QDialog):
                 graph = recovered.enter_context(_recover_vanilla_graph_snapshot(
                     ir, self._contract, name=self.routes.currentText(),
                 ))
-            except (ShaderGraphError, MaterialFunctionError, ValueError) as exc:
+            except ValueError as exc:
                 self.status.setText(self.tr("Recovery is incomplete; no body was changed: {error}").format(error=exc))
                 return
             self._set_body(graph)
@@ -310,7 +310,7 @@ class MaterialImplementationDialog(QDialog):
             node = self.editor.graph.add_node("material_function", properties=material_function_node_properties(asset))
             self.editor.scene.rebuild(select_node=node.node_id)
             self.editor._graph_changed()
-        except (OSError, ShaderGraphError, MaterialFunctionError) as exc:
+        except (OSError, ShaderGraphError) as exc:
             self.status.setText(str(exc))
 
     def expand_function(self):
@@ -321,7 +321,7 @@ class MaterialImplementationDialog(QDialog):
             graph = deepcopy(self.editor.graph)
             expand_material_function_node(graph, selected[0])
             self._set_body(graph)
-        except (ShaderGraphError, MaterialFunctionError) as exc:
+        except ShaderGraphError as exc:
             self.status.setText(str(exc))
 
     def extract_function(self):
@@ -336,7 +336,7 @@ class MaterialImplementationDialog(QDialog):
             graph, asset, _node = extracted
             if save_material_function(self, asset, material_function_root(self._project_dir)):
                 self._set_body(graph)
-        except (OSError, ShaderGraphError, MaterialFunctionError) as exc:
+        except (OSError, ShaderGraphError) as exc:
             self.status.setText(str(exc))
 
     def accept(self):

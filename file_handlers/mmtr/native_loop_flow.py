@@ -243,7 +243,7 @@ def normalize_loop_boundaries(blocks, successors, conditions, edge_origins, *, t
     fresh = fresh_namer(blocks)
 
     while True:
-        loops, predecessors, dominators = flow_loops(blocks, successors)
+        loops, _predecessors, dominators = flow_loops(blocks, successors)
         pending = [(header, loop) for header, loop in loops.items()
                    if not (len(loop['latches']) == 1 and len(loop['exits']) == 1
                            and next(iter(loop['exits']))[0] in loop['latches'])]

@@ -1101,7 +1101,7 @@ def _program_reference(project, semantics, document=None):
     return digest, item, str(route.get("binary_format", "dxbc-container"))
 
 
-def _program(project, semantics, contract: ShaderContract, document, profile) -> _RecoveredProgram:
+def _program(project, semantics, document, profile) -> _RecoveredProgram:
     digest, item, binary_format = _program_reference(project, semantics, document)
     if item is None:
         item = _recover_shader(document, profile, int(semantics.target_index), int(semantics.program_index),
@@ -1968,7 +1968,7 @@ class ReEngineShaderGraphProfile:
                     continue
                 try:
                     contract = self.shader_contract(document, program, shader.role)
-                except (ShaderGraphError, ValueError):
+                except ValueError:
                     continue
                 if renderer or any(item.name.casefold() in user_names for item in contract.constant_buffers) or any(
                     item.name.casefold() in names or (dynamic and (
@@ -2062,7 +2062,7 @@ class ReEngineShaderGraphProfile:
         from file_handlers.mmtr.material_project import _augmented_contract
 
         semantics = self._pass_semantics(project, document, semantics)
-        recovered = _program(project, semantics, contract, document, self)
+        recovered = _program(project, semantics, document, self)
         master = _master(project)
         bindless = master.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES
         material_word_offsets = {}

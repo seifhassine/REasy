@@ -299,7 +299,7 @@ def material_record_accesses(
             if values and (kind := merged_origin(values)):
                 origins[result] = kind
         elif ("@dx.op.rawBufferLoad." in body or "@dx.op.bufferLoad." in body) and (match := _RAW_LOAD.search(body)):
-            scalar_type, handle, element, element_offset, mask, alignment = match.groups()
+            scalar_type, handle, element, element_offset, mask, _alignment = match.groups()
             resource = handles.get(handle)
             if resource is None:
                 continue

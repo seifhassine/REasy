@@ -7,7 +7,6 @@ import re
 from typing import Mapping
 
 from file_handlers.sdf.dxc import (
-    DxcError,
     assemble_dxil,
     compile_hlsl_dxc,
     disassemble_dxil,
@@ -255,11 +254,7 @@ def _texture_dimensions(resource: ShaderContractResource, value: str) -> list[st
         rows.append(f"{value}.GetDimensions({arguments});")
     elif dimension == "texture1d":
         rows.append(f"{value}.GetDimensions(0u, REasyCarrierA, REasyCarrierB);")
-    elif dimension in {"texture2d", "texture-cube"}:
-        rows.append(
-            f"{value}.GetDimensions(0u, REasyCarrierA, REasyCarrierB, REasyCarrierC);"
-        )
-    elif dimension == "texture1d-array":
+    elif dimension in {"texture2d", "texture-cube", "texture1d-array"}:
         rows.append(
             f"{value}.GetDimensions(0u, REasyCarrierA, REasyCarrierB, REasyCarrierC);"
         )
@@ -1209,7 +1204,6 @@ def _merge_entry(
     carrier_spans = _function_spans(carrier_lines)
     if entry_point not in original_spans or entry_point not in carrier_spans:
         raise ShaderGraphError("DXIL entry-function routing is inconsistent.")
-    original_start, original_stop = original_spans[entry_point]
     carrier_start, carrier_stop = carrier_spans[entry_point]
     native_metadata = native_metadata or DxilEntryMetadata.parse(original_lines)
     carrier_metadata = carrier_metadata or DxilEntryMetadata.parse(carrier_lines)
@@ -1695,7 +1689,7 @@ def _execute_dxil_job(job: _NativeDxilJob) -> ReEngineDxilBuild:
             arguments=job.carrier_arguments,
         )
         prepared = _prepare_carrier(carrier_result.bytecode)
-    except (DxcError, ValueError) as exc:
+    except ValueError as exc:
         raise ShaderGraphError(f"DXC could not build the native material contract: {exc}") from exc
     reflected_carrier = prepared.contract
     carrier_report = validate_shader_contract(
@@ -1728,7 +1722,7 @@ def _execute_dxil_job(job: _NativeDxilJob) -> ReEngineDxilBuild:
         _NATIVE_ACTIVITY["validate"] += 1
         rebuilt = validate_dxil(rebuilt)
         shader = enrich_dxil_shader(parse_dxbc(rebuilt), rebuilt)
-    except (DxcError, ValueError) as exc:
+    except ValueError as exc:
         raise ShaderGraphError(f"DXC rejected rebuilt material semantics: {exc}") from exc
     # Container reflection omits primitive/mesh declarations and some linkage.
     contract = implementation_contract(ShaderContract.from_shader(shader), rebuilt)

@@ -205,7 +205,7 @@ def _material_interface(
                             alias_key = id(shader), id(program.constant_buffers)
                             aliases = generated_parameter_names.get(alias_key)
                             if aliases is None:
-                                from file_handlers.sdf.contracts import SdfContractError, material_buffer_contract
+                                from file_handlers.sdf.contracts import material_buffer_contract
                                 from file_handlers.sdf.shader_graph import ShaderContract
                                 try:
                                     typed = material_buffer_contract(
@@ -214,7 +214,7 @@ def _material_interface(
                                         logical_name=profile.material_parameter_name,
                                         allow_unreflected_fields=True, _indexed_names=True,
                                     )
-                                except (SdfContractError, ValueError):
+                                except ValueError:
                                     aliases = {}
                                 else:
                                     aliases = defaultdict(list)

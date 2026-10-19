@@ -2261,7 +2261,7 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             local_states = [(name, initial) for name,initial,_ in frame['states'] if local_arrays.is_cell(name)]
             updates.extend(values[name] if name in values else builder.unassigned(initial.value_type)
                            for name,initial in local_states)
-            local_exports = {name:item for name,item in values.local_items()}
+            local_exports = dict(values.local_items())
             exports = {name: values[name] for name in record['exports'] if name in values}
             for name, handle in handle_exports.items():
                 if not isinstance(handle, _ResourceHandle):
@@ -2298,7 +2298,7 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
         if event == "else":
             frame = branches[-1]
             frame["true_phis"] = tuple((name, value(operand, kind)) for name, kind, operand in record)
-            frame['true_cells'] = {name:item for name,item in values.local_items()}
+            frame['true_cells'] = dict(values.local_items())
             frame["true_outputs"] = dict(outputs)
             frame['true_execution'], builder.execution = builder.execution, frame['execution']
             frame['true_clips'] = tuple(builder.clips[len(frame['clips']):])

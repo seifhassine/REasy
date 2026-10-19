@@ -547,10 +547,9 @@ def _group_lookup(ctx, obj):
             if prefix and name.startswith(prefix):
                 label, stripped = set_label, name[len(prefix):]
         joint = ctx.group_joints.get(stripped)
-        if joint is None:
-            if name not in ctx.unknown_groups:
-                ctx.unknown_groups.add(name)
-                ctx.report.loss(f"Vertex group {name!r} matches no joint; ignored it")
+        if joint is None and name not in ctx.unknown_groups:
+            ctx.unknown_groups.add(name)
+            ctx.report.loss(f"Vertex group {name!r} matches no joint; ignored it")
         result.append(None if joint is None else (label, joint))
     return result
 

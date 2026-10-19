@@ -135,7 +135,7 @@ def build_material_family(project, document):
         try:
             logging.getLogger(__name__).info("Compiling MMTRS shader LOD %d of %d", lod + 1, len(family.members))
             builds.append(_build_material_project(family_member_project(project, lod), member))
-        except (ValueError, MaterialBuildError) as exc:
+        except ValueError as exc:
             detail = getattr(exc, "technical_details", "")
             raise MaterialBuildError(f"MMTRS LOD {lod}: {exc}" + (f"\n{detail}" if detail else ""), technical_details=detail) from exc
     first = builds[0]

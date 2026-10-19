@@ -15,8 +15,8 @@ DXIL_TEXTURE_KINDS = {1: 'texture1d', 2: 'texture2d', 3: 'texture2d-ms', 4: 'tex
 
 def complete_typed_resources(contract, metadata, lines):
     identifier = '%' + LLVM_NAME
-    types = dict(match.groups() for line in lines
-                 if (match := re.fullmatch('(' + identifier + r') = type \{\s*(.*?)\s*\}', line.strip())))
+    types = {match[1]: match[2] for line in lines
+             if (match := re.fullmatch('(' + identifier + r') = type \{\s*(.*?)\s*\}', line.strip()))}
     root = metadata.operands[3]
     if root == 'null':
         roots = metadata.definitions.get('!dx.resources', ())

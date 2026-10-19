@@ -202,7 +202,7 @@ def native_build_key(runtime, *inputs):
         buffer = bytearray()
         _signature(digest, inputs, set(), buffer, _TraversalMemo())
         digest.update(buffer)
-    except (TypeError, ValueError, OverflowError, RecursionError, UnicodeError):
+    except (TypeError, ValueError, OverflowError, RecursionError):
         return None
     return _BuildKey(runtime, digest.digest())
 

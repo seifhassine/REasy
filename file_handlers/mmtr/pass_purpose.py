@@ -90,7 +90,7 @@ def structural_class(document, profile, target_index: int, program_index: int) -
     if "pixel" in roles:
         try:
             outputs = profile.shader_contract(document, program, "pixel").outputs
-        except (ShaderGraphError, ValueError):
+        except ValueError:
             outputs = ()
         targets = any(field.semantic_name.casefold() == "sv_target" for field in outputs)
         colour = targets and (blend is None or any(target.write_mask for target in blend.render_targets))

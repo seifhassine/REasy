@@ -287,7 +287,7 @@ class SdfTexFile:
             offset = len(output)
             if profile.table:
                 struct.pack_into("<Q", output, table_offset + index * 8, offset)
-            columns, rows, row_bytes, row_pitch, slice_pitch, size = _footprint(level.dimensions, level.format)
+            _columns, rows, row_bytes, row_pitch, slice_pitch, size = _footprint(level.dimensions, level.format)
             payload_offset = offset + profile.level_size
             if profile.table:
                 output.extend(struct.pack("<fIIIffIIIIII", level.voxel_size, *level.dimensions,

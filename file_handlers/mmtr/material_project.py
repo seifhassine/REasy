@@ -969,7 +969,7 @@ def validate_material_project(
         adjacency[source.node_id].add(target.node_id)
         reverse[target.node_id].add(source.node_id)
 
-    indegree = {identity: 0 for identity in adjacency}
+    indegree = dict.fromkeys(adjacency, 0)
     for targets in adjacency.values():
         for identity in targets:
             indegree[identity] += 1
