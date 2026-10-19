@@ -1745,7 +1745,7 @@ class SdfShaderGraphEditor(QWidget):
             edit.clicked.connect(lambda: self._edit_function_region(node.node_id))
             self.properties_form.addRow(edit)
         elif node.kind in {'sample_texture', 'texture_load'}:
-            _texture_properties(self.properties_form, node, lambda key, value: self._set_node_property(node, key, value))
+            _texture_properties(self.properties_form, node, lambda key, value: self._set_node_property(node, key, value, rebuild_properties=True))
         elif node.kind == "shader_resource":
             resource = QComboBox()
             for item in self._contract.resources:

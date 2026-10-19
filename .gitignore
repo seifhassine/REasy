@@ -27,6 +27,12 @@ projects
 Mods
 exports
 
+plans
+.mmtr_corpus
+dev
+docs
+run_reasy_debug.bat
+
 # VS Code settings (if you don't want to share them)
 .vscode/
 
@@ -39,14 +45,9 @@ Thumbs.db
 
 # Local Tests
 /tests/**
-!/tests/test_scn_parser.py
-!/tests/test_motbank_roundtrip.py
-!/tests/test_scn_scene_editing.py
-resources/i18n/REasy_zh-CN.qm
+resources/i18n/**.qm
 secrets
-tests/test_scn_scene_editing.py
 extracted_mesh_samples/**
-MESH.bt
 Murmur3.1sc
 tools/audit_extracted_mesh_samples.py
 tools/audit_mesh_blendshape_remaps.py
@@ -55,3 +56,69 @@ tools/check_pak_codec_metadata.py
 tools/dump_mesh_blendshape_remap_case.py
 tools/extract_all_mesh_samples.py
 tools/validate_mesh_bt_python.py
+tools/scan_embedded_rsz_corpus.py
+tools/light_pass_catalog.py
+tools/surface_output_catalog.py
+tools/sampler_catalog.py
+tools/engine_input_catalog.py
+tools/frame_constant_catalog.py
+tools/system_textures.py
+tools/build_cache.py
+tools/capture_bindings.py
+tools/capture_light_passes.py
+tools/renderdoc_replay.py
+tools/mesh_conversion_checks.py
+tools/mesh_partition_checks.py
+tools/type_analysis.py
+reversing/pak_loading_info/pak_load_trace.py
+
+# Local animation-format research
+/DMC5_MOTION_SEMANTICS_AUDIT.md
+/MOTION_MOCAP_IMPLEMENTATION_NOTES.md
+/MOTLIST_486_RE8.md
+/MOTLIST_751_DD2.md
+/RE_Engine_mot_versions_report.md
+/RE_Engine_motlist_versions_report.md
+tools/analyze_dmc5_track_codecs.py
+tools/analyze_embedded_clip.py
+tools/analyze_mot_clip_correlations.py
+tools/analyze_mot_corpus.py
+tools/analyze_mot_deep.py
+tools/analyze_mot_sync_offsets.py
+tools/analyze_motlist_container.py
+tools/audit_dmc5_motion_interpolation.py
+tools/audit_dmc5_motion_semantics.py
+tools/generate_mot_templates.py
+tools/generate_motlist_templates.py
+tools/mot_template_base.bt.in
+tools/motlist_template_base.bt.in
+tools/summarize_mot_deep.py
+tools/verify_dmc5_motion_corpus.py
+
+# Local reverse-engineering artifacts
+/.tmp*
+/captures/
+/tmp/
+/reversing/mesh_blendshapes/readme.md
+/reversing/re3_sound/files/
+reversing/pak_loading_info/*
+/.research/
+*.bt
+!/MESH.bt
+tools/build_re_sound_metadata.py
+.freebuff/project-id
+.venv
+tools/apply_spanish_translations.py
+tools/create_spanish_skeleton.py
+.investigation_assets
+*.prof
+
+# Local app data written when running from the source tree
+/bookmarks.json
+/.reasy_bookmarks.json
+
+tools/audit_mesh_conversion.py
+tests/test_scn_parser.py
+tests/test_pak_mod_warning_banner.py
+reversing/pak_loading_info/readme.md
+tools/shader_tools.md

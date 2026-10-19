@@ -2759,20 +2759,11 @@ class _MeshViewport(ScenePreviewWidget):
         self.update()
 
     def _build_bone_label_points(self) -> tuple[list[str], np.ndarray]:
-        joint_count = int(getattr(self.mesh, "joint_count", 0) or 0)
-        if joint_count <= 0:
-            return [], np.zeros((0, 3), dtype=np.float32)
-        matrices = list(getattr(self.mesh, "world_matrices", None) or getattr(self.mesh, "local_matrices", None) or [])
+        joint_count = max(int(getattr(self.mesh, "joint_count", 0) or 0), 0)
+        matrices = list(getattr(self.mesh, "world_matrices", None) or getattr(self.mesh, "local_matrices", None) or [])[:joint_count]
         if not matrices:
             return [], np.zeros((0, 3), dtype=np.float32)
-
-        labels: list[str] = []
-        points = np.zeros((min(joint_count, len(matrices)), 3), dtype=np.float32)
-        for i in range(len(points)):
-            matrix = matrices[i]
-            points[i] = (matrix[12], matrix[13], matrix[14])
-            labels.append(joint_name(self.mesh, i))
-        return labels, points
+        return [joint_name(self.mesh, i) for i in range(len(matrices))], np.array([m[12:15] for m in matrices], np.float32)
 
     def _build_bone_label_atlas(self, font: QFont) -> tuple[QImage, list[tuple[int, int, int, int]]]:
         metrics = QFontMetrics(font)

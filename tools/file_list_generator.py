@@ -206,7 +206,7 @@ def _pak_signature(pak_path):
             handle = ctypes.c_void_p(msvcrt.get_osfhandle(stream.fileno()))
             if not ctypes.windll.kernel32.GetFileInformationByHandleEx(handle, 0, info, len(info)):
                 raise ctypes.WinError()
-            change_time = struct.unpack_from('<q', info, 24)[0]
+            change_time = struct.unpack_from('<q', info.raw, 24)[0]
     return (stat.st_dev, stat.st_ino, stat.st_size, stat.st_mtime_ns, change_time)
 
 

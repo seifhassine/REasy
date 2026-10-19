@@ -30,10 +30,8 @@ def transform_scale(world: np.ndarray) -> np.ndarray:
 
 
 def _biggest(scale: np.ndarray) -> F:
-    """The engines scale radii by max(x, max(y, x)); z takes no part."""
-    x, y = scale[0], scale[1]
-    inner = y if y > x else x
-    return x if x > inner else inner
+    """The engines scale radii by max(x, y); z takes no part."""
+    return max(scale[0], scale[1])
 
 
 def hung_joints(shape: CollisionShape) -> tuple[int, ...]:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Set
 
 import numpy as np
 
@@ -95,7 +95,7 @@ def gizmo_marks(mode: str, center: np.ndarray, size: float, active) -> tuple:
     return tuple(marks)
 
 
-def probe_marks(boxes: Iterable[tuple[str, object]], selected: set[str], points: np.ndarray,
+def probe_marks(boxes: Iterable[tuple[str, object]], selected: Set[str], points: np.ndarray,
                 colours: np.ndarray) -> tuple:
     marks = []
     for key, box in boxes:

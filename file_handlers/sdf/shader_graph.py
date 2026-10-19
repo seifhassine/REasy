@@ -1504,7 +1504,7 @@ def validate_node_update(graph, node, properties, contract):
 
 def node_pins(
     node: ShaderGraphNode,
-    contract: ShaderContract,
+    contract: ShaderContract | None,
 ) -> tuple[ShaderPin, ...]:
     inputs: list[ShaderPin] = []
     outputs: list[ShaderPin] = []

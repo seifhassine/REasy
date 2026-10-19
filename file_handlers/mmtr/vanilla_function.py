@@ -1184,7 +1184,7 @@ class _Builder:
                 return None
             if value.value_type == 'float':
                 word = struct.unpack('<I', struct.pack('<f', float(literal[0])))[0]
-                if struct.unpack('<f', struct.pack('<I', word))[0] != literal[0] and literal[0] == literal[0]:
+                if struct.unpack('<f', struct.pack('<I', word))[0] != literal[0] and not math.isnan(literal[0]):
                     return None
             else:
                 word = int(literal[0]) & 0xFFFFFFFF

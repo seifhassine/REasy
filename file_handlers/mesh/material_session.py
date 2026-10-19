@@ -55,8 +55,7 @@ def scoped_material_key(scope: str, material_name: str) -> str:
 class MaterialViewport(Protocol):
     texture_quality: str
 
-    def materials_changed(self) -> None:
-        pass
+    def materials_changed(self) -> None: ...
 
 
 class MeshMaterialSession(QObject):
