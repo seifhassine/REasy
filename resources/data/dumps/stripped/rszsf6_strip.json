@@ -1807735,5 +1807735,10 @@
 		"crc": "37e3fcb",
 		"fields": [],
 		"name": "System.Collections.Generic.ICollection`1<app.worldtour.WTCityContentCtrl003.eState>"
+	},
+	"metadata": {
+		"complete": false,
+		"fields": [],
+		"resources_identified": true
 	}
 }
