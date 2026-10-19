@@ -1,0 +1,45 @@
+{
+ "format": 3,
+ "game": "ONIMUSHAWOTS",
+ "resource_version": 260605155,
+ "programs": {
+  "shader_types": {},
+  "material_markers": [
+   [
+    "A",
+    [
+     1
+    ]
+   ],
+   [
+    "TS",
+    [
+     0
+    ]
+   ]
+  ],
+  "kinds_taking_material_markers": []
+ },
+ "placements": {
+  "foliage": {
+   "meshlets": {
+    "raster": "SpeedTreeV8{marker}GBufferMeshletList{billboard}VS",
+    "shade": "SpeedTreeV8GBufferVisibility{billboard}",
+    "transform": "SpeedTreeV8MeshletGeometryTransform{billboard}",
+    "billboard": "Billboard",
+    "instance": {
+     "DensCullTransitionBuffer": "ff",
+     "SpeedTreeV8WindStateBuffer": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "SpeedTreeV8PrevWindStateBuffer": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "extended": "0000000000000000000000000000000000000000000000000000000000000000"
+   }
+  }
+ },
+ "source": {
+  "capture": "wots_frame136485 (the frame's foliage, drawn with mesh shaders)",
+  "programs": "raster SpeedTreeV8{,O,TS,TSO,A,ATS}GBufferMeshletList[Billboard]MS/ASMS (15804-17002, the O variants' shaders the plain ones'), by shader hash (scratch stage107/name_master_draws.py); REasy draws the masters' VS programs, as it draws WOTS's other meshlets; transforms SpeedTreeV8MeshletGeometryTransform[Billboard] 20807-20865 by the transform IDs' indirect dispatches, shading SpeedTreeV8GBufferVisibility[Billboard] 20925 on",
+  "instance": "per instance record (scratch stage107/wots_speedtree_reads.md): DensCullTransitionBuffer a byte, the wind state 48 bytes and its previous; no grass push or global wind buffers (the global wind is a constant buffer the block names)",
+  "extended": "extendedBindlessIndex's block (32 bytes read: +0/+4/+8 squared distances, the gates d2 < +4 (leaf) and d2 < +4 or +8 (wind), +12 noise scale, +16/+20 the global wind's constant buffer entries, +24 a record index, +28 the billboards' threshold); zero here: no gate passes, the wind still"
+ }
+}

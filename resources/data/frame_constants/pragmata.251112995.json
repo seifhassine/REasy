@@ -1,0 +1,42 @@
+{
+ "format": 1,
+ "game": "PRAGMATA",
+ "resource_version": 251112995,
+ "scene": {
+  "subdivisionLevel": [
+   50.0
+  ],
+  "tessellationParam": [
+   1.0
+  ]
+ },
+ "source": {
+  "buffer": "SceneInfo",
+  "fields": [
+   "subdivisionLevel",
+   "tessellationParam"
+  ],
+  "captures": [
+   {
+    "capture": "PRAGMATA_frame12414.rdc",
+    "draws": 1224,
+    "tessellated": 0,
+    "tessellated_without_buffer": 0,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        50.0
+       ],
+       "tessellationParam": [
+        1.0
+       ]
+      },
+      "draws": 20
+     }
+    ]
+   }
+  ]
+ }
+}

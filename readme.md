@@ -63,6 +63,10 @@ REasy GUI is currently available in English and Chinese.
   - Regex search in the file list is supported. 
  
 - **3D Scene Viewing and Editing**
+
+- **Cross-game Mesh Conversion**
+
+- **Material Editing**
   
 - **RSZ Extended File Viewing and Editing:**  
   - User, PFB and SCN files are supported with advanced editing.

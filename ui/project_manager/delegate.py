@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QPixmap
+from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QPalette, QPixmap
 from PySide6.QtWidgets import (
+    QApplication,
     QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
@@ -15,6 +16,7 @@ from .constants import make_close_pixmap, make_plus_pixmap, make_star_pixmap
 _ACTION_HIT_SIZE, _ACTION_SPACING = 26, 1
 _ACTION_RIGHT, _MIN_TEXT_WIDTH = 3, 60
 _Action = tuple[QPixmap, str]
+_BOOKMARK_SCOPE_COLORS = {"pak": "#f59e0b", "project": "#4a7c59", "unpacked": "#64748b"}
 _TAG_PALETTE = (
     "#4caf50", "#2196f3", "#ff9800", "#9c27b0", "#e91e63",
     "#00bcd4", "#8bc34a", "#ff5722", "#607d8b", "#3f51b5",
@@ -26,21 +28,21 @@ def _chip_fg(color: QColor) -> QColor:
     return QColor("#111111") if luminance > 150 else QColor("#ffffff")
 
 
+def _event_point(event) -> QPoint:
+    """``pos()`` is deprecated on mouse events; help events have only ``pos()``."""
+    position = getattr(event, "position", None)
+    return position().toPoint() if callable(position) else event.pos()
+
+
 def _tag_color(tag: str) -> QColor:
-    """Return a deterministic color for a normalized tag."""
     color_hash = 0
     for character in normalize_tag(tag):
         color_hash = (color_hash * 31 + ord(character)) & 0xFFFFFFFF
     return QColor(_TAG_PALETTE[color_hash % len(_TAG_PALETTE)])
 
 
-# ---------------------------------------------------------------------------
 class _ActionIconsDelegate(QStyledItemDelegate):
-    """Shared action-icon layout, painting, and hit testing.
-
-    Subclasses implement `_row_actions(index)` returning a list of
-    ``(pixmap, action_id)`` pairs and route clicks in ``editorEvent``.
-    """
+    """Subclasses route clicks in ``editorEvent``."""
 
     def __init__(self, parent):
         super().__init__(parent)
@@ -52,7 +54,6 @@ class _ActionIconsDelegate(QStyledItemDelegate):
         parent.viewport().setMouseTracking(True)
 
     def set_column_width(self, width: int):
-        """Update current column width for icon visibility calculations."""
         self.column_width = width
 
     def _row_actions(self, index) -> list[_Action]:
@@ -106,8 +107,9 @@ class _ActionIconsDelegate(QStyledItemDelegate):
     def _action_at(self, event, option, count: int) -> int | None:
         if not self._actions_revealed(option):
             return None
+        point = _event_point(event)
         for action_index, rect in enumerate(self._action_rects(option, count)):
-            if rect.contains(event.pos()):
+            if rect.contains(point):
                 return action_index
         return None
 
@@ -132,7 +134,6 @@ class _ActionIconsDelegate(QStyledItemDelegate):
         return hint
 
 
-# ---------------------------------------------------------------------------
 class _ActionsDelegate(_ActionIconsDelegate):
     """System/Project files: bookmark and add/remove actions."""
 
@@ -189,7 +190,6 @@ class _ActionsDelegate(_ActionIconsDelegate):
         return False
 
 
-# ---------------------------------------------------------------------------
 class _PakActionsDelegate(_ActionIconsDelegate):
     """PAK files/folders: bookmark and add-to-project actions."""
 
@@ -255,10 +255,7 @@ class _PakActionsDelegate(_ActionIconsDelegate):
         return False
 
 
-# ---------------------------------------------------------------------------
-class _BookmarksDelegate(_ActionIconsDelegate):
-    """Bookmarks list: unbookmark action on the Path column."""
-
+class _BookmarkRowDelegate(_ActionIconsDelegate):
     def __init__(self, tree, remove_bookmark):
         super().__init__(tree)
         self._remove_bookmark = remove_bookmark
@@ -270,6 +267,14 @@ class _BookmarksDelegate(_ActionIconsDelegate):
 
     def _action_tooltip(self, action_id: str, index) -> str:
         return self.tr("Remove bookmark")
+
+    def helpEvent(self, event, view, option, index):
+        if event.type() == QEvent.ToolTip:
+            hidden = self._hidden_tags_at(event, option, index)
+            if hidden:
+                QToolTip.showText(event.globalPos(), hidden, view, option.rect)
+                return True
+        return super().helpEvent(event, view, option, index)
 
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
@@ -288,66 +293,135 @@ class _BookmarksDelegate(_ActionIconsDelegate):
             return True
         return False
 
-
-# ---------------------------------------------------------------------------
-class _ChipDelegate(QStyledItemDelegate):
-    """Paint right-aligned colored chips; subclasses supply ``(label, color)`` pairs."""
-
-    _CHIP_HEIGHT = 18
+    _CHIP_HEIGHT = 14
     _CHIP_SPACING = 4
+    _CHIP_MAX_SHARE = 0.7
 
-    def _chips(self, index) -> list[tuple[str, QColor]]:
-        raise NotImplementedError
+    def _subtitle_rect(self, option, reserved: int = 0) -> QRect:
+        rect = option.rect.adjusted(8, 5, -reserved - 8, -5)
+        return QRect(rect.left(), rect.top() + max(22, option.fontMetrics.height()) + 2,
+                     rect.width(), max(18, option.fontMetrics.height()))
 
-    def _total_width(self, font_metrics, chips) -> int:
-        if not chips:
-            return 0
-        labels_width = sum(font_metrics.horizontalAdvance(label) + 12 for label, _ in chips)
-        return labels_width + self._CHIP_SPACING * (len(chips) - 1)
+    def _tag_chip_layout(self, metrics, line: QRect, tags):
+        if not tags or line.width() <= 0:
+            return [], line.left()
+        height = max(self._CHIP_HEIGHT, min(line.height(), metrics.height()))
+        top = line.top() + (line.height() - height) // 2
+        limit = int(line.width() * self._CHIP_MAX_SHARE)
+
+        def chip_width(label: str) -> int:
+            return metrics.horizontalAdvance(label) + 12
+
+        entries: list[tuple[str, bool]] = []
+        used = 0
+        for index, tag in enumerate(tags):
+            label = tag
+            width = chip_width(label)
+            if width > limit:
+                label = metrics.elidedText(tag, Qt.ElideRight, max(0, limit - 12))
+                width = chip_width(label)
+            remaining = len(tags) - index - 1
+            reserve = self._CHIP_SPACING + chip_width(f"+{remaining}") if remaining else 0
+            step = width if not entries else width + self._CHIP_SPACING
+            if entries and used + step + reserve > limit:
+                break
+            entries.append((label, False))
+            used += step
+        if overflow := len(tags) - len(entries):
+            entries.append((f"+{overflow}", True))
+        widths = [chip_width(label) for label, _overflow in entries]
+        total = sum(widths) + self._CHIP_SPACING * (len(widths) - 1)
+        left = max(line.left(), line.right() + 1 - total)
+        chips = []
+        for (label, overflow), width in zip(entries, widths):
+            color = (QColor(_BOOKMARK_SCOPE_COLORS["unpacked"]) if overflow
+                     else _tag_color(label))
+            chips.append((QRect(left, top, width, height), label, color, overflow))
+            left += width + self._CHIP_SPACING
+        return chips, chips[0][0].left()
+
+    def _hidden_tags_at(self, event, option, index) -> str:
+        bookmark = index.data(Qt.UserRole + 1)
+        if bookmark is None:
+            return ""
+        actions = self._row_actions(index)
+        _visible, reserved = self._action_layout(option, len(actions))
+        chips, _left = self._tag_chip_layout(
+            option.fontMetrics, self._subtitle_rect(option, reserved), bookmark.tags)
+        point = _event_point(event)
+        for position, (chip, _label, _color, overflow) in enumerate(chips):
+            if overflow and chip.contains(point):
+                return self.tr("Tags: {tags}").format(tags=", ".join(bookmark.tags[position:]))
+        return ""
+
+    @staticmethod
+    def _paint_chip(painter, chip: QRect, label: str, color: QColor) -> None:
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(color)
+        painter.drawRoundedRect(QRectF(chip), chip.height() / 2, chip.height() / 2)
+        painter.setPen(_chip_fg(color))
+        painter.drawText(chip, Qt.AlignCenter, label)
 
     def paint(self, painter, option, index):
-        if option.state & QStyle.State_Selected:
-            painter.fillRect(option.rect, option.palette.highlight())
-        chips = self._chips(index)
-        if not chips:
-            return
+        bookmark = index.data(Qt.UserRole + 1)
+        if bookmark is None:
+            return super().paint(painter, option, index)
+        background = QStyleOptionViewItem(option)
+        self.initStyleOption(background, index)
+        background.text = ""
+        style = option.widget.style() if option.widget else QApplication.style()
+        style.drawControl(QStyle.CE_ItemViewItem, background, painter, option.widget)
+        actions = self._row_actions(index)
+        visible, reserved = self._action_layout(option, len(actions))
         painter.save()
-        fm = option.fontMetrics
-        total = self._total_width(fm, chips)
-        x = option.rect.right() - 2 - total
-        y = option.rect.top() + (option.rect.height() - self._CHIP_HEIGHT) // 2
-        for label, color in chips:
-            width = fm.horizontalAdvance(label) + 12
-            rect = QRectF(x, y, width, self._CHIP_HEIGHT)
-            painter.setPen(Qt.NoPen)
-            painter.setBrush(color)
-            painter.drawRoundedRect(rect, self._CHIP_HEIGHT / 2, self._CHIP_HEIGHT / 2)
-            painter.setPen(_chip_fg(color))
-            painter.drawText(rect, Qt.AlignCenter, label)
-            x += width + self._CHIP_SPACING
+        painter.setClipRect(option.rect)
+        rect = option.rect.adjusted(8, 5, -reserved - 8, -5)
+        if rect.width() <= 0:
+            painter.restore()
+            return
+        selected = bool(option.state & QStyle.State_Selected)
+        foreground = option.palette.color(QPalette.HighlightedText if selected else QPalette.Text)
+        muted = QColor(foreground)
+        muted.setAlpha(175)
+        scope = index.data(Qt.UserRole + 2)
+        badge_width = min(rect.width(), option.fontMetrics.horizontalAdvance(scope) + 12)
+        badge = QRectF(rect.right() - badge_width, rect.top() + 1,
+                       badge_width, max(18, option.fontMetrics.height() + 2))
+        color = QColor(_BOOKMARK_SCOPE_COLORS[bookmark.scope])
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(color)
+        painter.drawRoundedRect(badge, 6, 6)
+        painter.setPen(_chip_fg(color))
+        painter.drawText(badge, Qt.AlignCenter, scope)
+        font = painter.font()
+        font.setBold(True)
+        painter.setFont(font)
+        line_height = max(22, option.fontMetrics.height())
+        title = QRect(rect.left(), rect.top(), max(0, rect.width() - badge_width - 8), line_height)
+        painter.setPen(foreground)
+        painter.drawText(title, Qt.AlignVCenter, painter.fontMetrics().elidedText(index.data(), Qt.ElideMiddle, title.width()))
+        painter.setFont(option.font)
+        metrics = option.fontMetrics
+        subtitle = self._subtitle_rect(option, reserved)
+        chips, chips_left = self._tag_chip_layout(metrics, subtitle, bookmark.tags)
+        directory = bookmark.path.rstrip('/').rpartition('/')[0]
+        if directory:
+            width = chips_left - 8 - subtitle.left() if chips else subtitle.width()
+            if width > 16:
+                painter.setPen(muted)
+                painter.drawText(
+                    QRect(subtitle.left(), subtitle.top(), width, subtitle.height()),
+                    Qt.AlignVCenter,
+                    metrics.elidedText(directory, Qt.ElideMiddle, width),
+                )
+        for chip, label, color, _overflow in chips:
+            self._paint_chip(painter, chip, label, color)
+        if visible and self._actions_revealed(option):
+            for action_rect, (icon, _action_id) in zip(self._action_rects(option, len(actions)), actions):
+                painter.drawPixmap(action_rect.center().x() - icon.width() // 2,
+                                   action_rect.center().y() - icon.height() // 2, icon)
         painter.restore()
 
     def sizeHint(self, option, index):
-        width = self._total_width(option.fontMetrics, self._chips(index)) + 4
-        return QSize(width, self._CHIP_HEIGHT + 6)
+        return QSize(120, max(56, option.fontMetrics.height() * 2 + 14))
 
-
-class _TagChipsDelegate(_ChipDelegate):
-    """Render a bookmark's tags as colored inline chips."""
-
-    def _chips(self, index):
-        tags = index.data(Qt.UserRole)
-        return [(tag, _tag_color(tag)) for tag in tags] if isinstance(tags, (list, tuple)) else []
-
-
-class _ScopeBadgeDelegate(_ChipDelegate):
-    """Render a bookmark's scope as a colored badge."""
-
-    _SCOPE_COLORS = {"pak": "#f59e0b", "project": "#4a7c59", "unpacked": "#64748b"}
-
-    def _chips(self, index):
-        label = str(index.data(Qt.DisplayRole) or "")
-        if not label:
-            return []
-        color = QColor(self._SCOPE_COLORS.get(index.data(Qt.UserRole), self._SCOPE_COLORS["unpacked"]))
-        return [(label, color)]

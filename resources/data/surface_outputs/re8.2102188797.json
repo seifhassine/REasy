@@ -1,0 +1,215 @@
+{
+ "format": 5,
+ "game": "RE8",
+ "resource_version": 2102188797,
+ "layout": "via.render.layer.GBufferLayout",
+ "targets": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "imgSrc",
+    "tLinearImage",
+    "texSrc"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "Velocity"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "imgSrc",
+    "tLinearImage",
+    "texSrc"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "Velocity"
+   ]
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "imgSrc",
+    "tLinearImage",
+    "texSrc"
+   ],
+   "shader": "54889a2a82f32b26e205a99f42eb28b3685418f8166abaa52a005a38a71770d2"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "ParticleLightingTex"
+   ],
+   "shader": "f046f3456c5c8e0fd6d1f729d776e167e87e141dc9a0a622c34b349cffc2726a"
+  }
+ ],
+ "formats": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": false,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": false,
+   "format": 29,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": true,
+   "format": 29,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": true,
+   "format": 24,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": false,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": false
+  }
+ ],
+ "depth_formats": {
+  "gbuffer": 20,
+  "forward": 20,
+  "colour": 20
+ },
+ "engine_textures": [],
+ "source": {
+  "mmtr_files": 308,
+  "passes": {
+   "colour": 15590,
+   "depth": 54780,
+   "depth-prepass": 54880,
+   "forward": 126190,
+   "gbuffer": 173770,
+   "other": 15900,
+   "pick": 11480,
+   "shadow": 58070,
+   "stencil": 106960
+  },
+  "passes_beyond_slots": 0,
+  "captures": [
+   {
+    "capture": "cap.rdc",
+    "api": "D3D12",
+    "draws": {
+     "colour": 10,
+     "forward": 1,
+     "gbuffer": 547
+    },
+    "shaders": {
+     "colour": 2,
+     "forward": 1,
+     "gbuffer": 40
+    },
+    "gbuffers": 1,
+    "engine_texture_draws": {
+     "gbuffer": 547,
+     "depth-prepass": 163
+    }
+   }
+  ],
+  "several_slots": [
+   {
+    "purpose": "colour",
+    "target": 0,
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   }
+  ],
+  "several_slots_by_shader": [],
+  "several_formats": [],
+  "other_engine_textures": []
+ }
+}

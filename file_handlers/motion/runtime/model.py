@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import Enum, IntEnum
-import math
 from typing import TypeAlias
+
+import numpy as np
 
 
 class MotionRuntimeContextError(ValueError):
@@ -201,13 +203,9 @@ class RuntimeProperty:
 
 @dataclass(frozen=True, slots=True)
 class MotionMaterialParameter:
-    """A scalar motion value mapped onto one runtime material parameter."""
-
     source_name: str
     material_name: str
     parameter_name: str
-    maximum: float = 1.0
-    exponent: float = 1.0
 
     def __post_init__(self) -> None:
         if (
@@ -216,27 +214,39 @@ class MotionMaterialParameter:
             or not self.parameter_name
         ):
             raise ValueError("material animation names cannot be empty")
-        if not math.isfinite(self.maximum) or self.maximum <= 0.0:
-            raise ValueError("material animation maximum must be positive and finite")
-        if not math.isfinite(self.exponent) or self.exponent <= 0.0:
-            raise ValueError("material animation exponent must be positive and finite")
 
-    def evaluate(self, source_value: float) -> float:
-        """Apply the bounded power curve observed at the runtime material."""
+    @staticmethod
+    def bounded(value: float) -> float:
+        """Clamped with the controller's comparisons, so NaN gives 0."""
+        value = value if value >= 0.0 else 0.0
+        return value if value <= 1.0 else 1.0
 
-        value = float(source_value)
-        if not math.isfinite(value):
-            raise ValueError("material animation source value must be finite")
-        normalized = min(1.0, max(0.0, value / self.maximum))
-        return self.maximum * normalized ** self.exponent
+
+@dataclass(frozen=True, slots=True)
+class MotionValueCorrection:
+    """``apply`` follows the game's ``powf``."""
+
+    source_name: str
+    maximum: float
+    exponent: float
+
+    def apply(self, value: float) -> float:
+        with np.errstate(all="ignore"):
+            raised = float(np.power(np.float32(value), np.float32(self.exponent)))
+        return raised if raised <= self.maximum else self.maximum
 
 
 @dataclass(frozen=True, slots=True)
 class MotionMaterialController:
+    """Updates its parameters each frame, or with ``held_by_channels`` only when the mesh's blend channel values change
+    and never for a mesh without channels (DMC5's blend-texture controller)."""
+
     provider_type: str
     provider_instance_id: int
     provider_object_id: int
     parameters: tuple[MotionMaterialParameter, ...]
+    corrections: tuple[MotionValueCorrection, ...] = ()
+    held_by_channels: bool = False
 
     def __post_init__(self) -> None:
         if self.provider_instance_id <= 0 or self.provider_object_id < 0:
@@ -251,6 +261,14 @@ class MotionMaterialController:
     @property
     def source_names(self) -> tuple[str, ...]:
         return tuple(dict.fromkeys(item.source_name for item in self.parameters))
+
+    def values(self, sources: Mapping[str, float]) -> dict[tuple[str, str], float]:
+        corrected = {name: float(sources.get(name, 0.0)) for name in self.source_names}
+        for correction in self.corrections:
+            if correction.source_name in corrected:
+                corrected[correction.source_name] = correction.apply(corrected[correction.source_name])
+        return {(item.material_name, item.parameter_name): item.bounded(corrected[item.source_name])
+                for item in self.parameters}
 
 
 @dataclass(frozen=True, slots=True)
@@ -323,6 +341,8 @@ class MotionChannelDefinition:
     provider_object_id: int | None = None
     properties: tuple[RuntimeProperty, ...] = ()
     unresolved_reason: str = ""
+    # For a channel the game's script replays by itself: frames between motion starts (``LayerRepeat``); 0 otherwise.
+    repeat_period_frames: float = 0.0
 
 
 @dataclass(frozen=True, slots=True)

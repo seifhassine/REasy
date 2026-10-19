@@ -1,0 +1,1132 @@
+{
+ "format": 5,
+ "game": "PRAGMATA",
+ "resource_version": 251112995,
+ "layout": "via.render.layer.GBufferLayout",
+ "targets": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV",
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "",
+   "read_as": []
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "0e19d6f00f010714d422a1fced706ee2c4f894410d8cff32ac476062458eea7d"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "11047b67935b67fafe490d60cb6a6b633fe6f6123392a5d1a9d0d6f898f22ca0"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "11385d0759e0d11c01e3cc8c26ff899982b88193dd06828a77065d4360b4715c"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "2456e48e3ffa2fe74fa8f2430733b9b364501fda87edac90ccb8dfd492c95950"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "248e3cef6c9e88484f1f91c1726591ace130e4faac0f123ec64664505398b399"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "2fb444b0afb23575de5335ec1e1b2ee97344a91ec698539bc04f7b5e40a84ac9"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "34accb584464668773d0586fa78fef35e57cd1d9f37fbb7154ad0744d902d89f"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "4ab90046f8899ae0de76e9a58ba22d75a752d756fea47c2b43a061919449465d"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "5fafcf396a1e204cf4140b176a8e96e5319bb813d9bf591f70bf6b09fcf44331"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "622b745cce1ed1e50265ea89154ffd3d7710a13c7576f48a2ea0621d8816105d"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "6906351954517d0e498e5bb0cb0b4cb81f948fcadbb862f5a9d0fafd9b6e3c0f"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "76204fcd830bc8ae055a10a9e8a0b2fae31d4aafd2bcaf79589dbe153da9fcff"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "HDR1Srv",
+    "HDRImage",
+    "DiffuseBuffer",
+    "RE_POSTPROCESS_Color",
+    "g_lit_scene",
+    "texSrc"
+   ],
+   "shader": "7aca2651c65e8d7986db8cbb55bfb689a2ffd50b4db85c590862f265b2ea6a8a"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "7b0a92d27c8f3e77f1b5013dcb51b3b52b4529f016f782319feaaf4f3513901a"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "8da6c4193bb0c3ece1814b888a0b20cf42fb033eed46c3eb102939be3f892f5d"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "92e9ddae20d8f2ba6144cbe00af11a76179096bc1d7f7a7ccf3b8c9562ea7d73"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "a2f4799c29caf2511c06621faa61e3e65dde48a6b04a62350633b7f4b483f3f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "aefbaff161b73f84467b591204c97cdf54fc52a1ee1d9099346eb5ee17c069c4"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "b194c2244b56aafb33e38a0df5a13455b4438cd69a8de58372d6ec057dafd4ce"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "c67dc34b84c205d6b23610e27ba91bd062ca0329742ad52e3aa6ec24a5c59ef1"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "d5e71a7e7356c7813bcb47d423b2bd26b84611edbeb08ea0002fa47ceddcda26"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "da384293599ea8648f07b7bd0f9421e818394fb4f62d6435388940b9b24e231f"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "dbdc1bf9bc805067f4b337c2c0151fbab2437bdeb8f06e16ed45528a6db9fed6"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "dd1a82540ede0d9c95e8adcb6e75d77b38e3110b6d8d79a92a8cef41edb6aaa1"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "HDR1Srv",
+    "HDRImage",
+    "DiffuseBuffer",
+    "RE_POSTPROCESS_Color",
+    "g_lit_scene",
+    "texSrc"
+   ],
+   "shader": "e105fbea1fec9f1b613fa05dcc8d8800736bebd1ba02063b53774f84b24a7e76"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "e5f0800d265694e6b688d37d981ff6463b2eb22bff9b985312603a3390c5e81b"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "e6ce5ed31b09c827f4a8a15a5c0fad7f8efbf7deb667697c2e834a85cecfe0a2"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "HDR0Srv",
+    "SrcImage",
+    "SrcTexture"
+   ],
+   "shader": "f6eeecba1df5a2e13d46d3ecfe90aa92a2d3d42bc456abbbcee092af9f2f2b08"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "fb4c8a8fc0f3f07b1038b972401582a304c8dbb529c329a0ae9a23dc3d69687c"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "fce8556c719060f22d2087eeec17f8b6d2e11c869fcb086f15434ba0a0560f3f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "0e19d6f00f010714d422a1fced706ee2c4f894410d8cff32ac476062458eea7d"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "11047b67935b67fafe490d60cb6a6b633fe6f6123392a5d1a9d0d6f898f22ca0"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "11385d0759e0d11c01e3cc8c26ff899982b88193dd06828a77065d4360b4715c"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "2456e48e3ffa2fe74fa8f2430733b9b364501fda87edac90ccb8dfd492c95950"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "248e3cef6c9e88484f1f91c1726591ace130e4faac0f123ec64664505398b399"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "2fb444b0afb23575de5335ec1e1b2ee97344a91ec698539bc04f7b5e40a84ac9"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "34accb584464668773d0586fa78fef35e57cd1d9f37fbb7154ad0744d902d89f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "4ab90046f8899ae0de76e9a58ba22d75a752d756fea47c2b43a061919449465d"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "5fafcf396a1e204cf4140b176a8e96e5319bb813d9bf591f70bf6b09fcf44331"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "622b745cce1ed1e50265ea89154ffd3d7710a13c7576f48a2ea0621d8816105d"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "6906351954517d0e498e5bb0cb0b4cb81f948fcadbb862f5a9d0fafd9b6e3c0f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "76204fcd830bc8ae055a10a9e8a0b2fae31d4aafd2bcaf79589dbe153da9fcff"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "7b0a92d27c8f3e77f1b5013dcb51b3b52b4529f016f782319feaaf4f3513901a"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "8da6c4193bb0c3ece1814b888a0b20cf42fb033eed46c3eb102939be3f892f5d"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "92e9ddae20d8f2ba6144cbe00af11a76179096bc1d7f7a7ccf3b8c9562ea7d73"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "a2f4799c29caf2511c06621faa61e3e65dde48a6b04a62350633b7f4b483f3f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "aefbaff161b73f84467b591204c97cdf54fc52a1ee1d9099346eb5ee17c069c4"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "b194c2244b56aafb33e38a0df5a13455b4438cd69a8de58372d6ec057dafd4ce"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "c67dc34b84c205d6b23610e27ba91bd062ca0329742ad52e3aa6ec24a5c59ef1"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "d5e71a7e7356c7813bcb47d423b2bd26b84611edbeb08ea0002fa47ceddcda26"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "da384293599ea8648f07b7bd0f9421e818394fb4f62d6435388940b9b24e231f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "dbdc1bf9bc805067f4b337c2c0151fbab2437bdeb8f06e16ed45528a6db9fed6"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "dd1a82540ede0d9c95e8adcb6e75d77b38e3110b6d8d79a92a8cef41edb6aaa1"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "e5f0800d265694e6b688d37d981ff6463b2eb22bff9b985312603a3390c5e81b"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "e6ce5ed31b09c827f4a8a15a5c0fad7f8efbf7deb667697c2e834a85cecfe0a2"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "fb4c8a8fc0f3f07b1038b972401582a304c8dbb529c329a0ae9a23dc3d69687c"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "fce8556c719060f22d2087eeec17f8b6d2e11c869fcb086f15434ba0a0560f3f"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "0e19d6f00f010714d422a1fced706ee2c4f894410d8cff32ac476062458eea7d"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "11047b67935b67fafe490d60cb6a6b633fe6f6123392a5d1a9d0d6f898f22ca0"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "11385d0759e0d11c01e3cc8c26ff899982b88193dd06828a77065d4360b4715c"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "248e3cef6c9e88484f1f91c1726591ace130e4faac0f123ec64664505398b399"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "2fb444b0afb23575de5335ec1e1b2ee97344a91ec698539bc04f7b5e40a84ac9"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "5fafcf396a1e204cf4140b176a8e96e5319bb813d9bf591f70bf6b09fcf44331"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "7b0a92d27c8f3e77f1b5013dcb51b3b52b4529f016f782319feaaf4f3513901a"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "a2f4799c29caf2511c06621faa61e3e65dde48a6b04a62350633b7f4b483f3f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "aefbaff161b73f84467b591204c97cdf54fc52a1ee1d9099346eb5ee17c069c4"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "d5e71a7e7356c7813bcb47d423b2bd26b84611edbeb08ea0002fa47ceddcda26"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "da384293599ea8648f07b7bd0f9421e818394fb4f62d6435388940b9b24e231f"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV",
+    "DPGIBaseColorMetallicSRV"
+   ],
+   "shader": "e5f0800d265694e6b688d37d981ff6463b2eb22bff9b985312603a3390c5e81b"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "fb4c8a8fc0f3f07b1038b972401582a304c8dbb529c329a0ae9a23dc3d69687c"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "fce8556c719060f22d2087eeec17f8b6d2e11c869fcb086f15434ba0a0560f3f"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "11047b67935b67fafe490d60cb6a6b633fe6f6123392a5d1a9d0d6f898f22ca0"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "248e3cef6c9e88484f1f91c1726591ace130e4faac0f123ec64664505398b399"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "2fb444b0afb23575de5335ec1e1b2ee97344a91ec698539bc04f7b5e40a84ac9"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "5fafcf396a1e204cf4140b176a8e96e5319bb813d9bf591f70bf6b09fcf44331"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "7b0a92d27c8f3e77f1b5013dcb51b3b52b4529f016f782319feaaf4f3513901a"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "a2f4799c29caf2511c06621faa61e3e65dde48a6b04a62350633b7f4b483f3f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "d5e71a7e7356c7813bcb47d423b2bd26b84611edbeb08ea0002fa47ceddcda26"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "DPGINormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "e5f0800d265694e6b688d37d981ff6463b2eb22bff9b985312603a3390c5e81b"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "fb4c8a8fc0f3f07b1038b972401582a304c8dbb529c329a0ae9a23dc3d69687c"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "DPGIVelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "fce8556c719060f22d2087eeec17f8b6d2e11c869fcb086f15434ba0a0560f3f"
+  }
+ ],
+ "formats": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": false,
+   "format": 29,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": true,
+   "format": 29,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": true,
+   "format": 24,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "blending": true,
+   "format": 49,
+   "over_unblended": false
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "blending": true,
+   "format": 24,
+   "over_unblended": true
+  }
+ ],
+ "depth_formats": {
+  "gbuffer": 20,
+  "forward": 20
+ },
+ "engine_textures": [
+  {
+   "purpose": "gbuffer",
+   "name": "BlueNoise16",
+   "file": "systems/rendering/bluenoise16x16.tex"
+  },
+  {
+   "purpose": "depth-prepass",
+   "name": "BlueNoise32",
+   "file": "systems/rendering/bluenoise.tex"
+  }
+ ],
+ "source": {
+  "mmtr_files": 279,
+  "passes": {
+   "colour": 82029,
+   "depth": 25168,
+   "depth-prepass": 27444,
+   "forward": 130544,
+   "gbuffer": 77464,
+   "pick": 9104,
+   "shadow": 26780,
+   "stencil": 23728
+  },
+  "passes_beyond_slots": 0,
+  "captures": [
+   {
+    "capture": "PRAGMATA_frame12414.rdc",
+    "api": "D3D12",
+    "draws": {
+     "colour": 101,
+     "forward": 58,
+     "gbuffer": 494
+    },
+    "shaders": {
+     "colour": 30,
+     "forward": 6,
+     "gbuffer": 37
+    },
+    "gbuffers": 2,
+    "engine_texture_draws": {
+     "gbuffer": 494,
+     "depth-prepass": 111
+    }
+   }
+  ],
+  "several_slots": [
+   {
+    "purpose": "colour",
+    "target": 0,
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 1,
+    "slots": [
+     "",
+     "BaseColorMetallicTranslucency",
+     "OcclusionSSSSSVelocityXVelocityYMisc"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 2,
+    "slots": [
+     "BaseColorMetallicTranslucency",
+     "NormalXNormalYRoughnessMisc"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 3,
+    "slots": [
+     "NormalXNormalYRoughnessMisc",
+     "OcclusionSSSSSVelocityXVelocityYMisc"
+    ]
+   }
+  ],
+  "several_slots_by_shader": [],
+  "several_formats": [
+   {
+    "purpose": "colour",
+    "target": 0,
+    "blending": false,
+    "formats": [
+     17,
+     24,
+     26
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "blending": true,
+    "formats": [
+     26,
+     29
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 1,
+    "blending": false,
+    "formats": [
+     13,
+     17,
+     29
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 1,
+    "blending": true,
+    "formats": [
+     29,
+     49,
+     61
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 2,
+    "blending": false,
+    "formats": [
+     24,
+     29
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 3,
+    "blending": false,
+    "formats": [
+     13,
+     24
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": "depth",
+    "formats": [
+     20,
+     40,
+     55
+    ]
+   }
+  ],
+  "other_engine_textures": []
+ }
+}

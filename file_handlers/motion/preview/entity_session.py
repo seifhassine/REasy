@@ -8,6 +8,7 @@ from utils.resource_file_utils import ResourceDataLoader, resource_path_key
 from ..evaluation import (
     LayerBlendMode,
     LayerInterpolationCurve,
+    LayerRepeat,
     LayerTimePolicy,
     LayerTiming,
     MotionLayer,
@@ -520,14 +521,20 @@ def build_preview_motion_layer(
         else None
     )
     layer_index = channel.definition.layer_index
+    motion = choice.motion.resolve_motion()
+    period = channel.definition.repeat_period_frames
     return MotionLayer(
-        choice.motion.resolve_motion(),
+        motion,
         blend_mode={
             RuntimeBlendMode.OVERWRITE: LayerBlendMode.OVERWRITE,
             RuntimeBlendMode.ADD_BLEND: LayerBlendMode.ADDITIVE,
         }[definition.blend_mode],
         weight=definition.weight,
-        timing=LayerTiming(fade_in_frames=fade, curve=curve),
+        timing=LayerTiming(
+            fade_in_frames=fade,
+            curve=curve,
+            repeat=LayerRepeat(period, motion.end_frame) if period > 0.0 else None,
+        ),
         speed=definition.speed,
         wrap_looping=definition.wrap_looping,
         layer_key=(

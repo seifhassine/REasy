@@ -48,6 +48,10 @@ def scn_identity_keys(path: str) -> set[str]:
     return keys
 
 
+def holds_scene(rsz_file) -> bool:
+    return bool(getattr(rsz_file, "is_scn", False) or getattr(rsz_file, "is_pfb", False))
+
+
 def scn_source_identity_keys(source: ScnSceneSource) -> set[str]:
     return scn_identity_keys(scoped_document_path(source.project_dir, source.path))
 

@@ -47,7 +47,6 @@ def get_color_scheme(accent_color: str | None = None) -> dict:
     return colors
 
 def get_main_stylesheet(colors: dict) -> str:
-    """Generate the main application stylesheet."""
     return f"""
         QMainWindow, QDialog, QWidget {{
             background-color: {colors['window_bg']}; color: {colors['text']};
@@ -67,6 +66,11 @@ def get_main_stylesheet(colors: dict) -> str:
             background-color: {colors['input_bg']}; color: {colors['text']};
             border: 1px solid {colors['border']}; padding: 3px 5px;
             selection-background-color: {colors['selection']};
+        }}
+        /* Qt 6.12 shrinks a styled spin box's edit field to 1px when it has no buttons. */
+        QAbstractSpinBox[buttonSymbols="NoButtons"]::up-button,
+        QAbstractSpinBox[buttonSymbols="NoButtons"]::down-button {{
+            subcontrol-origin: border; width: 0px;
         }}
         QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus {{
             border-color: {colors['focus']};
@@ -236,7 +240,6 @@ def get_main_stylesheet(colors: dict) -> str:
     """
 
 def get_tree_stylesheet(colors: dict) -> str:
-    """Generate the shared tree view/widget stylesheet."""
     return f"""
         QTreeView, QTreeWidget {{
             background-color: {colors['tree_bg']};

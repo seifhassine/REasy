@@ -25,13 +25,7 @@ TrackValue = float | Vector3Value | QuaternionValue
 
 @dataclass(slots=True)
 class KeyTrack:
-    """Semantic key values independent of v65 storage and compression.
-
-    Quaternion values contain canonical nonnegative W even though v65 stores
-    only XYZ for every encoding observed in DMC5. Compression identifiers,
-    quantized codewords, denormalization parameters, offsets, and counts are
-    writer-derived and intentionally absent from this model.
-    """
+    """Quaternions use nonnegative W; DMC5 v65 encodings store only XYZ."""
 
     family: TrackFamily
     frames: list[int]

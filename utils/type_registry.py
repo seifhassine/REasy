@@ -32,7 +32,6 @@ class TypeRegistry:
         self._type_id_cache = {}
 
     def _lookup_type_info(self, type_id: int):
-        """Internal helper to resolve a type ID without touching the cache."""
         hex_key = format(type_id, "x")
         info = self.registry.get(hex_key)
         if info is None and len(hex_key) < 8:
@@ -40,12 +39,6 @@ class TypeRegistry:
         return info
 
     def get_type_info(self, type_id: int) -> dict:
-        """
-        Look up the type info for a given type_id.
-        We convert type_id to lowercase hex without the "0x" prefix.
-        We try both the unpadded and 8-digit padded keys.
-        Returns a dict (or None if not found).
-        """
         cache = self._type_id_cache
         if type_id in cache:
             return cache[type_id]
@@ -66,21 +59,12 @@ class TypeRegistry:
             cache[type_id] = lookup(type_id)
 
     def find_type_by_name(self, type_name: str) -> tuple:
-        """
-        Look up type info and ID by name.
-        Returns a tuple of (type_info, type_id) or (None, None) if not found.
-        """
         info = self._name_to_info.get(type_name)
         if info is None:
             return None, None
         return info, self._name_to_type_id.get(type_name)
 
     def getTypeParents(self, type_name: str) -> list:
-        """
-        Return an ordered list of parent type names for the given type name.
-        The list starts with the immediate parent and goes up the chain.
-        Stops if a parent name cannot be resolved or a cycle is detected.
-        """
         parents = []
         seen = set()
         current_name = type_name

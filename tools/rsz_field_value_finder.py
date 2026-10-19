@@ -1,10 +1,3 @@
-"""
-RSZ Field Value Finder Tool
-
-This tool scans multiple RSZ files to find all possible values for a specific field
-of instances with a given type ID.
-"""
-
 import os
 import sys
 import argparse
@@ -193,7 +186,6 @@ def scan_directory(directory, type_id, field_identifier, type_registry, recursiv
     return results
 
 def format_value(value):
-    """Format a field value for display"""
     if hasattr(value, 'value'):
         return format_display_value(value.value)
     elif hasattr(value, 'values'):

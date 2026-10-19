@@ -1,0 +1,62 @@
+{
+ "format": 2,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "target": 2,
+ "source_holds_indices": true,
+ "destination_holds_buffer": false,
+ "blend": {
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteTangentStandard"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormal"
+ },
+ "write_excluding_edge": null,
+ "write_by_submesh": false,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningInstanceIDVFXCS",
+  "PreTransformSkinningOptionalBufferCS",
+  "PreTransformSkinningOptionalBufferVFXCS",
+  "PreTransformSkinningVFXCS"
+ ],
+ "skin_by_range": false,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": false,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "source": {
+  "captures": [
+   {
+    "capture": "re4_frame24212.rdc",
+    "draws": [
+     4475
+    ]
+   },
+   {
+    "capture": "re4_frame165489.rdc",
+    "draws": [
+     5206,
+     6835,
+     6958
+    ]
+   }
+  ]
+ }
+}

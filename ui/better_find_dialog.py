@@ -1,12 +1,13 @@
 import os
 from shiboken6 import isValid
-from PySide6.QtCore import QCoreApplication, Qt, QModelIndex, QTimer
+from PySide6.QtCore import QCoreApplication, Qt, QModelIndex
 from PySide6.QtWidgets import (
     QDockWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
     QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
     QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView, QMainWindow
 )
 
+from ui.qt_timers import call_later
 from utils.number_format import format_display_value, format_float_sequence
 
 
@@ -47,7 +48,6 @@ class BetterFindDialog(QDockWidget):
         if isinstance(raw, dict):
             obj = raw.get("obj")
             if obj:
-                # strings
                 if hasattr(obj, "string"):
                     try:
                         s = str(obj.string)
@@ -59,11 +59,9 @@ class BetterFindDialog(QDockWidget):
                 if hasattr(obj, "guid_str"):
                     return obj.guid_str
 
-                # numeric scalars
                 if hasattr(obj, "value"):
                     return format_display_value(obj.value)
 
-                # vectors / ranges
                 if all(hasattr(obj, attr) for attr in ("x", "y")):
                     coords = [obj.x, obj.y]
                     if hasattr(obj, "z"):
@@ -75,7 +73,6 @@ class BetterFindDialog(QDockWidget):
                 if hasattr(obj, "values") and isinstance(obj.values, (list, tuple)):
                     return format_float_sequence(obj.values, separator=" ")
 
-        # fall-back (second column of the node’s data list))
         if hasattr(item, "data") and isinstance(item.data, (list, tuple)) and len(item.data) > 1:
             return str(item.data[1])
 
@@ -143,9 +140,6 @@ class BetterFindDialog(QDockWidget):
             self._tree_for_tab = None
         return self._tree_for_tab
 
-    # ------------------------------------------------------------------ #
-    # GUI
-    # ------------------------------------------------------------------ #
     def __init__(self, file_tab=None, parent=None, shared_mode=False):
         super().__init__(QCoreApplication.translate("BetterFindDialog", "Find in Tree"), parent)
 
@@ -164,7 +158,7 @@ class BetterFindDialog(QDockWidget):
                 pass
 
         self.resize(460, 330)
-        QTimer.singleShot(0, lambda: self.setFloating(True))
+        call_later(self, 0, lambda: self.setFloating(True))
 
         self.shared_mode = shared_mode
         self.file_tab = file_tab
@@ -180,7 +174,6 @@ class BetterFindDialog(QDockWidget):
 
         root = QVBoxLayout(content)
 
-        # search bar
         srow = QHBoxLayout()
         srow.addWidget(QLabel(self.tr("Search:")))
         self.search_entry = QLineEdit(placeholderText=self.tr("Enter text…"))
@@ -188,7 +181,6 @@ class BetterFindDialog(QDockWidget):
         srow.addWidget(self.search_entry)
         root.addLayout(srow)
 
-        # options
         opts = QHBoxLayout()
         self.opt_name = QRadioButton(self.tr("Name"))
         self.opt_value = QRadioButton(self.tr("Value"))
@@ -205,7 +197,6 @@ class BetterFindDialog(QDockWidget):
         opts.addStretch()
         root.addLayout(opts)
 
-        # splitter (results / preview)
         splitter = QSplitter(Qt.Vertical)
 
         res_col = QVBoxLayout()
@@ -227,7 +218,6 @@ class BetterFindDialog(QDockWidget):
 
         root.addWidget(splitter, 1)
 
-        # nav buttons
         nav = QHBoxLayout()
         nav.addWidget(QPushButton(self.tr("Find All"), clicked=self.find_all))
         nav.addStretch()
@@ -289,7 +279,7 @@ class BetterFindDialog(QDockWidget):
         self.result_list.clear()
         self.current_index = -1
 
-        # QTreeWidget path (for now UVAR viewer)
+        # QTreeWidget path (e.g. the UVAR viewer)
         if hasattr(tree, "invisibleRootItem"):
             metadata_map = getattr(tree, "_metadata_map", None)
             handler = getattr(tree, "_handler", None)
@@ -423,7 +413,6 @@ class BetterFindDialog(QDockWidget):
                         walk_items(child, [r], [])
 
             else:
-                # fetch lazy children
                 def fetch(idx):
                     if hasattr(model, "canFetchMore") and model.canFetchMore(idx):
                         model.fetchMore(idx)
@@ -526,21 +515,18 @@ class BetterFindDialog(QDockWidget):
         self._select((self.current_index - 1) % len(self.results))
 
     def set_file_tab(self, file_tab):
-        """Update the current file tab (for shared mode)"""
         if self.file_tab == file_tab:
-            return  # No change needed
+            return
 
         self.file_tab = file_tab
         self.app = file_tab.app if file_tab else None
         self._tree_for_tab = None
-        # Clear results when switching tabs
         if self.shared_mode:
             self.results.clear()
             self.result_list.clear()
             self.current_index = -1
             self.preview.clear()
             self.status.setText(self.tr("Tab switched - search cleared"))
-            # Update window title to show current tab
             if file_tab and hasattr(file_tab, 'filename'):
                 tab_name = os.path.basename(file_tab.filename) if file_tab.filename else self.tr("Untitled")
                 self.setWindowTitle(
@@ -663,7 +649,6 @@ class BetterFindDialog(QDockWidget):
         """)
     
     def showEvent(self, event):
-        """Ensure the search entry is focused when the dialog appears."""
         super().showEvent(event)
         if not hasattr(self, '_shown_once'):
             self._shown_once = True
@@ -674,7 +659,7 @@ class BetterFindDialog(QDockWidget):
             self.activateWindow()
             self.raise_()
 
-        QTimer.singleShot(20, focus_entry)
+        call_later(self, 20, focus_entry)
     
     def closeEvent(self, e):
         self.results.clear()

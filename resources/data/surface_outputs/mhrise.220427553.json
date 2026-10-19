@@ -1,0 +1,98 @@
+{
+ "format": 5,
+ "game": "MHRISE",
+ "resource_version": 220427553,
+ "layout": "via.render.layer.GBufferLayout",
+ "targets": [
+  {
+   "purpose": "forward",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "tLinearImage",
+    "texSrc"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "EffectMaskTex",
+    "Velocity"
+   ]
+  }
+ ],
+ "formats": [
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": false,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": true
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "blending": false,
+   "format": 10,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "blending": true,
+   "format": 61,
+   "over_unblended": false
+  }
+ ],
+ "depth_formats": {
+  "forward": 20
+ },
+ "engine_textures": [],
+ "source": {
+  "mmtr_files": 339,
+  "passes": {
+   "colour": 10869,
+   "depth": 38100,
+   "depth-prepass": 38148,
+   "forward": 148824,
+   "gbuffer": 151608,
+   "other": 11736,
+   "pick": 7584,
+   "shadow": 40182,
+   "stencil": 36828
+  },
+  "passes_beyond_slots": 0,
+  "captures": [
+   {
+    "capture": "mhr_frame3962.rdc",
+    "api": "D3D12",
+    "draws": {
+     "forward": 307
+    },
+    "shaders": {
+     "forward": 34
+    },
+    "gbuffers": 0,
+    "engine_texture_draws": {
+     "gbuffer": 0,
+     "depth-prepass": 0
+    }
+   }
+  ],
+  "several_slots": [],
+  "several_slots_by_shader": [],
+  "several_formats": [],
+  "other_engine_textures": []
+ }
+}

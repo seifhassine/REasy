@@ -1,0 +1,75 @@
+{
+ "format": 2,
+ "game": "SF6",
+ "resource_version": 250109895,
+ "target": 2,
+ "source_holds_indices": true,
+ "destination_holds_buffer": true,
+ "blend": {
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentStandard"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormal"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalExcludingEdge"
+ },
+ "write_by_submesh": false,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningInstanceIDWithNormCS",
+  "PreTransformSkinningOptionalBufferWithNormCS",
+  "PreTransformSkinningWithNormCS"
+ ],
+ "skin_by_range": false,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "source": {
+  "captures": [
+   {
+    "capture": "cap.rdc",
+    "draws": [
+     18589,
+     18596,
+     18648,
+     18689,
+     18745,
+     18816,
+     18837,
+     19193,
+     19220,
+     19271
+    ]
+   },
+   {
+    "capture": "resultscreen.rdc",
+    "draws": [
+     5221,
+     5229,
+     5259,
+     5285
+    ]
+   }
+  ],
+  "executable": "StreetFighter6_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
+ }
+}

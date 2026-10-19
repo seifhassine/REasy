@@ -26,6 +26,12 @@ def _handler_classes():
     yield DdsHandler
     from file_handlers.mesh.mesh_handler import MeshHandler
     yield MeshHandler
+    from file_handlers.stmesh.stmesh_handler import StmeshHandler
+    yield StmeshHandler
+    from file_handlers.sdftex.sdftex_handler import SdfTexHandler
+    yield SdfTexHandler
+    from file_handlers.sdf.sdf_handler import SdfHandler
+    yield SdfHandler
     from file_handlers.sound.sound_handler import SoundHandler
     yield SoundHandler
     from file_handlers.clip.clip_handler import ClipHandler
@@ -50,6 +56,9 @@ def _handler_classes():
 
 def get_handler_for_data(data: bytes, filename: str = ""):
     fn = filename.lower()
+    if re.search(r"\.mmtr\.\d+(?:\.[^.]+)*$", fn):
+        from file_handlers.mmtr.mmtr_handler import MmtrHandler
+        return MmtrHandler()
     if re.search(r"\.wel\.\d+(?:\.[^.]+)*$", fn):
         from file_handlers.wel.wel_handler import WelHandler
         return WelHandler()

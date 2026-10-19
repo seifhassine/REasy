@@ -1,9 +1,3 @@
-"""
-RSZ Field Value Finder Dialog
-
-This dialog provides a UI for searching RSZ field values across multiple files.
-"""
-
 import glob
 import os
 from pathlib import Path

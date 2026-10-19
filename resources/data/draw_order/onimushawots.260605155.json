@@ -1,0 +1,28 @@
+{
+ "format": 2,
+ "game": "ONIMUSHAWOTS",
+ "resource_version": 260605155,
+ "unblended": "objects",
+ "blended": "farthest_object_depth",
+ "source": {
+  "note": "README WOTS meshlet section: M_Env_Glass_Water (no blending) forward meshlets, then a character's v_chara_tear part (AForwardPreTransform, no blending), then M_Env_Glass_OutSide (blending) forward meshlets; one of each, so the order within a group is the objects' (no capture shows two)",
+  "captures": [
+   {
+    "capture": "wots_frame28857.rdc",
+    "test": "stage104/build_wots_forward.py",
+    "draws": [
+     15033,
+     15054,
+     15096
+    ]
+   }
+  ],
+  "executable": {
+   "file": "OnimushaWotS_dump.exe",
+   "draw_task": "0x1448a3b60",
+   "gate": "MeshRenderer +0x36/+0x37",
+   "render_entry": "RenderEntry +0x3f1 = 1 (0x1456ab833)",
+   "note": "README 'The forward blending order of five executables': one key per via.render.Mesh, ~trunc(clamp(z/w, 0, 1) x 4294967295) of its world box's centre (bones' boxes for a skinned mesh) moved by TransparentBias, plus the material's TransparentPriorityBias, stable ascending"
+  }
+ }
+}

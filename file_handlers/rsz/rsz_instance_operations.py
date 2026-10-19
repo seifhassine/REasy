@@ -8,28 +8,8 @@ from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData
 
 
 class RszInstanceOperations:
-    """
-    Utility class for RSZ instance operations that are common across multiple components.
-    
-    This centralizes operations like:
-    - Finding nested objects
-    - Finding instances referenced by other instances
-    - Managing instance references during deletion
-    """
-
     @staticmethod
     def build_deletion_id_adjustments(instance_count, deleted_ids, include_deleted=False):
-        """Build the sparse ID mapping produced by deleting instances.
-
-        Args:
-            instance_count: Instance count before the deletions are applied.
-            deleted_ids: Collection of instance IDs being deleted.
-            include_deleted: Include deleted IDs in the result with a value of -1.
-
-        Returns:
-            dict: Old instance IDs mapped to their compacted IDs. Unchanged IDs are
-            omitted from the sparse mapping.
-        """
         deleted_ids = set(deleted_ids)
         deleted_sorted = sorted(deleted_ids)
         id_adjustments = {}
@@ -54,17 +34,6 @@ class RszInstanceOperations:
     
     @staticmethod
     def find_nested_objects(parsed_elements, instance_id, object_table=None, is_component_deletion = False):
-        """
-        Find instance IDs of nested objects that aren't in the object table.
-        
-        Args:
-            parsed_elements: Dictionary of all parsed elements
-            instance_id: The base instance ID to find nested objects for
-            object_table: Optional object table to exclude IDs from
-            
-        Returns:
-            set: Set of nested object instance IDs
-        """
         nested_objects = set()
         
         if object_table is None:
@@ -99,23 +68,11 @@ class RszInstanceOperations:
         
     @staticmethod
     def find_userdata_references(fields, userdata_refs):
-        """
-        Find all UserDataData references in fields
-        
-        Args:
-            fields: Dictionary of fields to search
-            userdata_refs: Set to collect UserDataData references
-        """
         userdata_refs.update(collect_userdata_reference_values(fields))
 
     @staticmethod
     def iter_instance_references(parsed_elements, excluded_instance_ids=()):
-        """Yield every RSZ reference together with its source location.
-
-        The RSZ instance namespace is shared by object and userdata references, so
-        callers that need type-specific behavior can filter on ``ref_obj`` without
-        reimplementing direct-field and array traversal.
-        """
+        """Includes userdata references; callers filter on ``ref_obj``'s type."""
         excluded_instance_ids = set(excluded_instance_ids)
         for source_id, fields in parsed_elements.items():
             if source_id in excluded_instance_ids or not isinstance(fields, dict):
@@ -148,12 +105,7 @@ class RszInstanceOperations:
 
     @staticmethod
     def remap_hierarchy(hierarchy, id_mapping, deleted_ids=()):
-        """Remap either supported RSZ hierarchy representation.
-
-        Standard hierarchies store ``{"children": ..., "parent": ...}``; some
-        embedded structures store a direct child list. Keeping both shapes here
-        prevents insertion/deletion paths from drifting apart.
-        """
+        """Embedded structures may hold a plain child list instead of a children/parent dict."""
         deleted_ids = set(deleted_ids)
         remapped = {}
         for instance_id, data in hierarchy.items():
@@ -249,18 +201,6 @@ class RszInstanceOperations:
         object_table=None,
         reference_type=None,
     ):
-        """
-        Check if an instance is exclusively referenced from the given source instance.
-        
-        Args:
-            parsed_elements: Dictionary of all parsed elements
-            instance_id: The instance ID to check references for
-            source_id: The source instance ID that should be the only referencer
-            object_table: Optional object table to check if the instance is in it
-            
-        Returns:
-            bool: True if instance_id is only referenced from source_id, False otherwise
-        """
         if instance_id <= 0:
             return False
             
@@ -289,19 +229,7 @@ class RszInstanceOperations:
         reference_type_isolation=False,
         include_positional=False,
     ):
-        """Collect instances owned by an RSZ reference graph.
-
-        Direct object fields are structural ownership edges. Object references in
-        arrays, and all userdata references, are treated as ownership edges only
-        when no other instance references the target. ``own_all_userdata`` keeps
-        the embedded-RSZ rule where userdata belongs to its containing graph.
-        ``reference_type_isolation`` is for embedded object namespaces whose
-        object and userdata edges must be considered independently.
-        ``include_positional`` preserves legacy ownership of instances located
-        between adjacent object-table entries.
-
-        The root is intentionally excluded from the returned set.
-        """
+        """``own_all_userdata`` is for embedded RSZ; ``reference_type_isolation`` for embedded namespaces."""
         excluded_ids = set(object_table or ())
         excluded_ids.add(0)
         valid_ids = (
@@ -367,16 +295,6 @@ class RszInstanceOperations:
         
     @staticmethod
     def find_all_instance_references(parsed_elements, instance_id):
-        """
-        Find all instances that reference the given instance ID.
-        
-        Args:
-            parsed_elements: Dictionary of all parsed elements
-            instance_id: The instance ID to find references for
-            
-        Returns:
-            dict: Dictionary mapping referencing instance IDs to fields that reference the target
-        """
         references = {}
         
         for ref_id, fields in parsed_elements.items():
@@ -461,14 +379,5 @@ class RszInstanceOperations:
         
     @staticmethod
     def find_object_references(fields):
-        """
-        Find all object references in a set of fields
-        
-        Args:
-            fields: Dictionary of fields to search
-            
-        Returns:
-            set: Set of referenced object IDs
-        """
         return collect_object_reference_values(fields)
     

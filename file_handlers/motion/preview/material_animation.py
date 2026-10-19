@@ -4,6 +4,7 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 
 from file_handlers.mesh.material_session import scoped_material_key
+from file_handlers.rsz.scn_scene_graph import ScnObjectId
 
 from ..evaluation import DeformationTarget
 from ..runtime import MotionMaterialController
@@ -13,6 +14,8 @@ from ..runtime import MotionMaterialController
 class MaterialAnimationBinding:
     material_scope: str
     controller: MotionMaterialController
+    object_id: ScnObjectId
+    channels: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -22,8 +25,6 @@ class MaterialAnimationResolution:
 
 
 class SceneMaterialAnimationResolver:
-    """Resolve semantic material controllers onto loaded scene meshes."""
-
     def __init__(
         self,
         load_controllers: Callable[
@@ -72,18 +73,23 @@ class SceneMaterialAnimationResolver:
                     )
                     continue
                 for binding in matches:
-                    parameters = self._resolved_parameters(
-                        binding,
-                        controller,
-                    )
+                    mesh = binding.target.mesh
+                    names = set(getattr(mesh, "material_names", ()) or ())
+                    parameters = tuple(item for item in controller.parameters if item.material_name in names)
+                    missing = sorted({item.material_name for item in controller.parameters} - names)
+                    if missing:
+                        diagnostics.append(
+                            f"{binding.target.label}: material controller #{controller.provider_instance_id} "
+                            f"names material(s) the mesh lacks: {', '.join(missing)}."
+                        )
                     if not parameters:
                         continue
                     scope = material_scope_for(binding.asset.renderable)
-                    bindings[scope, controller.provider_instance_id] = (
-                        MaterialAnimationBinding(
-                            scope,
-                            replace(controller, parameters=parameters),
-                        )
+                    bindings[scope, controller.provider_instance_id] = MaterialAnimationBinding(
+                        scope,
+                        replace(controller, parameters=parameters),
+                        binding.asset.renderable.source_object_id,
+                        _channel_names(mesh) if controller.held_by_channels else (),
                     )
         return MaterialAnimationResolution(
             tuple(bindings.values()),
@@ -113,36 +119,21 @@ class SceneMaterialAnimationResolver:
         self._cache[document.rsz_file] = cached
         return cached
 
-    @staticmethod
-    def _resolved_parameters(
-        binding,
-        controller: MotionMaterialController,
-    ):
-        material_names = set(
-            getattr(binding.target.mesh, "material_names", ()) or ()
-        )
-        required = {
-            parameter.material_name for parameter in controller.parameters
-        }
-        missing = required - material_names
-        if missing:
-            raise ValueError(
-                f"{binding.target.label}: material animation targets "
-                f"missing material(s) {', '.join(sorted(missing))}"
-            )
-        return controller.parameters
+
+def _channel_names(mesh) -> tuple[str, ...]:
+    """Ordered as the mesh component's channel name hashes."""
+    data = getattr(mesh, "blend_shape_data", None)
+    return tuple(channel.name for channel in getattr(data, "channels", ()) or ())
 
 
 def material_deformation_targets(
     bindings: Iterable[MaterialAnimationBinding],
     property_name_hash: Callable[[str], int] | None,
 ) -> tuple[DeformationTarget, ...]:
-    """Expose each material input to the existing scalar MOT evaluator."""
-
     names = tuple(dict.fromkeys(
         name
         for binding in bindings
-        for name in binding.controller.source_names
+        for name in (*binding.controller.source_names, *binding.channels)
     ))
     if not names:
         return ()
@@ -164,27 +155,38 @@ def material_deformation_targets(
     return targets
 
 
-def evaluate_material_parameters(
-    bindings: Iterable[MaterialAnimationBinding],
-    deformation_weights: Iterable[tuple[str, float]],
-) -> dict[str, dict[str, float]]:
-    """Evaluate scoped material values from the composed scalar motion state."""
+class MaterialAnimation:
+    def __init__(self, bindings: Iterable[MaterialAnimationBinding] = ()) -> None:
+        self.bindings = tuple(bindings)
+        self._held: dict[int, tuple[tuple[float, ...], dict[tuple[str, str], float]]] = {}
 
-    sources = dict(deformation_weights)
-    result: dict[str, dict[str, float]] = {}
-    for binding in bindings:
-        controller = binding.controller
-        for parameter in controller.parameters:
-            material_key = scoped_material_key(
-                binding.material_scope,
-                parameter.material_name,
-            )
-            values = result.setdefault(material_key, {})
-            value = parameter.evaluate(sources.get(parameter.source_name, 0.0))
-            previous = values.setdefault(parameter.parameter_name, value)
-            if previous != value:
-                raise ValueError(
-                    f"material parameter {material_key}."
-                    f"{parameter.parameter_name} has conflicting animation values"
-                )
-    return result
+    def restart(self) -> None:
+        self._held.clear()
+
+    def evaluate(
+        self,
+        deformation_weights: Iterable[tuple[str, float]],
+        animated: ScnObjectId,
+    ) -> dict[str, dict[str, float]]:
+        sources = dict(deformation_weights)
+        result: dict[str, dict[str, float]] = {}
+        for index, binding in enumerate(self.bindings):
+            if binding.object_id != animated:
+                continue
+            controller = binding.controller
+            if controller.held_by_channels:
+                channels = tuple(sources.get(name, 0.0) for name in binding.channels)
+                held = self._held.get(index, ((0.0,) * len(channels), {}))
+                if channels != held[0]:
+                    held = self._held[index] = channels, controller.values(sources)
+                values = held[1]
+            else:
+                values = controller.values(sources)
+            for (material, parameter), value in values.items():
+                material_key = scoped_material_key(binding.material_scope, material)
+                previous = result.setdefault(material_key, {}).setdefault(parameter, value)
+                if previous != value:
+                    raise ValueError(
+                        f"material parameter {material_key}.{parameter} has conflicting animation values"
+                    )
+        return result

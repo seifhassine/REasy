@@ -6,6 +6,8 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 
+from utils.game_keys import game_key
+
 from .sound_metadata import SoundMetadata
 from .sound_resources import RelatedSoundPaths, resource_key, sound_media_key
 
@@ -43,10 +45,6 @@ class WemAuthoringCodec:
 
     def matches(self, tag: int | None) -> bool:
         return tag == self.tag or tag in self.match_tags
-
-
-def _game_key(value) -> str:
-    return re.sub(r"[^A-Z0-9]", "", str(value or "").upper())
 
 
 class SoundGameProfile:
@@ -151,18 +149,18 @@ _ALIASES: dict[str, str] = {}
 
 
 def register_sound_profile(profile: SoundGameProfile) -> SoundGameProfile:
-    key = _game_key(profile.game)
+    key = game_key(profile.game)
     if not key:
         raise ValueError("A sound profile must have a game key")
     _PROFILES[key] = profile
     for alias in (profile.game, profile.display_name, *profile.aliases):
-        _ALIASES[_game_key(alias)] = key
+        _ALIASES[game_key(alias)] = key
     sound_bank_family_for_game.cache_clear()
     return profile
 
 
 def sound_profile_for_game(game) -> SoundGameProfile | None:
-    return _PROFILES.get(_ALIASES.get(_game_key(game), _game_key(game)))
+    return _PROFILES.get(_ALIASES.get(game_key(game), game_key(game)))
 
 
 @lru_cache(maxsize=16384)

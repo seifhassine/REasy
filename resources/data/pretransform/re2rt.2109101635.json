@@ -1,0 +1,53 @@
+{
+ "format": 2,
+ "game": "RE2RT",
+ "resource_version": 2109101635,
+ "target": 3,
+ "source_holds_indices": false,
+ "destination_holds_buffer": false,
+ "blend": {
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteTangentStandard"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormal"
+ },
+ "write_excluding_edge": null,
+ "write_by_submesh": false,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningOptionalBufferCS"
+ ],
+ "skin_by_range": false,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "source": {
+  "captures": [
+   {
+    "capture": "newcap.rdc",
+    "draws": [
+     5471,
+     5478
+    ]
+   }
+  ],
+  "executable": "re2.exe (RE2 RT): the masters' programs run on each submesh; a mesh without bones runs the Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
+ }
+}

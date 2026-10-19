@@ -26,6 +26,9 @@ class ViewportOverlayManager:
         self.hover_key = hover_key
         self.drag_overlay = self.drag_offset = self.resize_overlay = None
         self._widgets: list[QWidget] = []
+        self._place_timer = QTimer(view)
+        self._place_timer.setSingleShot(True)
+        self._place_timer.timeout.connect(self.place)
 
     def setup(
         self,
@@ -52,7 +55,10 @@ class ViewportOverlayManager:
         for child in (widget, *widget.findChildren(QWidget)):
             child._viewport_drag_overlay = widget
             child.installEventFilter(self.view)
-        QTimer.singleShot(0, self.view, self.place)
+        self.place_later()
+
+    def place_later(self, msec: int = 0) -> None:
+        self._place_timer.start(msec)
 
     def event_filter(self, obj, event):
         kind = event.type()

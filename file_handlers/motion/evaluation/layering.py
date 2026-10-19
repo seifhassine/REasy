@@ -5,16 +5,17 @@ from enum import Enum
 import math
 from typing import TYPE_CHECKING, Hashable
 
+import numpy as np
+
 from ..mot.model import AnimationNode, Motion
 from ..transform_channels import TransformChannels
 from .composition import compose_evaluated_pose
 from .binding import JointBindingStrategy, bind_motion
-from .math3d import multiply_quaternions
-from .model import EvaluationDiagnostic, EvaluatedPose, Transform
+from .math3d import fastmotion
+from .model import EvaluationDiagnostic, EvaluatedPose
 from .sampling import (
     MotionEvaluator,
     RotationInterpolation,
-    interpolate_quaternion,
     resolve_motion_frame,
 )
 
@@ -42,12 +43,30 @@ class LayerInterpolationCurve(Enum):
 
 
 @dataclass(frozen=True, slots=True)
+class LayerRepeat:
+    """In frames from the timing's start; each play runs ``length`` frames at full weight and only the first fades in.
+    """
+
+    period: float
+    length: float
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.period) or not math.isfinite(self.length) or self.period <= 0.0 or self.length < 0.0:
+            raise ValueError("a repeated layer needs a positive period and a nonnegative length")
+
+    def place(self, elapsed: float) -> tuple[int, float]:
+        play, into = divmod(elapsed, self.period)
+        return int(play), into
+
+
+@dataclass(frozen=True, slots=True)
 class LayerTiming:
     """Activation timing on the base motion's frame clock."""
 
     start_frame: float = 0.0
     fade_in_frames: float = 0.0
     curve: LayerInterpolationCurve = LayerInterpolationCurve.LINEAR
+    repeat: LayerRepeat | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -57,12 +76,23 @@ class LayerTiming:
         ):
             raise ValueError("layer timing values must be finite and fade-in nonnegative")
 
+    def local_frame(self, frame: float) -> float:
+        elapsed = max(0.0, frame - self.start_frame)
+        return elapsed if self.repeat is None else self.repeat.place(elapsed)[1]
+
     def weight_at(self, frame: float) -> float:
         if frame < self.start_frame:
             return 0.0
+        elapsed = frame - self.start_frame
+        if self.repeat is not None:
+            play, elapsed = self.repeat.place(elapsed)
+            if elapsed >= self.repeat.length:
+                return 0.0
+            if play:
+                return 1.0
         if not self.fade_in_frames:
             return 1.0
-        amount = min(1.0, (frame - self.start_frame) / self.fade_in_frames)
+        amount = min(1.0, elapsed / self.fade_in_frames)
         if self.curve is LayerInterpolationCurve.LINEAR:
             return amount
         if self.curve is LayerInterpolationCurve.SMOOTH:
@@ -75,7 +105,7 @@ class LayerTiming:
 
     @property
     def constant_for_nonnegative_frames(self) -> bool:
-        return self.start_frame + self.fade_in_frames <= 0.0
+        return self.repeat is None and self.start_frame + self.fade_in_frames <= 0.0
 
 
 @dataclass(frozen=True, slots=True)
@@ -141,11 +171,22 @@ class MotionLayer:
             object.__setattr__(self, "joint_channels", normalized)
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class _BoundLayer:
+    """``node_weights`` and ``channels`` are per joint; weight 0 for no node."""
+
     source: MotionLayer
     evaluator: MotionEvaluator
-    joint_channels: tuple[TransformChannels, ...] | None
+    node_weights: np.ndarray
+    channels: np.ndarray
+
+
+# ``fastmotion.blend`` channel bits.
+_CHANNEL_BITS = (
+    ("translation", TransformChannels.TRANSLATION, 1),
+    ("rotation", TransformChannels.ROTATION, 2),
+    ("scale", TransformChannels.SCALE, 4),
+)
 
 
 class LayerFrameResolver:
@@ -196,11 +237,7 @@ class LayerFrameResolver:
             self._source_positions,
         ):
             if source_position is None:
-                requested = max(
-                    0.0,
-                    (layer_clock_frame - layer.timing.start_frame)
-                    * layer.speed,
-                )
+                requested = layer.timing.local_frame(layer_clock_frame) * layer.speed
                 frame = resolve_motion_frame(
                     layer.motion,
                     requested,
@@ -236,12 +273,8 @@ class LayerFrameResolver:
 
 
 class LayeredPoseEvaluator:
-    """Compose partial MOT channels over a fully evaluated base pose.
-
-    Only authored overlay channels participate. A partial facial MOT therefore
-    cannot reset an animated parent merely because that parent exists in its
-    source skeleton.
-    """
+    """Only authored overlay channels apply, so a partial facial MOT cannot reset an animated parent that merely exists
+    in its source skeleton."""
 
     def __init__(
         self,
@@ -299,7 +332,18 @@ class LayeredPoseEvaluator:
                 by_key.get(key, TransformChannels.NONE)
                 for key in rig_keys
             )
-        return _BoundLayer(layer, evaluator, joint_channels)
+        count = len(binding.joints)
+        node_weights = np.zeros(count, dtype=np.float64)
+        channels = np.zeros(count, dtype=np.uint8)
+        for index, bound in enumerate(binding.joints):
+            node = bound.animation_node
+            if not isinstance(node, AnimationNode) or node.weight <= 0.0:
+                continue
+            node_weights[index] = node.weight
+            allowed = TransformChannels.ALL if joint_channels is None else joint_channels[index]
+            channels[index] = sum(bit for name, channel, bit in _CHANNEL_BITS
+                                  if getattr(node, name) is not None and allowed & channel)
+        return _BoundLayer(layer, evaluator, node_weights, channels)
 
     def sample_frame(
         self,
@@ -319,7 +363,8 @@ class LayeredPoseEvaluator:
             base_pose.frame,
             layer_clock,
         )
-        local = list(base_pose.local_transforms)
+        local = base_pose.local
+        slerp = self.base.policy.rotation_interpolation is RotationInterpolation.SHORTEST_SLERP
         for layer, layer_frame in zip(self.layers, layer_frames):
             weight = layer.source.weight * layer.source.timing.weight_at(layer_clock)
             if weight <= 0.0:
@@ -329,122 +374,11 @@ class LayeredPoseEvaluator:
                 wrap_looping=False,
                 apply_node_weights=False,
             )
-            for index, bound in enumerate(layer.evaluator.binding.joints):
-                node = bound.animation_node
-                if (
-                    not isinstance(node, AnimationNode)
-                    or node.weight <= 0.0
-                ):
-                    continue
-                amount = weight * node.weight
-                channels = (
-                    TransformChannels.ALL
-                    if layer.joint_channels is None
-                    else layer.joint_channels[index]
-                )
-                current = local[index]
-                target = overlay.local_transforms[index]
-                local[index] = (
-                    _additive_transform(
-                        current,
-                        target,
-                        amount,
-                        node,
-                        channels,
-                        self.base.policy.rotation_interpolation,
-                    )
-                    if layer.source.blend_mode is LayerBlendMode.ADDITIVE
-                    else _overwrite_transform(
-                        current,
-                        target,
-                        amount,
-                        node,
-                        channels,
-                        self.base.policy.rotation_interpolation,
-                    )
-                )
+            fastmotion.blend(local, overlay.local, weight * layer.node_weights, layer.channels,
+                             layer.source.blend_mode is LayerBlendMode.ADDITIVE, slerp)
         return compose_evaluated_pose(
             self.base.binding.rig,
             base_pose.frame,
             local,
             base_pose.node_weights,
         )
-
-
-def _lerp3(
-    left: tuple[float, float, float],
-    right: tuple[float, float, float],
-    amount: float,
-) -> tuple[float, float, float]:
-    return (
-        left[0] + (right[0] - left[0]) * amount,
-        left[1] + (right[1] - left[1]) * amount,
-        left[2] + (right[2] - left[2]) * amount,
-    )
-
-
-def _overwrite_transform(
-    current: Transform,
-    target: Transform,
-    amount: float,
-    node: AnimationNode,
-    channels: TransformChannels,
-    rotation_interpolation: RotationInterpolation,
-) -> Transform:
-    return Transform(
-        _lerp3(current.translation, target.translation, amount)
-        if node.translation is not None
-        and channels & TransformChannels.TRANSLATION
-        else current.translation,
-        interpolate_quaternion(
-            current.rotation,
-            target.rotation,
-            amount,
-            rotation_interpolation,
-        )
-        if node.rotation is not None
-        and channels & TransformChannels.ROTATION
-        else current.rotation,
-        _lerp3(current.scale, target.scale, amount)
-        if node.scale is not None
-        and channels & TransformChannels.SCALE
-        else current.scale,
-    )
-
-
-def _additive_transform(
-    current: Transform,
-    target: Transform,
-    amount: float,
-    node: AnimationNode,
-    channels: TransformChannels,
-    rotation_interpolation: RotationInterpolation,
-) -> Transform:
-    return Transform(
-        tuple(
-            value + delta * amount
-            for value, delta in zip(current.translation, target.translation)
-        )
-        if node.translation is not None
-        and channels & TransformChannels.TRANSLATION
-        else current.translation,
-        multiply_quaternions(
-            current.rotation,
-            interpolate_quaternion(
-                (0.0, 0.0, 0.0, 1.0),
-                target.rotation,
-                amount,
-                rotation_interpolation,
-            ),
-        )
-        if node.rotation is not None
-        and channels & TransformChannels.ROTATION
-        else current.rotation,
-        tuple(
-            value + (delta - 1.0) * amount
-            for value, delta in zip(current.scale, target.scale)
-        )
-        if node.scale is not None
-        and channels & TransformChannels.SCALE
-        else current.scale,
-    )

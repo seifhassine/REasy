@@ -17,6 +17,7 @@ from file_handlers.sound.sound_profile import (
     sound_profile_for_game,
     sound_profiles,
 )
+from utils.game_keys import game_key
 
 
 @dataclass(frozen=True, order=True)
@@ -64,7 +65,7 @@ _CLI_DIRS = (
 
 def _game_key(game):
     profile = sound_profile_for_game(game)
-    return profile.game if profile else re.sub(r"[^A-Z0-9]", "", str(game or "").upper())
+    return profile.game if profile else game_key(game)
 
 
 def wwise_profile_for_game(game):

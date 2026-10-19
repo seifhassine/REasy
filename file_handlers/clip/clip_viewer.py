@@ -1397,6 +1397,10 @@ class ClipViewer(QWidget):
         self.modified = False
         self.current: dict[str, Any] | None = None
         self._key_table_internal = False
+        self._scroll_timer = QTimer(self)
+        self._scroll_timer.setSingleShot(True)
+        self._scroll_timer.setInterval(0)
+        self._scroll_timer.timeout.connect(self._scroll_timeline_to_current)
         self._build_ui()
         self._refresh()
 
@@ -1601,7 +1605,7 @@ class ClipViewer(QWidget):
         self._show_object(obj)
         self._update_section_visibility(obj)
         self._update_buttons(obj)
-        QTimer.singleShot(0, self._scroll_timeline_to_current)
+        self._scroll_timer.start()
 
     def _show_object(self, obj):
         if self.current and self.current.get("kind") == "oword":

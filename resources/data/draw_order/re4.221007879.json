@@ -1,0 +1,44 @@
+{
+ "format": 2,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "unblended": "objects",
+ "blended": "farthest_object_depth",
+ "source": {
+  "note": "re4_frame24212 and re4_frame165489 (README \"RE4's title forest set\"): the five blending quads (glass_reflectivetransparent and _lite) drawn farthest first across the two masters in every frame (24212 8137-8205, 165489 10979-11047; re4_frame25463, deleted, alike), fitted (the executable's sort is not read; the lite material's TransparentPriorityBias 10 is far below the quads' key gaps). The five that do not blend: nearest first within each master in 24212 (46 s after the spawn and a camera move), in the order made in 25463 (6 s after) and half sorted in 165489 (14 s after): a sort applied over time, not a rule of this catalog's, so the objects' order",
+  "captures": [
+   {
+    "capture": "re4_frame24212.rdc",
+    "script": "stage125/reasy_re4_test.lua",
+    "draws": [
+     8085,
+     8090,
+     8107,
+     8112,
+     8117,
+     8137,
+     8154,
+     8171,
+     8188,
+     8205
+    ]
+   },
+   {
+    "capture": "re4_frame165489.rdc",
+    "script": "stage125/reasy_re4_test.lua",
+    "draws": [
+     10932,
+     10937,
+     10942,
+     10959,
+     10964,
+     10979,
+     10996,
+     11013,
+     11030,
+     11047
+    ]
+   }
+  ]
+ }
+}

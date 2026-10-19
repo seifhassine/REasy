@@ -5,7 +5,11 @@ from typing import Sequence
 
 import numpy as np
 
-from .model import Matrix4, Quaternion, Transform
+from utils.native_build import ensure_fastmotion
+
+from .model import TRANSFORM_WIDTH, Quaternion, Transform
+
+fastmotion = ensure_fastmotion()
 
 
 def normalize_quaternion(value: Sequence[float]) -> Quaternion:
@@ -35,110 +39,34 @@ def inverse_quaternion(value: Sequence[float]) -> Quaternion:
     return -x, -y, -z, w
 
 
-def multiply_matrices(left: Sequence[float], right: Sequence[float]) -> Matrix4:
-    if len(left) != 16 or len(right) != 16:
-        raise ValueError("matrix multiplication requires two 4x4 matrices")
-    return tuple(
-        (
-            np.asarray(left, dtype=np.float64).reshape(4, 4)
-            @ np.asarray(right, dtype=np.float64).reshape(4, 4)
-        ).ravel().tolist()
-    )
-
-
-def transform_matrix(transform: Transform) -> Matrix4:
-    x, y, z, w = normalize_quaternion(transform.rotation)
-    sx, sy, sz = transform.scale
-    xx, yy, zz = x * x, y * y, z * z
-    xy, xz, yz = x * y, x * z, y * z
-    xw, yw, zw = x * w, y * w, z * w
-    tx, ty, tz = transform.translation
-    return (
-        (1.0 - 2.0 * (yy + zz)) * sx,
-        2.0 * (xy + zw) * sx,
-        2.0 * (xz - yw) * sx,
-        0.0,
-        2.0 * (xy - zw) * sy,
-        (1.0 - 2.0 * (xx + zz)) * sy,
-        2.0 * (yz + xw) * sy,
-        0.0,
-        2.0 * (xz + yw) * sz,
-        2.0 * (yz - xw) * sz,
-        (1.0 - 2.0 * (xx + yy)) * sz,
-        0.0,
-        tx,
-        ty,
-        tz,
-        1.0,
-    )
+def transform_matrices(local: np.ndarray) -> np.ndarray:
+    """``local`` rows as ``Transform.row``; row-vector 4x4 matrices."""
+    local = _rows(local)
+    return np.frombuffer(fastmotion.matrices(local), dtype=np.float64).reshape(-1, 4, 4)
 
 
 def compose_world_matrices(
-    local_transforms: Sequence[Transform], parent_indices: Sequence[int | None]
-) -> tuple[Matrix4, ...]:
-    if len(local_transforms) != len(parent_indices):
+    local: np.ndarray,
+    parents: np.ndarray,
+    compensating: np.ndarray | None = None,
+) -> np.ndarray:
+    """A ``compensating`` joint (``via::Joint::getPartSegmentScaleMatrix``) leaves its parent's scale out of its basis
+    but not its translation."""
+    local = _rows(local)
+    count = len(local)
+    parents = np.ascontiguousarray(parents, dtype=np.int32)
+    compensating = (np.zeros(count, dtype=np.uint8) if compensating is None
+                    else np.ascontiguousarray(compensating, dtype=np.uint8))
+    if len(parents) != count or len(compensating) != count:
         raise ValueError("local transforms and hierarchy lengths differ")
-    count = len(local_transforms)
-    if count == 0:
-        return ()
-    parents = np.fromiter(
-        (-1 if index is None else index for index in parent_indices),
-        dtype=np.int64,
-        count=count,
-    )
-    if np.any(parents < -1) or np.any(parents >= count):
-        raise ValueError("hierarchy contains an invalid parent index")
+    return np.frombuffer(fastmotion.compose(local, parents, compensating), dtype=np.float64).reshape(-1, 4, 4)
 
-    translation = np.asarray(
-        [value.translation for value in local_transforms], dtype=np.float64
-    )
-    rotation = np.asarray(
-        [value.rotation for value in local_transforms], dtype=np.float64
-    )
-    scale = np.asarray(
-        [value.scale for value in local_transforms], dtype=np.float64
-    )
-    lengths = np.linalg.norm(rotation, axis=1)
-    if np.any(~np.isfinite(lengths)) or np.any(lengths <= 1e-12):
-        raise ValueError("cannot normalize a zero-length or nonfinite quaternion")
-    x, y, z, w = (rotation / lengths[:, None]).T
-    sx, sy, sz = scale.T
-    xx, yy, zz = x * x, y * y, z * z
-    xy, xz, yz = x * y, x * z, y * z
-    xw, yw, zw = x * w, y * w, z * w
 
-    local = np.zeros((count, 4, 4), dtype=np.float64)
-    local[:, 0, 0] = (1.0 - 2.0 * (yy + zz)) * sx
-    local[:, 0, 1] = 2.0 * (xy + zw) * sx
-    local[:, 0, 2] = 2.0 * (xz - yw) * sx
-    local[:, 1, 0] = 2.0 * (xy - zw) * sy
-    local[:, 1, 1] = (1.0 - 2.0 * (xx + zz)) * sy
-    local[:, 1, 2] = 2.0 * (yz + xw) * sy
-    local[:, 2, 0] = 2.0 * (xz + yw) * sz
-    local[:, 2, 1] = 2.0 * (yz - xw) * sz
-    local[:, 2, 2] = (1.0 - 2.0 * (xx + yy)) * sz
-    local[:, 3, :3] = translation
-    local[:, 3, 3] = 1.0
-
-    world = np.empty_like(local)
-    pending = np.ones(count, dtype=bool)
-    while np.any(pending):
-        indices = np.flatnonzero(pending)
-        parent = parents[indices]
-        ready = parent < 0
-        children = ~ready
-        ready[children] = ~pending[parent[children]]
-        if not np.any(ready):
-            raise ValueError("hierarchy contains a cycle")
-        indices = indices[ready]
-        parent = parents[indices]
-        roots = parent < 0
-        world[indices[roots]] = local[indices[roots]]
-        world[indices[~roots]] = (
-            local[indices[~roots]] @ world[parent[~roots]]
-        )
-        pending[indices] = False
-    return tuple(map(tuple, world.reshape(count, 16).tolist()))
+def _rows(local: np.ndarray) -> np.ndarray:
+    local = np.ascontiguousarray(local, dtype=np.float64)
+    if local.ndim != 2 or local.shape[1] != TRANSFORM_WIDTH:
+        raise ValueError("local transforms must be rows of translation, rotation and scale")
+    return local
 
 
 def decompose_row_srt(matrix: Sequence[float], *, tolerance: float = 1e-5) -> Transform:

@@ -25,5 +25,5 @@ class TextureViewerHandler(BaseFileHandler):
         viewer.modified_changed.connect(self.modified_changed.emit)
         return viewer
 
-    def build_dds_bytes(self, image_index: int = 0) -> bytes:
+    def build_dds_bytes(self) -> bytes:
         return bytes(self.raw_data)

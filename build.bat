@@ -20,8 +20,13 @@ if /I "%GITHUB_ACTIONS%"=="true" (
 "%PY%" -c "import runpy, sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); runpy.run_module('PyInstaller', run_name='__main__')" --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
   --collect-submodules file_handlers ^
   --hidden-import fast_pakresolve --collect-binaries fast_pakresolve ^
+  --hidden-import fast_path_search --collect-binaries fast_path_search ^
   --hidden-import fast_string_scan --collect-binaries fast_string_scan ^
   --hidden-import fastmesh --collect-binaries fastmesh ^
+  --hidden-import fastmotion --collect-binaries fastmotion ^
+  --hidden-import fastsdftex --collect-binaries fastsdftex ^
+  --hidden-import fastmatpreview --collect-binaries fastmatpreview ^
+  --hidden-import fastdxil --collect-binaries fastdxil ^
   --hidden-import texture2ddecoder --collect-all texture2ddecoder ^
   --add-binary "%GDEFLATE_DLL%;tools\runtimes\win-x64\native" ^
   REasy.py || exit /b 1

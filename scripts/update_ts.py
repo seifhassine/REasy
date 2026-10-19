@@ -16,7 +16,10 @@ def project_python_files(project_root: Path) -> list[str]:
         capture_output=True,
         text=True,
     )
-    return sorted(filter(None, result.stdout.splitlines()))
+    return sorted(
+        path for path in result.stdout.splitlines()
+        if path and (project_root / path).is_file()
+    )
 
 
 def find_lupdate() -> str:

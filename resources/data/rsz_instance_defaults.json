@@ -1,0 +1,23 @@
+{
+  "_comment": [
+    "Values a newly created RSZ instance starts with where its type's zero default differs from what shipped files hold.",
+    "Keyed by type name. Each entry lists the names the field goes by across the games' type dumps (the first one an",
+    "instance has is set); a list value sets the vector components x, y, z, w in order.",
+    "Surveyed 2026-10-16 on the scn/pfb fixtures of all 21 dumps: GameObjects hold Update/Draw true and TimeScale -1;",
+    "folders with children hold Update/Draw/Startup (Standby) true; Transforms hold identity rotation and unit scale."
+  ],
+  "via.GameObject": [
+    {"fields": ["UpdateSelf", "Update", "v2"], "value": true},
+    {"fields": ["DrawSelf", "Draw", "v3"], "value": true},
+    {"fields": ["TimeScale", "Timescale", "v4"], "value": -1.0}
+  ],
+  "via.Folder": [
+    {"fields": ["UpdateSelf", "Update", "v2"], "value": true},
+    {"fields": ["DrawSelf", "Draw", "v3"], "value": true},
+    {"fields": ["Startup", "Standby", "StandBy", "v4"], "value": true}
+  ],
+  "via.Transform": [
+    {"fields": ["Rotation", "LocalRotation", "v1"], "value": [0.0, 0.0, 0.0, 1.0]},
+    {"fields": ["Scale", "LocalScale", "v2"], "value": [1.0, 1.0, 1.0]}
+  ]
+}

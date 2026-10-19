@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Callable
 
+import numpy as np
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -13,8 +14,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from file_handlers.strands.motion import MotionStrandsDialog
 from ui.scene.scene_preview import ScenePreviewWidget
 from utils.resource_file_utils import resolve_handler_resource_data
+from file_handlers.mesh.scene_lit import SceneDevicePreview
 from file_handlers.mesh.material_session import (
     MeshMaterialCollection,
     MeshMaterialSession,
@@ -77,6 +80,7 @@ class MotListPreviewWidget(QWidget):
         self._target_material_session: MeshMaterialSession | None = None
         self._using_source_rig = True
         self._cleaned = False
+        self._strands_dialog = None
         root_path = str(getattr(handler, "filepath", "") or handler.model.name)
         self._catalog = MotionPreviewCatalog(
             MotionListDocument(root_path, handler.model),
@@ -90,15 +94,15 @@ class MotListPreviewWidget(QWidget):
         self.playback.set_frame_driver(
             self.viewport.set_frame_callback,
         )
-        self.viewport.render_failure.connect(
-            self._on_render_failure,
-            Qt.ConnectionType.QueuedConnection,
-        )
         self._materials = MeshMaterialCollection(self.viewport, parent=self)
         self.viewport.texture_quality_changed.connect(
             self._materials.set_texture_quality
         )
         self._scene_renderer = MotionPreviewRenderer(self.viewport)
+        self._device_preview = SceneDevicePreview(self.viewport, self._materials, self)
+        self._motion_status = ""
+        self._device_preview.status_changed.connect(self._show_status)
+        self._device_preview.set_active(True)
         self._populate_motions()
 
     def _build_ui(self, viewport_factory: ViewportFactory) -> None:
@@ -159,6 +163,10 @@ class MotListPreviewWidget(QWidget):
         self.load_resource_button = QPushButton(self.tr("Load Mesh Resource…"))
         self.load_resource_button.clicked.connect(self._load_mesh_resource)
         self.rig_pane.add_widget(self.load_resource_button)
+        self.strands_button = QPushButton(self.tr("Strands…"))
+        self.strands_button.setEnabled(False)
+        self.strands_button.clicked.connect(self._show_strands)
+        self.rig_pane.add_widget(self.strands_button)
         self.source_rig_button = QPushButton(self.tr("Use MOT Skeleton"))
         self.source_rig_button.clicked.connect(self.use_source_rig)
         self.rig_pane.add_widget(self.source_rig_button)
@@ -257,7 +265,7 @@ class MotListPreviewWidget(QWidget):
 
     def _on_motion_changed(self, _index: int) -> None:
         self.playback.stop()
-        self._load_current_motion(reset_camera=True)
+        self._load_current_motion(reset_camera=False)
 
     def _play_selected_animation(self) -> None:
         if self.controller.ready and not self.controller.playing:
@@ -304,7 +312,22 @@ class MotListPreviewWidget(QWidget):
         except (MotionPreviewError, ValueError) as exc:
             self._clear_scene(str(exc))
 
+    def _show_strands(self):
+        if self._strands_dialog is None:
+            self._strands_dialog = MotionStrandsDialog(self)
+        self._strands_dialog.show()
+        self._strands_dialog.raise_()
+        self._render()
+
+    def strands_changed(self) -> None:
+        if not self._cleaned:
+            self._device_preview.strands_changed()
+
     def set_target(self, target: RigPreviewTarget) -> None:
+        if self._strands_dialog is not None:
+            self._strands_dialog.cleanup()
+            self._strands_dialog = None
+        self.strands_button.setEnabled(target.handler is not None)
         self._materials.clear()
         self._target_material_session = None
         self._target = target
@@ -385,7 +408,11 @@ class MotListPreviewWidget(QWidget):
         except (ValueError, RuntimeError) as exc:
             self._clear_scene(str(exc))
             return
-        status = self._status_text(snapshot)
+        self._motion_status = self._status_text(snapshot)
+        self._show_status()
+
+    def _show_status(self) -> None:
+        status = "  ".join(text for text in (self._motion_status, *self._device_preview.status()) if text)
         if status != self.status_label.text():
             self.status_label.setText(status)
 
@@ -395,7 +422,7 @@ class MotListPreviewWidget(QWidget):
             self.controller.frames_per_second,
             self.tr,
         )
-        if any(abs(weight - 1.0) > 1e-4 for weight in snapshot.node_weights):
+        if np.any(np.abs(snapshot.node_weights - 1.0) > 1e-4):
             messages.append(self.tr(
                 "Orange joints have non-unit MOT weights."
             ))
@@ -421,24 +448,23 @@ class MotListPreviewWidget(QWidget):
         )
 
     def _show_error(self, message: str) -> None:
-        self.status_label.setText(message)
+        self._motion_status = message
+        self._show_status()
 
     def _clear_scene(self, message: str) -> None:
         self.playback.clear()
         self._scene_renderer.clear(reset_camera=True)
-        self.status_label.setText(message)
-
-    def _on_render_failure(self, message: str) -> None:
-        if not self._cleaned:
-            self._clear_scene(
-                self.tr("Material preview failed: {error}").format(error=message)
-            )
+        self._show_error(message)
 
     def cleanup(self) -> None:
         if self._cleaned:
             return
         self._cleaned = True
         self.playback.cleanup()
+        if self._strands_dialog is not None:
+            self._strands_dialog.cleanup()
+            self._strands_dialog = None
+        self._device_preview.set_active(False)
         self._materials.clear()
         self.viewport.cleanup()
 

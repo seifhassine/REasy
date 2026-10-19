@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import io
+import hashlib
 import json
 import os
 import shutil
+import tempfile
 import urllib.request
 import zipfile
 from pathlib import Path
@@ -22,34 +23,48 @@ def _http_json(url: str, timeout: int = 20) -> dict:
         return json.load(r)
 
 
-def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name: str, *, parent_window=None):
+def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name: str,
+                                  *, parent_window=None, files=(), sha256=None):
     from ui.project_manager.pak_status_dialog import run_with_progress
 
-    def _do_download(br):
-        br.text.emit(f"Connecting to {display_name}…")
-        with requests.get(asset_url, stream=True, timeout=60) as r:
-            r.raise_for_status()
-            total = int(r.headers.get("content-length", 0))
-            got, buf = 0, io.BytesIO()
-            for chunk in r.iter_content(chunk_size=8192):
-                buf.write(chunk)
-                got += len(chunk)
-                if total:
-                    pct = int(got * 100 / total)
-                    br.prog.emit(pct)
-                    br.text.emit(f"Downloading {display_name}… {pct}%")
-        br.text.emit("Extracting…")
-        buf.seek(0)
-        if cache_dir.exists():
-            shutil.rmtree(cache_dir)
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        if asset_url.endswith(".tar.gz"):
-            import tarfile
-            with tarfile.open(fileobj=buf, mode="r:gz") as tf:
-                tf.extractall(cache_dir)
-        else:
-            with zipfile.ZipFile(buf) as zf:
-                zf.extractall(cache_dir)
+    if cache_dir.resolve().parent != (application_root() / "downloads").resolve():
+        raise ValueError("Tool cache must be a direct child of downloads/")
+
+    def _do_download(bridge):
+        bridge.text.emit(f"Downloading {display_name}…")
+        with tempfile.TemporaryFile() as archive:
+            with requests.get(asset_url, stream=True, timeout=60) as response:
+                response.raise_for_status()
+                total = int(response.headers.get("content-length", 0))
+                for chunk in response.iter_content(chunk_size=1024 * 1024):
+                    archive.write(chunk)
+                    if total:
+                        bridge.prog.emit(min(100, int(archive.tell() * 100 / total)))
+            archive.seek(0)
+            if sha256 and hashlib.file_digest(archive, "sha256").hexdigest() != sha256:
+                raise ValueError(f"{display_name} download failed SHA-256 verification")
+            archive.seek(0)
+            bridge.text.emit("Extracting…")
+            if files:
+                with zipfile.ZipFile(archive) as source:
+                    members = {item.filename.replace("\\", "/"): item for item in source.infolist()}
+                    payload = {Path(name).name: source.read(members[name]) for name in files}
+                if not all(payload.values()):
+                    raise ValueError(f"{display_name} archive contains an empty required file")
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                for name, data in payload.items():
+                    (cache_dir / name).write_bytes(data)
+            else:
+                if cache_dir.exists():
+                    shutil.rmtree(cache_dir)
+                cache_dir.mkdir(parents=True, exist_ok=True)
+                if asset_url.endswith(".tar.gz"):
+                    import tarfile
+                    with tarfile.open(fileobj=archive, mode="r:gz") as source:
+                        source.extractall(cache_dir, filter="data")
+                else:
+                    with zipfile.ZipFile(archive) as source:
+                        source.extractall(cache_dir)
 
     run_with_progress(parent_window, f"Download {display_name}", _do_download)
 

@@ -1,0 +1,403 @@
+{
+ "format": 1,
+ "game": "DD2",
+ "resource_version": 260511270,
+ "source": {
+  "captures": [
+   "DD2_frame227197.rdc"
+  ],
+  "several_states": {
+   "primSampler": 2
+  },
+  "kept_from_earlier_captures": {
+   "captures": [
+    "main_menu_scene.rdc",
+    "spawn_prison_startarea.rdc"
+   ],
+   "states": [
+    "glyphSampler",
+    "sampler0"
+   ]
+  }
+ },
+ "states": {
+  "AutomaticClamp": {
+   "filter": 85,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 16,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "AutomaticWrap": {
+   "filter": 85,
+   "address": [
+    1,
+    1,
+    1
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 16,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "BilinearBorder": {
+   "filter": 20,
+   "address": [
+    4,
+    4,
+    4
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "BilinearClamp": {
+   "filter": 20,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "BilinearMirror": {
+   "filter": 20,
+   "address": [
+    2,
+    2,
+    2
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "BilinearWrap": {
+   "filter": 20,
+   "address": [
+    1,
+    1,
+    1
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "BilinearWrapClamp": {
+   "filter": 20,
+   "address": [
+    1,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "LinearCompare": {
+   "filter": 148,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 2,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "PointBorder": {
+   "filter": 0,
+   "address": [
+    4,
+    4,
+    4
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "PointClamp": {
+   "filter": 0,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "PointMirror": {
+   "filter": 0,
+   "address": [
+    2,
+    2,
+    2
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "PointWrap": {
+   "filter": 0,
+   "address": [
+    1,
+    1,
+    1
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "TrilinearClamp": {
+   "filter": 21,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "TrilinearMirror": {
+   "filter": 21,
+   "address": [
+    2,
+    2,
+    2
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "TrilinearWrap": {
+   "filter": 21,
+   "address": [
+    1,
+    1,
+    1
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "WeatherSampler": {
+   "filter": 148,
+   "address": [
+    1,
+    1,
+    1
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "glyphSampler": {
+   "filter": 20,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    1.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "sampler0": {
+   "filter": 21,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 1,
+   "comparison": 8,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  }
+ }
+}

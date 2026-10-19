@@ -6,16 +6,20 @@ from enum import Enum
 import math
 from typing import Sequence
 
+import numpy as np
+
 from ..mot.model import AnimationNode, Joint, KeyTrack, Motion, TrackFamily
 from .composition import compose_evaluated_pose
-from .math3d import normalize_quaternion
+from .math3d import fastmotion, normalize_quaternion
 from .model import (
+    ROTATION,
+    TRANSFORM_WIDTH,
+    TRANSLATION,
     DiagnosticSeverity,
     EvaluatedPose,
     MotionRigBinding,
     Quaternion,
     SampledLocalPose,
-    Transform,
 )
 
 
@@ -124,13 +128,22 @@ def sample_track(
 
 
 def track_is_time_invariant(track: KeyTrack) -> bool:
-    """Return whether sampling the track can ever change its value."""
-
     return (
         bool(track.values)
         and len(track.frames) == len(track.values)
         and all(value == track.values[0] for value in track.values[1:])
     )
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class _JointTracks:
+    frames: np.ndarray
+    values: np.ndarray
+    tracks: np.ndarray
+    channels: np.ndarray
+    base: np.ndarray
+    rest: np.ndarray
+    weights: np.ndarray
 
 
 class MotionEvaluator:
@@ -160,18 +173,14 @@ class MotionEvaluator:
             for track in (node.translation, node.rotation, node.scale)
             if track is not None
         )
-        self._constant_tracks = {
-            id(track): track.values[0]
-            for track in tracks
-            if track_is_time_invariant(track)
-        }
-        self.time_invariant = len(self._constant_tracks) == len(tracks)
+        self.time_invariant = all(track_is_time_invariant(track) for track in tracks)
         if binding.has_errors:
             messages = "; ".join(
                 item.message for item in binding.diagnostics
                 if item.severity is DiagnosticSeverity.ERROR
             )
             raise ValueError(f"motion binding is not evaluable: {messages}")
+        self._joint_tracks = self._compile()
 
     @property
     def motion(self) -> Motion:
@@ -193,77 +202,81 @@ class MotionEvaluator:
         apply_node_weights: bool = True,
     ) -> SampledLocalPose:
         resolved = self.resolve_frame(frame, wrap_looping=wrap_looping)
-        local: list[Transform] = []
-        weights: list[float] = []
-        for bound, rig_joint in zip(self.binding.joints, self.binding.rig.joints):
-            current = rig_joint.rest
-            target = current
-            motion_joint = bound.motion_joint
-            node = bound.animation_node
-            use_source_default = (
-                isinstance(node, AnimationNode)
-                and node.weight > 0.0
-                and isinstance(motion_joint, Joint)
-                and self._source_default_matches_target(
-                    motion_joint,
-                    rig_joint.parent_index,
-                )
-            )
-            if use_source_default:
-                assert isinstance(motion_joint, Joint)
-                target = Transform(
-                    motion_joint.translation
-                    if node.translation is None
-                    and all(math.isfinite(value) for value in motion_joint.translation)
-                    else target.translation,
-                    normalize_quaternion(motion_joint.rotation)
-                    if node.rotation is None
-                    and all(math.isfinite(value) for value in motion_joint.rotation)
-                    else target.rotation,
-                    target.scale,
-                )
-            if isinstance(node, AnimationNode) and node.weight > 0.0:
-                target = Transform(
-                    self._sample_track(node.translation, resolved)
-                    if node.translation else target.translation,
-                    self._sample_track(node.rotation, resolved)
-                    if node.rotation else target.rotation,
-                    self._sample_track(node.scale, resolved)
-                    if node.scale else target.scale,
-                )
-            transform = target
-            if apply_node_weights and isinstance(node, AnimationNode):
-                if node.weight <= 0.0:
-                    transform = current
-                elif node.weight < 1.0:
-                    transform = _blend_transform(
-                        current,
-                        target,
-                        node.weight,
-                        self.policy.rotation_interpolation,
-                    )
-            weights.append(
-                node.weight if isinstance(node, AnimationNode) else 1.0
-            )
-            local.append(transform)
-
-        return SampledLocalPose(resolved, tuple(local), tuple(weights))
+        compiled = self._joint_tracks
+        local = np.frombuffer(fastmotion.sample(
+            resolved,
+            self.policy.rotation_interpolation is RotationInterpolation.SHORTEST_SLERP,
+            apply_node_weights,
+            compiled.frames,
+            compiled.values,
+            compiled.tracks,
+            compiled.channels,
+            compiled.base,
+            compiled.rest,
+            compiled.weights,
+        ), dtype=np.float64).reshape(-1, TRANSFORM_WIDTH)
+        # Writable: layers blend over it (``LayeredPoseEvaluator``).
+        return SampledLocalPose(resolved, local.copy(), compiled.weights)
 
     def sample_frame(self, frame: float, *, wrap_looping: bool | None = None) -> EvaluatedPose:
         sampled = self.sample_local_frame(frame, wrap_looping=wrap_looping)
         return compose_evaluated_pose(
             self.binding.rig,
             sampled.frame,
-            sampled.local_transforms,
+            sampled.local,
             sampled.node_weights,
         )
 
-    def _sample_track(self, track: KeyTrack, frame: float):
-        constant = self._constant_tracks.get(id(track))
-        return (
-            constant
-            if constant is not None
-            else sample_track(track, frame, self.policy.rotation_interpolation)
+    def _compile(self) -> _JointTracks:
+        rig = self.binding.rig
+        frames: list[np.ndarray] = []
+        values: list[np.ndarray] = []
+        rows: list[tuple[int, int, int, int, int]] = []
+        frame_start = value_start = 0
+
+        def add(track: KeyTrack, width: int) -> int:
+            nonlocal frame_start, value_start
+            if not track.frames or len(track.frames) != len(track.values):
+                raise ValueError("track must have matching nonempty frame and value arrays")
+            held = np.asarray(track.values, dtype=np.float64).reshape(len(track.values), -1)
+            if held.shape[1] != width:
+                raise ValueError(f"a joint track holds {held.shape[1]} values a key, not {width}")
+            frames.append(np.asarray(track.frames, dtype=np.float64))
+            values.append(held.ravel())
+            rows.append((frame_start, len(track.frames), value_start, width, int(track_is_time_invariant(track))))
+            frame_start += len(track.frames)
+            value_start += held.size
+            return len(rows) - 1
+
+        count = len(rig.joints)
+        channels = np.full((count, 3), -1, dtype=np.int32)
+        base = rig.rest.copy()
+        weights = np.ones(count, dtype=np.float64)
+        for index, (bound, rig_joint) in enumerate(zip(self.binding.joints, rig.joints)):
+            node, motion_joint = bound.animation_node, bound.motion_joint
+            if not isinstance(node, AnimationNode):
+                continue
+            weights[index] = node.weight
+            if node.weight <= 0.0:
+                continue
+            if isinstance(motion_joint, Joint) and self._source_default_matches_target(
+                motion_joint, rig_joint.parent_index,
+            ):
+                if node.translation is None and all(math.isfinite(value) for value in motion_joint.translation):
+                    base[index, TRANSLATION] = motion_joint.translation
+                if node.rotation is None and all(math.isfinite(value) for value in motion_joint.rotation):
+                    base[index, ROTATION] = normalize_quaternion(motion_joint.rotation)
+            for channel, (track, width) in enumerate(((node.translation, 3), (node.rotation, 4), (node.scale, 3))):
+                if track:
+                    channels[index, channel] = add(track, width)
+        return _JointTracks(
+            np.concatenate(frames) if frames else np.zeros(0, dtype=np.float64),
+            np.concatenate(values) if values else np.zeros(0, dtype=np.float64),
+            np.asarray(rows, dtype=np.int64).reshape(-1, 5),
+            channels,
+            base,
+            rig.rest,
+            weights,
         )
 
     def _source_default_matches_target(
@@ -280,28 +293,3 @@ class MotionEvaluator:
         if source_parent is None:
             return target_parent is None
         return self._target_by_source.get(id(source_parent), -1) == target_parent
-
-
-def _blend_transform(
-    current: Transform,
-    target: Transform,
-    amount: float,
-    rotation_interpolation: RotationInterpolation,
-) -> Transform:
-    amount = min(1.0, max(0.0, amount))
-    return Transform(
-        tuple(
-            left + (right - left) * amount
-            for left, right in zip(current.translation, target.translation)
-        ),
-        interpolate_quaternion(
-            current.rotation,
-            target.rotation,
-            amount,
-            rotation_interpolation,
-        ),
-        tuple(
-            left + (right - left) * amount
-            for left, right in zip(current.scale, target.scale)
-        ),
-    )

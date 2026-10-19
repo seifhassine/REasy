@@ -1,0 +1,782 @@
+{
+ "format": 18,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "file": "systems/shader/strand/strandphysics.sdf",
+ "target": 2,
+ "generation": "spring",
+ "steps": {
+  "init": {
+   "programs": {
+    "": "strandPhysicsInitSpringSystem"
+   },
+   "bindings": {
+    "boundingBoxUAV": "bounds",
+    "nodePropUAV": "node_properties",
+    "nodeUAV": "nodes@before",
+    "nodeVUAV": "velocities@before",
+    "offsetSRV": "strand.offsets",
+    "prevRestUAV": "rest_data@before",
+    "restUAV": "rest",
+    "vertexSRV": "strand.vertices"
+   }
+  },
+  "init_lod": {
+   "programs": {
+    "": "strandPhysicsInitSpringSystemLOD"
+   },
+   "bindings": {
+    "boundingBoxUAV": "bounds",
+    "nodePropUAV": "node_properties",
+    "nodeUAV": "nodes@before",
+    "nodeVUAV": "velocities@before",
+    "offsetSRV": "strand.offsets",
+    "prevRestUAV": "rest_data@before",
+    "restUAV": "rest",
+    "vertexSRV": "strand.vertices"
+   }
+  },
+  "rest_root": {
+   "programs": {
+    "": "strandPhysicsUpdateRestRoot",
+    "bound": "strandPhysicsUpdateRestRootBinding",
+    "bound world": "strandPhysicsUpdateRestRootBindingWorldRotation"
+   },
+   "bindings": {
+    "bindingValidationUAV": "validation",
+    "deformedMeshPositionSRV": "binding.deformed_mesh",
+    "deformedRootUAV": "deformed_roots",
+    "restBindingPositionSRV": "binding.table",
+    "restMeshPositionSRV": "binding.rest_mesh",
+    "restRootUAV": "rest_roots",
+    "rootUVUAV": "strand.root_uvs"
+   }
+  },
+  "rest_data": {
+   "programs": {
+    "": "strandPhysicsUpdateRestData",
+    "start": "strandPhysicsUpdateRestDataInitFrame",
+    "bound": "strandPhysicsUpdateRestDataBinding",
+    "bound start": "strandPhysicsUpdateRestDataBindingInitFrame"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "deformedRootSRV": "deformed_roots",
+    "nodeUAV": "nodes@before",
+    "prevRestUAV": "rest_data@before",
+    "restRootSRV": "rest_roots",
+    "restSRV": "rest",
+    "restUAV": "rest_data@now"
+   }
+  },
+  "rest_position": {
+   "programs": {
+    "": "strandPhysicsUpdateRestPosition",
+    "bound": "strandPhysicsUpdateRestPositionBinding",
+    "bound world": "strandPhysicsUpdateRestPositionBindingWorldRotation"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "deformedRootSRV": "deformed_roots",
+    "restRootSRV": "rest_roots",
+    "restSRV": "strand.vertices",
+    "restUAV": "guided_rest",
+    "vertexMappingSRV": "strand.vertex_strands"
+   }
+  },
+  "update": {
+   "programs": {
+    "": "strandPhysicsUpdateSpringSystem",
+    "world": "strandPhysicsUpdateSpringSystemWorldRotation"
+   },
+   "bindings": {
+    "boundingBoxUAV": "bounds",
+    "nodePropSRV": "node_properties",
+    "nodeSRV": "nodes@before",
+    "nodeUAV": "nodes@now",
+    "nodeVSRV": "velocities@before",
+    "nodeVUAV": "velocities@now",
+    "prevRestSRV": "rest_data@before",
+    "restSRV": "rest_data@now",
+    "velocityGridSRV": "grid.velocity@before",
+    "velocityGridUAV": "grid.velocity@now"
+   }
+  },
+  "interp": {
+   "programs": {
+    "": "strandPhysicsInterpSpringSystem",
+    "world": "strandPhysicsInterpSpringSystemWorldRotation"
+   },
+   "bindings": {
+    "nodeSRV": "nodes@now",
+    "offsetSRV": "strand.offsets",
+    "vertexSRV": "strand.vertices",
+    "vertexUAV": "render.vertices@before"
+   }
+  },
+  "guide": {
+   "programs": {
+    "": "strandPhysicsGuidingSpringSystem",
+    "guide_only": "strandPhysicsGuidingSpringSystemGuideOnly"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "closestGuideDataSRV": "strand.closest_guides",
+    "deformedVertexSRV": "render.vertices@before",
+    "offsetSRV": "strand.offsets",
+    "vertexSRV": "guided_rest",
+    "vertexUAV": "render.vertices@now"
+   }
+  }
+ },
+ "constants": {
+  "component": "via.render.Strands",
+  "copies": {
+   "gridDimension": "GridDimension",
+   "iterationTime": "IterationTime",
+   "maxDeformDistance": "MaxDeformDistance",
+   "occludeeAttenuation": "OccludeeAttenuation",
+   "strandAirDensity": "AirDensity",
+   "strandAirDragForce": "AirDragForce",
+   "strandAirVelocity": "AirVelocity",
+   "strandAirViscosity": "AirViscosity",
+   "strandAngularYoungModulus": "AngularYoungModulus",
+   "strandDamping": "StrandDamping",
+   "strandDensity": "StrandDensity",
+   "strandGravity": "Gravity",
+   "strandKineticFriction": "KineticFriction",
+   "strandNodeRadius": "CrossSectionRadius",
+   "strandStaticFriction": "StaticFriction",
+   "strandStretchYoungModulus": "StretchYoungModulus",
+   "strandViscosity": "StrandViscosity",
+   "subStep": "SubStep",
+   "turbulenceAmplitude": "TurbulenceAmplitude",
+   "turbulenceFrequency": "TurbulenceFrequency"
+  },
+  "own": {},
+  "arguments": {
+   "advect_bending": "AdvectBending",
+   "advect_stretch": "AdvectStretch",
+   "binding": "StrandBindingData",
+   "constraint_joint": "ConstraintJointName",
+   "ftl_bending": "FTLBending",
+   "ftl_stretch": "FTLStretch",
+   "guide_only": "GuideOnly",
+   "guided": "UseGuide",
+   "own_boxes": "BoxGroup",
+   "own_capsules": "CapsuleGroup",
+   "own_spheres": "SphereGroup",
+   "simulation": "Simulation",
+   "solve_bending": "SolveBending",
+   "solve_stretch": "SolveStretch",
+   "strand_size": "SimulationStrandSize",
+   "velocity_field": "UseVelocityField",
+   "vertex_lod": "VertexLOD",
+   "world_quaternion": "UseWorldQuaternion"
+  },
+  "literals": {},
+  "wrappers": {
+   "own_capsules": {
+    "enabled": "v1_Enable",
+    "follow": "v5_FollowParentTransform",
+    "joint": "v6_JointName",
+    "world": "v0_Capsule",
+    "local": [
+     "v2_LocalPos0",
+     "v3_LocalPos1",
+     "v4_LocalRadius"
+    ]
+   }
+  },
+  "settle_frames": 0
+ },
+ "render": {
+  "file": "systems/shader/strand/strand.sdf",
+  "target": 2,
+  "generation": "direct",
+  "steps": {
+   "ibl_dominant": {
+    "programs": {
+     "": "IBLDominant",
+     "two": "IBLDominant2",
+     "cube": "IBLDominantCube"
+    },
+    "bindings": {
+     "BSPTree": "scene.bsp_tree",
+     "CubemapSRV": "scene.cubemaps",
+     "DepthBlocker": "scene.depth_blocker",
+     "IBLCubemapArrayList2SRV": "scene.ibl_cubemaps",
+     "IBLCubemapBVHSRV": "scene.ibl_bounds",
+     "IBLDMTDir": "ibl.dir@now",
+     "IndirectProbe": "scene.indirect_probes",
+     "RWIBLDMTFaceColor": "ibl.face_color",
+     "RWIBLDMTFaceColor2": "ibl.face_color2",
+     "RWIBLDMTFaceColorMax": "ibl.face_color_max",
+     "RWIBLDMTFaceDir": "ibl.face_dir",
+     "TetraCoordinate": "scene.tetra_coordinates"
+    }
+   },
+   "ibl_composite": {
+    "programs": {
+     "": "IBLDominantComposite",
+     "two": "IBLDominantComposite2"
+    },
+    "bindings": {
+     "IBLDMTColor0": "ibl.color@before",
+     "IBLDMTCompID": "ibl.comp_id",
+     "IBLDMTCompOffset": "ibl.comp_offset",
+     "IBLDMTDir0": "ibl.dir@before",
+     "IBLDMTFaceColor": "ibl.face_color",
+     "IBLDMTFaceColor2": "ibl.face_color2",
+     "IBLDMTFaceColorMax": "ibl.face_color_max",
+     "IBLDMTFaceDir": "ibl.face_dir",
+     "RWIBLDMTColor": "ibl.color@now",
+     "RWIBLDMTDir": "ibl.dir@now"
+    }
+   },
+   "coarse_z": {
+    "programs": {
+     "": "coarseZ"
+    },
+    "bindings": {
+     "RWCoarseZ": "view.coarse_z",
+     "ReadonlyDepth": "scene.depth"
+    }
+   },
+   "coarse": {
+    "programs": {
+     "": "coarseRaster",
+     "countup": "coarseRasterCountup",
+     "mix": "coarseRasterMix",
+     "mix countup": "coarseRasterMixCountup",
+     "pretransformed": "preTransformedCoarseRaster",
+     "pretransformed countup": "preTransformedCoarseRasterCountup",
+     "pretransformed mix": "preTransformedCoarseRasterMix",
+     "pretransformed mix countup": "preTransformedCoarseRasterMixCountup"
+    },
+    "bindings": {
+     "CoarseZ": "view.coarse_z",
+     "CompactLineIndices": "strand.segments",
+     "RWAccumulate": "view.accumulate",
+     "RWCounter": "work.counter",
+     "RWIndirect": "view.arguments",
+     "RWOffset": "view.offset",
+     "RWQueue": "work.queue",
+     "RWSolidHairList": "work.solid_hair",
+     "RWVisibility": "work.visibility",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "allocation": {
+    "programs": {
+     "": "allocation"
+    },
+    "bindings": {
+     "RWAccumulate": "view.accumulate",
+     "RWCounter": "work.counter",
+     "RWOffset": "view.offset"
+    }
+   },
+   "coarse_alloc": {
+    "programs": {
+     "": "coarseRasterAlloc",
+     "mix": "coarseRasterMixAlloc",
+     "pretransformed": "preTransformedCoarseRasterAlloc",
+     "pretransformed mix": "preTransformedCoarseRasterMixAlloc"
+    },
+    "bindings": {
+     "CoarseZ": "view.coarse_z",
+     "CompactLineIndices": "strand.segments",
+     "RWAccumulate": "view.accumulate",
+     "RWIndirect": "view.arguments",
+     "RWOffset": "view.offset",
+     "RWQueue": "work.queue",
+     "RWSolidHairList": "work.solid_hair",
+     "RWVisibility": "work.visibility",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "ds_arguments": {
+    "programs": {
+     "": "initDSVolume"
+    },
+    "bindings": {
+     "RWDSBoundingVolumeBuffer": "ds.bounds"
+    }
+   },
+   "ds_bounds": {
+    "programs": {
+     "": "init1DSVolume",
+     "pretransformed": "init1DSVolumePretransform"
+    },
+    "bindings": {
+     "CompactLineIndices": "strand.segments",
+     "RWDSBoundingVolumeBuffer": "ds.bounds",
+     "Vertices": "render.vertices@now",
+     "Visibility": "work.visibility"
+    }
+   },
+   "ds_info": {
+    "programs": {
+     "": "init2DSVolume"
+    },
+    "bindings": {
+     "DSBoundingVolumeBuffer": "ds.bounds",
+     "RWDSVolumeDispatchIndirectArgsBuffer": "ds.arguments",
+     "RWDSVolumeInfoBuffer": "ds.info"
+    }
+   },
+   "ds_clear": {
+    "programs": {
+     "": "clearDSVolume"
+    },
+    "bindings": {
+     "DSVolumeInfoBuffer": "ds.info",
+     "RWDSVolumeTexture": "ds.volume"
+    }
+   },
+   "ds_raster": {
+    "programs": {
+     "": "rasterDSVolume",
+     "interpolated": "rasterDSVolumeIntpij",
+     "pretransformed": "rasterDSVolumePretransform",
+     "pretransformed interpolated": "rasterDSVolumePretransformIntpij"
+    },
+    "bindings": {
+     "CompactLineIndices": "strand.segments",
+     "DSVolumeInfoBuffer": "ds.info",
+     "RWDSVolumeTexture": "ds.volume",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "ds_raster_depth": {
+    "programs": {
+     "": "rasterDepthDSVolume"
+    },
+    "bindings": {
+     "DSVolumeInfoBuffer": "ds.info",
+     "RWDSVolumeTexture": "ds.volume",
+     "ReadonlyDepth": "scene.depth"
+    }
+   },
+   "ds_mip": {
+    "programs": {
+     "": "mipDSVolume"
+    },
+    "bindings": {
+     "DSVolumeInfoBuffer": "ds.info",
+     "DSVolumeMipTexture": "ds.volume#level-1",
+     "RWDSVolumeMipTexture": "ds.volume#level"
+    }
+   },
+   "ds_lut": {
+    "programs": {
+     "": "computeDSLUT"
+    },
+    "bindings": {
+     "RWDSLUT": "ds.lut"
+    }
+   },
+   "shading": {
+    "programs": {
+     "": "shading",
+     "dual": "shadingDual",
+     "dualibl": "shadingDualIBL",
+     "dualiblopt": "shadingDualIBLOpt",
+     "projection_lights": "shadingPjLt",
+     "projection_lights dual": "shadingPjLtDual",
+     "projection_lights dualibl": "shadingPjLtDualIBL",
+     "projection_lights dualiblopt": "shadingPjLtDualIBLOpt",
+     "shrink_shadow": "shadingSkSdw",
+     "shrink_shadow dual": "shadingSkSdwDual",
+     "shrink_shadow dualibl": "shadingSkSdwDualIBL",
+     "shrink_shadow dualiblopt": "shadingSkSdwDualIBLOpt",
+     "shrink_shadow projection_lights": "shadingSkSdwPjLt",
+     "shrink_shadow projection_lights dual": "shadingSkSdwPjLtDual",
+     "shrink_shadow projection_lights dualibl": "shadingSkSdwPjLtDualIBL",
+     "shrink_shadow projection_lights dualiblopt": "shadingSkSdwPjLtDualIBLOpt",
+     "pretransformed": "preTransformedShading",
+     "pretransformed dual": "preTransformedShadingDual",
+     "pretransformed dualibl": "preTransformedShadingDualIBL",
+     "pretransformed dualiblopt": "preTransformedShadingDualIBLOpt",
+     "pretransformed projection_lights": "preTransformedShadingPjLt",
+     "pretransformed projection_lights dual": "preTransformedShadingPjLtDual",
+     "pretransformed projection_lights dualibl": "preTransformedShadingPjLtDualIBL",
+     "pretransformed projection_lights dualiblopt": "preTransformedShadingPjLtDualIBLOpt",
+     "pretransformed shrink_shadow": "preTransformedShadingSkSdw",
+     "pretransformed shrink_shadow dual": "preTransformedShadingSkSdwDual",
+     "pretransformed shrink_shadow dualibl": "preTransformedShadingSkSdwDualIBL",
+     "pretransformed shrink_shadow dualiblopt": "preTransformedShadingSkSdwDualIBLOpt",
+     "pretransformed shrink_shadow projection_lights": "preTransformedShadingSkSdwPjLt",
+     "pretransformed shrink_shadow projection_lights dual": "preTransformedShadingSkSdwPjLtDual",
+     "pretransformed shrink_shadow projection_lights dualibl": "preTransformedShadingSkSdwPjLtDualIBL",
+     "pretransformed shrink_shadow projection_lights dualiblopt": "preTransformedShadingSkSdwPjLtDualIBLOpt"
+    },
+    "bindings": {
+     "AmbientBRDF": "scene.ambient_brdf",
+     "BSPTree": "scene.bsp_tree",
+     "BlueNoise32": "scene.blue_noise",
+     "CompactLineIndices": "strand.segments",
+     "CubemapSRV": "scene.cubemaps",
+     "DSLUT": "ds.lut",
+     "DSVolumeInfoBuffer": "ds.info",
+     "DSVolumeTexture": "ds.volume",
+     "DepthBlocker": "scene.depth_blocker",
+     "IBLCubemapArrayList2SRV": "scene.ibl_cubemaps",
+     "IBLCubemapBVHSRV": "scene.ibl_bounds",
+     "IBLDMTColor": "ibl.color@now",
+     "IBLDMTDir": "ibl.dir@now",
+     "IESLightTableSRV": "scene.ies_lights",
+     "IndirectProbe": "scene.indirect_probes",
+     "LightCullingListSRV": "scene.light_culling_list",
+     "LightCullingVolumeSRV": "scene.light_culling_volume",
+     "LightParameterSRV": "scene.light_parameters",
+     "Lut_Ntt": "scene.lut_ntt",
+     "ProjLightParamterSRV": "render.projection_lights",
+     "RWShade": "work.shade",
+     "ShadowMapSRV": "scene.shadow_map",
+     "ShadowParameterSRV": "scene.shadow_parameters",
+     "StaticShadowMapSRV": "scene.static_shadow_map",
+     "TetraCoordinate": "scene.tetra_coordinates",
+     "Vertices": "render.vertices@now",
+     "Visibility": "work.visibility"
+    }
+   },
+   "distributor": {
+    "programs": {
+     "": "distributor",
+     "countup": "distributor3P"
+    },
+    "bindings": {
+     "Offset": "view.offset",
+     "RWIndirect": "view.arguments",
+     "RWWorkQueue": "view.work_queue"
+    }
+   },
+   "fill": {
+    "programs": {
+     "": "fillTriangle",
+     "blend": "fillTriangleBlend",
+     "pretransformed": "preTransformedFillTriangle",
+     "pretransformed blend": "preTransformedFillTriangleBlend"
+    },
+    "bindings": {
+     "AerialPerspectiveTexture": "scene.aerial_perspective",
+     "CompactLineIndices": "strand.segments",
+     "PreviousVertices": "render.vertices@before",
+     "Shade": "work.shade",
+     "SolidHairList": "work.solid_hair",
+     "Vertices": "render.vertices@now",
+     "VolumetricFogTexture": "scene.volumetric_fog"
+    },
+    "targets": [
+     "scene.lit",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "fine": {
+    "programs": {
+     "": "fineRaster",
+     "countup": "fineRaster3P",
+     "32bit": "fineRaster32Bit",
+     "32bit countup": "fineRaster32Bit3P",
+     "pretransformed": "preTransformedFineRaster",
+     "pretransformed countup": "preTransformedFineRaster3P",
+     "pretransformed 32bit": "preTransformedFineRaster32Bit",
+     "pretransformed 32bit countup": "preTransformedFineRaster32Bit3P"
+    },
+    "bindings": {
+     "Accumulate": "view.accumulate",
+     "AerialPerspectiveTexture": "scene.aerial_perspective",
+     "Offset": "view.offset",
+     "Queue": "work.queue",
+     "RWDepth": "view.strand_depth",
+     "ReadonlyDepth": "scene.depth",
+     "ResponsiveAA": "scene.responsive_aa",
+     "Result": "scene.lit",
+     "Shade": "work.shade",
+     "VelocityXVelocityYOcclusionSubSurfaceUAV": "scene.velocity",
+     "Vertices": "render.vertices@now",
+     "VolumetricFogTexture": "scene.volumetric_fog",
+     "WorkQueue": "view.work_queue"
+    }
+   },
+   "depth_write": {
+    "programs": {
+     "": "depthWrite"
+    },
+    "bindings": {
+     "RWDepth": "view.strand_depth"
+    },
+    "targets": [
+     "scene.lit",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "material_shading": {
+    "programs": {
+     "": "Strands",
+     "dual": "StrandsDual",
+     "dualibl": "StrandsDualIBL",
+     "dualiblopt": "StrandsDualIBLOpt",
+     "projection_lights": "StrandsPjLt",
+     "projection_lights dual": "StrandsPjLtDual",
+     "projection_lights dualibl": "StrandsPjLtDualIBL",
+     "projection_lights dualiblopt": "StrandsPjLtDualIBLOpt",
+     "shrink_shadow": "StrandsSkSdw",
+     "shrink_shadow dual": "StrandsSkSdwDual",
+     "shrink_shadow dualibl": "StrandsSkSdwDualIBL",
+     "shrink_shadow dualiblopt": "StrandsSkSdwDualIBLOpt",
+     "shrink_shadow projection_lights": "StrandsSkSdwPjLt",
+     "shrink_shadow projection_lights dual": "StrandsSkSdwPjLtDual",
+     "shrink_shadow projection_lights dualibl": "StrandsSkSdwPjLtDualIBL",
+     "shrink_shadow projection_lights dualiblopt": "StrandsSkSdwPjLtDualIBLOpt",
+     "pretransformed": "StrandsPretrans",
+     "pretransformed dual": "StrandsPretransDual",
+     "pretransformed dualibl": "StrandsPretransDualIBL",
+     "pretransformed dualiblopt": "StrandsPretransDualIBLOpt",
+     "pretransformed projection_lights": "StrandsPretransPjLt",
+     "pretransformed projection_lights dual": "StrandsPretransPjLtDual",
+     "pretransformed projection_lights dualibl": "StrandsPretransPjLtDualIBL",
+     "pretransformed projection_lights dualiblopt": "StrandsPretransPjLtDualIBLOpt",
+     "pretransformed shrink_shadow": "StrandsPretransSkSdw",
+     "pretransformed shrink_shadow dual": "StrandsPretransSkSdwDual",
+     "pretransformed shrink_shadow dualibl": "StrandsPretransSkSdwDualIBL",
+     "pretransformed shrink_shadow dualiblopt": "StrandsPretransSkSdwDualIBLOpt",
+     "pretransformed shrink_shadow projection_lights": "StrandsPretransSkSdwPjLt",
+     "pretransformed shrink_shadow projection_lights dual": "StrandsPretransSkSdwPjLtDual",
+     "pretransformed shrink_shadow projection_lights dualibl": "StrandsPretransSkSdwPjLtDualIBL",
+     "pretransformed shrink_shadow projection_lights dualiblopt": "StrandsPretransSkSdwPjLtDualIBLOpt"
+    },
+    "bindings": {
+     "AmbientBRDF": "scene.ambient_brdf",
+     "BSPTree": "scene.bsp_tree",
+     "BlueNoise32": "scene.blue_noise",
+     "ColorMap": "material.ColorMap",
+     "CompactLineIndices": "strand.segments",
+     "CubemapSRV": "scene.cubemaps",
+     "DSLUT": "ds.lut",
+     "DSVolumeInfoBuffer": "ds.info",
+     "DSVolumeTexture": "ds.volume",
+     "DepthBlocker": "scene.depth_blocker",
+     "IBLCubemapArrayList2SRV": "scene.ibl_cubemaps",
+     "IBLCubemapBVHSRV": "scene.ibl_bounds",
+     "IBLDMTColor": "ibl.color@now",
+     "IBLDMTDir": "ibl.dir@now",
+     "IESLightTableSRV": "scene.ies_lights",
+     "IndirectProbe": "scene.indirect_probes",
+     "LightCullingListSRV": "scene.light_culling_list",
+     "LightCullingVolumeSRV": "scene.light_culling_volume",
+     "LightParameterSRV": "scene.light_parameters",
+     "Lut_Ntt": "scene.lut_ntt",
+     "ProjLightParamterSRV": "render.projection_lights",
+     "RWShade": "work.shade",
+     "RootUV": "strand.root_uvs",
+     "ShadowMapSRV": "scene.shadow_map",
+     "ShadowParameterSRV": "scene.shadow_parameters",
+     "StaticShadowMapSRV": "scene.static_shadow_map",
+     "TetraCoordinate": "scene.tetra_coordinates",
+     "VertexMapping": "strand.vertex_strands",
+     "Vertices": "render.vertices@now",
+     "Visibility": "work.visibility"
+    },
+    "material": true
+   }
+  },
+  "component": "via.render.Strands",
+  "arguments": {
+   "adjust_density": "ShadingQualityAdjustDensity",
+   "adjust_shading": "ShadingQualityAdjustShading",
+   "albedo_blend": "AlbedoBlendRate",
+   "azimuthal_roughness": "AzimuthalRoughness",
+   "backscatter": "BackScatterScale",
+   "constraint_joint": "ConstraintJointName",
+   "countup": "ThreePhaseRasterization",
+   "depth_threshold": "DSVolumeRasterDepthThreshold",
+   "depth_write_threshold": "DepthWriteThreshold",
+   "fake_scattering": "FakeMultipleScatteringFactor",
+   "ibl_count": "IBLDominantNum",
+   "ibl_delta": "DSVolumeTracingIBLDelta",
+   "ibl_first": "IBLDominantNo",
+   "ibl_interp_rate": "IBLDominantInterpRate",
+   "ibl_roughness": "IBLDominantRoughness",
+   "indirect_multiplier": "IndirectLightingMultiplier",
+   "injection_rate": "DSVolumeStrandInjectionRate",
+   "interpolated_injection": "DSVolumeInterpolationInjection",
+   "ior": "IOR",
+   "least_width": "MinimumHairWidth",
+   "light_count": "ShadingQualityLightMaxNum",
+   "light_count_over_density": "ShadingQualityLightMaxNumOverDensity",
+   "longitudinal_roughness": "LongitudialRoughness",
+   "material": "Material",
+   "melanin": "Melanin",
+   "mix": "MixWidth",
+   "most_width": "MaximumHairWidth",
+   "opacity": "Opacity",
+   "random_melanin": "RandomMelanin",
+   "random_roughness": "RandomRoughness",
+   "redness": "MelaninRedness",
+   "roughness": "Roughness",
+   "scattering": "MultipleScattering",
+   "shading_quality": "ShadingQuality",
+   "shadow_density": "ShadowDensity",
+   "shadow_pow": "ShadowPow",
+   "strands": "Strand",
+   "tilt": "CuticleTiltAngle",
+   "tip_melanin": "TipMelanin",
+   "tip_rate": "TipRate",
+   "tip_roughness": "TipRoughness",
+   "trace_delta": "DSVolumeTracingDelta",
+   "trace_offset": "DSVolumeTracingOffsetScale",
+   "volume_width_scale": "DSVolumeRasterStrandWidthScale",
+   "width_scale": "HairWidthScale"
+  },
+  "options_component": "",
+  "options": {},
+  "settings": {},
+  "scripted": {
+   "mix": true,
+   "vertex_lod": 3
+  },
+  "lut": null,
+  "version": 0,
+  "textures": {},
+  "camera": {},
+  "stencil_reference": null,
+  "anchors": [
+   {
+    "after": 6,
+    "phase": -1,
+    "inside": false
+   }
+  ],
+  "drawn_into": {
+   "scene.lit": [
+    "output",
+    "6.target 0"
+   ],
+   "scene.velocity": [
+    "gbuffer",
+    "3"
+   ],
+   "scene.depth": [
+    "depth",
+    ""
+   ]
+  },
+  "unserialized": {
+   "IBLDominantNo": -1,
+   "IOR": 1.5499999523162842
+  }
+ },
+ "lod": {
+  "fields": {
+   "vertex_lod": "VertexLOD",
+   "simulation": "Simulation",
+   "lod_factor": "LODFactor",
+   "lod_auto": "LODFactorAutoEnable",
+   "draw": "DrawDefault",
+   "outputs": "RenderOutputID"
+  },
+  "dynamics_fields": {},
+  "limit": 0,
+  "level": "world",
+  "failsafe": "union",
+  "run_cull": false,
+  "mesh_component": "via.render.Mesh",
+  "mesh_fields": {
+   "draw": "DrawDefault",
+   "shadow": "DrawShadowCast",
+   "outputs": "RenderOutputID"
+  }
+ },
+ "placement": {
+  "mesh_component": "via.render.Mesh",
+  "mesh": {
+   "resource": "Mesh",
+   "shared_skeleton": "SharedSkeleton",
+   "lod_mode": "LodMode",
+   "lod_level": "LodLevel"
+  },
+  "skeleton_component": "via.motion.DummySkeleton",
+  "skeleton": {
+   "resource": "SkeletonResourceHandle"
+  },
+  "preset_component": "via.character.CollisionShapePreset",
+  "preset": {
+   "infos": "CollisionShapePresetInfos",
+   "enabled": "Enabled",
+   "priority": "Priority",
+   "global_shapes": "UseGlobalShape"
+  },
+  "preset_info": {
+   "resource": "Resource",
+   "enabled": "Enabled",
+   "global": "Global"
+  },
+  "stamp_component": "via.render.Stamp",
+  "stamp": {
+   "texture": "Texture"
+  },
+  "dynamics": {
+   "stamp_mask": "UseStampMaskTexture"
+  }
+ },
+ "skinning": null,
+ "states": {
+  "simulation": 1,
+  "shading_quality": 0,
+  "fixed_lod_mode": 1
+ },
+ "source": {
+  "functions": {
+   "init": "0x7ff7e240d980",
+   "init_lod": "0x7ff7e240deb0",
+   "rest_root": "0x7ff7e2412730",
+   "rest_data": "0x7ff7e2412730",
+   "rest_position": "0x7ff7e2412730",
+   "update": "0x7ff7e2413710",
+   "interp": "0x7ff7e240ea20",
+   "guide": "0x7ff7e240d470"
+  },
+  "captures": [
+   {
+    "capture": "re4_frame165489.rdc",
+    "dispatches": 6,
+    "render_events": 19
+   }
+  ],
+  "render": {
+   "functions": {
+    "ibl_dominant": "0x7ff7e21e69e0",
+    "ibl_composite": "0x7ff7e21e69e0",
+    "coarse_z": "0x7ff7e21e3493",
+    "coarse": "0x7ff7e21e3493",
+    "allocation": "0x7ff7e21e3493",
+    "coarse_alloc": "0x7ff7e21e3493",
+    "ds_arguments": "0x7ff7e21e5e40",
+    "ds_bounds": "0x7ff7e21e5e40",
+    "ds_info": "0x7ff7e21e5e40",
+    "ds_clear": "0x7ff7e21e5e40",
+    "ds_raster": "0x7ff7e21e5e40",
+    "ds_raster_depth": "0x7ff7e21e5e40",
+    "ds_mip": "0x7ff7e21e5e40",
+    "ds_lut": "0x7ff7e21e5e40",
+    "shading": "0x7ff7e21e87e0",
+    "distributor": "0x7ff7e21e3493",
+    "fill": "0x7ff7e21e3493",
+    "fine": "0x7ff7e21e3493",
+    "depth_write": "0x7ff7e21e3493"
+   },
+   "executable": "re4_dump.exe",
+   "anchors": "re4_frame165489.rdc"
+  },
+  "states": {
+   "simulation": "via.render.Strands.SimulationStatus.Simulation",
+   "shading_quality": "via.render.Strands.ShadingQuality.High",
+   "fixed_lod_mode": "via.render.LodMode.Manual"
+  }
+ }
+}

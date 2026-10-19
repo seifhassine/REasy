@@ -671,12 +671,6 @@ class MsgHandler(BaseFileHandler):
                     entry["index"] = i
     
     def add_user_param(self, name: str = "NewParam", param_type: int = 2):
-        """Add a new user parameter (attribute)
-        
-        Args:
-            name: Name of the parameter
-            param_type: Type of parameter (-1 or 2 for string, 0 for int, 1 for float)
-        """
         self.userParamNames.append(name)
         self.userParamTypes.append(param_type)
         
@@ -690,11 +684,6 @@ class MsgHandler(BaseFileHandler):
             entry["attributes"].append(default_value)
     
     def remove_user_param(self, idx: int):
-        """Remove a user parameter at the given index
-        
-        Args:
-            idx: Index of the parameter to remove
-        """
         if 0 <= idx < len(self.userParamTypes):
             self.userParamNames.pop(idx)
             self.userParamTypes.pop(idx)

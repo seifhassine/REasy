@@ -91,10 +91,15 @@ class _ChatInput(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # Deferred until a resize settles; a child timer dies with the input.
+        self._height_timer = QTimer(self)
+        self._height_timer.setSingleShot(True)
+        self._height_timer.setInterval(0)
+        self._height_timer.timeout.connect(self._sync_height)
         self.setFixedHeight(54)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.document().contentsChanged.connect(self._sync_height)
-        QTimer.singleShot(0, self._sync_height)
+        self._height_timer.start()
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter) and not (
@@ -107,7 +112,7 @@ class _ChatInput(QPlainTextEdit):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        QTimer.singleShot(0, self._sync_height)
+        self._height_timer.start()
 
     def _sync_height(self):
         document_height = self.document().documentLayout().documentSize().height()
@@ -117,8 +122,6 @@ class _ChatInput(QPlainTextEdit):
 
 
 class _AnimatedDots(QWidget):
-    """Small painter-driven typing indicator with a smooth three-dot wave."""
-
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self._accent = QColor(accent)
@@ -172,8 +175,6 @@ class _AnimatedDots(QWidget):
 
 
 class _ContextUsageRing(QWidget):
-    """Animated circular meter for the active conversation context."""
-
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self._accent = QColor(accent)
@@ -290,8 +291,6 @@ class _ContextUsageRing(QWidget):
 
 
 class _ActivityIndicator(QFrame):
-    """Visible, contextual feedback while the model or a REasy tool is working."""
-
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self.setObjectName("assistantActivity")
@@ -427,8 +426,6 @@ class _WrappingLabel(QLabel):
 
 
 class _MessageRow(QWidget):
-    """One aligned chat message with an avatar and a rounded bubble."""
-
     def __init__(self, role: str, text: str, parent=None):
         super().__init__(parent)
         longest_line = max((len(line) for line in text.splitlines()), default=0)
@@ -500,8 +497,6 @@ class _MessageRow(QWidget):
 
 
 class _ToolEvent(QFrame):
-    """Compact, human-readable record of a completed REasy action."""
-
     def __init__(self, text: str, parent=None):
         super().__init__(parent)
         self.setObjectName("toolEvent")
@@ -732,8 +727,6 @@ class _EmptyState(QFrame):
 
 
 class AiChatDock(QDockWidget):
-    """A modern side chat which executes MDF tools on the Qt GUI thread."""
-
     COMPACTION_TRIGGER_RATIO = 0.70
     COMPACTION_RECENT_USER_TURNS = 4
     MAX_CHAT_OUTPUT_TOKENS = 32_768
@@ -871,6 +864,14 @@ acting on file state. Return only the compacted memory.
         self._timeout = QTimer(self)
         self._timeout.setSingleShot(True)
         self._timeout.timeout.connect(self._abort_timed_out_request)
+        self._settle_timer = QTimer(self)
+        self._settle_timer.setSingleShot(True)
+        self._settle_timer.setInterval(0)
+        self._settle_timer.timeout.connect(self._settle_transcript_layout)
+        self._scroll_start_timer = QTimer(self)
+        self._scroll_start_timer.setSingleShot(True)
+        self._scroll_start_timer.setInterval(0)
+        self._scroll_start_timer.timeout.connect(self._start_scroll_animation)
 
         self._build_ui()
         self.setMinimumWidth(350)
@@ -1395,8 +1396,6 @@ acting on file state. Return only the compacted memory.
         return accent if accent.isValid() else QColor("#00aaff")
 
     def apply_theme(self):
-        """Refresh the dock's richer theme after the application accent changes."""
-
         accent = self._accent_color()
         accent_hex = accent.name()
         accent_hover = accent.lighter(118).name()
@@ -3233,14 +3232,14 @@ acting on file state. Return only the compacted memory.
         animation.deleteLater()
 
     def _scroll_to_bottom(self):
-        QTimer.singleShot(0, self._settle_transcript_layout)
+        self._settle_timer.start()
 
     def _settle_transcript_layout(self):
         if self._shutting_down:
             return
         self.messages_layout.activate()
         self.message_canvas.updateGeometry()
-        QTimer.singleShot(0, self._start_scroll_animation)
+        self._scroll_start_timer.start()
 
     def _start_scroll_animation(self):
         if self._shutting_down:

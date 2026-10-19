@@ -18,10 +18,11 @@ from services.file_io import (
     file_fingerprint,
     reserve_new_file,
 )
+from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER
 
 MAX_FILE_OPERATIONS = 256
 FILE_OPERATION_PLAN_TTL_SECONDS = 10 * 60
-_PROTECTED_PARTS = frozenset({".git", ".reasy_project.json"})
+_PROTECTED_PARTS = frozenset({".git", PROJECT_METADATA_FOLDER, PROJECT_CONFIG_NAME})
 
 
 class FileOperationError(ValueError):

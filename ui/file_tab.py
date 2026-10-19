@@ -1,7 +1,6 @@
 """Per-file editor tab and its handler/viewer lifecycle."""
 
 import os
-import tempfile
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
@@ -18,6 +17,8 @@ from PySide6.QtWidgets import (
 
 from file_handlers.factory import get_handler_for_data, is_handler_type
 from services.backup_store import create_backup, find_backups
+from services.file_io import write_files_atomically
+from tools.shader_tools import ShaderToolDownloadCancelled
 from ui.better_find_dialog import BetterFindDialog
 from ui.highlight_delegate import HighlightDelegate
 from ui.highlight_manager import HighlightManager
@@ -31,6 +32,26 @@ from utils.resource_file_utils import (
 NO_FILE_LOADED_STR = QT_TRANSLATE_NOOP("FileTab", "No file loaded")
 UNSAVED_CHANGES_STR = QT_TRANSLATE_NOOP("FileTab", "Unsaved changes")
 _DEFAULT_LAYOUT_PRESERVE = object()
+
+
+def tab_output_path(tab) -> str:
+    path = tab.filename
+    if tab.pak_source_path and tab.pak_project_dir:
+        path = os.path.join(tab.pak_project_dir, tab.pak_source_path.lstrip("/\\"))
+    return os.path.abspath(os.fspath(path)) if path else ""
+
+
+def open_tabs_for_paths(tabs, paths, exclude=None) -> list:
+    targets = {os.path.normcase(os.path.abspath(os.fspath(path))): os.path.abspath(os.fspath(path))
+               for path in paths if path}
+    matches = []
+    for tab in tabs:
+        if tab is exclude:
+            continue
+        target = targets.get(os.path.normcase(tab_output_path(tab)))
+        if target:
+            matches.append((tab, target))
+    return matches
 
 
 class FileTab:
@@ -132,7 +153,6 @@ class FileTab:
             self.parent_notebook.setTabText(index, title)
 
     def _cleanup_layout(self, layout, preserve_widget=_DEFAULT_LAYOUT_PRESERVE):
-        """Clean up layout but preserve the tree widget"""
         if not layout:
             return
 
@@ -202,6 +222,8 @@ class FileTab:
                         self.app.scenes.attach_tab_document(self, replace=replace_scene_document)
                 else:
                     self.handler.read(data)
+            except ShaderToolDownloadCancelled:
+                raise
             except Exception as e:
                 suppress_error_dialog = getattr(
                     self.handler, "suppress_load_error_dialog", False
@@ -211,6 +233,8 @@ class FileTab:
             new_viewer = None
             try:
                 new_viewer = self.handler.create_viewer()
+            except ShaderToolDownloadCancelled:
+                raise
             except Exception as e:
                 print(f"Viewer creation failed: {e}")
 
@@ -246,7 +270,7 @@ class FileTab:
             if failed_handler and failed_handler is not old_handler:
                 self._dispose_handler(failed_handler)
 
-            if not suppress_error_dialog:
+            if not suppress_error_dialog and not isinstance(e, ShaderToolDownloadCancelled):
                 QMessageBox.critical(
                     None,
                     self.tr("Error"),
@@ -380,31 +404,9 @@ class FileTab:
             )
             item.setData(str(meta.get("original_value", "")), Qt.UserRole)
 
-    @staticmethod
-    def _path_key(path) -> str:
-        return os.path.normcase(os.path.abspath(os.fspath(path))) if path else ""
-
     def _open_output_tabs(self, output_paths):
-        targets = {
-            self._path_key(path): os.path.abspath(os.fspath(path))
-            for path in output_paths if path
-        }
-        if not self.app:
-            return []
-
-        matches = []
-        for tab in self.app.project_workspace.sessions.all_tabs():
-            if tab is self:
-                continue
-            candidate = tab.filename
-            if tab.pak_source_path and tab.pak_project_dir:
-                candidate = os.path.join(
-                    tab.pak_project_dir, tab.pak_source_path.lstrip("/\\")
-                )
-            target = targets.get(self._path_key(candidate))
-            if target:
-                matches.append((tab, target))
-        return matches
+        tabs = self.app.project_workspace.sessions.all_tabs() if self.app else ()
+        return open_tabs_for_paths(tabs, output_paths, exclude=self)
 
     def _confirm_open_output_tabs(self, matches):
         if not matches:
@@ -414,7 +416,7 @@ class FileTab:
             for tab, _target in matches
         )
         message = self.tr(
-            "This save will overwrite open related sound files:\n\n{files}\n\n"
+            "This save will overwrite open related files:\n\n{files}\n\n"
             "Close those tabs yourself and try again, or save now and reload them."
         ).format(files="\n".join(os.path.basename(path) for _tab, path in matches))
         if dirty:
@@ -424,7 +426,7 @@ class FileTab:
         save, cancel = QMessageBox.StandardButton.Save, QMessageBox.StandardButton.Cancel
         dialog = QMessageBox(
             QMessageBox.Icon.Warning,
-            self.tr("Related Sound Files Are Open"),
+            self.tr("Related Files Are Open"),
             message,
             save | cancel,
             self.notebook_widget,
@@ -453,10 +455,14 @@ class FileTab:
             self.modified or getattr(self.handler, "modified", False)
         )
         try:
+            prepare_save = getattr(self.viewer, "prepare_save", None)
+            if callable(prepare_save) and prepare_save(file_path) is False:
+                return False
+
             related = {}
             related_outputs = getattr(self.handler, "related_output_targets", None)
             if callable(related_outputs):
-                related = related_outputs()
+                related = related_outputs(file_path)
             reload_tabs = self._open_output_tabs((file_path, *related)) if related else ()
             if not self._confirm_open_output_tabs(reload_tabs):
                 return False
@@ -478,24 +484,7 @@ class FileTab:
                     self.create_backup(path, blob)
 
             if related:
-                temporary = {}
-                try:
-                    for path, blob in outputs.items():
-                        directory = os.path.dirname(path) or os.curdir
-                        os.makedirs(directory, exist_ok=True)
-                        descriptor, temp_path = tempfile.mkstemp(prefix=".reasy-save-", dir=directory)
-                        temporary[path] = temp_path
-                        with os.fdopen(descriptor, "wb") as stream:
-                            stream.write(blob)
-                    for path, temp_path in temporary.items():
-                        os.replace(temp_path, path)
-                    temporary.clear()
-                finally:
-                    for temp_path in temporary.values():
-                        try:
-                            os.remove(temp_path)
-                        except OSError:
-                            pass
+                write_files_atomically(outputs)
             else:
                 with open(file_path, "wb") as stream:
                     stream.write(data)
@@ -505,9 +494,13 @@ class FileTab:
                 mark_saved()
 
             self.filename = file_path
+            self.handler.filepath = file_path
             self.pak_source_path = None
             self.pak_data_loader = None
             self.modified = False
+            save_completed = getattr(self.viewer, "save_completed", None)
+            if callable(save_completed):
+                save_completed(file_path)
             self.update_tab_title()
             if self.app and hasattr(self.app, "scenes"):
                 self.app.scenes.document_store.clear_handler(self.handler)
@@ -518,7 +511,7 @@ class FileTab:
 
             if self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(
-                    self.tr("Saved {count} sound file(s). ").format(count=len(outputs))
+                    self.tr("Saved {count} file(s). ").format(count=len(outputs))
                     + self.tr("Primary: {path}").format(path=file_path)
                     if len(outputs) > 1 else self.tr("Saved: {path}").format(path=file_path),
                     3000,
@@ -527,7 +520,7 @@ class FileTab:
             return True
 
         except Exception as e:
-            pending = getattr(self.handler, "pending_related_outputs", lambda: {})()
+            pending = getattr(self.handler, "pending_related_outputs", dict)()
             if was_modified or pending:
                 self.modified = True
                 self.handler.modified = True
@@ -560,7 +553,6 @@ class FileTab:
             print(f"Backup creation failed: {e}")
 
     def direct_save(self):
-        """Save directly to the current file without prompting"""
         if not self.handler:
             QMessageBox.critical(None, self.tr("Error"), self.tr(NO_FILE_LOADED_STR))
             return False
@@ -649,7 +641,10 @@ class FileTab:
 
     def open_find_dialog(self):
         if is_handler_type(self.handler, "MsgHandler"):
-                QMessageBox.information(self.notebook_widget, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
+                QMessageBox.information(self.notebook_widget, self.tr("Search in MSG"), self.tr("MSG files have "
+                                                                                                "their own search "
+                                                                                                "bar at the top of "
+                                                                                                "the editor."))
                 return
         parent_window = self.notebook_widget.window()
         if isinstance(parent_window, QMainWindow) and parent_window.__class__.__name__ == 'FloatingTabWindow':
@@ -672,11 +667,9 @@ class FileTab:
                 self.app.open_find_dialog()
 
     def find_matching_backups(self):
-        """Find all backup files that match the current filename"""
         return find_backups(self.filename) if self.filename else []
 
     def restore_backup(self, backup_path):
-        """Restore the selected backup file"""
         try:
             with open(backup_path, "rb") as f:
                 data = f.read()
@@ -758,7 +751,6 @@ class FileTab:
                 self.handler = None
 
     def cleanup(self):
-        """Release resources held by this tab to avoid lingering memory use."""
         try:
             if self.viewer:
                 self._cleanup_viewer()

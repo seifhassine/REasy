@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from functools import lru_cache
 
 from file_handlers.mdf.mdf_file import MdfFile
-from file_handlers.mesh.mesh_file import MeshFile
+from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
 from file_handlers.tex.tex_file import TexFile
 from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
 from utils.resource_file_utils import (
@@ -152,7 +152,11 @@ class GuiAssetCatalog:
         )
         mesh = MeshFile()
         try:
-            mesh.read(data, file_version=version)
+            mesh.read(
+                data,
+                file_version=version,
+                load_mode=MeshLoadMode.LIGHT,
+            )
         except Exception as exc:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, mesh

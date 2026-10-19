@@ -1,5 +1,3 @@
-"""Application settings dialog."""
-
 import json
 import os
 
@@ -17,6 +15,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSpinBox,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -96,6 +95,16 @@ class SettingsDialog(QDialog):
         vgmstream_layout.addWidget(self.vgmstream_entry)
         vgmstream_layout.addWidget(self.vgmstream_browse_button)
         general_layout.addLayout(vgmstream_layout)
+
+        general_layout.addWidget(QLabel(self.tr("Blender Executable (.blend export/import):")), 0, Qt.AlignBottom)
+        blender_layout = QHBoxLayout()
+        blender_layout.setContentsMargins(0, 0, 0, 0)
+        self.blender_entry = QLineEdit(self.settings.get("blender_path", ""))
+        self.blender_entry.setPlaceholderText(self.tr("Found automatically when installed"))
+        self.blender_browse_button = QPushButton(self.tr("Browse..."))
+        blender_layout.addWidget(self.blender_entry)
+        blender_layout.addWidget(self.blender_browse_button)
+        general_layout.addLayout(blender_layout)
 
         game_version_layout = QHBoxLayout()
         game_version_layout.setContentsMargins(0, 0, 0, 0)
@@ -177,6 +186,23 @@ class SettingsDialog(QDialog):
         )
         general_layout.addWidget(self.verify_rsz_crc_on_open_box)
 
+        shader_cache_layout = QHBoxLayout()
+        shader_cache_layout.setContentsMargins(0, 0, 0, 0)
+        shader_cache_label = QLabel(self.tr("Parsed shader cache (MB):"))
+        shader_cache_label.setToolTip(self.tr(
+            "Memory for parsed shader files no open view uses, kept for later views; the least recently used go "
+            "first. 0 keeps only what open views use."
+        ))
+        shader_cache_layout.addWidget(shader_cache_label)
+        self.shader_cache_spin = QSpinBox()
+        self.shader_cache_spin.setRange(0, 1 << 20)
+        self.shader_cache_spin.setSingleStep(256)
+        self.shader_cache_spin.setValue(self.settings["parsed_shader_cache_mb"])
+        self.shader_cache_spin.setToolTip(shader_cache_label.toolTip())
+        shader_cache_layout.addWidget(self.shader_cache_spin)
+        shader_cache_layout.addStretch()
+        general_layout.addLayout(shader_cache_layout)
+
         ui_language_layout = QHBoxLayout()
         ui_language_layout.setContentsMargins(0, 0, 0, 0)
         ui_language_layout.addWidget(QLabel(self.tr("UI Language (Restart Recommended):")))
@@ -218,6 +244,7 @@ class SettingsDialog(QDialog):
         buttons.rejected.connect(self.reject)
         self.json_browse_button.clicked.connect(self._browse_json)
         self.vgmstream_browse_button.clicked.connect(self._browse_vgmstream)
+        self.blender_browse_button.clicked.connect(self._browse_blender)
         self.wwise_browse_button.clicked.connect(self._browse_wwise)
         self.game_version_combo.currentTextChanged.connect(
             self._on_wwise_game_changed
@@ -266,6 +293,16 @@ class SettingsDialog(QDialog):
         )
         if file_path:
             self.vgmstream_entry.setText(file_path)
+
+    def _browse_blender(self):
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            self.tr("Select Blender"),
+            os.path.dirname(self.blender_entry.text()) if self.blender_entry.text() else "",
+            self.tr("Executable Files (*)"),
+        )
+        if file_path:
+            self.blender_entry.setText(file_path)
 
     def _remember_wwise_path(self):
         if not self.wwise_game:
@@ -369,6 +406,7 @@ class SettingsDialog(QDialog):
         app = self.app_window
         app.set_rsz_json_path(new_json_path, save=False)
         self.settings["vgmstream_cli_path"] = self.vgmstream_entry.text().strip()
+        self.settings["blender_path"] = self.blender_entry.text().strip()
         self._remember_wwise_path()
         for game, path in tuple(self._wwise_paths.items()):
             profile = wwise_profile_for_game(game)
@@ -393,6 +431,7 @@ class SettingsDialog(QDialog):
         self.settings["save_workspace_on_close"] = self.save_workspace_box.isChecked()
         self.settings["confirmation_prompt"] = self.confirmation_prompt_box.isChecked()
         self.settings["verify_rsz_crc_on_open"] = self.verify_rsz_crc_on_open_box.isChecked()
+        self.settings["parsed_shader_cache_mb"] = self.shader_cache_spin.value()
         self.settings["keyboard_shortcuts"] = self.shortcuts
         self.settings["tree_highlight_color"] = self.selected_theme_color
         self.settings["game_version"] = self.game_version_combo.currentText()

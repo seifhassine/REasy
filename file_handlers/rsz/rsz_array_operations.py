@@ -1,9 +1,3 @@
-"""
-Array operations for RSZ files.
-
-This file contains operations for adding and removing elements from arrays in RSZ files.
-"""
-
 from PySide6.QtWidgets import QMessageBox
 from file_handlers.rsz.rsz_data_types import (
     ArrayData,
@@ -19,15 +13,10 @@ from file_handlers.rsz.utils.rsz_field_utils import (
     is_type_assignable,
     iter_field_reference_entries,
 )
+from file_handlers.rsz.utils.rsz_instance_defaults import apply_instance_defaults
 
 class RszArrayOperations:
-    """
-    Class for handling array operations in RSZ files.
-    This consolidates array element creation and deletion functionality.
-    """
-    
     def __init__(self, viewer):
-        """Initialize with a reference to the viewer"""
         self.viewer = viewer
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
@@ -41,7 +30,6 @@ class RszArrayOperations:
         userdata_string=None,
         notify=True,
     ):
-        """Create a new element for an array based on type information"""
         element_class = getattr(array_data, 'element_class', None) if array_data else None
         
         if not self.type_registry or not array_data or not element_class:
@@ -115,7 +103,6 @@ class RszArrayOperations:
         userdata_string=None,
         notify=True,
     ):
-        """Create a new UserDataData instance with associated RSZUserDataInfo for an array element"""
         from file_handlers.rsz.rsz_object_operations import RszObjectOperations
         
         object_ops = RszObjectOperations(self.viewer)
@@ -127,7 +114,7 @@ class RszArrayOperations:
             parent_instance_id, parent_field_name = parent_data
             next_instance_id = self._calculate_array_element_insertion_index(parent_instance_id, parent_field_name)
 
-        # Ensure we never use 0 as instance_id
+        # Instance 0 is the null instance.
         if next_instance_id == 0:
             next_instance_id = 1
         
@@ -153,16 +140,13 @@ class RszArrayOperations:
     def _create_new_object_instance_for_array(
         self, type_id, type_info, element_type, array_data, notify=True
     ):
-        """Create a new object instance for an array element"""
         parent_data = self._find_array_parent_data(array_data, notify=notify)
         if not parent_data:
             return None
         parent_instance_id, parent_field_name = parent_data
         
-        # Calculate insertion index for the new instance, considering parent location
         insertion_index = self._calculate_array_element_insertion_index(parent_instance_id, parent_field_name)
         
-        # Create and initialize the instance
         new_instance = self.viewer._initialize_new_instance(type_id, type_info)
         if not new_instance or new_instance.type_id == 0:
             if notify:
@@ -173,7 +157,6 @@ class RszArrayOperations:
                 )
             return None
         
-        # We'll use this to hold all nested objects in a hierarchical structure
         class NestedObjectNode:
             def __init__(self, type_info, type_id, field_name=None, parent=None):
                 self.type_info = type_info
@@ -182,19 +165,16 @@ class RszArrayOperations:
                 self.parent = parent
                 self.children = []
                 self.instance_id = 0  # Will be set when instance is created
-                self.fields = {}  # Fields will be initialized later
-                self.nested_objects = set()  # To hold nested objects
-                self.field_order = []  # Track field order for proper instance creation
+                self.fields = {}
+                self.nested_objects = set()
+                self.field_order = []
                 
             def add_child(self, child):
                 self.children.append(child)
                 
-        # Root node for our hierarchy
         root_node = NestedObjectNode(type_info, type_id)
         
-        # Step 1: Build a complete hierarchy of all nested objects recursively
         def analyze_nested_objects(node, visited_types=None):
-            """Recursively analyze and collect nested objects at all levels"""
             if visited_types is None:
                 visited_types = set()
                 
@@ -204,7 +184,6 @@ class RszArrayOperations:
                 return
             visited_types.add(type_name)
             
-            # Initialize temporary fields for analysis
             node.fields = {}
             
             for field_def in node.type_info.get("fields", []):
@@ -219,24 +198,18 @@ class RszArrayOperations:
                     if is_reference_type(field_obj) and field_orig_type and not field_array:
                         node.field_order.append((field_name, field_def.get("type", "unknown").lower(), field_orig_type, field_obj))
                     
-                    # Process direct object references
                     if isinstance(field_obj, ObjectData) and field_orig_type and not field_array:
-                        # Find the nested type
                         nested_type_info, nested_type_id = self.type_registry.find_type_by_name(field_orig_type)
                         if nested_type_info and nested_type_id:
-                            # Create a child node for this nested object
                             child_node = NestedObjectNode(nested_type_info, nested_type_id, field_name, node)
                             node.add_child(child_node)
                             
-                            # Recursively analyze this nested object
                             analyze_nested_objects(child_node, visited_types.copy())
+            apply_instance_defaults(node.fields, node.type_info)
             
-        # Start recursive analysis from root node
         analyze_nested_objects(root_node)
         
-        # Step 2: Create instances respecting field order
         
-        # First, create a mapping of all nodes by their type name for quick lookup
         node_by_type = {}
         def map_nodes(node):
             type_name = node.type_info.get("name", "")
@@ -246,7 +219,6 @@ class RszArrayOperations:
                 map_nodes(child)
         map_nodes(root_node)
         
-        # Track which nodes have been created
         created_nodes = set()
         instance_map = {}  # Maps node to instance ID
         current_insertion_index = insertion_index
@@ -279,17 +251,13 @@ class RszArrayOperations:
             
             instance = self.viewer._initialize_new_instance(node.type_id, node.type_info)
             if instance and instance.type_id != 0:
-                # Insert the instance
                 self.viewer._insert_instance_and_update_references(current_insertion_index, instance)
                 
-                # Register with ID manager
                 self.viewer.handler.id_manager.register_instance(current_insertion_index)
                 
-                # Store the instance ID
                 node.instance_id = current_insertion_index
                 instance_map[node] = current_insertion_index
                 
-                # Store the fields in parsed_elements
                 self.scn.parsed_elements[current_insertion_index] = node.fields
                 
                 current_insertion_index += 1
@@ -298,11 +266,9 @@ class RszArrayOperations:
         
         create_node_instances(root_node)
             
-        # Now update all object references to point to the correct instances
         def update_references(node):
             for field_name, field_value in node.fields.items():
                 if isinstance(field_value, ObjectData) and field_value.orig_type:
-                    # Find the child node for this field
                     for child in node.children:
                         if child.field_name == field_name and child in instance_map:
                             field_value.value = instance_map[child]
@@ -312,7 +278,6 @@ class RszArrayOperations:
         
         update_references(root_node)
                     
-        # Update the hierarchy in the SCN file - root node is the last node in all_nodes
         root_node_id = root_node.instance_id
         if root_node_id > 0:
             self.viewer.object_operations._update_instance_hierarchy(root_node_id, parent_instance_id)
@@ -326,11 +291,9 @@ class RszArrayOperations:
 
 
     def _add_element_to_ui_direct(self, array_item, element):
-        """Add a new element directly to the tree using the provided array item"""
         return append_array_element_node(self.viewer, array_item, element)
 
     def _calculate_insertion_index(self, parent_instance_id, parent_field_name):
-        """Calculate the best insertion index for a new instance based on field positioning"""
         return RszInstanceOperations.find_ordered_insertion_boundary(
             self.scn.parsed_elements,
             self.scn.instance_infos,
@@ -340,13 +303,6 @@ class RszArrayOperations:
         )
 
     def _calculate_array_element_insertion_index(self, parent_instance_id, parent_field_name):
-        """
-        Calculate the correct insertion index for new array element instances.
-        This ensures instances are created in the proper position relative to the parent's field order.
-        
-        For arrays that come between other fields in the type definition, this method ensures
-        that array element instances are inserted at the correct position to maintain field ordering.
-        """
         base_insertion_index = self._calculate_insertion_index(parent_instance_id, parent_field_name)
         
         array_data = None
@@ -407,33 +363,26 @@ class RszArrayOperations:
 
 
     def delete_array_element(self, array_data, element_index):
-        """Handle complex deletion of an array element with reference updates"""
         if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
             return False
             
-        # Get the element to delete
         element = array_data.values[element_index]
         
-        # Get instance ID and type of reference based on element type
         instance_id, ref_type = get_reference_id_and_type(element)
         
-        # If we have a reference to delete
         if instance_id > 0 and ref_type:
-            # First verify the instance exists
             if instance_id >= len(self.scn.instance_infos):
                 print(f"Warning: Invalid {ref_type} instance ID {instance_id}")
                 del array_data.values[element_index]
                 self.viewer.mark_modified()
                 return True
                 
-            # Check if this instance is referenced elsewhere
             is_referenced_elsewhere = self._check_instance_referenced_elsewhere(
                 instance_id, array_data, element_index, ref_type
             )
             
             if is_referenced_elsewhere:
                 print(f"{ref_type.capitalize()} {instance_id} is referenced elsewhere - only removing reference")
-                # Just remove the reference, not the actual instance
                 del array_data.values[element_index]
                 self.viewer.mark_modified()
                 return True
@@ -443,61 +392,40 @@ class RszArrayOperations:
             # First remove the array element to ensure it doesn't interfere with deletion
             del array_data.values[element_index]
             
-            # Delete the instance and all its nested objects
             if self._delete_instance_for_reference(instance_id, ref_type):
                 self.viewer.mark_modified()
                 return True
             
             return False
         else:
-            # For basic element types, just remove from the array
             del array_data.values[element_index]
             self.viewer.mark_modified()
             return True
     
     def _delete_instance_for_reference(self, instance_id, ref_type):
-        """
-        Generic method to delete an instance referenced from an array.
-        Works for both ObjectData and UserDataData references.
-        
-        Args:
-            instance_id: The instance ID to delete
-            ref_type: 'object' or 'userdata'
-        
-        Returns:
-            bool: Success or failure
-        """
-        # For ObjectData with nested children, use the full deletion method
         if ref_type == "object":
             return self._delete_instance_and_children(instance_id)
         
-        # For UserDataData or other simpler elements, use a streamlined approach
         all_nested_objects = {instance_id}
         
         try:
-            # 1. Prepare ID adjustments
             id_adjustments = self._build_deletion_id_adjustments(all_nested_objects)
             
-            # 2. Update references first
             self._update_references_before_deletion(
                 all_nested_objects, id_adjustments
             )
             
-            # 3. Remove from instance_infos
             self._remove_deleted_instance_infos(all_nested_objects)
             
-            # 4. Update object table
             for i, idx in enumerate(self.scn.object_table):
                 if idx in all_nested_objects:
                     self.scn.object_table[i] = 0
                 elif idx in id_adjustments:
                     self.scn.object_table[i] = id_adjustments[idx]
             
-            # 5. For UserData, clean up userdata specifically
             if ref_type == "userdata":
                 self.viewer._cleanup_userdata_for_instance(instance_id)
 
-            # 6. Update remaining parsed elements
             self.scn.parsed_elements = RszInstanceOperations.remap_instance_fields(
                 self.scn.parsed_elements,
                 id_adjustments,
@@ -505,15 +433,12 @@ class RszArrayOperations:
                 update_references=False,
             )
 
-            # 7. Update instance hierarchy
             self.scn.instance_hierarchy = RszInstanceOperations.remap_hierarchy(
                 self.scn.instance_hierarchy, id_adjustments, all_nested_objects
             )
             
-            # 8. Update userdata references
             self.viewer._update_userdata_references(all_nested_objects, id_adjustments)
             
-            # 9. Update ID manager
             for deleted_id in all_nested_objects:
                 self.viewer.handler.id_manager.remove_instance(deleted_id)
                 
@@ -529,7 +454,6 @@ class RszArrayOperations:
             return False
     
     def _is_reference_match(self, ref_obj, instance_id, ref_type):
-        """Helper to check if a reference object matches the criteria"""
         if ref_type == "object":
             return isinstance(ref_obj, ObjectData) and ref_obj.value == instance_id
         elif ref_type == "userdata":
@@ -550,66 +474,43 @@ class RszArrayOperations:
         ]
     
     def _check_instance_referenced_elsewhere(self, instance_id, current_array, current_index=None, ref_type="object"):
-        """
-        Unified method to check if an instance is referenced from places outside current context.
-        Works for both ObjectData and UserDataData references.
-        
-        Args:
-            instance_id: The instance ID to check
-            current_array: The array containing the reference we're deleting
-            current_index: Index of the element we're deleting (optional)
-            ref_type: 'object' or 'userdata'
-            
-        Returns:
-            bool: True if referenced elsewhere, False if only referenced within current element
-        """
-        # First find the parent component of the array
         parent_data = self._find_array_parent_data(current_array)
         if not parent_data:
-            # If we can't find the parent, be conservative and assume referenced elsewhere
             return True
             
         parent_instance_id, _ = parent_data
         
-        # Define range bounds for reference checking
-        min_id = 0  # Default lower bound
-        max_id = parent_instance_id  # Default upper bound is current component
+        # Instances in (min_id, max_id] are taken as the owning component's; their references don't count.
+        min_id = 0
+        max_id = parent_instance_id
         
-        # Find the component ID in object table
         component_object_id = -1
         for i, obj_id in enumerate(self.scn.object_table):
             if obj_id == parent_instance_id:
                 component_object_id = i
                 break
         
-        # If we found the component in the object table, check if it's a GameObject
         if component_object_id >= 0:
-            # Find if this is a component of a GameObject
             for go in self.scn.gameobjects:
                 if go.id < component_object_id and component_object_id <= go.id + go.component_count:
-                    # This is a component of a GameObject
                     
-                    # Calculate which component index this is (1-based from GameObject)
+                    # 1-based index among the GameObject's components.
                     component_index = component_object_id - go.id
                     
-                    # If this isn't the first component, find the previous component's instance ID
-                    if component_index > 1:  # If we're not the first component
+                    if component_index > 1:
                         prev_comp_obj_id = go.id + (component_index - 1)
                         if prev_comp_obj_id < len(self.scn.object_table):
                             prev_comp_instance_id = self.scn.object_table[prev_comp_obj_id]
                             if prev_comp_instance_id > 0:
-                                # Previous component's ID becomes our lower bound
+                                # A component's instances follow the previous component's.
                                 min_id = prev_comp_instance_id
-                                # Current component's ID is our upper bound
                                 max_id = parent_instance_id
                     break
         
         print(f"Checking if {ref_type} {instance_id} is referenced outside range: {min_id}-{max_id}")
         
-        # Check all instances for references to our target instance
         for check_id, fields in self.scn.parsed_elements.items():
-            # Skip if this instance is in our component range
-            if min_id < check_id <= max_id:  # Exclusive range check
+            if min_id < check_id <= max_id:
                 continue
                 
             for field_name, ref_obj, array_index in iter_field_reference_entries(fields):
@@ -619,7 +520,6 @@ class RszArrayOperations:
                     return True
 
             for field_data in fields.values():
-                # Check embedded instances within UserData
                 if hasattr(field_data, 'embedded_instances'):
                     for emb_id, emb_fields in field_data.embedded_instances.items():
                         if isinstance(emb_fields, dict):
@@ -627,29 +527,21 @@ class RszArrayOperations:
                                 if self._is_reference_match(ref_obj, instance_id, ref_type):
                                     return True
         
-        # Special additional check for arrays: 
-        # If this is the array we're modifying, check other indices for references
         if current_index is not None and isinstance(current_array, ArrayData):
             for i, item in enumerate(current_array.values):
-                if i != current_index:  # Skip the item we're deleting
+                if i != current_index:
                     if self._is_reference_match(item, instance_id, ref_type):
                         print(f"  Found another reference in same array at index {i}")
                         return True
         
-        # No references found outside our context
         return False
 
     def _delete_instance_and_children(self, instance_id):
-        """
-        Completely delete an instance and all its children, updating all related data structures.
-        """
         if instance_id <= 0 or instance_id >= len(self.viewer.scn.instance_infos):
             return False
             
-        # First, collect ALL nested objects recursively 
         all_nested_objects = self._collect_all_nested_objects(instance_id)
         
-        # Add main instance to the deletion set
         all_nested_objects.add(instance_id)
         
         print(f"Direct deletion of instance {instance_id} with {len(all_nested_objects)-1} nested objects")
@@ -657,38 +549,24 @@ class RszArrayOperations:
             print(f"  - {nested_id}: {self._get_instance_type_name(nested_id)}")
         
         try:
-            # Remove all instances from all data structures
-            # Process in reverse order (deepest nested objects first)
             deleted_ids = sorted(all_nested_objects, reverse=True)
             
-            # 1. First, prepare a list of adjustments for higher instance IDs
-            # For each deleted instance, instances with higher IDs need to be decreased
             id_adjustments = self._build_deletion_id_adjustments(all_nested_objects)
             
-            #  Diagnostic purposes
-            #print("ID Adjustments:")
-            #for old_id, new_id in sorted(id_adjustments.items()):
-            #    if new_id >= 0: 
-            #        print(f"  {old_id} -> {new_id}")
             
-            # 2. Delete instances and update data structures
             
             self._update_references_before_deletion(
                 all_nested_objects, id_adjustments
             )
             
-            # Now actually remove the instances from instance_infos
-            # We need to do this in reverse order to avoid index issues
             self._remove_deleted_instance_infos(all_nested_objects)
             
-            # 3. Remove from object table (replacing with 0)
             for i, instance_id in enumerate(self.scn.object_table):
                 if instance_id in all_nested_objects:
                     self.scn.object_table[i] = 0
                 elif instance_id in id_adjustments:
                     self.scn.object_table[i] = id_adjustments[instance_id]
             
-            # 4. Update other instance-keyed data structures
             self.scn.parsed_elements = RszInstanceOperations.remap_instance_fields(
                 self.scn.parsed_elements,
                 id_adjustments,
@@ -699,25 +577,18 @@ class RszArrayOperations:
                 self.scn.instance_hierarchy, id_adjustments, all_nested_objects
             )
             
-            # 5. Update userdata - reuse methods from RszViewer
-            # First, clean up userdata for all deleted instances
             for deleted_id in deleted_ids:
-                #  Viewer's method to to clean up userdata
                 self.viewer._cleanup_userdata_for_instance(deleted_id)
                 
-            # Then update remaining userdata references based on id_adjustments
-            # Create a mapping for userdata references
             userdata_mapping = {}
             for old_id, new_id in id_adjustments.items():
                 if new_id >= 0:  # Only include non-deleted instances
                     userdata_mapping[old_id] = new_id
                     
-            # Update all userdata references using the RszViewer method
-            # Pass empty deleted_ids since we've already handled deletions
+            # Deleted instances are already cleaned up, so none are passed.
             self.viewer._update_userdata_references(set(), userdata_mapping)
             
             
-            # Final step - update ID manager
             for deleted_id in all_nested_objects:
                 self.viewer.handler.id_manager.remove_instance(deleted_id)
                 
@@ -777,7 +648,6 @@ class RszArrayOperations:
             print(f"  - Nested object {nested_id}: {nested_type_name}")
         return nested_objects
     def _get_instance_type_name(self, instance_id):
-        """Get the type name for an instance ID for debugging"""
         if instance_id < 0 or instance_id >= len(self.scn.instance_infos):
             return "Invalid ID"
         

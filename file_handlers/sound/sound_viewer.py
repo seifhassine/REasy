@@ -12,7 +12,7 @@ from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QUrl, Signal
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
@@ -79,6 +79,7 @@ from tools.wwise_toolchain import (
     validate_wwise_installation,
     wwise_profile_for_game,
 )
+from ui.qt_timers import call_later
 
 from .bnk_parser import (
     WWISE_ANY_OBJECT_ID,
@@ -300,7 +301,7 @@ class SoundViewer(QWidget):
         self.destroyed.connect(
             lambda *_args, path=self._temp_dir: shutil.rmtree(path, ignore_errors=True)
         )
-        QTimer.singleShot(0, self, self._on_analyze)
+        call_later(self, 0, self._on_analyze)
 
     @property
     def modified(self):
@@ -480,8 +481,6 @@ class SoundViewer(QWidget):
             self.quality_combo.setCurrentIndex(0)
 
     def _start_wwise_project_warmup(self):
-        """Hide one-time Wwise project setup behind normal source selection time."""
-
         profile = wwise_profile_for_game(self._wwise_game())
         app = getattr(self.handler, "app", None)
         settings = getattr(app, "settings", None)
@@ -865,11 +864,9 @@ class SoundViewer(QWidget):
         )
         self.rep_wem = self._make_btn(self.tr("Replace Audio…"), QStyle.SP_BrowserReload, self._on_replace, enabled=False)
         self.rep_wem.setToolTip(self.tr(
-            "WAV import uses the codec, quality, and sample-rate settings from "
-            "Replacement Settings. The defaults match the original WEM. WAV "
-            "metadata wins when provided; "
-            "otherwise REasy inherits the original loops, cue points, and marker "
-            "labels and verifies the authored WEM."
+            "WAV import uses the codec, quality and sample rate from Replacement Settings; the defaults match the "
+            "original WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV "
+            "has none."
         ))
         self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), QStyle.SP_FileDialogDetailedView, self._on_edit_wem_metadata, enabled=False)
         self.exp_wem = self._make_btn(self.tr("Export WEM…"), QStyle.SP_DialogSaveButton, self._on_export_wem, enabled=False)
@@ -1160,7 +1157,7 @@ class SoundViewer(QWidget):
             position = permille * self._duration_ms // 1000
             self.player.setPosition(position)
             if self.player.playbackState() == QMediaPlayer.PlaybackState.StoppedState:
-                self._resume_position_ms = position  # Play starts from here.
+                self._resume_position_ms = position
 
     def _on_skip(self):
         next_start = next(
@@ -1437,7 +1434,7 @@ class SoundViewer(QWidget):
         active = self.player.playbackState() != QMediaPlayer.PlaybackState.StoppedState
         if self._preview_source_id == track.source_id and active:
             paused = self.player.playbackState() == QMediaPlayer.PlaybackState.PausedState
-            self.player.play() if paused else self.player.pause()  # Toggle.
+            self.player.play() if paused else self.player.pause()
             return
         if self._preview_source_id != track.source_id:
             self._cleanup_audio()
@@ -1498,7 +1495,7 @@ class SoundViewer(QWidget):
 
     def _on_stop(self):
         self._resume_position_ms = self.player.position()
-        self._stopped_source_id = self._preview_source_id  # Play resumes here.
+        self._stopped_source_id = self._preview_source_id
         self._cleanup_audio()
         self.status.clear()
 
@@ -3243,7 +3240,8 @@ class SoundViewer(QWidget):
         warning = self.tr("Delete {type} {id}?").format(type=obj.type_name, id=obj.object_id)
         if incoming:
             warning += "\n\n" + self.tr(
-                "{count} object(s) still link to it. Delete is intentionally low-level and those links will become unresolved; retarget or disconnect them first for a valid graph."
+                "{count} object(s) still link to it. Deleting leaves those links unresolved; retarget or disconnect "
+                "them first."
             ).format(count=len(incoming))
         if QMessageBox.warning(
             self, self.tr("Delete HIRC Object"), warning,
@@ -4248,10 +4246,9 @@ class SoundViewer(QWidget):
             ))
         elif kind == WwiseMediaKind.AUDIO:
             self.rep_wem.setToolTip(self.tr(
-                "WAV import uses the codec, quality, and sample-rate settings shown "
-                "below; the defaults match the original WEM. WAV metadata wins when "
-                "provided; otherwise REasy inherits the original loops, cue points, "
-                "and marker labels and verifies the authored WEM."
+                "WAV import uses the codec, quality and sample rate shown below; the defaults match the original "
+                "WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV has "
+                "none."
             ))
         elif kind == WwiseMediaKind.CRANKCASE_REV_MODEL:
             self.rep_wem.setToolTip(self.tr(

@@ -8,6 +8,7 @@ import time
 import uuid
 from dataclasses import dataclass, replace
 from pathlib import Path
+from typing import NamedTuple
 
 from PySide6.QtCore import QObject, Signal
 
@@ -135,13 +136,67 @@ def root_to_relative(value: str | os.PathLike | None) -> str:
 
 
 def root_to_absolute(value: str | os.PathLike | None) -> str:
-    """Resolve a stored (possibly relative) project root to an absolute path."""
     if not value:
         return ""
     raw = os.fspath(value)
     if os.path.isabs(raw):
         return normalize_root(raw)
     return normalize_root(os.path.join(application_root(), raw))
+
+
+def _query_tokens(text: str) -> list[str]:
+    tokens: list[str] = []
+    current: list[str] = []
+    quoted = False
+    for character in text:
+        if character == '"':
+            quoted = not quoted
+            if not quoted:
+                tokens.append("".join(current))
+                current = []
+        elif character.isspace() and not quoted:
+            if current:
+                tokens.append("".join(current))
+                current = []
+        else:
+            current.append(character)
+    if current or quoted:
+        tokens.append("".join(current))
+    return [token for token in tokens if token]
+
+
+class BookmarkQuery(NamedTuple):
+    terms: tuple[str, ...] = ()
+    tags: tuple[str, ...] = ()
+    excluded: tuple[str, ...] = ()
+    excluded_tags: tuple[str, ...] = ()
+
+    def matches(self, bookmark: "Bookmark", haystack: str) -> bool:
+        if any(tag not in bookmark.tags for tag in self.tags):
+            return False
+        if any(tag in bookmark.tags for tag in self.excluded_tags):
+            return False
+        if any(term not in haystack for term in self.terms):
+            return False
+        return not any(term in haystack for term in self.excluded)
+
+
+def parse_query(text: str) -> BookmarkQuery:
+    terms: list[str] = []
+    tags: list[str] = []
+    excluded: list[str] = []
+    excluded_tags: list[str] = []
+    for token in _query_tokens(text or ""):
+        negative = token.startswith("-") and len(token) > 1
+        body = token[1:] if negative else token
+        if body[:4].lower() == "tag:":
+            names = (normalize_tag(part) for part in body[4:].split(","))
+            (excluded_tags if negative else tags).extend(name for name in names if name)
+        elif negative:
+            excluded.append(body.lower())
+        else:
+            terms.append(body.lower())
+    return BookmarkQuery(tuple(terms), tuple(tags), tuple(excluded), tuple(excluded_tags))
 
 
 @dataclass(frozen=True)
@@ -205,10 +260,10 @@ class BookmarksStore(QObject):
         self._bookmarks: list[Bookmark] = []
         self._by_key: dict[_BookmarkKey, Bookmark] = {}
         self._by_id: dict[str, Bookmark] = {}
+        self._search_blobs: dict[str, str] = {}
         self.load_warnings: list[str] = []
         self.load()
 
-    # ---- persistence -------------------------------------------------
     def load(self) -> None:
         self.load_warnings.clear()
         self._replace_bookmarks([])
@@ -298,6 +353,9 @@ class BookmarksStore(QObject):
 
     def _apply_bookmarks(self, prepared: _BookmarkCollection) -> None:
         self._bookmarks, self._by_key, self._by_id = prepared
+        self._search_blobs = {
+            bookmark.id: self._search_blob(bookmark) for bookmark in self._bookmarks
+        }
 
     @staticmethod
     def _new_id(existing: dict[str, Bookmark]) -> str:
@@ -312,7 +370,6 @@ class BookmarksStore(QObject):
             for bookmark in self._bookmarks
         ]
 
-    # ---- identity / lookup -------------------------------------------
     @staticmethod
     def _normalized_key(scope: str, path: str, root: str = "", game: str = "") -> _BookmarkKey:
         context = root if scope == "project" else str(game or "").upper()
@@ -346,7 +403,6 @@ class BookmarksStore(QObject):
     def is_bookmarked(self, scope, path, root="", game="") -> bool:
         return self.get(scope, path, root, game) is not None
 
-    # ---- mutations ----------------------------------------------------
     def upsert(self, *, scope, path, root="", game="", tags=(), note="") -> Bookmark:
         scope = normalize_scope(scope)
         normalized = normalize_bookmark_path(scope, path)
@@ -405,11 +461,6 @@ class BookmarksStore(QObject):
         return updated
 
     def adopt_project_bookmarks(self, project_root: str, target: Path | str) -> int:
-        """Move this store's project-scope bookmarks for *project_root* to *target*.
-
-        Used when a project starts keeping its bookmarks in its own folder;
-        returns the number of bookmarks moved.
-        """
         root = normalize_root(project_root)
         target = Path(target)
         moving = [
@@ -439,26 +490,30 @@ class BookmarksStore(QObject):
         ])
         return len(moving)
 
-    # ---- queries ------------------------------------------------------
     def __len__(self) -> int:
         return len(self._bookmarks)
 
     def all_tags(self, game: str = "", project_root: str = "") -> list[str]:
-        """Tag frequency list, optionally restricted to a game / project root."""
         return _context_tags(self._bookmarks, game, project_root)
 
+    @staticmethod
+    def _search_blob(bookmark: Bookmark) -> str:
+        return " ".join([bookmark.path, bookmark.note, *bookmark.tags]).lower()
+
+    def _blob(self, bookmark: Bookmark) -> str:
+        blob = self._search_blobs.get(bookmark.id)
+        if blob is None:
+            blob = self._search_blob(bookmark)
+            self._search_blobs[bookmark.id] = blob
+        return blob
+
     def matches(self, query: str, tag: str | None = None) -> list[Bookmark]:
-        needle = (query or "").strip().lower()
-        out: list[Bookmark] = []
-        for bookmark in self._bookmarks:
-            if tag and tag not in bookmark.tags:
-                continue
-            if needle:
-                haystack = " ".join([bookmark.path, bookmark.note, *bookmark.tags]).lower()
-                if needle not in haystack:
-                    continue
-            out.append(bookmark)
-        return out
+        parsed = parse_query(query)
+        return [
+            bookmark
+            for bookmark in self._bookmarks
+            if (not tag or tag in bookmark.tags) and parsed.matches(bookmark, self._blob(bookmark))
+        ]
 
     def export_to(self, path: str | Path) -> int:
         self._write_payload(Path(path), self._bookmarks)
@@ -515,13 +570,6 @@ def _context_tags(bookmarks, game: str, project_root: str) -> list[str]:
 
 
 class ScopedBookmarksStore(QObject):
-    """A project's bookmarks bound to the shared game-keyed store.
-
-    Project-scope bookmarks persist in the project's own file (isolated tags);
-    PAK and unpacked bookmarks persist in the shared file so they follow the
-    game into every project. Exposes the BookmarksStore API used by the panel.
-    """
-
     changed = Signal()
 
     def __init__(
@@ -547,7 +595,6 @@ class ScopedBookmarksStore(QObject):
             return self.shared_store
         return None
 
-    # ---- lookup / mutation ---------------------------------------------
     def get(self, scope, path, root="", game="") -> Bookmark | None:
         try:
             return self._store_for_scope(scope).get(scope, path, root, game)
@@ -578,7 +625,6 @@ class ScopedBookmarksStore(QObject):
         store = self._store_for_id(bookmark_id)
         return store.touch(bookmark_id) if store else None
 
-    # ---- queries ---------------------------------------------------------
     def __len__(self) -> int:
         return len(self.project_store) + len(self.shared_store)
 

@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Callable
 
+import numpy as np
+
 from ..evaluation.model import (
     DiagnosticSeverity,
     EvaluatedPose,
@@ -25,15 +27,17 @@ class RootDisplayMode(Enum):
     LOCK_TRANSLATION = "lock_translation"
 
 
-@dataclass(frozen=True, slots=True)
+@dataclass(frozen=True, slots=True, eq=False)
 class MotionPreviewSnapshot:
+    """``joint_positions`` have the root translation removed."""
+
     frame: float
     end_frame: float
     pose: EvaluatedPose
     joint_names: tuple[str, ...]
-    joint_positions: tuple[Vector3, ...]
+    joint_positions: np.ndarray
     bone_pairs: tuple[tuple[int, int], ...]
-    node_weights: tuple[float, ...]
+    node_weights: np.ndarray
     root_deltas: tuple[tuple[int, Vector3], ...]
     deformation_weights: tuple[tuple[str, float], ...]
     diagnostics: tuple[EvaluationDiagnostic, ...]
@@ -44,7 +48,6 @@ class MotionPreviewError(ValueError):
 
 
 def is_static_skeletal_pose(motion: Motion) -> bool:
-    """Return whether skeletal tracks contain no time-varying values."""
     tracks = [
         track
         for node in motion.animation_nodes

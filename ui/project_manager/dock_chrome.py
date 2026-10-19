@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import weakref
+
 from PySide6.QtCore import QEvent, QRectF, Qt
 from PySide6.QtGui import QPalette, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QStyle, QToolButton, QWidget
@@ -21,15 +23,10 @@ _EXPAND_ARROW = {
 
 
 class DockTitleBar(QWidget):
-    """Title bar for the Project Browser dock: minimize / redock, never close.
-
-    Mouse events are deliberately left unhandled: they propagate to the
-    QDockWidget itself, which keeps its native drag / float / re-dock behavior.
-    """
+    """Unhandled mouse events pass to the QDockWidget for its native drag, float and re-dock."""
 
     def __init__(self, dock):
         super().__init__(dock)
-        self._dock = dock
         self.setObjectName("projectBrowserTitleBar")
         self.setAttribute(Qt.WA_StyledBackground, True)
         self.title_label = QLabel(dock.windowTitle(), self)
@@ -37,12 +34,12 @@ class DockTitleBar(QWidget):
         self.redock_btn = QToolButton(self)
         self.redock_btn.setAutoRaise(True)
         self.redock_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarNormalButton))
-        self.redock_btn.setToolTip(dock.tr("Dock back into the main window"))
+        self.redock_btn.setToolTip(self.tr("Dock back into the main window"))
         self.redock_btn.clicked.connect(dock.redock)
 
         self.min_btn = QToolButton(self)
         self.min_btn.setAutoRaise(True)
-        self.min_btn.setToolTip(dock.tr("Minimize to side tab"))
+        self.min_btn.setToolTip(self.tr("Minimize to side tab"))
         self.min_btn.clicked.connect(dock.minimize_to_side_tab)
 
         lay = QHBoxLayout(self)
@@ -63,7 +60,7 @@ class DockTitleBar(QWidget):
                 super().mouseDoubleClickEvent(event)
                 return
             try:
-                dock = self._dock
+                dock = self.parentWidget()  # not stored: the dock holds this bar (a cycle)
                 if dock.isFloating():
                     dock.redock()
                 else:
@@ -83,12 +80,17 @@ class SideTab(QWidget):
 
     def __init__(self, dock):
         super().__init__(dock.app_win)
-        self._dock = dock
+        # Weak: the dock holds this tab, so a strong reference would make a cycle for the garbage collector.
+        self._dock = weakref.ref(dock)
         self._area = None
         self._hover = False
         self.setCursor(Qt.PointingHandCursor)
         self.setToolTip(dock.windowTitle())
         dock.app_win.installEventFilter(self)
+
+    @property
+    def dock(self):
+        return self._dock()
 
     def eventFilter(self, obj, event):
         if obj is self.parentWidget() and event.type() == QEvent.Resize:
@@ -129,7 +131,7 @@ class SideTab(QWidget):
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.LeftButton:
-            self._dock.restore_from_side_tab()
+            self.dock.restore_from_side_tab()
 
     def paintEvent(self, _event):
         p = QPainter(self)
@@ -143,7 +145,7 @@ class SideTab(QWidget):
         p.setPen(QPen(pal.color(group, QPalette.Mid)))
         p.setBrush(pal.color(group, bg))
         p.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 7, 7)
-        text = f"{_EXPAND_ARROW.get(self._area, '›')}  {self._dock.windowTitle()}"
+        text = f"{_EXPAND_ARROW.get(self._area, '›')}  {self.dock.windowTitle()}"
         p.setPen(pal.color(group, fg))
         p.translate(self.rect().center())
         if self._area == Qt.LeftDockWidgetArea:

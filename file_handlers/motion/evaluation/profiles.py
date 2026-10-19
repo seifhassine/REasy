@@ -47,13 +47,8 @@ class Dmc5JointBindingStrategy:
         return key
 
 
-# Rotation interpolation is deliberately a replaceable evaluation policy. It
-# uses shortest-path normalized linear interpolation but is not a file field.
-# DMC5 MOT v65 omits joint default scale. The audited DMC5 mesh/JMAP rigs use
-# unit local scale, so standalone source-skeleton preview exposes this as an
-# explicit game profile choice rather than a generic evaluator fallback.
-# Partial facial rigs may use synthetic or otherwise different source
-# topology. Their defaults are not target-local at those boundaries.
+# Interpolation is an evaluation policy, not a file field. MOT v65 omits default scale; DMC5 mesh/JMAP rigs use unit
+# local scale. Facial source rigs may differ in topology, so their defaults need a hierarchy match.
 DMC5_EVALUATION_PROFILE = MotionEvaluationProfile(
     name="Devil May Cry 5",
     sampling_policy=SamplingPolicy(
@@ -69,8 +64,6 @@ DMC5_EVALUATION_PROFILE = MotionEvaluationProfile(
     property_name_hash=murmur3_hash_utf16le,
 )
 
-# Named aliases keep focused call sites concise while sharing one source of
-# truth for the complete game profile.
 DMC5_JOINT_BINDING = DMC5_EVALUATION_PROFILE.joint_binding
 DMC5_SAMPLING_POLICY = DMC5_EVALUATION_PROFILE.sampling_policy
 DMC5_POSE_COMPOSITION_POLICY = DMC5_EVALUATION_PROFILE.pose_composition_policy

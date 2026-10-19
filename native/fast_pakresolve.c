@@ -1,6 +1,14 @@
 #define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include <stdint.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#else
+#include <errno.h>
+#include <fcntl.h>
+#include <unistd.h>
+#endif
 
 static inline uint32_t rotl32(uint32_t x, int8_t r) {
 	return (x << r) | (x >> (32 - r));
@@ -143,10 +151,108 @@ static PyObject* murmur3_hash(PyObject* self, PyObject* args) {
 	return PyLong_FromUnsignedLong(hash);
 }
 
+/* Without the GIL: Python's open, seek, read and close each wait to reacquire it, stalling reads beside busy threads.
+ * Full sharing lets the file be replaced meanwhile. */
+static PyObject* read_at(PyObject* self, PyObject* args) {
+	PyObject* path;
+	long long offset;
+	Py_ssize_t size;
+	if (!PyArg_ParseTuple(args, "ULn", &path, &offset, &size)) {
+		return NULL;
+	}
+	if (offset < 0 || size < 0) {
+		PyErr_SetString(PyExc_ValueError, "read_at takes a non-negative offset and size");
+		return NULL;
+	}
+	PyObject* out = PyBytes_FromStringAndSize(NULL, size);
+	if (!out) {
+		return NULL;
+	}
+	char* buffer = PyBytes_AS_STRING(out);
+	Py_ssize_t done = 0;
+#ifdef _WIN32
+	wchar_t* wide = PyUnicode_AsWideCharString(path, NULL);
+	if (!wide) {
+		Py_DECREF(out);
+		return NULL;
+	}
+	DWORD error = 0;
+	Py_BEGIN_ALLOW_THREADS
+	HANDLE file = CreateFileW(wide, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
+		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+	if (file == INVALID_HANDLE_VALUE) {
+		error = GetLastError();
+	} else {
+		while (done < size) {
+			unsigned long long position = (unsigned long long)offset + (unsigned long long)done;
+			OVERLAPPED at = {0};
+			at.Offset = (DWORD)position;
+			at.OffsetHigh = (DWORD)(position >> 32);
+			DWORD wanted = (DWORD)(size - done < (1 << 30) ? size - done : (1 << 30)), got = 0;
+			if (!ReadFile(file, buffer + done, wanted, &got, &at)) {
+				error = GetLastError() == ERROR_HANDLE_EOF ? 0 : GetLastError();
+				break;
+			}
+			if (got == 0) {
+				break;
+			}
+			done += got;
+		}
+		CloseHandle(file);
+	}
+	Py_END_ALLOW_THREADS
+	PyMem_Free(wide);
+	if (error) {
+		Py_DECREF(out);
+		return PyErr_SetExcFromWindowsErrWithFilenameObject(PyExc_OSError, (int)error, path);
+	}
+#else
+	PyObject* encoded;
+	if (!PyUnicode_FSConverter(path, &encoded)) {
+		Py_DECREF(out);
+		return NULL;
+	}
+	const char* name = PyBytes_AS_STRING(encoded);
+	int error = 0;
+	Py_BEGIN_ALLOW_THREADS
+	int file = open(name, O_RDONLY | O_CLOEXEC);
+	if (file < 0) {
+		error = errno;
+	} else {
+		while (done < size) {
+			ssize_t got = pread(file, buffer + done, (size_t)(size - done), (off_t)(offset + done));
+			if (got < 0 && errno == EINTR) {
+				continue;
+			}
+			if (got <= 0) {
+				error = got < 0 ? errno : 0;
+				break;
+			}
+			done += got;
+		}
+		close(file);
+	}
+	Py_END_ALLOW_THREADS
+	if (error) {
+		Py_DECREF(out);
+		errno = error;
+		PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path);
+		Py_DECREF(encoded);
+		return NULL;
+	}
+	Py_DECREF(encoded);
+#endif
+	if (done < size && _PyBytes_Resize(&out, done) < 0) {
+		return NULL;
+	}
+	return out;
+}
+
 static PyMethodDef Methods[] = {
 	{"resolve_paths_utf8", (PyCFunction)resolve_paths_utf8, METH_VARARGS, "Resolve paths via UTF-8 hashing; returns (remaining_paths, updated_count)"},
 	{"resolve_paths_utf16le", (PyCFunction)resolve_paths_utf16le, METH_VARARGS, "Resolve paths via UTF-16LE hashing; returns (remaining_paths, updated_count)"},
 	{"murmur3_hash", (PyCFunction)murmur3_hash, METH_VARARGS, "Compute MurmurHash3 32-bit hash of bytes"},
+	{"read_at", (PyCFunction)read_at, METH_VARARGS, "read_at(path, offset, size): the bytes there, read without the GIL"},
 	{NULL, NULL, 0, NULL}
 };
 

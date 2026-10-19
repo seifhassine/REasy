@@ -2,7 +2,7 @@ import threading
 import os
 import subprocess
 import sys
-from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, QUrl
+from PySide6.QtCore import QCoreApplication, QObject, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
@@ -15,6 +15,26 @@ AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
 def is_windows() -> bool:
     return os.name == "nt"
 
+
+class _GuiThreadPoster(QObject):
+    """``QTimer.singleShot`` from a plain thread never fires: the thread has no event loop."""
+
+    _posted = Signal(object)
+
+    def __init__(self, parent):
+        super().__init__(parent)
+        self._posted.connect(self._run, Qt.ConnectionType.QueuedConnection)
+
+    def post(self, callback):
+        try:
+            self._posted.emit(callback)
+        except RuntimeError:  # the main window, and this poster with it, is gone
+            pass
+
+    def _run(self, callback):
+        callback()
+
+
 class UpdateNotificationManager:
     def __init__(self, main_window, current_version):
         self.main_window = main_window
@@ -24,6 +44,7 @@ class UpdateNotificationManager:
         self._update_menu = None
         self._update_check_timer = None
         self._auto_update_prompted = False
+        self._gui_poster = _GuiThreadPoster(main_window)
 
         QTimer.singleShot(1000, lambda: threading.Thread(
             target=self.check_for_updates, daemon=True).start())
@@ -197,7 +218,7 @@ class UpdateNotificationManager:
                             "Auto-update script not found. Opening releases page instead.",
                         ))
                     self.open_latest_release_page()
-                QTimer.singleShot(0, notify_missing)
+                self._gui_poster.post(notify_missing)
                 return
 
             cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script_path]
@@ -229,7 +250,7 @@ class UpdateNotificationManager:
                             "UpdateNotificationManager",
                             "The update failed with code {return_code}.\n\nDetails:\n{details}",
                         ).format(return_code=result.returncode, details=msg))
-            QTimer.singleShot(0, notify_done)
+            self._gui_poster.post(notify_done)
         except Exception as exc:
             error = str(exc)
 
@@ -241,4 +262,4 @@ class UpdateNotificationManager:
                         "UpdateNotificationManager",
                         "An unexpected error occurred during update.\n\n{error}",
                     ).format(error=error))
-            QTimer.singleShot(0, notify_error)
+            self._gui_poster.post(notify_error)

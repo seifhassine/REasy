@@ -18,6 +18,7 @@ import math
 
 from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
+from ui.qt_timers import call_later
 from ui.widgets_utils import ColorPreviewButton
 from utils.number_format import format_display_value, format_full_float
 
@@ -111,7 +112,7 @@ def _rgba_dialog_result(parent, initial_color):
         if not hex_edit:
             return
         text = f"#{color.red():02X}{color.green():02X}{color.blue():02X}{color.alpha():02X}"
-        QTimer.singleShot(0, lambda t=text: (
+        call_later(hex_edit, 0, lambda t=text: (
             hex_edit.blockSignals(True),
             hex_edit.setText(t),
             hex_edit.blockSignals(False))
@@ -170,7 +171,6 @@ class BaseValueWidget(QWidget):
         self._modified = False
 
     def mark_modified(self):
-        """Mark data as modified and notify"""
         self._modified = True
         self.modified_changed.emit(True)
 
@@ -183,8 +183,6 @@ class BaseValueWidget(QWidget):
 
 
 class ClipboardContentError(ValueError):
-    """Error raised when clipboard content cannot be parsed for vector inputs."""
-
     def __init__(self, reason, actual_count=None):
         super().__init__(reason)
         self.reason = reason
@@ -192,8 +190,6 @@ class ClipboardContentError(ValueError):
 
 
 class VectorClipboardMixin:
-    """Mixin that adds copy/paste helpers for vector-style inputs."""
-
     clipboard_precision = 8
 
     clipboard_button_width = 44
@@ -401,7 +397,6 @@ class GuidInput(BaseValueWidget):
         self.reset_button.clicked.connect(self._reset_guid)
 
     def _generate_guid(self):
-        """Generate a new random GUID"""
         if not self._data:
             return
 
@@ -409,7 +404,6 @@ class GuidInput(BaseValueWidget):
         self._apply_programmatic_guid(new_guid)
 
     def _reset_guid(self):
-        """Reset to null GUID (all zeros)"""
         if not self._data:
             return
 
@@ -459,7 +453,6 @@ class GuidInput(BaseValueWidget):
         self._history_anchor = ("valid", base_guid)
 
     def _format_guid(self, text):
-        """Format text as UUID, removing invalid chars and adding hyphens"""
         hex_only = ''.join(c for c in text.lower() if c in '0123456789abcdef')
         hex_only = hex_only[:32]
         
@@ -646,7 +639,6 @@ class OverwriteGuidLineEdit(QLineEdit):
         self.guid_widget._on_text_edited(text, from_history=True)
 
 class NumberInput(BaseValueWidget):
-    """Base class for numeric inputs"""
     valueChanged = Signal(float)
     
     def __init__(self, parent=None):
@@ -658,7 +650,6 @@ class NumberInput(BaseValueWidget):
         self.line_edit.textChanged.connect(self._on_text_changed)
 
     def validate_and_convert(self, text):
-        """Override in child classes to provide type-specific validation"""
         raise NotImplementedError()
 
     def _on_text_changed(self, text):
@@ -1286,7 +1277,6 @@ class HexBytesInput(BaseValueWidget):
             print(f"Error processing hex input: {e}")
     
     def _update_raw_bytes(self, new_bytes):
-        """Update the raw bytes data using the appropriate attribute"""
         self.raw_data.raw_bytes = new_bytes
 
 class OverwriteHexLineEdit(QLineEdit):
@@ -1334,7 +1324,6 @@ class OverwriteHexLineEdit(QLineEdit):
             super().keyPressEvent(event)
 
 class StringInput(BaseValueWidget):
-    """Widget for editing string values"""
     valueChanged = Signal(str)
 
     def __init__(self, parent=None):
@@ -1558,6 +1547,7 @@ class StringInput(BaseValueWidget):
             context.pak_cached_reader,
             should_overwrite=_confirm_overwrite,
             selection_parent=self,
+            game=context.game,
         )
         if dest_path:
             same_active_project = (
@@ -1934,8 +1924,6 @@ class RangeInput(BaseRangeInput):
 
 
 class RangeIInput(BaseRangeInput):
-    """Widget for editing integer range values"""
-
     def _create_validator(self):
         return QIntValidator()
 
@@ -1954,7 +1942,6 @@ class RangeIInput(BaseRangeInput):
         return (0, 0)
 
 class EnumInput(BaseValueWidget):
-    """Widget for editing enum values with dropdown selection"""
     valueChanged = Signal(int)
     
     def __init__(self, parent=None):
@@ -1972,68 +1959,55 @@ class EnumInput(BaseValueWidget):
         self.combo_box.view().setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded) 
         self.layout.addWidget(self.combo_box)
         
-        # Connect signals
         self.line_edit.textChanged.connect(self._on_text_changed)
         self.combo_box.currentIndexChanged.connect(self._on_combo_changed)
         
     def set_enum_values(self, enum_values):
-        """Set available enum values and populate dropdown"""
         self.enum_values = enum_values
         
         # Block signals during population to prevent auto-selection
         self.combo_box.blockSignals(True)
         self.combo_box.clear()
         
-        # Populate dropdown with enum values
         for enum_value in enum_values:
             self.combo_box.addItem(f"{enum_value['name']} ({enum_value['value']})")
         
-        # Restore signals
         self.combo_box.blockSignals(False)
         
-        # Set combo selection to match current value if it exists
         if self._data and hasattr(self._data, 'value'):
             self.update_combo_selection()
             
     def update_combo_selection(self):
-        """Set the combo box selection to match current value"""
         if not self._data or not self.enum_values:
             return
         
         current_value = self._data.value
         found_match = False
         
-        # Block signals to prevent triggering _on_combo_changed
         self.combo_box.blockSignals(True)
         
-        # Try to find matching enum value
         for i, enum_value in enumerate(self.enum_values):
             if enum_value['value'] == current_value:
                 self.combo_box.setCurrentIndex(i)
                 found_match = True
                 break
                 
-        # If no match found, set combo to -1 (no selection)
         if not found_match:
             self.combo_box.setCurrentIndex(-1)
             
         self.combo_box.blockSignals(False)
                 
     def update_display(self):
-        """Update both the text input and dropdown to match data"""
         if not self._data:
             return
         
-        # First update text field with actual value
         self.line_edit.blockSignals(True)
         self.line_edit.setText(str(self._data.value))
         self.line_edit.blockSignals(False)
         
-        # Then update combo box selection to match value, if possible
         self.update_combo_selection()
         
     def _on_text_changed(self, text):
-        """Update value when text is changed manually"""
         if not self._data or not text:
             return
             
@@ -2047,7 +2021,6 @@ class EnumInput(BaseValueWidget):
                 self._modified = True 
                 self.modified_changed.emit(True)
                 
-                # Update dropdown to match new value, but don't trigger another change
                 self.update_combo_selection()
                 
             self.line_edit.setStyleSheet("")
@@ -2055,7 +2028,6 @@ class EnumInput(BaseValueWidget):
             self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
             
     def _on_combo_changed(self, index):
-        """Update value when an enum option is selected"""
         if not self._data or index < 0 or index >= len(self.enum_values):
             return
             
@@ -2074,7 +2046,6 @@ class EnumInput(BaseValueWidget):
             self.modified_changed.emit(True)
 
 class Mat4Input(BaseValueWidget):
-    """Widget for editing 4x4 matrix values"""
     valueChanged = Signal(list)
     
     def __init__(self, data=None, parent=None):
@@ -2105,7 +2076,6 @@ class Mat4Input(BaseValueWidget):
             self.set_data(data)
 
     def update_display(self):
-        """Update input fields from the data"""
         if not self._data or not hasattr(self._data, 'values'):
             return
         
@@ -2119,7 +2089,6 @@ class Mat4Input(BaseValueWidget):
                 self.inputs[row][col].setText(format_full_float(values[idx], 8))
 
     def _on_value_changed(self):
-        """Handle input changes and update the data model"""
         if not self._data:
             return
         
@@ -2141,7 +2110,6 @@ class Mat4Input(BaseValueWidget):
             pass 
 
     def setValues(self, values):
-        """Set all input values at once"""
         if len(values) != 16:
             return
 
@@ -2151,7 +2119,6 @@ class Mat4Input(BaseValueWidget):
                 self.inputs[row][col].setText(format_display_value(values[idx]))
     
     def getValues(self):
-        """Get all values as a flat list"""
         try:
             return [float(input_field.text() or "0") 
                    for row in self.inputs 
@@ -2192,7 +2159,6 @@ class ColorInput(BaseValueWidget):
             input_field.textEdited.connect(self._validate_and_update)
 
     def _validate_and_update(self):
-        """Validate input and update values"""
         if not self._data:
             return
             
@@ -2218,7 +2184,6 @@ class ColorInput(BaseValueWidget):
         self._update_color_button()
     
     def _update_color_button(self):
-        """Update the color button appearance based on current RGBA values"""
         if not self._data:
             return
 
@@ -2249,7 +2214,6 @@ class ColorInput(BaseValueWidget):
             return (0, 0, 0, 255) 
     
     def _on_value_changed(self):
-        """Handle changes from manual input of RGBA values"""
         if not self._data:
             return
             
@@ -2299,11 +2263,9 @@ class ColorInput(BaseValueWidget):
 
 
 class Int4ColorInput(ColorInput):
-    """Color widget for Int4ColorData objects that store channels as x/y/z/w."""
     channel_attrs = ("x", "y", "z", "w")
 
 class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
-    """Widget for editing Vec3 RGB color values as floats"""
     valueChanged = Signal(tuple)
 
     clipboard_precision = 6
@@ -2338,7 +2300,6 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
             input_field.textEdited.connect(self._validate_and_update)
 
     def _validate_and_update(self):
-        """Validate input and update values"""
         if not self._data:
             return
             
@@ -2389,11 +2350,9 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         self._update_color_button()
     
     def _update_color_button(self):
-        """Update the color button appearance based on current RGB values"""
         if not self._data:
             return
             
-        # Clamp RGB values between 0 and 1 for display purposes
         r = max(0, min(1, float(self._data.x))) * 255
         g = max(0, min(1, float(self._data.y))) * 255
         b = max(0, min(1, float(self._data.z))) * 255
@@ -2401,11 +2360,9 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         self.color_button.setColor(int(r), int(g), int(b), 255)
     
     def _show_color_dialog(self):
-        """Open color picker dialog and update values if user selects a color"""
         if not self._data:
             return
             
-        # Convert float values [0.0-1.0] to integer values [0-255] for QColor
         r = int(max(0, min(1, float(self._data.x))) * 255)
         g = int(max(0, min(1, float(self._data.y))) * 255)
         b = int(max(0, min(1, float(self._data.z))) * 255)
@@ -2414,11 +2371,10 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         
         dialog = QColorDialog(initial_color, self)
         dialog.setWindowTitle(self.tr("Select Color"))
-        dialog.setOption(QColorDialog.ShowAlphaChannel, False)  # No alpha channel
+        dialog.setOption(QColorDialog.ShowAlphaChannel, False)
         
         if dialog.exec_():
             color = dialog.currentColor()
-            # Convert integer values [0-255] back to float values [0.0-1.0]
             self._data.x = color.red() / 255.0
             self._data.y = color.green() / 255.0
             self._data.z = color.blue() / 255.0
@@ -2440,7 +2396,6 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
             return (0.0, 0.0, 0.0)
     
     def _on_value_changed(self):
-        """Handle changes from manual input of RGB values"""
         if not self._data:
             return
             
@@ -2465,7 +2420,6 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
             pass
 
 class CapsuleInput(BaseValueWidget):
-    """Widget for editing capsule collision shapes (start point, end point, and radius)"""
     valueChanged = Signal(tuple)
     
     def __init__(self, data=None, parent=None):
@@ -2521,7 +2475,6 @@ class CapsuleInput(BaseValueWidget):
         self.radius_input.textEdited.connect(self._on_value_changed)
 
     def update_display(self):
-        """Update input fields from data object"""
         if not self._data:
             return
             
@@ -2539,7 +2492,6 @@ class CapsuleInput(BaseValueWidget):
             self.radius_input.setText(format_full_float(self._data.radius, 8))
 
     def _on_value_changed(self):
-        """Handle input changes and update the data model"""
         if not self._data:
             return
             
@@ -2583,7 +2535,6 @@ class CapsuleInput(BaseValueWidget):
             pass  # Ignore invalid input during typing
             
     def setValues(self, values):
-        """Set all input values at once (start_x, start_y, start_z, end_x, end_y, end_z, radius)"""
         if len(values) != 7:
             return
             
@@ -2596,7 +2547,6 @@ class CapsuleInput(BaseValueWidget):
         self.radius_input.setText(format_display_value(values[6]))
     
     def getValues(self):
-        """Get all values as a tuple (start_x, start_y, start_z, end_x, end_y, end_z, radius)"""
         try:
             start_values = [float(input_field.text() or "0") for input_field in self.start_inputs]
             end_values = [float(input_field.text() or "0") for input_field in self.end_inputs]

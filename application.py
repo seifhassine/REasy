@@ -7,7 +7,7 @@ import subprocess
 import sys
 
 import PySide6
-from PySide6.QtCore import QCoreApplication, QLocale, Qt
+from PySide6.QtCore import QCoreApplication, QLocale
 from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory
 
 from i18n.catalog import validate_catalog
@@ -15,7 +15,6 @@ from i18n.language_manager import LanguageManager
 from settings import load_settings
 from utils.app_paths import application_root
 from utils.native_build import ensure_fastmesh, ensure_fast_pakresolve
-from ui.scene.opengl_setup import configure_default_surface_format
 
 
 def _configure_garbage_collector() -> None:
@@ -58,11 +57,6 @@ def main(argv=None) -> int:
     _prepare_native_modules()
 
     QLocale.setDefault(QLocale.c())
-    # Preserve QOpenGLWidget contexts while live pages move between windows.
-    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
-    # QSurfaceFormat defaults must be selected before QApplication on platforms
-    # where OpenGL context sharing and pixel formats are fixed at startup.
-    configure_default_surface_format()
     app = QApplication(argv)
     app.setStyle(QStyleFactory.create("Fusion"))
 

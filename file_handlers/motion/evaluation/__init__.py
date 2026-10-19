@@ -6,6 +6,7 @@ from .layering import (
     LayerBlendMode,
     LayeredPoseEvaluator,
     LayerInterpolationCurve,
+    LayerRepeat,
     LayerTimePolicy,
     LayerTiming,
     MotionLayer,
@@ -14,10 +15,8 @@ from .math3d import (
     compose_world_matrices,
     decompose_row_srt,
     inverse_quaternion,
-    multiply_matrices,
     multiply_quaternions,
     normalize_quaternion,
-    transform_matrix,
 )
 from .mesh_adapter import rig_from_re_engine_mesh
 from .model import (
@@ -71,6 +70,7 @@ __all__ = [
     "LayerBlendMode",
     "LayeredPoseEvaluator",
     "LayerInterpolationCurve",
+    "LayerRepeat",
     "LayerTimePolicy",
     "LayerTiming",
     "Matrix4",
@@ -96,11 +96,9 @@ __all__ = [
     "decompose_row_srt",
     "interpolate_quaternion",
     "inverse_quaternion",
-    "multiply_matrices",
     "multiply_quaternions",
     "normalize_quaternion",
     "rig_from_re_engine_mesh",
     "rig_from_motion_skeleton",
     "sample_track",
-    "transform_matrix",
 ]

@@ -1,0 +1,17 @@
+{
+ "format": 2,
+ "game": "DD2",
+ "resource_version": 260511270,
+ "unblended": "objects",
+ "blended": "farthest_object_depth",
+ "source": {
+  "note": "No capture of DD2 shows two forward parts; the blending order is the executable's.",
+  "executable": {
+   "file": "DD2_dump.exe",
+   "draw_task": "0x7ff7892d7030",
+   "gate": "MeshRenderer +0x38/+0x39",
+   "render_entry": "RenderEntry +0x3fe = 1 (0x7ff78a1226b4)",
+   "note": "README 'The forward blending order of five executables': one key per via.render.Mesh, ~trunc(clamp(z/w, 0, 1) x 4294967295) of its world box's centre (bones' boxes for a skinned mesh) moved by TransparentBias, plus the material's TransparentPriorityBias, stable ascending"
+  }
+ }
+}

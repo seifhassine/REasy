@@ -1,0 +1,33 @@
+{
+ "format": 2,
+ "game": "PRAGMATA",
+ "resource_version": 251112995,
+ "unblended": "nearest_part",
+ "blended": "farthest_object_depth",
+ "source": {
+  "note": "README PRAGMATA forward section: sm62_025_00 parts made frosted 2.53, 4.01, 3.21 m, glass 2.62, 3.91, 3.01 m, water 3.53 m, hologram 2.84 m (from the spawn's camera); drawn env_glass_frosted, env_glass_frosted, env_beach_watersurface, env_glass_frosted (DirectForward, no blending: nearest first, the only order of the three giving that sequence), then env_glass, env_glass, env_hologram, env_glass (blending: farthest first) (PRAGMATA_frame21308, the same set: the same sequence; PRAGMATA_frame190158, the set's first capture, drew it too, 8944-8983 and 9668-9775) The blending four by view depth (draw_distances.py, PRAGMATA_frame21308): 12737 6.79-7.12 m, 12846 5.89-6.22, 12863 5.74-6.07, 12916 5.52-5.85, the game's order; by the distance to each box's centre 12846 (6.452 m) and 12863 (6.463 m) would go the other way.",
+  "captures": [
+   {
+    "capture": "PRAGMATA_frame21308.rdc",
+    "test": "stage105/build_pragmata_test.py",
+    "draws": [
+     11988,
+     11993,
+     12010,
+     12027,
+     12737,
+     12846,
+     12863,
+     12916
+    ]
+   }
+  ],
+  "executable": {
+   "file": "PRAGMATA_dump.exe",
+   "draw_task": "0x144b17160",
+   "gate": "MeshRenderer +0x36/+0x37",
+   "render_entry": "RenderEntry +0x409 = 1 (0x1459c35b9)",
+   "note": "README 'The forward blending order of five executables': one key per via.render.Mesh, ~trunc(clamp(z/w, 0, 1) x 4294967295) of its world box's centre (bones' boxes for a skinned mesh) moved by TransparentBias, plus the material's TransparentPriorityBias, stable ascending"
+  }
+ }
+}

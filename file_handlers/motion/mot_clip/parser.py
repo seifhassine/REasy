@@ -78,13 +78,6 @@ class CompactClipSpeedRecord:
 
 @dataclass(slots=True)
 class CompactClipV27ParseResult:
-    """One owner-neutral compact CLIP v27 payload plus its serialized layout.
-
-    Owner containers wrap the same compact graph in different descriptor and
-    boundary layouts. Keeping the record/table metadata here lets adapters
-    retain editable source offsets without decoding the graph a second time.
-    """
-
     clip: CompactMotClip
     clip_offset: int
     pointer_base: int
@@ -225,8 +218,6 @@ class CompactClipV27Parser:
             raise MotionParseError(f"{c.label}: MotClip Hermite table violates canonical layout")
 
         last_count = sum(record.has_last_key for record in props)
-        # The table address is explicit in the header; its count is explicit in
-        # property flags, so parsing it here does not infer a count from layout.
         last_keys = self._read_keys(c, last_keys_offset, last_count)
 
         hermite_bytes = bezier_offset - hermite_offset

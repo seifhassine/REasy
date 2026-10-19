@@ -1606,7 +1606,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "upsert_mdf_texture",
-                "Append or replace one texture row through the visible Textures table.",
+                "Append or replace one texture row through the visible Textures table. The texture role must match the assigned MMTR.",
                 {
                     "material": _MATERIAL,
                     "index": _INDEX,
@@ -1624,7 +1624,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "delete_mdf_texture",
-                "Delete one texture row through the visible Textures table.",
+                "Delete one texture row through the visible Textures table. Normal materials should keep the texture roles required by their assigned MMTR.",
                 {"material": _MATERIAL, "index": {"type": "integer", "minimum": 0}},
                 ["material", "index"],
                 activity=(
@@ -1636,7 +1636,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "upsert_mdf_parameter",
-                "Append or replace one parameter row through the visible Parameters table.",
+                "Append or replace one parameter row through the visible Parameters table. Normal parameter-structure changes should use Create Variant so the MMTR ABI is synchronized automatically.",
                 {
                     "material": _MATERIAL,
                     "index": _INDEX,
@@ -1659,7 +1659,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "delete_mdf_parameter",
-                "Delete one parameter row through the visible Parameters table.",
+                "Delete one parameter row through the visible Parameters table. Normal parameter removal should use Create Variant so the MMTR ABI remains synchronized.",
                 {"material": _MATERIAL, "index": {"type": "integer", "minimum": 0}},
                 ["material", "index"],
                 activity=(
@@ -1917,8 +1917,6 @@ class ReasyAssistantTools(
         )
 
     def authorize_tool_json(self, name: str, arguments_json: str) -> bool:
-        """Ask before an  AI action writes persistent data."""
-
         definition = self.tool_definition(name)
         if definition is None or not definition.persistent:
             return True
@@ -2427,9 +2425,7 @@ class ReasyAssistantTools(
                 for tab in session.tabs:
                     append(tab, session)
 
-        # Direct-open and detached tabs normally belong to the scratch session.
-        # Include UI-owned tabs as a fallback so assistant access does not depend
-        # on a project/session bookkeeping detail.
+        # Also list the UI's own tabs, in case a direct-open or detached tab is in no session.
         tab_lookup = getattr(self.app, "tabs", {})
         extra_tabs = list(tab_lookup.values()) if hasattr(tab_lookup, "values") else []
         extra_tabs.append(active_tab)
@@ -3225,9 +3221,9 @@ class ReasyAssistantTools(
         viewer.materials_table.selectRow(index)
         viewer._current_index = index
         section_indexes = {
-            "overview": 0,
-            "textures": 1,
-            "parameters": 2,
+            "overview": viewer.overview_tab_idx,
+            "textures": viewer.textures_tab_idx,
+            "parameters": viewer.params_tab_idx,
             "gpu_buffers": viewer.gpbf_tab_idx,
             "shader_lods": viewer.shaderLODRedirects_tab_idx,
         }
@@ -3250,6 +3246,8 @@ class ReasyAssistantTools(
 
     @staticmethod
     def _flags_for(viewer: MdfViewer, index: int) -> dict[str, Any]:
+        from file_handlers.mdf.mdf_file import transparent_priority_bias
+
         header = viewer.handler.mdf.materials[index].header
         raw = int(header.material_flags)
         version = viewer._current_file_version()
@@ -3267,8 +3265,7 @@ class ReasyAssistantTools(
         if version >= 31:
             for bit, name in enumerate(viewer._flags3_names):
                 flags[name] = bool((raw >> (32 + bit)) & 1)
-            bias = (raw >> 40) & 0xFF
-            flags["transparent_priority_bias"] = bias - 256 if bias >= 128 else bias
+            flags["transparent_priority_bias"] = transparent_priority_bias(raw)
         return flags
 
     @staticmethod
@@ -4288,7 +4285,6 @@ class ReasyAssistantTools(
         if 0 <= current_index < len(materials):
             selected_name = materials[current_index].header.mat_name.casefold()
         materials[:] = desired
-        viewer._clear_params_cache()
         viewer._refresh_materials_list()
         if materials:
             selected_index = next(

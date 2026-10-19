@@ -81,6 +81,13 @@ class TransformAdapter:
                 False,
             )
         )
+        transform.joint_segment_scale = bool(
+            getattr(
+                _named_field(self.fields, "JointSegmentScale"),
+                "value",
+                False,
+            )
+        )
         return transform
 
     def write(self, transform: ScnTransform) -> None:

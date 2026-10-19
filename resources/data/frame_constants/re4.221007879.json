@@ -1,0 +1,52 @@
+{
+ "format": 1,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "scene": {
+  "subdivisionLevel": [
+   15.0
+  ]
+ },
+ "source": {
+  "buffer": "SceneInfo",
+  "fields": [
+   "subdivisionLevel"
+  ],
+  "captures": [
+   {
+    "capture": "re4_frame41957.rdc",
+    "draws": 4852,
+    "tessellated": 212,
+    "tessellated_without_buffer": 1,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        15.0
+       ]
+      },
+      "draws": 232
+     }
+    ]
+   },
+   {
+    "capture": "re4_frame16973.rdc",
+    "draws": 1380,
+    "tessellated": 8,
+    "tessellated_without_buffer": 0,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        15.0
+       ]
+      },
+      "draws": 28
+     }
+    ]
+   }
+  ]
+ }
+}

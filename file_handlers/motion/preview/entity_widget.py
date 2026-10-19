@@ -28,6 +28,7 @@ from file_handlers.rsz.scn_scene_preview import (
     ScnScenePreviewWidget,
 )
 from ui.editor_widgets import EmbeddedPopupComboBox
+from ui.qt_timers import call_later
 from ui.scene.scn_visibility_panel import ScnGameObjectVisibilityPanel
 
 from ..evaluation import DeformationTarget, Rig
@@ -35,7 +36,7 @@ from ..mot import Motion
 from ..runtime import JointMapAttributes
 from .animation_browser import MotionAnimationBrowser
 from .attachments import MotionSceneAttachmentResolver
-from .blend_shapes import mesh_blend_shape_targets
+from .blend_shapes import blend_shape_targets
 from .channel_controls import MotionChannelPanel
 from .controller import MotionPreviewController
 from .controls import MotionPlaybackControls
@@ -53,13 +54,12 @@ from .model import (
 )
 from .entity_scene import EntitySceneCoordinator, MeshBinding
 from .material_animation import (
-    MaterialAnimationBinding,
+    MaterialAnimation,
     SceneMaterialAnimationResolver,
-    evaluate_material_parameters,
     material_deformation_targets,
 )
 from .resolution import PreviewMotionEntry
-from .renderer import MotionRenderState
+from .posed_meshes import PosedMeshes
 from .runtime_details import MotionRuntimeDebugDialog
 from .scene_state import resolve_renderable_scene_state
 from .shared_pose import (
@@ -104,15 +104,13 @@ class PfbMotionPreviewWidget(QWidget):
         self.support = support
         self.controller = MotionPreviewController(support.evaluation)
         self.session: EntityMotionSession | None = None
+        self._session_document_id = ""
         self._scene_binding = EntitySceneCoordinator(
             target_factory or self._target_from_asset,
             support.evaluation.joint_binding,
         )
-        self._deformers: dict[str, object] = {}
-        self._gpu_skinned_keys: set[str] = set()
-        self._material_animation_bindings: tuple[
-            MaterialAnimationBinding, ...
-        ] = ()
+        self._material_animation = MaterialAnimation()
+        self._animated_object: ScnObjectId | None = None
         self._material_animation_messages: tuple[str, ...] = ()
         self._material_resolver = SceneMaterialAnimationResolver(
             support.backend.material_controllers
@@ -120,7 +118,6 @@ class PfbMotionPreviewWidget(QWidget):
         self._material_parameter_values: dict[str, dict[str, float]] = {}
         self._attachment_resolver: MotionSceneAttachmentResolver | None = None
         self._active_attachment_keys: set[str] = set()
-        self._render_state = MotionRenderState()
         self._variant_visibility_overrides: dict[str, bool] = {}
         self._scene_state_visibility_overrides: dict[str, bool] = {}
         self._scene_state_part_overrides: dict[str, tuple[bool, ...]] = {}
@@ -143,6 +140,8 @@ class PfbMotionPreviewWidget(QWidget):
             self,
             settings=settings if isinstance(settings, dict) else None,
         )
+        self._poses = PosedMeshes(self.scene.preview, self.scene.restore_mesh_geometry)
+        self._deformer_inputs: dict[str, tuple[tuple, object]] = {}
         self.playback = MotionPlaybackControls(
             self.controller,
             frame_driver=self.scene.preview.set_frame_callback,
@@ -153,16 +152,17 @@ class PfbMotionPreviewWidget(QWidget):
         self.playback.set_stop_on_hide(False)
         self.playback.render_requested.connect(self._render)
         self.scene.renderables_changed.connect(self._sync_mesh_targets)
-        self.scene.preview.render_failure.connect(
-            self._on_render_failure,
-            Qt.ConnectionType.QueuedConnection,
-        )
+        # A child timer dies with the widget.
+        self._initialize_timer = QTimer(self)
+        self._initialize_timer.setSingleShot(True)
+        self._initialize_timer.setInterval(0)
+        self._initialize_timer.timeout.connect(self.initialize)
         self._build_ui()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
         if self._auto_initialize and not self._initialized and not self._cleaned:
-            QTimer.singleShot(0, self, self.initialize)
+            self._initialize_timer.start()
 
     def hideEvent(self, event) -> None:
         if not self.scene.preview.is_fullscreen_transitioning():
@@ -279,7 +279,7 @@ class PfbMotionPreviewWidget(QWidget):
             viewport.set_viewport_overlay_folded(hud, True)
         place_overlays = getattr(viewport, "place_viewport_overlays", None)
         if callable(place_overlays):
-            QTimer.singleShot(0, viewport, place_overlays)
+            call_later(viewport, 0, place_overlays)
 
     def initialize(self) -> None:
         if self._initialized or self._cleaned:
@@ -306,6 +306,7 @@ class PfbMotionPreviewWidget(QWidget):
 
     def set_session(self, session: EntityMotionSession) -> None:
         self.session = session
+        self._session_document_id = normalize_document_id(session.source_path)
         self._scene_binding.reset_session()
         self._material_resolver.clear()
         self.animation_browser.set_session(session)
@@ -532,7 +533,7 @@ class PfbMotionPreviewWidget(QWidget):
         self.channel_panel.setVisible(enabled)
         self.channel_panel.set_active(enabled)
         if enabled:
-            QTimer.singleShot(0, self._size_layer_composition_panel)
+            call_later(self, 0, self._size_layer_composition_panel)
 
     def _size_layer_composition_panel(self) -> None:
         height = self.scene_details_splitter.height()
@@ -611,20 +612,18 @@ class PfbMotionPreviewWidget(QWidget):
                 self._clear_animation(self.controller.error_message)
                 return
             self._apply_target_visibility(binding)
-            self._deformers = self._build_pose_deformers(
-                binding,
-                runtime_target,
-            )
-            self._enable_gpu_skinning()
+            self._poses.bind(self._build_pose_deformers(binding, runtime_target))
             self._sync_animated_visibility_scope()
+            self._animated_object = ScnObjectId(
+                binding.asset.renderable.source_object_id.document_id,
+                runtime_target.definition.id.object_id,
+            )
+            self._material_animation.restart()
             self._attachment_resolver = MotionSceneAttachmentResolver(
                 self.scene.graphs,
                 binding.asset.renderable,
                 binding.target.rig,
-                pose_source_object_id=ScnObjectId(
-                    binding.asset.renderable.source_object_id.document_id,
-                    runtime_target.definition.id.object_id,
-                ),
+                pose_source_object_id=self._animated_object,
             )
             self._active_target_key = binding.asset.key
             self.playback.configure()
@@ -638,54 +637,25 @@ class PfbMotionPreviewWidget(QWidget):
         if (
             not self.controller.ready
             or binding is None
-            or not self._deformers
+            or not self._poses.deformers
         ):
             return
         try:
             snapshot = self.controller.sample()
             self._apply_scene_state(snapshot.frame)
-            pose_changed, deformation_changed = self._render_state.changes(
-                snapshot
-            )
+            pose_changed, deformation_changed = self._poses.show(snapshot)
             if deformation_changed:
-                material_values = evaluate_material_parameters(
-                    self._material_animation_bindings,
+                material_values = self._material_animation.evaluate(
                     snapshot.deformation_weights,
+                    self._animated_object,
                 )
                 if material_values != self._material_parameter_values:
                     self.scene.set_material_parameter_values(material_values)
                     self._material_parameter_values = material_values
-            for key, deformer in self._deformers.items():
-                if key in self._gpu_skinned_keys:
-                    if deformation_changed:
-                        positions, normals = deformer.source_geometry(
-                            snapshot.deformation_weights
-                        )
-                        self.scene.preview.update_mesh_skinning_source(
-                            key,
-                            positions,
-                            normals,
-                        )
-                    if pose_changed:
-                        self.scene.preview.update_mesh_skinning(
-                            key,
-                            deformer.skin_matrices(snapshot),
-                        )
-                    continue
-                if not pose_changed and not deformation_changed:
-                    continue
-                vertices, normals = deformer.deform(snapshot)
-                self.scene.preview.update_mesh_geometry(
-                    key,
-                    vertices,
-                    normals,
-                    recompute_bounds=False,
-                )
             if pose_changed and self._attachment_resolver is not None:
                 self._apply_attachments(
                     self._attachment_resolver.resolve(snapshot)
                 )
-            self._render_state.accept(snapshot)
         except (MotionPreviewError, ValueError, RuntimeError) as exc:
             self._clear_animation(str(exc))
             return
@@ -709,10 +679,10 @@ class PfbMotionPreviewWidget(QWidget):
             messages.append(self._motion_label(entry))
             if is_static_skeletal_pose(entry.resolve_motion()):
                 messages.append(self.tr("Static skeletal pose"))
-        if len(self._deformers) > 1:
+        if len(self._poses.deformers) > 1:
             messages.append(
                 self.tr("Shared pose: {count} meshes").format(
-                    count=len(self._deformers)
+                    count=len(self._poses.deformers)
                 )
             )
         if self._material_parameter_values:
@@ -776,37 +746,21 @@ class PfbMotionPreviewWidget(QWidget):
         return tuple(targets.values())
 
     def _mesh_deformation_targets(self) -> tuple[DeformationTarget, ...]:
-        by_name: dict[str, DeformationTarget] = {}
-        by_hash: dict[int, str] = {}
-        for binding in self._scene_binding.bindings:
-            for target in mesh_blend_shape_targets(
-                binding.target.mesh,
-                self.support.evaluation.property_name_hash,
-                motion_name_key=(
-                    self.support.evaluation.joint_binding.motion_name_key
-                ),
-            ):
-                assert target.property_hash is not None
-                previous_name = by_hash.setdefault(
-                    target.property_hash,
-                    target.name,
-                )
-                if previous_name != target.name:
-                    raise ValueError(
-                        f"blendshape names {previous_name!r} and "
-                        f"{target.name!r} share property hash "
-                        f"0x{target.property_hash:08X}"
-                    )
-                by_name.setdefault(target.name, target)
-        return tuple(by_name.values())
+        return blend_shape_targets(
+            (binding.target.mesh for binding in self._scene_binding.bindings),
+            self.support.evaluation.property_name_hash,
+            motion_name_key=self.support.evaluation.joint_binding.motion_name_key,
+        )
 
     def _source_deformation_targets(self) -> tuple[DeformationTarget, ...]:
+        mesh_targets = self._mesh_deformation_targets()
+        names = {target.name for target in mesh_targets}
         return (
-            *self._mesh_deformation_targets(),
-            *material_deformation_targets(
-                self._material_animation_bindings,
+            *mesh_targets,
+            *(target for target in material_deformation_targets(
+                self._material_animation.bindings,
                 self.support.evaluation.property_name_hash,
-            ),
+            ) if target.name not in names),
         )
 
     def _sync_material_animation_bindings(self) -> None:
@@ -830,7 +784,7 @@ class PfbMotionPreviewWidget(QWidget):
                 else ()
             ),
         )
-        self._material_animation_bindings = resolution.bindings
+        self._material_animation = MaterialAnimation(resolution.bindings)
         self._material_animation_messages = resolution.diagnostics
 
     def _refresh_advanced_info(self) -> None:
@@ -921,28 +875,36 @@ class PfbMotionPreviewWidget(QWidget):
                 pose_space_matrix,
                 model_matrix,
             ):
-                deformers[key] = self._deformer_factory(
-                    binding.asset,
-                    binding.target,
+                deformers[key] = self._held_deformer(
+                    key,
+                    (binding.asset, binding.target),
+                    self._deformer_factory,
                 )
                 continue
-            deformers[key] = self._shared_deformer_factory(
-                binding.asset,
-                binding.target,
-                owner.target.rig,
-                shared_rig_model_space_transform(
-                    pose_space_matrix,
-                    model_matrix,
+            deformers[key] = self._held_deformer(
+                key,
+                (
+                    binding.asset,
+                    binding.target,
+                    owner.target.rig,
+                    shared_rig_model_space_transform(pose_space_matrix, model_matrix),
                 ),
+                self._shared_deformer_factory,
             )
+        self._deformer_inputs = {key: self._deformer_inputs[key] for key in deformers}
         return deformers
 
-    def _enable_gpu_skinning(self) -> None:
-        for key, deformer in self._deformers.items():
-            if deformer.requires_post_skin_normals:
-                continue
-            self.scene.preview.set_mesh_skinning(key, deformer.binding)
-            self._gpu_skinned_keys.add(key)
+    def _held_deformer(self, key: str, inputs: tuple, make: Callable[..., object]) -> object:
+        """Reusing the held one when its inputs are equal keeps skinning on the device."""
+        held = self._deformer_inputs.get(key)
+        if held is not None and len(held[0]) == len(inputs) and all(
+            np.array_equal(old, new) if isinstance(new, np.ndarray) else old is new
+            for old, new in zip(held[0], inputs)
+        ):
+            return held[1]
+        deformer = make(*inputs)
+        self._deformer_inputs[key] = (inputs, deformer)
+        return deformer
 
     def _apply_target_visibility(self, owner: MeshBinding) -> None:
         graph, group = self._scene_binding.same_joints_group(
@@ -990,7 +952,7 @@ class PfbMotionPreviewWidget(QWidget):
             self.current_entry.resolve_motion(),
             self.session.definition.scene_state_bindings,
             frame,
-            normalize_document_id(self.session.source_path),
+            self._session_document_id,
             (
                 renderable
                 for graph in self.scene.graphs
@@ -1030,20 +992,13 @@ class PfbMotionPreviewWidget(QWidget):
 
     def _clear_animation(self, message: str) -> None:
         self._restore_active_target()
+        self._poses.release()
         self.playback.clear()
         self.controller.clear()
         self._attachment_resolver = None
         self._debug_status = message
         self._show_notice(message)
         self._refresh_advanced_info()
-
-    def _on_render_failure(self, message: str) -> None:
-        if not self._cleaned:
-            self._clear_animation(
-                self.tr("Material preview failed: {error}").format(
-                    error=message
-                )
-            )
 
     def _show_notice(self, message: str) -> None:
         self.notice_label.setText(message)
@@ -1058,21 +1013,10 @@ class PfbMotionPreviewWidget(QWidget):
         self._scene_state_part_overrides.clear()
         self.scene.preview.clear_mesh_draw_transforms()
         self._active_attachment_keys.clear()
-        self._render_state.clear()
-        geometry_keys = set(self._deformers)
-        if self._active_target_key:
-            geometry_keys.add(self._active_target_key)
-        gpu_keys = geometry_keys & self._gpu_skinned_keys
-        if gpu_keys:
-            self.scene.preview.clear_mesh_skinning(gpu_keys)
-        for key in geometry_keys - gpu_keys:
-            self.scene.restore_mesh_geometry(key)
-        self._gpu_skinned_keys.clear()
         if self._material_parameter_values:
             self.scene.set_material_parameter_values({})
             self._material_parameter_values.clear()
         self._active_target_key = ""
-        self._deformers.clear()
         self._motion_focus_keys.clear()
         self._sync_animated_visibility_scope()
 
@@ -1082,6 +1026,8 @@ class PfbMotionPreviewWidget(QWidget):
         self._cleaned = True
         self.playback.cleanup()
         self._restore_active_target()
+        self._poses.release()
+        self._deformer_inputs.clear()
         self._material_resolver.clear()
         if self._advanced_dialog is not None:
             self._advanced_dialog.close()
@@ -1106,10 +1052,24 @@ class PfbMotionPreviewWidget(QWidget):
         return motion_target_from_mesh_handler(
             asset.renderable.mesh_path,
             asset.handler,
+            skin_weight_source=asset.renderable.skin_weight_source,
         )
 
     @staticmethod
+    def _deformer_options(asset: ScnLoadedMesh) -> dict:
+        renderable = asset.renderable
+        return dict(
+            bind_indices=asset.bind_mesh.indices,
+            handler=asset.handler,
+            explicit_mdf_path=renderable.mdf_path,
+            normal_recalculation_enabled=renderable.normal_recalculation_enabled,
+            normal_recalc_edge_exclusion=renderable.normal_recalc_edge_exclusion,
+            skin_weight_source=renderable.skin_weight_source,
+        )
+
+    @classmethod
     def _deformer_from_asset(
+        cls,
         asset: ScnLoadedMesh,
         target: RigPreviewTarget,
     ):
@@ -1118,13 +1078,12 @@ class PfbMotionPreviewWidget(QWidget):
             target.rig,
             asset.bind_mesh.vertices,
             asset.bind_mesh.normals,
-            asset.bind_mesh.indices,
-            handler=asset.handler,
-            explicit_mdf_path=asset.renderable.mdf_path,
+            **cls._deformer_options(asset),
         )
 
-    @staticmethod
+    @classmethod
     def _shared_deformer_from_asset(
+        cls,
         asset: ScnLoadedMesh,
         target: RigPreviewTarget,
         owner_rig: Rig,
@@ -1136,8 +1095,6 @@ class PfbMotionPreviewWidget(QWidget):
             owner_rig,
             asset.bind_mesh.vertices,
             asset.bind_mesh.normals,
-            asset.bind_mesh.indices,
             pose_to_constrained_matrix=pose_to_constrained_matrix,
-            handler=asset.handler,
-            explicit_mdf_path=asset.renderable.mdf_path,
+            **cls._deformer_options(asset),
         )

@@ -8,15 +8,6 @@ from PySide6.QtWidgets import QToolTip, QWidget
 
 
 class ViewRail(QWidget):
-    """Horizontal switcher for the Project Browser views.
-
-    A compact horizontal switcher strip along the top of the Project
-    Browser. Each item is a hand-drawn glyph above a bold title and a
-    small subtitle, so every view stays identifiable at a glance; the
-    active item is tinted by the app accent and gets an underline plus
-    a soft highlight pill.
-    """
-
     ITEM_H = 52
     ICON_SIZE = 17.0
     TOP_MARGIN = 3
@@ -36,19 +27,20 @@ class ViewRail(QWidget):
         self._current = ""
         self._hover = -1
         self._rects: list[QRect] = []
+        # Unbound painters, called with self: bound methods kept here would make the rail a cycle.
         self._items = (
             ("sys", self.tr("Game Files"), self.tr("unpacked copy"),
              self.tr("Game Files\n\nExtracted game assets, used as read-only reference."),
-             self._paint_unpacked),
+             ViewRail._paint_unpacked),
             ("proj", self.tr("My Mod"), self.tr("your project"),
              self.tr("My Mod\n\nThe mod's own files. Edits here are what gets exported."),
-             self._paint_project),
+             ViewRail._paint_project),
             ("pak", self.tr("PAK Files"), self.tr("game archives"),
              self.tr("PAK Files\n\nPaths inside the game's .pak archives."),
-             self._paint_pak),
+             ViewRail._paint_pak),
             ("bm", self.tr("Bookmarks"), self.tr("saved paths"),
              self.tr("Bookmarks\n\nSaved paths and folders you visit often."),
-             self._paint_bookmark),
+             ViewRail._paint_bookmark),
         )
         self._title_font, self._sub_font = self._make_fonts()
         self.setFixedHeight(self.RAIL_HEIGHT)
@@ -67,7 +59,6 @@ class ViewRail(QWidget):
             sub.setPointSizeF(7.0)
         return title, sub
 
-    # -- public API --------------------------------------------------------
 
     def set_current(self, view_id: str) -> None:
         """Highlight *view_id* without emitting :attr:`currentChanged`."""
@@ -79,7 +70,6 @@ class ViewRail(QWidget):
     def current(self) -> str:
         return self._current
 
-    # -- events ------------------------------------------------------------
 
     def leaveEvent(self, event):
         self._hover = -1
@@ -115,7 +105,6 @@ class ViewRail(QWidget):
         self._layout_items()
         super().resizeEvent(event)
 
-    # -- painting ----------------------------------------------------------
 
     def paintEvent(self, _event):
         p = QPainter(self)
@@ -164,7 +153,7 @@ class ViewRail(QWidget):
 
             p.save()
             p.translate(r.center().x() - self.ICON_SIZE / 2.0, r.top() + 3)
-            painter_fn(p, color)
+            painter_fn(self, p, color)
             p.restore()
 
             p.setFont(self._title_font)
@@ -221,7 +210,6 @@ class ViewRail(QWidget):
                 return i
         return -1
 
-    # -- glyphs ------------------------------------------------------------
 
     def _pen(self, color: QColor, width: float = 1.5) -> QPen:
         pen = QPen(color, width)

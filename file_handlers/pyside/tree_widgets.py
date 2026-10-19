@@ -87,7 +87,6 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
             super().paint(painter, option, index)
     
     def sizeHint(self, option, index):
-        """Ensure consistent row height for all items"""
         size = super().sizeHint(option, index)
         
         tree_view = self.parent()
@@ -131,7 +130,6 @@ class AdvancedTreeView(QTreeView):
         self.clicked.connect(self._on_item_click)
 
     def keyPressEvent(self, event):
-        """Handle keyboard shortcuts and track shift key"""
         if event.key() == Qt.Key_Delete:
             if not self._handle_delete_key():
                 return
@@ -186,7 +184,6 @@ class AdvancedTreeView(QTreeView):
         return True
 
     def keyReleaseEvent(self, event):
-        """Track shift key release"""
         super().keyReleaseEvent(event)
 
     def _on_item_click(self, index):
@@ -252,9 +249,6 @@ class AdvancedTreeView(QTreeView):
                 )
 
     def setModelData(self, root_data):
-        """
-        Helper to build a TreeModel from the nested dict.
-        """
         model = TreeModel(root_data)
         self.setModel(model)
         header = self.header()
@@ -277,7 +271,6 @@ class AdvancedTreeView(QTreeView):
                 self._refresh_widgets_by_data.setdefault(id(data), WeakSet()).add(editor)
 
     def embed_forms(self, parent_modified_callback=None):
-        """Use TreeWidgetFactory for embedding widgets consistently"""
         self.parent_modified_callback = parent_modified_callback
         model = self.model()
         if not model:
@@ -287,7 +280,6 @@ class AdvancedTreeView(QTreeView):
             modifiers = QApplication.keyboardModifiers()
             self.shift_pressed = bool(modifiers & Qt.ShiftModifier)
             
-            # Create widgets for immediate children
             self.create_widgets_for_children(parent_index)
             
             if self.shift_pressed:
@@ -295,19 +287,16 @@ class AdvancedTreeView(QTreeView):
             if self.resources_outdated:
                 self._apply_outdated_marker()
 
-        # Only connect the signal
         self.expanded.connect(embed_children_on_expand)
         
         self.installEventFilter(self)
 
     def eventFilter(self, obj, event):
-        """Reset shift_pressed when widget loses focus"""
         if event.type() == QEvent.FocusOut:
             self.shift_pressed = False
         return super().eventFilter(obj, event)
 
     def expand_all_children(self, parent_index):
-        """Recursively expand all children of the given parent"""
         modifiers = QApplication.keyboardModifiers()
         self.shift_pressed = bool(modifiers & Qt.ShiftModifier)
         
@@ -327,7 +316,6 @@ class AdvancedTreeView(QTreeView):
                     self.expand_all_children(child_index)
 
     def create_widgets_for_children(self, parent_index):
-        """Create widgets for all children of the given parent index"""
         model = self.model()
         if not model:
             return
@@ -397,8 +385,7 @@ class AdvancedTreeView(QTreeView):
             return
         resources_node = self._find_resources_node()
         if resources_node is None:
-            # Headless RSZ formats do not expose an Advanced->Resources section.
-            # Keep resources_outdated state but skip marker injection safely.
+            # Headless RSZ formats have no Resources section to mark.
             return
         idx = model.getIndexFromItem(resources_node)
         if not idx.isValid():
@@ -417,7 +404,6 @@ class AdvancedTreeView(QTreeView):
         self.setIndexWidget(idx, container)
 
     def show_context_menu(self, position):
-        """Show context menu for tree items"""
         index = self.indexAt(position)
         if not index.isValid():
             return
@@ -511,7 +497,6 @@ class AdvancedTreeView(QTreeView):
         menu.addAction(self.tr("Export as Template"))
         menu.addAction(self.tr("Translate Name"))
         
-        # Prefab handling
         parent_widget = self.viewer
         go_has_prefab = self._get_prefab_info(parent_widget, item_info, item)
         menu.addAction(self.tr("Modify Prefab Path") if go_has_prefab else self.tr("Associate with Prefab"))
@@ -764,7 +749,6 @@ class AdvancedTreeView(QTreeView):
         return False
 
     def _process_gameobject_action(self, action, index):
-        # Map action text to handler methods
         action_handlers = {
             self.tr("Add Component"): lambda: self.add_component_to_gameobject(index),
             self.tr("Paste Component"): lambda: self.paste_component(index),
@@ -806,8 +790,6 @@ class AdvancedTreeView(QTreeView):
             handler(index)
     
     def export_gameobject_as_template(self, index):
-        """Export a GameObject as a template"""
-            
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
         parent_widget = self.viewer
@@ -854,7 +836,6 @@ class AdvancedTreeView(QTreeView):
             QMessageBox.warning(self, self.tr("Error"), result["message"])
 
     def open_template_manager(self, index=None):
-        """Open the template manager dialog"""
         parent_widget = self.viewer
         if not parent_widget:
             QMessageBox.warning(
@@ -869,7 +850,6 @@ class AdvancedTreeView(QTreeView):
         dialog.exec()
     
     def _on_template_imported(self, template_data):
-        """Handle imported template - update UI if needed"""
         if not template_data or not template_data.get("success", False):
             return
             
@@ -884,13 +864,9 @@ class AdvancedTreeView(QTreeView):
                 if parent_index and parent_index.isValid():
                     break
                         
-        # Add GameObject to UI
         self.add_gameobject_to_ui_direct(template_data, parent_index)
 
     def _find_node_by_object_id(self, model, start_index, object_id):
-        """
-        Helper method to find a tree node by GameObject/Folder object_id
-        """
         item = start_index.internalPointer()
 
         if hasattr(item, 'raw') and isinstance(item.raw, dict):
@@ -909,7 +885,6 @@ class AdvancedTreeView(QTreeView):
         return None
     
     def _identify_item_type(self, item):
-        """Identify item type and extract relevant information"""
         raw = item.raw
         result = {
             'is_embedded': False, 'is_array': False, 'array_type': "", 'data_obj': None,
@@ -1022,7 +997,6 @@ class AdvancedTreeView(QTreeView):
     
     @staticmethod
     def _get_element_type(array_type):
-        """Extract element type from array type string"""
         if parsed := AdvancedTreeView.parse_complex_array_type(array_type):
             return parsed
         if array_type.endswith("[]"):
@@ -1067,7 +1041,6 @@ class AdvancedTreeView(QTreeView):
         return f"{base_type}<{','.join(params)}>" if params else None
 
     def add_array_element(self, index, array_type, data_obj, array_item):
-        """Add a new element to an array"""
         element_type = AdvancedTreeView._get_element_type(array_type)
         parent = self.viewer
         embedded_context = self._find_embedded_context(array_item)
@@ -1187,8 +1160,6 @@ class AdvancedTreeView(QTreeView):
         )
 
     def delete_array_element(self, parent_array_item, element_index):
-        """Delete an element from an array with proper backend updates"""
-            
         array_data = parent_array_item.raw.get('obj')
 
         if not self._display_confirmation(
@@ -1234,7 +1205,6 @@ class AdvancedTreeView(QTreeView):
         return msg_box.exec_() == QMessageBox.Yes
     
     def delete_component(self, index, component_instance_id):
-        """Delete a component from its GameObject"""
         if component_instance_id <= 0:
             QMessageBox.warning(self, self.tr("Error"), self.tr("Invalid component"))
             return
@@ -1262,7 +1232,6 @@ class AdvancedTreeView(QTreeView):
                 if go_node and go_node.isValid():
                     self.remove_component_from_ui_direct(go_node, index)
                     QApplication.beep()
-                    #QMessageBox.information(self, "Success", "Component deleted successfully")
                 else:
                     QMessageBox.information(
                         self,
@@ -1283,8 +1252,6 @@ class AdvancedTreeView(QTreeView):
             )
 
     def create_gameobject_in_folder(self, folder_index):
-        """Create a new GameObject in a folder"""
-            
         folder_item = folder_index.internalPointer()
         reasy_id = folder_item.raw.get("reasy_id")
         parent = self.viewer
@@ -1297,7 +1264,6 @@ class AdvancedTreeView(QTreeView):
                 self.tr("Could not determine folder instance ID"),
             )
             return
-        # Get folder's object table index
         folder_object_id = -1
         for i, instance_id in enumerate(parent.scn.object_table):
             if instance_id == folder_instance_id:
@@ -1312,7 +1278,6 @@ class AdvancedTreeView(QTreeView):
             )
             return
             
-        # Create dialog to get GameObject name
         name, ok = QInputDialog.getText(
             self,
             self.tr(_NEW_GAMEOBJECT_NAME),
@@ -1324,13 +1289,11 @@ class AdvancedTreeView(QTreeView):
             return
             
         try:
-            # Create GameObject with folder as parent
             go_data = parent.object_operations.create_gameobject(name, folder_object_id)
             
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data, folder_index)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
             else:
                 QMessageBox.warning(
                     self, self.tr("Error"), self.tr("Failed to create GameObject")
@@ -1343,8 +1306,6 @@ class AdvancedTreeView(QTreeView):
             )
     
     def create_child_gameobject(self, parent_go_index):
-        """Create a new GameObject as a child of another GameObject"""
-            
         parent_item = parent_go_index.internalPointer()
         reasy_id = parent_item.raw.get("reasy_id")
         parent_widget = self.viewer
@@ -1363,7 +1324,6 @@ class AdvancedTreeView(QTreeView):
             )
             return
         
-        # Create dialog to get GameObject name
         name, ok = QInputDialog.getText(
             self,
             self.tr("New Child GameObject"),
@@ -1375,14 +1335,11 @@ class AdvancedTreeView(QTreeView):
             return
             
         try:
-            # Create GameObject with parent GameObject as parent
             go_data = parent_widget.object_operations.create_gameobject(name, parent_object_id)
             
             if go_data and go_data.get('success', False):
-                # Use the new direct UI update method
                 self.add_gameobject_to_ui_direct(go_data, parent_go_index)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"Child GameObject '{name}' created successfully")
             else:
                 QMessageBox.warning(
                     self,
@@ -1433,13 +1390,8 @@ class AdvancedTreeView(QTreeView):
 
         self.add_folder_to_ui_direct(folder_data, parent_index)
         QApplication.beep()
-        #QMessageBox.information(self, "Success", f"Folder '{name}' created successfully")
     
     def _populate_folder_nodes(self, folder_dict, folder_data, viewer):
-        """
-        Fill the folder’s Settings node with its parsed RSZ fields,
-        just like we already do for GameObjects.
-        """
         settings_node = next((c for c in folder_dict["children"]
                             if c["data"][0] == "Settings"), None)
         if not settings_node:
@@ -1494,10 +1446,7 @@ class AdvancedTreeView(QTreeView):
         return folder_index
 
     def create_root_gameobject(self, index):
-        """Create a new GameObject at the root level"""
-        # Get the parent widget/handler for GameObject creation
         parent = self.viewer
-        # Create dialog to get GameObject name
         name, ok = QInputDialog.getText(
             self,
             self.tr("New Root GameObject"),
@@ -1514,7 +1463,6 @@ class AdvancedTreeView(QTreeView):
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"GameObject '{name}' created successfully")
             else:
                 QMessageBox.warning(
                     self, self.tr("Error"), self.tr("Failed to create GameObject")
@@ -1527,7 +1475,6 @@ class AdvancedTreeView(QTreeView):
             )
 
     def add_component_to_gameobject(self, index):
-        """Add a new component to a GameObject with autocomplete"""
         if not index.isValid():
             return
             
@@ -1554,7 +1501,6 @@ class AdvancedTreeView(QTreeView):
             if isinstance(result, dict) and result.get('success', False):
                 self.add_component_to_ui_direct(index, result)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"Added {component_type} to GameObject")
             elif result:
                 QMessageBox.information(
                     self,
@@ -1626,7 +1572,6 @@ class AdvancedTreeView(QTreeView):
             if row != -1:
                 model.removeRow(row, parent_index)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", "GameObject deleted successfully")
                 return
         
             QMessageBox.information(
@@ -1675,7 +1620,6 @@ class AdvancedTreeView(QTreeView):
                 if child is folder_item:
                     model.removeRow(i, parent_index)
                     QApplication.beep()
-                    #QMessageBox.information(self, "Success", f"Folder '{folder_name}' deleted successfully")
                     return
                 
             QMessageBox.information(
@@ -1693,8 +1637,6 @@ class AdvancedTreeView(QTreeView):
                 
 
     def manage_gameobject_prefab(self, index, has_prefab, current_path=""):
-        """Create or modify prefab association for a GameObject"""
-
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
         parent = self.viewer
@@ -1757,7 +1699,6 @@ class AdvancedTreeView(QTreeView):
         
         if(parent.object_operations.manage_gameobject_prefab(target_go, path)):
             QApplication.beep()
-            #QMessageBox.information(self, "Success", f"Prefab {action_type} successfully")
             return
 
         QMessageBox.warning(
@@ -1815,13 +1756,11 @@ class AdvancedTreeView(QTreeView):
             self,
             self.tr("Rebuilt"),
             self.tr(
-                "Refreshed {count} resources.\n\nNote that this step is not necessary, "
-                "as resources are automatically rebuilt on save."
+                "Refreshed {count} resources.\n\nThis is optional: resources are rebuilt automatically on save."
             ).format(count=len(new_section["children"])),
         )
 
     def add_resource(self):
-        """Add a new resource path directly in the tree view"""
         parent = self.viewer
         if not parent:
             QMessageBox.warning(
@@ -1845,7 +1784,6 @@ class AdvancedTreeView(QTreeView):
                 
             if self.add_resource_to_ui_direct(path, resource_index):
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"Added resource '{path}'")
             else:
                 QMessageBox.information(
                     self,
@@ -1858,16 +1796,6 @@ class AdvancedTreeView(QTreeView):
             self._handle_resource_error(self.tr("Failed to add resource: {}"), e)
     
     def add_resource_to_ui_direct(self, path, resource_index):
-        """
-        Add a resource directly to the UI tree without refreshing
-        
-        Args:
-            path: Resource path string
-            resource_index: Index of the resource in the resource_infos array
-        
-        Returns:
-            bool: True if the UI was updated successfully
-        """
         model = self.model()
         resources_node = self._find_resources_node()
         
@@ -1901,7 +1829,6 @@ class AdvancedTreeView(QTreeView):
         return False
 
     def edit_resource(self, index, resource_index):
-        """Edit a resource path directly in the tree view"""
         if resource_index < 0:
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Invalid resource index")
@@ -1944,7 +1871,6 @@ class AdvancedTreeView(QTreeView):
             for label in widget.findChildren(QLabel):
                 label.setText(path)
             QApplication.beep()
-            #QMessageBox.information(self, "Success", f"Resource updated to '{path}'")
         except Exception as e:
             self._handle_resource_error(self.tr("Failed to edit resource: {}"), e)
             
@@ -1972,11 +1898,6 @@ class AdvancedTreeView(QTreeView):
             return sorted(set(selected))
             
     def _remove_resource_ui(self, resource_index):
-        """
-        Remove the given resource row from the tree and
-        update sibling indices and header count.
-        Returns True on success.
-        """
         model = self.model()
         resources_node = self._find_resources_node()
         if not (model and resources_node):
@@ -1999,7 +1920,6 @@ class AdvancedTreeView(QTreeView):
         return True
     
     def delete_resources(self, resource_indices):
-        """Bulk‐delete resources and reuse the same UI helper for each."""
         if not resource_indices:
             return
         if not self._display_confirmation(
@@ -2020,12 +1940,10 @@ class AdvancedTreeView(QTreeView):
             for ri in sorted(resource_indices, reverse=True):
                 self._remove_resource_ui(ri)
             QApplication.beep()
-            #QMessageBox.information(self, "Success", f"Deleted {len(resource_indices)} resources")
         except Exception as e:
             self._handle_resource_error(self.tr("Failed to delete resource: {}"), e)
 
     def _get_resource_path_from_dialog(self, title, label, default_text=""):
-        """Show dialog to get resource path from user"""
         dialog = QInputDialog(self)
         dialog.setWindowTitle(title)
         dialog.setLabelText(label)
@@ -2048,7 +1966,6 @@ class AdvancedTreeView(QTreeView):
         return path
 
     def _get_current_resource_path(self, resource_index):
-        """Get the current path for a resource"""
         parent = self.viewer
         try:
             if (hasattr(parent.scn, 'is_pfb16') and parent.scn.is_pfb16 and 
@@ -2065,12 +1982,10 @@ class AdvancedTreeView(QTreeView):
         return "[Unknown]"
 
     def _handle_resource_error(self, message, error):
-        """Handle resource operation error"""
         QMessageBox.critical(self, self.tr("Error"), message.format(error))
         print(f"Exception details: {traceback.format_exc()}")
         
     def _update_remaining_resource_indices(self, resources_node, deleted_index):
-        """Update indices for remaining resources after deletion"""
         for child in resources_node.children:
             if (hasattr(child, 'raw') and isinstance(child.raw, dict) and 
                 child.raw.get("type") == "resource"):
@@ -2079,7 +1994,6 @@ class AdvancedTreeView(QTreeView):
                     child.raw["resource_index"] = current_index - 1
 
     def _find_resources_node(self):
-        """Helper to find the resources section node under Advanced Information"""
         return self._find_root_node_child("Advanced Information", "Resources", log_missing=False)
 
     
@@ -2290,7 +2204,6 @@ class AdvancedTreeView(QTreeView):
         
         try:
             
-            # Find Data Block node
             data_block_item = None
             for row in range(model.rowCount(QModelIndex())):
                 index = model.index(row, 0, QModelIndex())
@@ -2318,13 +2231,6 @@ class AdvancedTreeView(QTreeView):
             return None
     
     def add_component_to_ui_direct(self, go_index, component_data):
-        """
-        Add a component directly to the UI tree without refreshing
-        
-        Args:
-            go_index: QModelIndex of the GameObject
-            component_data: Dictionary with component data from creation operation
-        """
         go_item = go_index.internalPointer()
         parent = self.viewer
         model = self.model()
@@ -2385,13 +2291,6 @@ class AdvancedTreeView(QTreeView):
         return True
 
     def remove_component_from_ui_direct(self, go_index, component_index):
-        """
-        Remove a component directly from the UI tree without refreshing
-        
-        Args:
-            go_index: QModelIndex of the GameObject
-            component_index: QModelIndex of the component to remove
-        """
         if not go_index.isValid() or not component_index.isValid():
             return False
             
@@ -2419,10 +2318,8 @@ class AdvancedTreeView(QTreeView):
         return False
     
     def copy_array_elements(self, parent_array_item, element_indices, index):
-        """Copy multiple array elements to clipboard"""
         embedded_context = self._find_embedded_context(parent_array_item)
         
-        # Handle special case for userdata arrays
         if embedded_context == "userdata_array_needs_embedded":
             embedded_context = None
             
@@ -2465,7 +2362,6 @@ class AdvancedTreeView(QTreeView):
             traceback.print_exc()
 
     def paste_array_elements(self, index, array_type, data_obj, array_item):
-        """Paste multiple array elements from clipboard"""
         parent = self.viewer
         embedded_context = self._find_embedded_context(array_item)
         
@@ -2572,7 +2468,6 @@ class AdvancedTreeView(QTreeView):
         return True
 
     def _on_translation_completed(self, translated_text, context):
-        """Handle translation completion"""
         context = context or {}
 
         if self._batch_translator.handle_response(translated_text, context):
@@ -2604,7 +2499,6 @@ class AdvancedTreeView(QTreeView):
         self._translation_in_progress = False
 
     def translate_all_gameobject_names(self):
-        """Translate all GameObject names under the Data Block."""
         if self._translation_in_progress:
             QMessageBox.information(
                 self,
@@ -2766,8 +2660,6 @@ class AdvancedTreeView(QTreeView):
         return display_text, ""
 
     def delete_array_elements(self, parent_array_item, element_indices):
-        """Delete multiple array elements with proper backend updates"""
-
         array_data = parent_array_item.raw.get('obj')
         
         if not self._display_confirmation(
@@ -2792,7 +2684,6 @@ class AdvancedTreeView(QTreeView):
         if success:
             self._refresh_array_node(parent_array_item)
             QApplication.beep()
-            #QMessageBox.information(self, "Success", f"Deleted {len(element_indices)} elements successfully")
         else:
             QMessageBox.warning(
                 self, self.tr("Error"), self.tr("Failed to delete all elements")
@@ -2819,7 +2710,6 @@ class AdvancedTreeView(QTreeView):
         )
 
     def _refresh_array_node(self, array_item):
-        """Rebuild UI nodes for an array after modifications"""
         model = self.model()
         if not model:
             return
@@ -2862,7 +2752,6 @@ class AdvancedTreeView(QTreeView):
         self.create_widgets_for_children(array_index)
 
     def _scroll_to_array_end(self, array_item):
-        """Scroll view to the last actual element of an array"""
         model = self.model()
         if not model:
             return
@@ -2887,7 +2776,6 @@ class AdvancedTreeView(QTreeView):
             self.scrollTo(last_child_idx)
 
     def get_selected_array_elements(self, parent_array_item):
-        """Get indices of selected array elements"""
         selected_indices = []
         model = self.model()
         if not model:
@@ -2937,7 +2825,6 @@ class AdvancedTreeView(QTreeView):
         return element_index >= 0, element_index
         
     def copy_component(self, component_instance_id):
-        """Copy a component to clipboard for pasting to another GameObject"""
         if component_instance_id <= 0:
             QMessageBox.warning(self, self.tr("Error"), self.tr("Invalid component"))
             return
@@ -2963,7 +2850,6 @@ class AdvancedTreeView(QTreeView):
             )
             
     def paste_component(self, index):
-        """Paste a component from clipboard to a GameObject"""
         if not index.isValid():
             return
             
@@ -2986,7 +2872,6 @@ class AdvancedTreeView(QTreeView):
             if result and result.get("success", False):
                 self.add_component_to_ui_direct(index, result)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"Pasted {type_name} to GameObject")
             else:
                 QMessageBox.warning(
                     self,
@@ -3001,7 +2886,6 @@ class AdvancedTreeView(QTreeView):
             )
 
     def copy_gameobject(self, index):
-        """Copy a GameObject to clipboard"""
         item = index.internalPointer()
         reasy_id = item.raw.get("reasy_id")
         parent = self.viewer
@@ -3058,7 +2942,6 @@ class AdvancedTreeView(QTreeView):
             traceback.print_exc()
 
     def paste_gameobject_in_folder(self, folder_index):
-        """Paste a GameObject from clipboard into a folder"""
         folder_item = folder_index.internalPointer()
         reasy_id = folder_item.raw.get("reasy_id")
         parent = self.viewer
@@ -3080,13 +2963,11 @@ class AdvancedTreeView(QTreeView):
         self._paste_gameobject_common(folder_object_id, folder_index)
 
     def paste_gameobject_at_root(self, _):
-        """Paste a GameObject from clipboard at the root level"""
         self._paste_gameobject_common(-1, None)
 
     def paste_gameobject_as_child(self, parent_go_index):
-        """Paste a GameObject from clipboard as a child of another GameObject"""
         parent_item = parent_go_index.internalPointer()
-        # Get parent GameObject ID using reasy_id for stable reference
+        # reasy_id stays valid when instance IDs shift.
         reasy_id = parent_item.raw.get("reasy_id")
         parent_widget = self.viewer
         parent_instance_id = parent_widget.handler.id_manager.get_instance_id(reasy_id)
@@ -3107,13 +2988,6 @@ class AdvancedTreeView(QTreeView):
         self._paste_gameobject_common(parent_object_id, parent_go_index)
             
     def _paste_gameobject_common(self, parent_object_id, parent_index=None):
-        """
-        Common logic for pasting a GameObject from clipboard
-        
-        Args:
-            parent_object_id: Object table index of the parent (-1 for root)
-            parent_index: QModelIndex of the parent node for UI updating (None for root)
-        """
         parent_widget = self.viewer
         
         clipboard_data = parent_widget.handler.get_gameobject_clipboard_data(self)
@@ -3142,7 +3016,6 @@ class AdvancedTreeView(QTreeView):
             if go_data and go_data.get('success', False):
                 self.add_gameobject_to_ui_direct(go_data, parent_index)
                 QApplication.beep()
-                #QMessageBox.information(self, "Success", f"GameObject '{new_name}' pasted successfully")
             else:
                 QMessageBox.warning(
                     self, self.tr("Error"), self.tr("Failed to paste GameObject")
@@ -3155,8 +3028,6 @@ class AdvancedTreeView(QTreeView):
             )
 
     def copy_array_element(self, element_item):
-        """Copy an array element to clipboard"""
-
         if not element_item or not hasattr(element_item, 'raw'):
             return
 
@@ -3236,7 +3107,6 @@ class AdvancedTreeView(QTreeView):
         )
 
     def paste_array_element(self, index, data_obj, array_item):
-        """Paste an element from clipboard to an array"""
         parent = self.viewer
         embedded_context = self._find_embedded_context(array_item)
         
@@ -3256,7 +3126,6 @@ class AdvancedTreeView(QTreeView):
             self._refresh_array_node(array_item)
             self._scroll_to_array_end(array_item)
             QApplication.beep()
-            #QMessageBox.information(self, "Success", "Element pasted successfully.")
         except Exception as e:
             QMessageBox.critical(
                 self,
@@ -3265,8 +3134,6 @@ class AdvancedTreeView(QTreeView):
             )
 
     def _show_import_randomization_dialog(self, parent_index):
-        """Show dialog for import randomization options"""
-        
         dialog = QDialog(self)
         dialog.setWindowTitle(self.tr("Import Options"))
         dialog.setModal(True)
@@ -3289,7 +3156,7 @@ class AdvancedTreeView(QTreeView):
         
         note_label = QLabel(
             self.tr(
-                "Note: Internal references and relationships will be preserved regardless of ID randomization."
+                "Internal references are kept whether or not IDs are randomized."
             )
         )
         note_label.setWordWrap(True)

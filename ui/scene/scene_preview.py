@@ -2,219 +2,78 @@ from __future__ import annotations
 
 import time
 from contextlib import suppress
-from ctypes import c_void_p
-from dataclasses import dataclass, field
+from dataclasses import dataclass, fields, is_dataclass, replace
 
-import OpenGL
 import numpy as np
-for _flag in ("ERROR_CHECKING", "ERROR_LOGGING", "CONTEXT_CHECKING", "FULL_LOGGING"):
-    setattr(OpenGL, _flag, False)
-
-from OpenGL.arrays import vbo
-from OpenGL.GL import (
-    GL_AMBIENT,
-    GL_BACK,
-    GL_BLEND,
-    GL_CCW,
-    GL_COLOR_ARRAY,
-    GL_COLOR_BUFFER_BIT,
-    GL_COLOR_MATERIAL,
-    GL_CULL_FACE,
-    GL_DEPTH_BUFFER_BIT,
-    GL_DEPTH_TEST,
-    GL_DIFFUSE,
-    GL_DITHER,
-    GL_ARRAY_BUFFER,
-    GL_ELEMENT_ARRAY_BUFFER,
-    GL_EXTENSIONS,
-    GL_FILL,
-    GL_FLOAT,
-    GL_FRONT_AND_BACK,
-    GL_LIGHT0,
-    GL_LIGHTING,
-    GL_LINE,
-    GL_LINES,
-    GL_LINEAR,
-    GL_LINEAR_MIPMAP_LINEAR,
-    GL_LEQUAL,
-    GL_LESS,
-    GL_LINE_STRIP,
-    GL_MODELVIEW,
-    GL_MODELVIEW_MATRIX,
-    GL_MODULATE,
-    GL_MULTISAMPLE,
-    GL_NO_ERROR,
-    GL_NORMAL_ARRAY,
-    GL_NORMALIZE,
-    GL_ONE_MINUS_SRC_ALPHA,
-    GL_POSITION,
-    GL_POINTS,
-    GL_PROJECTION,
-    GL_PROJECTION_MATRIX,
-    GL_QUADS,
-    GL_RGBA,
-    GL_SCISSOR_TEST,
-    GL_SMOOTH,
-    GL_SRC_ALPHA,
-    GL_TEXTURE_2D,
-    GL_TEXTURE_COORD_ARRAY,
-    GL_TEXTURE_ENV,
-    GL_TEXTURE_ENV_MODE,
-    GL_TEXTURE_MAG_FILTER,
-    GL_TEXTURE_MAX_LEVEL,
-    GL_TEXTURE_MIN_FILTER,
-    GL_TRIANGLES,
-    GL_UNPACK_ALIGNMENT,
-    GL_UNSIGNED_BYTE,
-    GL_UNSIGNED_INT,
-    GL_VIEWPORT,
-    GL_DYNAMIC_DRAW,
-    GL_VERTEX_ARRAY,
-    glBegin,
-    glBindBuffer,
-    glBindTexture,
-    glBlendFunc,
-    glBufferSubData,
-    glClear,
-    glClearColor,
-    glColor4f,
-    glColorMask,
-    glColorPointer,
-    glCullFace,
-    glDeleteTextures,
-    glDepthMask,
-    glDepthFunc,
-    glDisable,
-    glDisableClientState,
-    glDrawElements,
-    glEnable,
-    glEnableClientState,
-    glEnd,
-    glFrontFace,
-    glGenTextures,
-    glGetDoublev,
-    glGetError,
-    glGetFloatv,
-    glGetIntegerv,
-    glGetString,
-    glLightfv,
-    glLineWidth,
-    glLoadIdentity,
-    glMatrixMode,
-    glMultMatrixf,
-    glNormalPointer,
-    glPixelStorei,
-    glPointSize,
-    glPolygonMode,
-    glPopMatrix,
-    glPushMatrix,
-    glReadPixels,
-    glRotatef,
-    glScissor,
-    glScalef,
-    glShadeModel,
-    glTexCoordPointer,
-    glTexEnvi,
-    glCompressedTexImage2D,
-    glTexImage2D,
-    glTexParameterf,
-    glTexParameteri,
-    glTranslatef,
-    glVertex3f,
-    glVertexPointer,
-    glViewport,
-)
-from OpenGL.GLU import gluPerspective, gluProject
-from PySide6.QtCore import QEvent, QThreadPool, QTimer, Qt, Signal, Slot
-from PySide6.QtGui import QCursor, QImage
-from PySide6.QtOpenGLWidgets import QOpenGLWidget
+from PySide6.QtCore import QElapsedTimer, QEvent, QTimer, Qt, Signal
+from PySide6.QtGui import QColor, QCursor, QPainter
 from PySide6.QtWidgets import (
     QCheckBox,
     QDoubleSpinBox,
     QFrame,
     QHBoxLayout,
     QLabel,
-    QProgressBar,
     QSpinBox,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from file_handlers.mesh.material_effects import riglogic_material_effect
-from file_handlers.tex.qt_image_utils import TexPreviewUpload
+from file_handlers.mesh.lit_preview import LitOverlays, engine_camera, free_camera
+from file_handlers.mmtr.engine_buffers import Camera
+from file_handlers.mmtr.overlay import GRID, project_points
+from file_handlers.mmtr.overlay_scene import ALL_EDGES, NO_EDGES, VISIBLE_EDGES, SceneShown
+from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight, ViewProbes
 from file_handlers.tex.texture_quality import (
     DEFAULT_TEXTURE_QUALITY,
     TEXTURE_QUALITY_PROFILES,
     normalize_texture_quality,
-    texture_quality_profile,
 )
 from settings import save_settings
 from ui.editor_widgets import EmbeddedPopupComboBox
-from ui.opengl_camera import OrbitCameraMixin
-from .opengl_setup import mesh_surface_format
+from ui.orbit_camera import OrbitCameraMixin
+from ui.qt_timers import call_later
+from .device_frames import LIMIT_MOST, FrameWindow
 from .freecam_controller import FreecamController
-from .gpu_skinning import GpuSkinningDeformer
 from .scene_buffers import (
-    SceneBufferSet,
-    build_scene_buffer_set,
-    display_colors,
+    SOFTWARE_LIGHT_DIRECTION,
+    VIEW_LIGHT_DIRECTION,
+    computed_normals,
     mesh_bounds_points,
     point_bounds,
     scene_bounds,
-    scene_index_buffers,
-    scene_key_index_buffers,
-    triangle_line_indices,
-    transform_normals,
     transform_points,
 )
 from .lightprobe_preview import SceneLightProbeInstance
-from .lightprobe_shading import (
-    ProbeShadeLayer,
-    ProbeShadeInput,
-    ProbeShadeRequest,
-    ProbeShadeWorker,
-    snapshot_probe_boxes,
+from .lightprobe_shading import ProbeShadeLayer, layer_order, snapshot_probe_boxes
+from .scene_marks import (
+    GIZMO_AXES, GIZMO_PLANES, bounds_marks, gizmo_circle_points, gizmo_marks, gizmo_plane_corners, probe_marks, unorm,
 )
-from .scene_model import SceneDrawMesh, SceneSkinningBinding
+from .scene_model import SceneDrawBatch, SceneDrawMesh, SceneSkinningBinding
+from .scene_skinning import SceneSkinning
+from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
 from .viewport_overlay import ViewportOverlayManager
-from .riglogic_material import RigLogicMaterialRenderer
 
 
-@dataclass(slots=True)
-class _GlBufferSet:
-    data: SceneBufferSet
-    vertices_vbo: object | None = None
-    normals_vbo: object | None = None
-    colors: np.ndarray | None = None
-    colors_vbo: object | None = None
-    uvs_vbo: object | None = None
-    span_indices_vbo: object | None = None
-    indices_vbo: object | None = None
-    line_indices_vbo: object | None = None
-    batch_vbos: list[tuple[str, object, int]] = field(default_factory=list)
-    index_count: int = 0
-    line_count: int = 0
-    lines_ready: bool = False
+
+def view_light(mode: str, ambient: float, diffuse: float) -> ViewLight | VertexLight | None:
+    if mode == "fixed":
+        return ViewLight(VIEW_LIGHT_DIRECTION, float(ambient), float(diffuse))
+    if mode == "software":
+        return VertexLight(SOFTWARE_LIGHT_DIRECTION, float(ambient), float(diffuse))
+    return None
 
 
-@dataclass(slots=True)
-class _GlSkinnedDrawSet:
-    key: str
-    source: _GlBufferSet
-    vertex_offset: int
-    model_matrix: np.ndarray
-    force_solid: bool
-    batches: list[tuple[str, object, int]]
-    line_indices_vbo: object | None = None
-    line_count: int = 0
-
-
-@dataclass(slots=True)
-class _GlRigidDrawSet:
-    key: str
-    buffer_set: _GlBufferSet
-    force_solid: bool
+def _same(told, again) -> bool:
+    if isinstance(told, np.ndarray) or isinstance(again, np.ndarray):
+        return (isinstance(told, np.ndarray) and isinstance(again, np.ndarray) and told.shape == again.shape
+                and np.array_equal(told, again))
+    if is_dataclass(told):
+        return type(told) is type(again) and all(_same(getattr(told, item.name), getattr(again, item.name))
+                                                 for item in fields(told))
+    if isinstance(told, tuple):
+        return isinstance(again, tuple) and len(told) == len(again) and all(map(_same, told, again))
+    return told == again
 
 
 @dataclass(slots=True)
@@ -224,25 +83,21 @@ class _FullscreenRestore:
     hidden_widgets: tuple[QWidget, ...]
 
 
-GIZMO_AXES = np.identity(3, dtype=np.float32)
-GIZMO_COLORS = ((1.0, 0.18, 0.12), (0.2, 0.9, 0.25), (0.25, 0.45, 1.0))
-GIZMO_BOX_FACES = ((0, 1, 2, 3), (4, 7, 6, 5), (0, 4, 5, 1), (1, 5, 6, 2), (2, 6, 7, 3), (3, 7, 4, 0))
-BOX_EDGES = ((0, 1), (1, 2), (2, 3), (3, 0), (4, 5), (5, 6), (6, 7), (7, 4), (0, 4), (1, 5), (2, 6), (3, 7))
-GIZMO_PLANES = ((0, 1, (1.0, 0.85, 0.12, 0.24)), (0, 2, (0.9, 0.15, 1.0, 0.22)), (1, 2, (0.15, 0.8, 1.0, 0.22)))
 IDENTITY4 = np.identity(4, dtype=np.float32)
 HOVER_PICK_INTERVAL = 1.0 / 15.0
 HOVER_PICK_MIN_PIXELS = 4.0
 HOVER_DETECT_KEY = Qt.Key_H
-GL_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FE
-GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT = 0x84FF
 
 
-class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
+class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     object_clicked = Signal(str)
     gizmo_transform_committed = Signal(object)
     texture_quality_changed = Signal(str)
-    texture_upload_status_changed = Signal()
-    render_failure = Signal(str)
+    # (SceneView, overlays), or (refusal string, None).
+    device_view_changed = Signal(object, object)
+    device_window_changed = Signal(int)
+    fps_limit_changed = Signal(int)
+    strands_stepped = Signal(object)
 
     SETTINGS_DEFAULTS = {
         "mesh_viewer_fps_limit": 60,
@@ -256,7 +111,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         "scene_probe_viz_points": 12000,
         "mesh_viewer_show_bones": False,
         "renderer_texture_quality": DEFAULT_TEXTURE_QUALITY,
-        "scene_render_mode": "solid",
+        "renderer_antialiasing": True,
+        "renderer_shading": "game",
+        "scene_render_mode": "off",
         "scene_gizmo_mode": "position",
         "scene_show_only_highlighted": False,
         "scene_camera_speed": 1.0,
@@ -265,10 +122,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         "scene_camera_boost": 3.0,
         "scene_camera_slow": 0.25,
     }
-    WIREFRAME_MODES = ("off", "polygon", "lines_depth", "lines_overlay")
-    LIGHTING_MODES = ("off", "fixed", "software", "probes")
+    # Edge modes: none, visible edges alone, visible edges over meshes, all edges over meshes.
+    WIREFRAME_MODES = ("off", "wire", "hybrid", "xray")
+    _WIREFRAME_RENAMED = {"polygon": "wire", "lines_depth": "hybrid", "lines_overlay": "xray", "solid": "off"}
+    LIGHTING_MODES = ("off", "fixed", "software", "probes", "game")
     PROBE_VIZ_MODES = ("off", "volumes", "points", "all")
-    PROBE_AUTO_ENABLE_VERTEX_LIMIT = 120000
 
     def __init__(
         self,
@@ -280,12 +138,35 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         initial_distance: float = 8.0,
         background: tuple[float, float, float, float] = (0.08, 0.08, 0.08, 1.0),
     ):
-        fmt = mesh_surface_format()
         super().__init__(parent)
-        self.setFormat(fmt)
+        self._frame_due = QTimer(self)
+        self._frame_due.setSingleShot(True)
+        self._frame_due.timeout.connect(self._frame)
+        self._device_frames = False
+        self._device_told = None
+        self._device_frame = None
+        self._device_window = None
+        self._device_content = 0
+        self._device_motion = 0
+        self._device_scene: tuple[tuple[SceneGeometry, ...], list[SceneDrawMesh]] | None = None
+        self._device_before: tuple | None = None
+        self._device_placed: tuple[int, tuple[ScenePlacement, ...]] | None = None
+        self._device_shapes: dict[int, SceneShape] = {}
+        self._device_overlays_made: tuple = (None, None)
+        self._device_probes_made: tuple = ((), None)
+        self.strands_only = False
+        self.strands_boxes: tuple = ()
+        self.strands_source = None
+        self.wrinkle_source = None
+        self.edit_tool = None
+        self._device_pick: tuple[str, tuple[int, int]] | None = None
+        self._mesh_poses: dict[str, ScenePose] = {}
 
         self._settings = settings if isinstance(settings, dict) else None
         self._controls = controls
+        self.orthographic = False
+        if controls == "mesh":
+            self.setToolTip(self.tr("Left drag: orbit · Right or middle drag: pan · Wheel: zoom"))
         self._background = background
         self._init_orbit_camera(
             rot_x=float(initial_rotation[0]),
@@ -308,66 +189,42 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._gizmo_hover_axis: int | None = None
         self._gizmo_drag = None
         self._gizmo_projection = None
-        self._regular_set: _GlBufferSet | None = None
-        self._solid_set: _GlBufferSet | None = None
-        self._selection_regular_set: _GlBufferSet | None = None
-        self._selection_solid_set: _GlBufferSet | None = None
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
-        self._hover_vertex_cache: dict[int, dict[str, np.ndarray]] = {}
         self._pending_scene_pick: tuple[str, np.ndarray] | None = None
         self._last_hover_pick_time = 0.0
         self._last_hover_pick_pos: np.ndarray | None = None
-        self._scene_matrix = IDENTITY4.copy()
-        self._regular_data: SceneBufferSet | None = None
-        self._solid_data: SceneBufferSet | None = None
-        self._texture_ids: dict[str, int] = {}
-        self._texture_sources: dict[str, str] = {}
-        self._texture_source_ids: dict[str, int] = {}
-        self._texture_upload_failures: set[str] = set()
-        self._max_texture_anisotropy = 1.0
-        self._anisotropy_limit_logs: set[tuple[str, float]] = set()
-        self._pending_material_images: dict[str, tuple[str, TexPreviewUpload]] = {}
-        self._material_effects: dict[str, object] = {}
-        self._material_tints: dict[str, tuple[float, float, float, float]] = {}
-        self._two_sided_materials: set[str] = set()
         self._material_parameters: dict[str, dict[str, float]] = {}
-        self._riglogic_material = RigLogicMaterialRenderer()
-        self._material_effect_errors: dict[str, str] = {}
-        self._material_resource_errors: dict[str, str] = {}
-        self._material_upload_errors: dict[str, tuple[str, str]] = {}
         self._hidden_keys: set[str] = set()
         self._hidden_parts: dict[str, frozenset[int]] = {}
-        self._gpu_skinning = GpuSkinningDeformer()
-        self._skinned_draw_sets: list[_GlSkinnedDrawSet] = []
-        self._rigid_draw_sets: list[_GlRigidDrawSet] = []
+        self._skinning = SceneSkinning()
         self._mesh_draw_matrices: dict[str, np.ndarray] = {}
-        self._skinned_draw_sets_dirty = False
-        self._gl_cleanup_context = None
-        self._needs_gl_upload = False
 
-        self.render_mode = "wire" if self._controls == "mesh" else self._setting_choice("scene_render_mode", ("wire", "hybrid", "solid"))
+        self._wireframe_key = "mesh_viewer_wireframe_mode" if self._controls == "mesh" else "scene_render_mode"
+        wireframe = str(self._setting_value(self._wireframe_key))
+        wireframe = self._WIREFRAME_RENAMED.get(wireframe, wireframe)
+        self.wireframe_mode = wireframe if wireframe in self.WIREFRAME_MODES else "off"
         self._gizmo_mode = self._setting_choice("scene_gizmo_mode", ("position", "rotation", "scale"))
         self.show_only_highlighted = self._setting_bool("scene_show_only_highlighted")
-        self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 0, 240)
+        self._fps_limit = self._setting_int("mesh_viewer_fps_limit", 0, LIMIT_MOST)
         self.texture_quality = self._setting_choice("renderer_texture_quality", tuple(TEXTURE_QUALITY_PROFILES))
-        self.wireframe_mode = self._setting_choice("mesh_viewer_wireframe_mode", self.WIREFRAME_MODES)
-        self.lighting_mode = self._setting_choice("mesh_viewer_lighting_mode", self.LIGHTING_MODES)
+        self.antialiasing = self._setting_bool("renderer_antialiasing")
+        lighting_modes = tuple(mode for mode in self.LIGHTING_MODES
+                               if mode != "game" and (controls != "mesh" or mode != "probes"))
+        self.lighting_mode = self.texture_light = self._setting_choice("mesh_viewer_lighting_mode", lighting_modes)
+        self.shading = self._setting_choice("renderer_shading", ("game", "gbuffer", "textures"))
+        self._game_offered = False
+        self._game_refused = ""
+        self._shading_widgets: dict[str, list[QWidget]] = {"textures": [], "game": []}
+        self._shading_shown = "textures"
         self._light_probe_instances: dict[str, SceneLightProbeInstance] = {}
         self._light_probe_status = ""
         self._preferred_selection_keys: set[str] = set()
         self._probe_viz_candidate_indices_cache: dict[tuple, np.ndarray] = {}
         self._probe_viz_point_cache_key = None
         self._probe_viz_point_cache: tuple[np.ndarray, np.ndarray] | None = None
-        self._probe_shade_pool = QThreadPool(self)
-        self._probe_shade_pool.setMaxThreadCount(1)
-        self._probe_shade_worker: ProbeShadeWorker | None = None
-        self._probe_shade_job_id = 0
-        self._probe_shade_result: tuple[tuple, dict[int, np.ndarray]] | None = None
-        self._probe_shade_error = ""
-        self._probe_shade_percent = 0
         self.line_width = self._setting_float("mesh_viewer_line_width", 0.5, 8.0)
-        self.color_source = "vertex"
+        self._color_source = "vertex"
         self.ambient = self._setting_float("mesh_viewer_ambient", 0.0, 1.0)
         self.diffuse = self._setting_float("mesh_viewer_diffuse", 0.0, 1.0)
         self.probe_exposure = self._setting_float("scene_probe_exposure", 0.01, 2.0)
@@ -379,13 +236,23 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.camera_wheel = self._setting_float("scene_camera_wheel", 0.001, 2.0)
         self.camera_boost = self._setting_float("scene_camera_boost", 1.0, 20.0)
         self.camera_slow = self._setting_float("scene_camera_slow", 0.01, 1.0)
-        self._colors_dirty = True
 
         self._timer = QTimer(self)
         self._timer.setTimerType(Qt.PreciseTimer)
         self._timer.setSingleShot(True)
         self._timer.timeout.connect(self._request_frame)
+        self._presented = 0
+        self._presented_clock = QElapsedTimer()
+        self._fps_timer = QTimer(self)
+        self._fps_timer.timeout.connect(self._show_device_rate)
+        self._frame_clock = QElapsedTimer()
+        self._told_clock = QElapsedTimer()
+        self._frames_asked = 0
         self._frame_callback = None
+        self.stepped_time = None
+        self._seconds_clock = QElapsedTimer()
+        self._stepped_seen: float | None = None
+        self._strands_stepped = None
         self._overlays = ViewportOverlayManager(self, HOVER_DETECT_KEY)
 
         self.setFocusPolicy(Qt.StrongFocus)
@@ -406,8 +273,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             QToolButton:hover { background:#253342; border-color:#4eb4a6; }
             QComboBox, QSpinBox, QDoubleSpinBox { background:#151b22; border:1px solid #33414e; color:#e8eef5; padding:2px 4px; min-height:18px; }
             QCheckBox { color:#dce3ea; background-color:transparent; font-size:11px; }
-            QProgressBar { background:#151b22; border:1px solid #33414e; border-radius:3px; color:#e8eef5; text-align:center; font-size:9px; }
-            QProgressBar::chunk { background:#328f83; border-radius:2px; }
         """)
         layout = QVBoxLayout(self.overlay)
         layout.setContentsMargins(8, 6, 8, 6)
@@ -471,7 +336,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if owner is not None:
             owner.leave_view_fullscreen() if owner.is_view_fullscreen() else owner.enter_view_fullscreen()
         else:
-            self._leave_view_fullscreen() if self._fullscreen_restore else self._enter_view_fullscreen()
+            self.leave_view_fullscreen() if self._fullscreen_restore else self._enter_view_fullscreen()
 
     def _enter_view_fullscreen(self):
         if self._fullscreen_restore is not None:
@@ -488,7 +353,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             widget.hide()
         self.fullscreen_button.setText("x")
         window.showFullScreen()
-        QTimer.singleShot(0, self, self._after_fullscreen_change)
+        call_later(self, 0, self._after_fullscreen_change)
 
     @staticmethod
     def _visible_siblings_to_window(
@@ -515,7 +380,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             branch = parent
         return tuple(hidden)
 
-    def _leave_view_fullscreen(self):
+    def leave_view_fullscreen(self):
         if self._fullscreen_restore is None:
             return
         self._fullscreen_transition = True
@@ -531,20 +396,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             restore.window.showMaximized()
         else:
             restore.window.showNormal()
-        QTimer.singleShot(0, self, self._after_fullscreen_change)
+        call_later(self, 0, self._after_fullscreen_change)
 
     def _after_fullscreen_change(self):
         self.setMouseTracking(True)
         self.setAttribute(Qt.WA_Hover, True)
         self.setFocus(Qt.OtherFocusReason)
         self._gizmo_projection = None
-        missing_regular = self._regular_set is None and self._regular_data is not None
-        missing_solid = self._solid_set is None and self._solid_data is not None
-        self._needs_gl_upload = self._needs_gl_upload or missing_regular or missing_solid
         self.place_viewport_overlays()
         self.update()
         self._fullscreen_transition = False
-        QTimer.singleShot(50, self, self.place_viewport_overlays)
+        self._overlays.place_later(50)
 
     def is_fullscreen_transitioning(self) -> bool:
         return self._fullscreen_transition
@@ -556,6 +418,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _build_scene_controls(self, layout: QVBoxLayout):
         self._add_scene_mode_control(layout)
         self._add_texture_quality_control(layout)
+        self._add_antialiasing_control(layout)
         self._add_fps_limit_control(layout)
         self._add_control_row(
             layout,
@@ -568,19 +431,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self.tr("Fast"), self._camera_spin("camera_boost", 1.0, 20.0, 0.25),
             self.tr("Slow"), self._camera_spin("camera_slow", 0.01, 1.0, 0.05),
         )
-        self.scene_light_combo = self._data_combo(
-            (
-                (self.tr("Fixed"), "fixed"),
-                (self.tr("Software"), "software"),
-                (self.tr("Probes"), "probes"),
-                (self.tr("Off"), "off"),
-            ),
-            self._set_lighting_mode,
-            self.lighting_mode,
-        )
-        self._add_control_row(layout, self.tr("Light"), self.scene_light_combo)
+        self._add_light_control(layout)
         self.probe_exposure_spin = self._float_spin(0.01, 2.0, 0.01, self.probe_exposure, self._set_probe_exposure)
-        self._add_control_row(layout, self.tr("Probe Exp"), self.probe_exposure_spin)
+        self._shown_under("textures", self._add_control_row(layout, self.tr("Probe Exp"), self.probe_exposure_spin))
         self.probe_viz_combo = self._data_combo(
             (
                 (self.tr("Off"), "off"),
@@ -608,13 +461,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.probe_status_label.setWordWrap(True)
         self.probe_status_label.setStyleSheet("color:#7fced6; background-color:transparent; font-size:10px;")
         layout.addWidget(self.probe_status_label)
-        self.probe_progress_bar = QProgressBar(self.overlay)
-        self.probe_progress_bar.setRange(0, 100)
-        self.probe_progress_bar.setValue(0)
-        self.probe_progress_bar.setFormat(self.tr("Calculating probe lighting… %p%"))
-        self.probe_progress_bar.setFixedHeight(14)
-        self.probe_progress_bar.hide()
-        layout.addWidget(self.probe_progress_bar)
         self._refresh_probe_status_label()
         self.gizmo_mode_combo = self._data_combo(
             (
@@ -636,19 +482,36 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         shortcut_note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
         layout.addWidget(shortcut_note)
 
+    def _add_light_control(self, layout: QVBoxLayout):
+        self.scene_shading_combo = self._data_combo(((self.tr("Textures"), "textures"),), self.set_shading)
+        self.scene_shading_combo.setToolTip(self.tr(
+            "Game lighting draws meshes with their materials' shaders and the game's light passes, where REasy has "
+            "them for the build; Textures draws their textures, lit by the chosen light."))
+        self._add_control_row(layout, self.tr("Shading"), self.scene_shading_combo)
+        self.scene_light_combo = self._data_combo(
+            (
+                (self.tr("Fixed"), "fixed"),
+                (self.tr("Software"), "software"),
+                (self.tr("Probes"), "probes"),
+                (self.tr("Off"), "off"),
+            ),
+            self._set_lighting_mode,
+            self.texture_light,
+        )
+        self._shown_under("textures", self._add_control_row(layout, self.tr("Light"), self.scene_light_combo))
+
     def _build_rcol_controls(self, layout: QVBoxLayout):
         self._add_scene_mode_control(layout)
         self._add_fps_limit_control(layout)
         self._add_highlight_filter_control(layout)
 
+    def _wireframe_combo(self) -> EmbeddedPopupComboBox:
+        return self._data_combo(((self.tr("Off"), "off"), (self.tr("Wire"), "wire"), (self.tr("Hybrid"), "hybrid"),
+                                 (self.tr("X-ray"), "xray")), self._set_wireframe_mode, self.wireframe_mode)
+
     def _add_scene_mode_control(self, layout: QVBoxLayout):
-        modes = (
-            (self.tr("Wireframe"), "wire"),
-            (self.tr("Solid + Wire"), "hybrid"),
-            (self.tr("Solid"), "solid"),
-        )
-        self.scene_mode_combo = self._data_combo(modes, self._set_render_mode, self.render_mode)
-        self._add_control_row(layout, self.tr("Mode"), self.scene_mode_combo)
+        self.scene_mode_combo = self._wireframe_combo()
+        self._add_control_row(layout, self.tr("Wireframe"), self.scene_mode_combo)
 
     def _add_highlight_filter_control(self, layout: QVBoxLayout):
         self.highlight_only_check = QCheckBox(
@@ -660,11 +523,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _add_fps_limit_control(self, layout: QVBoxLayout):
         fps_spin = QSpinBox(self.overlay)
-        fps_spin.setRange(0, 240)
+        fps_spin.setRange(0, LIMIT_MOST)
         fps_spin.setFixedWidth(50)
         fps_spin.setValue(self._fps_limit)
         fps_spin.setToolTip(
-            self.tr("Viewport and animation pose refresh rate; 0 is uncapped.")
+            self.tr("Frame rate of the viewport, animation poses and the game's strand chain; 0 is uncapped (strands "
+                    "then step at most {most} times a second).").format(most=LIMIT_MOST)
         )
         fps_spin.valueChanged.connect(self._change_fps_limit)
         self._add_control_row(layout, self.tr("Limit"), fps_spin)
@@ -694,6 +558,38 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             )
         )
         self._add_control_row(layout, self.tr("Quality"), combo)
+
+    def _add_antialiasing_control(self, layout: QVBoxLayout):
+        check = QCheckBox(self.tr("Anti-aliasing (REasy custom)"), self.overlay)
+        check.setChecked(self.antialiasing)
+        check.setToolTip(self.tr(
+            "Game lighting: smooths edges, brows and dithered detail by averaging frames drawn a fraction of a pixel "
+            "apart while the view stays still. Strands are left out; their renderer smooths them."))
+        check.toggled.connect(self._set_antialiasing)
+        self._shown_under("game", self._add_control_row(layout, check))
+
+    def _set_antialiasing(self, on: bool):
+        self.antialiasing = bool(on)
+        self._save_view_setting("renderer_antialiasing", self.antialiasing)
+        self.update()
+
+    def _shown_under(self, shading: str, row: QHBoxLayout) -> None:
+        widgets = [row.itemAt(index).widget() for index in range(row.count())]
+        for widget in filter(None, widgets):
+            self._shading_widgets[shading].append(widget)
+            widget.setVisible(self._shading_shown == shading)
+
+    def set_shading_controls(self, shading: str) -> None:
+        if shading == self._shading_shown:
+            return
+        self._shading_shown = shading
+        for kind, widgets in self._shading_widgets.items():
+            for widget in widgets:
+                widget.setVisible(kind == shading)
+        overlay = getattr(self, "overlay", None)
+        if overlay is not None:
+            overlay.adjustSize()
+            self.place_viewport_overlays()
 
     def _add_control_row(self, layout: QVBoxLayout, *items):
         row = QHBoxLayout()
@@ -726,22 +622,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def _build_mesh_controls(self, layout: QVBoxLayout):
         self._add_texture_quality_control(layout)
+        self._add_antialiasing_control(layout)
         self._add_fps_limit_control(layout)
 
-        self.wf_combo = self._data_combo(
-            (
-                (self.tr("Off"), "off"),
-                (self.tr("Polygon"), "polygon"),
-                (self.tr("Depth Lines"), "lines_depth"),
-                (self.tr("Overlay Lines"), "lines_overlay"),
-            ),
-            self._set_wireframe_mode,
-            self.wireframe_mode,
-        )
+        self.wf_combo = self._wireframe_combo()
         self.line_spin = self._float_spin(0.5, 8.0, 0.1, self.line_width, self._set_line_width)
         self._add_control_row(
             layout,
-            self.tr("WF Mode"),
+            self.tr("Wireframe"),
             self.wf_combo,
             self.tr("Line"),
             self.line_spin,
@@ -756,7 +644,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._set_lighting_mode,
             self.lighting_mode,
         )
-        row2 = self._add_control_row(layout, self.tr("Light"), self.light_combo)
+        self.amb_spin = self._float_spin(0.0, 1.0, 0.05, self.ambient, self._set_ambient)
+        self.diff_spin = self._float_spin(0.0, 1.0, 0.05, self.diffuse, self._set_diffuse)
+        self._shown_under("textures", self._add_control_row(
+            layout, self.tr("Light"), self.light_combo, self.tr("Amb"), self.amb_spin, self.tr("Diff"),
+            self.diff_spin))
         mesh = getattr(self, "mesh", None)
         if getattr(mesh, "streaming_buffer_count", 0):
             stream_status = (
@@ -764,16 +656,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 if getattr(mesh, "streaming_data_loaded", False)
                 else self.tr("Missing")
             )
-            row2.addWidget(
-                QLabel(
-                    self.tr("Stream {status}").format(status=stream_status),
-                    self.overlay,
-                )
-            )
-        self.amb_spin = self._float_spin(0.0, 1.0, 0.05, self.ambient, self._set_ambient)
-        self.diff_spin = self._float_spin(0.0, 1.0, 0.05, self.diffuse, self._set_diffuse)
-        for item in (self.tr("Amb"), self.amb_spin, self.tr("Diff"), self.diff_spin):
-            row2.addWidget(QLabel(item, self.overlay) if isinstance(item, str) else item)
+            self._add_control_row(layout, self.tr("Stream {status}").format(status=stream_status))
 
         self.bone_labels_check = QCheckBox(self.tr("Bones"), self.overlay)
         self.bone_labels_check.setChecked(self.show_bone_labels)
@@ -813,17 +696,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         save_settings(self._settings)
 
     def set_scene(self, meshes: list[SceneDrawMesh], highlighted_keys: set[str] | None = None, *, reset_camera: bool = True):
-        self._gpu_skinning.clear()
+        self._skinning.clear()
+        self._mesh_poses.clear()
         self._mesh_draw_matrices.clear()
-        self._skinned_draw_sets_dirty = True
         self._meshes = meshes
+        self._device_changed()
         self._highlighted_keys = set(self._selection_keys if highlighted_keys is None else highlighted_keys)
         self._hover_key = self._hover_block_key = ""
         self._recompute_bounds()
         self._refresh_selection_bounds()
         if reset_camera:
             self.freecam.reset(self.center, self.extent, self.camera_speed)
-        self._upload_buffers()
         self.update()
 
     def set_mesh_skinning(
@@ -841,8 +724,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 f"skinned mesh {key!r} has {len(binding.positions)} bind "
                 f"vertices; scene geometry has {len(matches[0].vertices)}"
             )
-        self._gpu_skinning.set_binding(key, binding)
-        self._skinned_draw_sets_dirty = True
+        self._skinning.set_binding(key, binding)
+        self._device_rebound({key})
         self.update()
 
     def update_mesh_skinning(
@@ -850,7 +733,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         key: str,
         matrices: np.ndarray,
     ) -> None:
-        self._gpu_skinning.update_palette(key, matrices)
+        self._skinning.update_palette(key, matrices)
+        self._device_motion += 1
         self.update()
 
     def update_mesh_skinning_source(
@@ -859,17 +743,80 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         positions: np.ndarray,
         normals: np.ndarray | None,
     ) -> None:
-        self._gpu_skinning.update_source(key, positions, normals)
+        self._skinning.update_source(key, positions, normals)
+        for mesh in self._meshes:
+            if mesh.key == key:
+                self._device_reshaped(mesh)
+        self.update()
+
+    def offer_game_lighting(self) -> None:
+        combo = getattr(self, "scene_shading_combo", None)
+        if combo is None:
+            self._add_light_control(self.overlay_body.layout())
+            self.overlay.adjustSize()
+            self.place_viewport_overlays()
+            combo = self.scene_shading_combo
+        if combo.findData("game") < 0:
+            combo.blockSignals(True)
+            combo.insertItem(0, self.tr("Game lighting"), "game")
+            combo.blockSignals(False)
+        self._game_offered = True
+        self._apply_shading()
+
+    def set_shading(self, shading: str) -> None:
+        if shading not in ("game", "textures"):
+            return
+        self.shading = shading
+        self._save_view_setting("renderer_shading", shading)
+        self._apply_shading()
+
+    def refuse_game_lighting(self, reason: str) -> None:
+        if reason != self._game_refused:
+            self._game_refused = reason
+            self._apply_shading()
+
+    @property
+    def game_lighting_refusal(self) -> str:
+        return self._game_refused if self._game_chosen else ""
+
+    @property
+    def _game_chosen(self) -> bool:
+        return self.shading != "textures" and self._game_offered
+
+    def _apply_shading(self) -> None:
+        game = self._game_chosen and not self._game_refused
+        lighting = "game" if game else self.texture_light
+        shading = getattr(self, "scene_shading_combo", None)
+        if shading is not None and (index := shading.findData("game")) >= 0:
+            shading.model().item(index).setEnabled(not self._game_refused)
+            shading.setItemData(index, self._game_refused or None, Qt.ItemDataRole.ToolTipRole)
+        for combo, value in ((shading, "game" if game else "textures"),
+                             (getattr(self, "scene_light_combo", None), self.texture_light)):
+            if combo is not None and combo.findData(value) >= 0:
+                combo.blockSignals(True)
+                combo.setCurrentIndex(combo.findData(value))
+                combo.blockSignals(False)
+        self.set_shading_controls("game" if game else "textures")
+        if lighting != self.lighting_mode:
+            self.lighting_mode = lighting
+            self._refresh_probe_status_label()
+            self.update()
+
+    def set_mesh_pose(self, key: str, pose: ScenePose | None) -> None:
+        if pose is None:
+            self._mesh_poses.pop(key, None)
+        else:
+            self._mesh_poses[key] = pose
+        self._device_motion += 1
         self.update()
 
     def clear_mesh_skinning(self, keys: set[str] | None = None) -> None:
-        removed = self._gpu_skinning.remove(keys)
-        self._skinned_draw_sets_dirty |= bool(removed)
+        removed = self._skinning.remove(keys)
+        if removed:
+            self._device_rebound(removed)
         self.update()
 
     def set_light_probe_instances(self, instances: list[SceneLightProbeInstance]) -> None:
-        self._cancel_probe_shading()
-        self._probe_shade_error = ""
         self._light_probe_instances = {instance.key: instance for instance in instances}
         loaded = sum(instance.probe_set is not None for instance in instances)
         self._light_probe_status = (
@@ -878,21 +825,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             else ""
         )
         self._invalidate_probe_viz_points()
-        vertex_count = self._buffer_vertex_count()
-        if (
-            loaded
-            and self._controls != "mesh"
-            and 0 < vertex_count <= self.PROBE_AUTO_ENABLE_VERTEX_LIMIT
-        ):
-            self.lighting_mode = "probes"
-            combo = getattr(self, "scene_light_combo", None)
-            if combo is not None:
-                combo.blockSignals(True)
-                target_index = combo.findData("probes")
-                if target_index >= 0:
-                    combo.setCurrentIndex(target_index)
-                combo.blockSignals(False)
-        self._colors_dirty = True
+        if loaded and self._controls != "mesh" and any(len(mesh.vertices) for mesh in self._meshes):
+            self.texture_light = "probes"
+            self._apply_shading()
         self._refresh_probe_status_label()
         self.update()
 
@@ -900,18 +835,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def light_probe_status(self) -> str:
         return self._light_probe_status
 
-    def _buffer_vertex_count(self) -> int:
-        total = 0
-        for data in (self._regular_data, self._solid_data):
-            if data is not None:
-                total += len(data.vertices)
-        return total
-
     def _refresh_probe_status_label(self) -> None:
         label = getattr(self, "probe_status_label", None)
         if label is None:
             return
-        label.setToolTip(self._probe_shade_error)
         visible = self._visible_light_probe_instances()
         loaded = [instance for instance in visible if instance.probe_set is not None]
         if not loaded:
@@ -927,25 +854,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             if self.lighting_mode == "probes"
             else self.tr("mode {mode}").format(mode=self.lighting_mode)
         )
-        if self._probe_shade_worker is not None:
-            mode = self.tr("calculating {percent}%").format(percent=self._probe_shade_percent)
-        elif self._probe_shade_result is not None:
-            mode = self.tr("applying")
-        elif self._probe_shade_error:
-            mode = self.tr("error")
         probe_count = sum(len(self._probe_viz_candidate_indices(instance)) for instance in loaded)
         label.setText(
             self.tr("Probe: {mode} | sets {sets} | OBB {boxes} | probes {probes}").format(
                 mode=mode, sets=len(loaded), boxes=len(boxes), probes=probe_count
             )
         )
-
-    def _show_probe_shade_progress(self, visible: bool, percent: int = 0) -> None:
-        bar = getattr(self, "probe_progress_bar", None)
-        if bar is None:
-            return
-        bar.setValue(max(0, min(100, int(percent))))
-        bar.setVisible(bool(visible))
 
     def _light_probe_boxes(self) -> list[object]:
         return [box for _key, box in self._light_probe_box_entries()]
@@ -976,7 +890,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.probe_exposure = float(value)
         self._save_view_setting("scene_probe_exposure", self.probe_exposure)
         self._invalidate_probe_viz_points()
-        self._invalidate_probe_shading()
         self.update()
 
     def _set_probe_viz_mode(self, mode: str) -> None:
@@ -998,9 +911,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._probe_viz_point_cache_key = None
         self._probe_viz_point_cache = None
 
-    def _mesh_transform_affects_display_colors(self) -> bool:
-        return self.lighting_mode in {"software", "probes"}
-
     def set_selected_keys(
         self,
         keys: set[str],
@@ -1018,8 +928,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._highlighted_keys = set(keys)
         self._gizmo_hover_axis = None
         self._refresh_selection_bounds()
-        if self.show_only_highlighted:
-            self._upload_buffers()
         if focus:
             self.focus_selection()
         self.update()
@@ -1033,45 +941,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if not matrices:
             return
         matches = [mesh for mesh in self._meshes if mesh.key in matrices]
-        deltas: dict[str, np.ndarray] = {}
+        for mesh in matches:
+            mesh.transform_matrix = np.asarray(matrices[mesh.key], dtype=np.float32).reshape(4, 4)
         if matches:
-            old = np.stack(
-                [
-                    np.asarray(
-                        mesh.transform_matrix
-                        if mesh.transform_matrix is not None
-                        else IDENTITY4,
-                        dtype=np.float32,
-                    )
-                    for mesh in matches
-                ]
-            )
-            new = np.stack(
-                [np.asarray(matrices[mesh.key], dtype=np.float32) for mesh in matches]
-            )
-            changed = ~np.all(np.isclose(old, new), axis=(1, 2))
-            if np.any(changed):
-                delta_values = new[changed] @ np.linalg.inv(old[changed])
-                deltas = dict(
-                    zip(
-                        (mesh.key for mesh, value in zip(matches, changed) if value),
-                        delta_values,
-                        strict=True,
-                    )
-                )
-            for mesh, matrix in zip(matches, new, strict=True):
-                mesh.transform_matrix = matrix
+            self._device_motion += 1
         if recompute_bounds:
             self._recompute_bounds()
             self._refresh_selection_bounds()
-        if deltas:
-            if self._mesh_transform_affects_display_colors():
-                self._invalidate_probe_shading()
-            if not self._scene_matrix_is_identity():
-                self._upload_buffers()
-            elif not self._apply_transform_deltas(deltas):
-                self._rebuild_buffer_data()
-                self._needs_gl_upload = True
         self.update()
 
     def set_mesh_draw_transforms(
@@ -1096,10 +972,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 raise ValueError(f"mesh {key!r} has a nonfinite draw transform")
             delta = world @ np.linalg.inv(authored)
             draw_matrices[str(key)] = delta.astype(np.float32, copy=False)
-        old_keys = set(self._mesh_draw_matrices)
         self._mesh_draw_matrices = draw_matrices
-        if old_keys != set(draw_matrices):
-            self._skinned_draw_sets_dirty = True
+        self._device_motion += 1
         self.update()
 
     def clear_mesh_draw_transforms(self) -> None:
@@ -1112,6 +986,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         normals: np.ndarray | None = None,
         *,
         recompute_bounds: bool = True,
+        colors: np.ndarray | None = None,
     ) -> None:
         """Replace one keyed mesh's vertex data without rebuilding its scene."""
         vertices = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
@@ -1122,6 +997,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         )
         if normals is not None and len(normals) != len(vertices):
             raise ValueError("dynamic mesh normals must match its vertex count")
+        if colors is not None:
+            colors = np.asarray(colors, dtype=np.float32).reshape(-1, 4)
+            if len(colors) != len(vertices):
+                raise ValueError("dynamic mesh colors must match its vertex count")
         matches = [mesh for mesh in self._meshes if mesh.key == key]
         if len(matches) != 1:
             raise ValueError(f"dynamic mesh key {key!r} matched {len(matches)} meshes")
@@ -1130,20 +1009,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             raise ValueError(
                 f"dynamic mesh {key!r} has {len(vertices)} vertices; expected {len(mesh.vertices)}"
             )
+        if mesh.normals is None and normals is not None or mesh.colors is None and colors is not None:
+            self._device_changed()
+        self._device_reshaped(mesh)
         mesh.vertices = vertices
         if normals is not None:
             mesh.normals = normals
+        if colors is not None:
+            mesh.colors = colors
         if recompute_bounds:
             self._recompute_bounds()
             self._refresh_selection_bounds()
-        if self._mesh_transform_affects_display_colors():
-            self._invalidate_probe_shading()
-            self._colors_dirty = True
-        if not self._scene_matrix_is_identity():
-            self._upload_buffers()
-        elif not self._apply_geometry_update(key, vertices, normals):
-            self._rebuild_buffer_data()
-            self._needs_gl_upload = True
         self.update()
 
     def set_gizmo_mode(self, mode: str) -> None:
@@ -1174,8 +1050,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._refresh_selection_bounds()
         if probe_visibility_changed:
             self._invalidate_probe_viz_points()
-            self._invalidate_probe_shading()
-        self._refresh_index_visibility(refresh)
+            self._refresh_probe_status_label()
+        if refresh:
+            self.update()
 
     def set_hidden_parts(
         self,
@@ -1191,119 +1068,26 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if normalized == self._hidden_parts:
             return
         self._hidden_parts = normalized
-        self._skinned_draw_sets_dirty = True
-        self._hover_vertex_cache.clear()
-        self._refresh_index_visibility(refresh)
-
-    def _refresh_index_visibility(self, refresh: bool) -> None:
-        if not refresh:
-            return
-        if self.context() is None:
+        if refresh:
             self.update()
+
+    def set_material_parameters(self, values: dict[str, dict[str, float]]) -> None:
+        values = {str(material): {str(name): float(value) for name, value in parameters.items()}
+                  for material, parameters in values.items() if parameters}
+        if values == self._material_parameters:
             return
-        self.makeCurrent()
-        self._upload_index_vbos(self._regular_set)
-        self._upload_index_vbos(self._solid_set)
-        self._refresh_selection_buffer_sets(current=True)
-        self.doneCurrent()
+        if values.keys() != self._material_parameters.keys():
+            self._device_rebound(())
+        else:
+            self._device_motion += 1
+        self._material_parameters = values
         self.update()
 
-    def set_material_images(self, images: dict[str, tuple[str, TexPreviewUpload]]):
-        self._pending_material_images = dict(images)
-        self._texture_upload_failures.intersection_update(images)
-        self._material_upload_errors = {
-            name: error
-            for name, error in self._material_upload_errors.items()
-            if name in images
-        }
-        self._sync_material_images()
-        self.texture_upload_status_changed.emit()
+    def device_materials(self) -> dict[str, dict[str, float]]:
+        return self._material_parameters
 
-    def update_material_images(self, images: dict[str, tuple[str, TexPreviewUpload]]):
-        self._pending_material_images.update(images)
-        self._sync_material_images(images)
-        self.texture_upload_status_changed.emit()
-
-    def texture_upload_counts(self) -> tuple[int, int, int]:
-        return len(self._pending_material_images), len(self._texture_ids), len(self._texture_upload_failures)
-
-    def material_effect_errors(self) -> tuple[str, ...]:
-        return tuple(dict.fromkeys((
-            *self._material_effect_errors.values(),
-            *self._material_resource_errors.values(),
-            *(message for _material, message in self._material_upload_errors.values()),
-        )))
-
-    def set_material_failures(self, failures: dict[str, str]) -> None:
-        failures = {
-            str(material): str(message)
-            for material, message in failures.items()
-            if message
-        }
-        if failures == self._material_resource_errors:
-            return
-        previous = self._material_resource_errors
-        self._material_resource_errors = failures
-        known = set(self._material_effect_errors.values())
-        for material, message in failures.items():
-            if previous.get(material) != message and message not in known:
-                self.render_failure.emit(message)
-        self.texture_upload_status_changed.emit()
-        self.update()
-
-    def set_material_profiles(self, profiles: dict[str, object]):
-        self._material_effects.clear()
-        self._material_tints, self._two_sided_materials = {}, set()
-        self._material_effect_errors.clear()
-        self._material_resource_errors.clear()
-        self._material_upload_errors.clear()
-        self.update_material_profiles(profiles)
-
-    def update_material_profiles(self, profiles: dict[str, object]):
-        for name, profile in profiles.items():
-            self._material_effects.pop(name, None)
-            self._material_effect_errors.pop(name, None)
-            try:
-                effect = riglogic_material_effect(profile)
-            except ValueError as exc:
-                self._record_material_effect_error(name, f"{name}: {exc}")
-            else:
-                if effect is not None:
-                    self._material_effects[name] = effect
-            tint = tuple(float(value) for value in getattr(profile, "tint", (1.0, 1.0, 1.0, 1.0)))
-            self._material_tints[name] = (tint + (1.0, 1.0, 1.0, 1.0))[:4]
-            (self._two_sided_materials.add if getattr(profile, "two_sided", False) else self._two_sided_materials.discard)(name)
-        self.update()
-
-    def set_material_parameters(
-        self,
-        parameters: dict[str, dict[str, float]],
-    ):
-        """Store semantic runtime parameters for material-capable backends."""
-
-        normalized = {
-            material: dict(values)
-            for material, values in parameters.items()
-        }
-        if normalized == self._material_parameters:
-            return
-        self._material_parameters = normalized
-        self.update()
-
-    def _sync_material_images(self, names=None):
-        if self.context() is None:
-            self.update()
-            return
-        self.makeCurrent()
-        self._sync_gl_textures(names)
-        self.doneCurrent()
-        self.update()
-
-    def _set_render_mode(self, mode: str):
-        self.render_mode = str(mode or "wire")
-        self._skinned_draw_sets_dirty = True
-        if self._controls != "mesh":
-            self._save_view_setting("scene_render_mode", self.render_mode)
+    def materials_changed(self):
+        self._device_changed()
         self.update()
 
     def _set_texture_quality(self, quality: str):
@@ -1318,6 +1102,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.setFocus(Qt.MouseFocusReason)
         if self._controls != "mesh" and event.button() == Qt.LeftButton:
             if self._begin_gizmo_drag(event):
+                event.accept()
+                return
+            if self.edit_tool is not None and self.edit_tool.press(event, self._screen_pos(event)):
                 event.accept()
                 return
             if self._hover_detect_down:
@@ -1339,6 +1126,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         if self._controls == "mesh":
             return super().mouseMoveEvent(event)
+        if (self.edit_tool is not None and self._cursor_lock_pos is None
+                and self.edit_tool.move(event, self._screen_pos(event))):
+            event.accept()
+            return
         buttons = event.buttons()
         if not (buttons & Qt.RightButton):
             self._update_scene_hover(self._screen_pos(event)) if self._hover_detect_down else self._set_hover_key("")
@@ -1363,6 +1154,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return
         if self._controls == "mesh":
             return super().mouseReleaseEvent(event)
+        if self.edit_tool is not None and self.edit_tool.release(event, self._screen_pos(event)):
+            event.accept()
+            return
         if not (event.buttons() & Qt.RightButton):
             self._unlock_scene_cursor()
         event.accept()
@@ -1370,6 +1164,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def wheelEvent(self, event):
         if self._controls == "mesh":
             super().wheelEvent(event)
+            return
+        if self.edit_tool is not None and self.edit_tool.wheel(event):
+            event.accept()
             return
         steps = event.angleDelta().y() / 120.0
         self.freecam.move_local(np.array((0.0, 0.0, -steps * self.freecam.speed * self.camera_wheel), dtype=np.float32))
@@ -1380,6 +1177,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         fullscreen = owner.is_view_fullscreen() if owner is not None else self._fullscreen_restore is not None
         if event.key() == Qt.Key_F11 or (fullscreen and event.key() == Qt.Key_Escape):
             self._toggle_view_fullscreen()
+            event.accept()
+            return
+        if self._controls != "mesh" and self.edit_tool is not None and self.edit_tool.key_press(event):
             event.accept()
             return
         if self._controls != "mesh" and event.key() == HOVER_DETECT_KEY:
@@ -1433,9 +1233,16 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def leaveEvent(self, event):
         self._set_hover_key("")
         self._last_hover_pick_pos = None
+        if self.edit_tool is not None:
+            self.edit_tool.leave()
         super().leaveEvent(event)
 
     def event(self, event):
+        if (event.type() == QEvent.ShortcutOverride and self.edit_tool is not None
+                and self.edit_tool.takes_key(event)):
+            # Accepting ShortcutOverride gives the tool its keys before the window's shortcuts.
+            event.accept()
+            return True
         if event.type() == QEvent.HoverMove and getattr(self, "_hover_detect_down", False) and getattr(self, "_controls", "mesh") != "mesh" and getattr(self, "_gizmo_drag", None) is None and getattr(self, "_cursor_lock_pos", None) is None:
             self._update_scene_hover(self._screen_pos(event))
             return True
@@ -1485,7 +1292,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _set_show_only_highlighted(self, enabled: bool):
         self.show_only_highlighted = bool(enabled)
         self._save_view_setting("scene_show_only_highlighted", self.show_only_highlighted)
-        self._upload_buffers()
         self.update()
 
     def _recompute_bounds(self):
@@ -1493,6 +1299,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self.scale = 1.0 / self.extent if self.extent > 1e-6 else 1.0
 
     def _refresh_selection_bounds(self) -> None:
+        held = self._tool_gizmo()
+        if held is not None:
+            self._selection_center, self._selection_extent = held
+            return
         meshes = [mesh for mesh in self._meshes if mesh.key in self._selection_keys and mesh.key not in self._hidden_keys]
         chunks = []
         mesh_points = mesh_bounds_points(meshes)
@@ -1541,23 +1351,30 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             return max(2.0 * distance * np.tan(np.deg2rad(22.5)) * 120.0 / max(self.height(), 1), self.extent * 0.004, 0.1)
         return max(float(self._selection_extent) * 0.45, max(float(self.extent) * 0.025, 0.25))
 
+    def _view_pixels(self) -> tuple[int, int]:
+        if self._device_window is not None and not self._device_window.isHidden():
+            return self._device_window.pixels()
+        dpr = float(self.devicePixelRatioF())
+        return max(1, int(self.width() * dpr)), max(1, int(self.height() * dpr))
+
+    def _device_camera(self, size: tuple[int, int]) -> Camera:
+        if self._controls == "mesh":
+            return engine_camera(float(self.rot_x), float(self.rot_y), float(self.distance),
+                                 tuple(map(float, self.center)), float(self.scale), size, bool(self.orthographic))
+        camera = self.freecam
+        return free_camera(tuple(map(float, camera.pos)), float(camera.pitch), float(camera.yaw), 0.01,
+                           max(float(self.extent) * 6.0, 1000.0), size)
+
     def _cache_gizmo_projection(self) -> None:
-        self._gizmo_projection = (
-            glGetDoublev(GL_MODELVIEW_MATRIX),
-            glGetDoublev(GL_PROJECTION_MATRIX),
-            glGetIntegerv(GL_VIEWPORT),
-            float(self.devicePixelRatioF()),
-        )
+        self._gizmo_projection = self.view_camera()
 
     def _project_gizmo_point(self, point) -> np.ndarray | None:
+        """In widget units."""
         if self._gizmo_projection is None:
             return None
-        model, projection, viewport, dpr = self._gizmo_projection
-        try:
-            x, y, _z = gluProject(float(point[0]), float(point[1]), float(point[2]), model, projection, viewport)
-        except Exception:
-            return None
-        return np.array((x / dpr, self.height() - y / dpr), dtype=np.float32)
+        camera, ratio = self._gizmo_projection
+        drawn, grid, _depths = project_points(np.asarray(point, np.float64).reshape(1, 3), camera)
+        return (grid[0] / (GRID * ratio)).astype(np.float32) if len(drawn) else None
 
     @staticmethod
     def _screen_pos(event) -> np.ndarray:
@@ -1584,16 +1401,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         v = (d00 * float(v2 @ v1) - d01 * float(v2 @ v0)) / denom
         return u >= 0.0 and v >= 0.0 and u + v <= 1.0
 
-    @staticmethod
-    def _gizmo_plane_corners(center: np.ndarray, size: float, a: int, b: int):
-        u, v = GIZMO_AXES[a], GIZMO_AXES[b]
-        return (
-            center + (u + v) * size * 0.22,
-            center + (u * 0.42 + v * 0.22) * size,
-            center + (u + v) * size * 0.42,
-            center + (u * 0.22 + v * 0.42) * size,
-        )
-
     def _pick_gizmo_axis(self, pos: np.ndarray) -> int | None:
         if self._selection_center is None:
             return None
@@ -1605,7 +1412,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 return None
             if self._gizmo_mode == "position":
                 for a, b, _color in GIZMO_PLANES:
-                    screen = [self._project_gizmo_point(point) for point in self._gizmo_plane_corners(center, size, a, b)]
+                    screen = [self._project_gizmo_point(point) for point in gizmo_plane_corners(center, size, a, b)]
                     if all(point is not None for point in screen) and (
                         self._screen_triangle_contains(pos, screen[0], screen[1], screen[2])
                         or self._screen_triangle_contains(pos, screen[0], screen[2], screen[3])
@@ -1619,7 +1426,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             ]
         else:
             hits = []
-            for axis_index, points in enumerate(self._gizmo_circle_points(center, size)):
+            for axis_index, points in enumerate(gizmo_circle_points(center, size)):
                 screen = [self._project_gizmo_point(point) for point in points]
                 screen = [point for point in screen if point is not None]
                 hits.extend((self._screen_segment_distance(pos, a, b), axis_index) for a, b in zip(screen, screen[1:]))
@@ -1631,7 +1438,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             key = ""
         elif key:
             self._hover_block_key = ""
-        key = key if key and key not in self._active_hidden_keys() else ""
+        key = key if key and key not in self._hidden_keys else ""
         if key == self._hover_key:
             return
         self._hover_key = key
@@ -1661,7 +1468,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
                 return False
             if self._gizmo_mode == "rotation":
                 screen_axis = np.array((-screen_axis[1], screen_axis[0]), dtype=np.float32)
+        tool = self.edit_tool if self._tool_gizmo() is not None else None
         self._gizmo_drag = {
+            "tool": tool,
             "mode": self._gizmo_mode,
             "axis": handle,
             "start": self._screen_pos(event),
@@ -1669,8 +1478,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             "size": self._gizmo_size(),
             "extent": max(float(self._selection_extent), 1e-3),
             "screen_axis": None if screen_axis is None else screen_axis / np.linalg.norm(screen_axis),
-            "matrices": {mesh.key: np.asarray(mesh.transform_matrix if mesh.transform_matrix is not None else np.identity(4), dtype=np.float32) for mesh in self._meshes if mesh.key in self._selection_keys},
-            "probe_matrices": [
+            "matrices": {} if tool is not None else {mesh.key: np.asarray(mesh.transform_matrix if mesh.transform_matrix is not None else np.identity(4), dtype=np.float32) for mesh in self._meshes if mesh.key in self._selection_keys},
+            "probe_matrices": [] if tool is not None else [
                 (key, box, box.matrix())
                 for key, box in self._selected_light_probe_box_entries()
                 if hasattr(box, "matrix")
@@ -1679,24 +1488,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if isinstance(handle, tuple):
             self._gizmo_drag["plane_axes"] = handle
             self._gizmo_drag["screen_basis_inv"] = np.linalg.inv(basis)
-        if not self._gizmo_drag["matrices"] and not self._gizmo_drag["probe_matrices"]:
+        if tool is not None:
+            tool.gizmo_begin()
+        elif not self._gizmo_drag["matrices"] and not self._gizmo_drag["probe_matrices"]:
             self._gizmo_drag = None
             return False
-        if self._mesh_transform_affects_display_colors() or self._gizmo_drag["probe_matrices"]:
-            self._cancel_probe_shading()
         self._set_hover_key("")
         self._gizmo_drag["whole_scene"] = self._selection_is_whole_scene()
-        if not self._gizmo_drag["whole_scene"] and len(self._gizmo_drag["matrices"]) == 1 and not self._gizmo_drag["probe_matrices"]:
-            self._gizmo_drag["regular_geometry"] = self._capture_gizmo_geometry(self._regular_set)
-            self._gizmo_drag["solid_geometry"] = self._capture_gizmo_geometry(self._solid_set)
-            if not (self._gizmo_drag["regular_geometry"] or self._gizmo_drag["solid_geometry"]):
-                self._gizmo_drag = None
-                raise RuntimeError("Selected renderable is missing from scene buffers")
-        self._gizmo_drag["deferred_geometry"] = not self._gizmo_drag["whole_scene"] and len(self._gizmo_drag["matrices"]) > 1
         self._gizmo_hover_axis = handle
-        if self._gizmo_drag["deferred_geometry"]:
-            self._refresh_selection_buffer_sets()
-            self._refresh_main_index_sets()
         return True
 
     def _drag_gizmo(self, event) -> None:
@@ -1723,9 +1522,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._selection_center = transform_points(np.asarray(drag["center"]).reshape(1, 3), matrix)[0]
         self._selection_extent = drag["extent"] if drag["mode"] != "scale" else max(drag["extent"] * np.linalg.norm(matrix[:3, :3], axis=0).max(), 1.0)
         drag["matrix"] = matrix
-        if not drag.get("whole_scene") and not drag.get("deferred_geometry"):
-            self._apply_gizmo_drag_matrix(matrix)
+        if drag["tool"] is not None:
+            drag["tool"].gizmo_drag(matrix)
         self._apply_light_probe_drag_matrix(matrix)
+        self._device_motion += 1
         self.update()
 
     def _finish_gizmo_drag(self, *, commit: bool) -> None:
@@ -1733,45 +1533,25 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if drag is None:
             return
         matrix = drag.get("matrix")
+        if drag.get("tool") is not None:
+            drag["tool"].gizmo_end(commit and matrix is not None)
         committed = {}
-        rebuild_after_drag = False
-        display_colors_changed = self._uses_probe_shading() and bool(
-            drag.get("matrices") or drag.get("probe_matrices")
-        )
         if commit and matrix is not None:
             for mesh in self._meshes:
                 start = drag["matrices"].get(mesh.key)
                 if start is not None:
                     mesh.transform_matrix = (matrix @ start).astype(np.float32, copy=False)
                     committed[mesh.key] = mesh.transform_matrix.copy()
-            if drag.get("whole_scene"):
-                self._scene_matrix = (matrix @ self._scene_matrix).astype(np.float32, copy=False)
-            elif drag.get("deferred_geometry"):
-                self._commit_deferred_gizmo_geometry(matrix)
-            if drag.get("matrices") and self._mesh_transform_affects_display_colors():
-                display_colors_changed = True
-                rebuild_after_drag = bool(drag.get("whole_scene"))
             if drag.get("probe_matrices"):
                 self._apply_light_probe_drag_matrix(matrix)
                 for key, box, _start in drag["probe_matrices"]:
                     committed.setdefault(key, np.asarray(box.matrix(), dtype=np.float32).copy())
-                display_colors_changed = True
-        elif not commit and not drag.get("whole_scene") and not drag.get("deferred_geometry"):
-            self._apply_gizmo_drag_matrix(IDENTITY4)
         if not commit and drag.get("probe_matrices"):
             self._restore_light_probe_drag_matrices()
-            display_colors_changed = True
-        deferred = bool(drag.get("deferred_geometry"))
         self._gizmo_drag = None
-        if rebuild_after_drag:
-            self._scene_matrix = IDENTITY4.copy()
-            self._upload_buffers()
-        elif display_colors_changed:
-            self._invalidate_probe_shading()
+        self._device_motion += 1
         if committed:
             self.gizmo_transform_committed.emit((committed, bool(drag.get("whole_scene"))))
-        if deferred:
-            self._refresh_main_index_sets()
         if committed or drag.get("probe_matrices"):
             self._invalidate_probe_viz_points()
             self._refresh_probe_status_label()
@@ -1806,210 +1586,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if changed:
             self._invalidate_probe_viz_points()
 
-    def _capture_gizmo_geometry(self, buffer_set: _GlBufferSet | None) -> dict | None:
-        if buffer_set is None:
-            return None
-        indices, _batches, _lines = scene_key_index_buffers(
-            buffer_set.data,
-            self._selection_keys,
-            hidden_parts=self._hidden_parts,
-            include_lines=False,
-        )
-        if not len(indices):
-            return None
-        vertices = np.unique(indices)
-        return {
-            "indices": vertices,
-            "vertices": buffer_set.data.vertices[vertices].copy(),
-            "normals": buffer_set.data.normals[vertices].copy() if buffer_set.data.normals is not None else None,
-        }
-
-    def _buffer_space_matrix(self, matrix: np.ndarray) -> np.ndarray:
-        if np.array_equal(self._scene_matrix, IDENTITY4):
-            return matrix
-        try:
-            return (np.linalg.inv(self._scene_matrix) @ matrix @ self._scene_matrix).astype(np.float32, copy=False)
-        except np.linalg.LinAlgError:
-            return matrix
-
-    def _apply_gizmo_drag_matrix(self, matrix: np.ndarray) -> None:
-        drag = self._gizmo_drag or {}
-        self._apply_gizmo_snapshots(matrix, drag.get("regular_geometry"), drag.get("solid_geometry"))
-
-    def _commit_deferred_gizmo_geometry(self, matrix: np.ndarray) -> None:
-        self._apply_gizmo_snapshots(matrix, self._capture_gizmo_geometry(self._regular_set), self._capture_gizmo_geometry(self._solid_set))
-
-    def _apply_gizmo_snapshots(self, matrix: np.ndarray, regular_snapshot: dict | None, solid_snapshot: dict | None) -> None:
-        matrix = self._buffer_space_matrix(matrix)
-        made_current = self.context() is not None
-        if made_current:
-            self.makeCurrent()
-        self._apply_gizmo_snapshot(self._regular_set, regular_snapshot, matrix, current=made_current)
-        self._apply_gizmo_snapshot(self._solid_set, solid_snapshot, matrix, current=made_current)
-        if made_current:
-            self.doneCurrent()
-
-    def _apply_gizmo_snapshot(self, buffer_set: _GlBufferSet | None, snapshot: dict | None, matrix: np.ndarray, *, current: bool = False) -> None:
-        if buffer_set is None or snapshot is None:
-            return
-        indices = snapshot["indices"]
-        buffer_set.data.vertices[indices] = transform_points(snapshot["vertices"], matrix)
-        if snapshot["normals"] is not None and buffer_set.data.normals is not None:
-            buffer_set.data.normals[indices] = transform_normals(snapshot["normals"], matrix)
-        if self.context() is not None:
-            if not current:
-                self.makeCurrent()
-            self._upload_changed_geometry(buffer_set, indices)
-            if not current:
-                self.doneCurrent()
-
-    def _scene_matrix_is_identity(self) -> bool:
-        return np.array_equal(self._scene_matrix, IDENTITY4)
-
-    def _apply_transform_deltas(self, deltas: dict[str, np.ndarray]) -> bool:
-        if not deltas:
-            return self._scene_matrix_is_identity()
-        made_current = self.context() is not None
-        if made_current:
-            try:
-                self.makeCurrent()
-            except Exception:
-                return False
-        data_seen = False
-        for buffer_set in (self._regular_set, self._solid_set):
-            if buffer_set is None:
-                continue
-            by_count: dict[int, list[tuple[int, np.ndarray]]] = {}
-            fallback: list[tuple[np.ndarray, np.ndarray]] = []
-            for key, matrix in deltas.items():
-                spans = buffer_set.data.key_vertex_spans.get(key, ())
-                if spans:
-                    for offset, count in spans:
-                        by_count.setdefault(count, []).append((offset, matrix))
-                    continue
-                rows = self._hover_vertices(buffer_set.data, key)
-                if len(rows):
-                    fallback.append((rows, matrix))
-
-            changed_spans: list[tuple[int, int]] = []
-            for count, entries in by_count.items():
-                offsets = np.fromiter(
-                    (offset for offset, _matrix in entries),
-                    dtype=np.intp,
-                    count=len(entries),
-                )
-                rows = offsets[:, None] + np.arange(count, dtype=np.intp)
-                transforms = np.stack([matrix for _offset, matrix in entries])
-                linear = transforms[:, :3, :3]
-                translations = transforms[:, :3, 3]
-                vertices = buffer_set.data.vertices[rows]
-                buffer_set.data.vertices[rows] = (
-                    np.einsum("nvc,nkc->nvk", vertices, linear)
-                    + translations[:, None, :]
-                )
-                if buffer_set.data.normals is not None:
-                    normal_matrices = np.identity(3, dtype=np.float32)[None].repeat(
-                        len(entries),
-                        axis=0,
-                    )
-                    valid = np.abs(np.linalg.det(linear)) > 1e-8
-                    if np.any(valid):
-                        normal_matrices[valid] = np.linalg.inv(linear[valid]).transpose(
-                            0,
-                            2,
-                            1,
-                        )
-                    normals = buffer_set.data.normals[rows]
-                    buffer_set.data.normals[rows] = np.einsum(
-                        "nvc,nkc->nvk",
-                        normals,
-                        normal_matrices,
-                    )
-                changed_spans.extend((int(offset), count) for offset in offsets)
-
-            for rows, matrix in fallback:
-                buffer_set.data.vertices[rows] = transform_points(
-                    buffer_set.data.vertices[rows], matrix
-                )
-                if buffer_set.data.normals is not None:
-                    buffer_set.data.normals[rows] = transform_normals(
-                        buffer_set.data.normals[rows], matrix
-                    )
-                changed_spans.extend(
-                    (start, end - start)
-                    for start, end in self._index_ranges(rows)
-                )
-
-            if changed_spans:
-                data_seen = True
-                if made_current:
-                    self._upload_changed_spans(
-                        buffer_set,
-                        self._merged_spans(changed_spans),
-                    )
-        if made_current:
-            self.doneCurrent()
-        return data_seen
-
-    @staticmethod
-    def _merged_spans(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
-        merged: list[tuple[int, int]] = []
-        for offset, count in sorted(spans):
-            end = offset + count
-            if merged and offset <= merged[-1][0] + merged[-1][1]:
-                previous_offset, previous_count = merged[-1]
-                merged[-1] = (
-                    previous_offset,
-                    max(previous_offset + previous_count, end) - previous_offset,
-                )
-            else:
-                merged.append((offset, count))
-        return merged
-
-    def _apply_geometry_update(
-        self,
-        key: str,
-        vertices: np.ndarray,
-        normals: np.ndarray | None,
-    ) -> bool:
-        made_current = self.context() is not None
-        if made_current:
-            try:
-                self.makeCurrent()
-            except Exception:
-                return False
-        data_seen = False
-        for buffer_set in (self._regular_set, self._solid_set):
-            if buffer_set is None:
-                continue
-            spans = buffer_set.data.key_vertex_spans.get(key, ())
-            if not spans:
-                continue
-            total = sum(count for _offset, count in spans)
-            if total != len(vertices):
-                if made_current:
-                    self.doneCurrent()
-                raise ValueError(
-                    f"dynamic mesh {key!r} covers {total} buffered vertices; got {len(vertices)}"
-                )
-            data_seen = True
-            source_offset = 0
-            for offset, count in spans:
-                source_end = source_offset + count
-                buffer_set.data.vertices[offset : offset + count] = vertices[
-                    source_offset:source_end
-                ]
-                if normals is not None and buffer_set.data.normals is not None:
-                    buffer_set.data.normals[offset : offset + count] = normals[
-                        source_offset:source_end
-                    ]
-                source_offset = source_end
-            if made_current:
-                self._upload_changed_spans(buffer_set, spans)
-        if made_current:
-            self.doneCurrent()
-        return data_seen
-
     @staticmethod
     def _translation_matrix(offset: np.ndarray) -> np.ndarray:
         matrix = np.identity(4, dtype=np.float32)
@@ -2036,196 +1612,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _around_pivot(self, pivot: np.ndarray, matrix: np.ndarray) -> np.ndarray:
         return self._translation_matrix(pivot) @ matrix @ self._translation_matrix(-pivot)
 
-    def _gizmo_circle_points(self, center: np.ndarray, radius: float):
-        angles = np.linspace(0.0, np.pi * 2.0, 49, dtype=np.float32)
-        circle = np.stack((np.cos(angles), np.sin(angles)), axis=1) * radius
-        return (
-            center + np.column_stack((np.zeros(len(circle)), circle[:, 0], circle[:, 1])),
-            center + np.column_stack((circle[:, 0], np.zeros(len(circle)), circle[:, 1])),
-            center + np.column_stack((circle[:, 0], circle[:, 1], np.zeros(len(circle)))),
-        )
-
-    @staticmethod
-    def _axis_perps(axis_index: int) -> tuple[np.ndarray, np.ndarray]:
-        axes = GIZMO_AXES
-        return axes[(axis_index + 1) % 3], axes[(axis_index + 2) % 3]
-
-    def _gizmo_color(self, axis_index: int) -> tuple[float, float, float, float]:
-        color = np.array(GIZMO_COLORS[axis_index], dtype=np.float32)
-        if axis_index == self._gizmo_active_axis():
-            color = np.clip(color * 1.25 + 0.35, 0.0, 1.0)
-        return float(color[0]), float(color[1]), float(color[2]), 1.0
-
     def _gizmo_active_axis(self) -> int | None:
         return self._gizmo_drag["axis"] if self._gizmo_drag else self._gizmo_hover_axis
 
-    def _draw_axis_arrow(self, center: np.ndarray, axis_index: int, size: float) -> None:
-        axis = GIZMO_AXES[axis_index]
-        p1, p2 = self._axis_perps(axis_index)
-        end = center + axis * size
-        base = end - axis * size * 0.16
-        radius = size * (0.07 if axis_index == self._gizmo_active_axis() else 0.05)
-        glLineWidth(4.0 if axis_index == self._gizmo_active_axis() else 2.4)
-        glColor4f(*self._gizmo_color(axis_index))
-        glBegin(GL_LINES)
-        glVertex3f(float(center[0]), float(center[1]), float(center[2]))
-        glVertex3f(float(base[0]), float(base[1]), float(base[2]))
-        glEnd()
-        ring = (base + p1 * radius, base + p2 * radius, base - p1 * radius, base - p2 * radius)
-        glBegin(GL_TRIANGLES)
-        for a, b in zip(ring, ring[1:] + ring[:1]):
-            for point in (end, a, b):
-                glVertex3f(float(point[0]), float(point[1]), float(point[2]))
-        glEnd()
-
-    def _draw_box(self, corners) -> None:
-        glBegin(GL_QUADS)
-        for face in GIZMO_BOX_FACES:
-            for index in face:
-                point = corners[index]
-                glVertex3f(float(point[0]), float(point[1]), float(point[2]))
-        glEnd()
-
-    def _draw_wire_box(self, corners) -> None:
-        glBegin(GL_LINES)
-        for a, b in BOX_EDGES:
-            for index in (a, b):
-                point = corners[index]
-                glVertex3f(float(point[0]), float(point[1]), float(point[2]))
-        glEnd()
-
-    def _draw_scale_axis(self, center: np.ndarray, axis_index: int, size: float) -> None:
-        self._draw_axis_arrow(center, axis_index, size * 0.82)
-        axis = GIZMO_AXES[axis_index]
-        p1, p2 = self._axis_perps(axis_index)
-        end = center + axis * size
-        half = size * (0.085 if axis_index == self._gizmo_active_axis() else 0.065)
-        glColor4f(*self._gizmo_color(axis_index))
-        corners = (
-            end + axis * half + p1 * half + p2 * half, end + axis * half + p1 * half - p2 * half,
-            end + axis * half - p1 * half - p2 * half, end + axis * half - p1 * half + p2 * half,
-            end - axis * half + p1 * half + p2 * half, end - axis * half + p1 * half - p2 * half,
-            end - axis * half - p1 * half - p2 * half, end - axis * half - p1 * half + p2 * half,
-        )
-        self._draw_box(corners)
-
-    def _draw_translate_planes(self, center: np.ndarray, size: float) -> None:
-        active = self._gizmo_active_axis()
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        for a, b, color in GIZMO_PLANES:
-            selected = active == (a, b) or active == (b, a)
-            rgba = np.array(color, dtype=np.float32)
-            if selected:
-                rgba[:3] = np.clip(rgba[:3] * 1.2 + 0.25, 0.0, 1.0)
-                rgba[3] = min(float(rgba[3]) * 1.9, 0.55)
-            glColor4f(float(rgba[0]), float(rgba[1]), float(rgba[2]), float(rgba[3]))
-            glBegin(GL_QUADS)
-            for point in self._gizmo_plane_corners(center, size, a, b):
-                glVertex3f(float(point[0]), float(point[1]), float(point[2]))
-            glEnd()
-
-    def _draw_center_cube(self, center: np.ndarray, size: float) -> None:
-        x, y, z = GIZMO_AXES * size
-        corners = (
-            center + x + y + z, center + x + y - z, center + x - y - z, center + x - y + z,
-            center - x + y + z, center - x + y - z, center - x - y - z, center - x - y + z,
-        )
-        glColor4f(0.95, 0.95, 0.9, 1.0)
-        self._draw_box(corners)
-
-    def _draw_gizmo(self) -> None:
+    def _gizmo_marks(self) -> tuple:
         if self._controls == "mesh" or self._selection_center is None:
-            return
-        center = self._selection_center
-        size = self._gizmo_size()
-        glDisable(GL_LIGHTING)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_DEPTH_TEST)
-        glDisable(GL_CULL_FACE)
-        glDepthMask(False)
-        if self._gizmo_mode == "rotation":
-            for axis_index, points in enumerate(self._gizmo_circle_points(center, size)):
-                glLineWidth(4.5 if axis_index == self._gizmo_active_axis() else 2.4)
-                glColor4f(*self._gizmo_color(axis_index))
-                glBegin(GL_LINE_STRIP)
-                for point in points:
-                    glVertex3f(float(point[0]), float(point[1]), float(point[2]))
-                glEnd()
-        elif self._gizmo_mode == "scale":
-            for axis_index in range(3):
-                self._draw_scale_axis(center, axis_index, size)
-        else:
-            self._draw_translate_planes(center, size)
-            for axis_index in range(3):
-                self._draw_axis_arrow(center, axis_index, size)
-        self._draw_center_cube(center, size * 0.045)
-        glLineWidth(1.0)
-        glDepthMask(True)
-        glDisable(GL_BLEND)
-        glEnable(GL_CULL_FACE)
-        glEnable(GL_DEPTH_TEST)
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
-
-    def _draw_light_probe_overlay(self) -> None:
-        if self._controls == "mesh" or self.probe_viz_mode == "off":
-            return
-        draw_volumes = self.probe_viz_mode in {"volumes", "all"}
-        draw_points = self.probe_viz_mode in {"points", "all"}
-        if not draw_volumes and not draw_points:
-            return
-        glDisable(GL_LIGHTING)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_CULL_FACE)
-        glDisable(GL_DEPTH_TEST)
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glDepthMask(False)
-        if draw_volumes:
-            self._draw_light_probe_obb_boxes()
-        if draw_points:
-            glEnable(GL_DEPTH_TEST)
-            glDepthMask(False)
-            self._draw_light_probe_points()
-        glPointSize(1.0)
-        glLineWidth(1.0)
-        glDepthMask(True)
-        glDisable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
-
-    def _draw_light_probe_obb_boxes(self) -> None:
-        entries = self._light_probe_box_entries()
-        if not entries:
-            return
-        selected = self._selection_keys | self._preferred_selection_keys
-        glLineWidth(2.0)
-        for key, box in entries:
-            try:
-                corners = np.asarray(box.corners(), dtype=np.float32).reshape(8, 3)
-            except Exception:
-                continue
-            if not np.isfinite(corners).all():
-                continue
-            alpha = 0.9 if key in selected else 0.55
-            glColor4f(0.1, 0.9, 1.0, alpha)
-            self._draw_wire_box(corners)
-            center = np.asarray(getattr(box, "center", ()), dtype=np.float32).reshape(3)
-            axes = np.asarray(getattr(box, "axes", ()), dtype=np.float32).reshape(3, 3)
-            extent = np.asarray(getattr(box, "extent", ()), dtype=np.float32).reshape(3)
-            if not np.isfinite(center).all() or not np.isfinite(axes).all() or not np.isfinite(extent).all():
-                continue
-            glLineWidth(1.5)
-            glBegin(GL_LINES)
-            for axis_index, color in enumerate(((1.0, 0.25, 0.2), (0.25, 1.0, 0.35), (0.35, 0.55, 1.0))):
-                endpoint = center + axes[axis_index] * max(float(extent[axis_index]), 0.0)
-                glColor4f(color[0], color[1], color[2], alpha)
-                glVertex3f(float(center[0]), float(center[1]), float(center[2]))
-                glVertex3f(float(endpoint[0]), float(endpoint[1]), float(endpoint[2]))
-            glEnd()
+            return ()
+        return gizmo_marks(self._gizmo_mode, self._selection_center, self._gizmo_size(), self._gizmo_active_axis())
 
     def _probe_viz_candidate_indices(self, instance: SceneLightProbeInstance) -> np.ndarray:
         probe_set = instance.probe_set
@@ -2294,18 +1687,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._probe_viz_point_cache_key = key
         return self._probe_viz_point_cache
 
-    def _draw_light_probe_points(self) -> None:
-        points, colors = self._probe_viz_points()
-        if not len(points):
-            return
-        glPointSize(4.0)
-        glBegin(GL_POINTS)
-        for point, color in zip(points, colors):
-            rgb = np.maximum(np.asarray(color[:3], dtype=np.float32), 0.08)
-            glColor4f(float(rgb[0]), float(rgb[1]), float(rgb[2]), 0.88)
-            glVertex3f(float(point[0]), float(point[1]), float(point[2]))
-        glEnd()
-
     @staticmethod
     def _points_inside_light_probe_box(points: np.ndarray, box) -> np.ndarray:
         try:
@@ -2319,86 +1700,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         local = (np.asarray(points, dtype=np.float32).reshape(-1, 3) - center) @ axes.T
         return np.all(np.abs(local) <= (extent + 1e-4), axis=1)
 
-    def _build_buffer_set(self, *, force_solid: bool) -> SceneBufferSet | None:
-        return build_scene_buffer_set(
-            self._meshes,
-            self._highlighted_keys,
-            show_only_highlighted=self.show_only_highlighted,
-            force_solid=force_solid,
-        )
-
-    def _rebuild_buffer_data(self):
-        self._regular_data = self._build_buffer_set(force_solid=False)
-        self._solid_data = self._build_buffer_set(force_solid=True)
-        self._hover_vertex_cache.clear()
-
-    @staticmethod
-    def _dispose_vbo(handle, *, delete_gl: bool = True) -> None:
-        if handle is None:
-            return
-        if delete_gl:
-            with suppress(Exception):
-                handle.delete()
-        buffers = getattr(handle, "buffers", None)
-        if hasattr(buffers, "clear"):
-            buffers.clear()
-
-    def _delete_buffer_set(self, buffer_set: _GlBufferSet | None, *, delete_gl: bool = True):
-        if buffer_set is None:
-            return
-        for name in ("vertices_vbo", "normals_vbo", "colors_vbo", "uvs_vbo", "span_indices_vbo"):
-            self._dispose_vbo(getattr(buffer_set, name), delete_gl=delete_gl)
-            setattr(buffer_set, name, None)
-        buffer_set.colors = None
-        self._delete_index_vbos(buffer_set, delete_gl=delete_gl)
-
-    def _delete_selection_buffer_sets(self, *, delete_gl: bool = True) -> None:
-        self._delete_index_vbos(self._selection_regular_set, delete_gl=delete_gl)
-        self._delete_index_vbos(self._selection_solid_set, delete_gl=delete_gl)
-        self._selection_regular_set = self._selection_solid_set = None
-
-    def _delete_skinned_draw_sets(self, *, delete_gl: bool = True) -> None:
-        for draw_set in self._skinned_draw_sets:
-            for _material, handle, _count in draw_set.batches:
-                self._dispose_vbo(handle, delete_gl=delete_gl)
-            self._dispose_vbo(
-                draw_set.line_indices_vbo,
-                delete_gl=delete_gl,
-            )
-        self._skinned_draw_sets.clear()
-        for draw_set in self._rigid_draw_sets:
-            self._delete_index_vbos(
-                draw_set.buffer_set,
-                delete_gl=delete_gl,
-            )
-        self._rigid_draw_sets.clear()
-
-    def _delete_index_vbos(self, buffer_set: _GlBufferSet | None, *, delete_gl: bool = True):
-        if buffer_set is None:
-            return
-        for handle in (buffer_set.indices_vbo, buffer_set.line_indices_vbo):
-            self._dispose_vbo(handle, delete_gl=delete_gl)
-        for _, batch_vbo, _ in buffer_set.batch_vbos:
-            self._dispose_vbo(batch_vbo, delete_gl=delete_gl)
-        buffer_set.indices_vbo = None
-        buffer_set.line_indices_vbo = None
-        buffer_set.batch_vbos.clear()
-        buffer_set.index_count = buffer_set.line_count = 0
-        buffer_set.lines_ready = False
-
-    def _display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
-        # Probe colors are calculated asynchronously. Until they are ready,
-        # keep the normal unlit material colors visible in the viewport.
-        return self._base_display_colors(buffer_set)
-
-    def _uses_probe_shading(self) -> bool:
-        return self.lighting_mode == "probes" and any(
-            instance.probe_set is not None
-            for instance in self._visible_light_probe_instances()
-        )
-
-    def _probe_shade_request(self) -> ProbeShadeRequest | None:
-        layers = tuple(
+    def _probe_layers(self) -> tuple[ProbeShadeLayer, ...]:
+        return tuple(
             ProbeShadeLayer(
                 key=instance.key,
                 probe_set=instance.probe_set,
@@ -2409,704 +1712,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             for instance in self._visible_light_probe_instances()
             if instance.probe_set is not None
         )
-        if not layers:
-            return None
-        inputs = tuple(
-            ProbeShadeInput(
-                key=id(buffer_set.data),
-                vertices=buffer_set.data.vertices,
-                normals=buffer_set.data.normals,
-                base_colors=buffer_set.data.base_colors,
-            )
-            for buffer_set in (self._regular_set, self._solid_set)
-            if buffer_set is not None and len(buffer_set.data.vertices)
-        )
-        if not inputs:
-            return None
-        return ProbeShadeRequest(layers, inputs, self.probe_exposure)
-
-    def _start_probe_shading(self, request: ProbeShadeRequest) -> None:
-        self._cancel_probe_shading()
-        self._probe_shade_job_id += 1
-        worker = ProbeShadeWorker(self._probe_shade_job_id, request)
-        worker.signals.progress.connect(self._on_probe_shade_progress)
-        worker.signals.finished.connect(self._on_probe_shade_finished)
-        worker.signals.cancelled.connect(self._on_probe_shade_cancelled)
-        worker.signals.failed.connect(self._on_probe_shade_failed)
-        self._probe_shade_worker = worker
-        self._probe_shade_error = ""
-        self._probe_shade_percent = 0
-        self._show_probe_shade_progress(True, 0)
-        self._refresh_probe_status_label()
-        self._probe_shade_pool.start(worker)
-
-    def _cancel_probe_shading(self) -> None:
-        if self._probe_shade_worker is not None:
-            self._probe_shade_worker.cancel()
-        self._probe_shade_pool.clear()
-        self._probe_shade_worker = None
-        self._probe_shade_result = None
-        self._probe_shade_percent = 0
-        self._show_probe_shade_progress(False)
-
-    def _invalidate_probe_shading(self) -> None:
-        self._cancel_probe_shading()
-        self._probe_shade_error = ""
-        self._colors_dirty = True
-        self._refresh_probe_status_label()
-
-    @Slot(int, int, int)
-    def _on_probe_shade_progress(self, job_id: int, completed: int, total: int) -> None:
-        worker = self._probe_shade_worker
-        if worker is None or worker.job_id != job_id:
-            return
-        percent = 100 if total <= 0 else int((max(0, completed) * 100) / total)
-        percent = max(0, min(100, percent))
-        if percent == self._probe_shade_percent:
-            return
-        self._probe_shade_percent = percent
-        self._show_probe_shade_progress(True, percent)
-        self._refresh_probe_status_label()
-
-    @Slot(int, object)
-    def _on_probe_shade_finished(self, job_id: int, results: object) -> None:
-        worker = self._probe_shade_worker
-        if worker is None or worker.job_id != job_id or not isinstance(results, dict):
-            return
-        self._probe_shade_result = (worker.request.key, results)
-        self._probe_shade_worker = None
-        self._probe_shade_percent = 100
-        self._show_probe_shade_progress(True, 100)
-        self._colors_dirty = True
-        self._refresh_probe_status_label()
-        self.update()
-
-    @Slot(int)
-    def _on_probe_shade_cancelled(self, job_id: int) -> None:
-        worker = self._probe_shade_worker
-        if worker is None or worker.job_id != job_id:
-            return
-        self._probe_shade_worker = None
-        self._show_probe_shade_progress(False)
-        self._refresh_probe_status_label()
-
-    @Slot(int, str)
-    def _on_probe_shade_failed(self, job_id: int, message: str) -> None:
-        worker = self._probe_shade_worker
-        if worker is None or worker.job_id != job_id:
-            return
-        self._probe_shade_worker = None
-        self._probe_shade_error = str(message)
-        self._show_probe_shade_progress(False)
-        self._colors_dirty = False
-        self._refresh_probe_status_label()
-        print(f"Probe lighting calculation failed: {message}")
-
-    def _refresh_probe_color_vbos(self) -> None:
-        request = self._probe_shade_request()
-        if request is None:
-            self._cancel_probe_shading()
-            self._colors_dirty = False
-            return
-        key = request.key
-        if self._probe_shade_result is not None:
-            result_key, results = self._probe_shade_result
-            if result_key == key and self._upload_probe_color_results(results):
-                self._probe_shade_result = None
-                self._probe_shade_error = ""
-                self._show_probe_shade_progress(False)
-                self._colors_dirty = False
-                self._refresh_probe_status_label()
-                return
-            self._probe_shade_result = None
-        if self._probe_shade_worker is None or self._probe_shade_worker.request.key != key:
-            self._start_probe_shading(request)
-        self._colors_dirty = False
-
-    def _upload_probe_color_results(self, results: dict[int, np.ndarray]) -> bool:
-        active_sets = tuple(
-            buffer_set
-            for buffer_set in (self._regular_set, self._solid_set)
-            if buffer_set is not None and len(buffer_set.data.vertices)
-        )
-        if any(id(buffer_set.data) not in results for buffer_set in active_sets):
-            return False
-        for buffer_set in active_sets:
-            colors = results[id(buffer_set.data)]
-            if buffer_set.colors_vbo is not None:
-                self._dispose_vbo(buffer_set.colors_vbo)
-            buffer_set.colors = colors
-            buffer_set.colors_vbo = self._array_vbo(colors)
-        self._sync_selection_color_buffers()
-        return True
-
-    def _sync_selection_color_buffers(self) -> None:
-        for selection, source in (
-            (self._selection_regular_set, self._regular_set),
-            (self._selection_solid_set, self._solid_set),
-        ):
-            if selection is not None and source is not None:
-                selection.colors = source.colors
-                selection.colors_vbo = source.colors_vbo
-
-    def _base_display_colors(self, buffer_set: SceneBufferSet) -> np.ndarray | None:
-        return display_colors(
-            buffer_set,
-            color_source=self.color_source,
-            lighting_mode=self.lighting_mode,
-            ambient=self.ambient,
-            diffuse=self.diffuse,
-        )
-
-    def _hover_vertices(self, buffer_set: SceneBufferSet, key: str) -> np.ndarray:
-        if not key:
-            return np.zeros((0,), dtype=np.uint32)
-        by_key = self._hover_vertex_cache.setdefault(id(buffer_set), {})
-        if key not in by_key:
-            spans = buffer_set.key_vertex_spans.get(key, ())
-            if spans:
-                by_key[key] = np.concatenate([
-                    np.arange(offset, offset + count, dtype=np.uint32)
-                    for offset, count in spans
-                ])
-            else:
-                chunks = [
-                    chunk.indices
-                    for chunk in buffer_set.triangle_chunks
-                    if chunk.key == key
-                    and (
-                        chunk.part_index is None
-                        or chunk.part_index
-                        not in self._hidden_parts.get(key, ())
-                    )
-                ]
-                by_key[key] = (
-                    np.unique(np.concatenate(chunks)).astype(np.uint32, copy=False)
-                    if chunks
-                    else np.zeros((0,), dtype=np.uint32)
-                )
-        return by_key[key]
-
-    def _upload_buffer_set(self, data: SceneBufferSet | None) -> _GlBufferSet | None:
-        if data is None:
-            return None
-        buffer_set = _GlBufferSet(data=data)
-        buffer_set.vertices_vbo = self._array_vbo(data.vertices) if len(data.vertices) else None
-        buffer_set.normals_vbo = self._array_vbo(data.normals) if data.normals is not None else None
-        colors = self._display_colors(data)
-        buffer_set.colors = colors
-        buffer_set.colors_vbo = self._array_vbo(colors) if colors is not None else None
-        buffer_set.uvs_vbo = self._array_vbo(data.uvs) if data.uvs is not None else None
-        self._upload_index_vbos(buffer_set)
-        return buffer_set
-
-    def _upload_index_view(self, source: _GlBufferSet | None, keys: set[str]) -> _GlBufferSet | None:
-        if source is None or not keys:
-            return None
-        view = _GlBufferSet(
-            data=source.data,
-            vertices_vbo=source.vertices_vbo,
-            normals_vbo=source.normals_vbo,
-            colors=source.colors,
-            colors_vbo=source.colors_vbo,
-            uvs_vbo=source.uvs_vbo,
-        )
-        need_lines = self._needs_line_indices()
-        indices, batches, line_indices = scene_key_index_buffers(
-            source.data,
-            keys,
-            hidden_parts=self._hidden_parts,
-            include_lines=need_lines,
-        )
-        self._set_index_buffers(view, indices, batches, line_indices, need_lines)
-        return view
-
-    def _rebuild_skinned_draw_sets(self) -> None:
-        self._delete_skinned_draw_sets()
-        self._gpu_skinning.prepare()
-        mesh_by_key = {mesh.key: mesh for mesh in self._meshes}
-        for buffer_set, force_solid in (
-            (self._regular_set, False),
-            (self._solid_set, True),
-        ):
-            if buffer_set is None:
-                continue
-            for key in sorted(self._gpu_skinning.keys):
-                spans = tuple(buffer_set.data.key_vertex_spans.get(key, ()))
-                if not spans:
-                    continue
-                if len(spans) != 1:
-                    raise ValueError(
-                        f"skinned mesh {key!r} is not contiguous in scene buffers"
-                    )
-                vertex_offset, vertex_count = spans[0]
-                if vertex_count != self._gpu_skinning.vertex_count(key):
-                    raise ValueError(
-                        f"skinned mesh {key!r} covers {vertex_count} scene "
-                        f"vertices; expected {self._gpu_skinning.vertex_count(key)}"
-                    )
-                by_material: dict[str, list[np.ndarray]] = {}
-                all_indices = []
-                for chunk in buffer_set.data.triangle_chunks:
-                    if (
-                        chunk.key != key
-                        or chunk.part_index is not None
-                        and chunk.part_index in self._hidden_parts.get(key, ())
-                    ):
-                        continue
-                    local = chunk.indices.astype(np.int64) - vertex_offset
-                    if np.any((local < 0) | (local >= vertex_count)):
-                        raise ValueError(
-                            f"skinned mesh {key!r} has indices outside its vertex span"
-                        )
-                    local = local.astype(np.uint32, copy=False)
-                    by_material.setdefault(chunk.material_name, []).append(local)
-                    all_indices.append(local)
-                batches = [
-                    (
-                        material,
-                        self._element_vbo(np.concatenate(parts)),
-                        sum(len(part) for part in parts),
-                    )
-                    for material, parts in sorted(by_material.items())
-                ]
-                lines = (
-                    triangle_line_indices(np.concatenate(all_indices))
-                    if all_indices and self._needs_line_indices()
-                    else np.zeros((0,), dtype=np.uint32)
-                )
-                self._skinned_draw_sets.append(
-                    _GlSkinnedDrawSet(
-                        key,
-                        buffer_set,
-                        vertex_offset,
-                        np.asarray(
-                            mesh_by_key[key].transform_matrix
-                            if mesh_by_key[key].transform_matrix is not None
-                            else IDENTITY4,
-                            dtype=np.float32,
-                        ),
-                        force_solid,
-                        batches,
-                        self._element_vbo(lines) if len(lines) else None,
-                        len(lines),
-                    )
-                )
-        rigid_keys = set(self._mesh_draw_matrices) - self._gpu_skinning.keys
-        for source, force_solid in (
-            (self._regular_set, False),
-            (self._solid_set, True),
-        ):
-            for key in sorted(rigid_keys):
-                view = self._upload_index_view(source, {key})
-                if view is not None and view.index_count:
-                    self._rigid_draw_sets.append(
-                        _GlRigidDrawSet(key, view, force_solid)
-                    )
-        self._upload_index_vbos(self._regular_set)
-        self._upload_index_vbos(self._solid_set)
-        self._refresh_selection_buffer_sets(current=True)
-        self._skinned_draw_sets_dirty = False
-
-    def _push_draw_matrix(
-        self,
-        key: str,
-        base: np.ndarray | None = None,
-    ) -> None:
-        matrix = IDENTITY4 if base is None else base
-        delta = self._mesh_draw_matrices.get(key)
-        if delta is not None:
-            matrix = delta @ matrix
-        glPushMatrix()
-        glMultMatrixf(np.ascontiguousarray(matrix.T, dtype=np.float32))
-
-    def _refresh_selection_buffer_sets(self, *, current: bool = False) -> None:
-        if self.context() is None:
-            return
-        if not current and not self._make_current_or_queue_upload():
-            return
-        self._delete_selection_buffer_sets()
-        if not self._selection_is_whole_scene():
-            keys = (
-                self._selection_keys
-                - self._hidden_keys
-                - self._gpu_skinning.keys
-                - self._mesh_draw_matrices.keys()
-            )
-            self._selection_regular_set = self._upload_index_view(self._regular_set, keys)
-            self._selection_solid_set = self._upload_index_view(self._solid_set, keys)
-        if not current:
-            self.doneCurrent()
-
-    def _refresh_main_index_sets(self, *, current: bool = False) -> None:
-        if self.context() is None:
-            self.update()
-            return
-        if not current and not self._make_current_or_queue_upload():
-            return
-        self._upload_index_vbos(self._regular_set)
-        self._upload_index_vbos(self._solid_set)
-        if not current:
-            self.doneCurrent()
-
-    def _active_hidden_keys(self) -> set[str]:
-        drag = self._gizmo_drag
-        if drag and drag.get("deferred_geometry"):
-            return self._hidden_keys | self._selection_keys
-        return self._hidden_keys
-
-    def _upload_index_vbos(self, buffer_set: _GlBufferSet | None):
-        if buffer_set is None:
-            return
-        self._delete_index_vbos(buffer_set)
-        need_lines = self._needs_line_indices()
-        indices, batches, line_indices = scene_index_buffers(
-            buffer_set.data,
-            self._active_hidden_keys()
-            | self._gpu_skinning.keys
-            | self._mesh_draw_matrices.keys(),
-            hidden_parts=self._hidden_parts,
-            include_lines=need_lines,
-        )
-        self._set_index_buffers(buffer_set, indices, batches, line_indices, need_lines)
-
-    def _set_index_buffers(self, buffer_set: _GlBufferSet, indices: np.ndarray, batches, line_indices: np.ndarray, need_lines: bool) -> None:
-        buffer_set.index_count = len(indices)
-        buffer_set.line_count = len(line_indices)
-        buffer_set.lines_ready = need_lines
-        buffer_set.indices_vbo = self._element_vbo(indices) if len(indices) else None
-        buffer_set.line_indices_vbo = self._element_vbo(line_indices) if len(line_indices) else None
-        buffer_set.batch_vbos = [
-            (material_name, self._element_vbo(indices), len(indices))
-            for material_name, indices in sorted(batches, key=lambda item: item[0])
-            if len(indices)
-        ]
-
-    def _needs_line_indices(self) -> bool:
-        return self.render_mode in {"wire", "hybrid"} or (
-            self._controls == "mesh" and self.wireframe_mode in {"lines_depth", "lines_overlay"}
-        )
-
-    def _ensure_line_indices(self, buffer_set: _GlBufferSet | None):
-        if buffer_set is None or buffer_set.lines_ready:
-            return
-        _indices, _batches, line_indices = scene_index_buffers(
-            buffer_set.data,
-            self._active_hidden_keys()
-            | self._gpu_skinning.keys
-            | self._mesh_draw_matrices.keys(),
-            hidden_parts=self._hidden_parts,
-            include_lines=True,
-        )
-        buffer_set.line_count = len(line_indices)
-        buffer_set.line_indices_vbo = self._element_vbo(line_indices) if len(line_indices) else None
-        buffer_set.lines_ready = True
-
-    @staticmethod
-    def _array_vbo(data: np.ndarray):
-        return vbo.VBO(data, usage=GL_DYNAMIC_DRAW, target=GL_ARRAY_BUFFER)
-
-    @staticmethod
-    def _element_vbo(data: np.ndarray):
-        return vbo.VBO(data, usage=GL_DYNAMIC_DRAW, target=GL_ELEMENT_ARRAY_BUFFER)
-
-    def _refresh_color_vbos(self):
-        if self._uses_probe_shading():
-            self._refresh_probe_color_vbos()
-            return
-        if self._probe_shade_worker is not None or self._probe_shade_result is not None:
-            self._cancel_probe_shading()
-            self._probe_shade_error = ""
-        for buffer_set in (self._regular_set, self._solid_set):
-            if buffer_set is None:
-                continue
-            if buffer_set.colors_vbo is not None:
-                self._dispose_vbo(buffer_set.colors_vbo)
-            colors = self._display_colors(buffer_set.data)
-            buffer_set.colors = colors
-            buffer_set.colors_vbo = self._array_vbo(colors) if colors is not None else None
-        self._sync_selection_color_buffers()
-        self._colors_dirty = False
-
-    @staticmethod
-    def _index_ranges(indices: np.ndarray):
-        if not len(indices):
-            return
-        start = prev = int(indices[0])
-        for value in indices[1:]:
-            value = int(value)
-            if value != prev + 1:
-                yield start, prev + 1
-                start = value
-            prev = value
-        yield start, prev + 1
-
-    def _upload_changed_geometry(self, buffer_set: _GlBufferSet | None, vertices: np.ndarray | None) -> None:
-        if buffer_set is None or vertices is None or not len(vertices):
-            return
-        for handle, data in ((buffer_set.vertices_vbo, buffer_set.data.vertices), (buffer_set.normals_vbo, buffer_set.data.normals)):
-            self._upload_changed_array(handle, data, vertices)
-
-    def _upload_changed_spans(
-        self,
-        buffer_set: _GlBufferSet,
-        spans: list[tuple[int, int]],
-    ) -> None:
-        for handle, data in (
-            (buffer_set.vertices_vbo, buffer_set.data.vertices),
-            (buffer_set.normals_vbo, buffer_set.data.normals),
-        ):
-            if handle is None or data is None:
-                continue
-            handle.bind()
-            stride = int(data.strides[0])
-            for offset, count in spans:
-                chunk = np.ascontiguousarray(data[offset : offset + count])
-                glBufferSubData(
-                    GL_ARRAY_BUFFER,
-                    offset * stride,
-                    chunk.nbytes,
-                    chunk,
-                )
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-    def _upload_changed_array(self, handle, data: np.ndarray | None, rows: np.ndarray) -> None:
-        if handle is None or data is None or not len(rows):
-            return
-        handle.bind()
-        stride = int(data.strides[0])
-        for start, end in self._index_ranges(rows):
-            chunk = np.ascontiguousarray(data[start:end])
-            glBufferSubData(GL_ARRAY_BUFFER, start * stride, chunk.nbytes, chunk)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-    def _upload_buffers(self, *, rebuild: bool = True, current: bool = False):
-        if rebuild:
-            self._cancel_probe_shading()
-            self._rebuild_buffer_data()
-            if not (self._gizmo_drag and self._gizmo_drag.get("whole_scene")):
-                self._scene_matrix = IDENTITY4.copy()
-        if self.context() is None:
-            return
-        if not current and not self._make_current_or_queue_upload():
-            return
-        self._delete_selection_buffer_sets()
-        self._delete_skinned_draw_sets()
-        self._delete_buffer_set(self._regular_set)
-        self._delete_buffer_set(self._solid_set)
-        self._regular_set = self._upload_buffer_set(self._regular_data)
-        self._solid_set = self._upload_buffer_set(self._solid_data)
-        self._refresh_selection_buffer_sets(current=True)
-        self._skinned_draw_sets_dirty = True
-        self._colors_dirty = self._uses_probe_shading()
-        if not current:
-            self.doneCurrent()
-        self._needs_gl_upload = False
-
-    def _make_current_or_queue_upload(self) -> bool:
-        try:
-            self.makeCurrent()
-            return True
-        except Exception:
-            self._needs_gl_upload = True
-            self.update()
-            return False
-
-    def _clear_gl_textures(self):
-        if self._texture_source_ids:
-            with suppress(Exception):
-                glDeleteTextures(list(self._texture_source_ids.values()))
-            self._texture_source_ids.clear()
-        self._texture_sources.clear()
-        self._texture_ids.clear()
-
-    def _sync_gl_textures(self, names=None):
-        if names is None:
-            self._texture_upload_failures.intersection_update(self._pending_material_images)
-            for name in set(self._texture_sources) - set(self._pending_material_images):
-                self._texture_ids.pop(name, None)
-                self._texture_sources.pop(name, None)
-            self._delete_unused_source_textures()
-            names = self._pending_material_images
-        for name in names:
-            source_path, texture = self._pending_material_images[name]
-            if self._texture_sources.get(name) == source_path and source_path in self._texture_source_ids:
-                self._texture_ids[name] = self._texture_source_ids[source_path]
-                self._texture_upload_failures.discard(name)
-                continue
-            old_source = self._texture_sources.pop(name, None)
-            self._texture_ids.pop(name, None)
-            if old_source and old_source not in self._texture_sources.values():
-                old_id = self._texture_source_ids.pop(old_source, None)
-                if old_id:
-                    glDeleteTextures([old_id])
-            texture_id = self._texture_source_ids.get(source_path)
-            if texture_id is None:
-                texture_id = glGenTextures(1)
-                try:
-                    self._upload_texture(texture_id, texture, self._texture_anisotropy())
-                except Exception as exc:
-                    with suppress(Exception):
-                        glDeleteTextures([texture_id])
-                    print(f"Texture upload failed: material={name!r}, path={source_path!r}: {exc}")
-                    self._texture_upload_failures.add(name)
-                    self._record_material_upload_error(name, source_path, exc)
-                    continue
-                self._texture_source_ids[source_path] = texture_id
-            self._texture_ids[name] = texture_id
-            self._texture_sources[name] = source_path
-            self._texture_upload_failures.discard(name)
-            self._material_upload_errors.pop(name, None)
-
-    def _record_material_upload_error(
-        self,
-        image_name: str,
-        source_path: str,
-        error: Exception,
-    ) -> None:
-        material_name = image_name.partition("\x1f")[0]
-        if material_name not in self._material_effects:
-            return
-        message = (
-            f"{material_name}: required RigLogic texture "
-            f"{source_path!r} could not be uploaded: {error}"
-        )
-        value = material_name, message
-        if self._material_upload_errors.get(image_name) == value:
-            return
-        self._material_upload_errors[image_name] = value
-        self.texture_upload_status_changed.emit()
-        self.render_failure.emit(message)
-
-    def _delete_unused_source_textures(self):
-        active_sources = set(self._texture_sources.values())
-        for source_path, texture_id in list(self._texture_source_ids.items()):
-            if source_path not in active_sources:
-                glDeleteTextures([texture_id])
-                self._texture_source_ids.pop(source_path, None)
-
-    @staticmethod
-    def _upload_texture(texture_id: int, texture: TexPreviewUpload, anisotropy: float = 1.0):
-        for _ in range(16):
-            if glGetError() == GL_NO_ERROR:
-                break
-        glBindTexture(GL_TEXTURE_2D, texture_id)
-        try:
-            glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, len(texture.levels) - 1)
-            if anisotropy > 1.0:
-                glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropy)
-            error = glGetError()
-            if error != GL_NO_ERROR:
-                raise RuntimeError(f"texture setup GL error 0x{error:04X}")
-            for mip, level in enumerate(texture.levels):
-                if texture.compressed:
-                    glCompressedTexImage2D(
-                        GL_TEXTURE_2D,
-                        mip,
-                        texture.gl_format,
-                        level.width,
-                        level.height,
-                        0,
-                        level.data,
-                    )
-                else:
-                    glTexImage2D(
-                        GL_TEXTURE_2D,
-                        mip,
-                        texture.gl_format,
-                        level.width,
-                        level.height,
-                        0,
-                        GL_RGBA,
-                        GL_UNSIGNED_BYTE,
-                        level.data,
-                    )
-                error = glGetError()
-                if error != GL_NO_ERROR:
-                    raise RuntimeError(
-                        f"mip {mip} ({level.width}x{level.height}) GL error 0x{error:04X}"
-                    )
-        finally:
-            glBindTexture(GL_TEXTURE_2D, 0)
-
-    @staticmethod
-    def _query_max_texture_anisotropy() -> float:
-        extensions = glGetString(GL_EXTENSIONS) or b""
-        if isinstance(extensions, str):
-            extensions = extensions.encode()
-        supported = (b"GL_EXT_texture_filter_anisotropic", b"GL_ARB_texture_filter_anisotropic")
-        if not any(name in extensions for name in supported):
-            return 1.0
-        value = np.asarray(glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT)).reshape(-1)
-        return max(1.0, float(value[0])) if len(value) else 1.0
-
-    def _texture_anisotropy(self) -> float:
-        profile = texture_quality_profile(self.texture_quality)
-        available = min(profile.anisotropy, self._max_texture_anisotropy)
-        if available < profile.anisotropy:
-            key = self.texture_quality, self._max_texture_anisotropy
-            if key not in self._anisotropy_limit_logs:
-                self._anisotropy_limit_logs.add(key)
-                print(
-                    f"Texture anisotropy limited: quality={profile.label}, "
-                    f"requested={profile.anisotropy:g}x, available={self._max_texture_anisotropy:g}x"
-                )
-        return available
-
-    @staticmethod
-    def _upload_qimage_texture(texture_id: int, image):
-        if image is None or image.isNull():
-            return
-        rgba = image.convertToFormat(QImage.Format.Format_RGBA8888)
-        bits = rgba.constBits()
-        if hasattr(bits, "setsize"):
-            bits.setsize(rgba.sizeInBytes())
-        glBindTexture(GL_TEXTURE_2D, texture_id)
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR)
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR)
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, rgba.width(), rgba.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes(bits))
-        glBindTexture(GL_TEXTURE_2D, 0)
-
-    def _cleanup_gl(self, context=None):
-        if context is not None and context is not self._gl_cleanup_context:
-            return
-        current = self.context()
-        made_current = False
-        with suppress(Exception):
-            if current is not None:
-                self.makeCurrent()
-                made_current = True
-                self._clear_gl_textures()
-        self._delete_skinned_draw_sets(delete_gl=made_current)
-        self._delete_buffer_set(self._regular_set, delete_gl=made_current)
-        self._delete_buffer_set(self._solid_set, delete_gl=made_current)
-        self._delete_selection_buffer_sets(delete_gl=made_current)
-        if made_current:
-            with suppress(Exception):
-                self._gpu_skinning.dispose_gl()
-            with suppress(Exception):
-                self._riglogic_material.dispose_gl()
-            with suppress(Exception):
-                self._cleanup_extra_gl()
-            with suppress(Exception):
-                self.doneCurrent()
-        self._regular_set = self._solid_set = self._gl_cleanup_context = None
-        self._needs_gl_upload = self._regular_data is not None or self._solid_data is not None
-
-    @Slot()
-    def _on_gl_context_about_to_be_destroyed(self):
-        self._cleanup_gl(self.sender())
 
     def cleanup(self):
         self._timer.stop()
-        self._cancel_probe_shading()
-        self._leave_view_fullscreen()
+        self._frame_due.stop()
+        self.leave_view_fullscreen()
         self._overlays.cleanup()
-        self._cleanup_gl()
         self._clear_scene_memory()
 
     def _clear_scene_memory(self):
@@ -3114,767 +1725,340 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
             self._unlock_scene_cursor()
         self.freecam.clear_input()
         self._meshes.clear()
-        self._gpu_skinning.clear()
-        self._skinned_draw_sets.clear()
-        self._rigid_draw_sets.clear()
+        self._skinning.clear()
+        self._device_changed()
         self._mesh_draw_matrices.clear()
-        self._skinned_draw_sets_dirty = False
         self._highlighted_keys.clear()
         self._selection_keys.clear()
         self._hidden_keys.clear()
         self._hidden_parts.clear()
-        self._material_effects.clear()
-        self._material_tints.clear()
-        self._two_sided_materials.clear()
         self._material_parameters.clear()
-        self._material_effect_errors.clear()
-        self._material_resource_errors.clear()
-        self._material_upload_errors.clear()
-        self._pending_material_images.clear()
-        self._texture_upload_failures.clear()
-        self._texture_ids.clear()
-        self._texture_sources.clear()
-        self._texture_source_ids.clear()
-        self._hover_vertex_cache.clear()
         self._light_probe_instances.clear()
         self._light_probe_status = ""
         self._preferred_selection_keys.clear()
-        self._probe_shade_error = ""
         self._invalidate_probe_viz_points()
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
         self._pending_scene_pick = self._last_hover_pick_pos = None
         self._selection_center = self._gizmo_drag = self._gizmo_projection = None
-        self._regular_data = self._solid_data = None
-        self._scene_matrix = IDENTITY4.copy()
-        self._needs_gl_upload = self._colors_dirty = False
 
     def closeEvent(self, event):
         if self._fullscreen_restore is not None:
-            self._leave_view_fullscreen()
+            self.leave_view_fullscreen()
             event.ignore()
             return
         self.cleanup()
         super().closeEvent(event)
 
-    def _cleanup_extra_gl(self):
-        pass
-
-    def _after_gl_initialized(self):
-        pass
-
-    def _after_scene_draw(self):
-        pass
-
-    def initializeGL(self):
-        glClearColor(self._background[0], self._background[1], self._background[2], 1.0)
-        glDisable(GL_BLEND)
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_LIGHT0)
-        glEnable(GL_COLOR_MATERIAL)
-        glEnable(GL_CULL_FACE)
-        glCullFace(GL_BACK)
-        glFrontFace(GL_CCW)
-        glEnable(GL_NORMALIZE)
-        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glShadeModel(GL_SMOOTH)
-        glLightfv(GL_LIGHT0, GL_DIFFUSE, (0.8, 0.8, 0.8, 1.0))
-        glLightfv(GL_LIGHT0, GL_AMBIENT, (0.3, 0.3, 0.3, 1.0))
-        try:
-            self._max_texture_anisotropy = self._query_max_texture_anisotropy()
-        except Exception as exc:
-            self._max_texture_anisotropy = 1.0
-            print(f"Texture anisotropy query failed: {exc}")
-        context = self.context()
-        if context is not None and context is not self._gl_cleanup_context:
-            context.aboutToBeDestroyed.connect(self._on_gl_context_about_to_be_destroyed)
-            self._gl_cleanup_context = context
-        if self._regular_data is None and self._solid_data is None:
-            self._rebuild_buffer_data()
-        self._regular_set = self._upload_buffer_set(self._regular_data)
-        self._solid_set = self._upload_buffer_set(self._solid_data)
-        self._refresh_selection_buffer_sets(current=True)
-        self._colors_dirty = self._uses_probe_shading()
-        self._sync_gl_textures()
-        self._rebuild_skinned_draw_sets()
-        self.texture_upload_status_changed.emit()
-        self._needs_gl_upload = False
-        self._after_gl_initialized()
-
-    def resizeGL(self, w: int, h: int):
-        dpr = float(self.devicePixelRatioF())
-        self._apply_projection(int(w * dpr), int(h * dpr))
-        self.place_viewport_overlays()
-
     def place_viewport_overlays(self):
         self._overlays.place()
 
-    def _apply_projection(self, w: int, h: int):
-        glViewport(0, 0, max(int(w), 1), max(int(h), 1))
-        glMatrixMode(GL_PROJECTION)
-        glLoadIdentity()
-        safe_h = max(float(h), 1.0)
-        near_plane = 0.1 if self._controls == "mesh" else 0.01
-        far_plane = 100.0 if self._controls == "mesh" else max(self.extent * 6.0, 1000.0)
-        gluPerspective(45.0, float(w) / safe_h, near_plane, far_plane)
-        glMatrixMode(GL_MODELVIEW)
+    def set_device_frames(self, enabled: bool) -> None:
+        """Qt makes the native window's sibling widgets native too, so they lose translucency."""
+        if enabled and self._device_window is None:
+            # Made before frames are on: creating it repaints the viewport.
+            window = FrameWindow(self)
+            window.window_changed.connect(self.device_window_changed)
+            window.setGeometry(self.rect())
+            window.winId()
+            window.lower()
+            self._device_window = window
+            self.device_window_changed.emit(int(window.winId()))
+        self._device_frames, self._device_told, self._device_frame = bool(enabled), None, None
+        self._sync_device_window()
+        self.update()
+        self._next_pass()
 
-    def _apply_render_state(self):
-        glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-        glDisable(GL_BLEND)
-        glColorMask(True, True, True, False)
-        glDepthMask(True)
+    def set_device_frame(self, frame) -> None:
+        self._device_frame = frame
+        if self._device_frames:
+            self._presented += frame is not None
+            self._next_pass()
+        self._sync_device_window()
+        self.update()
 
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
-            glEnable(GL_LIGHT0)
-            glEnable(GL_COLOR_MATERIAL)
-            glEnable(GL_NORMALIZE)
-            glShadeModel(GL_SMOOTH)
-            glLightfv(GL_LIGHT0, GL_DIFFUSE, (self.diffuse, self.diffuse, self.diffuse, 1.0))
-            glLightfv(GL_LIGHT0, GL_AMBIENT, (self.ambient, self.ambient, self.ambient, 1.0))
-        else:
-            glDisable(GL_LIGHTING)
-            glDisable(GL_LIGHT0)
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glLineWidth(1.0)
-
-    def _apply_camera_transform(self):
-        if self._controls == "mesh":
-            glTranslatef(0.0, 0.0, -self.distance)
-            glRotatef(self.rot_x, 1.0, 0.0, 0.0)
-            glRotatef(self.rot_y, 0.0, 1.0, 0.0)
-            glScalef(self.scale, self.scale, self.scale)
-            glTranslatef(-self.center[0], -self.center[1], -self.center[2])
+    def _sync_device_window(self) -> None:
+        if self._device_window is None:
             return
-        self.freecam.step(self.camera_boost, self.camera_slow)
-        glRotatef(-self.freecam.pitch, 1.0, 0.0, 0.0)
-        glRotatef(-self.freecam.yaw, 0.0, 1.0, 0.0)
-        glTranslatef(-self.freecam.pos[0], -self.freecam.pos[1], -self.freecam.pos[2])
+        told, frame = self._device_told, self._device_frame
+        shown = bool(self._device_frames and told is not None and frame is not None
+                     and self._device_frame_shows(told[0], frame))
+        if self._device_window.isHidden() == shown:
+            self._device_window.setVisible(shown)
 
-    def _bind_arrays(self, buffer_set: _GlBufferSet, *, use_textures: bool):
-        buffer_set.vertices_vbo.bind()
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glVertexPointer(3, GL_FLOAT, 0, None)
-
-        if buffer_set.normals_vbo is not None:
-            buffer_set.normals_vbo.bind()
-            glEnableClientState(GL_NORMAL_ARRAY)
-            glNormalPointer(GL_FLOAT, 0, None)
+    def _device_view(self) -> tuple[object, object]:
+        _geometries, meshes = self._device_content_shown()
+        game = self.lighting_mode == "game"
+        if self.lighting_mode == "probes":
+            probes = self._device_probes()
+            light = None if probes is None else ProbeLight(probes, float(self.probe_exposure))
         else:
-            glDisableClientState(GL_NORMAL_ARRAY)
+            light = view_light(self.lighting_mode, self.ambient, self.diffuse)
+        hidden = set(self._hidden_keys)
+        if self.show_only_highlighted and self._highlighted_keys:
+            hidden |= {mesh.key for mesh in meshes
+                       if mesh.key not in self._highlighted_keys and not mesh.ignore_highlight_filter}
+        hidden_parts = frozenset((key, part) for key, parts in self._hidden_parts.items() for part in parts)
+        background = unorm(self._background)[:3]
+        view = SceneView.through(self._device_camera(self._device_window.pixels()), light, background,
+                                 self._device_content, self._device_motion, frozenset(hidden), hidden_parts,
+                                 game=game, strands_only=game and self.strands_only,
+                                 antialiased=game and self.antialiasing)
+        return view, self._device_overlays(meshes, background)
 
-        if self._colors_dirty:
-            self._refresh_color_vbos()
-        if buffer_set.colors_vbo is not None:
-            buffer_set.colors_vbo.bind()
-            glEnableClientState(GL_COLOR_ARRAY)
-            glColorPointer(4, GL_FLOAT, 0, None)
-        else:
-            glDisableClientState(GL_COLOR_ARRAY)
+    def _device_probes(self) -> ViewProbes | None:
+        layers = sorted(self._probe_layers(), key=layer_order)
+        made = tuple(layer.fingerprint() for layer in layers)
+        if self._device_probes_made[0] != made:
+            self._device_probes_made = made, ViewProbes.of(layers) if layers else None
+        return self._device_probes_made[1]
 
-        uvs_vbo = buffer_set.uvs_vbo
-        if use_textures and uvs_vbo is not None and self._texture_ids:
-            uvs_vbo.bind()
-            glEnableClientState(GL_TEXTURE_COORD_ARRAY)
-            glTexCoordPointer(2, GL_FLOAT, 0, None)
-            return True
+    def _device_overlays(self, meshes: list[SceneDrawMesh], background: tuple[int, int, int]) -> LitOverlays:
+        numbers = {mesh.key: number for number, mesh in enumerate(meshes)}
+        selected = frozenset(numbers[key] for key in self._selection_keys if key in numbers)
+        pulse = round(255 * (0.22 + 0.10 * np.sin(time.perf_counter() * 3.5))) if selected else 56
+        mode = self.wireframe_mode
+        scene = SceneShown(
+            NO_EDGES if mode == "off" else ALL_EDGES if mode == "xray" else VISIBLE_EDGES, 1.4,
+            hovered=numbers.get(self._hover_key) if self._hover_key else None, selected=selected,
+            selection_colour=(255, 219, 46, pulse), outline=max(1, round(2 * self._view_pixels()[0]
+                                                                         / max(self.width(), 1))),
+            pick=None if self._device_pick is None else self._device_pick[1], filled=mode != "wire")
+        probes = self._controls != "mesh"
+        boxes = self._light_probe_box_entries() if probes and self.probe_viz_mode in {"volumes", "all"} else []
+        points, colours = (self._probe_viz_points() if probes and self.probe_viz_mode in {"points", "all"}
+                           else (np.zeros((0, 3)), np.zeros((0, 4))))
+        keys = frozenset(self._selection_keys | self._preferred_selection_keys)
+        # ``id(points)`` suffices: probe points are cached while unchanged.
+        made = (background, scene, self._gizmo_mode, None if self._selection_center is None else (
+            np.asarray(self._selection_center).tobytes(), self._gizmo_size(), self._gizmo_active_axis()),
+            tuple((key, np.asarray(box.corners(), np.float64).tobytes()) for key, box in boxes),
+            keys, id(points) if len(points) else None,
+            tuple((minimum.tobytes(), maximum.tobytes(), colour) for minimum, maximum, colour in self.strands_boxes),
+            edited := (() if self.edit_tool is None else self.edit_tool.marks()))
+        if self._device_overlays_made[0] != made:
+            self._device_overlays_made = made, LitOverlays(
+                background, (*probe_marks(boxes, keys, points, colours), *bounds_marks(self.strands_boxes),
+                             *edited, *self._gizmo_marks()),
+                scene=scene)
+        return self._device_overlays_made[1]
 
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        return False
-
-    def _unbind_arrays(self, buffer_set: _GlBufferSet, *, textured: bool):
-        if textured and buffer_set.uvs_vbo is not None:
-            glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        if buffer_set.colors_vbo is not None:
-            glDisableClientState(GL_COLOR_ARRAY)
-        if buffer_set.normals_vbo is not None:
-            glDisableClientState(GL_NORMAL_ARRAY)
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-    def _draw_triangles(self, buffer_set: _GlBufferSet | None, *, use_textures: bool = True):
-        if buffer_set is None:
+    def device_picked(self, content: int, texel, mesh: int | None) -> None:
+        pick = self._device_pick
+        if pick is None or content != self._device_content or tuple(texel) != pick[1]:
             return
-        if buffer_set.vertices_vbo is not None and buffer_set.indices_vbo is not None:
-            textured = self._bind_arrays(buffer_set, use_textures=use_textures)
-            glColor4f(1.0, 1.0, 1.0, 1.0)
+        self._device_pick = None
+        meshes = self._device_content_shown()[1]
+        self._finish_scene_pick(pick[0], "" if mesh is None or mesh >= len(meshes) else meshes[mesh].key)
+        self.update()
 
-            if buffer_set.batch_vbos and (textured or self._material_tints or self._two_sided_materials):
-                for material_name, batch_vbo, count in buffer_set.batch_vbos:
-                    tex_id = self._texture_ids.get(material_name)
-                    tint = self._material_tints.get(material_name, (1.0, 1.0, 1.0, 1.0))
-                    glDisable(GL_CULL_FACE) if material_name in self._two_sided_materials else glEnable(GL_CULL_FACE)
-                    effect_bound = self._bind_material_effect(
-                        material_name,
-                        tint,
-                        enabled=use_textures,
-                        has_uvs=buffer_set.uvs_vbo is not None,
-                    )
-                    if effect_bound is None:
-                        continue
-                    if effect_bound:
-                        glColor4f(1.0, 1.0, 1.0, 1.0)
-                        glDisable(GL_TEXTURE_2D)
-                    elif textured and tex_id:
-                        glColor4f(tint[0], tint[1], tint[2], tint[3])
-                        glEnable(GL_TEXTURE_2D)
-                        glBindTexture(GL_TEXTURE_2D, tex_id)
-                    else:
-                        glColor4f(tint[0], tint[1], tint[2], tint[3])
-                        glBindTexture(GL_TEXTURE_2D, 0)
-                        glDisable(GL_TEXTURE_2D)
-                    batch_vbo.bind()
-                    glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
-                    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-                    if effect_bound:
-                        self._riglogic_material.unbind()
-                glEnable(GL_CULL_FACE)
-                glColor4f(1.0, 1.0, 1.0, 1.0)
-            else:
-                glBindTexture(GL_TEXTURE_2D, 0)
-                glDisable(GL_TEXTURE_2D)
-                buffer_set.indices_vbo.bind()
-                glDrawElements(GL_TRIANGLES, buffer_set.index_count, GL_UNSIGNED_INT, None)
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
+    def _device_texel(self, pos: np.ndarray) -> tuple[int, int]:
+        width, height = self._view_pixels()
+        ratio = width / max(self.width(), 1)
+        return (min(max(int(pos[0] * ratio), 0), width - 1), min(max(int(pos[1] * ratio), 0), height - 1))
 
-            glBindTexture(GL_TEXTURE_2D, 0)
-            glDisable(GL_TEXTURE_2D)
-            self._unbind_arrays(buffer_set, textured=textured)
+    def _show_device_rate(self) -> None:
+        if self._device_frames and self._presented_clock.isValid():
+            self._show_fps(self._presented * 1000.0 / max(self._presented_clock.elapsed(), 1))
+        self._presented = 0
+        self._presented_clock.start()
 
-    def _draw_skinned_triangles(
-        self,
-        *,
-        force_solid: bool,
-        use_textures: bool,
-    ) -> None:
-        if self._colors_dirty:
-            self._refresh_color_vbos()
-        for draw_set in self._skinned_draw_sets:
-            if (
-                draw_set.force_solid != force_solid
-                or draw_set.key in self._hidden_keys
-            ):
+    def _device_frame_shows(self, view, frame) -> bool:
+        drawn = frame.view
+        return (isinstance(view, SceneView)
+                and (drawn.content, drawn.size, drawn.hidden, drawn.hidden_parts, drawn.game)
+                == (view.content, view.size, view.hidden, view.hidden_parts, view.game))
+
+    def _device_changed(self) -> None:
+        self._device_content += 1
+        self._device_scene = self._device_placed = self._device_before = None
+        self._device_shapes.clear()
+
+    def _device_rebound(self, keys) -> None:
+        """The device gets new content only if it differs, so an identical rebind (switching animations) keeps it."""
+        if self._device_scene is not None and self._device_before is None:
+            self._device_before = self._device_scene[0], frozenset(self._material_parameters)
+        self._device_scene = None
+        for mesh in self._meshes:
+            if mesh.key in keys:
+                self._device_shapes.pop(id(mesh), None)
+        self._device_motion += 1
+
+    def _device_reshaped(self, mesh: SceneDrawMesh) -> None:
+        geometries, meshes = self._device_scene or (None, [])
+        number = next((number for number, shown in enumerate(meshes) if shown is mesh), None)
+        if number is not None and sum(geometry.vertices == geometries[number].vertices
+                                      for geometry in geometries) > 1:
+            self._device_changed()
+            return
+        self._device_shapes.pop(id(mesh), None)
+        self._device_motion += 1
+
+    def _device_content_shown(self) -> tuple[tuple[SceneGeometry, ...], list[SceneDrawMesh]]:
+        if self._device_scene is None:
+            self._device_scene = self._device_geometries()
+            before, self._device_before = self._device_before, None
+            if before is not None and not _same(before, (self._device_scene[0], frozenset(self._material_parameters))):
+                self._device_content += 1
+                self._device_placed = None
+                self._device_shapes.clear()
+        return self._device_scene
+
+    def _device_geometries(self) -> tuple[tuple[SceneGeometry, ...], list[SceneDrawMesh]]:
+        geometries, meshes = [], []
+        triangles_of: dict[tuple[int, int], np.ndarray] = {}
+        uvs_of: dict[int, np.ndarray] = {}
+        first: dict[tuple[int, ...], int] = {}
+        for mesh in self._meshes:
+            count = len(np.asarray(mesh.vertices).reshape(-1, 3))
+            batches = []
+            for batch in mesh.batches or [SceneDrawBatch(indices=mesh.indices, material_name=mesh.material_name)]:
+                shared = id(batch.indices), count
+                if shared not in triangles_of:
+                    indices = np.asarray(batch.indices, np.uint32).reshape(-1)
+                    triangles = indices[:len(indices) // 3 * 3].reshape(-1, 3)
+                    triangles_of[shared] = triangles[(triangles < count).all(axis=1)].reshape(-1)
+                if len(triangles_of[shared]):
+                    batches.append(replace(batch, indices=triangles_of[shared]))
+            if not batches:
                 continue
-            self._push_draw_matrix(draw_set.key, draw_set.model_matrix)
-            for material_name, indices_vbo, count in draw_set.batches:
-                tint = self._material_tints.get(
-                    material_name,
-                    (1.0, 1.0, 1.0, 1.0),
-                )
-                glDisable(GL_CULL_FACE) if material_name in self._two_sided_materials else glEnable(GL_CULL_FACE)
-                effect = self._material_effects.get(material_name)
-                effect_program = self._bind_material_effect(
-                    material_name,
-                    tint,
-                    enabled=use_textures,
-                    has_uvs=draw_set.source.uvs_vbo is not None,
-                    vertex_shader=(
-                        self._gpu_skinning.shader_variant(draw_set.key)
-                        if effect is not None
-                        else None
-                    ),
-                )
-                if effect_program is None:
-                    continue
-                self._gpu_skinning.bind(
-                    draw_set.key,
-                    uvs_vbo=draw_set.source.uvs_vbo,
-                    colors_vbo=draw_set.source.colors_vbo,
-                    vertex_offset=draw_set.vertex_offset,
-                    program=effect_program,
-                    tint=tint,
-                    ambient=self.ambient,
-                    diffuse=self.diffuse,
-                    lit=self.lighting_mode == "fixed",
-                )
-                tex_id = self._texture_ids.get(material_name)
-                if effect_program:
-                    glDisable(GL_TEXTURE_2D)
-                elif use_textures and tex_id:
-                    glEnable(GL_TEXTURE_2D)
-                    glBindTexture(GL_TEXTURE_2D, tex_id)
-                else:
-                    glBindTexture(GL_TEXTURE_2D, 0)
-                    glDisable(GL_TEXTURE_2D)
-                indices_vbo.bind()
-                glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-                self._gpu_skinning.unbind()
-                if effect_program:
-                    self._riglogic_material.unbind()
-            glPopMatrix()
-        glBindTexture(GL_TEXTURE_2D, 0)
-        glDisable(GL_TEXTURE_2D)
-        glEnable(GL_CULL_FACE)
-        glColor4f(1.0, 1.0, 1.0, 1.0)
+            skin = self._skinning.influences(mesh.key)
+            flat = np.ones(4)
+            if self._vertex_colours(mesh, count) is None:
+                given = np.asarray(mesh.color, np.float64).reshape(-1)[:4]
+                flat[:len(given)] = given
+            uvs = None
+            if mesh.uvs is not None and np.size(mesh.uvs) == count * 2:
+                if id(mesh.uvs) not in uvs_of:
+                    uvs_of[id(mesh.uvs)] = np.array(mesh.uvs, np.float32).reshape(-1, 2)
+                uvs = uvs_of[id(mesh.uvs)]
+            number = len(geometries)
+            if skin is None:
+                number = first.setdefault((id(mesh.vertices), id(mesh.normals), id(mesh.colors), id(mesh.uvs)), number)
+            geometries.append(SceneGeometry(mesh.key, number, uvs, tuple(map(float, flat)),
+                                            *((None, None) if skin is None else skin), tuple(batches),
+                                            solid=bool(mesh.force_solid), edge_excluded=mesh.edge_excluded,
+                                            decal_receive_mode=mesh.decal_receive_mode,
+                                            transparent_bias=mesh.transparent_bias,
+                                            speedtree_placement=mesh.speedtree_placement))
+            meshes.append(mesh)
+        return tuple(geometries), meshes
 
-    def _draw_rigid_triangles(
-        self,
-        *,
-        force_solid: bool,
-        use_textures: bool,
-    ) -> None:
-        for draw_set in self._rigid_draw_sets:
-            if (
-                draw_set.force_solid != force_solid
-                or draw_set.key in self._hidden_keys
-            ):
-                continue
-            self._push_draw_matrix(draw_set.key)
-            self._draw_triangles(
-                draw_set.buffer_set,
-                use_textures=use_textures,
-            )
-            glPopMatrix()
+    @property
+    def color_source(self) -> str:
+        """"vertex" to show vertex colours, "" for each mesh's own colour."""
+        return self._color_source
 
-    def _draw_skinned_lines(self, *, force_solid: bool, overlay: bool) -> None:
-        glDisable(GL_LIGHTING)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_CULL_FACE)
-        if overlay:
-            glDisable(GL_DEPTH_TEST)
-            glDepthMask(False)
-        glLineWidth(self.line_width if self._controls == "mesh" else 1.4)
-        for draw_set in self._skinned_draw_sets:
-            if (
-                draw_set.force_solid != force_solid
-                or draw_set.key in self._hidden_keys
-                or draw_set.line_indices_vbo is None
-            ):
-                continue
-            self._push_draw_matrix(draw_set.key, draw_set.model_matrix)
-            scene_colors = self._controls != "mesh"
-            tint = (
-                (1.0, 1.0, 1.0, 1.0)
-                if scene_colors
-                else (0.2, 1.0, 0.3, 1.0)
-            )
-            self._gpu_skinning.bind(
-                draw_set.key,
-                colors_vbo=(
-                    draw_set.source.colors_vbo if scene_colors else None
-                ),
-                vertex_offset=draw_set.vertex_offset,
-                tint=tint,
-            )
-            draw_set.line_indices_vbo.bind()
-            glDrawElements(
-                GL_LINES,
-                draw_set.line_count,
-                GL_UNSIGNED_INT,
-                None,
-            )
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-            self._gpu_skinning.unbind()
-            glPopMatrix()
-        if overlay:
-            glDepthMask(True)
-            glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
+    @color_source.setter
+    def color_source(self, source: str) -> None:
+        if source != self._color_source:
+            self._color_source = source
+            self._device_changed()
+            self.update()
 
-    def _draw_rigid_lines(self, *, force_solid: bool, overlay: bool) -> None:
-        for draw_set in self._rigid_draw_sets:
-            if (
-                draw_set.force_solid != force_solid
-                or draw_set.key in self._hidden_keys
-            ):
-                continue
-            self._push_draw_matrix(draw_set.key)
-            self._draw_lines(draw_set.buffer_set, overlay=overlay)
-            glPopMatrix()
-
-    def _draw_scene_triangles(self, buffer_set: _GlBufferSet | None, *, force_solid: bool, use_textures: bool) -> None:
-        self._draw_triangles(buffer_set, use_textures=use_textures)
-        self._draw_rigid_triangles(force_solid=force_solid, use_textures=use_textures)
-        self._draw_skinned_triangles(force_solid=force_solid, use_textures=use_textures)
-
-    def _draw_scene_lines(self, buffer_set: _GlBufferSet | None, *, force_solid: bool, overlay: bool) -> None:
-        self._draw_lines(buffer_set, overlay=overlay)
-        self._draw_rigid_lines(force_solid=force_solid, overlay=overlay)
-        self._draw_skinned_lines(force_solid=force_solid, overlay=overlay)
-
-    def _bind_material_effect(
-        self,
-        material_name: str,
-        tint: tuple[float, float, float, float],
-        *,
-        enabled: bool,
-        has_uvs: bool,
-        vertex_shader: tuple[str, str] | None = None,
-    ) -> int | None:
-        if not enabled:
-            return 0
-        if (
-            material_name in self._material_effect_errors
-            or material_name in self._material_resource_errors
-            or any(
-                material == material_name
-                for material, _message in self._material_upload_errors.values()
-            )
-        ):
+    def _vertex_colours(self, mesh: SceneDrawMesh, count: int) -> np.ndarray | None:
+        if (self.color_source != "vertex" or mesh.colors is None
+                or np.size(mesh.colors) not in (count * 3, count * 4)):
             return None
-        try:
-            effect = self._material_effects.get(material_name)
-            if effect is None:
-                return 0
-            if not has_uvs:
-                self._record_material_effect_error(
-                    material_name,
-                    f"{material_name}: RigLogic material has no UV coordinates",
-                )
-                return None
-            return self._riglogic_material.bind(
-                effect,
-                material_name,
-                self._texture_ids,
-                self._material_parameters.get(material_name, {}),
-                tint=tint,
-                ambient=self.ambient,
-                diffuse=self.diffuse,
-                lit=self.lighting_mode == "fixed",
-                vertex_shader=vertex_shader,
-            )
-        except (RuntimeError, ValueError) as exc:
-            message = f"{material_name}: {exc}"
-            self._record_material_effect_error(material_name, message)
-            return None
+        colours = np.ones((count, 4), np.float32)
+        given = np.asarray(mesh.colors, np.float32).reshape(count, -1)
+        colours[:, :given.shape[1]] = given
+        return colours
 
-    def _record_material_effect_error(
-        self,
-        material_name: str,
-        message: str,
-    ) -> None:
-        if self._material_effect_errors.get(material_name) == message:
-            return
-        self._material_effect_errors[material_name] = message
-        print(f"Material effect preview failed: {message}")
-        self.texture_upload_status_changed.emit()
-        self.render_failure.emit(message)
+    def device_scene(self) -> tuple[int, tuple[SceneGeometry, ...]]:
+        geometries = self._device_content_shown()[0]
+        return self._device_content, geometries
 
-    def _draw_lines(self, buffer_set: _GlBufferSet | None, *, overlay: bool):
-        if buffer_set is None:
-            return
-        glDisable(GL_LIGHTING)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_CULL_FACE)
-        glDisableClientState(GL_NORMAL_ARRAY)
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        if overlay:
-            glDisable(GL_DEPTH_TEST)
-            glDepthMask(False)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-        glLineWidth(self.line_width if self._controls == "mesh" else 1.4)
-        self._ensure_line_indices(buffer_set)
-        if buffer_set.vertices_vbo is not None and buffer_set.line_indices_vbo is not None:
-            if self._colors_dirty:
-                self._refresh_color_vbos()
-            use_vertex_colors = self._controls != "mesh" and buffer_set.colors_vbo is not None
-            if use_vertex_colors:
-                buffer_set.colors_vbo.bind()
-                glEnableClientState(GL_COLOR_ARRAY)
-                glColorPointer(4, GL_FLOAT, 0, None)
-                glColor4f(1.0, 1.0, 1.0, 1.0)
-            else:
-                glDisableClientState(GL_COLOR_ARRAY)
-                glColor4f(0.2, 1.0, 0.3, 1.0)
-            buffer_set.vertices_vbo.bind()
-            glEnableClientState(GL_VERTEX_ARRAY)
-            glVertexPointer(3, GL_FLOAT, 0, None)
-            buffer_set.line_indices_vbo.bind()
-            glDrawElements(GL_LINES, buffer_set.line_count, GL_UNSIGNED_INT, None)
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-            glDisableClientState(GL_VERTEX_ARRAY)
-            if use_vertex_colors:
-                glDisableClientState(GL_COLOR_ARRAY)
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-        if overlay:
-            glDepthMask(True)
-            glEnable(GL_DEPTH_TEST)
-        glEnable(GL_CULL_FACE)
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
+    def device_strands(self) -> tuple[str, object, tuple[str, str, str], dict] | None:
+        return None if self.strands_source is None else self.strands_source()
 
-    def _draw_regular_scene(self):
-        if self._controls == "mesh":
-            if self.wireframe_mode == "polygon":
-                glPolygonMode(GL_FRONT_AND_BACK, GL_LINE)
-                glLineWidth(self.line_width)
-                self._draw_scene_triangles(self._regular_set, force_solid=False, use_textures=False)
-                glPolygonMode(GL_FRONT_AND_BACK, GL_FILL)
-            else:
-                self._draw_scene_triangles(self._regular_set, force_solid=False, use_textures=True)
-            if self.wireframe_mode in ("lines_depth", "lines_overlay"):
-                self._draw_scene_lines(self._regular_set, force_solid=False, overlay=self.wireframe_mode == "lines_overlay")
-            return
+    def device_wrinkles(self) -> tuple:
+        return () if self.wrinkle_source is None else tuple(self.wrinkle_source())
 
-        if self.render_mode in {"solid", "hybrid"}:
-            self._draw_scene_triangles(self._regular_set, force_solid=False, use_textures=True)
-        if self.render_mode in {"wire", "hybrid"}:
-            self._draw_scene_lines(self._regular_set, force_solid=False, overlay=False)
+    def set_edit_tool(self, tool) -> None:
+        """``tool``'s handlers return True when they take the event; it gives ``marks()`` and, while ``gizmo()`` returns
+        (centre, extent), owns the gizmo."""
+        if self._gizmo_drag is not None:
+            self._finish_gizmo_drag(commit=False)
+        self.edit_tool = tool
+        self.edit_tool_changed()
 
-    def _draw_deferred_selection(self) -> bool:
-        drag = self._gizmo_drag
-        if not (drag and drag.get("deferred_geometry") and drag.get("matrix") is not None):
+    def edit_tool_changed(self) -> None:
+        if self._gizmo_drag is None:
+            self._refresh_selection_bounds()
+        self.update()
+
+    def _tool_gizmo(self):
+        return None if self.edit_tool is None else self.edit_tool.gizmo()
+
+    def view_camera(self):
+        pixels = self._view_pixels()
+        return self._device_camera(pixels), pixels[0] / max(self.width(), 1)
+
+    def fit_points(self, points) -> None:
+        if len(points):
+            minimum, maximum = points.min(axis=0), points.max(axis=0)
+            self.center = (minimum + maximum) * 0.5
+            self.extent = max(float(np.max(maximum - minimum)), 1e-6)
+            self.scale = 1 / self.extent
+            self.freecam.focus(self.center, self.extent)
+            self.update()
+
+    def device_motion(self) -> tuple[ScenePlacement, ...]:
+        if self._device_placed is not None and self._device_placed[0] == self._device_motion:
+            return self._device_placed[1]
+        geometries, meshes = self._device_content_shown()
+        drag = self._gizmo_drag or {}
+        dragged = drag["matrices"] if drag.get("matrix") is not None else {}
+        placements = []
+        for geometry, mesh in zip(geometries or (), meshes, strict=True):
+            skinned = self._skinning.influences(mesh.key) is not None
+            positions, normals, bones = (self._skinning.posed(mesh.key) if skinned
+                                         else (mesh.vertices, mesh.normals, None))
+            of = meshes[geometry.vertices]
+            shape = self._device_shapes.get(id(of))
+            if shape is None:
+                positions = np.array(positions, np.float32).reshape(-1, 3)
+                normals = (np.array(normals, np.float32).reshape(-1, 3)
+                           if normals is not None and np.size(normals) == positions.size else computed_normals(
+                               positions, np.concatenate([batch.indices for batch in geometry.batches])))
+                shape = SceneShape(positions, normals, self._vertex_colours(mesh, len(positions)))
+                self._device_shapes[id(of)] = shape
+            world = IDENTITY4 if mesh.transform_matrix is None else np.asarray(mesh.transform_matrix, np.float32)
+            moved = self._mesh_draw_matrices.get(mesh.key)
+            if moved is not None:
+                world = moved @ world
+            if mesh.key in dragged:
+                world = drag["matrix"] @ world
+            placements.append(ScenePlacement(shape, np.array(world[:3], np.float64), bones,
+                                             self._mesh_poses.get(mesh.key)))
+        self._device_placed = self._device_motion, tuple(placements)
+        return self._device_placed[1]
+
+    def _device_draws(self) -> bool:
+        """Sends the view every frame, changed or not, as a game does."""
+        if not self._device_frames:
             return False
-        glPushMatrix()
-        glMultMatrixf(np.ascontiguousarray(self._buffer_space_matrix(drag["matrix"]).T, dtype=np.float32))
-        if self.render_mode in {"solid", "hybrid"}:
-            self._draw_triangles(self._selection_regular_set, use_textures=True)
-        if self.render_mode in {"wire", "hybrid"}:
-            self._draw_lines(self._selection_regular_set, overlay=False)
-        self._draw_triangles(self._selection_solid_set, use_textures=False)
-        self._draw_selection_glow()
-        glPopMatrix()
-        return True
+        if self._fps_limit and self._told_clock.isValid():
+            wait = 1000.0 / self._fps_limit - self._told_clock.elapsed()
+            if wait > 0:
+                if not self._timer.isActive() or self._timer.remainingTime() > wait:
+                    self._timer.start(int(wait) + 1)
+                return False
+        told = self._device_view()
+        changed = told != self._device_told
+        self._device_told = told
+        self._told_clock.start()
+        self.device_view_changed.emit(*told)
+        if changed:
+            self._sync_device_window()
+        return not isinstance(told[0], str)
 
-    def _draw_selection_glow(self):
-        keys = self._selection_keys - self._hidden_keys
-        if not keys:
-            return
-        if len(keys) > 256 or self._span_index_count(keys) > 700_000:
-            return
-        alpha = 0.12 + 0.10 * (0.5 + 0.5 * np.sin(time.perf_counter() * 3.5))
-        self._draw_overlay_sets((self._regular_set, self._solid_set), (1.0, 0.86, 0.18, float(alpha)), keys)
-
-    def _draw_hover_glow(self):
-        if self._hover_key:
-            self._draw_overlay_sets((self._regular_set, self._solid_set), (0.05, 1.0, 0.25, 0.38), {self._hover_key}, through=False)
-
-    def _span_index_count(self, keys: set[str]) -> int:
-        return sum(
-            count
-            for buffer_set in (self._regular_set, self._solid_set)
-            if buffer_set is not None
-            for key in keys
-            for _offset, count in buffer_set.data.key_spans.get(key, ())
-        )
-
-    def _draw_overlay_sets(self, buffer_sets, color, keys: set[str] | None = None, *, through: bool = True):
-        glEnable(GL_BLEND)
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
-        glDepthMask(False)
-        if through:
-            glDisable(GL_DEPTH_TEST)
-        else:
-            glDepthFunc(GL_LEQUAL)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_LIGHTING)
-        glDisableClientState(GL_NORMAL_ARRAY)
-        glDisableClientState(GL_COLOR_ARRAY)
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        glColor4f(*color)
-        skinned = self._gpu_skinning.keys
-        rigid = self._mesh_draw_matrices.keys() - skinned
-        dynamic = skinned | rigid
-        static_keys = None if keys is None else keys - dynamic
-        for buffer_set in buffer_sets:
-            if buffer_set is None or buffer_set.vertices_vbo is None:
-                continue
-            if keys is not None and not static_keys:
-                continue
-            index_vbo = self._span_index_vbo(buffer_set) if static_keys else buffer_set.indices_vbo
-            if index_vbo is None:
-                continue
-            buffer_set.vertices_vbo.bind()
-            glEnableClientState(GL_VERTEX_ARRAY)
-            glVertexPointer(3, GL_FLOAT, 0, None)
-            index_vbo.bind()
-            spans = (
-                (
-                    span
-                    for key in static_keys
-                    for span in buffer_set.data.key_spans.get(key, ())
-                )
-                if static_keys is not None
-                else ((0, buffer_set.index_count),)
-            )
-            for offset, count in spans:
-                glDrawElements(
-                    GL_TRIANGLES,
-                    count,
-                    GL_UNSIGNED_INT,
-                    c_void_p(offset * 4) if static_keys is not None else None,
-                )
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-            glDisableClientState(GL_VERTEX_ARRAY)
-            glBindBuffer(GL_ARRAY_BUFFER, 0)
-        self._draw_rigid_overlay(
-            color,
-            rigid if keys is None else keys & rigid,
-        )
-        self._draw_skinned_overlay(
-            color,
-            skinned if keys is None else keys & skinned,
-        )
-        glDepthMask(True)
-        glDisable(GL_BLEND)
-        if through:
-            glEnable(GL_DEPTH_TEST)
-        else:
-            glDepthFunc(GL_LESS)
-        if self.lighting_mode == "fixed":
-            glEnable(GL_LIGHTING)
-
-    def _draw_rigid_overlay(
-        self,
-        color: tuple[float, float, float, float],
-        keys: set[str],
-    ) -> None:
-        glColor4f(*color)
-        for draw_set in self._rigid_draw_sets:
-            if draw_set.key not in keys or draw_set.key in self._hidden_keys:
-                continue
-            self._draw_rigid_flat(draw_set)
-
-    def _draw_skinned_overlay(
-        self,
-        color: tuple[float, float, float, float],
-        keys: set[str],
-    ) -> None:
-        for draw_set in self._skinned_draw_sets:
-            if draw_set.key not in keys or draw_set.key in self._hidden_keys:
-                continue
-            self._draw_skinned_flat(draw_set, color)
-
-    def _draw_rigid_flat(self, draw_set: _GlRigidDrawSet) -> None:
-        self._push_draw_matrix(draw_set.key)
-        buffer_set = draw_set.buffer_set
-        buffer_set.vertices_vbo.bind()
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glVertexPointer(3, GL_FLOAT, 0, None)
-        buffer_set.indices_vbo.bind()
-        glDrawElements(GL_TRIANGLES, buffer_set.index_count, GL_UNSIGNED_INT, None)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-        glPopMatrix()
-
-    def _draw_skinned_flat(
-        self,
-        draw_set: _GlSkinnedDrawSet,
-        color: tuple[float, float, float, float],
-    ) -> None:
-        self._push_draw_matrix(draw_set.key, draw_set.model_matrix)
-        self._gpu_skinning.bind(draw_set.key, tint=color, vertex_colors=False)
-        for _material, indices_vbo, count in draw_set.batches:
-            indices_vbo.bind()
-            glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, None)
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-        self._gpu_skinning.unbind()
-        glPopMatrix()
-
-    def _span_index_vbo(self, buffer_set: _GlBufferSet):
-        if (
-            not self._active_hidden_keys()
-            and not self._gpu_skinning.keys
-            and not self._mesh_draw_matrices
-        ):
-            return buffer_set.indices_vbo
-        if buffer_set.span_indices_vbo is None and len(buffer_set.data.indices):
-            buffer_set.span_indices_vbo = self._element_vbo(buffer_set.data.indices)
-        return buffer_set.span_indices_vbo
-
-    def _draw_scene_pick(self, pos: np.ndarray, scene_matrix: np.ndarray | None, dpr: float) -> str:
-        key_ids, id_keys = self._pick_color_ids()
-        if not key_ids:
-            return ""
-        width, height = max(1, int(self.width() * dpr)), max(1, int(self.height() * dpr))
-        x = max(0, min(width - 1, int(pos[0] * dpr)))
-        y = max(0, min(height - 1, height - 1 - int(pos[1] * dpr)))
-        glDisable(GL_DITHER)
-        glDisable(GL_MULTISAMPLE)
-        glDisable(GL_BLEND)
-        glDisable(GL_TEXTURE_2D)
-        glDisable(GL_LIGHTING)
-        glDisable(GL_CULL_FACE)
-        glDisableClientState(GL_NORMAL_ARRAY)
-        glDisableClientState(GL_COLOR_ARRAY)
-        glDisableClientState(GL_TEXTURE_COORD_ARRAY)
-        glDepthFunc(GL_LESS)
-        glDepthMask(True)
-        glEnable(GL_SCISSOR_TEST)
-        glScissor(x, y, 1, 1)
-        if scene_matrix is not None:
-            glPushMatrix()
-            glMultMatrixf(np.ascontiguousarray(scene_matrix.T, dtype=np.float32))
-        for buffer_set in (self._regular_set, self._solid_set):
-            self._draw_pick_buffer(buffer_set, key_ids)
-        self._draw_rigid_pick(key_ids)
-        self._draw_skinned_pick(key_ids)
-        if scene_matrix is not None:
-            glPopMatrix()
-        rgba = np.frombuffer(glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE), dtype=np.uint8, count=4)
-        glDisable(GL_SCISSOR_TEST)
-        glEnable(GL_DITHER)
-        glEnable(GL_MULTISAMPLE)
-        pick_id = int(rgba[0]) | (int(rgba[1]) << 8) | (int(rgba[2]) << 16)
-        return id_keys.get(pick_id, "")
-
-    def _pick_color_ids(self) -> tuple[dict[str, int], dict[int, str]]:
-        hidden = self._active_hidden_keys()
-        key_ids: dict[str, int] = {}
-        for buffer_set in (self._regular_set, self._solid_set):
-            if buffer_set is None:
-                continue
-            for key in buffer_set.data.key_spans:
-                if key not in hidden and key not in key_ids:
-                    key_ids[key] = len(key_ids) + 1
-        return key_ids, {index: key for key, index in key_ids.items()}
-
-    def _draw_pick_buffer(self, buffer_set: _GlBufferSet | None, key_ids: dict[str, int]) -> None:
-        if buffer_set is None or buffer_set.vertices_vbo is None or not key_ids:
-            return
-        index_vbo = self._span_index_vbo(buffer_set)
-        if index_vbo is None:
-            return
-        buffer_set.vertices_vbo.bind()
-        glEnableClientState(GL_VERTEX_ARRAY)
-        glVertexPointer(3, GL_FLOAT, 0, None)
-        index_vbo.bind()
-        for key, spans in buffer_set.data.key_spans.items():
-            if (
-                key in self._gpu_skinning.keys
-                or key in self._mesh_draw_matrices
-            ):
-                continue
-            if not (pick_id := key_ids.get(key)):
-                continue
-            glColor4f(*self._pick_color(pick_id))
-            for offset, count in spans:
-                glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, c_void_p(offset * 4))
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0)
-        glDisableClientState(GL_VERTEX_ARRAY)
-        glBindBuffer(GL_ARRAY_BUFFER, 0)
-
-    def _draw_rigid_pick(self, key_ids: dict[str, int]) -> None:
-        for draw_set in self._rigid_draw_sets:
-            pick_id = key_ids.get(draw_set.key)
-            if not pick_id:
-                continue
-            glColor4f(*self._pick_color(pick_id))
-            self._draw_rigid_flat(draw_set)
-
-    def _draw_skinned_pick(self, key_ids: dict[str, int]) -> None:
-        for draw_set in self._skinned_draw_sets:
-            pick_id = key_ids.get(draw_set.key)
-            if not pick_id:
-                continue
-            self._draw_skinned_flat(draw_set, self._pick_color(pick_id))
-
-    @staticmethod
-    def _pick_color(pick_id: int) -> tuple[float, float, float, float]:
-        return (
-            (pick_id & 255) / 255.0,
-            ((pick_id >> 8) & 255) / 255.0,
-            ((pick_id >> 16) & 255) / 255.0,
-            1.0,
-        )
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self._device_window is not None:
+            self._device_window.setGeometry(self.rect())
+        self.place_viewport_overlays()
 
     def _finish_scene_pick(self, kind: str, key: str) -> None:
         if kind == "hover":
@@ -3887,84 +2071,111 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         else:
             self.object_clicked.emit("")
 
-    def _active_scene_matrix(self) -> np.ndarray | None:
-        matrix = self._scene_matrix
-        drag = self._gizmo_drag
-        if drag and drag.get("whole_scene") and drag.get("matrix") is not None:
-            matrix = drag["matrix"] @ matrix
-        return None if np.allclose(matrix, IDENTITY4) else matrix
+    def update(self, *area) -> None:
+        super().update(*area)
+        self._frame_due.start(0)
 
-    def _prepare_scene_view(self) -> None:
-        self._apply_render_state()
-        glLoadIdentity()
-        glLightfv(GL_LIGHT0, GL_POSITION, (0.5, 1.0, 1.0, 0.0))
-        self._apply_camera_transform()
+    def paintEvent(self, event):
+        QPainter(self).fillRect(event.rect(), QColor.fromRgbF(*self._background))
+
+    def _frame(self) -> None:
+        if not self.isVisible():
+            return
+        if self._controls != "mesh":
+            self.freecam.step(self.camera_boost, self.camera_slow)
         self._gizmo_projection = None
         if self._controls != "mesh" and self._selection_center is not None:
             self._cache_gizmo_projection()
-
-    def _restore_gl_content(self) -> None:
-        missing_regular = self._regular_set is None and self._regular_data is not None
-        missing_solid = self._solid_set is None and self._solid_data is not None
-        if self._needs_gl_upload or missing_regular or missing_solid:
-            self._upload_buffers(rebuild=False, current=True)
-            self._sync_gl_textures()
-        if self._skinned_draw_sets_dirty:
-            self._rebuild_skinned_draw_sets()
-
-    def paintGL(self):
-        dpr = float(self.devicePixelRatioF())
-        self._apply_projection(int(self.width() * dpr), int(self.height() * dpr))
-        self._restore_gl_content()
-        glColorMask(True, True, True, True)
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        self._prepare_scene_view()
-        scene_matrix = self._active_scene_matrix()
+        shown = self._device_window is not None and not self._device_window.isHidden()
+        if not shown:
+            self._device_pick = None
         if self._pending_scene_pick is not None:
             kind, pos = self._pending_scene_pick
             self._pending_scene_pick = None
-            key = self._draw_scene_pick(pos, scene_matrix, dpr)
-            QTimer.singleShot(0, self, lambda kind=kind, key=key: self._finish_scene_pick(kind, key))
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-            self._prepare_scene_view()
-        if scene_matrix is not None:
-            glPushMatrix()
-            glMultMatrixf(np.ascontiguousarray(scene_matrix.T, dtype=np.float32))
-        self._draw_regular_scene()
-        self._draw_scene_triangles(self._solid_set, force_solid=True, use_textures=False)
-        if not self._draw_deferred_selection():
-            self._draw_selection_glow()
-        self._draw_hover_glow()
-        if scene_matrix is not None:
-            glPopMatrix()
-        self._draw_light_probe_overlay()
-        self._draw_gizmo()
-        glColorMask(True, True, True, True)
-        self._after_scene_draw()
-        self._record_frame()
-        if self._fps_limit == 0 and self.isVisible():
-            self._timer.start(0)
+            if shown:
+                self._device_pick = kind, self._device_texel(pos)
+            else:
+                self._finish_scene_pick(kind, "")
+        told = self._device_draws()
+        if not self._device_frames:
+            self._record_frame()
+        self._after_pass(told)
+
+    def _after_pass(self, told: bool) -> None:
+        if not self._device_frames:
+            if self._fps_limit == 0:
+                self._timer.start(0)
+        elif not told and (self.freecam.keys or self._frame_callback is not None):
+            self._next_pass()
 
     def _update_timer_state(self):
         self._timer.stop()
         if not self.isVisible():
             return
+        self._frame_clock.start()
+        self._frames_asked = 0
         self._timer.start(self._frame_interval())
+        self._fps_timer.start(1000)
+
+    def _next_pass(self) -> None:
+        if self._timer.isActive() or not self.isVisible():
+            return
+        if self._fps_limit:
+            self._ask_next_frame()
+        else:
+            self._timer.start(0)
 
     def _request_frame(self) -> None:
-        if self._fps_limit:
-            self._timer.start(self._frame_interval())
+        if self._fps_limit and not self._device_frames:
+            self._ask_next_frame()
         if self._frame_callback is not None:
-            self._frame_callback()
+            self._frame_callback(self._frame_seconds())
         self.update()
+
+    def _frame_seconds(self) -> float:
+        if self._seconds_clock.isValid():
+            wall = max(0, self._seconds_clock.restart()) / 1000.0
+        else:
+            wall = 0.0
+            self._seconds_clock.start()
+        stepped = None if self.stepped_time is None else self.stepped_time()
+        before, self._stepped_seen = self._stepped_seen, stepped
+        return wall if stepped is None or before is None else stepped - before
+
+    def _ask_next_frame(self) -> None:
+        period = 1000.0 / self._fps_limit
+        if not self._frame_clock.isValid():
+            self._frame_clock.start()
+            self._frames_asked = 0
+        self._frames_asked += 1
+        due = self._frames_asked * period - self._frame_clock.elapsed()
+        if due < -period:
+            self._frame_clock.start()
+            self._frames_asked, due = 0, period
+        self._timer.start(max(0, round(due)))
 
     def _frame_interval(self) -> int:
         return 0 if self._fps_limit == 0 else max(1, round(1000 / self._fps_limit))
 
     def set_frame_callback(self, callback) -> None:
+        """``callback(seconds)`` gets the time since its last call."""
         if callback is not None and not callable(callback):
             raise TypeError("frame callback must be callable")
         self._frame_callback = callback
+        if callback is not None:
+            self._seconds_clock.start()
+            self._stepped_seen = None if self.stepped_time is None else self.stepped_time()
+            self._next_pass()
+
+    @property
+    def fps_limit(self) -> int:
+        """0 for uncapped."""
+        return self._fps_limit
+
+    def set_strands_stepped(self, stepped) -> None:
+        if stepped != self._strands_stepped:
+            self._strands_stepped = stepped
+            self.strands_stepped.emit(stepped)
 
     def _update_after_camera_change(self) -> None:
         if self._fps_limit == 0:
@@ -3972,12 +2183,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
-        QTimer.singleShot(0, self, self.place_viewport_overlays)
+        self._overlays.place_later()
         self._update_timer_state()
 
     def hideEvent(self, event):
         self._unlock_scene_cursor()
         self._timer.stop()
+        self._fps_timer.stop()
         self.freecam.clear_input()
         super().hideEvent(event)
 
@@ -3985,6 +2197,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         self._fps_limit = int(value)
         self._save_view_setting("mesh_viewer_fps_limit", self._fps_limit)
         self._update_timer_state()
+        self.fps_limit_changed.emit(self._fps_limit)
 
     def _set_camera_setting(self, attr: str, key: str, value: float):
         setattr(self, attr, float(value))
@@ -3996,16 +2209,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
         if mode not in self.WIREFRAME_MODES:
             return
         self.wireframe_mode = mode
-        self._skinned_draw_sets_dirty = True
-        self._save_view_setting("mesh_viewer_wireframe_mode", mode)
+        self._save_view_setting(self._wireframe_key, mode)
         self.update()
 
     def _set_lighting_mode(self, mode: str):
-        if mode not in self.LIGHTING_MODES:
+        """Game lighting is a shading (``set_shading``), not a light."""
+        if mode == "game" or mode not in self.LIGHTING_MODES:
             return
-        self.lighting_mode = mode
+        self.texture_light = mode
         self._save_view_setting("mesh_viewer_lighting_mode", mode)
-        self._invalidate_probe_shading()
+        if self.lighting_mode != "game":
+            self.lighting_mode = mode
+        self._refresh_probe_status_label()
         self.update()
 
     def _set_line_width(self, value: float):
@@ -4016,13 +2231,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QOpenGLWidget):
     def _set_ambient(self, value: float):
         self.ambient = float(value)
         self._save_view_setting("mesh_viewer_ambient", self.ambient)
-        self._colors_dirty = True
         self.update()
 
     def _set_diffuse(self, value: float):
         self.diffuse = float(value)
         self._save_view_setting("mesh_viewer_diffuse", self.diffuse)
-        self._colors_dirty = True
         self.update()
 
     def _set_show_bone_labels(self, checked: bool):

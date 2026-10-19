@@ -1,0 +1,105 @@
+{
+ "format": 2,
+ "game": "MHWS",
+ "resource_version": 240906211,
+ "target": 2,
+ "source_holds_indices": true,
+ "destination_holds_buffer": null,
+ "blend": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentLight"
+  },
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentStandard"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalCluster"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalClusterExcludingEdge"
+ },
+ "write_by_submesh": true,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningInstanceIDVFXCS",
+  "PreTransformSkinningInstanceIDWithNormCS",
+  "PreTransformSkinningInstanceIDWithNormVFXCS",
+  "PreTransformSkinningOptionalBufferCS",
+  "PreTransformSkinningOptionalBufferVFXCS",
+  "PreTransformSkinningOptionalBufferWithNormCS",
+  "PreTransformSkinningOptionalBufferWithNormVFXCS",
+  "PreTransformSkinningVFXCS",
+  "PreTransformSkinningWithNormCS",
+  "PreTransformSkinningWithNormVFXCS",
+  "PreTransformStaticCS",
+  "PreTransformStaticVFXCS"
+ ],
+ "skin_by_range": false,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "source": {
+  "captures": [
+   {
+    "capture": "MonsterHunterWilds_frame21612.rdc",
+    "draws": [
+     26388,
+     26492,
+     26777,
+     26802,
+     29161
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame64816.rdc",
+    "draws": [
+     19700,
+     19708,
+     19757,
+     19854,
+     20170
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame22611.rdc",
+    "draws": [
+     9862
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame15118.rdc",
+    "draws": [
+     11147,
+     11156,
+     19497
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame11055.rdc",
+    "draws": [
+     10394,
+     10427
+    ]
+   }
+  ],
+  "executable": "MonsterHunterWilds_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
+ }
+}

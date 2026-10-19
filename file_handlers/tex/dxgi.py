@@ -1,13 +1,37 @@
 from __future__ import annotations
 
+
+class UnknownTextureFormat(ValueError):
+    pass
+
+
 DXGI_FORMAT_UNKNOWN = 0
+DXGI_FORMAT_R32G32B32A32_FLOAT = 2
+DXGI_FORMAT_R32G32B32_FLOAT = 6
 DXGI_FORMAT_R16G16B16A16_TYPELESS = 9
 DXGI_FORMAT_R16G16B16A16_FLOAT = 10
 DXGI_FORMAT_R16G16B16A16_UNORM = 11
+DXGI_FORMAT_R16G16B16A16_UINT = 12
+DXGI_FORMAT_R16G16B16A16_SNORM = 13
+DXGI_FORMAT_R32G32_FLOAT = 16
+DXGI_FORMAT_R32G32_UINT = 17
 DXGI_FORMAT_R10G10B10A2_UNORM = 24
+DXGI_FORMAT_R11G11B10_FLOAT = 26
+DXGI_FORMAT_R8G8B8A8_TYPELESS = 27
 DXGI_FORMAT_R8G8B8A8_UNORM = 28
 DXGI_FORMAT_R8G8B8A8_UNORM_SRGB = 29
+DXGI_FORMAT_R8G8B8A8_UINT = 30
+DXGI_FORMAT_R16G16_FLOAT = 34
+DXGI_FORMAT_R16G16_UNORM = 35
+DXGI_FORMAT_R32_TYPELESS = 39
+DXGI_FORMAT_D32_FLOAT = 40
+DXGI_FORMAT_R32_FLOAT = 41
+DXGI_FORMAT_R32_UINT = 42
+DXGI_FORMAT_R32_SINT = 43
 DXGI_FORMAT_R8G8_UNORM = 49
+DXGI_FORMAT_R16_FLOAT = 54
+DXGI_FORMAT_R16_UNORM = 56
+DXGI_FORMAT_R16_UINT = 57
 DXGI_FORMAT_R8_UNORM = 61
 DXGI_FORMAT_A8_UNORM = 65
 DXGI_FORMAT_BC1_UNORM = 71
@@ -31,6 +55,26 @@ DXGI_FORMAT_B8G8R8A8_UNORM_SRGB = 91
 _BC8BPP = {DXGI_FORMAT_BC2_UNORM, DXGI_FORMAT_BC2_UNORM_SRGB, DXGI_FORMAT_BC3_UNORM, DXGI_FORMAT_BC3_UNORM_SRGB, DXGI_FORMAT_BC5_UNORM, DXGI_FORMAT_BC5_SNORM, DXGI_FORMAT_BC6H_UF16, DXGI_FORMAT_BC6H_SF16, DXGI_FORMAT_BC7_UNORM, DXGI_FORMAT_BC7_UNORM_SRGB}
 _BC4BPP = {DXGI_FORMAT_BC1_UNORM, DXGI_FORMAT_BC1_UNORM_SRGB, DXGI_FORMAT_BC4_UNORM, DXGI_FORMAT_BC4_SNORM}
 _BC_ALL = _BC8BPP | _BC4BPP
+_FORMAT_BITS = {
+    DXGI_FORMAT_R32G32B32A32_FLOAT: 128,
+    DXGI_FORMAT_R16G16B16A16_TYPELESS: 64,
+    DXGI_FORMAT_R16G16B16A16_FLOAT: 64,
+    DXGI_FORMAT_R16G16B16A16_UNORM: 64,
+    DXGI_FORMAT_R16G16B16A16_SNORM: 64,
+    DXGI_FORMAT_R10G10B10A2_UNORM: 32,
+    DXGI_FORMAT_R11G11B10_FLOAT: 32,
+    DXGI_FORMAT_R8G8B8A8_UNORM: 32,
+    DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: 32,
+    DXGI_FORMAT_R8G8_UNORM: 16,
+    DXGI_FORMAT_R16_FLOAT: 16,
+    DXGI_FORMAT_R16_UNORM: 16,
+    DXGI_FORMAT_R8_UNORM: 8,
+    DXGI_FORMAT_A8_UNORM: 8,
+    DXGI_FORMAT_B5G6R5_UNORM: 16,
+    DXGI_FORMAT_B5G5R5A1_UNORM: 16,
+    DXGI_FORMAT_B8G8R8A8_UNORM: 32,
+    DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: 32,
+}
 
 def is_block_compressed(dxgi_format: int) -> bool:
     return dxgi_format in _BC_ALL
@@ -40,23 +84,13 @@ def get_bits_per_pixel(dxgi_format: int) -> int:
         return 4
     if dxgi_format in _BC8BPP:
         return 8
-    
-    format_bits = {
-        DXGI_FORMAT_R16G16B16A16_FLOAT: 64,
-        DXGI_FORMAT_R16G16B16A16_UNORM: 64,
-        DXGI_FORMAT_R10G10B10A2_UNORM: 32,
-        DXGI_FORMAT_R8G8B8A8_UNORM: 32,
-        DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: 32,
-        DXGI_FORMAT_R8G8_UNORM: 16,
-        DXGI_FORMAT_R8_UNORM: 8,
-        DXGI_FORMAT_A8_UNORM: 8,
-        DXGI_FORMAT_B5G6R5_UNORM: 16,
-        DXGI_FORMAT_B5G5R5A1_UNORM: 16,
-        DXGI_FORMAT_B8G8R8A8_UNORM: 32,
-        DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: 32,
-    }
-    
-    return format_bits.get(dxgi_format, 32)
+    try:
+        return _FORMAT_BITS[dxgi_format]
+    except KeyError:
+        raise UnknownTextureFormat(
+            f"no reversed size for DXGI format {dxgi_format}; known formats: "
+            f"{sorted(KNOWN_FORMATS)}"
+        ) from None
 
 def get_block_size_bytes(dxgi_format: int) -> int:
     if dxgi_format in _BC4BPP:
@@ -75,13 +109,18 @@ def top_mip_size_bytes(dxgi_format: int, width: int, height: int) -> int:
 
 _NAME_MAP = {
     DXGI_FORMAT_UNKNOWN: "UNKNOWN",
+    DXGI_FORMAT_R32G32B32A32_FLOAT: "R32G32B32A32_FLOAT",
     DXGI_FORMAT_R16G16B16A16_TYPELESS: "R16G16B16A16_TYPELESS",
     DXGI_FORMAT_R16G16B16A16_FLOAT: "R16G16B16A16_FLOAT",
     DXGI_FORMAT_R16G16B16A16_UNORM: "R16G16B16A16_UNORM",
+    DXGI_FORMAT_R16G16B16A16_SNORM: "R16G16B16A16_SNORM",
     DXGI_FORMAT_R10G10B10A2_UNORM: "R10G10B10A2_UNORM",
+    DXGI_FORMAT_R11G11B10_FLOAT: "R11G11B10_FLOAT",
     DXGI_FORMAT_R8G8B8A8_UNORM: "R8G8B8A8_UNORM",
     DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: "R8G8B8A8_UNORM_SRGB",
     DXGI_FORMAT_R8G8_UNORM: "R8G8_UNORM",
+    DXGI_FORMAT_R16_FLOAT: "R16_FLOAT",
+    DXGI_FORMAT_R16_UNORM: "R16_UNORM",
     DXGI_FORMAT_R8_UNORM: "R8_UNORM",
     DXGI_FORMAT_A8_UNORM: "A8_UNORM",
     DXGI_FORMAT_BC1_UNORM: "BC1_UNORM",
@@ -104,13 +143,27 @@ _NAME_MAP = {
     DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: "B8G8R8A8_UNORM_SRGB",
 }
 
+#: Every format word this project can size.  The shipped corpus uses 17 of them.
+KNOWN_FORMATS = frozenset(_BC_ALL | _FORMAT_BITS.keys())
+
+
+def is_known_format(dxgi_format: int) -> bool:
+    return dxgi_format in KNOWN_FORMATS
+
+
 def dxgi_name(dxgi_format: int) -> str:
     return _NAME_MAP.get(dxgi_format, f"DXGI_{dxgi_format}")
+
+
 
 def describe_format(dxgi_format: int) -> dict:
     comp = is_block_compressed(dxgi_format)
     bpp = get_bits_per_pixel(dxgi_format)
     bs = get_block_size_bytes(dxgi_format) if comp else 0
-    return {'name': dxgi_name(dxgi_format), 'compressed': comp, 'bits_per_pixel': bpp, 'block_size': bs}
-
+    return {
+        'name': dxgi_name(dxgi_format),
+        'compressed': comp,
+        'bits_per_pixel': bpp,
+        'block_size': bs,
+    }
 

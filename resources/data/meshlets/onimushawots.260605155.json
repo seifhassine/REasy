@@ -1,0 +1,161 @@
+{
+ "format": 2,
+ "game": "ONIMUSHAWOTS",
+ "resource_version": 260605155,
+ "raster": "GBufferMeshletListVS",
+ "shade": "GBufferVisibility",
+ "forward": "ForwardMeshletListVS",
+ "material_ids": {
+  "file": "systems/develop/meshshader/test.sdf",
+  "program": "DrawMaterialID",
+  "target": 1
+ },
+ "vertices": 378,
+ "tile_vertices": 160,
+ "visibility_format": 17,
+ "material_id_formats": [
+  53,
+  55,
+  56
+ ],
+ "table_tag": 4207405473,
+ "instance": {
+  "userParam": 0,
+  "visibleFlag": 1896906783,
+  "partsTableIndex": 2702970337,
+  "extendedBindlessIndex": 4294967295,
+  "miscParams": 2,
+  "skinningIndex": 16777215
+ },
+ "deferred": {
+  "steps": [
+   {
+    "program": "DeferredIndexBufferKey",
+    "groups": 1056,
+    "buffers": {
+     "DeferredTexturingIndicesBufferSRV": "indices",
+     "RWSortCounter": "counter",
+     "RWSortKey": "keys"
+    }
+   },
+   {
+    "program": "DeferredBuildBucket",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredGenerateDispatchIndirect",
+    "groups": 1,
+    "buffers": {
+     "DeferredTexturingOffsetUAV": "offsets",
+     "DeferredTexturingIndirectUAV": "arguments",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredRadixsort1stPass",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWSortKey": "sorted_keys",
+     "RWSortData": "order",
+     "RWBucket": "buckets"
+    }
+   }
+  ],
+  "bound": {
+   "material_ids": {
+    "DeferredTexturingIndicesBufferUAV": "indices",
+    "RWSortCounter": "counter",
+    "DeferredIndexUAV": "slots"
+   },
+   "transform": {
+    "DeferredTexturingOffsetSRV": "offsets",
+    "DeferredTexturingIndicesBufferSRV": "indices",
+    "SortData": "order",
+    "DeferredTexturingTransformedBufferUAV": "triangles"
+   },
+   "shade": {
+    "DeferredIndexSRV": "slots",
+    "DeferredTexturingTransformedBufferSRV": "triangles"
+   }
+  },
+  "roles": {
+   "counter": {
+    "size": 128
+   },
+   "buckets": {
+    "size": 16384
+   },
+   "offsets": {
+    "size": 32768
+   },
+   "arguments": {
+    "size": 131072
+   },
+   "indices": {
+    "texel_bytes": 4
+   },
+   "keys": {
+    "texel_bytes": 4
+   },
+   "sorted_keys": {
+    "texel_bytes": 4
+   },
+   "order": {
+    "texel_bytes": 4
+   },
+   "triangles": {
+    "texel_bytes": 48
+   },
+   "slots": {
+    "format": 42
+   }
+  },
+  "zeroed": [
+   "counter",
+   "buckets"
+  ],
+  "transform_ids": 64,
+  "arguments": {
+   "role": "arguments",
+   "bytes": 32
+  }
+ },
+ "transform": {
+  "program": "MeshletGeometryTransform",
+  "reads": [
+   "DeferredIndexSRV",
+   "DeferredTexturingTransformedBufferSRV"
+  ]
+ },
+ "source": {
+  "captures": [
+   {
+    "capture": "wots_frame136485.rdc",
+    "draws": [
+     16099,
+     20770,
+     20914,
+     21489
+    ]
+   },
+   {
+    "capture": "wots_frame28857.rdc",
+    "test": "stage104/build_wots_forward.py",
+    "draws": [
+     15033,
+     15096
+    ]
+   }
+  ],
+  "note": "wots_frame28857: the forward meshlets drawn by the mesh-shader variants (AForwardMeshletListMS/ASMS) with the master's ForwardMeshletList pixel shader, which its ForwardMeshletListVS program holds too; REasy draws the vertex-shader variant, as for the raster",
+  "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
+  "deferred": "wots_frame136485 20770-20799 (scratch stage107/pipeline_wots.log against stage107/pipeline_mhws.log of MonsterHunterWilds_frame15118 11260-11289): DrawMaterialID, then test.sdf's DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared, the same buffer sizes bound (counter 128, buckets 16384, offsets 32768, arguments 131072, slots R32_UINT of the screen) and the same group counts (1056, 1056, 1, 1056); the transforms (20807-20895) by indirect dispatches of the transform IDs, the shading (20914 on) reading the slots and the transformed triangles"
+ }
+}

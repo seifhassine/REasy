@@ -44,6 +44,11 @@ class EventFlowGraph(QGraphicsView):
         self._node_timer = QTimer(self)
         self._node_timer.setSingleShot(True)
         self._node_timer.timeout.connect(self._emit_pending_node)
+        # Deferred until the nodes are laid out; a child timer dies with the view.
+        self._fit_timer = QTimer(self)
+        self._fit_timer.setSingleShot(True)
+        self._fit_timer.setInterval(0)
+        self._fit_timer.timeout.connect(self.fit_graph)
         self._has_graph = False
         self._pan_start = None
         self._pan_scroll = None
@@ -160,7 +165,7 @@ class EventFlowGraph(QGraphicsView):
         scene.setSceneRect(0, 0, width, content_height + 40)
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
         self._has_graph = True
-        QTimer.singleShot(0, self, self.fit_graph)
+        self._fit_timer.start()
 
     def cleanup(self):
         self._node_timer.stop()
@@ -228,8 +233,6 @@ class EventFlowGraph(QGraphicsView):
         self.horizontalScrollBar().setValue(0)
 
     def zoom_by(self, factor: float):
-        """Zoom around the pointer while keeping the graph usable."""
-
         current = self.transform().m11()
         target = min(4.0, max(0.2, current * factor))
         if current:

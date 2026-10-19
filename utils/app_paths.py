@@ -4,6 +4,9 @@ import os
 import sys
 from pathlib import Path
 
+PROJECT_METADATA_FOLDER = ".reasy"
+PROJECT_CONFIG_NAME = ".reasy_project.json"
+
 
 def application_root() -> Path:
     """Return the source root, or the executable directory in a frozen build."""

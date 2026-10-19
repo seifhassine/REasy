@@ -4,7 +4,9 @@ import importlib
 import struct
 from dataclasses import dataclass
 
-from .dds import DDS_MAGIC
+import numpy as np
+
+from .dds import CUBEMAP_FACES, DDS_DIMENSION_TEXTURE3D, DDS_MAGIC, DDS_MISC_TEXTURECUBE, DDSCAPS2_CUBEMAP, FOURCC_DX10
 from .dxgi import (
     DXGI_FORMAT_A8_UNORM,
     DXGI_FORMAT_B5G5R5A1_UNORM,
@@ -33,6 +35,7 @@ from .dxgi import (
     DXGI_FORMAT_R16G16B16A16_FLOAT,
     DXGI_FORMAT_R16G16B16A16_TYPELESS,
     DXGI_FORMAT_R16G16B16A16_UNORM,
+    UnknownTextureFormat,
     top_mip_size_bytes,
 )
 
@@ -80,7 +83,6 @@ _BC_DECODERS = {
     DXGI_FORMAT_BC7_UNORM_SRGB: "decode_bc7",
 }
 
-_DDS_FOURCC_DX10 = 0x30315844
 _DDS_FOURCC_DXT1 = 0x31545844
 _DDS_FOURCC_DXT3 = 0x33545844
 _DDS_FOURCC_DXT5 = 0x35545844
@@ -100,14 +102,6 @@ _DDS_LEGACY_FOURCC_TO_DXGI = {
 }
 
 
-def _float01_to_u8(value: float) -> int:
-    if value <= 0.0:
-        return 0
-    if value >= 1.0:
-        return 255
-    return int(value * 255.0 + 0.5)
-
-
 def _bgra_to_rgba(data: bytes) -> bytes:
     if len(data) % 4 != 0:
         raise ValueError(f"Decoded BC payload has invalid size: {len(data)}")
@@ -119,70 +113,56 @@ def _bgra_to_rgba(data: bytes) -> bytes:
 def _decode_uncompressed_rgba(dxgi_format: int, data: bytes, pixel_count: int) -> bytes:
     if dxgi_format in (DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB):
         return data[: pixel_count * 4]
+    if dxgi_format in (DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB):
+        return _bgra_to_rgba(data[: pixel_count * 4])
+
+    if dxgi_format == DXGI_FORMAT_R16G16B16A16_UNORM:
+        values = np.frombuffer(data, dtype="<u2", count=pixel_count * 4)
+        return (values >> 8).astype(np.uint8).tobytes()
+
+    if dxgi_format in (DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_TYPELESS):
+        # Float32 first: value * 255 + 0.5 is exact there, keeping round-half-up.
+        values = np.frombuffer(data, dtype="<f2", count=pixel_count * 4).astype(np.float32)
+        if np.isnan(values).any():
+            raise ValueError("cannot convert float NaN to integer")
+        np.clip(values, 0.0, 1.0, out=values)
+        values *= 255.0
+        values += 0.5
+        return values.astype(np.uint8).tobytes()
 
     out = bytearray(pixel_count * 4)
 
-    if dxgi_format in (DXGI_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM_SRGB):
-        for i in range(pixel_count):
-            b, g, r, a = data[i * 4:i * 4 + 4]
-            out[i * 4:i * 4 + 4] = bytes((r, g, b, a))
-        return bytes(out)
-
     if dxgi_format == DXGI_FORMAT_R8G8_UNORM:
-        for i in range(pixel_count):
-            r, g = data[i * 2:i * 2 + 2]
-            out[i * 4:i * 4 + 4] = bytes((r, g, 0, 255))
+        source = data[: pixel_count * 2]
+        out[0::4], out[1::4] = source[0::2], source[1::2]
+        out[3::4] = b"\xff" * pixel_count
         return bytes(out)
 
-    if dxgi_format == DXGI_FORMAT_R8_UNORM:
-        for i, r in enumerate(data[:pixel_count]):
-            out[i * 4:i * 4 + 4] = bytes((r, r, r, 255))
+    if dxgi_format in (DXGI_FORMAT_R8_UNORM, DXGI_FORMAT_A8_UNORM):
+        source = data[:pixel_count]
+        out[0::4] = out[1::4] = out[2::4] = source
+        out[3::4] = source if dxgi_format == DXGI_FORMAT_A8_UNORM else b"\xff" * pixel_count
         return bytes(out)
 
-    if dxgi_format == DXGI_FORMAT_A8_UNORM:
-        for i, a in enumerate(data[:pixel_count]):
-            out[i * 4:i * 4 + 4] = bytes((a, a, a, a))
-        return bytes(out)
-
-    if dxgi_format == DXGI_FORMAT_B5G6R5_UNORM:
-        for i in range(pixel_count):
-            v = struct.unpack_from("<H", data, i * 2)[0]
-            r = ((v >> 11) & 0x1F) * 255 // 31
-            g = ((v >> 5) & 0x3F) * 255 // 63
-            b = (v & 0x1F) * 255 // 31
-            out[i * 4:i * 4 + 4] = bytes((r, g, b, 255))
-        return bytes(out)
-
-    if dxgi_format == DXGI_FORMAT_B5G5R5A1_UNORM:
-        for i in range(pixel_count):
-            v = struct.unpack_from("<H", data, i * 2)[0]
-            b = (v & 0x1F) * 255 // 31
-            g = ((v >> 5) & 0x1F) * 255 // 31
-            r = ((v >> 10) & 0x1F) * 255 // 31
-            a = 255 if (v >> 15) else 0
-            out[i * 4:i * 4 + 4] = bytes((r, g, b, a))
-        return bytes(out)
-
-    if dxgi_format == DXGI_FORMAT_R16G16B16A16_UNORM:
-        for i in range(pixel_count):
-            r16, g16, b16, a16 = struct.unpack_from("<HHHH", data, i * 8)
-            out[i * 4:i * 4 + 4] = bytes((r16 >> 8, g16 >> 8, b16 >> 8, a16 >> 8))
-        return bytes(out)
-
-    if dxgi_format in (DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_TYPELESS):
-        for i in range(pixel_count):
-            r, g, b, a = struct.unpack_from("<eeee", data, i * 8)
-            out[i * 4:i * 4 + 4] = bytes((_float01_to_u8(r), _float01_to_u8(g), _float01_to_u8(b), _float01_to_u8(a)))
+    pixels = np.frombuffer(out, dtype=np.uint8).reshape(pixel_count, 4)
+    if dxgi_format in (DXGI_FORMAT_B5G6R5_UNORM, DXGI_FORMAT_B5G5R5A1_UNORM):
+        words = np.frombuffer(data, dtype="<u2", count=pixel_count)
+        pixels[:, 2] = (words & 31) * 255 // 31
+        if dxgi_format == DXGI_FORMAT_B5G6R5_UNORM:
+            pixels[:, 0] = (words >> 11) * 255 // 31
+            pixels[:, 1] = ((words >> 5) & 63) * 255 // 63
+            pixels[:, 3] = 255
+        else:
+            pixels[:, 0] = ((words >> 10) & 31) * 255 // 31
+            pixels[:, 1] = ((words >> 5) & 31) * 255 // 31
+            pixels[:, 3] = (words >> 15) * 255
         return bytes(out)
 
     if dxgi_format == DXGI_FORMAT_R10G10B10A2_UNORM:
-        for i in range(pixel_count):
-            packed = struct.unpack_from("<I", data, i * 4)[0]
-            r = (packed & 0x3FF) * 255 // 1023
-            g = ((packed >> 10) & 0x3FF) * 255 // 1023
-            b = ((packed >> 20) & 0x3FF) * 255 // 1023
-            a = ((packed >> 30) & 0x3) * 255 // 3
-            out[i * 4:i * 4 + 4] = bytes((r, g, b, a))
+        words = np.frombuffer(data, dtype="<u4", count=pixel_count)
+        for channel, shift in enumerate((0, 10, 20)):
+            pixels[:, channel] = ((words >> shift) & 1023) * 255 // 1023
+        pixels[:, 3] = (words >> 30) * 85
         return bytes(out)
 
     raise ValueError(f"Unsupported format for direct decoding: {dxgi_format}")
@@ -192,7 +172,10 @@ def decode_texture_data(dxgi_format: int, width: int, height: int, data: bytes) 
     if width <= 0 or height <= 0:
         raise ValueError("Invalid texture dimensions")
 
-    expected_input_size = top_mip_size_bytes(dxgi_format, width, height)
+    try:
+        expected_input_size = top_mip_size_bytes(dxgi_format, width, height)
+    except UnknownTextureFormat:
+        raise ValueError(f"Unsupported format for direct decoding: {dxgi_format}") from None
     if len(data) < expected_input_size:
         raise ValueError(
             f"Texture payload is truncated: {len(data)} bytes "
@@ -221,15 +204,19 @@ def decode_texture_data(dxgi_format: int, width: int, height: int, data: bytes) 
     return _decode_uncompressed_rgba(dxgi_format, data, width * height)
 
 
-def decode_tex_mip(tex_file, image_index: int = 0, mip_index: int = 0) -> DecodedTexture:
+def decode_tex_mip(
+    tex_file, image_index: int = 0, mip_index: int = 0, slice_index: int = 0
+) -> DecodedTexture:
     header = tex_file.header
-    if header.format_is_block_compressed() and not tex_file.header_is_power_of_two():
-        mip_data, width, height = tex_file.read_non_pot_level(mip_index, image_index)
-    else:
-        mip = tex_file.get_mip_map_data(mip_index, image_index)
-        mip_data, width, height = mip.data, mip.width, mip.height
-    rgba = decode_texture_data(header.format, width, height, mip_data)
-    return DecodedTexture(width=width, height=height, rgba=rgba)
+    data = tex_file.read_slice(mip_index, image_index, slice_index)
+    if data is None:
+        raise ValueError(
+            f"mip {mip_index} stores {header.slice_count(mip_index)} slices; "
+            f"slice {slice_index} is outside them"
+        )
+    width = max(1, header.width >> mip_index)
+    height = max(1, header.height >> mip_index)
+    return DecodedTexture(width, height, decode_texture_data(header.format, width, height, data))
 
 
 def _resolve_legacy_dds_dxgi(dds_data: bytes) -> int:
@@ -254,7 +241,21 @@ def _resolve_legacy_dds_dxgi(dds_data: bytes) -> int:
     raise ValueError("Unsupported DDS pixel format")
 
 
-def decode_dds_mip(dds_data: bytes, mip_index: int = 0, image_index: int = 0) -> DecodedTexture:
+@dataclass(frozen=True)
+class DdsInfo:
+    width: int
+    height: int
+    depth: int
+    array_size: int
+    image_count: int
+    mip_count: int
+    dxgi_format: int
+    data_offset: int
+    cubemap: bool
+    is_volume: bool
+
+
+def dds_info(dds_data: bytes) -> DdsInfo:
     if len(dds_data) < 128:
         raise ValueError("DDS data too small")
     if struct.unpack_from('<I', dds_data, 0)[0] != DDS_MAGIC:
@@ -262,42 +263,78 @@ def decode_dds_mip(dds_data: bytes, mip_index: int = 0, image_index: int = 0) ->
 
     width = struct.unpack_from('<I', dds_data, 16)[0]
     height = struct.unpack_from('<I', dds_data, 12)[0]
+    depth = max(1, struct.unpack_from('<I', dds_data, 24)[0])
     mip_count = max(1, struct.unpack_from('<I', dds_data, 28)[0])
-    if mip_index < 0 or mip_index >= mip_count:
-        raise ValueError(f"Mip index out of range: {mip_index}")
 
     fourcc = struct.unpack_from('<I', dds_data, 84)[0]
-    if fourcc == _DDS_FOURCC_DX10:
+    if fourcc == FOURCC_DX10:
         if len(dds_data) < 148:
             raise ValueError("DDS DX10 data too small")
         dxgi_format = struct.unpack_from('<I', dds_data, 128)[0]
-        array_size = max(1, struct.unpack_from('<I', dds_data, 140)[0])
+        dimension = struct.unpack_from('<I', dds_data, 132)[0]
+        misc_flags = struct.unpack_from('<I', dds_data, 136)[0]
+        depth_or_array = max(1, struct.unpack_from('<I', dds_data, 140)[0])
+        is_volume = dimension == DDS_DIMENSION_TEXTURE3D
+        array_size = 1 if is_volume else depth_or_array
+        if is_volume:
+            depth = depth_or_array
+        cubemap = bool(misc_flags & DDS_MISC_TEXTURECUBE)
         data_offset = 148
     else:
         dxgi_format = _resolve_legacy_dds_dxgi(dds_data)
+        caps2 = struct.unpack_from('<I', dds_data, 112)[0]
+        cubemap = bool(caps2 & DDSCAPS2_CUBEMAP)
         array_size = 1
+        is_volume = depth > 1
         data_offset = 128
 
-    if image_index < 0 or image_index >= array_size:
-        raise ValueError(f"Image index out of range: {image_index}")
+    return DdsInfo(
+        width,
+        height,
+        depth,
+        array_size,
+        array_size * CUBEMAP_FACES if cubemap else array_size,
+        mip_count,
+        dxgi_format,
+        data_offset,
+        cubemap,
+        is_volume,
+    )
 
-    mip_sizes: list[int] = []
-    mip_dims: list[tuple[int, int]] = []
-    w = width
-    h = height
-    for _ in range(mip_count):
-        mip_dims.append((w, h))
-        mip_sizes.append(top_mip_size_bytes(dxgi_format, w, h))
-        w = max(1, w >> 1)
-        h = max(1, h >> 1)
 
-    image_span = sum(mip_sizes)
-    start = data_offset + image_index * image_span + sum(mip_sizes[:mip_index])
-    size = mip_sizes[mip_index]
-    end = start + size
+def dds_subresources(info: DdsInfo) -> list[tuple[int, int]]:
+    """Sizes count unpadded rows."""
+    found = []
+    offset = info.data_offset
+    for _image in range(info.image_count):
+        for level in range(info.mip_count):
+            width, height = max(1, info.width >> level), max(1, info.height >> level)
+            size = top_mip_size_bytes(info.dxgi_format, width, height) * max(1, info.depth >> level)
+            found.append((offset, size))
+            offset += size
+    return found
+
+
+def decode_dds_mip(
+    dds_data: bytes, mip_index: int = 0, image_index: int = 0, slice_index: int = 0
+) -> DecodedTexture:
+    info = dds_info(dds_data)
+    if not 0 <= mip_index < info.mip_count:
+        raise ValueError(f"Mip index out of range: {mip_index}")
+    if not 0 <= image_index < info.image_count:
+        raise ValueError(f"Image index out of range: {image_index} of {info.image_count}")
+
+    offset, _size = dds_subresources(info)[image_index * info.mip_count + mip_index]
+    mip_w, mip_h = max(1, info.width >> mip_index), max(1, info.height >> mip_index)
+    mip_slices = max(1, info.depth >> mip_index)
+    if not 0 <= slice_index < mip_slices:
+        raise ValueError(f"Slice index out of range: {slice_index} of {mip_slices}")
+
+    slice_size = top_mip_size_bytes(info.dxgi_format, mip_w, mip_h)
+    start = offset + slice_index * slice_size
+    end = start + slice_size
     if end > len(dds_data):
         raise ValueError("DDS mip payload out of bounds")
 
-    mip_w, mip_h = mip_dims[mip_index]
-    rgba = decode_texture_data(dxgi_format, mip_w, mip_h, dds_data[start:end])
+    rgba = decode_texture_data(info.dxgi_format, mip_w, mip_h, dds_data[start:end])
     return DecodedTexture(width=mip_w, height=mip_h, rgba=rgba)
