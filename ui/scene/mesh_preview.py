@@ -1,6 +1,6 @@
 from file_handlers.mesh.normal_recalc import PreparedNormalRecalcPlan, mesh_normal_recalc_plan
-from .mesh_attributes import MeshAttributeView
-from .mesh_scene import build_mesh_scene, deform_mesh_vertices, mesh_scene_payloads
+lazy from .mesh_attributes import MeshAttributeView
+lazy from .mesh_scene import build_mesh_scene, deform_mesh_vertices, mesh_scene_payloads
 
 
 class MeshPreviewScene:

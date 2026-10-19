@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.mmtr.material_preview import MaterialPreviewError
 

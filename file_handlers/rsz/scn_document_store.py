@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from file_handlers.rsz.rsz_file import RszFile
+lazy from file_handlers.rsz.rsz_file import RszFile
 from file_handlers.rsz.rsz_handler import RszHandler
 
-from .scn_scene_graph import ScnSceneGraph, normalize_document_id, normalize_scene_path
+lazy from .scn_scene_graph import ScnSceneGraph, normalize_document_id, normalize_scene_path
 
 
 def scoped_document_path(project_dir: str, path: str) -> str:
@@ -140,7 +140,7 @@ class ScnDocumentStore:
         self._release_owner(owner, keep_dirty=False)
 
     def claim_graphs(self, owner: object, graphs: Iterable[ScnSceneGraph]) -> None:
-        document_ids = {document_id for graph in graphs for document_id in graph.documents}
+        document_ids = {*graph.documents for graph in graphs}
         for key, doc in list(self._documents.items()):
             if doc.scene_owner is owner and doc.document_id not in document_ids:
                 doc.scene_owner = None
@@ -162,7 +162,7 @@ class ScnDocumentStore:
         return [doc for doc in self._documents.values() if doc.scene_owner is owner]
 
     def dirty_documents(self, graphs: Iterable[ScnSceneGraph]) -> list[ScnDocument]:
-        ids = {document_id for graph in graphs for document_id in graph.documents}
+        ids = {*graph.documents for graph in graphs}
         return [doc for document_id in ids if (doc := self.get(document_id)) and doc.dirty]
 
     def save_graphs(self, graphs: Iterable[ScnSceneGraph]) -> int:

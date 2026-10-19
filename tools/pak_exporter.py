@@ -2,14 +2,14 @@ from __future__ import annotations
 from contextlib import contextmanager
 import os
 import shutil
-import subprocess
+lazy import subprocess
 import sys
 import tempfile
 from pathlib import Path
 from typing import Tuple
 
 from tools.github_downloader import GitHubToolDownloader
-from utils.app_paths import PROJECT_METADATA_FOLDER
+lazy from utils.app_paths import PROJECT_METADATA_FOLDER
 
 _OWNER_REPO = "seifhassine/REE.PAK.Tool"
 
@@ -80,7 +80,7 @@ def run_packer(
         proc = subprocess.Popen(
             cmd, cwd=exe.parent,
             stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            text=True, bufsize=1,
+            encoding="oem", errors="replace", bufsize=1,
         )
         out, _ = proc.communicate()
         return proc.returncode, out

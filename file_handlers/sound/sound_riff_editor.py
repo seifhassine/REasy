@@ -10,9 +10,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from tools.riff_metadata import RiffLoop, RiffMarker, RiffMetadata
+lazy from tools.riff_metadata import RiffLoop, RiffMarker, RiffMetadata
 
-from .sound_hirc_editor import RowsEditor, _number
+lazy from .sound_hirc_editor import RowsEditor, _number
 
 class RiffMetadataDialog(QDialog):
     def __init__(self, metadata, parent=None, profile=None):

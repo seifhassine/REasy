@@ -3,8 +3,8 @@ from PySide6.QtWidgets import (
     QComboBox, QHBoxLayout, QLabel, QSizePolicy, QSpinBox, QToolButton, QVBoxLayout, QWidget,
 )
 
-from ui.scene.mesh_attributes import HEAT_COLORS
-from .preview_controls import ComboStepper, make_searchable
+lazy from ui.scene.mesh_attributes import HEAT_COLORS
+lazy from .preview_controls import ComboStepper, make_searchable
 
 
 class AttributeControls(QWidget):

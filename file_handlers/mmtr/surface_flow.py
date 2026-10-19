@@ -3,7 +3,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+
+lazy from .surface_flow_dxbc import dxbc_flow
+lazy from .surface_flow_dxil import dxil_flow
+lazy from .surface_flow_spirv import spirv_flow
 
 
 MAX_CHANNEL_WIDTH = 4
@@ -241,13 +245,10 @@ def buffer_component_type(scalars) -> str:
 
 def recovered_surface_flow(ir_kind: str, ir, contract) -> NativeFlow:
     if ir_kind == "dxbc-sm5":
-        from .surface_flow_dxbc import dxbc_flow
         return dxbc_flow(ir, contract)
     if ir_kind == "dxil":
-        from .surface_flow_dxil import dxil_flow
         return dxil_flow(ir.to_assembly(), contract)
     if ir_kind == "spirv":
-        from .surface_flow_spirv import spirv_flow
         return spirv_flow(ir, contract)
     raise ShaderGraphError(f"Recovered program kind {ir_kind!r} has no surface dataflow reader.")
 
@@ -343,7 +344,7 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
                 scalars = {flow.values[item].scalar for item in candidate[1]}
                 if len(scalars) == 1 and "" not in scalars:
                     splits.append(candidate)
-        packed_lanes = {lane for group, _frontier, _tail in splits for lane in group}
+        packed_lanes = {*group for group, _frontier, _tail in splits}
         raw: dict[object, list[int]] = {}
         for lane in sorted(set(lanes) - packed_lanes):
             stores = lanes[lane]

@@ -3,7 +3,9 @@ from enum import Enum
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 
-from file_handlers.material_names import resolve_material_name
+lazy from file_handlers.material_names import resolve_material_name
+lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr
+lazy from .profiles.re_engine_spirv_authoring import spirv_uniform_reads, spirv_resource_reads
 
 
 class InputUsage(Enum):
@@ -85,8 +87,6 @@ def native_input_usage(document):
                     continue
                 seen.add(key)
                 if shader.binary_format == "spirv-module":
-                    from file_handlers.sdf.spirv_ir import SpirvSemanticIr
-                    from .profiles.re_engine_spirv_authoring import spirv_uniform_reads, spirv_resource_reads
                     try:
                         contract = profile.shader_contract(document, program, shader.role)
                         ir = None
@@ -166,7 +166,7 @@ def material_input_usage(document, *, descriptor_layout=None):
     if family is not None:
         members = tuple(material_input_usage(member, descriptor_layout=descriptor_layout) for member in family.members)
         result = MaterialInputUsage(
-            tuple(sorted({interval for member in members for interval in member.parameter_ranges})),
+            tuple(sorted({*member.parameter_ranges for member in members})),
             frozenset(name for member in members for name in member.textures),
             bool(members) and all(member.parameters_complete for member in members),
             bool(members) and all(member.textures_complete for member in members),

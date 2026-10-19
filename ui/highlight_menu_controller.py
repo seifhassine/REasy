@@ -1,8 +1,8 @@
-from PySide6.QtWidgets import QColorDialog
-from PySide6.QtGui import QAction, QColor
-from PySide6.QtCore import QCoreApplication, QModelIndex
+lazy from PySide6.QtWidgets import QColorDialog
+lazy from PySide6.QtGui import QAction, QColor
+lazy from PySide6.QtCore import QCoreApplication, QModelIndex
 
-from ui.highlight_utils import model_index_row_path
+lazy from ui.highlight_utils import model_index_row_path
 
 
 class HighlightMenuController:

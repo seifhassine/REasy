@@ -3,9 +3,9 @@ from __future__ import annotations
 import time
 from math import cos, radians, sin, tan
 
-import numpy as np
+lazy import numpy as np
 
-from PySide6.QtCore import QCoreApplication, Qt
+lazy from PySide6.QtCore import QCoreApplication, Qt
 
 
 class OrbitCameraMixin:

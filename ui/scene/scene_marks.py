@@ -4,7 +4,7 @@ from collections.abc import Iterable, Set
 
 import numpy as np
 
-from file_handlers.mesh.lit_preview import LitLines, LitPoints, LitTriangles
+lazy from file_handlers.mesh.lit_preview import LitLines, LitPoints, LitTriangles
 
 GIZMO_AXES = np.identity(3, dtype=np.float32)
 GIZMO_COLORS = ((1.0, 0.18, 0.12), (0.2, 0.9, 0.25), (0.25, 0.45, 1.0))

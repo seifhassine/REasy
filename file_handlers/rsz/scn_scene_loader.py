@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from utils.resource_file_utils import (
+lazy from utils.resource_file_utils import (
     ResourceResolutionContext,
     resource_context_for_app,
     resource_context_for_handler,
@@ -17,7 +17,7 @@ from .scn_scene_graph import (
     ScnSceneGraphBuilder,
     normalize_scene_path,
 )
-from .scn_document_store import ScnDocumentStore, scoped_document_path
+lazy from .scn_document_store import ScnDocumentStore, scoped_document_path
 
 
 @dataclass(slots=True)

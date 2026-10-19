@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from .errors import MotionParseError, MotionWriteError
+lazy from .errors import MotionParseError, MotionWriteError
 from .format_codec import MotionFormatCodec
 from .format_registry import find_motion_format, require_motion_format
-from .mot_list import MotList
+lazy from .mot_list import MotList
 
 
 class MotListFile:

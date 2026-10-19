@@ -6,15 +6,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QRunnable, Qt, QThreadPool, Signal
-from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QApplication, QStyle
+lazy from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPen, QPixmap
+lazy from PySide6.QtWidgets import QApplication, QStyle
 
-from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.mesh.material_session import MeshMaterialSession
-from file_handlers.mesh.lit_preview import thumbnail
-from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
-from utils.app_paths import application_root
-from utils.resource_file_utils import ResourceResolutionContext
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from file_handlers.mesh.material_session import MeshMaterialSession
+lazy from file_handlers.mesh.lit_preview import thumbnail
+lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
+lazy from utils.app_paths import application_root
+lazy from utils.resource_file_utils import ResourceResolutionContext
 
 
 THUMBNAIL_SIZE = 160

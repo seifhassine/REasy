@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from file_handlers.sdf.hlsl_contract import resource_identifier
+lazy from file_handlers.sdf.hlsl_contract import resource_identifier
 from file_handlers.sdf.shader_graph import (
     ShaderContract,
     ShaderExpression,
@@ -18,6 +18,26 @@ from file_handlers.sdf.shader_graph import (
     splat_expression,
 )
 from file_handlers.sdf.shader_graph_math import value_width
+lazy from file_handlers.sdf.aggregate_values import (
+    aggregate_expression, aggregate_fields, aggregate_helpers, aggregate_pins, aggregate_projection, aggregate_type,
+)
+lazy from file_handlers.sdf.shader_graph_buffer import BufferRead
+lazy from file_handlers.sdf.shader_graph_code import code_expression, code_helpers
+lazy from file_handlers.sdf.shader_graph_execution import EXECUTION_KINDS
+lazy from file_handlers.sdf.shader_graph_indexed_value import indexed_expression, indexed_helpers, indexed_shape
+lazy from file_handlers.sdf.shader_graph_math import TYPED_MATH_NODES, math_context_error, typed_math_expression, typed_math_helpers
+lazy from file_handlers.sdf.shader_graph_precision import precise_operation
+lazy from file_handlers.sdf.shader_graph_resource import resource_expression, resource_helpers, resource_properties
+lazy from file_handlers.sdf.shader_graph_texture import TextureOperation
+lazy from file_handlers.sdf.shader_graph_unassigned import unassigned_expression, unassigned_helpers, unassigned_type
+lazy from ..pass_purpose import drawing_for
+lazy from ..surface_data import MATERIAL_COORDINATES, surface_data_available, surface_data_keys, surface_data_value
+lazy from ..surface_outputs import validate_output_pin
+lazy from ..vertex_values import per_vertex_value, upstream as upstream_nodes
+lazy from .renderer_inputs import (
+    engine_input_nodes, engine_inputs_available, recovered_structured_slot, recovered_structured_word,
+    renderer_field_expression, renderer_fields, renderer_resource_expression, renderer_value_expression,
+)
 
 
 def recovered_master_pins(
@@ -36,7 +56,6 @@ def recovered_master_pins(
         value_type = str(value.get("value_type", "float"))
         renderer_type = False
         if value.get("input_kind") == "renderer_value":
-            from .renderer_inputs import renderer_fields
             renderer_fields(value)
             renderer_type = bool(re.fullmatch(r"(?:float|int|uint|bool)[1-4]?", value_type) or "value_layout" in value)
         if (
@@ -75,7 +94,6 @@ def recovered_master_pins(
 
 
 def surface_channel_pins(node: ShaderGraphNode, direction: str) -> tuple[ShaderPin, ...]:
-    from ..surface_outputs import validate_output_pin
     records = node.properties.get("output_pins" if direction == "output" else "channel_pins", [])
     if not isinstance(records, list):
         raise ShaderGraphError("Recovered master-material outputs are invalid.")
@@ -170,7 +188,6 @@ def _parameter_storage_expression(
 
 def _engine_structured_read(operation, incoming, helpers):
     """Rebuilt shaders declare engine structured buffers as records of uint slots."""
-    from .renderer_inputs import recovered_structured_slot, recovered_structured_word
     identifier = incoming('buffer', operation.object_type)
     index = incoming('index', 'uint')
     if not operation.dynamic_offset:
@@ -286,27 +303,22 @@ def recovered_graph_expression(
             )
 
         if kind in {'resource_index', 'descriptor_heap'}:
-            from file_handlers.sdf.shader_graph_resource import resource_expression, resource_helpers, resource_properties
             helpers.setdefault(('resource', repr(node.properties)), resource_helpers(node, contract))
             return finish(resource_expression(node, source_pin, incoming), resource_properties(node)[0], materialize=False)
         if node.properties.get('precise'):
-            from file_handlers.sdf.shader_graph_precision import precise_operation
             value, domain, helper = precise_operation(node, source_pin, contract, incoming)
             helpers.setdefault(('precise', helper), helper)
             return finish(value, domain)
         if kind in {'indexed_select', 'array_read'}:
-            from file_handlers.sdf.shader_graph_indexed_value import indexed_shape, indexed_helpers, indexed_expression
             domain, count = indexed_shape(node)
             helpers.setdefault(('indexed_value', kind, domain, count, node.properties.get('has_default', True)), indexed_helpers(node, contract))
             return finish(indexed_expression(node, source_pin, incoming), domain)
         if kind == 'unassigned_value':
-            from file_handlers.sdf.shader_graph_unassigned import unassigned_type, unassigned_helpers, unassigned_expression
             domain = unassigned_type(node)
             if compiler is not None:
                 return compiler.emit(key, scope, ShaderExpression('', domain, frozenset((scope,))), initialize=False)
             helpers.setdefault(('unassigned_value', domain), unassigned_helpers(node, contract))
             return finish(unassigned_expression(node, source_pin, incoming), domain)
-        from file_handlers.sdf.shader_graph_execution import EXECUTION_KINDS
         if kind in {'branch', 'repeat', 'resource_dimensions'} or kind in EXECUTION_KINDS:
             if kind == 'branch':
                 from ..material_branch import branch_evaluation as evaluate_region, branch_helpers as region_helpers
@@ -339,31 +351,25 @@ def recovered_graph_expression(
                 raise ShaderGraphError("Only surface channels can read the master material's outputs.")
             return finish(channel_resolver(source_pin), str(record["value_type"]), materialize=False)
         if kind == "re_engine_renderer_value":
-            from .renderer_inputs import renderer_value_expression
             return finish(renderer_value_expression(contract, node.properties, helpers),
                           node.properties["value_type"], materialize=False)
         if kind == "re_engine_renderer_resource":
-            from .renderer_inputs import renderer_resource_expression
             identifier, _resource = renderer_resource_expression(contract, node.properties)
             return finish(identifier, node.properties["value_type"], materialize=False)
         if kind == "re_engine_drawing_for":
-            from ..pass_purpose import drawing_for
             if not program_semantics.purpose:
                 raise ShaderGraphError("Drawing For needs the pass being built.")
             return finish("true" if drawing_for(node, program_semantics.purpose) else "false", "bool", materialize=False)
         if kind == "code":
-            from file_handlers.sdf.shader_graph_code import code_expression, code_helpers
             text = code_helpers(node)
             helpers.setdefault(("code", text), text)
             value_type = next(pin.value_type for pin in node_pins(node, contract)
                               if pin.direction == "output" and pin.name == source_pin)
             return finish(code_expression(node, source_pin, incoming), value_type)
         if kind == "re_engine_surface_data":
-            from ..surface_data import surface_data_value
             return finish(surface_data_value(program_semantics, contract, node.properties),
                           str(node.properties["value_type"]), materialize=False)
         if kind == "re_engine_per_vertex":
-            from ..vertex_values import per_vertex_value
             value_type = str(node.properties.get("value_type", "float"))
             if contract.stage == "pixel":
                 return finish(per_vertex_value(program_semantics, node).pixel_expression(), value_type,
@@ -372,24 +378,20 @@ def recovered_graph_expression(
                 raise ShaderGraphError("Computed per Vertex is read by vertex and pixel shaders only.")
             return finish(incoming("value", value_type), value_type, materialize=False)
         if kind == "re_engine_where_available":
-            from .renderer_inputs import engine_input_nodes, engine_inputs_available
-            from ..surface_data import surface_data_available, surface_data_keys
-            from ..vertex_values import upstream as upstream_nodes
             # A pixel shader reads what a Computed per Vertex node computes, not what the node reads.
             first = links.get((node.node_id, "value"))
             producers, per_vertex = upstream_nodes(project.graph, links, [first.source_node] if first else [],
                                                    through_per_vertex=contract.stage != "pixel")
             producers = [producer for producer in producers if producer not in per_vertex]
-            upstream = [item for producer in producers for item in engine_input_nodes(producer)]
+            upstream = [*engine_input_nodes(producer) for producer in producers]
             value_type = str(node.properties.get("value_type", "float"))
             computed = {value.source for value in program_semantics.vertex_values}
             chosen = ("value" if engine_inputs_available(contract, upstream) and surface_data_available(
-                program_semantics, [key for producer in producers for key in surface_data_keys(producer)])
+                program_semantics, [*surface_data_keys(producer) for producer in producers])
                 and (contract.stage != "pixel" or all(f"node:{item.node_id}" in computed for item in per_vertex))
                 else "otherwise")
             return finish(incoming(chosen, value_type), value_type, materialize=False)
         if kind in {"aggregate_construct", "aggregate_extract", "aggregate_replace"}:
-            from file_handlers.sdf.aggregate_values import aggregate_fields, aggregate_type, aggregate_helpers, aggregate_expression, aggregate_pins, aggregate_projection
             fields = aggregate_fields(node.properties)
             value_type = next(pin.value_type for pin in aggregate_pins(node, contract) if pin.direction == "output")
             if kind == "aggregate_extract":
@@ -400,8 +402,6 @@ def recovered_graph_expression(
                 producer, socket, index = aggregate_projection(project.graph,producer,link.source_pin,
                     int(node.properties.get("field_index",0)),links)
                 if producer.kind == "re_engine_renderer_value" and index is not None:
-                    from .renderer_inputs import renderer_field_expression, renderer_fields
-
                     if producer.properties["value_type"] != aggregate_type(fields):
                         raise ShaderGraphError("Aggregate input changes its logical field layout")
                     field = renderer_fields(producer.properties)[index]
@@ -436,7 +436,6 @@ def recovered_graph_expression(
                 materialize=False,
             )
         if kind == "texture_coordinates":
-            from ..surface_data import MATERIAL_COORDINATES, surface_data_value
             return finish(surface_data_value(program_semantics, contract, {
                 "datum": MATERIAL_COORDINATES, "label": "Texture Coordinates", "value_type": "float2"}),
                 "float2", materialize=False)
@@ -530,7 +529,6 @@ def recovered_graph_expression(
                 materialize=False,
             )
         if kind in {'sample_texture', 'texture_load'}:
-            from file_handlers.sdf.shader_graph_texture import TextureOperation
             try:
                 operation = TextureOperation.from_properties(kind, node.properties)
                 operation.validate_stage(contract.stage)
@@ -586,7 +584,6 @@ def recovered_graph_expression(
 
         value_type = str(node.properties.get("value_type", "float4"))
 
-        from file_handlers.sdf.shader_graph_math import TYPED_MATH_NODES, typed_math_expression, typed_math_helpers, math_context_error
         if kind in TYPED_MATH_NODES:
             try:
                 if context_error := math_context_error(kind, contract):
@@ -606,7 +603,6 @@ def recovered_graph_expression(
                 return finish(incoming(condition, value_type), value_type, materialize=False)
             return finish(f"({condition} ? {incoming('true', value_type)} : {incoming('false', value_type)})", value_type)
         if kind == 'buffer_load':
-            from file_handlers.sdf.shader_graph_buffer import BufferRead
             operation = BufferRead.from_properties(node.properties)
             link = links.get((node.node_id, 'buffer'))
             producer = project.graph.node(link.source_node) if link is not None else None

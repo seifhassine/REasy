@@ -4,10 +4,10 @@ import math
 
 from utils.hash_util import murmur3_hash
 
-from ..binary import ReadContext
-from ..errors import MotionParseError
+lazy from ..binary import ReadContext
+lazy from ..errors import MotionParseError
 from ..transform_channels import TransformChannels
-from .joint_map import (
+lazy from .joint_map import (
     ExtraJointFlags,
     JointMapDefinition,
     JointMapAttributes,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .surface_data import SURFACE_DATA_KIND
+lazy from .surface_data import SURFACE_DATA_KIND
 
 PLANAR_AXES = {"x": "yz", "y": "xz", "z": "xy"}
 

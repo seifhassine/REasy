@@ -2,8 +2,8 @@ from dataclasses import replace
 import itertools
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .profiles.dxbc_recovery import DxbcInstruction as Instruction
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .profiles.dxbc_recovery import DxbcInstruction as Instruction
 
 
 _EXITS = {'break', 'breakc_nz', 'breakc_z', 'continue', 'continuec_nz', 'continuec_z'}

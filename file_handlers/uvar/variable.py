@@ -3,8 +3,8 @@ import uuid
 
 from .base_model import BaseModel, FileHandler
 from .uvar_types import TypeKind, UvarFlags, Vec3, Int3, Uint3, Position, get_python_type
-from .uvar_expression import UvarExpression
-from utils.hash_util import murmur3_hash
+lazy from .uvar_expression import UvarExpression
+lazy from utils.hash_util import murmur3_hash
 
 TYPE_FORMATS = {
     TypeKind.Boolean: '<B',
@@ -85,7 +85,7 @@ NONVEC_WRITERS = {
     TypeKind.Enum:    lambda h, v: h.write('<i', v),
 }
 
-_UNSET = object()
+_UNSET = sentinel("_UNSET")
 _INTEGER_VEC3_LIST_TYPES = {
     TypeKind.Int8,
     TypeKind.Uint8,

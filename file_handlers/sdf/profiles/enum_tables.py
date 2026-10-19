@@ -1,8 +1,7 @@
 from collections.abc import Mapping
 from functools import cached_property
-from types import MappingProxyType
 
-from utils.enum_manager import EnumDefinitionError, game_enum_definitions
+lazy from utils.enum_manager import EnumDefinitionError, game_enum_definitions
 
 
 class EngineEnumTable(Mapping):
@@ -34,7 +33,7 @@ class EngineEnumTable(Mapping):
                 raise EnumDefinitionError(f"{label} has a duplicate/conflicting member {name}={value}")
             names.add(name)
             result[value] = meaning
-        return MappingProxyType(result)
+        return frozendict(result)
 
     def __getitem__(self, key):
         return self._values[key]

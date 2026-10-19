@@ -11,13 +11,14 @@ from typing import Iterable
 
 from file_handlers.bounded_cache import BoundedCache
 from file_handlers.mdf.mdf_file import BASE_TWO_SIDE_ENABLE, FORCED_TWO_SIDE_ENABLE, MatData, MdfFile, TexHeader
-from file_handlers.mmtr.mmtr_file import (
+lazy from file_handlers.mmtr.mmtr_file import (
     _parse_preview_document, _supports_preview_without_native_reflection, parse_drawn_master,
 )
 from file_handlers.mmtr.material_context import MaterialInstanceContext
-from file_handlers.mmtr.parsed_files import Lease
+lazy from file_handlers.mmtr.parsed_files import Lease
 from file_handlers.mmtr.profiles import MmtrGameProfile, mmtr_profile_for_game, mmtr_profile_for_resource
-from utils.resource_file_utils import (
+from utils.garbage_collection import configure_garbage_collector
+lazy from utils.resource_file_utils import (
     ResourceLocation,
     ResourceResolutionContext,
     locate_handler_resource,
@@ -27,6 +28,8 @@ from utils.resource_file_utils import (
 )
 
 from .profiles import MeshGameProfile, mesh_profile_for_game
+lazy from file_handlers.pak.reader import CachedPakReader
+lazy from file_handlers.mmtr.mmtrs_file import resolve_mmtr_resource
 
 
 PREFERRED_ALBEDO_TEXTURE_TYPES: tuple[str, ...] = (
@@ -176,7 +179,6 @@ class MeshMaterialResolver:
         reader = context.pak_cached_reader
         revision = None
         if reader is not None:
-            from file_handlers.pak.reader import CachedPakReader
             if type(reader) is not CachedPakReader:
                 return None
             revision = reader.path_lookup_revision
@@ -520,7 +522,8 @@ class MeshMaterialResolver:
     def _mdf_parse_pool() -> ProcessPoolExecutor:
         global _MDF_PARSE_POOL
         if _MDF_PARSE_POOL is None:
-            _MDF_PARSE_POOL = ProcessPoolExecutor(max_workers=min(4, os.cpu_count() or 1))
+            _MDF_PARSE_POOL = ProcessPoolExecutor(max_workers=min(4, os.process_cpu_count() or 1),
+                                                  initializer=configure_garbage_collector)
         return _MDF_PARSE_POOL
 
     @classmethod
@@ -598,7 +601,6 @@ class MeshMaterialResolver:
 
     @classmethod
     def _resolve_mmtr_resource(cls, handler, resource_path: str):
-        from file_handlers.mmtr.mmtrs_file import resolve_mmtr_resource
         return resolve_mmtr_resource(resource_path, lambda path: cls._resolve_resource(handler, path))
 
     @classmethod

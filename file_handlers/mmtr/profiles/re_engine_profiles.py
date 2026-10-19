@@ -26,10 +26,10 @@ from file_handlers.sdf.profiles import (
     SF6_SDF_PROFILE,
 )
 
-from ..models import MmtrNameSemantics, MmtrProgramContext
+lazy from ..models import MmtrNameSemantics, MmtrProgramContext
 from .base import MmtrGameProfile, register_mmtr_profile, surface_prefix
 from .re_engine_shader_graph import re_engine_shader_graph_profile
-from .speedtree_names import speedtree_name
+lazy from .speedtree_names import speedtree_name
 
 
 _SURFACE_ROOTS = (

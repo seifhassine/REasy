@@ -5,9 +5,10 @@ from dataclasses import replace
 from hashlib import sha256
 import struct
 
-from xxhash import xxh64_intdigest
+lazy from xxhash import xxh64_intdigest
 
-from .models import SdfDocument, SdfRuntimeCacheKey
+lazy from ._ownership import SdfByteClaims, claim_document_metadata
+lazy from .models import SdfDocument, SdfRuntimeCacheKey
 
 
 _MASK64 = (1 << 64) - 1
@@ -59,8 +60,6 @@ def state_runtime_cache_key(body: bytes) -> SdfRuntimeCacheKey:
 def attach_runtime_cache_keys(document: SdfDocument) -> None:
     if not document.profile.runtime_cache_keys:
         return
-
-    from ._ownership import SdfByteClaims, claim_document_metadata
 
     claims = SdfByteClaims(len(document.original_data))
     claims.add(0, document.header.program_table_offset + document.header.record_count * document.profile.record_size)

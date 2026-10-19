@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from .mdf_file import MatData, ParamHeader, TexHeader
-from file_handlers.material_names import resolve_material_name
-from file_handlers.mmtr.material_project import (
+lazy from .mdf_file import MatData, ParamHeader, TexHeader
+lazy from file_handlers.material_names import resolve_material_name
+lazy from file_handlers.mmtr.material_project import (
     MATERIAL_TEXTURE_DIMENSIONS, MaterialBufferLayout, MaterialBufferVariable, MaterialTextureSlot, valid_default_path,
 )
 

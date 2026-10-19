@@ -5,14 +5,14 @@ from typing import Optional
 from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
 from file_handlers.mesh.mesh_handler import MeshHandler
 from file_handlers.mesh.profiles import mesh_profile_for_stmesh_version
-from file_handlers.mmtr.mesh_draw import SubmeshRange
-from file_handlers.mmtr.meshlets import MeshletBuffer
-from utils.resource_file_utils import resource_version_from_path
+lazy from file_handlers.mmtr.mesh_draw import SubmeshRange
+lazy from file_handlers.mmtr.meshlets import MeshletBuffer
+lazy from utils.resource_file_utils import resource_version_from_path
 
-from .lit import StmeshDraw, meshlet_buffer, stmesh_draws
-from .mesh_view import stmesh_mesh
-from .stmesh_file import FLAG_MESHLETS, HEADER, MAGIC, StmeshFile, read_stmesh
-from .stmesh_writer import StmeshWriteResult, write_stmesh
+lazy from .lit import StmeshDraw, meshlet_buffer, stmesh_draws
+lazy from .mesh_view import stmesh_mesh
+lazy from .stmesh_file import FLAG_MESHLETS, HEADER, MAGIC, StmeshFile, read_stmesh
+lazy from .stmesh_writer import StmeshWriteResult, write_stmesh
 
 
 

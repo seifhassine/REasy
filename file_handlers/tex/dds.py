@@ -1,5 +1,5 @@
 import struct
-from .dxgi import get_bits_per_pixel, is_block_compressed, top_mip_size_bytes
+lazy from .dxgi import get_bits_per_pixel, is_block_compressed, top_mip_size_bytes
 
 DDS_MAGIC = 0x20534444
 

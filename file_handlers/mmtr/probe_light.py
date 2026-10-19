@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .material_preview import RANGE_SRV
-from .resident import BUFFER
+lazy from .material_preview import RANGE_SRV
+lazy from .resident import BUFFER
 
 # The captured probe shaders' walk visits at most this many tetrahedra.
 MOST_STEPS = 199

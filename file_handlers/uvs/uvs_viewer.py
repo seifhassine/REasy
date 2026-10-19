@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QTimer, QPointF, QRectF
-from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
+lazy from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -30,10 +30,10 @@ from PySide6.QtWidgets import (
 )
 
 from .uvs_file import UvsPattern, UvsSequence, UvsTexture
-from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
-from file_handlers.tex.tex_viewer import TexViewer
-from utils.number_format import format_display_value
-from utils.resource_file_utils import resolve_handler_resource_data
+lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
+lazy from file_handlers.tex.tex_viewer import TexViewer
+lazy from utils.number_format import format_display_value
+lazy from utils.resource_file_utils import resolve_handler_resource_data
 
 
 PLAY_BUTTON_TEXT = QT_TRANSLATE_NOOP("UvsViewer", "▶ Play")

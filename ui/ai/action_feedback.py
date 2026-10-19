@@ -17,7 +17,7 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
 from PySide6.QtWidgets import QAbstractItemView, QTabWidget, QWidget
 
-from settings import DEFAULT_SETTINGS
+lazy from settings import DEFAULT_SETTINGS
 
 
 _RIPPLE_DURATION_MS = 520

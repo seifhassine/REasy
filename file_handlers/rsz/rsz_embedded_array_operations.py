@@ -1,9 +1,9 @@
 import traceback
-from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type
-from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from utils.id_manager import EmbeddedIdManager
-from file_handlers.pyside.tree_model import DataTreeBuilder
-from file_handlers.rsz.utils.rsz_embedded_utils import (
+lazy from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type
+lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+lazy from utils.id_manager import EmbeddedIdManager
+lazy from file_handlers.pyside.tree_model import DataTreeBuilder
+lazy from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info,
     create_embedded_userdata_info,
@@ -14,14 +14,17 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
     build_context_chain,
     update_embedded_references_for_shift
 )
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     collect_object_reference_values,
     get_reference_id_and_type,
     update_references_of_type,
     update_references_with_mapping,
 )
-from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
-from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
+lazy from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
+lazy from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
+lazy from PySide6.QtWidgets import QMessageBox
+lazy from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
+lazy from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 
 
 class RszEmbeddedArrayOperations:
@@ -379,7 +382,6 @@ class RszEmbeddedArrayOperations:
             self._add_element_to_ui_direct(array_item, new_elem)
         
         if new_elem and notify:
-            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self.viewer, "Element Added", f"New {element_type} created.")
         
         return new_elem
@@ -1237,7 +1239,6 @@ class RszEmbeddedArrayOperations:
 
             self._populate_embedded_rsz_fixed(userdata_info, type_info, type_id)
 
-            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
             userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
             userdata_info.data_size = len(userdata_info.data)
 
@@ -1365,7 +1366,6 @@ class RszEmbeddedArrayOperations:
 
     def _paste_embedded_object_graph(self, elem_data, array_data, rui):
         """Insert a copied embedded object graph with remapped relative IDs."""
-        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 
         graph = elem_data["object_graph"]
         entries = sorted(graph.get("instances", ()), key=lambda item: item["id"])
@@ -1468,7 +1468,6 @@ class RszEmbeddedArrayOperations:
 
             self._restore_embedded_content(userdata_info, embedded_data)
             
-            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
             userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
             userdata_info.data_size = len(userdata_info.data)
 
@@ -1515,7 +1514,6 @@ class RszEmbeddedArrayOperations:
             fields = {}
             
             for field_name, field_data in fields_data.items():
-                from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
                 field_obj = RszArrayClipboard._deserialize_element(field_data, None, {})
                 if field_obj:
                     if isinstance(field_data, dict) and field_data.get("is_relative"):

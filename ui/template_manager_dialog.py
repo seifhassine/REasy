@@ -6,8 +6,8 @@ from PySide6.QtWidgets import (
     QMenu
 )
 
-from file_handlers.rsz.rsz_template_manager import RszTemplateManager
-from ui.community_templates_dialog import CommunityTemplatesDialog
+lazy from file_handlers.rsz.rsz_template_manager import RszTemplateManager
+lazy from ui.community_templates_dialog import CommunityTemplatesDialog
 
 class TemplateManagerDialog(QDialog):
     template_imported = Signal(dict)

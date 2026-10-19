@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from ..mesh_file import MPLY_MAGIC
-from .scene import LAYERS, layer_lods
+lazy from .scene import LAYERS, layer_lods
 
 
 def compact_names(mesh):

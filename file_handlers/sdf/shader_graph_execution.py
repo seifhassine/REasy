@@ -1,3 +1,5 @@
+import hashlib
+
 from .shader_graph_math import NUMERIC_VALUE_TYPES
 from .shader_graph import ShaderGraphError, ShaderGraphNodeExtension, ShaderNodeEvaluation, ShaderPin, register_shader_graph_node_extension
 from PySide6.QtCore import QT_TRANSLATE_NOOP
@@ -99,7 +101,6 @@ def execution_pins(node, _contract):
 
 
 def _name(node):
-    import hashlib
     inputs, outputs = execution_shape(node)
     shape = (node.kind, inputs, outputs, node.properties.get('operation'), node.properties.get('scope'), node.properties.get('synchronize'))
     return 'REasyExecution_' + hashlib.sha256(repr(shape).encode()).hexdigest()[:24]

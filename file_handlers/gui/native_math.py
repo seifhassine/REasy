@@ -34,9 +34,6 @@ def fdiv(numerator: float, denominator: float) -> float:
     if not denominator:
         if not numerator:
             return math.nan
-        negative = math.copysign(1.0, numerator) != math.copysign(
-            1.0,
-            denominator,
-        )
+        negative = math.signbit(numerator) != math.signbit(denominator)
         return -math.inf if negative else math.inf
     return f32(numerator / denominator)

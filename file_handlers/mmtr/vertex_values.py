@@ -9,6 +9,12 @@ from file_handlers.sdf.shader_graph import (
     ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, ShaderSignatureField, register_shader_graph_node_extension,
 )
 
+lazy from .profiles.renderer_inputs import (
+    add_engine_buffers, add_engine_resources, engine_input_nodes, engine_inputs_available, graph_renderer_buffers,
+    graph_renderer_resources,
+)
+lazy from .surface_data import program_surface_data, program_vertex_inputs, surface_data_keys
+
 PER_VERTEX_KIND = "re_engine_per_vertex"
 VALUE_SEMANTIC = "REASYVALUE"
 # Direct3D 11 and 12 link at most 32 vertex output registers.
@@ -142,15 +148,9 @@ def upstream(graph, links, roots, *, through_per_vertex: bool):
 
 
 def vertex_value_plan(document, profile, graph, target_index: int, program_index: int, roots):
-    from .profiles.renderer_inputs import (
-        add_engine_buffers, add_engine_resources, engine_input_nodes, engine_inputs_available, graph_renderer_buffers,
-        graph_renderer_resources,
-    )
-    from .surface_data import program_surface_data, program_vertex_inputs, surface_data_keys
-
     links = {(link.target_node, link.target_pin): link for link in graph.links}
     pixel_nodes, per_vertex = upstream(graph, links, roots, through_per_vertex=False)
-    wanted = {key for node in pixel_nodes for key in surface_data_keys(node)}
+    wanted = {*surface_data_keys(node) for node in pixel_nodes}
     if not (per_vertex or wanted):
         return (), ()
     program = document.sdf.targets[int(target_index)].programs[int(program_index)]
@@ -170,10 +170,9 @@ def vertex_value_plan(document, profile, graph, target_index: int, program_index
     for node in per_vertex:
         behind, _nested = upstream(graph, links, [link.source_node for (target, _pin), link in links.items()
                                                   if target == node.node_id], through_per_vertex=True)
-        if not engine_inputs_available(contract, [item for producer in behind
-                                                  for item in engine_input_nodes(producer)]):
+        if not engine_inputs_available(contract, [*engine_input_nodes(producer) for producer in behind]):
             refusals.append((f"node:{node.node_id}", "Its vertex shader cannot read an engine input Value reads."))
-        elif not {key for producer in behind for key in surface_data_keys(producer)} <= inputs:
+        elif not {*surface_data_keys(producer) for producer in behind} <= inputs:
             refusals.append((f"node:{node.node_id}", "Its vertex shader does not read Surface Data that Value reads."))
         else:
             sources[f"node:{node.node_id}"] = str(node.properties.get("value_type", "float"))

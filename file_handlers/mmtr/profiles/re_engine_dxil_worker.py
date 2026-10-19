@@ -4,6 +4,12 @@ import multiprocessing
 import os
 import pickle
 
+from utils.garbage_collection import configure_garbage_collector
+
+lazy from file_handlers.sdf import dxc
+lazy from ..native_build_cache import _immutable_size
+lazy from . import re_engine_dxil_authoring as native
+
 
 MIN_PARALLEL_JOBS = 96
 MAX_WORKERS = 8
@@ -29,9 +35,7 @@ class NativeWorkerOutcome:
 def initialize_native_worker(runtime_identity, configuration):
     global _WORKER_SESSION, _WORKER_IDENTITY, _WORKER_CONFIGURATION
     os.environ["REASY_DXCOMPILER_PATH"] = runtime_identity[0]
-    from file_handlers.sdf import dxc
     from ..material_region_read import region_read_session
-    from . import re_engine_dxil_authoring as native
 
     if tuple(configuration) != tuple(native._DXIL_BUILD_CONFIGURATION):
         raise RuntimeError("DXIL worker build configuration differs from its parent")
@@ -40,6 +44,7 @@ def initialize_native_worker(runtime_identity, configuration):
     if dxc._runtime_identity(dxc._library()) != runtime_identity:
         raise RuntimeError("DXIL worker compiler/validator runtime differs from its parent")
     _WORKER_IDENTITY, _WORKER_CONFIGURATION = runtime_identity, tuple(configuration)
+    configure_garbage_collector()
     _WORKER_SESSION = region_read_session()
     _WORKER_SESSION.__enter__()
 
@@ -54,13 +59,10 @@ def native_worker_executor(*, max_workers, runtime_identity, configuration):
 
 
 def native_worker_count():
-    return min(MAX_WORKERS, max(1, os.cpu_count() or 1))
+    return min(MAX_WORKERS, max(1, os.process_cpu_count() or 1))
 
 
 def _execute_chunk(chunk):
-    from file_handlers.sdf import dxc
-    from . import re_engine_dxil_authoring as native
-
     if dxc._runtime_identity(dxc._library()) != _WORKER_IDENTITY:
         raise RuntimeError("DXIL worker runtime changed before compilation")
     outcomes = []
@@ -85,8 +87,6 @@ def _execute_chunk(chunk):
 
 
 def _job_chunks(indexed_jobs, sequential):
-    from ..native_build_cache import _immutable_size
-
     chunk, size = [], 0
     for index, job in indexed_jobs:
         try:

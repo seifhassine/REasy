@@ -18,19 +18,19 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-from file_handlers.pak.pakfile import _is_chunked_entry
-from file_handlers.pak.utils import filepath_hash
-from utils.app_paths import cache_directory
+lazy from file_handlers.pak.pakfile import _is_chunked_entry
+lazy from file_handlers.pak.utils import filepath_hash
+lazy from utils.app_paths import cache_directory
 
-from .bnk_parser import (
+lazy from .bnk_parser import (
     _read_bank_source,
     _read_bank_version,
     _read_didx,
     _read_hirc_objects,
     _read_music_track_sources,
 )
-from .pck_codec import parse_pck_layout
-from .sound_resources import resource_key, sound_media_key as _media_key
+lazy from .pck_codec import parse_pck_layout
+lazy from .sound_resources import resource_key, sound_media_key as _media_key
 from .sound_profile import sound_bank_family_for_game as _split_bank_family
 
 
@@ -340,9 +340,9 @@ class RuntimeSoundIndex:
             for values in self.banks_by_source.values()
             for path, _stream_type in values
         } | {
-            path for values in self.embedded_by_source.values() for path in values
+            *values for values in self.embedded_by_source.values()
         } | {
-            path for record in self.package_records.values() for path in record.values()
+            *record.values() for record in self.package_records.values()
         })
         path_indexes = {path: index for index, path in enumerate(paths)}
         package_keys = sorted(self.package_records)

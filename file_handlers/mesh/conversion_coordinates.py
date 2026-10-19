@@ -1,10 +1,11 @@
 from array import array
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from .conversion_geometry import geometry_layers, mesh_payloads
+lazy from .conversion_geometry import geometry_layers, mesh_payloads
 from .models import MeshAABB
+lazy from .conversion_normals import reflect_normal_work
 
 
 def transform_coordinates(mesh, axes):
@@ -45,7 +46,7 @@ def transform_coordinates(mesh, axes):
     if reflected:
         draws = {}
         for _layer, groups, owners in geometry_layers(mesh):
-            for submesh in (sm for group in groups for sm in group.submeshes):
+            for submesh in (*group.submeshes for group in groups):
                 if submesh.is_quad:
                     raise ValueError("Coordinate reflection of quad topology is unsupported")
                 payload = owners[submesh.buffer_index]
@@ -66,7 +67,6 @@ def transform_coordinates(mesh, axes):
                     merged.append((start, end))
             for start, end in merged:
                 faces[start:end] = array(faces.typecode, winding(faces[start:end]))
-        from .conversion_normals import reflect_normal_work
         reflect_normal_work(mesh)
 
     for chunk in mesh.mesh_buffer.mply_chunks:

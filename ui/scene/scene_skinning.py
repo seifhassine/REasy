@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.textures_view import MOST_INFLUENCES
+lazy from file_handlers.mmtr.textures_view import MOST_INFLUENCES
 
-from .scene_model import SceneSkinningBinding
+lazy from .scene_model import SceneSkinningBinding
 
 
 @dataclass(slots=True)

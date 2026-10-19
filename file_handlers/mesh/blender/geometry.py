@@ -6,15 +6,18 @@ from dataclasses import dataclass, field, replace
 
 import numpy as np
 
-from ..contract_utils import layer_payloads
-from ..conversion_allocations import _WEIGHT_METADATA
-from ..conversion_skin import quantize_normalized_weights
+lazy from ..contract_utils import layer_payloads
+lazy from ..conversion_allocations import _WEIGHT_METADATA
+lazy from ..conversion_skin import quantize_normalized_weights
 from ..mesh_file import MPLY_MAGIC, MeshGroup
-from ..normal_recalc import INDICES_PER_WORKGROUP, WORKGROUP_SLOT_MASK, NormalRecalcRedirect
+lazy from ..normal_recalc import INDICES_PER_WORKGROUP, WORKGROUP_SLOT_MASK, NormalRecalcRedirect
 from . import meshlets, morphs
 from .export import gather, joint_names, vertex_weights
-from .nearest import NearestIndex
-from .scene import UV_PLANES, WEIGHT_SETS, layer_lods, main_buffer_index
+lazy from .nearest import NearestIndex
+lazy from .scene import UV_PLANES, WEIGHT_SETS, layer_lods, main_buffer_index
+lazy from ..conversion_morphs import _merge_morph_ranges
+lazy from ..profiles import NormalRecalcLayout
+lazy from ..conversion_normals import materialize_normal_work
 
 UV_TOLERANCE = 2e-6
 NORMAL_TOLERANCE = 2e-3
@@ -1039,7 +1042,7 @@ def _rebuild_domain(ctx, domain, plans):
     buffer_index = plans[0].buffer
     plan_of = {id(s): plan for plan in plans for s in plan.submesh}
     new_plans = [plan for plan in plans if not plan.submesh]
-    template = next((s for plan in plans for s in plan.submesh), None)
+    template = next((*plan.submesh for plan in plans), None)
     order, seen = [], set()
     for mesh_index, lod_index, lod in layer_lods(mesh, layer):
         if id(lod) in seen:
@@ -1236,7 +1239,6 @@ def _apply_morphs(ctx, owning, rebuilt):
                                                    identity=info["identity"] if info is not None else None)
     if changed_structure and not ctx.mesh.profile.has_modern_blend_shape_targets:
         # Older layouts store one contiguous range per target; gaps get zero deltas.
-        from ..conversion_morphs import _merge_morph_ranges
         for body in blend.bodies:
             for index in range(len(body.targets)):
                 _merge_morph_ranges(ctx.mesh, body, index)
@@ -1523,9 +1525,7 @@ def _apply_normal_redirects(ctx, rebuilt):
         ctx.mesh.normal_recalc_data = replace(data, lods=tuple(new_lods),
                                               redirects=first.redirects if first is not None and data.redirects else data.redirects)
     ctx.report.change("Rebuilt normal-recalculation redirects for the edited vertex buffers")
-    from ..profiles import NormalRecalcLayout
     if ctx.mesh.profile.normal_recalc_layout is NormalRecalcLayout.RE8:
-        from ..conversion_normals import materialize_normal_work
         materialize_normal_work(ctx.mesh)
 
 

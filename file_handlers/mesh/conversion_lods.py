@@ -1,6 +1,6 @@
 from dataclasses import replace
 
-from .blend_shape import BlendShapeChannel, BlendShapeTarget, BlendShapeTargetRange, blend_shape_name_offsets
+lazy from .blend_shape import BlendShapeChannel, BlendShapeTarget, BlendShapeTargetRange, blend_shape_name_offsets
 
 
 ACTIVATION_LOSS = ("Source morph LOD target and channel maps disagree; preserved channel bindings "

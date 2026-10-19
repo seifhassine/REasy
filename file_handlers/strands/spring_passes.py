@@ -5,14 +5,14 @@ import struct
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import MaterialPreviewError
-from file_handlers.tex.dxgi import DXGI_FORMAT_R32_UINT
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.tex.dxgi import DXGI_FORMAT_R32_UINT
 
 from .chain_catalog import BEFORE, NOW
-from .chain_passes import Grid, Step, dispatch_groups, program_variant
-from .strands_file import StrandsFile
+lazy from .chain_passes import Grid, Step, dispatch_groups, program_variant
+lazy from .strands_file import StrandsFile
 
 # Byte sizes; the bounds hold four slots of six words.
 _NODE, _VELOCITY, _PROPERTIES, _BOUNDS_BYTES = 28, 24, 32, 96

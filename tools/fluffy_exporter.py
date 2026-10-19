@@ -1,11 +1,11 @@
 from __future__ import annotations
 import json
-import zipfile
+lazy import zipfile
 import tempfile
 from pathlib import Path
 
-from tools.pak_exporter import _ensure_packer, run_packer
-from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER
+lazy from tools.pak_exporter import _ensure_packer, run_packer
+lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER
 
 _MODINFO_NAME = "modinfo.ini"
 

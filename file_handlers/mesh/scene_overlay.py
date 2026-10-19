@@ -3,14 +3,14 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.engine_buffers import Camera
-from file_handlers.mmtr.overlay import Overlay
-from file_handlers.mmtr.overlay_scene import OverlayGeometry, OverlayPart, OverlayScene
-from ui.scene.scene_view import SceneGeometry, ScenePlacement
+lazy from file_handlers.mmtr.engine_buffers import Camera
+lazy from file_handlers.mmtr.overlay import Overlay
+lazy from file_handlers.mmtr.overlay_scene import OverlayGeometry, OverlayPart, OverlayScene
+lazy from ui.scene.scene_view import SceneGeometry, ScenePlacement
 
-from .lit_preview import LitOverlays
+lazy from .lit_preview import LitOverlays
 
 
 class SceneOverlay:

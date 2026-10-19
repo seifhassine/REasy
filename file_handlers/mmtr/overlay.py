@@ -5,18 +5,18 @@ from collections.abc import Sequence
 from functools import lru_cache
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
 from file_handlers.tex.dxgi import (
     DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R8G8B8A8_TYPELESS, DXGI_FORMAT_R8_UNORM,
 )
 
-from .engine_buffers import Camera
+lazy from .engine_buffers import Camera
 from .material_preview import (
     RANGE_CBV, _NO_DEPTH_STENCIL, _RASTERIZER, RANGE_SRV, _TRIANGLE_LIST, RANGE_UAV, _UNBLENDED, MaterialPreviewError,
 )
-from .resident import BUFFER, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from .resident import BUFFER, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
 
 # Positions in 1/256 pixel.
 GRID = 256
@@ -705,10 +705,10 @@ class Overlay:
             corners["mark"] = np.arange(1, count + 1, dtype=np.uint32)[:, None]
             held = bytearray(self._capacity * 3 * _CORNER.itemsize)
             held[:corners.nbytes] = corners.tobytes()
-            scene.write(self._corners, bytes(held))
+            scene.write(self._corners, held.take_bytes())
             held = bytearray(self._capacity * _MARK.itemsize)
             held[:count * _MARK.itemsize] = marks.marks.tobytes()
-            scene.write(self._marks, bytes(held))
+            scene.write(self._marks, held.take_bytes())
             self._written = marks
         return self._draws[depth, texture]
 

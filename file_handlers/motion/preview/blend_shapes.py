@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Iterable
 
-import numpy as np
+lazy import numpy as np
 
 from ..evaluation import DeformationTarget
 

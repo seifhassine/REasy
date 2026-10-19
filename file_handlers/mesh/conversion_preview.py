@@ -4,24 +4,24 @@ from collections import Counter
 from colorsys import hsv_to_rgb
 from copy import copy, deepcopy
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QElapsedTimer, QSignalBlocker, QTimer, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox, QFrame, QHBoxLayout, QLabel, QPushButton,
     QSplitter, QStackedLayout, QVBoxLayout, QWidget,
 )
 
-from ui.scene.mesh_scene import (
+lazy from ui.scene.mesh_scene import (
     mesh_geometry_choices, mesh_scene_payloads, payload_records_have_complete_attribute,
 )
 from ui.scene.scene_preview import ScenePreviewWidget
-from ui.scene.mesh_preview import MeshPreviewScene
-from .scene_textures import plain_preview
-from .preview_controls import MorphControls, find_combo_data
+lazy from ui.scene.mesh_preview import MeshPreviewScene
+lazy from .scene_textures import plain_preview
+lazy from .preview_controls import MorphControls, find_combo_data
 
-from .conversion_geometry import detach_topology, mesh_payloads
-from .conversion_skin import adapt_source_skinning
-from .conversion_visibility import materialize_skinning_visibility
+lazy from .conversion_geometry import detach_topology, mesh_payloads
+lazy from .conversion_skin import adapt_source_skinning
+lazy from .conversion_visibility import materialize_skinning_visibility
 
 
 def part_color(index):

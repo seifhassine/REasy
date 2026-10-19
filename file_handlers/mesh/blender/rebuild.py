@@ -6,17 +6,17 @@ import re
 from collections import Counter
 from dataclasses import dataclass, field, replace
 
-import numpy as np
+lazy import numpy as np
 
 from ..canonical_writer import serialize_mesh
 from ..mesh_file import MPLY_MAGIC, JointNode, MeshFile
 from ..models import MeshAABB
 from .export import joint_names
-from .geometry import DrawPlan, apply_geometry
-from .morphs import lod_channel_names
+lazy from .geometry import DrawPlan, apply_geometry
+lazy from .morphs import lod_channel_names
 from .package import from_blender, matrix_from_blender
-from .materials import normalize_mply
-from .scene import UV_PLANES, build_scene, layer_lods
+lazy from .materials import normalize_mply
+lazy from .scene import UV_PLANES, build_scene, layer_lods
 
 REST_TOLERANCE = 1e-5
 

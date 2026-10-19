@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QStyledItemDelegate
 from PySide6.QtGui import QPalette
 
-from ui.highlight_utils import model_index_row_path
+lazy from ui.highlight_utils import model_index_row_path
 
 
 class HighlightDelegate(QStyledItemDelegate):

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
-from settings import app_settings
-from utils.resource_file_utils import resource_version_from_path
+lazy from settings import app_settings
+lazy from utils.resource_file_utils import resource_version_from_path
 
-from .profiles import SdfGameProfile
-from .sdf_file import SdfFile
-from .editing import SdfBinaryEditor
+lazy from .profiles import SdfGameProfile
+lazy from .sdf_file import SdfFile
+lazy from .editing import SdfBinaryEditor
+lazy from .sdf_viewer import SdfViewer
 
 
 class SdfHandler(BaseFileHandler):
@@ -92,8 +93,6 @@ class SdfHandler(BaseFileHandler):
         return self.sdf.write()
 
     def create_viewer(self):
-        from .sdf_viewer import SdfViewer
-
         return SdfViewer(self)
 
 

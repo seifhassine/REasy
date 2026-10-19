@@ -6,30 +6,30 @@ import threading
 from functools import partial
 from pathlib import Path
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QFileDialog,
                                QFormLayout, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QMessageBox, QProgressBar,
                                QPushButton, QSizePolicy, QSpinBox, QStackedWidget, QToolButton, QVBoxLayout, QWidget)
 
 from file_handlers.clsp.clsp_file import ShapeKind
-from file_handlers.clsp.placement import hung_joints
-from ui.background_jobs import BackgroundJobs
-from utils.hash_util import murmur3_hash_utf16le
-from utils.resource_file_utils import resource_context_for_handler, resource_key
+lazy from file_handlers.clsp.placement import hung_joints
+lazy from ui.background_jobs import BackgroundJobs
+lazy from utils.hash_util import murmur3_hash_utf16le
+lazy from utils.resource_file_utils import resource_context_for_handler, resource_key
 
-from .bindings import StrandBindings
-from .chain_constants import COLLIDER_SLOTS, collider_slots
-from .colliders import EVERY_TAG, SetColliders
-from .controls import plain_label
-from .edit_session import EditFile, EditSession, load_session, save_target
-from .editing import StrandEdit
-from .forms import ColliderForm, LodForm, NewColliderDialog, PresetForm, PresetImportDialog
+lazy from .bindings import StrandBindings
+lazy from .chain_constants import COLLIDER_SLOTS, collider_slots
+lazy from .colliders import EVERY_TAG, SetColliders
+lazy from .controls import plain_label
+lazy from .edit_session import EditFile, EditSession, load_session, save_target
+lazy from .editing import StrandEdit
+lazy from .forms import ColliderForm, LodForm, NewColliderDialog, PresetForm, PresetImportDialog
 from .gpus import AnimationCurve, CurveKey, GpuStrandsPreset, gpus_version
-from .growing import HEIGHT, LENGTH, GrowSettings, default_fringe, default_height
+lazy from .growing import HEIGHT, LENGTH, GrowSettings, default_fringe, default_height
 from .lod import NO_RECORD, lod_records, with_lod_record
-from .strand_tool import BRUSHES, COLLIDERS, COMB, MODES, PAINT, SELECT, SMOOTH, TRANSFORM, StrandTool
-from .strands_file import StrandsFile
+lazy from .strand_tool import BRUSHES, COLLIDERS, COMB, MODES, PAINT, SELECT, SMOOTH, TRANSFORM, StrandTool
+lazy from .strands_file import StrandsFile
 
 _PREVIEW_DELAY = 700
 _ROOTS_DELAY = 300

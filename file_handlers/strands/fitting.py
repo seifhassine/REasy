@@ -1,9 +1,9 @@
 """See docs/internals/strand-editing.md, Fitting and guides."""
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 
-from .strands_file import NO_GUIDE, unpacked
+lazy from .strands_file import NO_GUIDE, unpacked
 
 SPACED, _ROUNDING = 0.9, 1e-6
 _CANDIDATES, _PLACES, _CHUNK = 64, 16, 512

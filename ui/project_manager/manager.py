@@ -25,20 +25,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from app_config import GAMES, GAME_NATIVE_PATHS
-from file_handlers.pak import scan_all_pak_files, scan_pak_files
-from file_handlers.pak.reader import CachedPakReader
-from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header, pak_mod_flags
-from services.file_operations import FileOperationError, FolderFileOperations
-from tools.fluffy_exporter import create_fluffy_zip
-from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
-from ui.background_jobs import BackgroundJobs
-from ui.qt_timers import call_later
-from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER, application_root
-from utils.resource_file_utils import resource_key
+lazy from app_config import GAMES, GAME_NATIVE_PATHS
+lazy from file_handlers.pak import scan_all_pak_files, scan_pak_files
+lazy from file_handlers.pak.reader import CachedPakReader
+lazy from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header, pak_mod_flags
+lazy from services.file_operations import FileOperationError, FolderFileOperations
+lazy from tools.fluffy_exporter import create_fluffy_zip
+lazy from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
+lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.qt_timers import call_later
+lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER, application_root
+lazy from utils.resource_file_utils import resource_key
 
-from .bookmark_panel import BookmarksPanel
-from .bookmarks import (
+lazy from .bookmark_panel import BookmarksPanel
+lazy from .bookmarks import (
     BOOKMARKS_PROJECT_NAME,
     BookmarksStore,
     ScopedBookmarksStore,
@@ -46,20 +46,21 @@ from .bookmarks import (
     project_bookmarks_path,
     resolve_filesystem_target,
 )
-from .constants import PROJECTS_ROOT
-from .delegate import _ActionsDelegate, _PakActionsDelegate
-from .dock_chrome import DockTitleBar, SideTab
-from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
-from .project_config import (
+lazy from .constants import PROJECTS_ROOT
+lazy from .delegate import _ActionsDelegate, _PakActionsDelegate
+lazy from .dock_chrome import DockTitleBar, SideTab
+lazy from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
+lazy from .project_config import (
     load_project_config,
     project_config_path,
     save_project_config,
     update_project_config,
 )
-from .project_settings_dialog import ProjectSettingsDialog
-from .rsz_jsons import resolve_rsz_json_path
-from .trees import PakPathModel, _DndTree, _DropTree
-from .view_rail import ViewRail
+lazy from .project_settings_dialog import ProjectSettingsDialog
+lazy from .rsz_jsons import resolve_rsz_json_path
+lazy from .trees import PakPathModel, _DndTree, _DropTree
+lazy from .view_rail import ViewRail
+lazy from concurrent.futures import ThreadPoolExecutor
 
 def _custom_message_handler(mode, ctx, msg):
     if "QFileSystemWatcher: FindNextChangeNotification failed" in msg:
@@ -2048,7 +2049,6 @@ class ProjectManager(QDockWidget):
         mods_folder = base_dir  / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
 
-        from ui.project_manager.manager import quitely_get_pak_name
         project_dir = self.project_dir
         pak_name = quitely_get_pak_name(Path(project_dir)) or Path(project_dir).name
         if not pak_name.lower().endswith(".pak"):
@@ -2066,7 +2066,6 @@ class ProjectManager(QDockWidget):
         dlg.resize(600, 400)
         dlg.show()
 
-        from concurrent.futures import ThreadPoolExecutor
         exec_ = ThreadPoolExecutor(max_workers=1)
 
         def _work():

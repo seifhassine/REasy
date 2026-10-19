@@ -19,8 +19,8 @@ from typing import (
 
 import numpy as np
 
-from utils.binary_handler import BinaryHandler
-from utils.hash_util import murmur3_hash_utf16le
+lazy from utils.binary_handler import BinaryHandler
+lazy from utils.hash_util import murmur3_hash_utf16le
 from utils.native_build import ensure_fastmesh
 from .profiles import (
     LegacyLightMapLayout,
@@ -35,11 +35,23 @@ from .profiles import (
     mesh_profile_for_versions,
 )
 from .models import MESH_MAGIC, MPLY_MAGIC, MeshAABB
-from .contract_utils import split_auxiliary_layouts
+lazy from .contract_utils import split_auxiliary_layouts
 
-if TYPE_CHECKING:
-    from .blend_shape import BlendShapeData
-    from .normal_recalc import NormalRecalcData
+lazy from .blend_shape import (
+    BlendShapeData,
+    parse_bone_modifier,
+    parse_blend_shapes,
+    read_blend_shape_name_indices,
+)
+lazy from .normal_recalc import (
+    NormalRecalcData,
+    BUFFER_OWNED_NORMAL_RECALC_PARSERS,
+    LOD0_NORMAL_RECALC_PARSERS,
+    legacy_normal_recalc_submeshes,
+    parse_modern_normal_recalc,
+    parse_sf6_normal_recalc,
+)
+lazy from . import normal_recalc, blend_shape
 
 
 _fastmesh = ensure_fastmesh()
@@ -3437,9 +3449,8 @@ class MPLYParser:
         mesh_buffer.meshlet_parts_layout = parts_layout
         mesh_buffer.mply_group_pivots = self.group_pivots
         mesh_buffer.mply_cluster_headers = [
-            header
+            *lod_headers
             for lod_headers in cluster_headers
-            for header in lod_headers
         ]
         mesh_buffer.mply_chunk_flags = []
         lods: List[MeshLOD] = []
@@ -4423,16 +4434,14 @@ class MeshFile:
                 )
 
         mesh_lods = [
-            lod
+            *mesh_data.lods
             for mesh_data in self.meshes
-            for lod in mesh_data.lods
         ]
         if self.shadow_mesh is not None:
             mesh_lods.extend(self.shadow_mesh.lods)
         groups = [
-            group
+            *lod.mesh_groups
             for lod in mesh_lods
-            for group in lod.mesh_groups
         ]
         if self.occluder_mesh is not None:
             groups.extend(self.occluder_mesh.mesh_groups)
@@ -4444,7 +4453,7 @@ class MeshFile:
                 "reserve",
                 "At least one mesh-group reserve block is nonzero.",
             )
-        submeshes = [submesh for group in groups for submesh in group.submeshes]
+        submeshes = [*group.submeshes for group in groups]
         if self.header.profile.submesh_reserve03_is_runtime_ignored:
             if any(
                 submesh.runtime_ignored_reserve03
@@ -4829,14 +4838,6 @@ class MeshFile:
                 "the raw section remains available for inspection.",
             )
             return
-        from .normal_recalc import (
-            BUFFER_OWNED_NORMAL_RECALC_PARSERS,
-            LOD0_NORMAL_RECALC_PARSERS,
-            legacy_normal_recalc_submeshes,
-            parse_modern_normal_recalc,
-            parse_sf6_normal_recalc,
-            sf6_normal_recalc_lod_topologies,
-        )
 
         profile = self.header.profile
         if (
@@ -4855,13 +4856,13 @@ class MeshFile:
                     data,
                     offset,
                     section_end,
-                    sf6_normal_recalc_lod_topologies(self),
+                    normal_recalc.sf6_normal_recalc_lod_topologies(self),
                     section_alignment=profile.normal_recalc_section_alignment,
                     split_vertex_page_plane=profile.normal_recalc_has_split_vertex_page_plane,
                 )
             elif normal_layout in BUFFER_OWNED_NORMAL_RECALC_PARSERS:
                 self.normal_recalc_data = BUFFER_OWNED_NORMAL_RECALC_PARSERS[normal_layout](
-                    data, offset, section_end, self, sf6_normal_recalc_lod_topologies(self),
+                    data, offset, section_end, self, normal_recalc.sf6_normal_recalc_lod_topologies(self),
                 )
             else:
                 self.normal_recalc_data = LOD0_NORMAL_RECALC_PARSERS[normal_layout](
@@ -4915,14 +4916,6 @@ class MeshFile:
         streaming_data: Optional[bytes] = None,
         streaming_data_loader: Optional[Callable[[], Optional[bytes]]] = None,
     ) -> bool:
-        from .blend_shape import (
-            BlendShapeData,
-            decode_blend_shape_payloads,
-            parse_bone_modifier,
-            parse_blend_shapes,
-            read_blend_shape_name_indices,
-        )
-
         self._reset_state(MeshLoadMode.coerce(load_mode))
         self.source_size = len(data)
 
@@ -5234,7 +5227,7 @@ class MeshFile:
             )
             vertex_counts = dict(self.mesh_buffer.vertex_counts_by_buffer)
             try:
-                decode_blend_shape_payloads(
+                blend_shape.decode_blend_shape_payloads(
                     self.blend_shape_data,
                     self.mesh_buffer.buffer_payloads,
                     payload_offsets,

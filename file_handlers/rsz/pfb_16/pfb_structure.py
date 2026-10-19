@@ -1,5 +1,5 @@
 import struct
-from file_handlers.rsz.scn_19.scn_19_structure import (
+lazy from file_handlers.rsz.scn_19.scn_19_structure import (
      parse_scn19_rsz_userdata, 
     build_scn19_rsz_section
 )
@@ -166,7 +166,7 @@ def build_pfb_16(rsz_file, special_align_enabled = False) -> bytes:
     )
     out[0:Pfb16Header.SIZE] = header_bytes
 
-    return bytes(out)
+    return out.take_bytes()
 
 def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = False) -> int:
     if special_align_enabled:

@@ -21,15 +21,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from app_config import GAMES
-from i18n.language_manager import LanguageManager
-from settings import DEFAULT_SETTINGS
-from tools.wwise_toolchain import (
+lazy from app_config import GAMES
+lazy from i18n.language_manager import LanguageManager
+lazy from settings import DEFAULT_SETTINGS
+lazy from tools.wwise_toolchain import (
     suggested_wwise_browse_path,
     validate_wwise_installation,
     wwise_profile_for_game,
 )
-from ui.keyboard_shortcuts import create_shortcuts_tab
+lazy from ui.keyboard_shortcuts import create_shortcuts_tab
 
 
 class SettingsDialog(QDialog):

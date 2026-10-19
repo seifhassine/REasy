@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from file_handlers.font.catalog import GuiFontCatalog
-from file_handlers.gcf.gcf_file import GcfFile
-from file_handlers.gcf.model import GcfData
-from file_handlers.ift.catalog import IconFontCatalog
-from file_handlers.msg.msg_handler import MsgHandler
-from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
+lazy from file_handlers.font.catalog import GuiFontCatalog
+lazy from file_handlers.gcf.gcf_file import GcfFile
+lazy from file_handlers.gcf.model import GcfData
+lazy from file_handlers.ift.catalog import IconFontCatalog
+lazy from file_handlers.msg.msg_handler import MsgHandler
+lazy from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
 
-from .assets import GuiAssetCatalog
-from .profiles import GuiFormatProfile
+lazy from .assets import GuiAssetCatalog
+lazy from .profiles import GuiFormatProfile
 
 
 @dataclass(frozen=True, slots=True)

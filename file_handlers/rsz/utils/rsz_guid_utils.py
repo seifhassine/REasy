@@ -1,5 +1,6 @@
 import uuid
-from utils.hex_util import guid_le_to_str, is_null_guid
+lazy from utils.hex_util import guid_le_to_str, is_null_guid
+lazy from file_handlers.rsz.rsz_data_types import GameObjectRefData, GuidData
 
 
 def create_new_guid():
@@ -20,8 +21,6 @@ def handle_guid_mapping(original_guid, guid_mapping, randomize=True):
 
 
 def process_gameobject_ref_data(guid_hex, guid_str, orig_type, guid_mapping=None, randomize_guids=True):
-    from file_handlers.rsz.rsz_data_types import GameObjectRefData
-    
     if not guid_hex:
         return GameObjectRefData(guid_str, None, orig_type)
     
@@ -44,7 +43,5 @@ def process_gameobject_ref_data(guid_hex, guid_str, orig_type, guid_mapping=None
 
 
 def create_guid_data(guid_bytes):
-    from file_handlers.rsz.rsz_data_types import GuidData
-    
     guid_str = guid_le_to_str(guid_bytes)
     return GuidData(guid_str, guid_bytes)

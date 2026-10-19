@@ -9,10 +9,11 @@ from .shader_graph import (ShaderContract, ShaderGraph, ShaderGraphError, Shader
                            generate_graph_function, validate_shader_contract, MAX_PROJECT_LENGTH, MAX_SOURCE_LENGTH,
                            _identifier)
 from .aggregate_values import constant_value_fields
-from .shader_contract_storage import contract_from_storage, contract_to_storage
-from .hlsl_contract import contract_structures, contract_cbuffer, resource_declaration, resource_identifier
+lazy from .shader_contract_storage import contract_from_storage, contract_to_storage
+lazy from .hlsl_contract import contract_structures, contract_cbuffer, resource_declaration, resource_identifier
 from .dxc import compile_hlsl_dxc, validate_dxil
-from .models import SdfRayTracingLibrary
+lazy from . import dxil_structured_views, raytracing_abi
+lazy from .models import SdfRayTracingLibrary
 from .raytracing import (
     DXR_EXPORT_STAGES, PAYLOAD_ACCESS_STAGES, raytracing_export_fields, validate_raytracing_library,
 )
@@ -556,8 +557,8 @@ def build_raytracing_graph(project, *, diagnostics=None):
     result = compile_hlsl_dxc(source,entry_point='',target=project.contract.target,extra_arguments=tuple(arguments))
     if diagnostics is not None and result.diagnostics.strip('\0\n\r '):
         diagnostics.append(result.diagnostics.strip('\0\n\r '))
-    from .dxil_structured_views import coalesce_structured_views, structured_view_spaces
-    bytecode = coalesce_structured_views(result.bytecode, project.contract, structured_view_spaces(project.contract))
+    bytecode = dxil_structured_views.coalesce_structured_views(
+        result.bytecode, project.contract, dxil_structured_views.structured_view_spaces(project.contract))
     bytecode = validate_dxil(bytecode)
     library = SdfRayTracingLibrary(
         **{role:project.bindings.get(role,'') for role in raytracing_export_fields(project.export_layout)},
@@ -577,8 +578,6 @@ def _constant_identifier(buffer,variable):
 
 
 def new_raytracing_graph(library):
-    from .raytracing_abi import library_abi
-
     shader = validate_raytracing_library(library,reflect=True)
     project = RayTracingGraphProject(ShaderContract.from_shader(shader),
         bindings={role:getattr(library,role) for role in raytracing_export_fields(library.export_layout)},
@@ -603,7 +602,7 @@ def new_raytracing_graph(library):
             fields.append(RayField(f'field{index}',value_type,dimensions,*access))
         project.structures.append(RayStructure(name,tuple(fields)))
         return name, ()
-    abis = library_abi(library, shader).exports
+    abis = raytracing_abi.library_abi(library, shader).exports
     defaults = {}
     for domain in ('payload','attributes','callable_data'):
         shape = next((getattr(abi,domain) for abi in abis.values() if getattr(abi,domain) is not None),None)

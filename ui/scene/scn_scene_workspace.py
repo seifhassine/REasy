@@ -6,8 +6,8 @@ from contextlib import suppress
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
-from PySide6.QtWidgets import (
+lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
+lazy from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDockWidget,
@@ -31,11 +31,11 @@ from PySide6.QtWidgets import (
 )
 
 from file_handlers.rsz.scn_scene_loader import ScnSceneLoader, ScnSceneSource, holds_scene, scn_source_identity_keys
-from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
-from file_handlers.rsz.scn_document_store import ScnDocumentStore
-from file_handlers.rsz.rsz_handler import RszHandler
-from ui.qt_timers import call_later
-from ui.scene.scn_raw_inspector import ScnRawInspector
+lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
+lazy from file_handlers.rsz.scn_document_store import ScnDocumentStore
+lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from ui.qt_timers import call_later
+lazy from ui.scene.scn_raw_inspector import ScnRawInspector
 
 
 ALREADY_OPEN_TEXT = QT_TRANSLATE_NOOP(
@@ -1316,7 +1316,7 @@ class ScnSceneController:
         changed_documents = self._document_ids_for_handler(handler)
         handled_documents = set()
         for scene in self.tabs():
-            touched = {document_id for graph in scene.preview.graphs for document_id in graph.documents} & changed_documents
+            touched = {*graph.documents for graph in scene.preview.graphs} & changed_documents
             result = scene.preview.sync_raw_transform_field(touched, changed_obj) if touched and changed_obj is not None else None
             if result is not None and result.handled and result.dirty_documents:
                 handled_documents.update(result.dirty_documents)

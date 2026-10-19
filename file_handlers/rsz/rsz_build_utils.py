@@ -1,6 +1,6 @@
 import struct
 
-from utils.hex_util import align as align_value
+lazy from utils.hex_util import align as align_value
 
 
 UTF16_NULL = b"\x00\x00"

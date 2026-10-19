@@ -3,9 +3,9 @@ from __future__ import annotations
 import math
 import struct
 
-from ..errors import MotionValidationError
+lazy from ..errors import MotionValidationError
 from ..profiles import MotionFormatProfile
-from .model import (
+lazy from .model import (
     MotTree,
     TreeLinkType,
     TreeNodeType,

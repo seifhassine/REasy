@@ -4,10 +4,10 @@ import struct
 
 from utils.hash_util import murmur3_hash
 
-from ..binary import ReadContext, align_up
-from ..errors import MotionParseError
+lazy from ..binary import ReadContext, align_up
+lazy from ..errors import MotionParseError
 from ..profiles import MotionFormatProfile
-from .model import (
+lazy from .model import (
     MotTree,
     MotionIdRemap,
     TreeLink,

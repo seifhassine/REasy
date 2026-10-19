@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
-from .spirv import SpirvError
+lazy from .shader_stage_execution import ShaderPrimitiveExecution
+lazy from .spirv import SpirvError
 
 
 @dataclass(frozen=True)
@@ -68,7 +69,6 @@ def _patch_control_points(native):
 
 
 def _tessellation_execution(native):
-    from .shader_stage_execution import ShaderPrimitiveExecution
     modes = dict(native.execution_modes)
     if set(modes) - _TESSELLATION_MODES:
         raise SpirvError('This Vulkan tessellation mode needs an explicit semantic adapter.')
@@ -106,7 +106,6 @@ def vulkan_primitive_execution(native, streams=(0,)):
         return _tessellation_execution(native)
     if native.stage != 'geometry':
         return None
-    from .shader_stage_execution import ShaderPrimitiveExecution
     modes = dict(native.execution_modes)
     inputs = {19:'point',20:'line',21:'lineadj',22:'triangle',23:'triangleadj'}
     outputs = {27:'pointlist',28:'linestrip',29:'trianglestrip'}

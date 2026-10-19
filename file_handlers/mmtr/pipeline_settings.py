@@ -13,7 +13,8 @@ from file_handlers.sdf.sdf_file import (
 )
 
 from file_handlers.sdf.models import STATE_KINDS
-from .pass_purpose import pass_purpose
+lazy from .pass_purpose import pass_purpose
+lazy from .material_family import distinct_members
 
 _FIELDS = {
     "rasterizer": ("fill_mode_id", "cull_mode_id", "front_counter_clockwise", "depth_clip_enable", "scissor_enable",
@@ -74,7 +75,6 @@ def with_member_states(states: Mapping, lods, changes: Mapping) -> dict:
 
 
 def setting_members(document) -> tuple[tuple[tuple, object], ...]:
-    from .material_family import distinct_members
     family = getattr(document, "material_family", None)
     return (((None,), document),) if family is None else distinct_members(family)
 

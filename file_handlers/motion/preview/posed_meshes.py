@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from typing import Protocol
 
-import numpy as np
+lazy import numpy as np
 
 from ui.scene.scene_model import SceneSkinningBinding
-from ui.scene.scene_view import ScenePose
+lazy from ui.scene.scene_view import ScenePose
 
 from .model import MotionPreviewSnapshot
 

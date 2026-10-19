@@ -5,7 +5,7 @@ import math
 
 import numpy as np
 
-from ui.scene.scene_model import SceneDrawMesh
+lazy from ui.scene.scene_model import SceneDrawMesh
 
 from .model import MotionPreviewSnapshot
 

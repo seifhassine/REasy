@@ -8,7 +8,7 @@ from functools import partial
 import struct
 from collections.abc import Callable, Mapping, Sequence
 
-import numpy as np
+lazy import numpy as np
 
 from .profiles import (
     MeshGameProfile,
@@ -245,7 +245,7 @@ def _normal_recalc_lod_view(mesh, lod_index, body, redirects):
     lod = copy(view.meshes[0].lods[lod_index])
     view.meshes[0].lods = [lod]
     lod.mesh_groups = [copy(group) for group in lod.mesh_groups]
-    draws = [draw for group in lod.mesh_groups for draw in group.submeshes]
+    draws = [*group.submeshes for group in lod.mesh_groups]
     if not draws or len({draw.buffer_index for draw in draws}) != 1:
         raise NormalRecalcError(f"Normal-recalculation LOD {lod_index} needs one vertex buffer")
     base = min(draw.verts_index_offset for draw in draws)
@@ -1023,7 +1023,7 @@ def _serialize_legacy_normal_recalc(
     _pack_words(encoded, redirects_offset - section_offset, redirect_words)
     _pack_words(encoded, indices_offset - section_offset, packed_indices)
     _pack_words(encoded, indices_end - section_offset, page_words)
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 
 def _serialize_lod0_normal_recalc(
@@ -1069,7 +1069,7 @@ def _serialize_lod0_normal_recalc(
     struct.pack_into("<qq", encoded, redirects_offset - 16 - section_offset, redirects_offset, faces_offset)
     _pack_words(encoded, redirects_offset - section_offset, redirect_words)
     _pack_words(encoded, faces_offset - section_offset, face_words)
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 
 serialize_dmc5_normal_recalc = partial(_serialize_legacy_normal_recalc, layout=NormalRecalcLayout.DMC5)
@@ -1220,7 +1220,7 @@ def serialize_sf6_normal_recalc(
         _pack_words(encoded, redirects_offset - section_offset, redirect_words)
         _pack_words(encoded, faces_offset - section_offset, face_words)
         _pack_words(encoded, faces_offset + len(face_words) * 4 - section_offset, page_words)
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 
 def _unpack_words(view, offset: int, count: int) -> tuple[int, ...]:

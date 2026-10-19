@@ -5,13 +5,12 @@ from typing import TYPE_CHECKING, Callable
 
 from file_handlers.sdf.profiles import SdfGameProfile
 from file_handlers.sdf.profiles.base import ProfileRegistry
-from file_handlers.material_names import logical_material_parameter_name
+lazy from file_handlers.material_names import logical_material_parameter_name
+lazy from file_handlers.sdf.models import SdfProgram
 
-from ..models import MmtrNameSemantics, MmtrProgramContext
+lazy from ..models import MmtrNameSemantics, MmtrProgramContext
 
 if TYPE_CHECKING:
-    from file_handlers.sdf.models import SdfProgram
-
     from .re_engine_shader_graph import ReEngineShaderGraphProfile
 
 

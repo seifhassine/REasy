@@ -1,6 +1,6 @@
 import re
 
-from .shader_storage import ShaderStorageType
+lazy from .shader_storage import ShaderStorageType
 from .shader_graph import ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 

@@ -6,7 +6,7 @@ import re
 
 from file_handlers.sdf.dxc import DxcError, disassemble_dxil
 from file_handlers.sdf.shader_graph import ShaderGraphError
-from file_handlers.sdf.storage_codec import pack_ir_storage, unpack_ir_storage
+lazy from file_handlers.sdf.storage_codec import pack_ir_storage, unpack_ir_storage
 
 
 IR_SCHEMA = "reasy.dxil-semantic-ir"

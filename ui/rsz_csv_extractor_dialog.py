@@ -24,10 +24,10 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtWidgets import QComboBox
 
-from utils.type_registry import TypeRegistry
-from utils.number_format import format_display_value
-from tools.rsz_field_value_finder import format_value
-from tools.rsz_data_matcher import scan_directory_single_pass
+lazy from utils.type_registry import TypeRegistry
+lazy from utils.number_format import format_display_value
+lazy from tools.rsz_field_value_finder import format_value
+lazy from tools.rsz_data_matcher import scan_directory_single_pass
 
 _REGISTRY_CACHE: Dict[str, TypeRegistry] = {}
 ANY_VALUE = QT_TRANSLATE_NOOP("RszCsvExtractorDialog", "Any value")

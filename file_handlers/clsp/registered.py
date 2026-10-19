@@ -6,7 +6,9 @@ from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 
 from file_handlers.bounded_cache import BoundedCache
-from utils.resource_file_utils import resource_key
+lazy from utils.resource_file_utils import resource_key
+lazy from file_handlers.rsz.plain_values import plain_value
+lazy from file_handlers.rsz.rsz_file import RszFile
 
 _NAMED = BoundedCache()
 _NAMED_ENTRIES, _NAMED_BYTES = 4096, 64 * 1024 * 1024
@@ -30,9 +32,6 @@ def _strings(value) -> Iterator[str]:
 
 
 def named(registry, game: str, path: str, data: bytes) -> frozenset[str]:
-    from file_handlers.rsz.plain_values import plain_value
-    from file_handlers.rsz.rsz_file import RszFile
-
     cache_key = (game, resource_key(path), hashlib.blake2b(data, digest_size=16).digest())
     held = _NAMED.get(cache_key)
     if held is not None:

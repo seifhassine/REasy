@@ -87,7 +87,7 @@ def write_riff_metadata(data: bytes, metadata: RiffMetadata) -> bytes:
         body += chunk.chunk_id + struct.pack("<I", len(chunk.payload)) + chunk.payload
         if len(chunk.payload) & 1:
             body.append(0)
-    return b"RIFF" + struct.pack("<I", len(body)) + bytes(body)
+    return b"RIFF" + struct.pack("<I", len(body)) + body.take_bytes()
 
 
 def inherit_riff_metadata(
@@ -269,7 +269,7 @@ def _pack_smpl(metadata: RiffMetadata) -> bytes:
             "<6I", int(loop.cue_id) & 0xFFFFFFFF, int(loop.loop_type) & 0xFFFFFFFF,
             start, end, 0, int(loop.play_count) & 0xFFFFFFFF,
         )
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _pack_cues(markers: tuple[RiffMarker, ...]) -> bytes:
@@ -281,7 +281,7 @@ def _pack_cues(markers: tuple[RiffMarker, ...]) -> bytes:
             raise ValueError("Cue IDs must be unique and sample offsets non-negative")
         used.add(cue_id)
         out += struct.pack("<II4sIII", cue_id, offset, b"data", 0, 0, offset)
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _pack_labels(markers: list[RiffMarker]) -> bytes:
@@ -291,4 +291,4 @@ def _pack_labels(markers: list[RiffMarker]) -> bytes:
         out += b"labl" + struct.pack("<I", len(payload)) + payload
         if len(payload) & 1:
             out.append(0)
-    return bytes(out)
+    return out.take_bytes()

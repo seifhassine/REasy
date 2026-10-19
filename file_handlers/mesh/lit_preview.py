@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
-from types import MappingProxyType
 
 import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP
@@ -32,22 +31,22 @@ from file_handlers.mmtr.pretransform import (
 )
 from file_handlers.mmtr.profiles import mmtr_profile_for_game, mmtr_profile_for_resource
 from file_handlers.mmtr.shown_image import TargetImages
-from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
+lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
 from file_handlers.mmtr.pass_choice import PassChoiceError
 from file_handlers.mmtr.surface_meaning import GBUFFER_PURPOSE, surface_output_catalog_for
-from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
-from file_handlers.stmesh.stmesh_handler import StmeshHandler
+lazy from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
+lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
 from file_handlers.sdf.sdf_file import CULL_NONE
 from file_handlers.tex.texture_quality import texture_quality_profile
 from ui.scene.device_frames import Presenter
-from ui.scene.mesh_preview import MeshPreviewScene
+lazy from ui.scene.mesh_preview import MeshPreviewScene
 from ui.scene.scene_buffers import VIEW_LIGHT_DIRECTION, mesh_bounds_points
 from utils.resource_file_utils import PrefetchedFiles, resource_path_with_version, resource_version_from_path
 
 from .device_preview import DevicePreview
-from .material_resolver import MeshMaterialResolver
-from .material_shader_preview import preview_material
-from .mesh_inspector import MeshInspection
+lazy from .material_resolver import MeshMaterialResolver
+lazy from .material_shader_preview import preview_material
+lazy from .mesh_inspector import MeshInspection
 
 # The mesh viewer's vertical field of view (degrees) and clip distances (scaled units).
 _FIELD_OF_VIEW = 45.0
@@ -153,7 +152,7 @@ class LitScene:
     level: ChainLevel | None = None
     groups: tuple[int, ...] = ()
     meshlets: bool = False
-    engine: Mapping[str, bytes] = MappingProxyType({})
+    engine: Mapping[str, bytes] = frozendict()
     box: ObjectBox | None = None
 
     @property
@@ -744,8 +743,8 @@ class LitPreview(GameLighting, DevicePreview):
         return LitScene(game, inspection.geometry, tuple(parts), masters, PrefetchedFiles(files), skinned, bones,
                         stencil_reference(session), bounds, level, groups,
                         bool(meshlets) or speedtree and handler.stmesh.meshlets is not None,
-                        stmesh_engine_buffers(handler.stmesh, speedtree_catalog, None) if speedtree
-                        else MappingProxyType({}), None if speedtree else object_box(mesh))
+                        frozendict(stmesh_engine_buffers(handler.stmesh, speedtree_catalog, None)) if speedtree
+                        else frozendict(), None if speedtree else object_box(mesh))
 
 
 def stencil_reference(session) -> int:

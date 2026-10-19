@@ -3,16 +3,16 @@ import io
 import os
 import re
 import threading
-import zstandard as zstd
+lazy import zstandard as zstd
 import zlib
 import traceback
 from functools import cache, partial
 from pathlib import Path
 from typing import Container, Dict, Iterable, List, Optional, Sequence
-from concurrent.futures import ThreadPoolExecutor, as_completed
+lazy from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .utils import filepath_hash, guess_extension_from_header, normalize_pak_path
-from utils.native_build import ensure_fast_pakresolve
+lazy from utils.native_build import ensure_fast_pakresolve
 from .pakfile import (
     PakFile,
     PakEntry,
@@ -540,10 +540,7 @@ class CachedPakReader(PakReader):
                 thread_local.initialized = True
                 thread_local.created_dirs = set()
                 thread_local.buffer = bytearray(8 * 1024 * 1024)
-                try:
-                    thread_local.zstd_decompressor = zstd.ZstdDecompressor()
-                except ImportError:
-                    thread_local.zstd_decompressor = None
+                thread_local.zstd_decompressor = zstd.ZstdDecompressor()
             return thread_local
         
         def extract_from_pak(pak: PakFile, entries: List[tuple[PakEntry, Path]]) -> int:
@@ -622,7 +619,7 @@ class CachedPakReader(PakReader):
                                         data = _decompress_with_alternate_codec(e, data, resources.zstd_decompressor)
                             elif e.compression == 2:
                                 if data.startswith(_ZSTD_MAGIC):
-                                    data = (resources.zstd_decompressor or zstd.ZstdDecompressor()).decompress(data)
+                                    data = resources.zstd_decompressor.decompress(data)
                                 else:
                                     data = _decompress_with_alternate_codec(e, data, resources.zstd_decompressor)
 
@@ -647,7 +644,7 @@ class CachedPakReader(PakReader):
         extracted = 0
         
         total_files = sum(len(entries) for _pak, entries in groups.values())
-        num_cores = os.cpu_count() or 4
+        num_cores = os.process_cpu_count() or 4
         
         if total_files < 10:
             for _pak_path, (pak, entries) in groups.items():

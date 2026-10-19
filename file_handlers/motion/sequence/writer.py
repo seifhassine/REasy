@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import struct
 
-from ..binary import pad_to_alignment
+lazy from ..binary import pad_to_alignment
 from ..mot_clip.writer import CompactMotClipV27Writer
 from ..profiles import MotionFormatProfile
 from .model import SequenceData
@@ -57,4 +57,4 @@ class SequenceV65Writer:
             1,
             sequence.category,
         )
-        return bytes(out)
+        return out.take_bytes()

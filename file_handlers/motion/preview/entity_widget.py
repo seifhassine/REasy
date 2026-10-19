@@ -4,7 +4,7 @@ from dataclasses import replace
 from typing import Callable
 
 import numpy as np
-from PySide6.QtCore import QSignalBlocker, QTimer, Qt
+lazy from PySide6.QtCore import QSignalBlocker, QTimer, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QLabel,
@@ -14,11 +14,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.rsz.scn_scene_attachments import (
+lazy from file_handlers.rsz.scn_scene_attachments import (
     ScnJointAttachmentResult,
     same_joints_pose_space_matrix,
 )
-from file_handlers.rsz.scn_scene_graph import (
+lazy from file_handlers.rsz.scn_scene_graph import (
     ScnObjectId,
     ScnRenderableMesh,
     normalize_document_id,
@@ -29,45 +29,45 @@ from file_handlers.rsz.scn_scene_preview import (
 )
 from ui.editor_widgets import EmbeddedPopupComboBox
 from ui.qt_timers import call_later
-from ui.scene.scn_visibility_panel import ScnGameObjectVisibilityPanel
+lazy from ui.scene.scn_visibility_panel import ScnGameObjectVisibilityPanel
 
 from ..evaluation import DeformationTarget, Rig
 from ..mot import Motion
 from ..runtime import JointMapAttributes
-from .animation_browser import MotionAnimationBrowser
+lazy from .animation_browser import MotionAnimationBrowser
 from .attachments import MotionSceneAttachmentResolver
-from .blend_shapes import blend_shape_targets
-from .channel_controls import MotionChannelPanel
+lazy from .blend_shapes import blend_shape_targets
+lazy from .channel_controls import MotionChannelPanel
 from .controller import MotionPreviewController
-from .controls import MotionPlaybackControls
-from .editor_layout import MotionEditorPane, MotionEditorWorkspace
-from .entity_session import (
+lazy from .controls import MotionPlaybackControls
+lazy from .editor_layout import MotionEditorPane, MotionEditorWorkspace
+lazy from .entity_session import (
     EntityMotionSession,
     EntityMotionSessionResolver,
     ResolvedMotionTarget,
 )
-from .model import (
+lazy from .model import (
     MotionPreviewError,
     is_static_skeletal_pose,
     snapshot_diagnostic_messages,
     snapshot_status_messages,
 )
-from .entity_scene import EntitySceneCoordinator, MeshBinding
-from .material_animation import (
+lazy from .entity_scene import EntitySceneCoordinator, MeshBinding
+lazy from .material_animation import (
     MaterialAnimation,
     SceneMaterialAnimationResolver,
     material_deformation_targets,
 )
 from .resolution import PreviewMotionEntry
-from .posed_meshes import PosedMeshes
-from .runtime_details import MotionRuntimeDebugDialog
-from .scene_state import resolve_renderable_scene_state
-from .shared_pose import (
+lazy from .posed_meshes import PosedMeshes
+lazy from .runtime_details import MotionRuntimeDebugDialog
+lazy from .scene_state import resolve_renderable_scene_state
+lazy from .shared_pose import (
     resolve_motion_display_scope,
     resolve_motion_variant_visibility,
     resolve_same_joints_pose_targets,
 )
-from .skinning import (
+lazy from .skinning import (
     build_shared_rig_deformer,
     build_skinned_mesh_deformer,
     shared_rig_model_space_transform,
@@ -687,9 +687,8 @@ class PfbMotionPreviewWidget(QWidget):
             )
         if self._material_parameter_values:
             values = [
-                value
+                *parameters.values()
                 for parameters in self._material_parameter_values.values()
-                for value in parameters.values()
             ]
             messages.append(
                 self.tr("Material animation: {active}/{total} active").format(
@@ -954,9 +953,8 @@ class PfbMotionPreviewWidget(QWidget):
             frame,
             self._session_document_id,
             (
-                renderable
+                *getattr(graph, "renderables", ())
                 for graph in self.scene.graphs
-                for renderable in getattr(graph, "renderables", ())
             ),
         )
         if (

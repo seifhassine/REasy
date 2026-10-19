@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .meshlets import MeshletChunk
-from .stmesh_file import BatchType, Geometry, StmeshFile
+lazy from .meshlets import MeshletChunk
+lazy from .stmesh_file import BatchType, Geometry, StmeshFile
 
 # The shaders' constants, as float32: 255/256 and the golden angle.
 _Z_TOP = np.float32(0.99609375)

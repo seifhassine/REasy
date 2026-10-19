@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from ..binary import ReadContext
-from ..errors import MotionParseError
+lazy from ..binary import ReadContext
+lazy from ..errors import MotionParseError
 from ..mot_clip.parser import CompactClipV27Parser
 from ..profiles import MotionFormatProfile
 from .model import SequenceCategory, SequenceData, SequenceTrack

@@ -4,7 +4,7 @@ import struct
 import numpy as np
 
 from file_handlers.clsp.clsp_file import EVERY_TAG
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
 _F = np.float32
 # The only .gpus resource version known.
@@ -242,7 +242,7 @@ class GpuStrandsPreset:
         pointer = struct.unpack_from('<Q', data, 0xe0)[0]
         pointer = write_payload(pointer, 128 if pointer else 0, struct.pack('<32f', *self.static_friction_weights))
         struct.pack_into('<Q', data, 0xe0, pointer)
-        return bytes(data)
+        return data.take_bytes()
 
 
 def gpus_version(path: str) -> int:

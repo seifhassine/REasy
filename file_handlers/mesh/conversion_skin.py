@@ -1,9 +1,9 @@
 from array import array
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from .conversion_geometry import geometry_layers, mesh_payloads
+lazy from .conversion_geometry import geometry_layers, mesh_payloads
 from .mesh_file import MPLY_MAGIC, SKIN_WEIGHT_STREAMS, SkinWeightBuffer
 from .profiles import MaterialSkinningLayout, SkinWeightLayout
 from .skinning_contract import MeshSkinningContract, normal_compute_influence_count, packed_rigid_joint_indices

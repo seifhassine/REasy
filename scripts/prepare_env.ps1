@@ -4,7 +4,7 @@ Set-Location (Join-Path $PSScriptRoot "..")
 
 $venv = ".venv"
 $py = if ($UseCurrentPython) { "python" } else { Join-Path $venv "Scripts\python.exe" }
-$check = "import sys; raise SystemExit(0 if sys.version_info >= (3, 12) else 1)"
+$check = "import sys; raise SystemExit(sys.version_info[:2] != (3, 15))"
 $pyStamp = Join-Path $venv ".reasy-python.stamp"
 $gdeflateRoot = Join-Path ".cache" "gdeflate"
 $gdeflateSource = Join-Path $gdeflateRoot "GDeflateCore"
@@ -24,7 +24,7 @@ function OK($exe, [string[]] $argv) {
 function Clean { if (Test-Path $venv) { Remove-Item -LiteralPath $venv -Recurse -Force } }
 function Create-Venv($exe, [string[]] $prefix) {
     # Prefer the unpacked stdlib so Windows launchers can be copied even when venv is also in pythonXY.zip.
-    $create = "import sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); import venv; venv.create(sys.argv[1], system_site_packages=True, **({'scm_ignore_files': {'git'}} if sys.version_info >= (3, 13) else {}))"
+    $create = "import sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); import venv; venv.create(sys.argv[1], system_site_packages=True, scm_ignore_files={'git'})"
     if (-not (OK $exe ($prefix + @("-c", $create, $venv)))) { Clean; return $false }
     if (-not (Test-Path $py) -or -not (OK $py @("-c", $check))) { Clean; return $false }
     return $true
@@ -40,22 +40,13 @@ function Fresh($stamp, $inputs, $outputs) {
     -not (Get-ChildItem $inputs -File -ErrorAction SilentlyContinue | Where-Object LastWriteTimeUtc -gt $t | Select-Object -First 1)
 }
 function Prep {
-    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "native\*.cpp", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmotion*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "faststrands*.pyd", "fastsdftex*.pyd", "resources\i18n\*.qm"))) { return $true }
+    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "native\*.cpp", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmotion*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "resources\i18n\*.qm"))) { return $true }
     if (-not $UseCurrentPython -and -not (OK $py @("-m", "ensurepip", "--upgrade"))) { return $false }
     if (-not $UseCurrentPython -and -not (OK $py @("-m", "pip", "--disable-pip-version-check", "install", "-r", "requirements.txt"))) { return $false }
     if (-not (OK $py @("setup.py", "build_ext", "--inplace"))) { return $false }
     if (-not (OK $py @("scripts\compile_qm.py"))) { return $false }
     if (-not $UseCurrentPython) { Set-Content $pyStamp (Get-Date).ToUniversalTime().ToString("o") }
     return $true
-}
-function Try-Python($exe, [string[]] $prefix, $name) {
-    Write-Host "Trying $name..."
-    if (-not (OK $exe ($prefix + @("-c", $check)))) { return $false }
-    Clean
-    if (-not (Create-Venv $exe $prefix)) { return $false }
-    if (Prep) { return $true }
-    Clean
-    return $false
 }
 function Find-VsDevCmd {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} "Microsoft Visual Studio\Installer\vswhere.exe"
@@ -132,16 +123,12 @@ function Build-GDeflate {
 
 $ready = ($UseCurrentPython -or ((Test-Path $py) -and (Uses-SystemSite))) -and (OK $py @("-c", $check)) -and (Prep)
 if (-not $ready) {
-    if ($UseCurrentPython) { Write-Error "Python 3.12+ with dependencies is required."; exit 1 }
+    if ($UseCurrentPython) { Write-Error "python on PATH must be Python 3.15 with REasy's dependencies installed."; exit 1 }
     Clean
-    $ready = Try-Python "python" ([string[]]@()) "python"
-    $versions = @()
-    if (-not $ready -and (Get-Command py -ErrorAction SilentlyContinue)) {
-        $versions = & py -0p 2>$null | ForEach-Object { if ($_ -match "^\s*(-V:3(?:\.\d+)?)\b") { $Matches[1] } }
-    }
-    foreach ($v in $versions) { if (Try-Python "py" ([string[]]@($v)) $v) { $ready = $true; break } }
+    $ready = (OK "py" @("-3.15", "-c", $check)) -and (Create-Venv "py" @("-3.15")) -and (Prep)
+    if (-not $ready) { Clean }
 }
-if (-not $ready) { Write-Error "Python 3.12+ with pip is required."; exit 1 }
+if (-not $ready) { Write-Error "Python 3.15 is required: install it so that 'py -3.15' runs, then rerun."; exit 1 }
 
 if (-not (Restore-GDeflateNet)) { Write-Error "Failed to initialize or repair the GDeflateNet submodule."; exit 1 }
 if (-not (Build-GDeflate)) { Write-Error "Failed to build libGDeflate.dll from source."; exit 1 }

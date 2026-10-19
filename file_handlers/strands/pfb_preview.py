@@ -1,17 +1,17 @@
 from pathlib import Path
 
-import numpy as np
-from PySide6.QtCore import QTimer, Qt
+lazy import numpy as np
+lazy from PySide6.QtCore import QTimer, Qt
 from PySide6.QtWidgets import QSplitter, QVBoxLayout, QWidget
 
-from file_handlers.mmtr.profiles import mmtr_profile_for_game
-from file_handlers.rsz.rsz_handler import RszHandler
-from file_handlers.rsz.scn_scene_graph import ScnSceneGraphBuilder
-from file_handlers.rsz.scn_scene_loader import ScnSceneSource
-from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
-from utils.resource_file_utils import resource_key
-from .chain_catalog import strand_catalog_for
-from .controls import LoadedSet, StrandsControls
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
+lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from file_handlers.rsz.scn_scene_graph import ScnSceneGraphBuilder
+lazy from file_handlers.rsz.scn_scene_loader import ScnSceneSource
+lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
+lazy from utils.resource_file_utils import resource_key
+lazy from .chain_catalog import strand_catalog_for
+lazy from .controls import LoadedSet, StrandsControls
 
 
 def holds_strand_sets(handler) -> bool:

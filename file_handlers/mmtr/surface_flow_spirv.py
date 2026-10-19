@@ -3,16 +3,16 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from file_handlers.sdf.spirv import SpirvError, reflect_spirv
-from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
-from file_handlers.sdf.spirv_ir import SpirvSemanticIr, grammar
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.spirv import SpirvError, reflect_spirv
+lazy from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
+lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr, grammar
 
-from .native_loop_flow import reachable_blocks
-from .profiles.re_engine_spirv_authoring import _Module
-from .spirv_control_flow import spirv_cfg
-from .surface_flow import FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field
-from .surface_flow_dxil import _dominators
+lazy from .native_loop_flow import reachable_blocks
+lazy from .profiles.re_engine_spirv_authoring import _Module
+lazy from .spirv_control_flow import spirv_cfg
+lazy from .surface_flow import FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field
+lazy from .surface_flow_dxil import _dominators
 
 
 _PURE_CLASSES = frozenset({"Arithmetic", "Relational_and_Logical", "Conversion", "Bit", "Derivative"})
@@ -108,7 +108,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
                       names["OpSpecConstantFalse"]}:
             lanes[row.result] = [("constant", row.name)]
         elif code in {names["OpConstantComposite"], names["OpSpecConstantComposite"]}:
-            lanes[row.result] = [lane for part in row.values[2:] for lane in lanes[part]]
+            lanes[row.result] = [*lanes[part] for part in row.values[2:]]
         elif code in {names["OpConstantNull"], names["OpUndef"]}:
             lanes[row.result] = [("constant", row.name)] * len(shape(row.type_id))
         elif code == names["OpVariable"]:
@@ -223,7 +223,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
             continue
         references = [operand.value for operand in row.operands if operand.kind == "IdRef"]
         if name == "OpPhi":
-            controls = [lane for condition in path_controls(current) for lane in operand_lanes(condition)]
+            controls = [*operand_lanes(condition) for condition in path_controls(current)]
             incoming = references[0::2]
             lanes[result] = [add("join", [operand_lanes(item)[lane] for item in incoming if operand_lanes(item)],
                                  ("phi",), scalar, (result, lane), controls)
@@ -235,7 +235,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
         elif name == "OpLoad":
             root, path = pointer(references[0])
             storage = _MEMORY_CLASSES.get(definitions[definitions[root].type_id].values[1])
-            dynamic = [lane for item in path if module.constant(item) is None for lane in operand_lanes(item)]
+            dynamic = [*operand_lanes(item) for item in path if module.constant(item) is None]
             family = ("load", storage)
             lanes[result] = [add("source", dynamic, family, scalar, (result, lane))
                              for lane, scalar in enumerate(shape(row.type_id))]
@@ -259,7 +259,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
                 variable_type = module.pointee(root)
                 if None in constant_path:
                     # A dynamically indexed store may reach any lane, so those lanes keep only their stored value.
-                    index_lanes = [lane for item in path for lane in operand_lanes(item)]
+                    index_lanes = [*operand_lanes(item) for item in path]
                     for field in fields:
                         for lane in range(field.mask.bit_count()):
                             joined = add("join", [*stored, *index_lanes], ("dynamic-store",),
@@ -273,7 +273,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
                     stores.append((fields[element], lane, value, (start + step, current, position), scope))
         elif name in _ROUTING:
             if name == "OpCompositeConstruct":
-                lanes[result] = [lane for item in references for lane in operand_lanes(item)]
+                lanes[result] = [*operand_lanes(item) for item in references]
             elif name == "OpCompositeExtract":
                 source_type = definitions[references[0]].type_id
                 literal = [operand.value for operand in row.operands[3:]]
@@ -292,7 +292,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
             else:
                 lanes[result] = list(operand_lanes(references[0]))
         elif name in _DISCARDS:
-            controls = [lane for condition in path_controls(current) for lane in operand_lanes(condition)]
+            controls = [*operand_lanes(condition) for condition in path_controls(current)]
             discards.append((add("join", (), ("discard",), "bool", (row.opcode, current), controls),
                              (start + step, current, None)))
         elif name == "OpReturn":
@@ -335,7 +335,7 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
                                             picked, (*signature, constants(picked)), scalar, (result, lane)))
                 lanes[result] = result_lanes
             else:
-                every = [lane for item in operands for lane in operand_lanes(item)]
+                every = [*operand_lanes(item) for item in operands]
                 kind = "pure" if mixing and any(isinstance(item, int) for item in every) else "source"
                 family = (*signature, constants(every)) if kind == "pure" else signature
                 lanes[result] = [add(kind, every, family, scalar, (result, lane)) for lane, scalar in enumerate(scalars)]

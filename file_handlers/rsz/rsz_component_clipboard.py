@@ -1,9 +1,9 @@
 import traceback
-from file_handlers.rsz.rsz_data_types import ObjectData
+lazy from file_handlers.rsz.rsz_data_types import ObjectData
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table
+lazy from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+lazy from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+lazy from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table
 
 class RszComponentClipboard(RszClipboardBase):
     def get_clipboard_type(self) -> str:

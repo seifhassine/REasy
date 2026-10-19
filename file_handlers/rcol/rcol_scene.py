@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from ui.scene.scene_model import SceneDrawMesh
-from .shape_types import AABB, Area, Capsule, Cylinder, OBB, Sphere, Triangle
+lazy from .shape_types import AABB, Area, Capsule, Cylinder, OBB, Sphere, Triangle
 
 
 @dataclass(slots=True)

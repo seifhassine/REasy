@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from enum import IntFlag
 from typing import List
 
-from utils.binary_handler import BinaryHandler
+lazy from utils.binary_handler import BinaryHandler
 
 MCAMBANK_MAGIC = 0x6B6E6263
 

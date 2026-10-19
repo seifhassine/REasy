@@ -2,9 +2,9 @@ from dataclasses import replace
 import hashlib
 import struct
 
-import numpy as np
+lazy import numpy as np
 
-from .normal_recalc import (
+lazy from .normal_recalc import (
     INDICES_PER_WORKGROUP, VERTEX_INDEX_BITS, VERTEX_INDEX_MASK,
     NormalRecalcLOD, NormalRecalcSubmesh, NormalRecalcWorkItem,
     derive_dmc5_normal_indices, derive_re8_normal_indices,
@@ -44,7 +44,7 @@ def normal_work_needs_rebuild(mesh, *, check_slots=True):
 
 
 def _draws(mesh, index):
-    return [draw for group in mesh.meshes[0].lods[index].mesh_groups for draw in group.submeshes]
+    return [*group.submeshes for group in mesh.meshes[0].lods[index].mesh_groups]
 
 
 def _topology(mesh, draws):

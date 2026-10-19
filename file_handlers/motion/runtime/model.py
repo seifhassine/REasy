@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import TypeAlias
 
-import numpy as np
+lazy import numpy as np
 
 
 class MotionRuntimeContextError(ValueError):

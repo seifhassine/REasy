@@ -1,7 +1,7 @@
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mesh.conversion_skin import coalesce_weights
+lazy from file_handlers.mesh.conversion_skin import coalesce_weights
 from file_handlers.mesh.mesh_file import SKIN_WEIGHT_STREAMS
 
 

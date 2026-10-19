@@ -9,23 +9,23 @@ from dataclasses import dataclass
 import numpy as np
 
 from file_handlers.clsp.clsp_file import CollisionShape
-from file_handlers.mmtr.engine_buffers import Camera
-from file_handlers.mmtr.light_passes import LightPasses, Source
+lazy from file_handlers.mmtr.engine_buffers import Camera
+lazy from file_handlers.mmtr.light_passes import LightPasses, Source
 from file_handlers.mmtr.material_preview import VIEW_DIMENSIONS, PreviewMaterial
-from file_handlers.mmtr.mesh_render import DEPTH_VIEWS
-from file_handlers.mmtr.pretransform_passes import SystemPrograms
-from file_handlers.mmtr.resident import UNORDERED_ACCESS
-from file_handlers.rsz.scene_joints import times
+lazy from file_handlers.mmtr.mesh_render import DEPTH_VIEWS
+lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
+lazy from file_handlers.mmtr.resident import UNORDERED_ACCESS
+lazy from file_handlers.rsz.scene_joints import times
 
 from .binding_skin import POSITION_BYTES, BindingSkin, skin_matrices
-from .chain_catalog import BEFORE, NOW, StrandCatalog
+lazy from .chain_catalog import BEFORE, NOW, StrandCatalog
 from .chain_constants import SetFrame
 from .chain_passes import MASK, StrandPasses, frame_steps, kept_buffers, strand_buffers
 from .chain_set import StrandSet
 from .gpus import GpuStrandsPreset
-from .hair_material import material_given, user_material
+lazy from .hair_material import material_given, user_material
 from .lod import F, LodRecord
-from .opacity import StrandOpacity
+lazy from .opacity import StrandOpacity
 from .render_constants import DrawFrame, RenderConstants
 from .render_passes import DrawShape, DrawState, RenderPasses, composite_steps, draw_steps, tiles_of, view_steps
 from .set_lod import BoundMesh, LodRun, LodView, SetLod
@@ -189,7 +189,7 @@ class StrandChain:
             block = bytearray(out.get(_ENVIRONMENT, bytes(layouts[_ENVIRONMENT].byte_size)))
             count = next(item for item in layouts[_ENVIRONMENT].variables if item.name == _FRAME_COUNT)
             struct.pack_into("<I", block, count.byte_offset, self._count & 0xffffffff)
-            out[_ENVIRONMENT] = bytes(block)
+            out[_ENVIRONMENT] = block.take_bytes()
         return out
 
     def _run(self) -> list[int]:

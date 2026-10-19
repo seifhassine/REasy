@@ -1,6 +1,8 @@
-from .shader_graph import (ShaderGraphError, ShaderGraphNodeExtension, ShaderPin,
-    register_shader_graph_node_extension, _identifier, signature_declaration, signature_member)
-from .shader_stage_execution import patch_field_members, patch_struct
+from .shader_graph import (GeneratedShaderSource, ShaderGraphError, ShaderGraphNodeExtension, ShaderPin,
+    register_shader_graph_node_extension, _graph_numeric_features, _identifier, generate_graph_function,
+    signature_declaration, signature_member, validate_graph)
+lazy from .dxil_structured_views import structured_view_spaces
+lazy from .shader_stage_execution import patch_field_members, patch_struct
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 
@@ -34,8 +36,7 @@ def _signature_structure(name, fields, prefix):
 
 
 def generate_hull_source(graph, contract):
-    from .shader_graph import (GeneratedShaderSource, generate_graph_function, validate_graph,
-        _graph_numeric_features, MAX_SOURCE_LENGTH)
+    from .shader_graph import MAX_SOURCE_LENGTH
     errors = [item.message for item in validate_graph(graph, contract) if item.severity == 'error']
     if errors:
         raise ShaderGraphError('\n'.join(errors))
@@ -90,7 +91,6 @@ def generate_hull_source(graph, contract):
     if len(source.encode('utf-8')) > MAX_SOURCE_LENGTH:
         raise ShaderGraphError('Generated hull HLSL exceeds the source size budget.')
     half, unassigned, signed_zero, word_views = _graph_numeric_features(graph)
-    from .dxil_structured_views import structured_view_spaces
     return GeneratedShaderSource(source, 'main', contract.target,
         native_16bit=half, unassigned_values=unassigned, signed_zero_constants=signed_zero,
         structured_view_spaces=structured_view_spaces(contract) if word_views else ())

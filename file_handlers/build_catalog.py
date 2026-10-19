@@ -2,7 +2,7 @@ from functools import lru_cache
 import json
 from pathlib import Path
 
-from utils.app_paths import resource_path
+lazy from utils.app_paths import resource_path
 
 
 def catalog_file_name(game: str, resource_version: int) -> str:

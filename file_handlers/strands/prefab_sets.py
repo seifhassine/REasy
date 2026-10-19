@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import MaterialPreviewError
-from file_handlers.rsz.plain_values import plain_fields
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.rsz.plain_values import plain_fields
 
-from .chain_catalog import StrandCatalog
+lazy from .chain_catalog import StrandCatalog
 
 
 @dataclass(frozen=True, slots=True)

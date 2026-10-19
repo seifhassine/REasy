@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Protocol
 
 from ..binary import ReadContext
-from ..errors import MotionParseError
+lazy from ..errors import MotionParseError
 from ..mot_list.model import MotionSlotFlags, MotionSlotType
 from ..mot_list.parser import MotListV85Parser
 from ..profiles import MotionFormatProfile

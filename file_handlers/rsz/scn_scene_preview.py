@@ -7,34 +7,34 @@ from functools import partial
 from pathlib import Path
 from typing import Callable, Mapping
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from file_handlers.lightprobe.loader import parse_light_probe_data
-from file_handlers.mesh.material_session import (
+lazy from file_handlers.lightprobe.loader import parse_light_probe_data
+lazy from file_handlers.mesh.material_session import (
     MeshMaterialCollection,
     MeshMaterialSession,
     scoped_material_key,
 )
-from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.stmesh.stmesh_handler import StmeshHandler
-from file_handlers.mesh.mesh_file import MeshLoadMode
-from file_handlers.mesh.scene_lit import SceneDevicePreview
-from file_handlers.mesh.scene_wrinkles import scene_wrinkles
-from file_handlers.mmtr.profiles import mmtr_profile_for_game
-from file_handlers.mmtr.wrinkle import wrinkle_catalog_for
-from ui.qt_timers import call_later
-from ui.scene.lightprobe_preview import SceneLightProbeInstance, SceneLightProbeSet
-from ui.scene.mesh_scene import build_mesh_scene
-from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
-from ui.scene.scene_preview import ScenePreviewWidget
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
+lazy from file_handlers.mesh.mesh_file import MeshLoadMode
+lazy from file_handlers.mesh.scene_lit import SceneDevicePreview
+lazy from file_handlers.mesh.scene_wrinkles import scene_wrinkles
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
+lazy from file_handlers.mmtr.wrinkle import wrinkle_catalog_for
+lazy from ui.qt_timers import call_later
+lazy from ui.scene.lightprobe_preview import SceneLightProbeInstance, SceneLightProbeSet
+lazy from ui.scene.mesh_scene import build_mesh_scene
+lazy from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
+lazy from ui.scene.scene_preview import ScenePreviewWidget
 from utils.resource_file_utils import resource_version_from_path
 
-from .scn_scene_loader import ScnSceneLoader, ScnSceneSource
-from .scn_document_store import ScnDocumentStore
-from .scn_scene_commands import RawTransformFieldCommand, TransformEditResult, TransformSelectionCommand
-from .scn_scene_graph import (
+lazy from .scn_scene_loader import ScnSceneLoader, ScnSceneSource
+lazy from .scn_document_store import ScnDocumentStore
+lazy from .scn_scene_commands import RawTransformFieldCommand, TransformEditResult, TransformSelectionCommand
+lazy from .scn_scene_graph import (
     ScnSceneDiagnostic,
     ScnLightProbeBinding,
     ScnRenderableMesh,
@@ -316,7 +316,7 @@ class ScnScenePreviewWidget(QWidget):
         draw_by_key = {mesh.key: mesh for mesh in self._draw_meshes}
         result = []
         for renderable in (
-            item for graph in self.graphs for item in graph.renderables
+            *graph.renderables for graph in self.graphs
         ):
             cached = self._mesh_cache.get(self._mesh_cache_key(renderable))
             draw_mesh = draw_by_key.get(renderable.key)
@@ -400,7 +400,7 @@ class ScnScenePreviewWidget(QWidget):
             self._notify_graphs_changed()
             return
         self._stop_timers()
-        removed = [renderable for row in rows for renderable in self.graphs[row].renderables]
+        removed = [*self.graphs[row].renderables for row in rows]
         removed_keys = {renderable.key for renderable in removed}
         removed_assets = {self._material_asset_key(renderable) for renderable in removed}
         self.graphs = [graph for index, graph in enumerate(self.graphs) if index not in rows]
@@ -466,7 +466,7 @@ class ScnScenePreviewWidget(QWidget):
             self._material_timer.start(0)
 
     def _document_ids(self) -> set[str]:
-        return {document_id for graph in self.graphs for document_id in graph.documents}
+        return {*graph.documents for graph in self.graphs}
 
     def refresh(self) -> None:
         self._refresh_queued = False
@@ -879,7 +879,7 @@ class ScnScenePreviewWidget(QWidget):
 
     def _update_diagnostics(self) -> None:
         new = []
-        for diagnostic in (item for graph in self.graphs for item in graph.diagnostics):
+        for diagnostic in (*graph.diagnostics for graph in self.graphs):
             key = (diagnostic.severity, diagnostic.code, diagnostic.message, diagnostic.document_id, diagnostic.document_instance_id, diagnostic.path)
             if key not in self._shown_diagnostics:
                 self._shown_diagnostics.add(key)

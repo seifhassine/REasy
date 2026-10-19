@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import struct
 
-import numpy as np
+lazy import numpy as np
 
-from .data import LprbData
+lazy from .data import LprbData
 
 
 _LEGACY_HEADER_SIZE = 16

@@ -2,15 +2,16 @@ from array import array
 from copy import deepcopy
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from .contract_utils import layer_groups
-from .conversion_allocations import _slice_payload, join_payloads
-from .mesh_file import (
+lazy from .contract_utils import layer_groups
+lazy from .conversion_allocations import _slice_payload, join_payloads
+lazy from .mesh_file import (
     MESH_MAGIC, MPLY_MAGIC, GroupPivotData, MeshBufferPayload, MeshData, MeshGroup, MeshLOD,
     Submesh,
 )
-from .meshlet_clusters import split_chunk
+lazy from .meshlet_clusters import split_chunk
+lazy from .conversion_skin import coalesce_weights
 
 
 def retains_meshlets(mesh, profile, output_kind="auto"):
@@ -39,7 +40,6 @@ def retains_meshlets(mesh, profile, output_kind="auto"):
             weights = np.asarray(stream.weights).reshape(stream.vertex_count, stream.influence_count)
             indices = np.asarray(stream.deform_indices).reshape(weights.shape)
             if stream.influence_count > profile.skin_weight_influence_count:
-                from .conversion_skin import coalesce_weights
                 if np.any(np.count_nonzero(coalesce_weights(indices, weights), axis=1)
                           > profile.skin_weight_influence_count):
                     return False
@@ -109,7 +109,7 @@ def separate_normal_lods(mesh):
     allocations = []
     plans = {}
     for lod in mesh.meshes[0].lods:
-        submeshes = [s for g in lod.mesh_groups for s in g.submeshes]
+        submeshes = [*g.submeshes for g in lod.mesh_groups]
         indices = {s.buffer_index for s in submeshes}
         if len(indices) != 1:
             raise ValueError("Normal-recalculation LOD spans multiple vertex buffers")
@@ -121,7 +121,7 @@ def separate_normal_lods(mesh):
             continue
         original = buffer.buffer_payloads[source]
         for index, lod in enumerate(lods.values()):
-            submeshes = [s for g in lod.mesh_groups for s in g.submeshes]
+            submeshes = [*g.submeshes for g in lod.mesh_groups]
             start = min(s.verts_index_offset for s in submeshes)
             end = max(s.verts_index_offset + s.vert_count for s in submeshes)
             target = source if index == 0 else max(buffer.buffer_payloads) + 1
@@ -180,7 +180,7 @@ def split_large_meshlets(mesh, profile, loss):
     split = [split_chunk(chunk, profile.meshlet_max_vertices, profile.meshlet_max_triangles)
              for chunk in buffer.mply_chunks]
     if len(split) < sum(map(len, split)):
-        buffer.mply_chunks = [part for parts in split for part in parts]
+        buffer.mply_chunks = [*parts for parts in split]
         loss("Split meshlets larger than the target draws; their positions are requantized")
 
 

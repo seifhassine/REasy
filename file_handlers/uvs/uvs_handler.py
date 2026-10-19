@@ -2,7 +2,7 @@ import struct
 from typing import Optional
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
 from .uvs_file import UVS_MAGIC, UvsFile
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import struct
 
-from .models import (
+lazy from .models import (
     SdfDetachedVariable,
     SdfDetachedVariableTable,
     SdfDocument,

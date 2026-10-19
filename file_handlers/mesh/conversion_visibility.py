@@ -1,10 +1,10 @@
 from array import array
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from .conversion_geometry import geometry_layers, mesh_payloads
-from .conversion_skin import _material_layout
+lazy from .conversion_geometry import geometry_layers, mesh_payloads
+lazy from .conversion_skin import _material_layout
 from .mesh_file import MESH_MAGIC
 from .profiles import MaterialSkinningLayout
 

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from array import array
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mesh.mesh_file import MESH_MAGIC, MeshBuffer, MeshBufferPayload, MeshContentFlags, MeshData, \
+lazy from file_handlers.mesh.mesh_file import MESH_MAGIC, MeshBuffer, MeshBufferPayload, MeshContentFlags, MeshData, \
     MeshFile, MeshGroup, MeshLOD, Submesh
-from file_handlers.mesh.profiles import MeshGameProfile
+lazy from file_handlers.mesh.profiles import MeshGameProfile
 
-from .geometry import DecodedVertices, decode_billboards, decode_chunk, decode_geometry, draws
-from .stmesh_file import BufferLayout, StmeshFile
+lazy from .geometry import DecodedVertices, decode_billboards, decode_chunk, decode_geometry, draws
+lazy from .stmesh_file import BufferLayout, StmeshFile
 
 _SUBMESH_VERTICES = 0x10000
 

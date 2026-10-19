@@ -186,7 +186,7 @@ class IftCodec:
         for group in model.groups:
             sub_ats.append(cursor if group.subs else 0)
             cursor += 0x28 * len(group.subs)
-        flat_subs = [s for g in model.groups for s in g.subs]
+        flat_subs = [*g.subs for g in model.groups]
         blob_ats: list[int] = []
         for sub in flat_subs:
             blob_ats.append(cursor)
@@ -241,7 +241,7 @@ class IftCodec:
                 )
                 out[blob_ats[k] : blob_ats[k] + len(sub.blob)] = sub.blob
                 k += 1
-        return bytes(out)
+        return out.take_bytes()
 
 
 IFT_CODECS: dict[int, IftCodec] = {v: IftCodec(v) for v in IFT_PROFILES}

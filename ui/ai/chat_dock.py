@@ -5,6 +5,7 @@ import math
 import os
 import re
 from dataclasses import dataclass
+from functools import cached_property
 
 from PySide6.QtCore import (
     QByteArray,
@@ -28,7 +29,7 @@ from PySide6.QtGui import (
     QTextLength,
     QTextTable,
 )
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+lazy from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -48,7 +49,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from services.ai.chat_service import (
+lazy from services.ai.chat_service import (
     DEEPSEEK_PROVIDER,
     LOCAL_PROVIDER,
     AiProviderConfig,
@@ -62,13 +63,13 @@ from services.ai.chat_service import (
     parse_chat_response,
     thinking_config_for_model,
 )
-from services.ai.tool_outcome import AiToolOutcome, summarize_tool_result
-from services.ai.credential_store import (
+lazy from services.ai.tool_outcome import AiToolOutcome, summarize_tool_result
+lazy from services.ai.credential_store import (
     CredentialStoreError,
     DeepSeekCredentialStore,
 )
-from settings import AI_FILE_ACTION_MODES
-from ui.ai.tools import ReasyAssistantTools, assistant_system_prompt
+lazy from settings import AI_FILE_ACTION_MODES
+lazy from ui.ai.tools import ReasyAssistantTools, assistant_system_prompt
 
 
 @dataclass(frozen=True)
@@ -831,11 +832,7 @@ acting on file state. Return only the compacted memory.
         self.resize(420, 760)
 
         self.app_window = app_window
-        self.credential_store = getattr(
-            app_window,
-            "deepseek_credential_store",
-            None,
-        ) or DeepSeekCredentialStore()
+        self._api_key_storage_loaded = False
         self.tools = ReasyAssistantTools(app_window)
         self.network = QNetworkAccessManager(self)
         self._reply: QNetworkReply | None = None
@@ -1082,7 +1079,6 @@ acting on file state. Return only the compacted memory.
         )
         settings_layout.addWidget(self.api_key_help)
 
-        self._initialize_api_key_storage()
         self.api_key_edit.setVisible(configured_provider.requires_api_key)
         self.remember_key_check.setVisible(configured_provider.requires_api_key)
         self.endpoint_edit.setVisible(
@@ -2300,6 +2296,21 @@ acting on file state. Return only the compacted memory.
             provider.requires_api_key and not self._api_key()
         )
 
+    @cached_property
+    def credential_store(self):
+        # Built on first use: keyring loads ~50 modules and probes the OS backends.
+        return getattr(
+            self.app_window,
+            "deepseek_credential_store",
+            None,
+        ) or DeepSeekCredentialStore()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._api_key_storage_loaded:
+            self._api_key_storage_loaded = True
+            self._initialize_api_key_storage()
+
     def _initialize_api_key_storage(self):
         if not self.credential_store.available:
             self.remember_key_check.setEnabled(False)
@@ -2314,7 +2325,7 @@ acting on file state. Return only the compacted memory.
             return
         if remembered:
             self.api_key_edit.setText(remembered)
-            self.remember_key_check.setChecked(True)
+            self._set_remember_checked(True)
 
     def _set_remember_checked(self, checked: bool):
         blocker = QSignalBlocker(self.remember_key_check)

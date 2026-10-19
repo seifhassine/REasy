@@ -8,7 +8,7 @@ from operator import or_
 import struct
 
 from .spirv import SPIRV_MAGIC, SpirvError, _spirv_module
-from .storage_codec import pack_ir_storage, unpack_ir_storage
+lazy from .storage_codec import pack_ir_storage, unpack_ir_storage
 from tools.shader_tools import prompt_shader_tool_download, shader_tool_directory
 
 

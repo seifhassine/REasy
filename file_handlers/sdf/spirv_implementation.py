@@ -1,14 +1,16 @@
 from dataclasses import replace
 
+lazy from file_handlers.mmtr.material_implementation import CompiledImplementation
+
 from .dxc import compile_hlsl_dxc
-from .shader_graph import ShaderGraphError, _identifier
-from .spirv import reflect_spirv
-from .spirv_contract import (
+lazy from .shader_graph import ShaderGraphError, _identifier
+lazy from .spirv import reflect_spirv
+lazy from .spirv_contract import (
     _BUILTINS, _PATCH_BUILTINS, _PATCH_DECORATION, patch_interface_ids, spirv_interface_rows, spirv_shader_contract,
 )
-from .spirv_execution import vulkan_execution
-from .spirv_ir import SpirvSemanticIr, SpirvBuilder
-from .spirv_tools import validate_spirv
+lazy from .spirv_execution import vulkan_execution
+lazy from .spirv_ir import SpirvSemanticIr, SpirvBuilder
+lazy from .spirv_tools import validate_spirv
 
 
 def complete_vulkan_contract(contract, bytecode):
@@ -136,7 +138,6 @@ def _drop_undeclared_descriptors(bytecode, declared):
 
 
 def compile_vulkan_implementation(generated, contract):
-    from file_handlers.mmtr.material_implementation import CompiledImplementation
     execution = contract.vulkan_execution
     if execution is None:
         raise ShaderGraphError('A Vulkan implementation requires explicit native descriptor linkage.')

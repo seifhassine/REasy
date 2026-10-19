@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable
 
-from utils.resource_file_utils import ResourceDataLoader, resource_path_key
+lazy from utils.resource_file_utils import ResourceDataLoader, resource_path_key
 
-from ..evaluation import (
+lazy from ..evaluation import (
     LayerBlendMode,
     LayerInterpolationCurve,
     LayerRepeat,
@@ -34,7 +34,7 @@ from .resolution import (
     MotionResolutionDiagnostic,
     PreviewMotionEntry,
 )
-from .resources import MotionListResourceStore
+lazy from .resources import MotionListResourceStore
 from .support import EntityMotionSupport
 
 

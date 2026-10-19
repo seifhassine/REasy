@@ -12,6 +12,7 @@ import sys
 from threading import RLock
 import uuid
 
+lazy import fastdxil
 from file_handlers.bounded_cache import BoundedCache
 from tools.shader_tools import prompt_shader_tool_download, shader_tool_directory
 
@@ -20,8 +21,8 @@ if sys.platform == "win32":
 else:  # pragma: no cover - DXC COM is Windows-only.
     winreg = None
 
-from .com import blob_bytes, com_method, com_release
-from .dxbc import (
+lazy from .com import blob_bytes, com_method, com_release
+lazy from .dxbc import (
     CONSTANT_BUFFER_TYPE_NAMES,
     RESOURCE_DIMENSION_NAMES,
     RESOURCE_INPUT_TYPE_NAMES,
@@ -38,6 +39,7 @@ from .dxbc import (
     DxbcTypeMember,
     DxbcVariable,
 )
+lazy from .hlsl import thread_group
 
 
 class DxcError(ValueError):
@@ -730,8 +732,6 @@ def _reflect_container(container: bytes, *, library_shader: DxbcShader | None = 
     raw = bytes(container)
     if raw[:4] != b"DXBC":
         raise DxcError("DXIL reflection needs a DXBC/DXIL container")
-    import fastdxil
-
     try:
         reflected = fastdxil.reflect(
             ctypes.cast(_library().DxcCreateInstance, LPVOID).value, raw, library_shader is not None,
@@ -743,8 +743,6 @@ def _reflect_container(container: bytes, *, library_shader: DxbcShader | None = 
     creator, version, flags, bound, group = reflected
     resources, buffers, types = _bound_data(bound)
     shader_type = (version >> 16) & 0xFFFF
-    from .hlsl import thread_group
-
     return DxbcReflection(
         shader_type_id=shader_type,
         shader_type=SHADER_STAGE_NAMES.get(shader_type, f"stage-{shader_type}"),

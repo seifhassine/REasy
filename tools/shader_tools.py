@@ -3,6 +3,8 @@ import sys
 from pathlib import Path
 
 from utils.app_paths import application_root
+lazy from PySide6.QtCore import QCoreApplication, QThread
+lazy from PySide6.QtWidgets import QApplication, QMessageBox
 
 
 def shader_tool_directory(name):
@@ -41,8 +43,6 @@ PACKAGES = {
 def prompt_shader_tool_download(name):
     if sys.platform != "win32" or platform.machine().lower() not in {"amd64", "x86_64"} or sys.maxsize <= 2**32:
         return False
-    from PySide6.QtCore import QCoreApplication, QThread
-    from PySide6.QtWidgets import QApplication, QMessageBox
     from tools.github_downloader import _download_and_extract_archive
 
     app = QApplication.instance()

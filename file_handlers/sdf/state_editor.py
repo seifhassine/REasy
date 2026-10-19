@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .sdf_file import (
+lazy from .sdf_file import (
     BLEND_NAMES,
     BLEND_OPERATION_NAMES,
     COMPARISON_FUNCTION_NAMES,

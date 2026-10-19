@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from utils.hex_util import align
+lazy from utils.hex_util import align
 
 HEADER = 0x90
 BVH = 0xa0

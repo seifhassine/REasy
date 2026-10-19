@@ -1,7 +1,7 @@
 import struct
 from typing import Optional
 
-from utils.resource_file_utils import (
+lazy from utils.resource_file_utils import (
     ResourceResolutionContext,
     resource_context_for_handler,
     resource_path_at_version,
@@ -10,8 +10,8 @@ from utils.resource_file_utils import (
 )
 
 from . import authoring
-from .tex_file import TexFile, TEX_MAGIC
-from .dds import CUBEMAP_FACES, DDS_MISC_TEXTURECUBE, build_dds_dx10
+lazy from .tex_file import TexFile, TEX_MAGIC
+lazy from .dds import CUBEMAP_FACES, DDS_MISC_TEXTURECUBE, build_dds_dx10
 from .texture_handler import TextureViewerHandler
 
 

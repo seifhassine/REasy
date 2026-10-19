@@ -4,14 +4,14 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 
-from utils.hex_util import align
+lazy from utils.hex_util import align
 
-from .meshlets import BVH, HEADER as MESHLET_HEADER, pack_blob, pack_block_tables, pack_streaming
-from .stmesh_file import (CLUSTER, FLAG_SDF_TEXTURE, HEADER, MAGIC, MESHLET_SPAN, STREAMS, BufferLayout, Geometry,
+lazy from .meshlets import BVH, HEADER as MESHLET_HEADER, pack_blob, pack_block_tables, pack_streaming
+lazy from .stmesh_file import (CLUSTER, FLAG_SDF_TEXTURE, HEADER, MAGIC, MESHLET_SPAN, STREAMS, BufferLayout, Geometry,
                           StmeshError, StmeshFile)
-from .wind import SIZE as WIND_SIZE
+lazy from .wind import SIZE as WIND_SIZE
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,7 +47,7 @@ def _lod_chunk(lod, layout: BufferLayout) -> bytes:
             raise StmeshError("RE4 and SF6 clusters hold no BVH size")
         material = at + layout.cluster_material
         raw[material], raw[material + 1] = cluster.material_id, cluster.batch_type
-    return bytes(raw)
+    return raw.take_bytes()
 
 
 def _streams(chunk: bytearray, geometry: Geometry | None, at_slots: int, at_offsets: int, at_strides: int,
@@ -151,7 +151,7 @@ def write_stmesh(mesh: StmeshFile) -> StmeshWriteResult:
             body += np.ascontiguousarray(mesh.group_pivots, "<f4").tobytes()
         streaming = None
     header = MAGIC + struct.pack("<3I", 0, HEADER, buffers)
-    return StmeshWriteResult(header + bytes(block.data) + bytes(chunk) + body, streaming)
+    return StmeshWriteResult(header + bytes(block.data) + chunk.take_bytes() + body, streaming)
 
 
 __all__ = ["StmeshWriteResult", "write_stmesh"]

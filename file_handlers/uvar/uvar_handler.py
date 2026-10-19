@@ -7,13 +7,18 @@ from PySide6.QtWidgets import (
     QTreeWidget, QTreeWidgetItem, QWidget, QVBoxLayout
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
-from PySide6.QtGui import QAction, QBrush, QColor
+lazy from PySide6.QtGui import QAction, QBrush, QColor, QGuiApplication
 
 from file_handlers.base_handler import FileHandler as BaseFileHandler
-from file_handlers.uvar import (
+lazy from file_handlers.uvar import (
     UVarFile, Variable, TypeKind, UVAR_MAGIC
 )
-from utils.number_format import format_float_sequence, format_full_float
+lazy from utils.number_format import format_float_sequence, format_full_float
+lazy from file_handlers.pyside.uvar_value_dialog import UvarValueEditDialog
+lazy from file_handlers.uvar.uvar_expression import UvarExpression
+lazy from file_handlers.uvar.uvar_node import UvarNode
+lazy from file_handlers.uvar.uvar_types import NodeValueType, NodeConnection
+lazy from file_handlers.uvar.node_parameter import NodeParameter
 
 
 _ITEM_COUNT_TEXT = QT_TRANSLATE_NOOP(
@@ -993,8 +998,6 @@ class UvarHandler(BaseFileHandler):
             self.modified = True
             
     def _edit_variable_value(self, tree: QTreeWidget, item: QTreeWidgetItem, meta: Dict):
-        from file_handlers.pyside.uvar_value_dialog import UvarValueEditDialog
-        
         file = meta.get("file")
         var_index = meta.get("index")
         
@@ -1135,7 +1138,6 @@ class UvarHandler(BaseFileHandler):
                 )
             
     def _copy_to_clipboard(self, text: str):
-        from PySide6.QtGui import QGuiApplication
         clipboard = QGuiApplication.clipboard()
         clipboard.setText(text)
         
@@ -1169,8 +1171,7 @@ class UvarHandler(BaseFileHandler):
         )
         if not ok:
             return
-        from file_handlers.uvar.uvar_file import UVarFile as _UVarFile
-        new_embed = _UVarFile()
+        new_embed = UVarFile()
         new_embed.is_embedded = True
         new_embed.header.version = main_file.header.version
         new_embed.header.magic = main_file.header.magic
@@ -1257,7 +1258,6 @@ class UvarHandler(BaseFileHandler):
 
     def _get_expr(self, variable):
         if variable.expression is None:
-            from file_handlers.uvar.uvar_expression import UvarExpression
             variable.expression = UvarExpression()
         return variable.expression
 
@@ -1337,7 +1337,6 @@ class UvarHandler(BaseFileHandler):
     def _expr_add_node(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
         var = meta["variable"]
         expr = self._get_expr(var)
-        from file_handlers.uvar.uvar_node import UvarNode
         node = UvarNode()
         name, ok = QInputDialog.getText(tree, self.tr("Add Node"), self.tr("Node name:"))
         if not ok:
@@ -1493,7 +1492,6 @@ class UvarHandler(BaseFileHandler):
 
     def _expr_add_param(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
         node = meta["node"]
-        from file_handlers.uvar.uvar_types import NodeValueType
         types = [t.name for t in NodeValueType]
         type_name, ok = QInputDialog.getItem(
             tree, self.tr("Add Parameter"), self.tr("Type:"), types, 0, False
@@ -1550,13 +1548,11 @@ class UvarHandler(BaseFileHandler):
             )
             if not ok: 
                 return
-            import uuid
             try:
                 value = uuid.UUID(v)
             except Exception:
                 QMessageBox.warning(tree, self.tr("Invalid"), self.tr("Invalid GUID"))
                 return
-        from file_handlers.uvar.node_parameter import NodeParameter
         p = NodeParameter()
         p.name_hash = name_hash
         p.type = t
@@ -1577,7 +1573,6 @@ class UvarHandler(BaseFileHandler):
 
     def _expr_edit_param(self, tree: 'QTreeWidget', item: 'QTreeWidgetItem', meta: Dict):
         p = meta["param"]
-        from file_handlers.uvar.uvar_types import NodeValueType
         if p.type == NodeValueType.Int32:
             v, ok = QInputDialog.getInt(
                 tree,
@@ -1615,7 +1610,6 @@ class UvarHandler(BaseFileHandler):
                 text=str(p.value) if p.value else "00000000-0000-0000-0000-000000000000",
             )
             if ok:
-                import uuid
                 try:
                     p.value = uuid.UUID(v)
                 except Exception:
@@ -1709,7 +1703,6 @@ class UvarHandler(BaseFileHandler):
                 self.tr("Self-connections are not allowed."),
             )
             return
-        from file_handlers.uvar.uvar_types import NodeConnection
         rel = NodeConnection(src_node=sn, src_port=sp, dst_node=dn, dst_port=dp)
         expr.relations.append(rel)
         expr_item = self._find_parent_expr_item(item)

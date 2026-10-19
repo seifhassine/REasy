@@ -4,8 +4,8 @@ import struct
 
 from utils.hash_util import murmur3_hash
 
-from ..binary import pad_to_alignment
-from ..errors import MotionWriteError
+lazy from ..binary import pad_to_alignment
+lazy from ..errors import MotionWriteError
 from ..profiles import MotionFormatProfile
 from .model import (
     ASCII_VALUE_PROPERTY_TYPES,
@@ -290,7 +290,7 @@ class CompactMotClipV27Writer:
         ):
             local = table_offsets[name]
             struct.pack_into("<Q", out, 0x28 + index * 8, stored(local) if local else 0)
-        return bytes(out)
+        return out.take_bytes()
 
     @staticmethod
     def _key_record(key, hermite_index, bezier_index) -> bytes:

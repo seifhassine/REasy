@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-from PySide6.QtGui import QFontDatabase
+lazy from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,

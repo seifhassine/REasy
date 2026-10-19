@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from functools import partial
 
-import numpy as np
+lazy import numpy as np
 
 from .contract_utils import (
     ContractValidator,
@@ -15,6 +15,7 @@ from .contract_utils import (
 )
 from .models import MESH_MAGIC, MPLY_MAGIC
 from .profiles.base import Half2ValueDomain
+lazy from .canonical_contract import assert_mesh_semantic_domains
 
 
 RE9_VERTEX_STRIDES = {
@@ -121,8 +122,6 @@ def _assert_meshlet_runtime_contract(mesh: object, mesh_buffer: object) -> None:
 
 
 def _assert_ordinary_runtime_contract(mesh: object, mesh_buffer: object) -> None:
-    from .canonical_contract import assert_mesh_semantic_domains
-
     assert_mesh_semantic_domains(mesh)
     _VALIDATOR.assert_late_buffer_layouts(mesh, mesh_buffer, _assert_element_headers)
     _require(
@@ -354,9 +353,8 @@ def _assert_ordinary_import(mesh: object, mesh_buffer: object) -> None:
         )
         if shadow.shares_main_payload:
             main_lods = [
-                lod
+                *mesh_data.lods
                 for mesh_data in mesh.meshes
-                for lod in mesh_data.lods
             ]
             _require(
                 all(any(lod is main_lod for main_lod in main_lods) for lod in shadow.lods),

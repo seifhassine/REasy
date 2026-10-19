@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .hlsl import compile_hlsl_file_detailed, compile_hlsl_source_detailed
+lazy from . import dxc
+lazy from .hlsl import compile_hlsl_file_detailed, compile_hlsl_source_detailed
 
 
 def uses_dxc(target: str) -> bool:
@@ -21,12 +22,10 @@ def compile_hlsl_for_target(
 ):
     """D3DCompile resolves #include from the file's folder."""
     if uses_dxc(target):
-        from .dxc import compile_hlsl_dxc
-
         options = {"entry_point": entry_point, "target": target, "extra_arguments": ("-Zi", "-Od") if debug else ()}
         if path is None:
-            return compile_hlsl_dxc(source, **options)
-        return compile_hlsl_dxc(Path(path).read_bytes(), source_name=str(path), **options)
+            return dxc.compile_hlsl_dxc(source, **options)
+        return dxc.compile_hlsl_dxc(Path(path).read_bytes(), source_name=str(path), **options)
     if path is not None:
         return compile_hlsl_file_detailed(
             path, entry_point=entry_point, target=target, debug=debug, warnings_as_errors=warnings_as_errors,

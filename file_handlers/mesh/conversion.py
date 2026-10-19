@@ -3,23 +3,23 @@ from copy import deepcopy
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-import numpy as np
+lazy import numpy as np
 
 from .canonical_writer import CanonicalMeshWriteResult, serialize_mesh
-from .contract_utils import all_groups, all_lods, layer_groups
-from .conversion_coordinates import transform_coordinates
-from .conversion_allocations import make_resident
-from .conversion_geometry import (
+lazy from .contract_utils import all_groups, all_lods, layer_groups
+lazy from .conversion_coordinates import transform_coordinates
+lazy from .conversion_allocations import make_resident
+lazy from .conversion_geometry import (
     detach_topology, materialize_tangents, mesh_payloads, meshlets_to_mesh, retains_meshlets, separate_normal_lods,
     split_large_meshlets,
 )
-from .conversion_skin import adapt_source_skinning, compact_skin_palette, convert_skin_streams, target_skinning_contract
-from .conversion_visibility import materialize_skinning_visibility
-from .conversion_morphs import translate_morphs
-from .conversion_indices import needs_draw_splitting, split_large_draws
-from .conversion_normals import (PARTITION_WORK_LOSS, WORK_ASSIGNMENT_LOSS, materialize_normal_work,
+lazy from .conversion_skin import adapt_source_skinning, compact_skin_palette, convert_skin_streams, target_skinning_contract
+lazy from .conversion_visibility import materialize_skinning_visibility
+lazy from .conversion_morphs import translate_morphs
+lazy from .conversion_indices import needs_draw_splitting, split_large_draws
+lazy from .conversion_normals import (PARTITION_WORK_LOSS, WORK_ASSIGNMENT_LOSS, materialize_normal_work,
                                  normal_work_needs_rebuild, normal_work_signatures)
-from .mesh_file import (
+lazy from .mesh_file import (
     MESH_MAGIC, MPLY_INTEGER_PLANES, MPLY_MAGIC, MPLY_VECTOR_PLANES, SKIN_WEIGHT_STREAMS, MeshFile, MeshLoadMode,
 )
 from .skinning_contract import MeshSkinningContract
@@ -28,6 +28,7 @@ from .profiles import (
     MeshHeaderLayout, NormalRecalcLayout, VertexNormalWSemantic,
     mesh_profile_for_game, mesh_profiles,
 )
+lazy from .conversion_parts import split_palettes
 
 
 class MeshConversionError(ValueError):
@@ -378,7 +379,6 @@ def convert_mesh(mesh: MeshFile, target: MeshGameProfile | str, *,
                              defer_palette=palette_policy == "split")
         parts = [(converted, ())]
         if len(converted.bone_remap_indices) > target.max_deform_bones or partition_normals or partition_indices:
-            from .conversion_parts import split_palettes
             if meshlets:
                 meshlets_to_mesh(converted, loss)
             if source_work_needs_rebuild:
@@ -423,7 +423,7 @@ def _write_converted(converted, target, version_pair, contract, normal_work, los
             shadow.lods = deepcopy(shadow.lods, {id(converted.mesh_buffer): converted.mesh_buffer})
             groups = shadow.lods[0].mesh_groups
             loss("Target combines shadow parts under part ID 0")
-            groups[0].submeshes = [s for group in groups for s in group.submeshes]
+            groups[0].submeshes = [*group.submeshes for group in groups]
             groups[0].vertex_count = sum(group.vertex_count for group in groups)
             groups[0].group_id = 0
             shadow.lods[0].mesh_groups = groups[:1]

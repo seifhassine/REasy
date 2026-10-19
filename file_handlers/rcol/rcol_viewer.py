@@ -5,7 +5,7 @@ from typing import Any
 import os
 import uuid
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSignalBlocker
 from PySide6.QtWidgets import (
     QComboBox,
@@ -36,27 +36,27 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.rsz.rsz_handler import RszHandler
-from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-from file_handlers.pyside.component_selector import ComponentSelectorDialog
-from utils.id_manager import IdManager
+lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+lazy from file_handlers.pyside.component_selector import ComponentSelectorDialog
+lazy from utils.id_manager import IdManager
 
-from .request_set import IgnoreTag, RequestSet
-from .rcol_structures import RcolGroup, RcolShape
-from .shape_types import ShapeType, create_shape
+lazy from .request_set import IgnoreTag, RequestSet
+lazy from .rcol_structures import RcolGroup, RcolShape
+lazy from .shape_types import ShapeType, create_shape
 from .rcol_scene import SceneAttachment, build_scene_meshes
-from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
-from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.mesh.material_session import (
+lazy from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from file_handlers.mesh.material_session import (
     MeshMaterialCollection,
     MeshMaterialSession,
 )
-from file_handlers.mesh.scene_lit import SceneDevicePreview
-from ui.scene.mesh_scene import build_mesh_scene
+lazy from file_handlers.mesh.scene_lit import SceneDevicePreview
+lazy from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawMesh
-from ui.scene.scene_preview import ScenePreviewWidget
-from utils.number_format import format_display_value
-from utils.resource_file_utils import resolve_handler_resource_data
+lazy from ui.scene.scene_preview import ScenePreviewWidget
+lazy from utils.number_format import format_display_value
+lazy from utils.resource_file_utils import resolve_handler_resource_data
 
 
 MESH_LOAD_FAILED_TITLE = QT_TRANSLATE_NOOP("RcolViewer", "Mesh Load Failed")

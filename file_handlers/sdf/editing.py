@@ -7,14 +7,16 @@ from functools import partial
 import hashlib
 import struct
 
-from file_handlers.bounded_cache import BoundedCache
-from utils.hex_util import align
+lazy from file_handlers.bounded_cache import BoundedCache
+lazy from utils.hex_util import align
 
 from . import canonical_writer as _writer
+lazy from . import dxc, hlsl, raytracing, raytracing_abi
 from .dxbc import parse_dxbc
-from .models import RESOURCE_KINDS, STAGE_KEYS, SdfDocument, SdfProgram
-from .runtime_cache import runtime_cache_key_bytes, state_runtime_cache_key, xxh64
-from .spirv import SPIRV_MAGIC, SpirvError, reflect_spirv
+lazy from .models import RESOURCE_KINDS, STAGE_KEYS, SdfDocument, SdfProgram
+lazy from .runtime_cache import runtime_cache_key_bytes, state_runtime_cache_key, xxh64
+lazy from .spirv import SPIRV_MAGIC, SpirvError, reflect_spirv
+lazy from .spirv_implementation import relink_vertex_input_ids
 
 _REPLACEMENT_EXECUTION_CACHE_ENTRIES = 1024
 _REPLACEMENT_EXECUTION_CACHE_BYTES = 32 * 1024 * 1024
@@ -145,7 +147,7 @@ class SdfBinaryEditor:
         return hasher
 
     def _count_pointer_references(self, offset: int) -> int:
-        programs = [program for target in self.document.targets for program in target.programs]
+        programs = [*target.programs for target in self.document.targets]
         if not programs:
             return 0
         start = programs[0].record_offset
@@ -487,11 +489,9 @@ class SdfBinaryEditor:
     ) -> None:
         current = self.program(target_index, program_index).shader(role)
         if current is not None and current.raytracing_library is not None:
-            from .raytracing import serialize_raytracing_library
-
             library = replace(current.raytracing_library, bytecode=bytes(dxbc))
             self.replace_shader_payload(target_index, program_index, role,
-                serialize_raytracing_library(library, export_layout=self.profile.raytracing_export_layout),
+                raytracing.serialize_raytracing_library(library, export_layout=self.profile.raytracing_export_layout),
                 binary_format="dxil-raytracing-library")
             return
         if bytes(dxbc[:4]) == struct.pack("<I", SPIRV_MAGIC):
@@ -522,11 +522,9 @@ class SdfBinaryEditor:
         if actual_stage == "compute":
             try:
                 if reflection.model_major >= 6:
-                    from .dxc import enrich_dxil_shader
-                    group_size = enrich_dxil_shader(reflection, raw).reflection.thread_group_size
+                    group_size = dxc.enrich_dxil_shader(reflection, raw).reflection.thread_group_size
                 else:
-                    from .hlsl import dxbc_thread_group_size
-                    group_size = dxbc_thread_group_size(raw)
+                    group_size = hlsl.dxbc_thread_group_size(raw)
                 if group_size is not None:
                     group_size = tuple(group_size)
             except Exception as exc:
@@ -557,16 +555,12 @@ class SdfBinaryEditor:
         if is_library:
             if key != "compute" or not self.profile.raytracing_libraries:
                 raise SdfEditError("DXR libraries are not supported in this build/lane")
-            from .raytracing import parse_raytracing_library, validate_raytracing_library
-
             try:
-                library = parse_raytracing_library(raw, export_layout=self.profile.raytracing_export_layout)
-                validate_raytracing_library(library, reflect=True)
+                library = raytracing.parse_raytracing_library(raw, export_layout=self.profile.raytracing_export_layout)
+                raytracing.validate_raytracing_library(library, reflect=True)
                 current = program.shader(key)
                 if current is not None and current.raytracing_library is not None:
-                    from .raytracing_abi import validate_raytracing_replacement
-
-                    validate_raytracing_replacement(current.raytracing_library, library)
+                    raytracing_abi.validate_raytracing_replacement(current.raytracing_library, library)
             except Exception as exc:
                 raise SdfEditError(f"replacement {key} is not a valid DXR library: {exc}") from exc
             actual_stage = "library"
@@ -592,7 +586,6 @@ class SdfBinaryEditor:
             actual_stage = reflected_spirv.stage
             group_size = reflected_spirv.thread_group_size if actual_stage == "compute" else None
             if actual_stage=='vertex' and program.input_signature.spirv_input_signature is not None:
-                from .spirv_implementation import relink_vertex_input_ids
                 raw=relink_vertex_input_ids(raw,reflected_spirv,program.input_signature.spirv_input_signature)
             raw = struct.pack("<I", len(raw)) + raw + entry.encode("ascii") + b"\0"
         else:
@@ -771,7 +764,7 @@ class SdfBinaryEditor:
             )
             raw.extend(_writer._input_element_bytes(semantic_id, format_id, input_slot, semantic_index, byte_offset,
                                                     bool(element.get("per_instance", False))))
-        self._replace_state(program, self.profile.program_layout.input_layout_pointer_offset, layout, bytes(raw),
+        self._replace_state(program, self.profile.program_layout.input_layout_pointer_offset, layout, raw.take_bytes(),
                             "input layout", isolate)
 
     def _known_state_key(self, field: str, body: bytes):
@@ -780,7 +773,7 @@ class SdfBinaryEditor:
             known = {}
             fields = {"rasterizer_state": "rasterizer state", "blend_state": "blend state",
                       "depth_stencil_state": "depth/stencil state", "input_layout": "input layout"}
-            for target in (target for source in self._key_sources for target in source.targets):
+            for target in (*source.targets for source in self._key_sources):
                 for program in target.programs:
                     for attribute, name in fields.items():
                         state = getattr(program, attribute)
@@ -868,7 +861,7 @@ class SdfBinaryEditor:
         self._replace_pointed_block(
             program,
             layout.compact_declaration_pointer_offset,
-            bytes(raw),
+            raw.take_bytes(),
             isolate=isolate,
             existing_size=program.compact_declaration_count * layout.compact_declaration_size,
             alignment=4,
@@ -906,13 +899,13 @@ class SdfBinaryEditor:
         raw[start : start + layout.binding_descriptor_size] = bytes((*slots, mask, resource_type))
         owners = tuple(self._binding_table_owners(pointer, size))
         if isolate and len(owners) > 1:
-            new_offset = self._insert_metadata(bytes(raw), alignment=8)
+            new_offset = self._insert_metadata(raw.take_bytes(), alignment=8)
             self._set_program_pointer(program, pointer_relative, new_offset)
         else:
             new_offset = self._replace_pointed_block(
                 program,
                 pointer_relative,
-                bytes(raw),
+                raw.take_bytes(),
                 isolate=isolate,
                 expected_size=size,
                 existing_size=size,
@@ -1173,7 +1166,7 @@ class SdfBinaryEditor:
             raw = bytearray(self._data[first : first + len(metadata) * stride])
             string_relative = len(raw)
             raw.extend(encoded_name + b"\x00")
-            new_base = self._insert_metadata(bytes(raw), alignment=8)
+            new_base = self._insert_metadata(raw.take_bytes(), alignment=8)
             entry = new_base + index * stride
             struct.pack_into("<Q", self._data, entry, new_base + string_relative)
             struct.pack_into("<I", self._data, entry + 8, hasher(str(name)))
@@ -1303,7 +1296,7 @@ class SdfBinaryEditor:
                 raw.extend(variable_name.encode("ascii") + b"\x00")
                 struct.pack_into("<Q", raw, relative, variable_name_relative)
 
-        new_base = self._insert_metadata(bytes(raw), alignment=8)
+        new_base = self._insert_metadata(raw.take_bytes(), alignment=8)
         target_entry = new_base + target_entry_relative
         struct.pack_into("<Q", self._data, target_entry, new_base + name_relative)
         struct.pack_into("<I", self._data, target_entry + 8, hasher(str(name)))

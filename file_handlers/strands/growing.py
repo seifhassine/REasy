@@ -3,13 +3,13 @@ from __future__ import annotations
 
 import os
 from collections.abc import Callable, Sequence
-from concurrent.futures import ThreadPoolExecutor, as_completed
+lazy from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.clsp.clsp_file import CollisionShape, ShapeKind
-from file_handlers.clsp.geometry import box_axes, capsule_ends, bounds, depth
+lazy from file_handlers.clsp.clsp_file import CollisionShape, ShapeKind
+lazy from file_handlers.clsp.geometry import box_axes, capsule_ends, bounds, depth
 from utils.native_build import ensure_fastmesh, ensure_fastsdftex
 
 from . import fitting
@@ -323,7 +323,7 @@ class _Work:
 
     def run(self, jobs: Sequence[Callable[[], object]], first: float, last: float) -> list:
         results = [None] * len(jobs)
-        pool = ThreadPoolExecutor(max(1, min(os.cpu_count() or 1, len(jobs))))
+        pool = ThreadPoolExecutor(max(1, min(os.process_cpu_count() or 1, len(jobs))))
         try:
             futures = {pool.submit(job): number for number, job in enumerate(jobs)}
             for done, future in enumerate(as_completed(futures), 1):
@@ -444,7 +444,7 @@ def _drape(chains, strands, use, rows, grid, head: Head, settings: GrowSettings,
                   calm=_CALM, fold=np.cos(np.radians(_FOLD)), block=_BLOCK)
     packed = np.array([params[name] for name in _PARAMS], np.float64)
     rows, values = np.ascontiguousarray(rows), np.ascontiguousarray(values, np.float32)
-    step = max(16, -(-len(chains) // (8 * (os.cpu_count() or 1))))
+    step = max(16, -(-len(chains) // (8 * (os.process_cpu_count() or 1))))
 
     def job(part):
         return lambda: _fastmesh.drape_strands(chains[part], strands[part], use[part], rows, styled, values, blocks,

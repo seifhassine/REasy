@@ -26,10 +26,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .models import RESOURCE_KINDS, STAGE_KEYS, shader_target
-from .hlsl import hlsl_compiler_available
-from .hlsl_target import compile_hlsl_for_target, uses_dxc
-from .state_editor import select_preserved
+lazy from .models import RESOURCE_KINDS, STAGE_KEYS, shader_target
+lazy from .dxc import dxc_available
+lazy from .hlsl import hlsl_compiler_available
+lazy from .hlsl_target import compile_hlsl_for_target, uses_dxc
+lazy from .state_editor import select_preserved
 
 
 def _spin(maximum=0xFFFF) -> QSpinBox:
@@ -52,8 +53,6 @@ def _reflected_target(shader) -> str:
 
 def _compiler_missing(target: str) -> str:
     if uses_dxc(target):
-        from .dxc import dxc_available
-
         return "" if dxc_available() else QCoreApplication.translate(
             "SdfProgramEditor", "Microsoft DirectX Shader Compiler (dxcompiler.dll) was not found on this system.")
     return "" if hlsl_compiler_available() else QCoreApplication.translate(

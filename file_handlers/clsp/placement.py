@@ -6,7 +6,7 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
-from .clsp_file import CollisionShape, ShapeKind
+lazy from .clsp_file import CollisionShape, ShapeKind
 
 F = np.float32
 _UNIT = np.eye(4, dtype=F)

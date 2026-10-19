@@ -6,12 +6,12 @@ from collections.abc import Sequence
 from dataclasses import replace
 from functools import lru_cache
 
-from file_handlers.sdf.hlsl import compile_hlsl_source
-from file_handlers.tex.dxgi import DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_UINT
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.tex.dxgi import DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_UINT
 
-from .engine_buffers import Camera
-from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV
-from .resident import TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from .engine_buffers import Camera
+lazy from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV
+lazy from .resident import TEXTURE_2D, UNORDERED_ACCESS, Resident
 
 FRAMES = 8
 _GROUP = 8

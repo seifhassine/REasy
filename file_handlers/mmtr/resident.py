@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from collections.abc import Callable, Hashable, Iterable, Sequence
 
+lazy import fastmatpreview
+
 from .material_preview import RANGE_CBV, RANGE_SRV, VIEW_DIMENSIONS, Following
 
 # D3D12_RESOURCE_FLAGS bits.
@@ -14,8 +16,6 @@ class Resident:
     """``hardware`` False runs on Microsoft's software device (WARP)."""
 
     def __init__(self, hardware: bool):
-        import fastmatpreview
-
         self.scene = fastmatpreview.Scene(hardware)
         self.pending: list[int] = []
         self._buffers: dict[bytes, int] = {}

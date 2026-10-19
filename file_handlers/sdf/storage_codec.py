@@ -4,7 +4,7 @@ import base64
 import re
 import zlib
 
-from .shader_graph import ShaderGraphError
+lazy from .shader_graph import ShaderGraphError
 
 
 IR_STORAGE_PREFIX = "zlib-base64:"

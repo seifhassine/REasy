@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from file_handlers.sdf.spirv import SpirvError
+lazy from file_handlers.sdf.spirv import SpirvError
 
-from .surface_flow import ChannelSplit, NativeFlow
+lazy from .surface_flow import ChannelSplit, NativeFlow
+lazy from .profiles.constant_words import word_parts
+lazy from .profiles.re_engine_spirv_authoring import _Module
 
 
 def parameter_sources(ir_kind: str, ir, contract, flow: NativeFlow, buffer_name: str, prefix: int) -> dict[int, int]:
@@ -19,7 +21,6 @@ def parameter_sources(ir_kind: str, ir, contract, flow: NativeFlow, buffer_name:
         return result
     origins = {value.origin: index for index, value in enumerate(flow.values)}
     if ir_kind == "dxil":
-        from .profiles.constant_words import word_parts
         from .profiles.re_engine_bindless_material import material_record_accesses
         from .profiles.re_engine_dxil_authoring import _constant_extracts
         lines = ir.to_assembly().splitlines()
@@ -35,7 +36,6 @@ def parameter_sources(ir_kind: str, ir, contract, flow: NativeFlow, buffer_name:
         return result
     if buffer is None:
         return result
-    from .profiles.re_engine_spirv_authoring import _Module
     module = _Module(ir)
     for row in ir.instructions:
         if row.opcode != 61:

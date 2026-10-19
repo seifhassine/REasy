@@ -1,7 +1,11 @@
-from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resource_version_from_path
+lazy from PySide6.QtCore import QCoreApplication
+lazy from PySide6.QtWidgets import QLabel
 
-from .sdftex_file import SdfTexFile
+from file_handlers.base_handler import BaseFileHandler
+lazy from utils.resource_file_utils import resource_version_from_path
+
+lazy from .sdftex_file import SdfTexFile
+lazy from .viewer import DistanceFieldViewer
 
 
 class SdfTexHandler(BaseFileHandler):
@@ -26,10 +30,6 @@ class SdfTexHandler(BaseFileHandler):
         return data
 
     def create_viewer(self):
-        from PySide6.QtCore import QCoreApplication
-        from PySide6.QtWidgets import QLabel
-        from .viewer import DistanceFieldViewer
-
         viewer = DistanceFieldViewer(self.sdftex)
         note = QLabel(QCoreApplication.translate(
             'DistanceFieldViewer',

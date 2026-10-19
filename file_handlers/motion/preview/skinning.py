@@ -2,28 +2,29 @@ from __future__ import annotations
 
 from enum import Enum
 
-import numpy as np
+lazy import numpy as np
 
 from file_handlers.mesh.skinning_contract import (
     MeshSkinningContract,
     MeshSkinningContractError,
     resolve_mesh_skinning_contract,
 )
-from file_handlers.mesh.normal_recalc import PreparedNormalRecalcPlan, mesh_normal_recalc_plan
+lazy from file_handlers.mesh.normal_recalc import PreparedNormalRecalcPlan, mesh_normal_recalc_plan
 from file_handlers.mesh.profiles import MaterialSkinningLayout
-from ui.scene.mesh_scene import (
+lazy from ui.scene.mesh_scene import (
     MeshScenePayload,
     mesh_lod0_submeshes,
     mesh_scene_payloads,
 )
-from ui.scene.scene_model import SceneSkinningBinding
+lazy from ui.scene.scene_model import SceneSkinningBinding
 from utils.native_build import ensure_fastmesh
 
 from ..evaluation.math3d import transform_matrices
 from ..evaluation.model import Rig
 from ..evaluation.shared_rig import SharedRigPoseMapper
-from .blend_shapes import MeshBlendShapeDeformer
+lazy from .blend_shapes import MeshBlendShapeDeformer
 from .model import MotionPreviewSnapshot
+lazy from file_handlers.mesh.skinning_contract import packed_rigid_joint_indices
 
 
 skin_vertices = ensure_fastmesh().skin_vertices
@@ -431,8 +432,6 @@ class SkinnedMeshDeformer:
         ):
             rigid = limits == 1
             if np.any(rigid):
-                from file_handlers.mesh.skinning_contract import packed_rigid_joint_indices
-
                 indices[rigid, 0] = packed_rigid_joint_indices(indices[rigid])
             self._apply_late_packed_influence_contract(weights, limits, counts)
             return

@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
                               QGridLayout, QLabel, QComboBox, QCheckBox, QSizePolicy,
                               QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer
-from PySide6.QtGui import (
+lazy from PySide6.QtGui import (
     QDoubleValidator,
     QRegularExpressionValidator,
     QIntValidator,
@@ -16,11 +16,14 @@ import re
 import os
 import math
 
-from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
-from file_handlers.pyside.component_selector import ComponentSelectorDialog
-from ui.qt_timers import call_later
-from ui.widgets_utils import ColorPreviewButton
-from utils.number_format import format_display_value, format_full_float
+lazy from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
+lazy from file_handlers.pyside.component_selector import ComponentSelectorDialog
+lazy from ui.qt_timers import call_later
+lazy from ui.widgets_utils import ColorPreviewButton
+lazy from utils.number_format import format_display_value, format_full_float
+lazy from utils.resource_file_utils import (
+    resource_context_for_app, resource_context_for_handler, copy_resource_to_project,
+)
 
 
 _COMPONENT_LABEL_STYLE = """
@@ -1114,7 +1117,7 @@ class OBBInput(BaseValueWidget):
                 self.inputs[row][col].setText(format_full_float(values[idx], 8))
 
     def setValues(self, values):
-        flat_inputs = [input_field for row in self.inputs for input_field in row]
+        flat_inputs = [*row for row in self.inputs]
         for input_field, val in zip(flat_inputs, values):
             input_field.setText(format_display_value(val))
             
@@ -1401,11 +1404,6 @@ class StringInput(BaseValueWidget):
         return getattr(self._get_handler(), "app", None)
 
     def _get_resource_context(self, app_window):
-        from utils.resource_file_utils import (
-            resource_context_for_app,
-            resource_context_for_handler,
-        )
-
         handler = self._get_handler()
         context = resource_context_for_handler(handler) if handler is not None else None
         project_dir = str(getattr(context, "project_dir", "") or "")
@@ -1494,8 +1492,6 @@ class StringInput(BaseValueWidget):
         context,
         add_to_project=False,
     ):
-        from utils.resource_file_utils import copy_resource_to_project
-        
         proj_dock = app_window.proj_dock
         if add_to_project:
             if not context.project_dir:

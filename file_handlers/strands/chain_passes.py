@@ -5,18 +5,18 @@ import struct
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import (
+lazy from file_handlers.mmtr.material_preview import (
     RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, MaterialPreviewError,
 )
-from file_handlers.mmtr.pretransform import SystemProgram
-from file_handlers.mmtr.pretransform_passes import SystemPrograms, dispatch_compute
-from file_handlers.mmtr.resident import BUFFER, TEXTURE_2D, TEXTURE_3D, UNORDERED_ACCESS, Resident
+lazy from file_handlers.mmtr.pretransform import SystemProgram
+lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms, dispatch_compute
+lazy from file_handlers.mmtr.resident import BUFFER, TEXTURE_2D, TEXTURE_3D, UNORDERED_ACCESS, Resident
 from file_handlers.tex.dxgi import DXGI_FORMAT_R32_SINT, DXGI_FORMAT_R32_UINT
 
-from .chain_catalog import BEFORE, NOW, StrandCatalog
-from .strands_file import StrandsFile
+lazy from .chain_catalog import BEFORE, NOW, StrandCatalog
+lazy from .strands_file import StrandsFile
 
 # The bounds ring's three boxes of six words, minima at +1e8 and maxima at -1e8, order-preserving encoded.
 _BOUNDS = (b"\x20\xbc\xbe\xcc" * 3 + b"\xdf\x43\x41\x33" * 3) * 3

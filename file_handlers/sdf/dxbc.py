@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+lazy import ctypes
 from dataclasses import dataclass
 import hashlib
 import os
 import struct
 
-from .binary_reader import BoundedReader
+lazy from .binary_reader import BoundedReader
+lazy from .com import blob_bytes, com_release
+lazy from .hlsl import HlslCompileError, _compiler
 
 
 DXBC_MAGIC = b"DXBC"
@@ -1178,11 +1181,6 @@ def disassemble_dxbc(
         raise DxbcDisassemblyError("input is not a DXBC container")
     if os.name != "nt":
         raise DxbcDisassemblyError("DXBC disassembly requires Windows D3DCompiler")
-
-    # Windows-only ctypes names stay in this branch so the module imports on Linux/macOS.
-    import ctypes
-    from .com import blob_bytes, com_release
-    from .hlsl import HlslCompileError, _compiler
 
     try:
         compiler = _compiler()

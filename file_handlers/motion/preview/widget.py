@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import Counter
 from typing import Callable
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -14,38 +14,38 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.strands.motion import MotionStrandsDialog
+lazy from file_handlers.strands.motion import MotionStrandsDialog
 from ui.scene.scene_preview import ScenePreviewWidget
 from utils.resource_file_utils import resolve_handler_resource_data
-from file_handlers.mesh.scene_lit import SceneDevicePreview
-from file_handlers.mesh.material_session import (
+lazy from file_handlers.mesh.scene_lit import SceneDevicePreview
+lazy from file_handlers.mesh.material_session import (
     MeshMaterialCollection,
     MeshMaterialSession,
 )
 
-from ..evaluation import (
+lazy from ..evaluation import (
     rig_from_motion_skeleton,
 )
 from ..mot.model import Motion
-from .catalog import MotionPreviewCatalog
-from .blend_shapes import mesh_blend_shape_targets
-from .animation_browser import MotionEntryList
+lazy from .catalog import MotionPreviewCatalog
+lazy from .blend_shapes import mesh_blend_shape_targets
+lazy from .animation_browser import MotionEntryList
 from .controller import MotionPreviewController
-from .controls import MotionPlaybackControls
-from .editor_layout import MotionEditorPane, MotionEditorWorkspace
-from .model import (
+lazy from .controls import MotionPlaybackControls
+lazy from .editor_layout import MotionEditorPane, MotionEditorWorkspace
+lazy from .model import (
     MotionPreviewError,
     snapshot_diagnostic_messages,
     snapshot_status_messages,
 )
-from .resolution import (
+lazy from .resolution import (
     MotionListDocument,
     PreviewMotionEntry,
     PreviewMotionOrigin,
 )
-from .renderer import MotionPreviewRenderer
+lazy from .renderer import MotionPreviewRenderer
 from .support_registry import entity_motion_support_for_format
-from .target import RigPreviewTarget, load_re_engine_mesh_target
+lazy from .target import RigPreviewTarget, load_re_engine_mesh_target
 
 
 ViewportFactory = Callable[..., QWidget]

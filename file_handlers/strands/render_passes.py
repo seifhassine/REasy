@@ -5,25 +5,26 @@ import struct
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import (
+lazy from file_handlers.mmtr.material_preview import (
     RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, _UAV_DIMENSIONS, VIEW_DIMENSIONS, SHADER_VISIBILITY,
     MaterialPreviewError,
 )
-from file_handlers.mmtr.mesh_draw import program_states
-from file_handlers.mmtr.pretransform import SystemProgram
-from file_handlers.mmtr.pretransform_passes import SystemPrograms
-from file_handlers.mmtr.resident import DEPTH_STENCIL, RENDER_TARGET, UNORDERED_ACCESS, Resident
-from file_handlers.sdf.contracts import shader_contract_for_program
+lazy from file_handlers.mmtr.mesh_draw import program_states
+lazy from file_handlers.mmtr.pretransform import SystemProgram
+lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
+lazy from file_handlers.mmtr.resident import DEPTH_STENCIL, RENDER_TARGET, UNORDERED_ACCESS, Resident
+lazy from file_handlers.sdf.contracts import shader_contract_for_program
 from file_handlers.tex.dxgi import (
     DXGI_FORMAT_D32_FLOAT, DXGI_FORMAT_R11G11B10_FLOAT, DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R16G16B16A16_SNORM,
     DXGI_FORMAT_R16G16_FLOAT, DXGI_FORMAT_R32G32_UINT, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_TYPELESS,
     DXGI_FORMAT_R32_UINT,
 )
 
-from .chain_catalog import ChainStepKind, RenderSection
-from .chain_passes import ROOT_CONSTANT, TEXTURE_INPUT_TYPES, program_variant, block_layouts, side
+lazy from .chain_catalog import ChainStepKind, RenderSection
+lazy from .chain_passes import ROOT_CONSTANT, TEXTURE_INPUT_TYPES, program_variant, block_layouts, side
+lazy from .direct_render import LAYOUT as DIRECT_LAYOUT
 
 # Pixels per tile side, and per-tile bytes of the accumulation, offsets and work queue.
 TILE, TILE_BYTES = 16, 96
@@ -274,7 +275,7 @@ class RenderPasses:
         self.device, self.render, self.programs, self.samplers = device, render, programs, samplers
         self.material_target = material_target
         if render.generation == "direct":
-            from .direct_render import LAYOUT as layout
+            layout = DIRECT_LAYOUT
         else:
             layout = LAYOUT
         self.layout: RenderLayout = layout

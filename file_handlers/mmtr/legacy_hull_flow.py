@@ -1,10 +1,10 @@
 from dataclasses import replace
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .legacy_loop_flow import joined_complementary_branches, lowered_switches, normalized_loop_exits, register_extent
-from .legacy_register_flow import lower_indexable_temps, destination_count, destination_register
-from .profiles.dxbc_recovery import DxbcInstruction as Instruction
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .legacy_loop_flow import joined_complementary_branches, lowered_switches, normalized_loop_exits, register_extent
+lazy from .legacy_register_flow import lower_indexable_temps, destination_count, destination_register
+lazy from .profiles.dxbc_recovery import DxbcInstruction as Instruction
 
 
 def normalized_hull_phases(ir):

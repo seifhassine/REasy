@@ -3,18 +3,17 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from types import MappingProxyType
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.sdf.contracts import shader_contract_for_program
 
-from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, MaterialPreviewError
+lazy from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, MaterialPreviewError
 from .mesh_draw import DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R32_UINT, program_states
 from .pretransform import constant_buffer
 from .pretransform_passes import SystemPrograms, dispatch_compute
-from .resident import BUFFER, UNORDERED_ACCESS, Resident
-from .wrinkle import (
+lazy from .resident import BUFFER, UNORDERED_ACCESS, Resident
+lazy from .wrinkle import (
     INDICES, VERTICES, WrinkleCatalog, WrinkleObject, WrinkleProxy, WrinkleStep, buffer_sizes, frame_steps,
     setup_steps,
 )
@@ -189,7 +188,7 @@ class WrinklePasses:
                 scene.write(buffer, constant_buffer(layout, steps[number].constants))
 
     def buffers(self, owner: int) -> Mapping[str, int]:
-        return MappingProxyType(self._objects[owner].held)
+        return frozendict(self._objects[owner].held)
 
     def steps(self, owner: int) -> list[int]:
         found = self._objects[owner]

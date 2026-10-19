@@ -5,17 +5,17 @@ from collections.abc import Callable
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QElapsedTimer, QObject, Qt, QTimer, Signal
 
-from file_handlers.mmtr.material_preview import (
+lazy from file_handlers.mmtr.material_preview import (
     MaterialPreviewError, gpu_buffer_contents, resident_key, streamed_key,
 )
-from file_handlers.mmtr.mmtrs_file import MmtrsFormatError, resolve_mmtr_resource
-from file_handlers.mmtr.pretransform import ChainLevel
-from file_handlers.strands.chain_scene import (ChainScene, gather as gather_strands, handler_files, shader_paths,
+lazy from file_handlers.mmtr.mmtrs_file import MmtrsFormatError, resolve_mmtr_resource
+lazy from file_handlers.mmtr.pretransform import ChainLevel
+lazy from file_handlers.strands.chain_scene import (ChainScene, gather as gather_strands, handler_files, shader_paths,
                                                with_files)
 from ui.scene.device_frames import LIMIT_MOST, RenderThread
-from utils.resource_file_utils import ResourceLocation
+lazy from utils.resource_file_utils import ResourceLocation
 
-from .material_resolver import MeshMaterialResolver
+lazy from .material_resolver import MeshMaterialResolver
 
 
 _MASTER_NOT_FOUND = QT_TRANSLATE_NOOP("MaterialPreview", "Master material {path} was not found.")

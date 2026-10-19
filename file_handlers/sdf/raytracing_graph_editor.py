@@ -7,15 +7,15 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QFileDialog
     QHBoxLayout, QLabel, QLineEdit, QPlainTextEdit, QPushButton, QSplitter,
     QTabWidget, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
 
-from services.file_io import write_files_atomically
+lazy from services.file_io import write_files_atomically
 
 from .aggregate_values import constant_value_fields
-from .raytracing import raytracing_export_fields, serialize_raytracing_library
+lazy from .raytracing import raytracing_export_fields, serialize_raytracing_library
 from .raytracing_abi import validate_raytracing_replacement
 from .raytracing_graph import (RAY_BUILTINS, RAY_STAGES, RayField, RayStructure, RayTracingGraphProject,
     build_raytracing_graph, generate_raytracing_library, new_raytracing_graph)
 from .shader_graph import MAX_PROJECT_LENGTH, ShaderGraphError, node_pins
-from .shader_graph_editor import _ShaderGraphScene, _ShaderGraphView
+lazy from .shader_graph_editor import _ShaderGraphScene, _ShaderGraphView
 
 
 class RayTracingGraphEditor(QWidget):

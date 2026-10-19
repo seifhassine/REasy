@@ -2,7 +2,7 @@ import struct
 from dataclasses import dataclass
 from typing import List
 
-from utils.binary_handler import BinaryHandler
+lazy from utils.binary_handler import BinaryHandler
 
 
 MOTBANK_MAGIC = 0x6B6E626D

@@ -5,6 +5,9 @@ from file_handlers.sdf.shader_graph import ShaderGraphError
 
 
 from file_handlers.sdf.dxil_metadata import metadata_definitions
+lazy from file_handlers.sdf.dxil_metadata import native_float_literal
+lazy from file_handlers.sdf.shader_stage_execution import ShaderMeshExecution, ShaderPrimitiveExecution
+lazy from file_handlers.sdf.shader_storage import native_storage_type
 
 
 _STORAGE_TYPE = re.compile(r'(%[-\w.$]+) = type (.+)')
@@ -168,14 +171,12 @@ class DxilEntryMetadata:
         return tuple(int(item[4:]) for item in dimensions)
 
     def mesh_execution(self):
-        from file_handlers.sdf.shader_stage_execution import ShaderMeshExecution
         if self.stage not in {'mesh', 'amplification'}:
             return None
         state = self._stage_state(9, 5) if self.stage == 'mesh' else self._stage_state(10, 2)
         if any(not re.fullmatch(r'i32 \d+', item) for item in state[1:]):
             raise ShaderGraphError('DXIL mesh/amplification execution state is invalid.')
         numbers = tuple(int(item[4:]) for item in state[1:])
-        from file_handlers.sdf.shader_storage import native_storage_type
         layout = native_storage_type(self.payload_type,self.storage_types) if self.payload_type else None
         result = (ShaderMeshExecution(numbers[0], numbers[1], {1:'line', 2:'triangle'}.get(numbers[2], ''), numbers[3], layout)
                   if self.stage == 'mesh' else ShaderMeshExecution(payload_bytes=numbers[0],payload_layout=layout))
@@ -189,7 +190,6 @@ class DxilEntryMetadata:
         return states[0]
 
     def geometry_execution(self):
-        from file_handlers.sdf.shader_stage_execution import ShaderPrimitiveExecution
         state = self._stage_state(1,5)
         if self.stage!='geometry' or any(not re.fullmatch(r'i32 \d+',item) for item in state):
             raise ShaderGraphError('DXIL geometry execution state is invalid.')
@@ -206,11 +206,9 @@ class DxilEntryMetadata:
         if self.stage=='geometry':
             return self.geometry_execution()
         if self.stage=='hull':
-            from file_handlers.sdf.shader_stage_execution import ShaderPrimitiveExecution
             state = self._stage_state(3,7)
             if any(not re.fullmatch(r'i32 \d+',value) for value in state[1:6]) or not state[6].startswith('float '):
                 raise ShaderGraphError('DXIL hull execution state is invalid.')
-            from file_handlers.sdf.dxil_metadata import native_float_literal
             result = ShaderPrimitiveExecution(input_control_points=int(state[1][4:]), output_control_points=int(state[2][4:]),
                 domain={1:'isoline',2:'tri',3:'quad'}.get(int(state[3][4:]),''),
                 partitioning={1:'integer',2:'pow2',3:'fractional_odd',4:'fractional_even'}.get(int(state[4][4:]),''),
@@ -219,7 +217,6 @@ class DxilEntryMetadata:
             result.validate_stage('hull')
             return result
         if self.stage=='domain':
-            from file_handlers.sdf.shader_stage_execution import ShaderPrimitiveExecution
             state = self._stage_state(2,2)
             if any(not re.fullmatch(r'i32 \d+',value) for value in state):
                 raise ShaderGraphError('DXIL domain execution state is invalid.')

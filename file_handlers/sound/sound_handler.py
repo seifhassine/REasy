@@ -4,13 +4,13 @@ import weakref
 from pathlib import Path
 
 from file_handlers.base_handler import FileHandler
-from .bnk_parser import (
+lazy from .bnk_parser import (
     BnkEditModel,
     BnkParseResult,
     parse_soundbank,
     rewrite_soundbank,
 )
-from .sound_resources import resource_key
+lazy from .sound_resources import resource_key
 
 SOUND_MAGICS = frozenset({b"BKHD", b"AKPK", b"SBNK", b"SPCK"})
 

@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
-from file_handlers.uvs.uvs_file import UvsFile
-from utils.resource_file_utils import (
+lazy from file_handlers.uvs.uvs_file import UvsFile
+lazy from utils.resource_file_utils import (
     resolve_handler_resource_data,
     resource_version_from_path,
 )
 
 from .ift_file import IftFile
 from .model import IconGlyph
+lazy from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 
 class IftHandler(BaseFileHandler):
@@ -74,7 +75,6 @@ class IftHandler(BaseFileHandler):
     def populate_treeview(self, tree, _parent_item, _metadata_map: dict) -> None:
         if self.ift is None:
             return
-        from PySide6.QtGui import QStandardItem, QStandardItemModel
 
         data = self.ift.require_model()
         model = QStandardItemModel()

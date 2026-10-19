@@ -8,15 +8,15 @@ import re
 from typing import Any, Callable
 from uuid import uuid4
 
-from file_handlers.material_names import is_private_material_parameter
-from file_handlers.mdf.material_layout import MaterialDescriptorLayout
+lazy from file_handlers.material_names import is_private_material_parameter
+lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
 from file_handlers.sdf.contracts import (
     SdfContractError,
     material_buffer_contract,
     matches_outer_resource,
 )
-from file_handlers.sdf.hlsl import HlslCompileError
-from file_handlers.sdf.models import STAGE_KEYS, SdfConstantBuffer, SdfConstantVariable
+lazy from file_handlers.sdf.hlsl import HlslCompileError
+lazy from file_handlers.sdf.models import STAGE_KEYS, SdfConstantBuffer, SdfConstantVariable
 from file_handlers.sdf.shader_graph import (
     MAX_GRAPH_LINKS,
     MAX_GRAPH_NODES,
@@ -36,9 +36,9 @@ from file_handlers.sdf.shader_graph import (
     validate_shader_contract,
 )
 
-from .pass_purpose import pass_purpose, purpose_title
-from .pipeline_settings import PipelineSettingError, apply_pipeline_states, validate_pipeline_states
-from .material_function import (
+lazy from .pass_purpose import pass_purpose, purpose_title
+lazy from .pipeline_settings import PipelineSettingError, apply_pipeline_states, validate_pipeline_states
+lazy from .material_function import (
     MaterialFunctionError,
     _expand_material_functions_for_compilation,
     material_function_from_node,
@@ -48,12 +48,19 @@ from .material_implementation import (
     MaterialProgramImplementation, implementation_routes, compile_implementation, implementation_execution, implementation_contract,
     _cached_contract_fingerprint,
 )
-from .surface_meaning import shader_bytes
-from .engine_inputs import RESOURCE_TABLES
-from .models import BINDLESS_PARAMETER_STORAGES
+lazy from .surface_meaning import shader_bytes
+lazy from .engine_inputs import RESOURCE_TABLES
+lazy from .models import BINDLESS_PARAMETER_STORAGES
 from .profiles.base import MmtrGameProfile, same_mmtr_profile
-from file_handlers.sdf.shader_graph_math import value_width
-from utils.hex_util import align
+lazy from .material_family import family_member_project, build_material_family
+lazy from .profiles.re_engine_dxil_recovery import compact_recovered_dxil_storage
+lazy from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
+lazy from .profiles.renderer_inputs import (
+    RendererResourceUnavailable, RendererValueUnavailable, engine_buffer_layout, engine_resource_layout, renderer_only,
+    free_register, engine_input_plan, graph_renderer_buffers, graph_renderer_resources,
+)
+lazy from file_handlers.sdf.shader_graph_math import value_width
+lazy from utils.hex_util import align
 
 
 MATERIAL_SCHEMA = "reasy.material"
@@ -84,7 +91,6 @@ class MaterialBuildError(MaterialProjectError):
 
 
 def _engine_input_unavailable(exc):
-    from .profiles.renderer_inputs import RendererResourceUnavailable, RendererValueUnavailable
     while exc is not None:
         if isinstance(exc, (RendererValueUnavailable, RendererResourceUnavailable)):
             return exc
@@ -330,9 +336,6 @@ class MaterialTextureDefinition:
 
 
 def _compact_project_dxil_recipes(payload: str) -> str:
-    from .profiles.re_engine_dxil_recovery import compact_recovered_dxil_storage
-    from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
-
     document = json.loads(payload)
     compacted = {}
     for node in document["graph"]["nodes"]:
@@ -1230,7 +1233,6 @@ def _material_buffer_metadata_variables(
 
 
 def apply_material_build(editor, document, build: MmtrMaterialBuild) -> None:
-    from .profiles.renderer_inputs import engine_buffer_layout, engine_resource_layout
     texture_slots = {item.texture_id: item for item in build.texture_layout}
     material_names = set(build.source_texture_names)
     material_names.update(
@@ -1452,13 +1454,11 @@ def material_authoring_coverage(document, project=None) -> MaterialAuthoringCove
                                          covered, ())
     family = getattr(document, "material_family", None)
     if family is not None:
-        from .material_family import family_member_project
         ready = project is not None and project._prepare_semantics is None
         rows = tuple(material_authoring_coverage(member, family_member_project(project, lod) if ready else None)
                      for lod, member in enumerate(family.members))
         return replace(rows[0], member_coverages=rows[1:])
     profile = document.profile.shader_graph_profile
-    from .profiles.renderer_inputs import renderer_only
     renderer = renderer_only(document, profile, project)
     rebuildable = set(material_program_routes(document, project))
     user_buffers = {
@@ -1554,7 +1554,6 @@ def _augment_material_textures(
     document,
     stage: str,
 ) -> ShaderContract:
-    from .profiles.renderer_inputs import free_register
     resources = list(contract.resources)
     source_names = {
         str(name)
@@ -1902,7 +1901,6 @@ def build_material_project(project: MmtrMaterialProject, document) -> MmtrMateri
     if getattr(document, "material_family", None) is not None:
         if project.implementations:
             raise MaterialBuildError("Graph-owned bodies in shader-LOD families need explicit per-member renderer templates.")
-        from .material_family import build_material_family
         return build_material_family(project, document)
     return _build_material_project(project, document)
 
@@ -1967,7 +1965,6 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
     prepared: dict[str, _PreparedMaterialShader] = {}
     compiled_results: dict[str, object] = {}
 
-    from .profiles.renderer_inputs import engine_input_plan, graph_renderer_buffers, graph_renderer_resources
     engine_buffers, engine_resources = graph_renderer_buffers(project.graph), graph_renderer_resources(project.graph)
 
     def prepare_route(target_index, program_index, shader_role, *, first):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtGui import QImage, QPixmap
+lazy from PySide6.QtGui import QImage, QPixmap
 
 from .tex_handler import TexHandler
 from .texture_decoder import decode_tex_mip

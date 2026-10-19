@@ -4,12 +4,12 @@ import struct
 
 from utils.hash_util import murmur3_hash
 
-from ..binary import pad_to_alignment
-from ..errors import MotionWriteError
+lazy from ..binary import pad_to_alignment
+lazy from ..errors import MotionWriteError
 from ..profiles import MotionFormatProfile
 from ..sequence.writer import SequenceV65Writer
 from .model import AppendPropertyType, JointMapExtraType, KeyTrack, Motion
-from .track_codec import SOLVER_BY_FAMILY, encode_track, needs_parameters
+lazy from .track_codec import SOLVER_BY_FAMILY, encode_track, needs_parameters
 from .validator import MotV65Validator
 
 
@@ -109,7 +109,7 @@ class MotV65Writer:
         struct.pack_into("<H", out, 0x72, 0)
         if logical_end == 0:
             raise MotionWriteError("internal MOT layout failure")
-        return bytes(out)
+        return out.take_bytes()
 
     def _write_skeleton(self, out: bytearray, motion: Motion) -> None:
         skeleton = motion.skeleton

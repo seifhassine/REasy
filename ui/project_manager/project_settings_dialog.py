@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QPushButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox
 )
 
-from .project_config import load_project_config, save_project_config
+lazy from .project_config import load_project_config, save_project_config
 
 
 class ProjectSettingsDialog(QDialog):

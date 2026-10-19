@@ -16,19 +16,21 @@ from PySide6.QtWidgets import (
 	QSlider, QStackedWidget, QStyle, QToolButton
 )
 
-from settings import DEFAULT_SETTINGS, load_settings
-from app_config import GAMES
+lazy from settings import DEFAULT_SETTINGS, load_settings
+lazy from app_config import GAMES
 
-from file_handlers.pak import scan_pak_files
-from file_handlers.pak.reader import CachedPakReader
-from ui.project_manager.constants import BASE_DIR
-from ui.project_manager.pak_file_lists import (
+lazy from file_handlers.pak import scan_pak_files
+lazy from file_handlers.pak.reader import CachedPakReader
+lazy from ui.project_manager.constants import BASE_DIR
+lazy from ui.project_manager.pak_file_lists import (
 	choose_pak_list_file, find_suggested_pak_list_paths_for_directory,
 	game_for_pak_list_path, read_pak_list_file,
 )
-from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
-from utils.resource_file_utils import resource_context_for_app
-from file_handlers.pak.utils import any_pak_modded
+lazy from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
+lazy from utils.resource_file_utils import resource_context_for_app
+lazy from file_handlers.pak.utils import any_pak_modded
+lazy from ui.extraction_progress_dialog import ExtractionProgressDialog
+lazy from threading import Thread
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
@@ -872,9 +874,6 @@ class PakBrowserDialog(QDialog):
 			QMessageBox.critical(self, self.tr("Write failed"), str(e))
 
 	def _run_extraction_with_progress(self, reader_getter, outdir_getter, targets: List[str], missing: List[str]):
-		from ui.extraction_progress_dialog import ExtractionProgressDialog
-		from threading import Thread
-
 		progress_dialog = ExtractionProgressDialog(len(targets), self)
 		extraction_error = [None]
 		extraction_count = [0]

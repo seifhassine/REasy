@@ -5,9 +5,9 @@ import re
 from dataclasses import dataclass
 from functools import lru_cache
 
-import numpy as np
+lazy import numpy as np
 
-from utils.app_paths import resource_path
+lazy from utils.app_paths import resource_path
 
 ROLES_FILE = "resources/data/skeletons/roles.json"
 

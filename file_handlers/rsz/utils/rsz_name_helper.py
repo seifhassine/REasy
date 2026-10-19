@@ -1,4 +1,4 @@
-from file_handlers.rsz.rsz_data_types import StringData
+lazy from file_handlers.rsz.rsz_data_types import StringData
 
 
 class RszViewerNameHelper:

@@ -1,9 +1,17 @@
 from copy import deepcopy
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
 from .profiles import BlendShapeLayout, MeshHeaderLayout, NormalRecalcLayout
+lazy from .canonical_writer import _quantize_blend_positions, _target_quantization_aabb
+lazy from .normal_recalc import (
+    NormalRecalcData,
+    NormalRecalcLOD,
+    NormalRecalcRedirect,
+    LegacyNormalRecalcProfile,
+)
+lazy from .conversion_lods import align_morph_lods
 
 
 def _lod_map_entry(values, index, lod):
@@ -23,8 +31,6 @@ def _require_identity_lod_maps(blend, *, allow_reference_maps=False):
 
 
 def _select_morph_codec(body, profile, loss):
-    from .canonical_writer import _quantize_blend_positions, _target_quantization_aabb
-
     channels = {channel.index: channel for channel in body.channels}
     bounds = [_target_quantization_aabb(t, channels, i) for i, t in enumerate(body.targets)]
     errors = {}
@@ -182,8 +188,6 @@ def translate_morphs(mesh, source, target, loss):
         if (blend.bodies and mesh.normal_recalc_data is None
                 and not (target.blend_shape_normal_w_is_padding
                          or target.blend_shape_normal_w_is_runtime_ignored)):
-            from .normal_recalc import NormalRecalcData, NormalRecalcLOD, NormalRecalcRedirect
-
             loss("Target requires recalculating morph normals from topology instead of stored target normals")
             lods = tuple(NormalRecalcLOD(index, 0, 0, 0, (), (), redirects=tuple(
                 NormalRecalcRedirect(i) for i in range(sum(g.vertex_count for g in lod.mesh_groups))))
@@ -197,7 +201,6 @@ def translate_morphs(mesh, source, target, loss):
             loss("Target supports morphs on LOD0 only; removed higher-LOD morphs")
             blend.bodies = blend.bodies[:1]
         if (not target.has_modern_blend_shape_targets or target.canonical_single_channel_morph_targets):
-            from .conversion_lods import align_morph_lods
             align_morph_lods(mesh, source, target, loss)
         if (source.has_modern_blend_shape_targets != target.has_modern_blend_shape_targets
                 and target.has_blend_shape_lod_maps):
@@ -316,8 +319,6 @@ def translate_morphs(mesh, source, target, loss):
             normal = replace(normal, redirects=normal.lods[0].redirects)
         if target.normal_recalc_layout in {
                 NormalRecalcLayout.DMC5, NormalRecalcLayout.RE2, NormalRecalcLayout.RE3}:
-            from .normal_recalc import LegacyNormalRecalcProfile, NormalRecalcData
-
             profile = None
             if target.normal_recalc_layout is NormalRecalcLayout.DMC5:
                 profile = (normal.legacy_profile

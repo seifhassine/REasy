@@ -1,7 +1,7 @@
 import uuid
 from typing import List
 
-from utils.binary_handler import BinaryHandler
+lazy from utils.binary_handler import BinaryHandler
 
 
 CFIL_MAGIC = 0x4C494643

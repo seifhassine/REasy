@@ -7,51 +7,50 @@ from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from functools import partial
 from itertools import product
-from types import MappingProxyType
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mdf.mdf_file import transparent_priority_bias
+lazy from file_handlers.mdf.mdf_file import transparent_priority_bias
 from file_handlers.sdf.contracts import shader_contract_for_program
-from file_handlers.sdf.models import program_names
+lazy from file_handlers.sdf.models import program_names
 from file_handlers.sdf.sdf_file import (
     COMPARE_ALWAYS, COMPARE_EQUAL, COMPARE_GREATER, COMPARE_GREATER_EQUAL, COMPARE_LESS, COMPARE_LESS_EQUAL,
     COMPARE_NOT_EQUAL,
 )
 
-from .engine_buffers import (
+lazy from .engine_buffers import (
     CAMERA_BUFFERS, PLACEMENT_BUFFERS, Camera, EngineConstant, InstanceInput, Placement, engine_buffer, scene_values,
 )
-from .draw_order import SORTED_ORDERS, draw_order_for
-from .frame_constants import frame_constants_for
-from .material_preview import (
+lazy from .draw_order import SORTED_ORDERS, draw_order_for
+lazy from .frame_constants import frame_constants_for
+lazy from .material_preview import (
     RANGE_CBV, _MATERIAL_HEAP_START, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, _UAV_DIMENSIONS, VIEW_DIMENSIONS,
     SHADER_VISIBILITY,
     MaterialPreviewError, PreviewMaterial, _heap_fields_kept, _texture_entry, bound_record_size, gbuffer_route,
     pixel_sampled_textures, resident_key, shader_bindings, streamed_key,
 )
 from file_handlers.mesh.mesh_file import MeshFile, VertexBufferType
-from file_handlers.rsz.scene_joints import times
-from utils.resource_file_utils import resource_path_key
+lazy from file_handlers.rsz.scene_joints import times
+lazy from utils.resource_file_utils import resource_path_key
 
 from .mesh_draw import MeshBuffer, SubmeshRange, program_states, submesh_geometry
-from .meshlet_deferred import DeferredPasses
+lazy from .meshlet_deferred import DeferredPasses
 from .meshlets import (
     EXTENDED, HANDLE_STEP, ROUTE as MESHLET_ROUTE, MeshletBuffer, MeshletGroup, MeshletPrograms, check_clusters,
     check_group, culled_meshlets, extended_blocks, instance_records, material_culling_size, material_tables,
     meshlet_catalog_for, meshlet_programs, named_meshlet_programs, receives_decals, replace_table, root_constant,
     skinning_records,
 )
-from .pass_choice import depth_prepass_program, has_scene_program, own_passes, own_program, scene_program
-from .pretransform import CHAIN_BUFFERS, ROUTE, ChainStep, Deformation, Destination
-from .pretransform import constant_buffer as chain_constants
-from .pretransform_passes import ChainPasses, SystemPrograms, check_threads, written_entry
-from .wrinkle import WrinkleObject, object_scale, proxy_bones, render_target_form, wrinkle_catalog_for
+lazy from .pass_choice import depth_prepass_program, has_scene_program, own_passes, own_program, scene_program
+lazy from .pretransform import CHAIN_BUFFERS, ROUTE, ChainStep, Deformation, Destination
+lazy from .pretransform import constant_buffer as chain_constants
+lazy from .pretransform_passes import ChainPasses, SystemPrograms, check_threads, written_entry
+lazy from .wrinkle import WrinkleObject, object_scale, proxy_bones, render_target_form, wrinkle_catalog_for
 from .wrinkle_passes import WrinklePasses
-from .resident import BUFFER, DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
-from .sampler_states import sampler_catalog_for
-from .surface_meaning import GBUFFER_PURPOSE, PREPASS_PURPOSE, TargetFormat, surface_output_catalog_for
+lazy from .resident import BUFFER, DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from .sampler_states import sampler_catalog_for
+lazy from .surface_meaning import GBUFFER_PURPOSE, PREPASS_PURPOSE, TargetFormat, surface_output_catalog_for
 
 # Phases drawn between the light passes (``light_passes.MeshPhase.key``).
 PHASES = ("blending", "forward")
@@ -94,7 +93,7 @@ class MeshObject:
     bounds: MeshBounds | None = None
     deformation: Deformation | None = None
     skins: Sequence[MeshPart] = ()
-    engine: Mapping[str, bytes | EngineConstant] = MappingProxyType({})
+    engine: Mapping[str, bytes | EngineConstant] = frozendict()
     decal_receive_mode: int = 0
     box: ObjectBox | None = None
     transparent_bias: float = 0.0
@@ -440,7 +439,7 @@ class MeshScene:
     def __init__(self, objects: Sequence[MeshObject], load_file: Callable[[str], bytes | None], camera: Camera, *,
                  shader_target: int, hardware: bool = False, phases: Collection[PhaseKey] = (),
                  pass_file: Callable[[str, bytes], object] | None = None,
-                 captured: Mapping[str, Mapping[str, Sequence[int]]] = MappingProxyType({})):
+                 captured: Mapping[str, Mapping[str, Sequence[int]]] = frozendict()):
         parts = [part for item in objects for part in (*item.parts, *item.skins)]
         if not parts:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP("MaterialPreview", "The mesh has no submesh to draw."))
@@ -916,8 +915,8 @@ class MeshScene:
     def _not_held(self, engine: Iterable[tuple]) -> list[tuple]:
         return [entry for entry in engine if entry[2].register_class != "t" or entry[2].name not in self._meshlet_held]
 
-    def _system_table(self, stage: str, contract, resource, textures: Mapping[str, tuple] = MappingProxyType({}),
-                      written: Mapping[str, tuple] = MappingProxyType({})) -> tuple:
+    def _system_table(self, stage: str, contract, resource, textures: Mapping[str, tuple] = frozendict(),
+                      written: Mapping[str, tuple] = frozendict()) -> tuple:
         kind, name = resource.register_class, resource.name
         place = (resource.bind_point, resource.register_space, resource.bind_count)
         visibility, held = SHADER_VISIBILITY[stage], self._meshlet_held
@@ -1437,7 +1436,7 @@ class MeshScene:
         for first, (by_object, run) in self._forward_runs.items():
             if first not in at:
                 continue
-            flat = [step for _box, _owner, made, _bias in run for step in made]
+            flat = [*made for _box, _owner, made, _bias in run]
             places = sorted(at.get(step, -1) for step in flat)
             start = places[0]
             if start < 0 or places[-1] - start != len(flat) - 1:
@@ -1450,7 +1449,7 @@ class MeshScene:
                     keys.append(min(max(objects[owner] + bias, 0), _KEY_MAX))
                     firsts.setdefault(owner, number)
                 order = sorted(range(len(run)), key=lambda number: (keys[number], firsts[run[number][1]], number))
-                steps[start:start + len(flat)] = [step for number in order for step in run[number][2]]
+                steps[start:start + len(flat)] = [*run[number][2] for number in order]
                 continue
             distances = []
             for box, owner, _made, _bias in run:
@@ -1460,7 +1459,7 @@ class MeshScene:
                 world = _world_boxes(np.asarray(transforms, np.float64)[None], [MeshBounds(box)])[0]
                 distances.append(float(np.linalg.norm((world[0] + world[1]) / 2 - camera)))
             order = sorted(range(len(run)), key=lambda number: distances[number])
-            steps[start:start + len(flat)] = [step for number in order for step in run[number][2]]
+            steps[start:start + len(flat)] = [*run[number][2] for number in order]
         return steps
 
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from collections.abc import Mapping
 
-from .material_resolver import MeshMaterialResolver
+lazy from .material_resolver import MeshMaterialResolver
 from .profiles import MaterialSkinningLayout, NormalRecalcLayout
+lazy import numpy as np
 
 
 class MeshSkinningContractError(ValueError):
@@ -24,8 +25,6 @@ class MeshSkinningContract:
 
 
 def packed_rigid_joint_indices(indices):
-    import numpy as np
-
     result = indices[:, 0].astype(np.int64)
     escaped = indices[:, 2] == 1023
     result[escaped] |= indices[escaped, 1].astype(np.int64) << 10

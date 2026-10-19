@@ -1,21 +1,22 @@
 import struct
 import traceback
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     StringData,
     ResourceData,
     is_reference_type,
     is_array_type
 )
-from utils.hex_util import align
-from utils.id_manager import EmbeddedIdManager
-from utils.hash_util import murmur3_hash
-from file_handlers.rsz.rsz_build_utils import (
+lazy from utils.hex_util import align
+lazy from utils.id_manager import EmbeddedIdManager
+lazy from utils.hash_util import murmur3_hash
+lazy from file_handlers.rsz.rsz_build_utils import (
     calculate_wstring_offsets,
     pad_to_alignment,
     write_scn_gameobjects,
     write_wstring_entries,
 )
+lazy from file_handlers.rsz.rsz_file import RszFile
 
 _RSZ_V3_HEADER_FORMAT = "<4I Q Q"
 
@@ -178,7 +179,6 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         rui.embedded_instance_infos.append(inst_info)
     
     if embedded_header.data_offset < embedded_data_len:
-        from file_handlers.rsz.rsz_file import RszFile
         mini_scn = RszFile()
         
         mini_scn.type_registry = type_registry
@@ -357,12 +357,11 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
     )
     out[0:Scn19Header.SIZE] = header_bytes
     
-    return bytes(out)
+    return out.take_bytes()
 
 def build_embedded_rsz(rui, type_registry=None):
     if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
         recalculate_json_path_hash(rui)
-        from file_handlers.rsz.rsz_file import RszFile
         mini_scn = RszFile()
         
         mini_scn.type_registry = type_registry
@@ -535,7 +534,6 @@ def build_embedded_rsz(rui, type_registry=None):
             out += instance_data
         except Exception as e:
             print(f"Error in _write_instance_data: {e}")
-            import traceback
             traceback.print_exc()
             return b''
         
@@ -568,7 +566,7 @@ def build_embedded_rsz(rui, type_registry=None):
         
         rui.modified = False
         
-        return bytes(out)
+        return out.take_bytes()
     
     return rui.data if hasattr(rui, 'data') and rui.data else b""
 

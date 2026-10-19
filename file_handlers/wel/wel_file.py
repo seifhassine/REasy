@@ -186,4 +186,4 @@ class WELFile:
             )
 
         out += self.trailing_data
-        return bytes(out)
+        return out.take_bytes()

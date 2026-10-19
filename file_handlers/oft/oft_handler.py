@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
 from .codec import detect_oft_version
 from .oft_file import OftFile
 from .profiles import OftFormatError
+lazy from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 
 class OftHandler(BaseFileHandler):
@@ -42,7 +43,6 @@ class OftHandler(BaseFileHandler):
     def populate_treeview(self, tree, _parent_item, _metadata_map: dict) -> None:
         if self.oft is None:
             return
-        from PySide6.QtGui import QStandardItem, QStandardItemModel
 
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(["Field", "Value"])

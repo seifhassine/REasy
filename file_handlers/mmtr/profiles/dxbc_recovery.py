@@ -6,8 +6,8 @@ import re
 import struct
 from typing import Iterable, Mapping
 
-from file_handlers.sdf.dxbc import DxbcDisassemblyError, disassemble_dxbc
-from file_handlers.sdf.hlsl_contract import resource_declaration, resource_identifier
+lazy from file_handlers.sdf.dxbc import DxbcDisassemblyError, disassemble_dxbc
+lazy from file_handlers.sdf.hlsl_contract import resource_declaration, resource_identifier
 from file_handlers.sdf.shader_graph import (
     GeneratedShaderSource,
     ShaderContract,
@@ -22,12 +22,14 @@ from file_handlers.sdf.shader_graph import (
     texture_element_type,
     texture_hlsl_type,
 )
-from file_handlers.sdf.shader_graph_texture import texture_coordinate_width
+lazy from file_handlers.sdf.shader_graph_texture import texture_coordinate_width
 from file_handlers.sdf.shader_stage_execution import (
     ShaderPrimitiveExecution as DxbcStageExecution, patch_field_members, patch_struct,
 )
-from file_handlers.sdf.storage_codec import pack_ir_storage, unpack_ir_storage
-from .dxbc_stages import stage_declaration, pixel_signature_interpolation, signature_packing_modes
+lazy from file_handlers.sdf.storage_codec import pack_ir_storage, unpack_ir_storage
+lazy from .dxbc_stages import stage_declaration, pixel_signature_interpolation, signature_packing_modes
+lazy from file_handlers.sdf.shader_graph_math import multiply_high_statements
+lazy from ..legacy_register_flow import destination_count, destination_register, source_references
 
 
 IR_SCHEMA = "reasy.dmc5.dxbc-ir"
@@ -1112,8 +1114,6 @@ def _recover_structured_loops(ir: DxbcSemanticIr) -> tuple[_StructuredLoop, ...]
 
 
 def _can_recover_loop_header(instructions, loop):
-    from ..legacy_register_flow import destination_count, destination_register, source_references
-
     state_register, state_axis = loop.state.split(".")
     state = (state_register, "xyzw".index(state_axis))
     discarded = set()
@@ -2059,7 +2059,6 @@ class _HlslEmitter:
             statements = [f"uint4 reasyMulA = {render(left)};", f"uint4 reasyMulB = {render(right)};",
                           "uint4 reasyMulLo = reasyMulA * reasyMulB;"]
             if self._dest(high) is not None:
-                from file_handlers.sdf.shader_graph_math import multiply_high_statements
                 statements += multiply_high_statements('uint4','reasyMulA','reasyMulB','reasyMulHi',signed=base=='imul')
             self.lines.extend("    " * self.indent + statement for statement in statements)
             for destination, value in ((high, "reasyMulHi"), (low, "reasyMulLo")):

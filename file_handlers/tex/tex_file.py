@@ -5,10 +5,10 @@ import struct
 from dataclasses import dataclass
 from typing import List, Optional, Sequence, Tuple
 
-import numpy as np
+lazy import numpy as np
 
-from .dds import CUBEMAP_FACES
-from .dxgi import (
+lazy from .dds import CUBEMAP_FACES
+lazy from .dxgi import (
     KNOWN_FORMATS,
     get_bits_per_pixel,
     get_block_size_bytes,
@@ -16,8 +16,8 @@ from .dxgi import (
     is_known_format,
     top_mip_size_bytes,
 )
-from .flags import TexFlags
-from .gdeflate import decompress_gdeflate, gdeflate_uncompressed_size, is_gdeflate_payload
+lazy from .flags import TexFlags
+lazy from .gdeflate import decompress_gdeflate, gdeflate_uncompressed_size, is_gdeflate_payload
 from .profiles import (
     LAYOUT_INLINE,
     LAYOUT_LEGACY,
@@ -137,7 +137,7 @@ def write_tex(
     for stored in stored_mips:
         out += struct.pack("<ii", stored.stored_size, stored.offset)
     out += payload
-    return bytes(out)
+    return out.take_bytes()
 
 
 class TexFile:

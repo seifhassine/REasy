@@ -5,14 +5,15 @@ import json
 import os
 import shutil
 import tempfile
-import urllib.request
-import zipfile
+lazy import urllib.request
+lazy import zipfile
 from pathlib import Path
 from typing import Callable, Optional, Tuple
 
 import requests
 
 from utils.app_paths import application_root
+lazy import tarfile
 
 # Kept as a compatibility alias for tools.pak_exporter and third-party callers.
 _get_base_dir = application_root
@@ -59,7 +60,6 @@ def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name:
                     shutil.rmtree(cache_dir)
                 cache_dir.mkdir(parents=True, exist_ok=True)
                 if asset_url.endswith(".tar.gz"):
-                    import tarfile
                     with tarfile.open(fileobj=archive, mode="r:gz") as source:
                         source.extractall(cache_dir, filter="data")
                 else:

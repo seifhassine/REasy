@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.editor_widgets import (
+lazy from ui.editor_widgets import (
     EDITOR_META_ROLE,
     EDITOR_TITLE_ROLE,
     EmbeddedPopupComboBox,

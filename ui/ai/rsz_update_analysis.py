@@ -7,13 +7,13 @@ from hashlib import sha256
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterable
 
-from ui.ai.file_migration import FileMigrationJob
-from ui.ai.pak_folder_migration import (
+lazy from ui.ai.file_migration import FileMigrationJob
+lazy from ui.ai.pak_folder_migration import (
     PakFolderDiscovery,
     discover_mod_folder_pak_files_steps,
 )
-from ui.ai.rsz_migration import RszMigrationStrategy
-from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
+lazy from ui.ai.rsz_migration import RszMigrationStrategy
+lazy from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
 
 
 _INSTANCE_ID_RE = re.compile(r"(?P<label>instance|userdata)\[\d+\]")

@@ -1,15 +1,15 @@
 from __future__ import annotations
 
-from utils.resource_file_utils import ResourceResolutionContext
+lazy from utils.resource_file_utils import ResourceResolutionContext
 
 from ..format_codec import MotionFormatCodec
-from .resolution import (
+lazy from .resolution import (
     MotionListDocument,
     MotionPreviewResolution,
     MotionPreviewResolver,
     TreeMotionReferenceStrategy,
 )
-from .resources import MotionListResourceStore
+lazy from .resources import MotionListResourceStore
 
 
 class MotionPreviewCatalog:

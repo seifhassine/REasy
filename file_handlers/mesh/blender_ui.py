@@ -8,16 +8,19 @@ from PySide6.QtWidgets import (
     QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QLabel, QMessageBox, QTextEdit, QVBoxLayout,
 )
 
-from settings import app_settings, remember_setting
-from ui.background_jobs import run_job
-from utils.resource_file_utils import resource_version_from_path, streaming_companion_path
+lazy from settings import app_settings, remember_setting
+lazy from ui.background_jobs import run_job
+lazy from utils.resource_file_utils import resource_version_from_path, streaming_companion_path
 
-from .blender import (
+lazy from .blender import (
     Reference, apply_blend, blender_version, find_blender, read_blend, reference_bones, reference_import,
     resource_version, source_bones, suggest,
 )
-from .blender.export import joint_names
-from .blender.runner import MINIMUM_VERSION, BlenderError
+lazy from .blender.export import joint_names
+lazy from .blender.runner import MINIMUM_VERSION, BlenderError
+lazy from .mesh_handler import MeshHandler
+lazy from .blender_reference_dialog import ReferencePicker, ReferenceChoice
+lazy from .bone_mapping_dialog import BoneMappingDialog
 
 SETTINGS_KEY = "blender_path"
 MAPPINGS_KEY = "blender_bone_mappings"
@@ -164,8 +167,6 @@ def _tab_for(handler):
 
 
 def apply_to_document(handler, result):
-    from .mesh_handler import MeshHandler
-
     tab = _tab_for(handler)
     if tab is None:
         raise ValueError(translate("BlenderRoundTrip", "The mesh's editor tab was not found"))
@@ -239,9 +240,6 @@ def _scene_reader(path, blender):
 
 
 def _reference_review(parent, app, path, blender, dump, current=None):
-    from .blender_reference_dialog import ReferencePicker
-    from .bone_mapping_dialog import BoneMappingDialog
-
     bones, weighted = source_bones(dump)
     picker = ReferencePicker(bones, weighted, app, current, parent)
     if picker.exec() != QDialog.Accepted or picker.choice is None:
@@ -289,8 +287,6 @@ def _open_scene(parent, app, start=""):
 
 
 def _open_mesh_choice(viewer):
-    from .blender_reference_dialog import ReferenceChoice
-
     handler = viewer.handler
     label = Path(handler.filepath).name if handler.filepath else translate("BlenderRoundTrip", "The open mesh")
     try:

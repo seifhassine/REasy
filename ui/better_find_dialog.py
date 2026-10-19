@@ -7,8 +7,8 @@ from PySide6.QtWidgets import (
     QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView, QMainWindow
 )
 
-from ui.qt_timers import call_later
-from utils.number_format import format_display_value, format_float_sequence
+lazy from ui.qt_timers import call_later
+lazy from utils.number_format import format_display_value, format_float_sequence
 
 
 ADVANCED_INFO_LABEL = "Advanced Information"

@@ -15,10 +15,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.qt_timers import call_later
+lazy from ui.qt_timers import call_later
 
-from .bookmarks import normalize_tag, normalize_tags
-from .delegate import _chip_fg, _tag_color
+lazy from .bookmarks import normalize_tag, normalize_tags
+lazy from .delegate import _chip_fg, _tag_color
 
 
 class BookmarkDialog(QDialog):

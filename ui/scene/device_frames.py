@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import threading
 from collections.abc import Callable
-from ctypes import wintypes
+lazy from ctypes import wintypes
 
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import QWidget

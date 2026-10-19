@@ -4,18 +4,17 @@ from __future__ import annotations
 import struct
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from types import MappingProxyType
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.engine_buffers import EngineConstant, InstanceInput
+lazy from file_handlers.mmtr.engine_buffers import EngineConstant, InstanceInput
 from file_handlers.mmtr.material_preview import MaterialPreviewError
-from file_handlers.mmtr.meshlets import EXTENDED, Cluster, MeshletBuffer, MeshletPrograms
-from file_handlers.mmtr.pass_choice import PassChoiceError
+lazy from file_handlers.mmtr.meshlets import EXTENDED, Cluster, MeshletBuffer, MeshletPrograms
+lazy from file_handlers.mmtr.pass_choice import PassChoiceError
 from file_handlers.mmtr.mesh_draw import MeshBuffer, SubmeshRange
-from file_handlers.mmtr.speedtree_catalog import FoliageBuffers, SpeedTreeCatalog
-from file_handlers.mmtr.speedtree_programs import (
+lazy from file_handlers.mmtr.speedtree_catalog import FoliageBuffers, SpeedTreeCatalog
+lazy from file_handlers.mmtr.speedtree_programs import (
     speedtree_cluster_route, speedtree_meshlet_programs, speedtree_placement,
 )
 
@@ -61,8 +60,8 @@ def meshlet_buffer(mesh: StmeshFile, runs: Mapping[SubmeshRange, Sequence[tuple[
     def cluster(lod: int, number: int) -> Cluster:
         chunk = meshlets.lods[lod].chunks[number]
         return Cluster(at[lod, number] // 4, len(chunk.triangles), chunk.material_id)
-    return MeshletBuffer(blob, MappingProxyType({key: tuple(cluster(*chunk) for chunk in chunks)
-                                                 for key, chunks in runs.items()}))
+    return MeshletBuffer(blob, frozendict({key: tuple(cluster(*chunk) for chunk in chunks)
+                                           for key, chunks in runs.items()}))
 
 
 def billboard_lod(mesh: StmeshFile, lod: int) -> bool:

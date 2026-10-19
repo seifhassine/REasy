@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable
 
-import numpy as np
+lazy import numpy as np
 
-from .lightprobe_preview import SceneLightProbeSet
+lazy from .lightprobe_preview import SceneLightProbeSet
 
 
 @dataclass(frozen=True, slots=True)

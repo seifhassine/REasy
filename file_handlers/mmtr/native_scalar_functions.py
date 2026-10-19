@@ -1,6 +1,6 @@
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 from .native_local_memory import split
 from .profiles.re_engine_dxil_recovery import LLVM_NAME, DxilSemanticRecord
 
@@ -25,7 +25,7 @@ def inline_scalar_calls(events, ir):
     if not functions:
         yield from events
         return
-    reserved = {name for record in ir.records for name in _LOCAL.findall(record.text)}
+    reserved = {*_LOCAL.findall(record.text) for record in ir.records}
     serial = 0
 
     def expand(record, stack, recurse):

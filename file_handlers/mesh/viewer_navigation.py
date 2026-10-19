@@ -1,9 +1,9 @@
 from PySide6.QtCore import QEvent, QObject, Qt
-from PySide6.QtGui import QKeySequence
-from PySide6.QtWidgets import QMenu, QToolButton
+lazy from PySide6.QtGui import QKeySequence
+lazy from PySide6.QtWidgets import QMenu, QToolButton
 
-from ui.styles import get_color_scheme
-from .preview_controls import find_combo_data
+lazy from ui.styles import get_color_scheme
+lazy from .preview_controls import find_combo_data
 
 
 class MeshNavigation(QObject):

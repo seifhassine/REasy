@@ -24,7 +24,7 @@ class BindingSurface:
     def of(cls, mesh, lod: int) -> BindingSurface:
         if not mesh.meshes or not 0 <= lod < len(mesh.meshes[0].lods):
             raise ValueError(f"The binding mesh has no LOD {lod}")
-        submeshes = [item for group in mesh.meshes[0].lods[lod].mesh_groups for item in group.submeshes]
+        submeshes = [*group.submeshes for group in mesh.meshes[0].lods[lod].mesh_groups]
         buffers = {item.buffer_index for item in submeshes}
         if len(buffers) != 1:
             raise ValueError("A binding mesh LOD draws from one vertex buffer")

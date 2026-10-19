@@ -1,3 +1,4 @@
+import copy
 from file_handlers.rsz.rsz_data_types import (
     ObjectData, UserDataData, F32Data, U16Data, S16Data, S32Data, U32Data, U64Data, S64Data, S8Data, U8Data, BoolData,
     StringData, ResourceData, RuntimeTypeData, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, Float4Data, QuaternionData,
@@ -6,11 +7,20 @@ from file_handlers.rsz.rsz_data_types import (
     PointData, StructData, RawBytesData, PositionData, Uint2Data, Uint3Data, SizeData, is_reference_type
 )
 from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.utils.rsz_embedded_utils import (
+lazy from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info
 )
-from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
+lazy from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
+lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+lazy from file_handlers.rsz.utils.rsz_field_utils import iter_field_reference_entries
+lazy from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
+lazy from file_handlers.rsz.scn_19.scn_19_structure import EmbeddedRSZHeader, Scn19RSZUserDataInfo, build_embedded_rsz
+lazy from utils.id_manager import EmbeddedIdManager
+lazy from file_handlers.rsz.rsz_file import RszInstanceInfo
+lazy from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
+lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+lazy from file_handlers.pyside.tree_model import DataTreeBuilder
 
 
 _ELEMENT_CODECS = (
@@ -222,8 +232,6 @@ class RszArrayClipboard:
 
         embedded_instances = getattr(rui, "embedded_instances", {})
         if root_instance_id is not None:
-            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-
             all_instance_ids = RszInstanceOperations.collect_owned_instances(
                 embedded_instances,
                 root_instance_id,
@@ -254,8 +262,6 @@ class RszArrayClipboard:
         relative_id_mapping = {orig_id: idx for idx, orig_id in enumerate(sorted_ids)}
         external_refs = set()
         if root_instance_id is not None:
-            from file_handlers.rsz.utils.rsz_field_utils import iter_field_reference_entries
-
             for instance_id in all_instance_ids:
                 for _, reference, _ in iter_field_reference_entries(
                     embedded_instances.get(instance_id, {})
@@ -407,7 +413,6 @@ class RszArrayClipboard:
             all_ids = viewer.array_operations._collect_all_nested_objects(root_object_id)
             all_ids.add(root_object_id)
             
-            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
             for instance_id in list(all_ids):
                 if instance_id in viewer.scn.parsed_elements:
                     instance_fields = viewer.scn.parsed_elements[instance_id]
@@ -535,7 +540,6 @@ class RszArrayClipboard:
         
         if element_type == "ObjectData":
             if embedded_context:
-                from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
                 embedded_ops = RszEmbeddedArrayOperations(viewer)
                 element = embedded_ops.paste_array_element(elem_data, array_data, embedded_context)
                 if element:
@@ -553,7 +557,6 @@ class RszArrayClipboard:
                     array_data.values.append(element)
         elif element_type == "UserDataData":
             if embedded_context:
-                from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
                 embedded_ops = RszEmbeddedArrayOperations(viewer)
                 element = embedded_ops.paste_array_element(elem_data, array_data, embedded_context)
                 if element:
@@ -663,8 +666,6 @@ class RszArrayClipboard:
 
     @staticmethod
     def _reset_embedded_userdata_storage(userdata_info, viewer):
-        from file_handlers.rsz.scn_19.scn_19_structure import EmbeddedRSZHeader
-
         userdata_info.embedded_rsz_header = EmbeddedRSZHeader()
         userdata_info.embedded_rsz_header.magic = viewer.scn.rsz_header.magic
         userdata_info.embedded_rsz_header.version = viewer.scn.rsz_header.version
@@ -687,13 +688,10 @@ class RszArrayClipboard:
         if not hasattr(userdata_info, 'embedded_instance_hierarchy'):
             userdata_info.embedded_instance_hierarchy = {}
 
-        from utils.id_manager import EmbeddedIdManager
         userdata_info.id_manager = EmbeddedIdManager(id_manager_instance_id)
 
     @staticmethod
     def _create_embedded_userdata_info(instance_id, type_id, root_instance, parent_userdata_rui):
-        from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
-
         userdata_info = Scn19RSZUserDataInfo()
         userdata_info.instance_id = instance_id
         userdata_info.type_id = type_id
@@ -842,7 +840,6 @@ class RszArrayClipboard:
             nested_hash = ui_data.get("hash", 0)
             nested_json_path_hash = ui_data.get("json_path_hash", 0)
 
-            from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
             nested_userdata_info = Scn19RSZUserDataInfo()
             mapped_instance_id = id_mapping.get(nested_instance_id, nested_instance_id)
             nested_userdata_info.instance_id = mapped_instance_id
@@ -883,8 +880,6 @@ class RszArrayClipboard:
 
     @staticmethod
     def _insert_graph_instances(viewer, instances, insertion_index):
-        from file_handlers.rsz.rsz_file import RszInstanceInfo
-
         relative_to_new_id = {}
         guid_mapping = {}
 
@@ -909,7 +904,6 @@ class RszArrayClipboard:
             relative_to_new_id[relative_id] = current_index
 
             if instance_data.get("is_userdata", False):
-                from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
                 base_clipboard = type('TempClipboard', (RszClipboardBase,), {
                     'get_clipboard_type': lambda self: 'temp'
                 })()
@@ -986,8 +980,6 @@ class RszArrayClipboard:
             fields_data = instance.get("fields", {})
             embedded_fields = {}
             
-            from file_handlers.rsz.rsz_data_types import UserDataData, ArrayData
-            
             for field_name, field_data in fields_data.items():
                 deserialized_field = RszArrayClipboard._deserialize_field_with_relative_mapping(
                     field_data, id_mapping
@@ -1058,7 +1050,6 @@ class RszArrayClipboard:
             viewer.scn._rsz_userdata_str_map = {}
         
         if existing_instance_id in viewer.scn._rsz_userdata_set:
-            from file_handlers.rsz.rsz_data_types import UserDataData
             userdata_element = UserDataData(existing_instance_id, elem_data.get("string", ""), elem_data.get("orig_type", ""))
             userdata_element._container_context = None
             userdata_element._owning_context = None  
@@ -1072,7 +1063,6 @@ class RszArrayClipboard:
         userdata_desc = f"Embedded Binary Data (ID: {existing_instance_id})"
         viewer.scn._rsz_userdata_str_map[userdata_info] = userdata_desc
         
-        from file_handlers.rsz.rsz_data_types import UserDataData
         userdata_element = UserDataData(existing_instance_id, elem_data.get("string", ""), elem_data.get("orig_type", ""))
         userdata_element._container_context = None
         userdata_element._owning_context = None  
@@ -1124,7 +1114,6 @@ class RszArrayClipboard:
         
         update_rsz_header_counts(userdata_info)
     
-        from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
         userdata_info.data = build_embedded_rsz(userdata_info, viewer.type_registry)
         userdata_info.data_size = len(userdata_info.data)
         
@@ -1300,7 +1289,6 @@ class RszArrayClipboard:
         update_rsz_header_counts(target_rui)
         update_rsz_header_counts(userdata_info)
         
-        from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz 
         userdata_info.data = build_embedded_rsz(userdata_info, viewer.type_registry)
         userdata_info.data_size = len(userdata_info.data)
 
@@ -1363,8 +1351,6 @@ class RszArrayClipboard:
         if not embedded_context:
             return None
         
-        from file_handlers.rsz.rsz_data_types import UserDataData
-        from file_handlers.rsz.rsz_object_operations import RszObjectOperations
         
         if "object_graph" in elem_data:
             element = RszArrayClipboard._deserialize_complete_embedded_rsz_userdata(
@@ -1379,7 +1365,6 @@ class RszArrayClipboard:
             parent_instance_id = getattr(array_data, '_owning_instance_id', None)
             
             # Calculate proper insertion index based on field order
-            from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
             embedded_ops = RszEmbeddedArrayOperations(viewer)
             insertion_index = embedded_ops._calculate_field_order_insertion_index(array_data, embedded_context, parent_instance_id)
             
@@ -1893,7 +1878,6 @@ class RszArrayClipboard:
                                 userdata_info, field_data.get("object_graph"), viewer
                             )
                             
-                            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
                             userdata_info.data = build_embedded_rsz(userdata_info, viewer.type_registry)
                             userdata_info.data_size = len(userdata_info.data)
                             userdata_info.modified = True
@@ -1964,7 +1948,6 @@ class RszArrayClipboard:
                 for field_name, field_data in instance_fields.items():
                     if field_name in viewer.scn.parsed_elements[new_instance_id]:
                         try:
-                            from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
                             base_clipboard = type('TempClipboard', (RszClipboardBase,), {
                                 'get_clipboard_type': lambda self: 'temp'
                             })()
@@ -2232,7 +2215,6 @@ class RszArrayClipboard:
     @staticmethod
     def _add_element_to_ui_direct(widget, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
-        from file_handlers.pyside.tree_model import DataTreeBuilder
 
         parent_viewer = widget.parent()
         if not parent_viewer:
@@ -2329,7 +2311,6 @@ class RszArrayClipboard:
                 "relative_id": rel_id,
                 "type_id": inst_entry.get("type_id", 0)
             })
-            import copy
             fields_copy = copy.deepcopy(inst_entry.get("fields", {}))
             _mark_relative(fields_copy)
             embedded_data["instances"][str(rel_id)] = fields_copy

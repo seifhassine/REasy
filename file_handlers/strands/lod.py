@@ -9,7 +9,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from .gpus import AnimationCurve, CurveKey
-from .strands_file import StrandsFile
+lazy from .strands_file import StrandsFile
 
 F = np.float32
 _MAGIC, _HEAD, _CURVE, _KEYS = b"SLOD", 8, 0x20, 0x48
@@ -76,7 +76,7 @@ def with_lod_record(data: bytes, key: int, record: LodRecord) -> bytes:
                      record.factor)
     struct.pack_into("<HH4fII", body, _CURVE, len(curve.keys), curve.loop_count, curve.loop_start, curve.loop_end,
                      curve.minimum, curve.maximum, curve.wrap, curve.flags)
-    made = (struct.pack("<II", key, len(curve.keys)) + bytes(body) + b"".join(
+    made = (struct.pack("<II", key, len(curve.keys)) + body.take_bytes() + b"".join(
         struct.pack("<fH5e", k.value, k.kind, k.time, k.in_y, k.in_x, k.out_y, k.out_x) for k in curve.keys))
     if key in spans:
         return data[:start] + made + data[end:]

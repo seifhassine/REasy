@@ -10,7 +10,8 @@ import importlib
 import json
 import math
 import re
-from typing import Any, Callable, Hashable
+from collections.abc import Hashable
+from typing import Any, Callable
 from uuid import uuid4
 
 from ..material_names import resolve_material_name
@@ -2507,7 +2508,7 @@ def _sink_statements(text, start, end, indent):
                 declarations[follower] = copy
                 follower += 1
     if not any(match and _SAMPLING.search(match.group(3)) for match in declarations):
-        return [line for body in texts for line in body]
+        return [*body for body in texts]
     readers, writers = {}, {}
     for number, (begin, stop) in enumerate(statements):
         for position in range(begin, stop):
@@ -3350,7 +3351,7 @@ def _graph_numeric_features(graph):
             if 'nodes' in value and 'links' in value:
                 nodes = {node['id']: node for node in value['nodes']}
                 negative_zero = {identity for identity, node in nodes.items() if node['kind'] == 'constant'
-                    and any(isinstance(number, float) and number == 0 and math.copysign(1, number) < 0
+                    and any(isinstance(number, float) and number == 0 and math.signbit(number)
                             for number in node.get('properties', {}).get('values', ()))}
                 # IEEE comparisons treat +0 and -0 identically.
                 signed_zero |= any(link['source'][0] in negative_zero

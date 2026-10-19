@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -60,7 +59,7 @@ def export_blend(mesh, path, *, blender=None, title=None, file_version=None, mer
                                    "\n".join(result.changes + result.losses))
             verified = True
         path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.move(staged, path)
+        staged.move(path)
     return BlendExportResult(path, len(manifest["objects"]), len(manifest["meshes"]), verified, result)
 
 

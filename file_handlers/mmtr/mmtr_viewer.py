@@ -9,31 +9,31 @@ from pathlib import Path
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QInputDialog, QLabel, QMessageBox, QPushButton
 
-from file_handlers.mdf.mdf_file import MdfFile
-from file_handlers.mdf.mdf_handler import MdfHandler
+lazy from file_handlers.mdf.mdf_file import MdfFile
+lazy from file_handlers.mdf.mdf_handler import MdfHandler
 from file_handlers.sdf.sdf_viewer import SdfViewer
-from services.backup_store import create_backup
-from ui.background_jobs import run_job
-from ui.file_tab import open_tabs_for_paths, tab_output_path
-from utils.resource_file_utils import (
+lazy from services.backup_store import create_backup
+lazy from ui.background_jobs import run_job
+lazy from ui.file_tab import open_tabs_for_paths, tab_output_path
+lazy from utils.resource_file_utils import (
     normalize_resource_path,
     resource_context_for_handler,
     resource_path_with_version,
     resource_version_from_path,
 )
 
-from .material_context import bind_material_instance
-from .material_editor import MmtrMaterialEditor
-from .material_family import family_member_filename
+lazy from .material_context import bind_material_instance
+lazy from .material_editor import MmtrMaterialEditor
+lazy from .material_family import family_member_filename
 from .material_project import apply_material_build, material_authoring_coverage
-from .material_variant import (
+lazy from .material_variant import (
     create_material_variant_artifacts,
     material_project_sidecar_path,
     mmtr_resource_path_from_file,
     write_material_variant,
 )
-from .material_variant_dialog import MaterialVariantDialog
-from .material_variant_sources import MdfVariantSourceChoice, discover_mdf_consumers
+lazy from .material_variant_dialog import MaterialVariantDialog
+lazy from .material_variant_sources import MdfVariantSourceChoice, discover_mdf_consumers
 
 
 @dataclass(frozen=True)

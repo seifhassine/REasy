@@ -7,30 +7,30 @@ import math
 import os
 import shutil
 import struct
-import subprocess
+lazy import subprocess
 import tempfile
 import threading
 import uuid
-import xml.etree.ElementTree as ET
+lazy import xml.etree.ElementTree as ET
 from collections.abc import Iterable
 from dataclasses import dataclass
 from html import escape
 from pathlib import Path
 
-from file_handlers.sound.sound_profile import SoundGameProfile, WemAuthoringCodec
-from tools.riff_metadata import (
+lazy from file_handlers.sound.sound_profile import SoundGameProfile, WemAuthoringCodec
+lazy from tools.riff_metadata import (
     RiffMetadata,
     inherit_riff_metadata,
     read_riff_metadata,
     rescale_riff_metadata,
     write_riff_metadata,
 )
-from tools.wwise_toolchain import (
+lazy from tools.wwise_toolchain import (
     WwiseInstallation,
     require_wwise_profile,
     validate_wwise_installation,
 )
-from utils.app_paths import cache_directory
+lazy from utils.app_paths import cache_directory
 
 
 _EXTENSIBLE_SUBFORMAT_SUFFIX = bytes.fromhex("00001000800000aa00389b71")
@@ -360,9 +360,7 @@ def _run_wwise_cli(arguments: list[str], operation: str, *, timeout: int = 120):
             errors="replace",
             timeout=timeout,
             check=False,
-            creationflags=(
-                getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0
-            ),
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
     except subprocess.TimeoutExpired as exc:
         raise ValueError("Wwise conversion timed out.") from exc

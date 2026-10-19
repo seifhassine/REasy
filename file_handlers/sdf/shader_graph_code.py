@@ -8,7 +8,7 @@ import re
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from .shader_graph import ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension
-from .shader_graph_math import NUMERIC_VALUE_TYPES
+lazy from .shader_graph_math import NUMERIC_VALUE_TYPES
 
 CODE_KIND = "code"
 MAX_CODE_BYTES = 64 * 1024

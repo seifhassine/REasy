@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping
 
 from ..mmtr.material_preview import VIEW_DIMENSIONS, PreviewMaterial, _texture_texels
-from ..mmtr.resident import Resident
+lazy from ..mmtr.resident import Resident
 
 MATERIAL = "material."
 

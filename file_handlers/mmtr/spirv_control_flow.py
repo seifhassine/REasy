@@ -1,5 +1,5 @@
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .native_loop_flow import reachable_blocks, region_postdominators, region_postorder
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .native_loop_flow import reachable_blocks, region_postdominators, region_postorder
 
 
 def spirv_cfg(rows):

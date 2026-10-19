@@ -3,16 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any, Protocol
 
-if TYPE_CHECKING:
-    from file_handlers.clip.enums import PropertyType
-    from utils.resource_file_utils import ResourceDataLoader
+lazy from file_handlers.clip.enums import PropertyType
+lazy from utils.resource_file_utils import ResourceDataLoader
 
-    from .dependencies import GuiDependencyCatalog
-    from .model import GuiDocument
-    from .profiles import GuiFormatProfile
-    from .scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
+lazy from .dependencies import GuiDependencyCatalog
+lazy from .model import GuiDocument
+lazy from .profiles import GuiFormatProfile
+lazy from .scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
 
 
 @dataclass(frozen=True, slots=True)

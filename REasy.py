@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 """entrypoint for REasy."""
 
-import ctypes
+lazy import ctypes
 import multiprocessing
 import sys
 import tempfile
 from pathlib import Path
 
 from app_config import CURRENT_VERSION, GAMES
+lazy from application import main as run_application
 
 __all__ = ["CURRENT_VERSION", "GAMES", "FileTab", "REasyEditorApp", "main"]
 
@@ -40,8 +41,6 @@ def main():
     if _launched_from_temp():
         _show_zip_error()
         return 1
-
-    from application import main as run_application
 
     return run_application()
 

@@ -2,6 +2,9 @@ import re
 
 from file_handlers.sdf.shader_graph_indexed_value import MAX_INDEXED_VALUES
 
+lazy from .native_loop_flow import LABEL, branch_to, phi_rows, predecessor_map, terminator
+lazy from .profiles.re_engine_dxil_recovery import DxilSemanticRecord
+
 
 def case_value_table(head, join, blocks, successors, conditions, predecessors, phis, uses):
     current, selector, domain = head, None, None
@@ -117,9 +120,6 @@ def immediate_postdominators(successors):
 
 
 def fold_value_switches(blocks):
-    from .native_loop_flow import LABEL, branch_to, phi_rows, predecessor_map, terminator
-    from .profiles.re_engine_dxil_recovery import DxilSemanticRecord
-
     def exits(label):
         kind, tested, direct, cases = terminator(blocks[label][-1])
         return kind, tested, direct, dict(cases)

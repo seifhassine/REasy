@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from .rsz_data_types import (AABBData, AreaData, ArrayData, CapsuleData, ColorData, ConeData, CylinderData,
+lazy from .rsz_data_types import (AABBData, AreaData, ArrayData, CapsuleData, ColorData, ConeData, CylinderData,
                              LineSegmentData, Mat4Data, OBBData, ObjectData, RangeData, RangeIData, RawBytesData,
                              RectData, SizeData, SphereData, StructData, UserDataData, _GuidBytesData)
 

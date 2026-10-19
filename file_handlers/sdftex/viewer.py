@@ -1,19 +1,25 @@
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QImage, QPixmap
+lazy from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox,
     QFormLayout, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton,
     QSlider, QSpinBox, QTabWidget, QVBoxLayout, QWidget,
 )
 
-from ui.background_jobs import run_job
+lazy from file_handlers.mesh.scene_textures import plain_preview
+lazy from ui.background_jobs import run_job
+lazy from ui.scene.mesh_scene import build_mesh_scene
+lazy from ui.scene.scene_model import SceneDrawMesh
+lazy from ui.scene.scene_preview import ScenePreviewWidget
+lazy from utils.resource_file_utils import resource_context_for_handler
 
-from .geometry import (BakeCancelled, Grid, bake_levels, covering_grid,
+lazy from .geometry import (BakeCancelled, Grid, bake_levels, covering_grid,
                        geometry_bounds_at_native_center, mesh_bounds, surface_mesh)
-from .sdftex_file import SdfTexFile, StorageFormat, supported_formats
+lazy from .mesh_resource import reference_path
+lazy from .sdftex_file import SdfTexFile, StorageFormat, supported_formats
 
 
 class _SliceImage(QLabel):
@@ -211,10 +217,6 @@ class DistanceFieldViewer(QWidget):
     def _show_surface(self, *_args, reset_camera=False):
         if self._surface is None:
             return
-        from file_handlers.mesh.scene_textures import plain_preview
-        from ui.scene.scene_model import SceneDrawMesh
-        from ui.scene.scene_preview import ScenePreviewWidget
-
         vertices, indices = self._surface
         if self._gl is None:
             self._gl = ScenePreviewWidget(controls='mesh', initial_distance=2.5)
@@ -249,9 +251,6 @@ class MeshDistanceFieldDialog(QDialog):
         self.path_label.setWordWrap(True)
         self.path_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.path_label)
-        from ui.scene.mesh_scene import build_mesh_scene
-        from utils.resource_file_utils import resource_context_for_handler
-
         resource_context_for_handler(handler)
         self.bounds = mesh_bounds(handler.mesh)
         self.center = tuple((self.bounds[0]+self.bounds[1])/2)
@@ -358,8 +357,6 @@ class MeshDistanceFieldDialog(QDialog):
         self.storage.setEnabled(not self.keep_grids.isChecked())
 
     def _bake(self):
-        from .mesh_resource import reference_path
-
         try:
             if not self.complete_geometry:
                 raise ValueError('Complete LOD 0 geometry is required to bake')

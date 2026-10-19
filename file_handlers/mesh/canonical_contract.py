@@ -12,7 +12,7 @@ from .contract_utils import (
     has_nonzero,
     layer_groups,
 )
-from .conversion_geometry import mesh_payloads
+lazy from .conversion_geometry import mesh_payloads
 from .mesh_file import SKIN_WEIGHT_STREAMS
 
 
@@ -252,7 +252,7 @@ def _assert_buffer_domains(mesh: object) -> None:
             "StreamingInfo entries do not own the streaming BufferLayout array",
         )
 
-    main_groups = [group for mesh_data in mesh.meshes for group in layer_groups(mesh_data)]
+    main_groups = [*layer_groups(mesh_data) for mesh_data in mesh.meshes]
     _assert_index_padding(
         main_groups,
         mesh_buffer.buffer_payloads,

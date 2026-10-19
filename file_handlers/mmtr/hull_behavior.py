@@ -1,6 +1,6 @@
 from dataclasses import replace
 
-from .material_function import MaterialFunctionPin, material_function_node_properties
+lazy from .material_function import MaterialFunctionPin, material_function_node_properties
 
 
 def combine_hull_behaviors(control, patch, contract, name):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from file_handlers.font.sfnt import SfntFont
+lazy from file_handlers.font.sfnt import SfntFont
 
 from .codec import decode_oft, encode_oft
 from .profiles import OFT_PROFILES

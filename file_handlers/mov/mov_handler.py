@@ -1,8 +1,8 @@
 import os
 import tempfile
 
-from PySide6.QtCore import QUrl
-from PySide6.QtGui import QDesktopServices
+lazy from PySide6.QtCore import QUrl
+lazy from PySide6.QtGui import QDesktopServices
 
 from file_handlers.base_handler import BaseFileHandler
 

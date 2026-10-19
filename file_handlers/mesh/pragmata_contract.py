@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import partial
 
-import numpy as np
+lazy import numpy as np
 
 from .contract_utils import (
     ContractValidator,

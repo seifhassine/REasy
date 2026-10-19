@@ -10,8 +10,8 @@ from PySide6.QtWidgets import (
     QToolTip,
 )
 
-from .bookmarks import normalize_tag
-from .constants import make_close_pixmap, make_plus_pixmap, make_star_pixmap
+lazy from .bookmarks import normalize_tag
+lazy from .constants import make_close_pixmap, make_plus_pixmap, make_star_pixmap
 
 _ACTION_HIT_SIZE, _ACTION_SPACING = 26, 1
 _ACTION_RIGHT, _MIN_TEXT_WIDTH = 3, 60

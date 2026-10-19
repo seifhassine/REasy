@@ -5,9 +5,9 @@ import re
 from pathlib import Path
 from typing import Any, Iterable
 
-from file_handlers.msg.msg_handler import MsgHandler
-from ui.ai.file_migration import FileMigrationJob
-from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
+lazy from file_handlers.msg.msg_handler import MsgHandler
+lazy from ui.ai.file_migration import FileMigrationJob
+lazy from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
 
 
 MSG_COPY_SECTIONS = frozenset({"name", "sound_id", "content", "attributes"})

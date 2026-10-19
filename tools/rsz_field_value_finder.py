@@ -6,11 +6,13 @@ from pathlib import Path
 
 sys.path.append(str(Path(__file__).parent.parent))
 
-from file_handlers.rsz.rsz_data_types import _ValueData
-from services.backup_store import create_backup
-from utils.app_paths import resolve_cli_path
-from utils.type_registry import TypeRegistry
-from utils.number_format import format_display_value, format_float_sequence
+from utils.garbage_collection import configure_garbage_collector
+lazy from file_handlers.rsz.rsz_data_types import _ValueData
+lazy from services.backup_store import create_backup
+lazy from utils.app_paths import resolve_cli_path
+lazy from utils.type_registry import TypeRegistry
+lazy from utils.number_format import format_display_value, format_float_sequence
+lazy from file_handlers.rsz.rsz_file import RszFile
 
 RSZ_EXTENSIONS = {'.scn', '.pfb', '.user'}
 
@@ -42,7 +44,6 @@ def scan_file(filepath, type_id, field_identifier, type_registry, failures):
         failures.append(filepath)
         return []
 
-    from file_handlers.rsz.rsz_file import RszFile
     rsz_file = RszFile()
     rsz_file.type_registry = type_registry
     rsz_file.filepath = str(filepath)
@@ -110,8 +111,6 @@ def _replace_scalar(data, find, replacement):
 def replace_file_values(
     filepath, type_id, field_name, find, replacement, type_registry, instance_ids
 ):
-    from file_handlers.rsz.rsz_file import RszFile
-
     path = Path(filepath)
     original = path.read_bytes()
     rsz_file = RszFile()
@@ -244,6 +243,7 @@ def format_value(value):
     return format_display_value(value)
 
 def main():
+    configure_garbage_collector()
     parser = argparse.ArgumentParser(description='Find all possible values of a specific field in RSZ files')
     parser.add_argument('--dir', '-d', type=resolve_cli_path, required=True, help='Directory to scan')
     parser.add_argument('--type-id', '-t', required=True, help='Type ID to search for (hex or decimal)')

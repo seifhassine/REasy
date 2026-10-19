@@ -4,7 +4,7 @@ Consolidated tree infrastructure that handles both eager and lazy-loading approa
 
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel
 from typing import Callable, Any
-from utils.number_format import format_display_value
+lazy from utils.number_format import format_display_value
 
 class DeferredChildBuilder:
     __slots__ = ('builder_func', 'context', '_built', '_children')

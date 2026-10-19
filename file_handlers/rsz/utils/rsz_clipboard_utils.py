@@ -66,7 +66,7 @@ class RszClipboardUtils:
 
     @staticmethod
     def write_clipboard_data(clipboard_file, data):
-        """Write JSON using the legacy RSZ clipboard encoding and error behavior."""
+        """Write the clipboard JSON; errors reach the caller."""
         with open(clipboard_file, "w") as stream:
             json.dump(
                 data,

@@ -1,6 +1,6 @@
-from PySide6.QtGui import QColor
+lazy from PySide6.QtGui import QColor
 
-from settings import DEFAULT_SETTINGS
+lazy from settings import DEFAULT_SETTINGS
 
 
 def get_color_scheme(accent_color: str | None = None) -> dict:

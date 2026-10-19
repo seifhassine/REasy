@@ -7,9 +7,13 @@ from itertools import islice
 from enum import Enum
 
 from file_handlers.bounded_cache import BoundedCache
-from file_handlers.pak.utils import filepath_hash, normalize_pak_path, read_pak_entry_hashes
-from services.file_io import write_files_atomically
+lazy from file_handlers.pak.utils import filepath_hash, normalize_pak_path, read_pak_entry_hashes
+lazy from services.file_io import write_files_atomically
 from utils.native_build import ensure_fast_path_search, ensure_fast_string_scan
+lazy from tools.file_list_search import Search
+lazy import ctypes
+lazy import msvcrt
+lazy import struct
 
 
 _extract_strings = ensure_fast_string_scan().extract_strings
@@ -197,10 +201,6 @@ def _pak_signature(pak_path):
         stat = os.fstat(stream.fileno())
         change_time = stat.st_ctime_ns
         if os.name == 'nt':
-            import ctypes
-            import msvcrt
-            import struct
-
             # Windows st_ctime is creation time, not the NTFS metadata change time.
             info = ctypes.create_string_buffer(40)  # FILE_BASIC_INFO
             handle = ctypes.c_void_p(msvcrt.get_osfhandle(stream.fileno()))
@@ -1312,7 +1312,6 @@ class PathCollector(_GatheredPaths):
 
     def prepare_search(self, list_file_path, pak_directory, progress_callback=None):
         """The caller runs or ``close``s the returned ``Search``."""
-        from tools.file_list_search import Search
         try:
             if not os.path.exists(list_file_path):
                 return None, (False, f"List file not found: {list_file_path}", None, set())

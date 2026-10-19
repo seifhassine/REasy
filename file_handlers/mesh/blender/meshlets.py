@@ -4,11 +4,11 @@ from array import array
 from collections import Counter
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from ..conversion_allocations import _WEIGHT_METADATA
+lazy from ..conversion_allocations import _WEIGHT_METADATA
 from ..mesh_file import MPLYChunk
-from ..meshlet_clusters import meshletize as _meshletize
+lazy from ..meshlet_clusters import meshletize as _meshletize
 
 MAX_MESHLET_VERTICES = 128
 MAX_MESHLET_TRIANGLES = 126

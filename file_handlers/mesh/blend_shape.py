@@ -8,7 +8,7 @@ import numpy as np
 
 from .mesh_file import _checked_slice
 from .models import MeshAABB
-from .profiles import (
+lazy from .profiles import (
     BlendShapeLayout,
     MeshGameProfile,
     MeshMainVersion,
@@ -995,9 +995,8 @@ def read_blend_shape_name_indices(
     if index_count < 0:
         raise ValueError("Blendshape name-index count is negative")
     channels = [
-        channel
+        *body.channels
         for body in blend_shapes.bodies
-        for channel in body.channels
     ]
     active_channel_slot_count = max(
         (channel.name_slot + 1 for channel in channels),

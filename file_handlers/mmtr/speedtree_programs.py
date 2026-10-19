@@ -1,13 +1,13 @@
 """See docs/internals/speedtree.md, Programs."""
 from __future__ import annotations
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.stmesh.stmesh_file import BatchType
+lazy from file_handlers.stmesh.stmesh_file import BatchType
 
 from .meshlets import MeshletPrograms
-from .pass_choice import PassChoiceError, speedtree_route
-from .speedtree_catalog import SpeedTreeCatalog, SpeedTreePlacement
+lazy from .pass_choice import PassChoiceError, speedtree_route
+lazy from .speedtree_catalog import SpeedTreeCatalog, SpeedTreePlacement
 
 
 def speedtree_placement(catalog: SpeedTreeCatalog | None, placement: str | None) -> SpeedTreePlacement:

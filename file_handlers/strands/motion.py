@@ -1,8 +1,8 @@
-from PySide6.QtCore import Qt
+lazy from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QVBoxLayout
 
-from file_handlers.motion.preview.renderer import MotionPreviewRenderer
-from .controls import StrandsControls
+lazy from file_handlers.motion.preview.renderer import MotionPreviewRenderer
+lazy from .controls import StrandsControls
 
 
 class MotionStrandsDialog(QDialog):

@@ -5,8 +5,8 @@ from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QFormLayout, QLabel, QV
 
 from collections.abc import Callable, Mapping
 
-from file_handlers.mmtr.material_preview import PreviewMaterial
-from file_handlers.mmtr.shown_image import target_lanes
+lazy from file_handlers.mmtr.material_preview import PreviewMaterial
+lazy from file_handlers.mmtr.shown_image import target_lanes
 
 
 def preview_material(surface, parameters: Callable[[], Mapping[str, float]] | None = None) -> PreviewMaterial:

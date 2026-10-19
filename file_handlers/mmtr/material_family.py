@@ -3,10 +3,13 @@ from dataclasses import dataclass, replace
 import logging
 from pathlib import Path
 
-from utils.resource_file_utils import resource_version_from_path
-from .material_context import MaterialInstanceContext, bind_material_context
-from .mmtr_file import MmtrFile
+lazy from utils.resource_file_utils import resource_version_from_path
+lazy from .material_context import MaterialInstanceContext, bind_material_context
+lazy from .mmtr_file import MmtrFile
 from .mmtrs_file import MmtrsFile, family_member, is_mmtrs_resource, mmtrs_family
+lazy from .material_project import _build_material_project, MaterialBuildError
+lazy from .pipeline_settings import member_states
+lazy from .profiles.re_engine_shader_graph import _master
 
 
 @dataclass(frozen=True, slots=True)
@@ -105,8 +108,6 @@ def seed_material_family(document, project, *, defer_shader_recovery):
 
 
 def family_member_project(project, lod):
-    from .pipeline_settings import member_states
-    from .profiles.re_engine_shader_graph import _master
     project.prepare_semantics()
     master = _master(project)
     indices, recipes = master.properties.get("family_recipe_indices", ()), master.properties.get("family_recipes", ())
@@ -127,7 +128,6 @@ def family_member_project(project, lod):
 
 
 def build_material_family(project, document):
-    from .material_project import _build_material_project, MaterialBuildError
     family = document.material_family
     project.prepare_semantics()
     builds = []

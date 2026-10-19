@@ -2,7 +2,7 @@ import copy
 import math
 import uuid
 
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rsz.rsz_data_types import (
     AABBData,
     ArrayData,
     GameObjectRefData,
@@ -16,7 +16,7 @@ from file_handlers.rsz.rsz_data_types import (
     is_reference_type,
     is_array_type,
 )
-from utils.enum_manager import EnumManager
+lazy from utils.enum_manager import EnumManager
 
 
 INTEGER_BOUNDS = {

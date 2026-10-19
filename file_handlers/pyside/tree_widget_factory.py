@@ -1,4 +1,4 @@
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rsz.rsz_data_types import (
     StructData, U32Data, S32Data
 )
 import uuid
@@ -8,10 +8,10 @@ from file_handlers.pyside.value_widgets import (
     RangeIInput, ColorInput, Vec3ColorInput, CapsuleInput, Int3Input, Uint3Input, Uint2Input, Int2Input, Int4Input, Int4ColorInput, EnumInput, F64Input, 
     SizeInput, RectInput
 )
-from utils.enum_manager import EnumManager
+lazy from utils.enum_manager import EnumManager
 
-from PySide6.QtGui import QIcon
-from PySide6.QtCore import QCoreApplication, Qt
+lazy from PySide6.QtGui import QIcon
+lazy from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
     QWidget,
     QHBoxLayout,

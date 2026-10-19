@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import struct
 
-from .mot_list import MotList, MotListV85Parser, MotListV85Writer
+lazy from .mot_list import MotList, MotListV85Parser, MotListV85Writer
 from .profiles import DMC5_PROFILE
 
 

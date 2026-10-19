@@ -4,12 +4,12 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from file_handlers.mmtr.pretransform import chain_level, pretransform_catalog_for
+lazy from file_handlers.mmtr.pretransform import chain_level, pretransform_catalog_for
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
 from utils.resource_file_utils import natives_relative
 
 from .binding_surface import BindingSurface
-from .bindings import StrandBindings
+lazy from .bindings import StrandBindings
 from .chain_catalog import strand_catalog_for
 from .chain_scene import ChainScene, bound_mesh_path, gather, handler_files
 from .companions import prefab_graph

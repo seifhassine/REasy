@@ -52,7 +52,7 @@ def write_clsp(shapes) -> bytes:
     for shape in shapes:
         out += struct.pack("<3I4xQ8x", shape.kind, shape.joint, shape.end_joint, shape.tag)
         out += np.asarray(shape.values, "<f4").reshape(20).tobytes()
-    return bytes(out)
+    return out.take_bytes()
 
 
 __all__ = ["CollisionShape", "ShapeKind", "read_clsp", "write_clsp"]

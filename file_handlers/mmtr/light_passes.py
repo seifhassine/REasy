@@ -9,26 +9,26 @@ from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from functools import partial
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.ocioc import OCIOC_MAGIC, OciocTexture, parse_ocioc
+lazy from file_handlers.ocioc import OCIOC_MAGIC, OciocTexture, parse_ocioc
 from file_handlers.sdf.contracts import shader_contract_for_program
-from file_handlers.sdf.models import program_names
+lazy from file_handlers.sdf.models import program_names
 from file_handlers.sdf.sdf_file import parse_sdf_to_draw
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
-from file_handlers.tex.dxgi import DXGI_FORMAT_R32_UINT
+lazy from file_handlers.tex.dxgi import DXGI_FORMAT_R32_UINT
 
 from .engine_buffers import FRAME_BUFFERS, Camera, _laid_out, camera_key, frame_values, scene_values, with_words
-from .material_preview import (
+lazy from .material_preview import (
     RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, _UAV_DIMENSIONS, VIEW_DIMENSIONS, SHADER_VISIBILITY,
     MaterialPreviewError, _texture_entry,
 )
 from .mesh_draw import program_states
 from .mesh_render import DEPTH_VIEWS, PHASES, MeshScene
-from .pass_choice import MESH_PROGRAMS
-from .profiles.base import mmtr_profile_for_game
-from .resident import DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS
+lazy from .pass_choice import MESH_PROGRAMS
+lazy from .profiles.base import mmtr_profile_for_game
+lazy from .resident import DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS
 from .sampler_states import sampler_catalog_for
 from .shown_image import shown_step
 
@@ -401,7 +401,7 @@ def _constant_buffer(name: str, layout, camera: Camera, light: Light,
     words_of = dict(captured)
     if name in _LIGHT_BUFFERS:
         words_of.update(DL_Enable=(_ALL_BITS,), DL_TextureBindlessIndex=(_ALL_BITS,))
-    return bytes(with_words(data, layout, words_of))
+    return with_words(data, layout, words_of).take_bytes()
 
 
 def captured_constants(catalog: LightPassCatalog) -> dict[str, dict[str, tuple[int, ...]]]:
@@ -409,7 +409,7 @@ def captured_constants(catalog: LightPassCatalog) -> dict[str, dict[str, tuple[i
     for item in (*catalog.passes, *catalog.phases):
         for name, fields in item.constants.items():
             if fields:
-                found.setdefault(name, set()).add(tuple(sorted(fields.items())))
+                found.setdefault(name, set()).add(frozendict(fields))
     if any(len(kinds) > 1 for kinds in found.values()):
         raise ValueError(f"the catalog's passes capture {sorted(n for n, k in found.items() if len(k) > 1)} differently")
     return {name: dict(*kinds) for name, kinds in found.items()}
@@ -830,7 +830,7 @@ class LightPasses:
         return made[1]
 
     def _added_steps(self, key: tuple[int, int, bool]) -> list[int]:
-        return [step for steps in self._added.get(key, ()) for step in steps()]
+        return [*steps() for steps in self._added.get(key, ())]
 
     def _frame(self) -> None:
         for index in range(len(self.catalog.passes)):
@@ -855,7 +855,7 @@ class LightPasses:
         scene, pending = self.scene, self.device.pending
         scene.begin()
         pending += scene.gbuffer()
-        pending += [step for steps in self._starting for step in steps()]
+        pending += [*steps() for steps in self._starting]
         self._frame()
         step, texture = self._shown_image()
         pending += [step, *after(texture)]

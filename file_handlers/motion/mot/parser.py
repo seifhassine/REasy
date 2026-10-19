@@ -2,15 +2,15 @@ from __future__ import annotations
 
 import struct
 
-import numpy as np
+lazy import numpy as np
 
 from utils.hash_util import murmur3_hash
 
-from ..binary import ReadContext, align_up
-from ..errors import MotionParseError, MotionValidationError
+lazy from ..binary import ReadContext, align_up
+lazy from ..errors import MotionParseError, MotionValidationError
 from ..profiles import MotionFormatProfile
 from ..sequence.parser import SequenceV65Parser
-from .model import (
+lazy from .model import (
     AnimationNode,
     AppendArray,
     AppendClass,
@@ -27,7 +27,7 @@ from .model import (
     SyncPointGrid,
     TrackFamily,
 )
-from .track_codec import (
+lazy from .track_codec import (
     FAMILY_BY_SOLVER,
     bytes_per_key,
     decode_track_values,

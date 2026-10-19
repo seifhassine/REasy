@@ -8,16 +8,16 @@ import json
 import os
 from pathlib import Path
 import re
-import subprocess
+lazy import subprocess
 from typing import Mapping, MutableMapping
 
-from file_handlers.sound.sound_profile import (
+lazy from file_handlers.sound.sound_profile import (
     SoundGameProfile,
     sound_profile_for_bank_version,
     sound_profile_for_game,
     sound_profiles,
 )
-from utils.game_keys import game_key
+lazy from utils.game_keys import game_key
 
 
 @dataclass(frozen=True, order=True)
@@ -138,7 +138,7 @@ def _probe_version(cli_path):
             errors="replace",
             timeout=15,
             check=False,
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
     except (OSError, subprocess.SubprocessError):
         return None

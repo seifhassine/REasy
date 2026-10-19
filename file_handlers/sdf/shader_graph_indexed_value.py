@@ -1,3 +1,5 @@
+import hashlib
+
 from .shader_graph_math import NUMERIC_VALUE_TYPES
 from .shader_graph import (
     ShaderGraphError, ShaderGraphNodeExtension, ShaderPin,
@@ -97,7 +99,6 @@ def table_pins(node, _contract):
 
 
 def _table_name(node):
-    import hashlib
     domain, words, has_default = table_shape(node)
     identity = f"{domain}:{int(has_default)}:{','.join(map(str, words))}".encode('ascii')
     return f'REasyTable_{hashlib.sha256(identity).hexdigest()[:20]}'

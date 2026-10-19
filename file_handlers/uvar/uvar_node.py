@@ -1,7 +1,7 @@
 from typing import List
 
 from .base_model import BaseModel, FileHandler
-from .node_parameter import NodeParameter
+lazy from .node_parameter import NodeParameter
 
 class UvarNode(BaseModel):
     

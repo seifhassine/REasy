@@ -24,9 +24,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .bookmark_dialog import BookmarkDialog
-from .bookmarks import Bookmark, BookmarksStore, normalize_root
-from .delegate import _BookmarkRowDelegate
+lazy from .bookmark_dialog import BookmarkDialog
+lazy from .bookmarks import Bookmark, BookmarksStore, normalize_root
+lazy from .delegate import _BookmarkRowDelegate
 
 _ContextProvider = Callable[[], tuple[str | None, str | None]]
 

@@ -1,13 +1,14 @@
 import math
 
-import numpy as np
+lazy import numpy as np
 
 from .contract_utils import (
     ContractValidator, all_groups, all_lods, assert_canonical_layout_constants,
     assert_late_normal_recalc_runtime_storage,
 )
-from .dd2_contract import DD2_VERTEX_STRIDES
+lazy from .dd2_contract import DD2_VERTEX_STRIDES
 from .models import MPLY_MAGIC
+lazy from .canonical_contract import assert_mesh_semantic_domains, assert_mesh_canonical_storage
 
 V = ContractValidator("Updated DD2 canonical contract")
 
@@ -49,8 +50,6 @@ def _common(mesh):
 
 
 def _ordinary(mesh):
-    from .canonical_contract import assert_mesh_semantic_domains
-
     assert_mesh_semantic_domains(mesh)
     b = mesh.mesh_buffer
     V.require_equal("GPU buffer base", mesh.header.vertices_offset, b.vertex_buffer_offset)
@@ -185,7 +184,6 @@ def assert_dd2_updated_import_safe(mesh):
         V.require_zero("corpus-unused " + name, getattr(f, name))
     V.assert_content_policy(f, mesh.header.magic == MPLY_MAGIC)
     if mesh.header.magic != MPLY_MAGIC:
-        from .canonical_contract import assert_mesh_canonical_storage
         assert_mesh_canonical_storage(mesh)
         V.require_zero("corpus-unused occluder layout", mesh.header.occluder_mesh_offset)
         for md in mesh.meshes:

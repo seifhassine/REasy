@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 import re
 from .shader_storage import ShaderStorageType
+lazy from .shader_graph import ShaderGraphError
 
 
 @dataclass(frozen=True, slots=True)
@@ -16,7 +17,6 @@ class ShaderMeshExecution:
             object.__setattr__(self, 'payload_layout', ShaderStorageType.from_data(self.payload_layout))
 
     def validate_stage(self, stage):
-        from .shader_graph import ShaderGraphError
         if (any(type(n) is not int for n in (self.max_output_vertices, self.max_output_primitives, self.payload_bytes))
                 or not 0 <= self.payload_bytes <= 16384
                 or stage not in {'mesh', 'amplification'}):
@@ -49,7 +49,6 @@ class ShaderPrimitiveExecution:
     output_streams: tuple[int, ...] = ()
 
     def __post_init__(self):
-        from .shader_graph import ShaderGraphError
         object.__setattr__(self, 'output_streams', tuple(self.output_streams) or ((0,) if self.input_primitive else ()))
         integers = (self.input_control_points, self.output_control_points, self.max_output_vertices,
                     self.geometry_instances, *self.output_streams)
@@ -67,7 +66,6 @@ class ShaderPrimitiveExecution:
             raise ShaderGraphError('Invalid primitive/tessellation execution declaration')
 
     def validate_stage(self, stage):
-        from .shader_graph import ShaderGraphError
         stage = {'geometry':'gs', 'hull':'hs', 'domain':'ds'}.get(stage, stage)
         if stage in {'ds', 'hs'} and (not self.input_control_points or not self.domain):
             raise ShaderGraphError('Tessellation requires a declared domain and control-point count')
@@ -86,7 +84,6 @@ class ShaderPrimitiveExecution:
 
 
 def patch_field_members(fields):
-    from .shader_graph import ShaderGraphError
     result = []
     for field in fields:
         name = re.sub(r"[^A-Za-z0-9_]", "_", f"patch_{field.semantic_name}")

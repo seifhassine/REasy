@@ -3,11 +3,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.sdf.sdf_file import CULL_BACK, CULL_NONE
+lazy from file_handlers.sdf.sdf_file import CULL_BACK, CULL_NONE
 
-from .material_preview import _TRIANGLE_LIST, MaterialPreviewError, PreviewMaterial
+lazy from .material_preview import _TRIANGLE_LIST, MaterialPreviewError, PreviewMaterial
 from .mesh_draw import program_states
 from .mesh_render import _written, draw_purpose
 from .pass_choice import depth_prepass_program, has_scene_program, own_passes

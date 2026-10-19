@@ -1,5 +1,5 @@
 from .shader_graph import ShaderGraphError,ShaderGraphNodeExtension,ShaderPin,register_shader_graph_node_extension
-from .shader_stage_execution import patch_field_members,patch_struct
+lazy from .shader_stage_execution import patch_field_members,patch_struct
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 

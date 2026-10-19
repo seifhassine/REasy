@@ -10,7 +10,7 @@ from typing import Any, Protocol
 
 from file_handlers.clip.enums import PropertyType
 
-from ..errors import GuiFormatError, GuiWriteError
+lazy from ..errors import GuiFormatError, GuiWriteError
 from ..property_types import (
     FLOAT_VECTOR_COUNTS,
     SIGNED_FORMATS,

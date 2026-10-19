@@ -4,7 +4,7 @@ from typing import Iterable
 
 import numpy as np
 
-from .scene_model import SceneDrawMesh
+lazy from .scene_model import SceneDrawMesh
 
 # Towards the "software" light, in the world.
 SOFTWARE_LIGHT_DIRECTION = (0.4, 0.8, 0.4)

@@ -1,7 +1,7 @@
 import json
 from functools import lru_cache
 
-from utils.app_paths import resource_path
+lazy from utils.app_paths import resource_path
 from utils.game_keys import game_key
 
 

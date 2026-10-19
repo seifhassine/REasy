@@ -4,9 +4,9 @@ import math
 from functools import partial
 from typing import Iterable
 
-import numpy as np
+lazy import numpy as np
 
-from .blend_shape import lod_map_allocation
+lazy from .blend_shape import lod_map_allocation
 from .contract_utils import (
     ContractValidator,
     assert_canonical_layout_constants,

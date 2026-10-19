@@ -4,12 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 
-from .legacy_register_flow import destination_count
-from .native_dxbc_precision import operand_precision
-from .profiles.dxbc_recovery import DxbcSemanticIr, _output_register
-from .surface_flow import (
+lazy from .legacy_register_flow import destination_count
+lazy from .native_dxbc_precision import operand_precision
+lazy from .profiles.dxbc_recovery import DxbcSemanticIr, _output_register
+lazy from .surface_flow import (
     TEXEL_TYPES, FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field,
     declared_component_types, structured_element,
 )
@@ -345,7 +345,7 @@ def dxbc_flow(ir: DxbcSemanticIr, contract) -> NativeFlow:
             if opcode == "ret":
                 state = _DEAD
         elif opcode in {"discard_nz", "discard_z"}:
-            controls = [item for frame in frames for item in frame.condition]
+            controls = [*frame.condition for frame in frames]
             condition = read(state, operands[0], 0)
             discards.append(FlowStore("discard", 0, 0, add("join", [condition], ("discard", opcode), "bool",
                                                            ("discard", position), controls), "", (position, opcode),

@@ -7,7 +7,8 @@ from pathlib import Path
 from typing import Callable, Iterable, Optional, Tuple
 from weakref import WeakKeyDictionary
 
-from app_config import GAME_NATIVE_PATHS
+lazy from app_config import GAME_NATIVE_PATHS
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 
 
 _PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, tuple[object, dict[str, list[str]]]]" = WeakKeyDictionary()
@@ -74,7 +75,7 @@ class ResourceLocation:
 
 
 # PAK decompression releases the GIL, so reads run in parallel.
-_READERS = ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 1), thread_name_prefix="Resource reads")
+_READERS = ThreadPoolExecutor(max_workers=min(8, os.process_cpu_count() or 1), thread_name_prefix="Resource reads")
 
 
 def _read_bytes(location: ResourceLocation) -> bytes | None:
@@ -164,7 +165,6 @@ def build_resource_path(path: str, game: str) -> str:
     extension = normalize_resource_path(path).rsplit(".", 1)[-1].casefold()
     if not game or extension not in {"mmtr", "mmtrs"}:
         return path
-    from file_handlers.mmtr.profiles import mmtr_profile_for_game
 
     profile = mmtr_profile_for_game(game)
     version = profile.build_resource_version if profile is not None else None

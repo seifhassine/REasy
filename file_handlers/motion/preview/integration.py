@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from .support_registry import entity_motion_support_for_game
+lazy from PySide6.QtCore import QCoreApplication, Qt
+lazy from PySide6.QtWidgets import QLabel
+lazy from .entity_widget import PfbMotionPreviewWidget
 
 
 def create_pfb_motion_preview(handler):
@@ -12,9 +15,6 @@ def create_pfb_motion_preview(handler):
     if support is None:
         return None
     if not getattr(getattr(handler, "resource_context", None), "project_dir", ""):
-        from PySide6.QtCore import QCoreApplication, Qt
-        from PySide6.QtWidgets import QLabel
-
         notice = QLabel(
             QCoreApplication.translate(
                 "MotionPreview",
@@ -26,6 +26,5 @@ def create_pfb_motion_preview(handler):
         notice.setWordWrap(True)
         return notice
 
-    from .entity_widget import PfbMotionPreviewWidget
 
     return PfbMotionPreviewWidget(handler, support=support)

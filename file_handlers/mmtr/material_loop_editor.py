@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QScrollArea, QTabWidget, QVBoxLayout, QWidget
-from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES
-from .material_function_editor import apply_buttons, function_canvas
+lazy from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES
+lazy from .material_function_editor import apply_buttons, function_canvas
 from .material_loop import loop_body, loop_properties
 
 

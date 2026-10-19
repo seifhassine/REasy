@@ -9,9 +9,9 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 
-from file_handlers.motion.profiles import MotionFormatProfile
+lazy from file_handlers.motion.profiles import MotionFormatProfile
 
-from .adapter import GuiFormatAdapter
+lazy from .adapter import GuiFormatAdapter
 
 
 @dataclass(frozen=True, slots=True)

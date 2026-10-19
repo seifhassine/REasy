@@ -2,9 +2,9 @@ from dataclasses import dataclass, field
 import re
 
 from .dxc import disassemble_dxil
-from .dxil_metadata import metadata_definitions, metadata_operands
+lazy from .dxil_metadata import metadata_definitions, metadata_operands
 from .raytracing import PAYLOAD_ACCESS_STAGES, raytracing_export_fields, validate_raytracing_library
-from .shader_graph import ShaderContract, ShaderGraphError, validate_shader_contract
+lazy from .shader_graph import ShaderContract, ShaderGraphError, validate_shader_contract
 
 
 _STAGES = {7:'raygeneration', 8:'intersection', 9:'anyhit', 10:'closesthit', 11:'miss', 12:'callable'}

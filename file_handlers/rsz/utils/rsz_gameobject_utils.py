@@ -2,8 +2,9 @@
 Shared GameObject and object-table helpers for RSZ operations.
 """
 
-from file_handlers.rsz.rsz_data_types import StringData
-from file_handlers.rsz.utils.rsz_guid_utils import create_guid_data, create_new_guid
+lazy from file_handlers.rsz.rsz_data_types import StringData
+lazy from file_handlers.rsz.utils.rsz_guid_utils import create_guid_data, create_new_guid
+lazy from file_handlers.rsz.rsz_file import PfbGameObject, RszGameObject
 
 
 DEFAULT_GAMEOBJECT_NAME = "GameObject"
@@ -12,12 +13,8 @@ DEFAULT_GAMEOBJECT_NAME = "GameObject"
 def create_gameobject_entry(scn, object_id, parent_id):
     """Create a GameObject entry matching the current RSZ container type."""
     if getattr(scn, "is_pfb", False):
-        from file_handlers.rsz.rsz_file import PfbGameObject
-
         new_go = PfbGameObject()
     else:
-        from file_handlers.rsz.rsz_file import RszGameObject
-
         new_go = RszGameObject()
 
     new_go.id = object_id

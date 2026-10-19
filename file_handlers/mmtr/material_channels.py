@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout, QLabel, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
-from .pass_purpose import purpose_title
+lazy from .pass_purpose import purpose_title
 
 
 translate = QCoreApplication.translate

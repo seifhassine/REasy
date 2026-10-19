@@ -3,12 +3,12 @@ from __future__ import annotations
 import math
 from typing import Mapping
 
-from file_handlers.rsz.rsz_data_types import ArrayData
+lazy from file_handlers.rsz.rsz_data_types import ArrayData
 
 from .model import MotionRuntimeContextError
 
 
-MISSING = object()
+MISSING = sentinel("MISSING")
 
 
 def value(fields: Mapping[str, object], name: str, *, default=MISSING):

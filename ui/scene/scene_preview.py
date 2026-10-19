@@ -19,23 +19,23 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.mesh.lit_preview import LitOverlays, engine_camera, free_camera
-from file_handlers.mmtr.engine_buffers import Camera
-from file_handlers.mmtr.overlay import GRID, project_points
-from file_handlers.mmtr.overlay_scene import ALL_EDGES, NO_EDGES, VISIBLE_EDGES, SceneShown
-from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight, ViewProbes
+lazy from file_handlers.mesh.lit_preview import LitOverlays, engine_camera, free_camera
+lazy from file_handlers.mmtr.engine_buffers import Camera
+lazy from file_handlers.mmtr.overlay import GRID, project_points
+lazy from file_handlers.mmtr.overlay_scene import ALL_EDGES, NO_EDGES, VISIBLE_EDGES, SceneShown
+lazy from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight, ViewProbes
 from file_handlers.tex.texture_quality import (
     DEFAULT_TEXTURE_QUALITY,
     TEXTURE_QUALITY_PROFILES,
     normalize_texture_quality,
 )
 from settings import save_settings
-from ui.editor_widgets import EmbeddedPopupComboBox
+lazy from ui.editor_widgets import EmbeddedPopupComboBox
 from ui.orbit_camera import OrbitCameraMixin
-from ui.qt_timers import call_later
-from .device_frames import LIMIT_MOST, FrameWindow
-from .freecam_controller import FreecamController
-from .scene_buffers import (
+lazy from ui.qt_timers import call_later
+lazy from .device_frames import LIMIT_MOST, FrameWindow
+lazy from .freecam_controller import FreecamController
+lazy from .scene_buffers import (
     SOFTWARE_LIGHT_DIRECTION,
     VIEW_LIGHT_DIRECTION,
     computed_normals,
@@ -44,15 +44,15 @@ from .scene_buffers import (
     scene_bounds,
     transform_points,
 )
-from .lightprobe_preview import SceneLightProbeInstance
-from .lightprobe_shading import ProbeShadeLayer, layer_order, snapshot_probe_boxes
-from .scene_marks import (
+lazy from .lightprobe_preview import SceneLightProbeInstance
+lazy from .lightprobe_shading import ProbeShadeLayer, layer_order, snapshot_probe_boxes
+lazy from .scene_marks import (
     GIZMO_AXES, GIZMO_PLANES, bounds_marks, gizmo_circle_points, gizmo_marks, gizmo_plane_corners, probe_marks, unorm,
 )
-from .scene_model import SceneDrawBatch, SceneDrawMesh, SceneSkinningBinding
-from .scene_skinning import SceneSkinning
-from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
-from .viewport_overlay import ViewportOverlayManager
+lazy from .scene_model import SceneDrawBatch, SceneDrawMesh, SceneSkinningBinding
+lazy from .scene_skinning import SceneSkinning
+lazy from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
+lazy from .viewport_overlay import ViewportOverlayManager
 
 
 

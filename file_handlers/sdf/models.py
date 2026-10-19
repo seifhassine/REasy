@@ -3,13 +3,12 @@ from __future__ import annotations
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
 import re
-from typing import TYPE_CHECKING
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 
-if TYPE_CHECKING:
-    from .dxbc import DxbcShader
-    from .profiles import SdfGameProfile
+lazy from . import canonical_writer
+lazy from .dxbc import DxbcShader
+lazy from .profiles import SdfGameProfile
 
 
 SDF_MAGIC = b"SDF\x00"
@@ -500,9 +499,7 @@ class SdfDocument:
         return self.original_data
 
     def write_canonical(self) -> bytes:
-        from .canonical_writer import serialize_sdf
-
-        return serialize_sdf(self)
+        return canonical_writer.serialize_sdf(self)
 
 
 __all__ = [name for name in globals() if name.startswith("Sdf")]

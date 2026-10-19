@@ -11,7 +11,7 @@ import numpy as np
 from ..mot.model import AnimationNode, Joint, KeyTrack, Motion, TrackFamily
 from .composition import compose_evaluated_pose
 from .math3d import fastmotion, normalize_quaternion
-from .model import (
+lazy from .model import (
     ROTATION,
     TRANSFORM_WIDTH,
     TRANSLATION,

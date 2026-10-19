@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QFont
+lazy from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QButtonGroup,
@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.enums import PropertyType
 from file_handlers.motion.mot_clip.model import (
     ASCII_VALUE_PROPERTY_TYPES,
     CONTAINER_PROPERTY_TYPES,
@@ -54,12 +54,12 @@ from file_handlers.motion.mot_clip.model import (
     ClipKey,
     ClipProperty,
 )
-from ui.styles import get_color_scheme
+lazy from ui.styles import get_color_scheme
 
-from .adapter import GuiPreviewControl, GuiPreviewScenario
-from .dependencies import GuiDependencyCatalog
-from .gui_file import GuiFile
-from .model import (
+lazy from .adapter import GuiPreviewControl, GuiPreviewScenario
+lazy from .dependencies import GuiDependencyCatalog
+lazy from .gui_file import GuiFile
+lazy from .model import (
     COMPONENT_NAMES,
     GuiAnimation,
     GuiBinding,
@@ -69,7 +69,7 @@ from .model import (
     GuiSymbol,
     GuiTextureSet,
 )
-from .property_types import (
+lazy from .property_types import (
     GUI_FLOAT_TYPES,
     GUI_INTEGER_TYPES,
     GUI_INTEGER_VECTOR_TYPES,
@@ -77,7 +77,7 @@ from .property_types import (
     SIGNED_VECTOR_COUNTS,
     UNSIGNED_VECTOR_COUNTS,
 )
-from .scene import GuiSceneNode, GuiWorkspace
+lazy from .scene import GuiSceneNode, GuiWorkspace
 
 
 ROLE_VALUE = int(Qt.ItemDataRole.UserRole)

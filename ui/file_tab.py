@@ -15,15 +15,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.factory import get_handler_for_data, is_handler_type
-from services.backup_store import create_backup, find_backups
-from services.file_io import write_files_atomically
-from tools.shader_tools import ShaderToolDownloadCancelled
-from ui.better_find_dialog import BetterFindDialog
-from ui.highlight_delegate import HighlightDelegate
-from ui.highlight_manager import HighlightManager
-from ui.highlight_utils import model_index_row_path
-from utils.resource_file_utils import (
+lazy from file_handlers.factory import get_handler_for_data, is_handler_type
+lazy from services.backup_store import create_backup, find_backups
+lazy from services.file_io import write_files_atomically
+lazy from tools.shader_tools import ShaderToolDownloadCancelled
+lazy from ui.better_find_dialog import BetterFindDialog
+lazy from ui.highlight_delegate import HighlightDelegate
+lazy from ui.highlight_manager import HighlightManager
+lazy from ui.highlight_utils import model_index_row_path
+lazy from utils.resource_file_utils import (
     resolve_handler_resource_data,
     resource_context_for_app,
 )
@@ -31,7 +31,7 @@ from utils.resource_file_utils import (
 
 NO_FILE_LOADED_STR = QT_TRANSLATE_NOOP("FileTab", "No file loaded")
 UNSAVED_CHANGES_STR = QT_TRANSLATE_NOOP("FileTab", "Unsaved changes")
-_DEFAULT_LAYOUT_PRESERVE = object()
+_DEFAULT_LAYOUT_PRESERVE = sentinel("_DEFAULT_LAYOUT_PRESERVE")
 
 
 def tab_output_path(tab) -> str:

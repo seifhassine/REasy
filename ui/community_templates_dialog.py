@@ -1,4 +1,4 @@
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QThread
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QThread, QTimer
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
     QLabel, QLineEdit, QTextEdit, QPushButton, QComboBox,
@@ -7,12 +7,12 @@ from PySide6.QtWidgets import (
     QFormLayout, QCheckBox
 )
 
-from file_handlers.rsz.rsz_template_manager import RszTemplateManager
-from file_handlers.rsz.rsz_community_template_manager import RszCommunityTemplateManager
+lazy from file_handlers.rsz.rsz_template_manager import RszTemplateManager
+lazy from file_handlers.rsz.rsz_community_template_manager import RszCommunityTemplateManager
 from datetime import datetime
 
 
-_NO_RESULT = object()
+_NO_RESULT = sentinel("_NO_RESULT")
 ERROR_TEXT_STYLE = "color: red;"
 LOGIN_REQUIRED_TITLE = QT_TRANSLATE_NOOP(
     "CommunityTemplatesDialog", "Login Required"
@@ -741,7 +741,6 @@ class CommunityTemplatesDialog(QDialog):
     
     def _on_search_text_changed(self):
         """Handle search text change with debounce"""
-        from PySide6.QtCore import QTimer
         
         if hasattr(self, "_search_timer"):
             self._search_timer.stop()

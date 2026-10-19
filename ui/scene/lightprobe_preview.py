@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from file_handlers.lightprobe.data import LightProbeData
+lazy from file_handlers.lightprobe.data import LightProbeData
 
 
 _LEGACY_LPRB8_CUBE_TERM_INDICES = np.asarray(

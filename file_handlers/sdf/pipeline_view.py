@@ -5,11 +5,11 @@ import math
 from types import SimpleNamespace
 
 from PySide6.QtCore import QPointF, QRectF, QT_TRANSLATE_NOOP, Qt, Signal
-from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
+lazy from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QSizePolicy, QWidget
 
-from .models import RESOURCE_KINDS, STAGE_KEYS, SdfProgram
-from .sdf_file import write_channels
+lazy from .models import RESOURCE_KINDS, STAGE_KEYS, SdfProgram
+lazy from .sdf_file import write_channels
 
 
 _STAGE_TITLES = {

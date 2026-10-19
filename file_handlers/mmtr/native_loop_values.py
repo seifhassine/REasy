@@ -1,11 +1,11 @@
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .profiles.re_engine_dxil_recovery import DxilSemanticRecord
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .profiles.re_engine_dxil_recovery import DxilSemanticRecord
+lazy from .native_loop_flow import LABEL
 
 
 def prepare_loop_exports(blocks, members, dominators, fresh):
-    from .native_loop_flow import LABEL
     definitions = {row.result:(label,row) for label,rows in blocks.items() for row in rows if row.result}
     moved, after = set(), {}
     for label,rows in tuple(blocks.items()):

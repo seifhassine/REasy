@@ -8,12 +8,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from file_handlers.mmtr.engine_buffers import engine_inverse
+lazy from file_handlers.mmtr.engine_buffers import engine_inverse
 
-from .chain_catalog import RenderSection
+lazy from .chain_catalog import RenderSection
 from .chain_constants import ConstantBlocks
-from .render_passes import SET_TEXTURES, TILE_BYTES
-from .strands_file import StrandsFile
+lazy from .render_passes import SET_TEXTURES, TILE_BYTES
+lazy from .strands_file import StrandsFile
 
 F = np.float32
 _PI, _HALF_TURN = F(3.1415927410125732), F(180)

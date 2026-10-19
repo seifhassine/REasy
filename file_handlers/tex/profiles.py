@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 
-from utils.enum_manager import EnumDefinitionError, game_enum_definitions
+lazy from utils.enum_manager import EnumDefinitionError, game_enum_definitions
 
 LAYOUT_LEGACY = 1  # 32 B header: count_a = mip levels, count_b = images
 LAYOUT_INLINE = 2  # 40 B header: u16 of 12-bit image count, 4-bit mip count

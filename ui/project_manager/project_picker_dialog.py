@@ -26,8 +26,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .project_config import load_project_config, project_config_path
-from ui.styles import get_color_scheme
+lazy from .project_config import load_project_config, project_config_path
+lazy from ui.styles import get_color_scheme
 
 
 NO_PREVIEW_TEXT = QT_TRANSLATE_NOOP("ProjectPickerDialog", "No preview")

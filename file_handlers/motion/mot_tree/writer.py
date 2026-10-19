@@ -4,7 +4,7 @@ import struct
 
 from utils.hash_util import murmur3_hash
 
-from ..binary import pad_to_alignment
+lazy from ..binary import pad_to_alignment
 from ..profiles import MotionFormatProfile
 from .model import MotTree, TreeParameterType
 from .validator import MotTreeV4Validator
@@ -164,5 +164,5 @@ class MotTreeV4Writer:
             0,
             0,
         )
-        return bytes(out)
+        return out.take_bytes()
 

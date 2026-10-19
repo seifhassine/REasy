@@ -10,22 +10,22 @@ import tempfile
 from functools import partial
 from inspect import signature
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import Any, Callable, Iterable
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QTimer, Qt
 
-from app_config import GAMES
-from services.ai.mdf_merge_planner import (
+lazy from app_config import GAMES
+lazy from services.ai.mdf_merge_planner import (
     MISSING as _MISSING,
     merge_equal as _merge_equal,
     plan_three_way_merge as _plan_three_way_merge,
 )
-from ui.ai.action_feedback import AiActionFeedback
-from ui.ai.action_policy import (
+lazy from ui.ai.action_feedback import AiActionFeedback
+lazy from ui.ai.action_policy import (
     AiActionPolicy,
     AiChangeDecision,
 )
-from ui.ai.file_migration import migrate_file_jobs_steps
+lazy from ui.ai.file_migration import migrate_file_jobs_steps
 from ui.ai.file_tools import (
     FILE_MANAGEMENT_ASSISTANT_PROMPT,
     FILE_MANAGEMENT_CAPABILITY,
@@ -33,14 +33,14 @@ from ui.ai.file_tools import (
     file_management_prompt_matches,
     file_tool_definitions,
 )
-from ui.ai.tool_registry import (
+lazy from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
     ToolSchemaContext,
     tool as _tool,
     translate_tool_text as _tr,
 )
-from ui.ai.update_reports import FileUpdateReport, UpdateReportCollector
+lazy from ui.ai.update_reports import FileUpdateReport, UpdateReportCollector
 from ui.ai.msg_tools import (
     MSG_ASSISTANT_CAPABILITY_PROMPT,
     MSG_CAPABILITY,
@@ -59,11 +59,11 @@ from ui.ai.rsz_tools import (
     rsz_prompt_matches,
     rsz_tool_definitions,
 )
-from ui.project_manager.constants import PROJECTS_ROOT
-from ui.project_manager.project_picker_dialog import discover_projects
+lazy from ui.project_manager.constants import PROJECTS_ROOT
+lazy from ui.project_manager.project_picker_dialog import discover_projects
 
-if TYPE_CHECKING:
-    from file_handlers.mdf.mdf_viewer import MdfViewer
+lazy from file_handlers.mdf.mdf_viewer import MdfViewer
+lazy from file_handlers.mdf.mdf_file import MatData, transparent_priority_bias
 
 
 AI_ASSISTANT_BASE_PROMPT = """\
@@ -3160,8 +3160,6 @@ class ReasyAssistantTools(
 
     @staticmethod
     def _mdf_for_tab(tab) -> tuple[Any, MdfViewer]:
-        from file_handlers.mdf.mdf_viewer import MdfViewer
-
         if tab is None or not isinstance(getattr(tab, "viewer", None), MdfViewer):
             raise AssistantToolError(
                 _tr(
@@ -3246,8 +3244,6 @@ class ReasyAssistantTools(
 
     @staticmethod
     def _flags_for(viewer: MdfViewer, index: int) -> dict[str, Any]:
-        from file_handlers.mdf.mdf_file import transparent_priority_bias
-
         header = viewer.handler.mdf.materials[index].header
         raw = int(header.material_flags)
         version = viewer._current_file_version()
@@ -4319,8 +4315,6 @@ class ReasyAssistantTools(
         if insert_at == len(viewer.handler.mdf.materials):
             self._add_mdf_material(name)
         else:
-            from file_handlers.mdf.mdf_file import MatData
-
             blank = MatData()
             blank.header.mat_name = viewer._generate_unique_material_name(
                 "Material",

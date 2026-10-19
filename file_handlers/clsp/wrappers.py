@@ -5,8 +5,8 @@ from collections.abc import Sequence
 
 import numpy as np
 
-from .clsp_file import ShapeKind
-from .placement import pairwise, point, row_lengths
+lazy from .clsp_file import ShapeKind
+lazy from .placement import pairwise, point, row_lengths
 
 F = np.float32
 

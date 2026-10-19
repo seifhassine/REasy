@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 
 LEAF = 32
 CHUNK = 8192

@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.engine_buffers import Camera
-from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight
+lazy from file_handlers.mmtr.engine_buffers import Camera
+lazy from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight
 
-from .scene_model import SceneDrawBatch
+lazy from .scene_model import SceneDrawBatch
 
 
 

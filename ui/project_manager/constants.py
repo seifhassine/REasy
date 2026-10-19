@@ -4,7 +4,7 @@ import math
 import os
 
 from PySide6.QtCore import QPointF, QSize, Qt
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
+lazy from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPixmap
 
 from app_config import GAME_NATIVE_PATHS
 from utils.app_paths import application_root

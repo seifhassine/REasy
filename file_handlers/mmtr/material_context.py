@@ -1,11 +1,11 @@
 from dataclasses import dataclass, replace
 
-from file_handlers.material_names import is_private_material_parameter, resolve_material_name
+lazy from file_handlers.material_names import is_private_material_parameter, resolve_material_name
 from file_handlers.mdf.material_layout import MaterialDescriptorLayout
-from file_handlers.sdf.models import program_tables
+lazy from file_handlers.sdf.models import program_tables
 
 from .models import MmtrMaterialInterface, MmtrMaterialParameter
-from .material_variant import mmtr_resource_path_from_file
+lazy from .material_variant import mmtr_resource_path_from_file
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,7 +36,7 @@ class MaterialInstanceContext:
     def bind_interface(self, native: MmtrMaterialInterface, *, named_sizes=(), shader_lod=None):
         parameters = list(self.parameters)
         fields = {p.name: p for p in parameters}
-        words = {word for p in parameters for word in range(p.byte_offset, p.byte_offset + p.byte_size, 4)}
+        words = {*range(p.byte_offset, p.byte_offset + p.byte_size, 4) for p in parameters}
         for parameter in native.parameters:
             if is_private_material_parameter(parameter.name) or not parameter.program_count:
                 continue

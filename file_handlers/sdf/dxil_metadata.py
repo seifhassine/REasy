@@ -3,7 +3,7 @@ import struct
 import sys
 
 from file_handlers.bounded_cache import BoundedCache
-from .shader_graph import ShaderGraphError
+lazy from .shader_graph import ShaderGraphError
 
 _METADATA_TUPLE = re.compile(r"(![\w.]+) = (!\{.*\})")
 _NESTED_OPERAND = re.compile(r'["{}()\[\]]')

@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-import numpy as np
+lazy import numpy as np
 
-from .skeleton_roles import normalized_name, resolve, role_pairs
+lazy from .skeleton_roles import normalized_name, resolve, role_pairs
 
 MERGE, ADD, DROP = "merge", "add", "drop"
 ACTIONS = (MERGE, ADD, DROP)

@@ -4,8 +4,8 @@ import functools
 import json
 import struct
 
-from file_handlers.rsz.rsz_data_types import BoolData, F32Data, F64Data, MaybeObject, RawBytesData
-from utils.app_paths import resource_path
+lazy from file_handlers.rsz.rsz_data_types import BoolData, F32Data, F64Data, MaybeObject, RawBytesData
+lazy from utils.app_paths import resource_path
 
 DEFAULTS_RESOURCE = "resources/data/rsz_instance_defaults.json"
 

@@ -12,7 +12,7 @@ from typing import NamedTuple
 
 from PySide6.QtCore import QObject, Signal
 
-from utils.app_paths import application_root
+lazy from utils.app_paths import application_root
 
 _BOOKMARKS_VERSION = 1
 _BOOKMARK_SCOPES = frozenset(("pak", "project", "unpacked"))

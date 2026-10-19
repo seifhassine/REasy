@@ -5,12 +5,11 @@ from collections.abc import Mapping, Sequence
 import ctypes
 from dataclasses import dataclass
 import re
-from types import MappingProxyType
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from .material_preview import MaterialPreviewError
+lazy from .material_preview import MaterialPreviewError
 
 _DECLARATION = re.compile(r"(?:row_major )?(float|uint|int)(\d)?(?:x(\d))?\b")
 _LOG2F = ctypes.CDLL("ucrtbase").log2f
@@ -81,7 +80,7 @@ class EngineConstant:
             if name not in held:
                 raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                     "MaterialPreview", "The engine's buffer holds no field {name}."), {"name": name})
-        return bytes(_laid_out(layout, values, True))
+        return _laid_out(layout, values, True).take_bytes()
 
 
 class InstanceInput(bytes):
@@ -243,7 +242,7 @@ def _encoded(variable, values: np.ndarray, constant: bool) -> tuple[int, bytes]:
     for index in range(variable.array_length):
         element = words[index * width:(index + 1) * width].tobytes()
         rows[16 * index:16 * index + len(element)] = element
-    return variable.byte_offset, bytes(rows)
+    return variable.byte_offset, rows.take_bytes()
 
 
 def _laid_out(layout, values: dict[str, np.ndarray], constant: bool) -> bytearray:
@@ -297,8 +296,8 @@ def with_words(data: bytearray, layout, words: Mapping[str, Sequence[int]]) -> b
 
 
 def engine_buffer(contract, resource, camera: Camera, placement: Placement,
-                  frame: Mapping[str, Sequence[float]] = MappingProxyType({}),
-                  captured: Mapping[str, Mapping[str, Sequence[int]]] = MappingProxyType({})) -> bytes | None:
+                  frame: Mapping[str, Sequence[float]] = frozendict(),
+                  captured: Mapping[str, Mapping[str, Sequence[int]]] = frozendict()) -> bytes | None:
     if resource.register_class == "b":
         layout = contract.buffer(resource.name)
         values = {"SceneInfo": lambda: _scene_info(camera, frame), "World": lambda: _instance_values(placement),
@@ -306,12 +305,12 @@ def engine_buffer(contract, resource, camera: Camera, placement: Placement,
         data = _laid_out(layout, values() if values else frame_values(resource.name), True)
         if resource.name != "SceneInfo":
             with_words(data, layout, captured.get(resource.name, {}))
-        return bytes(data)
+        return data.take_bytes()
     if resource.input_type != "structured-buffer":
         return None
     layout = contract.structured_buffer(resource.name)
     if resource.name == "InstanceWorldInfo":
-        return bytes(_laid_out(layout, _instance_values(placement), False))
+        return _laid_out(layout, _instance_values(placement), False).take_bytes()
     if resource.name == "SkinningMatrices" and placement.bones is not None:
         names = [variable.name for variable in layout.variables]
         if len(names) != 3:

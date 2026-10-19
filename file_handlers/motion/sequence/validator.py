@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import MotionValidationError
+lazy from ..errors import MotionValidationError
 from ..mot_clip.validator import CompactMotClipV27Validator
 from ..profiles import MotionFormatProfile
 from .model import SequenceData

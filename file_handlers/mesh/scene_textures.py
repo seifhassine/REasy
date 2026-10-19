@@ -13,21 +13,21 @@ from file_handlers.mmtr.overlay import Overlay, view_projection
 from file_handlers.mmtr.pass_choice import PassChoiceError
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
 from file_handlers.mmtr.resident import Resident
-from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
+lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
 from file_handlers.mmtr.textures_states import ordered
 from file_handlers.mmtr.textures_view import ProbeLight, TexturesView, ViewBatch, ViewGeometry, ViewProbes
-from file_handlers.stmesh.lit import cluster_route
-from file_handlers.stmesh.stmesh_handler import StmeshHandler
+lazy from file_handlers.stmesh.lit import cluster_route
+lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
 from file_handlers.tex.texture_quality import texture_quality_profile
-from ui.scene.mesh_scene import mesh_lod_parts
+lazy from ui.scene.mesh_scene import mesh_lod_parts
 from ui.scene.scene_view import SceneGeometry, ScenePlacement, SceneShape, SceneView
 from utils.resource_file_utils import PrefetchedFiles
 
 from .device_preview import DevicePreview
 from .lit_preview import UNKNOWN_SKINNING, LitOverlays
 from .material_resolver import MeshMaterialResolver
-from .material_session import MeshMaterialCollection
-from .scene_overlay import SceneOverlay
+lazy from .material_session import MeshMaterialCollection
+lazy from .scene_overlay import SceneOverlay
 from .textures_preview import TexturedFrame, TexturedPart, TexturesDrawer, bind_parts, exact_states
 
 # Culling margin beyond the view's sides, as a share of distance, for the device's single precision.

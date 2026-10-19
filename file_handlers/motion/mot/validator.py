@@ -3,14 +3,14 @@ from __future__ import annotations
 import math
 from collections import Counter
 
-import numpy as np
+lazy import numpy as np
 
 from utils.hash_util import murmur3_hash
 
-from ..errors import MotionValidationError
+lazy from ..errors import MotionValidationError
 from ..profiles import MotionFormatProfile
 from ..sequence.validator import SequenceV65Validator
-from .model import (
+lazy from .model import (
     AppendPropertyType,
     JointMapExtraType,
     KeyTrack,

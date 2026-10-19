@@ -4,15 +4,15 @@ from __future__ import annotations
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.build_catalog import catalog_reader
 
-from .material_preview import MaterialPreviewError
-from .pretransform import (
+lazy from .material_preview import MaterialPreviewError
+lazy from .pretransform import (
     THREADS as _SKINNING_THREADS, _POSITION as _POSITION_STREAM, _UV0, _UV1, _UV2, ChainLevel, Destination,
-    SystemProgram, _program_from_dict, _program_to_dict, _skinning, _words, system_variant,
+    SystemProgram, _program_from_dict, _program_to_dict, _skinning, _words, system_variant, chain_level,
 )
 
 CATALOG_FORMAT = 1
@@ -139,11 +139,8 @@ def mesh_joints(mesh) -> tuple[np.ndarray, np.ndarray]:
 
 
 def wrinkle_proxy(mesh, chains) -> WrinkleProxy:
-    from .pretransform import chain_level
-
     level = chain_level(mesh, 0, chains, deformed_only=False)
-    submeshes = [] if level is None else [item for group in mesh.meshes[0].lods[0].mesh_groups
-                                          for item in group.submeshes]
+    submeshes = [] if level is None else [*group.submeshes for group in mesh.meshes[0].lods[0].mesh_groups]
     if len(submeshes) != 1 or int(submeshes[0].faces_index_offset) or int(submeshes[0].verts_index_offset):
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "No capture shows the wrinkle passes on a proxy mesh other than one submesh."))

@@ -9,7 +9,7 @@ from functools import lru_cache
 from utils.game_keys import game_key
 
 from .sound_metadata import SoundMetadata
-from .sound_resources import RelatedSoundPaths, resource_key, sound_media_key
+lazy from .sound_resources import RelatedSoundPaths, resource_key, sound_media_key
 
 
 @dataclass(frozen=True, slots=True)

@@ -11,10 +11,19 @@ from file_handlers.bounded_cache import BoundedCache
 from file_handlers.sdf.shader_graph import (
     ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension,
 )
+lazy from file_handlers.sdf.spirv import reflect_spirv
+lazy from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
 
-from .surface_flow import (
+lazy from .surface_flow import (
     SCALAR_TYPES, ChannelSplit, FlowStore, NativeFlow, SurfaceChannel, _vector, recovered_surface_flow,
 )
+lazy from .pass_purpose import pass_purpose
+lazy from .profiles.re_engine_bindless_material import bound_resource
+lazy from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
+lazy from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
+lazy from .profiles.re_engine_spirv_authoring import _Module
+lazy from .surface_outputs import _recover_ir, _shader_bytes
+lazy from .vertex_values import MAX_REGISTERS, first_register, linkage_problem, carried_value
 
 SURFACE_DATA_KIND = "re_engine_surface_data"
 MATERIAL_COORDINATES = "coordinates"
@@ -97,9 +106,6 @@ _DXIL_VALUE = re.compile(r"%[\w.]+")
 
 
 def _dxil_sources(ir, contract, flow: NativeFlow) -> dict[int, tuple]:
-    from .profiles.re_engine_bindless_material import bound_resource
-    from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
-
     lines = ir.to_assembly().splitlines()
     rows = {row: key for key, row in DxilEntryMetadata.parse(lines).input_rows().items()}
     fields = {(item.semantic_name.casefold(), item.semantic_index): item for item in contract.inputs}
@@ -134,10 +140,6 @@ def _dxil_sources(ir, contract, flow: NativeFlow) -> dict[int, tuple]:
 
 
 def _spirv_sources(ir, contract, flow: NativeFlow) -> dict[int, tuple]:
-    from file_handlers.sdf.spirv import reflect_spirv
-    from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
-    from .profiles.re_engine_spirv_authoring import _Module
-
     native = reflect_spirv(ir.write())
     module = _Module(ir)
     inputs, _outputs, _undeclared = spirv_interface_rows(native, contract,
@@ -361,8 +363,6 @@ def texture_read_inputs(ir_kind: str, ir, contract) -> dict[str, frozenset]:
 
 
 def _native(compute, document, profile, program, role: str):
-    from .surface_outputs import _recover_ir, _shader_bytes
-
     kind, data, contract, digest = _shader_bytes(document, profile, program, role)
     key = compute.__name__, f"{kind}:{digest}", contract.fingerprint
     found = _CACHE.get(key)
@@ -451,9 +451,6 @@ class SurfaceDataOffer:
 
 
 def document_surface_data(document, profile) -> tuple[SurfaceDataOffer, ...]:
-    from .pass_purpose import pass_purpose
-    from .vertex_values import MAX_REGISTERS, first_register, linkage_problem
-
     totals, found, carried, labels, real = {}, {}, {}, {}, set()
     for target in document.sdf.targets:
         for program in target.programs:
@@ -497,7 +494,6 @@ def _node_datum(kind, properties):
 
 def surface_data_keys(node) -> list[tuple[str, str]]:
     """(key, value type) pairs."""
-    from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
     if node.kind == RE_ENGINE_RECOVERED_MASTER_KIND:
         return []  # Its properties are the recovered programs, which nest no graph.
     found = []
@@ -525,14 +521,12 @@ def graph_reads_surface_data(graph) -> bool:
 
 
 def surface_data_available(semantics, keys) -> bool:
-    from .vertex_values import carried_value
     present = {(datum.key, datum.value_type) for datum in semantics.surface_data}
     return all(key in present or semantics.shader_role == "pixel" and carried_value(semantics, *key) is not None
                for key in keys)
 
 
 def surface_data_value(semantics, contract, properties) -> str:
-    from .vertex_values import carried_value
     key = str(properties.get("datum", ""))
     if contract.stage not in {"vertex", "pixel"}:
         raise ShaderGraphError("Surface data is read by vertex and pixel shaders only.")

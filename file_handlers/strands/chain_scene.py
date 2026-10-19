@@ -5,29 +5,38 @@ import dataclasses
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.clsp.clsp_file import TAG_BITS, CollisionShape, read_clsp
-from file_handlers.clsp.placement import hung_joints
+lazy from file_handlers.clsp.placement import hung_joints
 from file_handlers.clsp.registered import named, registered
-from file_handlers.mdf.mdf_file import MdfFile
+lazy from file_handlers.mdf.mdf_file import MdfFile
 from file_handlers.mmtr.material_preview import (
     PreviewMaterial, _texture_texels, gpu_buffer_contents,
 )
-from file_handlers.mmtr.pretransform import ChainLevel, refusal, chain_level, pretransform_catalog_for
+lazy from file_handlers.mmtr.pretransform import ChainLevel, refusal, chain_level, pretransform_catalog_for
 from file_handlers.rsz.plain_values import plain_fields
 from file_handlers.rsz.scene_joints import JointSet
-from utils.resource_file_utils import resource_key, resource_path_with_version
+lazy from utils.resource_file_utils import (
+    resource_key,
+    resource_path_with_version,
+    nearby_resource_paths,
+    resolve_companion_resource,
+    resource_context_for_handler,
+)
 
-from .bindings import StrandBindings
+lazy from .bindings import StrandBindings
 from .chain_catalog import StrandCatalog, strand_catalog_for
 from .chain_frame import Binding, SetSource
 from .companions import prefab_graph
 from .gpus import GpuStrandsPreset, gpus_version
 from .lod import first_lod, lod_records
-from .prefab_sets import prefab_sets
+lazy from .prefab_sets import prefab_sets
 from .strands_file import StrandsFile
+lazy from file_handlers.mesh.mesh_file import MeshLoadMode
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from .companions import _registry
 
 _INTERNAL_SKINNING = "useInternalSkinning"
 _UNCLAIMED = -(2 ** 31)
@@ -272,7 +281,7 @@ def _hung(shape: CollisionShape, joints: JointSet | None) -> bool:
 
 def _placement_files(files: GameFiles, graphs, catalog: StrandCatalog, owner: str) -> tuple[dict, dict]:
     placement, meshes, skeletons = catalog.placement, {}, {}
-    for document in (document for graph in graphs for document in graph.documents.values()):
+    for document in (*graph.documents.values() for graph in graphs):
         for component in document.components.values():
             if component.type_name not in (placement.mesh_component, placement.skeleton_component):
                 continue
@@ -538,13 +547,6 @@ def with_files(files: GameFiles, held: Mapping[str, tuple[str, bytes]]) -> GameF
 
 
 def handler_files(handler, game: str) -> GameFiles:
-    from file_handlers.mesh.mesh_file import MeshLoadMode
-    from file_handlers.mesh.mesh_handler import MeshHandler
-    from utils.resource_file_utils import (nearby_resource_paths, resolve_companion_resource,
-                                           resource_context_for_handler)
-
-    from .companions import _registry
-
     def mesh(path: str, data: bytes, light: bool = False):
         return MeshHandler.from_bytes(path, data, resource_context=resource_context_for_handler(handler),
                                       game_version=getattr(handler, "game_version", ""),

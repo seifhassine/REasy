@@ -7,12 +7,12 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from .chain_catalog import RenderSection
+lazy from .chain_catalog import RenderSection
 from .chain_constants import ConstantBlocks
-from .direct_render import LAYOUT, ibl_count
-from .render_constants import (EUMELANIN, FOUR_PI, LEAST_SHARE, LEAST_THROUGH, LINEAR, LOGF, PHEOMELANIN,
+lazy from .direct_render import LAYOUT, ibl_count
+lazy from .render_constants import (EUMELANIN, FOUR_PI, LEAST_SHARE, LEAST_THROUGH, LINEAR, LOGF, PHEOMELANIN,
                                SQUARE, THOUSAND, TWENTIETH)
-from .strands_file import StrandsFile
+lazy from .strands_file import StrandsFile
 
 F = np.float32
 _ONE = F(1)

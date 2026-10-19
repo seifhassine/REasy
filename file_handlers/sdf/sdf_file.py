@@ -5,16 +5,18 @@ from pathlib import Path
 import struct
 import threading
 
-from utils.hex_util import align
+lazy from utils.hex_util import align
+lazy from utils.resource_file_utils import resource_version_from_path
 
-from ._ownership import discover_detached_variable_tables
-from .binary_reader import BoundedReader
-from .dxbc import (
+lazy from . import dxc, raytracing
+lazy from ._ownership import discover_detached_variable_tables
+lazy from .binary_reader import BoundedReader
+lazy from .dxbc import (
     DxbcSignatureParameter,
     DxbcShader,
     parse_dxbc,
 )
-from .models import (
+lazy from .models import (
     RESOURCE_KINDS,
     STAGE_KEYS,
     SDF_MAGIC,
@@ -45,8 +47,9 @@ from .models import (
     SdfTarget,
     program_names,
 )
-from .profiles import SdfGameProfile, sdf_profile_for_resource
-from .spirv import _STAGES, SpirvError, _literal_string, _spirv_instructions, _spirv_module
+lazy from .profiles import SdfGameProfile, sdf_profile_for_resource
+lazy from .runtime_cache import attach_runtime_cache_keys
+lazy from .spirv import _STAGES, SpirvError, _literal_string, _spirv_instructions, _spirv_module
 
 
 class SdfFormatError(ValueError):
@@ -307,8 +310,6 @@ class _SdfParser:
             discarded_authoring_ranges=tuple(self.discarded_authoring_ranges),
         )
         if self.runtime_cache_keys:
-            from .runtime_cache import attach_runtime_cache_keys
-
             try:
                 attach_runtime_cache_keys(document)
             except ValueError as exc:
@@ -943,19 +944,15 @@ class _SdfParser:
             if payload[:4] == b"\x00\x10\x05\x00":
                 if not self.profile.raytracing_libraries or role != "compute":
                     raise SdfFormatError(f"{program_name}: DXR library is not supported in this build/lane")
-                from .raytracing import parse_raytracing_library, validate_raytracing_library
-
                 try:
-                    library = parse_raytracing_library(
+                    library = raytracing.parse_raytracing_library(
                         payload, export_layout=self.profile.raytracing_export_layout,
                     )
-                    reflection = validate_raytracing_library(library)
+                    reflection = raytracing.validate_raytracing_library(library)
                     if self.eager_native_reflection:
                         try:
-                            from .dxc import DxcError
-
-                            reflection = validate_raytracing_library(library, reflect=True)
-                        except DxcError:
+                            reflection = raytracing.validate_raytracing_library(library, reflect=True)
+                        except dxc.DxcError:
                             pass  # Opening does not require an installed native compiler.
                 except ValueError as exc:
                     raise SdfFormatError(f"{program_name}: {exc}") from exc
@@ -1009,9 +1006,7 @@ class _SdfParser:
             if self.eager_native_reflection and reflection.reflection is None and any(
                 chunk.tag == "DXIL" for chunk in reflection.chunks
             ):
-                from .dxc import enrich_dxil_shader
-
-                reflection = enrich_dxil_shader(reflection, payload)
+                reflection = dxc.enrich_dxil_shader(reflection, payload)
             self.shader_cache[key] = reflection
         if role in STAGE_KEYS and not self.profile.accepts_shader_stage(
             role,
@@ -1695,7 +1690,6 @@ class SdfFile:
         **kwargs,
     ) -> "SdfFile":
         source = Path(path)
-        from utils.resource_file_utils import resource_version_from_path
         kwargs.setdefault("label", str(source))
         kwargs.setdefault("resource_version", resource_version_from_path(str(source), "sdf"))
         return cls.from_bytes(source.read_bytes(), **kwargs)

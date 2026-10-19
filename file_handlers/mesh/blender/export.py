@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 
 from ..mesh_file import joint_name
 from ..profiles import VertexNormalWSemantic
 from .package import flip_uv, matrix_to_blender, to_blender
-from .scene import UV_PLANES, WEIGHT_SETS, build_scene
+lazy from .scene import UV_PLANES, WEIGHT_SETS, build_scene
 
 
 def joint_names(mesh):

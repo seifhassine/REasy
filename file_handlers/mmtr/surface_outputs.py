@@ -1,17 +1,21 @@
 from __future__ import annotations
 
-from concurrent.futures import ProcessPoolExecutor
+lazy from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, replace
-import multiprocessing
+lazy import multiprocessing
 import os
 import re
 
 from file_handlers.bounded_cache import BoundedCache
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr
+from utils.garbage_collection import configure_garbage_collector
 
-from .surface_flow import ChannelSplit, SurfaceChannel, recovered_surface_flow, surface_channels
-from .surface_meaning import GBUFFER_PURPOSE, pixel_shader_digest, shader_bytes
-from .surface_reach import channel_reach, parameter_sources
+lazy from .surface_flow import ChannelSplit, SurfaceChannel, recovered_surface_flow, surface_channels
+lazy from .surface_meaning import GBUFFER_PURPOSE, pixel_shader_digest, shader_bytes
+lazy from .surface_reach import channel_reach, parameter_sources
+lazy from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
+lazy from .surface_data import projected_position
 
 
 SURFACE_OUTPUTS_VERSION = 6
@@ -49,10 +53,8 @@ _SEMANTIC_LABELS = {"sv_target": "Target {index}", "sv_depth": "Depth", "sv_dept
 
 def _recover_ir(ir_kind: str, data: bytes):
     if ir_kind == "spirv":
-        from file_handlers.sdf.spirv_ir import SpirvSemanticIr
         return SpirvSemanticIr.from_bytes(data)
     if ir_kind == "dxil":
-        from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
         return recover_re_engine_dxil_ir(data)
     from .profiles.dxbc_recovery import recover_dxbc_ir
     return recover_dxbc_ir(data)
@@ -98,8 +100,9 @@ def prefetch_program_surfaces(jobs) -> None:
             pending.setdefault(key, (ir_kind, data, contract, buffer_name, prefix))
     if len(pending) < _PARALLEL_MINIMUM:
         return
-    workers = min(os.cpu_count() or 1, len(pending) // (_PARALLEL_MINIMUM // 4))
-    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn")) as pool:
+    workers = min(os.process_cpu_count() or 1, len(pending) // (_PARALLEL_MINIMUM // 4))
+    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn"),
+                             initializer=configure_garbage_collector) as pool:
         results = pool.map(_analyse_job, pending.values(), chunksize=max(1, len(pending) // (workers * 4)))
         for key, result in zip(pending, results):
             if result is not None:
@@ -109,7 +112,6 @@ def prefetch_program_surfaces(jobs) -> None:
 def recovered_channels(ir_kind: str, ir, contract, flow) -> tuple[ChannelSplit, ...]:
     splits = surface_channels(flow)
     if flow.stage == "vertex":
-        from .surface_data import projected_position
         position = projected_position(ir_kind, ir, contract, flow)
         if position is not None:
             splits = (*splits, position)

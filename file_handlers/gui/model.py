@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Iterator, Protocol
 
 from file_handlers.clip.enums import PropertyType
-from file_handlers.motion.mot_clip.model import (
+lazy from file_handlers.motion.mot_clip.model import (
     ClipNode,
     ClipProperty,
     CompactMotClip,
@@ -220,7 +220,7 @@ class GuiDocument:
     def _owned_animations(self) -> list[GuiAnimation]:
         result: list[GuiAnimation] = []
         seen: set[int] = set()
-        for animation in (item for symbol in self.symbols for item in symbol.animations):
+        for animation in (*symbol.animations for symbol in self.symbols):
             if id(animation) not in seen:
                 seen.add(id(animation))
                 result.append(animation)
@@ -350,12 +350,11 @@ class GuiDocument:
 
 
     def summary(self) -> dict[str, int | str]:
-        properties = [item for obj in self.objects for item in obj.properties]
+        properties = [*obj.properties for obj in self.objects]
         tracks = [
-            prop
+            *iter_clip_properties(node.properties)
             for animation in self.animations
             for node in iter_clip_nodes(animation.clip.root)
-            for prop in iter_clip_properties(node.properties)
         ]
         return {
             "source": self.source,

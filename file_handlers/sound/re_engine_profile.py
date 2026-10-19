@@ -6,7 +6,13 @@ import re
 
 from .sound_metadata import SoundMetadata
 from .sound_profile import SoundGameProfile, WemAuthoringCodec, WemQualitySetting
-from .sound_resources import RelatedSoundPaths, resource_key
+lazy from .sound_resources import RelatedSoundPaths, resource_key
+lazy from .sound_media import (
+    resolve_sound_replacement,
+    build_sound_replacement_outputs,
+    resolve_indexed_streaming_pck,
+    validate_streaming_pck_match,
+)
 
 
 _SOUND_NAME = re.compile(
@@ -140,23 +146,15 @@ class ReEngineSoundProfile(SoundGameProfile):
         )
 
     def resolve_replacement(self, handler, result, track):
-        from .sound_media import resolve_sound_replacement
-
         return resolve_sound_replacement(self, handler, result, track)
 
     def build_replacement_outputs(self, plans, replacements):
-        from .sound_media import build_sound_replacement_outputs
-
         return build_sound_replacement_outputs(plans, replacements)
 
     def resolve_indexed_package(self, handler):
-        from .sound_media import resolve_indexed_streaming_pck
-
         return resolve_indexed_streaming_pck(self, handler)
 
     def validate_indexed_package(self, index_data: bytes, streaming_data: bytes) -> None:
-        from .sound_media import validate_streaming_pck_match
-
         validate_streaming_pck_match(index_data, streaming_data)
 
 

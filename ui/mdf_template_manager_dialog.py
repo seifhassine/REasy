@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QComboBox,
 )
 
-from file_handlers.mdf.mdf_template_manager import MdfTemplateManager
+lazy from file_handlers.mdf.mdf_template_manager import MdfTemplateManager
 
 
 IMPORT_TEMPLATE_TITLE = QT_TRANSLATE_NOOP(

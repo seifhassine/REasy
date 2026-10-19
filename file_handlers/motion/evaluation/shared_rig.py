@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import numpy as np
+lazy import numpy as np
 
 from .math3d import transform_matrices
 from .model import Rig, Vector3

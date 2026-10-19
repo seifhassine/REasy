@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from typing import Sequence
 
-import numpy as np
+lazy import numpy as np
 
 from utils.native_build import ensure_fastmotion
 

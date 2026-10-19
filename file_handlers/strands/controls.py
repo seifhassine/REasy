@@ -1,25 +1,26 @@
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel,
     QListWidget, QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
-from file_handlers.mesh.device_preview import gather_master
-from ui.background_jobs import BackgroundJobs
-from ui.scene.device_frames import LIMIT_MOST
-from file_handlers.mmtr.material_preview import MaterialPreviewError
-from file_handlers.mmtr.pretransform import chain_level, pretransform_catalog_for
-from file_handlers.mmtr.profiles import mmtr_profile_for_game
-from utils.resource_file_utils import nearby_resource_paths
-from .bindings import StrandBindings
-from .chain_catalog import strand_catalog_for
-from .chain_scene import (bound_mesh_path, character_candidates, chosen_character, handler_files, read_character,
+lazy from file_handlers.mesh.device_preview import gather_master
+lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.scene.device_frames import LIMIT_MOST
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.mmtr.pretransform import chain_level, pretransform_catalog_for
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
+lazy from utils.resource_file_utils import nearby_resource_paths
+lazy from .bindings import StrandBindings
+lazy from .chain_catalog import strand_catalog_for
+lazy from .chain_scene import (bound_mesh_path, character_candidates, chosen_character, handler_files, read_character,
                           read_set, shader_paths)
-from .companions import prefab_graph
-from .prefab_sets import prefab_sets
+lazy from .companions import prefab_graph
+lazy from .prefab_sets import prefab_sets
 from .strands_file import StrandsFile
+lazy from .edit_panel import StrandEditPanel
 
 _BOUNDS_COLOURS = (0.3, 1.0, 0.6), (1.0, 0.65, 0.2)
 
@@ -202,7 +203,6 @@ class StrandsControls(QScrollArea):
             viewport.strands_stepped.connect(self._stepped)
         self.editor = None
         if editing:
-            from .edit_panel import StrandEditPanel
             self.editor = StrandEditPanel(self, self.options)
             self.editor.editing_changed.connect(self._editing_changed)
             form.addRow(self.editor)

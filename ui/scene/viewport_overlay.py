@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QCoreApplication, QEvent, QTimer, Qt
-from PySide6.QtWidgets import QLabel, QWidget
+lazy from PySide6.QtCore import QCoreApplication, QEvent, QTimer, Qt
+lazy from PySide6.QtWidgets import QLabel, QWidget
 
 
 class ViewportOverlayManager:

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 from pathlib import Path
 import re
+import struct
 
 from PySide6.QtCore import (
     QCoreApplication,
@@ -12,7 +14,7 @@ from PySide6.QtCore import (
     QTimer,
     Signal,
 )
-from PySide6.QtGui import (
+lazy from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
@@ -26,6 +28,7 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QApplication,
     QComboBox,
+    QDialog,
     QDoubleSpinBox,
     QSpinBox,
     QFileDialog,
@@ -52,17 +55,43 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from services.file_io import write_files_atomically
+lazy from file_handlers.mmtr import material_implementation, material_region_read
+lazy from file_handlers.mmtr.material_branch import new_branch_properties
+lazy from file_handlers.mmtr.material_function import material_function_from_node, replace_material_function
+lazy from file_handlers.mmtr.material_function_editor import MaterialBranchDialog, MaterialFunctionDialog
+lazy from file_handlers.mmtr.material_loop import new_loop_properties
+lazy from file_handlers.mmtr.material_loop_editor import MaterialLoopDialog
+lazy from file_handlers.mmtr.surface_meaning import shader_bytes
+lazy from services.file_io import write_files_atomically
 
-from .hlsl import HlslCompileError, hlsl_compiler_available
-from .hlsl_target import compile_hlsl_for_target
-from .models import stage_display_name
-from .shader_graph_math import (BASIC_MATH_NODES, BASIC_MATH_KINDS, EXTRA_MATH_NODES, UNARY_FUNCTIONS, COMPARE_RELATIONS,
+lazy from . import dxc
+lazy from .aggregate_values import constant_value_fields
+lazy from .contracts import shader_contract_for_program
+lazy from .dxbc import parse_dxbc
+lazy from .hlsl import HlslCompileError, hlsl_compiler_available
+lazy from .hlsl_target import compile_hlsl_for_target
+lazy from .models import stage_display_name
+lazy from .shader_graph_buffer import BufferRead, structured_buffer_stride, structured_buffer_type, structured_word_bits
+lazy from .shader_graph_code import code_pin_text, updated_code
+lazy from .shader_graph_constant_buffer import constant_buffer_size, constant_buffer_type
+lazy from .shader_graph_execution import ATOMIC_OPERATIONS, EXECUTION_TEMPLATES
+lazy from .shader_graph_geometry import geometry_templates
+lazy from .shader_graph_hull import hull_templates
+lazy from .shader_graph_indexed_value import MAX_INDEXED_VALUES
+lazy from .shader_graph_invocation import INVOCATION_INPUTS, invocation_stages
+lazy from .shader_graph_layout import arrange_shader_graph
+lazy from .shader_graph_mesh import mesh_templates
+lazy from .shader_graph_precision import PRECISION_OPERATIONS
+lazy from .shader_graph_resource import (RESOURCE_TEMPLATES, coherent_resource_element, is_writable_resource_type,
+    resource_coherence, resource_properties)
+lazy from .shader_graph_storage import storage_templates
+lazy from .shader_graph_tessellation import domain_templates
+lazy from .shader_graph_math import (BASIC_MATH_NODES, BASIC_MATH_KINDS, EXTRA_MATH_NODES, UNARY_FUNCTIONS, COMPARE_RELATIONS,
     TYPED_MATH_NODES, TYPED_MATH_CATEGORIES, NUMERIC_VALUE_TYPES, is_float_type, node_label, numeric_suffix,
     operation_value_types, numeric_type_label, value_width)
-from .shader_graph_texture import (TEXTURE_MODES, TEXTURE_ELEMENT_TYPES, TEXTURE_LOAD_COORDINATES,
+lazy from .shader_graph_texture import (TEXTURE_MODES, TEXTURE_TEMPLATES, TEXTURE_ELEMENT_TYPES, TEXTURE_LOAD_COORDINATES,
     TEXTURE_OBJECT_TYPES, TEXTURE_SPATIAL_WIDTHS, WRITABLE_TEXTURE_DIMENSIONS, WRITABLE_TEXTURE_OBJECT_TYPES,
-    TextureOperation, texture_object_parts, texture_object_sample_count, texture_object_type)
+    TextureOperation, texture_object_parts, texture_object_sample_count, texture_object_type, texture_property_update)
 from .shader_graph import (
     SHADER_GRAPH_STAGES,
     MAX_SOURCE_LENGTH,
@@ -116,7 +145,6 @@ def _display_name(value: str) -> str:
 
 
 def _precision_properties(form, node, set_property):
-    from .shader_graph_precision import PRECISION_OPERATIONS
     if node.kind not in PRECISION_OPERATIONS:
         return
     control = QCheckBox(translate("SdfShaderGraphEditor", 'Preserve calculation order'))
@@ -216,7 +244,6 @@ def _numeric_properties(form, node, set_property):
             control.valueChanged.connect(lambda value, key=key: set_property(key, value))
             form.addRow(translate("SdfShaderGraphEditor", label), control)
     if node.kind in {'indexed_select', 'array_read'}:
-        from .shader_graph_indexed_value import MAX_INDEXED_VALUES
         count = QSpinBox()
         count.setRange(1, MAX_INDEXED_VALUES)
         count.setValue(node.properties.get('count', 4))
@@ -227,7 +254,6 @@ def _numeric_properties(form, node, set_property):
 
 
 def _table_properties(form, node, set_property):
-    import struct
     domain, words = node.properties['value_type'], list(node.properties['words'])
     decode = {'float': lambda word: struct.unpack('<f', struct.pack('<I', word))[0],
               'int': lambda word: word - (1 << 32) if word & 0x80000000 else word, 'uint': int}[domain]
@@ -261,7 +287,6 @@ def _default_policy_properties(form, node, set_property):
 
 
 def _execution_properties(form, node, update):
-    from .shader_graph_execution import ATOMIC_OPERATIONS
     if node.kind in {'memory_load', 'memory_store', 'memory_atomic'}:
         stride = QSpinBox()
         stride.setRange(0, 2048)
@@ -332,7 +357,6 @@ def _execution_properties(form, node, update):
 
 
 def _invocation_properties(form, node, update, *, stage):
-    from .shader_graph_invocation import INVOCATION_INPUTS, invocation_stages
     selection = QComboBox()
     for meaning, (title, _, _) in INVOCATION_INPUTS.items():
         if stage not in invocation_stages(meaning):
@@ -354,9 +378,6 @@ def _structured_word_control(form, stride, bits, update):
 
 
 def _resource_object_controls(form, current, update, *, samplers=True):
-    from .shader_graph_buffer import structured_buffer_stride, structured_buffer_type, structured_word_bits
-    from .shader_graph_constant_buffer import constant_buffer_size, constant_buffer_type
-    from .shader_graph_resource import coherent_resource_element, resource_coherence, is_writable_resource_type
     coherent = coherent_resource_element(current)
     unqualified_update = update
     current = coherent or current
@@ -430,7 +451,6 @@ def _resource_properties(form, node, update):
     if node.kind == 'resource_dimensions':
         _resource_object_controls(form, node.properties.get('resource_type', 'texture2d'), lambda value: update('resource_type', value), samplers=False)
         return
-    from .shader_graph_resource import resource_properties
     element, array = resource_properties(node)
     _resource_object_controls(form, element, lambda value: update('element_type', value))
     if array:
@@ -469,7 +489,6 @@ def _buffer_properties(form, node, update):
         note.setWordWrap(True)
         form.addRow(note)
         return
-    from .shader_graph_buffer import BufferRead
     operation = BufferRead.from_properties(node.properties)
     if operation.stride:
         form.addRow(translate("SdfShaderGraphEditor", "Record stride"), QLabel(translate("SdfShaderGraphEditor", "{stride} bytes (resource contract)").format(stride=operation.stride)))
@@ -497,8 +516,6 @@ def _buffer_properties(form, node, update):
 
 
 def _code_properties(form, node, apply):
-    from .shader_graph_code import code_pin_text
-
     inputs = QLineEdit(code_pin_text(node.properties, "inputs"))
     outputs = QLineEdit(code_pin_text(node.properties, "outputs"))
     for field in (inputs, outputs):
@@ -1327,11 +1344,10 @@ class SdfShaderGraphEditor(QWidget):
             widget.hide()
         self.pass_label.setText(contract.stage.title())
         self.setEnabled(True)
-        from file_handlers.mmtr.material_region_read import region_read_session, suspend_region_read_session
-        with suspend_region_read_session():
+        with material_region_read.suspend_region_read_session():
             self._populate_palette()
         self._populate_properties(None)
-        with region_read_session():
+        with material_region_read.region_read_session():
             self.scene.set_graph(graph, contract)
             self._refresh_graph_state(regenerate=False)
         self.fit_graph()
@@ -1414,11 +1430,9 @@ class SdfShaderGraphEditor(QWidget):
             return
         self._contract = ShaderContract.from_shader(shader.reflection)
         if self._contract.stage == 'compute':
-            from .contracts import shader_contract_for_program
             self._contract = shader_contract_for_program(self._document.profile, self._program, stage)
         if shader.binary_format == 'dxbc-container':
-            from file_handlers.mmtr.material_implementation import implementation_contract
-            self._contract = implementation_contract(self._contract, shader.payload)
+            self._contract = material_implementation.implementation_contract(self._contract, shader.payload)
         key = (self._program.target_index, self._program.program_index, stage)
         self._active_key = key
         graph = self._graph_cache.get(key)
@@ -1491,8 +1505,6 @@ class SdfShaderGraphEditor(QWidget):
             item = QTreeWidgetItem([field.display_name])
             item.setData(0, Qt.ItemDataRole.UserRole, ('primitive_input' if contract.stage in {'geometry','domain','hull'} else 'input', {"semantic": field.semantic_name, "semantic_index": field.semantic_index}))
             values.addChild(item)
-        from .shader_graph_tessellation import domain_templates
-        from .shader_graph_hull import hull_templates
         add_palette_templates(values, (*domain_templates(contract), *hull_templates(contract)))
         objects = [r for r in contract.resources if r.texture_value_type or r.input_type in {'sampler', 'byte-address-buffer', 'rw-byte-address-buffer', 'structured-buffer'}]
         if objects:
@@ -1502,18 +1514,15 @@ class SdfShaderGraphEditor(QWidget):
                 item.setData(0, Qt.ItemDataRole.UserRole, ("shader_resource", {"resource": resource.name}))
                 objects_root.addChild(item)
         sampling = category(self.tr("Texture sampling"))
-        from .shader_graph_texture import TEXTURE_TEMPLATES
         add_palette_templates(sampling, TEXTURE_TEMPLATES)
         buffers = category(self.tr("Buffer reads"))
         for stride in sorted({0, *(r.sample_count for r in objects if r.input_type == 'structured-buffer')}):
             item = QTreeWidgetItem([self.tr("Read Record Word ({stride} byte records)").format(stride=stride) if stride else self.tr("Read Buffer Word")])
             item.setData(0, Qt.ItemDataRole.UserRole, ("buffer_load", {"stride": stride, "byte_offset": 0}))
             buffers.addChild(item)
-        from file_handlers.mmtr.material_branch import new_branch_properties
         control = category(self.tr("Control flow"))
         item = QTreeWidgetItem([self.tr("Branch")])
         item.setData(0, Qt.ItemDataRole.UserRole, ("branch", new_branch_properties()))
-        from file_handlers.mmtr.material_loop import new_loop_properties
         repeat = QTreeWidgetItem(control, [self.tr('Repeat')])
         repeat.setData(0, Qt.ItemDataRole.UserRole, ('repeat', new_loop_properties()))
         control.addChild(item)
@@ -1542,7 +1551,6 @@ class SdfShaderGraphEditor(QWidget):
                 item.setToolTip(0, f"{buffer.name}.{variable.name} · {variable.graph_type} · b{buffer.bind_point}+{variable.byte_offset}")
                 properties = {"buffer": buffer.name, "variable": variable.name}
                 if variable.graph_type is None:
-                    from .aggregate_values import constant_value_fields
                     try:
                         fields = constant_value_fields(variable)
                         if not fields:
@@ -1588,23 +1596,17 @@ class SdfShaderGraphEditor(QWidget):
         for category_name, templates in TYPED_MATH_CATEGORIES:
             typed_root = category(node_label(category_name))
             add_palette_templates(typed_root, templates)
-        from .shader_graph_execution import EXECUTION_TEMPLATES
         execution = category(self.tr('Execution'))
         add_palette_templates(execution, EXECUTION_TEMPLATES)
         if self._graph is not None:
-            from .shader_graph_invocation import INVOCATION_INPUTS, invocation_stages
             for meaning, (label, _, _) in INVOCATION_INPUTS.items():
                 if self._graph.stage not in invocation_stages(meaning):
                     continue
                 item = QTreeWidgetItem([node_label(label)])
                 item.setData(0, Qt.ItemDataRole.UserRole, ('invocation_input', {'meaning': meaning}))
                 execution.addChild(item)
-        from .shader_graph_geometry import geometry_templates
-        from .shader_graph_mesh import mesh_templates
-        from .shader_graph_storage import storage_templates
         add_palette_templates(execution, (*geometry_templates(contract), *mesh_templates(contract),
                                           *storage_templates(contract, self._graph)))
-        from .shader_graph_resource import RESOURCE_TEMPLATES
         resources = category(self.tr('Resource Addressing'))
         add_palette_templates(resources, RESOURCE_TEMPLATES)
 
@@ -1785,7 +1787,6 @@ class SdfShaderGraphEditor(QWidget):
             self.properties_form.addRow(self.tr("Buffer"), QLabel(str(node.properties.get("buffer", ""))))
             self.properties_form.addRow(self.tr("Value"), QLabel(str(node.properties.get("variable", ""))))
             if "field_path" in node.properties:
-                from .aggregate_values import constant_value_fields
                 buffer = self._contract.buffer(str(node.properties.get("buffer", "")))
                 variable = next((item for item in buffer.variables if item.name == node.properties.get("variable")), None) if buffer else None
                 if variable is not None:
@@ -1833,11 +1834,6 @@ class SdfShaderGraphEditor(QWidget):
         node = self._graph.node(node_id) if self._graph else None
         if node is None or node.kind not in {"branch", "repeat", "material_function"}:
             return
-        from copy import deepcopy
-        from PySide6.QtWidgets import QDialog
-        from file_handlers.mmtr.material_function_editor import MaterialBranchDialog, MaterialFunctionDialog
-        from file_handlers.mmtr.material_loop_editor import MaterialLoopDialog
-        from file_handlers.mmtr.material_function import material_function_from_node, replace_material_function
         try:
             if node.kind in {"branch", "repeat"}:
                 dialog_type = MaterialBranchDialog if node.kind == 'branch' else MaterialLoopDialog
@@ -1876,7 +1872,6 @@ class SdfShaderGraphEditor(QWidget):
                 if selected is None or selected.input_type not in {'structured-buffer', 'rw-structured-buffer'} or selected.sample_count % 8:
                     properties.pop('word_bits', None)
             if node.kind in {'sample_texture','texture_load'}:
-                from .shader_graph_texture import texture_property_update
                 properties = texture_property_update(node.properties,key,value)
             validate_node_update(self._graph, node, properties, self._contract)
         except ShaderGraphError as exc:
@@ -1895,7 +1890,6 @@ class SdfShaderGraphEditor(QWidget):
         self._graph_changed(rebuild_scene=False)
 
     def _set_code(self, node: ShaderGraphNode, inputs: str, outputs: str, body: str) -> None:
-        from .shader_graph_code import updated_code
         try:
             node.properties = updated_code(self._graph, node, inputs, outputs, body)
         except ShaderGraphError as exc:
@@ -2048,10 +2042,8 @@ class SdfShaderGraphEditor(QWidget):
         self.inspector_tabs.setCurrentWidget(self.properties_scroll)
 
     def _generate_source(self):
-        from file_handlers.mmtr.material_implementation import implementation_execution
-        from file_handlers.mmtr.surface_meaning import shader_bytes
         shader = self._program.shader(self._contract.stage) if self._program is not None else None
-        early_depth = (implementation_execution(shader_bytes(shader)).early_depth_stencil if shader is not None
+        early_depth = (material_implementation.implementation_execution(shader_bytes(shader)).early_depth_stencil if shader is not None
                        else self._standalone_early_depth)
         return generate_graph_hlsl(self._graph, self._contract, early_depth_stencil=early_depth)
 
@@ -2193,11 +2185,8 @@ class SdfShaderGraphEditor(QWidget):
         return target.programs[program_index]
 
     def _replacement_issues(self, candidate, bytecode, targets):
-        from file_handlers.mmtr.material_implementation import (
-            implementation_contract, implementation_execution, _check_interpolation)
-        from file_handlers.mmtr.surface_meaning import shader_bytes
         issues, compatible = [], True
-        execution = implementation_execution(bytecode)
+        execution = material_implementation.implementation_execution(bytecode)
         for target_index, program_index in targets:
             program = self._program_for_target(target_index, program_index)
             shader = program.shader(self._contract.stage) if program is not None else None
@@ -2206,12 +2195,12 @@ class SdfShaderGraphEditor(QWidget):
                 if shader is None or not shader.present or shader.reflection is None:
                     raise ShaderGraphError(f'Pass has no reflected {self._contract.stage} stage.')
                 native = shader_bytes(shader)
-                reference = implementation_contract(ShaderContract.from_shader(shader.reflection), native)
+                reference = material_implementation.implementation_contract(ShaderContract.from_shader(shader.reflection), native)
                 report = validate_shader_contract(reference, candidate)
                 compatible &= report.compatible
                 issues.extend((issue.severity, scope, issue.message) for issue in report.issues)
-                _check_interpolation(reference, candidate)
-                if implementation_execution(native) != execution:
+                material_implementation._check_interpolation(reference, candidate)
+                if material_implementation.implementation_execution(native) != execution:
                     raise ShaderGraphError('The replacement changes native early-depth execution.')
             except ValueError as exc:
                 compatible = False
@@ -2238,15 +2227,13 @@ class SdfShaderGraphEditor(QWidget):
             )
             return
         try:
-            from file_handlers.mmtr.material_implementation import compile_implementation
-            from .dxc import DxcError
             if self._source_is_generated:
                 generated = self._generated_source or self._generate_source()
                 if generated.source != source:
                     raise ShaderGraphError('The generated source no longer matches this graph. Generate it again before compiling.')
                 self._generated_source = generated
                 shader = self._program.shader(self._contract.stage)
-                result = compile_implementation(generated, self._contract, shader.binary_format)
+                result = material_implementation.compile_implementation(generated, self._contract, shader.binary_format)
             elif re.search(r"^\s*#\s*include\b", source, re.MULTILINE):
                 origin = self._source_origin_cache.get(self._active_key)
                 if origin is None or origin[1] != _source_digest(source):
@@ -2269,22 +2256,19 @@ class SdfShaderGraphEditor(QWidget):
                     target=self._contract.target,
                     warnings_as_errors=True,
                 )
-        except (HlslCompileError, DxcError, ShaderGraphError) as exc:
+        except (HlslCompileError, dxc.DxcError, ShaderGraphError) as exc:
             self._show_compile_failure(str(exc))
             if not quiet:
                 self.inspector_tabs.setCurrentWidget(self.validation_page)
             return
         targets = self._scope_targets()
-        from file_handlers.mmtr.material_implementation import implementation_contract
-        from .dxbc import parse_dxbc
-        from .dxc import enrich_dxil_shader
         try:
             candidate = getattr(result, 'semantic_contract', None)
             if candidate is None:
                 reflected = parse_dxbc(result.bytecode)
                 if reflected.model_major >= 6:
-                    reflected = enrich_dxil_shader(reflected, result.bytecode)
-                candidate = implementation_contract(ShaderContract.from_shader(reflected), result.bytecode)
+                    reflected = dxc.enrich_dxil_shader(reflected, result.bytecode)
+                candidate = material_implementation.implementation_contract(ShaderContract.from_shader(reflected), result.bytecode)
             all_issues, compatible = self._replacement_issues(candidate, result.bytecode, targets)
         except ValueError as exc:
             self._show_compile_failure(str(exc))
@@ -2369,7 +2353,6 @@ class SdfShaderGraphEditor(QWidget):
     def _arrange_graph(self) -> None:
         if self._graph is None:
             return
-        from .shader_graph_layout import arrange_shader_graph
         try:
             arrange_shader_graph(self._graph, self._contract)
         except ShaderGraphError as exc:

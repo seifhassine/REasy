@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import numpy as np
+lazy import numpy as np
 
 from ..evaluation.composition import compose_evaluated_pose
 from ..evaluation.math3d import (

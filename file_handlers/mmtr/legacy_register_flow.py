@@ -1,8 +1,9 @@
 from dataclasses import replace
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .native_dxbc_precision import operand_precision
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .native_dxbc_precision import operand_precision
+lazy from .profiles.dxbc_recovery import DxbcInstruction as Instruction
 
 
 _WRITERS = frozenset(('mov movc add mul div min max mad dp2 dp3 dp4 frc sqrt round_ni round_pi rsq rcp exp log '
@@ -40,7 +41,6 @@ def destination_count(instruction):
 def lower_indexable_temps(ir):
     if not ir.indexable_temps:
         return ir
-    from .profiles.dxbc_recovery import DxbcInstruction as Instruction
     declarations = {index: (rows, components) for index, rows, components in ir.indexable_temps}
     slots, next_register = {}, ir.temp_count
     for index,(rows,components) in declarations.items():

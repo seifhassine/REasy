@@ -5,15 +5,15 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 
 from ..canonical_writer import serialize_mesh
 from .export import joint_names
 from .mapping import ADD, DROP, MERGE, Bone
-from .materials import compact_names
+lazy from .materials import compact_names
 from .package import from_blender, matrix_to_blender
 from .rebuild import BlendImportError, parse_source, rebuild_from_dump
-from .scene import build_scene
+lazy from .scene import build_scene
 
 LAYER_LABELS = {"main": "Main", "shadow": "Shadow", "occluder": "Occluder"}
 LOD_TAG = re.compile(r"lod\s*(\d+)\s*$", re.IGNORECASE)

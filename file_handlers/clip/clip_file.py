@@ -5,7 +5,7 @@ import struct
 from .enums import CLIP_MAGIC
 from .parser import ClipParser, ParsedClip
 from .reader import ClipParserError
-from .writer import ClipWriter
+lazy from .writer import ClipWriter
 
 
 class ClipFile:

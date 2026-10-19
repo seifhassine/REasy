@@ -9,14 +9,15 @@ import re
 from types import FunctionType
 from copy import deepcopy
 
-from file_handlers.sdf.graph_snapshot import _Object, _Array, compiler_graph_copy
+lazy from file_handlers.sdf.graph_snapshot import _Object, _Array, compiler_graph_copy
 from file_handlers.sdf.shader_graph import (
     GeneratedShaderSource, ShaderContract, ShaderGraph, ShaderGraphNode,
     ShaderGraphLink, ShaderGraphError, ShaderSignatureField, ShaderContractResource,
     ShaderContractBuffer, ShaderContractVariable,
 )
 from file_handlers.sdf.shader_stage_execution import ShaderPrimitiveExecution
-from .material_region_read import REGION_ASSET_FIELDS
+lazy from file_handlers.sdf import shader_graph
+lazy from .material_region_read import REGION_ASSET_FIELDS
 from .native_build_cache import NativeBuildCache, _Uncacheable, native_build_key
 
 
@@ -37,7 +38,7 @@ _MODULES = tuple('file_handlers.' + name for name in (
 _DIRECT_FUNCTIONS = {'file_handlers.sdf.dxil_structured_views': ('structured_view_spaces',),
                      'file_handlers.sdf.models': ('shader_target',), 'utils.hex_util': ('align',)}
 _LIBRARY_MODULES = frozenset((
-    'builtins', 'copy', 'dataclasses', 'contextlib', 'functools', 'uuid', 'typing', 'pathlib', 'pathlib._local', '_contextvars',
+    'builtins', 'copy', 'dataclasses', 'contextlib', 'functools', 'uuid', 'typing', 'pathlib', '_contextvars', 'collections.abc',
     'file_handlers.sdf.dxbc', 'file_handlers.sdf.dxc',
     'file_handlers.sdf.shader_stage_execution', 'file_handlers.sdf.spirv_execution',
     # Node labels are translated; the cache is per session, so its language cannot change.
@@ -46,8 +47,8 @@ _LIBRARY_MODULES = frozenset((
 _CONTEXTMANAGER_CODE = contextlib.contextmanager(lambda: None).__code__
 _GENERATED_METHODS = frozenset(('__repr__', '__eq__', '__hash__', '__setattr__',
                               '__delattr__', '__getstate__', '__setstate__'))
-# Python 3.14 compiles a class's annotations into a function of its own; annotations do not change generation.
-_ANNOTATIONS = frozenset(('__annotate__', '__annotate_func__'))
+# A class's annotations compile into a function of their own; they do not change generation.
+_ANNOTATIONS = frozenset(('__annotate_func__',))
 _CONTRACT_RECORDS = frozenset((ShaderContract, ShaderSignatureField, ShaderContractResource,
                              ShaderContractBuffer, ShaderContractVariable, ShaderPrimitiveExecution))
 
@@ -141,7 +142,7 @@ def _runtime_state(generator, graph_builder, kinds):
         kind = type(value)
         if kind in (type(None), bool, int, float, str, bytes):
             return value
-        if kind is object:
+        if kind is sentinel:
             return ('sentinel', identity(value))
         if isinstance(value, re.Pattern):
             return ('regex', value.pattern, value.flags)
@@ -224,7 +225,7 @@ def _runtime_state(generator, graph_builder, kinds):
                             continue
                         if isinstance(method, (staticmethod, classmethod)):
                             method = method.__func__
-                        # Newer Pythons wrap the generated __repr__ in reprlib.recursive_repr.
+                        # Dataclasses wrap the generated __repr__ in reprlib.recursive_repr.
                         generated = inspect.unwrap(method) if isinstance(method, FunctionType) else method
                         if (method_name in _GENERATED_METHODS and isinstance(generated, FunctionType)
                                 and (generated.__code__.co_filename == '<string>'
@@ -238,7 +239,7 @@ def _runtime_state(generator, graph_builder, kinds):
                     members.append((name, identity(value), tuple(methods)))
                 elif isinstance(value, type):
                     members.append((name, state(value)))
-                elif callable(value) and name not in {'Any', 'Callable', 'Hashable', 'Iterable'}:
+                elif callable(value) and name not in {'Any', 'Callable', 'Iterable'}:
                     members.append((name, state(value)))
                 elif ((name.isupper() and name not in {'_NODE_EXTENSIONS', '_MISSING'})
                       or name == '_fields'):
@@ -281,7 +282,6 @@ def generate_implementation_source(implementation, contract, *, early_depth_sten
         _runtime_state(generator, graph_builder, _graph_kinds(initial_document))
     except (TypeError, ValueError, KeyError, RecursionError, OverflowError):
         return ordinary()
-    from file_handlers.sdf import shader_graph
     from .material_region_read import region_read_session
     with region_read_session():
         owned = compiler_graph_copy(implementation.graph)

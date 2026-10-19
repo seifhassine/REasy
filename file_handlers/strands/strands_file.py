@@ -341,7 +341,7 @@ class StrandsFile:
                 for box in extras.joint_bounds:
                     out += struct.pack("<6f", *box.min, *box.max)
         out += struct.pack(f"<{len(self.groom_groups)}I", *self.groom_groups)
-        return bytes(out)
+        return out.take_bytes()
 
 
 def _read_guide_extras(reader, sizes, lods):

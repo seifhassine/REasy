@@ -9,7 +9,7 @@ import struct
 import sys
 from types import MemberDescriptorType
 
-from file_handlers.bounded_cache import BoundedCache
+lazy from file_handlers.bounded_cache import BoundedCache
 
 
 class _Uncacheable(TypeError):

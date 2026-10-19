@@ -13,21 +13,21 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 
 from file_handlers.mesh.preview_controls import find_combo_data
-from file_handlers.sdf.shader_graph import ShaderGraph, ShaderGraphError, new_shader_graph, SHADER_GRAPH_STAGES
-from file_handlers.sdf.shader_graph_editor import SdfShaderGraphEditor
-from .material_editor import (
+lazy from file_handlers.sdf.shader_graph import ShaderGraph, ShaderGraphError, new_shader_graph, SHADER_GRAPH_STAGES
+lazy from file_handlers.sdf.shader_graph_editor import SdfShaderGraphEditor
+lazy from .material_editor import (
     extract_selected_function, import_material_function, material_function_root, save_material_function,
 )
-from .material_function import (
+lazy from .material_function import (
     expand_material_function_node, material_function_node_properties,
 )
 from .material_implementation import (
     MaterialProgramImplementation, group_implementation_routes, implementation_contract, implementation_execution,
     implementation_routes,
 )
-from .surface_meaning import shader_bytes
+lazy from .surface_meaning import shader_bytes
 from .material_project import material_program_contract, material_program_routes
-from .pass_purpose import PURPOSES, pass_purpose, purpose_title
+lazy from .pass_purpose import PURPOSES, pass_purpose, purpose_title
 from .profiles.dxbc_recovery import recover_dxbc_ir
 from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
 from .vanilla_function import _recover_vanilla_graph_snapshot

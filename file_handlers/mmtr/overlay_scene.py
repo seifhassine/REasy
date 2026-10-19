@@ -8,16 +8,16 @@ from functools import lru_cache
 
 import numpy as np
 
-from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
 from file_handlers.sdf.sdf_file import CULL_BACK, CULL_FRONT, CULL_NONE
-from file_handlers.tex.dxgi import (
+lazy from file_handlers.tex.dxgi import (
     DXGI_FORMAT_R16G16B16A16_UINT, DXGI_FORMAT_R32G32B32A32_FLOAT, DXGI_FORMAT_R32G32B32_FLOAT, DXGI_FORMAT_R32_FLOAT,
     DXGI_FORMAT_R32_TYPELESS, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R8_UNORM,
 )
 
-from .material_preview import RANGE_CBV, _NO_DEPTH_STENCIL, _RASTERIZER, RANGE_SRV, _TRIANGLE_LIST, RANGE_UAV
+lazy from .material_preview import RANGE_CBV, _NO_DEPTH_STENCIL, _RASTERIZER, RANGE_SRV, _TRIANGLE_LIST, RANGE_UAV
 from .overlay import _GROUP, _UNWRITTEN, _VIEW, PIXEL_RULES, RULES, packed
-from .resident import BUFFER, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from .resident import BUFFER, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
 
 _LINE_LIST = 2
 # Packed four per vertex element.

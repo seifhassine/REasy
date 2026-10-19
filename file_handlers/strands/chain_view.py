@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.light_passes import LightPasses
-from file_handlers.mmtr.mesh_render import MeshScene
-from file_handlers.mmtr.pretransform_passes import SystemPrograms
+lazy from file_handlers.mmtr.light_passes import LightPasses
+lazy from file_handlers.mmtr.mesh_render import MeshScene
+lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
 
-from .chain_frame import SetPlace, StrandChain
-from .chain_scene import ChainScene
-from .lod import bone_union
-from .placement import PrefabPlacement
-from .set_lod import BoundMesh
-from .spring_chain import SpringChain
+lazy from .chain_frame import SetPlace, StrandChain
+lazy from .chain_scene import ChainScene
+lazy from .lod import bone_union
+lazy from .placement import PrefabPlacement
+lazy from .set_lod import BoundMesh
+lazy from .spring_chain import SpringChain
 
 
 class StrandView:

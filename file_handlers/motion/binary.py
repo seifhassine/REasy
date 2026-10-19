@@ -4,7 +4,7 @@ import struct
 from dataclasses import dataclass
 from typing import Callable, TypeVar
 
-from .errors import MotionParseError
+lazy from .errors import MotionParseError
 
 
 _T = TypeVar("_T")

@@ -1,7 +1,6 @@
 #From Enums_Internal
-from types import MappingProxyType
 
-from utils.number_format import format_float_sequence
+lazy from utils.number_format import format_float_sequence
 
 class ArrayData:
     """Array container that stores values and element type"""
@@ -96,7 +95,7 @@ class StructData:
         raise NotImplementedError("StructData parsing is handled separately")
 
 
-_MISSING = object()
+_MISSING = sentinel("_MISSING")
 
 
 class _ValueData:
@@ -726,7 +725,7 @@ TYPE_MAPPING = {
     "struct": StructData,
 }
 
-NON_ARRAY_PARSERS = MappingProxyType({
+NON_ARRAY_PARSERS = frozendict({
     MaybeObject: MaybeObject.parse,
     UserDataData: UserDataData.parse,
     ObjectData: ObjectData.parse,

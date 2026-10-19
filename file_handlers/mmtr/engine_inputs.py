@@ -4,8 +4,8 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 
-from file_handlers.sdf.shader_contract_storage import variable_to_dict
-from file_handlers.sdf.shader_graph import ShaderContractBuffer, ShaderContractResource, ShaderContractVariable
+lazy from file_handlers.sdf.shader_contract_storage import variable_to_dict
+lazy from file_handlers.sdf.shader_graph import ShaderContractBuffer, ShaderContractResource, ShaderContractVariable
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
 
 CATALOG_FORMAT = 3

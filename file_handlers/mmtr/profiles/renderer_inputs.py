@@ -5,7 +5,7 @@ from dataclasses import dataclass, field, replace
 from typing import Any
 
 from file_handlers.sdf.dxc import enrich_dxil_shader
-from file_handlers.material_names import is_private_material_parameter
+lazy from file_handlers.material_names import is_private_material_parameter
 from file_handlers.sdf.aggregate_values import (
     AggregateField, aggregate_fields, aggregate_type, aggregate_helpers, constant_value_fields,
 )
@@ -15,6 +15,10 @@ from file_handlers.sdf.shader_graph import (
     register_shader_graph_node_extension,
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from file_handlers.mmtr.engine_inputs import engine_input_catalog_for, resource_from_dict, resource_to_dict
+lazy from file_handlers.mmtr.pass_purpose import pass_purpose
+lazy from file_handlers.sdf.hlsl_contract import resource_identifier
+lazy from file_handlers.sdf.shader_graph_resource import resource_value_type
 
 
 RENDERER_VALUE_KIND = "re_engine_renderer_value"
@@ -166,7 +170,6 @@ def engine_buffer_layout(document, program, stage, name):
 
 
 def _engine_input_layout(document, program, stage, name, *, resources: bool):
-    from file_handlers.mmtr.engine_inputs import engine_input_catalog_for
     shader = program.shader(stage)
     if shader is None or not shader.present:
         return None, f"{program.name} has no {stage} shader."
@@ -275,7 +278,6 @@ def engine_input_plan(document, program, stage, buffers, resources):
     """The game binds engine inputs per pass, so passes with equal shaders can differ."""
     if not (buffers or resources):
         return ()
-    from file_handlers.mmtr.engine_inputs import engine_input_catalog_for
     catalog = engine_input_catalog_for(document.profile)
     shader = program.shader(stage)
     if catalog is None or shader is None:
@@ -288,7 +290,6 @@ def engine_input_plan(document, program, stage, buffers, resources):
 
 
 def engine_resource_value_type(resource):
-    from file_handlers.sdf.shader_graph_resource import resource_value_type
     if resource.register_class not in {"t", "s"}:
         return None
     try:
@@ -327,7 +328,6 @@ def engine_resource_declaration(catalog, name):
 
 
 def engine_resource_pin(declaration):
-    from file_handlers.mmtr.engine_inputs import resource_to_dict
     signature = resource_to_dict(declaration)
     identity = hashlib.sha256(repr(sorted(signature.items())).encode("utf-8")).hexdigest()[:24]
     return dict(pin="renderer_resource_" + identity, label=declaration.name,
@@ -340,7 +340,6 @@ def engine_resource_layout(document, program, stage, name):
 
 
 def _engine_resource_signature(properties):
-    from file_handlers.mmtr.engine_inputs import resource_from_dict
     return resource_from_dict(properties["resource"])
 
 
@@ -397,7 +396,6 @@ def renderer_resource_expression(contract, properties):
     resource = _bound_resource(contract, properties)
     if resource is None:
         raise RendererResourceUnavailable(properties)
-    from file_handlers.sdf.hlsl_contract import resource_identifier
     return resource_identifier(resource), resource
 
 
@@ -435,11 +433,9 @@ def _engine_resource_entries(document, program, role, contract, catalog, declara
 
 
 def material_engine_inputs(document, profile):
-    from file_handlers.mmtr.engine_inputs import engine_input_catalog_for
     catalog = engine_input_catalog_for(document.profile)
     user_buffers = {name.casefold() for name in document.profile.user_material_buffer_names}
     routes = profile.material_program_routes(document)
-    from file_handlers.mmtr.pass_purpose import pass_purpose
     cache, bound_by_shader, readable_by_pass, declarations = {}, {}, {}, {}
     fields, counts, by_purpose, purpose_totals, readers = {}, {}, {}, Counter(), {}
     for target, index, role in routes:

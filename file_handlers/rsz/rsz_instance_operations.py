@@ -1,10 +1,10 @@
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     collect_object_reference_values,
     collect_userdata_reference_values,
     iter_field_reference_entries,
     update_references_with_mapping,
 )
-from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData
+lazy from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData
 
 
 class RszInstanceOperations:

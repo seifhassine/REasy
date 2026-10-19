@@ -4,17 +4,17 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping, Sequence
 from functools import partial
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.clsp.clsp_file import CollisionShape
-from file_handlers.clsp.placement import place, transform_scale
-from file_handlers.mmtr.material_preview import MaterialPreviewError
-from file_handlers.rsz.plain_values import plain_fields
-from file_handlers.rsz.scene_joints import F, JointSet, Placed, placed_objects
+lazy from file_handlers.clsp.clsp_file import CollisionShape
+lazy from file_handlers.clsp.placement import place, transform_scale
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.rsz.plain_values import plain_fields
+lazy from file_handlers.rsz.scene_joints import F, JointSet, Placed, placed_objects
 
-from .chain_catalog import StrandCatalog
-from .chain_constants import rest_position
+lazy from .chain_catalog import StrandCatalog
+lazy from .chain_constants import rest_position
 
 
 class PrefabPlacement:

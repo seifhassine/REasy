@@ -1,11 +1,13 @@
 from functools import lru_cache
 import re
+from collections import Counter
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .native_loop_flow import (
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .native_loop_flow import (
     LABEL, fresh_namer, normalize_loop_boundaries, phi_rows, reachable_blocks, region_postdominators,
     region_postorder, terminator,
 )
+lazy from .native_shared_tail import convergence_sensitive_calls
 
 
 def structured_dxil_records(ir, entry):
@@ -158,7 +160,6 @@ def structured_dxil_records(ir, entry):
         except KeyError as exc:
             raise ShaderGraphError("A DXIL phi is missing its actual predecessor.") from exc
 
-    from collections import Counter
     from .native_case_values import case_value_table
     uses = Counter(value for records in blocks.values() for record in records
                    for value in re.findall(r'%' + LABEL, record.text.partition('=')[2] if record.result else record.text))
@@ -226,7 +227,6 @@ def structured_dxil_records(ir, entry):
             ready_phis = True
         return incoming(label, predecessor)
 
-    from .native_shared_tail import convergence_sensitive_calls
     sensitive_call = convergence_sensitive_calls(ir)
     emitted_sensitive = set()
     for event, record in region(region, start):

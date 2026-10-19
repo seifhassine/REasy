@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
+lazy from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QFrame,
     QLabel,
@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .models import RESOURCE_KINDS, SdfProgram, humanize_identifier, stage_display_name
+lazy from .models import RESOURCE_KINDS, SdfProgram, humanize_identifier, stage_display_name
 
 
 def _human(value: str) -> str:

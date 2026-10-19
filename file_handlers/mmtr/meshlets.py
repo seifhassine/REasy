@@ -3,19 +3,18 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from types import MappingProxyType
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
-from file_handlers.sdf.models import program_names
+lazy from file_handlers.sdf.models import program_names
 
-from .material_preview import MaterialPreviewError
+lazy from .material_preview import MaterialPreviewError
 from .mesh_draw import SubmeshRange
 from .meshlet_deferred import DeferredCatalogError, DeferredTexturing, deferred_from_dict
-from .pass_choice import gbuffer_program_name
-from .pretransform import SystemProgram
+lazy from .pass_choice import gbuffer_program_name
+lazy from .pretransform import SystemProgram
 
 CATALOG_FORMAT = 2
 CATALOG_DIRECTORY = "resources/data/meshlets"
@@ -101,7 +100,7 @@ def catalog_from_dict(data: Mapping) -> MeshletCatalog:
         str(data["game"]), int(data["resource_version"]), str(data["raster"]), str(data["shade"]),
         None if data["forward"] is None else str(data["forward"]), SystemProgram(str(programs["file"]), str(programs["program"])), int(programs["target"]),
         int(data["vertices"]), int(data["tile_vertices"]), int(data["visibility_format"]), formats,
-        int(data["table_tag"]), MappingProxyType(instance), dict(data.get("source", {})),
+        int(data["table_tag"]), frozendict(instance), dict(data.get("source", {})),
         None if deferred is None else deferred_from_dict(deferred),
         None if transform is None else MeshletTransform(str(transform["program"]),
                                                         frozenset(map(str, transform["reads"]))),
@@ -140,7 +139,7 @@ class MeshletBuffer:
                         offset = int(submesh.file_offset) - int(layout.gpu_meshlet_offset)
                         clusters[SubmeshRange.from_submesh(submesh)] = (Cluster(
                             offset // 4, int(submesh.indices_count) // 3, int(submesh.material_index)),)
-        return cls(layout.gpu_data, MappingProxyType(clusters))
+        return cls(layout.gpu_data, frozendict(clusters))
 
 
 def meshlet_programs(document, target: int, material_flags: int, catalog: MeshletCatalog,
@@ -256,7 +255,7 @@ def material_tables(catalog: MeshletCatalog, groups: Sequence[MeshletGroup],
         offsets[owner] = len(data)
         table = np.array(words, "<u4").tobytes()
         data += table + bytes(-len(table) % 16)
-    return bytes(data), offsets
+    return data.take_bytes(), offsets
 
 
 def extended_blocks(start: int, blocks: Sequence[bytes | None]) -> tuple[bytes, list[int]]:
@@ -269,7 +268,7 @@ def extended_blocks(start: int, blocks: Sequence[bytes | None]) -> tuple[bytes, 
         offsets.append(head)
         data += np.array([head + _EXTENDED_HEAD], "<u4").tobytes().ljust(_EXTENDED_HEAD, b"\0")
         data += bytes(block) + bytes(-len(block) % 16)
-    return bytes(data), offsets
+    return data.take_bytes(), offsets
 
 
 def receives_decals(mode: int, skinned: bool) -> bool:
@@ -313,7 +312,7 @@ def skinning_records(boxes: np.ndarray, joints: Sequence[tuple[int, int]]) -> by
     for number, (box, (joint, previous)) in enumerate(zip(np.asarray(boxes, np.float64), joints)):
         records[_SKINNING_RECORD * number:_SKINNING_RECORD * (number + 1)] = (
             np.asarray([*box[1], *box[0]], "<f4").tobytes() + np.asarray([joint, previous], "<i4").tobytes())
-    return bytes(records)
+    return records.take_bytes()
 
 
 def replace_table(layout, ids: int, transforms: Mapping[int, int] | None = None) -> bytes:
@@ -334,7 +333,7 @@ def replace_table(layout, ids: int, transforms: Mapping[int, int] | None = None)
                                        "lay out."), {"name": variable.name, "declaration": variable.hlsl_declaration})
             values = named if variable.name == "VisibilityShaderShaderID" else transformed
             data[variable.byte_offset:variable.byte_offset + _IDS * 4] = values.tobytes()
-    return bytes(data)
+    return data.take_bytes()
 
 
 def root_constant(layout, value: int) -> bytes:

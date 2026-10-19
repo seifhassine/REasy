@@ -2,15 +2,15 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 
-from file_handlers.rsz.scn_scene_graph import (
+lazy from file_handlers.rsz.scn_scene_graph import (
     ScnRenderableMesh,
     ScnSceneGraph,
     normalize_document_id,
 )
-from file_handlers.rsz.scn_scene_attachments import (
+lazy from file_handlers.rsz.scn_scene_attachments import (
     same_joints_descendant_depth,
 )
-from utils.resource_file_utils import resource_path_key
+lazy from utils.resource_file_utils import resource_path_key
 
 from ..runtime import MotionTargetDefinition
 from .entity_session import EntityMotionSession

@@ -3,13 +3,15 @@ from __future__ import annotations
 from collections import defaultdict
 from dataclasses import replace
 from pathlib import Path
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
-from file_handlers.sdf import SdfFile
-from file_handlers.sdf.models import RESOURCE_KINDS, LazyPrograms, SdfProgram, program_tables
+lazy from file_handlers.sdf import SdfFile
+lazy from file_handlers.sdf.models import RESOURCE_KINDS, LazyPrograms, SdfProgram, program_tables
+lazy from file_handlers.sdf.sdf_file import parse_sdf_to_draw
+lazy from file_handlers.sdf.shader_graph import ShaderContract
 
-from .analysis import MmtrAnalysisError, skinning_influence_count
-from .models import (
+lazy from .analysis import MmtrAnalysisError, skinning_influence_count
+lazy from .models import (
     LazyProgramSemantics,
     MmtrDocument,
     MmtrMaterialInterface,
@@ -206,7 +208,6 @@ def _material_interface(
                             aliases = generated_parameter_names.get(alias_key)
                             if aliases is None:
                                 from file_handlers.sdf.contracts import material_buffer_contract
-                                from file_handlers.sdf.shader_graph import ShaderContract
                                 try:
                                     typed = material_buffer_contract(
                                         ShaderContract.from_shader(dxbc), program,
@@ -342,8 +343,6 @@ def _parse_preview_document(
 ) -> MmtrDocument:
     if not _supports_preview_without_native_reflection(profile):
         return MmtrFile.from_bytes(data, profile=profile, label=label).require_document()
-
-    from file_handlers.sdf.sdf_file import parse_sdf_to_draw
 
     return _document_from_sdf(parse_sdf_to_draw(data, profile.sdf_profile, label), profile, label)
 

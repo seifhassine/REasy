@@ -1,7 +1,7 @@
 import os
 import json
 from datetime import datetime
-from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+lazy from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
 
 class RszTemplateManager:
     @staticmethod

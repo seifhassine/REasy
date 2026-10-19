@@ -134,9 +134,9 @@ REasy GUI is currently available in English and Chinese.
 
 - The first build requires Git and network access to initialize GDeflateNet and fetch the pinned GDeflateCore sources. Later builds reuse the cached native build.
 
-- Python 3.12+ is required.
+- Python 3.15 is required; the scripts create `.venv` with `py -3.15`.
 
-- If build.bat complains about not having 3.12+, then run python --version to check which version is being used by default.
+- If build.bat says Python 3.15 is required, check that `py -3.15 --version` works.
 
 - If you want to run REasy.py, make sure you either use the `run_reasy.bat` batch script or `python setup.py build_ext --inplace
 ` beforehand.

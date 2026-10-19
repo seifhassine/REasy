@@ -4,15 +4,15 @@ from __future__ import annotations
 import struct
 from collections.abc import Sequence
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY
-from file_handlers.mmtr.pretransform import SystemProgram
-from file_handlers.mmtr.pretransform_passes import SystemPrograms, check_threads, dispatch_compute
-from file_handlers.mmtr.resident import BUFFER, UNORDERED_ACCESS, Resident
+lazy from file_handlers.mmtr.material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY
+lazy from file_handlers.mmtr.pretransform import SystemProgram
+lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms, check_threads, dispatch_compute
+lazy from file_handlers.mmtr.resident import BUFFER, UNORDERED_ACCESS, Resident
 
-from .chain_catalog import SkinningSection
-from .lod import F
+lazy from .chain_catalog import SkinningSection
+lazy from .lod import F
 
 POSITION_BYTES, _WEIGHT_BYTES, _MATRIX_BYTES, _THREADS = 12, 16, 48, 256
 
@@ -54,7 +54,7 @@ class BindingSkin:
                     for variable in layout.variables:
                         if variable.name in values:
                             struct.pack_into("<i", block, variable.byte_offset, values[variable.name])
-                    tables.append((RANGE_CBV, *place, 0, visibility, ((0, device.buffer(bytes(block))),)))
+                    tables.append((RANGE_CBV, *place, 0, visibility, ((0, device.buffer(block.take_bytes())),)))
                 elif resource.register_class == "t":
                     stride = contract.structured_buffer(name).byte_size if "structured" in resource.input_type else 0
                     tables.append((RANGE_SRV, *place, BUFFER, visibility, ((0, 0, stride, bound[name]),)))

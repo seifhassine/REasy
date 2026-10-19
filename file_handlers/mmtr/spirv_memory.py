@@ -1,4 +1,4 @@
-from .profiles.re_engine_spirv_authoring import _UniformLayout, _UniformOffset
+lazy from .profiles.re_engine_spirv_authoring import _UniformLayout, _UniformOffset
 from .vanilla_function import _ResourceHandle, VanillaFunctionError
 
 

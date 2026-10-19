@@ -4,7 +4,7 @@ from enum import Enum, auto
 from typing import Callable
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
-from PySide6.QtWidgets import QMessageBox
+lazy from PySide6.QtWidgets import QMessageBox
 
 
 _ALLOW_THIS_CHANGE = QT_TRANSLATE_NOOP(

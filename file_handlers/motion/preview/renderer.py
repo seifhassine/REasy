@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Protocol
 
-import numpy as np
+lazy import numpy as np
 
-from ui.scene.mesh_scene import build_mesh_scene
+lazy from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawMesh
 
 from .model import MotionPreviewSnapshot
 from .posed_meshes import PosedMeshes, PosedViewport
-from .scene import SkeletonScene
-from .skinning import SkinningError, build_skinned_mesh_deformer
-from .target import RigPreviewTarget
+lazy from .scene import SkeletonScene
+lazy from .skinning import SkinningError, build_skinned_mesh_deformer
+lazy from .target import RigPreviewTarget
 
 
 class PreviewViewport(PosedViewport, Protocol):

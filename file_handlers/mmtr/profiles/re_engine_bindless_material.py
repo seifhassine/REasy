@@ -6,8 +6,10 @@ import operator
 import re
 
 from file_handlers.sdf.shader_graph import ShaderContract, ShaderContractResource, ShaderGraphError
-from ..native_resource import DXIL_RESOURCE_CLASSES, DXIL_TEXTURE_KINDS
-from .re_engine_dxil_signatures import DxilEntryMetadata
+lazy from ..native_resource import DXIL_RESOURCE_CLASSES, DXIL_TEXTURE_KINDS
+lazy from .re_engine_dxil_signatures import DxilEntryMetadata
+lazy from ..native_loop_flow import predecessor_map
+lazy from ..surface_flow_dxil import _control_flow, _entry
 
 
 _VALUE = r"%[-$._A-Za-z0-9]+"
@@ -555,8 +557,6 @@ class HeapIndices:
     unknown."""
 
     def __init__(self, lines: list[str], contract: ShaderContract):
-        from ..native_loop_flow import predecessor_map
-        from ..surface_flow_dxil import _control_flow, _entry
         statements = _entry(lines)[3]
         blocks, successors, _conditions, self.dominators = _control_flow(statements)
         self.predecessors: dict[str, set[str]] = predecessor_map(blocks, successors)
@@ -795,7 +795,7 @@ def relocate_material_record_words(
                     f"  {word.value} = extractvalue %dx.types.CBufRet.{scalar} {name}, {lane}",
                 ]
             replacements[word.line_index] = prefix
-    return [replacement for index, line in enumerate(lines) for replacement in replacements.get(index, (line,))]
+    return [*replacements.get(index, (line,)) for index, line in enumerate(lines)]
 
 
 __all__ = ["BindlessMaterialAccess", "EngineHeapHandle", "HeapIndices", "MaterialWordRead", "MaterialTextureAccess", "bound_resource", "engine_heap_handles", "material_buffer_reads", "material_record_accesses", "material_input_accesses", "material_texture_accesses", "relocate_material_record_words", "texture_handles"]

@@ -4,9 +4,9 @@ import importlib
 import struct
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 
-from .dds import CUBEMAP_FACES, DDS_DIMENSION_TEXTURE3D, DDS_MAGIC, DDS_MISC_TEXTURECUBE, DDSCAPS2_CUBEMAP, FOURCC_DX10
+lazy from .dds import CUBEMAP_FACES, DDS_DIMENSION_TEXTURE3D, DDS_MAGIC, DDS_MISC_TEXTURECUBE, DDSCAPS2_CUBEMAP, FOURCC_DX10
 from .dxgi import (
     DXGI_FORMAT_A8_UNORM,
     DXGI_FORMAT_B5G5R5A1_UNORM,
@@ -107,7 +107,7 @@ def _bgra_to_rgba(data: bytes) -> bytes:
         raise ValueError(f"Decoded BC payload has invalid size: {len(data)}")
     out = bytearray(data)
     out[0::4], out[2::4] = out[2::4], out[0::4]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _decode_uncompressed_rgba(dxgi_format: int, data: bytes, pixel_count: int) -> bytes:
@@ -136,13 +136,13 @@ def _decode_uncompressed_rgba(dxgi_format: int, data: bytes, pixel_count: int) -
         source = data[: pixel_count * 2]
         out[0::4], out[1::4] = source[0::2], source[1::2]
         out[3::4] = b"\xff" * pixel_count
-        return bytes(out)
+        return out.take_bytes()
 
     if dxgi_format in (DXGI_FORMAT_R8_UNORM, DXGI_FORMAT_A8_UNORM):
         source = data[:pixel_count]
         out[0::4] = out[1::4] = out[2::4] = source
         out[3::4] = source if dxgi_format == DXGI_FORMAT_A8_UNORM else b"\xff" * pixel_count
-        return bytes(out)
+        return out.take_bytes()
 
     pixels = np.frombuffer(out, dtype=np.uint8).reshape(pixel_count, 4)
     if dxgi_format in (DXGI_FORMAT_B5G6R5_UNORM, DXGI_FORMAT_B5G5R5A1_UNORM):

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import PurePosixPath
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication, QPointF, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QPen
+lazy from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
     QColorDialog,
@@ -22,12 +22,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.material_names import is_private_material_parameter, resolve_material_name
-from file_handlers.mmtr.material_usage import InputUsage, MaterialInputUsage, material_input_usage
-from file_handlers.sdf.models import humanize_identifier
-from file_handlers.sdf.shader_graph_editor import _ShaderGraphView, connection_path
-from .material_layout import MaterialDescriptorLayout
-from .mdf_file import MATERIAL_FLAG_NAMES
+lazy from file_handlers.material_names import is_private_material_parameter, resolve_material_name
+lazy from file_handlers.mmtr.material_usage import InputUsage, MaterialInputUsage, material_input_usage
+lazy from file_handlers.sdf.models import humanize_identifier
+lazy from file_handlers.sdf.shader_graph_editor import _ShaderGraphView, connection_path
+lazy from .material_layout import MaterialDescriptorLayout
+lazy from .mdf_file import MATERIAL_FLAG_NAMES
 
 _BEHAVIOR_FLAGS = (
     (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Casts shadows"), True, "ShadowCastDisable"),

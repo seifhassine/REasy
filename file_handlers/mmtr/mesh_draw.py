@@ -4,14 +4,14 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.mesh.mesh_file import VertexBufferType
 from file_handlers.sdf.dxbc import PRIMITIVE_TOPOLOGY_NAMES
 from file_handlers.tex.dxgi import DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R32_UINT
 
-from .material_preview import MaterialPreviewError
-from .pretransform import Destination, destination_view
+lazy from .material_preview import MaterialPreviewError
+lazy from .pretransform import Destination, destination_view
 
 _WHITE_STRIDE = 4
 _TOPOLOGIES = {name: number for number, name in PRIMITIVE_TOPOLOGY_NAMES.items()

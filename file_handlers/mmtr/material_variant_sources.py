@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from concurrent.futures import ThreadPoolExecutor, as_completed
+lazy from concurrent.futures import ThreadPoolExecutor, as_completed
 import os
 from pathlib import Path
 from typing import Callable, Iterable
 
-from file_handlers.mdf.mdf_file import MdfFile
-from utils.app_paths import PROJECT_METADATA_FOLDER
-from utils.resource_file_utils import normalize_resource_path, resource_version_from_path
+lazy from file_handlers.mdf.mdf_file import MdfFile
+lazy from utils.app_paths import PROJECT_METADATA_FOLDER
+lazy from utils.resource_file_utils import normalize_resource_path, resource_version_from_path
 
 
 @dataclass(frozen=True, slots=True)

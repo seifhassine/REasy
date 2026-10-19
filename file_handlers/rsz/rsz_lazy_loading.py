@@ -2,9 +2,9 @@
 RSZ Lazy Loading Support
 """
 
-from ..pyside.tree_core import DeferredChildBuilder
-from ..pyside.tree_model import DataTreeBuilder
-from .rsz_data_types import (
+lazy from ..pyside.tree_core import DeferredChildBuilder
+lazy from ..pyside.tree_model import DataTreeBuilder
+lazy from .rsz_data_types import (
     StructData,
     ArrayData,
     ObjectData,

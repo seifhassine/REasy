@@ -4,16 +4,17 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
+lazy import subprocess
 import tempfile
 import threading
 import wave
 from contextlib import suppress
 from dataclasses import replace
 from pathlib import Path
+import platform
 
 from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QUrl, Signal
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+lazy from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -46,7 +47,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tools.wem_converter import (
+lazy from tools.wem_converter import (
     CHANNEL_AS_INPUT,
     CHANNEL_MONO,
     CHANNEL_STEREO,
@@ -62,16 +63,16 @@ from tools.wem_converter import (
     prepare_wwise_project,
     wem_codec_tag,
 )
-from tools.wwise_ir_converter import (
+lazy from tools.wwise_ir_converter import (
     convert_file_to_convolution_reverb_ir,
     convert_file_to_hybrid_reverb_ir,
 )
-from tools.riff_metadata import (
+lazy from tools.riff_metadata import (
     RiffMetadataInheritanceError,
     read_riff_metadata,
     write_riff_metadata,
 )
-from tools.wwise_toolchain import (
+lazy from tools.wwise_toolchain import (
     WwiseToolchainError,
     configured_wwise_path,
     set_configured_wwise_path,
@@ -79,7 +80,7 @@ from tools.wwise_toolchain import (
     validate_wwise_installation,
     wwise_profile_for_game,
 )
-from ui.qt_timers import call_later
+lazy from ui.qt_timers import call_later
 
 from .bnk_parser import (
     WWISE_ANY_OBJECT_ID,
@@ -99,24 +100,24 @@ from .bnk_parser import (
     set_hirc_children,
     wwise_id_from_name,
 )
-from .sound_graph import EventFlowGraph
-from .sound_hirc_editor import ActionPickerDialog, HircPropertiesDialog, WwiseFieldsEditor
+lazy from .sound_graph import EventFlowGraph
+lazy from .sound_hirc_editor import ActionPickerDialog, HircPropertiesDialog, WwiseFieldsEditor
 from .sound_metadata import SoundMetadata
 from .sound_profile import sound_profile_for_handler
-from .sound_riff_editor import RiffMetadataDialog
-from .sound_resources import (
+lazy from .sound_riff_editor import RiffMetadataDialog
+lazy from .sound_resources import (
     local_sound_path,
     open_sound_resource,
     resource_key,
 )
-from .sound_waveform import (
+lazy from .sound_waveform import (
     WaveformWidget,
     analyze_wave_activity,
     write_wave_channel,
 )
 from .wwise_schema import STRUCTURED_BANK_VERSIONS, is_hirc_bus, is_hirc_plugin
 from .wwise_v132 import set_v132_fields
-from .wwise_media import (
+lazy from .wwise_media import (
     WwiseMediaKind,
     convolution_reverb_to_wav,
     detect_media_kind,
@@ -128,6 +129,7 @@ from .wwise_media import (
     validate_crankcase_rev_model,
     wwise_to_midi,
 )
+lazy from tools.github_downloader import GitHubToolDownloader
 
 
 _COLUMNS = [
@@ -158,8 +160,6 @@ def _asset_preferences(system: str, machine: str) -> list[str]:
 
 
 def _vgmstream_asset_url(tag, assets):
-    import platform
-
     for preference in _asset_preferences(platform.system().lower(), platform.machine().lower()):
         for asset in assets:
             name = asset.get("name", "").lower()
@@ -173,8 +173,6 @@ def _vgmstream_asset_url(tag, assets):
 def _get_vgmstream_downloader():
     global _vgmstream_downloader
     if _vgmstream_downloader is None:
-        from tools.github_downloader import GitHubToolDownloader
-
         _vgmstream_downloader = GitHubToolDownloader(
             owner_repo="vgmstream/vgmstream",
             cache_subdir="vgmstream_cli",
@@ -1281,7 +1279,7 @@ class SoundViewer(QWidget):
 
     @staticmethod
     def _run_vgmstream(arguments):
-        kwargs = {"check": False, "capture_output": True, "text": True}
+        kwargs = {"check": False, "capture_output": True, "encoding": "utf-8", "errors": "replace"}
         if os.name == "nt":
             kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         try:

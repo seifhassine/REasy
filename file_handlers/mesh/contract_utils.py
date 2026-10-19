@@ -6,9 +6,12 @@ from typing import Iterable, Mapping, Sequence
 
 import math
 
-import numpy as np
+lazy import numpy as np
 
 from .models import MPLY_MAGIC
+lazy from .canonical_contract import assert_mesh_semantic_domains
+lazy from . import normal_recalc
+lazy from .normal_recalc import NormalRecalcData, derive_sf6_normal_indices
 
 
 def has_nonzero(value: object) -> bool:
@@ -379,8 +382,6 @@ class ContractValidator:
             layouts(field, stream.vertex_elements, stream.extra_vertex_elements)
 
     def assert_late_ordinary_runtime(self, mesh: object, mesh_buffer: object, element_headers) -> None:
-        from .canonical_contract import assert_mesh_semantic_domains
-
         assert_mesh_semantic_domains(mesh)
         assert_late_normal_recalc_runtime_storage(mesh, self)
         self.assert_late_buffer_layouts(mesh, mesh_buffer, element_headers)
@@ -750,7 +751,7 @@ def layer_groups(layer: object, *, unique_lods: bool = False) -> list[object]:
     lods = getattr(layer, "lods", (layer,))
     if unique_lods:
         lods = {id(lod): lod for lod in lods}.values()
-    return [group for lod in lods for group in lod.mesh_groups]
+    return [*lod.mesh_groups for lod in lods]
 
 
 def layer_payloads(mesh, layer: str) -> dict[int, object]:
@@ -773,7 +774,7 @@ def layer_vertex_offset(mesh, layer: str, submesh: object) -> int:
 
 def all_groups(mesh: object) -> list[object]:
     layers = (*getattr(mesh, "meshes", ()), getattr(mesh, "shadow_mesh", None), getattr(mesh, "occluder_mesh", None))
-    return [group for layer in layers if layer is not None for group in layer_groups(layer)]
+    return [*layer_groups(layer) for layer in layers if layer is not None]
 
 
 def all_lods(mesh: object) -> list[tuple[str, int, object]]:
@@ -798,9 +799,8 @@ def ordinary_geometry(
     lods = [lod for _owner, _index, lod in all_lods(mesh)]
     groups = all_groups(mesh)
     submeshes = [
-        submesh
+        *getattr(group, "submeshes", ())
         for group in groups
-        for submesh in getattr(group, "submeshes", ())
     ]
     return lods, groups, submeshes
 
@@ -813,10 +813,9 @@ def assert_zero_index_padding(mesh: object, validator: ContractValidator) -> Non
         (
             "MeshData",
             (
-                group
+                *lod.mesh_groups
                 for mesh_data in getattr(mesh, "meshes", ())
                 for lod in mesh_data.lods
-                for group in lod.mesh_groups
             ),
             mesh_buffer.buffer_payloads,
         )
@@ -826,7 +825,7 @@ def assert_zero_index_padding(mesh: object, validator: ContractValidator) -> Non
         owners.append(
             (
                 "ShadowMeshLayout",
-                (group for lod in shadow.lods for group in lod.mesh_groups),
+                (*lod.mesh_groups for lod in shadow.lods),
                 shadow.payloads,
             )
         )
@@ -968,13 +967,8 @@ def assert_late_normal_recalc_import_storage(
     normal = getattr(mesh, "normal_recalc_data", None)
     if normal is None:
         return
-    from .normal_recalc import (
-        NormalRecalcData,
-        derive_sf6_normal_indices,
-        sf6_normal_recalc_lod_topologies,
-    )
 
-    topologies = sf6_normal_recalc_lod_topologies(mesh)
+    topologies = normal_recalc.sf6_normal_recalc_lod_topologies(mesh)
     validator.require_equal(
         "NormalRecalcLayout canonical LOD count",
         len(normal.lods),

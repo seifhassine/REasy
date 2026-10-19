@@ -3,13 +3,10 @@ from __future__ import annotations
 import threading
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
-from file_handlers.mdf.material_layout import MaterialDescriptorLayout
+lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
 
-if TYPE_CHECKING:
-    from file_handlers.sdf.models import SdfDocument, SdfProgram
-
-    from .profiles import MmtrGameProfile
+lazy from file_handlers.sdf.models import SdfDocument, SdfProgram
+lazy from .profiles import MmtrGameProfile
 
 
 @dataclass(frozen=True, slots=True)

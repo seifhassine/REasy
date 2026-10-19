@@ -2,7 +2,8 @@ import struct
 from typing import Optional
 
 from file_handlers.base_handler import BaseFileHandler
-from .mdf_file import MdfFile, MDF_MAGIC
+lazy from .mdf_file import MdfFile, MDF_MAGIC
+lazy from .mdf_viewer import MdfViewer
 
 
 class MdfHandler(BaseFileHandler):
@@ -39,7 +40,6 @@ class MdfHandler(BaseFileHandler):
         return result
 
     def create_viewer(self):
-        from .mdf_viewer import MdfViewer
         v = MdfViewer(self)
         v.modified_changed.connect(self.modified_changed.emit)
         v.modified_changed.connect(lambda val: setattr(self, 'modified', bool(val)))

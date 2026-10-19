@@ -3,9 +3,9 @@ from __future__ import annotations
 import weakref
 from pathlib import Path, PurePosixPath
 
-from utils.resource_file_utils import natives_split, resolve_handler_resource_data
+lazy from utils.resource_file_utils import natives_split, resolve_handler_resource_data
 
-from .sdftex_file import SdfTexFile
+lazy from .sdftex_file import SdfTexFile
 
 
 def reference_path(value: str) -> str:

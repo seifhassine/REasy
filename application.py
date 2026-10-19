@@ -1,27 +1,20 @@
 """Application bootstrap for native dependencies, Qt, and translations."""
 
-import gc
 import os
 from pathlib import Path
-import subprocess
+lazy import subprocess
 import sys
 
 import PySide6
 from PySide6.QtCore import QCoreApplication, QLocale
 from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory
 
-from i18n.catalog import validate_catalog
+lazy from i18n.catalog import validate_catalog
 from i18n.language_manager import LanguageManager
 from settings import load_settings
 from utils.app_paths import application_root
+from utils.garbage_collection import configure_garbage_collector
 from utils.native_build import ensure_fastmesh, ensure_fast_pakresolve
-
-
-def _configure_garbage_collector() -> None:
-    gc.collect(2)
-    gc.freeze()
-    _, generation_one, generation_two = gc.get_threshold()
-    gc.set_threshold(50_000, generation_one * 2, generation_two * 2)
 
 
 def _compile_translation_if_needed(settings: dict) -> None:
@@ -53,7 +46,7 @@ def _prepare_native_modules() -> None:
 
 def main(argv=None) -> int:
     argv = list(sys.argv if argv is None else argv)
-    _configure_garbage_collector()
+    configure_garbage_collector()
     _prepare_native_modules()
 
     QLocale.setDefault(QLocale.c())

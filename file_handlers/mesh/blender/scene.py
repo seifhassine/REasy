@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from ..contract_utils import layer_payloads, layer_vertex_offset
+lazy from ..contract_utils import layer_payloads, layer_vertex_offset
 from ..mesh_file import MPLY_MAGIC
 
 LAYERS = ("main", "shadow", "occluder")

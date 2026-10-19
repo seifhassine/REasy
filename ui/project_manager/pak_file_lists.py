@@ -4,11 +4,11 @@ from dataclasses import dataclass
 from functools import lru_cache
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication
-from PySide6.QtWidgets import QFileDialog
+lazy from PySide6.QtCore import QCoreApplication
+lazy from PySide6.QtWidgets import QFileDialog
 
-from file_handlers.pak import normalize_pak_path
-from utils.app_paths import resource_path
+lazy from file_handlers.pak import normalize_pak_path
+lazy from utils.app_paths import resource_path
 
 
 @dataclass(frozen=True, slots=True)

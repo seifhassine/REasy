@@ -1,19 +1,20 @@
-from PySide6.QtWidgets import QMessageBox
-from .rsz_data_types import (
+lazy from PySide6.QtWidgets import QMessageBox
+lazy from .rsz_data_types import (
     ObjectData, ArrayData,
     UserDataData
 )
-from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from file_handlers.rsz.utils.rsz_embedded_utils import (
+lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+lazy from file_handlers.rsz.utils.rsz_embedded_utils import (
     create_scn19_userdata_info,
     initialize_scn19_userdata_runtime,
     shift_embedded_instances_for_insertion,
+    create_embedded_instance_info,
 )
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     collect_userdata_reference_values,
     is_type_assignable,
 )
-from file_handlers.rsz.utils.rsz_gameobject_utils import (
+lazy from file_handlers.rsz.utils.rsz_gameobject_utils import (
     add_guid_to_settings,
     create_gameobject_entry,
     find_gameobject_by_id,
@@ -21,6 +22,8 @@ from file_handlers.rsz.utils.rsz_gameobject_utils import (
     remove_from_object_table,
     update_gameobject_hierarchy,
 )
+lazy from .rsz_array_operations import RszArrayOperations
+lazy from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszPrefabInfo
 
 
 class RszObjectOperations:
@@ -453,7 +456,6 @@ class RszObjectOperations:
         return parent_instance_id, parent_field_name, is_array, array_data, element_index
 
     def _compute_object_insertion_index(self, parent_instance_id, parent_field_name, is_array, element_index=None):
-        from .rsz_array_operations import RszArrayOperations
         if not self.viewer.array_operations:
             self.viewer.array_operations = RszArrayOperations(self.viewer)
         if parent_instance_id is None or parent_field_name is None:
@@ -583,7 +585,6 @@ class RszObjectOperations:
                 return True
 
             if not self.viewer.array_operations:
-                from .rsz_array_operations import RszArrayOperations
                 self.viewer.array_operations = RszArrayOperations(self.viewer)
             self.viewer.array_operations._delete_instance_and_children(current_instance_id)
             object_field.value = 0
@@ -610,7 +611,6 @@ class RszObjectOperations:
             )
         ):
             if not self.viewer.array_operations:
-                from .rsz_array_operations import RszArrayOperations
                 self.viewer.array_operations = RszArrayOperations(self.viewer)
             self.viewer.array_operations._delete_instance_and_children(current_instance_id)
             object_field.value = 0
@@ -634,7 +634,6 @@ class RszObjectOperations:
         return True
 
     def _compute_userdata_insertion_index(self, parent_instance_id, parent_field_name, is_array):
-        from .rsz_array_operations import RszArrayOperations
         if not self.viewer.array_operations:
             self.viewer.array_operations = RszArrayOperations(self.viewer)
         if parent_instance_id is None or parent_field_name is None:
@@ -649,7 +648,6 @@ class RszObjectOperations:
                 if type_id is not None and ui.hash != type_id:
                     ui.hash = type_id
                 return ui
-        from file_handlers.rsz.rsz_file import RSZUserDataInfo
         new_ui = RSZUserDataInfo()
         new_ui.hash = int(type_id) if type_id is not None else 0
         new_ui.crc = self.viewer._parse_crc_value(crc_value) if crc_value is not None else 0
@@ -720,7 +718,6 @@ class RszObjectOperations:
         string_is_shared = False
 
         if current_instance_id > 0:
-            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
             refs = RszInstanceOperations.find_all_instance_references(self.scn.parsed_elements, current_instance_id)
             total_refs = sum(len(v) for v in refs.values())
             our_only_ref = False
@@ -1025,7 +1022,6 @@ class RszObjectOperations:
                 print("No prefab_infos array in scene")
                 return False
                 
-            from file_handlers.rsz.rsz_file import RszPrefabInfo
             new_prefab = RszPrefabInfo()
             
             prefab_id = len(self.scn.prefab_infos)
@@ -1103,8 +1099,6 @@ class RszObjectOperations:
                 userdata_info, type_info, type_id, field_type
             )
         else:
-            from file_handlers.rsz.rsz_file import RSZUserDataInfo
-
             userdata_info = RSZUserDataInfo()
             userdata_info.instance_id = current_insertion_index
             
@@ -1367,11 +1361,9 @@ class RszObjectOperations:
             parent_rui.embedded_instance_infos = []
         
         while len(parent_rui.embedded_instance_infos) <= next_id:
-            from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
             null_info = create_embedded_instance_info(0, self.type_registry)
             parent_rui.embedded_instance_infos.append(null_info)
         
-        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
         instance_info = create_embedded_instance_info(type_id, self.type_registry)
         parent_rui.embedded_instance_infos[next_id] = instance_info
         

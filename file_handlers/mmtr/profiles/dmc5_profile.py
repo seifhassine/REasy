@@ -4,7 +4,7 @@ from dataclasses import replace
 
 from file_handlers.sdf.profiles import DMC5_SDF_PROFILE, DMC5_SDF_RESOURCE_VERSION
 
-from ..models import MmtrNameSemantics, MmtrProgramContext, MmtrSemanticNote
+lazy from ..models import MmtrNameSemantics, MmtrProgramContext, MmtrSemanticNote
 from .base import MmtrGameProfile, register_mmtr_profile, surface_prefix
 from .re_engine_shader_graph import re_engine_shader_graph_profile
 

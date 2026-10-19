@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -6,17 +7,25 @@ from PySide6.QtWidgets import (
 	QGroupBox, QGridLayout, QCheckBox, QSpinBox, QSplitter, QTabWidget, QSizePolicy,
 	QMessageBox, QToolButton, QStyle, QStackedWidget
 )
-from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
+lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSize, QPoint
-from utils.hash_util import murmur3_hash_utf16le
-from utils.number_format import format_display_value
-from utils.resource_file_utils import resource_path_key
-from .mdf_clipboard import MdfClipboard
-from .mdf_file import MATERIAL_FLAG_NAMES, transparent_priority_bias
-from .mdf_template_manager import MdfTemplateManager
-from ui.mdf_template_export_dialog import MdfTemplateExportDialog
-from ui.widgets_utils import get_color_preview_brush
-from .material_graph import MdfMaterialGraph, is_color_parameter, layer_color_channel, pick_parameter_color, unit_value
+lazy from file_handlers.mesh.material_resolver import MeshMaterialResolver
+lazy from file_handlers.mmtr.material_context import MaterialInstanceContext
+lazy from file_handlers.mmtr.material_family import bind_drawn_master, parsed_master
+lazy from file_handlers.mmtr.mmtr_viewer import ObjectScope, open_master_for_object
+lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
+lazy from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY, choose_texture_mip
+lazy from utils.hash_util import murmur3_hash_utf16le
+lazy from utils.number_format import format_display_value
+lazy from utils.resource_file_utils import resource_context_for_handler, resource_path_key, resource_version_from_path
+lazy from .mdf_clipboard import MdfClipboard
+lazy from .mdf_file import (MATERIAL_FLAG_NAMES, GpbfHeader, MatData, ParamHeader, TexHeader,
+    transparent_priority_bias)
+lazy from .mdf_template_manager import MdfTemplateManager
+lazy from ui.mdf_template_export_dialog import MdfTemplateExportDialog
+lazy from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
+lazy from ui.widgets_utils import get_color_preview_brush
+lazy from .material_graph import MdfMaterialGraph, is_color_parameter, layer_color_channel, pick_parameter_color, unit_value
 
 
 COPY_MATERIALS_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Copy Materials")
@@ -744,15 +753,6 @@ class MdfViewer(QWidget):
 		return self._current_file_version()
 
 	def _open_template_manager(self):
-		try:
-			from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
-		except ImportError:
-			QMessageBox.warning(
-				self,
-				self.tr("Template Manager"),
-				self.tr("Template manager UI is unavailable."),
-			)
-			return
 		dlg = MdfTemplateManagerDialog(self, viewer=self)
 		dlg.template_imported.connect(self._on_template_imported)
 		dlg.exec()
@@ -986,7 +986,6 @@ class MdfViewer(QWidget):
 		self.modified = True
 
 	def _on_add_texture(self):
-		from .mdf_file import TexHeader
 		md = self._current_material()
 		if md is None:
 			return
@@ -1008,7 +1007,6 @@ class MdfViewer(QWidget):
 
 	@staticmethod
 	def _new_parameter(name="Param"):
-		from .mdf_file import ParamHeader
 		return ParamHeader(name=name, component_count=1)
 
 	def _on_add_param(self):
@@ -1079,11 +1077,6 @@ class MdfViewer(QWidget):
 			self.params_info_label.setText("")
 
 	def _edit_shader(self):
-		from pathlib import Path
-		from file_handlers.mesh.material_resolver import MeshMaterialResolver
-		from file_handlers.mmtr.mmtr_viewer import ObjectScope, open_master_for_object
-		from utils.resource_file_utils import resource_context_for_handler
-
 		m = self.handler.mdf
 		idx = self._get_current_index()
 		app = getattr(self.handler, "app", None)
@@ -1119,11 +1112,6 @@ class MdfViewer(QWidget):
 				pak_project_dir=str(getattr(context, "project_dir", "") or "") if in_paks else "")
 
 	def _resolve_mmtr_document(self, material):
-		from file_handlers.mesh.material_resolver import MeshMaterialResolver
-		from file_handlers.mmtr.material_context import MaterialInstanceContext
-		from file_handlers.mmtr.material_family import bind_drawn_master, parsed_master
-		from utils.resource_file_utils import resource_context_for_handler, resource_version_from_path
-
 		resource_path = str(material.header.mmtr_path or "").replace("\\", "/").strip()
 		if not resource_path:
 			return None
@@ -1159,10 +1147,6 @@ class MdfViewer(QWidget):
 			return QPixmap()
 		if cache_key in self._texture_preview_cache:
 			return self._texture_preview_cache[cache_key]
-		from file_handlers.mesh.material_resolver import MeshMaterialResolver
-		from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
-		from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY, choose_texture_mip
-
 		try:
 			resolved = MeshMaterialResolver.resolve_texture_path(self.handler, resource_path, prefer_streaming=False)
 			if resolved is None:
@@ -1204,7 +1188,6 @@ class MdfViewer(QWidget):
 
 
 	def _on_add_gpbf(self):
-		from .mdf_file import GpbfHeader
 		m = self.handler.mdf
 		rows = self.materials_table.selectionModel().selectedRows()
 		if not m or not rows:
@@ -1474,7 +1457,6 @@ class MdfViewer(QWidget):
 		m = self.handler.mdf
 		if not m:
 			return
-		from .mdf_file import MatData
 		
 		existing_names = self._get_existing_material_names()
 		new_name = self._generate_unique_material_name("Material", existing_names)

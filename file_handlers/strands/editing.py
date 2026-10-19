@@ -11,9 +11,9 @@ import numpy as np
 from utils.native_build import ensure_fastmesh
 
 from . import fitting, growing
-from .bindings import StrandBindings
-from .fitting import KEY_SPAN
-from .strands_file import (NO_GUIDE, SEGMENT_FLAG_END, SEGMENT_FLAG_START, SEGMENT_VERTEX_MASK, VERTEX, StrandsBounds,
+lazy from .bindings import StrandBindings
+lazy from .fitting import KEY_SPAN
+lazy from .strands_file import (NO_GUIDE, SEGMENT_FLAG_END, SEGMENT_FLAG_START, SEGMENT_VERTEX_MASK, VERTEX, StrandsBounds,
                            StrandsFile, StrandsLodLevel, guide_data, packed, unpacked)
 
 _fastmesh = ensure_fastmesh()

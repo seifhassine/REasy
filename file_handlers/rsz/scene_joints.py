@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from utils.hash_util import murmur3_hash_utf16le
+lazy from utils.hash_util import murmur3_hash_utf16le
 
 F = np.float32
 # A ``.fbxskel``'s joints: their offset, hash table offset and count in its header, and the bytes of each.

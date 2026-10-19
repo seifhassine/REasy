@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QObject, Qt, Signal
 
-from file_handlers.clsp.geometry import outline
-from file_handlers.mesh.lit_preview import LitLines
-from file_handlers.mmtr.overlay import view_projection
+lazy from file_handlers.clsp.geometry import outline
+lazy from file_handlers.mesh.lit_preview import LitLines
+lazy from file_handlers.mmtr.overlay import view_projection
 
-from .colliders import EVERY_TAG, SetColliders
-from .editing import StrandEdit
+lazy from .colliders import EVERY_TAG, SetColliders
+lazy from .editing import StrandEdit
 
 SELECT, PAINT, COMB, SMOOTH, TRANSFORM, COLLIDERS = "select", "paint", "comb", "smooth", "transform", "colliders"
 MODES = (SELECT, PAINT, COMB, SMOOTH, TRANSFORM, COLLIDERS)

@@ -1,7 +1,7 @@
 import re
 from functools import lru_cache
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 from .native_loop_flow import (
     LABEL, _phi, _scalar_result_type, branch_to, flow_loops, fresh_namer, phi_rows, predecessor_map,
 )
@@ -65,7 +65,7 @@ def _escaping_scalar_type(record, types=None):
 
 
 def _contained_lifetimes(blocks, prefix, head, types):
-    local_rows = [row for label in prefix - {head} for row in blocks[label]]
+    local_rows = [*blocks[label] for label in prefix - {head}]
     if any(row.opcode == 'alloca' for row in local_rows):
         return False
     lifetimes = [row for row in local_rows if '@llvm.lifetime.' in row.text]

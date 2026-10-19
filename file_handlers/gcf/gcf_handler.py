@@ -2,10 +2,11 @@ from __future__ import annotations
 
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resolve_handler_resource_data
+lazy from utils.resource_file_utils import resolve_handler_resource_data
 
 from .gcf_file import GcfFile
 from .model import GcfData
+lazy from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 class GcfHandler(BaseFileHandler):
     def __init__(self) -> None:
@@ -46,7 +47,6 @@ class GcfHandler(BaseFileHandler):
     def populate_treeview(self, tree, _parent_item, _metadata_map: dict) -> None:
         if self.gcf is None:
             return
-        from PySide6.QtGui import QStandardItem, QStandardItemModel
 
         data = self.gcf_data
         model = QStandardItemModel()

@@ -8,10 +8,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from file_handlers.sdf.state_editor import SdfStateEditor
+lazy from file_handlers.sdf.state_editor import SdfStateEditor
 
-from .pass_purpose import PURPOSES, pass_purpose, purpose_title
-from .pipeline_settings import (
+lazy from .pass_purpose import PURPOSES, pass_purpose, purpose_title
+lazy from .pipeline_settings import (
     PLAIN_SETTINGS, STATE_KINDS, PipelineSettingError, changed_fields, effective_program, pass_key,
     plain_setting_state, setting_members, state_values, with_plain_setting,
 )

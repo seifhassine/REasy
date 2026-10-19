@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.fol.fol_file import FolFile, FolTransform
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.fol.fol_file import FolFile, FolTransform
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     BoolData,
     OBBData,
@@ -18,10 +18,11 @@ from file_handlers.rsz.rsz_data_types import (
     StringData,
     StructData,
 )
-from file_handlers.rsz.rsz_file import RszFile
-from file_handlers.rsz.utils.rsz_instance_defaults import type_table
-from file_handlers.stmesh.stmesh_file import COMPONENT, FOLIAGE
-from utils.resource_file_utils import normalize_resource_path
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from file_handlers.rsz.utils.rsz_instance_defaults import type_table
+lazy from file_handlers.stmesh.stmesh_file import COMPONENT, FOLIAGE
+lazy from utils.resource_file_utils import normalize_resource_path
+lazy from .scn_scene_adapters import TransformAdapter, FolderLinkAdapter, CompositeMeshAdapter, MeshAdapter
 
 
 VIA_FOLDER = "via.Folder"
@@ -682,8 +683,6 @@ class ScnSceneGraphBuilder:
             self._add_object(document, folder, "folder", graph)
 
     def _extract_transform(self, component, graph, object_id) -> ScnTransform | None:
-        from .scn_scene_adapters import TransformAdapter
-
         try:
             return TransformAdapter(component.fields).read()
         except ValueError:
@@ -778,8 +777,6 @@ class ScnSceneGraphBuilder:
         return fields.get(steps[-1])
 
     def _folder_link_path(self, fields: Mapping[str, object]) -> str:
-        from .scn_scene_adapters import FolderLinkAdapter
-
         return FolderLinkAdapter(fields).scene_path()
 
     def _folder_offset(self, fields: Mapping[str, object]) -> tuple[float, float, float] | None:
@@ -1229,8 +1226,6 @@ class ScnSceneGraphBuilder:
         return True
 
     def _extract_composite_transform(self, fields: Mapping[str, object]) -> ScnTransform | None:
-        from .scn_scene_adapters import CompositeMeshAdapter
-
         try:
             return CompositeMeshAdapter(fields).read_transform()
         except ValueError:
@@ -1240,8 +1235,6 @@ class ScnSceneGraphBuilder:
         self,
         fields: Mapping[str, object],
     ) -> tuple[str, str, tuple[bool, ...] | None]:
-        from .scn_scene_adapters import MeshAdapter
-
         adapter = MeshAdapter(fields)
         return (*adapter.paths(), adapter.enabled_parts())
 

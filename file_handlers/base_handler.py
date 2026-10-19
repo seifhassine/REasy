@@ -1,5 +1,5 @@
 from abc import abstractmethod
-from utils.type_registry import TypeRegistry
+lazy from utils.type_registry import TypeRegistry
 from PySide6.QtCore import QObject, Signal
 
 class BaseFileHandler(QObject):

@@ -3,17 +3,23 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
+lazy from PySide6.QtCore import QSortFilterProxyModel, QStringListModel, Qt
 from PySide6.QtWidgets import (
     QButtonGroup, QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QListView, QPushButton, QRadioButton, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from settings import app_settings, remember_setting
-from ui.background_jobs import BackgroundJobs
-from utils.resource_file_utils import resource_context_for_app, resource_version_from_path, streaming_companion_path
+lazy from settings import app_settings, remember_setting
+lazy from ui.background_jobs import BackgroundJobs
+lazy from utils.resource_file_utils import resource_context_for_app, resource_version_from_path, streaming_companion_path
 
 from .blender import Reference, reference_bones, suggest
+lazy from .mesh_file import MeshFile
+lazy from file_handlers.pak import scan_pak_files
+lazy from file_handlers.pak.reader import CachedPakReader
+lazy from ui.project_manager.constants import BASE_DIR
+lazy from ui.project_manager.pak_file_lists import find_default_pak_list_path, read_pak_list_file
+lazy from app_config import GAMES
 
 DIRECTORIES_KEY = "blender_reference_directories"
 
@@ -26,8 +32,6 @@ class ReferenceChoice:
 
 
 def _mesh_from_bytes(data, streaming, file_version, label):
-    from .mesh_file import MeshFile
-
     mesh = MeshFile()
     mesh.read(data, file_version=int(file_version), streaming_data=streaming)
     return ReferenceChoice(Reference.from_mesh(mesh, file_version, label), mesh, label)
@@ -56,11 +60,6 @@ def load_pak_reference(reader, path):
 
 
 def open_game_files(game, directory):
-    from file_handlers.pak import scan_pak_files
-    from file_handlers.pak.reader import CachedPakReader
-    from ui.project_manager.constants import BASE_DIR
-    from ui.project_manager.pak_file_lists import find_default_pak_list_path, read_pak_list_file
-
     paks = scan_pak_files(directory)
     if not paks:
         raise ValueError(f"No game PAK files in {directory}")
@@ -132,8 +131,6 @@ class ReferencePicker(QDialog):
         self.sources.button(0 if current is not None else 1).setChecked(True)
 
     def _game_page(self):
-        from app_config import GAMES
-
         page = QWidget()
         layout = QVBoxLayout(page)
         form = QFormLayout()

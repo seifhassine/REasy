@@ -32,9 +32,9 @@ _ROUTE_TABLES = frozenset(('program_routes', 'semantic_programs'))
 _GRAPH_KEYS = frozenset(('stage', 'contract_fingerprint', 'nodes', 'links'))
 
 
-_MISSING = object()
-_INVALID = object()
-_MEMO_OWNERS = object()
+_MISSING = sentinel("_MISSING")
+_INVALID = sentinel("_INVALID")
+_MEMO_OWNERS = sentinel("_MEMO_OWNERS")
 
 
 def _invalid_properties():

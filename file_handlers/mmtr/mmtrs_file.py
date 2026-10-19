@@ -3,7 +3,7 @@ from pathlib import PurePosixPath
 import struct
 from typing import Callable
 
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
 
 class MmtrsFormatError(ValueError):
@@ -61,7 +61,7 @@ class MmtrsFile:
             offset = offsets.setdefault(path, len(result))
             struct.pack_into("<Q", result, 8 + index * 8, offset)
             result.extend(path.encode("utf-16le") + b"\0\0")
-        return bytes(result)
+        return result.take_bytes()
 
     def path_for_lod(self, shader_lod: int) -> str:
         if not 0 <= shader_lod < len(self.material_paths):

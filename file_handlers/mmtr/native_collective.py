@@ -1,5 +1,5 @@
 import re
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 
 
 _QUERIES = {

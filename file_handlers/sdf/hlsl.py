@@ -7,7 +7,7 @@ from pathlib import Path
 import sys
 from uuid import UUID
 
-from .com import blob_bytes, com_method, com_release
+lazy from .com import blob_bytes, com_method, com_release
 
 
 class HlslCompileError(ValueError):

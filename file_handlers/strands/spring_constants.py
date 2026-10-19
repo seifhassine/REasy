@@ -5,17 +5,17 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.clsp.clsp_file import ShapeKind
-from file_handlers.clsp.placement import point
-from file_handlers.clsp.wrappers import placed
-from file_handlers.mmtr.engine_buffers import engine_inverse
-from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.clsp.placement import point
+lazy from file_handlers.clsp.wrappers import placed
+lazy from file_handlers.mmtr.engine_buffers import engine_inverse
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
 
-from .chain_catalog import ConstantSources
+lazy from .chain_catalog import ConstantSources
 from .chain_constants import ConstantBlocks, matrix_rotation
-from .strands_file import StrandsFile
+lazy from .strands_file import StrandsFile
 
 F = np.float32
 # The node mass the physics object's constructor sets.

@@ -5,15 +5,15 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
 
 from .chain_catalog import ConstantSources
-from .lod import F, spring_box, world_box
+lazy from .lod import F, spring_box, world_box
 from .spring_constants import SpringConstants, SpringFrame
 from .spring_passes import SpringShape, SpringState
-from .strands_file import StrandsFile
+lazy from .strands_file import StrandsFile
 
 _START_LEVEL, _RESTART_FRAME, _SIMULATED = 3, 3, 1
 _AUTO = 4

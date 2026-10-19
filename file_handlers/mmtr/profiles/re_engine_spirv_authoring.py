@@ -3,12 +3,13 @@ import re
 
 from file_handlers.sdf.dxc import compile_hlsl_dxc
 from file_handlers.sdf.shader_graph import ShaderSignatureField
-from file_handlers.sdf.spirv import SpirvError, reflect_spirv
-from file_handlers.sdf.spirv_ir import Operand, SpirvBuilder, SpirvSemanticIr
-from file_handlers.sdf.spirv_tools import finalize_spirv
+lazy from file_handlers.sdf.spirv import SpirvError, reflect_spirv
+lazy from file_handlers.sdf.spirv_ir import Operand, SpirvBuilder, SpirvSemanticIr
+lazy from file_handlers.sdf.spirv_tools import finalize_spirv
 from .re_engine_dxil_authoring import _carrier_source
-from .material_stage_inputs import stage_input_library
-from .constant_words import word_parts, override_word, OVERRIDE_PATTERN, normalize_word_expressions
+lazy from .material_stage_inputs import stage_input_library
+lazy from .constant_words import word_parts, override_word, OVERRIDE_PATTERN, normalize_word_expressions
+lazy from ..surface_splice_spirv import SpirvSurfaceSplice
 
 
 @dataclass(frozen=True)
@@ -442,7 +443,6 @@ def rebuild_spirv(ir, source_contract, contract, *, scalar_expressions, texture_
         raise SpirvError("Compiled Vulkan expression library omitted an override")
     surface = None
     if surface_plan:
-        from ..surface_splice_spirv import SpirvSurfaceSplice
         surface = SpirvSurfaceSplice(
             ir, linker, surface_plan, lambda: [input_value(read, component)[0] for read, component in input_fields],
             lambda pointer_type, *initializer: local_variable(pointer_type, *initializer), lambda row: rows.append(row),

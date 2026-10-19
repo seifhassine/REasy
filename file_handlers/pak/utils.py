@@ -4,9 +4,16 @@ import re
 from pathlib import Path
 from typing import List, NamedTuple
 import struct
-import numpy as np
-from .pakfile import PAK_HEADER_SIZE, _decrypt_pak_entry_data, read_pak_header
-from utils.hash_util import murmur3_hash
+lazy import numpy as np
+lazy from .pakfile import (
+    PAK_HEADER_SIZE,
+    _decrypt_pak_entry_data,
+    read_pak_header,
+    PAK_FLAG_ENTRY_TABLE_KEY,
+    PAK_FLAG_HASH_REMAP,
+    _skip_optional_header_sections,
+)
+lazy from utils.hash_util import murmur3_hash
 
 
 def normalize_pak_path(path: str, *, lowercase: bool = False) -> str:
@@ -76,8 +83,7 @@ def _mod_pak_cache_key(pak_path: str) -> tuple[str, int, int] | None:
         st = os.stat(pak_path)
     except OSError:
         return None
-    mtime_ns = getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000))
-    return (os.path.abspath(pak_path), int(st.st_size), int(mtime_ns))
+    return (os.path.abspath(pak_path), st.st_size, st.st_mtime_ns)
 
 
 def pak_mod_flags(pak_path: str) -> PakModFlags:
@@ -125,12 +131,6 @@ def any_pak_modded(pak_paths) -> bool:
 
 
 def read_pak_entry_hashes(pak_path: str, *, strict: bool = False):
-    from .pakfile import (
-        PAK_FLAG_ENTRY_TABLE_KEY,
-        PAK_FLAG_HASH_REMAP,
-        _skip_optional_header_sections,
-    )
-
     empty = np.empty(0, dtype='<u8')
 
     try:

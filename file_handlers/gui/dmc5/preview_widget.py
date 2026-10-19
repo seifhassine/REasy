@@ -9,7 +9,7 @@ from functools import lru_cache
 
 import numpy as np
 from PySide6.QtCore import QByteArray, QElapsedTimer, QObject, QPointF, QRect, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import (
+lazy from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
@@ -27,33 +27,33 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QWidget
 
-from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer
+lazy from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer
 
-from ..dependencies import GuiDependencyCatalog
-from ..errors import GuiSceneError
-from ..model import GuiAnimation, GuiNineSlice, GuiSymbol, GuiTextureSet
-from ..native_math import f32 as _preview_f32
-from ..native_math import fadd as _pfadd
-from ..native_math import fdiv as _pfdiv
-from ..native_math import fmul as _pfmul
-from ..native_math import fsub as _pfsub
-from ..scene import GuiSceneNode
-from .adapter import DMC5_DEFAULT_LANGUAGE, DMC5_DEFAULT_SAFE_AREA_RATIO
-from .controllers import Dmc5GuiControllerContext
-from .icon_tags import (
+lazy from ..dependencies import GuiDependencyCatalog
+lazy from ..errors import GuiSceneError
+lazy from ..model import GuiAnimation, GuiNineSlice, GuiSymbol, GuiTextureSet
+lazy from ..native_math import f32 as _preview_f32
+lazy from ..native_math import fadd as _pfadd
+lazy from ..native_math import fdiv as _pfdiv
+lazy from ..native_math import fmul as _pfmul
+lazy from ..native_math import fsub as _pfsub
+lazy from ..scene import GuiSceneNode
+lazy from .adapter import DMC5_DEFAULT_LANGUAGE, DMC5_DEFAULT_SAFE_AREA_RATIO
+lazy from .controllers import Dmc5GuiControllerContext
+lazy from .icon_tags import (
     DMC5_MENU_DECIDE_VK,
     Dmc5IconInputContext,
     resolve_dmc5_icon_tag,
 )
 from .playback import DMC5_SEGMENT_VALUES, Dmc5GuiPlayback
-from .scene import Dmc5GuiScene, project_gui_point
-from .text import (
+lazy from .scene import Dmc5GuiScene, project_gui_point
+lazy from .text import (
     TextOpcode,
     compile_dmc5_markup,
     find_dmc5_wrap_break,
     ruby_layout_plan,
 )
-from .text_tags import resolve_dmc5_text_tag
+lazy from .text_tags import resolve_dmc5_text_tag
 
 
 _CONTAINERS = {

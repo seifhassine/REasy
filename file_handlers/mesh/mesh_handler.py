@@ -1,19 +1,34 @@
 import struct
 from pathlib import Path
 from typing import Callable, Optional
+from dataclasses import replace
+import hashlib
+import json
 
 from file_handlers.base_handler import BaseFileHandler
-from file_handlers.sdftex.mesh_resource import MeshDistanceField
+lazy from file_handlers.sdftex.mesh_resource import MeshDistanceField
 from .canonical_writer import CanonicalMeshWriteResult, serialize_mesh
 from .mesh_file import MeshFile, MeshLoadMode, MESH_MAGIC, MPLY_MAGIC
-from .profiles import MeshGameProfile
-from utils.resource_file_utils import (
+lazy from .profiles import MeshGameProfile, mesh_profile_for_game
+lazy from utils.resource_file_utils import (
     ResourceResolutionContext,
     natives_split,
     resolve_handler_resource_data,
     resource_context_for_app,
     resource_version_from_path,
 )
+lazy from .conversion import convert_mesh
+lazy from . import skinning_contract
+lazy from .conversion_geometry import mesh_payloads
+lazy from .conversion_skin import (
+    SourceSkinningAmbiguity,
+    source_has_material_skinning,
+    source_skinning_contract,
+    equivalent_source_skinning,
+    validate_source_skinning,
+)
+lazy from .material_resolver import MdfSkinningConflict, MeshMaterialResolver
+lazy from .mesh_viewer import MeshViewer
 
 
 class MeshHandler(BaseFileHandler):
@@ -98,8 +113,6 @@ class MeshHandler(BaseFileHandler):
         return result.main
 
     def convert_to(self, target, **options):
-        from .conversion import convert_mesh
-
         source_mdf_path = options.pop("source_mdf_path", "")
         if source_mdf_path and "source_skinning_contract" in options:
             raise ValueError("Choose a source MDF or an explicit source shader, not both")
@@ -109,22 +122,12 @@ class MeshHandler(BaseFileHandler):
         return convert_mesh(self.mesh, target, **options)
 
     def conversion_source_skinning_contract(self, *, explicit_mdf_path=""):
-        from .skinning_contract import resolve_mesh_skinning_contract, normal_compute_influence_count
-        from dataclasses import replace
-        from .conversion_geometry import mesh_payloads
-        from .conversion_skin import (
-            SourceSkinningAmbiguity, source_has_material_skinning, source_skinning_contract,
-            equivalent_source_skinning, validate_source_skinning,
-        )
-        from .material_resolver import MdfSkinningConflict, MeshMaterialResolver
-        from .profiles import mesh_profile_for_game
-
         if self.mesh is None or self.mesh.header.magic == MPLY_MAGIC:
             return None
 
         def material_contract(counts):
             return replace(source_skinning_contract(self.mesh, material_counts=counts),
-                           lod0_compute_influence_count=normal_compute_influence_count(self.mesh))
+                           lod0_compute_influence_count=skinning_contract.normal_compute_influence_count(self.mesh))
         flags = self.mesh.header.decoded_content_flags
         if flags is not None and not flags.is_skinning:
             return None
@@ -147,7 +150,7 @@ class MeshHandler(BaseFileHandler):
                 counts = MeshMaterialResolver.resolve_material_skinning_influences(
                     self, game, explicit_mdf_path=explicit_mdf_path)
                 return material_contract(counts)
-            return resolve_mesh_skinning_contract(self.mesh, self, explicit_mdf_path=explicit_mdf_path)
+            return skinning_contract.resolve_mesh_skinning_contract(self.mesh, self, explicit_mdf_path=explicit_mdf_path)
         except ValueError as exc:
             if explicit_mdf_path:
                 raise
@@ -169,8 +172,6 @@ class MeshHandler(BaseFileHandler):
             if part.output.streaming is not None:
                 outputs[str(self._streaming_output_path(part_path))] = part.output.streaming
         if len(result.parts) > 1:
-            import hashlib
-            import json
             manifest = dict(schema="reasy.mesh-assembly", version=1, game=result.profile.game,
                 mesh_version=result.file_version, source=Path(self.filepath).name if self.filepath else None,
                 requirements=result.requirements, losses=result.losses,
@@ -319,7 +320,6 @@ class MeshHandler(BaseFileHandler):
         return self._parse(data, MeshLoadMode.FULL)
 
     def create_viewer(self):
-        from .mesh_viewer import MeshViewer
         v = MeshViewer(self)
         v.modified_changed.connect(self.modified_changed.emit)
         return v

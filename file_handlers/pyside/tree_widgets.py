@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLay
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog, QPushButton,
                                QStyle, QStyleOptionViewItem)
-from PySide6.QtGui import QCursor, QIcon, QPalette
+lazy from PySide6.QtGui import QCursor, QIcon, QPalette
 from PySide6.QtCore import (
     QT_TRANSLATE_NOOP,
     Qt,
@@ -15,22 +15,26 @@ from PySide6.QtCore import (
 from shiboken6 import isValid
 
 
-from .tree_core import TreeModel
-from .component_selector import ComponentSelectorDialog 
-from ui.template_manager_dialog import TemplateManagerDialog
-from ui.template_export_dialog import TemplateExportDialog
-from ui.highlight_utils import model_index_row_path
-from file_handlers.rsz.rsz_template_manager import RszTemplateManager
+lazy from .tree_core import TreeModel
+lazy from .component_selector import ComponentSelectorDialog 
+lazy from ui.template_manager_dialog import TemplateManagerDialog
+lazy from ui.template_export_dialog import TemplateExportDialog
+lazy from ui.highlight_utils import model_index_row_path
+lazy from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
-from .tree_widget_factory import TreeWidgetFactory
+lazy from .tree_widget_factory import TreeWidgetFactory
 
-from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
-from utils.translate_utils import (
+lazy from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
+lazy from utils.translate_utils import (
     TranslationBatcher,
     TranslationManager,
     show_translation_error,
     show_translation_result,
 )
+lazy from file_handlers.pyside.value_widgets import StringInput
+lazy from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+lazy from file_handlers.rsz.utils.rsz_embedded_utils import find_embedded_context
+lazy from file_handlers.rsz.rsz_data_types import UserDataData
 
 
 _DATA_BLOCK_LABEL = "Data Block"
@@ -46,7 +50,7 @@ _NEW_GAMEOBJECT_NAME = QT_TRANSLATE_NOOP(
 _GAMEOBJECT_NAME_PROMPT = QT_TRANSLATE_NOOP(
     "AdvancedTreeView", "GameObject Name:"
 )
-_MISSING = object()
+_MISSING = sentinel("_MISSING")
 
 
 class AdvancedStyledDelegate(QStyledItemDelegate):
@@ -357,7 +361,6 @@ class AdvancedTreeView(QTreeView):
             self.viewer.handler.auto_resource_management
             and node_type == "ResourceData"
         ):
-            from file_handlers.pyside.value_widgets import StringInput
             widget.findChild(StringInput).valueChanged.connect(
                 lambda _=index: self._on_resource_name_changed()
             )
@@ -425,7 +428,6 @@ class AdvancedTreeView(QTreeView):
             translate_all_act = menu.addAction(self.tr("Translate All GameObject Names"))
             action = menu.exec_(QCursor.pos())
             if action == exp_act:
-                from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
                 RszGameObjectClipboard.export_datablock(self.viewer)
             elif action == imp_act:
                 self._show_import_randomization_dialog(index)
@@ -1092,13 +1094,9 @@ class AdvancedTreeView(QTreeView):
         data_obj,
         element_type,
     ):
-        try:
-            from file_handlers.rsz.rsz_data_types import UserDataData
-            is_userdata_array = (
-                getattr(data_obj, 'element_class', None) == UserDataData
-            )
-        except Exception:
-            is_userdata_array = False
+        is_userdata_array = (
+            getattr(data_obj, 'element_class', None) == UserDataData
+        )
         is_normal_rsz = not parent.scn.has_embedded_rsz
         if not is_userdata_array or not is_normal_rsz:
             return element_type, None, True
@@ -1190,7 +1188,6 @@ class AdvancedTreeView(QTreeView):
             )
 
     def _find_embedded_context(self, item):
-        from file_handlers.rsz.utils.rsz_embedded_utils import find_embedded_context
         return find_embedded_context(item)
 
     def _display_confirmation(self, message):
@@ -3177,7 +3174,6 @@ class AdvancedTreeView(QTreeView):
         import_button.clicked.connect(dialog.accept)
         
         if dialog.exec_() == QDialog.Accepted:
-            from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
             result = RszGameObjectClipboard.import_datablock(
                 self.viewer,
                 parent_folder_id=-1,

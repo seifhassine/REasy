@@ -1,5 +1,5 @@
 import json
-from .type_registry_patcher import TypeRegistryPatcher
+lazy from .type_registry_patcher import TypeRegistryPatcher
 
 
 class TypeRegistry:

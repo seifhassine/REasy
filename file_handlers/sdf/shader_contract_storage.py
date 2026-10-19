@@ -4,9 +4,9 @@ import json
 from dataclasses import asdict
 from .shader_stage_execution import ShaderPrimitiveExecution, ShaderMeshExecution
 from .spirv_execution import ShaderVulkanExecution
-from .storage_codec import pack_ir_storage, unpack_ir_storage
+lazy from .storage_codec import pack_ir_storage, unpack_ir_storage
 
-from file_handlers.sdf.shader_graph import (
+lazy from file_handlers.sdf.shader_graph import (
     ShaderContract,
     ShaderContractBuffer,
     ShaderContractResource,

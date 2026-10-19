@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from file_handlers.mesh.mesh_handler import MeshHandler
 from file_handlers.mesh.mesh_file import MeshLoadMode
-from utils.resource_file_utils import ResourceResolutionContext
+lazy from utils.resource_file_utils import ResourceResolutionContext
 
 from ..evaluation.mesh_adapter import rig_from_re_engine_mesh
 from ..evaluation.model import Rig

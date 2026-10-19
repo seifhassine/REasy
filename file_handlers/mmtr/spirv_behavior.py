@@ -1,11 +1,13 @@
 from dataclasses import dataclass
 from functools import lru_cache
 
-from file_handlers.sdf.spirv import reflect_spirv
-from file_handlers.sdf.spirv_contract import _DOMAIN_LOCATION_BUILTIN
-from .profiles.re_engine_spirv_authoring import _Module
+lazy from file_handlers.sdf.spirv import reflect_spirv
+lazy from file_handlers.sdf.spirv_contract import _DOMAIN_LOCATION_BUILTIN, patch_interface_ids, spirv_interface_rows
+lazy from .profiles.re_engine_spirv_authoring import _Module
 from .vanilla_function import _Builder, _Value, VanillaFunctionError
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from .hull_behavior import combine_hull_behaviors
+lazy from .spirv_control_flow import SpirvControlFlow
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 
 @dataclass(frozen=True)
@@ -43,7 +45,6 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
     module = _Module(ir)
     native = reflect_spirv(ir.write())
     if native.stage == 'hull' and _hull_phase is None:
-        from .hull_behavior import combine_hull_behaviors
         return combine_hull_behaviors(
             recover_spirv_function(ir, contract, name=name + ' Control Points', _hull_phase='control_point'),
             recover_spirv_function(ir, contract, name=name + ' Patch Constants', _hull_phase='patch'),
@@ -58,7 +59,6 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
     resources = {d.variable_id: next((r for r in contract.resources if r.name == d.name), None)
                  for d in native.descriptors}
     buffers = {d.variable_id: contract.buffer(d.name) for d in native.descriptors if d.descriptor_kind == 'constant-buffer'}
-    from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
     patch_ids = patch_interface_ids(native, module.decorations)
     input_rows, output_rows, _undeclared_ids = spirv_interface_rows(native, contract, patch_ids)
     interface_rows = {**input_rows, **output_rows}
@@ -128,7 +128,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
 
     def construct(type_id, elements):
         if definitions[type_id].opcode == 23:
-            return builder.vector([part for element in elements for part in parts(element)])
+            return builder.vector([*parts(element) for element in elements])
         if len(elements) != len(children(type_id)):
             raise VanillaFunctionError('A Vulkan composite does not match its declared members.')
         return _Composite(tuple(elements))
@@ -675,7 +675,6 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
             raise VanillaFunctionError(f'{op} did not produce its declared result.')
         values[row.result] = result
 
-    from .spirv_control_flow import SpirvControlFlow
     function_rows = module.functions[entries[0].values[1]][1:-1]
     if _hull_phase is not None:
         from .spirv_tessellation import hull_phase_bodies
@@ -688,7 +687,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
 
     def flattened(item):
         if isinstance(item, _Composite):
-            return [leaf for child in item.elements for leaf in flattened(child)]
+            return [*flattened(child) for child in item.elements]
         if not isinstance(item, _Value):
             raise VanillaFunctionError('A Vulkan control-flow value needs a numeric aggregate or explicit object ownership.')
         return [item]
@@ -751,7 +750,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
         frame['state_values'] = state_values
         frame['boundary_keys'] = [('continue', header), *frame['update_keys'], *exports]
         walk(header, ('boundary', header), ready=True, parent=header)
-        updates = [leaf for key in frame['update_keys'] for leaf in flattened(values[key])]
+        updates = [*flattened(values[key]) for key in frame['update_keys']]
         templates = {**{key: values[key] for key in exports}, **{('output', key): item for key, item in outputs.items()}}
         flat_exports = {(key, i): leaf for key, item in templates.items() for i, leaf in enumerate(flattened(item))}
         joined = builder.merge_loop(frame, values['continue', header], updates, flat_exports)
@@ -840,8 +839,8 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
                 condition, (arm_nodes, arm_values, arm_execution) = steps[index]
                 before = {node.node_id for node in builder.graph.nodes} if index else set()
                 merged_leaves = iter(builder.merge_branch(condition, arm_nodes, merged_nodes,
-                    [leaf for item in arm_values for leaf in flattened(item)],
-                    [leaf for item in merged for leaf in flattened(item)], executions=(arm_execution, merged_execution)))
+                    [*flattened(item) for item in arm_values],
+                    [*flattened(item) for item in merged], executions=(arm_execution, merged_execution)))
                 merged = [restored(template, merged_leaves) for template in arm_values]
                 if index:
                     current = {node.node_id for node in builder.graph.nodes}

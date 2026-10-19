@@ -3,9 +3,9 @@ from __future__ import annotations
 
 import dataclasses
 
-import numpy as np
+lazy import numpy as np
 
-from .clsp_file import CollisionShape, ShapeKind
+lazy from .clsp_file import CollisionShape, ShapeKind
 
 _STEPS, _PLANE = 24, 0.5
 

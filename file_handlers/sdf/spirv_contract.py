@@ -2,10 +2,11 @@ from dataclasses import replace
 import hashlib
 import re
 
-from .shader_graph import (ShaderContract, ShaderContractBuffer, ShaderContractResource,
+lazy from .shader_graph import (ShaderContract, ShaderContractBuffer, ShaderContractResource,
                            ShaderContractVariable, ShaderSignatureField, _identifier)
-from .spirv import SpirvError, reflect_spirv
-from .spirv_ir import SpirvSemanticIr
+lazy from .spirv import SpirvError, reflect_spirv
+lazy from .spirv_execution import vulkan_primitive_execution
+lazy from .spirv_ir import SpirvSemanticIr
 
 
 _BUILTINS = {
@@ -111,7 +112,6 @@ def spirv_shader_contract(module, *, entry_point=None):
             if sampled is not None and sampled.opcode == 86:
                 comparison.add(root(sampled.values[3]))
 
-    from .spirv_execution import vulkan_primitive_execution
     streams = {row.values[0]:row.values[2] for row in ir.instructions if row.opcode==71 and row.values[1]==29}
     primitive = vulkan_primitive_execution(native, tuple(sorted({streams.get(item.variable_id,0) for item in native.outputs})) or (0,))
 

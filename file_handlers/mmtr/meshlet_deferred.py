@@ -3,16 +3,15 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from types import MappingProxyType
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from .material_preview import (
+lazy from .material_preview import (
     RANGE_SRV, RANGE_UAV, VIEW_DIMENSIONS, _UAV_DIMENSIONS, SHADER_VISIBILITY, MaterialPreviewError,
 )
-from .pretransform import SystemProgram
-from .pretransform_passes import SystemPrograms, dispatch_compute
-from .resident import BUFFER, UNORDERED_ACCESS, Resident
+lazy from .pretransform import SystemProgram
+lazy from .pretransform_passes import SystemPrograms, dispatch_compute
+lazy from .resident import BUFFER, UNORDERED_ACCESS, Resident
 
 STAGES = ("material_ids", "transform", "shade")
 
@@ -47,7 +46,7 @@ class DeferredTexturing:
 
 
 def _names(data: Mapping) -> Mapping[str, str]:
-    return MappingProxyType({str(name): str(role) for name, role in data.items()})
+    return frozendict({str(name): str(role) for name, role in data.items()})
 
 
 def deferred_from_dict(data: Mapping) -> DeferredTexturing:
@@ -59,7 +58,7 @@ def deferred_from_dict(data: Mapping) -> DeferredTexturing:
     steps = tuple(DeferredStep(str(item["program"]), int(item["groups"]), _names(item["buffers"]))
                   for item in data["steps"])
     bound = {stage: _names(data["bound"][stage]) for stage in STAGES}
-    named = {role for item in (*(step.buffers for step in steps), *bound.values()) for role in item.values()}
+    named = {*item.values() for item in (*(step.buffers for step in steps), *bound.values())}
     zeroed = frozenset(map(str, data["zeroed"]))
     arguments = data["arguments"]
     named.add(str(arguments["role"]))
@@ -67,7 +66,7 @@ def deferred_from_dict(data: Mapping) -> DeferredTexturing:
         raise DeferredCatalogError("a deferred texturing catalog names roles it gives no size, or zeroes a texture")
     if not steps or any(step.groups < 1 for step in steps):
         raise DeferredCatalogError("a deferred texturing catalog runs no steps, or a step over no groups")
-    return DeferredTexturing(steps, MappingProxyType(bound), MappingProxyType(roles), zeroed,
+    return DeferredTexturing(steps, frozendict(bound), frozendict(roles), zeroed,
                              int(data["transform_ids"]), str(arguments["role"]), int(arguments["bytes"]))
 
 

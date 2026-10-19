@@ -1,8 +1,9 @@
 import re
 from collections.abc import Set
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from .profiles.re_engine_dxil_recovery import DxilSemanticRecord
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from .profiles.re_engine_dxil_recovery import DxilSemanticRecord
+lazy from .native_loop_values import prepare_loop_exports
 
 
 LABEL = r'[A-Za-z0-9$._-]+'
@@ -258,7 +259,6 @@ def normalize_loop_boundaries(blocks, successors, conditions, edge_origins, *, t
         dispatch = fresh(f'reasy_exit_{header}')
         edges = [(source, header) for source in sorted(loop['latches'])] + exits
         bridges = {(source, target): fresh(f'reasy_edge_{source}_{target}') for source, target in edges}
-        from .native_loop_values import prepare_loop_exports
         prepare_loop_exports(blocks,members,dominators,fresh)
         outside = {label: list(records) for label, records in blocks.items() if label not in members}
         definitions = {record.result: record for member in members for record in blocks[member] if record.result}

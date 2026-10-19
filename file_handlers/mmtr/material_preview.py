@@ -6,16 +6,18 @@ from dataclasses import dataclass, field
 from functools import lru_cache
 import re
 import struct
-from types import MappingProxyType
 from typing import NamedTuple
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 
-from file_handlers.mdf.material_layout import MaterialDescriptorLayout
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from file_handlers.tex.qt_image_utils import parse_tex_bytes
-from file_handlers.tex.texture_quality import mip_for_largest_side
-from utils.resource_file_utils import resource_version_from_path
+lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.tex.qt_image_utils import parse_tex_bytes
+lazy from file_handlers.tex.texture_quality import mip_for_largest_side
+lazy from utils.resource_file_utils import resource_version_from_path
+
+lazy from .profiles.re_engine_bindless_material import HeapIndices
+lazy from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
 
 translate = QCoreApplication.translate
 
@@ -194,7 +196,6 @@ class _MaterialReads:
 
 @lru_cache(maxsize=16)
 def _dxil_lines(shader: bytes) -> tuple[str, ...]:
-    from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
     return tuple(item.text for item in recover_re_engine_dxil_ir(shader).records)
 
 
@@ -220,14 +221,13 @@ def _material_reads(contract, shader: bytes, prefix: int) -> _MaterialReads:
                 "MaterialPreview", "The pass names its material constant buffer through a table the preview does not "
                 "lay out."))
         tables[table.name] = max(tables.get(table.name, 0), access.constant_buffer_size)
-    return _MaterialReads(frozenset(holders), MappingProxyType(tables),
-                          MappingProxyType(_record_tags(lines, accesses, prefix)), texture_reads,
+    return _MaterialReads(frozenset(holders), frozendict(tables),
+                          frozendict(_record_tags(lines, accesses, prefix)), texture_reads,
                           material_buffer_reads(lines, accesses), engine_heap_handles(lines, contract, accesses))
 
 
 @lru_cache(maxsize=16)
 def _heap_indices(contract, shader: bytes):
-    from .profiles.re_engine_bindless_material import HeapIndices
     return HeapIndices(list(_dxil_lines(shader)), contract)
 
 
@@ -355,7 +355,7 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The pass reads one record word's texture from the descriptor heap and from an array."))
     buffers: dict[str, int] = {}
-    for offset in sorted({offset for found in reads.values() for offset in found.buffers}):
+    for offset in sorted({*found.buffers for found in reads.values()}):
         name = words.get(("gpu_buffer", offset))
         if name is None:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP(
@@ -382,9 +382,9 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
             now = bytearray(record)
             for offset, values in animated:
                 struct.pack_into(f"<{len(values)}f", now, offset, *values)
-            return shape(bytes(header) + bytes(now))
+            return shape(bytes(header) + now.take_bytes())
         return Following((material.animated, place, held), make)
-    sizes = [size for found in reads.values() for size in found.tables.values()]
+    sizes = [*found.tables.values() for found in reads.values()]
     if sizes:
         buffer_index, largest = base + len(indices) + len(buffers) + 1, max(sizes)
         heap[buffer_index] = (RANGE_CBV, 0, (buffer_index, given(lambda data: data.ljust(largest, b"\0"),

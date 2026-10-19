@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from utils.binary_handler import BinaryHandler
+lazy from utils.binary_handler import BinaryHandler
 
 
 UVS_MAGIC = 0x5556532E

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 
 from file_handlers.tex.dxgi import DXGI_FORMAT_R16G16B16A16_FLOAT, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_UINT
 
-from .chain_passes import program_variant
+lazy from .chain_passes import program_variant
 from .render_passes import Fill, RenderLayout, Step, Write, _over
 
 # Pixels per tile side.

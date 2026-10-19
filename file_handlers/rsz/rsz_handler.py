@@ -10,40 +10,45 @@ from PySide6.QtWidgets import (
     QTabWidget,
 )
 
-from utils.enum_manager import EnumManager
-from utils.registry_manager import RegistryManager
-from utils.hex_util import guid_le_to_str
+lazy from utils.enum_manager import EnumManager
+lazy from utils.registry_manager import RegistryManager
+lazy from utils.hex_util import guid_le_to_str
 from ..base_handler import BaseFileHandler
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rsz.rsz_data_types import (
     StructData,
     ArrayData,
     UserDataData,
     is_reference_type,
     is_array_type,
 )
-from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
-from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError
-from ui.styles import get_color_scheme, get_tree_stylesheet
-from ..pyside.tree_model import DataTreeBuilder
-from ..pyside.tree_core import DeferredChildBuilder
-from ..pyside.tree_widgets import AdvancedTreeView
-from utils.id_manager import IdManager, EmbeddedIdManager
-from .rsz_array_operations import RszArrayOperations
-from .rsz_instance_operations import RszInstanceOperations
-from .utils.rsz_name_helper import RszViewerNameHelper
-from .rsz_object_operations import RszObjectOperations
-from .rsz_array_clipboard import RszArrayClipboard
-from .rsz_gameobject_clipboard import RszGameObjectClipboard
-from .rsz_component_clipboard import RszComponentClipboard
-from .utils.rsz_field_utils import (
+lazy from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
+lazy from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError, RszFolderInfo, RszResourceInfo
+lazy from ui.styles import get_color_scheme, get_tree_stylesheet
+lazy from ..pyside.tree_model import DataTreeBuilder
+lazy from ..pyside.tree_core import DeferredChildBuilder
+lazy from ..pyside.tree_widgets import AdvancedTreeView
+lazy from utils.id_manager import IdManager, EmbeddedIdManager
+lazy from .rsz_array_operations import RszArrayOperations
+lazy from .rsz_instance_operations import RszInstanceOperations
+lazy from .utils.rsz_name_helper import RszViewerNameHelper
+lazy from .rsz_object_operations import RszObjectOperations
+lazy from .rsz_array_clipboard import RszArrayClipboard
+lazy from .rsz_gameobject_clipboard import RszGameObjectClipboard
+lazy from .rsz_component_clipboard import RszComponentClipboard
+lazy from .utils.rsz_field_utils import (
     create_default_field_value,
     create_field_from_definition,
     iter_field_references,
     shift_references_above_threshold,
 )
-from .utils.rsz_guid_utils import create_guid_data
-from .utils.rsz_instance_defaults import apply_instance_defaults
-from .rsz_lazy_loading import RszLazyNodeBuilder
+lazy from .utils.rsz_guid_utils import create_guid_data
+lazy from .utils.rsz_instance_defaults import apply_instance_defaults
+lazy from .rsz_lazy_loading import RszLazyNodeBuilder
+lazy from file_handlers.motion.preview.integration import create_pfb_motion_preview
+lazy from file_handlers.strands.pfb_preview import create_pfb_strands_preview
+lazy from .scn_scene_loader import holds_scene
+lazy import ui.scene.scn_scene_workspace as scn_scene_workspace
+lazy from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
 
 ADVANCED_SECTION_TITLE = "Advanced Information"
 DATA_BLOCK_TITLE = "Data Block"
@@ -182,8 +187,6 @@ class RszHandler(BaseFileHandler):
         viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
         viewer._initialize_editor_services()
         viewer.populate_tree()
-        from file_handlers.motion.preview.integration import create_pfb_motion_preview
-        from file_handlers.strands.pfb_preview import create_pfb_strands_preview
 
         preview = create_pfb_motion_preview(self)
         if preview is None:
@@ -362,8 +365,6 @@ class RszViewer(QWidget):
         self._configure_scene_actions()
 
     def _configure_scene_actions(self):
-        from .scn_scene_loader import holds_scene
-
         if not holds_scene(self.scn):
             return
         if self.scene_button is not None:
@@ -382,9 +383,7 @@ class RszViewer(QWidget):
         self.refresh_scene_button()
 
     def _scene_source(self):
-        from ui.scene.scn_scene_workspace import scn_source_from_tab
-
-        return scn_source_from_tab(self.handler.app._resolve_tab_from_widget(self))
+        return scn_scene_workspace.scn_source_from_tab(self.handler.app._resolve_tab_from_widget(self))
 
     def _populate_scene_button_menu(self):
         if self.handler.app is not None:
@@ -1099,12 +1098,7 @@ class RszViewer(QWidget):
         scn = self.scn
         
         if ref_id in scn._rsz_userdata_set:
-            try:
-                from file_handlers.rsz.rsz_data_types import UserDataData
-            except Exception:
-                UserDataData = None
-
-            if UserDataData is not None and isinstance(data_obj, UserDataData) and not getattr(self.scn, 'has_embedded_rsz', False):
+            if isinstance(data_obj, UserDataData) and not getattr(self.scn, 'has_embedded_rsz', False):
                 rui = scn._rsz_userdata_dict.get(ref_id)
                 display_value = self.name_helper.get_userdata_display_value(ref_id)
                 try:
@@ -1129,11 +1123,7 @@ class RszViewer(QWidget):
                         f"{field_name}: {display_value}", "", None, None, []
                     )
         
-        try:
-            from file_handlers.rsz.rsz_data_types import UserDataData
-        except Exception:
-            UserDataData = None
-        if (UserDataData is not None and isinstance(data_obj, UserDataData)
+        if (isinstance(data_obj, UserDataData)
             and not getattr(self.scn, 'has_embedded_rsz', False)
             and (ref_id == 0)):
             display_value = getattr(data_obj, 'string', '') or ''
@@ -1325,7 +1315,6 @@ class RszViewer(QWidget):
     def _resolve_array_operations(self, array_data):
         embedded_context = getattr(array_data, '_owning_context', None)
         if embedded_context:
-            from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArrayOperations
             return RszEmbeddedArrayOperations(self), embedded_context
 
         if not self.array_operations:
@@ -1385,7 +1374,6 @@ class RszViewer(QWidget):
         return self.object_operations.delete_folder(folder_id)
 
     def create_scn_folder_object(self):
-        from .rsz_file import RszFolderInfo
         return RszFolderInfo()
 
     def _create_default_field(self, data_class, original_type, is_array=False, field_size=1):
@@ -1671,7 +1659,6 @@ class RszViewer(QWidget):
                 self.scn._pfb16_direct_strings.append(path)
                 print(f"Added '{path}' to _pfb16_direct_strings")
         else:
-            from file_handlers.rsz.rsz_file import RszResourceInfo
             new_res = RszResourceInfo()
             new_res.string_offset = 0
         

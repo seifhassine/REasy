@@ -8,7 +8,7 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
-from ui.scene.mesh_scene import mesh_lod_parts
+lazy from ui.scene.mesh_scene import mesh_lod_parts
 
 
 CAMERA_VIEWS = {

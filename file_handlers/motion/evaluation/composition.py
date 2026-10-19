@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import numpy as np
+lazy import numpy as np
 
 from .math3d import compose_world_matrices
 from .model import EvaluatedPose, Rig

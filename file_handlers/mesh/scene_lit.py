@@ -5,7 +5,6 @@ import struct
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field, replace
 from functools import partial
-from types import MappingProxyType
 
 import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QObject, Qt, Signal
@@ -28,15 +27,15 @@ from file_handlers.mmtr.pretransform import (
 )
 from file_handlers.mmtr.pretransform_passes import SystemPrograms
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
-from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
+lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
 from file_handlers.mmtr.wrinkle import WrinkleObject, mesh_joints, wrinkle_catalog_for, wrinkle_object, wrinkle_proxy
-from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
-from file_handlers.stmesh.stmesh_handler import StmeshHandler
+lazy from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
+lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
 from file_handlers.strands.chain_frame import Stepped
 from file_handlers.strands.chain_scene import ChainScene
 from file_handlers.strands.chain_view import StrandView
 from file_handlers.tex.texture_quality import texture_quality_profile
-from ui.scene.mesh_scene import mesh_lod_parts
+lazy from ui.scene.mesh_scene import mesh_lod_parts
 from ui.scene.scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneView
 from utils.resource_file_utils import PrefetchedFiles, resource_version_from_path
 
@@ -46,7 +45,7 @@ from .lit_preview import (
 )
 from .material_resolver import MeshMaterialResolver
 from .mesh_file import MeshFile
-from .scene_overlay import SceneOverlay
+lazy from .scene_overlay import SceneOverlay
 from .material_shader_preview import preview_material
 from .scene_textures import SceneTexturesPreview
 
@@ -69,7 +68,7 @@ class SceneLitMesh:
     groups: Mapping[int, int]
     channels: Mapping[str, tuple[int, ...]]
     meshlets: bool = False
-    engine: Mapping[str, bytes] = MappingProxyType({})
+    engine: Mapping[str, bytes] = frozendict()
     box: ObjectBox | None = None
 
     @property
@@ -277,7 +276,7 @@ class SceneLitDrawer(LitDrawer):
             passes.drawn(light, after)
 
     def draw(self, content: SceneLitContent, view: SceneView, placements: tuple[ScenePlacement, ...],
-             overlays: LitOverlays, rate: float, materials: Mapping[str, Mapping[str, float]] = MappingProxyType({})
+             overlays: LitOverlays, rate: float, materials: Mapping[str, Mapping[str, float]] = frozendict()
              ) -> SceneLitFrame:
         content.values.now = materials
         self._rate = rate
@@ -714,8 +713,8 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         if profile is None or light_pass_catalog_for(profile) is None:
             group.reason = str(MaterialPreviewError(NO_LIGHT_PASSES))
         elif isinstance(handler, StmeshHandler):
-            engine = MappingProxyType(stmesh_engine_buffers(handler.stmesh, speedtree_catalog_for(profile),
-                                                            placement))
+            engine = frozendict(stmesh_engine_buffers(handler.stmesh, speedtree_catalog_for(profile),
+                                                      placement))
             stencil = stencil_reference(session)
             for lod in lods:
                 held = _read_stmesh_lod(handler, lod)

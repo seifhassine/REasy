@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections import Counter
 from functools import partial
 
-import numpy as np
+lazy import numpy as np
 from ui.scene.scene_preview import ScenePreviewWidget, view_light
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
-from PySide6.QtGui import QAction, QFont, QFontMetrics, QImage, QPainter, QPixmap
+lazy from PySide6.QtGui import QAction, QFont, QFontMetrics, QImage, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -32,29 +32,29 @@ from file_handlers.mmtr.overlay_scene import ALL_EDGES, VISIBLE_EDGES, SceneShow
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
 from file_handlers.mmtr.textures_view import UvPattern
 from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY
-from settings import app_settings, remember_setting
+lazy from settings import app_settings, remember_setting
 from ui.qt_timers import call_later
-from ui.styles import get_color_scheme
-from ui.scene.mesh_scene import (
+lazy from ui.styles import get_color_scheme
+lazy from ui.scene.mesh_scene import (
     mesh_geometry_choices,
     mesh_scene_payloads,
     payload_records_have_complete_attribute,
 )
-from ui.scene.mesh_preview import MeshPreviewScene
+lazy from ui.scene.mesh_preview import MeshPreviewScene
 from ui.scene.scene_marks import bounds_marks, unorm
-from .preview_controls import MorphControls
-from .attribute_controls import AttributeControls
+lazy from .preview_controls import MorphControls
+lazy from .attribute_controls import AttributeControls
 from .mesh_file import joint_name
-from .viewer_navigation import MeshNavigation
-from .mesh_inspector import CAMERA_VIEWS, MeshInspection, MeshInspector
-from .material_session import MeshMaterialCollection, MeshMaterialSession
-from .material_resolver import MeshMaterialResolver
-from .material_shader_preview import MaterialShaderControls
-from .normal_recalc import INDICES_PER_WORKGROUP, VERTEX_INDEX_BITS
-from .attributes_preview import AttributeView, AttributesPreview
-from .textures_preview import TexturedView, TexturesPreview
+lazy from .viewer_navigation import MeshNavigation
+lazy from .mesh_inspector import CAMERA_VIEWS, MeshInspection, MeshInspector
+lazy from .material_session import MeshMaterialCollection, MeshMaterialSession
+lazy from .material_resolver import MeshMaterialResolver
+lazy from .material_shader_preview import MaterialShaderControls
+lazy from .normal_recalc import INDICES_PER_WORKGROUP, VERTEX_INDEX_BITS
+lazy from .attributes_preview import AttributeView, AttributesPreview
+lazy from .textures_preview import TexturedView, TexturesPreview
 from .lit_preview import LitLabels, LitLines, LitOverlays, LitPoints, LitPreview, LitShape, LitView
-from .profiles import (
+lazy from .profiles import (
     BlendShapeLayout,
     LegacyLightMapLayout,
     MeshBufferLayout,
@@ -2214,9 +2214,8 @@ class MeshViewer(QWidget):
                 if is_semantic_normal:
                     lod_geometry = mesh.meshes[0].lods[lod.lod_index]
                     submeshes = [
-                        submesh
+                        *group.submeshes
                         for group in lod_geometry.mesh_groups
-                        for submesh in group.submeshes
                     ]
                     triangle_indices = sum(
                         submesh.indices_count for submesh in submeshes

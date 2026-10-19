@@ -1,7 +1,8 @@
 import struct
 
-from .dxbc import parse_dxbc
-from .models import SdfRayTracingLibrary
+lazy from . import dxc
+lazy from .dxbc import parse_dxbc
+lazy from .models import SdfRayTracingLibrary
 
 DXR_LIBRARY_TAG = 0x00051000
 DXR_LIBRARY_HEADER_SIZE = 0x140
@@ -98,9 +99,7 @@ def validate_raytracing_library(
     if (shader.stage != "library" and not placeholder) or shader.total_size != len(library.bytecode):
         raise ValueError("DXR envelope must contain exactly one DXIL library")
     if reflect:
-        from .dxc import enrich_dxil_shader
-
-        shader = enrich_dxil_shader(shader, library.bytecode)
+        shader = dxc.enrich_dxil_shader(shader, library.bytecode)
         exports = {function.name: function.stage for function in shader.reflection.library_functions}
         for field in fields:
             name = getattr(library, field)
@@ -119,4 +118,4 @@ def serialize_raytracing_library(
     for index, field in enumerate(raytracing_export_fields(library.export_layout), 1):
         name = getattr(library, field).encode("ascii")
         result[index * 32 : index * 32 + len(name)] = name
-    return bytes(result) + library.bytecode
+    return result.take_bytes() + library.bytecode

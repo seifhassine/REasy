@@ -3,6 +3,7 @@ from __future__ import annotations
 from enum import Enum, IntEnum
 
 from utils.game_keys import game_key
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 
 
 class MeshMainVersion(IntEnum):
@@ -148,8 +149,6 @@ class MeshGameProfile:
     supports_packed_rigid_skinning = False
     @property
     def material_shader_resource_version(self) -> int | None:
-        from file_handlers.mmtr.profiles import mmtr_profile_for_game
-
         profile = mmtr_profile_for_game(self.game)
         return profile.build_resource_version if profile is not None else None
 

@@ -8,13 +8,13 @@ from dataclasses import dataclass
 import numpy as np
 
 from file_handlers.clsp.clsp_file import EVERY_TAG, CollisionShape, ShapeKind
-from file_handlers.clsp.placement import pairwise, point, row_lengths
-from file_handlers.clsp.wrappers import placed
-from file_handlers.mmtr.engine_buffers import engine_inverse
+lazy from file_handlers.clsp.placement import pairwise, point, row_lengths
+lazy from file_handlers.clsp.wrappers import placed
+lazy from file_handlers.mmtr.engine_buffers import engine_inverse
 
-from .chain_catalog import ConstantSources
-from .gpus import GpuStrandsPreset
-from .strands_file import StrandsFile
+lazy from .chain_catalog import ConstantSources
+lazy from .gpus import GpuStrandsPreset
+lazy from .strands_file import StrandsFile
 
 F = np.float32
 _PI, _PER_DEGREE = F(3.1415927410125732), F(0.0055555556900799274)

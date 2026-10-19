@@ -1,19 +1,20 @@
-from PySide6.QtWidgets import QMessageBox
-from file_handlers.rsz.rsz_data_types import (
+lazy from PySide6.QtWidgets import QMessageBox
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     ObjectData,
     UserDataData,
     is_reference_type,
 )
-from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+lazy from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     create_field_from_definition,
     get_reference_id_and_type,
     is_type_assignable,
     iter_field_reference_entries,
 )
-from file_handlers.rsz.utils.rsz_instance_defaults import apply_instance_defaults
+lazy from file_handlers.rsz.utils.rsz_instance_defaults import apply_instance_defaults
+lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
 
 class RszArrayOperations:
     def __init__(self, viewer):
@@ -103,8 +104,6 @@ class RszArrayOperations:
         userdata_string=None,
         notify=True,
     ):
-        from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-        
         object_ops = RszObjectOperations(self.viewer)
         
         parent_data = self._find_array_parent_data(array_data, notify=notify)

@@ -6,13 +6,13 @@ import math
 from pathlib import Path
 from typing import Mapping
 
-from file_handlers.motbank.motbank_file import MotbankFile
-from file_handlers.rsz.rsz_file import RszFile
-from utils.type_registry import TypeRegistry
+lazy from file_handlers.motbank.motbank_file import MotbankFile
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from utils.type_registry import TypeRegistry
 
 from .jmap import parse_dmc5_joint_map
 from .joint_map import JointMapDefinition
-from .model import (
+lazy from .model import (
     MotionBankDefinition,
     MotionBankReference,
     MotionChannelActivation,
@@ -40,9 +40,9 @@ from .model import (
     RuntimeWrapMode,
     TreeLayerSource,
 )
-from .pfb_graph import PfbRuntimeGraph
+lazy from .pfb_graph import PfbRuntimeGraph
 from .profiles import DMC5_RUNTIME_PROFILE, Dmc5MotionRuntimeProfile
-from .rsz_values import (
+lazy from .rsz_values import (
     bool_value as _bool,
     clean_path as _clean_path,
     finite_float as _finite_float,

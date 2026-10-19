@@ -2,7 +2,8 @@ import fnmatch
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, Optional, Callable
 
-from utils.type_registry import TypeRegistry
+lazy from utils.type_registry import TypeRegistry
+lazy from file_handlers.rsz.rsz_file import RszFile
 
 ValidSignature = (b"SCN\x00", b"USR\x00", b"PFB\x00")
 
@@ -139,7 +140,6 @@ def scan_directory_single_pass(
     """
     Walk the tree once and collect A/B entries without reading files twice.
     """
-    from file_handlers.rsz.rsz_file import RszFile
 
     a_map: Dict[Tuple[Any, ...], List[dict]] = {}
     b_map: Dict[Tuple[Any, ...], List[dict]] = {}

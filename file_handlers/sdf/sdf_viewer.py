@@ -21,9 +21,15 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .dxbc import DxbcDisassemblyError, disassemble_dxbc
-from .editing import SdfBinaryEditor, SdfEditError
-from .models import STAGE_KEYS, STATE_KINDS, SdfProgram, SdfRayTracingLibrary, stage_display_name
+lazy from .dxbc import DxbcDisassemblyError, disassemble_dxbc
+lazy from .editing import SdfBinaryEditor, SdfEditError
+lazy from .models import STAGE_KEYS, STATE_KINDS, SdfProgram, SdfRayTracingLibrary, stage_display_name
+lazy from .pipeline_view import PipelineStatePreview, SdfPipelineGraph
+lazy from .program_editor import SdfProgramEditor
+lazy from .program_overview import SdfProgramOverview
+lazy from .raytracing import raytracing_export_fields, serialize_raytracing_library
+lazy from .shader_authoring_editor import SdfShaderAuthoringEditor
+lazy from .state_editor import SdfStateEditor
 
 
 def _hex_offset(value: int) -> str:
@@ -97,12 +103,6 @@ class SdfViewer(QWidget):
         self._program_tree_generation = 0
         self._program_view_generation = 0
         self._rendered_program_tabs: dict[str, int] = {}
-        from .pipeline_view import PipelineStatePreview, SdfPipelineGraph
-        from .program_editor import SdfProgramEditor
-        from .program_overview import SdfProgramOverview
-        from .shader_authoring_editor import SdfShaderAuthoringEditor
-        from .state_editor import SdfStateEditor
-
         self.hardware_variant_label = QLabel(self.tr("Hardware variant"))
         controls.addWidget(self.hardware_variant_label)
         self.target_selector = QComboBox()
@@ -284,7 +284,7 @@ class SdfViewer(QWidget):
         document = self.document
         self.overview.set_document(document)
         wanted = self._current_program_key
-        programs = [program for target in document.targets for program in target.programs]
+        programs = [*target.programs for target in document.targets]
         self._shared_shader_counts = Counter(
             (shader.offset, shader.size)
             for program in programs
@@ -729,7 +729,6 @@ class SdfViewer(QWidget):
 
         library = None
         if isinstance(raw, SdfRayTracingLibrary):
-            from .raytracing import serialize_raytracing_library
             library = serialize_raytracing_library(raw)
 
         def operation(editor: SdfBinaryEditor) -> None:
@@ -798,8 +797,6 @@ class SdfViewer(QWidget):
             return
         self._add(item, "offset", _hex_offset(shader.offset))
         if shader.raytracing_library is not None:
-            from .raytracing import raytracing_export_fields
-
             exports = self._add(item, "Ray-tracing library exports")
             self._add(exports, "layout", shader.raytracing_library.export_layout)
             for field in raytracing_export_fields(shader.raytracing_library.export_layout):

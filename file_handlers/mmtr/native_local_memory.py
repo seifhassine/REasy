@@ -2,8 +2,8 @@ from dataclasses import dataclass
 import math
 import re
 
-from file_handlers.sdf.dxil_metadata import metadata_operands
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.dxil_metadata import metadata_operands
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 from file_handlers.sdf.shader_graph_indexed_value import MAX_INDEXED_VALUES
 from .profiles.re_engine_dxil_recovery import LLVM_NAME
 
@@ -58,7 +58,7 @@ class ArrayType:
         if len(members) != self.dimensions[0]:
             raise ShaderGraphError('A constant array has the wrong declared element count.')
         child = ArrayType(self.scalar, self.dimensions[1:])
-        return [value for member in members for value in child.literals(member)]
+        return [*child.literals(member) for member in members]
 
 
 @dataclass(frozen=True)

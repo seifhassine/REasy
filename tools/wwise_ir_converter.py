@@ -6,20 +6,20 @@ import math
 import shutil
 import tempfile
 import uuid
-import xml.etree.ElementTree as ET
+lazy import xml.etree.ElementTree as ET
 from pathlib import Path
 
-from file_handlers.sound.bnk_parser import extract_embedded_wem, parse_soundbank
-from file_handlers.sound.wwise_media import (
+lazy from file_handlers.sound.bnk_parser import extract_embedded_wem, parse_soundbank
+lazy from file_handlers.sound.wwise_media import (
     WwiseMediaKind,
     parse_convolution_reverb_media,
     parse_hybrid_reverb_media,
 )
-from tools.wem_converter import (
+lazy from tools.wem_converter import (
     _codec_tag_from_fmt, _read_source_wav, _riff_chunks, _run_wwise_cli,
     _wwise_command,
 )
-from tools.wwise_toolchain import (
+lazy from tools.wwise_toolchain import (
     WwiseInstallation,
     require_wwise_profile,
     validate_wwise_installation,

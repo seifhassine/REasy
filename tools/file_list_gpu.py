@@ -1,11 +1,14 @@
 import struct
 from itertools import accumulate, chain
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV
-from file_handlers.mmtr.resident import BUFFER, UNORDERED_ACCESS
-from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.mmtr.material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV
+lazy from file_handlers.mmtr.resident import BUFFER, UNORDERED_ACCESS
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.pak.utils import filepath_hash
+lazy from tools.file_list_generator import CombinedStems
+lazy from tools.file_list_search import block_candidate, NumericTask, sorted_keys
 
 CAPACITY, _GROUP = 1 << 20, 128
 SLOT = 0x80000000
@@ -152,9 +155,6 @@ class GpuUnavailable(RuntimeError):
 
 class GpuPathValidator:
     def __init__(self, hashes):
-        from file_handlers.pak.utils import filepath_hash
-        from tools.file_list_generator import CombinedStems
-        from tools.file_list_search import NumericTask, sorted_keys
         self._scene = None
         try:
             import fastmatpreview
@@ -220,8 +220,6 @@ class GpuPathValidator:
     def match_blocks(self, blocks):
         """A block is (source, first, count) over the source's candidates; a source is a (heads, tails, tails_outer)
         block (``expand_block``) or a ``NumericTask``. Candidates must be ASCII, at most ``CAPACITY`` in all."""
-        from tools.file_list_generator import CombinedStems
-        from tools.file_list_search import NumericTask, block_candidate
         texts, items, rows, used = [], [], [], []
         offset = start = 0
         placed = {}

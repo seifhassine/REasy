@@ -3,11 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.rsz.rsz_data_types import ArrayData, ResourceData, StringData
+lazy from file_handlers.rsz.rsz_data_types import ArrayData, ResourceData, StringData
 
-from .scn_scene_graph import ScnTransform, make_trs_matrix, normalize_scene_path
+lazy from .scn_scene_graph import ScnTransform, make_trs_matrix, normalize_scene_path
 
 
 def decompose_trs(matrix: np.ndarray, reference: ScnTransform | None = None) -> ScnTransform:

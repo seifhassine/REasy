@@ -4,8 +4,8 @@ import struct
 from typing import List, Tuple
 
 from utils.binary_handler import BinaryHandler
-from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
+lazy from utils.resource_file_utils import resource_version_from_path
 
 
 MDF_MAGIC = 0x0046444D

@@ -4,19 +4,19 @@ from __future__ import annotations
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, replace
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.sdf.contracts import shader_contract_for_program
-from file_handlers.sdf.models import program_names
-from file_handlers.sdf.sdf_file import parse_sdf_to_draw
+lazy from file_handlers.sdf.models import program_names
+lazy from file_handlers.sdf.sdf_file import parse_sdf_to_draw
 
-from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, MaterialPreviewError
-from .pretransform import (
+lazy from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, MaterialPreviewError
+lazy from .pretransform import (
     ACCUMULATOR, CHAIN_BUFFERS, DESTINATION, INDEX_WORDS, SOURCE, THREADS, VERTEX_WORDS, WEIGHTS, ChainStep,
     Deformation, SystemProgram, constant_buffer, used_channels, weight_list,
 )
-from .resident import BUFFER, UNORDERED_ACCESS, Resident
+lazy from .resident import BUFFER, UNORDERED_ACCESS, Resident
 
 _READ = {"byte-address-buffer": False, "structured-buffer": True}
 _WRITTEN = "rw-byte-address-buffer"

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 
-MISSING = object()
+MISSING = sentinel("MISSING")
 
 
 def merge_equal(left: Any, right: Any) -> bool:

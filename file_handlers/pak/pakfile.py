@@ -4,12 +4,11 @@ import struct
 import threading
 import zlib
 from dataclasses import dataclass
-import zstandard as zstd
-import numpy as np
-from typing import TYPE_CHECKING, Callable, Optional, BinaryIO, List, Sequence
+lazy import zstandard as zstd
+lazy import numpy as np
+from typing import Callable, Optional, BinaryIO, List, Sequence
 
-if TYPE_CHECKING:
-    from .resolution import PakReaderInfo
+lazy from .resolution import PakReaderInfo
 
 
 MAGIC = 0x414B504B

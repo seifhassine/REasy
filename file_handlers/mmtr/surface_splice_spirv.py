@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from file_handlers.sdf.shader_graph_math import value_width
-from file_handlers.sdf.spirv import SpirvError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph_math import value_width
+lazy from file_handlers.sdf.spirv import SpirvError
 
-from .spirv_control_flow import spirv_cfg
-from .surface_flow import NativeFlow
+lazy from .spirv_control_flow import spirv_cfg
+lazy from .surface_flow import NativeFlow
+lazy from .surface_flow_dxil import _dominators
 
 
 _OP_VARIABLE, _OP_LOAD, _OP_STORE, _OP_FUNCTION_PARAMETER, _OP_LABEL = 59, 61, 62, 55, 248
@@ -68,7 +69,6 @@ def _after_phis(rows, index: int) -> int:
 
 
 def _construct_exit(ir, index: int) -> int:
-    from .surface_flow_dxil import _dominators
     function = next(rows for rows in _functions(ir) if rows[0][0] <= index <= rows[-1][0])
     blocks, successors, _conditions, merges = spirv_cfg(row for _position, row in function)
     holder = next(row.result for position, row in reversed(function) if position <= index and row.opcode == _OP_LABEL)
@@ -214,7 +214,7 @@ class _Types:
         children = self.children(type_id)
         if not children:
             return [prefix]
-        return [path for index, child in enumerate(children) for path in self.paths(child, (*prefix, index))]
+        return [*self.paths(child, (*prefix, index)) for index, child in enumerate(children)]
 
     def at(self, type_id, path) -> int:
         for index in path:
@@ -400,7 +400,7 @@ class SpirvSurfaceSplice:
                     raise _NotInlined
                 return result[0]
             elif code == _OP_CONSTRUCT:
-                values[row.result] = [atom for item in row.values[2:] for atom in self.symbolic(item, values, operand)]
+                values[row.result] = [*self.symbolic(item, values, operand) for item in row.values[2:]]
             elif code == _OP_EXTRACT:
                 start, width = self.carrier.span(carrier[row.values[2]].type_id, row.values[3:])
                 values[row.result] = self.symbolic(row.values[2], values, operand)[start:start + width]

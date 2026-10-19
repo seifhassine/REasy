@@ -4,9 +4,11 @@ from dataclasses import dataclass
 import math
 from typing import Callable
 
-import numpy as np
+lazy import numpy as np
 
-from .sdftex_file import Bc4Blocks, DistanceLevel, SdfTexFile, StorageFormat, bc4_palette
+lazy from utils.native_build import ensure_fastsdftex
+
+lazy from .sdftex_file import Bc4Blocks, DistanceLevel, SdfTexFile, StorageFormat, bc4_palette
 
 MAX_VOXELS = 4_194_304
 MAX_TRIANGLES = 1_000_000
@@ -181,8 +183,6 @@ def triangle_geometry(vertices, indices, *, solid: bool):
 def bake_levels(vertices, indices, specs, *, center, resource_version, shadow_offset_scale=1.0,
                 shell_thickness=0.0, progress: Callable[[int, int], None] | None = None,
                 cancelled: Callable[[], bool] | None = None) -> tuple[SdfTexFile, list[float]]:
-    from utils.native_build import ensure_fastsdftex
-
     fastsdftex = ensure_fastsdftex()
 
     if not math.isfinite(shell_thickness) or shell_thickness < 0:

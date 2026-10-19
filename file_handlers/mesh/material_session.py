@@ -4,10 +4,10 @@ from collections.abc import MutableMapping
 from typing import Protocol
 
 from PySide6.QtCore import QObject, Signal
-from PySide6.QtGui import QImage
+lazy from PySide6.QtGui import QImage
 
 from file_handlers.bounded_cache import BoundedCache
-from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
+lazy from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
 from file_handlers.tex.texture_quality import (
     DEFAULT_TEXTURE_QUALITY,
     choose_texture_mip,
@@ -18,7 +18,7 @@ from file_handlers.tex.texture_quality import (
 from .material_resolver import MeshMaterialBinding, MeshMaterialResolver, ResolvedMdf
 
 
-_MISSING = object()
+_MISSING = sentinel("_MISSING")
 _RESOURCE_CACHE_ENTRIES = 512
 _RESOURCE_CACHE_BYTES = 64 * 1024 * 1024
 

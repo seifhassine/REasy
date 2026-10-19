@@ -7,9 +7,9 @@ from dataclasses import fields
 from functools import partial
 from pathlib import Path
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt, Signal
-from PySide6.QtGui import QDoubleValidator
+lazy from PySide6.QtGui import QDoubleValidator
 from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QCompleter, QDialog, QDialogButtonBox,
                                QDoubleSpinBox, QFormLayout, QGroupBox, QHBoxLayout, QHeaderView, QLabel, QLineEdit,
                                QMessageBox, QPushButton, QRadioButton, QSpinBox, QTableWidget, QTableWidgetItem,
@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QCompleter, Q
 
 from file_handlers.clsp.clsp_file import CollisionShape, ShapeKind
 
-from .gpus import AnimationCurve, CurveKey, GpuStrandsPreset
+lazy from .gpus import AnimationCurve, CurveKey, GpuStrandsPreset
 
 _CONTEXT = "StrandForms"
 translate = QCoreApplication.translate

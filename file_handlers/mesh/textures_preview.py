@@ -5,7 +5,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.mmtr.light_passes import light_pass_catalog_for
 from file_handlers.mmtr.material_context import MaterialInstanceContext
@@ -16,14 +16,14 @@ from file_handlers.mmtr.parsed_files import Lease
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
 from file_handlers.mmtr.resident import Resident
 from file_handlers.mmtr.pass_choice import PassChoiceError
-from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
+lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
 from file_handlers.mmtr.surface_meaning import surface_output_catalog_for
 from file_handlers.mmtr.textures_states import ShownDraw, ordered, plain_draw, program_draw
 from file_handlers.mmtr.textures_view import (
     CHECKER, TexturesView, UvPattern, VertexLight, ViewBatch, ViewGeometry, ViewLight,
 )
-from file_handlers.stmesh.lit import cluster_route
-from file_handlers.stmesh.stmesh_handler import StmeshHandler
+lazy from file_handlers.stmesh.lit import cluster_route
+lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
 from file_handlers.tex.texture_quality import texture_quality_profile
 from utils.resource_file_utils import PrefetchedFiles
 

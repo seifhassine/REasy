@@ -1,11 +1,11 @@
-from PySide6.QtCore import QCoreApplication, Qt
-from PySide6.QtWidgets import (
+lazy from PySide6.QtCore import QCoreApplication, Qt
+lazy from PySide6.QtWidgets import (
     QVBoxLayout, QHBoxLayout, QWidget, QLabel, QLineEdit,
     QPushButton, QDialogButtonBox, QDialog, QMessageBox,
     QListWidget, QListWidgetItem
 )
-from PySide6.QtGui import QKeySequence
-from settings import DEFAULT_SETTINGS
+lazy from PySide6.QtGui import QKeySequence
+lazy from settings import DEFAULT_SETTINGS
 
 def create_shortcuts_tab():
     """Creates and returns a widget containing the keyboard shortcuts UI"""

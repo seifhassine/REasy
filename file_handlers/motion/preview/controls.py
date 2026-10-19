@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.editor_widgets import EmbeddedPopupComboBox
+lazy from ui.editor_widgets import EmbeddedPopupComboBox
 
 from .controller import MotionPreviewController
 from .model import PreviewLoopMode, RootDisplayMode

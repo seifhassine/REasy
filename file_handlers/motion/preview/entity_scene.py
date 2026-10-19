@@ -4,11 +4,11 @@ from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
-from file_handlers.rsz.scn_scene_attachments import (
+lazy from file_handlers.rsz.scn_scene_attachments import (
     same_joints_constraint_renderables,
     same_joints_descendant_depth,
 )
-from file_handlers.rsz.scn_scene_graph import (
+lazy from file_handlers.rsz.scn_scene_graph import (
     ScnRenderableMesh,
     ScnSceneGraph,
     normalize_document_id,
@@ -22,7 +22,7 @@ from ..evaluation.binding import (
 )
 from ..mot import Motion
 from .entity_session import EntityMotionSession, ResolvedMotionTarget
-from .shared_pose import resolve_motion_target_renderable
+lazy from .shared_pose import resolve_motion_target_renderable
 from .target import RigPreviewTarget
 
 if TYPE_CHECKING:

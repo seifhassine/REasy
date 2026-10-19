@@ -6,26 +6,26 @@ import hashlib
 from pathlib import Path
 import re
 from typing import Mapping
-from file_handlers.material_names import logical_material_parameter_name
-from file_handlers.mdf.material_layout import MaterialDescriptorLayout
+lazy from file_handlers.material_names import logical_material_parameter_name
+lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
 
 from file_handlers.sdf.contracts import (
     shader_contract_for_program,
 )
 from file_handlers.sdf.dxc import DxcError, enrich_dxil_shader
-from file_handlers.sdf.dxbc import parse_dxbc
+lazy from file_handlers.sdf.dxbc import parse_dxbc
 from file_handlers.sdf.hlsl import compile_hlsl_source_detailed
 from file_handlers.sdf.models import RESOURCE_KINDS, STAGE_KEYS
-from file_handlers.sdf.spirv import (
+lazy from file_handlers.sdf.spirv import (
     SpirvDescriptor,
     SpirvError,
     SpirvReflection,
     reflect_spirv,
 )
 from file_handlers.sdf import storage_codec
-from file_handlers.sdf.spirv_ir import SpirvSemanticIr
-from file_handlers.sdf.spirv_contract import spirv_shader_contract
-from file_handlers.sdf.spirv_tools import validate_spirv
+lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr
+lazy from file_handlers.sdf.spirv_contract import spirv_shader_contract
+lazy from file_handlers.sdf.spirv_tools import validate_spirv
 from file_handlers.sdf.shader_graph import (
     ShaderContract,
     ShaderContractBuffer,
@@ -39,13 +39,14 @@ from file_handlers.sdf.shader_graph import (
     texture_hlsl_type,
 )
 
-from file_handlers.sdf.hlsl_contract import resource_identifier
-from file_handlers.sdf.shader_contract_storage import contract_from_storage, contract_to_storage
+lazy from file_handlers.sdf.hlsl_contract import resource_identifier
+lazy from file_handlers.sdf.shader_contract_storage import contract_from_storage, contract_to_storage
 from ..native_build_cache import NativeBuildCache, native_build_key
-from ..models import BINDLESS_PARAMETER_STORAGES, MmtrMaterialInterface, MmtrProgramSemantics, MmtrResourceContract
+lazy from ..models import BINDLESS_PARAMETER_STORAGES, MmtrMaterialInterface, MmtrProgramSemantics, MmtrResourceContract
 from ..pass_purpose import graph_draws_for, pass_purpose
 from ..surface_data import graph_reads_surface_data, program_surface_data, program_vertex_inputs
-from ..surface_meaning import pixel_shader_digest
+lazy from ..surface_data import surface_data_value
+lazy from ..surface_meaning import catalog_fingerprint, pixel_shader_digest, surface_output_catalog_for
 from ..vertex_values import PER_VERTEX_KIND, add_vertex_values, vertex_value_plan
 from .base import bound_texture_names, same_mmtr_profile
 from .dxbc_recovery import (
@@ -64,13 +65,27 @@ from .re_engine_dxil_authoring import rebuild_re_engine_dxil_batch
 from .re_engine_dxil_recovery import ReEngineDxilSemanticIr, recover_re_engine_dxil_ir
 from . import re_engine_dxil_recovery as _dxil_recovery
 from .re_engine_bindless_material import material_record_accesses, material_texture_accesses
-from .re_engine_spirv_authoring import rebuild_spirv, spirv_uniform_reads
-from .dxbc_stages import with_pixel_interpolation
+lazy from .re_engine_spirv_authoring import rebuild_spirv, spirv_uniform_reads
+lazy from .dxbc_stages import with_pixel_interpolation
 from .renderer_inputs import (
     RENDERER_VALUE_KIND, add_engine_buffers, add_engine_resources, graph_renderer_buffers, graph_renderer_resources,
     renderer_buffer, renderer_input_pins, renderer_only,
 )
-from .constant_words import ConstantWord
+lazy from .constant_words import ConstantWord, constant_word, word_parts
+lazy from file_handlers.sdf.aggregate_values import aggregate_projection
+lazy from ..material_family import distinct_members, seed_material_family
+lazy from ..material_project import MaterialTextureDefinition, _TEXTURE_CONTRACT_DIMENSIONS, material_resource_dimension
+lazy from ..surface_flow import ChannelSplit, SurfaceChannel, recovered_surface_flow
+lazy from ..surface_outputs import (
+    SURFACE_OUTPUTS_VERSION, SurfaceEdit, SurfaceTap, channel_for_pin, channel_pin_name, material_texture_names,
+    named_texture_reads, native_program_channels, native_program_surface, output_pin_records,
+    prefetch_native_program_surfaces, reach_records, recovered_channels,
+)
+lazy from ..surface_splice_dxbc import splice_dxbc_surface
+lazy from ..surface_splice_dxil import dxil_surface_plan
+lazy from ..surface_splice_spirv import spirv_surface_plan
+lazy from ..vertex_values import VALUE_SEMANTIC
+lazy from .renderer_inputs import renderer_field_expression, renderer_fields
 
 
 RE_ENGINE_RECOVERED_MASTER_KIND = "re_engine_recovered_master_material"
@@ -705,7 +720,6 @@ def _texture_input(graph, definition, *, x, y):
 
 def _expose_descriptor_inputs(document, project, profile):
     from uuid import uuid4
-    from ..material_project import MaterialTextureDefinition
     master = _master(project)
     layouts = master.properties.get("descriptor_layouts", ())
     if len(layouts) != 1:
@@ -734,7 +748,6 @@ def _expose_descriptor_inputs(document, project, profile):
 
 
 def _surface_sources(document, profile, routes) -> list[tuple[str, object, list]]:
-    from ..material_family import distinct_members
     if document.material_family is None:
         return [("", document, [*routes, *_surface_route_table(document, profile)])]
     return [(f"LOD {', '.join(map(str, lods))} · ", member,
@@ -743,10 +756,6 @@ def _surface_sources(document, profile, routes) -> list[tuple[str, object, list]
 
 
 def _surface_outputs(document, profile, routes) -> tuple[list, list, list, str]:
-    from ..surface_meaning import catalog_fingerprint, surface_output_catalog_for
-    from ..surface_outputs import (
-        native_program_surface, output_pin_records, prefetch_native_program_surfaces, reach_records,
-    )
     catalog = surface_output_catalog_for(document.profile)
     entries, errors = [], []
     sources = _surface_sources(document, profile, routes)
@@ -771,7 +780,6 @@ def _surface_outputs(document, profile, routes) -> tuple[list, list, list, str]:
 
 
 def _connect_surface_outputs(graph, master, surface, records, errors, reach, meaning) -> bool:
-    from ..surface_outputs import SURFACE_OUTPUTS_VERSION
     names = {str(record["pin"]) for record in records}
     stale = [link for link in graph.links
              if (link.source_node == master.node_id and link.source_pin.startswith("channel_")
@@ -814,7 +822,6 @@ def _reads_vertex_data(graph) -> bool:
 
 
 def _vertex_values(project, document, profile, target_index: int, program_index: int) -> tuple[tuple, tuple]:
-    from ..surface_outputs import channel_for_pin, native_program_channels
     graph = project.graph
     if not _reads_vertex_data(graph):
         return (), ()
@@ -844,7 +851,6 @@ def _vertex_value_routes(project, document, profile, routes) -> tuple[tuple[int,
 
 
 def _edited_surface_routes(project, document, profile) -> tuple[tuple[int, int, str], ...]:
-    from ..surface_outputs import channel_pin_name, native_program_channels
     edited = {record["pin"] for record, _link in _edited_channels(project)}
     result = []
     for route in _surface_route_table(document, profile) if edited else ():
@@ -859,8 +865,6 @@ def _edited_surface_routes(project, document, profile) -> tuple[tuple[int, int, 
 
 
 def _upgrade_surface_outputs(document, project, profile) -> bool:
-    from ..surface_meaning import catalog_fingerprint, surface_output_catalog_for
-    from ..surface_outputs import SURFACE_OUTPUTS_VERSION
     master = _master(project)
     if (master.properties.get("surface_outputs_version") == SURFACE_OUTPUTS_VERSION
             and master.properties.get("surface_meaning") == catalog_fingerprint(surface_output_catalog_for(
@@ -1214,7 +1218,6 @@ def _buffer_reads(recovered, buffer):
 
 def _dxil_reads(ir: ReEngineDxilSemanticIr | _ValidatedDxilAssembly, contract, bind_point: int, register_space: int = 0) -> set[int] | None:
     from .re_engine_dxil_authoring import _constant_extracts
-    from .constant_words import word_parts
 
     assembly = ir.to_assembly()
     key = native_build_key((_constant_extracts,), "constant-words", assembly, contract)
@@ -1266,7 +1269,6 @@ def _renderer_word_bits(expression, value_type):
 def _bindless_texture_resolver(profile, master, contract, recovered, descriptor_layout, source_descriptor_layout,
                                helper_sources: dict):
     """The resolver adds its helper to ``helper_sources``."""
-    from file_handlers.mmtr.material_project import _TEXTURE_CONTRACT_DIMENSIONS
     native: dict[str, object] = {}
 
     def texture_object(definition):
@@ -1314,9 +1316,6 @@ def _bindless_texture_resolver(profile, master, contract, recovered, descriptor_
 
 def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgram,
                descriptor_layout=None, source_descriptor_layout=None):
-    from .constant_words import constant_word
-    from .renderer_inputs import renderer_fields, renderer_field_expression
-    from file_handlers.sdf.aggregate_values import aggregate_projection
     master = _master(project)
     values = master.properties.get("input_pins", [])
     if not isinstance(values, list):
@@ -1503,10 +1502,6 @@ def _coerced(result, value_type: str, label: str) -> str:
 
 
 def _added_values(profile, project, contract, semantics, helpers: dict, texture_resolver=None):
-    from ..surface_data import surface_data_value
-    from ..surface_flow import ChannelSplit, SurfaceChannel
-    from ..surface_outputs import SurfaceEdit
-    from ..vertex_values import VALUE_SEMANTIC
     incoming = {(link.target_node, link.target_pin): link for link in project.graph.links}
     edits = []
     for value in semantics.vertex_values:
@@ -1530,8 +1525,6 @@ def _added_values(profile, project, contract, semantics, helpers: dict, texture_
 
 def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredProgram, helpers: dict,
                    texture_resolver=None):
-    from ..surface_flow import recovered_surface_flow
-    from ..surface_outputs import SurfaceEdit, SurfaceTap, channel_for_pin, recovered_channels
     master = _master(project)
     edited = _edited_channels(project)
     added = (_added_values(profile, project, contract, semantics, helpers, texture_resolver)
@@ -1542,7 +1535,6 @@ def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredP
     flow = recovered_surface_flow(recovered.ir_kind, recovered.ir, recovered.contract)
     channels = recovered_channels(recovered.ir_kind, recovered.ir, recovered.contract, flow)
     if recovered.ir_kind == "dxil":
-        from ..surface_outputs import material_texture_names, named_texture_reads
         layouts = tuple(MaterialDescriptorLayout.from_dict(item) for item in master.properties.get("descriptor_layouts", ()))
         channels = named_texture_reads(channels, material_texture_names(
             layouts, master.properties.get("shader_lod"), profile.material_record_prefix_size))
@@ -1737,7 +1729,6 @@ class ReEngineShaderGraphProfile:
         layouts = document.material_interface.descriptor_layouts
         order = {name: i for i, name in enumerate(layouts[0].textures)} if len(layouts) == 1 else {}
         if document.material_family is not None:
-            from ..material_project import material_resource_dimension
             candidates = {}
             for member in document.material_family.members:
                 for item in self.editable_textures(member):
@@ -1837,7 +1828,6 @@ class ReEngineShaderGraphProfile:
             return
         _seed(document, project, self, defer_shader_recovery=defer_shader_recovery or document.material_family is not None)
         if document.material_family is not None:
-            from ..material_family import seed_material_family
             seed_material_family(document, project, defer_shader_recovery=defer_shader_recovery)
 
     def seed_material_project_interface(self, document, project) -> None:
@@ -1875,7 +1865,6 @@ class ReEngineShaderGraphProfile:
         ):
             return changed
         if document.material_family is not None:
-            from ..material_family import seed_material_family
             seed_material_family(document, project, defer_shader_recovery=False)
             return True
         programs, routes = _bundle(document, self)
@@ -2124,7 +2113,6 @@ class ReEngineShaderGraphProfile:
             edits, flow = _surface_edits(self, project, adjusted, semantics, recovered, surface_helpers)
             surface_plan = ()
             if edits:
-                from ..surface_splice_spirv import spirv_surface_plan
                 surface_plan = spirv_surface_plan(recovered.ir, flow, edits)
                 helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
             product = _SpirvProduct(recovered.ir, recovered.contract, adjusted,
@@ -2142,7 +2130,6 @@ class ReEngineShaderGraphProfile:
             # Added values move the inputs the rasterizer generates to registers after them.
             ir, hooks = relocated_dxbc_inputs(recovered.ir, recovered.contract, adjusted), None
             if edits:
-                from ..surface_splice_dxbc import splice_dxbc_surface
                 ir, hooks = splice_dxbc_surface(ir, flow, adjusted, edits)
                 helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
             generated = generate_recovered_dxbc_shader(
@@ -2160,7 +2147,6 @@ class ReEngineShaderGraphProfile:
                                          source_descriptor_layout, surface_helpers))
         surface_plan = ()
         if edits:
-            from ..surface_splice_dxil import dxil_surface_plan
             surface_plan = dxil_surface_plan(flow, edits, recovered.ir.to_assembly(), recovered.contract)
             helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
         product = _DxilProduct(

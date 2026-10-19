@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QObject, QRunnable, QSignalBlocker, Qt, QThreadPool, Signal, Slot
-from PySide6.QtGui import QColor
+lazy from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView, QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFileDialog,
     QFormLayout, QFrame, QHBoxLayout, QHeaderView, QLabel, QLineEdit, QMessageBox, QProgressBar,
@@ -12,18 +12,20 @@ from PySide6.QtWidgets import (
     QToolButton, QVBoxLayout, QWidget,
 )
 
-from services.file_io import write_files_atomically
-from ui.background_jobs import BackgroundJobs
+lazy from services.file_io import write_files_atomically
+lazy from ui.background_jobs import BackgroundJobs
 from .conversion import conversion_targets
-from .conversion_geometry import retains_meshlets
-from .conversion_preview import MeshConversionPreview, part_color
-from .conversion_skin import (
+lazy from .conversion_geometry import retains_meshlets
+lazy from .conversion_preview import MeshConversionPreview, part_color
+lazy from .conversion_skin import (
     adapt_source_skinning, skin_weight_capacity, source_has_material_skinning, source_skinning_contract,
     source_weight_options, target_weight_options,
 )
 from .mesh_file import MeshFile, MPLY_MAGIC
 from .profiles import BlendShapeLayout, MaterialSkinningLayout
-from .preview_controls import make_searchable
+lazy from .preview_controls import make_searchable
+lazy from .blender import export_blend
+lazy from .blender_ui import require_blender
 
 
 BLENDER_TARGET = ("blender", None)
@@ -668,9 +670,6 @@ class MeshConversionDialog(QDialog):
             self._blend_directory = None
 
     def _check_blender(self):
-        from .blender import export_blend
-        from .blender_ui import require_blender
-
         blender = require_blender(self, getattr(self.handler, "app", None))
         if blender is None:
             self.report.setPlainText(self.tr("Blender is required for .blend export."))

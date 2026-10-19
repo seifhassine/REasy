@@ -173,7 +173,7 @@ def encode_fslt(model: FsltData) -> bytes:
                 obj += size * len(items)
     texts = [f.path for s in model.slots for f in s.fonts]
     for group in ("rules", "tail_rules"):
-        texts += [t for s in model.slots for r in getattr(s, group) for t in r.texts]
+        texts += [*r.texts for s in model.slots for r in getattr(s, group)]
     strings: dict[str, int] = {}
     for text in texts:
         if text not in strings:
@@ -185,4 +185,4 @@ def encode_fslt(model: FsltData) -> bytes:
     if version == 6:
         struct.pack_into("<Q", out, 8, model.extra)
     struct.pack_into(f"<{SLOT_COUNT}Q", out, 0x10 if version == 6 else 8, *entries)
-    return bytes(out)
+    return out.take_bytes()

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from utils.binary_handler import BinaryHandler as FileHandler
+lazy from utils.binary_handler import BinaryHandler as FileHandler
 
 class BaseModel(ABC):
     def __init__(self):

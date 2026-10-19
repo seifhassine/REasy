@@ -4,7 +4,7 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
-from utils.app_paths import PROJECT_CONFIG_NAME
+lazy from utils.app_paths import PROJECT_CONFIG_NAME
 
 
 def project_config_path(project_dir: Path | str) -> Path:

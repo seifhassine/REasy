@@ -1,9 +1,11 @@
 import re
 
 from .dxc import assemble_dxil, disassemble_dxil, enrich_dxil_shader
-from .dxbc import parse_dxbc
-from .dxil_metadata import metadata_definitions
-from .shader_graph import ShaderGraphError, dxil_target
+lazy from file_handlers.mmtr.profiles.re_engine_dxil_authoring import _attach_reflection
+
+lazy from .dxbc import parse_dxbc
+lazy from .dxil_metadata import metadata_definitions
+lazy from .shader_graph import ShaderGraphError, dxil_target
 
 
 def structured_view_spaces(contract):
@@ -30,7 +32,6 @@ def coalesce_structured_views(bytecode, contract, spaces):
         return bytecode
     assembly = disassemble_dxil(bytecode)
     if contract.stage != 'library':
-        from file_handlers.mmtr.profiles.re_engine_dxil_authoring import _attach_reflection
         assembly = _attach_reflection(assembly, bytecode)
     lines = assembly.splitlines()
     definitions = metadata_definitions(lines)

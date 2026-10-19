@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from ..blend_shape import (
+lazy from ..blend_shape import (
     BlendShapeBody, BlendShapeChannel, BlendShapeData, BlendShapeDeltaSegment, BlendShapeTarget,
     BlendShapeTargetRange,
 )
-from .scene import _shape_key_names, layer_lods, main_buffer_index
+lazy from .scene import _shape_key_names, layer_lods, main_buffer_index
 
 
 def lod_channel_names(mesh, lod):

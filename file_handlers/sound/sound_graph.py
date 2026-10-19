@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections import Counter
 
 from PySide6.QtCore import Qt, QTimer, Signal
-from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen
+lazy from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen
 from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QSizePolicy
 
 

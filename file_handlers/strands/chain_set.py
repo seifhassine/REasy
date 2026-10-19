@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
 
-from .chain_catalog import ConstantSources
-from .chain_constants import PhysicsConstants, SetFrame
-from .chain_passes import FrameState, SetShape
-from .gpus import GpuStrandsPreset
-from .strands_file import StrandsFile
+lazy from .chain_catalog import ConstantSources
+lazy from .chain_constants import PhysicsConstants, SetFrame
+lazy from .chain_passes import FrameState, SetShape
+lazy from .gpus import GpuStrandsPreset
+lazy from .strands_file import StrandsFile
 
 
 class StrandSet:

@@ -4,7 +4,7 @@ import math
 import struct
 from collections import Counter
 
-from ..errors import MotionValidationError
+lazy from ..errors import MotionValidationError
 from ..profiles import MotionFormatProfile
 from .model import (
     CONTAINER_PROPERTY_TYPES,

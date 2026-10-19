@@ -4,14 +4,14 @@ from __future__ import annotations
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 
-import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy import numpy as np
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
 
-from file_handlers.sdf.models import program_names
+lazy from file_handlers.sdf.models import program_names
 
-from .material_preview import MaterialPreviewError, gbuffer_route
+lazy from .material_preview import MaterialPreviewError, gbuffer_route
 
 CATALOG_FORMAT = 2
 CATALOG_DIRECTORY = "resources/data/pretransform"
@@ -309,7 +309,7 @@ def chain_level(mesh, level: int, catalog: PreTransformCatalog, deformed_only: b
     from file_handlers.mesh.normal_recalc import legacy_normal_recalc_words
 
     lods = mesh.meshes[0].lods
-    submeshes = sorted((item for group in lods[level].mesh_groups for item in group.submeshes),
+    submeshes = sorted((*group.submeshes for group in lods[level].mesh_groups),
                        key=lambda item: item.verts_index_offset)
     if not submeshes:
         return None
@@ -624,7 +624,7 @@ def chain_steps(level: ChainLevel, catalog: PreTransformCatalog, destination: De
             edges = (level.base, moved.first, moved.first + moved.count, level.end)
             still = [(first, last - first) for first, last in (edges[:2], edges[2:]) if last > first]
         elif catalog.skin_by_range is not False:
-            ranges = [item for target in blend.targets for item in target.ranges] + list(blend.still)
+            ranges = [*target.ranges for target in blend.targets] + list(blend.still)
             by_range = [(item.first, item.count, item.material) for item in ranges if item.group in enabled]
             if catalog.skin_by_range is None and sorted(by_range) != sorted(spans):
                 raise unseen("blend-shape ranges that are not the submeshes")
@@ -693,7 +693,7 @@ def constant_buffer(layout, constants: Mapping[str, np.ndarray]) -> bytes:
                 "MaterialPreview", "No capture shows the renderer setting the compute program's constant {name}."),
                 name=variable.name)
         data[variable.byte_offset:variable.byte_offset + words.nbytes] = words.tobytes()
-    return bytes(data)
+    return data.take_bytes()
 
 
 def used_channels(target: BlendTarget, weights: Sequence[float]) -> np.ndarray:

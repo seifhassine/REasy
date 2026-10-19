@@ -1,6 +1,6 @@
 from typing import List, Optional
 from .base_model import BaseModel, FileHandler
-from utils.hash_util import murmur3_hash
+lazy from utils.hash_util import murmur3_hash
 
 def calc_hash(text: str) -> int:
     """Calculate murmur3 hash for UTF-16LE encoded string"""

@@ -1,13 +1,18 @@
 import os
-from concurrent.futures import ThreadPoolExecutor
+lazy from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from functools import cached_property
 from itertools import chain, combinations, compress, cycle, islice, repeat
 from math import ceil, inf, prod
 from time import perf_counter
 
-from file_handlers.pak.utils import filepath_hash
-from tools.file_list_generator import DIGITS, CombinedStems, ImproverMode, block_size, expand_block
+lazy from file_handlers.pak.utils import filepath_hash
+lazy from tools.file_list_generator import DIGITS, CombinedStems, ImproverMode, block_size, expand_block
+lazy from utils.native_build import ensure_fast_path_search
+lazy from utils.hash_util import murmur3_hashes
+lazy import numpy as np
+lazy import gc
+lazy import random
 
 BATCH_SIZE = 65_536
 REPORT_INTERVAL = 0.1
@@ -130,7 +135,6 @@ def format_duration(seconds):
 
 
 def sorted_keys(hashes):
-    import numpy as np
     return np.sort(np.fromiter(hashes, dtype=np.uint64))
 
 
@@ -147,15 +151,13 @@ def block_candidate(source, k):
 
 class CpuBlockMatcher:
     def __init__(self, hashes):
-        import numpy as np
-        from utils.native_build import ensure_fast_path_search
         self._match = ensure_fast_path_search().match_blocks
         self._keys = sorted_keys(hashes)
         top = (self._keys & np.uint64(0xFFFFFFFF)) >> np.uint64(6)
         self._bits = np.zeros(1 << 23, dtype=np.uint8)
         np.bitwise_or.at(self._bits, (top >> np.uint64(3)).astype(np.intp),
                          (np.uint64(1) << (top & np.uint64(7))).astype(np.uint8))
-        self.threads = max(1, (os.cpu_count() or 2) - 1)
+        self.threads = max(1, (os.process_cpu_count() or 2) - 1)
         self._pool = ThreadPoolExecutor(self.threads, thread_name_prefix='file-list-search')
 
     @staticmethod
@@ -187,7 +189,7 @@ class CpuBlockMatcher:
         def search(part):
             found = self._match([self._native(*block) for block in part], self._bits, self._keys)
             return [block_candidate(part[index][0], k) for index, k in found]
-        return [path for paths in self._pool.map(search, parts) for path in paths]
+        return [*paths for paths in self._pool.map(search, parts)]
 
     def close(self):
         self._pool.shutdown(wait=True)
@@ -206,7 +208,6 @@ class Search:
     it, then ``run`` it, which closes it. ``callback(message, current, total)`` returns whether to stop."""
 
     def __init__(self, collector, entries, hashes, unfound=None):
-        from utils.hash_util import murmur3_hashes
         self.collector, self.entries, self.hashes = collector, entries, hashes
         self.unfound = len(hashes) if unfound is None else unfound
         self.budget = collector.search_budget
@@ -404,8 +405,6 @@ class Search:
             return False, f"{collector.compute_backend.upper()} search failed: {error}. Try CPU mode or a smaller search.", None, set()
 
     def _measure(self):
-        import gc
-        import random
         gc.collect()
         collector = self.collector
         sampler = collector._sampling_copy()

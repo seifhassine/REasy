@@ -16,7 +16,7 @@ from file_handlers.sdf.dxc import (
     validate_dxil,
 )
 from file_handlers.sdf.dxbc import parse_dxbc
-from file_handlers.sdf import dxil_metadata as _dxil_metadata
+from file_handlers.sdf import dxc, dxil_metadata as _dxil_metadata
 from file_handlers.sdf.shader_graph import (
     ShaderContract,
     ShaderContractBuffer,
@@ -29,8 +29,8 @@ from file_handlers.sdf.shader_graph import (
     HLSL_RESERVED_WORDS, _hlsl_variable_parts, _identifier, mask_components, signature_declaration, signature_member,
 )
 
-from file_handlers.sdf.shader_graph_texture import texture_coordinate_width
-from file_handlers.sdf.hlsl_contract import (resource_identifier, resource_declaration as _resource_declaration, contract_structures as _contract_structures, contract_cbuffer as _contract_cbuffer)
+lazy from file_handlers.sdf.shader_graph_texture import texture_coordinate_width
+lazy from file_handlers.sdf.hlsl_contract import (resource_identifier, resource_declaration as _resource_declaration, contract_structures as _contract_structures, contract_cbuffer as _contract_cbuffer)
 from .re_engine_dxil_recovery import _GLOBAL, _TYPE, LLVM_NAME, ReEngineDxilSemanticIr
 from .re_engine_bindless_material import material_record_accesses, relocate_material_record_words
 from .re_engine_dxil_signatures import DxilEntryMetadata, map_carrier_inputs, with_signature_rows
@@ -39,6 +39,11 @@ from .material_stage_inputs import stage_input_library
 from ..native_build_cache import NativeBuildCache, native_build_key
 from ..native_resource import DXIL_RESOURCE_CLASS_NUMBERS, DXIL_RESOURCE_CLASSES
 from ..material_implementation import implementation_contract
+lazy from file_handlers.bounded_cache import BoundedCache
+lazy from ..native_resource import complete_typed_resources
+lazy from .. import surface_splice_dxil
+lazy from ..surface_splice_dxil import apply_surface_plan, optimizer_passes, place_surface_code, surface_helper_source
+lazy from . import re_engine_dxil_worker as worker
 
 
 _DEFINE = re.compile(r'^define\b.*?@(?P<name>' + LLVM_NAME + r')\(')
@@ -79,10 +84,6 @@ def native_build_batch_info():
 
 
 def _native_pipeline_functions():
-    from file_handlers.sdf import dxc
-    from ..native_resource import complete_typed_resources
-    from .. import surface_splice_dxil
-
     return (compile_hlsl_dxc, disassemble_dxil, optimize_dxil,
             assemble_dxil, validate_dxil, dxil_container_part, dxc._operation_result,
             enrich_dxil_shader, parse_dxbc, ShaderContract.from_shader.__func__,
@@ -105,13 +106,10 @@ def _native_pipeline_functions():
 
 
 def _native_build_runtime():
-    from file_handlers.sdf import dxc
-
     return (dxc._library(), *_native_pipeline_functions())
 
 
 def _bounded_region_cache(name: str, key, byte_limit: int, build, cost):
-    from file_handlers.bounded_cache import BoundedCache
     from ..material_region_read import region_derived_cache
 
     cache = region_derived_cache(name)
@@ -159,8 +157,6 @@ def _prepare_carrier(bytecode: bytes) -> _PreparedCarrier:
 
 
 def _analysed_carrier(bytecode: bytes) -> _PreparedCarrier:
-    from ..native_resource import complete_typed_resources
-
     shader = enrich_dxil_shader(parse_dxbc(bytecode), bytecode)
     assembly = disassemble_dxil(bytecode)
     metadata = DxilEntryMetadata.parse(assembly.splitlines())
@@ -483,7 +479,6 @@ def _carrier_source(
             rendered = ", ".join(values.get(component, "0.0") for component in "xyzw")
             lines.append(f"    float4 v{register} = float4({rendered});")
         lines.extend((f"    return float({expression});", "}", ""))
-    from ..surface_splice_dxil import surface_helper_source
     surface_lines, surface_calls = surface_helper_source(surface_plan, arguments, registers)
     lines.extend(surface_lines)
     return_type = "REasyStageOutput" if contract.outputs else "void"
@@ -761,7 +756,7 @@ def _rewrite_legacy_handles(
         r'(?P<prefix>@dx\.op\.createHandle\(i32\s+57,\s+i8\s+)(?P<class>\d+),\s+i32\s+(?P<id>\d+),\s+i32\s+(?P<index>[^,]+)(?P<suffix>,\s+i1\s+(?:true|false)\))'
     )
     result = []
-    reserved = {name for line in entry for name in _SSA.findall(line)}
+    reserved = {*_SSA.findall(line) for line in entry}
     for line in entry:
         def replace_handle(match: re.Match[str]) -> str:
             register_class = DXIL_RESOURCE_CLASSES.get(int(match.group("class")))
@@ -824,7 +819,7 @@ def _rewrite_modern_handles(
     )
     handle_resources: dict[str, ShaderContractResource] = {}
     result: list[str] = []
-    reserved = {name for line in entry for name in _SSA.findall(line)}
+    reserved = {*_SSA.findall(line) for line in entry}
     for line in entry:
         match = creation.match(line.strip()) if "@dx.op.createHandleFromBinding(" in line else None
         if match is not None:
@@ -1231,7 +1226,6 @@ def _merge_entry(
                 for line in original_lines[start:stop]]
         surface_code = {}
         if surface_plan and name == entry_point:
-            from ..surface_splice_dxil import apply_surface_plan
             body, surface_code = apply_surface_plan(body, start, carrier_lines, carrier_entry, surface_plan,
                                                     native_metadata.output_rows())
         body = _rewrite_legacy_handles(body, source_contract, candidate_contract, texture_overrides)
@@ -1240,7 +1234,6 @@ def _merge_entry(
         body = _apply_material_overrides(body, carrier_entry, candidate_contract, material_expressions, native_metadata)
         body = relocate_material_record_words(body, candidate_contract, dict(material_word_offsets), entry_metadata=native_metadata)
         if surface_code:
-            from ..surface_splice_dxil import place_surface_code
             body = place_surface_code(body, surface_code)
         entries.extend(body)
     entry = entries
@@ -1659,7 +1652,6 @@ def _prepare_dxil_job(
     )
     passes = list(_DXIL_OPTIMIZER_PASSES)
     if surface_plan:
-        from ..surface_splice_dxil import optimizer_passes
         passes[passes.index("-always-inline") + 1:passes.index("-always-inline") + 1] = optimizer_passes(surface_plan)
     if added_inputs or added_outputs:
         # The native view-ID state describes the native signature; the added rows need it recomputed.
@@ -1767,16 +1759,12 @@ def rebuild_re_engine_dxil(
 
 
 def _native_worker_runtime(runtime):
-    from file_handlers.sdf import dxc
-
     if runtime[1:] != _DEFAULT_NATIVE_PIPELINE:
         return None
     return dxc._runtime_identity(runtime[0])
 
 
 def rebuild_re_engine_dxil_batch(requests):
-    from . import re_engine_dxil_worker as worker
-
     requests = tuple(requests)
     results = [None] * len(requests)
     prepared, owners, aliases = {}, {}, {}

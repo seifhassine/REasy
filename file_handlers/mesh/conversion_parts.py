@@ -4,13 +4,14 @@ from dataclasses import dataclass, replace
 
 import numpy as np
 
-from .conversion_allocations import (
+lazy from .conversion_allocations import (
     _SEGMENT_PLANES, _rebased_draw, _select_payload, join_payloads, make_resident,
 )
 from .mesh_file import SKIN_WEIGHT_STREAMS
-from .normal_recalc import (
+lazy from .normal_recalc import (
     INDICES_PER_WORKGROUP, WORKGROUP_SLOT_MASK, NormalRecalcData, NormalRecalcLOD, NormalRecalcRedirect,
 )
+lazy from .conversion import _clone
 
 # Triangles per piece of a draw too dense for one normal work window: 1,020 indices fit its 1,024 slots.
 DENSE_NORMAL_CHUNK_TRIANGLES = 340
@@ -67,7 +68,7 @@ class _Domain:
         self.required = np.array([self.base], dtype=np.int64)
         blend = mesh.blend_shape_data
         if lod_index == 0 and blend and blend.bone_modifier:
-            self.required = np.union1d(self.required, [v for e in blend.bone_modifier.effectors for v in e.vertex_indices])
+            self.required = np.union1d(self.required, [*e.vertex_indices for e in blend.bone_modifier.effectors])
 
     def closure(self, selection):
         rendered = np.unique(np.concatenate([self.primitives[di][ids].ravel() for di, ids in selection]))
@@ -132,8 +133,6 @@ def _morphs(part, mappings):
 
 
 def _build_part(mesh, domains, selections, loss):
-    from .conversion import _clone
-
     part = _clone(mesh)
     payloads, normals, geometry, mappings = {}, [], [], {}
     vertex_base = face_base = 0

@@ -5,22 +5,22 @@ import struct
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mmtr.engine_buffers import Camera
-from file_handlers.mmtr.light_passes import LightPasses, Source
+lazy from file_handlers.mmtr.engine_buffers import Camera
+lazy from file_handlers.mmtr.light_passes import LightPasses, Source
 from file_handlers.mmtr.material_preview import VIEW_DIMENSIONS
-from file_handlers.mmtr.mesh_render import DEPTH_VIEWS
-from file_handlers.mmtr.pretransform import SystemProgram
-from file_handlers.mmtr.pretransform_passes import SystemPrograms
-from file_handlers.mmtr.resident import RENDER_TARGET, UNORDERED_ACCESS
+lazy from file_handlers.mmtr.mesh_render import DEPTH_VIEWS
+lazy from file_handlers.mmtr.pretransform import SystemProgram
+lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
+lazy from file_handlers.mmtr.resident import RENDER_TARGET, UNORDERED_ACCESS
 
 from .chain_catalog import BEFORE, NOW, StrandCatalog
 from .chain_frame import SetPlace, SetSource, Stepped
 from .chain_passes import StrandPasses
 from .direct_constants import DirectConstants, DirectFrame, drawn_segments, injected_segments
-from .direct_render import IBL_OPTIMIZED, SCATTERING, DirectState, direct_steps, ibl_count, ibl_tables
-from .hair_material import material_given, user_material
+lazy from .direct_render import IBL_OPTIMIZED, SCATTERING, DirectState, direct_steps, ibl_count, ibl_tables
+lazy from .hair_material import material_given, user_material
 from .lod import F, world_box
 from .render_passes import DrawShape, RenderPasses, tiles_of
 from .spring_constants import SpringFrame
@@ -126,7 +126,7 @@ class SpringChain:
             block = bytearray(out.get(_ENVIRONMENT, bytes(layouts[_ENVIRONMENT].byte_size)))
             count = next(item for item in layouts[_ENVIRONMENT].variables if item.name == _FRAME_COUNT)
             struct.pack_into("<I", block, count.byte_offset, self._count & 0xffffffff)
-            out[_ENVIRONMENT] = bytes(block)
+            out[_ENVIRONMENT] = block.take_bytes()
         return out
 
     def _run(self) -> list[int]:

@@ -2,10 +2,10 @@ from dataclasses import dataclass
 import hashlib
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from file_handlers.sdf.shader_storage import native_storage_type
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_storage import native_storage_type
 from .native_local_memory import split
-from .profiles.re_engine_dxil_recovery import LLVM_NAME
+lazy from .profiles.re_engine_dxil_recovery import LLVM_NAME
 
 
 @dataclass(frozen=True)

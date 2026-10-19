@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass, replace
 
-from file_handlers.mesh.material_session import scoped_material_key
+lazy from file_handlers.mesh.material_session import scoped_material_key
 from file_handlers.rsz.scn_scene_graph import ScnObjectId
 
 from ..evaluation import DeformationTarget

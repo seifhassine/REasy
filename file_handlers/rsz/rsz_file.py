@@ -1,7 +1,6 @@
 import struct
 import uuid
 import sys
-from types import MappingProxyType
 from file_handlers.rsz.rsz_data_types import (
     Int4Data, Int4ColorData, StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
@@ -10,10 +9,12 @@ from file_handlers.rsz.rsz_data_types import (
     ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, AreaDataOld, get_type_class, 
     RectData, NON_ARRAY_PARSERS, LazyRawValues
 )
-from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
-from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
-from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
-from file_handlers.rsz.rsz_build_utils import (
+lazy from file_handlers.rsz.pfb_16.pfb_structure import (
+    Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata, parse_pfb16_resources, Pfb16ResourceInfo,
+)
+lazy from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
+lazy from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
+lazy from file_handlers.rsz.rsz_build_utils import (
     calculate_wstring_offsets,
     pad_to_alignment,
     write_prefab_info_table,
@@ -23,7 +24,7 @@ from file_handlers.rsz.rsz_build_utils import (
     write_userdata_info_table,
     write_wstring_entries,
 )
-from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
+lazy from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
 _STRUCT_DEFINITIONS = {
     "uint": "<I",
@@ -607,7 +608,7 @@ class RszFile:
         self._gameobject_instance_ids = set()  # Set of gameobject instance IDs
         self._folder_instance_ids = set()      # Set of folder instance IDs
 
-        self._empty_fields = MappingProxyType({})
+        self._empty_fields = frozendict()
         self._path_lower = ""
         self._is_16 = False
         self._is_18 = False
@@ -692,7 +693,6 @@ class RszFile:
         self._parse_gameobject_ref_infos(data)
         
         if self._is_16:
-            from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
             self._current_offset = parse_pfb16_resources(self, data)
         else:
             self._parse_resource_infos(data)
@@ -1673,7 +1673,7 @@ class RszFile:
                 if field_name in fields:
                     self._write_field_value(field_def, fields[field_name], out)
                     
-        return bytes(out)
+        return out.take_bytes()
     
     def get_resources_dynamically(self):
         """Get resources dynamically based on resource fields"""
@@ -1755,7 +1755,6 @@ class RszFile:
         return resources
 
     def rebuild_resources(self):
-        from file_handlers.rsz.pfb_16.pfb_structure import Pfb16ResourceInfo
         dynamic_resources = self.get_resources_dynamically()
         self.resource_infos.clear()
         self._resource_str_map.clear()
@@ -1985,7 +1984,7 @@ class RszFile:
         out[0:ScnHeader.SIZE] = header_bytes
         
         
-        return bytes(out)
+        return out.take_bytes()
 
     def _build_usr(self, special_align_enabled=False) -> bytes:
         self.header.resource_count = len(self.resource_infos)
@@ -2037,7 +2036,7 @@ class RszFile:
         )
         out[0:UsrHeader.SIZE] = header_bytes
 
-        return bytes(out)
+        return out.take_bytes()
 
     def _build_pfb(self, special_align_enabled = False) -> bytes:
         self.header.info_count = len(self.gameobjects)
@@ -2103,7 +2102,7 @@ class RszFile:
         )
         out[0:PfbHeader.SIZE] = header_bytes
 
-        return bytes(out)
+        return out.take_bytes()
     
     def _build_rsz_section(self, out: bytearray, special_align_enabled = False, update_header_data_offset: bool = True):
         """Build the RSZ section that's common to all file formats.
@@ -2189,7 +2188,7 @@ class RszFile:
 
         out = bytearray()
         self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
-        return bytes(out)
+        return out.take_bytes()
 
     def build_validated(self, special_align_enabled=False) -> bytes:
         """Build and strictly verify a stable parse/build round trip."""

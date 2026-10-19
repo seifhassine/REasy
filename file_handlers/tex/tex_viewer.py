@@ -3,21 +3,22 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import Qt, Signal, QPoint
-from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
+lazy from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QCheckBox,
     QGroupBox, QScrollArea, QFileDialog, QInputDialog, QMessageBox, QSlider
 )
 
-from ui.qt_timers import call_later
+lazy from ui.qt_timers import call_later
 
 from . import authoring
-from .dxgi import describe_format
-from .flags import CHOICE, SWITCH, TYPE_MASK, TexSetting
-from .profiles import tex_profile, tex_profiles, tex_version_for_game
-from .texture_decoder import decode_dds_mip, decode_tex_mip, dds_info
+lazy from .dxgi import describe_format
+lazy from .flags import CHOICE, SWITCH, TYPE_MASK, TexSetting
+lazy from .profiles import tex_profile, tex_profiles, tex_version_for_game
+lazy from .texture_decoder import decode_dds_mip, decode_tex_mip, dds_info
+lazy from .dds import DDS_MAGIC
 
 # A cook carrying every member still fits in two rows.
 SETTINGS_PER_ROW = 4
@@ -644,8 +645,6 @@ class TexViewer(QWidget):
         self.authoring_label.setText(" ".join([written, *notes]))
 
     def _export_dds(self):
-        from .dds import DDS_MAGIC
-
         raw = getattr(self.handler, 'raw_data', b"")
         if raw[:4] == DDS_MAGIC.to_bytes(4, 'little'):
             return

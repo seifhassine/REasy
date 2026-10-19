@@ -6,9 +6,9 @@ import os
 from typing import Any, Dict, List, Optional
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.app_paths import resource_path
-from file_handlers.msg.msg_viewer import MsgViewer
-from utils.hash_util import murmur3_hash
+lazy from utils.app_paths import resource_path
+lazy from file_handlers.msg.msg_viewer import MsgViewer
+lazy from utils.hash_util import murmur3_hash
 
 logger = logging.getLogger(__name__)
 
@@ -447,7 +447,7 @@ class MsgHandler(BaseFileHandler):
         for index, cipher_byte in enumerate(encrypted):
             decrypted[index] = cipher_byte ^ previous_cipher_byte ^ cls._KEY[index & 0xF]
             previous_cipher_byte = cipher_byte
-        return bytes(decrypted)
+        return decrypted.take_bytes()
 
     def _decrypt_string_pool(self):
         if not self.is_encrypted or self.header["data_offset"] is None:

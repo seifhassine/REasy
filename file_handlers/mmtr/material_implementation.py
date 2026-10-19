@@ -8,16 +8,25 @@ import re
 
 from file_handlers.sdf.dxbc import parse_dxbc
 from file_handlers.sdf.dxc import DxcError, compile_hlsl_dxc, disassemble_dxil, enrich_dxil_shader, validate_dxil
-from file_handlers.sdf.graph_snapshot import compiler_graph_copy
+lazy from file_handlers.sdf.graph_snapshot import compiler_graph_copy
 from file_handlers.sdf.hlsl import compile_hlsl_source_detailed
-from file_handlers.sdf.models import STAGE_KEYS
-from file_handlers.sdf.shader_contract_storage import contract_from_storage, contract_to_storage
-from file_handlers.sdf.shader_stage_execution import ShaderPrimitiveExecution, ShaderMeshExecution
-from file_handlers.sdf.shader_graph import (
+lazy from file_handlers.sdf.models import STAGE_KEYS
+lazy from file_handlers.sdf.shader_contract_storage import contract_from_storage, contract_to_storage
+lazy from file_handlers.sdf.shader_stage_execution import ShaderPrimitiveExecution, ShaderMeshExecution
+lazy from file_handlers.sdf.shader_graph import (
     ShaderContract, ShaderGraph, ShaderGraphError, generate_graph_hlsl, validate_graph, validate_shader_contract,
 )
-from .material_function import compilation_graph
+lazy from file_handlers.sdf import dxc
+lazy from file_handlers.sdf.spirv_contract import spirv_shader_contract
+lazy from file_handlers.sdf.spirv_implementation import complete_vulkan_contract
+lazy from .material_function import compilation_graph
 from .native_build_cache import NativeBuildCache, native_build_key
+lazy from .implementation_source_cache import generate_implementation_source
+lazy from .native_resource import complete_typed_resources
+lazy from .profiles.dxbc_stages import pixel_signature_interpolation, signature_packing_modes
+lazy from .profiles.re_engine_dxil_authoring import rebuild_re_engine_dxil
+lazy from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
+lazy from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
 
 
 _IMPLEMENTATION_DXIL_CONFIGURATION = (
@@ -29,10 +38,7 @@ _IMPLEMENTATION_BUILD_CACHE = NativeBuildCache()
 
 
 def _implementation_build_runtime():
-    from file_handlers.sdf import dxc
     from file_handlers.sdf.dxil_structured_views import coalesce_structured_views
-    from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
-    from .native_resource import complete_typed_resources
 
     try:
         library = dxc._library()
@@ -106,7 +112,6 @@ class MaterialProgramImplementation:
     def generate(self, contract, *, early_depth_stencil=False, source_profile=None):
         if contract.fingerprint != self.contract.fingerprint:
             raise ShaderGraphError("The renderer ABI changed. Rebind this implementation explicitly before building.")
-        from .implementation_source_cache import generate_implementation_source
         generated = generate_implementation_source(self, contract, early_depth_stencil=early_depth_stencil,
             source_profile=source_profile, generator=generate_graph_hlsl, graph_builder=compilation_graph)
         return replace(generated, source=self.source) if self.source else generated
@@ -232,11 +237,8 @@ class ImplementationExecution:
 
 def implementation_contract(contract, bytecode):
     if bytes(bytecode[:4]) == b'\x03\x02\x23\x07':
-        from file_handlers.sdf.spirv_implementation import complete_vulkan_contract
         return complete_vulkan_contract(contract, bytecode)
     if contract.model_major >= 6:
-        from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
-        from .native_resource import complete_typed_resources
         lines = disassemble_dxil(bytecode).splitlines()
         entry = DxilEntryMetadata.parse(lines)
         contract = complete_typed_resources(contract, entry, lines)
@@ -270,7 +272,6 @@ def implementation_contract(contract, bytecode):
             outputs=tuple(replace(field, interpolation=outputs.get(field.stream_key, field.interpolation)) for field in contract.outputs))
     if contract.stage in {'vertex','geometry','domain','hull'}:
         from .profiles.dxbc_recovery import recover_dxbc_ir
-        from .profiles.dxbc_stages import signature_packing_modes
         execution = recover_dxbc_ir(bytecode).execution if contract.stage != 'vertex' else None
         if contract.primitive_execution is not None and contract.primitive_execution != execution:
             raise ShaderGraphError('Native primitive execution disagrees with its renderer contract.')
@@ -283,7 +284,6 @@ def implementation_contract(contract, bytecode):
     if contract.stage != "pixel" or not contract.inputs:
         return contract
     from .profiles.dxbc_recovery import recover_dxbc_ir
-    from .profiles.dxbc_stages import pixel_signature_interpolation
     modes = pixel_signature_interpolation(contract.inputs, recover_dxbc_ir(bytecode).input_interpolation)
     return replace(contract, inputs=tuple(replace(field, interpolation=modes.get(field.key, field.interpolation))
         for field in contract.inputs))
@@ -300,14 +300,12 @@ def _check_interpolation(reference, candidate):
 
 def implementation_execution(bytecode):
     if bytes(bytecode[:4]) == b'\x03\x02\x23\x07':
-        from file_handlers.sdf.spirv_contract import spirv_shader_contract
         contract = implementation_contract(spirv_shader_contract(bytecode), bytecode)
         return ImplementationExecution(contract.vulkan_execution.early_fragment_tests, contract.primitive_execution)
     shader = parse_dxbc(bytecode)
     if shader.unknown_feature_flags:
         raise ShaderGraphError("The renderer template has unidentified shader feature flags.")
     if shader.model_major >= 6:
-        from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
         try:
             entry = DxilEntryMetadata.parse(disassemble_dxil(bytecode).splitlines())
         except DxcError as exc:
@@ -335,8 +333,6 @@ def _retain_contract_bindings(bytecode, reflected, contract):
 
 
 def _rebuilt_dxil(bytecode, reflected, contract, **options):
-    from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
-    from .profiles.re_engine_dxil_authoring import rebuild_re_engine_dxil
     source = implementation_contract(ShaderContract.from_shader(reflected), bytecode)
     return rebuild_re_engine_dxil(recover_re_engine_dxil_ir(bytecode), source, contract, **options).bytecode
 

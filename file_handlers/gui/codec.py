@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from .errors import GuiFormatError
-from .model import GuiDocument
-from .profiles import GuiFormatProfile, gui_profile_from_data
+lazy from .errors import GuiFormatError
+lazy from .model import GuiDocument
+lazy from .profiles import GuiFormatProfile, gui_profile_from_data
 
 
 def parse_gui(

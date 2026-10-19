@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 from dataclasses import replace
-from file_handlers.material_names import is_private_material_parameter
+lazy from file_handlers.material_names import is_private_material_parameter
 
 from .dxc import DxcError, enrich_dxil_shader
-from .models import RESOURCE_KINDS, STAGE_KEYS, SdfProgram
-from .profiles import SdfGameProfile
-from .shader_graph import (
+lazy from . import hlsl
+lazy from .models import RESOURCE_KINDS, STAGE_KEYS, SdfProgram
+lazy from .profiles import SdfGameProfile
+lazy from .shader_graph import (
     ShaderContract,
     ShaderContractBuffer,
     ShaderContractVariable,
+    _constant_buffer_identifiers,
 )
 
 
@@ -210,8 +212,7 @@ def shader_contract_for_program(
     if contract is None:
         contract = ShaderContract.from_shader(reflected)
         if contract.stage == 'compute' and contract.thread_group_size is None:
-            from .hlsl import dxbc_thread_group_size
-            contract = replace(contract, thread_group_size=dxbc_thread_group_size(reference.payload))
+            contract = replace(contract, thread_group_size=hlsl.dxbc_thread_group_size(reference.payload))
         if native_contract_cache is not None:
             native_contract_cache[reflected.sha256] = contract
     if not (is_library and profile.raytracing_libraries and key == "compute" and contract.stage == "library") and not profile.accepts_shader_stage(key, contract.stage):
@@ -241,7 +242,6 @@ def material_buffer_contract(
     def compiler_alias(buffer, variable):
         nonlocal compiler_aliases
         if compiler_aliases is None:
-            from .shader_graph import _constant_buffer_identifiers
             authored_buffers = []
             for reflected in contract.constant_buffers:
                 authored = outer.get(reflected.name.casefold())

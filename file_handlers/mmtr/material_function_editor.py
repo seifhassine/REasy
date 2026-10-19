@@ -13,16 +13,18 @@ from file_handlers.sdf.shader_graph import (
     ShaderContract, ShaderGraph, ShaderGraphDiagnostic, ShaderGraphError,
     connection_compatible, node_pins,
 )
-from file_handlers.sdf.shader_graph_editor import add_palette_templates
+lazy from file_handlers.sdf.shader_graph import validate_node_update
+lazy from file_handlers.sdf.shader_graph_editor import add_palette_templates, _resource_object_controls
 from .material_editor import MmtrMaterialEditor
-from .material_function import (
+lazy from .material_function import (
     MaterialFunctionAsset, MaterialFunctionPin, expand_material_functions,
 )
-from .material_project import MmtrMaterialProject
+lazy from .material_project import MmtrMaterialProject
 from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES, numeric_type_label, value_width
-from file_handlers.sdf.shader_graph_buffer import structured_buffer_stride
+lazy from file_handlers.sdf.shader_graph_buffer import structured_buffer_stride
 from file_handlers.sdf.shader_graph_texture import (TEXTURE_OBJECT_TYPES, TEXTURE_SPATIAL_WIDTHS,
     TEXTURE_ELEMENT_TYPES, WRITABLE_TEXTURE_DIMENSIONS, texture_object_parts, texture_object_type, texture_object_sample_count)
+lazy from file_handlers.sdf.shader_graph_texture import TEXTURE_TEMPLATES
 
 
 PORT_TYPES = (
@@ -162,7 +164,6 @@ class MaterialFunctionCanvas(MmtrMaterialEditor):
         interface.setExpanded(True)
         sampling = QTreeWidgetItem([self.tr('Textures')])
         self.palette.addTopLevelItem(sampling)
-        from file_handlers.sdf.shader_graph_texture import TEXTURE_TEMPLATES
         add_palette_templates(sampling, TEXTURE_TEMPLATES)
         buffers = QTreeWidgetItem([self.tr("Buffers")])
         item = QTreeWidgetItem([self.tr("Read Buffer Word")])
@@ -247,7 +248,6 @@ class MaterialFunctionCanvas(MmtrMaterialEditor):
             types.addItem(self.tr(label), value)
         current_type = node.properties['value_type']
         from file_handlers.sdf.shader_graph_resource import resource_array_parts, resource_array_type, is_writable_resource_type
-        from file_handlers.sdf.shader_graph_editor import _resource_object_controls
         array = resource_array_parts(current_type)
         if array and current_type != 'resource_array<texture2d,0>':
             types.addItem(self.tr('Descriptor table ({count})').format(count=array[1] or self.tr('unbounded')), current_type)
@@ -426,7 +426,6 @@ class MaterialBranchDialog(QDialog):
     def _sync_interface(self, source):
         if self._syncing:
             return
-        from file_handlers.sdf.shader_graph import validate_node_update
         self._syncing = True
         try:
             target = self.editors[1 - self.editors.index(source)]

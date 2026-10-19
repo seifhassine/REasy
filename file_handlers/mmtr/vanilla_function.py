@@ -12,24 +12,45 @@ import math
 import re
 import struct
 
-from file_handlers.sdf.aggregate_values import constant_value_fields
+lazy from file_handlers.sdf.aggregate_values import constant_value_fields
 from file_handlers.sdf.shader_graph import (
     MAX_GRAPH_LINKS, ShaderContract, ShaderGraph, ShaderGraphError, ShaderGraphLink,
 )
-from file_handlers.sdf.shader_graph_layout import arrange_shader_graph
-from file_handlers.sdf.shader_graph_math import (
+lazy from file_handlers.sdf.shader_graph_layout import arrange_shader_graph
+lazy from file_handlers.sdf.shader_graph_math import (
     TYPED_MATH_NODES, COLLECTIVE_NODES, typed_math_signature, NUMERIC_BASE_TYPES, is_float_type, value_width,
 )
-from file_handlers.sdf.shader_graph_texture import TextureOperation, TEXTURE_SPATIAL_WIDTHS, TEXTURE_LOAD_COORDINATES
-from file_handlers.sdf.shader_graph_buffer import BufferRead
+lazy from file_handlers.sdf.shader_graph_texture import (
+    TextureOperation, TEXTURE_SPATIAL_WIDTHS, TEXTURE_LOAD_COORDINATES, GATHER_DIMENSIONS,
+)
+lazy from file_handlers.sdf.shader_graph_buffer import BufferRead
+lazy from file_handlers.sdf.dxil_metadata import native_float_literal
+lazy from file_handlers.sdf.graph_snapshot import IMMUTABLE_JSON
+lazy from file_handlers.sdf.shader_graph_precision import PRECISION_OPERATIONS
 from .native_local_memory import split
 from .material_function import (
     MaterialFunctionAsset, MaterialFunctionError, MaterialFunctionPin,
     _compiler_function_asset,
 )
+lazy from .material_function import _inline_function
 from .profiles.dxbc_recovery import DxbcSemanticIr
+lazy from .profiles.dxbc_recovery import _output_register
 from .profiles.re_engine_dxil_recovery import ReEngineDxilSemanticIr
-from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
+lazy from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
+lazy from .hull_behavior import combine_hull_behaviors
+lazy from .legacy_hull_flow import normalized_hull_phases, passthrough_hull_behavior
+lazy from .legacy_loop_flow import normalized_loop_exits, joined_complementary_branches, lowered_switches
+lazy from .legacy_register_flow import (
+    lower_indexable_temps, register_liveness, destination_count, destination_register, pure_register_calculation,
+)
+lazy from .native_collective import collective_call
+lazy from .native_dxbc_precision import operand_precision, word_value
+lazy from .native_resource import (
+    DXIL_RESOURCE_CLASSES, coherent_uav_bindings, native_constant_buffer_extents, heap_resource,
+    validate_resource_properties,
+)
+lazy from .profiles.dxbc_stages import pixel_signature_interpolation
+lazy from .vanilla_control_flow import structured_dxil_records
 
 
 class VanillaFunctionError(MaterialFunctionError):
@@ -62,7 +83,8 @@ def _recovery_allocation_batch(ir):
     finally:
         try:
             if allocation.needs_collection:
-                gc.collect()
+                # What was made while the collector was off is all still young.
+                gc.collect(0)
         finally:
             _RECOVERY_ALLOCATION.reset(token)
             gc.enable()
@@ -169,7 +191,6 @@ class _RecoveryGraph(ShaderGraph):
 
 def _recovery_graph_digest(graph):
     from .material_region_read import REGION_ASSET_FIELDS, region_derived_cache
-    from file_handlers.sdf.graph_snapshot import IMMUTABLE_JSON
     entries = region_derived_cache("recovery_graph_hashes")
     if entries is None:
         entries = {}
@@ -304,7 +325,6 @@ class RecoveredBehavior:
         return thaw_graph(graph)
 
     def _bind(self, contract: ShaderContract) -> ShaderGraph:
-        from .material_function import _inline_function
         graph = ShaderGraph(contract.stage, contract.fingerprint)
         instance = graph.add_node("material_function", node_id="behavior")
         for pin_id, key in self.dependencies:
@@ -490,7 +510,6 @@ class _Builder:
         return self.scalar(self.input(('patch_constant',*field.key),field.display_name,field.value_type),component)
 
     def _node(self, kind, *, properties=None):
-        from file_handlers.sdf.shader_graph_precision import PRECISION_OPERATIONS
         if self.precise_math and kind in PRECISION_OPERATIONS:
             properties = {**(properties or {}), 'precise': True}
         index = self._next_node
@@ -773,7 +792,6 @@ class _Builder:
         return self.values[key]
 
     def precise(self, value):
-        from file_handlers.sdf.shader_graph_precision import PRECISION_OPERATIONS
         node = self.graph.node(value.node)
         if node is not None and node.kind == 'capture_value':
             link = next(link for link in self.graph.links if link.target_node == node.node_id and link.target_pin == 'value')
@@ -785,7 +803,7 @@ class _Builder:
     def operation(self, kind, *, _value_type=None, _properties=None, **inputs):
         types = {value.value_type for value in inputs.values()}
         value_type = _value_type or (next(iter(types)) if len(types) == 1 else None)
-        key = (kind, value_type, tuple(inputs.items()), self.precise_math, tuple(sorted((_properties or {}).items())))
+        key = (kind, value_type, tuple(inputs.items()), self.precise_math, frozendict(_properties or {}))
         reusable = kind not in COLLECTIVE_NODES
         if not reusable and self.clips:
             raise VanillaFunctionError('Collective lane operations after discard need an ordered execution-effect region.')
@@ -933,7 +951,7 @@ class _Builder:
             operands['sampler'] = self.resource_value(sampler)
         if {name: operand.value_type for name, operand in operands.items()} != dict(operation.inputs):
             raise VanillaFunctionError('Texture operands do not match their declared typed sampling contract.')
-        key = (kind, operation, tuple(sorted(operands.items())))
+        key = (kind, operation, frozendict(operands))
         if key not in self.values or self.execution is not None and _writable(texture):
             node = self._node(kind, properties=properties)
             for name, operand in operands.items():
@@ -1282,7 +1300,6 @@ class _Builder:
 
 
 def _float_literal(text):
-    from file_handlers.sdf.dxil_metadata import native_float_literal
     try:
         return native_float_literal(text)
     except ValueError as exc:
@@ -1291,8 +1308,6 @@ def _float_literal(text):
 
 def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name="Vanilla Behavior", _hull_phase=None):
     if ir.stage == 'hs' and _hull_phase is None:
-        from .legacy_hull_flow import normalized_hull_phases, passthrough_hull_behavior
-        from .hull_behavior import combine_hull_behaviors
         control, patch = normalized_hull_phases(ir)
         control_behavior = (recover_dxbc_function(control,contract,name=name+' Control Points',_hull_phase='control_point')
                             if control is not None else passthrough_hull_behavior(contract,name+' Control Points'))
@@ -1306,14 +1321,10 @@ def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name=
     strict = 'refactoringAllowed' not in ir.global_flags
     if strict and any(instruction.precise_mask for instruction in ir.instructions):
         raise VanillaFunctionError('Per-instruction precise masks require the native refactoring-allowed flag.')
-    from .legacy_loop_flow import normalized_loop_exits, joined_complementary_branches, lowered_switches
-    from .legacy_register_flow import lower_indexable_temps, register_liveness, destination_count, destination_register, pure_register_calculation
-    from .profiles.dxbc_recovery import _output_register
     source_ir = joined_complementary_branches(lowered_switches(lower_indexable_temps(ir)))
     loop_origins = {}
     ir = normalized_loop_exits(source_ir, loop_origins=loop_origins)
     if ir.stage == "ps":
-        from .profiles.dxbc_stages import pixel_signature_interpolation
         modes = pixel_signature_interpolation(contract.inputs, ir.input_interpolation)
         for field in contract.inputs:
             if modes.get(field.key, "") != field.interpolation:
@@ -1331,7 +1342,6 @@ def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name=
     inputs, patch_inputs, control_outputs = (lane_fields(fields) for fields in
                                              (contract.inputs, contract.patch_constants, contract.outputs))
     buffers = {buffer.bind_point: buffer for buffer in contract.constant_buffers if buffer.register_space == 0}
-    from .native_dxbc_precision import operand_precision, word_value
     output_lanes = {(_output_register(field), lane)
         for field in phase_outputs for lane in range(4) if field.mask & (1 << lane)}
     stream_lanes = {stream:{(_output_register(field),lane) for field in contract.outputs if field.stream == stream
@@ -2055,7 +2065,6 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
     function_name = name
     metadata = DxilEntryMetadata.parse(ir.to_assembly().splitlines())
     if metadata.stage == 'hull' and _hull_phase is None:
-        from .hull_behavior import combine_hull_behaviors
         return combine_hull_behaviors(
             recover_dxil_function(ir,contract,name=name+' Control Points',_hull_phase='control_point'),
             recover_dxil_function(ir,contract,name=name+' Patch Constants',_hull_phase='patch'),contract,name)
@@ -2064,7 +2073,6 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
     phase_outputs = contract.patch_constants if _hull_phase == 'patch' else contract.outputs
     # NativeLowPrecision is a shader flag; ordinary DXIL half means minimum precision.
     half_type = 'half' if metadata.shader_flags() & (1 << 23) else 'min16float'
-    from .native_resource import DXIL_RESOURCE_CLASSES, coherent_uav_bindings, native_constant_buffer_extents
     coherent_bindings = coherent_uav_bindings(metadata)
     cbuffer_extents = native_constant_buffer_extents(metadata)
     if metadata.stage not in {"pixel", "vertex", "compute", "geometry", "domain", "hull", "mesh", "amplification"}:
@@ -2078,7 +2086,6 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             raise VanillaFunctionError('Native mesh execution disagrees with the renderer contract.')
         if contract.mesh_execution.payload_bytes and contract.mesh_execution.payload_layout is None:
             raise VanillaFunctionError('This mesh entry requires a typed amplification-payload adapter.')
-    from .vanilla_control_flow import structured_dxil_records
     from .native_scalar_functions import inline_scalar_calls
     entry_name = metadata.hull_patch_function_name() if _hull_phase == 'patch' else metadata.function_name
     events = tuple(inline_scalar_calls(structured_dxil_records(ir, entry_name), ir))
@@ -2501,7 +2508,6 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
         if call is None:
             raise VanillaFunctionError(f"{record.opcode} needs an additional editable behavior operation.")
         operation, arguments = call[1], split(call[2])
-        from .native_collective import collective_call
         collective = collective_call(operation, arguments)
         if collective is not None:
             kind, domain, operands = collective
@@ -2614,7 +2620,6 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             annotation = re.fullmatch(r"%dx.types.ResourceProperties \{ i32 (\d+), i32 (\d+) \}", arguments[2])
             if annotation is None:
                 raise VanillaFunctionError('The descriptor property declaration is invalid.')
-            from .native_resource import heap_resource, validate_resource_properties
             kind, layout = map(int, annotation.groups())
             if isinstance(resource, _HeapIndex):
                 coherent = bool(kind & 16384)
@@ -2755,7 +2760,6 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
                 raise VanillaFunctionError('The native gather declaration is inconsistent.')
             texture = handles.get(arguments[1].removeprefix('%dx.types.Handle '))
             sampler = handles.get(arguments[2].removeprefix('%dx.types.Handle '))
-            from file_handlers.sdf.shader_graph_texture import GATHER_DIMENSIONS
             dimension = texture.dimension.replace('-', '') if texture else ''
             if dimension not in GATHER_DIMENSIONS:
                 raise VanillaFunctionError('A gather requires its declared 2D or cube texture.')

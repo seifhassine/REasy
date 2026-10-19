@@ -3,9 +3,9 @@ from __future__ import annotations
 import math
 from functools import partial
 
-import numpy as np
+lazy import numpy as np
 
-from utils.hash_util import murmur3_hash_utf16le
+lazy from utils.hash_util import murmur3_hash_utf16le
 
 from .contract_utils import (
     ContractValidator,

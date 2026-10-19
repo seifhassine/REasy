@@ -3,6 +3,9 @@ import hashlib
 import json
 import re
 
+lazy from .dxil_metadata import metadata_operands
+lazy from .shader_graph import ShaderGraphError
+
 
 @dataclass(frozen=True, slots=True)
 class ShaderStorageType:
@@ -13,7 +16,6 @@ class ShaderStorageType:
 
     @classmethod
     def from_data(cls, data, depth=0):
-        from .shader_graph import ShaderGraphError
         if depth > 16 or not isinstance(data, dict) or set(data) != {'kind','count','element','members'}:
             raise ShaderGraphError('Invalid typed shader storage declaration.')
         members = data['members']
@@ -23,7 +25,6 @@ class ShaderStorageType:
                    tuple(cls.from_data(member,depth+1) for member in members))
 
     def __post_init__(self):
-        from .shader_graph import ShaderGraphError
         if not isinstance(self.kind,str) or type(self.count) is not int or not isinstance(self.members,tuple):
             raise ShaderGraphError('Invalid typed shader storage declaration.')
         valid = (self.kind in {'uint','float','bool'} and self.count == 0 and self.element is None and not self.members
@@ -62,7 +63,6 @@ class ShaderStorageType:
 
 
 def native_storage_type(text, definitions, trail=()):
-    from .shader_graph import ShaderGraphError
     if len(trail) > 16 or text in trail:
         raise ShaderGraphError('Recursive or excessively nested shader storage type.')
     if text in {'i32','float','i1'}:
@@ -72,7 +72,6 @@ def native_storage_type(text, definitions, trail=()):
     if text.startswith('%') and text in definitions:
         return native_storage_type(definitions[text],definitions,(*trail,text))
     if text.startswith('{ ') and text.endswith(' }'):
-        from .dxil_metadata import metadata_operands
         return ShaderStorageType('struct', members=tuple(native_storage_type(member,definitions,(*trail,text))
             for member in metadata_operands('!{'+text[2:-2]+'}')))
     raise ShaderGraphError('This group/payload element needs an additional semantic type adapter.')

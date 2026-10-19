@@ -9,9 +9,9 @@ from dataclasses import dataclass
 from itertools import islice
 from typing import Any
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     GameObjectRefData,
     GuidData,
@@ -21,32 +21,32 @@ from file_handlers.rsz.rsz_data_types import (
     StructData,
     UserDataData,
 )
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     VALUE_COMPONENTS as _COMPONENTS,
     coerce_field_value,
     contains_resource_value,
     is_type_assignable,
     new_collection_element,
 )
-from file_handlers.rsz.rsz_file import RszFile
-from ui.ai.file_migration import (
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from ui.ai.file_migration import (
     migration_confirmation_details,
     migration_job_schema,
     migration_publish_schema_properties,
 )
-from ui.ai.pak_folder_migration import update_mod_folder_from_paks_steps
-from ui.ai.rsz_migration import RszMigrationStrategy, load_type_registry
-from ui.ai.rsz_update_analysis import (
+lazy from ui.ai.pak_folder_migration import update_mod_folder_from_paks_steps
+lazy from ui.ai.rsz_migration import RszMigrationStrategy, load_type_registry
+lazy from ui.ai.rsz_update_analysis import (
     RszUpdateAnalysis,
     analyze_rsz_mod_folder_steps,
 )
-from ui.ai.tool_registry import (
+lazy from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
     tool as _tool,
     translate_tool_text as _tr,
 )
-from utils.enum_manager import EnumManager
+lazy from utils.enum_manager import EnumManager
 
 
 RSZ_CAPABILITY = "rsz"
@@ -961,7 +961,7 @@ def _external_references(
         clean, _ = _clean_string(value)
         if not clean:
             return
-        key = (kind, clean, tuple(sorted(location.items())))
+        key = (kind, clean, frozendict(location))
         if key in seen:
             return
         seen.add(key)

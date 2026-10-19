@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
 from file_handlers.sdf.sdf_handler import SdfHandler
 
-from .mmtr_file import MmtrFile
-from .profiles import MmtrGameProfile
+lazy from .mmtr_file import MmtrFile
+lazy from .profiles import MmtrGameProfile
+lazy from .material_context import bind_material_instance
+lazy from .material_family import load_material_family
+lazy from .mmtr_viewer import MmtrViewer
 
 
 class MmtrHandler(SdfHandler):
@@ -56,9 +59,6 @@ class MmtrHandler(SdfHandler):
         self.modified = False
 
     def _bind(self, material) -> None:
-        from .material_context import bind_material_instance
-        from .material_family import load_material_family
-
         if not str(material.header.mmtr_path or "").casefold().endswith(".mmtrs"):
             self.mmtr.document = bind_material_instance(self.mmtr.require_document(), material)
         elif self._family_loader is None:
@@ -96,8 +96,6 @@ class MmtrHandler(SdfHandler):
         self._related_outputs.clear()
 
     def create_viewer(self):
-        from .mmtr_viewer import MmtrViewer
-
         return MmtrViewer(self)
 
 

@@ -5,7 +5,7 @@ from enum import IntEnum
 import math
 import struct
 
-import numpy as np
+lazy import numpy as np
 
 from file_handlers.tex.dxgi import (DXGI_FORMAT_BC4_UNORM, DXGI_FORMAT_R8_UNORM, DXGI_FORMAT_R16_FLOAT,
                                     get_bits_per_pixel, get_block_size_bytes, is_block_compressed)
@@ -310,4 +310,4 @@ class SdfTexFile:
             upload = np.zeros((depth, rows, row_pitch), dtype=np.uint8)
             upload[:, :, :row_bytes] = elements.view(np.uint8).reshape(depth, rows, row_bytes)
             output.extend(upload.tobytes())
-        return bytes(output)
+        return output.take_bytes()

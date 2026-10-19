@@ -1,9 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
 from enum import Enum
 import math
-from typing import TYPE_CHECKING, Hashable
 
 import numpy as np
 
@@ -19,8 +19,7 @@ from .sampling import (
     resolve_motion_frame,
 )
 
-if TYPE_CHECKING:
-    from collections.abc import Sequence
+lazy from collections.abc import Sequence
 
 
 class LayerBlendMode(Enum):

@@ -3,16 +3,16 @@ from __future__ import annotations
 
 import dataclasses
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.clsp.clsp_file import EVERY_TAG, TAG_BITS, CollisionShape, ShapeKind, read_clsp, write_clsp
-from file_handlers.clsp.geometry import bounds, depth, made, moved
-from file_handlers.clsp.placement import hung_joints, place
-from utils.hash_util import murmur3_hash_utf16le
+lazy from file_handlers.clsp.clsp_file import EVERY_TAG, TAG_BITS, CollisionShape, ShapeKind, read_clsp, write_clsp
+lazy from file_handlers.clsp.geometry import bounds, depth, made, moved
+lazy from file_handlers.clsp.placement import hung_joints, place
+lazy from utils.hash_util import murmur3_hash_utf16le
 
-from .chain_scene import ChainScene, Holding, Settled, settle
-from .editing import StrandEdit, ranges
-from .placement import PrefabPlacement
+lazy from .chain_scene import ChainScene, Holding, Settled, settle
+lazy from .editing import StrandEdit, ranges
+lazy from .placement import PrefabPlacement
 
 _SLACK = 1e-6
 

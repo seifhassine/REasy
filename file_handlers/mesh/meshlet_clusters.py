@@ -5,9 +5,9 @@ from __future__ import annotations
 from collections import deque
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from .conversion_allocations import select_skin_rows
+lazy from .conversion_allocations import select_skin_rows
 from .mesh_file import MPLY_VECTOR_PLANES, MPLYChunk
 
 # Raw bytes of the whole source chunk; the writer lays them out again, so sub-chunks clear them.

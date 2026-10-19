@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional, Sequence
 
-from .dds import CUBEMAP_FACES
-from .dxgi import dxgi_name, get_bits_per_pixel, is_block_compressed, is_known_format
-from .flags import EV_MASK, FIELD_18_23_MASK, TYPE_MASK, TexFlags, type_choices
+lazy from .dds import CUBEMAP_FACES
+lazy from .dxgi import dxgi_name, get_bits_per_pixel, is_block_compressed, is_known_format
+lazy from .flags import EV_MASK, FIELD_18_23_MASK, TYPE_MASK, TexFlags, type_choices
 from .profiles import (
     LAYOUT_LEGACY,
     LAYOUT_STORED,
@@ -15,7 +15,7 @@ from .profiles import (
     texture_format_ids,
     texture_type_name,
 )
-from .tex_file import (
+lazy from .tex_file import (
     MipHeader,
     StoredMipHeader,
     TexFile,
@@ -24,7 +24,7 @@ from .tex_file import (
     natural_mip_layout,
     write_tex,
 )
-from .texture_decoder import dds_info, dds_subresources
+lazy from .texture_decoder import dds_info, dds_subresources
 
 MAX_AXIS = 0xFFFF
 
@@ -180,7 +180,7 @@ def _padded_rows(
         for row in range(rows):
             out += chunk[row * natural_pitch : (row + 1) * natural_pitch]
             out += bytes(pitch - natural_pitch)
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _channel_count(dxgi_format: int) -> int:

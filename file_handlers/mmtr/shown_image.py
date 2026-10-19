@@ -6,14 +6,14 @@ import struct
 from collections.abc import Callable, Sequence
 from functools import lru_cache
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
 from file_handlers.tex.dxgi import DXGI_FORMAT_R10G10B10A2_UNORM, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R8G8B8A8_UNORM
 
-from .material_preview import RANGE_SRV, RANGE_UAV, MaterialPreviewError
+lazy from .material_preview import RANGE_SRV, RANGE_UAV, MaterialPreviewError
 from .mesh_render import DEPTH_VIEWS, MeshScene
-from .resident import TEXTURE_2D, UNORDERED_ACCESS
+lazy from .resident import TEXTURE_2D, UNORDERED_ACCESS
 
 _TOPS = {DXGI_FORMAT_R8G8B8A8_UNORM: 255, DXGI_FORMAT_R10G10B10A2_UNORM: 1023}
 # Per channel: a normalized channel's largest integer, or None for floats (sRGB reads decode to float).

@@ -8,7 +8,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
 from file_handlers.sdf.sdf_file import (
     BLEND_INVERSE_SOURCE_ALPHA, BLEND_ONE, BLEND_OPERATION_ADD, BLEND_SOURCE_ALPHA, BLEND_ZERO, COMPARE_EQUAL,
     COMPARE_GREATER, COMPARE_GREATER_EQUAL, CULL_BACK,
@@ -19,18 +19,18 @@ from file_handlers.tex.dxgi import (
     DXGI_FORMAT_R8G8B8A8_UINT, DXGI_FORMAT_R8G8B8A8_UNORM,
 )
 
-from .engine_buffers import Camera
-from .material_preview import (
+lazy from .engine_buffers import Camera
+lazy from .material_preview import (
     RANGE_CBV, _NO_DEPTH_STENCIL, _RASTERIZER, RANGE_SAMPLER, RANGE_SRV, _TRIANGLE_LIST, RANGE_UAV, _UNBLENDED,
 )
 from .mesh_render import DEPTH_VIEWS
-from .overlay import view_projection
+lazy from .overlay import view_projection
 from .overlay_scene import (
     MOST_INFLUENCES, _IDENTITY, _identity_palette, _influence_streams,
     _palette_rows, _rewrite, _rows,
 )
 from .probe_light import SOURCE as _PROBES, ProbeLight, ViewProbes
-from .resident import BUFFER, DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from .resident import BUFFER, DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
 
 # Reversed depth: greater is nearer.
 EQUAL, NEARER, AS_NEAR = COMPARE_EQUAL, COMPARE_GREATER, COMPARE_GREATER_EQUAL

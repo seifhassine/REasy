@@ -3,7 +3,7 @@ from __future__ import annotations
 import struct
 
 from .enums import PropertyType, property_type_or_unknown
-from .structures import (
+lazy from .structures import (
     ActionKey,
     BoolKey,
     Key,
@@ -13,7 +13,7 @@ from .structures import (
     SpeedPoint,
     validate_path_point3d,
 )
-from utils.number_format import format_full_float
+lazy from utils.number_format import format_full_float
 
 
 def key_payload_text(prop: Property | None, key) -> str:

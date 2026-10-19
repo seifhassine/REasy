@@ -7,7 +7,7 @@ from dataclasses import fields
 from .enums import PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
 from .parser import ParsedClip
 from .reader import ClipParserError
-from .structures import (
+lazy from .structures import (
     ActionKey,
     BoolKey,
     ClipInfo,
@@ -308,7 +308,7 @@ class ClipGraphOperations:
             clip_info.root_nodes = [item for item in clip_info.root_nodes if id(item) not in doomed_ids]
         for parent in all_nodes:
             parent.child_nodes = [item for item in parent.child_nodes if id(item) not in doomed_ids]
-        for prop in (prop for item in doomed for prop in item.properties):
+        for prop in (*item.properties for item in doomed):
             self._delete_property_subgraph(prop)
 
     def add_node_property(self, node: Node, prop: Property):
@@ -516,7 +516,7 @@ class ClipGraphOperations:
                     items is clip.root_nodes for clip in track.clip_infos
                 ):
                     track.child_nodes[:] = [
-                        node for clip in track.clip_infos for node in clip.root_nodes
+                        *clip.root_nodes for clip in track.clip_infos
                     ]
                     break
         return True
@@ -702,11 +702,11 @@ class ClipGraphOperations:
 
     def _node_roots(self) -> list[Node]:
         if self.parsed.tracks:
-            return [node for track in self.parsed.tracks for node in track.child_nodes]
+            return [*track.child_nodes for track in self.parsed.tracks]
         return [] if self.parsed.header.version >= 85 else self.parsed.root_nodes
 
     def _all_properties(self) -> list[Property]:
-        roots = [prop for node in self._all_nodes() for prop in node.properties]
+        roots = [*node.properties for node in self._all_nodes()]
         return list(self._walk_unique(roots, "child_properties"))
 
     def _external_reference_memo(

@@ -5,12 +5,12 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 
 import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mmtr.material_preview import MaterialPreviewError
-from file_handlers.rsz.scene_joints import times
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
+lazy from file_handlers.rsz.scene_joints import times
 
-from .chain_catalog import LodSection
+lazy from .chain_catalog import LodSection
 from .lod import (F, NO_RECORD, LodRecord, drawn_segments, extent_scaled, frustum_planes, grown_box, in_frustum,
                   lod_factor_auto, readback_box, screen_rate, seen, vertex_level, world_box)
 

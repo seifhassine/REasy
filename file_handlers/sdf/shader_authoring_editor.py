@@ -1,7 +1,8 @@
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QStackedLayout, QWidget
 
-from .shader_graph_editor import SdfShaderGraphEditor
+lazy from .raytracing_graph_editor import RayTracingGraphEditor
+lazy from .shader_graph_editor import SdfShaderGraphEditor
 
 
 class SdfShaderAuthoringEditor(QWidget):
@@ -19,7 +20,6 @@ class SdfShaderAuthoringEditor(QWidget):
         shader = program.shader('compute')
         if shader is not None and shader.raytracing_library is not None:
             if self.raytracing is None:
-                from .raytracing_graph_editor import RayTracingGraphEditor
                 self.raytracing = RayTracingGraphEditor()
                 self.raytracing.apply_requested.connect(self.apply_requested)
                 self.stack.addWidget(self.raytracing)

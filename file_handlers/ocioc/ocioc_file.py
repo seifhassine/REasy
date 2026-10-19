@@ -4,9 +4,9 @@ from __future__ import annotations
 import struct
 from dataclasses import dataclass
 
-from file_handlers.sdf.models import SDF_MAGIC
-from file_handlers.tex.dxgi import get_bits_per_pixel
-from utils.hash_util import murmur3_hash_ascii
+lazy from file_handlers.sdf.models import SDF_MAGIC
+lazy from file_handlers.tex.dxgi import get_bits_per_pixel
+lazy from utils.hash_util import murmur3_hash_ascii
 
 OCIOC_MAGIC = b"OCIO"
 _HEADER = struct.Struct("<4sI2I4Q")

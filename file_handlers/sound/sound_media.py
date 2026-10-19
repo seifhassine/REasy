@@ -17,7 +17,7 @@ from .bnk_parser import (
     parse_wem_metadata,
     rewrite_soundbank,
 )
-from .sound_resources import (
+lazy from .sound_resources import (
     local_sound_directories,
     read_sound_resource,
     resource_key,

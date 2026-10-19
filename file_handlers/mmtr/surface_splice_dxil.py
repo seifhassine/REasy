@@ -4,12 +4,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
-from file_handlers.sdf.shader_graph_math import value_width
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph_math import value_width
 
-from .profiles.re_engine_dxil_authoring import _CALL, _SSA, _VALUE
-from .surface_flow import NativeFlow
-from .surface_flow_dxil import call_access
+lazy from .profiles.re_engine_dxil_authoring import _CALL, _SSA, _VALUE, _function_spans, _symbol
+lazy from .surface_flow import NativeFlow
+lazy from .surface_flow_dxil import call_access, entry_dominance, value_numbers, _entry
 
 
 EDITED_OPTIMIZER_PASSES = ("-dce",)
@@ -72,7 +72,6 @@ def dxil_surface_plan(flow: NativeFlow, edits, assembly: str = "", contract=None
 
     def material_address(block, line) -> str:
         from .profiles.re_engine_bindless_material import material_record_accesses
-        from .surface_flow_dxil import entry_dominance, value_numbers
         defined, dominators = entry_dominance(assembly)
         numbers = value_numbers(assembly)
         records: dict[str, list] = {}
@@ -88,7 +87,6 @@ def dxil_surface_plan(flow: NativeFlow, edits, assembly: str = "", contract=None
         return min(next(iter(records.values())))[1]
 
     def position_site(split) -> tuple[int, str, tuple[tuple[int, str], ...]]:
-        from .surface_flow_dxil import _entry
         lines = assembly.splitlines()
         _metadata, begin, end, statements = _entry(lines)
         blocks = {begin + 1 + index: block for block, index, _text in statements}
@@ -261,7 +259,6 @@ def _call_parts(line: str):
 
 
 def _helper_body(carrier_lines: list[str], callee: str):
-    from .profiles.re_engine_dxil_authoring import _function_spans, _symbol
     span = _function_spans(carrier_lines).get(_symbol(callee[1:]))
     if span is None:
         raise ShaderGraphError("DXIL carrier omitted a surface helper definition.")
@@ -371,9 +368,9 @@ def apply_surface_plan(lines: list[str], start: int, carrier_lines: list[str], c
                 needed = inputs
                 if inline is not None:
                     parameters, body, returned = inline
-                    used = {token for line in body for token in _SSA.findall(line)} | set(_SSA.findall(returned))
+                    used = {*_SSA.findall(line) for line in body} | set(_SSA.findall(returned))
                     needed = [argument for parameter, argument in zip(parameters, inputs) if parameter in used]
-                closure = _closure(carrier_entry, [token for argument in needed for token in _SSA.findall(argument)])
+                closure = _closure(carrier_entry, [*_SSA.findall(argument) for argument in needed])
                 names = {match["result"]: fresh() for line in closure if (match := _VALUE.match(line))}
                 code.extend(_rename(line, names) for line in closure)
                 arguments = [*(_rename(argument, names) for argument in inputs), *address, *taps]
@@ -467,7 +464,7 @@ def _rename(text: str, names: dict[str, str]) -> str:
 
 
 def place_surface_code(lines: list[str], markers: dict[str, list[str]]) -> list[str]:
-    result = [item for line in lines for item in markers.get(line, (line,))]
+    result = [*markers.get(line, (line,)) for line in lines]
     if sum(line in markers for line in lines) != len(markers):
         raise ShaderGraphError("A DXIL rewrite lost the place of a surface edit.")
     return result

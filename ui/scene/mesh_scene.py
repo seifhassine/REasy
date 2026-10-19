@@ -3,14 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.mesh.contract_utils import layer_payloads, layer_vertex_offset
+lazy from file_handlers.mesh.contract_utils import layer_payloads, layer_vertex_offset
 
-from .scene_model import SceneDrawBatch, SceneDrawMesh
-from .mesh_attributes import (
+lazy from .scene_model import SceneDrawBatch, SceneDrawMesh
+lazy from .mesh_attributes import (
     SKIN_WEIGHT_ATTRIBUTE_NAMES, MeshAttributeView, merge_attribute,
 )
+lazy from file_handlers.mesh.normal_recalc import recalculate_mesh_normals
 
 
 def payload_records_have_complete_attribute(
@@ -403,8 +404,6 @@ def build_mesh_scene(
         and normal_recalculation_enabled
         and getattr(mesh, "normal_recalc_data", None) is not None
     ):
-        from file_handlers.mesh.normal_recalc import recalculate_mesh_normals
-
         recalculated = recalculate_mesh_normals(
             mesh,
             vertices,

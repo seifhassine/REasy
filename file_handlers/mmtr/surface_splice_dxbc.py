@@ -5,12 +5,12 @@ from collections import defaultdict
 from dataclasses import replace
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 
-from .native_dxbc_precision import operand_precision
-from .profiles.dxbc_recovery import DxbcHookPlan, DxbcHookSite, DxbcInstruction, DxbcSemanticIr, _output_register
-from .surface_flow import NativeFlow
-from .surface_flow_dxbc import _DOT, _RESOURCE, _SWIZZLED, _base_opcode, _literal_lane, _writes
+lazy from .native_dxbc_precision import operand_precision
+lazy from .profiles.dxbc_recovery import DxbcHookPlan, DxbcHookSite, DxbcInstruction, DxbcSemanticIr, _output_register
+lazy from .surface_flow import NativeFlow
+lazy from .surface_flow_dxbc import _DOT, _RESOURCE, _SWIZZLED, _base_opcode, _literal_lane, _writes
 
 
 def _bits(expression: str, scalar: str) -> str:

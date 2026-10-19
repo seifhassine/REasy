@@ -8,11 +8,11 @@ from typing import Iterable, Sequence
 
 import numpy as np
 
-from utils.hash_util import murmur3_hash_utf16le
-from utils.hex_util import align
+lazy from utils.hash_util import murmur3_hash_utf16le
+lazy from utils.hex_util import align
 
-from .blend_shape import blend_shape_lod_map_counts, lod_map_allocation
-from .contract_utils import all_groups, layer_groups
+lazy from .blend_shape import blend_shape_lod_map_counts, lod_map_allocation, blend_shape_name_offsets
+lazy from .contract_utils import all_groups, layer_groups
 from .mesh_file import (
     MESH_MAGIC,
     MPLY_MAGIC,
@@ -23,7 +23,7 @@ from .mesh_file import (
     SkinWeightBuffer,
     VertexBufferType,
 )
-from .profiles import (
+lazy from .profiles import (
     BlendShapeLayout,
     Half2ValueDomain,
     LegacyLightMapLayout,
@@ -35,6 +35,18 @@ from .profiles import (
     NormalRecalcLayout,
     SkinWeightLayout,
     VertexNormalWSemantic,
+)
+lazy from .normal_recalc import (
+    NormalRecalcError,
+    _sf6_split_vertex_pages,
+    NormalRecalcLODTopology,
+    NormalRecalcSubmesh,
+    _lod_redirects,
+    BUFFER_OWNED_NORMAL_RECALC_PARSERS,
+    derive_sf6_normal_indices,
+    NormalRecalcRedirect,
+    LOD0_NORMAL_RECALC_SERIALIZERS,
+    serialize_sf6_normal_recalc,
 )
 
 
@@ -199,7 +211,7 @@ def _build_topology_plan(mesh: MeshFile) -> _TopologyPlan:
         buffer_to_source={value: key for key, value in source_to_buffer.items()},
     )
     even = bool(buffer.profile.submesh_index_ranges_are_even_aligned)
-    main_groups = (group for mesh_data in mesh.meshes for group in layer_groups(mesh_data))
+    main_groups = (*layer_groups(mesh_data) for mesh_data in mesh.meshes)
     _plan_layer_indices(
         plan,
         main_groups,
@@ -237,8 +249,6 @@ def _build_topology_plan(mesh: MeshFile) -> _TopologyPlan:
     )
     if (not plan.use_32bit_indices and mesh.normal_recalc_data is not None
             and buffer.profile.normal_recalc_has_split_vertex_page_plane):
-        from .normal_recalc import NormalRecalcError, _sf6_split_vertex_pages
-
         # Full-capacity uint16 clusters use SF6's two-page program; other layouts use uint32 normal tables.
         for entry in _normal_topologies(mesh, plan):
             try:
@@ -600,7 +610,7 @@ def _encode_vertex_payload(payload: object, profile: MeshGameProfile) -> _Encode
             stride, raw = _encode_attribute_plane(payload, semantic, profile)
         headers.append(MeshBufferItemHeader(semantic, stride, len(output)))
         output.extend(raw)
-    return _EncodedVertexPayload(bytes(output), tuple(headers))
+    return _EncodedVertexPayload(output.take_bytes(), tuple(headers))
 
 
 def _index_bytes(values: Sequence[int], use_32bit: bool) -> bytes:
@@ -1034,16 +1044,13 @@ def _normal_topologies(
     mesh: MeshFile,
     topology_plan: _TopologyPlan,
 ) -> tuple[_NormalTopologyPlan, ...]:
-    from .normal_recalc import NormalRecalcLODTopology, NormalRecalcSubmesh
-
     if not mesh.meshes:
         return ()
     result: list[_NormalTopologyPlan] = []
     for lod_index, lod in enumerate(mesh.meshes[0].lods):
         submeshes = [
-            submesh
+            *group.submeshes
             for group in lod.mesh_groups
-            for submesh in group.submeshes
         ]
         if not submeshes:
             raise CanonicalMeshWriteError(
@@ -1087,8 +1094,6 @@ def _normal_topologies(
 
 
 def _normal_redirects(data: object, lod_index: int) -> tuple[object, ...]:
-    from .normal_recalc import _lod_redirects
-
     redirects = _lod_redirects(data, lod_index)[1]
     if not redirects:
         raise CanonicalMeshWriteError(
@@ -1188,8 +1193,6 @@ def _append_embedded_normal_tables(
     normal_topologies: Sequence[_NormalTopologyPlan],
     plans: dict[int, _BufferBuildPlan],
 ) -> None:
-    from .normal_recalc import BUFFER_OWNED_NORMAL_RECALC_PARSERS, derive_sf6_normal_indices
-
     data = mesh.normal_recalc_data
     if data is None or profile.normal_recalc_layout not in BUFFER_OWNED_NORMAL_RECALC_PARSERS:
         return
@@ -1398,7 +1401,7 @@ def _build_buffer_plans(
                 _index_bytes(topology_plan.occluder_indices[buffer_index], use_32bit)
             )
         _append_zero_alignment(universal)
-        plan.universal_bytes = bytes(universal)
+        plan.universal_bytes = universal.take_bytes()
 
     for alias_index, owner_index in sorted(alias_of_by_buffer.items()):
         try:
@@ -1420,8 +1423,6 @@ def _legacy_normal_submeshes(
     mesh: MeshFile,
     topology_plan: _TopologyPlan,
 ) -> tuple[object, ...]:
-    from .normal_recalc import NormalRecalcSubmesh
-
     if not mesh.meshes or not mesh.meshes[0].lods:
         raise CanonicalMeshWriteError("normal recalculation requires LOD0")
     return tuple(
@@ -1445,8 +1446,6 @@ def _serialize_normal_section(
     if data is None:
         return b""
     if not profile.normal_redirect_annotation_is_runtime_semantic:
-        from .normal_recalc import NormalRecalcRedirect
-
         def canonical_redirects(values: Sequence[object]) -> tuple[object, ...]:
             return tuple(
                 NormalRecalcRedirect(int(item.target_vertex), False)
@@ -1462,11 +1461,6 @@ def _serialize_normal_section(
             ),
             edge_excluded=False,
         )
-    from .normal_recalc import (
-        BUFFER_OWNED_NORMAL_RECALC_PARSERS,
-        LOD0_NORMAL_RECALC_SERIALIZERS,
-        serialize_sf6_normal_recalc,
-    )
 
     layout = profile.normal_recalc_layout
     if layout in LOD0_NORMAL_RECALC_SERIALIZERS:
@@ -2592,7 +2586,7 @@ def _encode_element_headers(headers: Sequence[MeshBufferItemHeader]) -> bytes:
         if not 0 <= offset <= 0xFFFFFFFF:
             raise CanonicalMeshWriteError("vertex-element offset exceeds uint32")
         output.extend(struct.pack("<HHI", semantic, stride, offset))
-    return bytes(output)
+    return output.take_bytes()
 
 
 def _encode_buffer_layout_record(
@@ -2773,7 +2767,7 @@ def _write_streaming_info(
     for entry_start, entry_size in entries:
         builder.write("<II", entry_start, entry_size)
     builder.align(16)
-    return start, bytes(external), starts
+    return start, external.take_bytes(), starts
 
 
 def _patch_header_file_size(builder: _BinaryBuilder) -> None:
@@ -2794,8 +2788,6 @@ def _write_parts_name_hashes(builder: _BinaryBuilder, mesh: MeshFile) -> int:
 
 
 def _pack_blend_names(mesh, profile):
-    from .blend_shape import blend_shape_name_offsets
-
     blend = mesh.blend_shape_data
     if blend is None or not blend.bodies:
         return mesh
@@ -3922,9 +3914,9 @@ def _serialize_mply(
     if any(not values for values in chunks_by_lod):
         raise CanonicalMeshWriteError("MPLY chunk LOD ownership is not a dense domain")
 
-    prepared = iter(_prepare_mply_chunks([chunk for lod_chunks in chunks_by_lod for chunk in lod_chunks], profile))
+    prepared = iter(_prepare_mply_chunks([*lod_chunks for lod_chunks in chunks_by_lod], profile))
     plans_by_lod = [[next(prepared) for _chunk in lod_chunks] for lod_chunks in chunks_by_lod]
-    chunk_plans = [plan for lod_plans in plans_by_lod for plan in lod_plans]
+    chunk_plans = [*lod_plans for lod_plans in plans_by_lod]
 
     external = bytearray()
     for plan in chunk_plans:
@@ -4130,7 +4122,7 @@ def _serialize_mply(
     if header_plan.on_memory_size is not None:
         builder.patch(header_plan.on_memory_size, "<Q", blob_base)
     _patch_header_file_size(builder)
-    return CanonicalMeshWriteResult(main=builder.bytes(), streaming=bytes(external))
+    return CanonicalMeshWriteResult(main=builder.bytes(), streaming=external.take_bytes())
 
 
 __all__ = [

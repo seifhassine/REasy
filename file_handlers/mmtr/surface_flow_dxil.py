@@ -3,18 +3,20 @@ from __future__ import annotations
 
 import re
 
-from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 
-from .native_loop_flow import dominator_sets, predecessor_map, reachable_blocks
-from .profiles.re_engine_dxil_authoring import (
+lazy from .native_loop_flow import dominator_sets, predecessor_map, reachable_blocks
+lazy from .profiles.re_engine_dxil_authoring import (
     _ATTRIBUTE_DEFINITION, _CALL, _DECLARE, _SSA, _VALUE, _function_spans,
 )
-from .profiles.re_engine_dxil_recovery import _TYPE
-from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
-from .surface_flow import (
+lazy from .profiles.re_engine_dxil_recovery import _TYPE
+lazy from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
+lazy from .surface_flow import (
     TEXEL_TYPES, FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field,
     declared_component_types, structured_element,
 )
+lazy from .profiles.constant_words import word_parts
+lazy from .profiles.re_engine_bindless_material import texture_handles
 
 
 _LABEL = re.compile(r"^(?:; <label>:(?P<comment>\d+)|(?P<name>[-$._A-Za-z0-9]+):)")
@@ -317,8 +319,6 @@ def dxil_flow(assembly: str, contract) -> NativeFlow:
 def _resource_stores(lines, contract, calls, bodies, index, component_types) -> list[FlowStore]:
     if not calls:
         return []
-    from .profiles.constant_words import word_parts
-    from .profiles.re_engine_bindless_material import texture_handles
     from .profiles.re_engine_dxil_authoring import _constant_extracts
     handles = texture_handles(lines, contract, writable=True)
     fields = {}

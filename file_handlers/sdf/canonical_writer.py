@@ -5,11 +5,13 @@ from dataclasses import dataclass
 from functools import partial
 import struct
 
-from utils.hex_util import align
+lazy from utils.hex_util import align
 
-from .models import RESOURCE_KINDS, STAGE_KEYS, SDF_MAGIC, SdfDocument, SdfProgram
-from .spirv import SpirvError, _spirv_module
-from .runtime_cache import runtime_cache_key_bytes, shader_runtime_cache_key, state_runtime_cache_key
+lazy from .models import RESOURCE_KINDS, STAGE_KEYS, SDF_MAGIC, SdfDocument, SdfProgram
+lazy from .raytracing import serialize_raytracing_library
+lazy from .runtime_cache import runtime_cache_key_bytes, shader_runtime_cache_key, state_runtime_cache_key
+lazy from .sdf_file import SdfFile
+lazy from .spirv import SpirvError, _spirv_module
 
 
 class SdfCanonicalWriteError(ValueError):
@@ -222,7 +224,7 @@ def _input_layout_bytes(profile, layout) -> bytes:
     result = bytearray(struct.pack("<II", len(key), 0))
     for element in key:
         result.extend(_input_element_bytes(*element))
-    return bytes(result)
+    return result.take_bytes()
 
 
 def _raster_bytes(profile, state) -> bytes:
@@ -266,7 +268,7 @@ def _blend_bytes(profile, state) -> bytes:
         packed = _pack_fields(0, _BLEND_TARGET_FIELDS, profile, partial(getattr, target), f"blend target {index}")
         result.extend(struct.pack("<I", packed))
     result.extend(struct.pack("<I", _pack_fields(0, _BLEND_FLAGS, profile, partial(getattr, state))))
-    return bytes(result)
+    return result.take_bytes()
 
 
 def _depth_bytes(profile, state) -> bytes:
@@ -453,8 +455,6 @@ def _shader_payload(profile, reference, field: str, *, target_index: int) -> byt
     if reference.binary_format == "dxil-raytracing-library":
         if not profile.raytracing_libraries or reference.role != "compute" or reference.raytracing_library is None:
             raise SdfCanonicalWriteError(f"{field} has no supported semantic DXR library")
-        from .raytracing import serialize_raytracing_library
-
         try:
             return serialize_raytracing_library(
                 reference.raytracing_library, export_layout=profile.raytracing_export_layout,
@@ -510,7 +510,7 @@ def _shader_payload(profile, reference, field: str, *, target_index: int) -> byt
                     0,
                 )
             )
-        return bytes(result)
+        return result.take_bytes()
     if reference.binary_format == "spirv-module":
         if target_index not in profile.spirv_target_indices:
             raise SdfCanonicalWriteError(f"{field} is on a non-SPIR-V target")
@@ -1042,8 +1042,6 @@ def serialize_sdf(document: SdfDocument, *, validate: bool = True) -> bytes:
     result = _CanonicalWriter(document).write()
     if not validate:
         return result
-    from .sdf_file import SdfFile
-
     reparsed = SdfFile.from_bytes(
         result,
         profile=document.profile,

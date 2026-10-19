@@ -1,10 +1,10 @@
 from array import array
 
-import numpy as np
+lazy import numpy as np
 
-from .contract_utils import layer_groups
-from .conversion_allocations import _rebased_draw, _select_payload, join_payloads, make_resident
-from .conversion_geometry import detach_topology, geometry_layers
+lazy from .contract_utils import layer_groups
+lazy from .conversion_allocations import _rebased_draw, _select_payload, join_payloads, make_resident
+lazy from .conversion_geometry import detach_topology, geometry_layers
 
 
 def needs_draw_splitting(mesh, target):

@@ -6,8 +6,8 @@ from dataclasses import replace
 from pathlib import Path
 from uuid import uuid4
 
-from utils.app_paths import PROJECT_METADATA_FOLDER
-from services.file_io import write_files_atomically
+lazy from utils.app_paths import PROJECT_METADATA_FOLDER
+lazy from services.file_io import write_files_atomically
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtGui import QAction, QFont
@@ -46,7 +46,7 @@ from file_handlers.sdf.shader_graph import (
     connection_compatible,
     validate_node_update,
 )
-from file_handlers.sdf.shader_graph_editor import (
+lazy from file_handlers.sdf.shader_graph_editor import (
     _ShaderGraphScene,
     _ShaderGraphView,
     _display_name,
@@ -57,12 +57,20 @@ from file_handlers.sdf.shader_graph_editor import (
     _texture_properties,
     add_palette_templates,
     filter_palette,
+    _precision_properties,
+    _execution_properties,
+    _wide_integer_control,
+    _resource_properties,
+    _buffer_properties,
 )
-from file_handlers.sdf.shader_graph_buffer import structured_buffer_stride
-from file_handlers.sdf.shader_graph_math import (
+lazy from file_handlers.sdf.shader_graph_buffer import structured_buffer_stride
+lazy from file_handlers.sdf.shader_graph_math import (
     BASIC_MATH_KINDS, BASIC_MATH_NODES, EXTRA_MATH_NODES, NUMERIC_VALUE_TYPES, UNARY_FUNCTIONS, TYPED_MATH_NODES,
     TYPED_MATH_CATEGORIES, is_float_type, node_label, numeric_type_label, value_width,
 )
+lazy from file_handlers.sdf.aggregate_values import AGGREGATE_KINDS, aggregate_fields
+lazy from file_handlers.sdf.shader_graph_layout import arrange_shader_graph
+lazy from file_handlers.sdf.shader_graph_texture import texture_property_update
 
 from .material_project import (
     MaterialBuildError,
@@ -92,12 +100,22 @@ from .material_function import (
     replace_material_function,
     FUNCTION_VALUE_TYPES,
 )
-from .material_channels import ChannelPanel, channel_nodes, reach_summary, visible_channel_pins
-from .pass_purpose import PURPOSES, VISIBLE, pass_purpose, purpose_title
-from .surface_data import MATERIAL_COORDINATES, SURFACE_DATA_KIND
-from .material_variant import material_project_sidecar_path
+lazy from .material_channels import ChannelPanel, channel_nodes, reach_summary, visible_channel_pins
+lazy from .pass_purpose import PURPOSES, VISIBLE, pass_purpose, purpose_title, DRAWING_FOR_KIND
+lazy from .surface_data import MATERIAL_COORDINATES, SURFACE_DATA_KIND, document_surface_data
+lazy from .material_variant import material_project_sidecar_path
 from .material_usage import InputUsage, material_input_usage
-from .profiles.base import same_mmtr_profile
+lazy from .profiles.base import same_mmtr_profile
+lazy from . import material_implementation
+lazy from .material_function_editor import MaterialFunctionDialog, new_material_function, MaterialBranchDialog
+lazy from .material_projection import insert_planar, insert_tiling_offset, insert_triplanar
+lazy from .native_build_cache import fresh_native_build_cache
+lazy from .profiles import re_engine_dxil_authoring
+lazy from .profiles.renderer_inputs import (
+    RENDERER_RESOURCE_KIND, RENDERER_VALUE_KIND, renderer_fields, WHERE_AVAILABLE_KIND, material_engine_inputs,
+)
+lazy from .render_settings import RenderSettingsDialog
+lazy from .vertex_values import PER_VERTEX_KIND
 
 
 def _default_for_type(value_type: str) -> tuple[float, ...]:
@@ -625,7 +643,6 @@ class MmtrMaterialEditor(QWidget):
     def _edit_render_settings(self) -> None:
         if self._project is None or self._document is None:
             return
-        from .render_settings import RenderSettingsDialog
         dialog = RenderSettingsDialog(self._document, self._project.pipeline_states, self)
         if dialog.exec() != QDialog.DialogCode.Accepted or dialog.states == self._project.pipeline_states:
             return
@@ -636,7 +653,6 @@ class MmtrMaterialEditor(QWidget):
     def _arrange_graph(self, _checked=False, *, mark_dirty=True):
         if self._project is None or self._contract is None:
             return
-        from file_handlers.sdf.shader_graph_layout import arrange_shader_graph
         try:
             arrange_shader_graph(self._project.graph, self._contract,
                 width_provider=lambda node: self.scene.node_items[node.node_id].WIDTH)
@@ -897,8 +913,6 @@ class MmtrMaterialEditor(QWidget):
                 )
                 category.addChild(item)
 
-        from .profiles.renderer_inputs import RENDERER_RESOURCE_KIND, RENDERER_VALUE_KIND, renderer_fields
-        from file_handlers.sdf.aggregate_values import AGGREGATE_KINDS
         renderer_values = {value["pin"]: value for node in self._project.graph.nodes
                            for value in node.properties.get("input_pins", []) if value.get("input_kind") == "renderer_value"}
         engine_resources = {}
@@ -1039,7 +1053,6 @@ class MmtrMaterialEditor(QWidget):
         repeat.setData(0, Qt.ItemDataRole.UserRole, ('repeat', new_loop_properties()))
         item.setToolTip(0, self.tr("Runs the selected branch. Double-click to edit the branches."))
         control_flow.addChild(item)
-        from .pass_purpose import DRAWING_FOR_KIND
         drawing = QTreeWidgetItem(control_flow, [self.tr("Drawing For")])
         drawing.setData(0, Qt.ItemDataRole.UserRole, (DRAWING_FOR_KIND, {"purposes": ["shadow"]}))
         drawing.setToolTip(0, self.tr(
@@ -1051,14 +1064,12 @@ class MmtrMaterialEditor(QWidget):
             "body": "result = value;"}))
         code.setToolTip(0, self.tr("A small HLSL function you write: typed inputs and outputs, and a body that "
                                    "assigns the outputs."))
-        from .profiles.renderer_inputs import WHERE_AVAILABLE_KIND
         available = QTreeWidgetItem(control_flow, [self.tr("Where Available")])
         available.setData(0, Qt.ItemDataRole.UserRole, (WHERE_AVAILABLE_KIND, {"value_type": "float4"}))
         available.setToolTip(0, self.tr(
             "Uses Value in the rendering passes that provide every engine input and surface data it reads, and "
             "Otherwise in the rest."
         ))
-        from .vertex_values import PER_VERTEX_KIND
         per_vertex = QTreeWidgetItem(control_flow, [self.tr("Computed per Vertex")])
         per_vertex.setData(0, Qt.ItemDataRole.UserRole, (PER_VERTEX_KIND, {"value_type": "float3"}))
         per_vertex.setToolTip(0, self.tr(
@@ -1113,11 +1124,9 @@ class MmtrMaterialEditor(QWidget):
         return cached[1]
 
     def _material_surface_data(self):
-        from .surface_data import document_surface_data
         return self._profile_data("_surface_data", document_surface_data)
 
     def _material_engine_inputs(self):
-        from .profiles.renderer_inputs import material_engine_inputs
         return self._profile_data("_engine_inputs", material_engine_inputs)
 
     def _filter_palette(self, text: str) -> None:
@@ -1460,7 +1469,6 @@ class MmtrMaterialEditor(QWidget):
             self.properties.addRow(help_label)
             return
         self.selection_title.setText(node_title(node))
-        from file_handlers.sdf.shader_graph_editor import _precision_properties
         _precision_properties(self.properties, node,
             lambda key, value: self._set_node_property(node, key, value))
         if node.properties.get("semantic_reconstruction_boundary"):
@@ -1638,7 +1646,6 @@ class MmtrMaterialEditor(QWidget):
             values = list(node.properties.get("values", _default_for_type(value_type)))
             for index in range(value_width(value_type)):
                 if value_type.rstrip('234').endswith('64_t'):
-                    from file_handlers.sdf.shader_graph_editor import _wide_integer_control
                     editor = _wide_integer_control(value_type, values[index] if index < len(values) else 0,
                         lambda value, i=index: self._set_constant(node,i,value))
                     self.properties.addRow('XYZW'[index],editor)
@@ -1660,15 +1667,12 @@ class MmtrMaterialEditor(QWidget):
                 )
                 self.properties.addRow(("X", "Y", "Z", "W")[index], editor)
         elif node.kind in {'execution_begin', 'capture_value', 'discard_pixel', 'memory_load', 'memory_store', 'memory_atomic', 'memory_barrier', 'image_load', 'image_store', 'image_atomic'}:
-            from file_handlers.sdf.shader_graph_editor import _execution_properties
             _execution_properties(self.properties, node, lambda key, value: self._set_node_property(node, key, value))
         elif node.kind == 'constant_table':
             _table_properties(self.properties, node, lambda key, value: self._set_node_property(node, key, value))
         elif node.kind in {'resource_index', 'descriptor_heap', 'resource_dimensions'}:
-            from file_handlers.sdf.shader_graph_editor import _resource_properties
             _resource_properties(self.properties, node, lambda key, value: self._set_node_property(node, key, value))
         elif node.kind in {'buffer_load','constant_buffer_load'}:
-            from file_handlers.sdf.shader_graph_editor import _buffer_properties
             _buffer_properties(self.properties, node, lambda key, value: self._set_node_property(node, key, value))
         elif node.kind == "swizzle":
             value_type = QComboBox()
@@ -1690,7 +1694,6 @@ class MmtrMaterialEditor(QWidget):
               or node.kind in {"multiply_add", "select", "indexed_select", "array_read", "unassigned_value"}):
             _numeric_properties(self.properties, node, lambda key, value: self._set_node_property(node, key, value))
         elif node.kind in {"aggregate_extract", "aggregate_replace"}:
-            from file_handlers.sdf.aggregate_values import aggregate_fields
             field = QComboBox()
             for index, item in enumerate(aggregate_fields(node.properties)):
                 field.addItem(f"{item.path or 'Value'} ({item.value_type})", index)
@@ -1858,7 +1861,6 @@ class MmtrMaterialEditor(QWidget):
         return position, normal
 
     def _insert_placement(self, payload, x: float, y: float):
-        from .material_projection import insert_planar, insert_tiling_offset, insert_triplanar
         graph = self._project.graph
         position, normal = self._placement_data()
         if payload["kind"] == "tiling":
@@ -1870,7 +1872,6 @@ class MmtrMaterialEditor(QWidget):
         return insert_triplanar(graph, position, normal, x, y)
 
     def _add_engine_sampler_choice(self, node: ShaderGraphNode) -> None:
-        from .profiles.renderer_inputs import RENDERER_RESOURCE_KIND
         graph = self._project.graph
         links = {(link.target_node, link.target_pin): link for link in graph.links}
         texture_link = links.get((node.node_id, "texture"))
@@ -1905,7 +1906,6 @@ class MmtrMaterialEditor(QWidget):
         self.properties.addRow(self.tr("Engine sampler"), control)
 
     def _use_engine_sampler(self, node: ShaderGraphNode, sampler) -> None:
-        from .profiles.renderer_inputs import RENDERER_RESOURCE_KIND
         if sampler is None:
             return
         graph = self._project.graph
@@ -1942,7 +1942,6 @@ class MmtrMaterialEditor(QWidget):
             return
         properties = {**node.properties, key: value}
         if node.kind in {'sample_texture','texture_load'}:
-            from file_handlers.sdf.shader_graph_texture import texture_property_update
             properties = texture_property_update(node.properties,key,value)
         if self._project is not None:
             try:
@@ -1993,7 +1992,6 @@ class MmtrMaterialEditor(QWidget):
     def _new_material_function(self):
         if self._project is None:
             return
-        from .material_function_editor import MaterialFunctionDialog, new_material_function
         links = [item.link for item in self.scene.selectedItems() if hasattr(item, "link")]
         link = links[0] if len(links) == 1 else None
         value_type = next((pin.value_type for pin in node_pins(self._project.graph.node(link.source_node), self._contract)
@@ -2027,7 +2025,6 @@ class MmtrMaterialEditor(QWidget):
             return
         node = self._project.graph.node(node_id)
         if node is not None and node.kind in {"branch", "repeat"}:
-            from .material_function_editor import MaterialBranchDialog
             from .material_loop_editor import MaterialLoopDialog
             dialog_type = MaterialBranchDialog if node.kind == 'branch' else MaterialLoopDialog
             dialog = dialog_type(node, self, validate_replacement=lambda properties:
@@ -2042,7 +2039,6 @@ class MmtrMaterialEditor(QWidget):
             if node is not None:
                 self._populate_properties(node)
             return
-        from .material_function_editor import MaterialFunctionDialog
         try:
             asset = material_function_from_node(node)
             dialog = MaterialFunctionDialog(asset, self, validate_replacement=lambda edited:
@@ -2263,10 +2259,7 @@ class MmtrMaterialEditor(QWidget):
                     "Discard the graph edits before saving the MMTR."
                 )
             )
-        from . import material_implementation
         from .material_region_read import region_read_session, suspend_region_read_session
-        from .native_build_cache import fresh_native_build_cache
-        from .profiles import re_engine_dxil_authoring
 
         with suspend_region_read_session(), fresh_native_build_cache(
             re_engine_dxil_authoring._NATIVE_BUILD_CACHE,

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.rsz.scn_scene_attachments import (
+lazy from file_handlers.rsz.scn_scene_attachments import (
     ScnAnimatedRigPose,
     ScnJointAttachmentResult,
     resolve_joint_attachments,
 )
-from file_handlers.rsz.scn_scene_graph import (
+lazy from file_handlers.rsz.scn_scene_graph import (
     ScnObjectId,
     ScnRenderableMesh,
     ScnSceneGraph,

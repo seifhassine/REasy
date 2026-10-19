@@ -5,7 +5,7 @@ from dataclasses import dataclass, replace
 import os
 from pathlib import Path, PurePosixPath
 
-from file_handlers.mdf.material_sync import (
+lazy from file_handlers.mdf.material_sync import (
     MaterialSyncResult,
     MaterialTextureSyncResult,
     parameter_layout_errors,
@@ -13,14 +13,14 @@ from file_handlers.mdf.material_sync import (
     synchronize_material_textures,
     texture_layout_errors,
 )
-from file_handlers.material_names import resolve_material_name
-from file_handlers.mdf.mdf_file import MdfFile
-from file_handlers.mdf.material_layout import MaterialDescriptorLayout
-from file_handlers.sdf.editing import SdfBinaryEditor
-from file_handlers.sdf.models import STAGE_KEYS
-from services.file_io import write_files_atomically
+lazy from file_handlers.material_names import resolve_material_name
+lazy from file_handlers.mdf.mdf_file import MdfFile
+lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
+lazy from file_handlers.sdf.editing import SdfBinaryEditor
+lazy from file_handlers.sdf.models import STAGE_KEYS
+lazy from services.file_io import write_files_atomically
 from utils.app_paths import PROJECT_METADATA_FOLDER
-from utils.resource_file_utils import normalize_resource_path, resource_version_from_path
+lazy from utils.resource_file_utils import normalize_resource_path, resource_version_from_path
 
 from .material_project import (
     apply_material_build,
@@ -30,7 +30,9 @@ from .material_project import (
     material_program_contract,
     material_resource_dimension,
 )
-from .mmtr_file import MmtrFile
+lazy from .mmtr_file import MmtrFile
+lazy from .material_family import family_member_filename, family_member_project
+lazy from .mmtrs_file import MmtrsFile
 
 
 class MaterialVariantError(ValueError):
@@ -396,8 +398,6 @@ def create_material_variant_artifacts(
         )
     member_files = []
     if family is not None:
-        from .material_family import family_member_filename, family_member_project
-        from .mmtrs_file import MmtrsFile
         if len(build.family_builds) != len(family.members):
             raise MaterialVariantError("Every MMTRS member must be rebuilt together.")
         paths, payload_paths = [], {}

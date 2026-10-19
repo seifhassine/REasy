@@ -3,15 +3,15 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 
-import numpy as np
+lazy import numpy as np
 
 from ..evaluation.binding import bind_motion
-from ..evaluation.deformation import (
+lazy from ..evaluation.deformation import (
     DeformationTarget,
     DeformationWeightEvaluator,
 )
 from ..evaluation.layering import LayeredPoseEvaluator, MotionLayer
-from ..evaluation.model import (
+lazy from ..evaluation.model import (
     DiagnosticSeverity,
     EvaluatedPose,
     MotionRigBinding,
@@ -22,13 +22,13 @@ from ..evaluation.profiles import MotionEvaluationProfile
 from ..evaluation.sampling import MotionEvaluator
 from ..mot.model import Motion
 from ..runtime.model import RuntimeRootMotionMode
-from .model import (
+lazy from .model import (
     MotionPreviewError,
     MotionPreviewSnapshot,
     PreviewLoopMode,
     RootDisplayMode,
 )
-from .root_motion import apply_runtime_root_motion
+lazy from .root_motion import apply_runtime_root_motion
 
 
 class MotionPreviewController:

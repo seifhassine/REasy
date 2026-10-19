@@ -63,10 +63,7 @@ class UpdateProgressDialog(QDialog):
 
     def _on_ready_read(self):
         data = self._process.readAllStandardOutput()
-        try:
-            text = bytes(data).decode(errors='replace')
-        except Exception:
-            text = str(data)
+        text = bytes(data).decode(errors='replace')
         text = text.replace('\r\n', '\n').replace('\r', '\n')
         if len(text) and not text.endswith("\n"):
             text += "\n"

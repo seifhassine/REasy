@@ -1,14 +1,14 @@
 """See docs/internals/mesh-preview.md, Program choice."""
 from __future__ import annotations
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.mdf.mdf_file import BASE_ALPHA_TEST_ENABLE, BASE_TWO_SIDE_ENABLE
-from file_handlers.sdf.models import program_names
-from file_handlers.sdf.sdf_file import COMPARE_EQUAL
+lazy from file_handlers.mdf.mdf_file import BASE_ALPHA_TEST_ENABLE, BASE_TWO_SIDE_ENABLE
+lazy from file_handlers.sdf.models import program_names
+lazy from file_handlers.sdf.sdf_file import COMPARE_EQUAL
 
 from .material_preview import TranslatedError
-from .pass_purpose import pass_purpose
+lazy from .pass_purpose import pass_purpose
 
 # D3D12_DEPTH_WRITE_MASK_ZERO.
 _DEPTH_WRITE_ZERO = 0

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QObject, QTimer
+lazy from PySide6.QtCore import QObject, QTimer
 
 
 def call_later(owner: QObject, msec: int, callback) -> None:

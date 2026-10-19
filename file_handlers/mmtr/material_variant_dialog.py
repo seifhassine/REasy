@@ -20,17 +20,17 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from file_handlers.mdf.mdf_file import MdfFile
-from utils.resource_file_utils import normalize_resource_path
+lazy from file_handlers.mdf.mdf_file import MdfFile
+lazy from utils.resource_file_utils import normalize_resource_path
 
-from .material_variant import (
+lazy from .material_variant import (
     MaterialVariantError,
     mmtr_resource_path_from_file,
     resolve_project_output_path,
     suggest_variant_file,
     validate_variant_targets,
 )
-from .material_variant_sources import (
+lazy from .material_variant_sources import (
     MdfVariantSourceChoice,
     make_mdf_source_choice,
 )

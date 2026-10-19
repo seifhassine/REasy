@@ -6,6 +6,8 @@ from file_handlers.sdf.shader_graph import (
     ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension,
 )
 
+lazy from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
+
 
 _NAMED = {
     "deferred-gbuffer": ("gbuffer", {"colour"}),
@@ -53,7 +55,6 @@ def graph_draws_for(graph) -> bool:
             return value.get("kind") == DRAWING_FOR_KIND or any(found(item) for item in value.values())
         return isinstance(value, (list, tuple)) and any(found(item) for item in value)
 
-    from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
     # The recovered master's properties are its programs, which nest no graph.
     return any(node.kind == DRAWING_FOR_KIND or node.kind != RE_ENGINE_RECOVERED_MASTER_KIND and found(node.properties)
                for node in graph.nodes)

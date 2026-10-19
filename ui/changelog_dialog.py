@@ -3,8 +3,8 @@ from PySide6.QtCore import Qt, QUrl
 from PySide6.QtGui import QPixmap, QPainter, QLinearGradient, QColor, QDesktopServices
 from PySide6.QtWidgets import (QDialog, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton, 
                                QScrollArea, QSpacerItem, QSizePolicy, QGraphicsDropShadowEffect)
-from ui.styles import get_color_scheme
-from utils.app_paths import application_root
+lazy from ui.styles import get_color_scheme
+lazy from utils.app_paths import application_root
 
 class _IllustrationPanel(QFrame):
     def __init__(self, image_path: str, parent: QWidget | None = None):

@@ -1,5 +1,5 @@
 import os
-from .type_registry import TypeRegistry
+lazy from .type_registry import TypeRegistry
 
 class RegistryManager:
     """Manages global registry instances to avoid reloading JSON templates"""

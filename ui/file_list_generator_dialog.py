@@ -11,10 +11,10 @@ from PySide6.QtWidgets import (
     QLineEdit, QInputDialog, QCheckBox, QFormLayout, QComboBox,
     QTabWidget, QWidget, QAbstractItemView, QSpinBox
 )
-from settings import app_settings, remember_setting
-from ui.background_jobs import run_job
-from ui.styles import get_color_scheme
-from tools.file_list_search import format_duration
+lazy from settings import app_settings, remember_setting
+lazy from ui.background_jobs import run_job
+lazy from ui.styles import get_color_scheme
+lazy from tools.file_list_search import format_duration
 from tools.file_list_generator import (
     ExePathExtractor,
     ExtensionAnalyzer,

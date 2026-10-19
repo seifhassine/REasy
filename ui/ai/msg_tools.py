@@ -11,20 +11,20 @@ from typing import Any
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
 
-from file_handlers.msg.msg_handler import MsgHandler
-from file_handlers.msg.msg_viewer import MsgViewer
-from ui.ai.file_migration import (
+lazy from file_handlers.msg.msg_handler import MsgHandler
+lazy from file_handlers.msg.msg_viewer import MsgViewer
+lazy from ui.ai.file_migration import (
     migration_confirmation_details,
     migration_job_schema,
     migration_publish_schema_properties,
 )
-from ui.ai.msg_migration import (
+lazy from ui.ai.msg_migration import (
     MsgMigrationStrategy,
     default_msg_attribute,
     overlay_msg_data,
 )
-from ui.ai.pak_folder_migration import update_mod_folder_from_paks_steps
-from ui.ai.tool_registry import (
+lazy from ui.ai.pak_folder_migration import update_mod_folder_from_paks_steps
+lazy from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
     tool,
@@ -230,7 +230,7 @@ _LANGUAGE_ALIASES = {
     "繁体中文": 12,
     "简体中文": 13,
 }
-_MISSING = object()
+_MISSING = sentinel("_MISSING")
 
 _EXPORT_MSG_JSON_ACTION = QT_TRANSLATE_NOOP(
     "ReasyAssistantTools",

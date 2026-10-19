@@ -4,10 +4,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from functools import lru_cache
 
-from file_handlers.mmtr.material_preview import RANGE_SRV, RANGE_UAV
-from file_handlers.mmtr.resident import TEXTURE_2D, UNORDERED_ACCESS, Resident
-from file_handlers.sdf.hlsl import compile_hlsl_source
-from file_handlers.tex.dxgi import DXGI_FORMAT_R32G32_UINT, DXGI_FORMAT_R32_FLOAT
+lazy from file_handlers.mmtr.material_preview import RANGE_SRV, RANGE_UAV
+lazy from file_handlers.mmtr.resident import TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from file_handlers.sdf.hlsl import compile_hlsl_source
+lazy from file_handlers.tex.dxgi import DXGI_FORMAT_R32G32_UINT, DXGI_FORMAT_R32_FLOAT
 
 _GROUP = 8
 _OPACITY = f"""Texture2D<uint2> layers : register(t0);

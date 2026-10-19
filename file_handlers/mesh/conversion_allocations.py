@@ -2,9 +2,9 @@ from array import array
 from copy import copy, deepcopy
 from dataclasses import replace
 
-import numpy as np
+lazy import numpy as np
 
-from .contract_utils import layer_groups
+lazy from .contract_utils import layer_groups
 from .mesh_file import SKIN_WEIGHT_STREAMS, MeshBufferPayload
 
 
@@ -118,8 +118,8 @@ def join_payloads(payloads, loss):
             width = next(iter(widths), 0)
             metadata[field] = b"".join(getattr(s, field) or bytes(s.vertex_count * width) for s in sources)
         setattr(result, name, replace(first, vertex_count=result.vertex_count,
-            deform_indices=array("H", (i for s in sources for i in s.deform_indices)),
-            weights=array("f", (w for s in sources for w in s.weights)),
+            deform_indices=array("H", (*s.deform_indices for s in sources)),
+            weights=array("f", (*s.weights for s in sources)),
             **metadata,
         ))
     return result, bases
@@ -242,11 +242,11 @@ def make_resident(mesh, loss):
     for layer in (mesh.shadow_mesh, mesh.occluder_mesh):
         if layer is not None:
             topology = deepcopy(layer.lods if hasattr(layer, "lods") else layer.mesh_groups, {id(buffer): buffer})
-            snapshot = ([group for lod in {id(lod): lod for lod in topology}.values() for group in lod.mesh_groups]
+            snapshot = ([*lod.mesh_groups for lod in {id(lod): lod for lod in topology}.values()]
                         if hasattr(layer, "lods") else topology)
             auxiliary.append((layer, layer_groups(layer, unique_lods=True), layer.payloads,
                               topology, snapshot))
-    joined, all_moves = _pack([g for lod in unique_lods for g in lod.mesh_groups], payloads, loss,
+    joined, all_moves = _pack([*lod.mesh_groups for lod in unique_lods], payloads, loss,
                              report_orphans=bool(unique_lods))
     buffer.buffer_payloads = {0: joined}
     lod_moves, cursor = {}, 0

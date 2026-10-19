@@ -3,13 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyModel, Qt
-from PySide6.QtGui import QBrush, QColor
+lazy from PySide6.QtGui import QBrush, QColor
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QCompleter, QDialog, QDialogButtonBox, QFileDialog, QHBoxLayout,
     QHeaderView, QLabel, QLineEdit, QMessageBox, QPushButton, QStyledItemDelegate, QTableView, QVBoxLayout,
 )
 
-from .blender.mapping import ACTIONS, ADD, DROP, EXACT, LOADED, MANUAL, MERGE, NAME, POSITION, ROLE
+lazy from .blender.mapping import ACTIONS, ADD, DROP, EXACT, LOADED, MANUAL, MERGE, NAME, POSITION, ROLE
 
 SOURCE, VERTICES, TARGET, UNMAPPED, FOUND, OFFSET = range(6)
 UNMAPPED_TEXT = "—"

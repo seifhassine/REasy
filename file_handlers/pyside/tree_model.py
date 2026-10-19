@@ -1,4 +1,4 @@
-from utils.number_format import format_display_value
+lazy from utils.number_format import format_display_value
 
 class DataTreeBuilder:
     """Generic tree data builder with format utilities"""

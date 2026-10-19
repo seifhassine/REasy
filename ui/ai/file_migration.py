@@ -9,8 +9,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
-from services.file_io import FileFingerprint, copy_file_atomically, file_fingerprint
-from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
+lazy from services.file_io import FileFingerprint, copy_file_atomically, file_fingerprint
+lazy from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
 
 
 MAX_MIGRATION_JOBS = 256

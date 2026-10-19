@@ -1,8 +1,8 @@
-from file_handlers.sdf.shader_graph import ShaderContractResource, ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import ShaderContractResource, ShaderGraphError
 import re
 from dataclasses import replace
 
-from .profiles.re_engine_dxil_recovery import LLVM_NAME
+lazy from .profiles.re_engine_dxil_recovery import LLVM_NAME
 
 
 DXIL_RESOURCE_CLASSES = {0: 't', 1: 'u', 2: 'b', 3: 's'}
