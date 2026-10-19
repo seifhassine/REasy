@@ -302700,7 +302700,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "MixWidth(?)",
+				"name": "MixWidth",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -302709,7 +302709,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Opacity(?)",
+				"name": "Opacity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -302718,7 +302718,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "DepthWriteThreshold(?)",
+				"name": "DepthWriteThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -302754,15 +302754,6 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "LODFactorAuto",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
 				"name": "LODFactorAutoScreenMaxRate",
 				"native": true,
 				"original_type": "",
@@ -302791,6 +302782,15 @@
 				"align": 4,
 				"array": false,
 				"name": "ShadowLODFactor",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Melanin",
 				"native": true,
 				"original_type": "",
 				"size": 4,

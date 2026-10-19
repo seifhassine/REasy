@@ -245238,7 +245238,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ShadingQualityAdjustShading?",
+				"name": "ShadingQualityAdjustShading",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -245247,7 +245247,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ShadingQualityAdjustDensity?",
+				"name": "ShadingQualityAdjustDensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -245256,7 +245256,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "VertexLod",
+				"name": "VertexLOD",
 				"native": true,
 				"original_type": "via.render.Strands.VertexLod",
 				"size": 4,
