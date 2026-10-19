@@ -100,7 +100,6 @@ unpack_16float = _UNPACKERS["16float"]
 
 class _NonArrayFieldParser:
     __slots__ = (
-        "file",
         "data",
         "pos",
         "base_mod",
@@ -115,10 +114,9 @@ class _NonArrayFieldParser:
         "rsz_userdata_map",
     )
 
-    def __init__(self, file_obj):
-        self.file = file_obj
-        self.data = file_obj.data
-        self.base_mod = 0
+    def __init__(self, data, base_mod=0):
+        self.data = data
+        self.base_mod = base_mod
         self.pos = 0
         self.field_size = 0
         self.field_align = 1
@@ -132,6 +130,7 @@ class _NonArrayFieldParser:
 
     def reset_context(
         self,
+        data,
         base_mod,
         current_children,
         set_parent,
@@ -140,7 +139,7 @@ class _NonArrayFieldParser:
         rsz_userdata_by_id,
         rsz_userdata_map,
     ):
-        self.data = self.file.data
+        self.data = data
         self.base_mod = base_mod
         self.current_children = current_children
         self.set_parent = set_parent
@@ -1108,24 +1107,12 @@ class RszFile:
         element_class,
         base_mod: int,
     ):
-        raw = self.data[raw_start:raw_end]
+        data = self.data
+        raw = data[raw_start:raw_end]
         raw_copy_safe = base_mod == 0 and field_align <= 4
 
         def materialize():
-            parser = _NonArrayFieldParser(self)
-            parser.reset_context(
-                base_mod,
-                [],
-                lambda _idx, _parent: None,
-                lambda _candidate: False,
-                None,
-                self._rsz_userdata_dict,
-                self._rsz_userdata_str_map,
-            )
-            parser.data = self.data
-            parser.field_size = field_size
-            parser.field_align = field_align
-            parser.original_type = original_type
+            parser = _NonArrayFieldParser(data, base_mod)
             values = []
             append = values.append
             pos = raw_start
@@ -1144,31 +1131,30 @@ class RszFile:
         raw_end: int,
         parse_start: int,
         struct_fields_def: list,
-        current_instance_index: int,
-        original_type: str,
         max_align: int,
         base_mod: int,
     ):
-        raw = self.data[raw_start:raw_end]
+        data = self.data
+        raw = data[raw_start:raw_end]
         raw_copy_safe = base_mod == 0 and max_align <= 4
+        fields = tuple(field["_parse_cache"] for field in struct_fields_def)
 
         def materialize():
+            parser = _NonArrayFieldParser(data, base_mod)
+            configure = parser.configure
             struct_values = []
             current_pos = parse_start
-            parsed_elements = self.parsed_elements.setdefault(current_instance_index, {})
             for _ in range(count):
                 struct_element = {}
-                self.parsed_elements[current_instance_index] = struct_element
-                next_pos = self.parse_instance_fields(
-                    offset=current_pos,
-                    fields_def=struct_fields_def,
-                    current_instance_index=current_instance_index,
-                )
-                if next_pos <= current_pos or not struct_element:
+                pos = current_pos
+                for field_name, _rsz_type, fsize, field_align, _is_array, original_type, parser_func, _element_class in fields:
+                    configure(pos, fsize, field_align, original_type)
+                    struct_element[field_name] = parser_func(parser)
+                    pos = parser.pos
+                if pos <= current_pos or not struct_element:
                     break
                 struct_values.append(struct_element)
-                current_pos = next_pos
-            self.parsed_elements[current_instance_index] = parsed_elements
+                current_pos = pos
             return struct_values
 
         return LazyRawValues(count, materialize, raw, raw_copy_safe)
@@ -2309,9 +2295,10 @@ class RszFile:
         if parser_pool:
             non_array_parser = parser_pool.pop()
         else:
-            non_array_parser = _NonArrayFieldParser(self)
+            non_array_parser = _NonArrayFieldParser(self.data)
 
         non_array_parser.reset_context(
+            self.data,
             base_mod,
             current_children,
             set_parent,
@@ -2361,8 +2348,6 @@ class RszFile:
                                         raw_end,
                                         current_pos,
                                         struct_fields_def,
-                                        current_instance_index,
-                                        original_type,
                                         max(layout, field_align),
                                         base_mod,
                                     )
