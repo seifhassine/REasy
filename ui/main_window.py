@@ -1420,7 +1420,7 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.efx* *.cfil* *.motbank* *.mcambank* *.tex* *.mesh* *.mdf2* *.sbnk* *.spck* *.wel* *.mov*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;EFX Files (*.efx*);;CFIL Files (*.cfil*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds*);;Mesh Files (*.mesh*);;Material Definition Files (*.mdf2*);;Sound Files (*.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;All Files (*.*)"
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.cfil* *.rcol* *.fol* *.uvs* *.motbank* *.mcambank* *.clip* *.tml* *.ucurve* *.motlist* *.gui* *.gcf* *.ift* *.oft* *.tex* *.dds *.mesh* *.stmesh* *.sdftex* *.mdf2* *.mmtr* *.sdf* *.vsdf* *.csdf* *.bnk* *.pck* *.sbnk* *.spck* *.wel* *.wcc* *.wcp* *.wcst* *.wgs* *.wss* *.wcsw* *.wcss* *.wcsa* *.wcsf* *.mov*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;CFIL Files (*.cfil*);;RCOL Files (*.rcol*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Texture Files (*.tex*);;DDS Files (*.dds);;Mesh Files (*.mesh* *.stmesh*);;Material Definition Files (*.mdf2*);;Master Material Files (*.mmtr*);;Sound Files (*.bnk* *.pck* *.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;All Files (*.*)"
         )
         if not fn:
             return
