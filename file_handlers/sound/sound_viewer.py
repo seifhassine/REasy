@@ -14,6 +14,7 @@ from pathlib import Path
 import platform
 
 from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QUrl, Signal
+from PySide6.QtGui import QKeySequence, QShortcut
 lazy from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
@@ -1097,7 +1098,11 @@ class SoundViewer(QWidget):
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.table.itemSelectionChanged.connect(self._on_sel)
-        self.table.itemDoubleClicked.connect(self._on_dbl)
+        self.table.itemDoubleClicked.connect(self._play_highlighted)
+        for key in (Qt.Key_Space, Qt.Key_Return, Qt.Key_Enter):
+            shortcut = QShortcut(QKeySequence(key), self.table)
+            shortcut.setContext(Qt.ShortcutContext.WidgetShortcut)
+            shortcut.activated.connect(self._play_highlighted)
         # Rows are sorted in _populate: QTableWidget's built-in sorting drops
         # Python-owned items under PySide6, emptying moved rows.
         header.setSectionsClickable(True)
@@ -1210,7 +1215,7 @@ class SoundViewer(QWidget):
     def _on_sel(self):
         self._update_source_card()
 
-    def _on_dbl(self, _item):
+    def _play_highlighted(self, _item=None):
         if self.play_btn.isEnabled():
             self._on_play()
 
