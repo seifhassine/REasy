@@ -648,7 +648,7 @@ class SoundViewer(QWidget):
         self.source_context_label = QLabel(self.tr("All media sources"))
         self.source_context_label.setStyleSheet("font-weight: 600;")
         self.source_search = QLineEdit()
-        self.source_search.setPlaceholderText(self.tr("Filter source ID"))
+        self.source_search.setPlaceholderText(self.tr("Filter source ID or used by"))
         self.source_search.setMaximumWidth(220)
         self.source_search.textChanged.connect(lambda _text: self._populate(self._parsed_tracks))
         search.addWidget(self.source_context_label)
@@ -4331,9 +4331,7 @@ class SoundViewer(QWidget):
         if event:
             source_ids = set(event.source_ids)
             visible = [track for track in visible if track.source_id in source_ids]
-        needle = self.source_search.text().strip()
-        if needle:
-            visible = [track for track in visible if needle in str(track.source_id)]
+        needle = self.source_search.text().strip().casefold()
         self.table.blockSignals(True)
         self.table.setRowCount(0)
         selected_row = -1
@@ -4343,6 +4341,16 @@ class SoundViewer(QWidget):
             if self._is_media_bank(self._parse_result) else None
         )
         for track in visible:
+            used_by_values = tuple(
+                self._sound_metadata.label("event", event_id, event=True)
+                for event_id in track.event_ids
+            ) or self._sound_metadata.source_event_labels(
+                track.source_id, media_path
+            )
+            if needle and needle not in str(track.source_id) and not any(
+                needle in value.casefold() for value in used_by_values
+            ):
+                continue
             split_prefetch = self._is_split_prefetch(track)
             wem = (
                 embedded_wem_view(self.handler.raw_data, track)
@@ -4377,12 +4385,6 @@ class SoundViewer(QWidget):
                     metadata.details if metadata else "",
                 ) if value
             ) or "—"
-            used_by_values = tuple(
-                self._sound_metadata.label("event", event_id, event=True)
-                for event_id in track.event_ids
-            ) or self._sound_metadata.source_event_labels(
-                track.source_id, media_path
-            )
             used_by = ", ".join(used_by_values[:3])
             if len(used_by_values) > 3:
                 used_by += self.tr(" · +{count} more").format(
