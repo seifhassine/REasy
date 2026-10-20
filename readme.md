@@ -1,206 +1,125 @@
-# REasy Editor v0.7.7 ![GitHub all releases](https://img.shields.io/github/downloads/seifhassine/REasy/total)
-
 <p align="center">
-  <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor Logo" style="max-width:300px;">
+  <img src="resources/images/reasy_editor_logo.png" alt="REasy Editor" width="300">
 </p>
 
-
-<br>
-
-**REasy Editor** is a quality-of-life toolkit for RE games that currently supports viewing and editing of some RE Engine files. It also includes miscellaneous tools to speed up your work. 
-Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBANK, MESH and CFIL files.
-
-REasy GUI is currently available in English and Chinese.
-
-
-<br>
-<br>
 <p align="center">
-<img alt="image" src="https://github.com/user-attachments/assets/1ec4648a-a10d-4b5f-aed5-a654995a5d32"  width=70%/>
+  A file editor and modding toolkit for RE Engine games.
 </p>
 
-<br>
+<p align="center">
+  <a href="https://github.com/seifhassine/REasy/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/seifhassine/REasy"></a>
+  <a href="https://github.com/seifhassine/REasy/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/seifhassine/REasy/total"></a>
+  <a href="https://github.com/seifhassine/REasy/actions/workflows/build.yml"><img alt="Build" src="https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg"></a>
+</p>
 
-
-## Features
-
-<br>
 <div align="center">
-
-<sub><sup>Note: Below formats are listed according to source code. The release archive may be outdated and might not yet support them.</sup></sub>  
-<sub><sup>Note 2: Many formats are not supported in RE7 non-rt.</sup></sub>  
-| File Type | Support | Tested On |
-|-----------|---------|-----------|
-| UVAR      | ✅       | Most Titles  |
-| RCOL      | ✅    <sub><sup>[RE7, Wilds NOT SUPPORTED]</sup></sub>   | Most titles       |
-| SCN/PFB/User       | ✅       | Most titles       |
-| LPRB/PRB       | ✅ <sub><sup>[Read-only probe data; SCN OBB transform editing]</sup></sub>      |  Most titles      |
-| MSG       | ✅       | Most titles      |
-| MESH (3D Viewing)       | ✅ <sub><sup>[RE7, KGPG NOT SUPPORTED]</sup></sub>       | Most titles      |
-| PAK       | ✅       | Most titles      |
-| CFIL       | ✅       | Most titles      |
-| MOTBANK       | ✅       | Most titles      |
-| MCAMBANK       | ✅       | Most titles      |
-| TEX/DDS       | ✅ <sub><sup>[Viewing/Conversion]</sup></sub>      | Most titles      |
-| MDF       | ✅       |    Most titles   |
-| BNK/PCK       | ✅       |Main titles moddable, rest are read-only|
-| WEL       | ✅       |    Most titles|
-| WCC/WCP/WCST/WGS/WSS/WCSW/WCSS/WCSA/WCSF       | ✅       |    Most titles |
-| UVS       | ✅       |    Most titles   |
-| CLIP/TML/UCURVE       | ✅       |    Most titles (up to Pragmata)  |
-| MOTLIST       | DMC5 Previewing Only       |    DMC5  |
-| GUI       | ✅      |    DMC5  |
-| CDEF       | Coming Soon       |       |
-| EFX       | Coming Soon       |       |
-  
+<table>
+  <tr>
+    <td><a href=".github/images/strands-game-lighting.png"><img alt="RE9 hair strands in Game lighting" src=".github/images/strands-game-lighting.png" width="400"></a></td>
+    <td><a href=".github/images/scene-game-shaders.png"><img alt="A scene drawn with the game's shaders" src=".github/images/scene-game-shaders.png" width="400"></a></td>
+  </tr>
+  <tr>
+    <td align="center"><sub>Hair strands in a prefab's 3D tab</sub></td>
+    <td align="center"><sub>A scene drawn with the game's shaders</sub></td>
+  </tr>
+</table>
 </div>
-<br>
-<br>
 
-- **PAK File Extraction and Creation**  
-  - REasy currently has the fastest PAK extraction system.
-  - Support for single entry extraction.
-  - Regex search in the file list is supported. 
- 
-- **3D Scene Viewing and Editing**
+REasy opens, edits and repacks the files used by Capcom's RE Engine. It covers RE2, RE3 and RE7 (RT and non-RT), RE4, RE8, RE9, RE Resistance, DMC5, SF6, MH Rise, MH Wilds, MH Stories 3, Dragon's Dogma 2, Onimusha: Way of the Sword, Pragmata, Kunitsu-Gami, Dead Rising Deluxe Remaster and O2.
 
-- **Cross-game Mesh Conversion**
+The interface is available in English, Chinese, Russian and Spanish.
 
-- **Material Editing**
-  
-- **RSZ Extended File Viewing and Editing:**  
-  - User, PFB and SCN files are supported with advanced editing.
-  - Template Manager to export your favorite GameObjects and import them in different files (Exported GameObjects can be found in the "templates" directory in plaintext (JSON)).
-  - Clipboard system allowing to copy paste array elements, components and GameObjects across different files (JSON serialized).
-  - Community Templates browser where you can download templates from other people, rate them and upload your own for different games (accessible in Template Manager).
-  - Up-to-date improved RSZ dumps for all games.
-  - Obsolete RSZ file detector (available in >Tools)
-  - Support for all versions of RSZ files dating from RE7.
-  - And much more..
-   
-- **RSZ Diff Viewer:**  
-  - Allows comparing of RSZ files. Currently, only SCN files are supported. 
+## What it does
 
-- **Search Functionality:**  
-  Search all files across directories for:
-  - Specific text (UTF-16LE encoded)
-  - 32-bit numbers (with hexadecimal display)
-  - GUIDs (with conversion from standard format)
-  - Specific RSZ field values
+- **SCN, PFB and USER editing** for every RSZ version since RE7. Copy and paste GameObjects, components and array items between files, save GameObjects as templates, or grab templates other people shared from the community browser.
+- **3D viewer** for meshes and scenes, with a Game lighting mode that draws them with their real shaders.
+- **Mesh conversion** between games, and a Blender round trip.
+- **Material editing**, from MDF values down to master materials (MMTR) as a node graph.
+- **Hair strand editing** for RE9 and Pragmata.
+- **PAK tools**: fast extraction (whole archives or single files, with regex search) and packing.
+- **Projects**: build a mod and export it as a PAK or a Fluffy Mod Manager zip (*File > Create Project*).
+- **Search** across folders for text, numbers, GUIDs or RSZ field values.
+- **Diff viewer** for SCN files, and a detector for RSZ files outdated by game updates (*Tools*).
+- **AI assistant** (optional) using DeepSeek or a local OpenAI-compatible server such as LM Studio. It can browse projects, tabs and PAKs and edit MDF and MSG files. Your messages and the editor context it asks for are sent to the provider you pick.
 
-- **Project Manager:**
- 
-  Ability to create mods and export them as .PAK or Fluffy Manager .ZIP archive (File > Create Project).
+## Supported files
 
-- **AI Assistant:**
+- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR,  SDFTEX (baked from a mesh), DDS (to TEX), SDF, MESH, TEX, MOTBANK, MCAMBANK, CLIP, TML, UCURVE, GUI, BNK, PCK, WEL, WCC and other headless sound files, hair strands
+- **View:** FOL, STMESH, GCF, IFT, OFT, MOTLIST, light probes (in SCN scenes)
+- **Other:** PAK through *Tools > PAK Browser*, MOV in your default video player
 
-  For now, supports DeepSeek API or a local OpenAI-compatible server such as LM Studio. It can navigate projects, tabs, and PAK files, and inspect or edit MDF and MSG files through REasy. 
+<details>
+<summary>Game limits</summary>
 
-  Local servers are restricted to loopback addresses. DeepSeek keys can be used for the current session, loaded from `DEEPSEEK_API_KEY`, or stored in the operating system keyring (not tested on Linux). Chat messages and requested editor context are sent to the selected provider.
-  
--  **Backup System for Files**
+- **MESH**: view only for RE7, RE7 RT, O2, MH Stories 3, Kunitsu-Gami and one older RE3/Resistance version; DRDR meshes don't open.
+- **MMTR, SDF**: not RE7 non-RT. Older DD2 and the Onimusha demo: pixel shaders only.
+- **RCOL**: not RE7 non-RT (rcol.2) or MH Wilds rcol.38.
+- **Hair strands**: edit in RE9 and Pragmata, view in RE4.
+- **GUI, MOTLIST**: DMC5 only.
+- **WEL**: RE2, RE3, RE7 RT, RE8, DMC5, MH Rise.
+- **BNK, PCK**: no audio replacement for RE7 non-RT, RE Resistance, MH Stories 3, O2, Kunitsu-Gami or DRDR.
+- **Light probes**: not RE7 non-RT, RE Resistance or DRDR.
+- **STMESH**: RE4, SF6, MH Wilds, DD2, Onimusha, Pragmata.
+- **SDFTEX**: RE4, MH Wilds, DD2, Onimusha, Pragmata, RE9.
+- **CLIP, TML, UCURVE**: tested up to MH Wilds.
 
+</details>
 
+The list follows the source code; the latest release may be behind.
 
-## Guides:
+## Getting started
 
-- **Wiki:**  
-  Accessible [here](https://github.com/seifhassine/REasy-Wiki/blob/main/README.md). Work in progress.
-  
-- **Adding New Flags to RE4R:**  
-  I tested adding 22000 new flags (file size went from 2mb to ~16mb), and tried some of them randomly. Game was stable. At 50k added flags, it crashes when a gamesave is triggered. To determine the exact threshold, your testing and feedback are needed. But 20k should be more than enough. (I wrote a guide [here](https://www.nexusmods.com/residentevil42023/articles/346))
+Grab the latest build from [Releases](https://github.com/seifhassine/REasy/releases/latest) and run `REasy.exe`.
 
-- **RE8:**
-  [Modding Weapons and Items with REasy Editor](https://www.nexusmods.com/residentevilvillage/articles/45) by [matalayudasleazy](https://next.nexusmods.com/profile/matalayudasleazy?gameId=3669)
+To run from source on Windows you need Python 3.15 (`py -3.15 --version` should work), Git, and the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
 
-## Correctness
+- `run_reasy.bat` sets up `.venv` on first launch and starts REasy.
+- `build.bat` builds a standalone `REasy.exe` into `dist`.
 
-- All RSZ (.user, .pfb, .scn) files from most games are tested before release:
- 
-    [![Build and Package REasy](https://github.com/seifhassine/REasy/actions/workflows/build.yml/badge.svg)](https://github.com/seifhassine/REasy/actions/workflows/build.yml)
+The first setup fetches and compiles the native GDeflate sources, so it needs network access. Later runs reuse the cache. If you'd rather launch `REasy.py` yourself, run `python setup.py build_ext --inplace` first.
 
+On Linux, if REasy stops with "Aborted" on launch, install `libxcb-cursor0`.
 
-## RSZ Dumps:
+## Guides
 
-- Under [/resources/data/dumps](https://github.com/seifhassine/REasy/tree/master/resources/data/dumps) you will find a list of updated RSZ templates for all games. 
+- [REasy Wiki](https://github.com/seifhassine/REasy-Wiki/blob/main/README.md) (work in progress)
+- [Adding new flags to RE4R](https://www.nexusmods.com/residentevil42023/articles/346). Around 20k extra flags is safe; at 50k the game crashes on save.
+- [Modding weapons and items in RE8](https://www.nexusmods.com/residentevilvillage/articles/45) by [matalayudasleazy](https://next.nexusmods.com/profile/matalayudasleazy?gameId=3669)
 
-## Installation
+Up-to-date RSZ dumps for every game are in [resources/data/dumps](resources/data/dumps). RSZ files from most games are tested on every build.
 
-- Run build.bat
+## Contributing
 
-- Python dependencies are listed in requirements.txt
+PRs are welcome and I review them. AI-assisted contributions are fine as long as a human has reviewed them properly: keep the code clean, include correctness tests, and stick to one file format or submodule per PR.
 
-- Microsoft Visual C++ 14.0 or greater is required. Get it with "Microsoft C++ Build Tools": https://visualstudio.microsoft.com/visual-cpp-build-tools/
+## Credits
 
-- The first build requires Git and network access to initialize GDeflateNet and fetch the pinned GDeflateCore sources. Later builds reuse the cached native build.
+- [@alphazolam](https://github.com/alphazolam) for the 010 RE templates
+- @TrikzMe for RE's MurmurHash3
+- [@praydog](https://github.com/praydog) for the RSZ JSON dumps and REFramework
+- @don for help with exe debugging
+- @shadowcookie for advice and many updated file structures (REE Lib)
+- @Ekey for the PAK decryption algorithms
+- @NSACloud for older mesh format research (Now reworked)
+- @brewedenhell for contributions to the [Wiki](https://github.com/seifhassine/REasy-Wiki/tree/main)
 
-- Python 3.15 is required; the scripts create `.venv` with `py -3.15`.
+If you'd like to support development, you can do so [here](https://linktr.ee/seifhassine).
 
-- If build.bat says Python 3.15 is required, check that `py -3.15 --version` works.
+## License and use
 
-- If you want to run REasy.py, make sure you either use the `run_reasy.bat` batch script or `python setup.py build_ext --inplace
-` beforehand.
+REasy is released under the [MIT License](LICENSE.txt). It uses [PySide6](https://pypi.org/project/PySide6/) (Qt for Python) under the [LGPL v3](https://www.gnu.org/licenses/lgpl-3.0.html); see [Qt licensing](https://www.qt.io/licensing/).
 
-If you want to run REasy on Linux and encounter the error "Aborted" on launch, try installing libxcb-cursor0 using apt-get. 
+The REasy name and logo are covered by [TRADEMARKS.md](TRADEMARKS.md). They may not be used to credit REasy for sexually explicit or NSFW content, or for anything that breaks Capcom's terms.
 
-## Credits:
+REasy is meant for lawful modding, research and preservation, mainly in offline and single-player games. It does not support cheating, interfering with anti-cheat or online services, or distributing copyrighted material, and related issues or content may be removed from REasy's platforms. You are responsible for following the law and each game's terms. None of this changes the rights the MIT License grants.
 
-@alphazolam for the 010 RE templates.
-
-@TrikzMe for RE's MurMurHash3 
-
-@praydog, for making the RSZ JSON dumps and REF. 
-
-@don on Discord for helping out with .exe debugging related stuff.
-
-@shadowcookie for consulting with misc. stuff as well as many updated file format structures (REE Lib). 
-
-@Ekey - PAK file decryption algorithms
-
-@NSACloud for the MPLY flags on MHWILDS+ 
-
-@brewedenhell for contributions to the [Wiki](https://github.com/seifhassine/REasy-Wiki/tree/main)
-
-## Support REasy:
-
-If you appreciate my work and would like to support the development of the tool, you can support me through this [link](https://linktr.ee/seifhassine)
-
-## License, Contributions:
-
-REasy is under the [MIT License](LICENSE.txt). Use of the REasy name and logo is covered by [TRADEMARKS.md](TRADEMARKS.md).
-You are wlecome to contribute to the project. I am currently active and will review PRs.
-
-## On AI-assisted contributions:
-
-All contributions are welcome as long as they are thoroughly curated and reviewed by a human. Please make sure the code is clean, functional and accompanied with thorough correctness tests.
-Please do not work on more than one file format or submodule at a time when submitting a AI-assisted contribution. 
-
-## Third-Party Components
-
-This project uses **[PySide6](https://pypi.org/project/PySide6/)** (Qt for Python), licensed under **LGPL version 3**.
-For more information, see:  
-- [Qt Licensing Information](https://www.qt.io/licensing/)  
-- [LGPL v3 License Text](https://www.gnu.org/licenses/lgpl-3.0.html)
-
-## Explicit Content Attribution
-
-The REasy name and logo may not be used to credit, attribute, or otherwise identify REasy as a tool used to create sexually explicit, pornographic, or otherwise NSFW content, or any content that breaks Capcom's terms or policies. REasy is an independent project, not affiliated with or endorsed by Capcom. See [TRADEMARKS.md](TRADEMARKS.md).
-
-## Responsible Use
-
-REasy is intended for lawful modding, research, and preservation, primarily in offline and single-player environments. The project does not support cheating, unfair advantages in online games, interference with anti-cheat or online services, or unauthorized distribution of copyrighted material.
-
-Related issues, contributions, or content may be removed from REasy-controlled platforms. REasy is not affiliated with or endorsed by Capcom. Users are responsible for complying with applicable laws and game terms.
-
-This policy does not modify the rights granted under the MIT License.
+REasy is an independent project and is not affiliated with or endorsed by Capcom.
 
 ## Sponsors
-<table>
- <tbody>
-  <tr>
-   <td align="center"><img alt="[SignPath]" src="https://avatars.githubusercontent.com/u/34448643" height="30"/></td>
-   <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
-  </tr>
- </tbody>
-</table>
 
+<table>
+  <tr>
+    <td align="center"><img alt="SignPath" src="https://avatars.githubusercontent.com/u/34448643" height="30"></td>
+    <td>Free code signing on Windows provided by <a href="https://signpath.io/">SignPath.io</a>, certificate by <a href="https://signpath.org/">SignPath Foundation</a></td>
+  </tr>
+</table>
