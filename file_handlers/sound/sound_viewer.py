@@ -10,6 +10,7 @@ import threading
 import wave
 from contextlib import suppress
 from dataclasses import replace
+from functools import partial
 from pathlib import Path
 import platform
 
@@ -115,6 +116,7 @@ lazy from .sound_waveform import (
     WaveformWidget,
     analyze_wave_activity,
     write_wave_channel,
+    write_wave_edit,
 )
 from .wwise_schema import STRUCTURED_BANK_VERSIONS, is_hirc_bus, is_hirc_plugin
 from .wwise_v132 import set_v132_fields
@@ -283,6 +285,7 @@ class SoundViewer(QWidget):
         self._settings_dialog = None
         self._current_audio: tuple[str | None, str | None] = (None, None)
         self._decoded_cache: dict[int, tuple] = {}
+        self._wave_edits: dict[int, list[str]] = {}
         self._preview_audio_path = None
         self._channel_audio_path = None
         self._preview_source_id = None
@@ -1081,9 +1084,45 @@ class SoundViewer(QWidget):
         bar.addWidget(volume_icon)
         bar.addWidget(self.vol_slider)
         layout.addLayout(bar)
-        self.waveform = WaveformWidget()
+        self.waveform = WaveformWidget(selectable=True)
         layout.addWidget(self.waveform)
+        layout.addLayout(self._build_wave_edit_bar())
         return group
+
+    def _build_wave_edit_bar(self):
+        bar = QHBoxLayout()
+        bar.setSpacing(6)
+
+        def add(text, icon, callback, tooltip):
+            button = self._make_btn(text, icon, callback, enabled=False)
+            button.setToolTip(tooltip)
+            bar.addWidget(button)
+            return button
+
+        self.wave_edit_buttons = [
+            add(self.tr("Silence"), QStyle.SP_MediaVolumeMuted, partial(self._on_wave_edit, "silence"),
+                self.tr("Silence the selected range.")),
+            add(self.tr("Trim"), QStyle.SP_DialogDiscardButton, partial(self._on_wave_edit, "trim"),
+                self.tr("Remove the selected range.")),
+            add(self.tr("Crop"), QStyle.SP_FileDialogContentsView, partial(self._on_wave_edit, "crop"),
+                self.tr("Keep only the selected range.")),
+        ]
+        bar.addStretch(1)
+        self.wave_history_buttons = [
+            add(self.tr("Undo"), QStyle.SP_ArrowBack, partial(self._drop_wave_edits, start=-1),
+                self.tr("Undo the last edit.")),
+            add(self.tr("Discard"), QStyle.SP_DialogResetButton, partial(self._drop_wave_edits, start=0),
+                self.tr("Discard all edits.")),
+        ]
+        self.wave_apply_btn = add(
+            self.tr("Apply Edits"), QStyle.SP_DialogApplyButton, self._on_apply_wave_edits,
+            self.tr(
+                "Encode the edited audio with Wwise at maximum quality and replace this "
+                "source. After Trim or Crop the original loop points and markers no "
+                "longer line up, so they are not kept."
+            ),
+        )
+        return bar
 
     def _build_table(self):
         self.table = QTableWidget(0, len(_COLUMNS))
@@ -1124,6 +1163,7 @@ class SoundViewer(QWidget):
         self.pos_slider.sliderReleased.connect(self._on_seek_done)
         self.pos_slider.sliderMoved.connect(lambda value: self.pos_cur.setText(self._fmt_ms(value)))
         self.waveform.seek_requested.connect(self._on_waveform_seek)
+        self.waveform.selection_changed.connect(self._update_wave_edit_buttons)
         self.player.durationChanged.connect(self._on_duration)
         self.player.positionChanged.connect(self._on_position)
         self.player.playbackStateChanged.connect(self._on_state)
@@ -1214,6 +1254,7 @@ class SoundViewer(QWidget):
 
     def _on_sel(self):
         self._update_source_card()
+        self._update_wave_edit_buttons()
 
     def _play_highlighted(self, _item=None):
         if self.play_btn.isEnabled():
@@ -1281,6 +1322,7 @@ class SoundViewer(QWidget):
         self.channel_combo.addItem(self.tr("Mix"), -1)
         self.channel_combo.setEnabled(False)
         self.channel_combo.blockSignals(False)
+        self._update_wave_edit_buttons()
 
     @staticmethod
     def _run_vgmstream(arguments):
@@ -1445,14 +1487,27 @@ class SoundViewer(QWidget):
                 self._resume_position_ms = 0
         self._stopped_source_id = None
         self.status.setText(self.tr("Decoding source {id}…").format(id=track.source_id))
-        self._current_audio = self._cached_audio(track)
-        if not self._current_audio[1]:
+        wem_path, wav_path = self._cached_audio(track)
+        if not wav_path:
             self.status.setText(self.tr("Decode failed."))
             return
         self._preview_source_id = track.source_id
-        self._configure_channels(self._current_audio[1])
-        self._start_preview(self._current_audio[1], start_ms=self._resume_position_ms)
+        self._current_audio = (wem_path, wav_path)
+        self._play_wave_version(start_ms=self._resume_position_ms)
         self._resume_position_ms = 0
+
+    def _play_wave_version(self, *, start_ms=0):
+        """Preview the newest edit of the current source, or its decoded audio."""
+
+        edits = self._wave_edits.get(self._preview_source_id)
+        mix_path = edits[-1] if edits else self._decoded_cache[self._preview_source_id][1]
+        channel_path, self._channel_audio_path = self._channel_audio_path, None
+        self._current_audio = (self._current_audio[0], mix_path)
+        self.waveform.clear()
+        self._configure_channels(mix_path)
+        self._start_preview(mix_path, start_ms=start_ms)
+        self._remove_file(channel_path)
+        self._update_wave_edit_buttons()
 
     def _queue_waveform(self, wav_path):
         self._waveform_job += 1
@@ -1503,11 +1558,93 @@ class SoundViewer(QWidget):
         self.status.clear()
 
     def _purge_decoded_cache(self):
-        for paths in self._decoded_cache.values():
+        for paths in (*self._decoded_cache.values(), *self._wave_edits.values()):
             for path in paths:
                 self._remove_file(path)
         self._decoded_cache.clear()
+        self._wave_edits.clear()
         self._stopped_source_id = None
+
+    def _update_wave_edit_buttons(self):
+        track = self._selected()[1]
+        source_id = track.source_id if track else None
+        editable = (
+            source_id is not None
+            and source_id == self._preview_source_id
+            and self.waveform.selection() is not None
+            and self._media_kind(track) == WwiseMediaKind.AUDIO
+        )
+        pending = bool(self._wave_edits.get(source_id))
+        for button in self.wave_edit_buttons:
+            button.setEnabled(editable)
+        for button in self.wave_history_buttons:
+            button.setEnabled(pending)
+        self.wave_apply_btn.setEnabled(pending and self._can_replace_track(track))
+
+    def _on_wave_edit(self, operation, _checked=False):
+        source_id, selection = self._preview_source_id, self.waveform.selection()
+        if source_id is None or selection is None:
+            return
+        descriptor, output = tempfile.mkstemp(
+            dir=self._temp_dir, prefix=f"{source_id}_edit_", suffix=".wav"
+        )
+        os.close(descriptor)
+        try:
+            write_wave_edit(self._current_audio[1], output, operation, *selection)
+        except (OSError, ValueError, wave.Error) as exc:
+            self._remove_file(output)
+            QMessageBox.warning(self, self.tr("Edit Audio"), str(exc))
+            return
+        self._wave_edits.setdefault(source_id, []).append(output)
+        start = 0.0 if operation == "crop" else selection[0]
+        self._play_wave_version(start_ms=round(start * self._duration_ms))
+
+    def _drop_wave_edits(self, _checked=False, *, start):
+        """Delete the selected source's edits from index ``start`` on (undo: -1, discard: 0)."""
+
+        track = self._selected()[1]
+        edits = self._wave_edits.get(track.source_id) if track else None
+        if not edits:
+            return
+        dropped = edits[start:]
+        del edits[start:]
+        if track.source_id == self._preview_source_id:
+            self._play_wave_version(start_ms=self.player.position())
+        else:
+            self._update_wave_edit_buttons()
+        # Removed only once the preview has moved off them.
+        for path in dropped:
+            self._remove_file(path)
+
+    def _on_apply_wave_edits(self):
+        action = self.tr("Apply Edits")
+        if not self._ensure_modding_allowed(action):
+            return
+        selected = self._require_track(action)
+        if not selected:
+            return
+        _, track = selected
+        edits = self._wave_edits.get(track.source_id)
+        if not edits:
+            return
+        try:
+            plan = self._replacement_plan(track)
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, self.tr("Replace Error"), str(exc))
+            return
+        if not self._confirm_replacement_plans((plan,)):
+            return
+        edited = edits[-1]
+        with (
+            wave.open(edited, "rb") as result,
+            wave.open(self._decoded_cache[track.source_id][1], "rb") as original,
+        ):
+            retimed = result.getnframes() != original.getnframes()
+        self._cleanup_audio()
+        self._replace_source_with(
+            track, plan, WwiseMediaKind.AUDIO, edited,
+            inherit_metadata=not retimed, quality_preset="maximum",
+        )
 
     @staticmethod
     def _save_path(parent, title, default, extension, file_filter):
@@ -1942,6 +2079,7 @@ class SoundViewer(QWidget):
         original_wem=b"",
         preserve_original_metadata=True,
         sample_rate_policy=None,
+        quality_preset=None,
     ):
         suffix = Path(path).suffix.casefold()
         if suffix == ".wem":
@@ -1971,8 +2109,8 @@ class SoundViewer(QWidget):
                 sample_rate_policy or self._sample_rate_policy()
             ),
             codec_tag=self._encoding_codec_tag(),
-            quality_preset=self._encoding_quality_preset(),
-            compression=self._advanced_compression_settings(),
+            quality_preset=quality_preset or self._encoding_quality_preset(),
+            compression=None if quality_preset else self._advanced_compression_settings(),
         )
         return authored, wem_codec_tag(authored)
 
@@ -1985,6 +2123,7 @@ class SoundViewer(QWidget):
         original=b"",
         preserve_original_metadata=True,
         sample_rate_policy=None,
+        quality_preset=None,
     ):
         kind = self._media_kind(track, original)
         suffix = Path(path).suffix.casefold()
@@ -1995,6 +2134,7 @@ class SoundViewer(QWidget):
                 original_wem=original,
                 preserve_original_metadata=preserve_original_metadata,
                 sample_rate_policy=sample_rate_policy,
+                quality_preset=quality_preset,
             )
         if kind == WwiseMediaKind.MIDI:
             if suffix == ".mid":
@@ -2203,8 +2343,12 @@ class SoundViewer(QWidget):
         if not self._confirm_replacement_plans((plan,)):
             return
         path, _ = QFileDialog.getOpenFileName(self, *dialog_spec)
-        if not path:
-            return
+        if path:
+            self._replace_source_with(track, plan, kind, path)
+
+    def _replace_source_with(
+        self, track, plan, kind, path, *, inherit_metadata=True, quality_preset=None
+    ):
         rate_policy = self._sample_rate_policy()
         rate_plan = None
         try:
@@ -2221,7 +2365,9 @@ class SoundViewer(QWidget):
             try:
                 data, codec = self._read_replacement_media(
                     path, track, original=plan.original_wem,
+                    preserve_original_metadata=inherit_metadata,
                     sample_rate_policy=rate_policy,
+                    quality_preset=quality_preset,
                 )
             except RiffMetadataInheritanceError as exc:
                 discard = QMessageBox.question(
@@ -2241,6 +2387,7 @@ class SoundViewer(QWidget):
                     original=plan.original_wem,
                     preserve_original_metadata=False,
                     sample_rate_policy=rate_policy,
+                    quality_preset=quality_preset,
                 )
             if not data:
                 return
@@ -2264,18 +2411,17 @@ class SoundViewer(QWidget):
                     encoding += self.tr(" (matched original)") if (
                         original_codec == authored_codec
                     ) else self.tr(" (profile default)")
+                authored_wav = Path(path).suffix.casefold() == ".wav"
                 advanced_text = (
                     self._advanced_compression_text()
-                    if Path(path).suffix.casefold() == ".wav" else ""
+                    if authored_wav and not quality_preset else ""
                 )
+                quality = quality_preset or self._encoding_quality_preset()
                 if advanced_text:
                     encoding += " · " + advanced_text
-                elif (
-                    Path(path).suffix.casefold() == ".wav"
-                    and self._encoding_quality_preset()
-                ):
+                elif authored_wav and quality and authored_codec.quality is not None:
                     encoding += self.tr(" · {quality} quality").format(
-                        quality=self._encoding_quality_preset().title()
+                        quality=quality.title()
                     )
             self._report_changes(
                 self.tr("Replaced source {id} in {count} verified file(s) with {file} ({encoding}){rates}.").format(

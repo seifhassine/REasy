@@ -124,16 +124,47 @@ def write_wave_segment(source_path, output_path, start_ms, end_ms):
         output.writeframes(payload)
 
 
+_WAVE_EDITS = {
+    "silence": lambda data, first, last: data[:first] + bytes(last - first) + data[last:],
+    "trim": lambda data, first, last: data[:first] + data[last:],
+    "crop": lambda data, first, last: data[first:last],
+}
+
+
+def write_wave_edit(source_path, output_path, operation, start, end):
+    
+    with wave.open(str(source_path), "rb") as source:
+        params = source.getparams()
+        payload = source.readframes(params.nframes)
+    if params.sampwidth < 2:
+        raise ValueError("Only 16-bit or wider PCM can be edited.")
+    frame = params.nchannels * params.sampwidth
+    first, last = (
+        round(max(0.0, min(1.0, value)) * params.nframes) * frame for value in (start, end)
+    )
+    if last <= first:
+        raise ValueError("Select part of the waveform first.")
+    payload = _WAVE_EDITS[operation](payload, first, last)
+    if not payload:
+        raise ValueError("The edit would remove all audio.")
+    with wave.open(str(output_path), "wb") as output:
+        output.setparams(params)
+        output.writeframes(payload)
+
+
 class WaveformWidget(QWidget):
     seek_requested = Signal(int)
+    selection_changed = Signal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, selectable=False):
         super().__init__(parent)
         self._peaks, self._ranges, self._position = [], [], 0.0
+        self._selectable, self._anchor, self._selection = selectable, None, None
         self.setFixedHeight(60)
-        self.setToolTip(
-            self.tr("Blue: waveform · Green: activity · Dark: silence · Yellow: play position")
-        )
+        legend = self.tr("Blue: waveform · Green: activity · Dark: silence · Yellow: play position")
+        if selectable:
+            legend += "\n" + self.tr("Click to seek · Drag to select a range")
+        self.setToolTip(legend)
 
     def set_data(self, peaks, ranges):
         self._peaks, self._ranges = peaks, ranges
@@ -143,16 +174,42 @@ class WaveformWidget(QWidget):
         self._position = max(0.0, min(1.0, ratio))
         self.update()
 
+    def selection(self):
+        return self._selection
+
     def clear(self):
         self._peaks, self._ranges, self._position = [], [], 0.0
+        self._set_selection(None)
         self.update()
+
+    def _set_selection(self, value):
+        if value != self._selection:
+            self._selection = value
+            self.selection_changed.emit()
+            self.update()
+
+    def _ratio(self, event):
+        return max(0.0, min(1.0, event.position().x() / max(1, self.width())))
 
     def mousePressEvent(self, event):
         if self._peaks and event.button() == Qt.LeftButton:
-            ratio = event.position().x() / max(1, self.width())
-            self.seek_requested.emit(round(max(0.0, min(1.0, ratio)) * 1000))
+            self._anchor = self._ratio(event)
+            self._set_selection(None)
+            self.seek_requested.emit(round(self._anchor * 1000))
             return
         super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        if self._selectable and self._anchor is not None and event.buttons() & Qt.LeftButton:
+            ratio = self._ratio(event)
+            dragged = abs(ratio - self._anchor) * self.width() >= 3
+            self._set_selection(tuple(sorted((self._anchor, ratio))) if dragged else None)
+            return
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._anchor = None
+        super().mouseReleaseEvent(event)
 
     def paintEvent(self, _event):
         painter = QPainter(self)
@@ -173,6 +230,9 @@ class WaveformWidget(QWidget):
         for index, peak in enumerate(self._peaks):
             x, amplitude = round(index * width / scale), round((bounds.height() / 2 - 2) * peak)
             painter.drawLine(x, middle - amplitude, x, middle + amplitude)
+        if self._selection:
+            left, right = (round(value * width) for value in self._selection)
+            painter.fillRect(left, 1, max(1, right - left), bounds.height() - 1, QColor(249, 214, 107, 60))
         cursor = round(self._position * width)
         painter.setPen(QPen(QColor("#f9d66b")))
         painter.drawLine(cursor, 1, cursor, bounds.bottom() - 1)
