@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QStringListModel, QTimer, Qt
+from PySide6.QtCore import QStringListModel, Qt
 from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
@@ -9,12 +9,16 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPlainTextEdit,
+    QScrollArea,
     QToolButton,
     QVBoxLayout,
     QWidget,
 )
 
-from .bookmarks import normalize_tag, normalize_tags
+lazy from ui.qt_timers import call_later
+
+lazy from .bookmarks import normalize_tag, normalize_tags
+lazy from .delegate import _chip_fg, _tag_color
 
 
 class BookmarkDialog(QDialog):
@@ -39,6 +43,7 @@ class BookmarkDialog(QDialog):
         layout.addWidget(QLabel(self.tr("Path:")))
         path_label = QLabel(path)
         path_label.setWordWrap(True)
+        path_label.setTextFormat(Qt.PlainText)
         path_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(path_label)
 
@@ -62,12 +67,24 @@ class BookmarkDialog(QDialog):
             for tag in completer_tags:
                 button = QToolButton(text=tag, checkable=True)
                 button.setToolTip(self.tr("Toggle tag"))
+                color = _tag_color(tag)
+                button.setStyleSheet(
+                    "QToolButton { border: 1px solid %s; border-radius: 9px; padding: 2px 8px; }"
+                    "QToolButton:checked { background: %s; color: %s; }"
+                    % (color.name(), color.name(), _chip_fg(color).name())
+                )
                 button.clicked.connect(lambda _=False, value=tag: self._toggle_tag(value))
                 chips_layout.addWidget(button)
                 self._tag_buttons[tag] = button
             chips_layout.addStretch(1)
             layout.addWidget(QLabel(self.tr("Quick tags:")))
-            layout.addWidget(chips_widget)
+            chips_scroll = QScrollArea()
+            chips_scroll.setWidget(chips_widget)
+            chips_scroll.setWidgetResizable(True)
+            chips_scroll.setFrameShape(QScrollArea.NoFrame)
+            chips_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            chips_scroll.setFixedHeight(chips_widget.sizeHint().height() + 24)
+            layout.addWidget(chips_scroll)
 
         layout.addWidget(QLabel(self.tr("Note:")))
         self.note_edit = QPlainTextEdit(self)
@@ -86,7 +103,7 @@ class BookmarkDialog(QDialog):
         self.tags_edit.textChanged.connect(self._refresh_chips)
         self.tags_edit.returnPressed.connect(self.accept)
         self._refresh_chips()
-        QTimer.singleShot(0, self.tags_edit.setFocus)
+        call_later(self, 0, self.tags_edit.setFocus)
 
     def tags(self) -> list[str]:
         return [

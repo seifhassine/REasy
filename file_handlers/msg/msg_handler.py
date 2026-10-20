@@ -6,9 +6,9 @@ import os
 from typing import Any, Dict, List, Optional
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.app_paths import resource_path
-from file_handlers.msg.msg_viewer import MsgViewer
-from utils.hash_util import murmur3_hash
+lazy from utils.app_paths import resource_path
+lazy from file_handlers.msg.msg_viewer import MsgViewer
+lazy from utils.hash_util import murmur3_hash
 
 logger = logging.getLogger(__name__)
 
@@ -447,7 +447,7 @@ class MsgHandler(BaseFileHandler):
         for index, cipher_byte in enumerate(encrypted):
             decrypted[index] = cipher_byte ^ previous_cipher_byte ^ cls._KEY[index & 0xF]
             previous_cipher_byte = cipher_byte
-        return bytes(decrypted)
+        return decrypted.take_bytes()
 
     def _decrypt_string_pool(self):
         if not self.is_encrypted or self.header["data_offset"] is None:
@@ -671,12 +671,6 @@ class MsgHandler(BaseFileHandler):
                     entry["index"] = i
     
     def add_user_param(self, name: str = "NewParam", param_type: int = 2):
-        """Add a new user parameter (attribute)
-        
-        Args:
-            name: Name of the parameter
-            param_type: Type of parameter (-1 or 2 for string, 0 for int, 1 for float)
-        """
         self.userParamNames.append(name)
         self.userParamTypes.append(param_type)
         
@@ -690,11 +684,6 @@ class MsgHandler(BaseFileHandler):
             entry["attributes"].append(default_value)
     
     def remove_user_param(self, idx: int):
-        """Remove a user parameter at the given index
-        
-        Args:
-            idx: Index of the parameter to remove
-        """
         if 0 <= idx < len(self.userParamTypes):
             self.userParamNames.pop(idx)
             self.userParamTypes.pop(idx)

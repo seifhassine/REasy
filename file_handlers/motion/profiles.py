@@ -81,62 +81,36 @@ class MotionFormatProfile:
                 )
 
 
-def _prefixed_names(prefix: str, *names: str) -> tuple[str, ...]:
-    return tuple(prefix + name for name in names)
-
-
-DMC5_FULL_WRINKLE_NAMES = (
-    *_prefixed_names(
-        "head_cm1_color.head_wm1_",
-        "blink_L",
-        "blink_R",
-        "browsRaiseInner_L",
-        "browsRaiseInner_R",
-        "browsRaiseOuter_L",
-        "browsRaiseOuter_R",
-        "chinRaise_L",
-        "chinRaise_R",
-        "jawOpen",
-        "lipsNarrow_DL",
-        "lipsNarrow_DR",
-        "lipsNarrow_UL",
-        "lipsNarrow_UR",
-        "purse_DL",
-        "purse_DR",
-        "purse_UL",
-        "purse_UR",
-        "squintInner_L",
-        "squintInner_R",
-    ),
-    *_prefixed_names(
-        "head_cm2_color.head_wm2_",
-        "browsDown_L",
-        "browsDown_R",
-        "browsLateral_L",
-        "browsLateral_R",
-        "mouthStretch_L",
-        "mouthStretch_R",
-        "neckStretch_L",
-        "neckStretch_R",
-        "noseWrinkler_L",
-        "noseWrinkler_R",
-    ),
-    *_prefixed_names(
-        "head_cm3_color.head_wm3_",
-        "cheekRaiseInner_L",
-        "cheekRaiseInner_R",
-        "cheekRaiseOuter_L",
-        "cheekRaiseOuter_R",
-        "cheekRaiseUpper_L",
-        "cheekRaiseUpper_R",
-        "lipsStretch_DL",
-        "lipsStretch_DR",
-        "lipsStretch_UL",
-        "lipsStretch_UR",
-        "smile_L",
-        "smile_R",
-    ),
+# The motion values DMC5's ``app.BakeBlendTextureController`` gives a head's wrinkle maps, by colour map: its
+# ``RigLogicBlendTextureParts`` and its mob heads' parts, from the executable's static constructor.
+_DMC5_RIG_LOGIC_PARTS = (
+    (1, ("blink_L", "blink_R", "browsRaiseInner_L", "browsRaiseInner_R", "browsRaiseOuter_L", "browsRaiseOuter_R",
+         "chinRaise_L", "chinRaise_R", "jawOpen", "lipsNarrow_DL", "lipsNarrow_DR", "lipsNarrow_UL", "lipsNarrow_UR",
+         "purse_DL", "purse_DR", "purse_UL", "purse_UR", "squintInner_L", "squintInner_R")),
+    (2, ("browsDown_L", "browsDown_R", "browsLateral_L", "browsLateral_R", "mouthStretch_L", "mouthStretch_R",
+         "neckStretch_L", "neckStretch_R", "noseWrinkler_L", "noseWrinkler_R")),
+    (3, ("cheekRaiseInner_L", "cheekRaiseInner_R", "cheekRaiseOuter_L", "cheekRaiseOuter_R", "cheekRaiseUpper_L",
+         "cheekRaiseUpper_R", "lipsStretch_DL", "lipsStretch_DR", "lipsStretch_UL", "lipsStretch_UR", "smile_L",
+         "smile_R")),
 )
+_DMC5_MOB_PARTS = (
+    (1, ("browRaise_CL", "browRaise_CR", "browRaise_L", "browRaise_R", "cheekRaiser_DL", "cheekRaiser_DR",
+         "neckStretcher_L", "neckStretcher_R", "noseWrinkler_L", "noseWrinkler_R", "purse_DL", "purse_DR",
+         "purse_UL", "purse_UR")),
+    (2, ("browDown_L", "browDown_R", "browLateral_L", "browLateral_R", "chinRaiser_DL", "chinRaiser_DR", "smile_L",
+         "smile_R", "squintInner_L", "squintInner_R")),
+)
+
+
+def _wrinkle_names(spelling: str, parts) -> tuple[str, ...]:
+    return tuple(spelling.format(map=number, part=part) for number, names in parts for part in names)
+
+
+# ``RigLogicWrinkleWeightName``, ``RigLogicPeopleWrinkleWeightName`` and ``RigLogicLegacyWrinkleWeightName``.
+DMC5_FULL_WRINKLE_NAMES = _wrinkle_names("head_cm{map}_color.head_wm{map}_{part}", _DMC5_RIG_LOGIC_PARTS)
+DMC5_MOB_WRINKLE_NAMES = _wrinkle_names("head_cm{map}_color.head_wm{map}_{part}", _DMC5_MOB_PARTS)
+DMC5_LEGACY_WRINKLE_NAMES = _wrinkle_names("FRM_text_WMmultipliers__head_cm{map}_color__head_wm{map}_{part}",
+                                           _DMC5_RIG_LOGIC_PARTS)
 
 
 DMC5_PROFILE = MotionFormatProfile(
@@ -207,7 +181,7 @@ DMC5_PROFILE = MotionFormatProfile(
         ),
         motion_properties=tuple(
             (murmur3_hash_utf16le(name), name)
-            for name in DMC5_FULL_WRINKLE_NAMES
+            for name in (*DMC5_FULL_WRINKLE_NAMES, *DMC5_MOB_WRINKLE_NAMES, *DMC5_LEGACY_WRINKLE_NAMES)
         ),
     ),
 )

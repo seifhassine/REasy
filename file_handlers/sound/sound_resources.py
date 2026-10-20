@@ -7,7 +7,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from utils.resource_file_utils import resource_context_for_handler
+lazy from utils.resource_file_utils import resource_context_for_handler
+lazy from .sound_profile import sound_profile_for_path
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,8 +36,6 @@ def matching_sound_companion_path(path: str, profile=None) -> str | None:
     """Return a location hint; media matching still requires runtime validation."""
 
     if profile is None:
-        from .sound_profile import sound_profile_for_path
-
         profile = sound_profile_for_path(path)
     return profile.matching_companion_path(path) if profile is not None else None
 

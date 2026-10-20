@@ -2,8 +2,8 @@ from typing import List, Optional
 import struct
 from .base_model import FileHandler
 from .rcol_structures import Header, RcolGroup, RCOL_MAGIC, calc_hash
-from .request_set import RequestSet, RequestSetInfo, IgnoreTag
-from file_handlers.rsz.rsz_file import RszFile as RSZFile
+lazy from .request_set import RequestSet, RequestSetInfo, IgnoreTag
+lazy from file_handlers.rsz.rsz_file import RszFile as RSZFile
 from io import BytesIO
 
 class RcolFile:
@@ -609,7 +609,7 @@ class RcolFile:
                 if isinstance(guid, bytes) and len(guid) == 16:
                     handler.write_bytes(guid)
                     guid_blob.extend(guid)
-            request_guid_blob = bytes(guid_blob)
+            request_guid_blob = guid_blob.take_bytes()
 
         # Group mask GUID blobs can exist with or without request sets.
         for group in self.groups:

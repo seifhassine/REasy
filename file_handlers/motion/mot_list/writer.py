@@ -102,5 +102,5 @@ class MotListV85Writer:
             base_path_offset,
             len(slots),
         )
-        return bytes(out)
+        return out.take_bytes()
 

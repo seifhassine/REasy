@@ -1,0 +1,35 @@
+{
+ "format": 1,
+ "game": "RE8",
+ "resource_version": 2102188797,
+ "scene": {
+  "subdivisionLevel": [
+   10.0
+  ]
+ },
+ "source": {
+  "buffer": "SceneInfo",
+  "fields": [
+   "subdivisionLevel"
+  ],
+  "captures": [
+   {
+    "capture": "cap.rdc",
+    "draws": 928,
+    "tessellated": 0,
+    "tessellated_without_buffer": 1,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        10.0
+       ]
+      },
+      "draws": 20
+     }
+    ]
+   }
+  ]
+ }
+}

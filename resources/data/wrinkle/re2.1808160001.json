@@ -1,0 +1,103 @@
+{
+ "format": 1,
+ "game": "RE2",
+ "resource_version": 1808160001,
+ "target": 0,
+ "programs": {
+  "reform": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_ReformIB"
+  },
+  "fill": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_FillSurplusVB"
+  },
+  "number": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_RegistVertexID"
+  },
+  "sort": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_SortVertex"
+  },
+  "rank": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_SortRefIndex"
+  },
+  "duplicates": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_FindDuplicatedVertex"
+  },
+  "rest": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_PrimAreaRest"
+  },
+  "area": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_PrimAreaSkin8w"
+  },
+  "clear": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_ClearVertAreaSkin"
+  },
+  "gather": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_VertAreaSkin"
+  },
+  "spread": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_ProbagateDupVertex"
+  },
+  "draw": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_DrawAreaToTexture2"
+  }
+ },
+ "skinning": {
+  "8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinning8w"
+  }
+ },
+ "duplicate_slots": 6,
+ "component": {
+  "type": "via.render.Wrinkle",
+  "render_target": "RenderTarget",
+  "calc_mode": "CalcMode",
+  "uv_gap": "CorrectUVGapFlag",
+  "spread": "CorrectDuplicatedVerticesFlag",
+  "proxy": "via.render.ComputeSkinning",
+  "mesh": "Mesh"
+ },
+ "source": {
+  "captures": [
+   {
+    "capture": "faces.rdc",
+    "frames": [
+     {
+      "skinning": 354,
+      "area": 895,
+      "gather": 942,
+      "draw": 1080,
+      "spread": 964
+     },
+     {
+      "skinning": 359,
+      "area": 900,
+      "gather": 947,
+      "draw": 1091,
+      "spread": 969
+     },
+     {
+      "skinning": 364,
+      "area": 905,
+      "gather": 952,
+      "draw": 1102,
+      "spread": 974
+     }
+    ]
+   }
+  ],
+  "executable": "re2_dump.exe: via.render.Wrinkle drawImplement 0x7ff627a5d3a0, drawWrinkle 0x7ff627a5d6d0 (the setup on the first frame drawn, the frame's passes and their constants), createBuffers 0x7ff627a5c200, the fields' getters (README \"Wrinkle passes\"); faces.rdc's rest areas and duplicate lists reproduced bit for bit by these programs (scratch stage136)"
+ }
+}

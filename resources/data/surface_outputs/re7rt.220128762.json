@@ -1,0 +1,141 @@
+{
+ "format": 5,
+ "game": "RE7RT",
+ "resource_version": 220128762,
+ "layout": "via.render.layer.GBufferLayout",
+ "targets": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "tLinearImage",
+    "texSrc"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "Velocity"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "tLinearImage",
+    "texSrc"
+   ]
+  }
+ ],
+ "formats": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": false,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": false,
+   "format": 29,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": false
+  }
+ ],
+ "depth_formats": {
+  "gbuffer": 40,
+  "forward": 40
+ },
+ "engine_textures": [
+  {
+   "purpose": "gbuffer",
+   "name": "BlueNoise16",
+   "file": "systems/rendering/bluenoise16x16.tex"
+  }
+ ],
+ "source": {
+  "mmtr_files": 203,
+  "passes": {
+   "colour": 12545,
+   "depth": 36210,
+   "depth-prepass": 36100,
+   "forward": 117650,
+   "gbuffer": 140475,
+   "other": 11820,
+   "pick": 7320,
+   "shadow": 38310,
+   "stencil": 34100
+  },
+  "passes_beyond_slots": 0,
+  "captures": [
+   {
+    "capture": "newcap.rdc",
+    "api": "D3D12",
+    "draws": {
+     "forward": 28,
+     "gbuffer": 334
+    },
+    "shaders": {
+     "forward": 3,
+     "gbuffer": 13
+    },
+    "gbuffers": 1,
+    "engine_texture_draws": {
+     "gbuffer": 334,
+     "depth-prepass": 25
+    }
+   }
+  ],
+  "several_slots": [],
+  "several_slots_by_shader": [],
+  "several_formats": [],
+  "other_engine_textures": []
+ }
+}

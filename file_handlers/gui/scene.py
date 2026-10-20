@@ -9,11 +9,11 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterator
 
-from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
+lazy from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
 
-from .codec import parse_gui
-from .errors import GuiFormatError, GuiSceneError
-from .model import (
+lazy from .codec import parse_gui
+lazy from .errors import GuiFormatError, GuiSceneError
+lazy from .model import (
     ZERO_GUID,
     ChangeRecorder,
     GuiAnimation,
@@ -26,7 +26,7 @@ from .model import (
     iter_clip_nodes,
     resolve_properties,
 )
-from .profiles import GuiFormatProfile, gui_profile
+lazy from .profiles import GuiFormatProfile, gui_profile
 
 
 def normalize_gui_resource_path(value: str) -> str:

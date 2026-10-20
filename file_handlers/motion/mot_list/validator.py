@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ..errors import MotionValidationError
+lazy from ..errors import MotionValidationError
 from ..mot.model import Motion
 from ..mot.validator import MotV65Validator
 from ..mot_tree.model import MotTree

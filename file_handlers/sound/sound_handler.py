@@ -4,13 +4,13 @@ import weakref
 from pathlib import Path
 
 from file_handlers.base_handler import FileHandler
-from .bnk_parser import (
+lazy from .bnk_parser import (
     BnkEditModel,
     BnkParseResult,
     parse_soundbank,
     rewrite_soundbank,
 )
-from .sound_resources import resource_key
+lazy from .sound_resources import resource_key
 
 SOUND_MAGICS = frozenset({b"BKHD", b"AKPK", b"SBNK", b"SPCK"})
 
@@ -221,7 +221,8 @@ class SoundHandler(FileHandler):
             self._related_parses.pop(key, None)
         self._related_inputs[key] = value
 
-    def related_output_targets(self) -> dict[str, bytes]:
+    def related_output_targets(self, primary_path: str) -> dict[str, bytes]:
+        # ``primary_path`` is unused: the BNK/PCK companions' paths are relative to the project or natives root.
         if not self._related_outputs:
             return {}
         context = self.resource_context

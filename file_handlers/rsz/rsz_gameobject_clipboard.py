@@ -1,13 +1,14 @@
 import os
 import json
 import traceback
-from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
-from file_handlers.rsz.rsz_file import RszPrefabInfo
-from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
+import random
+lazy from PySide6.QtWidgets import QMessageBox, QLineEdit, QInputDialog
+lazy from file_handlers.rsz.rsz_file import RszPrefabInfo
+lazy from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.utils.rsz_guid_utils import handle_guid_mapping
-from file_handlers.rsz.utils.rsz_field_utils import iter_field_references, shift_references_above_threshold
+lazy from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+lazy from file_handlers.rsz.utils.rsz_guid_utils import handle_guid_mapping
+lazy from file_handlers.rsz.utils.rsz_field_utils import iter_field_references, shift_references_above_threshold
 from file_handlers.rsz.utils.rsz_gameobject_utils import (
     DEFAULT_GAMEOBJECT_NAME,
     add_guid_to_settings,
@@ -326,7 +327,6 @@ class RszGameObjectClipboard(RszClipboardBase):
         instance = RszGameObjectClipboard.get_instance()
         
         if randomize_ids:
-            import random
             context_id_offset = random.randint(20000, 20000000)
         else:
             context_id_offset = 0
@@ -1607,9 +1607,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                 print("Error: Root object not found in parsed elements")
                 return False
             
-            from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
             from file_handlers.rsz.rsz_data_types import ArrayData
-            import json
             
             exported_count = 0
             
@@ -1645,7 +1643,6 @@ class RszGameObjectClipboard(RszClipboardBase):
             
         except Exception as e:
             print(f"Error exporting user file data block: {e}")
-            import traceback
             traceback.print_exc()
             return False
     
@@ -1673,9 +1670,7 @@ class RszGameObjectClipboard(RszClipboardBase):
                 print("Error: Current root object not found")
                 return None
             
-            from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
             from file_handlers.rsz.rsz_data_types import ArrayData
-            import json
             
             imported_arrays = 0
             skipped_arrays = 0
@@ -1757,6 +1752,5 @@ class RszGameObjectClipboard(RszClipboardBase):
                 
         except Exception as e:
             print(f"Error importing user file data block: {e}")
-            import traceback
             traceback.print_exc()
             return None

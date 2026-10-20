@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Callable
 
 import numpy as np
 
-from file_handlers.lightprobe.data import LightProbeData
+lazy from file_handlers.lightprobe.data import LightProbeData
 
-
-# Captured probe shaders through PRB.11 test at most 199 tetrahedra per lookup.
-_RUNTIME_MAX_TETRA_STEPS = 199
-_TETRA_CORNER_TAGS = np.arange(4, dtype=np.uint32)
 
 _LEGACY_LPRB8_CUBE_TERM_INDICES = np.asarray(
     (
@@ -34,10 +29,6 @@ _LEGACY_LPRB8_CUBE_TERM_WEIGHTS = np.asarray(
     ),
     dtype=np.float32,
 )
-
-
-class ProbeShadingCancelled(RuntimeError):
-    """Raised when a in-progress probe shading request is superceded"""
 
 
 @dataclass(slots=True)
@@ -108,287 +99,6 @@ class SceneLightProbeSet:
                     colors[:, :3] = np.clip(colors[:, :3] * (0.7 / reference), 0.0, 1.0)
         return positions, colors
 
-    def shade_vertices(
-        self,
-        vertices: np.ndarray,
-        normals: np.ndarray | None,
-        *,
-        exposure: float = 0.035,
-        max_neighbor_steps: int = _RUNTIME_MAX_TETRA_STEPS,
-        exact_vertex_limit: int = 4096,
-        progress_callback: Callable[[int, int], None] | None = None,
-        cancel_requested: Callable[[], bool] | None = None,
-    ) -> np.ndarray:
-        points = np.asarray(vertices, dtype=np.float32).reshape(-1, 3)
-        normals_array = _normal_array(points, normals)
-        if len(points) > exact_vertex_limit:
-            return self._shade_vertices_chunked(
-                points,
-                normals_array,
-                exposure=exposure,
-                max_neighbor_steps=max_neighbor_steps,
-                progress_callback=progress_callback,
-                cancel_requested=cancel_requested,
-            )
-        return self._shade_vertices_exact(
-            points,
-            normals_array,
-            exposure=exposure,
-            max_neighbor_steps=max_neighbor_steps,
-            progress_callback=progress_callback,
-            cancel_requested=cancel_requested,
-        )
-
-    def _shade_vertices_exact(
-        self,
-        points: np.ndarray,
-        normals_array: np.ndarray,
-        *,
-        exposure: float,
-        max_neighbor_steps: int,
-        progress_callback: Callable[[int, int], None] | None,
-        cancel_requested: Callable[[], bool] | None,
-    ) -> np.ndarray:
-        colors = np.ones((len(points), 4), dtype=np.float32)
-        for index, (point, normal) in enumerate(zip(points, normals_array)):
-            if cancel_requested is not None and cancel_requested():
-                raise ProbeShadingCancelled()
-            rgb = self.sample_surface_rgb(point, normal, max_neighbor_steps=max_neighbor_steps)
-            if rgb is None:
-                colors[index, :3] = (0.05, 0.05, 0.06)
-            else:
-                colors[index, :3] = _tonemap_rgb(rgb, exposure)
-            completed = index + 1
-            if progress_callback is not None and (completed == len(points) or completed % 64 == 0):
-                progress_callback(completed, len(points))
-        return colors
-
-    def _shade_vertices_chunked(
-        self,
-        points: np.ndarray,
-        normals_array: np.ndarray,
-        *,
-        exposure: float,
-        max_neighbor_steps: int,
-        progress_callback: Callable[[int, int], None] | None,
-        cancel_requested: Callable[[], bool] | None,
-        chunk_size: int = 8192,
-    ) -> np.ndarray:
-        colors = np.ones((len(points), 4), dtype=np.float32)
-        probe_indices_by_tetra = self.tetra_probe_indices.reshape(-1, 4)
-        for start in range(0, len(points), chunk_size):
-            if cancel_requested is not None and cancel_requested():
-                raise ProbeShadingCancelled()
-            end = min(start + chunk_size, len(points))
-            self._shade_vertex_chunk(
-                points[start:end],
-                normals_array[start:end],
-                colors,
-                start=start,
-                exposure=exposure,
-                max_neighbor_steps=max_neighbor_steps,
-                probe_indices_by_tetra=probe_indices_by_tetra,
-                cancel_requested=cancel_requested,
-            )
-            if progress_callback is not None:
-                progress_callback(end, len(points))
-        return colors
-
-    def _shade_vertex_chunk(
-        self,
-        points: np.ndarray,
-        normals: np.ndarray,
-        colors: np.ndarray,
-        *,
-        start: int,
-        exposure: float,
-        max_neighbor_steps: int,
-        probe_indices_by_tetra: np.ndarray,
-        cancel_requested: Callable[[], bool] | None,
-    ) -> None:
-        initial_tetra = self._initial_tetra_indices(points)
-        valid_rows = np.flatnonzero(initial_tetra >= 0)
-        invalid_rows = np.flatnonzero(initial_tetra < 0)
-        if len(invalid_rows):
-            colors[start + invalid_rows, :3] = (0.05, 0.05, 0.06)
-        if not len(valid_rows):
-            return
-
-        tetra, weights = self._walk_tetra_rows(
-            points[valid_rows],
-            initial_tetra[valid_rows],
-            max_neighbor_steps=max_neighbor_steps,
-            cancel_requested=cancel_requested,
-        )
-        resolved = tetra >= 0
-        if np.any(~resolved):
-            colors[start + valid_rows[~resolved], :3] = (0.05, 0.05, 0.06)
-        if not np.any(resolved):
-            return
-
-        resolved_rows = valid_rows[resolved]
-        probe_indices = probe_indices_by_tetra[tetra[resolved]]
-        blended_terms = (
-            self.terms_rgb[probe_indices]
-            * weights[resolved, :, np.newaxis, np.newaxis]
-        ).sum(axis=1)
-        rgb = _sample_directional_rgb(blended_terms, normals[resolved_rows])
-        colors[start + resolved_rows, :3] = _tonemap_rgb_array(rgb, exposure)
-
-    def _walk_tetra_rows(
-        self,
-        points: np.ndarray,
-        tetra_indices: np.ndarray,
-        *,
-        max_neighbor_steps: int,
-        cancel_requested: Callable[[], bool] | None = None,
-    ) -> tuple[np.ndarray, np.ndarray]:
-        points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
-        current = np.asarray(tetra_indices, dtype=np.int64).reshape(-1).copy()
-        if len(current) != len(points):
-            raise ValueError("Point and tetrahedron row counts must match")
-        valid = (current >= 0) & (current < self.tetrahedron_count)
-        current[~valid] = -1
-        weights = np.zeros((len(points), 4), dtype=np.float32)
-        if not np.any(valid):
-            return current, weights
-
-        transforms = (
-            None
-            if self.tetra_transforms is None
-            else self.tetra_transforms.reshape(-1, 12)
-        )
-        probe_indices = self.tetra_probe_indices.reshape(-1, 4)
-        neighbors = self.tetra_neighbors.reshape(-1, 4)
-        active = valid.copy()
-        for _step in range(max(1, int(max_neighbor_steps))):
-            if cancel_requested is not None and cancel_requested():
-                raise ProbeShadingCancelled()
-            if not self._walk_active_tetra_rows(
-                points,
-                current,
-                weights,
-                active,
-                transforms=transforms,
-                probe_indices=probe_indices,
-                neighbors=neighbors,
-            ):
-                break
-        return current, weights
-
-    def _walk_active_tetra_rows(
-        self,
-        points: np.ndarray,
-        current: np.ndarray,
-        weights: np.ndarray,
-        active: np.ndarray,
-        *,
-        transforms: np.ndarray | None,
-        probe_indices: np.ndarray,
-        neighbors: np.ndarray,
-    ) -> bool:
-        rows = np.flatnonzero(active)
-        if not len(rows):
-            return False
-        tetra = current[rows]
-        if transforms is None:
-            row_weights = _tetra_weights_from_positions(
-                self.probe_positions[probe_indices[tetra]],
-                points[rows],
-            )
-        else:
-            row_weights = _tetra_weights_batch(transforms[tetra], points[rows])
-        weights[rows] = row_weights
-        min_corner, outside = _tetra_exit_rows(row_weights)
-        inside = ~outside
-        if np.any(inside):
-            active[rows[inside]] = False
-
-        outside_rows = rows[~inside]
-        if not len(outside_rows):
-            return True
-        next_tetra = neighbors[tetra[~inside], min_corner[~inside]].astype(
-            np.int64, copy=False
-        )
-        can_step = (next_tetra >= 0) & (next_tetra < self.tetrahedron_count)
-        if np.any(can_step):
-            current[outside_rows[can_step]] = next_tetra[can_step]
-        if np.any(~can_step):
-            current[outside_rows[~can_step]] = -1
-            active[outside_rows[~can_step]] = False
-        return True
-
-    def _initial_tetra_indices(self, points: np.ndarray) -> np.ndarray:
-        dim_x, dim_y, dim_z = self.grid_dimensions
-        cells = np.floor(
-            points * np.asarray(self.inv_cell_size, dtype=np.float32)
-            + np.asarray(self.grid_bias, dtype=np.float32)
-        ).astype(np.int64, copy=False)
-        valid = (
-            (cells[:, 0] >= 0)
-            & (cells[:, 1] >= 0)
-            & (cells[:, 2] >= 0)
-            & (cells[:, 0] < dim_x)
-            & (cells[:, 1] < dim_y)
-            & (cells[:, 2] < dim_z)
-        )
-        tetra_indices = np.full(len(points), -1, dtype=np.int64)
-        if not np.any(valid):
-            return tetra_indices
-        valid_rows = np.flatnonzero(valid)
-        linear_indices = (
-            cells[valid_rows, 0] * self.linear_x_stride
-            + cells[valid_rows, 1] * self.linear_y_stride
-            + cells[valid_rows, 2]
-        )
-        in_grid = (linear_indices >= 0) & (linear_indices < len(self.grid_indices))
-        if not np.any(in_grid):
-            return tetra_indices
-        rows = valid_rows[in_grid]
-        values = self.grid_indices[linear_indices[in_grid]].astype(np.int64, copy=False)
-        valid_values = (values != 0xFFFFFFFF) & (values >= 0) & (values < self.tetrahedron_count)
-        tetra_indices[rows[valid_values]] = values[valid_values]
-        return tetra_indices
-
-    def sample_surface_rgb(
-        self,
-        point: np.ndarray,
-        normal: np.ndarray,
-        *,
-        max_neighbor_steps: int = _RUNTIME_MAX_TETRA_STEPS,
-    ) -> tuple[float, float, float] | None:
-        result = self._find_tetra(point, max_neighbor_steps=max_neighbor_steps)
-        if result is None:
-            return None
-        tetra_index, weights = result
-        base = int(tetra_index) * 4
-        probe_indices = self.tetra_probe_indices[base:base + 4]
-        blended_terms = np.tensordot(weights, self.terms_rgb[probe_indices], axes=(0, 0))
-        rgb = _sample_directional_rgb(
-            blended_terms[np.newaxis, ...],
-            np.asarray(normal, dtype=np.float32).reshape(1, 3),
-        )[0]
-        return float(max(0.0, rgb[0])), float(max(0.0, rgb[1])), float(max(0.0, rgb[2]))
-
-    def _find_tetra(
-        self,
-        point: np.ndarray,
-        *,
-        max_neighbor_steps: int,
-    ) -> tuple[int, np.ndarray] | None:
-        points = np.asarray(point, dtype=np.float32).reshape(1, 3)
-        initial_tetra = self._initial_tetra_indices(points)
-        if initial_tetra[0] < 0:
-            return None
-        tetra, weights = self._walk_tetra_rows(
-            points,
-            initial_tetra,
-            max_neighbor_steps=max_neighbor_steps,
-        )
-        if tetra[0] < 0:
-            return None
-        return int(tetra[0]), weights[0]
-
 
 @dataclass(slots=True)
 class SceneLightProbeInstance:
@@ -397,16 +107,6 @@ class SceneLightProbeInstance:
     obbs: list[object]
     priority: int = 0
     intensity: float = 1.0
-
-
-def _normal_array(points: np.ndarray, normals: np.ndarray | None) -> np.ndarray:
-    fallback = np.array((0.0, 1.0, 0.0), dtype=np.float32)
-    if normals is None:
-        return np.tile(fallback, (len(points), 1))
-    normals_array = np.asarray(normals, dtype=np.float32).reshape(-1, 3)
-    if len(normals_array) != len(points):
-        return np.tile(fallback, (len(points), 1))
-    return normals_array
 
 
 def _normalize3_rows(values: np.ndarray) -> np.ndarray:
@@ -553,57 +253,6 @@ def _icosahedral_term_rows(normal: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     if np.any(fallback):
         weights[fallback] = np.array((1.0, 0.0, 0.0), dtype=np.float32)
     return term_indices, weights.astype(np.float32, copy=False)
-
-
-def _tetra_weights_batch(transforms: np.ndarray, points: np.ndarray) -> np.ndarray:
-    delta = points - transforms[:, (3, 7, 11)]
-    b0 = (transforms[:, 0:3] * delta).sum(axis=1)
-    b1 = (transforms[:, 4:7] * delta).sum(axis=1)
-    b2 = (transforms[:, 8:11] * delta).sum(axis=1)
-    return np.stack((b0, b1, b2, 1.0 - b0 - b1 - b2), axis=1).astype(np.float32, copy=False)
-
-
-def _tetra_weights_from_positions(
-    tetra_positions: np.ndarray,
-    points: np.ndarray,
-) -> np.ndarray:
-    """Rebuild PRB.11 barycentric coordinates as its captured shader does."""
-    positions = np.asarray(tetra_positions, dtype=np.float32).reshape(-1, 4, 3)
-    points = np.asarray(points, dtype=np.float32).reshape(-1, 3)
-    edge0 = positions[:, 0] - positions[:, 3]
-    edge1 = positions[:, 1] - positions[:, 3]
-    edge2 = positions[:, 2] - positions[:, 3]
-    delta = points - positions[:, 3]
-    cross12 = np.cross(edge1, edge2)
-    denominator = (edge0 * cross12).sum(axis=1)
-    with np.errstate(divide="ignore", invalid="ignore"):
-        b0 = (delta * cross12).sum(axis=1) / denominator
-        b1 = (delta * np.cross(edge2, edge0)).sum(axis=1) / denominator
-        b2 = (delta * np.cross(edge0, edge1)).sum(axis=1) / denominator
-    return np.stack((b0, b1, b2, 1.0 - b0 - b1 - b2), axis=1).astype(
-        np.float32,
-        copy=False,
-    )
-
-
-def _tetra_exit_rows(weights: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
-    """Recover the runtime's low-bit-tagged exit corner and outside mask."""
-    tagged_bits = (
-        np.asarray(weights, dtype=np.float32).view(np.uint32)
-        & np.uint32(0xFFFFFFFC)
-    ) | _TETRA_CORNER_TAGS
-    tagged_weights = tagged_bits.view(np.float32)
-    corners = np.argmin(tagged_weights, axis=1).astype(np.int64, copy=False)
-    minima = tagged_weights[np.arange(len(tagged_weights)), corners]
-    outside = np.isnan(minima) | (minima < np.float32(-0.0))
-    return corners, outside
-
-
-def _tonemap_rgb(rgb: tuple[float, float, float], exposure: float) -> np.ndarray:
-    values = np.maximum(np.asarray(rgb, dtype=np.float32), 0.0)
-    mapped = 1.0 - np.exp(-values * float(exposure))
-    mapped = np.clip(mapped, 0.0, 1.0) ** (1.0 / 2.2)
-    return mapped.astype(np.float32)
 
 
 def _tonemap_rgb_array(rgb: np.ndarray, exposure: float) -> np.ndarray:

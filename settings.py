@@ -38,12 +38,13 @@ DEFAULT_SETTINGS = {
     "ai_file_action_mode": "review",
     "ai_file_autopilot_trash": False,
     "show_rsz_advanced": True,
-    "game_version": "RE4",  # Default game version
+    "game_version": "RE4",
     "backup_on_save": True,
     "ui_language": "system",
     "translation_target_language": "en",
     "tree_highlight_color": "#00aaff",
     "vgmstream_cli_path": "",
+    "blender_path": "",
     "wwise_install_paths": {},
     "keyboard_shortcuts": {
         "file_open": "Ctrl+O",
@@ -82,6 +83,7 @@ DEFAULT_SETTINGS = {
     "last_seen_version": "",
     "enum_prompt_checked_json_path": "",
     "renderer_texture_quality": "balanced",
+    "renderer_antialiasing": True,
     "mesh_viewer_fps_limit": 60,
     "mesh_viewer_wireframe_mode": "off",
     "mesh_viewer_lighting_mode": "fixed",
@@ -89,6 +91,7 @@ DEFAULT_SETTINGS = {
     "mesh_viewer_ambient": 0.35,
     "mesh_viewer_diffuse": 0.65,
     "mesh_viewer_show_bones": False,
+    "parsed_shader_cache_mb": 2048,
 }
 
 
@@ -189,6 +192,9 @@ def normalize_settings(settings=None):
     normalized["ai_file_autopilot_trash"] = (
         normalized.get("ai_file_autopilot_trash") is True
     )
+    budget = normalized.get("parsed_shader_cache_mb")
+    if type(budget) is not int or budget < 0:
+        normalized["parsed_shader_cache_mb"] = DEFAULT_SETTINGS["parsed_shader_cache_mb"]
     return normalized
 
 
@@ -209,4 +215,17 @@ def save_settings(settings):
             json.dump(settings, f, indent=4)
     except IOError as e:
         print("Error saving settings:", e)
+
+
+def app_settings(app):
+    settings = getattr(app, "settings", None)
+    return settings if isinstance(settings, dict) else None
+
+
+def remember_setting(app, key, value):
+    settings = app_settings(app)
+    if settings is None or settings.get(key) == value:
+        return
+    settings[key] = value
+    save_settings(settings)
 

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from file_handlers.gcf.model import GcfData
-from file_handlers.uvs.uvs_file import UvsFile
-from utils.resource_file_utils import (
+lazy from file_handlers.gcf.model import GcfData
+lazy from file_handlers.uvs.uvs_file import UvsFile
+lazy from utils.resource_file_utils import (
     ResourceDataLoader,
     resource_path_with_version,
     resource_version_from_path,

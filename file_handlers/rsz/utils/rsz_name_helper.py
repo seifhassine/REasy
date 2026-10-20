@@ -1,27 +1,13 @@
-"""
-Helper class for managing instance names in RSZ files.
-
-This file contains utility methods to determine display names for:
-- GameObjects
-- Components
-- Folders
-- UserData
-- Any RSZ instance
-"""
-
-from file_handlers.rsz.rsz_data_types import StringData
+lazy from file_handlers.rsz.rsz_data_types import StringData
 
 
 class RszViewerNameHelper:
-    """Helper class for handling instance name resolution in RSZ files"""
-    
     def __init__(self, scn, type_registry):
         self.scn = scn
         self.type_registry = type_registry
         self._last_added_object = None
     
     def get_gameobject_name(self, instance_index, default_name):
-        """Get display name for a GameObject"""
         if instance_index is None:
             return default_name
             
@@ -29,7 +15,6 @@ class RszViewerNameHelper:
         return name if name else default_name
             
     def get_folder_name(self, folder_id, default_name):
-        """Get display name for a Folder"""
         if folder_id >= len(self.scn.object_table):
             return default_name
             
@@ -38,10 +23,8 @@ class RszViewerNameHelper:
         return name if name else default_name
 
     def get_instance_first_field_name(self, instance_id):
-        """Get name from first string field if available."""
         if instance_id in self.scn.parsed_elements:
             fields = self.scn.parsed_elements[instance_id]
-            # Get the first field that is a string
             for field_value in fields.values():
                 if isinstance(field_value, StringData):
                     return field_value.value.rstrip("\x00")
@@ -58,7 +41,6 @@ class RszViewerNameHelper:
         return f"Instance[{instance_id}]"
         
     def get_type_name_for_instance(self, instance_id):
-        """Get type name for an instance ID with optimized lookup"""
         if instance_id >= len(self.scn.instance_infos):
             return "Invalid ID"
         if (
@@ -76,7 +58,6 @@ class RszViewerNameHelper:
         )
         
     def get_userdata_display_value(self, ref_id):
-        """Get display value for UserData reference"""
         for rui in self.scn.rsz_userdata_infos:
             if rui.instance_id == ref_id:
                 return self.scn.get_rsz_userdata_string(rui)

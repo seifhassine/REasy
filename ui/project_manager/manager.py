@@ -2,13 +2,15 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import weakref
 from pathlib import Path
 from time import monotonic
 from urllib.parse import quote, unquote
 
 from PySide6.QtCore import (
     QModelIndex, QRect, QRegularExpression, QSize, QSortFilterProxyModel,
-    QStringListModel, QT_TRANSLATE_NOOP, QTimer, Qt, QUrl,
+    QStringListModel,
+    QT_TRANSLATE_NOOP, QTimer, Qt, QUrl,
     qInstallMessageHandler,
 )
 from PySide6.QtGui import (
@@ -23,17 +25,20 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from app_config import GAMES, GAME_NATIVE_PATHS
-from file_handlers.pak import scan_all_pak_files, scan_pak_files
-from file_handlers.pak.reader import CachedPakReader
-from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header
-from services.file_operations import FileOperationError, FolderFileOperations
-from tools.fluffy_exporter import create_fluffy_zip
-from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
-from utils.app_paths import application_root
+lazy from app_config import GAMES, GAME_NATIVE_PATHS
+lazy from file_handlers.pak import scan_all_pak_files, scan_pak_files
+lazy from file_handlers.pak.reader import CachedPakReader
+lazy from file_handlers.pak.utils import any_pak_modded, guess_extension_from_header, pak_mod_flags
+lazy from services.file_operations import FileOperationError, FolderFileOperations
+lazy from tools.fluffy_exporter import create_fluffy_zip
+lazy from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
+lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.qt_timers import call_later
+lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER, application_root
+lazy from utils.resource_file_utils import resource_key
 
-from .bookmark_panel import BookmarksPanel
-from .bookmarks import (
+lazy from .bookmark_panel import BookmarksPanel
+lazy from .bookmarks import (
     BOOKMARKS_PROJECT_NAME,
     BookmarksStore,
     ScopedBookmarksStore,
@@ -41,21 +46,21 @@ from .bookmarks import (
     project_bookmarks_path,
     resolve_filesystem_target,
 )
-from .constants import PROJECTS_ROOT
-from .delegate import _ActionsDelegate, _PakActionsDelegate
-from .dock_chrome import DockTitleBar, SideTab
-from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
-from .project_config import (
-    CONFIG_NAME,
+lazy from .constants import PROJECTS_ROOT
+lazy from .delegate import _ActionsDelegate, _PakActionsDelegate
+lazy from .dock_chrome import DockTitleBar, SideTab
+lazy from .pak_file_lists import choose_pak_list_file, find_default_pak_list_path, read_pak_list_file
+lazy from .project_config import (
     load_project_config,
     project_config_path,
     save_project_config,
     update_project_config,
 )
-from .project_settings_dialog import ProjectSettingsDialog
-from .rsz_jsons import resolve_rsz_json_path
-from .trees import _DndTree, _DropTree
-from .view_rail import ViewRail
+lazy from .project_settings_dialog import ProjectSettingsDialog
+lazy from .rsz_jsons import resolve_rsz_json_path
+lazy from .trees import PakPathModel, _DndTree, _DropTree
+lazy from .view_rail import ViewRail
+lazy from concurrent.futures import ThreadPoolExecutor
 
 def _custom_message_handler(mode, ctx, msg):
     if "QFileSystemWatcher: FindNextChangeNotification failed" in msg:
@@ -74,6 +79,8 @@ def _actual_mesh_path(path: str) -> str:
     return re.sub(r"(?i)(^|[\\/])streaming[\\/]", r"\1", path, count=1)
 
 def _safe_path(path, root=None):
+    if not path:
+        return None  # Path('') would resolve to the working directory.
     try:
         path = Path(path).expanduser().resolve(strict=True)
         path.relative_to(Path(root or path.anchor).resolve(strict=True))
@@ -114,6 +121,17 @@ class _LoadingSpinner(QWidget):
         p.drawArc(r, int((90 - self._angle) * 16), int(-110 * 16))
 
 
+def _read_project_sources(config) -> dict:
+    """Runs off the GUI thread, so it touches no widgets or project state."""
+    result = {key: str(_safe_path(config.get(key)) or '') for key in ('unpacked_dir', 'pak_game_dir', 'pak_list_path')}
+    paks = scan_all_pak_files(result['pak_game_dir']) if result['pak_game_dir'] else []
+    flags = [(path, pak_mod_flags(path)) for path in paks]
+    result['selected_paks'] = [path for path, flag in flags if not flag.is_payload]
+    result['modded'] = any(flag.is_payload or flag.has_invalidated for _, flag in flags)
+    result['base_paths'] = read_pak_list_file(result['pak_list_path']) if result['pak_list_path'] else []
+    return result
+
+
 class _ProjectFilesProxy(QSortFilterProxyModel):
     """Hide REasy's per-project files (config, bookmarks) from the Project Files tree."""
 
@@ -121,20 +139,12 @@ class _ProjectFilesProxy(QSortFilterProxyModel):
         model = self.sourceModel()
         if isinstance(model, QFileSystemModel):
             name = model.fileName(model.index(source_row, 0, source_parent))
-            if name in (CONFIG_NAME, BOOKMARKS_PROJECT_NAME, ".reasy"):
+            if name in (PROJECT_CONFIG_NAME, BOOKMARKS_PROJECT_NAME, PROJECT_METADATA_FOLDER):
                 return False
         return True
 
 
 class ProjectManager(QDockWidget):
-    """
-      • bookmarks.py       – bookmark model and persistence
-      • bookmark_dialog.py – bookmark metadata editor
-      • bookmark_panel.py  – bookmark browsing and editing UI
-      • constants.py       – paths and icons
-      • delegate.py        – item painting and actions
-      • trees.py           – drag/drop QTreeView subclasses
-    """
     PAK_HISTORY_PREFIX = "pak://"
     PROJECT_HISTORY_PREFIX = "project://"
 
@@ -156,6 +166,19 @@ class ProjectManager(QDockWidget):
         is_pak = entry.startswith(cls.PAK_HISTORY_PREFIX)
         return None, is_pak, entry[len(cls.PAK_HISTORY_PREFIX):] if is_pak else entry
 
+    @classmethod
+    def _tab_resource_path(cls, tab, project_dir: str) -> str:
+        current = str(getattr(tab, "filename", "") or "")
+        source = str(getattr(tab, "pak_source_path", "") or "")
+        if not current or resource_key(current) != resource_key(source):
+            return ""
+        if not os.path.isabs(current):
+            return current.replace("\\", "/")
+        root = os.path.abspath(project_dir or "")
+        if not os.path.abspath(current).startswith(root + os.sep):
+            return ""
+        return os.path.relpath(current, root).replace("\\", "/")
+
     def prepare_pak_tab_direct_save(self, tab, project_dir: str | None = None) -> bool:
         pak_source_path = tab.pak_source_path
         project_dir = project_dir or self.project_dir
@@ -171,7 +194,9 @@ class ProjectManager(QDockWidget):
             )
             return tab.on_save()
 
-        project_target = self._project_target(project_dir, pak_source_path)
+        project_target = self._project_target(
+            project_dir, self._tab_resource_path(tab, project_dir) or pak_source_path
+        )
         if os.path.abspath(getattr(tab, "filename", "") or "") == os.path.abspath(project_target):
             return True
 
@@ -239,10 +264,17 @@ class ProjectManager(QDockWidget):
     def _expected_native(self):        
         return GAME_NATIVE_PATHS.get(self.current_game or "", ())
     
+    @property
+    def app_win(self):
+        return self._app_win()
+
     def __init__(self, app_window, unpacked_root: str | None = None):
         super().__init__(self.tr("Project Browser"), app_window)
         self.setObjectName("projectBrowserDock")
-        self.app_win       = app_window
+        # Back-references to the window and dock are weak: strong ones would close a cycle only the GC frees, with
+        # Python-owned Qt objects in it.
+        self._app_win      = weakref.ref(app_window)
+        weak_self = weakref.ref(self)
         self.current_game  = getattr(app_window, "current_game", None)
         self.unpacked_dir  = os.path.abspath(unpacked_root) if unpacked_root else None
         self.pak_dir = None
@@ -258,7 +290,7 @@ class ProjectManager(QDockWidget):
         body_lay.setSpacing(0)
         self.view_rail = ViewRail(
             c,
-            accent_provider=lambda: QColor(self.app_win.settings.get("tree_highlight_color", "#00aaff")),
+            accent_provider=lambda: QColor(weak_self().app_win.settings.get("tree_highlight_color", "#00aaff")),
         )
         body_lay.addWidget(self.view_rail)
         page = QWidget(c)
@@ -343,7 +375,7 @@ class ProjectManager(QDockWidget):
 
         self._global_bookmarks_store = BookmarksStore(bookmarks_path(), parent=self)
         self.bookmarks = BookmarksPanel(
-            lambda: (self.current_game, self.project_dir),
+            lambda: (weak_self().current_game, weak_self().project_dir),
             c,
             store=self._global_bookmarks_store,
         )
@@ -354,13 +386,11 @@ class ProjectManager(QDockWidget):
         for b in (self.btn_conf, self.btn_zip, self.btn_pak):
             b.setEnabled(False)
             
-        # models + views -----------------------------------------------------
-        self.model_sys,  self.tree_sys  = QFileSystemModel(), _DndTree()
-        self.model_proj, self.tree_proj = QFileSystemModel(), _DropTree(self)
+        self.model_sys,  self.tree_sys  = QFileSystemModel(self), _DndTree()
+        self.model_proj, self.tree_proj = QFileSystemModel(self), _DropTree(self)
         self._proj_proxy = _ProjectFilesProxy(self)
         self._proj_proxy.setSourceModel(self.model_proj)
         self.tree_proj.hide()
-        # PAK tree (virtual)
         self.tree_pak = QTreeView()
         self.tree_pak.setUniformRowHeights(True)
         self.tree_pak.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -379,6 +409,7 @@ class ProjectManager(QDockWidget):
         self._pak_flat_model: QStringListModel | None = None
         self._proj_flat_model: QStandardItemModel | None = None
         self._project_load_ticket = 0
+        self._project_sources_jobs = BackgroundJobs(self)
         self._project_load_started_at = 0.0
         self._project_load_min_visible_ms = 300
         self._project_pak_states = {}
@@ -405,7 +436,6 @@ class ProjectManager(QDockWidget):
             hdr.setMinimumSectionSize(100)
             hdr.sectionResized.connect(self._on_section_resized)
 
-        # icon delegate
         self.tree_sys .setItemDelegateForColumn(0, _ActionsDelegate(self, False))
         self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
         # Hide dock toggle from global context menus
@@ -424,11 +454,13 @@ class ProjectManager(QDockWidget):
         self._title_bar = DockTitleBar(self)
         self.setTitleBarWidget(self._title_bar)
         self._side_tab = SideTab(self)
-        for signal in (self.visibilityChanged, self.topLevelChanged, self.dockLocationChanged):
+        # The area comes from the dock's own signal: a window deleted while shown hides the dock from its destructor,
+        # after its wrapper is gone.
+        for signal in (self.visibilityChanged, self.topLevelChanged):
             signal.connect(lambda *_: self._sync_dock_chrome())
+        self.dockLocationChanged.connect(self._on_dock_location_changed)
         self._sync_dock_chrome()
 
-        # double‑click open
         self.tree_sys.doubleClicked .connect(lambda idx: self._on_double(idx, False))
         self.tree_proj.doubleClicked.connect(lambda idx: self._on_double(idx, True))
         self.tree_pak.doubleClicked.connect(self._on_pak_double)
@@ -437,7 +469,6 @@ class ProjectManager(QDockWidget):
         lay.addWidget(self.tree_sys)
         lay.addWidget(self.tree_proj)
         lay.addWidget(self.tree_pak)
-        # Placeholders for missing configuration
         self.sys_placeholder = QLabel(self.tr("Please choose unpacked game directory using the Browse button above"))
         self.sys_placeholder.setAlignment(Qt.AlignCenter)
         self.sys_placeholder.setWordWrap(True)
@@ -479,25 +510,20 @@ class ProjectManager(QDockWidget):
         overlay_layout.addWidget(self.loading_card, alignment=Qt.AlignHCenter)
         overlay_layout.addStretch(1)
 
-        # View rail (top horizontal switcher; default to Project)
         self.view_rail.currentChanged.connect(self._switch_tab)
         self._switch_tab("proj")
 
-        # context menus
         self.tree_sys .customContextMenuRequested.connect(self._sys_menu)
         self.tree_proj.customContextMenuRequested.connect(self._proj_menu)
         self.tree_pak.customContextMenuRequested.connect(self._pak_menu)
 
-        # pre‑load unpacked root
         if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
             self._apply_unpacked_root(self.unpacked_dir)
-        # Initialize PAK controls state and placeholders
         self.bookmarks.changed.connect(self._on_bookmarks_changed)
         self._update_tab_controls_state()
         self._update_placeholders()
 
     def minimize_to_side_tab(self):
-        """Collapse into the edge tab; docks back first when floating."""
         if self.isFloating():
             self.redock()
         self._minimized = True
@@ -505,12 +531,8 @@ class ProjectManager(QDockWidget):
         self._sync_dock_chrome()
 
     def redock(self):
-        """Dock back into the main window at its last docked position.
-
-        Qt's setFloating(False) can leave the dock at its floating position
-        (over the central widget) when the main window layout fails to
-        re-activate; if that happens, re-apply the last healthy layout state.
-        """
+        """When the window layout fails to re-activate, Qt's setFloating(False) leaves the dock at its floating position
+        over the central widget."""
         if self.isFloating():
             self.setFloating(False)
             if not self._layout_sane():
@@ -526,7 +548,6 @@ class ProjectManager(QDockWidget):
             return
         self._restore_docked_layout()
         if not self._layout_sane():
-            # Never leave the browser unreachable: collapse to the side tab.
             self.minimize_to_side_tab()
 
     def _restore_docked_layout(self):
@@ -537,7 +558,7 @@ class ProjectManager(QDockWidget):
         self.raise_()
 
     def _apply_docked_size(self):
-        vertical = self._dock_area() in (Qt.TopDockWidgetArea, Qt.BottomDockWidgetArea)
+        vertical = self._last_area in (Qt.TopDockWidgetArea, Qt.BottomDockWidgetArea)
         self.app_win.resizeDocks(
             [self],
             [self._docked_size.height() if vertical else self._docked_size.width()],
@@ -566,16 +587,16 @@ class ProjectManager(QDockWidget):
         if not self._layout_sane():
             self._restore_docked_layout()
 
-    def _dock_area(self):
-        area = self.app_win.dockWidgetArea(self)
+    def _on_dock_location_changed(self, area):
+        # Floating reports NoDockWidgetArea.
         if area != Qt.NoDockWidgetArea:
             self._last_area = area
-        return self._last_area
+        self._sync_dock_chrome()
 
     def _sync_dock_chrome(self):
-        self._title_bar.sync(self.isFloating(), self._dock_area())
+        self._title_bar.sync(self.isFloating(), self._last_area)
         if self._minimized and not self.isVisible():
-            self._side_tab.set_area(self._dock_area())
+            self._side_tab.set_area(self._last_area)
             self._side_tab.show()
         else:
             self._minimized = False
@@ -584,10 +605,13 @@ class ProjectManager(QDockWidget):
             self._layout_state = self.app_win.saveState()
 
     def infer_project_game(self, project_path: Path | str) -> str | None:
-        """Return the associated game for *project_path* if it can be inferred."""
         path = Path(project_path).resolve()
 
         game_names = {game.upper(): game for game in GAMES}
+
+        candidate = load_project_config(path).get("game")
+        if isinstance(candidate, str) and candidate.upper() in game_names:
+            return game_names[candidate.upper()]
 
         parent_name = path.parent.name.upper()
         if parent_name in game_names:
@@ -602,17 +626,9 @@ class ProjectManager(QDockWidget):
             if candidate in game_names:
                 return game_names[candidate]
 
-        cfg = load_project_config(path)
-        candidate = cfg.get("game")
-        if isinstance(candidate, str):
-            candidate = candidate.upper()
-            if candidate in game_names:
-                return game_names[candidate]
-
         return None
 
     def _update_project_cfg(self, updates: dict):
-        """Merge updates into per-project config file if a project is active."""
         if not self.project_dir or not updates:
             return
         try:
@@ -904,6 +920,7 @@ class ProjectManager(QDockWidget):
             "filter_proxy": self._pak_filter_proxy,
             "filter_text": self.pak_filter_edit.text(),
             "index_dirty": self._pak_index_dirty,
+            "modded": self._mod_paks_found,
             "scroll_value": self.tree_pak.verticalScrollBar().value(),
             "signature": (self._path_key(self.pak_dir), signature),
         }
@@ -934,6 +951,7 @@ class ProjectManager(QDockWidget):
             self._pak_cached_reader = state.get("reader")
             self._pak_tree_model = state.get("tree_model")
             self._pak_filter_proxy = state.get("filter_proxy")
+            self._update_mod_warning(state.get("modded", False))
             self._pak_flat_model = self._pak_filter_proxy.sourceModel()
             self.unpacked_dir = unpacked_dir
             self._set_pak_list_display(self._pak_list_path)
@@ -973,7 +991,7 @@ class ProjectManager(QDockWidget):
                 obj.deleteLater()
 
     def set_project(self, proj_dir, on_loaded=None):
-        if self.project_dir and self.project_dir != proj_dir:
+        if self.project_dir:
             self._save_project_state()
         self.project_dir = proj_dir
         self._project_load_ticket += 1
@@ -996,6 +1014,7 @@ class ProjectManager(QDockWidget):
                 self._update_tab_controls_state()
                 self._update_placeholders()
                 self.bookmarks.refresh()
+                self._set_loading_overlay(False)
                 if on_loaded:
                     on_loaded()
                 return
@@ -1020,54 +1039,47 @@ class ProjectManager(QDockWidget):
     def _finish_project_load(self, ticket: int, proj_dir: str, on_loaded=None):
         if ticket != self._project_load_ticket or self.project_dir != proj_dir:
             return
-        try:
-            if not self.current_game:
-                inferred = self.infer_project_game(proj_dir)
-                if inferred:
-                    self.current_game = inferred
-            if self.current_game:
-                self._update_project_cfg({"game": self.current_game})
+        if not self.current_game:
+            self.current_game = self.infer_project_game(proj_dir)
+        if self.current_game:
+            self._update_project_cfg({"game": self.current_game})
+        self._set_loading_overlay(True, self.tr("Loading PAK sources..."))
+        config = load_project_config(proj_dir)
+        self._project_sources_jobs.start(
+            lambda: _read_project_sources(config),
+            lambda result: self._project_sources_ready(ticket, proj_dir, on_loaded, result, ""),
+            lambda error: self._project_sources_ready(ticket, proj_dir, on_loaded, None, error))
 
-            cfg = load_project_config(proj_dir)
-            if cfg:
-                udir = _safe_path(cfg.get("unpacked_dir"))
-                if udir and udir.is_dir():
-                    self.unpacked_dir = str(udir)
-                    self.model_sys.setRootPath(self.unpacked_dir)
-                    self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
-                self._update_path_label()
-                gdir = _safe_path(cfg.get("pak_game_dir"))
-                path = _safe_path(cfg.get("pak_list_path"))
-                pak_state_changed = False
-                if gdir and gdir.is_dir():
-                    self.pak_dir = str(gdir)
-                    self._update_path_label()
-                    self._set_loading_overlay(True, self.tr("Loading PAKs..."))
-                    self._scan_paks(rebuild=False)
-                    pak_state_changed = True
-                if path and path.is_file():
-                    self._pak_list_path = str(path)
-                    self._set_pak_list_display(str(path))
-                    self._set_loading_overlay(True, self.tr("Loading PAK list..."))
-                    self._load_pak_list_file(str(path), rebuild=False)
-                    pak_state_changed = True
-                if pak_state_changed:
-                    self._pak_index_dirty = True
-                    if self._active_tab == "pak":
-                        self._set_loading_overlay(True, self.tr("Preparing PAK list..."))
-                    self._prepare_pak_index()
-        except Exception:
-            pass
+    def _project_sources_ready(self, ticket, proj_dir, on_loaded, result, error: str):
+        if ticket != self._project_load_ticket or self.project_dir != proj_dir:
+            return
+        try:
+            if error:
+                raise OSError(error)
+            self.unpacked_dir = result['unpacked_dir'] or None
+            if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
+                self.model_sys.setRootPath(self.unpacked_dir)
+                self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+            self.pak_dir = result['pak_game_dir'] or None
+            self._pak_list_path = result['pak_list_path'] or None
+            self._pak_selected_paks = result['selected_paks']
+            self._pak_base_paths = result['base_paths']
+            self._set_pak_list_display(self._pak_list_path)
+            self._update_mod_warning(result['modded'])
+            self._pak_index_dirty = True
+            self._update_path_label()
+            self._prepare_pak_index()
+        except Exception as error:
+            QMessageBox.warning(self, self.tr("Project sources failed"), str(error))
         finally:
-            is_current = ticket == self._project_load_ticket and self.project_dir == proj_dir
-            if is_current:
-                self.tree_pak.setEnabled(True)
-                self._update_tab_controls_state()
-                self.bookmarks.refresh()
+            self.tree_pak.setEnabled(True)
+            self._update_tab_controls_state()
+            self.bookmarks.refresh()
             self._hide_loading_overlay(ticket)
             self._update_placeholders()
-            if is_current and on_loaded:
+            if on_loaded:
                 on_loaded()
+
     def _hide_loading_overlay(self, ticket: int):
         if ticket != self._project_load_ticket:
             return
@@ -1090,9 +1102,12 @@ class ProjectManager(QDockWidget):
     def _refresh_mod_warning(self):
         try:
             candidates = scan_all_pak_files(self.pak_dir) if self.pak_dir else ()
-        except Exception:
+        except OSError:
             candidates = ()
-        self._mod_paks_found = any_pak_modded(candidates)
+        self._update_mod_warning(any_pak_modded(candidates))
+
+    def _update_mod_warning(self, modded):
+        self._mod_paks_found = modded
         if self._mod_paks_found:
             self.mod_warning.setText(self.tr(
                 "⚠ Modded PAKs detected in the game folder (mod payloads or "
@@ -1158,6 +1173,10 @@ class ProjectManager(QDockWidget):
             self._rebuild_pak_index()
 
     def _rebuild_pak_index(self, *, verify_paths: bool = True):
+        if self._pak_flat_model is not None:
+            self._pak_filter_proxy.setSourceModel(None)
+            self._pak_flat_model.deleteLater()
+            self._pak_flat_model = None
         
         if not self._pak_selected_paks:
             
@@ -1209,8 +1228,8 @@ class ProjectManager(QDockWidget):
         selected = list(self._pak_selected_paks)
         if r is None or not r.matches_source(selected, game=self.current_game):
             r = CachedPakReader.from_paks(selected, game=self.current_game)
-        base_paths = list(self._pak_base_paths or [])
         if not r.cache_ready or (full_cache and not r.cache_complete):
+            base_paths = list(self._pak_base_paths or [])
             r.prepare(base_paths, full=full_cache)
         self._pak_cached_reader = r
         return r
@@ -1261,36 +1280,9 @@ class ProjectManager(QDockWidget):
         return state
 
     def _build_pak_tree_model(self, paths: list[str]):
-        model = QStandardItemModel()
-        model.setHorizontalHeaderLabels([self.tr("Paths")])
-        
-        root: dict[str, dict] = {}
-        for p in sorted(set(paths)):
-            parts = p.split('/')
-            node = root
-            for part in parts:
-                node = node.setdefault(part, {})
-                
         style = self.style()
-        dir_icon  = style.standardIcon(QStyle.SP_DirIcon)
-        file_icon = style.standardIcon(QStyle.SP_FileIcon)
-        
-        def build(parent, node, prefix=""):
-            for name, child in node.items():
-                item = QStandardItem(name)
-                item.setEditable(False)
-                full = prefix + name
-                if child:
-                    item.setIcon(dir_icon)
-                    
-                    item.setData(full + "/", Qt.UserRole + 2)
-                    parent.appendRow(item)
-                    build(item, child, full + "/")
-                else:
-                    item.setIcon(file_icon)
-                    item.setData(full, Qt.UserRole + 1)
-                    parent.appendRow(item)
-        build(model.invisibleRootItem(), root, "")
+        model = PakPathModel(paths, style.standardIcon(QStyle.SP_DirIcon),
+                             style.standardIcon(QStyle.SP_FileIcon))
         self.tree_pak.setModel(model)
         self._pak_tree_model = model
 
@@ -1306,11 +1298,10 @@ class ProjectManager(QDockWidget):
                 self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
             return
 
-        if self._pak_flat_model is None:
-            self._pak_flat_model = QStringListModel(self)
         if not self._pak_population_paths:
             self._pak_population_paths = list(self._pak_all_paths or [])
-        self._pak_flat_model.setStringList(self._pak_population_paths)
+        if self._pak_flat_model is None:
+            self._pak_flat_model = QStringListModel(self._pak_population_paths, self)
 
         proxy = self._pak_filter_proxy
         proxy.setSourceModel(self._pak_flat_model)
@@ -1621,7 +1612,6 @@ class ProjectManager(QDockWidget):
         return scope, rel, root, self.current_game or ""
 
     def _show_proj_tree(self):
-        """Attach the project filesystem model and restore the tree view."""
         self.tree_proj.setModel(self._proj_proxy)
         self.tree_proj.hideColumn(1)
         self.tree_proj.hideColumn(2)
@@ -1677,7 +1667,7 @@ class ProjectManager(QDockWidget):
         old_model = self.model_proj
         old_model.setOption(QFileSystemModel.DontWatchForChanges, True)
 
-        self.model_proj = QFileSystemModel()
+        self.model_proj = QFileSystemModel(self)
         self.model_proj.setRootPath(self.project_dir or "")
         self._proj_proxy.setSourceModel(self.model_proj)
         self._show_proj_tree()
@@ -1707,14 +1697,7 @@ class ProjectManager(QDockWidget):
         if path and os.path.isfile(path):
             self._open_in_editor(path, warn_project_copy=not in_project)
 
-    # ---- bookmarks ------------------------------------------------------
     def _apply_bookmarks_store(self, proj_dir) -> None:
-        """Bind bookmarks to the project's file plus the shared game-keyed store.
-
-        The dock is only ever used with an active project, so there is no
-        no-project fallback: PAK/unpacked bookmarks live in the shared store
-        and follow the game into every project.
-        """
         if not proj_dir:
             return
         path = project_bookmarks_path(proj_dir)
@@ -1724,7 +1707,6 @@ class ProjectManager(QDockWidget):
         )
 
     def _reveal_pak_folder(self, path: str) -> bool:
-        """Switch to the PAK tree and reveal/select the folder prefix *path*."""
         if not self._pak_base_paths:
             return False
         self._switch_tab("pak")
@@ -1753,7 +1735,6 @@ class ProjectManager(QDockWidget):
         return True
 
     def _reveal_filesystem_folder(self, target: str, scope: str) -> bool:
-        """Switch to the matching tab and reveal/select a folder in its tree."""
         if scope == "project":
             self._switch_tab("proj")
             if self.proj_filter_edit.text().strip():
@@ -1845,8 +1826,8 @@ class ProjectManager(QDockWidget):
             g = combo.itemText(idx)
             hint = "/".join(GAME_NATIVE_PATHS.get(g, ()))
             info_lbl.setText(self.tr(
-                "Expected sub‑folder for <b>{game}</b>: <code>{folder}</code>"
-                "<br>Note: Make sure your directory contains that folder."
+                "Expected sub‑folder for <b>{game}</b>: <code>{folder}</code><br>Your directory must contain that "
+                "folder."
             ).format(game=g, folder=hint or self.tr("‑‑ any ‑‑")))
         _upd(0)
         combo.currentIndexChanged.connect(_upd)
@@ -1854,7 +1835,6 @@ class ProjectManager(QDockWidget):
         return combo.currentText() if dlg.exec() == QDialog.Accepted else None
     
     def _on_section_resized(self, logical_index: int, old_size: int, new_size: int):
-        """Handle manual column resizing with minimum width enforcement."""
         if logical_index != 0:
             return
         
@@ -1938,7 +1918,7 @@ class ProjectManager(QDockWidget):
             except (TypeError, ValueError):
                 pass
         if state.get("minimized"):
-            QTimer.singleShot(0, self.minimize_to_side_tab)
+            call_later(self, 0, self.minimize_to_side_tab)
 
     def _state_key_for_index(self, tree, index) -> str:
         if not index.isValid():
@@ -1952,20 +1932,20 @@ class ProjectManager(QDockWidget):
         if model is None:
             return []
         result = []
-
-        def visit(parent):
-            if len(result) >= limit:
-                return
-            for row in range(model.rowCount(parent)):
-                index = model.index(row, 0, parent)
-                if not index.isValid() or not tree.isExpanded(index):
-                    continue
-                if key := self._state_key_for_index(tree, index):
-                    result.append(key)
-                visit(index)
-
-        visit(tree.rootIndex())
+        self._collect_expanded_keys(tree, model, tree.rootIndex(), result, limit)
         return result
+
+    def _collect_expanded_keys(self, tree, model, parent, result: list[str], limit: int) -> None:
+        # A method: a nested function calling itself is a reference cycle, holding this dock until the GC runs.
+        if len(result) >= limit:
+            return
+        for row in range(model.rowCount(parent)):
+            index = model.index(row, 0, parent)
+            if not index.isValid() or not tree.isExpanded(index):
+                continue
+            if key := self._state_key_for_index(tree, index):
+                result.append(key)
+            self._collect_expanded_keys(tree, model, index, result, limit)
 
     def _restore_expanded_keys(self, tree, keys) -> None:
         if not isinstance(keys, list):
@@ -2069,7 +2049,6 @@ class ProjectManager(QDockWidget):
         mods_folder = base_dir  / "Mods"
         mods_folder.mkdir(parents=True, exist_ok=True)
 
-        from ui.project_manager.manager import quitely_get_pak_name
         project_dir = self.project_dir
         pak_name = quitely_get_pak_name(Path(project_dir)) or Path(project_dir).name
         if not pak_name.lower().endswith(".pak"):
@@ -2087,31 +2066,35 @@ class ProjectManager(QDockWidget):
         dlg.resize(600, 400)
         dlg.show()
 
-        from concurrent.futures import ThreadPoolExecutor
         exec_ = ThreadPoolExecutor(max_workers=1)
 
         def _work():
             return run_packer(project_dir, str(dest_path))
 
         fut = exec_.submit(_work)
+        # A child timer polls: a self-rescheduling function would be a reference cycle holding this dock until the GC
+        # runs.
+        poll_timer = QTimer(dlg)
+        poll_timer.setInterval(150)
 
         def _poll():
-            if fut.done():
-                code, out = fut.result()
-                bar.hide()
-                log.append(out)
-                if code == 0:
-                    self._show_export_done_dialog(
-                        self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path),
-                        dest_path,
-                    )
-                else:
-                    QMessageBox.critical(self, self.tr("Error"),
-                                         self.tr("PAK packer returned an error."))
+            if not fut.done():
+                return
+            poll_timer.stop()
+            code, out = fut.result()
+            bar.hide()
+            log.append(out)
+            if code == 0:
+                self._show_export_done_dialog(
+                    self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path),
+                    dest_path,
+                )
             else:
-                QTimer.singleShot(150, self, _poll)
+                QMessageBox.critical(self, self.tr("Error"),
+                                     self.tr("PAK packer returned an error."))
 
-        QTimer.singleShot(100, self, _poll)
+        poll_timer.timeout.connect(_poll)
+        poll_timer.start()
         
 def quitely_get_pak_name(project_dir: Path) -> str | None:
     return load_project_config(project_dir).get("pak_name")

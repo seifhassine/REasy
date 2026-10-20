@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from .data import LightProbeData
-from .lprb_parser import parse_lprb
-from .prb_parser import parse_prb
+lazy from .data import LightProbeData
+lazy from .lprb_parser import parse_lprb
+lazy from .prb_parser import parse_prb
 
 
 def parse_light_probe_data(

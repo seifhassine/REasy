@@ -1,0 +1,1896 @@
+{
+ "format": 5,
+ "game": "DD2",
+ "resource_version": 260511270,
+ "layout": "via.render.layer.GBufferLayout",
+ "targets": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV",
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "SrcTexture",
+    "imgSrc",
+    "luminanceTex"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ]
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ]
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "SrcTexture",
+    "imgSrc",
+    "luminanceTex"
+   ],
+   "shader": "6def3fcf291ea72816161afc9c896ce300b56d01f22c23a1ad9419c2270e1693"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "5ae58b10b505e4245ac3252a82062bbec91e30ab8f836b1c75108a519de97e21"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "6def3fcf291ea72816161afc9c896ce300b56d01f22c23a1ad9419c2270e1693"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "78d4d665cbd240b4400166a56d16c58aef3fc57c68c9a564a0b887146c0f9a92"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "89789007e4516c37ca98d28af36147858fb35dec1a2ed667d17410eded53f926"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "8f6ef844481ed56fa752a14f1be6114a7bb06287421acd1d92c704850086a640"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "b79d0693c8bf77f4ae20d3fd2d4762e9af13323c70cb4ded8bbae6218b0df362"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "e15068a070db57f4f3484e70f0946b0f1ac41850e6a9da5c5453372363db9b2e"
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ],
+   "shader": "f9c6143242ccad58035afe9ccdf8a14fc22e121d7fd5f335d92af39ffe0416d4"
+  },
+  {
+   "purpose": "forward",
+   "target": 2,
+   "slot": "",
+   "read_as": [
+    "TransparentSSRDepthSRV"
+   ]
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "0f5b2dc1e42890a846b67d288c4a1da6a889f61fb06f6f12017da5bf704cee7c"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "10a8dadcc5cbebe84e5a5949fd79a99d7f26a9cb946da5d7cb90dc441fbc7188"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "1115ab41cb0537ba218d104209277354626e80f60ea63a88986f9f0d57bb65ab"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "1507030a10cfecbb759cbcb7ece5093c03c0246ba8699aa3d2d5917dfb041669"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "15cec4b8b6ff831cef4fce637e56d9678dace73b10dadbccb7cb1a460a694e1d"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "19d4238cf094353c11bf40528a2c9e86e92775330edf5aba7c282610f88a9210"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "1d4c94a335d81729102f19f3dcd9a4e8071137e7de97dfb9a603af3e901e1199"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "1eabf716e4e8b4b9343fae3e9ed5ebb74aaccddcca3ded5a6aa97dba4d7c112f"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "2293b6a039445b0a73eb8f3a67bccc1fc4e242e459f0e8ac17646ac581ba44b6"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "28229e4415f9061855715d77d72cf6df7bc707c3bfe4c6c237888181a47943c2"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "2aa6d67f9764fd8b9e11d406bf82b132d088e510e3d7410216bdad2a642affda"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "2ee8bcea20374bfe174002d942e8ee3b1de412721e5904e909d94e5a8f0b481f"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibleSRV"
+   ],
+   "shader": "2f9023f75a82c6a173abc300efa8056ca2ee91fbb64170404bd988cf8ec45f8c"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "303af8b1ff0b219c9eeac494abc5ea6f33aee7c6efbc55a734bbe68e801df5b1"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "35043791ff510cc4de5fbfb9b2d01471fb635867a1dca45ebfec001630dd60f1"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "3afb030d2c7c9790bd3154a468ae13d9d3578ee64c1c0fb32356220309a30606"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "4119215f3bfb0c621d6a7848d992aaab7b5844a56d4d521bfc962afa6d8d28d6"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "4876c68c633d041a368f810302707bd841866b4ffec9493be56600df69c3fd4f"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "50a3fba27ca274a62e2a50c47f7ee34086f10d05514a4e3bb303666fbd5a91fc"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "526d72aa7a54e61c04dcdf2de028dc124589871ba2fb9018e0bb74d8a38ce148"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "57a88d4984ac3fe61dc4782b47ddf83b21ecc940c9f45bc6f8ab2e6baefe190b"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "CustomMaterialFog0Texture"
+   ],
+   "shader": "5e32066a0003fb326039713cd07615cdebccc37ffaca40c43837699f49c8ef39"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "6f356f3d94f885aaa91783af617fa69f6d3c99f1d8fb577813e8b6f8dbf10a14"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "73f7066d0400f224e6bfd3554b64c88826cefb8c13202ac4ab03dc0259f94e68"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "773b635f054289a0278b8dfb942f63375a2851458623df09c3d16fccf44c26f5"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibleSRV"
+   ],
+   "shader": "7ce7350a518847b177bcc51be503790ea911f1e0c213a91cd4d84ca525b59155"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "8006ee4517a40bfce4b8a28753083e60ff650f727c1e42b9bbed2de09bc8125c"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "86c01ec2595a4ecebbb134e7ed1c99f3811de2ab679043ca0e1119b78e037729"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "8a183888c51d542a0c21ed90ee2c243fbddf855135e7d9d8dce70a32bbe8d6cd"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "8b1c4881ad2b53a0c03cd34ab33963b469d881c0d0a2482d736412b4ea8d09d3"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "8d1b3cf06c82cb577f6e2a0a17bb274fd88af4be176e1394b2cd421538047dff"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "92e9ddae20d8f2ba6144cbe00af11a76179096bc1d7f7a7ccf3b8c9562ea7d73"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "9641ffbe543de99409b13b21ab8372d2a3bd3228986090e3fbda0ef9bedd7bd9"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "9c9b5e3390575ea14853af6009c020e1c53a123e79447da1d9d24e533ba62867"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "ba00695638269b99bc7c21d1b992078dec841420b19808b1b8150316746c9365"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "be333be6409fb30788ff4d12fc67fdb348bfc66772066466d6f106f860fa3678"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "bfdba6f3fd047e53322e7d90b69c233b5473b6b0a6767928c2e1900007061145"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "c15f302c18eddaab9155035b4743379839aec34cc560b16e8f824b0d968c75f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "c39cd73f2146005493fe74290a47fb77322a759dba60bd54c64cd7135147efab"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "c7f5c95e47d68f50e7018bffb675affa014005d53a5cadcb82d15c0ae77d6abb"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "GUIImage"
+   ],
+   "shader": "ce071d10f65f7853b19bbade3abfa7349795a6e600005a37833eabd56b391f28"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "cfb1675fa3d0695c165ad26e6f5643f435b583969c1fac25bf84fccc76d5ed0e"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "d2561ab348234ee781fd5277985f4fef166b1bd2e0c34888fcd8eab952a6d634"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "d503ad823462a8d9693919c4e51c649bf7df361e2aaa488161670344656b7984"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "HDRImage",
+    "RE_POSTPROCESS_Color",
+    "SrcTexture",
+    "imgSrc",
+    "luminanceTex"
+   ],
+   "shader": "d7c47538915699eee1e2c6699b12376aa4373b3d4666a82e7e0727c4ef715ac1"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "defb6509d7f9b274799dda719400b0747c5747318212900c15b7f4ccbee122f4"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "e515efa178d53f470b2249005cf2a9df7b3684914a3c98eb2595ff3c013c441a"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "e55a7e94f06d4276bdc391d53b236311a4c63065713a68838e60192273680970"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "CustomMaterialFog0Texture"
+   ],
+   "shader": "e59c420ba1c85169bd14b02e3011a3f997a91ecbd6871d6d559a4b559a9165bc"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "CustomMaterialFog0Texture"
+   ],
+   "shader": "f2962521bb390ec7270d139e1807c3bd9596876481c1cd6072c977a1d75e8bf1"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibleSRV"
+   ],
+   "shader": "f35995adb70bf5b44509721a84f299b1ab1b87d7a845a6a83f6aacbb4b25d71e"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "f6bc53789992151b64030a5e363ef70ab95639312f3f204f58f492f3e0871f9b"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "PreLighting",
+   "read_as": [
+    "ModifiedGBufferSRV"
+   ],
+   "shader": "fc6a980fb1f3beef4e592a0a1b3ceaa566a97b1305bd8bf51f09d6a62acd6c21"
+  },
+  {
+   "purpose": "colour",
+   "target": 0,
+   "slot": "",
+   "read_as": [
+    "VisibilityBuffer",
+    "GroundFlagsAndDepthPerPixelSrv",
+    "DepthVisibilityBuffer"
+   ],
+   "shader": "fe40bc3c91c9d1a6079f31600a9004ef0f84bccd8d6a747fab05e4555c21f866"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "0f5b2dc1e42890a846b67d288c4a1da6a889f61fb06f6f12017da5bf704cee7c"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "10a8dadcc5cbebe84e5a5949fd79a99d7f26a9cb946da5d7cb90dc441fbc7188"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "1507030a10cfecbb759cbcb7ece5093c03c0246ba8699aa3d2d5917dfb041669"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "15cec4b8b6ff831cef4fce637e56d9678dace73b10dadbccb7cb1a460a694e1d"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "19d4238cf094353c11bf40528a2c9e86e92775330edf5aba7c282610f88a9210"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "1eabf716e4e8b4b9343fae3e9ed5ebb74aaccddcca3ded5a6aa97dba4d7c112f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "2293b6a039445b0a73eb8f3a67bccc1fc4e242e459f0e8ac17646ac581ba44b6"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "28229e4415f9061855715d77d72cf6df7bc707c3bfe4c6c237888181a47943c2"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "2aa6d67f9764fd8b9e11d406bf82b132d088e510e3d7410216bdad2a642affda"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "2ee8bcea20374bfe174002d942e8ee3b1de412721e5904e909d94e5a8f0b481f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_1"
+   ],
+   "shader": "2f9023f75a82c6a173abc300efa8056ca2ee91fbb64170404bd988cf8ec45f8c"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "3afb030d2c7c9790bd3154a468ae13d9d3578ee64c1c0fb32356220309a30606"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "3d3a732542fd40521fd3e05cb5e4ceee362c303bfa3a79232045722a20f91e59"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "4119215f3bfb0c621d6a7848d992aaab7b5844a56d4d521bfc962afa6d8d28d6"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "466dd75a8662e71df22118d0253b1db32424dd70ca75ceb3845c471397b82254"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "4876c68c633d041a368f810302707bd841866b4ffec9493be56600df69c3fd4f"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "50a3fba27ca274a62e2a50c47f7ee34086f10d05514a4e3bb303666fbd5a91fc"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "526d72aa7a54e61c04dcdf2de028dc124589871ba2fb9018e0bb74d8a38ce148"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "57a88d4984ac3fe61dc4782b47ddf83b21ecc940c9f45bc6f8ab2e6baefe190b"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "CustomMaterialFog1Texture"
+   ],
+   "shader": "5e32066a0003fb326039713cd07615cdebccc37ffaca40c43837699f49c8ef39"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "6f356f3d94f885aaa91783af617fa69f6d3c99f1d8fb577813e8b6f8dbf10a14"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "73f7066d0400f224e6bfd3554b64c88826cefb8c13202ac4ab03dc0259f94e68"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "773b635f054289a0278b8dfb942f63375a2851458623df09c3d16fccf44c26f5"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_1"
+   ],
+   "shader": "7ce7350a518847b177bcc51be503790ea911f1e0c213a91cd4d84ca525b59155"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "8006ee4517a40bfce4b8a28753083e60ff650f727c1e42b9bbed2de09bc8125c"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "86c01ec2595a4ecebbb134e7ed1c99f3811de2ab679043ca0e1119b78e037729"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "8a183888c51d542a0c21ed90ee2c243fbddf855135e7d9d8dce70a32bbe8d6cd"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "8b1c4881ad2b53a0c03cd34ab33963b469d881c0d0a2482d736412b4ea8d09d3"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "8d1b3cf06c82cb577f6e2a0a17bb274fd88af4be176e1394b2cd421538047dff"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "90337eef23789a50cc1947b0a891360429fed73454037ef64ad49c6f08a7e9eb"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "92e9ddae20d8f2ba6144cbe00af11a76179096bc1d7f7a7ccf3b8c9562ea7d73"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "9641ffbe543de99409b13b21ab8372d2a3bd3228986090e3fbda0ef9bedd7bd9"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "9c9b5e3390575ea14853af6009c020e1c53a123e79447da1d9d24e533ba62867"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "ba00695638269b99bc7c21d1b992078dec841420b19808b1b8150316746c9365"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "be333be6409fb30788ff4d12fc67fdb348bfc66772066466d6f106f860fa3678"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "bfdba6f3fd047e53322e7d90b69c233b5473b6b0a6767928c2e1900007061145"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "c15f302c18eddaab9155035b4743379839aec34cc560b16e8f824b0d968c75f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "c39cd73f2146005493fe74290a47fb77322a759dba60bd54c64cd7135147efab"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "c7f5c95e47d68f50e7018bffb675affa014005d53a5cadcb82d15c0ae77d6abb"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "cfb1675fa3d0695c165ad26e6f5643f435b583969c1fac25bf84fccc76d5ed0e"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "d2561ab348234ee781fd5277985f4fef166b1bd2e0c34888fcd8eab952a6d634"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "d503ad823462a8d9693919c4e51c649bf7df361e2aaa488161670344656b7984"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "d7c47538915699eee1e2c6699b12376aa4373b3d4666a82e7e0727c4ef715ac1"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "defb6509d7f9b274799dda719400b0747c5747318212900c15b7f4ccbee122f4"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "e515efa178d53f470b2249005cf2a9df7b3684914a3c98eb2595ff3c013c441a"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "e55a7e94f06d4276bdc391d53b236311a4c63065713a68838e60192273680970"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "CustomMaterialFog1Texture"
+   ],
+   "shader": "e59c420ba1c85169bd14b02e3011a3f997a91ecbd6871d6d559a4b559a9165bc"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "CustomMaterialFog1Texture"
+   ],
+   "shader": "f2962521bb390ec7270d139e1807c3bd9596876481c1cd6072c977a1d75e8bf1"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_1"
+   ],
+   "shader": "f35995adb70bf5b44509721a84f299b1ab1b87d7a845a6a83f6aacbb4b25d71e"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "f6bc53789992151b64030a5e363ef70ab95639312f3f204f58f492f3e0871f9b"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "BaseColorMetallicTranslucency",
+   "read_as": [
+    "BaseColorMetallicSRV"
+   ],
+   "shader": "fc6a980fb1f3beef4e592a0a1b3ceaa566a97b1305bd8bf51f09d6a62acd6c21"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [
+    "g_lit_scene_transparent"
+   ],
+   "shader": "fdf0f67d166d228622931d5424656cb16636f94164bcc5b73cf72ce4e37406da"
+  },
+  {
+   "purpose": "colour",
+   "target": 1,
+   "slot": "",
+   "read_as": [],
+   "shader": "fe40bc3c91c9d1a6079f31600a9004ef0f84bccd8d6a747fab05e4555c21f866"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "10a8dadcc5cbebe84e5a5949fd79a99d7f26a9cb946da5d7cb90dc441fbc7188"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "15cec4b8b6ff831cef4fce637e56d9678dace73b10dadbccb7cb1a460a694e1d"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "2293b6a039445b0a73eb8f3a67bccc1fc4e242e459f0e8ac17646ac581ba44b6"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "28229e4415f9061855715d77d72cf6df7bc707c3bfe4c6c237888181a47943c2"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "2aa6d67f9764fd8b9e11d406bf82b132d088e510e3d7410216bdad2a642affda"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "2ee8bcea20374bfe174002d942e8ee3b1de412721e5904e909d94e5a8f0b481f"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "3afb030d2c7c9790bd3154a468ae13d9d3578ee64c1c0fb32356220309a30606"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "",
+   "read_as": [
+    "TransparentSSRDepthSRV"
+   ],
+   "shader": "3d3a732542fd40521fd3e05cb5e4ceee362c303bfa3a79232045722a20f91e59"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "",
+   "read_as": [
+    "TransparentSSRDepthSRV"
+   ],
+   "shader": "466dd75a8662e71df22118d0253b1db32424dd70ca75ceb3845c471397b82254"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "4876c68c633d041a368f810302707bd841866b4ffec9493be56600df69c3fd4f"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "50a3fba27ca274a62e2a50c47f7ee34086f10d05514a4e3bb303666fbd5a91fc"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "526d72aa7a54e61c04dcdf2de028dc124589871ba2fb9018e0bb74d8a38ce148"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "57a88d4984ac3fe61dc4782b47ddf83b21ecc940c9f45bc6f8ab2e6baefe190b"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "73f7066d0400f224e6bfd3554b64c88826cefb8c13202ac4ab03dc0259f94e68"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "773b635f054289a0278b8dfb942f63375a2851458623df09c3d16fccf44c26f5"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "8006ee4517a40bfce4b8a28753083e60ff650f727c1e42b9bbed2de09bc8125c"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "8a183888c51d542a0c21ed90ee2c243fbddf855135e7d9d8dce70a32bbe8d6cd"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "8b1c4881ad2b53a0c03cd34ab33963b469d881c0d0a2482d736412b4ea8d09d3"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "8d1b3cf06c82cb577f6e2a0a17bb274fd88af4be176e1394b2cd421538047dff"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "90337eef23789a50cc1947b0a891360429fed73454037ef64ad49c6f08a7e9eb"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "9641ffbe543de99409b13b21ab8372d2a3bd3228986090e3fbda0ef9bedd7bd9"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "9c9b5e3390575ea14853af6009c020e1c53a123e79447da1d9d24e533ba62867"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "ba00695638269b99bc7c21d1b992078dec841420b19808b1b8150316746c9365"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "be333be6409fb30788ff4d12fc67fdb348bfc66772066466d6f106f860fa3678"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "bfdba6f3fd047e53322e7d90b69c233b5473b6b0a6767928c2e1900007061145"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "c15f302c18eddaab9155035b4743379839aec34cc560b16e8f824b0d968c75f9"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "c39cd73f2146005493fe74290a47fb77322a759dba60bd54c64cd7135147efab"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "c7f5c95e47d68f50e7018bffb675affa014005d53a5cadcb82d15c0ae77d6abb"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "cfb1675fa3d0695c165ad26e6f5643f435b583969c1fac25bf84fccc76d5ed0e"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "d503ad823462a8d9693919c4e51c649bf7df361e2aaa488161670344656b7984"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "",
+   "read_as": [
+    "TransparentSSRDepthSRV"
+   ],
+   "shader": "d7c47538915699eee1e2c6699b12376aa4373b3d4666a82e7e0727c4ef715ac1"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "defb6509d7f9b274799dda719400b0747c5747318212900c15b7f4ccbee122f4"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "e55a7e94f06d4276bdc391d53b236311a4c63065713a68838e60192273680970"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "f6bc53789992151b64030a5e363ef70ab95639312f3f204f58f492f3e0871f9b"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "NormalXNormalYRoughnessMisc",
+   "read_as": [
+    "NormalXNormalYRoughnessMiscSRV",
+    "g_normal_roughness_source_0"
+   ],
+   "shader": "fc6a980fb1f3beef4e592a0a1b3ceaa566a97b1305bd8bf51f09d6a62acd6c21"
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "slot": "",
+   "read_as": [
+    "TransparentSSRDepthSRV"
+   ],
+   "shader": "fdf0f67d166d228622931d5424656cb16636f94164bcc5b73cf72ce4e37406da"
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "slot": "OcclusionSSSSSVelocityXVelocityYMisc",
+   "read_as": [
+    "VelocityXVelocityYOcclusionSubSurfaceSRV",
+    "g_motion_vector"
+   ]
+  }
+ ],
+ "formats": [
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": false,
+   "format": 29,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 1,
+   "blending": true,
+   "format": 29,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 2,
+   "blending": true,
+   "format": 24,
+   "over_unblended": true
+  },
+  {
+   "purpose": "gbuffer",
+   "target": 3,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": false,
+   "format": 26,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 0,
+   "blending": true,
+   "format": 26,
+   "over_unblended": true
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 1,
+   "blending": true,
+   "format": 10,
+   "over_unblended": false
+  },
+  {
+   "purpose": "forward",
+   "target": 2,
+   "blending": true,
+   "format": 54,
+   "over_unblended": false
+  },
+  {
+   "purpose": "colour",
+   "target": 2,
+   "blending": false,
+   "format": 24,
+   "over_unblended": false
+  },
+  {
+   "purpose": "colour",
+   "target": 3,
+   "blending": false,
+   "format": 13,
+   "over_unblended": false
+  }
+ ],
+ "depth_formats": {
+  "gbuffer": 20,
+  "forward": 20
+ },
+ "engine_textures": [
+  {
+   "purpose": "gbuffer",
+   "name": "BlueNoise16",
+   "file": "systems/rendering/bluenoise16x16.tex"
+  },
+  {
+   "purpose": "gbuffer",
+   "name": "BlueNoise32",
+   "file": "systems/rendering/bluenoise.tex"
+  },
+  {
+   "purpose": "gbuffer",
+   "name": "WindNoise",
+   "file": "systems/rendering/speedtreegamewindnoise.tex"
+  },
+  {
+   "purpose": "depth-prepass",
+   "name": "BlueNoise32",
+   "file": "systems/rendering/bluenoise.tex"
+  },
+  {
+   "purpose": "depth-prepass",
+   "name": "WindNoise",
+   "file": "systems/rendering/speedtreegamewindnoise.tex"
+  }
+ ],
+ "source": {
+  "mmtr_files": 818,
+  "passes": {
+   "colour": 430778,
+   "depth": 78616,
+   "depth-prepass": 84620,
+   "forward": 389080,
+   "gbuffer": 236488,
+   "other": 576,
+   "pick": 26736,
+   "shadow": 91772,
+   "stencil": 76216
+  },
+  "passes_beyond_slots": 0,
+  "captures": [
+   {
+    "capture": "DD2_frame18254.rdc",
+    "api": "D3D12",
+    "draws": {
+     "colour": 83,
+     "forward": 21,
+     "gbuffer": 290
+    },
+    "shaders": {
+     "colour": 51,
+     "forward": 7,
+     "gbuffer": 23
+    },
+    "gbuffers": 1,
+    "engine_texture_draws": {
+     "gbuffer": 290,
+     "depth-prepass": 94
+    }
+   },
+   {
+    "capture": "DD2_frame6935.rdc",
+    "api": "D3D12",
+    "draws": {
+     "colour": 103,
+     "forward": 63,
+     "gbuffer": 1634
+    },
+    "shaders": {
+     "colour": 57,
+     "forward": 8,
+     "gbuffer": 43
+    },
+    "gbuffers": 2,
+    "engine_texture_draws": {
+     "gbuffer": 1634,
+     "depth-prepass": 699
+    }
+   }
+  ],
+  "several_slots": [
+   {
+    "purpose": "forward",
+    "target": 0,
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 1,
+    "slots": [
+     "",
+     "OcclusionSSSSSVelocityXVelocityYMisc"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 1,
+    "slots": [
+     "",
+     "BaseColorMetallicTranslucency"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 2,
+    "slots": [
+     "",
+     "NormalXNormalYRoughnessMisc"
+    ]
+   }
+  ],
+  "several_slots_by_shader": [
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "5ae58b10b505e4245ac3252a82062bbec91e30ab8f836b1c75108a519de97e21",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "78d4d665cbd240b4400166a56d16c58aef3fc57c68c9a564a0b887146c0f9a92",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "89789007e4516c37ca98d28af36147858fb35dec1a2ed667d17410eded53f926",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "8f6ef844481ed56fa752a14f1be6114a7bb06287421acd1d92c704850086a640",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "b79d0693c8bf77f4ae20d3fd2d4762e9af13323c70cb4ded8bbae6218b0df362",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "e15068a070db57f4f3484e70f0946b0f1ac41850e6a9da5c5453372363db9b2e",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "forward",
+    "target": 0,
+    "shader": "f9c6143242ccad58035afe9ccdf8a14fc22e121d7fd5f335d92af39ffe0416d4",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "shader": "3d3a732542fd40521fd3e05cb5e4ceee362c303bfa3a79232045722a20f91e59",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "shader": "466dd75a8662e71df22118d0253b1db32424dd70ca75ceb3845c471397b82254",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "shader": "90337eef23789a50cc1947b0a891360429fed73454037ef64ad49c6f08a7e9eb",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "shader": "fdf0f67d166d228622931d5424656cb16636f94164bcc5b73cf72ce4e37406da",
+    "slots": [
+     "",
+     "PreLighting"
+    ]
+   }
+  ],
+  "several_formats": [
+   {
+    "purpose": "colour",
+    "target": 0,
+    "blending": false,
+    "formats": [
+     17,
+     24
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 0,
+    "blending": true,
+    "formats": [
+     26,
+     29,
+     85
+    ],
+    "over_unblended": [
+     false
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 1,
+    "blending": false,
+    "formats": [
+     17,
+     29
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 1,
+    "blending": true,
+    "formats": [
+     10,
+     24,
+     26,
+     29
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": 2,
+    "blending": true,
+    "formats": [
+     24,
+     54
+    ],
+    "over_unblended": [
+     null
+    ]
+   },
+   {
+    "purpose": "colour",
+    "target": "depth",
+    "formats": [
+     20,
+     40,
+     55
+    ]
+   }
+  ],
+  "other_engine_textures": [
+   {
+    "purpose": "gbuffer",
+    "name": "GroomingTexSRV",
+    "files": [],
+    "other_contents": true
+   },
+   {
+    "purpose": "depth-prepass",
+    "name": "GroomingTexSRV",
+    "files": [],
+    "other_contents": true
+   }
+  ]
+ }
+}

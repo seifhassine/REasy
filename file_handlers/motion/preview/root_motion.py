@@ -2,16 +2,19 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
+lazy import numpy as np
+
 from ..evaluation.composition import compose_evaluated_pose
 from ..evaluation.math3d import (
     inverse_quaternion,
     multiply_quaternions,
 )
 from ..evaluation.model import (
+    ROTATION,
+    TRANSLATION,
     EvaluatedPose,
     Quaternion,
     Rig,
-    Transform,
 )
 from ..runtime.model import RuntimeRootMotionMode
 
@@ -37,56 +40,31 @@ def apply_runtime_root_motion(
         and completed_cycles == 0
     ):
         return pose
-    roots = tuple(
-        index
-        for index, joint in enumerate(rig.joints)
-        if joint.parent_index is None
-    )
-    local = list(pose.local_transforms)
+    roots = np.flatnonzero(rig.parents < 0)
+    local = pose.local.copy()
     if mode is RuntimeRootMotionMode.NONE:
-        for index in roots:
-            local[index] = Transform(
-                scale=local[index].scale,
-            )
+        local[roots, TRANSLATION] = 0.0
+        local[roots, ROTATION] = (0.0, 0.0, 0.0, 1.0)
     elif mode is RuntimeRootMotionMode.CONTINUANCE:
-        if completed_cycles:
-            if cycle_start is None or cycle_end is None:
-                raise ValueError(
-                    "continuance root motion requires cycle endpoints"
-                )
-            for index in roots:
-                current = local[index]
-                start = cycle_start.local_transforms[index]
-                end = cycle_end.local_transforms[index]
-                cycle_rotation = multiply_quaternions(
-                    inverse_quaternion(start.rotation),
-                    end.rotation,
-                )
-                partial_rotation = multiply_quaternions(
-                    inverse_quaternion(start.rotation),
-                    current.rotation,
-                )
-                local[index] = Transform(
-                    tuple(
-                        value + completed_cycles * (stop - begin)
-                        for value, begin, stop in zip(
-                            current.translation,
-                            start.translation,
-                            end.translation,
-                        )
-                    ),
-                    multiply_quaternions(
-                        multiply_quaternions(
-                            start.rotation,
-                            _quaternion_power(
-                                cycle_rotation,
-                                completed_cycles,
-                            ),
-                        ),
-                        partial_rotation,
-                    ),
-                    current.scale,
-                )
+        if cycle_start is None or cycle_end is None:
+            raise ValueError(
+                "continuance root motion requires cycle endpoints"
+            )
+        for index in roots:
+            current = local[index]
+            start = cycle_start.local[index]
+            end = cycle_end.local[index]
+            undone = inverse_quaternion(start[ROTATION])
+            cycle_rotation = multiply_quaternions(undone, end[ROTATION])
+            partial_rotation = multiply_quaternions(undone, current[ROTATION])
+            current[ROTATION] = multiply_quaternions(
+                multiply_quaternions(
+                    start[ROTATION],
+                    _quaternion_power(cycle_rotation, completed_cycles),
+                ),
+                partial_rotation,
+            )
+            current[TRANSLATION] += completed_cycles * (end[TRANSLATION] - start[TRANSLATION])
     else:
         raise ValueError(
             f"{mode.label} root-motion evaluation is not established"

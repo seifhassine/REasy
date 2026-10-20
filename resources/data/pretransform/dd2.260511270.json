@@ -1,0 +1,67 @@
+{
+ "format": 2,
+ "game": "DD2",
+ "resource_version": 260511270,
+ "target": 2,
+ "source_holds_indices": true,
+ "destination_holds_buffer": true,
+ "blend": {
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentStandard"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalCluster"
+ },
+ "write_excluding_edge": null,
+ "write_by_submesh": true,
+ "skinning": [
+  "PreTransformSkinningOptionalBufferCS",
+  "PreTransformSkinningOptionalBufferVFXCS"
+ ],
+ "skin_by_range": true,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "source": {
+  "captures": [
+   {
+    "capture": "DD2_frame18254.rdc",
+    "draws": []
+   },
+   {
+    "capture": "DD2_frame6935.rdc",
+    "draws": []
+   },
+   {
+    "capture": "DD2_frame226100.rdc",
+    "draws": [
+     11370,
+     11421
+    ]
+   },
+   {
+    "capture": "DD2_frame227197.rdc",
+    "draws": [
+     12054,
+     12121
+    ]
+   }
+  ],
+  "executable": "DD2_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
+ }
+}

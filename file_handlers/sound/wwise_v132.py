@@ -1837,7 +1837,7 @@ def set_v132_fields(payload: bytes, layout: WwiseObjectLayout, changes: dict[str
             except (KeyError, struct.error) as exc:
                 raise ValueError(f"Invalid value for {path}: {raw_value}") from exc
         result[field.offset:field.offset + field.size] = packed
-    return bytes(result)
+    return result.take_bytes()
 
 
 set_wwise_fields = set_v132_fields

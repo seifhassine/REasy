@@ -4,13 +4,10 @@ PySide6_Essentials
 shiboken6
 PyInstaller
 requests
-firebase-admin
-#NodeGraphQt
 zstandard
 mmh3
+xxhash
 texture2ddecoder
-PyOpenGL
-PyOpenGL_accelerate
 numpy
 capstone
 pefile

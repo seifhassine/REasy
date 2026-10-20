@@ -8,17 +8,17 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.enums import PropertyType
 
-from ..adapter import GuiPreviewControl, GuiPreviewOption, GuiPreviewScenario
-from ..scene import GuiScene, normalize_gui_resource_path
-from .controllers import (
+lazy from ..adapter import GuiPreviewControl, GuiPreviewOption, GuiPreviewScenario
+lazy from ..scene import GuiScene, normalize_gui_resource_path
+lazy from .controllers import (
     Dmc5ControllerHost,
     Dmc5GuiControllerContext,
     Dmc5PreviewState,
 )
-from .playback import DMC5_SEGMENT_VALUES, dmc5_control_defaults
-from .property_codec import encode_dmc5_gui_value
+lazy from .playback import DMC5_SEGMENT_VALUES, dmc5_control_defaults
+lazy from .property_codec import encode_dmc5_gui_value
 
 
 _CONTROL_FIELDS = (
@@ -219,9 +219,8 @@ def _property_controls(
     records = {
         prop.name: prop
         for prop in (
-            item
+            *scene.property_records(node, name)
             for name in node.properties
-            for item in scene.property_records(node, name)
         )
         if prop.name not in _IDENTITY_FIELDS and prop.name not in _CONTROL_FIELDS
     }

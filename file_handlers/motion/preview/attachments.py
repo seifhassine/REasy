@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.rsz.scn_scene_attachments import (
+lazy from file_handlers.rsz.scn_scene_attachments import (
     ScnAnimatedRigPose,
     ScnJointAttachmentResult,
     resolve_joint_attachments,
 )
-from file_handlers.rsz.scn_scene_graph import (
+lazy from file_handlers.rsz.scn_scene_graph import (
     ScnObjectId,
     ScnRenderableMesh,
     ScnSceneGraph,
@@ -58,7 +58,7 @@ class MotionSceneAttachmentResolver:
             raise ValueError(
                 "motion attachment target rig contains duplicate joint names"
             )
-        self._root_by_joint = rig.root_indices
+        self._root_by_joint = np.asarray(rig.root_indices, dtype=np.int64)
 
     def resolve(
         self,
@@ -67,24 +67,14 @@ class MotionSceneAttachmentResolver:
         if snapshot.joint_names != self._joint_names:
             raise ValueError("motion snapshot does not match the attachment target rig")
 
-        matrices = np.asarray(
-            snapshot.pose.world_matrices,
-            dtype=np.float32,
-        ).reshape(-1, 4, 4).copy()
+        matrices = snapshot.pose.world.astype(np.float32)
         if (
             len(matrices) != len(self._rig.joints)
             or not np.isfinite(matrices).all()
         ):
             raise ValueError("motion snapshot has invalid joint world matrices")
-
-        root_deltas = dict(snapshot.root_deltas)
-        for joint_index, root_index in enumerate(self._root_by_joint):
-            delta = root_deltas.get(root_index)
-            if delta is not None:
-                matrices[joint_index, 3, :3] -= np.asarray(
-                    delta,
-                    dtype=np.float32,
-                )
+        for root, delta in snapshot.root_deltas:
+            matrices[self._root_by_joint == root, 3, :3] -= np.asarray(delta, dtype=np.float32)
 
         column_matrices = matrices.transpose(0, 2, 1)
         pose = ScnAnimatedRigPose(

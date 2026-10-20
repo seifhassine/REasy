@@ -4,7 +4,7 @@ import copy
 from dataclasses import dataclass
 from typing import Any, Callable, Iterable
 
-from PySide6.QtCore import QCoreApplication
+lazy from PySide6.QtCore import QCoreApplication
 
 
 class AssistantToolError(ValueError):

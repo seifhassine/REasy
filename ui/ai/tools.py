@@ -10,22 +10,22 @@ import tempfile
 from functools import partial
 from inspect import signature
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Iterable
+from typing import Any, Callable, Iterable
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QTimer, Qt
 
-from app_config import GAMES
-from services.ai.mdf_merge_planner import (
+lazy from app_config import GAMES
+lazy from services.ai.mdf_merge_planner import (
     MISSING as _MISSING,
     merge_equal as _merge_equal,
     plan_three_way_merge as _plan_three_way_merge,
 )
-from ui.ai.action_feedback import AiActionFeedback
-from ui.ai.action_policy import (
+lazy from ui.ai.action_feedback import AiActionFeedback
+lazy from ui.ai.action_policy import (
     AiActionPolicy,
     AiChangeDecision,
 )
-from ui.ai.file_migration import migrate_file_jobs_steps
+lazy from ui.ai.file_migration import migrate_file_jobs_steps
 from ui.ai.file_tools import (
     FILE_MANAGEMENT_ASSISTANT_PROMPT,
     FILE_MANAGEMENT_CAPABILITY,
@@ -33,14 +33,14 @@ from ui.ai.file_tools import (
     file_management_prompt_matches,
     file_tool_definitions,
 )
-from ui.ai.tool_registry import (
+lazy from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
     ToolSchemaContext,
     tool as _tool,
     translate_tool_text as _tr,
 )
-from ui.ai.update_reports import FileUpdateReport, UpdateReportCollector
+lazy from ui.ai.update_reports import FileUpdateReport, UpdateReportCollector
 from ui.ai.msg_tools import (
     MSG_ASSISTANT_CAPABILITY_PROMPT,
     MSG_CAPABILITY,
@@ -59,11 +59,11 @@ from ui.ai.rsz_tools import (
     rsz_prompt_matches,
     rsz_tool_definitions,
 )
-from ui.project_manager.constants import PROJECTS_ROOT
-from ui.project_manager.project_picker_dialog import discover_projects
+lazy from ui.project_manager.constants import PROJECTS_ROOT
+lazy from ui.project_manager.project_picker_dialog import discover_projects
 
-if TYPE_CHECKING:
-    from file_handlers.mdf.mdf_viewer import MdfViewer
+lazy from file_handlers.mdf.mdf_viewer import MdfViewer
+lazy from file_handlers.mdf.mdf_file import MatData, transparent_priority_bias
 
 
 AI_ASSISTANT_BASE_PROMPT = """\
@@ -1606,7 +1606,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "upsert_mdf_texture",
-                "Append or replace one texture row through the visible Textures table.",
+                "Append or replace one texture row through the visible Textures table. The texture role must match the assigned MMTR.",
                 {
                     "material": _MATERIAL,
                     "index": _INDEX,
@@ -1624,7 +1624,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "delete_mdf_texture",
-                "Delete one texture row through the visible Textures table.",
+                "Delete one texture row through the visible Textures table. Normal materials should keep the texture roles required by their assigned MMTR.",
                 {"material": _MATERIAL, "index": {"type": "integer", "minimum": 0}},
                 ["material", "index"],
                 activity=(
@@ -1636,7 +1636,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "upsert_mdf_parameter",
-                "Append or replace one parameter row through the visible Parameters table.",
+                "Append or replace one parameter row through the visible Parameters table. Normal parameter-structure changes should use Create Variant so the MMTR ABI is synchronized automatically.",
                 {
                     "material": _MATERIAL,
                     "index": _INDEX,
@@ -1659,7 +1659,7 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "delete_mdf_parameter",
-                "Delete one parameter row through the visible Parameters table.",
+                "Delete one parameter row through the visible Parameters table. Normal parameter removal should use Create Variant so the MMTR ABI remains synchronized.",
                 {"material": _MATERIAL, "index": {"type": "integer", "minimum": 0}},
                 ["material", "index"],
                 activity=(
@@ -1917,8 +1917,6 @@ class ReasyAssistantTools(
         )
 
     def authorize_tool_json(self, name: str, arguments_json: str) -> bool:
-        """Ask before an  AI action writes persistent data."""
-
         definition = self.tool_definition(name)
         if definition is None or not definition.persistent:
             return True
@@ -2427,9 +2425,7 @@ class ReasyAssistantTools(
                 for tab in session.tabs:
                     append(tab, session)
 
-        # Direct-open and detached tabs normally belong to the scratch session.
-        # Include UI-owned tabs as a fallback so assistant access does not depend
-        # on a project/session bookkeeping detail.
+        # Also list the UI's own tabs, in case a direct-open or detached tab is in no session.
         tab_lookup = getattr(self.app, "tabs", {})
         extra_tabs = list(tab_lookup.values()) if hasattr(tab_lookup, "values") else []
         extra_tabs.append(active_tab)
@@ -3164,8 +3160,6 @@ class ReasyAssistantTools(
 
     @staticmethod
     def _mdf_for_tab(tab) -> tuple[Any, MdfViewer]:
-        from file_handlers.mdf.mdf_viewer import MdfViewer
-
         if tab is None or not isinstance(getattr(tab, "viewer", None), MdfViewer):
             raise AssistantToolError(
                 _tr(
@@ -3225,9 +3219,9 @@ class ReasyAssistantTools(
         viewer.materials_table.selectRow(index)
         viewer._current_index = index
         section_indexes = {
-            "overview": 0,
-            "textures": 1,
-            "parameters": 2,
+            "overview": viewer.overview_tab_idx,
+            "textures": viewer.textures_tab_idx,
+            "parameters": viewer.params_tab_idx,
             "gpu_buffers": viewer.gpbf_tab_idx,
             "shader_lods": viewer.shaderLODRedirects_tab_idx,
         }
@@ -3267,8 +3261,7 @@ class ReasyAssistantTools(
         if version >= 31:
             for bit, name in enumerate(viewer._flags3_names):
                 flags[name] = bool((raw >> (32 + bit)) & 1)
-            bias = (raw >> 40) & 0xFF
-            flags["transparent_priority_bias"] = bias - 256 if bias >= 128 else bias
+            flags["transparent_priority_bias"] = transparent_priority_bias(raw)
         return flags
 
     @staticmethod
@@ -4288,7 +4281,6 @@ class ReasyAssistantTools(
         if 0 <= current_index < len(materials):
             selected_name = materials[current_index].header.mat_name.casefold()
         materials[:] = desired
-        viewer._clear_params_cache()
         viewer._refresh_materials_list()
         if materials:
             selected_index = next(
@@ -4323,8 +4315,6 @@ class ReasyAssistantTools(
         if insert_at == len(viewer.handler.mdf.materials):
             self._add_mdf_material(name)
         else:
-            from file_handlers.mdf.mdf_file import MatData
-
             blank = MatData()
             blank.header.mat_name = viewer._generate_unique_material_name(
                 "Material",

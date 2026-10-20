@@ -1,0 +1,1263 @@
+{
+ "format": 6,
+ "game": "RE3RT",
+ "resource_version": 2109101635,
+ "master_target": 3,
+ "source": {
+  "sdf_files": 76,
+  "ocio_configurations": 0,
+  "captures": [
+   {
+    "capture": "newcap.rdc",
+    "events": [
+     5189,
+     5402,
+     6829,
+     6834,
+     6873,
+     6894,
+     7430,
+     7460
+    ],
+    "programs": {
+     "5189": [
+      "GBufferEmissiveDecode"
+     ],
+     "5402": [
+      "FastScreenSpaceSubsurfaceScatteringParam",
+      "FastScreenSpaceSubsurfaceScatteringParam",
+      "FastScreenSpaceSubsurfaceScatteringParam",
+      "FastScreenSpaceSubsurfaceScatteringParam",
+      "FastScreenSpaceSubsurfaceScatteringParam"
+     ],
+     "6829": [
+      "DeferredLightSingleWithSSSSSMask",
+      "DeferredLightSingleWithSSSSSMask",
+      "DeferredLightSingleWithSSSSSMask"
+     ],
+     "6834": [
+      "DeferredLightWithSSSSSMask",
+      "DeferredLightWithSSSSSMask",
+      "DeferredLightWithSSSSSMask"
+     ],
+     "6873": [
+      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask"
+     ],
+     "6894": [
+      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
+      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask"
+     ],
+     "7430": [
+      "LDRPostProcessWithTonemapC4L3Section"
+     ],
+     "7460": [
+      "ScreenOutputSRGB"
+     ]
+    },
+    "files": {
+     "6829 LightCullingVolumeSRV": [],
+     "6829 AmbientBRDF": [
+      "systems/rendering/newambientbrdf.tex"
+     ],
+     "6829 StaticShadowMapSRV": [],
+     "6829 ShadowMapSRV": [],
+     "6829 IESLightTableSRV": [],
+     "6829 GIDSRV": [],
+     "6834 LightCullingVolumeSRV": [],
+     "6834 AmbientBRDF": [
+      "systems/rendering/newambientbrdf.tex"
+     ],
+     "6834 StaticShadowMapSRV": [],
+     "6834 ShadowMapSRV": [],
+     "6834 IESLightTableSRV": [],
+     "6834 GIDSRV": [],
+     "7430 tTextureMap0": [],
+     "7430 tTextureMap1": [],
+     "7430 tTextureMap2": [
+      "systems/rendering/colorcubelinear.tex"
+     ],
+     "7430 ImagePlameBase": [
+      "systems/rendering/nullwhite.tex"
+     ],
+     "7430 ImagePlameAlpha": [
+      "systems/rendering/nullwhite.tex"
+     ]
+    },
+    "heap_reads": [],
+    "moves": [
+     [
+      5326,
+      33416,
+      ""
+     ],
+     [
+      5330,
+      33416,
+      ""
+     ],
+     [
+      5351,
+      33416,
+      ""
+     ],
+     [
+      5355,
+      33416,
+      ""
+     ],
+     [
+      5359,
+      33416,
+      ""
+     ],
+     [
+      6981,
+      7618,
+      ""
+     ],
+     [
+      7452,
+      7618,
+      ""
+     ]
+    ],
+    "ambiguous": [],
+    "bakes": [],
+    "phases": {
+     "blending": [
+      5202,
+      5209,
+      5216,
+      5221,
+      5231,
+      5241,
+      5248,
+      5255,
+      5274,
+      5281,
+      5288,
+      5298
+     ],
+     "forward": [
+      7044,
+      7054,
+      7062
+     ]
+    }
+   }
+  ]
+ },
+ "passes": [
+  {
+   "role": "emissive_decode",
+   "name": "GBufferEmissiveDecode",
+   "file": "systems/shader/system.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 0,
+   "depth": {
+    "kind": "depth",
+    "value": ""
+   },
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "none",
+      "value": ""
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    },
+    {
+     "key": "target 1",
+     "format": 29,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "gbuffer",
+      "value": "1"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    },
+    {
+     "key": "target 2",
+     "format": 24,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "gbuffer",
+      "value": "2"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "WhitePtSrv",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ModifiedGBufferSRV",
+     "source": {
+      "kind": "gbuffer",
+      "value": "0"
+     },
+     "view_format": 24,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "Tonemap": {
+     "tonemapRange": [
+      1036831949
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "subsurface_param",
+   "name": "FastScreenSpaceSubsurfaceScatteringParam",
+   "file": "systems/shader/lighting.sdf",
+   "target": 3,
+   "kind": "dispatch",
+   "count": [
+    0,
+    0
+   ],
+   "tile": [
+    16,
+    16,
+    1
+   ],
+   "stencil_reference": 0,
+   "depth": null,
+   "outputs": [
+    {
+     "key": "RWSubSurfaceParam",
+     "format": 42,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "history",
+      "value": "1.RWSubSurfaceParam"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "compute",
+     "name": "ReadonlyDepth",
+     "source": {
+      "kind": "depth",
+      "value": ""
+     },
+     "view_format": 20,
+     "levels": []
+    },
+    {
+     "stage": "compute",
+     "name": "VelocityXVelocityYOcclusionSubSurfaceSRV",
+     "source": {
+      "kind": "gbuffer",
+      "value": "3"
+     },
+     "view_format": 13,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "deferred_light",
+   "name": "DeferredLightSingleWithSSSSSMask",
+   "file": "systems/shader/lighting.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 2,
+   "depth": {
+    "kind": "depth",
+    "value": ""
+   },
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "history",
+      "value": "6.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "ReadonlyDepth",
+     "source": {
+      "kind": "depth",
+      "value": ""
+     },
+     "view_format": 20,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LightParameterSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ShadowParameterSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LightCullingVolumeSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 42,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LightCullingListSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "AmbientBRDF",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/newambientbrdf.tex"
+     },
+     "view_format": 95,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "BaseColorMetallicSRV",
+     "source": {
+      "kind": "output",
+      "value": "0.target 1"
+     },
+     "view_format": 29,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "NormalXNormalYRoughnessMiscSRV",
+     "source": {
+      "kind": "output",
+      "value": "0.target 2"
+     },
+     "view_format": 24,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "VelocityXVelocityYOcclusionSubSurfaceSRV",
+     "source": {
+      "kind": "gbuffer",
+      "value": "3"
+     },
+     "view_format": 13,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "StaticShadowMapSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 41,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ShadowMapSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 41,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "IESLightTableSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 54,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "HDRImage",
+     "source": {
+      "kind": "output",
+      "value": "0.target 0"
+     },
+     "view_format": 26,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "GIDSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 42,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "EnvironmentInfo": {
+     "breakingPBRIBLIntensity": [
+      1065353216
+     ],
+     "breakingPBRIBLReflectanceBias": [
+      0
+     ],
+     "breakingPBRSpecularIntensity": [
+      1065353216
+     ],
+     "breakingPBR_Reserved": [
+      0
+     ]
+    },
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "deferred_light",
+   "name": "DeferredLightWithSSSSSMask",
+   "file": "systems/shader/lighting.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 2,
+   "depth": {
+    "kind": "depth",
+    "value": ""
+   },
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "0.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    },
+    {
+     "key": "target 1",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "2.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "ReadonlyDepth",
+     "source": {
+      "kind": "depth",
+      "value": ""
+     },
+     "view_format": 20,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LightParameterSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ShadowParameterSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LightCullingVolumeSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 42,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LightCullingListSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "AmbientBRDF",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/newambientbrdf.tex"
+     },
+     "view_format": 95,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "BaseColorMetallicSRV",
+     "source": {
+      "kind": "output",
+      "value": "0.target 1"
+     },
+     "view_format": 29,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "NormalXNormalYRoughnessMiscSRV",
+     "source": {
+      "kind": "output",
+      "value": "0.target 2"
+     },
+     "view_format": 24,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "VelocityXVelocityYOcclusionSubSurfaceSRV",
+     "source": {
+      "kind": "gbuffer",
+      "value": "3"
+     },
+     "view_format": 13,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "StaticShadowMapSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 41,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ShadowMapSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 41,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "IESLightTableSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 54,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "GIDSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 42,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "EnvironmentInfo": {
+     "breakingPBRIBLIntensity": [
+      1065353216
+     ],
+     "breakingPBRIBLReflectanceBias": [
+      0
+     ],
+     "breakingPBRSpecularIntensity": [
+      1065353216
+     ],
+     "breakingPBR_Reserved": [
+      0
+     ]
+    },
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "subsurface_blur",
+   "name": "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
+   "file": "systems/shader/lighting.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 2,
+   "depth": {
+    "kind": "depth",
+    "value": ""
+   },
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "history",
+      "value": "4.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "DiffuseBuffer",
+     "source": {
+      "kind": "output",
+      "value": "3.target 1"
+     },
+     "view_format": 26,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "SubSurfaceParam",
+     "source": {
+      "kind": "output",
+      "value": "1.RWSubSurfaceParam"
+     },
+     "view_format": 42,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "BakedGaussianProfiles",
+     "source": {
+      "kind": "buffer",
+      "value": "237b436decc815959861d74ff78e6837e15287a02121ec98c0c01f56fbbcf4bf"
+     },
+     "view_format": 0,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "subsurface_blur",
+   "name": "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
+   "file": "systems/shader/lighting.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 2,
+   "depth": {
+    "kind": "depth",
+    "value": ""
+   },
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "3.target 1"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "ReadonlyDepth",
+     "source": {
+      "kind": "depth",
+      "value": ""
+     },
+     "view_format": 20,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "BaseColorMetallicSRV",
+     "source": {
+      "kind": "output",
+      "value": "0.target 1"
+     },
+     "view_format": 29,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "NormalXNormalYRoughnessMiscSRV",
+     "source": {
+      "kind": "output",
+      "value": "0.target 2"
+     },
+     "view_format": 24,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "HDRImage",
+     "source": {
+      "kind": "output",
+      "value": "3.target 0"
+     },
+     "view_format": 26,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "DiffuseBuffer",
+     "source": {
+      "kind": "output",
+      "value": "4.target 0"
+     },
+     "view_format": 26,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "SubSurfaceParam",
+     "source": {
+      "kind": "output",
+      "value": "1.RWSubSurfaceParam"
+     },
+     "view_format": 42,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "BakedGaussianProfiles",
+     "source": {
+      "kind": "buffer",
+      "value": "237b436decc815959861d74ff78e6837e15287a02121ec98c0c01f56fbbcf4bf"
+     },
+     "view_format": 0,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "tonemap",
+   "name": "LDRPostProcessWithTonemapC4L3Section",
+   "file": "systems/shader/advancedsystem.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 0,
+   "depth": null,
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "made",
+      "value": "5.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "vertex",
+     "name": "WhitePtSrv",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "RE_POSTPROCESS_Color",
+     "source": {
+      "kind": "output",
+      "value": "5.target 0"
+     },
+     "view_format": 26,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ComputeResultSRV",
+     "source": {
+      "kind": "none",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "tTextureMap0",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/colorcubelinear.tex"
+     },
+     "view_format": 29,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "tTextureMap1",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/colorcubelinear.tex"
+     },
+     "view_format": 29,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "tTextureMap2",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/colorcubelinear.tex"
+     },
+     "view_format": 29,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ImagePlameBase",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/nullwhite.tex"
+     },
+     "view_format": 72,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "ImagePlameAlpha",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/nullwhite.tex"
+     },
+     "view_format": 72,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "ColorCorrectTexture": {
+     "fTextureInverseSize": [
+      1023410176
+     ],
+     "fTextureSize": [
+      1107296256
+     ]
+    },
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    },
+    "Tonemap": {
+     "tonemapRange": [
+      1036831949
+     ]
+    },
+    "TonemapParam": {
+     "contrast": [
+      1065353216
+     ],
+     "contrastFactor": [
+      3225766568
+     ],
+     "displayMaxNitSubContrastFactor": [
+      1055890866
+     ],
+     "invLinearBegin": [
+      1083274333
+     ],
+     "linearBegin": [
+      1046562734
+     ],
+     "linearLength": [
+      1053609165
+     ],
+     "linearStart": [
+      1057501479
+     ],
+     "madLinearStartContrastFactor": [
+      0
+     ],
+     "maxNit": [
+      1065353216
+     ],
+     "mulLinearStartContrastFactor": [
+      1070721813
+     ],
+     "toe": [
+      1065353216
+     ]
+    }
+   },
+   "indirect": null
+  },
+  {
+   "role": "display",
+   "name": "ScreenOutputSRGB",
+   "file": "systems/shader/screenoutput.sdf",
+   "target": 3,
+   "kind": "draw",
+   "count": [
+    3,
+    1
+   ],
+   "tile": [
+    0,
+    0,
+    0
+   ],
+   "stencil_reference": 0,
+   "depth": null,
+   "outputs": [
+    {
+     "key": "target 0",
+     "format": 28,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "history",
+      "value": "7.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "tLinearImage",
+     "source": {
+      "kind": "output",
+      "value": "6.target 0"
+     },
+     "view_format": 26,
+     "levels": []
+    }
+   ],
+   "constants": {},
+   "indirect": null
+  }
+ ],
+ "phases": [
+  {
+   "purpose": "blending",
+   "masters": [],
+   "after": 0,
+   "depth": true,
+   "targets": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "0.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    },
+    {
+     "key": "target 1",
+     "format": 29,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "0.target 1"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    },
+    {
+     "key": "target 2",
+     "format": 24,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "0.target 2"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "ReadonlyDepth",
+     "source": {
+      "kind": "depth",
+      "value": ""
+     },
+     "view_format": 0,
+     "levels": []
+    }
+   ],
+   "constants": {}
+  },
+  {
+   "purpose": "forward",
+   "masters": [],
+   "after": 5,
+   "depth": true,
+   "targets": [
+    {
+     "key": "target 0",
+     "format": 26,
+     "texel_bytes": 4,
+     "initial": {
+      "kind": "output",
+      "value": "5.target 0"
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    },
+    {
+     "key": "target 1",
+     "format": 61,
+     "texel_bytes": 1,
+     "initial": {
+      "kind": "none",
+      "value": ""
+     },
+     "buffer": null,
+     "size": null,
+     "level": 0
+    }
+   ],
+   "reads": [
+    {
+     "stage": "pixel",
+     "name": "AmbientBRDF",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/newambientbrdf.tex"
+     },
+     "view_format": 95,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LTC1",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/ltc1.tex"
+     },
+     "view_format": 10,
+     "levels": []
+    },
+    {
+     "stage": "pixel",
+     "name": "LTC2",
+     "source": {
+      "kind": "file",
+      "value": "systems/rendering/ltc2.tex"
+     },
+     "view_format": 10,
+     "levels": []
+    }
+   ],
+   "constants": {
+    "EnvironmentInfo": {
+     "breakingPBRIBLIntensity": [
+      1065353216
+     ],
+     "breakingPBRIBLReflectanceBias": [
+      0
+     ],
+     "breakingPBRSpecularIntensity": [
+      1065353216
+     ],
+     "breakingPBR_Reserved": [
+      0
+     ]
+    },
+    "SceneInfo": {
+     "renderOutputId": [
+      31
+     ]
+    }
+   }
+  }
+ ],
+ "buffers": {
+  "237b436decc815959861d74ff78e6837e15287a02121ec98c0c01f56fbbcf4bf": "eNrLSuyz/fJ7mt2l//X2DECwYUOSbfHZV5Yg9pkzPntf/eSwe73qlA2In5b2bM/rB8J2J5NKbaHyexY/YLPz+tBhZ8m80/T0GZ/dS6F8awjf+iVQ/TGo+nNnfGxeAM37ADUvOe2ZzRagfeUI+8DqQOBkspit1HU3u/NQdx1fMN/2WbM4WN2smZL7Oyc72HEeXmYDMXfNPvfDgnaf++bZQuX3rZaYZhutPseOZdNxUyB/L4xfCuRPnylp6wFU/wWh3g5kHjPUvPNn1tgdA9r3FGGfPcxdWXjD6wxaeKXtRQ2vM2jhdQYtvM6ghdcZtPBKs0UNrzPw8MqaUm/7cm6D7b/tbmCx0t3/bW5c3mizISgdyD+wP2zfH9vehaJ2mzWU7BgYIvbPEXexK/lrZvfykQaQf2Bfg91vW9F/P20LJx4Bqd+LxrdFU2+HZp49mn32o+4aXu4Csv8jMCqf67ryHmT+68Adu9Hk0fm7kPls15Wt0OStkflvAndYo8nbMIyCUTAKRsEQBwAJ8ucd"
+ }
+}

@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.editor_widgets import EmbeddedPopupComboBox
+lazy from ui.editor_widgets import EmbeddedPopupComboBox
 
 from .controller import MotionPreviewController
 from .model import PreviewLoopMode, RootDisplayMode
@@ -68,7 +68,7 @@ class _MotionTimeline(QSlider):
 
 
 class MotionPlaybackControls(QWidget):
-    """Shared timeline and clock for every motion preview surface."""
+    """Ticked by the viewport's frame callback so it keeps the strands' stepped time."""
 
     render_requested = Signal(bool)
 
@@ -76,13 +76,12 @@ class MotionPlaybackControls(QWidget):
         self,
         controller: MotionPreviewController,
         *,
-        frame_driver: Callable[[Callable[[], None] | None], None] | None = None,
+        frame_driver: Callable[[Callable[[float], None] | None], None] | None = None,
         parent: QWidget | None = None,
     ):
         super().__init__(parent)
         self.controller = controller
         self._frame_driver = frame_driver
-        self._elapsed = QElapsedTimer()
         self._ui_elapsed = QElapsedTimer()
         self._ui_timer = QTimer(self)
         self._ui_timer.setTimerType(Qt.TimerType.CoarseTimer)
@@ -176,7 +175,7 @@ class MotionPlaybackControls(QWidget):
 
     def set_frame_driver(
         self,
-        frame_driver: Callable[[Callable[[], None] | None], None],
+        frame_driver: Callable[[Callable[[float], None] | None], None],
     ) -> None:
         if self.controller.playing:
             raise RuntimeError("cannot replace the viewport frame driver during playback")
@@ -211,7 +210,6 @@ class MotionPlaybackControls(QWidget):
         if self._frame_driver is None:
             raise RuntimeError("motion playback requires a viewport frame driver")
         self.controller.playing = True
-        self._elapsed.start()
         self._ui_elapsed.start()
         self._ui_timer.start()
         self._frame_driver(self._on_tick)
@@ -304,10 +302,10 @@ class MotionPlaybackControls(QWidget):
             self._ui_elapsed.restart()
             self._sync_frame_number()
 
-    def _on_tick(self) -> None:
+    def _on_tick(self, seconds: float) -> None:
         if not self.controller.playing:
             return
-        elapsed_seconds = max(0, self._elapsed.restart()) / 1000.0
+        elapsed_seconds = max(0.0, seconds)
         self.controller.advance(min(elapsed_seconds, _MAX_TICK_SECONDS))
         self.render_requested.emit(False)
         if not self.controller.playing:

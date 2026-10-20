@@ -3,20 +3,22 @@ import io
 import os
 import re
 import threading
-import zstandard as zstd
+lazy import zstandard as zstd
 import zlib
 import traceback
+from functools import cache, partial
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Container, Dict, Iterable, List, Optional, Sequence
+lazy from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from .utils import filepath_hash, guess_extension_from_header, normalize_pak_path
-from utils.native_build import ensure_fast_pakresolve
+lazy from utils.native_build import ensure_fast_pakresolve
 from .pakfile import (
     PakFile,
     PakEntry,
     _read_entry_raw,
     _decrypt_resource,
+    read_entry,
     _is_chunked_entry,
 )
 from .resolution import (
@@ -47,6 +49,11 @@ def _decompress_with_alternate_codec(e: PakEntry, data: bytes, zstd_decompressor
     return data
 
 
+@cache
+def _native():
+    return ensure_fast_pakresolve()
+
+
 class PakReader:
     def __init__(self, game: str | None = None) -> None:
         self.game = game
@@ -56,8 +63,11 @@ class PakReader:
         self.enable_console_logging: bool = False
         self._searched_paths: Dict[int, str] = {}
         self._registered_hashes: Dict[str, int] = {}
+        self._registered_paths_revision = 0
 
     def reset_file_list(self) -> None:
+        if self._searched_paths or self._registered_hashes:
+            self._registered_paths_revision += 1
         self._searched_paths.clear()
         self._registered_hashes.clear()
 
@@ -66,6 +76,8 @@ class PakReader:
             if self.filter and not self.filter.search(p):
                 continue
             h = filepath_hash(p)
+            if self._searched_paths.get(h) != p:
+                self._registered_paths_revision += 1
             self._searched_paths[h] = p
             self._registered_hashes[p] = h
 
@@ -73,8 +85,11 @@ class PakReader:
 
 
 class CachedPakReader(PakReader):
-    def __init__(self, game: str | None = None) -> None:
+    def __init__(self, game: str | None = None, *, include_stubs: bool = False) -> None:
         super().__init__(game=game)
+        # Redirect stubs (0x70 attributes) send the game to a DLC copy; without it the game serves nothing.
+        # ``include_stubs`` serves the stub's own data, below every real winner.
+        self.include_stubs = include_stubs
         self._cache: Optional[Dict[int, tuple[PakFile, PakEntry]]] = None
         self._cache_complete: bool = True
         self.resolution_profile: PakResolutionProfile | None = None
@@ -82,6 +97,9 @@ class CachedPakReader(PakReader):
         self.resolved_game: str | None = None
         self.ordered_pak_paths: tuple[str, ...] = ()
         self.resolution_stats: dict[str, int] = {}
+        self._index_revision = 0
+        # Snapshots share PakEntry objects, so later filename discovery must invalidate their path lookups too.
+        self._entry_names_revision = [0]
 
     @classmethod
     def from_paks(
@@ -89,9 +107,9 @@ class CachedPakReader(PakReader):
         pak_paths: Iterable[str],
         *,
         game: str | None = None,
+        include_stubs: bool = False,
     ) -> "CachedPakReader":
-        """Create a reader with an explicit PAK set and game identity."""
-        reader = cls(game=game)
+        reader = cls(game=game, include_stubs=include_stubs)
         reader.pak_file_priority = list(pak_paths)
         return reader
 
@@ -100,8 +118,13 @@ class CachedPakReader(PakReader):
         pak_paths: Sequence[str],
         *,
         game: str | None,
+        include_stubs: bool = False,
     ) -> bool:
-        return self.game == game and self.pak_file_priority == list(pak_paths)
+        return (
+            self.game == game
+            and self.include_stubs == include_stubs
+            and self.pak_file_priority == list(pak_paths)
+        )
 
     @property
     def cache_ready(self) -> bool:
@@ -115,9 +138,20 @@ class CachedPakReader(PakReader):
     def registered_paths(self) -> tuple[str, ...]:
         return tuple(self._searched_paths.values())
 
+    @property
+    def path_lookup_revision(self) -> tuple[int, int, int, int]:
+        return (
+            self._index_revision,
+            id(self._cache),
+            self._registered_paths_revision,
+            self._entry_names_revision[0],
+        )
+
     def fork(self) -> "CachedPakReader":
         """Create a cache-free reader with the same source settings."""
-        reader = type(self).from_paks(self.pak_file_priority, game=self.game)
+        reader = type(self).from_paks(
+            self.pak_file_priority, game=self.game, include_stubs=self.include_stubs
+        )
         reader.max_threads = self.max_threads
         reader.filter = self.filter
         reader.enable_console_logging = self.enable_console_logging
@@ -130,6 +164,8 @@ class CachedPakReader(PakReader):
         reader._cache_complete = self._cache_complete
         reader._searched_paths = dict(self._searched_paths)
         reader._registered_hashes = dict(self._registered_hashes)
+        reader._registered_paths_revision = self._registered_paths_revision
+        reader._entry_names_revision = self._entry_names_revision
         reader.resolution_profile = self.resolution_profile
         reader.resolution_profile_source = self.resolution_profile_source
         reader.resolved_game = self.resolved_game
@@ -143,11 +179,6 @@ class CachedPakReader(PakReader):
         *,
         full: bool = False,
     ) -> "CachedPakReader":
-        """Prepare either a targeted or complete winner index.
-
-        Targeted indexes keep bulk list validation cheap. A later full request
-        upgrades the same reader while retaining every registered path name.
-        """
         requested = (
             normalize_pak_path(path, lowercase=True)
             for path in paths
@@ -226,6 +257,7 @@ class CachedPakReader(PakReader):
             return
         self._cache = self._build_cache(assign_paths=assign_paths)
         self._cache_complete = True
+        self._index_revision += 1
 
     def cache_entries_for_paths(self, paths: Iterable[str]) -> None:
         """Build a lightweight cache containing only known list paths."""
@@ -236,12 +268,9 @@ class CachedPakReader(PakReader):
         self.add_files(*paths)
         self._cache = self._build_cache(assign_paths=True)
         self._cache_complete = False
+        self._index_revision += 1
 
     def assign_paths(self, paths: Iterable[str], replace_existing: bool = False) -> int:
-        """Fast path: assign known names into the existing cache without rebuilding.
-
-        Returns number of entries newly named.
-        """
         norm_paths = list({normalize_pak_path(p, lowercase=True) for p in paths})
         if replace_existing:
             self.reset_file_list()
@@ -254,16 +283,21 @@ class CachedPakReader(PakReader):
                 return 0
 
         if replace_existing:
+            self._entry_names_revision[0] += 1
             for _pak, entry in self._cache.values():
                 entry.path = None
             if not norm_paths:
                 return 0
 
-        fast = ensure_fast_pakresolve()
-        if fast is None:
-            raise RuntimeError("fast_pakresolve native module is required but not available")
-        
-        _rem, updated = fast.resolve_paths_utf16le(self._cache, norm_paths)
+        fast = _native()
+        try:
+            _rem, updated = fast.resolve_paths_utf16le(self._cache, norm_paths)
+        except Exception:
+            # A native failure can still have named some entries.
+            self._entry_names_revision[0] += 1
+            raise
+        if updated:
+            self._entry_names_revision[0] += 1
         return int(updated)
 
 
@@ -347,39 +381,56 @@ class CachedPakReader(PakReader):
                     break
 
         cache: Dict[int, tuple[PakFile, PakEntry]] = {}
+        stubs: Dict[int, tuple[PakFile, PakEntry]] = {}
         rejected = 0
         for _info, pak in ordered:
             for entry in pak.entries:
                 entry_hash = entry.combined_hash
                 if entry_hash in cache:
                     continue
+                if entry.path is None and self._searched_paths:
+                    entry.path = self._searched_paths.get(entry_hash)
                 if (
                     (entry.attributes & 0x70) != 0
                     and entry_is_gated(entry.attributes, profile.gate, pak.has_attr_bit20)
                     and entry_hash not in authorized
                 ):
                     rejected += 1
+                    stubs.setdefault(entry_hash, (pak, entry))
                     continue
-                if entry.path is None and self._searched_paths:
-                    entry.path = self._searched_paths.get(entry_hash)
                 cache[entry_hash] = (pak, entry)
+            self._alias_remaps(cache, pak)
 
-            if pak.remap_pairs:
-                for stored_hash, public_hash in pak.remap_pairs:
-                    holder = cache.get(stored_hash) or cache.get(public_hash)
-                    if holder is None:
-                        continue
-                    cache.setdefault(public_hash, holder)
-                    cache.setdefault(stored_hash, holder)
+        unresolved = {value: holder for value, holder in stubs.items() if value not in cache}
+        if self.include_stubs and unresolved:
+            cache.update(unresolved)
+            for _info, pak in ordered:
+                self._alias_remaps(cache, pak, only=unresolved.keys())
 
         self.resolution_stats = {
             "readers": len(ordered),
             "gated_hashes": len(gated_hashes),
             "authorized_hashes": len(authorized),
             "rejected_entries": rejected,
+            "unresolved_stubs": len(unresolved),
             "winners": len(cache),
         }
         return cache
+
+    @staticmethod
+    def _alias_remaps(
+        cache: Dict[int, tuple[PakFile, PakEntry]],
+        pak: PakFile,
+        only: Optional[Container[int]] = None,
+    ) -> None:
+        for stored_hash, public_hash in pak.remap_pairs:
+            if only is not None and stored_hash not in only and public_hash not in only:
+                continue
+            holder = cache.get(stored_hash) or cache.get(public_hash)
+            if holder is None:
+                continue
+            cache.setdefault(public_hash, holder)
+            cache.setdefault(stored_hash, holder)
 
     def get_file(self, path_or_hash: str | int) -> Optional[io.BytesIO]:
         if isinstance(path_or_hash, str):
@@ -397,12 +448,7 @@ class CachedPakReader(PakReader):
         if not hit:
             return None
         pak, e = hit
-        with open(pak.filepath, "rb") as fs:
-            buf = io.BytesIO()
-
-            _read_entry_raw(e, fs, buf, chunk_table=pak.chunk_table)
-            buf.seek(0)
-            return buf
+        return io.BytesIO(read_entry(e, partial(_native().read_at, pak.filepath), chunk_table=pak.chunk_table))
 
     def cached_paths(self, include_unknown: bool = True) -> List[str]:
         if self._cache is None:
@@ -494,10 +540,7 @@ class CachedPakReader(PakReader):
                 thread_local.initialized = True
                 thread_local.created_dirs = set()
                 thread_local.buffer = bytearray(8 * 1024 * 1024)
-                try:
-                    thread_local.zstd_decompressor = zstd.ZstdDecompressor()
-                except ImportError:
-                    thread_local.zstd_decompressor = None
+                thread_local.zstd_decompressor = zstd.ZstdDecompressor()
             return thread_local
         
         def extract_from_pak(pak: PakFile, entries: List[tuple[PakEntry, Path]]) -> int:
@@ -576,7 +619,7 @@ class CachedPakReader(PakReader):
                                         data = _decompress_with_alternate_codec(e, data, resources.zstd_decompressor)
                             elif e.compression == 2:
                                 if data.startswith(_ZSTD_MAGIC):
-                                    data = (resources.zstd_decompressor or zstd.ZstdDecompressor()).decompress(data)
+                                    data = resources.zstd_decompressor.decompress(data)
                                 else:
                                     data = _decompress_with_alternate_codec(e, data, resources.zstd_decompressor)
 
@@ -601,7 +644,7 @@ class CachedPakReader(PakReader):
         extracted = 0
         
         total_files = sum(len(entries) for _pak, entries in groups.values())
-        num_cores = os.cpu_count() or 4
+        num_cores = os.process_cpu_count() or 4
         
         if total_files < 10:
             for _pak_path, (pak, entries) in groups.items():
@@ -659,4 +702,3 @@ class CachedPakReader(PakReader):
             missing_files.extend(missing_local)
         
         return extracted
-

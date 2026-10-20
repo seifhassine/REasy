@@ -1,8 +1,8 @@
 import json
 from collections import deque
 from PySide6.QtCore import QObject, QUrl, QUrlQuery, Signal
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
-from PySide6.QtWidgets import QMessageBox
+lazy from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest, QNetworkReply
+lazy from PySide6.QtWidgets import QMessageBox
 
 
 def _translated_text(response_data: str) -> str:

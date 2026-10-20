@@ -1,12 +1,11 @@
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional
 import uuid
 
-if TYPE_CHECKING:
-    from .variable import Variable
+lazy from .variable import Variable
 
 from .base_model import BaseModel, FileHandler
-from .uvar_types import UVAR_MAGIC
-from utils.hash_util import murmur3_hash
+lazy from .uvar_types import UVAR_MAGIC
+lazy from utils.hash_util import murmur3_hash
 
 class HeaderStruct(BaseModel):
     def __init__(self):

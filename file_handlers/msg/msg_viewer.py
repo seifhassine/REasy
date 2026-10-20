@@ -1,17 +1,20 @@
+import uuid
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTreeView, QComboBox,
     QLabel, QPushButton, QLineEdit, QMessageBox, QSplitter,
     QTextEdit, QGroupBox, QFrame, QCheckBox, QFileDialog,
-    QSpinBox, QFormLayout, QHeaderView, QMenu, QScrollArea, QStyle
+    QSpinBox, QFormLayout, QHeaderView, QMenu, QScrollArea, QStyle, QDialog, QDialogButtonBox, QInputDialog
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QSignalBlocker, Qt, Signal
-from PySide6.QtGui import (
+lazy from PySide6.QtGui import (
     QFont, QKeySequence, QPalette, QShortcut, QStandardItem,
     QStandardItemModel,
 )
 
-from utils.number_format import format_full_float
-from file_handlers.sound.sound_waveform import WaveformWidget
+lazy from utils.number_format import format_full_float
+lazy from file_handlers.sound.sound_waveform import WaveformWidget
+lazy from file_handlers.sound import sound_profile_for_handler
+lazy from file_handlers.msg.msg_sound_player import MsgSoundPreviewSession, configured_vgmstream
 
 
 CHAR_COUNT_TEXT = QT_TRANSLATE_NOOP("MsgViewer", "{count} chars")
@@ -648,7 +651,6 @@ class MsgViewer(QWidget):
         entry_idx = meta["entry_index"]
         original_entry = self.handler.entries[entry_idx]
         
-        import uuid
         new_entry = {
             "uuid": str(uuid.uuid4()),
             "name": original_entry.get("name", "") + " (Copy)",
@@ -910,7 +912,6 @@ class MsgViewer(QWidget):
 
     def _on_add_attribute(self):
         """Add a new user parameter (attribute)"""
-        from PySide6.QtWidgets import QDialog, QVBoxLayout, QFormLayout, QDialogButtonBox, QComboBox
         
         dialog = QDialog(self)
         dialog.setWindowTitle(self.tr("Add New Attribute"))
@@ -960,7 +961,6 @@ class MsgViewer(QWidget):
     
     def _on_remove_attribute(self):
         """Remove a user parameter (attribute)"""
-        from PySide6.QtWidgets import QInputDialog
         
         if not self.handler.userParamNames:
             QMessageBox.information(
@@ -998,8 +998,6 @@ class MsgViewer(QWidget):
     def _ensure_sound_session(self) -> bool:
         if self._sound_session is not None:
             return True
-        from file_handlers.sound import sound_profile_for_handler
-        from file_handlers.msg.msg_sound_player import MsgSoundPreviewSession
 
         profile = sound_profile_for_handler(self.handler)
         if profile is None:
@@ -1255,8 +1253,6 @@ class MsgViewer(QWidget):
         )
 
     def _play_sound(self, message_id, candidate) -> None:
-        from file_handlers.msg.msg_sound_player import configured_vgmstream
-
         if self._sound_session is None:
             return
         executable = configured_vgmstream(self.handler)

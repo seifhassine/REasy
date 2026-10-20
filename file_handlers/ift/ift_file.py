@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Callable
+from typing import Callable
 
 from .codec import decode_ift, encode_ift
 from .model import IconGlyph, IftAtlasValidation, IftData, IftEntry
 from .profiles import IFT_MAGIC
 
-if TYPE_CHECKING:
-    from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
+lazy from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
 
 
 class IftFile:

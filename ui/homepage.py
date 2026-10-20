@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from utils.app_paths import resource_path
+lazy from utils.app_paths import resource_path
 
 
 class HomePageWidget(QWidget):

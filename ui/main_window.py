@@ -4,23 +4,23 @@ import os
 import sys
 import weakref
 
-from file_handlers.factory import get_handler_for_data, is_handler_type
+lazy from file_handlers.factory import get_handler_for_data, is_handler_type
 
-from ui.better_find_dialog import BetterFindDialog
-from ui.file_tab import FileTab, UNSAVED_CHANGES_STR
-from ui.guid_converter import create_guid_converter_dialog
-from ui.about_dialog import AboutDialog
-from ui.outdated_files_dialog import OutdatedFilesDialog
-from ui.update_notification import UpdateNotificationManager
-from ui.rsz_differ_dialog import RszDifferDialog
-from ui.file_list_generator_dialog import FileListGeneratorDialog
-from ui.rsz_enum_prompt import RszEnumPromptController
+lazy from ui.better_find_dialog import BetterFindDialog
+lazy from ui.file_tab import FileTab, UNSAVED_CHANGES_STR
+lazy from ui.guid_converter import create_guid_converter_dialog
+lazy from ui.about_dialog import AboutDialog
+lazy from ui.outdated_files_dialog import OutdatedFilesDialog
+lazy from ui.update_notification import UpdateNotificationManager
+lazy from ui.rsz_differ_dialog import RszDifferDialog
+lazy from ui.file_list_generator_dialog import FileListGeneratorDialog
+lazy from ui.rsz_enum_prompt import RszEnumPromptController
 from settings import DEFAULT_SETTINGS, load_settings, normalize_settings, save_settings
-from app_config import CURRENT_VERSION, GAMES
-from ui.changelog_dialog import ChangelogDialog
-from ui.settings_dialog import SettingsDialog
-from ui.styles import get_color_scheme, get_main_stylesheet
-from utils.app_paths import resource_path
+lazy from app_config import CURRENT_VERSION, GAMES
+lazy from ui.changelog_dialog import ChangelogDialog
+lazy from ui.settings_dialog import SettingsDialog
+lazy from ui.styles import get_color_scheme, get_main_stylesheet
+lazy from utils.app_paths import resource_path
 
 from PySide6.QtCore import (
     QByteArray,
@@ -58,23 +58,30 @@ from PySide6.QtWidgets import (
     QDockWidget,
 )
 
-from ui.console_logger import ConsoleWidget, ConsoleRedirector
-from ui.ai.chat_dock import AiChatDock
-from ui.breadcrumbs import BreadcrumbBar
-from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
-from ui.editor_groups import EditorGroupHost
-from ui.directory_search import search_directory_for_type
-from ui.highlight_menu_controller import HighlightMenuController
-from ui.homepage import HomePageStack, HomePageWidget
-from ui.scene.opengl_setup import create_surface_anchor
-from tools.hash_calculator import HashCalculator
+lazy from ui.console_logger import ConsoleWidget, ConsoleRedirector
+lazy from ui.ai.chat_dock import AiChatDock
+lazy from ui.breadcrumbs import BreadcrumbBar
+lazy from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
+lazy from ui.editor_groups import EditorGroupHost
+lazy from ui.directory_search import search_directory_for_type
+lazy from ui.highlight_menu_controller import HighlightMenuController
+lazy from ui.homepage import HomePageStack, HomePageWidget
+lazy from tools.hash_calculator import HashCalculator
 
-from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
-from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
-from ui.project_manager.project_sessions import save_modified_tabs  # noqa: E402
+lazy from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
+lazy from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402
+lazy from ui.project_manager.project_sessions import save_modified_tabs  # noqa: E402
 from ui.project_manager import (  # noqa: E402
     ProjectManager, ProjectWorkspaceController, PROJECTS_ROOT, ensure_projects_root
 )
+lazy from ui.scene.scn_scene_workspace import ScnSceneController
+lazy from ui.pak_browser_dialog import PakBrowserDialog
+lazy from file_handlers.mesh.blender_ui import import_mesh_from_blender
+lazy from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog
+lazy from ui.scene.scene_preview import ScenePreviewWidget
+lazy from file_handlers.mmtr.parsed_files import set_budget
+lazy from ui.rsz_field_value_finder_dialog import RszFieldValueFinderDialog
+lazy from ui.scene.scn_raw_inspector import select_instance_in_tree
 
 RECENTLY_CLOSED_FILES_LIMIT = 20
 
@@ -83,8 +90,10 @@ class _LazySceneController:
     def __init__(self, app):
         self._app = app
 
+    def tabs(self):
+        return ()
+
     def __getattr__(self, name):
-        from ui.scene.scn_scene_workspace import ScnSceneController
         self._app.scenes = controller = ScnSceneController(self._app)
         return getattr(controller, name)
 
@@ -110,6 +119,7 @@ class REasyEditorApp(QMainWindow):
         except Exception as e:
             self.settings = normalize_settings()
             print(f"Error loading settings: {e}")
+        self._apply_parsed_shader_budget()
 
         ensure_projects_root()
         self.current_project = None
@@ -119,9 +129,6 @@ class REasyEditorApp(QMainWindow):
 
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
-        # This child must exist before the main window is first shown. Otherwise
-        # Qt recreates the native window when the first mesh preview is opened.
-        self._opengl_surface_anchor = create_surface_anchor(central_widget)
         main_layout = QVBoxLayout(central_widget)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
@@ -551,6 +558,7 @@ class REasyEditorApp(QMainWindow):
         add_action(tools_menu, self.tr("RSZ Diff Viewer"), self.open_rsz_differ)
         add_action(tools_menu, self.tr("PAK Browser"), self.open_pak_browser)
         add_action(tools_menu, self.tr("File List Generator"), self.open_file_list_generator)
+        add_action(tools_menu, self.tr("Import Mesh from Blender…"), self.import_mesh_from_blender)
 
         tools_menu.addSeparator()
 
@@ -731,8 +739,6 @@ class REasyEditorApp(QMainWindow):
         return dialog
 
     def open_pak_browser(self):
-        from ui.pak_browser_dialog import PakBrowserDialog
-
         self._show_singleton_dialog("_pak_browser", lambda: PakBrowserDialog(self))
 
     def open_file_list_generator(self):
@@ -740,9 +746,10 @@ class REasyEditorApp(QMainWindow):
             "_file_list_generator_dialog", lambda: FileListGeneratorDialog(self)
         )
 
-    def open_rsz_csv_extractor(self):
-        from ui.rsz_csv_extractor_dialog import RszCsvExtractorDialog
+    def import_mesh_from_blender(self):
+        import_mesh_from_blender(self)
 
+    def open_rsz_csv_extractor(self):
         dialog = RszCsvExtractorDialog(self, self.settings)
         dialog.exec()
 
@@ -882,6 +889,11 @@ class REasyEditorApp(QMainWindow):
             return QByteArray()
 
     def _save_workbench_state(self) -> None:
+        views = list(self.tabs.values())
+        for window in QApplication.topLevelWidgets():
+            views.extend(window.findChildren(ScenePreviewWidget))
+        for view in views:
+            self._leave_view_fullscreen(view)
         workbench = self.settings.setdefault("workbench", {})
         workbench.update({
             "state_version": 1,
@@ -947,6 +959,12 @@ class REasyEditorApp(QMainWindow):
             "editor_groups": self.editor_groups.snapshot(),
         }
 
+    @staticmethod
+    def _restore_geometry(window, geometry: QByteArray) -> None:
+        window.restoreGeometry(geometry)
+        # Fullscreen is only ever a viewport's temporary view; never start in it.
+        window.setWindowState(window.windowState() & ~Qt.WindowFullScreen)
+
     def _restore_window_layout(self) -> None:
         workbench = self.settings.get("workbench", {})
         if not isinstance(workbench, dict) or not self.settings.get(
@@ -956,7 +974,7 @@ class REasyEditorApp(QMainWindow):
         geometry = self._decode_window_bytes(workbench.get("window_geometry"))
         state = self._decode_window_bytes(workbench.get("window_state"))
         if not geometry.isEmpty():
-            self.restoreGeometry(geometry)
+            self._restore_geometry(self, geometry)
         if not state.isEmpty():
             self.restoreState(state, 1)
 
@@ -1004,7 +1022,7 @@ class REasyEditorApp(QMainWindow):
                     window = notebook.detach_widget(tab.notebook_widget) if notebook is not None else None
                     geometry = self._decode_window_bytes(entry.get("window_geometry"))
                     if window is not None and not geometry.isEmpty():
-                        window.restoreGeometry(geometry)
+                        self._restore_geometry(window, geometry)
 
         queue = list(projects)
 
@@ -1112,7 +1130,7 @@ class REasyEditorApp(QMainWindow):
         event.accept()
 
     def update_from_app_settings(self):
-        """Update handler settings from the application settings"""
+        self._apply_parsed_shader_budget()
         active_tabs = set(self.project_workspace.sessions.active_tabs())
         for tab in self.tabs.values():
             if hasattr(tab, 'handler') and is_handler_type(tab.handler, "RszHandler"):
@@ -1120,6 +1138,9 @@ class REasyEditorApp(QMainWindow):
                 tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
                 if tab in active_tabs:
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
+
+    def _apply_parsed_shader_budget(self):
+        set_budget(self.settings["parsed_shader_cache_mb"])
 
     def open_settings_dialog(self):
         SettingsDialog(self).exec()
@@ -1175,9 +1196,6 @@ class REasyEditorApp(QMainWindow):
         search_directory_for_type(self, 'hex')
 
     def open_rsz_field_value_finder(self):
-        """Open the RSZ field value finder window."""
-        from ui.rsz_field_value_finder_dialog import RszFieldValueFinderDialog
-
         self._show_singleton_dialog(
             "_rsz_field_value_finder_dialog",
             lambda: RszFieldValueFinderDialog(self, self.settings),
@@ -1185,7 +1203,6 @@ class REasyEditorApp(QMainWindow):
 
     def open_rsz_instance(self, filepath, instance_id, type_registry):
         """Open or activate a file and reveal one RSZ instance in its editor."""
-        from ui.scene.scn_raw_inspector import select_instance_in_tree
 
         key = os.path.normcase(os.path.abspath(filepath))
         tab = next((tab for tab in self.tabs.values() if getattr(tab, "filename", None)
@@ -1216,7 +1233,8 @@ class REasyEditorApp(QMainWindow):
             return
 
         if is_handler_type(active.handler, "MsgHandler"):
-            QMessageBox.information(self, self.tr("Search in MSG"), self.tr("MSG files have a built-in search at the top of the editor. Please use that search bar."))
+            QMessageBox.information(self, self.tr("Search in MSG"), self.tr("MSG files have their own search bar at "
+                                                                            "the top of the editor."))
             return
 
         for window in self._floating_windows():
@@ -1606,8 +1624,8 @@ class REasyEditorApp(QMainWindow):
     def reopen_last_closed_file(self):
         self.reopen_closed_file(notify_if_empty=True)
 
-    def _close_tab_object(self, tab, *, record_history=True):
-        widget = tab.notebook_widget
+    @staticmethod
+    def _leave_view_fullscreen(tab):
         leave_fullscreen = getattr(tab, "leave_view_fullscreen", None)
         if callable(leave_fullscreen):
             try:
@@ -1616,6 +1634,10 @@ class REasyEditorApp(QMainWindow):
                 leave_fullscreen()
             except RuntimeError:
                 pass
+
+    def _close_tab_object(self, tab, *, record_history=True):
+        widget = tab.notebook_widget
+        self._leave_view_fullscreen(tab)
         for window in self.project_workspace.sessions.windows_for([tab]):
             try:
                 window.close_without_reattach()

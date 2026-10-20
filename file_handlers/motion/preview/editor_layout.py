@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor
+lazy from PySide6.QtCore import Qt
+lazy from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.styles import get_color_scheme
+lazy from ui.styles import get_color_scheme
 
 
 class MotionEditorPane(QFrame):

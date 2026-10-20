@@ -3,7 +3,7 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from file_handlers.mdf.mdf_clipboard import MdfClipboard
+lazy from file_handlers.mdf.mdf_clipboard import MdfClipboard
 
 
 class MdfTemplateManager:

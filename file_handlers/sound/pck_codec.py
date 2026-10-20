@@ -196,7 +196,7 @@ def rewrite_pck(data: bytes, replacements: dict[int, bytes]) -> bytes:
         return bytes(data)
 
     out = bytearray(data)
-    all_entries = [entry for table in layout.tables for entry in table.entries]
+    all_entries = [*table.entries for table in layout.tables]
     replacing_ids = {id(entry) for entry in replaceable}
     original_offsets = sorted(
         {entry.offset for entry in all_entries if entry.length > 0}
@@ -293,7 +293,7 @@ def _add_pck_sound_entry(data: bytes, source_id: int, payload: bytes) -> bytes:
         record_offset=insert_at,
     )
     _encode_pck_entry(header, new_entry)
-    return bytes(header) + payload + b"\0" * (media_span - len(payload)) + data[layout.blob_base :]
+    return header.take_bytes() + payload + b"\0" * (media_span - len(payload)) + data[layout.blob_base :]
 
 
 def _align_up(value: int, alignment: int) -> int:

@@ -4,7 +4,7 @@ import math
 import struct
 from typing import Any, Protocol
 
-from .model import (
+lazy from .model import (
     AssetLanguageTriplet,
     FontSlotMapping,
     GcfData,

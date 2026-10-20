@@ -1,35 +1,51 @@
 from __future__ import annotations
 
-import numpy as np
+from enum import Enum
+
+lazy import numpy as np
 
 from file_handlers.mesh.skinning_contract import (
     MeshSkinningContract,
     MeshSkinningContractError,
     resolve_mesh_skinning_contract,
 )
-from ui.scene.mesh_scene import (
+lazy from file_handlers.mesh.normal_recalc import PreparedNormalRecalcPlan, mesh_normal_recalc_plan
+from file_handlers.mesh.profiles import MaterialSkinningLayout
+lazy from ui.scene.mesh_scene import (
     MeshScenePayload,
     mesh_lod0_submeshes,
     mesh_scene_payloads,
 )
-from ui.scene.scene_model import SceneSkinningBinding
+lazy from ui.scene.scene_model import SceneSkinningBinding
 from utils.native_build import ensure_fastmesh
 
+from ..evaluation.math3d import transform_matrices
 from ..evaluation.model import Rig
 from ..evaluation.shared_rig import SharedRigPoseMapper
-from .blend_shapes import MeshBlendShapeDeformer
+lazy from .blend_shapes import MeshBlendShapeDeformer
 from .model import MotionPreviewSnapshot
-from .normal_recalc import MeshNormalRecalculator
+lazy from file_handlers.mesh.skinning_contract import packed_rigid_joint_indices
 
 
-_fastmesh = ensure_fastmesh()
-if _fastmesh is None or not hasattr(_fastmesh, "skin_vertices"):
-    raise ImportError("fastmesh was built without motion-preview skinning support")
-skin_vertices = _fastmesh.skin_vertices
+skin_vertices = ensure_fastmesh().skin_vertices
 
 
 class SkinningError(ValueError):
     pass
+
+
+class SkinWeightSource(str, Enum):
+    PRIMARY = "primary"
+    ADDITIONAL = "additional"
+
+    @classmethod
+    def coerce(cls, value: "SkinWeightSource | str") -> "SkinWeightSource":
+        if isinstance(value, cls):
+            return value
+        try:
+            return cls(str(value).strip().lower())
+        except ValueError as exc:
+            raise SkinningError(f"unknown skin-weight source: {value!r}") from exc
 
 
 def shared_rig_model_space_transform(
@@ -71,6 +87,7 @@ def build_skinned_mesh_deformer(
     *,
     handler=None,
     explicit_mdf_path: str = "",
+    **deformer_options,
 ) -> "SkinnedMeshDeformer":
     try:
         contract = resolve_mesh_skinning_contract(
@@ -88,6 +105,7 @@ def build_skinned_mesh_deformer(
         bind_normals,
         bind_indices,
         skinning_contract=contract,
+        **deformer_options,
     )
 
 
@@ -100,8 +118,7 @@ def build_shared_rig_deformer(
     bind_indices: np.ndarray | None = None,
     *,
     pose_to_constrained_matrix: np.ndarray,
-    handler=None,
-    explicit_mdf_path: str = "",
+    **options,
 ) -> "SharedRigSkinningDeformer":
     return SharedRigSkinningDeformer(
         build_skinned_mesh_deformer(
@@ -110,8 +127,7 @@ def build_shared_rig_deformer(
             bind_positions,
             bind_normals,
             bind_indices,
-            handler=handler,
-            explicit_mdf_path=explicit_mdf_path,
+            **options,
         ),
         SharedRigPoseMapper(
             owner_rig,
@@ -119,6 +135,25 @@ def build_shared_rig_deformer(
             pose_to_constrained_matrix,
         ),
     )
+
+
+class MeshBones:
+    """The mesh's bones in remap order, as the game takes them."""
+
+    def __init__(self, joints, joint_count: int):
+        self.joints = np.asarray(joints, dtype=np.int64)
+        self.joint_count = joint_count
+        self._held = np.flatnonzero((self.joints >= 0) & (self.joints < joint_count))
+        self._still = np.tile(np.eye(3, 4, dtype=np.float32), (len(self.joints), 1, 1))
+
+    def of(self, matrices: np.ndarray) -> np.ndarray:
+        """Bones from the rig joints' skin ``matrices`` (row vectors), as 3 x 4 for column positions."""
+        matrices = np.asarray(matrices, dtype=np.float32).reshape(-1, 4, 4)
+        if len(matrices) != self.joint_count:
+            raise SkinningError("skin matrix count does not match the mesh rig")
+        bones = self._still.copy()
+        bones[self._held] = np.transpose(matrices[self.joints[self._held], :, :3], (0, 2, 1))
+        return bones
 
 
 class SharedRigSkinningDeformer:
@@ -155,9 +190,16 @@ class SharedRigSkinningDeformer:
 
     def skin_matrices(self, snapshot: MotionPreviewSnapshot) -> np.ndarray:
         return self.pose_mapper.skin_matrices(
-            snapshot.pose.world_matrices,
+            snapshot.pose.world,
             snapshot.root_deltas,
         )
+
+    def mesh_bones(self, matrices: np.ndarray) -> np.ndarray:
+        return self.deformer.mesh_bones(matrices)
+
+    def joint_locals(self, _snapshot: MotionPreviewSnapshot) -> None:
+        """The motion poses the owner's joints; this mesh file's own stay as the file sets them."""
+        return None
 
     def source_geometry(
         self,
@@ -179,6 +221,9 @@ class SkinnedMeshDeformer:
         bind_indices: np.ndarray | None = None,
         *,
         skinning_contract: MeshSkinningContract | None = None,
+        skin_weight_source: SkinWeightSource | str = SkinWeightSource.PRIMARY,
+        normal_recalculation_enabled: bool = True,
+        normal_recalc_edge_exclusion: bool = False,
     ):
         self.bind_positions = np.ascontiguousarray(
             bind_positions,
@@ -194,10 +239,11 @@ class SkinnedMeshDeformer:
             self.bind_positions,
             self.bind_normals,
         )
-        self._normal_recalculator = MeshNormalRecalculator.from_mesh(
-            mesh,
-            bind_indices,
-            len(self.bind_positions),
+        plan = (mesh_normal_recalc_plan(mesh, None if bind_indices is None else np.asarray(bind_indices).reshape(-1))
+                if normal_recalculation_enabled else None)
+        self._normal_recalculator = None if plan is None else PreparedNormalRecalcPlan(plan, len(self.bind_positions))
+        self._normal_recalc_edge_exclusion = bool(
+            normal_recalc_edge_exclusion
         )
         if self.bind_normals is not None and len(self.bind_normals) != len(
             self.bind_positions
@@ -208,7 +254,10 @@ class SkinnedMeshDeformer:
             raise SkinningError(
                 f"mesh skinning covers {expected_vertices} vertices; scene has {len(self.bind_positions)}"
             )
-        self._root_by_joint = rig.root_indices
+        self.rig = rig
+        self._root_by_joint = np.asarray(rig.root_indices, dtype=np.int64)
+        self._bones = MeshBones(mesh.bone_remap_indices, len(rig.joints))
+        self.skin_weight_source = SkinWeightSource.coerce(skin_weight_source)
         self._joint_indices, self._weights = self._build_influence_buffers(
             mesh,
             rig,
@@ -233,40 +282,54 @@ class SkinnedMeshDeformer:
         payloads: list[MeshScenePayload],
         skinning_contract: MeshSkinningContract | None,
     ) -> tuple[np.ndarray, np.ndarray]:
-        deform_to_joint = np.asarray(mesh.bone_remap_indices, dtype=np.int64)
+        deform_to_joint = self._bones.joints
         if not len(deform_to_joint):
             raise SkinningError("mesh has no deform-bone remap table")
         records: list[tuple[np.ndarray, np.ndarray]] = []
         max_width = 0
 
         for record in payloads:
-            streams = [
-                stream
-                for stream in (
-                    getattr(record.payload, "skin_weights", None),
-                    getattr(record.payload, "extra_skin_weights", None),
+            if self.skin_weight_source is SkinWeightSource.ADDITIONAL:
+                alternative = getattr(
+                    record.payload,
+                    "additional_vertex_weights",
+                    None,
                 )
-                if stream is not None
-            ]
+                streams = [alternative] if alternative is not None else []
+                source_label = "additional vertex weights"
+            else:
+                streams = [
+                    stream
+                    for stream in (
+                        getattr(record.payload, "skin_weights", None),
+                        getattr(record.payload, "extra_skin_weights", None),
+                    )
+                    if stream is not None
+                ]
+                source_label = "primary skin weights"
             if not streams:
                 raise SkinningError(
-                    f"mesh buffer {record.buffer_index} has no decoded skin weights"
+                    f"mesh buffer {record.buffer_index} has no decoded "
+                    f"{source_label}"
                 )
             deform_parts = []
             weight_parts = []
             for stream in streams:
-                if stream.vertex_count < record.vertex_count:
+                source_start = int(record.source_vertex_start)
+                source_end = source_start + int(record.vertex_count)
+                if stream.vertex_count < source_end:
                     raise SkinningError(
-                        f"mesh buffer {record.buffer_index} has fewer weights than LOD0 vertices"
+                        f"mesh buffer {record.buffer_index} has fewer "
+                        f"{source_label} than the selected vertices"
                     )
                 width = stream.influence_count
                 deform_parts.append(
                     np.asarray(stream.deform_indices, dtype=np.int64)
-                    .reshape(-1, width)[: record.vertex_count]
+                    .reshape(-1, width)[source_start:source_end]
                 )
                 weight_parts.append(
                     np.asarray(stream.weights, dtype=np.float32)
-                    .reshape(-1, width)[: record.vertex_count]
+                    .reshape(-1, width)[source_start:source_end]
                 )
             deform = np.concatenate(deform_parts, axis=1)
             weights = np.concatenate(weight_parts, axis=1)
@@ -291,6 +354,7 @@ class SkinnedMeshDeformer:
             payloads,
             weights,
             skinning_contract,
+            deform,
         )
         active = weights > 0.0
         missing = np.flatnonzero(~np.any(active, axis=1))
@@ -328,6 +392,7 @@ class SkinnedMeshDeformer:
         payloads: list[MeshScenePayload],
         weights: np.ndarray,
         contract: MeshSkinningContract | None,
+        indices: np.ndarray,
     ) -> None:
         if contract is None:
             return
@@ -338,7 +403,9 @@ class SkinnedMeshDeformer:
                 f"decoded weight lanes, got {width}"
             )
 
-        if contract.default_influence_count is not None:
+        if contract.lod0_compute_influence_count is not None:
+            limits = np.full(len(weights), contract.lod0_compute_influence_count, dtype=np.uint8)
+        elif contract.default_influence_count is not None:
             limits = np.full(
                 len(weights),
                 contract.default_influence_count,
@@ -359,6 +426,15 @@ class SkinnedMeshDeformer:
         counts = tuple(int(value) for value in np.unique(limits) if value)
         if any(count < 1 or count > width for count in counts):
             raise SkinningError("mesh skinning contract has an invalid influence count")
+        if (
+            contract.material_layout
+            is MaterialSkinningLayout.LATE_DXIL_PACKED_10BIT
+        ):
+            rigid = limits == 1
+            if np.any(rigid):
+                indices[rigid, 0] = packed_rigid_joint_indices(indices[rigid])
+            self._apply_late_packed_influence_contract(weights, limits, counts)
+            return
         for count in (value for value in counts if value < width):
             rows = np.flatnonzero(limits == count)
             active_weights = weights[rows, :count]
@@ -381,6 +457,52 @@ class SkinnedMeshDeformer:
                     "weights"
                 )
             weights[full_rows, -1] = np.clip(residual, 0.0, 1.0)
+
+    @staticmethod
+    def _apply_late_packed_influence_contract(
+        weights: np.ndarray,
+        limits: np.ndarray,
+        counts: tuple[int, ...],
+    ) -> None:
+        """Follows the release DXIL 4/6/12-weight permutations."""
+
+        unsupported = set(counts) - {1, 4, 6, 12}
+        if unsupported:
+            raise SkinningError(
+                "late packed skinning has unsupported material contracts "
+                f"{sorted(unsupported)}"
+            )
+        for selector in counts:
+            rows = np.flatnonzero(limits == selector)
+            if selector == 1:
+                weights[rows] = 0
+                weights[rows, 0] = 1
+                continue
+            if selector == 4:
+                # SkinWeightCount_4 reads three indices and three UNORM
+                # weights, then divides all three by their sum.
+                stored_count = 3
+                stored = weights[rows, :stored_count]
+                totals = np.sum(stored, axis=1)
+                if np.any(totals <= 0.0):
+                    raise SkinningError(
+                        "four-weight shader span has a vertex without a "
+                        "usable stored influence"
+                    )
+                weights[rows, :stored_count] = stored / totals[:, np.newaxis]
+                weights[rows, stored_count:] = 0.0
+                continue
+
+            stored_count = selector - 1
+            residual = 1.0 - np.sum(weights[rows, :stored_count], axis=1)
+            tolerance = 1e-5
+            if np.any((residual < -tolerance) | (residual > 1.0 + tolerance)):
+                raise SkinningError(
+                    f"{selector}-weight shader span has invalid implicit "
+                    "final weights"
+                )
+            weights[rows, stored_count] = np.clip(residual, 0.0, 1.0)
+            weights[rows, selector:] = 0.0
 
     @staticmethod
     def _vertex_influence_limits(
@@ -495,11 +617,17 @@ class SkinnedMeshDeformer:
             raise SkinningError("skin matrix count does not match the mesh rig")
         if not np.isfinite(matrices).all():
             raise SkinningError("skin matrices contain a non-finite value")
-        source_normals = (
-            None
-            if self._normal_recalculator is not None
-            else (self.bind_normals if normals is None else normals)
+        source_normals = self.bind_normals if normals is None else normals
+        preserve_excluded_normals = bool(
+            self._normal_recalculator is not None
+            and self._normal_recalc_edge_exclusion
+            and self._normal_recalculator.has_edge_exclusions
         )
+        if (
+            self._normal_recalculator is not None
+            and not preserve_excluded_normals
+        ):
+            source_normals = None
         position_bytes, normal_bytes = skin_vertices(
             self.bind_positions if positions is None else positions,
             source_normals,
@@ -514,26 +642,30 @@ class SkinnedMeshDeformer:
             else None
         )
         if self._normal_recalculator is not None:
-            normals = self._normal_recalculator.recalculate(positions)
+            normals = self._normal_recalculator.recalculate(
+                positions,
+                edge_exclusion_enabled=self._normal_recalc_edge_exclusion,
+                preserved_normals=normals,
+            )
         return positions, normals
 
+    def mesh_bones(self, matrices: np.ndarray) -> np.ndarray:
+        return self._bones.of(matrices)
+
+    def joint_locals(self, snapshot: MotionPreviewSnapshot) -> np.ndarray:
+        """Row vectors, for ``ScenePose.joints``."""
+        return transform_matrices(snapshot.pose.local)
+
     def skin_matrices(self, snapshot: MotionPreviewSnapshot) -> np.ndarray:
-        raw = snapshot.pose.skin_matrices
-        if len(raw) != len(self._root_by_joint) or any(
-            matrix is None for matrix in raw
-        ):
-            raise SkinningError(
-                "evaluated target pose has no skin matrix for every mesh joint"
-            )
-        matrices = np.asarray(raw, dtype=np.float32).reshape(-1, 4, 4).copy()
+        world = snapshot.pose.world
+        if len(world) != len(self._root_by_joint):
+            raise SkinningError("evaluated target pose does not match the mesh rig")
+        try:
+            matrices = self.rig.skin_matrices(world).astype(np.float32)
+        except ValueError as exc:
+            raise SkinningError(str(exc)) from exc
         if not np.isfinite(matrices).all():
-            raise SkinningError(
-                "evaluated target pose contains a non-finite skin matrix"
-            )
-        root_deltas = dict(snapshot.root_deltas)
-        if root_deltas:
-            for joint_index, root_index in enumerate(self._root_by_joint):
-                delta = root_deltas.get(root_index)
-                if delta is not None:
-                    matrices[joint_index, 3, :3] -= np.asarray(delta, dtype=np.float32)
+            raise SkinningError("evaluated target pose contains a non-finite skin matrix")
+        for root, delta in snapshot.root_deltas:
+            matrices[self._root_by_joint == root, 3, :3] -= np.asarray(delta, dtype=np.float32)
         return matrices

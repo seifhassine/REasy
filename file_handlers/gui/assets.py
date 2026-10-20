@@ -5,19 +5,19 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import lru_cache
 
-from file_handlers.mdf.mdf_file import MdfFile
-from file_handlers.mesh.mesh_file import MeshFile
-from file_handlers.tex.tex_file import TexFile
-from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
-from utils.resource_file_utils import (
+lazy from file_handlers.mdf.mdf_file import MdfFile
+lazy from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
+lazy from file_handlers.tex.tex_file import TexFile
+lazy from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
+lazy from utils.resource_file_utils import (
     ResourceDataLoader,
     normalize_resource_path,
     resource_path_with_version,
     resource_version_from_path,
 )
 
-from .errors import GuiAssetError
-from .profiles import GuiFormatProfile
+lazy from .errors import GuiAssetError
+lazy from .profiles import GuiFormatProfile
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,7 +152,11 @@ class GuiAssetCatalog:
         )
         mesh = MeshFile()
         try:
-            mesh.read(data, file_version=version)
+            mesh.read(
+                data,
+                file_version=version,
+                load_mode=MeshLoadMode.LIGHT,
+            )
         except Exception as exc:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, mesh

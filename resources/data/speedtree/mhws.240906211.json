@@ -1,0 +1,48 @@
+{
+ "format": 3,
+ "game": "MHWS",
+ "resource_version": 240906211,
+ "programs": {
+  "shader_types": {},
+  "material_markers": [
+   [
+    "A",
+    [
+     1
+    ]
+   ],
+   [
+    "TS",
+    [
+     0
+    ]
+   ]
+  ],
+  "kinds_taking_material_markers": []
+ },
+ "placements": {
+  "foliage": {
+   "meshlets": {
+    "raster": "SpeedTreeV8{marker}GBufferMeshlet{billboard}VS",
+    "shade": "SpeedTreeV8GBufferVisibility{billboard}",
+    "transform": "SpeedTreeV8MeshletGeometryTransform{billboard}",
+    "billboard": "Billboard",
+    "instance": {
+     "DensCullTransitionBuffer": "ff",
+     "GrassFallPushIndexBuffer": "00000000",
+     "SpeedTreeV8WindStateBuffer": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "SpeedTreeV8PrevWindStateBuffer": "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "SpeedTreeV8GlobalWindStateBuffer": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+     "SpeedTreeV8GlobalPrevWindStateBuffer": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    },
+    "extended": "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+   }
+  }
+ },
+ "source": {
+  "capture": "MonsterHunterWilds_frame15118 (the title scene's foliage: sm12_011_00, sm15_002_00-03, sm15_003_00, sm15_004_00)",
+  "programs": "raster 8367 (plain), 8404 (TS), 8528 (A, Billboard), 8542 (A), 8622 (ATS), by shader hash (scratch stage106/name_speedtree_draws.py); material flags 0x98 plain, 0x9a A, 0x9b ATS; transform 11309, shading 11559",
+  "instance": "per instance record (vs_reads.md, cs_reads.md): DensCullTransitionBuffer a byte (the frame: 255), the wind state 48 bytes and its previous, GrassFallPushIndexBuffer a word of collider indices + 1 (0 none), the global wind state 128 bytes (indexed by the block's +24; one record each here)",
+  "extended": "extendedBindlessIndex's block (64 bytes): the frame holds 1e4, 9e4, 1e6 (squared distances under which the branch sway, the leaf ripple and any wind run), 0.06 (noise scale), the global wind index at +24; the distances zero here: no wind code runs, the wind still"
+ }
+}

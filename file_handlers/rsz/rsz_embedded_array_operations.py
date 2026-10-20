@@ -1,16 +1,10 @@
-"""
-Specialized operations for arrays in embedded RSZ structures.
-
-This module handles array operations (adding/removing elements) specifically for
-embedded RSZ data structures found in SCN.19 files.
-"""
-
 import traceback
-from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type
-from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from utils.id_manager import EmbeddedIdManager
-from file_handlers.pyside.tree_model import DataTreeBuilder
-from file_handlers.rsz.utils.rsz_embedded_utils import (
+import weakref
+lazy from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type
+lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+lazy from utils.id_manager import EmbeddedIdManager
+lazy from file_handlers.pyside.tree_model import DataTreeBuilder
+lazy from file_handlers.rsz.utils.rsz_embedded_utils import (
     update_rsz_header_counts,
     create_embedded_instance_info,
     create_embedded_userdata_info,
@@ -21,21 +15,28 @@ from file_handlers.rsz.utils.rsz_embedded_utils import (
     build_context_chain,
     update_embedded_references_for_shift
 )
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     collect_object_reference_values,
     get_reference_id_and_type,
     update_references_of_type,
     update_references_with_mapping,
 )
-from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
-from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
+lazy from file_handlers.rsz.utils.rsz_tree_utils import append_array_element_node
+lazy from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
+lazy from PySide6.QtWidgets import QMessageBox
+lazy from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
+lazy from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 
 
 class RszEmbeddedArrayOperations:
     
     def __init__(self, viewer):
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.type_registry = viewer.type_registry
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def delete_array_element(self, array_data, element_index, fallback_rui):
         if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
@@ -106,7 +107,6 @@ class RszEmbeddedArrayOperations:
 
 
     def _update_array_counters(self, array_data, rui):
-        """Update array counters in embedded context to match current array length"""
         if hasattr(rui, '_array_counters') and array_data:
             array_id = id(array_data)
             if array_id in rui._array_counters:
@@ -282,7 +282,6 @@ class RszEmbeddedArrayOperations:
                 if rui.embedded_object_table[i] in nested:
                     rui.embedded_object_table[i] = 0
         
-        # Update id_manager
         if hasattr(rui, 'id_manager') and isinstance(rui.id_manager, EmbeddedIdManager):
             if hasattr(rui.id_manager, '_instance_to_reasy'):
                 for d in nested:
@@ -309,7 +308,6 @@ class RszEmbeddedArrayOperations:
         return True
     
     def _cleanup_references_to_deleted_instances(self, deleted_ids, rui):
-        """Clean up all references to instances that are being deleted."""
         if hasattr(rui, 'embedded_instances'):
             for instance_id, fields in rui.embedded_instances.items():
                 if instance_id in deleted_ids or not isinstance(fields, dict):
@@ -348,7 +346,6 @@ class RszEmbeddedArrayOperations:
         array_item=None,
         notify=True,
     ):
-        """Create array element with proper instance ordering in embedded contexts."""
         parent_context = getattr(array_data, '_owning_context', None)
         parent_instance_id = getattr(array_data, '_owning_instance_id', None)
 
@@ -390,7 +387,6 @@ class RszEmbeddedArrayOperations:
             self._add_element_to_ui_direct(array_item, new_elem)
         
         if new_elem and notify:
-            from PySide6.QtWidgets import QMessageBox
             QMessageBox.information(self.viewer, "Element Added", f"New {element_type} created.")
         
         return new_elem
@@ -428,10 +424,6 @@ class RszEmbeddedArrayOperations:
         
 
     def _calculate_field_order_insertion_index(self, array_data, rui, parent_id):
-        """
-        Calculate the correct insertion index for new instances based on field declaration order.
-        This ensures that instances are created in the same order as fields are declared in the type definition.
-        """
         if not hasattr(array_data, '_owning_field') or not hasattr(array_data, '_owning_instance_id'):
             return parent_id
             
@@ -698,10 +690,6 @@ class RszEmbeddedArrayOperations:
 
     def _create_new_embedded_object_instance_for_array(
         self, type_id, type_info, element_type, array_data, rui, parent_id):
-        """
-        Build a new object (with all nested children) and splice it into *rui*.
-        """
-
         class _NestedNode:
             __slots__ = ("type_id", "type_info", "type_name", "is_userdata",
                         "fields", "children", "instance_id",
@@ -779,7 +767,6 @@ class RszEmbeddedArrayOperations:
         created_nodes = set()
         
         def _gather_in_field_order(node):
-            """Gather nodes respecting field declaration order"""
             if node in created_nodes:
                 return
                 
@@ -913,8 +900,6 @@ class RszEmbeddedArrayOperations:
                 _register_instance(node)
 
         update_rsz_header_counts(rui)
-        if hasattr(rui, "mark_modified"):
-            rui.mark_modified()
 
         root_iid = all_nodes[-1].instance_id
         
@@ -1229,7 +1214,6 @@ class RszEmbeddedArrayOperations:
             )
 
     def _create_userdata_element_fixed(self, element_type, array_data, parent_rui):
-        """Create UserDataData element with proper ordering."""
         type_info, type_id = self.type_registry.find_type_by_name(element_type)
         if not type_info:
             return None
@@ -1258,7 +1242,6 @@ class RszEmbeddedArrayOperations:
 
             self._populate_embedded_rsz_fixed(userdata_info, type_info, type_id)
 
-            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
             userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
             userdata_info.data_size = len(userdata_info.data)
 
@@ -1284,28 +1267,23 @@ class RszEmbeddedArrayOperations:
         return element
 
     def _calculate_insertion_index(self, array_data, parent_rui, parent_instance_id):
-        """Calculate where to insert new element based on field order."""
         insertion_point, min_after, array_field_name = self._analyze_instance_layout(parent_rui, parent_instance_id, array_data)
         
         if insertion_point is None:
-            # Fallback to simple calculation
-            max_id = 0  # Start from 0, not parent_instance_id
+            max_id = 0
             for elem in array_data.values:
                 if is_reference_type(elem) and elem.value > max_id:
                     max_id = elem.value
-            # If no elements yet, start after any existing instances (but not parent)
             if max_id == 0:
                 for inst_id in sorted(parent_rui.embedded_instances.keys()):
                     if inst_id != parent_instance_id and inst_id > max_id:
                         max_id = inst_id
-                # Find the first gap or use max_id + 1
                 for i in range(1, max_id + 2):
                     if i not in parent_rui.embedded_instances or i == parent_instance_id:
                         if i != parent_instance_id:
                             return i
             return max_id + 1
         
-        # If we would collide with instances from later fields, we need to shift them
         if min_after is not None and insertion_point >= min_after:
             return min_after
         
@@ -1358,7 +1336,6 @@ class RszEmbeddedArrayOperations:
         userdata_info.embedded_rsz_header.object_count = 1
 
     def paste_array_element(self, elem_data, array_data, parent_rui):
-        """Paste array element - handle UserDataData with full content."""
         element_type = elem_data.get("type")
         
         if element_type == "UserDataData" and elem_data.get("has_full_content"):
@@ -1392,7 +1369,6 @@ class RszEmbeddedArrayOperations:
 
     def _paste_embedded_object_graph(self, elem_data, array_data, rui):
         """Insert a copied embedded object graph with remapped relative IDs."""
-        from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 
         graph = elem_data["object_graph"]
         entries = sorted(graph.get("instances", ()), key=lambda item: item["id"])
@@ -1467,7 +1443,6 @@ class RszEmbeddedArrayOperations:
         return root
 
     def _paste_userdata_with_full_content(self, elem_data, array_data, parent_rui):
-        """Paste UserDataData with full embedded content."""
         embedded_data = elem_data.get("embedded_data", {})
         
         parent_instance_id = self._find_parent_id_for_array(array_data, parent_rui)
@@ -1496,7 +1471,6 @@ class RszEmbeddedArrayOperations:
 
             self._restore_embedded_content(userdata_info, embedded_data)
             
-            from file_handlers.rsz.scn_19.scn_19_structure import build_embedded_rsz
             userdata_info.data = build_embedded_rsz(userdata_info, self.type_registry)
             userdata_info.data_size = len(userdata_info.data)
 
@@ -1520,7 +1494,6 @@ class RszEmbeddedArrayOperations:
         return element
     
     def _restore_embedded_content(self, userdata_info, embedded_data):
-        """Restore embedded content from serialized data."""
         instance_infos = embedded_data.get("instance_infos", [])
         instances = embedded_data.get("instances", {})
         
@@ -1544,7 +1517,6 @@ class RszEmbeddedArrayOperations:
             fields = {}
             
             for field_name, field_data in fields_data.items():
-                from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
                 field_obj = RszArrayClipboard._deserialize_element(field_data, None, {})
                 if field_obj:
                     if isinstance(field_data, dict) and field_data.get("is_relative"):
@@ -1572,7 +1544,6 @@ class RszEmbeddedArrayOperations:
         userdata_info.embedded_rsz_header.object_count = len(userdata_info.embedded_object_table)
 
     def _verify_and_fix_references(self, parent_rui, parent_instance_id):
-        """Verify and fix any reference inconsistencies in the parent instance."""
         if not hasattr(parent_rui, 'embedded_instances'):
             return
             
@@ -1580,7 +1551,6 @@ class RszEmbeddedArrayOperations:
         if not parent_fields:
             return
             
-        # Check each field for valid references
         for field_name, field_obj in parent_fields.items():
             if is_reference_type(field_obj):
                 if field_obj.value > 0:
@@ -1609,7 +1579,6 @@ class RszEmbeddedArrayOperations:
                             elem.value = 0
 
     def _analyze_instance_layout(self, parent_rui, parent_instance_id, array_data):
-        """Analyze the current instance layout to understand where array elements should go."""
         parent_instance_info = parent_rui.embedded_instance_infos[parent_instance_id] if parent_instance_id < len(parent_rui.embedded_instance_infos) else None
         if not parent_instance_info:
             print("ERROR: No parent instance info")
@@ -1646,7 +1615,7 @@ class RszEmbeddedArrayOperations:
         
         max_before = 0 
         for inst_id, (field_name, field_idx) in sorted(instance_to_field.items()):
-            if field_idx <= our_array_field_index and inst_id != parent_instance_id:  # Exclude parent
+            if field_idx <= our_array_field_index and inst_id != parent_instance_id:
                 max_before = max(max_before, inst_id)
         
         min_after = None

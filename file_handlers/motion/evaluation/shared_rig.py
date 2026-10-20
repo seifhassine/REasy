@@ -2,10 +2,10 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 
-import numpy as np
+lazy import numpy as np
 
-from .math3d import transform_matrix
-from .model import Matrix4, Rig, Vector3
+from .math3d import transform_matrices
+from .model import Rig, Vector3
 
 
 class SharedRigPoseMapper:
@@ -38,81 +38,61 @@ class SharedRigPoseMapper:
         )
         if not any(index is not None for index in self._owner_indices):
             raise ValueError("constrained rig has no joints in common with its owner")
-        self._local_matrices = tuple(
-            np.asarray(transform_matrix(joint.rest), dtype=np.float32).reshape(4, 4)
-            for joint in constrained_rig.joints
-        )
+        joints = constrained_rig.joints
+        self._local_matrices = transform_matrices(constrained_rig.rest).astype(np.float32)
+        owned = [index for index, owner in enumerate(self._owner_indices) if owner is not None]
+        self._owned = np.asarray(owned, dtype=np.int64)
+        self._owned_sources = np.asarray([self._owner_indices[index] for index in owned], dtype=np.int64)
+        followers = [index for index, owner in enumerate(self._owner_indices) if owner is None]
+        self._follower_roots = np.asarray(
+            [index for index in followers if joints[index].parent_index is None], dtype=np.int64)
+        self._follower_levels = self._levels(
+            [index for index in followers if joints[index].parent_index is not None])
         self._owner_roots = owner_rig.root_indices
-        self._display_roots = self._mapped_root_indices()
+        self._display_roots = np.array([-1 if root is None else root for root in self._mapped_root_indices()],
+                                       dtype=np.int64)
 
-    def world_matrices(
-        self,
-        owner_world_matrices: Sequence[Matrix4],
-    ) -> np.ndarray:
-        if len(owner_world_matrices) != len(self.owner_rig.joints):
+    def world_matrices(self, owner_world: np.ndarray) -> np.ndarray:
+        owner_world = np.asarray(owner_world, dtype=np.float32).reshape(-1, 4, 4)
+        if len(owner_world) != len(self.owner_rig.joints):
             raise ValueError("owner pose does not match its rig")
-        owner_world = np.asarray(
-            owner_world_matrices,
-            dtype=np.float32,
-        ).reshape(-1, 4, 4)
         if not np.isfinite(owner_world).all():
             raise ValueError("owner pose contains a non-finite joint matrix")
 
-        result: list[np.ndarray | None] = [None] * len(self.constrained_rig.joints)
-
-        def resolve(index: int) -> np.ndarray:
-            matrix = result[index]
-            if matrix is not None:
-                return matrix
-            owner_index = self._owner_indices[index]
-            if owner_index is not None:
-                matrix = (
-                    owner_world[owner_index] @ self._pose_to_constrained
-                ).astype(np.float32)
-            else:
-                parent = self.constrained_rig.joints[index].parent_index
-                matrix = (
-                    self._local_matrices[index].copy()
-                    if parent is None
-                    else self._local_matrices[index] @ resolve(parent)
-                )
-            result[index] = matrix
-            return matrix
-
-        return np.stack(
-            [resolve(index) for index in range(len(result))]
-        ).astype(np.float32)
+        world = np.empty((len(self.constrained_rig.joints), 4, 4), dtype=np.float32)
+        world[self._owned] = owner_world[self._owned_sources] @ self._pose_to_constrained
+        world[self._follower_roots] = self._local_matrices[self._follower_roots]
+        for children, parents in self._follower_levels:
+            world[children] = self._local_matrices[children] @ world[parents]
+        return world
 
     def skin_matrices(
         self,
-        owner_world_matrices: Sequence[Matrix4],
+        owner_world: np.ndarray,
         root_deltas: Sequence[tuple[int, Vector3]] = (),
     ) -> np.ndarray:
-        world = self.world_matrices(owner_world_matrices)
-        matrices = []
-        for index, joint in enumerate(self.constrained_rig.joints):
-            if joint.inverse_bind_matrix is None:
-                raise ValueError(
-                    f"constrained rig joint {joint.name!r} has no inverse-bind matrix"
-                )
-            inverse_bind = np.asarray(
-                joint.inverse_bind_matrix,
-                dtype=np.float32,
-            ).reshape(4, 4)
-            matrices.append(inverse_bind @ world[index])
-        skin = np.stack(matrices).astype(np.float32)
-
-        deltas = {
-            int(root): np.asarray(delta, dtype=np.float32)
-            for root, delta in root_deltas
-        }
-        for index, root in enumerate(self._display_roots):
-            delta = deltas.get(root) if root is not None else None
-            if delta is not None:
-                skin[index, 3, :3] -= (
-                    delta @ self._pose_to_constrained[:3, :3]
-                )
+        skin = self.constrained_rig.skin_matrices(self.world_matrices(owner_world)).astype(np.float32)
+        for root, delta in root_deltas:
+            skin[self._display_roots == int(root), 3, :3] -= (
+                np.asarray(delta, dtype=np.float32) @ self._pose_to_constrained[:3, :3]
+            )
         return skin
+
+    def _levels(self, indices: list[int]) -> tuple[tuple[np.ndarray, np.ndarray], ...]:
+        joints = self.constrained_rig.joints
+        levels: list[tuple[np.ndarray, np.ndarray]] = []
+        placed = {index for index, owner in enumerate(self._owner_indices)
+                  if owner is not None or joints[index].parent_index is None}
+        pending = list(indices)
+        while pending:
+            ready = [index for index in pending if joints[index].parent_index in placed]
+            if not ready:
+                raise ValueError("constrained rig hierarchy contains a cycle")
+            levels.append((np.asarray(ready, dtype=np.int64),
+                           np.asarray([joints[index].parent_index for index in ready], dtype=np.int64)))
+            placed.update(ready)
+            pending = [index for index in pending if index not in placed]
+        return tuple(levels)
 
     @staticmethod
     def _unique_joint_names(rig: Rig, label: str) -> dict[str, int]:

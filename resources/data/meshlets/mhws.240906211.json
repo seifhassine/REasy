@@ -1,0 +1,131 @@
+{
+ "format": 2,
+ "game": "MHWS",
+ "resource_version": 240906211,
+ "raster": "GBufferMeshletVS",
+ "shade": "GBufferVisibility",
+ "forward": "ForwardMeshletVS",
+ "material_ids": {
+  "file": "systems/develop/meshshader/test.sdf",
+  "program": "DrawMaterialID",
+  "target": 2
+ },
+ "vertices": 384,
+ "tile_vertices": 160,
+ "visibility_format": 17,
+ "material_id_formats": [
+  53,
+  55,
+  56
+ ],
+ "table_tag": 4207405473,
+ "instance": {
+  "userParam": 0,
+  "visibleFlag": 1627455519,
+  "partsTableIndex": 2702970337,
+  "extendedBindlessIndex": 4294967295,
+  "miscParams": 110,
+  "reserve2": 3014656
+ },
+ "deferred": {
+  "steps": [
+   {
+    "program": "DeferredIndexBufferKey",
+    "groups": 1056,
+    "buffers": {
+     "DeferredTexturingIndicesBufferSRV": "indices",
+     "RWSortCounter": "counter",
+     "RWSortKey": "keys"
+    }
+   },
+   {
+    "program": "DeferredBuildBucket",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredGenerateDispatchIndirect",
+    "groups": 1,
+    "buffers": {
+     "DeferredTexturingOffsetUAV": "offsets",
+     "DeferredTexturingIndirectUAV": "arguments",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredRadixsort1stPass",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWSortKey": "sorted_keys",
+     "RWSortData": "order",
+     "RWBucket": "buckets"
+    }
+   }
+  ],
+  "bound": {
+   "material_ids": {
+    "DeferredTexturingIndicesBufferUAV": "indices",
+    "RWSortCounter": "counter",
+    "DeferredIndexUAV": "slots"
+   },
+   "transform": {
+    "DeferredTexturingOffsetSRV": "offsets",
+    "DeferredTexturingIndicesBufferSRV": "indices",
+    "SortData": "order",
+    "DeferredTexturingTransformedBufferUAV": "triangles"
+   },
+   "shade": {
+    "DeferredIndexSRV": "slots",
+    "DeferredTexturingTransformedBufferSRV": "triangles"
+   }
+  },
+  "roles": {
+   "counter": {"size": 128},
+   "buckets": {"size": 16384},
+   "offsets": {"size": 32768},
+   "arguments": {"size": 131072},
+   "indices": {"texel_bytes": 4},
+   "keys": {"texel_bytes": 4},
+   "sorted_keys": {"texel_bytes": 4},
+   "order": {"texel_bytes": 4},
+   "triangles": {"texel_bytes": 48},
+   "slots": {"format": 42}
+  },
+  "zeroed": ["counter", "buckets"],
+  "transform_ids": 64,
+  "arguments": {"role": "arguments", "bytes": 32}
+ },
+ "transform": {"program": "MeshletGeometryTransform", "reads": ["DeferredIndexSRV", "DeferredTexturingTransformedBufferSRV"]},
+ "source": {
+  "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
+  "captures": [
+   {
+    "capture": "MonsterHunterWilds_frame15118.rdc",
+    "draws": [
+     8355,
+     8909,
+     11260,
+     11272,
+     11277,
+     11283,
+     11289,
+     11309,
+     11396,
+     11559
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame14579.rdc",
+    "draws": [
+     18865
+    ]
+   }
+  ]
+ }
+}

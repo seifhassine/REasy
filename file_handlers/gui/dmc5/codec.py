@@ -5,14 +5,14 @@ from __future__ import annotations
 import struct
 import uuid
 
-from file_handlers.clip.enums import PropertyType
-from file_handlers.motion.binary import ReadContext
-from file_handlers.motion.errors import MotionParseError
+lazy from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.motion.binary import ReadContext
+lazy from file_handlers.motion.errors import MotionParseError
 from file_handlers.motion.mot_clip.model import ClipInterpolation
-from file_handlers.motion.mot_clip.parser import CompactClipV27Parser
+lazy from file_handlers.motion.mot_clip.parser import CompactClipV27Parser
 
-from ..errors import GuiFormatError
-from ..model import (
+lazy from ..errors import GuiFormatError
+lazy from ..model import (
     GUI_MAGIC,
     NINE_SLICE_CELL_NAMES,
     GuiAnimation,
@@ -26,9 +26,9 @@ from ..model import (
     GuiTextureEntry,
     GuiTextureSet,
 )
-from ..profiles import GuiFormatProfile
-from .adapter import DMC5_GUI_ADAPTER
-from .property_codec import decode_dmc5_gui_value
+lazy from ..profiles import GuiFormatProfile
+lazy from .adapter import DMC5_GUI_ADAPTER
+lazy from .property_codec import decode_dmc5_gui_value
 
 
 MAX_RECORDS = 1_000_000

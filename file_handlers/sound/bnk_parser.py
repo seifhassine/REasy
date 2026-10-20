@@ -19,7 +19,7 @@ from .pck_codec import (
     parse_pck_layout,
     rewrite_pck,
 )
-from .wwise_schema import (
+lazy from .wwise_schema import (
     BNK_FX_SCHEMAS,
     BNK_PLUGIN_NAMES,
     STRUCTURED_BANK_VERSIONS,
@@ -745,7 +745,7 @@ def parse_pck(data: bytes) -> BnkParseResult:
             warnings=["Invalid or truncated AKPK header"],
         )
 
-    all_entries = [entry for table in layout.tables for entry in table.entries]
+    all_entries = [*table.entries for table in layout.tables]
     media_entries = [entry for entry in all_entries if entry.table_kind != "banks"]
     tracks = [
         BnkTrack(
@@ -985,7 +985,7 @@ def _pack_chunk_records(chunks: list[ChunkRecord], trailing: bytes = b"") -> byt
         out += chunk.chunk_id + struct.pack("<I", len(chunk.payload))
         out += chunk.payload
     out += trailing
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _read_bank_version(chunk: bytes | None) -> int | None:
@@ -2113,7 +2113,7 @@ def _pack_event_payload(object_id: int, action_ids: tuple[int, ...]) -> bytes:
     out = bytearray(struct.pack("<I", object_id) + _pack_varuint(len(action_ids)))
     if action_ids:
         out += struct.pack(f"<{len(action_ids)}I", *action_ids)
-    return bytes(out)
+    return out.take_bytes()
 
 
 def clone_hirc_payload(obj: HircObject, object_id: int) -> bytes:
@@ -2124,7 +2124,7 @@ def clone_hirc_payload(obj: HircObject, object_id: int) -> bytes:
         raise ValueError(f"HIRC object {obj.object_id} has no editable ShortID")
     payload = bytearray(obj.payload)
     struct.pack_into("<I", payload, 0, object_id)
-    return bytes(payload)
+    return payload.take_bytes()
 
 
 def create_play_action_payload(object_id: int, target_id: int) -> bytes:
@@ -2173,7 +2173,7 @@ def patch_hirc_reference(obj: HircObject, offset: int, target_id: int) -> bytes:
         raise ValueError(f"Reference offset {offset} is outside HIRC object {obj.object_id}")
     payload = bytearray(obj.payload)
     struct.pack_into("<I", payload, offset, _object_id(target_id, allow_zero=True))
-    return bytes(payload)
+    return payload.take_bytes()
 
 
 def _validate_hirc_reference_target(
@@ -2244,7 +2244,7 @@ def set_action_fields(
     payload = bytearray(obj.payload)
     struct.pack_into("<HI", payload, 4, action_type, _object_id(target_id, allow_zero=True))
     payload[10] = (payload[10] & ~1) | int(bool(target_is_bus))
-    return bytes(payload)
+    return payload.take_bytes()
 
 
 def _pack_action_exceptions(exceptions) -> bytes:
@@ -2254,7 +2254,7 @@ def _pack_action_exceptions(exceptions) -> bytes:
         out += struct.pack(
             "<IB", _object_id(object_id, allow_zero=True), int(bool(is_bus))
         )
-    return bytes(out)
+    return out.take_bytes()
 
 
 def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
@@ -2331,7 +2331,7 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
         struct.pack_into(
             "<I", out, 6, _u32(settings.parameter_id or 0, "Game Parameter ID")
         )
-    return bytes(out)
+    return out.take_bytes()
 
 
 def set_attenuation(obj: HircObject, settings: BnkAttenuation) -> bytes:
@@ -2374,7 +2374,7 @@ def set_attenuation(obj: HircObject, settings: BnkAttenuation) -> bytes:
                 "<ffI", x, y, _u32(point.interpolation, "Curve interpolation")
             )
     out += obj.payload[original.end :]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def set_silence_source(obj: HircObject, settings: BnkSilenceSource) -> bytes:
@@ -2393,7 +2393,7 @@ def set_silence_source(obj: HircObject, settings: BnkSilenceSource) -> bytes:
         raise ValueError("Silence duration must be non-negative")
     payload = bytearray(obj.payload)
     struct.pack_into("<3f", payload, original.offset, *values)
-    return bytes(payload)
+    return payload.take_bytes()
 
 
 def set_fx_parameters(obj: HircObject, parameters) -> bytes:
@@ -2430,7 +2430,7 @@ def set_fx_parameters(obj: HircObject, parameters) -> bytes:
     fmt = "<" + "".join(_FX_STORAGE_FORMAT[item.storage] for item in fx.parameters)
     payload = bytearray(obj.payload)
     struct.pack_into(fmt, payload, fx.offset, *values)
-    return bytes(payload)
+    return payload.take_bytes()
 
 
 def set_bank_sources(obj: HircObject, sources) -> bytes:
@@ -2456,7 +2456,7 @@ def set_bank_sources(obj: HircObject, sources) -> bytes:
             _u32(source.in_memory_size, "In-memory size"),
             _u8(source.source_bits, "Source flags"),
         )
-    return bytes(payload)
+    return payload.take_bytes()
 
 
 def bnk_property_name(
@@ -2544,7 +2544,7 @@ def set_property_bundle(obj: HircObject, values, ranges) -> bytes:
                 _u32(item.maximum_bits, "Range maximum bits"),
             )
     out += obj.payload[bundle.end :]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def can_edit_hirc_children(obj: HircObject) -> bool:
@@ -2633,7 +2633,7 @@ def set_random_sequence(
     for item in playlist:
         out += struct.pack("<Ii", _object_id(item.object_id), _s32(item.weight, "Playlist weight"))
     out += obj.payload[settings.playlist_end :]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def set_switch_container(
@@ -2673,7 +2673,7 @@ def set_switch_container(
             _s32(param.fade_in_ms, "Fade-in time"),
         )
     out += obj.payload[settings.data_end :]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def set_music_segment(
@@ -2703,7 +2703,7 @@ def set_music_segment(
             name += b"\0" if name else b""
             out += struct.pack("<I", len(name)) + name
     out += obj.payload[segment.markers_end :]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _read_clip_automations(
@@ -2747,7 +2747,7 @@ def _write_clip_automations(automations: tuple[BnkClipAutomation, ...]) -> bytes
         )
         for position, value, curve in item.points:
             out += struct.pack("<ffI", float(position), float(value), int(curve))
-    return bytes(out)
+    return out.take_bytes()
 
 
 def set_music_track_clips(
@@ -2800,7 +2800,7 @@ def set_music_track_clips(
         out += obj.payload[automation_end :]
     else:
         out += obj.payload[track.playlist_end :]
-    return bytes(out)
+    return out.take_bytes()
 
 
 def music_clip_source_ids(result) -> frozenset[int]:
@@ -3199,7 +3199,7 @@ def _pack_hirc(objects: list[HircObject], trailing: bytes = b"") -> bytes:
         out += struct.pack("<I", len(obj.payload))
         out += obj.payload
     out += trailing
-    return bytes(out)
+    return out.take_bytes()
 
 
 def _edit_hirc_chunk(
@@ -3837,7 +3837,7 @@ class BnkEditModel:
                 original.type_id,
                 original.type_name,
                 object_id,
-                bytes(payload),
+                payload.take_bytes(),
                 0,
                 bank_version=self.result.bank_version,
             )
@@ -3924,7 +3924,7 @@ def _rekey_didx(chunks: list[ChunkRecord], renames: dict[int, int]) -> None:
             entry.offset,
             entry.length,
         )
-    chunks[index] = ChunkRecord(b"DIDX", bytes(payload))
+    chunks[index] = ChunkRecord(b"DIDX", payload.take_bytes())
 
 
 def _rewrite_bnk(
@@ -4039,7 +4039,7 @@ def _rewrite_bnk_media(
             if hirc_index is not None else _HircReadResult([], b"", False)
         )
         _decode_hirc_objects(hirc.objects, bank_version)
-    sources = [source for obj in hirc.objects for source in obj.sources]
+    sources = [*obj.sources for obj in hirc.objects]
     source_ids = {source.source_id for source in sources}
     embedded_ids = {source.source_id for source in sources if source.stream_type == 0}
     prefetch_ids = {source.source_id for source in sources if source.stream_type == 1}
@@ -4114,8 +4114,8 @@ def _rewrite_bnk_media(
         )
         new_didx += struct.pack(_DIDX_ENTRY_FMT, entry.source_id, len(new_data), len(payload))
         new_data += payload
-    chunks[didx_index] = ChunkRecord(b"DIDX", bytes(new_didx))
-    chunks[data_index] = ChunkRecord(b"DATA", bytes(new_data))
+    chunks[didx_index] = ChunkRecord(b"DIDX", new_didx.take_bytes())
+    chunks[data_index] = ChunkRecord(b"DATA", new_data.take_bytes())
 
 
 def _infer_media_alignment(entries: list[BnkEmbeddedAudio]) -> int:

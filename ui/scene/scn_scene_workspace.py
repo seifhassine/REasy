@@ -6,8 +6,8 @@ from contextlib import suppress
 from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
-from PySide6.QtWidgets import (
+lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
+lazy from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
     QDockWidget,
@@ -30,11 +30,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.rsz.scn_scene_loader import ScnSceneLoader, ScnSceneSource, scn_source_identity_keys
-from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
-from file_handlers.rsz.scn_document_store import ScnDocumentStore
-from file_handlers.rsz.rsz_handler import RszHandler
-from ui.scene.scn_raw_inspector import ScnRawInspector
+from file_handlers.rsz.scn_scene_loader import ScnSceneLoader, ScnSceneSource, holds_scene, scn_source_identity_keys
+lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
+lazy from file_handlers.rsz.scn_document_store import ScnDocumentStore
+lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from ui.qt_timers import call_later
+lazy from ui.scene.scn_raw_inspector import ScnRawInspector
 
 
 ALREADY_OPEN_TEXT = QT_TRANSLATE_NOOP(
@@ -66,7 +67,7 @@ def _make_scn_source(path: str, handler=None, *, project_dir: str = "", game_ver
 def scn_source_from_tab(tab) -> ScnSceneSource | None:
     handler = getattr(tab, "handler", None)
     rsz_file = getattr(handler, "rsz_file", None)
-    if not isinstance(handler, RszHandler) or not getattr(rsz_file, "is_scn", False):
+    if not isinstance(handler, RszHandler) or not holds_scene(rsz_file):
         return None
     app = getattr(handler, "app", None)
     proj = getattr(app, "proj_dock", None)
@@ -184,7 +185,7 @@ class ScnSceneTab:
         )
         self.source_label = QLabel(panel)
         self.menu_button = self._tool_button("≡", QCoreApplication.translate("ScnSceneWorkspace", "Scene menu"), lambda: self._show_scene_popup(self.menu_button.mapToGlobal(self.menu_button.rect().bottomLeft())))
-        self.add_button = self._tool_button(QStyle.SP_FileDialogNewFolder, QCoreApplication.translate("ScnSceneWorkspace", "Add open SCN"), self._show_add_source_popup)
+        self.add_button = self._tool_button(QStyle.SP_FileDialogNewFolder, QCoreApplication.translate("ScnSceneWorkspace", "Add open SCN or PFB"), self._show_add_source_popup)
         self.save_button = self._tool_button(QStyle.SP_DialogSaveButton, QCoreApplication.translate("ScnSceneWorkspace", "Save scene"), self.direct_save)
         self.remove_button = self._tool_button(self._remove_icon, QCoreApplication.translate("ScnSceneWorkspace", "Remove selected from scene"), self.remove_selected_sources)
         self.rename_button = self._tool_button(QStyle.SP_FileDialogDetailedView, QCoreApplication.translate("ScnSceneWorkspace", "Rename scene"), lambda: self.app.scenes.rename_scene(self))
@@ -305,7 +306,7 @@ class ScnSceneTab:
             with suppress(RuntimeError):
                 if self._scene_popup is not None:
                     self._scene_popup.hide()
-            QTimer.singleShot(0, self.notebook_widget, lambda: callback(*args))
+            call_later(self.notebook_widget, 0, lambda: callback(*args))
         return run
 
     def _add_popup_row(self, label: str, actions) -> None:
@@ -340,7 +341,7 @@ class ScnSceneTab:
             widget.hide()
         self.preview.preview.fullscreen_button.setText("x")
         window.showFullScreen()
-        QTimer.singleShot(0, self.notebook_widget, self._after_view_fullscreen_change)
+        call_later(self.notebook_widget, 0, self._after_view_fullscreen_change)
 
     def leave_view_fullscreen(self, *, defer_update: bool = True) -> None:
         if self._fullscreen_restore is None:
@@ -362,7 +363,7 @@ class ScnSceneTab:
             else:
                 window.showNormal()
         if defer_update:
-            QTimer.singleShot(0, self.notebook_widget, self._after_view_fullscreen_change)
+            call_later(self.notebook_widget, 0, self._after_view_fullscreen_change)
 
     def _fullscreen_chrome(self, window) -> list[QWidget]:
         widgets, seen = [], set()
@@ -384,11 +385,11 @@ class ScnSceneTab:
     def _show_add_source_popup(self) -> None:
         sources = self.app.scenes.open_scn_sources()
         panel, body = self._ensure_scene_popup(
-            QCoreApplication.translate("ScnSceneWorkspace", "Add SCN")
+            QCoreApplication.translate("ScnSceneWorkspace", "Add SCN or PFB")
         )
         if not sources:
             body.addWidget(QLabel(QCoreApplication.translate(
-                "ScnSceneWorkspace", "Open an SCN from a PAK first."
+                "ScnSceneWorkspace", "Open an SCN or PFB from a PAK first."
             ), panel))
         for source in sources:
             actions = [(
@@ -425,7 +426,6 @@ class ScnSceneTab:
             self.title = title
             self.update_tab_title()
             self.update_source_summary()
-            self.app.scenes.refresh_actions()
             self.app.project_workspace._sync_tabs()
             self._scene_popup.hide()
 
@@ -510,9 +510,9 @@ class ScnSceneTab:
     def update_source_summary(self) -> None:
         count = len(self.sources)
         summary = (
-            QCoreApplication.translate("ScnSceneWorkspace", "{title} | {count} SCN source")
+            QCoreApplication.translate("ScnSceneWorkspace", "{title} | {count} source")
             if count == 1
-            else QCoreApplication.translate("ScnSceneWorkspace", "{title} | {count} SCN sources")
+            else QCoreApplication.translate("ScnSceneWorkspace", "{title} | {count} sources")
         )
         self.source_label.setText(summary.format(title=self.title, count=count))
         self.source_tree.clear()
@@ -598,7 +598,6 @@ class ScnSceneTab:
         self.app.scenes.document_store.claim_graphs(self, self.preview.graphs)
         self.update_source_summary()
         self.app.scenes.sync_hidden_raw_tabs()
-        self.app.scenes.refresh_actions()
         self.app.scenes.refresh_buttons()
 
     def _on_scene_edited(self, document_ids=None, changed_fields=None) -> None:
@@ -647,9 +646,9 @@ class ScnSceneTab:
         self.modified = bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs))
         self.update_tab_title()
         saved_message = (
-            QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} SCN file.")
+            QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} file.")
             if count == 1
-            else QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} SCN files.")
+            else QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} files.")
         )
         self.app.status_bar.showMessage(saved_message.format(count=count), 3000)
         return True
@@ -724,7 +723,7 @@ class ScnSceneTab:
         if include_source_actions:
             self._add_popup_row(
                 QCoreApplication.translate("ScnSceneWorkspace", "Selection"),
-                [(QCoreApplication.translate("ScnSceneWorkspace", "Remove SCN"), self.remove_selected_sources, self.remove_button.isEnabled())],
+                [(QCoreApplication.translate("ScnSceneWorkspace", "Remove source"), self.remove_selected_sources, self.remove_button.isEnabled())],
             )
         active_source = scn_source_from_tab(self.app.get_active_tab())
         can_add_source = self.app.scenes.can_add_source(active_source)
@@ -769,7 +768,7 @@ class ScnSceneTab:
             with suppress(RuntimeError):
                 widget.hide()
         self.preview.preview.fullscreen_button.setText("x")
-        QTimer.singleShot(0, self.notebook_widget, self._after_view_fullscreen_change)
+        call_later(self.notebook_widget, 0, self._after_view_fullscreen_change)
 
     def _handoff_fullscreen(self, scene, action) -> None:
         if scene.notebook_widget.window() is self.notebook_widget.window():
@@ -779,7 +778,7 @@ class ScnSceneTab:
         else:
             self.leave_view_fullscreen()
             action(scene)
-            QTimer.singleShot(0, scene.notebook_widget, scene.enter_view_fullscreen)
+            call_later(scene.notebook_widget, 0, scene.enter_view_fullscreen)
 
     def _go_to_scene(self, scene) -> None:
         if self.is_view_fullscreen() and scene is not self:
@@ -1050,7 +1049,6 @@ class ScnSceneController:
         self.app.tabs[tab.notebook_widget] = tab
         self.app.project_workspace.sessions.add_global_tab(tab)
         self.focus(tab)
-        self.refresh_actions()
         self.app._refresh_homepage()
         return tab
 
@@ -1058,7 +1056,7 @@ class ScnSceneController:
         source = source or scn_source_from_tab(self.app.get_active_tab())
         if source is None:
             self._notice(QCoreApplication.translate(
-                "ScnSceneWorkspace", "Open an SCN from a PAK first."
+                "ScnSceneWorkspace", "Open an SCN or PFB from a PAK first."
             ))
             return
         owner = self.owner_for_source(source)
@@ -1091,7 +1089,6 @@ class ScnSceneController:
             self._notice(QCoreApplication.translate(
                 "ScnSceneWorkspace", "{source} is already in {scene}."
             ).format(source=_source_display_name(source), scene=scene_tab.title))
-        self.refresh_actions()
         self.refresh_buttons()
 
     def rename_scene(self, scene_tab: ScnSceneTab | None = None) -> None:
@@ -1105,7 +1102,7 @@ class ScnSceneController:
             return
         if scene_tab.is_view_fullscreen():
             scene_tab.leave_view_fullscreen(defer_update=False)
-            QTimer.singleShot(0, scene_tab.notebook_widget, lambda tab=scene_tab: self._close_scene_tab(tab))
+            call_later(scene_tab.notebook_widget, 0, lambda tab=scene_tab: self._close_scene_tab(tab))
         else:
             self._close_scene_tab(scene_tab)
 
@@ -1148,7 +1145,7 @@ class ScnSceneController:
         menu.clear()
         if source is None:
             action = menu.addAction(QCoreApplication.translate(
-                "ScnSceneWorkspace", "Open an SCN from a PAK first"
+                "ScnSceneWorkspace", "Open an SCN or PFB from a PAK first"
             ))
             action.setEnabled(False)
             return
@@ -1200,7 +1197,6 @@ class ScnSceneController:
                 scene.rebuild_owned_scn_paths()
             if matched or nested_owner is scene:
                 scene.preview.request_refresh() if reloaded else scene.preview.set_stale()
-        self.refresh_actions()
         self.refresh_buttons()
 
     def attach_tab_document(self, tab, *, replace: bool = False) -> None:
@@ -1292,11 +1288,6 @@ class ScnSceneController:
             window.activateWindow()
         workspace._sync_tabs()
 
-    def refresh_actions(self) -> None:
-        menu = getattr(self.app, "scene_menu", None)
-        if menu is not None and menu.isVisible():
-            self.populate_scene_menu(menu)
-
     def refresh_buttons(self) -> None:
         for tab in self.app.tabs.values():
             if isinstance(tab, ScnSceneTab):
@@ -1325,7 +1316,7 @@ class ScnSceneController:
         changed_documents = self._document_ids_for_handler(handler)
         handled_documents = set()
         for scene in self.tabs():
-            touched = {document_id for graph in scene.preview.graphs for document_id in graph.documents} & changed_documents
+            touched = {*graph.documents for graph in scene.preview.graphs} & changed_documents
             result = scene.preview.sync_raw_transform_field(touched, changed_obj) if touched and changed_obj is not None else None
             if result is not None and result.handled and result.dirty_documents:
                 handled_documents.update(result.dirty_documents)
@@ -1367,7 +1358,7 @@ class ScnSceneController:
         new_scene_label = QCoreApplication.translate("ScnSceneWorkspace", "New Scene")
         titles = [scene.title for scene in scenes] + [new_scene_label]
         dialog = QInputDialog(self.app)
-        dialog.setWindowTitle(QCoreApplication.translate("ScnSceneWorkspace", "Add SCN to Scene"))
+        dialog.setWindowTitle(QCoreApplication.translate("ScnSceneWorkspace", "Add SCN or PFB to Scene"))
         dialog.setLabelText(QCoreApplication.translate("ScnSceneWorkspace", "Scene:"))
         dialog.setComboBoxItems(titles)
         dialog.setComboBoxEditable(False)

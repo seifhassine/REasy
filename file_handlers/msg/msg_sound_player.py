@@ -6,11 +6,11 @@ import hashlib
 import os
 import shutil
 import struct
-import subprocess
+lazy import subprocess
 import tempfile
 import threading
 import time
-from concurrent.futures import Future, ThreadPoolExecutor
+lazy from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from pathlib import Path
 
@@ -28,12 +28,12 @@ from file_handlers.sound.sound_waveform import (
     analyze_wave_activity,
     write_wave_segment,
 )
-from file_handlers.sound.runtime_sound_index import (
+lazy from file_handlers.sound.runtime_sound_index import (
     request_runtime_sound_index,
     snapshot_pak_reader,
 )
 from file_handlers.sound.wwise_media import WwiseMediaKind
-from utils.resource_file_utils import resource_context_for_handler
+lazy from utils.resource_file_utils import resource_context_for_handler
 
 
 @dataclass(frozen=True, slots=True)
@@ -533,7 +533,8 @@ class MsgSoundPreviewSession(QObject):
         kwargs = {
             "stdout": subprocess.PIPE,
             "stderr": subprocess.PIPE,
-            "text": True,
+            "encoding": "utf-8",
+            "errors": "replace",
         }
         if os.name == "nt":
             kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)

@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Hashable, Protocol
+from typing import Protocol
 
 from ..mot.model import AnimationNode, Joint, Motion
-from .model import (
+lazy from .model import (
     BoundJoint,
     DiagnosticSeverity,
     EvaluationDiagnostic,

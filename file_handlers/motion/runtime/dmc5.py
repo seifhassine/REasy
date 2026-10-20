@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import contextlib
 import io
+import math
 from pathlib import Path
 from typing import Mapping
 
-from file_handlers.motbank.motbank_file import MotbankFile
-from file_handlers.rsz.rsz_file import RszFile
-from utils.type_registry import TypeRegistry
+lazy from file_handlers.motbank.motbank_file import MotbankFile
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from utils.type_registry import TypeRegistry
 
 from .jmap import parse_dmc5_joint_map
 from .joint_map import JointMapDefinition
-from .model import (
+lazy from .model import (
     MotionBankDefinition,
     MotionBankReference,
     MotionChannelActivation,
@@ -29,6 +30,7 @@ from .model import (
     MotionSceneStateBinding,
     MotionTargetDefinition,
     MotionTargetId,
+    MotionValueCorrection,
     RuntimeBlendMode,
     RuntimeInterpolationCurve,
     RuntimeInterpolationMode,
@@ -38,9 +40,9 @@ from .model import (
     RuntimeWrapMode,
     TreeLayerSource,
 )
-from .pfb_graph import PfbRuntimeGraph
+lazy from .pfb_graph import PfbRuntimeGraph
 from .profiles import DMC5_RUNTIME_PROFILE, Dmc5MotionRuntimeProfile
-from .rsz_values import (
+lazy from .rsz_values import (
     bool_value as _bool,
     clean_path as _clean_path,
     finite_float as _finite_float,
@@ -709,13 +711,19 @@ class _Dmc5RuntimeAdapter:
         problem = self._layer_problem(target_id, layer_index)
         if not choices:
             problem = _join_problem(problem, "PFB work contains no blink motion")
+        interval = _finite_float(work, "Interval", default=0.0)
+        random_interval = _finite_float(work, "RandomInterval", default=0.0)
+        # DMC5 blinks by itself (``PlayerFacialMotionController.updateBlink``): a timer counts down each update; below 0
+        # the blink motion starts at full weight (fading in over InterpolationFrame) and the timer resets to Interval +
+        # RandomInterval x r. REasy uses r = 1/2.
+        period = math.floor(interval + random_interval / 2.0) + 1.0
         self.channels.append(
             MotionChannelDefinition(
                 key=f"{provider_id}:BlinkData",
                 label="Blink",
                 kind=MotionChannelKind.BLINK,
                 activation=(
-                    MotionChannelActivation.RUNTIME_CONTROLLED
+                    MotionChannelActivation.ACTIVE
                     if enabled
                     else MotionChannelActivation.INACTIVE
                 ),
@@ -723,6 +731,7 @@ class _Dmc5RuntimeAdapter:
                 layer_index=layer_index,
                 bank_id=_int(work, "BankID", default=0),
                 choices=choices,
+                default_choice_key="blink" if choices else None,
                 fade_in_frames=_nonnegative_float(
                     work,
                     "InterpolationFrame",
@@ -733,16 +742,11 @@ class _Dmc5RuntimeAdapter:
                 provider_instance_id=provider_id,
                 provider_object_id=self.graph.owner_of(provider_id),
                 properties=(
-                    RuntimeProperty(
-                        "Interval",
-                        _finite_float(work, "Interval", default=0.0),
-                    ),
-                    RuntimeProperty(
-                        "Random interval",
-                        _finite_float(work, "RandomInterval", default=0.0),
-                    ),
+                    RuntimeProperty("Interval", interval),
+                    RuntimeProperty("Random interval", random_interval),
                 ),
                 unresolved_reason=problem,
+                repeat_period_frames=period if period > 0.0 else 0.0,
             )
         )
 
@@ -1054,19 +1058,15 @@ def _read_material_controllers(
             )
         fields = graph.fields(instance_id)
         blend_type = _int(fields, "_BlendTextureType")
-        legacy = _bool(fields, "IsRegacyMotion", default=False)
-        try:
-            source_names = profile.wrinkle_names(
-                blend_type,
-                legacy=legacy,
-            )
-        except ValueError as exc:
-            raise MotionRuntimeContextError(
-                f"blend-texture controller {instance_id}: {exc}"
-            ) from exc
-
-        corrections: dict[int, tuple[float, float]] = {}
-        if _bool(fields, "IsWrinkleWeightCorrection", default=False):
+        source_names = profile.wrinkle_names(
+            blend_type,
+            legacy=_bool(fields, "IsRegacyMotion", default=False),
+        )
+        corrections = []
+        if (
+            _bool(fields, "IsWrinkleWeightCorrection", default=False)
+            and blend_type == profile.full_blend_texture_type
+        ):
             for correction_id in _int_array(
                 fields,
                 "WrinkleWeightCorrectionDataList",
@@ -1079,64 +1079,34 @@ def _read_material_controllers(
                         f"blend-texture correction part {part} exceeds "
                         f"type {blend_type}'s {len(source_names)} wrinkle inputs"
                     )
-                if part in corrections:
-                    raise MotionRuntimeContextError(
-                        f"blend-texture correction part {part} is duplicated"
-                    )
-                maximum = _finite_float(correction, "_MaxWeight")
-                exponent = _finite_float(correction, "_Ratio")
-                if maximum <= 0.0 or exponent <= 0.0:
-                    raise MotionRuntimeContextError(
-                        f"blend-texture correction part {part} has a "
-                        "nonpositive maximum or exponent"
-                    )
-                corrections[part] = maximum, exponent
+                corrections.append(MotionValueCorrection(
+                    source_names[part],
+                    _finite_float(correction, "_MaxWeight"),
+                    _finite_float(correction, "_Ratio"),
+                ))
 
-        head_material = _string(fields, "BlendTextureMaterialName")
-        if not head_material:
-            raise MotionRuntimeContextError(
-                f"blend-texture controller {instance_id} has no head material"
-            )
+        head_material = _string(fields, "BlendTextureMaterialName", default="")
+        teeth_material = _string(fields, "BlendTextureTeethMaterialName", default="")
         parameters = [
-            MotionMaterialParameter(
-                source_name,
-                head_material,
-                f"Weight{index + 1}",
-                *corrections.get(index, (1.0, 1.0)),
-            )
+            MotionMaterialParameter(source_name, head_material, f"Weight{index + 1}")
             for index, source_name in enumerate(source_names)
+            if head_material
         ]
-        teeth_material = _string(
-            fields,
-            "BlendTextureTeethMaterialName",
-            default="",
-        )
         if teeth_material:
-            try:
-                jaw = profile.jaw_open_index(blend_type)
-            except ValueError as exc:
-                raise MotionRuntimeContextError(
-                    f"blend-texture controller {instance_id}: {exc}"
-                ) from exc
-            if not 0 <= jaw < len(source_names):
-                raise MotionRuntimeContextError(
-                    f"blend-texture jaw index {jaw} exceeds "
-                    f"type {blend_type}'s {len(source_names)} wrinkle inputs"
-                )
-
-            parameters.append(
-                MotionMaterialParameter(
-                    source_names[jaw],
-                    teeth_material,
-                    "Weight1",
-                )
-            )
-        controllers.append(MotionMaterialController(
-            profile.bake_blend_texture_controller_type,
-            instance_id,
-            owner_id,
-            tuple(parameters),
-        ))
+            parameters.append(MotionMaterialParameter(
+                source_names[profile.jaw_open_index],
+                teeth_material,
+                "Weight1",
+            ))
+        if parameters:
+            controllers.append(MotionMaterialController(
+                profile.bake_blend_texture_controller_type,
+                instance_id,
+                owner_id,
+                tuple(parameters),
+                tuple(corrections),
+                held_by_channels=True,
+            ))
     return tuple(controllers)
 
 

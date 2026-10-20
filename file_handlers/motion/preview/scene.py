@@ -5,7 +5,7 @@ import math
 
 import numpy as np
 
-from ui.scene.scene_model import SceneDrawMesh
+lazy from ui.scene.scene_model import SceneDrawMesh
 
 from .model import MotionPreviewSnapshot
 
@@ -184,7 +184,6 @@ class SkeletonScene:
         self.meshes = [
             SceneDrawMesh(
                 key=f"bone:{child}",
-                geometry_key="motion-preview:bone",
                 vertices=_BONE_VERTICES,
                 indices=_BONE_INDICES,
                 color=_weight_color(
@@ -205,7 +204,6 @@ class SkeletonScene:
         self.meshes.extend(
             SceneDrawMesh(
                 key=f"joint:{index}:{name}",
-                geometry_key="motion-preview:joint",
                 vertices=_JOINT_VERTICES,
                 indices=_JOINT_INDICES,
                 color=_weight_color(

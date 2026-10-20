@@ -2,11 +2,11 @@ import os
 import shutil
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QSignalBlocker, QTimer, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QFileDialog, QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
+lazy from PySide6.QtCore import QCoreApplication, QSignalBlocker, QTimer, Qt
+lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+lazy from PySide6.QtWidgets import QFileDialog, QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
 
-from .project_sessions import ProjectSessionManager
+lazy from .project_sessions import ProjectSessionManager
 
 
 class ProjectWorkspaceController:

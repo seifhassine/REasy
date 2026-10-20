@@ -5,8 +5,8 @@ from dataclasses import dataclass
 import os
 
 from file_handlers.gcf.model import FontSlotMapping, GcfData
-from file_handlers.oft.oft_file import OftFile
-from utils.resource_file_utils import (
+lazy from file_handlers.oft.oft_file import OftFile
+lazy from utils.resource_file_utils import (
     ResourceDataLoader,
     ResourceResolutionContext,
 )

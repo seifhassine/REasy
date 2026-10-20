@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .dmc5_codec import DMC5_MOTION_FORMAT_CODEC
-from .errors import MotionParseError
+lazy from .errors import MotionParseError
 from .format_codec import MotionFormatCodec
 
 

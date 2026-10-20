@@ -16,19 +16,21 @@ from PySide6.QtWidgets import (
 	QSlider, QStackedWidget, QStyle, QToolButton
 )
 
-from settings import DEFAULT_SETTINGS, load_settings
-from app_config import GAMES
+lazy from settings import DEFAULT_SETTINGS, load_settings
+lazy from app_config import GAMES
 
-from file_handlers.pak import scan_pak_files
-from file_handlers.pak.reader import CachedPakReader
-from ui.project_manager.constants import BASE_DIR
-from ui.project_manager.pak_file_lists import (
+lazy from file_handlers.pak import scan_pak_files
+lazy from file_handlers.pak.reader import CachedPakReader
+lazy from ui.project_manager.constants import BASE_DIR
+lazy from ui.project_manager.pak_file_lists import (
 	choose_pak_list_file, find_suggested_pak_list_paths_for_directory,
 	game_for_pak_list_path, read_pak_list_file,
 )
-from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
-from utils.resource_file_utils import resource_context_for_app
-from file_handlers.pak.utils import any_pak_modded
+lazy from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
+lazy from utils.resource_file_utils import resource_context_for_app
+lazy from file_handlers.pak.utils import any_pak_modded
+lazy from ui.extraction_progress_dialog import ExtractionProgressDialog
+lazy from threading import Thread
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
@@ -117,6 +119,14 @@ class PakBrowserDialog(QDialog):
 		self.show_only_valid_cb.toggled.connect(self._on_show_only_valid_toggled)
 		mid.addWidget(self.show_only_valid_cb)
 
+		self.include_stubs_cb = QCheckBox(self.tr("Include DLC stubs"))
+		self.include_stubs_cb.setToolTip(self.tr(
+			"Also treat redirect stubs as valid files: base PAK entries the game redirects "
+			"to a DLC PAK that is not installed. Opening or extracting one reads the stub's own data."
+		))
+		self.include_stubs_cb.setChecked(False)
+		mid.addWidget(self.include_stubs_cb)
+
 		self.icon_size_slider = QSlider(Qt.Horizontal, self)
 		self.icon_size_slider.setRange(48, 160)
 		self.icon_size_slider.setValue(88)
@@ -195,7 +205,8 @@ class PakBrowserDialog(QDialog):
 		self._cached_show_valid = False
 		self._cached_show_unknown = False
 		self._cache_outdated = False
-		self.game_combo.currentTextChanged.connect(self._on_resolution_game_changed)
+		self.game_combo.currentTextChanged.connect(self._on_resolution_changed)
+		self.include_stubs_cb.toggled.connect(self._on_resolution_changed)
 		self._scanned_root = ""
 		self._loading_depth = 0
 		self.loading_label = QLabel(self)
@@ -263,7 +274,7 @@ class PakBrowserDialog(QDialog):
 			self.pak_list.addItem(p)
 		self._refresh_index()
 
-	def _on_resolution_game_changed(self, _game: str):
+	def _on_resolution_changed(self, _value=None):
 		self._thumbnail_provider.cancel_pending()
 		self._cached_reader = None
 		self._valid_paths = set()
@@ -488,7 +499,7 @@ class PakBrowserDialog(QDialog):
 		self._schedule_visible_thumbnails()
 
 	def closeEvent(self, event):
-		self._thumbnail_provider.close()
+		self._thumbnail_provider.cancel_pending()
 		super().closeEvent(event)
 
 	def _filtered_icon_entries(self, paths, text):
@@ -606,9 +617,14 @@ class PakBrowserDialog(QDialog):
 			return None
 
 		game = self.game_combo.currentText().strip()
+		include_stubs = self.include_stubs_cb.isChecked()
 		r = self._cached_reader if isinstance(self._cached_reader, CachedPakReader) else None
-		if r is None or not r.matches_source(paks, game=game) or self._cache_outdated:
-			r = CachedPakReader.from_paks(paks, game=game)
+		if (
+			r is None
+			or not r.matches_source(paks, game=game, include_stubs=include_stubs)
+			or self._cache_outdated
+		):
+			r = CachedPakReader.from_paks(paks, game=game, include_stubs=include_stubs)
 			if self._base_paths:
 				r.add_files(*self._base_paths)
 			self._cached_reader = r
@@ -858,9 +874,6 @@ class PakBrowserDialog(QDialog):
 			QMessageBox.critical(self, self.tr("Write failed"), str(e))
 
 	def _run_extraction_with_progress(self, reader_getter, outdir_getter, targets: List[str], missing: List[str]):
-		from ui.extraction_progress_dialog import ExtractionProgressDialog
-		from threading import Thread
-
 		progress_dialog = ExtractionProgressDialog(len(targets), self)
 		extraction_error = [None]
 		extraction_count = [0]

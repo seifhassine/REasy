@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Any, Callable, Iterable
 
-from ui.ai.file_migration import FileMigrationJob, FileMigrationStrategy
-from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
+lazy from ui.ai.file_migration import FileMigrationJob, FileMigrationStrategy
+lazy from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
 
 
 _DETAIL_LIMIT = 100

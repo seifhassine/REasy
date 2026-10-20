@@ -1,5 +1,3 @@
-"""Fast, editable, runtime-evaluated GUI preview."""
-
 from __future__ import annotations
 
 import math
@@ -11,7 +9,7 @@ from functools import lru_cache
 
 import numpy as np
 from PySide6.QtCore import QByteArray, QElapsedTimer, QObject, QPointF, QRect, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import (
+lazy from PySide6.QtGui import (
     QBrush,
     QColor,
     QFont,
@@ -29,33 +27,33 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QWidget
 
-from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer
+lazy from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer
 
-from ..dependencies import GuiDependencyCatalog
-from ..errors import GuiSceneError
-from ..model import GuiAnimation, GuiNineSlice, GuiSymbol, GuiTextureSet
-from ..native_math import f32 as _preview_f32
-from ..native_math import fadd as _pfadd
-from ..native_math import fdiv as _pfdiv
-from ..native_math import fmul as _pfmul
-from ..native_math import fsub as _pfsub
-from ..scene import GuiSceneNode
-from .adapter import DMC5_DEFAULT_LANGUAGE, DMC5_DEFAULT_SAFE_AREA_RATIO
-from .controllers import Dmc5GuiControllerContext
-from .icon_tags import (
+lazy from ..dependencies import GuiDependencyCatalog
+lazy from ..errors import GuiSceneError
+lazy from ..model import GuiAnimation, GuiNineSlice, GuiSymbol, GuiTextureSet
+lazy from ..native_math import f32 as _preview_f32
+lazy from ..native_math import fadd as _pfadd
+lazy from ..native_math import fdiv as _pfdiv
+lazy from ..native_math import fmul as _pfmul
+lazy from ..native_math import fsub as _pfsub
+lazy from ..scene import GuiSceneNode
+lazy from .adapter import DMC5_DEFAULT_LANGUAGE, DMC5_DEFAULT_SAFE_AREA_RATIO
+lazy from .controllers import Dmc5GuiControllerContext
+lazy from .icon_tags import (
     DMC5_MENU_DECIDE_VK,
     Dmc5IconInputContext,
     resolve_dmc5_icon_tag,
 )
 from .playback import DMC5_SEGMENT_VALUES, Dmc5GuiPlayback
-from .scene import Dmc5GuiScene, project_gui_point
-from .text import (
+lazy from .scene import Dmc5GuiScene, project_gui_point
+lazy from .text import (
     TextOpcode,
     compile_dmc5_markup,
     find_dmc5_wrap_break,
     ruby_layout_plan,
 )
-from .text_tags import resolve_dmc5_text_tag
+lazy from .text_tags import resolve_dmc5_text_tag
 
 
 _CONTAINERS = {
@@ -402,7 +400,11 @@ class Dmc5GuiCanvas(QWidget):
         self._static_boundaries: set[tuple[str, str]] = set()
         self._last_frame_boundaries: set[tuple[str, str]] = set()
         self._frame_boundaries: set[tuple[str, str]] | None = None
-        self._diagnostic_pending = False
+        # A child timer dies with the canvas.
+        self._diagnostic_timer = QTimer(self)
+        self._diagnostic_timer.setSingleShot(True)
+        self._diagnostic_timer.setInterval(0)
+        self._diagnostic_timer.timeout.connect(self._emit_diagnostics)
         self._timer = QTimer(self)
         self._timer.setInterval(16)
         self._timer.timeout.connect(self._tick)
@@ -437,11 +439,8 @@ class Dmc5GuiCanvas(QWidget):
         self,
         values_by_path: dict[str, dict[str, object]] | None,
     ) -> None:
-        """Install host/controller values that do not belong to GUIR.
-
-        The mapping is deliberately explicit.  Current save data, menu-controller
-        labels, and other game state must not be guessed from the opened file.
-        """
+        """For values GUIR files do not hold, such as save data and menu-controller labels, which the game's host and
+        controllers set."""
 
         self._runtime_overrides = {
             str(path): dict(values)
@@ -625,12 +624,10 @@ class Dmc5GuiCanvas(QWidget):
         if boundary in target:
             return
         target.add(boundary)
-        if self._frame_boundaries is None and not self._diagnostic_pending:
-            self._diagnostic_pending = True
-            QTimer.singleShot(0, self._emit_diagnostics)
+        if self._frame_boundaries is None:
+            self._diagnostic_timer.start()
 
     def _emit_diagnostics(self) -> None:
-        self._diagnostic_pending = False
         reasons: dict[str, int] = {}
         for _path, reason in self._static_boundaries | self._last_frame_boundaries:
             reasons[reason] = reasons.get(reason, 0) + 1
@@ -701,9 +698,7 @@ class Dmc5GuiCanvas(QWidget):
             self._frame_boundaries = None
             if current != self._last_frame_boundaries:
                 self._last_frame_boundaries = current
-                if not self._diagnostic_pending:
-                    self._diagnostic_pending = True
-                    QTimer.singleShot(0, self._emit_diagnostics)
+                self._diagnostic_timer.start()
 
     def _draw_preview_nodes(self, painter: QPainter) -> None:
         assert self._scene is not None
@@ -1160,10 +1155,8 @@ class Dmc5GuiCanvas(QWidget):
             bottom = corners[2] * (1.0 - x) + corners[3] * x
             tint = top * (1.0 - y) + bottom * y
 
-        # RE Engine samples sRGB textures into linear space and submits its
-        # transformed vertex colors as linear RGBA8.  QImage/QPainter do not,
-        # so perform the shader-side color math explicitly before encoding the
-        # result back to display sRGB.
+        # The engine samples sRGB textures as linear and submits vertex colors as linear RGBA8; QPainter does neither,
+        # so do the shader's color math here and encode the result back to sRGB.
         if neutral_saturation:
             table = _srgb_multiply_table()
             tint_bytes = np.asarray(tint[..., :3], dtype=np.uint8)
@@ -1378,9 +1371,8 @@ class Dmc5GuiCanvas(QWidget):
             item.recursion_suppressed for item in program.unresolved_tags
         ):
             self._boundary(node, "external runtime text-tag resolver")
-        # PAGE, line breaks, icons and ruby are consumed below.  These sourced
-        # opcodes alter individual glyph runs and need the native span layout;
-        # never pretend the node-wide Qt font/color is equivalent.
+        # These opcodes change single glyph runs and need the game's span layout; a node-wide Qt font or color is not
+        # equivalent.
         run_opcodes = {
             TextOpcode.SIZE,
             TextOpcode.FONT,
@@ -1701,7 +1693,7 @@ class Dmc5GuiCanvas(QWidget):
                 index for index, name in enumerate(mesh.material_names)
                 if str(name).casefold() == key[1]
             )
-            buffer = mesh.mesh_buffer
+            buffer = mesh.mesh_buffer.buffer_payloads[0]
             positions = np.asarray(buffer.positions, dtype=np.float32).reshape(-1, 3)
             uv0 = np.asarray(buffer.uv0, dtype=np.float32).reshape(-1, 2)
             uv1 = np.asarray(buffer.uv1, dtype=np.float32).reshape(-1, 2)
@@ -2121,9 +2113,7 @@ class Dmc5GuiCanvas(QWidget):
             np.linalg.norm(tangent_normals, axis=1, keepdims=True), 1e-6
         )
 
-        # DMC5's fixed GUI light is spatial, not a painted horizontal ramp.
-        # These operations mirror the captured ui2120 pixel shader. The mesh
-        # is a GUI plane whose captured world-space TBN is (-X, +Y, -Z).
+        # The fixed GUI light is spatial, not a horizontal ramp; this follows the ui2120 pixel shader.
         aspect = np.asarray(
             (
                 float(parameters["AspectUV_U"]),
@@ -2155,8 +2145,7 @@ class Dmc5GuiCanvas(QWidget):
             np.sqrt(light_x * light_x + light_y * light_y + light_z * light_z),
             1e-6,
         )
-        # Dot against the captured plane basis: tangent=-X, bitangent=+Y,
-        # geometric normal=-Z.
+        # Dot against the plane's world-space basis: tangent -X, bitangent +Y, geometric normal -Z.
         facing = np.maximum(
             (
                 tangent_normals[:, 0] * light_x
@@ -2967,8 +2956,6 @@ class Dmc5GuiCanvas(QWidget):
         return True
 
     def _input_branch_enabled(self, node: GuiSceneNode) -> bool:
-        """Apply native file-authored visibility, alpha, and HitVisible gates."""
-
         return self._runtime_branch_enabled(node, require_hit_visible=True)
 
     def _input_hit_node(self, point: QPointF) -> GuiSceneNode | None:

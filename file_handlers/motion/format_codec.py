@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Protocol
 
-from .mot_list.model import MotList
+lazy from .mot_list.model import MotList
 
 if TYPE_CHECKING:
     from .profiles import MotionFormatProfile

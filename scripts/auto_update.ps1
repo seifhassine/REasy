@@ -9,6 +9,7 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+[Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 
 function Write-Log { param([string]$Message) Write-Host $Message }
 function Invoke-BestEffort {

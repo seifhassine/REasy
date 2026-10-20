@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import wave
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPen
+lazy from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QWidget
 
 def analyze_wave_activity(wav_path, width, sensitivity=0.52):

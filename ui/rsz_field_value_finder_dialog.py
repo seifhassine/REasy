@@ -1,9 +1,3 @@
-"""
-RSZ Field Value Finder Dialog
-
-This dialog provides a UI for searching RSZ field values across multiple files.
-"""
-
 import glob
 import os
 from pathlib import Path
@@ -37,14 +31,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tools.rsz_field_value_finder import (
+lazy from tools.rsz_field_value_finder import (
     format_value,
     is_rsz_path,
     replace_file_values,
     scan_file,
     value_matches,
 )
-from utils.type_registry import TypeRegistry
+lazy from utils.type_registry import TypeRegistry
 
 
 def _path_key(path):

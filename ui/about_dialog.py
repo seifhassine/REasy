@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
-from app_config import CURRENT_VERSION
+lazy from app_config import CURRENT_VERSION
 
 
 class AboutDialog(QDialog):

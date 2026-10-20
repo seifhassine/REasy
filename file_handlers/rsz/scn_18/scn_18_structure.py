@@ -1,12 +1,14 @@
 import struct
-from utils.hex_util import read_wstring 
-from file_handlers.rsz.rsz_build_utils import (
+lazy from utils.hex_util import read_wstring 
+lazy from file_handlers.rsz.rsz_build_utils import (
     calculate_wstring_offsets,
     encode_wstring,
     pad_to_alignment,
     write_scn_gameobjects,
     write_wstring_entries,
 )
+lazy from file_handlers.rsz.rsz_file import RszResourceInfo
+lazy from file_handlers.rsz.scn_19.scn_19_structure import build_scn19_rsz_section
 
 class Scn18Header:
     SIZE = 56
@@ -41,7 +43,6 @@ class Scn18Header:
 def _parse_scn_18_resource_infos(rsz_file):
     rsz_file._resource_str_map.clear()
     for _ in range(rsz_file.header.resource_count):
-        from file_handlers.rsz.rsz_file import RszResourceInfo
         ri = RszResourceInfo()
         rsz_file.resource_infos.append(ri)
         s, rsz_file._current_offset = read_wstring(rsz_file.full_data, rsz_file._current_offset, 1000)
@@ -121,7 +122,6 @@ def build_scn_18(rsz_file, special_align_enabled = False) -> bytes:
         rsz_start = len(out)
         rsz_file.header.data_offset = rsz_start
 
-        from file_handlers.rsz.scn_19.scn_19_structure import build_scn19_rsz_section
         build_scn19_rsz_section(rsz_file, out, rsz_start)
 
     rsz_file.header.folder_tbl = folder_tbl_offset
@@ -143,4 +143,4 @@ def build_scn_18(rsz_file, special_align_enabled = False) -> bytes:
     )
     out[0:Scn18Header.SIZE] = header_bytes
     
-    return bytes(out)
+    return out.take_bytes()

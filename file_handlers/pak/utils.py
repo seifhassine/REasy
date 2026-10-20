@@ -4,15 +4,20 @@ import re
 from pathlib import Path
 from typing import List, NamedTuple
 import struct
-from .pakfile import _decrypt_pak_entry_data
-from utils.hash_util import murmur3_hash
+lazy import numpy as np
+lazy from .pakfile import (
+    PAK_HEADER_SIZE,
+    _decrypt_pak_entry_data,
+    read_pak_header,
+    PAK_FLAG_ENTRY_TABLE_KEY,
+    PAK_FLAG_HASH_REMAP,
+    _skip_optional_header_sections,
+)
+lazy from utils.hash_util import murmur3_hash
 
 
 def normalize_pak_path(path: str, *, lowercase: bool = False) -> str:
-    """
-    PAK indexes are case-insensitive but some callers retain the display case,
-    so lowercasing is explicit rather than an unconditional side effect.
-    """
+    """PAK indexes ignore case, but some callers keep the display case."""
     p = path.strip().replace("\\", "/")
     while "//" in p:
         p = p.replace("//", "/")
@@ -78,8 +83,7 @@ def _mod_pak_cache_key(pak_path: str) -> tuple[str, int, int] | None:
         st = os.stat(pak_path)
     except OSError:
         return None
-    mtime_ns = getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000))
-    return (os.path.abspath(pak_path), int(st.st_size), int(mtime_ns))
+    return (os.path.abspath(pak_path), st.st_size, st.st_mtime_ns)
 
 
 def pak_mod_flags(pak_path: str) -> PakModFlags:
@@ -91,15 +95,11 @@ def pak_mod_flags(pak_path: str) -> PakModFlags:
         if cached is not None:
             return cached
 
-    is_payload = has_invalidated = False
-    for combined in _iter_pak_entry_hashes(pak_path):
-        if combined == 0:
-            has_invalidated = True
-        elif combined == _MANIFEST_HASH or combined == _MODINFO_HASH:
-            is_payload = True
-        if has_invalidated and is_payload:
-            break
-    flags = PakModFlags(is_payload, has_invalidated)
+    hashes = read_pak_entry_hashes(pak_path)
+    flags = PakModFlags(
+        bool(np.any((hashes == _MANIFEST_HASH) | (hashes == _MODINFO_HASH))),
+        bool(np.any(hashes == 0)),
+    )
     if cache_key is not None:
         _PAK_MOD_FLAGS_CACHE[cache_key] = flags
     return flags
@@ -116,7 +116,6 @@ def pak_has_invalidated_entries(pak_path: str) -> bool:
 
 
 def pak_is_modded(pak_path: str) -> bool:
-    """Return True if the PAK shows any sign of being modified."""
     flags = pak_mod_flags(pak_path)
     return flags.is_payload or flags.has_invalidated
 
@@ -131,45 +130,43 @@ def any_pak_modded(pak_paths) -> bool:
     return False
 
 
-def _iter_pak_entry_hashes(pak_path: str):
-    """Yield the combined path hash of every entry (empty if unreadable)."""
-    from .pakfile import PAK_FLAG_ENTRY_TABLE_KEY, _skip_optional_header_sections
+def read_pak_entry_hashes(pak_path: str, *, strict: bool = False):
+    empty = np.empty(0, dtype='<u8')
 
     try:
         with open(pak_path, "rb") as f:
-            header = f.read(16)
-            if len(header) != 16:
-                return
-            magic, maj, minr, features, file_count, _ = struct.unpack("<IBBHII", header)
-            if magic != 0x414B504B:
-                return
-            if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
-                return
+            header = read_pak_header(f, pak_path, supported_only=strict)
+            maj, features, file_count = header.major, header.feature_flags, header.file_count
+            if not file_count:
+                return empty
 
-            fmt = "<IIqqqqq" if maj == 4 else "<qqII"
-            entry_size = struct.calcsize(fmt)
+            entry_size = header.entry_size
             table_size = file_count * entry_size
             table = f.read(table_size)
             if len(table) != table_size:
-                return
+                raise OSError("Unexpected EOF reading PAK entry table")
 
             _skip_optional_header_sections(f, features)
+            if features & PAK_FLAG_HASH_REMAP:
+                remap_header = f.read(8)
+                if len(remap_header) != 8:
+                    raise OSError("Unexpected EOF reading PAK remap header")
+                f.seek(struct.unpack('<Q', remap_header)[0] * 16, os.SEEK_CUR)
 
             if (features & PAK_FLAG_ENTRY_TABLE_KEY) != 0:
                 key = f.read(128)
                 if len(key) != 128:
-                    return
+                    raise OSError("Unexpected EOF reading PAK key")
                 table = bytearray(table)
                 _decrypt_pak_entry_data(table, bytearray(key))
 
-            if maj == 4:
-                for hash_lower, hash_upper, *_ in struct.iter_unpack(fmt, table):
-                    yield (hash_upper << 32) | hash_lower
-            else:
-                for _offset, _csize, hash_upper, hash_lower in struct.iter_unpack(fmt, table):
-                    yield (hash_upper << 32) | hash_lower
+            rows = np.frombuffer(table, dtype='<u4').reshape(file_count, entry_size // 4)
+            lower, upper = (rows[:, 0], rows[:, 1]) if maj == 4 else (rows[:, 5], rows[:, 4])
+            return (upper.astype('<u8') << 32) | lower
     except OSError:
-        return
+        if strict:
+            raise
+        return empty
 
 
 def _natural_path_key(path: Path, root: Path) -> tuple:
@@ -183,23 +180,10 @@ def _natural_path_key(path: Path, root: Path) -> tuple:
 def _has_valid_pak_header(path: Path) -> bool:
     try:
         size = path.stat().st_size
-        if size < 16:
-            return False
         with path.open("rb") as stream:
-            header = stream.read(16)
-        magic, major, minor, _features, file_count, _fingerprint = struct.unpack(
-            "<IBBHII", header
-        )
-        if magic != 0x414B504B or (major, minor) not in {
-            (4, 0),
-            (4, 1),
-            (4, 2),
-            (2, 0),
-        }:
-            return False
-        entry_size = 48 if major == 4 else 24
-        return size >= 16 + file_count * entry_size
-    except (OSError, struct.error):
+            header = read_pak_header(stream, str(path), supported_only=False)
+        return size >= PAK_HEADER_SIZE + header.file_count * header.entry_size
+    except OSError:
         return False
 
 

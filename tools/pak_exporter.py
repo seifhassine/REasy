@@ -1,10 +1,15 @@
 from __future__ import annotations
-import subprocess
+from contextlib import contextmanager
+import os
+import shutil
+lazy import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Tuple
 
 from tools.github_downloader import GitHubToolDownloader
+lazy from utils.app_paths import PROJECT_METADATA_FOLDER
 
 _OWNER_REPO = "seifhassine/REE.PAK.Tool"
 
@@ -35,19 +40,50 @@ def _ensure_packer(*, auto_download=True, parent_window=None) -> Path:
     return _downloader.ensure(auto_download=auto_download, parent_window=parent_window)
 
 
+@contextmanager
+def _game_payload_source(src_dir: str | Path):
+    """Hide REasy's per-project authoring metadata from the external packer."""
+
+    source = Path(src_dir).resolve()
+    metadata = source / PROJECT_METADATA_FOLDER
+    if not metadata.exists():
+        yield source
+        return
+    with tempfile.TemporaryDirectory(
+        prefix=".reasy-pack-",
+        dir=source.parent,
+    ) as temporary:
+        staged = Path(temporary) / source.name
+        staged.mkdir()
+        for directory, folders, files in os.walk(source):
+            folders[:] = [folder for folder in folders if folder != PROJECT_METADATA_FOLDER]
+            relative = Path(directory).relative_to(source)
+            destination_dir = staged / relative
+            destination_dir.mkdir(parents=True, exist_ok=True)
+            for name in files:
+                original = Path(directory) / name
+                destination = destination_dir / name
+                try:
+                    os.link(original, destination)
+                except OSError:
+                    shutil.copy2(original, destination)
+        yield staged
+
+
 def run_packer(
     src_dir: str | Path, dest_pak: str | Path,
     *, parent=None, auto_download=True
 ) -> Tuple[int, str]:
     exe = _ensure_packer(auto_download=auto_download, parent_window=parent)
-    cmd = [str(exe), str(src_dir), str(dest_pak)]
-    proc = subprocess.Popen(
-        cmd, cwd=exe.parent,
-        stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        text=True, bufsize=1,
-    )
-    out, _ = proc.communicate()
-    return proc.returncode, out
+    with _game_payload_source(src_dir) as payload_source:
+        cmd = [str(exe), str(payload_source), str(dest_pak)]
+        proc = subprocess.Popen(
+            cmd, cwd=exe.parent,
+            stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            encoding="oem", errors="replace", bufsize=1,
+        )
+        out, _ = proc.communicate()
+        return proc.returncode, out
 
 
 if __name__ == "__main__":

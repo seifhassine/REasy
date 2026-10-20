@@ -7,9 +7,9 @@ import math
 from dataclasses import dataclass
 from functools import lru_cache
 
-from utils.app_paths import resource_path
+lazy from utils.app_paths import resource_path
 
-from ..scene import normalize_gui_resource_path
+lazy from ..scene import normalize_gui_resource_path
 
 
 FrozenFields = tuple[tuple[str, object], ...]

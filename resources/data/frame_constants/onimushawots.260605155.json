@@ -1,0 +1,42 @@
+{
+ "format": 1,
+ "game": "ONIMUSHAWOTS",
+ "resource_version": 260605155,
+ "scene": {
+  "subdivisionLevel": [
+   50.0
+  ],
+  "tessellationParam": [
+   1.0
+  ]
+ },
+ "source": {
+  "buffer": "SceneInfo",
+  "fields": [
+   "subdivisionLevel",
+   "tessellationParam"
+  ],
+  "captures": [
+   {
+    "capture": "wots_frame136485.rdc",
+    "draws": 1001,
+    "tessellated": 0,
+    "tessellated_without_buffer": 0,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        50.0
+       ],
+       "tessellationParam": [
+        1.0
+       ]
+      },
+      "draws": 20
+     }
+    ]
+   }
+  ]
+ }
+}

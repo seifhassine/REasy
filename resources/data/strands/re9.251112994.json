@@ -1,0 +1,1795 @@
+{
+ "format": 18,
+ "game": "RE9",
+ "resource_version": 251112994,
+ "file": "systems/shader/strand/strandphysics.sdf",
+ "target": 2,
+ "generation": "cosserat",
+ "steps": {
+  "init": {
+   "programs": {
+    "": "strandPhysics2InitCosseratRods",
+    "mass": "strandPhysics2InitCosseratRodsMassOnly",
+    "copy": "strandPhysics2InitCosseratRods_EW"
+   },
+   "bindings": {
+    "nodePositionUAV": "nodes.position@before",
+    "nodePropUAV": "node_properties",
+    "nodeQuaternionUAV": "nodes.rotation@before",
+    "nodeVUAV": "velocities@before",
+    "nodeWetnessUAV": "node_wetness",
+    "offsetSRV": "strand.offsets.first",
+    "prevRestPositionUAV": "rest_data.position@before",
+    "prevRestQuaternionUAV": "rest_data.rotation@before",
+    "restPositionUAV": "rest.position",
+    "restQuaternionUAV": "rest.rotation",
+    "vertexSRV": "strand.vertices.first"
+   }
+  },
+  "init_secondary": {
+   "programs": {
+    "": "strandPhysics2InitSecondaryGuide"
+   },
+   "bindings": {
+    "closestGuideData0SRV": "strand.closest_guides.first.0",
+    "closestGuideData1SRV": "strand.closest_guides.first.1",
+    "closestGuideData2SRV": "strand.closest_guides.first.2",
+    "closestGuideData3SRV": "strand.closest_guides.first.3",
+    "closestGuideData4SRV": "strand.closest_guides.first.4",
+    "closestGuideData5SRV": "strand.closest_guides.first.5",
+    "offsetSRV": "strand.offsets.first",
+    "restPositionUAV": "secondary.rest.position",
+    "restQuaternionUAV": "secondary.rest.rotation",
+    "secondaryToPrimary0UAV": "secondary.to_primary.0",
+    "secondaryToPrimary1UAV": "secondary.to_primary.1",
+    "secondaryToPrimary2UAV": "secondary.to_primary.2",
+    "vertexSRV": "strand.vertices.first"
+   }
+  },
+  "clear_grid": {
+   "programs": {
+    "vp": "strandPhysics2ClearGrid_VP",
+    "is": "strandPhysics2ClearGrid_IS",
+    "vp is": "strandPhysics2ClearGrid_VP_IS"
+   },
+   "bindings": {
+    "densityGridUAV": "grid.density@now",
+    "massGridUAV": "grid.mass@now",
+    "velocityXGridUAV": "grid.velocity_x@now",
+    "velocityYGridUAV": "grid.velocity_y@now",
+    "velocityZGridUAV": "grid.velocity_z@now"
+   }
+  },
+  "rest_root": {
+   "programs": {
+    "": "strandPhysics2UpdateRestRoot",
+    "bound": "strandPhysics2UpdateRestRoot_BM",
+    "bound world": "strandPhysics2UpdateRestRoot_BM_WQ",
+    "bound quantized": "strandPhysics2UpdateRestRoot_BM_QU",
+    "bound world quantized": "strandPhysics2UpdateRestRoot_BM_WQ_QU"
+   },
+   "bindings": {
+    "bindingValidationUAV": "validation",
+    "deformedMeshPositionSRV": "binding.deformed_mesh",
+    "deformedRootPositionUAV": "deformed_roots.position",
+    "deformedRootQuaternionUAV": "deformed_roots.rotation",
+    "restBindingPositionSRV": "binding.table",
+    "restMeshPositionSRV": "binding.rest_mesh",
+    "restRootPositionUAV": "rest_roots.position",
+    "restRootQuaternionUAV": "rest_roots.rotation",
+    "rootUVUAV": "strand.root_uvs"
+   }
+  },
+  "rest_data": {
+   "programs": {
+    "": "strandPhysics2UpdateRestData",
+    "start": "strandPhysics2UpdateRestDataInitFrame",
+    "bound": "strandPhysics2UpdateRestDataBinding",
+    "bound start": "strandPhysics2UpdateRestDataBindingInitFrame"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "deformedRootPositionSRV": "deformed_roots.position",
+    "deformedRootQuaternionSRV": "deformed_roots.rotation",
+    "nodePositionUAV": "nodes.position@before",
+    "nodeQuaternionUAV": "nodes.rotation@before",
+    "prevRestPositionUAV": "rest_data.position@before",
+    "prevRestQuaternionUAV": "rest_data.rotation@before",
+    "restPositionSRV": "rest.position",
+    "restPositionUAV": "rest_data.position@now",
+    "restQuaternionSRV": "rest.rotation",
+    "restQuaternionUAV": "rest_data.rotation@now",
+    "restRootPositionSRV": "rest_roots.position"
+   }
+  },
+  "guided_rest": {
+   "programs": {
+    "guided": "strandPhysics2UpdateRestPositionGuidedSimCoord",
+    "bound": "strandPhysics2UpdateRestPositionBindingSimCoord"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "closestGuideData0SRV": "strand.closest_guides.0",
+    "closestGuideData1SRV": "strand.closest_guides.1",
+    "closestGuideData3SRV": "strand.closest_guides.3",
+    "closestGuideData4SRV": "strand.closest_guides.4",
+    "deformedRootPositionSRV": "deformed_roots.position",
+    "deformedRootQuaternionSRV": "deformed_roots.rotation",
+    "indexSRV": "strand.segments",
+    "restRootPositionSRV": "rest_roots.position",
+    "restSRV": "strand.vertices",
+    "restUAV": "guided_rest",
+    "vertexMappingSRV": "strand.vertex_strands"
+   }
+  },
+  "update": {
+   "programs": {
+    "": "strandPhysics2UpdateCosseratRods",
+    "vp": "strandPhysics2UpdateCosseratRods_VP",
+    "is": "strandPhysics2UpdateCosseratRods_IS",
+    "vp is": "strandPhysics2UpdateCosseratRods_VP_IS"
+   },
+   "bindings": {
+    "boundingBoxUAV": "bounds",
+    "densityGridSRV": "grid.density@before",
+    "densityGridUAV": "grid.density@now",
+    "massGridSRV": "grid.mass@before",
+    "massGridUAV": "grid.mass@now",
+    "nodePositionSRV": "nodes.position@before",
+    "nodePositionUAV": "nodes.position@now",
+    "nodePropSRV": "node_properties",
+    "nodeQuaternionSRV": "nodes.rotation@before",
+    "nodeQuaternionUAV": "nodes.rotation@now",
+    "nodeVSRV": "velocities@before",
+    "nodeVUAV": "velocities@now",
+    "nodeWetnessUAV": "node_wetness",
+    "prevRestPositionSRV": "rest_data.position@before",
+    "prevRestQuaternionSRV": "rest_data.rotation@before",
+    "restPositionSRV": "rest_data.position@now",
+    "restQuaternionSRV": "rest_data.rotation@now",
+    "rootWetnessUAV": "root_wetness",
+    "velocityXGridSRV": "grid.velocity_x@before",
+    "velocityXGridUAV": "grid.velocity_x@now",
+    "velocityYGridSRV": "grid.velocity_y@before",
+    "velocityYGridUAV": "grid.velocity_y@now",
+    "velocityZGridSRV": "grid.velocity_z@before",
+    "velocityZGridUAV": "grid.velocity_z@now",
+    "wetnessMaskSRV": "wetness_mask"
+   }
+  },
+  "pause": {
+   "programs": {
+    "": "strandPhysics2PauseCosseratRods"
+   },
+   "bindings": {
+    "boundingBoxUAV": "bounds",
+    "nodePositionSRV": "nodes.position@before",
+    "nodePositionUAV": "nodes.position@now",
+    "nodeQuaternionSRV": "nodes.rotation@before",
+    "nodeQuaternionUAV": "nodes.rotation@now",
+    "nodeVSRV": "velocities@before",
+    "nodeVUAV": "velocities@now",
+    "prevRestPositionSRV": "rest_data.position@before",
+    "prevRestQuaternionSRV": "rest_data.rotation@before",
+    "restPositionSRV": "rest_data.position@now",
+    "restQuaternionSRV": "rest_data.rotation@now"
+   }
+  },
+  "guide_secondary": {
+   "programs": {
+    "": "strandPhysics2GuidingSecondaryGuide",
+    "bound": "strandPhysics2GuidingSecondaryGuide_BM"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "deformedRootPositionSRV": "deformed_roots.position",
+    "deformedRootQuaternionSRV": "deformed_roots.rotation",
+    "nodePositionUAV": "secondary.nodes.position",
+    "nodeQuaternionUAV": "secondary.nodes.rotation",
+    "nodeWetnessUAV": "secondary.wetness",
+    "restPositionSRV": "secondary.rest.position",
+    "restPositionUAV": "secondary.posed_rest.position",
+    "restQuaternionSRV": "secondary.rest.rotation",
+    "restQuaternionUAV": "secondary.posed_rest.rotation",
+    "restRootPositionSRV": "rest_roots.position",
+    "secondaryToPrimary0SRV": "secondary.to_primary.0",
+    "secondaryToPrimary1SRV": "secondary.to_primary.1",
+    "secondaryToPrimary2SRV": "secondary.to_primary.2",
+    "simDeformedPositionSRV": "nodes.position@now",
+    "simDeformedQuaternionSRV": "nodes.rotation@now",
+    "simRestPositionSRV": "rest_data.position@now",
+    "simRestQuaternionSRV": "rest_data.rotation@now",
+    "wetnessMaskSRV": "wetness_mask"
+   }
+  },
+  "guide": {
+   "programs": {
+    "": "strandPhysics2GuidingCosseratRods",
+    "guide_only": "strandPhysics2GuidingCosseratRodsGuideOnly",
+    "world": "strandPhysics2GuidingCosseratRodsWorldRotation",
+    "guide_only world": "strandPhysics2GuidingCosseratRodsGuideOnlyWorldRotation"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "closestGuideData0SRV": "strand.closest_guides.0",
+    "closestGuideData1SRV": "strand.closest_guides.1",
+    "closestGuideData2SRV": "strand.closest_guides.2",
+    "closestGuideData3SRV": "strand.closest_guides.3",
+    "closestGuideData4SRV": "strand.closest_guides.4",
+    "closestGuideData5SRV": "strand.closest_guides.5",
+    "indexSRV": "strand.segments",
+    "offsetSRV": "strand.offsets",
+    "renVertexSRV": "guided_rest",
+    "simDeformedPositionSRV": "nodes.position@now",
+    "simDeformedQuaternionSRV": "nodes.rotation@now",
+    "simNodeWetnessSRV": "node_wetness",
+    "simRestPositionSRV": "rest_data.position@now",
+    "simRestQuaternionSRV": "rest_data.rotation@now",
+    "vertexMappingSRV": "strand.vertex_strands",
+    "vertexUAV": "render.vertices@now"
+   }
+  },
+  "guide_from_secondary": {
+   "programs": {
+    "": "strandPhysics2GuidingCosseratRods",
+    "guide_only": "strandPhysics2GuidingCosseratRodsGuideOnly",
+    "world": "strandPhysics2GuidingCosseratRodsWorldRotation",
+    "guide_only world": "strandPhysics2GuidingCosseratRodsGuideOnlyWorldRotation"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "closestGuideData0SRV": "strand.closest_guides.0",
+    "closestGuideData1SRV": "strand.closest_guides.1",
+    "closestGuideData2SRV": "strand.closest_guides.2",
+    "closestGuideData3SRV": "strand.closest_guides.3",
+    "closestGuideData4SRV": "strand.closest_guides.4",
+    "closestGuideData5SRV": "strand.closest_guides.5",
+    "indexSRV": "strand.segments",
+    "offsetSRV": "strand.offsets",
+    "renVertexSRV": "guided_rest",
+    "simDeformedPositionSRV": "secondary.nodes.position",
+    "simDeformedQuaternionSRV": "secondary.nodes.rotation",
+    "simNodeWetnessSRV": "secondary.wetness",
+    "simRestPositionSRV": "secondary.posed_rest.position",
+    "simRestQuaternionSRV": "secondary.posed_rest.rotation",
+    "vertexMappingSRV": "strand.vertex_strands",
+    "vertexUAV": "render.vertices@now"
+   }
+  },
+  "transform": {
+   "programs": {
+    "": "strandPhysics2TransformOnly",
+    "bound": "strandPhysics2TransformOnlyBindingMesh"
+   },
+   "bindings": {
+    "bindingValidationSRV": "validation",
+    "boundingBoxUAV": "bounds",
+    "deformedRootPositionSRV": "deformed_roots.position",
+    "deformedRootQuaternionSRV": "deformed_roots.rotation",
+    "indexSRV": "strand.segments",
+    "restRootPositionSRV": "rest_roots.position",
+    "vertexMappingSRV": "strand.vertex_strands",
+    "vertexSRV": "strand.vertices",
+    "vertexUAV": "render.vertices@now"
+   }
+  },
+  "bounds_copy": {
+   "programs": {
+    "": "StrandPhysics2BoundingInfoCopy"
+   },
+   "bindings": {
+    "StrandShadingInfoUAV": "render.shading_info",
+    "boundingBoxSRV": "bounds"
+   }
+  }
+ },
+ "constants": {
+  "component": "via.dynamics.GpuStrandsDynamics",
+  "copies": {
+   "airOrientationAlignmentInfluence": "AirOrientationAlignmentInfluence",
+   "baseWetness": "BaseWetness",
+   "collisionMargin": "CollisionMargin",
+   "dryingRate": "DryingRate",
+   "maxAcceleration": "MaxAcceleration",
+   "maxAngularSpeed": "MaxAngularSpeed",
+   "maxLinearSpeed": "MaxLinearSpeed",
+   "occludeeAttenuation": "OccludeeAttenuation",
+   "skinMoveInfluenceAngularVelocityRange": "SkinMoveInfluenceAngularVelocityRange",
+   "skinMoveInfluenceLinearVelocityRange": "SkinMoveInfluenceLinearVelocityRange",
+   "skinMoveInfluenceRange": "SkinMoveInfluenceRange",
+   "staticFrictionStretchThreshold": "StaticFrictionStretchThreshold",
+   "strandAirDensity": "AirDensity",
+   "strandAirDragForce": "AirDragForce",
+   "strandAirLiftForce": "AirLiftForce",
+   "strandAirLiftPeriod": "AirLiftPeriod",
+   "strandAirLiftResolution": "AirLiftResolution",
+   "strandAirVelocity": "AirVelocity",
+   "strandGravity": "Gravity",
+   "turbulenceAmplitude": "TurbulenceAmplitude",
+   "turbulenceCycle": "TurbulenceCycle",
+   "turbulenceFrequency": "TurbulenceFrequency",
+   "turbulenceOption": "TurbulenceOption",
+   "wetClumpTightnessLimit": "ClumpTightnessLimit",
+   "wetFlyAwayAmount": "FlyAwayAmount",
+   "wetFlyAwayFraction": "FlyAwayFraction",
+   "wetnessPromoteMethod": "WetnessPromoteMethod"
+  },
+  "own": {
+   "angularVelocityDamping": "AngularVelocityDamping",
+   "angularVelocityEMAWeight": "AngularVelocityEMAWeight",
+   "interSmoothingStrength": "InterSmoothingStrength",
+   "linearVelocityDamping": "LinearVelocityDamping",
+   "linearVelocityEMAWeight": "LinearVelocityEMAWeight",
+   "repulsiveStrength": "RepulsiveStrength",
+   "restitutionCoefficient": "RestitutionCoefficient",
+   "strandAngularYoungModulus": "BendStiffness",
+   "strandDensity": "StrandDensity",
+   "strandKineticFriction": "KineticFriction",
+   "strandNodeRadius": "CrossSectionRadius",
+   "strandStaticFriction": "StaticFriction",
+   "strandStretchYoungModulus": "StretchStiffness",
+   "swingLimit": "SwingLimit",
+   "swingLimitStiffness": "SwingLimitStiffness",
+   "twistLimit": "TwistLimit",
+   "twistLimitStiffness": "TwistLimitStiffness"
+  },
+  "arguments": {
+   "adaptive_skin_move": "UseAdaptiveSkinMoveInfluence",
+   "advect_bending": "AdvectBending",
+   "advect_stretch": "AdvectStretch",
+   "air_drag": "EnableAirDrag",
+   "automatic_rate": "AutoFPS",
+   "binding": "StrandBindingData",
+   "binding_object": "BindingGameObject",
+   "clear_velocity": "ClearVelocityEveryFrame",
+   "clump_tightness": "ClumpTightness",
+   "collision_target": "CollisionTargetOption",
+   "constraint_joint": "ConstraintJointName",
+   "density_cell_width": "DensityCellWidth",
+   "fast_collision": "FastCollision",
+   "guide_only": "GuideOnly",
+   "guided": "UseGuide",
+   "guided_rest": "GuidingRestPosition",
+   "inter_smoothing": "UseInterSmoothing",
+   "iterations": "IterationTime",
+   "least_rate": "MinSimFPS",
+   "local_grid": "LocalGrid",
+   "lod_reset": "ResetWhenVertexLODChanged",
+   "max_linear_speed": "MaxLinearSpeed",
+   "more_preset_weights": "AdditionalStrandDynamicsDataWeight",
+   "more_presets": "AdditionalStrandDynamicsData",
+   "most_rate": "MaxSimFPS",
+   "occlusion_distance": "OcclusionMaxDistance",
+   "origin_joint": "SimulationOriginJointName",
+   "origin_object": "SimulationOriginGameObject",
+   "own_boxes": "BoxGroup",
+   "own_capsules": "CapsuleGroup",
+   "own_spheres": "SphereGroup",
+   "paused": "PauseSimulation",
+   "preset": "StrandDynamicsData",
+   "preset_weight": "StrandDynamicsDataWeight",
+   "skin_move_influence": "SkinMoveInfluence",
+   "solve_bending": "SolveBending",
+   "solve_collision": "SolveCollision",
+   "solve_stretch": "SolveStretch",
+   "solver": "EnableSolver",
+   "solver_option": "SolverOption",
+   "specify_origin": "SpecifySimulationOrigin",
+   "static_warp": "EnableStaticWarp",
+   "strand_size": "SimulationStrandSize",
+   "sub_steps": "SubStep",
+   "swing_limited": "UseSwingLimit",
+   "target_rate": "TargetFPS",
+   "time_scaled": "DependsOnTimeScale",
+   "translation_guiding": "UseTranslationGuiding",
+   "twist_limited": "UseTwistLimit",
+   "velocity_cell_width": "VelocityCellWidth",
+   "volume_preservation": "UseVolumePreservation",
+   "warping": "Warping",
+   "wet_angular_damping": "WetAngularDamping",
+   "wet_bend": "WetBendMultiplier",
+   "wet_friction": "WetFrictionMultiplier",
+   "wet_linear_damping": "WetLinearDamping",
+   "wet_mass": "WetMassMultiplier",
+   "wet_multipliers": "ApplyWetnessMultiplier",
+   "wet_stretch": "WetStretchMultiplier",
+   "world_inertia": "UseWorldInertialForce",
+   "world_inertia_multiplier": "WorldInertialForceMultiplier",
+   "world_quaternion": "UseWorldQuaternion",
+   "world_velocity_drag": "UseWorldVelocityForAirDrag",
+   "world_velocity_multiplier": "WorldVelocityMultiplier"
+  },
+  "literals": {
+   "useInternalSkinning": 1
+  },
+  "wrappers": {
+   "own_spheres": {
+    "enabled": "Enable",
+    "follow": "FollowParentTransform",
+    "joint": "JointName",
+    "world": "Sphere",
+    "local": [
+     "LocalPos",
+     "LocalRadius"
+    ]
+   },
+   "own_capsules": {
+    "enabled": "Enable",
+    "follow": "FollowParentTransform",
+    "joint": "JointName",
+    "world": "Capsule",
+    "local": [
+     "LocalPos0",
+     "LocalPos1",
+     "LocalRadius"
+    ]
+   },
+   "own_boxes": {
+    "enabled": "Enable",
+    "follow": "FollowParentTransform",
+    "joint": "JointName",
+    "world": "Box",
+    "local": [
+     "LocalCoord",
+     "LocalExtent"
+    ]
+   }
+  },
+  "settle_frames": 3
+ },
+ "render": {
+  "file": "systems/shader/strand/strand.sdf",
+  "target": 2,
+  "generation": "oit",
+  "steps": {
+   "reset_oit": {
+    "programs": {
+     "": "resetOIT"
+    },
+    "bindings": {
+     "OITUAVs": "view.oit"
+    }
+   },
+   "coarse_z": {
+    "programs": {
+     "": "coarseZ"
+    },
+    "bindings": {
+     "RWCoarseZ": "view.coarse_z",
+     "ReadonlyDepth": "scene.depth"
+    }
+   },
+   "coarse": {
+    "programs": {
+     "": "coarseRaster",
+     "hardware": "coarseRasterHardware",
+     "subdivision": "coarseRasterSubD",
+     "subdivision hardware": "coarseRasterSubDHardware",
+     "countup": "coarseRasterCountup",
+     "countup hardware": "coarseRasterCountupHardware",
+     "countup subdivision": "coarseRasterCountupSubD",
+     "countup subdivision hardware": "coarseRasterCountupSubDHardware",
+     "mix": "coarseRasterMix",
+     "mix hardware": "coarseRasterMixHardware",
+     "mix subdivision": "coarseRasterMixSubD",
+     "mix subdivision hardware": "coarseRasterMixSubDHardware",
+     "mix countup": "coarseRasterMixCountup",
+     "mix countup hardware": "coarseRasterMixCountupHardware",
+     "mix countup subdivision": "coarseRasterMixCountupSubD",
+     "mix countup subdivision hardware": "coarseRasterMixCountupSubDHardware",
+     "pretransformed": "preTransformedCoarseRaster",
+     "pretransformed hardware": "preTransformedCoarseRasterHardware",
+     "pretransformed subdivision": "preTransformedCoarseRasterSubD",
+     "pretransformed subdivision hardware": "preTransformedCoarseRasterSubDHardware",
+     "pretransformed countup": "preTransformedCoarseRasterCountup",
+     "pretransformed countup hardware": "preTransformedCoarseRasterCountupHardware",
+     "pretransformed countup subdivision": "preTransformedCoarseRasterCountupSubD",
+     "pretransformed countup subdivision hardware": "preTransformedCoarseRasterCountupSubDHardware",
+     "pretransformed mix": "preTransformedCoarseRasterMix",
+     "pretransformed mix hardware": "preTransformedCoarseRasterMixHardware",
+     "pretransformed mix subdivision": "preTransformedCoarseRasterMixSubD",
+     "pretransformed mix subdivision hardware": "preTransformedCoarseRasterMixSubDHardware",
+     "pretransformed mix countup": "preTransformedCoarseRasterMixCountup",
+     "pretransformed mix countup hardware": "preTransformedCoarseRasterMixCountupHardware",
+     "pretransformed mix countup subdivision": "preTransformedCoarseRasterMixCountupSubD",
+     "pretransformed mix countup subdivision hardware": "preTransformedCoarseRasterMixCountupSubDHardware"
+    },
+    "bindings": {
+     "CoarseZ": "view.coarse_z",
+     "CompactLineIndices": "strand.segments",
+     "RWAccumulate": "view.accumulate",
+     "RWCounter": "work.counter",
+     "RWIndirect": "view.arguments",
+     "RWOffset": "view.offset",
+     "RWQueue": "work.queue",
+     "RWSolidHairList": "work.solid_hair",
+     "RWVisibility": "work.visibility",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "allocation": {
+    "programs": {
+     "": "allocation"
+    },
+    "bindings": {
+     "RWAccumulate": "view.accumulate",
+     "RWCounter": "work.counter",
+     "RWDistributeIndirect": "view.distribute_arguments",
+     "RWIndirect": "view.arguments",
+     "RWOffset": "view.offset"
+    }
+   },
+   "coarse_alloc": {
+    "programs": {
+     "": "coarseRasterAlloc",
+     "hardware": "coarseRasterAllocHardware",
+     "subdivision": "coarseRasterAllocSubD",
+     "subdivision hardware": "coarseRasterAllocSubDHardware",
+     "mix": "coarseRasterMixAlloc",
+     "mix hardware": "coarseRasterMixAllocHardware",
+     "mix subdivision": "coarseRasterMixAllocSubD",
+     "mix subdivision hardware": "coarseRasterMixAllocSubDHardware",
+     "pretransformed": "preTransformedCoarseRasterAlloc",
+     "pretransformed hardware": "preTransformedCoarseRasterAllocHardware",
+     "pretransformed subdivision": "preTransformedCoarseRasterAllocSubD",
+     "pretransformed subdivision hardware": "preTransformedCoarseRasterAllocSubDHardware",
+     "pretransformed mix": "preTransformedCoarseRasterMixAlloc",
+     "pretransformed mix hardware": "preTransformedCoarseRasterMixAllocHardware",
+     "pretransformed mix subdivision": "preTransformedCoarseRasterMixAllocSubD",
+     "pretransformed mix subdivision hardware": "preTransformedCoarseRasterMixAllocSubDHardware"
+    },
+    "bindings": {
+     "CoarseZ": "view.coarse_z",
+     "CompactLineIndices": "strand.segments",
+     "Offset": "view.offset",
+     "RWAccumulate": "view.accumulate",
+     "RWIndirect": "view.arguments",
+     "RWQueue": "work.queue",
+     "RWSolidHairList": "work.solid_hair",
+     "RWVisibility": "work.visibility",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "shading_init": {
+    "programs": {
+     "": "StrandShadingInit"
+    },
+    "bindings": {
+     "CounterSRV": "work.counter",
+     "StrandShadingBoundingVolumeUAV": "shading.bounds",
+     "StrandShadingDispatchIndirectArgsUAV": "shading.dispatch"
+    }
+   },
+   "shading_bounds": {
+    "programs": {
+     "": "StrandShadingInit1",
+     "pretransformed": "StrandShadingInit1Pretrans"
+    },
+    "bindings": {
+     "CompactLineIndices": "strand.segments",
+     "StrandShadingBoundingVolumeUAV": "shading.bounds",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "shading_info": {
+    "programs": {
+     "": "StrandShadingInit2"
+    },
+    "bindings": {
+     "StrandShadingBoundingVolumeSRV": "shading.bounds",
+     "StrandShadingInfoUAV": "render.shading_info"
+    }
+   },
+   "indirect_light_arguments": {
+    "programs": {
+     "": "StrandIndirectLightArgsCS"
+    },
+    "bindings": {
+     "CounterSRV": "work.counter",
+     "StrandIndirectLightArgsUAV": "indirect_light.arguments"
+    }
+   },
+   "indirect_light": {
+    "programs": {
+     "": "StrandIndirectLightCS"
+    },
+    "bindings": {
+     "BSPTree": "scene.bsp_tree",
+     "CubemapSRV": "scene.cubemaps",
+     "DepthBlocker": "scene.depth_blocker",
+     "IBLCubemapArrayList2SRV": "scene.ibl_cubemaps",
+     "IBLCubemapBVHSRV": "scene.ibl_bounds",
+     "IndirectProbe": "scene.indirect_probes",
+     "StrandIndirectLightUAV": "indirect_light.image",
+     "StrandShadingInfoSRV": "render.shading_info",
+     "TetraCoordinate": "scene.tetra_coordinates"
+    }
+   },
+   "ds_arguments": {
+    "programs": {
+     "": "initDSVolume"
+    },
+    "bindings": {
+     "CounterSRV": "work.counter",
+     "RWDSVolumeDispatchIndirectArgsBuffer": "ds.arguments"
+    }
+   },
+   "ds_info": {
+    "programs": {
+     "": "init2DSVolume"
+    },
+    "bindings": {
+     "CounterSRV": "work.counter",
+     "RWDSVolumeDispatchIndirectArgsBuffer": "ds.arguments",
+     "RWDSVolumeInfoBuffer": "ds.info",
+     "StrandShadingInfoSRV": "render.shading_info"
+    }
+   },
+   "ds_clear": {
+    "programs": {
+     "": "clearDSVolume"
+    },
+    "bindings": {
+     "RWDSVolumeTexture": "ds.volume"
+    }
+   },
+   "ds_raster": {
+    "programs": {
+     "": "rasterDSVolume",
+     "interpolated": "rasterDSVolumeIntpij",
+     "pretransformed": "rasterDSVolumePretransform",
+     "pretransformed interpolated": "rasterDSVolumePretransformIntpij"
+    },
+    "bindings": {
+     "CompactLineIndices": "strand.segments",
+     "DSVolumeInfoBuffer": "ds.info",
+     "RWDSVolumeTexture": "ds.volume",
+     "Vertices": "render.vertices@now"
+    }
+   },
+   "ds_raster_depth": {
+    "programs": {
+     "": "rasterDepthDSVolume"
+    },
+    "bindings": {
+     "DSVolumeInfoBuffer": "ds.info",
+     "RWDSVolumeTexture": "ds.volume",
+     "SolidDepthSRV": "scene.depth"
+    }
+   },
+   "ds_copy": {
+    "programs": {
+     "": "copyDSVolume"
+    },
+    "bindings": {
+     "DSVolumeTexture": "ds.volume",
+     "RWDSVolume2": "ds.volume2"
+    }
+   },
+   "ds_mip": {
+    "programs": {
+     "": "mipDSVolume"
+    },
+    "bindings": {
+     "DSVolume2Mip": "ds.volume2#level-1",
+     "RWDSVolume2Mip": "ds.volume2#level"
+    }
+   },
+   "ds_lut": {
+    "programs": {
+     "": "computeDSLUT"
+    },
+    "bindings": {
+     "RWDSLUT": "ds.lut"
+    }
+   },
+   "ds_lut_copy": {
+    "programs": {
+     "": "copyDSLUT"
+    },
+    "bindings": {
+     "DSLUTTex": "ds.lut_source",
+     "RWDSLUT": "ds.lut"
+    }
+   },
+   "need_fog": {
+    "programs": {
+     "": "reportNeedFog"
+    },
+    "bindings": {}
+   },
+   "shading_arguments": {
+    "programs": {
+     "": "shadingIndirectArgs"
+    },
+    "bindings": {
+     "CounterSRV": "work.counter",
+     "RWShadingIndrectArgs": "shading.arguments"
+    }
+   },
+   "shading": {
+    "programs": {
+     "": "shading",
+     "scattering": "shadingDualIBLOpt",
+     "projection_lights": "shadingPjLt",
+     "projection_lights scattering": "shadingPjLtDualIBLOpt",
+     "shrink_shadow": "shadingSkSdw",
+     "shrink_shadow scattering": "shadingSkSdwDualIBLOpt",
+     "shrink_shadow projection_lights": "shadingSkSdwPjLt",
+     "shrink_shadow projection_lights scattering": "shadingSkSdwPjLtDualIBLOpt",
+     "pretransformed": "preTransformedShading",
+     "pretransformed scattering": "preTransformedShadingDualIBLOpt",
+     "pretransformed projection_lights": "preTransformedShadingPjLt",
+     "pretransformed projection_lights scattering": "preTransformedShadingPjLtDualIBLOpt",
+     "pretransformed shrink_shadow": "preTransformedShadingSkSdw",
+     "pretransformed shrink_shadow scattering": "preTransformedShadingSkSdwDualIBLOpt",
+     "pretransformed shrink_shadow projection_lights": "preTransformedShadingSkSdwPjLt",
+     "pretransformed shrink_shadow projection_lights scattering": "preTransformedShadingSkSdwPjLtDualIBLOpt"
+    },
+    "bindings": {
+     "AreaLightParameterSRV": "scene.area_light_parameters",
+     "CompactLineIndices": "strand.segments",
+     "DSLUT": "ds.lut",
+     "DSVolume2": "ds.volume2",
+     "DSVolumeInfoBuffer": "ds.info",
+     "GlobalSDFTexture": "scene.global_sdf",
+     "IESLightTableSRV": "scene.ies_lights",
+     "LightCullingListSRV": "scene.light_culling_list",
+     "LightCullingVolumeSRV": "scene.light_culling_volume",
+     "LightParameterSRV": "scene.light_parameters",
+     "Lut_Ntt": "scene.lut_ntt",
+     "ProjLightParamterSRV": "render.projection_lights",
+     "RWShade": "work.shade",
+     "ShadowMapSRV": "scene.shadow_map",
+     "ShadowParameterSRV": "scene.shadow_parameters",
+     "ShrinkShadowMapSRV": "scene.shrink_shadow_map",
+     "StaticShadowMapSRV": "scene.static_shadow_map",
+     "StrandIndirectLightSRV": "indirect_light.image",
+     "StrandShadingInfoSRV": "render.shading_info",
+     "Vertices": "render.vertices@now",
+     "Visibility": "work.visibility"
+    }
+   },
+   "distributor": {
+    "programs": {
+     "": "distributor",
+     "countup": "distributor3P"
+    },
+    "bindings": {
+     "Offset": "view.offset",
+     "RWIndirect": "view.arguments",
+     "RWWorkQueue": "view.work_queue"
+    }
+   },
+   "fill": {
+    "programs": {
+     "": "fillTriangle",
+     "root_blend": "fillTriangleRootBlend",
+     "blend": "fillTriangleBlend",
+     "blend root_blend": "fillTriangleBlendRootBlend",
+     "pretransformed": "preTransformedFillTriangle",
+     "pretransformed root_blend": "preTransformedFillTriangleRootBlend",
+     "pretransformed blend": "preTransformedFillTriangleBlend",
+     "pretransformed blend root_blend": "preTransformedFillTriangleBlendRootBlend"
+    },
+    "bindings": {
+     "CoarseZ": "view.coarse_z",
+     "CompactLineIndices": "strand.segments",
+     "PreviousVertices": "render.vertices@before",
+     "Shade": "work.shade",
+     "SolidHairList": "work.solid_hair",
+     "Vertices": "render.vertices@now"
+    },
+    "targets": [
+     "view.strand_image",
+     "view.strand_velocity"
+    ],
+    "depth": "view.strand_depth"
+   },
+   "fine": {
+    "programs": {
+     "oit2": "fineRasterOIT2",
+     "oit2 motion": "fineRasterOIT2MV",
+     "oit2 stencil": "fineRasterOIT2WriteStencil",
+     "oit2 stencil motion": "fineRasterOIT2WriteStencilMV",
+     "oit4": "fineRasterOIT4",
+     "oit4 motion": "fineRasterOIT4MV",
+     "oit4 stencil": "fineRasterOIT4WriteStencil",
+     "oit4 stencil motion": "fineRasterOIT4WriteStencilMV",
+     "oit6": "fineRasterOIT6",
+     "oit6 motion": "fineRasterOIT6MV",
+     "oit6 stencil": "fineRasterOIT6WriteStencil",
+     "oit6 stencil motion": "fineRasterOIT6WriteStencilMV",
+     "oit8": "fineRasterOIT8",
+     "oit8 motion": "fineRasterOIT8MV",
+     "oit8 stencil": "fineRasterOIT8WriteStencil",
+     "oit8 stencil motion": "fineRasterOIT8WriteStencilMV",
+     "subdivision oit2": "fineRasterSubDOIT2",
+     "subdivision oit2 motion": "fineRasterSubDOIT2MV",
+     "subdivision oit2 stencil": "fineRasterSubDOIT2WriteStencil",
+     "subdivision oit2 stencil motion": "fineRasterSubDOIT2WriteStencilMV",
+     "subdivision oit4": "fineRasterSubDOIT4",
+     "subdivision oit4 motion": "fineRasterSubDOIT4MV",
+     "subdivision oit4 stencil": "fineRasterSubDOIT4WriteStencil",
+     "subdivision oit4 stencil motion": "fineRasterSubDOIT4WriteStencilMV",
+     "subdivision oit6": "fineRasterSubDOIT6",
+     "subdivision oit6 motion": "fineRasterSubDOIT6MV",
+     "subdivision oit6 stencil": "fineRasterSubDOIT6WriteStencil",
+     "subdivision oit6 stencil motion": "fineRasterSubDOIT6WriteStencilMV",
+     "subdivision oit8": "fineRasterSubDOIT8",
+     "subdivision oit8 motion": "fineRasterSubDOIT8MV",
+     "subdivision oit8 stencil": "fineRasterSubDOIT8WriteStencil",
+     "subdivision oit8 stencil motion": "fineRasterSubDOIT8WriteStencilMV",
+     "countup oit2": "fineRaster3POIT2",
+     "countup oit2 motion": "fineRaster3POIT2MV",
+     "countup oit2 stencil": "fineRaster3POIT2WriteStencil",
+     "countup oit2 stencil motion": "fineRaster3POIT2WriteStencilMV",
+     "countup oit4": "fineRaster3POIT4",
+     "countup oit4 motion": "fineRaster3POIT4MV",
+     "countup oit4 stencil": "fineRaster3POIT4WriteStencil",
+     "countup oit4 stencil motion": "fineRaster3POIT4WriteStencilMV",
+     "countup oit6": "fineRaster3POIT6",
+     "countup oit6 motion": "fineRaster3POIT6MV",
+     "countup oit6 stencil": "fineRaster3POIT6WriteStencil",
+     "countup oit6 stencil motion": "fineRaster3POIT6WriteStencilMV",
+     "countup oit8": "fineRaster3POIT8",
+     "countup oit8 motion": "fineRaster3POIT8MV",
+     "countup oit8 stencil": "fineRaster3POIT8WriteStencil",
+     "countup oit8 stencil motion": "fineRaster3POIT8WriteStencilMV",
+     "countup subdivision oit2": "fineRaster3PSubDOIT2",
+     "countup subdivision oit2 motion": "fineRaster3PSubDOIT2MV",
+     "countup subdivision oit2 stencil": "fineRaster3PSubDOIT2WriteStencil",
+     "countup subdivision oit2 stencil motion": "fineRaster3PSubDOIT2WriteStencilMV",
+     "countup subdivision oit4": "fineRaster3PSubDOIT4",
+     "countup subdivision oit4 motion": "fineRaster3PSubDOIT4MV",
+     "countup subdivision oit4 stencil": "fineRaster3PSubDOIT4WriteStencil",
+     "countup subdivision oit4 stencil motion": "fineRaster3PSubDOIT4WriteStencilMV",
+     "countup subdivision oit6": "fineRaster3PSubDOIT6",
+     "countup subdivision oit6 motion": "fineRaster3PSubDOIT6MV",
+     "countup subdivision oit6 stencil": "fineRaster3PSubDOIT6WriteStencil",
+     "countup subdivision oit6 stencil motion": "fineRaster3PSubDOIT6WriteStencilMV",
+     "countup subdivision oit8": "fineRaster3PSubDOIT8",
+     "countup subdivision oit8 motion": "fineRaster3PSubDOIT8MV",
+     "countup subdivision oit8 stencil": "fineRaster3PSubDOIT8WriteStencil",
+     "countup subdivision oit8 stencil motion": "fineRaster3PSubDOIT8WriteStencilMV",
+     "32bit oit2": "fineRaster32BitOIT2",
+     "32bit oit2 motion": "fineRaster32BitOIT2MV",
+     "32bit oit2 stencil": "fineRaster32BitOIT2WriteStencil",
+     "32bit oit2 stencil motion": "fineRaster32BitOIT2WriteStencilMV",
+     "32bit oit4": "fineRaster32BitOIT4",
+     "32bit oit4 motion": "fineRaster32BitOIT4MV",
+     "32bit oit4 stencil": "fineRaster32BitOIT4WriteStencil",
+     "32bit oit4 stencil motion": "fineRaster32BitOIT4WriteStencilMV",
+     "32bit oit6": "fineRaster32BitOIT6",
+     "32bit oit6 motion": "fineRaster32BitOIT6MV",
+     "32bit oit6 stencil": "fineRaster32BitOIT6WriteStencil",
+     "32bit oit6 stencil motion": "fineRaster32BitOIT6WriteStencilMV",
+     "32bit oit8": "fineRaster32BitOIT8",
+     "32bit oit8 motion": "fineRaster32BitOIT8MV",
+     "32bit oit8 stencil": "fineRaster32BitOIT8WriteStencil",
+     "32bit oit8 stencil motion": "fineRaster32BitOIT8WriteStencilMV",
+     "32bit subdivision oit2": "fineRaster32BitSubDOIT2",
+     "32bit subdivision oit2 motion": "fineRaster32BitSubDOIT2MV",
+     "32bit subdivision oit2 stencil": "fineRaster32BitSubDOIT2WriteStencil",
+     "32bit subdivision oit2 stencil motion": "fineRaster32BitSubDOIT2WriteStencilMV",
+     "32bit subdivision oit4": "fineRaster32BitSubDOIT4",
+     "32bit subdivision oit4 motion": "fineRaster32BitSubDOIT4MV",
+     "32bit subdivision oit4 stencil": "fineRaster32BitSubDOIT4WriteStencil",
+     "32bit subdivision oit4 stencil motion": "fineRaster32BitSubDOIT4WriteStencilMV",
+     "32bit subdivision oit6": "fineRaster32BitSubDOIT6",
+     "32bit subdivision oit6 motion": "fineRaster32BitSubDOIT6MV",
+     "32bit subdivision oit6 stencil": "fineRaster32BitSubDOIT6WriteStencil",
+     "32bit subdivision oit6 stencil motion": "fineRaster32BitSubDOIT6WriteStencilMV",
+     "32bit subdivision oit8": "fineRaster32BitSubDOIT8",
+     "32bit subdivision oit8 motion": "fineRaster32BitSubDOIT8MV",
+     "32bit subdivision oit8 stencil": "fineRaster32BitSubDOIT8WriteStencil",
+     "32bit subdivision oit8 stencil motion": "fineRaster32BitSubDOIT8WriteStencilMV",
+     "32bit countup oit2": "fineRaster32Bit3POIT2",
+     "32bit countup oit2 motion": "fineRaster32Bit3POIT2MV",
+     "32bit countup oit2 stencil": "fineRaster32Bit3POIT2WriteStencil",
+     "32bit countup oit2 stencil motion": "fineRaster32Bit3POIT2WriteStencilMV",
+     "32bit countup oit4": "fineRaster32Bit3POIT4",
+     "32bit countup oit4 motion": "fineRaster32Bit3POIT4MV",
+     "32bit countup oit4 stencil": "fineRaster32Bit3POIT4WriteStencil",
+     "32bit countup oit4 stencil motion": "fineRaster32Bit3POIT4WriteStencilMV",
+     "32bit countup oit6": "fineRaster32Bit3POIT6",
+     "32bit countup oit6 motion": "fineRaster32Bit3POIT6MV",
+     "32bit countup oit6 stencil": "fineRaster32Bit3POIT6WriteStencil",
+     "32bit countup oit6 stencil motion": "fineRaster32Bit3POIT6WriteStencilMV",
+     "32bit countup oit8": "fineRaster32Bit3POIT8",
+     "32bit countup oit8 motion": "fineRaster32Bit3POIT8MV",
+     "32bit countup oit8 stencil": "fineRaster32Bit3POIT8WriteStencil",
+     "32bit countup oit8 stencil motion": "fineRaster32Bit3POIT8WriteStencilMV",
+     "32bit countup subdivision oit2": "fineRaster32Bit3PSubDOIT2",
+     "32bit countup subdivision oit2 motion": "fineRaster32Bit3PSubDOIT2MV",
+     "32bit countup subdivision oit2 stencil": "fineRaster32Bit3PSubDOIT2WriteStencil",
+     "32bit countup subdivision oit2 stencil motion": "fineRaster32Bit3PSubDOIT2WriteStencilMV",
+     "32bit countup subdivision oit4": "fineRaster32Bit3PSubDOIT4",
+     "32bit countup subdivision oit4 motion": "fineRaster32Bit3PSubDOIT4MV",
+     "32bit countup subdivision oit4 stencil": "fineRaster32Bit3PSubDOIT4WriteStencil",
+     "32bit countup subdivision oit4 stencil motion": "fineRaster32Bit3PSubDOIT4WriteStencilMV",
+     "32bit countup subdivision oit6": "fineRaster32Bit3PSubDOIT6",
+     "32bit countup subdivision oit6 motion": "fineRaster32Bit3PSubDOIT6MV",
+     "32bit countup subdivision oit6 stencil": "fineRaster32Bit3PSubDOIT6WriteStencil",
+     "32bit countup subdivision oit6 stencil motion": "fineRaster32Bit3PSubDOIT6WriteStencilMV",
+     "32bit countup subdivision oit8": "fineRaster32Bit3PSubDOIT8",
+     "32bit countup subdivision oit8 motion": "fineRaster32Bit3PSubDOIT8MV",
+     "32bit countup subdivision oit8 stencil": "fineRaster32Bit3PSubDOIT8WriteStencil",
+     "32bit countup subdivision oit8 stencil motion": "fineRaster32Bit3PSubDOIT8WriteStencilMV",
+     "pretransformed oit2": "preTransformedFineRasterOIT2",
+     "pretransformed oit2 motion": "preTransformedFineRasterOIT2MV",
+     "pretransformed oit2 stencil": "preTransformedFineRasterOIT2WriteStencil",
+     "pretransformed oit2 stencil motion": "preTransformedFineRasterOIT2WriteStencilMV",
+     "pretransformed oit4": "preTransformedFineRasterOIT4",
+     "pretransformed oit4 motion": "preTransformedFineRasterOIT4MV",
+     "pretransformed oit4 stencil": "preTransformedFineRasterOIT4WriteStencil",
+     "pretransformed oit4 stencil motion": "preTransformedFineRasterOIT4WriteStencilMV",
+     "pretransformed oit6": "preTransformedFineRasterOIT6",
+     "pretransformed oit6 motion": "preTransformedFineRasterOIT6MV",
+     "pretransformed oit6 stencil": "preTransformedFineRasterOIT6WriteStencil",
+     "pretransformed oit6 stencil motion": "preTransformedFineRasterOIT6WriteStencilMV",
+     "pretransformed oit8": "preTransformedFineRasterOIT8",
+     "pretransformed oit8 motion": "preTransformedFineRasterOIT8MV",
+     "pretransformed oit8 stencil": "preTransformedFineRasterOIT8WriteStencil",
+     "pretransformed oit8 stencil motion": "preTransformedFineRasterOIT8WriteStencilMV",
+     "pretransformed subdivision oit2": "preTransformedFineRasterSubDOIT2",
+     "pretransformed subdivision oit2 motion": "preTransformedFineRasterSubDOIT2MV",
+     "pretransformed subdivision oit2 stencil": "preTransformedFineRasterSubDOIT2WriteStencil",
+     "pretransformed subdivision oit2 stencil motion": "preTransformedFineRasterSubDOIT2WriteStencilMV",
+     "pretransformed subdivision oit4": "preTransformedFineRasterSubDOIT4",
+     "pretransformed subdivision oit4 motion": "preTransformedFineRasterSubDOIT4MV",
+     "pretransformed subdivision oit4 stencil": "preTransformedFineRasterSubDOIT4WriteStencil",
+     "pretransformed subdivision oit4 stencil motion": "preTransformedFineRasterSubDOIT4WriteStencilMV",
+     "pretransformed subdivision oit6": "preTransformedFineRasterSubDOIT6",
+     "pretransformed subdivision oit6 motion": "preTransformedFineRasterSubDOIT6MV",
+     "pretransformed subdivision oit6 stencil": "preTransformedFineRasterSubDOIT6WriteStencil",
+     "pretransformed subdivision oit6 stencil motion": "preTransformedFineRasterSubDOIT6WriteStencilMV",
+     "pretransformed subdivision oit8": "preTransformedFineRasterSubDOIT8",
+     "pretransformed subdivision oit8 motion": "preTransformedFineRasterSubDOIT8MV",
+     "pretransformed subdivision oit8 stencil": "preTransformedFineRasterSubDOIT8WriteStencil",
+     "pretransformed subdivision oit8 stencil motion": "preTransformedFineRasterSubDOIT8WriteStencilMV",
+     "pretransformed countup oit2": "preTransformedFineRaster3POIT2",
+     "pretransformed countup oit2 motion": "preTransformedFineRaster3POIT2MV",
+     "pretransformed countup oit2 stencil": "preTransformedFineRaster3POIT2WriteStencil",
+     "pretransformed countup oit2 stencil motion": "preTransformedFineRaster3POIT2WriteStencilMV",
+     "pretransformed countup oit4": "preTransformedFineRaster3POIT4",
+     "pretransformed countup oit4 motion": "preTransformedFineRaster3POIT4MV",
+     "pretransformed countup oit4 stencil": "preTransformedFineRaster3POIT4WriteStencil",
+     "pretransformed countup oit4 stencil motion": "preTransformedFineRaster3POIT4WriteStencilMV",
+     "pretransformed countup oit6": "preTransformedFineRaster3POIT6",
+     "pretransformed countup oit6 motion": "preTransformedFineRaster3POIT6MV",
+     "pretransformed countup oit6 stencil": "preTransformedFineRaster3POIT6WriteStencil",
+     "pretransformed countup oit6 stencil motion": "preTransformedFineRaster3POIT6WriteStencilMV",
+     "pretransformed countup oit8": "preTransformedFineRaster3POIT8",
+     "pretransformed countup oit8 motion": "preTransformedFineRaster3POIT8MV",
+     "pretransformed countup oit8 stencil": "preTransformedFineRaster3POIT8WriteStencil",
+     "pretransformed countup oit8 stencil motion": "preTransformedFineRaster3POIT8WriteStencilMV",
+     "pretransformed countup subdivision oit2": "preTransformedFineRaster3PSubDOIT2",
+     "pretransformed countup subdivision oit2 motion": "preTransformedFineRaster3PSubDOIT2MV",
+     "pretransformed countup subdivision oit2 stencil": "preTransformedFineRaster3PSubDOIT2WriteStencil",
+     "pretransformed countup subdivision oit2 stencil motion": "preTransformedFineRaster3PSubDOIT2WriteStencilMV",
+     "pretransformed countup subdivision oit4": "preTransformedFineRaster3PSubDOIT4",
+     "pretransformed countup subdivision oit4 motion": "preTransformedFineRaster3PSubDOIT4MV",
+     "pretransformed countup subdivision oit4 stencil": "preTransformedFineRaster3PSubDOIT4WriteStencil",
+     "pretransformed countup subdivision oit4 stencil motion": "preTransformedFineRaster3PSubDOIT4WriteStencilMV",
+     "pretransformed countup subdivision oit6": "preTransformedFineRaster3PSubDOIT6",
+     "pretransformed countup subdivision oit6 motion": "preTransformedFineRaster3PSubDOIT6MV",
+     "pretransformed countup subdivision oit6 stencil": "preTransformedFineRaster3PSubDOIT6WriteStencil",
+     "pretransformed countup subdivision oit6 stencil motion": "preTransformedFineRaster3PSubDOIT6WriteStencilMV",
+     "pretransformed countup subdivision oit8": "preTransformedFineRaster3PSubDOIT8",
+     "pretransformed countup subdivision oit8 motion": "preTransformedFineRaster3PSubDOIT8MV",
+     "pretransformed countup subdivision oit8 stencil": "preTransformedFineRaster3PSubDOIT8WriteStencil",
+     "pretransformed countup subdivision oit8 stencil motion": "preTransformedFineRaster3PSubDOIT8WriteStencilMV",
+     "pretransformed 32bit oit2": "preTransformedFineRaster32BitOIT2",
+     "pretransformed 32bit oit2 motion": "preTransformedFineRaster32BitOIT2MV",
+     "pretransformed 32bit oit2 stencil": "preTransformedFineRaster32BitOIT2WriteStencil",
+     "pretransformed 32bit oit2 stencil motion": "preTransformedFineRaster32BitOIT2WriteStencilMV",
+     "pretransformed 32bit oit4": "preTransformedFineRaster32BitOIT4",
+     "pretransformed 32bit oit4 motion": "preTransformedFineRaster32BitOIT4MV",
+     "pretransformed 32bit oit4 stencil": "preTransformedFineRaster32BitOIT4WriteStencil",
+     "pretransformed 32bit oit4 stencil motion": "preTransformedFineRaster32BitOIT4WriteStencilMV",
+     "pretransformed 32bit oit6": "preTransformedFineRaster32BitOIT6",
+     "pretransformed 32bit oit6 motion": "preTransformedFineRaster32BitOIT6MV",
+     "pretransformed 32bit oit6 stencil": "preTransformedFineRaster32BitOIT6WriteStencil",
+     "pretransformed 32bit oit6 stencil motion": "preTransformedFineRaster32BitOIT6WriteStencilMV",
+     "pretransformed 32bit oit8": "preTransformedFineRaster32BitOIT8",
+     "pretransformed 32bit oit8 motion": "preTransformedFineRaster32BitOIT8MV",
+     "pretransformed 32bit oit8 stencil": "preTransformedFineRaster32BitOIT8WriteStencil",
+     "pretransformed 32bit oit8 stencil motion": "preTransformedFineRaster32BitOIT8WriteStencilMV",
+     "pretransformed 32bit subdivision oit2": "preTransformedFineRaster32BitSubDOIT2",
+     "pretransformed 32bit subdivision oit2 motion": "preTransformedFineRaster32BitSubDOIT2MV",
+     "pretransformed 32bit subdivision oit2 stencil": "preTransformedFineRaster32BitSubDOIT2WriteStencil",
+     "pretransformed 32bit subdivision oit2 stencil motion": "preTransformedFineRaster32BitSubDOIT2WriteStencilMV",
+     "pretransformed 32bit subdivision oit4": "preTransformedFineRaster32BitSubDOIT4",
+     "pretransformed 32bit subdivision oit4 motion": "preTransformedFineRaster32BitSubDOIT4MV",
+     "pretransformed 32bit subdivision oit4 stencil": "preTransformedFineRaster32BitSubDOIT4WriteStencil",
+     "pretransformed 32bit subdivision oit4 stencil motion": "preTransformedFineRaster32BitSubDOIT4WriteStencilMV",
+     "pretransformed 32bit subdivision oit6": "preTransformedFineRaster32BitSubDOIT6",
+     "pretransformed 32bit subdivision oit6 motion": "preTransformedFineRaster32BitSubDOIT6MV",
+     "pretransformed 32bit subdivision oit6 stencil": "preTransformedFineRaster32BitSubDOIT6WriteStencil",
+     "pretransformed 32bit subdivision oit6 stencil motion": "preTransformedFineRaster32BitSubDOIT6WriteStencilMV",
+     "pretransformed 32bit subdivision oit8": "preTransformedFineRaster32BitSubDOIT8",
+     "pretransformed 32bit subdivision oit8 motion": "preTransformedFineRaster32BitSubDOIT8MV",
+     "pretransformed 32bit subdivision oit8 stencil": "preTransformedFineRaster32BitSubDOIT8WriteStencil",
+     "pretransformed 32bit subdivision oit8 stencil motion": "preTransformedFineRaster32BitSubDOIT8WriteStencilMV",
+     "pretransformed 32bit countup oit2": "preTransformedFineRaster32Bit3POIT2",
+     "pretransformed 32bit countup oit2 motion": "preTransformedFineRaster32Bit3POIT2MV",
+     "pretransformed 32bit countup oit2 stencil": "preTransformedFineRaster32Bit3POIT2WriteStencil",
+     "pretransformed 32bit countup oit2 stencil motion": "preTransformedFineRaster32Bit3POIT2WriteStencilMV",
+     "pretransformed 32bit countup oit4": "preTransformedFineRaster32Bit3POIT4",
+     "pretransformed 32bit countup oit4 motion": "preTransformedFineRaster32Bit3POIT4MV",
+     "pretransformed 32bit countup oit4 stencil": "preTransformedFineRaster32Bit3POIT4WriteStencil",
+     "pretransformed 32bit countup oit4 stencil motion": "preTransformedFineRaster32Bit3POIT4WriteStencilMV",
+     "pretransformed 32bit countup oit6": "preTransformedFineRaster32Bit3POIT6",
+     "pretransformed 32bit countup oit6 motion": "preTransformedFineRaster32Bit3POIT6MV",
+     "pretransformed 32bit countup oit6 stencil": "preTransformedFineRaster32Bit3POIT6WriteStencil",
+     "pretransformed 32bit countup oit6 stencil motion": "preTransformedFineRaster32Bit3POIT6WriteStencilMV",
+     "pretransformed 32bit countup oit8": "preTransformedFineRaster32Bit3POIT8",
+     "pretransformed 32bit countup oit8 motion": "preTransformedFineRaster32Bit3POIT8MV",
+     "pretransformed 32bit countup oit8 stencil": "preTransformedFineRaster32Bit3POIT8WriteStencil",
+     "pretransformed 32bit countup oit8 stencil motion": "preTransformedFineRaster32Bit3POIT8WriteStencilMV",
+     "pretransformed 32bit countup subdivision oit2": "preTransformedFineRaster32Bit3PSubDOIT2",
+     "pretransformed 32bit countup subdivision oit2 motion": "preTransformedFineRaster32Bit3PSubDOIT2MV",
+     "pretransformed 32bit countup subdivision oit2 stencil": "preTransformedFineRaster32Bit3PSubDOIT2WriteStencil",
+     "pretransformed 32bit countup subdivision oit2 stencil motion": "preTransformedFineRaster32Bit3PSubDOIT2WriteStencilMV",
+     "pretransformed 32bit countup subdivision oit4": "preTransformedFineRaster32Bit3PSubDOIT4",
+     "pretransformed 32bit countup subdivision oit4 motion": "preTransformedFineRaster32Bit3PSubDOIT4MV",
+     "pretransformed 32bit countup subdivision oit4 stencil": "preTransformedFineRaster32Bit3PSubDOIT4WriteStencil",
+     "pretransformed 32bit countup subdivision oit4 stencil motion": "preTransformedFineRaster32Bit3PSubDOIT4WriteStencilMV",
+     "pretransformed 32bit countup subdivision oit6": "preTransformedFineRaster32Bit3PSubDOIT6",
+     "pretransformed 32bit countup subdivision oit6 motion": "preTransformedFineRaster32Bit3PSubDOIT6MV",
+     "pretransformed 32bit countup subdivision oit6 stencil": "preTransformedFineRaster32Bit3PSubDOIT6WriteStencil",
+     "pretransformed 32bit countup subdivision oit6 stencil motion": "preTransformedFineRaster32Bit3PSubDOIT6WriteStencilMV",
+     "pretransformed 32bit countup subdivision oit8": "preTransformedFineRaster32Bit3PSubDOIT8",
+     "pretransformed 32bit countup subdivision oit8 motion": "preTransformedFineRaster32Bit3PSubDOIT8MV",
+     "pretransformed 32bit countup subdivision oit8 stencil": "preTransformedFineRaster32Bit3PSubDOIT8WriteStencil",
+     "pretransformed 32bit countup subdivision oit8 stencil motion": "preTransformedFineRaster32Bit3PSubDOIT8WriteStencilMV"
+    },
+    "bindings": {
+     "Accumulate": "view.accumulate",
+     "AerialPerspectiveTexture": "scene.aerial_perspective",
+     "AtmosphereTransmittanceCopiedTexture": "scene.atmosphere_transmittance",
+     "CompactLineIndices": "strand.segments",
+     "OITUAVs": "view.oit",
+     "Offset": "view.offset",
+     "PreviousVertices": "render.vertices@before",
+     "Queue": "work.queue",
+     "ReadonlyDepth": "scene.depth",
+     "Shade": "work.shade",
+     "Vertices": "render.vertices@now",
+     "VolumetricFogTexture": "scene.volumetric_fog",
+     "VolumetricParticleTexture": "scene.volumetric_particle",
+     "WorkQueue": "view.work_queue"
+    }
+   },
+   "resolve": {
+    "programs": {
+     "": "resolveImagesOIT"
+    },
+    "bindings": {
+     "OITResolvedUAV": "view.oit_resolved",
+     "OITSRVs": "view.oit",
+     "STRAND_DEPTH_SRV": "view.strand_depth"
+    },
+    "targets": [
+     "view.strand_image",
+     "view.strand_velocity"
+    ],
+    "depth": "view.strand_depth"
+   },
+   "solid_fog": {
+    "programs": {
+     "": "applyStrandSolidFog"
+    },
+    "bindings": {
+     "AerialPerspectiveTexture": "scene.aerial_perspective",
+     "AtmosphereTransmittanceCopiedTexture": "scene.atmosphere_transmittance",
+     "Depth": "scene.depth",
+     "HDRImage": "scene.lit",
+     "ReadonlyDepth": "scene.depth",
+     "VolumetricFogTexture": "scene.volumetric_fog",
+     "VolumetricParticleTexture": "scene.volumetric_particle"
+    },
+    "targets": [
+     "scene.lit",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "combine": {
+    "programs": {
+     "": "StrandCombinedImageAndDepthCopyBlend"
+    },
+    "bindings": {
+     "AerialPerspectiveTexture": "scene.aerial_perspective",
+     "AtmosphereTransmittanceCopiedTexture": "scene.atmosphere_transmittance",
+     "OITResolvedSRV": "view.oit_resolved",
+     "STRAND_DEPTH_SRV": "view.strand_depth",
+     "STRAND_RTV0_SRV": "view.strand_image",
+     "VolumetricFogTexture": "scene.volumetric_fog",
+     "VolumetricParticleTexture": "scene.volumetric_particle"
+    },
+    "targets": [
+     "scene.lit",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "image_copy": {
+    "programs": {
+     "": "StrandImageOnlyCopy"
+    },
+    "bindings": {
+     "AerialPerspectiveTexture": "scene.aerial_perspective",
+     "AtmosphereTransmittanceCopiedTexture": "scene.atmosphere_transmittance",
+     "STRAND_DEPTH_SRV": "view.strand_depth",
+     "STRAND_RTV0_SRV": "view.strand_image",
+     "STRAND_RTV1_SRV": "view.strand_velocity",
+     "VolumetricFogTexture": "scene.volumetric_fog",
+     "VolumetricParticleTexture": "scene.volumetric_particle"
+    },
+    "targets": [
+     "scene.image",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "resolve_upscale": {
+    "programs": {
+     "": "resolveOITUpscale"
+    },
+    "bindings": {
+     "OITResolvedSRV": "view.oit_resolved",
+     "OITSRVs": "view.oit"
+    },
+    "targets": [
+     "scene.image",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "depth_upscale": {
+    "programs": {
+     "": "depthWriteUpscale"
+    },
+    "bindings": {
+     "OITResolvedSRV": "view.oit_resolved"
+    },
+    "targets": [
+     "scene.image",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "stencil_upscale": {
+    "programs": {
+     "": "stencilWriteUpscale"
+    },
+    "bindings": {
+     "OITResolvedSRV": "view.oit_resolved"
+    },
+    "targets": [
+     "scene.image",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "responsive_upscale": {
+    "programs": {
+     "": "drawResponsiveAAUpscale"
+    },
+    "bindings": {
+     "OITSRVs": "view.oit",
+     "ResponsiveAA": "scene.responsive_aa"
+    },
+    "targets": [
+     "scene.image",
+     "scene.velocity"
+    ],
+    "depth": "scene.depth"
+   },
+   "material_shading": {
+    "programs": {
+     "": "Strands",
+     "scattering": "StrandsDualIBLOpt",
+     "projection_lights": "StrandsPjLt",
+     "projection_lights scattering": "StrandsPjLtDualIBLOpt",
+     "shrink_shadow": "StrandsSkSdw",
+     "shrink_shadow scattering": "StrandsSkSdwDualIBLOpt",
+     "shrink_shadow projection_lights": "StrandsSkSdwPjLt",
+     "shrink_shadow projection_lights scattering": "StrandsSkSdwPjLtDualIBLOpt",
+     "pretransformed": "StrandsPretrans",
+     "pretransformed scattering": "StrandsPretransDualIBLOpt",
+     "pretransformed projection_lights": "StrandsPretransPjLt",
+     "pretransformed projection_lights scattering": "StrandsPretransPjLtDualIBLOpt",
+     "pretransformed shrink_shadow": "StrandsPretransSkSdw",
+     "pretransformed shrink_shadow scattering": "StrandsPretransSkSdwDualIBLOpt",
+     "pretransformed shrink_shadow projection_lights": "StrandsPretransSkSdwPjLt",
+     "pretransformed shrink_shadow projection_lights scattering": "StrandsPretransSkSdwPjLtDualIBLOpt"
+    },
+    "bindings": {
+     "AreaLightParameterSRV": "scene.area_light_parameters",
+     "ColorGradient_A": "material.ColorGradient_A",
+     "ColorGradient_A_2": "material.ColorGradient_A_2",
+     "ColorGradient_B": "material.ColorGradient_B",
+     "ColorGradient_B_2": "material.ColorGradient_B_2",
+     "ColorGradient_C": "material.ColorGradient_C",
+     "ColorGradient_C_2": "material.ColorGradient_C_2",
+     "ColorMap": "material.ColorMap",
+     "CompactLineIndices": "strand.segments",
+     "DSLUT": "ds.lut",
+     "DSVolume2": "ds.volume2",
+     "DSVolumeInfoBuffer": "ds.info",
+     "GlobalSDFTexture": "scene.global_sdf",
+     "IESLightTableSRV": "scene.ies_lights",
+     "LightCullingListSRV": "scene.light_culling_list",
+     "LightCullingVolumeSRV": "scene.light_culling_volume",
+     "LightParameterSRV": "scene.light_parameters",
+     "Lut_Ntt": "scene.lut_ntt",
+     "MaskMap": "material.MaskMap",
+     "ProjLightParamterSRV": "render.projection_lights",
+     "RWShade": "work.shade",
+     "RootUV": "strand.root_uvs",
+     "ShadowMapSRV": "scene.shadow_map",
+     "ShadowParameterSRV": "scene.shadow_parameters",
+     "ShrinkShadowMapSRV": "scene.shrink_shadow_map",
+     "StampMaskRTT": "material.StampMaskRTT",
+     "StampedStrandColorGradient": "material.StampedStrandColorGradient",
+     "StaticShadowMapSRV": "scene.static_shadow_map",
+     "StrandIndirectLightSRV": "indirect_light.image",
+     "StrandShadingInfoSRV": "render.shading_info",
+     "VertexMapping": "strand.vertex_strands",
+     "Vertices": "render.vertices@now",
+     "Visibility": "work.visibility",
+     "closestGuideData0SRV": "strand.closest_guides.0",
+     "closestGuideData1SRV": "strand.closest_guides.1",
+     "closestGuideData2SRV": "strand.closest_guides.2",
+     "closestGuideData3SRV": "strand.closest_guides.3",
+     "closestGuideData4SRV": "strand.closest_guides.4",
+     "closestGuideData5SRV": "strand.closest_guides.5",
+     "offsetSRV": "strand.offsets"
+    },
+    "material": true
+   }
+  },
+  "component": "via.render.Strands",
+  "arguments": {
+   "albedo_rate": "AlbedoBlendRate",
+   "azimuthal_roughness": "AzimuthalRoughness",
+   "backscatter": "BackScatterScale",
+   "constraint_joint": "ConstraintJointName",
+   "countup": "ThreePhaseRasterization",
+   "depth_threshold": "DSVolumeRasterDepthThreshold",
+   "direction_jitter": "DSVolumeTracingDirectionJitterAngle",
+   "fake_scattering": "FakeMultipleScatteringFactor",
+   "indirect_multiplier": "IndirectLightingMultiplier",
+   "indirect_roughness": "IndirectLightingRoughness",
+   "injection_rate": "DSVolumeStrandInjectionRate",
+   "interpolated_injection": "DSVolumeInterpolationInjection",
+   "ior": "IOR",
+   "least_width": "MinimumHairWidth",
+   "longitudinal_roughness": "LongitudialRoughness",
+   "material": "Material",
+   "melanin": "Melanin",
+   "mix": "MixWidth",
+   "most_width": "MaximumHairWidth",
+   "opacity": "Opacity",
+   "origin_jitter": "DSVolumeTracingOriginJitterScale",
+   "random_melanin": "RandomMelanin",
+   "raster_depth": "DSVolumeRasterDepth",
+   "rate_from_lod": "DSVolumeStrandInjectionRateMinLodFactor",
+   "redness": "MelaninRedness",
+   "root_blend": "RootBlendRate",
+   "roughness": "Roughness",
+   "scattering": "MultipleScattering",
+   "shading_distribution": "LODShadingDistribution",
+   "shading_quality": "ShadingQuality",
+   "shadow_optimization": "ShadowOptimization",
+   "shadow_pow": "ShadowPow",
+   "stencil_value": "WriteStencil",
+   "strands": "Strand",
+   "tilt": "CuticleTiltAngle",
+   "tilt_degrees": "CuticleTiltDegree",
+   "tilt_in_degrees": "CuticleTiltDegreeSpec",
+   "tip_melanin": "TipMelanin",
+   "tip_rate": "TipRate",
+   "trace_delta": "DSVolumeTracingDelta",
+   "trace_offset": "DSVolumeTracingOffsetScale",
+   "trace_samples": "DSTraceInterpolationSampleNum",
+   "trace_step": "DSVolumeRasterTraceStepScale",
+   "volume_width_scale": "DSVolumeRasterStrandWidthScale",
+   "voxel_size": "DSVolumeVoxelSize",
+   "width_scale": "HairWidthScale"
+  },
+  "options_component": "via.render.StrandsOptions",
+  "options": {
+   "depth_write_threshold": "DepthWriteThreshold",
+   "motion": "UseAccurateMotionVector",
+   "reflections": "ScreenSpaceReflectionSupport",
+   "render_resolution": "SoftwareRenderResolution",
+   "resolution_limit": "UseUpscaleResolutionLimit",
+   "stencil": "StencilValue"
+  },
+  "settings": {
+   "lod_settings": "Character/StrandsLod.stdlod",
+   "write_stencil": "False"
+  },
+  "scripted": {
+   "subdivision": true,
+   "hardware": false,
+   "transparency": 2
+  },
+  "lut": [
+   4096,
+   16,
+   1
+  ],
+  "version": 3,
+  "textures": {
+   "scene.lut_ntt": {
+    "format": 34,
+    "size": [
+     128,
+     128
+    ],
+    "texels": "eNrtw99rzXEcx/GlTHNlTdKajZZZ0jqb9+d7fu1sZ3M2ZzZyjEljGLtwsprVqAltLkiWbWWl1cok0im/FcqkNhFxYRfTuJAIKynTJswf8nw96pG28UddmoJ3KvpAjZLnx5X8WrWSD1cp+deYku9T9F/rlDyh6M8rlXyHov+uUPKrCl69Ya+CZ8XzFfx61beocpfEHij40coeBfdVtCj4+mhUwUPluQoeLpsrV+4jkVEFnyztVfA9pbsVfCbsU/At4fkKPhZ6V6bcidA9BZ8K9iv4QLBNwWuDmxU8I1is4K8CixV8MDATUe7WwHsFjwVGFTwvkFLwP/7zCv7Yf0LBT/uTCt7g36bgq/wVCv7XK1LwcS9HwW96CxX8nDdbqtxt3hcFr/cmFNzvPVPwXO+hgqd7KQX/7oYU/K3rVfAxd1LB77jDCj7skgre53YpeJdLKHi7q1bw/S6s4A3Op+A1bqWCR1y2ghe7RQpe4NIVPMfNhpU7031S8AXujYL/sycKPm03FHzKhhT8o/Uo+KQdU/BxO6jgL22ngo9ZnYKPWETB71uRgt+2PAVPWaaCX7F5Cn7RfoaUe9A+K/iATSh4n71Q8LM2ouCn7JaCd9tlBT9uFxS803oUvMO6FPyQdSh4qyUV/IA1KXiL1St4s8UVvMkiCt5oJQq+3QoVfKstU/CEZSn4JstQ8FqbCyp33KYVvMqmFLzSPih41CYUPGKvFTxkTxU8YI8U3NldBV9rKQX32SUFL7JBBV9j/Qq+2s4oeKF1K3iBdSp4vrUr+ApLKvhya1bwXGtU8ByrV/Bsq1XwpRZT8CUWUfD/mK59iw=="
+   }
+  },
+  "camera": {
+   "DepthWriteThreshold": 0.949999988079071,
+   "SoftwareRenderResolution": 1.0,
+   "StencilValue": 0,
+   "UseUpscaleResolutionLimit": true,
+   "ScreenSpaceReflectionSupport": true,
+   "UseAccurateMotionVector": false
+  },
+  "stencil_reference": null,
+  "anchors": [
+   {
+    "after": 8,
+    "phase": -1,
+    "inside": false
+   },
+   {
+    "after": 8,
+    "phase": 4,
+    "inside": false
+   },
+   {
+    "after": 8,
+    "phase": 4,
+    "inside": false
+   },
+   {
+    "after": 8,
+    "phase": 4,
+    "inside": false
+   },
+   {
+    "after": 17,
+    "phase": 5,
+    "inside": true
+   }
+  ],
+  "drawn_into": {
+   "scene.lit": [
+    "output",
+    "7.OutDiffuseBuffer"
+   ],
+   "scene.velocity": [
+    "output",
+    "2.target 3"
+   ],
+   "scene.depth": [
+    "depth",
+    ""
+   ],
+   "scene.image": [
+    "output",
+    "7.OutDiffuseBuffer"
+   ]
+  },
+  "unserialized": {}
+ },
+ "lod": {
+  "fields": {
+   "vertex_lod": "VertexLOD",
+   "simulation": "Simulation",
+   "draw": "DrawDefault",
+   "outputs": "RenderOutputID",
+   "lod_factor": "LODFactor",
+   "lod_auto": "LODFactorAutoEnable",
+   "lod_resolution": "LODFactorAutoResolutionEnable",
+   "frustum_culling": "FrustumCullingEnable"
+  },
+  "dynamics_fields": {
+   "failsafe": "EnableCPUAABBFailsafe"
+  },
+  "limit": 1,
+  "level": "world",
+  "failsafe": "union",
+  "run_cull": true,
+  "mesh_component": "via.render.Mesh",
+  "mesh_fields": {
+   "frustum_culling": "FrustumCulling",
+   "draw": "DrawDefault",
+   "shadow": "DrawShadowCast",
+   "outputs": "RenderOutputID"
+  }
+ },
+ "placement": {
+  "mesh_component": "via.render.Mesh",
+  "mesh": {
+   "resource": "Mesh",
+   "shared_skeleton": "SharedSkeleton",
+   "lod_mode": "LodMode",
+   "lod_level": "LodLevel"
+  },
+  "skeleton_component": "via.motion.DummySkeleton",
+  "skeleton": {
+   "resource": "SkeletonResourceHandle"
+  },
+  "preset_component": "via.character.CollisionShapePreset",
+  "preset": {
+   "infos": "CollisionShapePresetInfos",
+   "enabled": "Enabled",
+   "priority": "Priority",
+   "global_shapes": "UseGlobalShape"
+  },
+  "preset_info": {
+   "resource": "Resource",
+   "enabled": "Enabled",
+   "global": "Global"
+  },
+  "stamp_component": "via.render.Stamp",
+  "stamp": {
+   "texture": "Texture"
+  },
+  "dynamics": {
+   "stamp_mask": "UseStampMaskTexture"
+  }
+ },
+ "skinning": {
+  "file": "systems/shader/computeskinning.sdf",
+  "target": 2,
+  "program": "CSSkinningOptionalBuffer2",
+  "buffers": {
+   "matrices": "SkinningMatrices",
+   "mesh": "InputByteBuffer",
+   "source": "bSrcVB2",
+   "destination": "bDestPosVB"
+  },
+  "constants": {
+   "joint_offset": "jointOffset",
+   "vertex_count": "cVertexCount",
+   "positions": "cVertexPositionByteOffset",
+   "weights": "cVertexSkinWeightByteOffset",
+   "destination": "cDstVertexPositionByteOffset"
+  },
+  "plain": {
+   "2": "CSSkinning8w"
+  }
+ },
+ "states": {
+  "simulation": 3,
+  "shading_quality": 0,
+  "fixed_lod_mode": 1
+ },
+ "source": {
+  "functions": {
+   "init": "0x145342600 / 0x1401a84b0",
+   "init_secondary": "0x144c465e0 / 0x14818fc00",
+   "clear_grid": "0x1458d0260 / 0x144f188f0",
+   "rest_root": "0x145867a40 / 0x144f1b290, 0x14a029f80 / 0x148191ba0",
+   "rest_data": "0x145867a40 / 0x144f1b290",
+   "guided_rest": "0x145867a40 / 0x144f1b290",
+   "update": "0x144c46c80 / 0x144f19cc0",
+   "pause": "0x1458d0890 / 0x1401a78c0",
+   "guide_secondary": "0x1458d1250 / 0x1481902a0",
+   "guide": "0x1458d1fe0 / 0x144f18f30",
+   "guide_from_secondary": "0x1458d1fe0 / 0x144f18f30",
+   "transform": "0x14a029f80 / 0x148191ba0",
+   "bounds_copy": "0x1457daf50 / 0x144f18740"
+  },
+  "captures": [
+   {
+    "capture": "re9_frame13673.rdc",
+    "dispatches": 7
+   },
+   {
+    "capture": "re9_frame13674.rdc",
+    "dispatches": 7
+   },
+   {
+    "capture": "re9_frame46687.rdc",
+    "dispatches": 10
+   },
+   {
+    "capture": "re9_frame4686.rdc",
+    "dispatches": 11
+   },
+   {
+    "capture": "re9_frame4833.rdc",
+    "dispatches": 11
+   },
+   {
+    "capture": "re9_frame4834.rdc",
+    "dispatches": 11
+   },
+   {
+    "capture": "re9_frame4835.rdc",
+    "dispatches": 11
+   },
+   {
+    "capture": "re9_frame42365.rdc",
+    "dispatches": 8
+   }
+  ],
+  "constants": {
+   "executable": "re9_dump.exe",
+   "functions": [
+    "0x1403d7670",
+    "0x140d38c10",
+    "0x1400e0d70",
+    "0x1403d7090",
+    "0x14589cb10"
+   ],
+   "wrapper_updates": {
+    "own_spheres": "0x14a2abb30",
+    "own_capsules": "0x14a2abfb0",
+    "own_boxes": "0x14a02aad0"
+   },
+   "dispatches": [
+    "0x145342600",
+    "0x144c465e0",
+    "0x1458d0260",
+    "0x145867a40",
+    "0x144c46c80",
+    "0x1458d0890",
+    "0x1458d1250",
+    "0x1458d1fe0",
+    "0x14a029f80",
+    "0x1457daf50"
+   ]
+  },
+  "render": {
+   "functions": {
+    "reset_oit": "0x144ae40d0 / 0x1403d96c0",
+    "coarse_z": "0x144ae40d0 / 0x1403d96c0",
+    "coarse": "0x144ae40d0 / 0x1403d96c0",
+    "allocation": "0x144ae40d0 / 0x1403d96c0",
+    "coarse_alloc": "0x144ae40d0 / 0x1403d96c0",
+    "shading_init": "0x144fe92e0 / 0x1458d6690",
+    "shading_bounds": "0x144fe92e0 / 0x1458d6690",
+    "shading_info": "0x144fe92e0 / 0x1458d6690",
+    "indirect_light_arguments": "0x1445d7b30 / 0x1458d6fe0",
+    "indirect_light": "0x1445d7b30 / 0x1458d6fe0",
+    "ds_arguments": "0x144aea600 / 0x1453547b0",
+    "ds_info": "0x144aea600 / 0x1453547b0",
+    "ds_clear": "0x144aea600 / 0x1453547b0",
+    "ds_raster": "0x144aea600 / 0x1453547b0",
+    "ds_raster_depth": "0x144aea600 / 0x1453547b0",
+    "ds_copy": "0x144aea600 / 0x1453547b0",
+    "ds_mip": "0x144aea600 / 0x1453547b0",
+    "ds_lut": "0x144aea600 / 0x1453547b0",
+    "ds_lut_copy": "0x144aea600 / 0x1453547b0",
+    "need_fog": "0x1403d96c0",
+    "shading_arguments": "0x144fa8e60 / 0x145863430",
+    "shading": "0x14037dfd0 / 0x140312290",
+    "distributor": "0x144ae40d0 / 0x1403d96c0",
+    "fill": "0x144ae40d0 / 0x1403d96c0",
+    "fine": "0x144ae40d0 / 0x1403d96c0",
+    "resolve": "0x144ae40d0 / 0x1403d96c0",
+    "solid_fog": "0x144ae40d0 / 0x1403d96c0",
+    "combine": "0x144ae40d0 / 0x1403d96c0",
+    "image_copy": "0x144ae40d0 / 0x1403d96c0",
+    "resolve_upscale": "0x144ae40d0 / 0x1403d96c0",
+    "depth_upscale": "0x144ae40d0 / 0x1403d96c0",
+    "stencil_upscale": "0x144ae40d0 / 0x1403d96c0",
+    "responsive_upscale": "0x144ae40d0 / 0x1403d96c0"
+   },
+   "executable": "re9_dump.exe",
+   "captures": [
+    {
+     "capture": "re9_frame13673.rdc",
+     "events": 32
+    },
+    {
+     "capture": "re9_frame13674.rdc",
+     "events": 32
+    },
+    {
+     "capture": "re9_frame46687.rdc",
+     "events": 55
+    },
+    {
+     "capture": "re9_frame4686.rdc",
+     "events": 57
+    },
+    {
+     "capture": "re9_frame4833.rdc",
+     "events": 55
+    },
+    {
+     "capture": "re9_frame4834.rdc",
+     "events": 55
+    },
+    {
+     "capture": "re9_frame4835.rdc",
+     "events": 55
+    },
+    {
+     "capture": "re9_frame42365.rdc",
+     "events": 55
+    }
+   ],
+   "settings_from_captures": [
+    "write_stencil"
+   ],
+   "scripted_fields": {
+    "subdivision": "SubDivision",
+    "hardware": "RenderMethod",
+    "transparency": "TransparentQuality"
+   },
+   "camera": [
+    "natives/stm/appsystem/camera/scene/camera.scn.21",
+    "MainCamera"
+   ],
+   "camera_from_captures": [
+    "ScreenSpaceReflectionSupport",
+    "UseAccurateMotionVector"
+   ],
+   "stencil_reference": "re9_frame4686.rdc",
+   "anchors": "re9_frame4686.rdc",
+   "lut_instructions": [
+    "0x145355902",
+    "0x145355a06"
+   ],
+   "ntt_instructions": [
+    "0x141202689",
+    "0x1412026d3",
+    "0x1412027ea"
+   ],
+   "version_instructions": [
+    "0x1454f1b79",
+    "0x1454f222e",
+    "0x1454f2a4f",
+    "0x1454f2a96",
+    "0x1454f5723",
+    "0x14036922a",
+    "0x145354874"
+   ],
+   "anchors_rule": "re9_frame4686.rdc's anchors renumbered to the light passes' catalog of re9_frame4834 (2026-10-16), whose phases add a second EyeballCopyHDR (4) before the forward phase (5): the composites after the last eye phase, the second resolve inside the forward phase after its draws that do not blend"
+  },
+  "lod": {
+   "executable": "re9_dump.exe",
+   "functions": [
+    "0x14587d1e0",
+    "0x1403d7670",
+    "0x1403d96c0",
+    "0x14015a500",
+    "0x1403d65f0"
+   ],
+   "limit": [
+    "0x144cb1c80",
+    "0x14ec53430",
+    "/Render/StrandLODLimit"
+   ],
+   "level": [
+    "0x14587da3c",
+    "0x14587da72",
+    "0x14587da15",
+    "0x1403d66ca"
+   ],
+   "failsafe": [
+    "0x14587db86",
+    "0x14587dbc4",
+    "0x1457b4fe0"
+   ]
+  },
+  "placement": {
+   "via.render.Mesh": {
+    "resource": "0x140608bd0",
+    "shared_skeleton": "0x151880cb0",
+    "lod_mode": "0x1403557e0",
+    "lod_level": "0x1403557e0"
+   },
+   "via.motion.DummySkeleton": {
+    "resource": "0x154591740"
+   },
+   "via.character.CollisionShapePreset": {
+    "infos": "0x1400a5270",
+    "enabled": "0x1400a5270",
+    "priority": "0x1400a5270",
+    "global_shapes": "0x1400a4f80"
+   },
+   "via.character.CollisionShapePresetInfo": {
+    "resource": "0x1400a5270",
+    "enabled": "0x1400a5270",
+    "global": "0x1400a5270"
+   },
+   "via.render.Stamp": {
+    "texture": "0x144c46c80"
+   },
+   "via.dynamics.GpuStrandsDynamics": {
+    "stamp_mask": "0x144c46c80"
+   }
+  },
+  "skinning": {
+   "functions": {
+    "skinning": "0x1403560d0",
+    "matrices": "0x145869450",
+    "constants": "0x1403564d0",
+    "plain": "0x140356b20",
+    "plain_program": "0x140356c60"
+   },
+   "captures": [
+    {
+     "capture": "re9_frame13673.rdc",
+     "writers": 2,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 2
+     }
+    },
+    {
+     "capture": "re9_frame13674.rdc",
+     "writers": 2,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 2
+     }
+    },
+    {
+     "capture": "re9_frame46687.rdc",
+     "writers": 3,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 3
+     }
+    },
+    {
+     "capture": "re9_frame4686.rdc",
+     "writers": 7,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 7
+     }
+    },
+    {
+     "capture": "re9_frame4833.rdc",
+     "writers": 7,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 7
+     }
+    },
+    {
+     "capture": "re9_frame4834.rdc",
+     "writers": 7,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 7
+     }
+    },
+    {
+     "capture": "re9_frame4835.rdc",
+     "writers": 7,
+     "programs": {
+      "CSSkinningOptionalBuffer2": 7
+     }
+    },
+    {
+     "capture": "re9_frame42365.rdc",
+     "writers": null
+    },
+    {
+     "capture": "re9_frame9667.rdc",
+     "writers": 3,
+     "programs": {
+      "CSSkinning8w": 3
+     }
+    }
+   ]
+  },
+  "states": {
+   "simulation": "via.render.Strands.SimulationStatus.SimulationOverridden",
+   "shading_quality": "via.render.Strands.ShadingQuality.High",
+   "fixed_lod_mode": "via.render.LodMode.Manual"
+  }
+ }
+}

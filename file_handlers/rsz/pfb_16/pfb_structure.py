@@ -1,5 +1,5 @@
 import struct
-from file_handlers.rsz.scn_19.scn_19_structure import (
+lazy from file_handlers.rsz.scn_19.scn_19_structure import (
      parse_scn19_rsz_userdata, 
     build_scn19_rsz_section
 )
@@ -26,15 +26,13 @@ class Pfb16Header:
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
 class Pfb16ResourceInfo:
-    """Special ResourceInfo class for PFB.16 that contains direct string data"""
     def __init__(self, string_value=""):
         self.string_value = string_value 
         self.reserved = 0 
 
     @property
     def string_offset(self):
-        """Compatibility property that emulates string_offset behavior
-        Returns a non-zero value if we have a string, 0 otherwise"""
+        """PFB.16 stores strings inline, so this only flags that one is present."""
         return 1 if self.string_value else 0
     
     @string_offset.setter
@@ -43,11 +41,6 @@ class Pfb16ResourceInfo:
         pass 
 
 def parse_pfb16_resources(rsz_file, data: bytes) -> int:
-    """Parse resources for PFB.16 format where strings are stored directly
-    
-    This implementation uses a robust byte-by-byte scan to properly locate
-    all UTF-16LE encoded resource strings in the file.
-    """
     current_offset = rsz_file.header.resource_info_tbl
     
     rsz_file.resource_infos = []
@@ -107,7 +100,6 @@ def parse_pfb16_resources(rsz_file, data: bytes) -> int:
     return final_offset
 
 def build_pfb_16(rsz_file, special_align_enabled = False) -> bytes:
-    """Build method specifically for PFB.16 files"""
     rsz_file.header.info_count = len(rsz_file.gameobjects)
     rsz_file.header.resource_count = len(rsz_file.resource_infos)
     rsz_file.header.gameobject_ref_info_count = len(rsz_file.gameobject_ref_infos)
@@ -130,7 +122,6 @@ def build_pfb_16(rsz_file, special_align_enabled = False) -> bytes:
         0   # data_offset - will update later
     )
 
-    # 2) Write gameobjects - PFB format is simpler (12 bytes each)
     for go in rsz_file.gameobjects:
         out += struct.pack("<iii", go.id, go.parent_id, go.component_count)
     
@@ -175,10 +166,9 @@ def build_pfb_16(rsz_file, special_align_enabled = False) -> bytes:
     )
     out[0:Pfb16Header.SIZE] = header_bytes
 
-    return bytes(out)
+    return out.take_bytes()
 
 def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = False) -> int:
-    """Build the RSZ section for PFB.16 files with support for embedded RSZ"""
     if special_align_enabled:
         while len(out) % 16 != 0:
             out += b"\x00"
@@ -192,11 +182,9 @@ def build_pfb16_rsz_section(rsz_file, out: bytearray, special_align_enabled = Fa
     return rsz_start
 
 def parse_pfb16_rsz_userdata(rsz_file, data, skip_data=False):
-    """Parse embedded RSZ userdata in PFB.16 files by leveraging SCN.19 implementation"""
     rsz_file.has_embedded_rsz = True
     return parse_scn19_rsz_userdata(rsz_file, data, skip_data)
 
 def create_pfb16_resource(path=""):
-    """Create a new Pfb16ResourceInfo with the given path"""
     resource = Pfb16ResourceInfo(path)
     return resource

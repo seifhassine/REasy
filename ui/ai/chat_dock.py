@@ -5,6 +5,7 @@ import math
 import os
 import re
 from dataclasses import dataclass
+from functools import cached_property
 
 from PySide6.QtCore import (
     QByteArray,
@@ -28,7 +29,7 @@ from PySide6.QtGui import (
     QTextLength,
     QTextTable,
 )
-from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
+lazy from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -48,7 +49,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from services.ai.chat_service import (
+lazy from services.ai.chat_service import (
     DEEPSEEK_PROVIDER,
     LOCAL_PROVIDER,
     AiProviderConfig,
@@ -62,13 +63,13 @@ from services.ai.chat_service import (
     parse_chat_response,
     thinking_config_for_model,
 )
-from services.ai.tool_outcome import AiToolOutcome, summarize_tool_result
-from services.ai.credential_store import (
+lazy from services.ai.tool_outcome import AiToolOutcome, summarize_tool_result
+lazy from services.ai.credential_store import (
     CredentialStoreError,
     DeepSeekCredentialStore,
 )
-from settings import AI_FILE_ACTION_MODES
-from ui.ai.tools import ReasyAssistantTools, assistant_system_prompt
+lazy from settings import AI_FILE_ACTION_MODES
+lazy from ui.ai.tools import ReasyAssistantTools, assistant_system_prompt
 
 
 @dataclass(frozen=True)
@@ -91,10 +92,15 @@ class _ChatInput(QPlainTextEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        # Deferred until a resize settles; a child timer dies with the input.
+        self._height_timer = QTimer(self)
+        self._height_timer.setSingleShot(True)
+        self._height_timer.setInterval(0)
+        self._height_timer.timeout.connect(self._sync_height)
         self.setFixedHeight(54)
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.document().contentsChanged.connect(self._sync_height)
-        QTimer.singleShot(0, self._sync_height)
+        self._height_timer.start()
 
     def keyPressEvent(self, event: QKeyEvent):
         if event.key() in (Qt.Key_Return, Qt.Key_Enter) and not (
@@ -107,7 +113,7 @@ class _ChatInput(QPlainTextEdit):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        QTimer.singleShot(0, self._sync_height)
+        self._height_timer.start()
 
     def _sync_height(self):
         document_height = self.document().documentLayout().documentSize().height()
@@ -117,8 +123,6 @@ class _ChatInput(QPlainTextEdit):
 
 
 class _AnimatedDots(QWidget):
-    """Small painter-driven typing indicator with a smooth three-dot wave."""
-
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self._accent = QColor(accent)
@@ -172,8 +176,6 @@ class _AnimatedDots(QWidget):
 
 
 class _ContextUsageRing(QWidget):
-    """Animated circular meter for the active conversation context."""
-
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self._accent = QColor(accent)
@@ -290,8 +292,6 @@ class _ContextUsageRing(QWidget):
 
 
 class _ActivityIndicator(QFrame):
-    """Visible, contextual feedback while the model or a REasy tool is working."""
-
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self.setObjectName("assistantActivity")
@@ -427,8 +427,6 @@ class _WrappingLabel(QLabel):
 
 
 class _MessageRow(QWidget):
-    """One aligned chat message with an avatar and a rounded bubble."""
-
     def __init__(self, role: str, text: str, parent=None):
         super().__init__(parent)
         longest_line = max((len(line) for line in text.splitlines()), default=0)
@@ -500,8 +498,6 @@ class _MessageRow(QWidget):
 
 
 class _ToolEvent(QFrame):
-    """Compact, human-readable record of a completed REasy action."""
-
     def __init__(self, text: str, parent=None):
         super().__init__(parent)
         self.setObjectName("toolEvent")
@@ -732,8 +728,6 @@ class _EmptyState(QFrame):
 
 
 class AiChatDock(QDockWidget):
-    """A modern side chat which executes MDF tools on the Qt GUI thread."""
-
     COMPACTION_TRIGGER_RATIO = 0.70
     COMPACTION_RECENT_USER_TURNS = 4
     MAX_CHAT_OUTPUT_TOKENS = 32_768
@@ -838,11 +832,7 @@ acting on file state. Return only the compacted memory.
         self.resize(420, 760)
 
         self.app_window = app_window
-        self.credential_store = getattr(
-            app_window,
-            "deepseek_credential_store",
-            None,
-        ) or DeepSeekCredentialStore()
+        self._api_key_storage_loaded = False
         self.tools = ReasyAssistantTools(app_window)
         self.network = QNetworkAccessManager(self)
         self._reply: QNetworkReply | None = None
@@ -871,6 +861,14 @@ acting on file state. Return only the compacted memory.
         self._timeout = QTimer(self)
         self._timeout.setSingleShot(True)
         self._timeout.timeout.connect(self._abort_timed_out_request)
+        self._settle_timer = QTimer(self)
+        self._settle_timer.setSingleShot(True)
+        self._settle_timer.setInterval(0)
+        self._settle_timer.timeout.connect(self._settle_transcript_layout)
+        self._scroll_start_timer = QTimer(self)
+        self._scroll_start_timer.setSingleShot(True)
+        self._scroll_start_timer.setInterval(0)
+        self._scroll_start_timer.timeout.connect(self._start_scroll_animation)
 
         self._build_ui()
         self.setMinimumWidth(350)
@@ -1081,7 +1079,6 @@ acting on file state. Return only the compacted memory.
         )
         settings_layout.addWidget(self.api_key_help)
 
-        self._initialize_api_key_storage()
         self.api_key_edit.setVisible(configured_provider.requires_api_key)
         self.remember_key_check.setVisible(configured_provider.requires_api_key)
         self.endpoint_edit.setVisible(
@@ -1395,8 +1392,6 @@ acting on file state. Return only the compacted memory.
         return accent if accent.isValid() else QColor("#00aaff")
 
     def apply_theme(self):
-        """Refresh the dock's richer theme after the application accent changes."""
-
         accent = self._accent_color()
         accent_hex = accent.name()
         accent_hover = accent.lighter(118).name()
@@ -2301,6 +2296,21 @@ acting on file state. Return only the compacted memory.
             provider.requires_api_key and not self._api_key()
         )
 
+    @cached_property
+    def credential_store(self):
+        # Built on first use: keyring loads ~50 modules and probes the OS backends.
+        return getattr(
+            self.app_window,
+            "deepseek_credential_store",
+            None,
+        ) or DeepSeekCredentialStore()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        if not self._api_key_storage_loaded:
+            self._api_key_storage_loaded = True
+            self._initialize_api_key_storage()
+
     def _initialize_api_key_storage(self):
         if not self.credential_store.available:
             self.remember_key_check.setEnabled(False)
@@ -2315,7 +2325,7 @@ acting on file state. Return only the compacted memory.
             return
         if remembered:
             self.api_key_edit.setText(remembered)
-            self.remember_key_check.setChecked(True)
+            self._set_remember_checked(True)
 
     def _set_remember_checked(self, checked: bool):
         blocker = QSignalBlocker(self.remember_key_check)
@@ -3233,14 +3243,14 @@ acting on file state. Return only the compacted memory.
         animation.deleteLater()
 
     def _scroll_to_bottom(self):
-        QTimer.singleShot(0, self._settle_transcript_layout)
+        self._settle_timer.start()
 
     def _settle_transcript_layout(self):
         if self._shutting_down:
             return
         self.messages_layout.activate()
         self.message_canvas.updateGeometry()
-        QTimer.singleShot(0, self._start_scroll_animation)
+        self._scroll_start_timer.start()
 
     def _start_scroll_animation(self):
         if self._shutting_down:

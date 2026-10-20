@@ -4,11 +4,11 @@ import json
 from collections.abc import Mapping
 from pathlib import Path
 
-CONFIG_NAME = ".reasy_project.json"
+lazy from utils.app_paths import PROJECT_CONFIG_NAME
 
 
 def project_config_path(project_dir: Path | str) -> Path:
-    return (Path(project_dir).resolve() / CONFIG_NAME).resolve()
+    return (Path(project_dir).resolve() / PROJECT_CONFIG_NAME).resolve()
 
 
 def load_project_config(project_dir: Path | str) -> dict:

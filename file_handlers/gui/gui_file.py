@@ -7,11 +7,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from .codec import parse_gui
-from .errors import GuiFormatError
+lazy from .codec import parse_gui
+lazy from .errors import GuiFormatError
 from .model import GUI_MAGIC, GuiAnimation, GuiDocument, GuiObject, GuiSymbol
-from .profiles import GuiFormatProfile, gui_profile_from_data
-from .serializer import serialize_gui
+lazy from .profiles import GuiFormatProfile, gui_profile_from_data
+lazy from .serializer import serialize_gui
 
 
 def _snapshot(value: Any) -> Any:

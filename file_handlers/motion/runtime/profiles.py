@@ -2,49 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..profiles import DMC5_FULL_WRINKLE_NAMES
-
-
-def _wrinkle_names(
-    *groups: tuple[int, tuple[str, ...]],
-) -> tuple[str, ...]:
-    return tuple(
-        f"head_cm{group}_color.head_wm{group}_{name}"
-        for group, names in groups
-        for name in names
-    )
-
-
-DMC5_MOB_WRINKLE_NAMES = _wrinkle_names(
-    (1, (
-        "browRaise_CL",
-        "browRaise_CR",
-        "browRaise_L",
-        "browRaise_R",
-        "cheekRaiser_DL",
-        "cheekRaiser_DR",
-        "neckStretcher_L",
-        "neckStretcher_R",
-        "noseWrinkler_L",
-        "noseWrinkler_R",
-        "purse_DL",
-        "purse_DR",
-        "purse_UL",
-        "purse_UR",
-    )),
-    (2, (
-        "browDown_L",
-        "browDown_R",
-        "browLateral_L",
-        "browLateral_R",
-        "chinRaiser_DL",
-        "chinRaiser_DR",
-        "smile_L",
-        "smile_R",
-        "squintInner_L",
-        "squintInner_R",
-    )),
-)
+from ..profiles import DMC5_FULL_WRINKLE_NAMES, DMC5_LEGACY_WRINKLE_NAMES, DMC5_MOB_WRINKLE_NAMES
 
 
 @dataclass(frozen=True, slots=True)
@@ -104,11 +62,13 @@ class Dmc5MotionRuntimeProfile:
         "Ex04",
         "Manual",
     )
-    wrinkle_name_sets: tuple[tuple[str, ...], ...] = (
-        DMC5_FULL_WRINKLE_NAMES,
-        DMC5_MOB_WRINKLE_NAMES,
-    )
-    wrinkle_jaw_open_indices: tuple[int | None, ...] = (8, None)
+    # The game's ``BlendTextureType`` (only ``Full`` applies corrections) and ``JawOpenIndex``.
+    full_blend_texture_type: int = 0
+    mob_blend_texture_type: int = 1
+    full_wrinkle_names: tuple[str, ...] = DMC5_FULL_WRINKLE_NAMES
+    mob_wrinkle_names: tuple[str, ...] = DMC5_MOB_WRINKLE_NAMES
+    legacy_wrinkle_names: tuple[str, ...] = DMC5_LEGACY_WRINKLE_NAMES
+    jaw_open_index: int = 8
     observers: tuple[LayerObserverProfile, ...] = (
         LayerObserverProfile(
             "via.motion.script.FootEffectController",
@@ -149,32 +109,13 @@ class Dmc5MotionRuntimeProfile:
         ),
     )
 
-    def wrinkle_names(
-        self,
-        blend_texture_type: int,
-        *,
-        legacy: bool,
-    ) -> tuple[str, ...]:
-        if legacy:
-            raise ValueError("legacy DMC5 wrinkle naming is not established")
-        if not 0 <= blend_texture_type < len(self.wrinkle_name_sets):
-            raise ValueError(
-                f"unknown DMC5 blend-texture type {blend_texture_type}"
-            )
-        return self.wrinkle_name_sets[blend_texture_type]
-
-    def jaw_open_index(self, blend_texture_type: int) -> int:
-        if not 0 <= blend_texture_type < len(self.wrinkle_jaw_open_indices):
-            raise ValueError(
-                f"unknown DMC5 blend-texture type {blend_texture_type}"
-            )
-        index = self.wrinkle_jaw_open_indices[blend_texture_type]
-        if index is None:
-            raise ValueError(
-                f"DMC5 blend-texture type {blend_texture_type} has no "
-                "established jaw-open input"
-            )
-        return index
+    def wrinkle_names(self, blend_texture_type: int, *, legacy: bool) -> tuple[str, ...]:
+        """In head-weight order, as ``getRigLogicWrinkleWeightName`` picks them."""
+        if blend_texture_type == self.full_blend_texture_type and legacy:
+            return self.legacy_wrinkle_names
+        if blend_texture_type == self.mob_blend_texture_type:
+            return self.mob_wrinkle_names
+        return self.full_wrinkle_names
 
 
 DMC5_RUNTIME_PROFILE = Dmc5MotionRuntimeProfile()

@@ -5,13 +5,13 @@ from __future__ import annotations
 import struct
 
 from file_handlers.motion.mot_clip.model import ClipInterpolation
-from file_handlers.motion.mot_clip.writer import CompactMotClipV27Writer
+lazy from file_handlers.motion.mot_clip.writer import CompactMotClipV27Writer
 
-from ..errors import GuiFormatError, GuiWriteError
-from ..model import GUI_MAGIC, GuiDocument, GuiNineSlice, GuiProperty, GuiTextureSet
-from ..profiles import GuiFormatProfile
-from .adapter import DMC5_GUI_ADAPTER
-from .property_codec import (
+lazy from ..errors import GuiFormatError, GuiWriteError
+lazy from ..model import GUI_MAGIC, GuiDocument, GuiNineSlice, GuiProperty, GuiTextureSet
+lazy from ..profiles import GuiFormatProfile
+lazy from .adapter import DMC5_GUI_ADAPTER
+lazy from .property_codec import (
     DMC5_GUI_NATIVE_POOL_ORDER,
     dmc5_native_gui_value_pool,
     encode_dmc5_gui_value,
@@ -261,7 +261,7 @@ class Dmc5GuiSerializer:
                     int(entry.pattern),
                     *entry.bounds,
                 )
-            return bytes(payload)
+            return payload.take_bytes()
         if isinstance(special, GuiNineSlice):
             if len(special.cells) != 9:
                 raise GuiWriteError("nine-slice payload requires nine cells")
@@ -272,5 +272,5 @@ class Dmc5GuiSerializer:
                     "<II", payload, 0x10 + index * 8, cell.sequence, cell.pattern
                 )
                 struct.pack_into("<2f", payload, 0x58 + index * 8, *cell.repeat_size)
-            return bytes(payload)
+            return payload.take_bytes()
         raise GuiWriteError(f"unsupported special payload {type(special).__name__}")

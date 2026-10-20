@@ -1,32 +1,40 @@
 from __future__ import annotations
 
 import time
-from collections import deque
+from collections import OrderedDict, deque
 from dataclasses import dataclass, replace
+from functools import partial
 from pathlib import Path
 from typing import Callable, Mapping
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QTimer, Signal
 from PySide6.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from file_handlers.lightprobe.loader import parse_light_probe_data
-from file_handlers.mesh.material_session import (
+lazy from file_handlers.lightprobe.loader import parse_light_probe_data
+lazy from file_handlers.mesh.material_session import (
     MeshMaterialCollection,
     MeshMaterialSession,
     scoped_material_key,
 )
-from file_handlers.mesh.mesh_handler import MeshHandler
-from ui.scene.lightprobe_preview import SceneLightProbeInstance, SceneLightProbeSet
-from ui.scene.mesh_scene import build_mesh_scene
-from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
-from ui.scene.scene_preview import ScenePreviewWidget
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
+lazy from file_handlers.mesh.mesh_file import MeshLoadMode
+lazy from file_handlers.mesh.scene_lit import SceneDevicePreview
+lazy from file_handlers.mesh.scene_wrinkles import scene_wrinkles
+lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
+lazy from file_handlers.mmtr.wrinkle import wrinkle_catalog_for
+lazy from ui.qt_timers import call_later
+lazy from ui.scene.lightprobe_preview import SceneLightProbeInstance, SceneLightProbeSet
+lazy from ui.scene.mesh_scene import build_mesh_scene
+lazy from ui.scene.scene_model import SceneDrawBatch, SceneDrawMesh
+lazy from ui.scene.scene_preview import ScenePreviewWidget
 from utils.resource_file_utils import resource_version_from_path
 
-from .scn_scene_loader import ScnSceneLoader, ScnSceneSource
-from .scn_document_store import ScnDocumentStore
-from .scn_scene_commands import RawTransformFieldCommand, TransformEditResult, TransformSelectionCommand
-from .scn_scene_graph import (
+lazy from .scn_scene_loader import ScnSceneLoader, ScnSceneSource
+lazy from .scn_document_store import ScnDocumentStore
+lazy from .scn_scene_commands import RawTransformFieldCommand, TransformEditResult, TransformSelectionCommand
+lazy from .scn_scene_graph import (
     ScnSceneDiagnostic,
     ScnLightProbeBinding,
     ScnRenderableMesh,
@@ -81,7 +89,7 @@ class ScnScenePreviewWidget(QWidget):
         self._light_probe_cache: dict[str, SceneLightProbeSet | None] = {}
         self._shown_diagnostics: set[tuple] = set()
         self._pending_renderables: deque[_RenderableQueueItem] = deque()
-        self._pending_material_renderables: deque[ScnRenderableMesh] = deque()
+        self._pending_material_renderables: OrderedDict[str, _RenderableQueueItem] = OrderedDict()
         self._draw_meshes: list[SceneDrawMesh] = []
         self._hidden_renderables: set[str] = set()
         self._visibility_overrides: dict[str, bool] = {}
@@ -92,7 +100,7 @@ class ScnScenePreviewWidget(QWidget):
         self._loading = False
         self._refresh_queued = False
         self._camera_initialized = False
-        self._last_asset_counts = (0, 0, 0)
+        self._last_asset_counts = (0, 0, 0, 0)
 
         self._mesh_timer = QTimer(self)
         self._mesh_timer.setSingleShot(True)
@@ -101,6 +109,10 @@ class ScnScenePreviewWidget(QWidget):
         self._material_timer = QTimer(self)
         self._material_timer.setSingleShot(True)
         self._material_timer.timeout.connect(self._resolve_material_step)
+
+        self._status_timer = QTimer(self)
+        self._status_timer.setSingleShot(True)
+        self._status_timer.timeout.connect(self._update_status)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -111,10 +123,11 @@ class ScnScenePreviewWidget(QWidget):
 
         self.preview = ScenePreviewWidget(self, settings=settings)
         self._materials = MeshMaterialCollection(self.preview, parent=self)
-        self._materials.changed.connect(self._update_status)
+        self._device_preview = SceneDevicePreview(self.preview, self._materials, self)
+        self._device_preview.status_changed.connect(self._schedule_status_update)
+        self.preview.wrinkle_source = self._wrinkles
         self.preview.gizmo_transform_committed.connect(self._commit_gizmo_transforms)
         self.preview.texture_quality_changed.connect(self._on_texture_quality_changed)
-        self.preview.texture_upload_status_changed.connect(self._update_status)
         self.preview.setMinimumHeight(320)
         layout.addWidget(self.preview, 1)
 
@@ -131,7 +144,7 @@ class ScnScenePreviewWidget(QWidget):
         self._loading = False
         self._refresh_queued = True
         self.status_label.setText(self.tr("Preparing scene preview..."))
-        QTimer.singleShot(0, self, self.refresh)
+        call_later(self, 0, self.refresh)
 
     def set_stale(self) -> None:
         self._stale = True
@@ -152,9 +165,25 @@ class ScnScenePreviewWidget(QWidget):
             self._apply_transform_result(result, force_upload=True)
         return result
 
+    def _wrinkles(self) -> list:
+        found = []
+        for graph in self.graphs:
+            source = self.loader.source_for_graph(graph)
+            profile = mmtr_profile_for_game(getattr(source, "game_version", "")
+                                            or getattr(self.handler, "game_version", ""))
+            catalog = None if profile is None else wrinkle_catalog_for(profile)
+            if catalog is not None:
+                found += scene_wrinkles(graph, catalog)
+        return found
+
+    def strands_changed(self) -> None:
+        self._device_preview.strands_changed()
+        self.preview.update()
+
     def _stop_timers(self) -> None:
         self._mesh_timer.stop()
         self._material_timer.stop()
+        self._status_timer.stop()
 
     def cleanup(self) -> None:
         self._stop_timers()
@@ -181,8 +210,15 @@ class ScnScenePreviewWidget(QWidget):
         self._shown_diagnostics.clear()
         self._loaded = self._loading = self._refresh_queued = self._stale = False
         self._camera_initialized = False
-        self._last_asset_counts = (0, 0, 0)
+        self._last_asset_counts = (0, 0, 0, 0)
         self.graphs.clear()
+        self._status_timer.stop()
+        self._show_device_frames()
+
+    def _show_device_frames(self) -> None:
+        """Off while loading: each new mesh and material would make new device content."""
+        self._device_preview.set_active(
+            self._loaded and not self._loading and not self._pending_material_renderables)
 
     def scene_sources(self) -> list[ScnSceneSource]:
         if self._sources_getter is not None:
@@ -196,12 +232,13 @@ class ScnScenePreviewWidget(QWidget):
         if not self._loaded or self._stale or self._loading:
             self.request_refresh()
             return
-        graphs = self.loader.build_graphs([source], max_depth=8, skip_document_ids=self._document_ids())
+        graphs = self.loader.build_graphs([source], max_depth=16, skip_document_ids=self._document_ids())
         if not graphs:
             return
         self.graphs.extend(graphs)
         self._load_light_probe_instances()
         self._queue_renderables(graphs)
+        self._show_device_frames()
         self._update_status()
         self._update_diagnostics()
         self._notify_graphs_changed()
@@ -279,7 +316,7 @@ class ScnScenePreviewWidget(QWidget):
         draw_by_key = {mesh.key: mesh for mesh in self._draw_meshes}
         result = []
         for renderable in (
-            item for graph in self.graphs for item in graph.renderables
+            *graph.renderables for graph in self.graphs
         ):
             cached = self._mesh_cache.get(self._mesh_cache_key(renderable))
             draw_mesh = draw_by_key.get(renderable.key)
@@ -363,12 +400,29 @@ class ScnScenePreviewWidget(QWidget):
             self._notify_graphs_changed()
             return
         self._stop_timers()
-        removed = [renderable for row in rows for renderable in self.graphs[row].renderables]
+        removed = [*self.graphs[row].renderables for row in rows]
         removed_keys = {renderable.key for renderable in removed}
         removed_assets = {self._material_asset_key(renderable) for renderable in removed}
         self.graphs = [graph for index, graph in enumerate(self.graphs) if index not in rows]
         self._pending_renderables = deque(item for item in self._pending_renderables if item.renderable.key not in removed_keys)
-        self._pending_material_renderables = deque(renderable for renderable in self._pending_material_renderables if renderable.key not in removed_keys)
+        pending_materials = self._pending_material_renderables
+        removed_pending = {
+            asset for asset, item in pending_materials.items()
+            if item.renderable.key in removed_keys
+        }
+        replacements = {}
+        for graph in self.graphs:
+            for renderable in graph.renderables:
+                asset = self._material_asset_key(renderable)
+                if asset in removed_pending:
+                    cached = self._mesh_cache.get(self._mesh_cache_key(renderable))
+                    if cached is not None and cached[0] is not None:
+                        replacements.setdefault(asset, _RenderableQueueItem(graph, renderable))
+        self._pending_material_renderables = OrderedDict(
+            (asset, replacements.get(asset, item))
+            for asset, item in pending_materials.items()
+            if asset not in removed_pending or asset in replacements
+        )
         self._draw_meshes = [mesh for mesh in self._draw_meshes if mesh.key not in removed_keys]
         self._hidden_renderables.difference_update(removed_keys)
         for overrides in (
@@ -389,7 +443,8 @@ class ScnScenePreviewWidget(QWidget):
             self._batch_cache.pop(asset, None)
         missing = sum(d.code == "missing_mesh" for graph in self.graphs for d in graph.diagnostics)
         failed = sum(d.code == "mesh_preview_error" for graph in self.graphs for d in graph.diagnostics)
-        self._last_asset_counts = (len(self._draw_meshes), missing, failed)
+        empty = sum(d.code == "mesh_without_geometry" for graph in self.graphs for d in graph.diagnostics)
+        self._last_asset_counts = (len(self._draw_meshes), missing, failed, empty)
         self._loading = bool(self._pending_renderables)
         if not self.graphs:
             self._loaded = False
@@ -401,16 +456,17 @@ class ScnScenePreviewWidget(QWidget):
             self._update_status()
             self._apply_hidden_renderables()
         self._sync_preview_materials()
+        self._show_device_frames()
         self._update_diagnostics()
         self._notify_graphs_changed()
         self.renderables_changed.emit()
         if self._pending_renderables:
             self._mesh_timer.start(0)
-        elif self._pending_material_renderables:
+        if self._pending_material_renderables:
             self._material_timer.start(0)
 
     def _document_ids(self) -> set[str]:
-        return {document_id for graph in self.graphs for document_id in graph.documents}
+        return {*graph.documents for graph in self.graphs}
 
     def refresh(self) -> None:
         self._refresh_queued = False
@@ -421,7 +477,7 @@ class ScnScenePreviewWidget(QWidget):
         self.status_label.setText(
             self.tr("Building source-aware SCN scene graph...")
         )
-        self.graphs = self.loader.build_graphs(self.scene_sources(), max_depth=8)
+        self.graphs = self.loader.build_graphs(self.scene_sources(), max_depth=16)
         if not self.graphs:
             self.status_label.setText(self.tr("No SCN is loaded."))
             self.preview.set_light_probe_instances([])
@@ -436,6 +492,7 @@ class ScnScenePreviewWidget(QWidget):
         self._loaded = True
         self.preview.set_scene([])
         self._sync_preview_materials()
+        self._show_device_frames()
         self._update_status()
         self._update_diagnostics()
         self._notify_graphs_changed()
@@ -543,7 +600,7 @@ class ScnScenePreviewWidget(QWidget):
     def _load_mesh_step(self) -> None:
         if not self.graphs:
             return
-        loaded, missing, failed = self._last_asset_counts
+        loaded, missing, failed, empty = self._last_asset_counts
         deadline = time.perf_counter() + 0.05
         while self._pending_renderables and time.perf_counter() < deadline:
             item = self._pending_renderables.popleft()
@@ -551,10 +608,18 @@ class ScnScenePreviewWidget(QWidget):
             try:
                 base_mesh = self._mesh_for_renderable(renderable, item.graph)
                 if base_mesh is None:
-                    missing += 1
+                    if self._mesh_cache.get(self._mesh_cache_key(renderable), (None,))[0] is None:
+                        missing += 1
+                    else:
+                        empty += 1
                     continue
                 self._draw_meshes.append(self._instance_draw_mesh(base_mesh, renderable))
-                self._pending_material_renderables.append(renderable)
+                material_asset = self._material_asset_key(renderable)
+                pending = self._pending_material_renderables
+                if material_asset not in self._materials and material_asset not in pending:
+                    pending[material_asset] = item
+                    handler = self._mesh_cache.get(self._mesh_cache_key(renderable), (None,))[0]
+                    self._materials.prefetch(handler, renderable.mdf_path)
                 loaded += 1
             except Exception as exc:
                 failed += 1
@@ -566,7 +631,7 @@ class ScnScenePreviewWidget(QWidget):
                         renderable,
                     )
                 )
-        self._last_asset_counts = (loaded, missing, failed)
+        self._last_asset_counts = (loaded, missing, failed, empty)
         self._update_status()
         self._update_diagnostics()
         if self._pending_renderables:
@@ -578,15 +643,30 @@ class ScnScenePreviewWidget(QWidget):
             self.preview.set_scene(self._draw_meshes, reset_camera=not self._camera_initialized)
             self._camera_initialized = True
             self.renderables_changed.emit()
-            if self._pending_material_renderables:
-                self._material_timer.start(0)
+        if self._pending_material_renderables and not self._material_timer.isActive():
+            self._material_timer.start(0)
+        self._show_device_frames()
 
     def _resolve_material_step(self) -> None:
         deadline = time.perf_counter() + 0.02
         while self._pending_material_renderables and time.perf_counter() < deadline:
-            self._queue_materials(self._pending_material_renderables.popleft())
+            _asset, item = self._pending_material_renderables.popitem(last=False)
+            try:
+                self._queue_materials(item.renderable)
+            except Exception as exc:
+                item.graph.diagnostics.append(
+                    self._diagnostic(
+                        "warning",
+                        "material_preview_error",
+                        f"Failed to resolve materials for {item.renderable.mesh_path}: {exc}",
+                        item.renderable,
+                    )
+                )
+                self._update_diagnostics()
+                self._schedule_status_update()
         if self._pending_material_renderables:
             self._material_timer.start(0)
+        self._show_device_frames()
 
     def _mesh_for_renderable(self, renderable: ScnRenderableMesh, graph: ScnSceneGraph) -> SceneDrawMesh | None:
         cache_key = self._mesh_cache_key(renderable)
@@ -608,7 +688,8 @@ class ScnScenePreviewWidget(QWidget):
             )
             return None
 
-        mesh_handler = MeshHandler.from_bytes(
+        handler_class = StmeshHandler if StmeshHandler.can_handle(resolved.data) else MeshHandler
+        mesh_handler = handler_class.from_bytes(
             resolved.path,
             resolved.data,
             app=getattr(getattr(source, "handler", None) or self.handler, "app", None),
@@ -617,14 +698,42 @@ class ScnScenePreviewWidget(QWidget):
                 getattr(source, "game_version", "")
                 or getattr(self.handler, "game_version", "")
             ),
+            load_mode=MeshLoadMode.LIGHT,
         )
+        mesh_handler.reread = partial(self._resource_bytes, source, renderable.mesh_path)
         mesh = getattr(mesh_handler, "mesh", None)
         base_mesh = None
         if mesh is not None:
-            scene_meshes = build_mesh_scene(mesh, key="scn_mesh", include_vertex_colors=False)
+            scene_meshes = build_mesh_scene(
+                mesh,
+                key="scn_mesh",
+                include_vertex_colors=False,
+                normal_recalculation_enabled=(
+                    renderable.normal_recalculation_enabled
+                ),
+                normal_recalc_edge_exclusion=(
+                    renderable.normal_recalc_edge_exclusion
+                ),
+            )
             base_mesh = scene_meshes[0] if scene_meshes else None
+        if base_mesh is None:
+            # RE4's ``*_occ.mesh`` hold an occluder mesh alone, which the game culls with and does not draw.
+            occluder = bool(getattr(getattr(mesh, "header", None), "occluder_mesh_offset", 0))
+            graph.diagnostics.append(
+                self._diagnostic(
+                    "info",
+                    "mesh_without_geometry",
+                    f"Mesh resource holds {'an occluder mesh alone' if occluder else 'nothing'} to draw: "
+                    f"{renderable.mesh_path}",
+                    renderable,
+                )
+            )
         self._mesh_cache[cache_key] = (mesh_handler, base_mesh)
         return base_mesh
+
+    def _resource_bytes(self, source, path: str) -> bytes | None:
+        resolved = self.loader.resolve_resource_for_source(source, path)
+        return None if resolved is None else resolved.data
 
     def _instance_draw_mesh(self, base_mesh: SceneDrawMesh, renderable: ScnRenderableMesh) -> SceneDrawMesh:
         key = renderable.key
@@ -640,6 +749,9 @@ class ScnScenePreviewWidget(QWidget):
                         batch.material_name,
                     ),
                     part_index=batch.part_index,
+                    alpha_test=batch.alpha_test,
+                    transparent=batch.transparent,
+                    submesh=batch.submesh,
                 )
                 for batch in base_mesh.batches
             ]
@@ -650,7 +762,9 @@ class ScnScenePreviewWidget(QWidget):
             material_name=material_name,
             batches=batches,
             transform_matrix=renderable.world_matrix,
-            geometry_key=material_asset_key,
+            decal_receive_mode=renderable.decal_receive_mode,
+            transparent_bias=renderable.transparent_bias,
+            speedtree_placement=renderable.speedtree_placement,
         )
 
     @staticmethod
@@ -664,7 +778,7 @@ class ScnScenePreviewWidget(QWidget):
         self,
         values: dict[str, dict[str, float]],
     ) -> None:
-        self._materials.set_parameter_values(values)
+        self.preview.set_material_parameters(values)
 
     @staticmethod
     def _material_asset_key(renderable: ScnRenderableMesh) -> str:
@@ -683,7 +797,12 @@ class ScnScenePreviewWidget(QWidget):
 
     @classmethod
     def _mesh_cache_key(cls, renderable: ScnRenderableMesh) -> str:
-        return f"{cls._asset_scope(renderable)}|{normalize_scene_path(renderable.mesh_path).lower()}"
+        return (
+            f"{cls._asset_scope(renderable)}|"
+            f"{normalize_scene_path(renderable.mesh_path).lower()}|"
+            f"nr={int(renderable.normal_recalculation_enabled)}|"
+            f"nr-edge={int(renderable.normal_recalc_edge_exclusion)}"
+        )
 
     def _queue_materials(self, renderable: ScnRenderableMesh) -> None:
         material_asset_key = self._material_asset_key(renderable)
@@ -706,11 +825,16 @@ class ScnScenePreviewWidget(QWidget):
         )
         self._materials.add(material_asset_key, session)
 
+    def _schedule_status_update(self) -> None:
+        if self.graphs and not self._status_timer.isActive():
+            self._status_timer.start(50)
+
     def _update_status(self) -> None:
+        self._status_timer.stop()
         if not self.graphs:
             return
-        loaded, missing, failed = self._last_asset_counts
-        progress = loaded + missing + failed
+        loaded, missing, failed, empty = self._last_asset_counts
+        progress = loaded + missing + failed + empty
         documents = sum(len(graph.documents) for graph in self.graphs)
         instances = sum(len(graph.document_instances) for graph in self.graphs)
         links = sum(len(graph.links) for graph in self.graphs)
@@ -727,19 +851,6 @@ class ScnScenePreviewWidget(QWidget):
             if light_probe_count
             else self.tr("LightProbes: none")
         )
-        prepared_textures, gpu_textures, failed_textures = self.preview.texture_upload_counts()
-        texture_status = self.tr("Textures GPU: {gpu}/{prepared}").format(
-            gpu=gpu_textures, prepared=prepared_textures
-        )
-        if failed_textures:
-            texture_status += self.tr(" | Upload failed: {count}").format(
-                count=failed_textures
-            )
-        effect_errors = self.preview.material_effect_errors()
-        if effect_errors:
-            texture_status += self.tr(" | Material effects failed: {count}").format(
-                count=len(effect_errors)
-            )
         self.status_label.setText(
             " | ".join(
                 [
@@ -758,18 +869,17 @@ class ScnScenePreviewWidget(QWidget):
                     else self.tr("Preview ready"),
                     self.tr("Meshes loaded: {count}").format(count=loaded),
                     self.tr("Missing: {count}").format(count=missing),
-                    self.tr("Failed: {count}").format(count=failed),
-                    texture_status,
+                    self.tr("Failed: {count}").format(count=failed + len(self._device_preview.refused())),
                     light_probe_status,
                     self.tr("Diagnostics: {count}").format(count=diagnostics),
+                    *self._device_preview.status(),
                 ]
             )
         )
-        self.status_label.setToolTip("\n".join(effect_errors))
 
     def _update_diagnostics(self) -> None:
         new = []
-        for diagnostic in (item for graph in self.graphs for item in graph.diagnostics):
+        for diagnostic in (*graph.diagnostics for graph in self.graphs):
             key = (diagnostic.severity, diagnostic.code, diagnostic.message, diagnostic.document_id, diagnostic.document_instance_id, diagnostic.path)
             if key not in self._shown_diagnostics:
                 self._shown_diagnostics.add(key)

@@ -1,16 +1,13 @@
-from typing import List, TYPE_CHECKING, Any
+from typing import List, Any
 import uuid
 
-if TYPE_CHECKING:
-    from .variable import Variable
-
 from .base_model import BaseModel, FileHandler
-from .header import HeaderStruct, HashData
-from .variable import Variable
-from .uvar_types import TypeKind
-from .uvar_expression import UvarExpression
-from .config import MAX_VARIABLES
-from utils.hash_util import murmur3_hash
+lazy from .header import HeaderStruct, HashData
+lazy from .variable import Variable
+lazy from .uvar_types import TypeKind
+lazy from .uvar_expression import UvarExpression
+lazy from .config import MAX_VARIABLES
+lazy from utils.hash_util import murmur3_hash
 
 class UVarFile(BaseModel):
     def __init__(self, handler: FileHandler | bytes | bytearray | None = None, is_embedded: bool = False):
@@ -338,8 +335,6 @@ class UVarFile(BaseModel):
             embed.update_strings()
             
     def add_variable(self, name: str, var_type: int | TypeKind, value: Any = None) -> Variable:
-        from .uvar_types import TypeKind
-        
         var = Variable()
         var.guid = uuid.uuid4()
         var.name = name

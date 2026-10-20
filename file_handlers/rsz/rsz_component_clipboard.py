@@ -1,27 +1,15 @@
 import traceback
-from file_handlers.rsz.rsz_data_types import ObjectData
+lazy from file_handlers.rsz.rsz_data_types import ObjectData
 from file_handlers.rsz.rsz_clipboard_base import RszClipboardBase
-from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
-from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
-from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table
+lazy from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+lazy from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+lazy from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table
 
 class RszComponentClipboard(RszClipboardBase):
-    """Clipboard handling for copying and pasting components."""
-    
     def get_clipboard_type(self) -> str:
-        """Return the clipboard type identifier"""
         return "component"
     
     def copy_component_to_clipboard(self, viewer, component_instance_id):
-        """Copy a component to clipboard
-        
-        Args:
-            viewer: The viewer instance
-            component_instance_id: Instance ID of the component to copy
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         try:
             if component_instance_id <= 0 or component_instance_id >= len(viewer.scn.instance_infos):
                 print(f"Invalid component instance ID: {component_instance_id}")
@@ -63,16 +51,6 @@ class RszComponentClipboard(RszClipboardBase):
             return False
     
     def paste_component_from_clipboard(self, viewer, go_instance_id, clipboard_data=None):
-        """Paste a component from clipboard to a GameObject with ffull support for nested objects
-
-        Args:
-            viewer: The viewer instance
-            go_instance_id: Instance ID of the target GameObject
-            clipboard_data: Optional pre-loaded clipboard data
-            
-        Returns:
-            dict: Result information, or None if failed
-        """
         try:
             if not clipboard_data:
                 print("No clipboard data provided, loading from file")

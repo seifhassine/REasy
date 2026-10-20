@@ -9,15 +9,15 @@ from collections.abc import Callable
 from dataclasses import dataclass
 
 from file_handlers.clip.enums import PropertyType
-from file_handlers.motion.mot_clip.model import (
+lazy from file_handlers.motion.mot_clip.model import (
     ClipInterpolation,
     ClipKey,
     ClipProperty,
     HermiteCurve,
 )
 
-from ..errors import GuiSceneError
-from ..model import (
+lazy from ..errors import GuiSceneError
+lazy from ..model import (
     COMPONENT_NAMES,
     GuiAnimation,
     GuiSymbol,
@@ -25,12 +25,12 @@ from ..model import (
     iter_clip_nodes,
     resolve_properties,
 )
-from ..native_math import f32 as _f32
-from ..native_math import fadd as _fadd
-from ..native_math import fdiv as _fdiv
-from ..native_math import fsub as _fsub
-from ..scene import GuiSceneNode
-from .scene import Dmc5GuiScene
+lazy from ..native_math import f32 as _f32
+lazy from ..native_math import fadd as _fadd
+lazy from ..native_math import fdiv as _fdiv
+lazy from ..native_math import fsub as _fsub
+lazy from ..scene import GuiSceneNode
+lazy from .scene import Dmc5GuiScene
 
 
 _NUMERIC_TYPES = {

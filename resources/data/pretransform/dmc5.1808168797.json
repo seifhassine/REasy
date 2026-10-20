@@ -1,0 +1,159 @@
+{
+ "format": 2,
+ "game": "DMC5",
+ "resource_version": 1808168797,
+ "target": 0,
+ "source_holds_indices": false,
+ "destination_holds_buffer": false,
+ "blend": {},
+ "blend_still": null,
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormal"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalExcludingEdge"
+ },
+ "write_by_submesh": false,
+ "skinning": [
+  "PreTransformSkinningCS"
+ ],
+ "skin_by_range": null,
+ "system_skins_blend": true,
+ "system_skinning": {
+  "4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinning4wVelocity2"
+  },
+  "8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinning8wVelocity2"
+  },
+  "WithNorm 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinningWithNorm4wVelocity2"
+  },
+  "WithNorm 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinningWithNorm8wVelocity2"
+  },
+  "WithNorm none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinningWithNormNoneVelocity2"
+  },
+  "none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinningNoneVelocity2"
+  }
+ },
+ "system_blend": {
+  "0 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeLight4w"
+  },
+  "0 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeLight8w"
+  },
+  "0 WithNormR 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormRLight4w"
+  },
+  "0 WithNormR 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormRLight8w"
+  },
+  "0 WithNormR none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormRLightStatic"
+  },
+  "0 WithNormW 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormWLight4w"
+  },
+  "0 WithNormW 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormWLight8w"
+  },
+  "0 WithNormW none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormWLightStatic"
+  },
+  "0 none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeLightStatic"
+  },
+  "1 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeStandard4w"
+  },
+  "1 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeStandard8w"
+  },
+  "1 WithNormR 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormRStandard4w"
+  },
+  "1 WithNormR 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormRStandard8w"
+  },
+  "1 WithNormR none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormRStandardStatic"
+  },
+  "1 WithNormW 4w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormWStandard4w"
+  },
+  "1 WithNormW 8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormWStandard8w"
+  },
+  "1 WithNormW none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeWithNormWStandardStatic"
+  },
+  "1 none": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSBlendShapeStandardStatic"
+  }
+ },
+ "blend_place": "vertex_sum",
+ "static_like_skinning": false,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "source": {
+  "captures": [
+   {
+    "capture": "newcap.rdc",
+    "draws": [
+     1137,
+     1426,
+     6902
+    ]
+   },
+   {
+    "capture": "latest1.rdc",
+    "draws": [
+     4236,
+     4370,
+     24985
+    ]
+   },
+   {
+    "capture": "latest2.rdc",
+    "draws": [
+     3143
+    ]
+   }
+  ],
+  "executable": "DevilMayCry5_dump.exe: the same system path (scratch stage111 skinrange); a target's deltas read from the sum of the earlier targets' vertex counts (scratch stage111 bsoffsets)"
+ }
+}

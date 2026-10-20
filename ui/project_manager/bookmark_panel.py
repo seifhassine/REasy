@@ -3,10 +3,12 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from PySide6.QtCore import QModelIndex, Qt, QTimer, Signal
-from PySide6.QtGui import QStandardItem, QStandardItemModel
+from PySide6.QtGui import QAction, QKeySequence, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QComboBox,
+    QCompleter,
     QDialog,
     QFileDialog,
     QHeaderView,
@@ -22,16 +24,14 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .bookmark_dialog import BookmarkDialog
-from .bookmarks import Bookmark, BookmarksStore, normalize_root
-from .delegate import _BookmarksDelegate, _ScopeBadgeDelegate, _TagChipsDelegate
+lazy from .bookmark_dialog import BookmarkDialog
+lazy from .bookmarks import Bookmark, BookmarksStore, normalize_root
+lazy from .delegate import _BookmarkRowDelegate
 
 _ContextProvider = Callable[[], tuple[str | None, str | None]]
 
 
 class BookmarksPanel(QWidget):
-    """Bookmark browsing, editing, filtering, and persistence UI."""
-
     changed = Signal()
     open_requested = Signal(object)
 
@@ -46,24 +46,35 @@ class BookmarksPanel(QWidget):
         self._store = store if store is not None else BookmarksStore(parent=self)
         self._active_tag: str | None = None
         self._rendered_tags: tuple[str, ...] | None = None
-        self._tag_buttons: dict[str | None, QToolButton] = {}
+        self._rendered_ids: list[str] | None = None
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(4)
         layout.addLayout(self._build_toolbar())
 
-        self._tags_layout = QHBoxLayout()
-        self._tags_layout.setContentsMargins(0, 0, 0, 0)
-        self._tags_layout.setSpacing(4)
-        layout.addLayout(self._tags_layout)
+        filters = QHBoxLayout()
+        self._tag_combo = QComboBox()
+        self._tag_combo.setEditable(True)
+        self._tag_combo.setInsertPolicy(QComboBox.NoInsert)
+        self._tag_combo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self._tag_combo.setMinimumContentsLength(10)
+        self._tag_combo.setMinimumWidth(0)
+        self._tag_combo.setMaxVisibleItems(12)
+        self._tag_combo.setAccessibleName(self.tr("Filter by tag"))
+        self._tag_combo.setToolTip(self.tr("Choose a tag, or type to find one"))
+        self._tag_combo.completer().setCompletionMode(QCompleter.PopupCompletion)
+        self._tag_combo.completer().setFilterMode(Qt.MatchContains)
+        self._tag_combo.completer().setCaseSensitivity(Qt.CaseInsensitive)
+        self._tag_combo.currentIndexChanged.connect(lambda: self._set_tag(self._tag_combo.currentData()))
+        self._tag_combo.lineEdit().editingFinished.connect(self._finish_tag_edit)
+        filters.addWidget(self._tag_combo, 1)
+        self._count_label = QLabel()
+        filters.addWidget(self._count_label)
+        layout.addLayout(filters)
 
         self._model = QStandardItemModel(self)
-        self._model.setHorizontalHeaderLabels(
-            [self.tr("Path"), self.tr("Tags"), self.tr("Scope")]
-        )
-        self._model.setHeaderData(1, Qt.Horizontal, Qt.AlignRight, Qt.TextAlignmentRole)
-        self._model.setHeaderData(2, Qt.Horizontal, Qt.AlignRight, Qt.TextAlignmentRole)
+        self._model.setHorizontalHeaderLabels([self.tr("Bookmarks")])
         self._tree = self._build_tree()
         layout.addWidget(self._tree)
 
@@ -74,8 +85,13 @@ class BookmarksPanel(QWidget):
         layout.addWidget(self._empty_label)
 
         self._store.changed.connect(self._on_store_changed)
+        # Deferred until the panel is up; a child timer dies with the panel.
+        self._warnings_timer = QTimer(self)
+        self._warnings_timer.setSingleShot(True)
+        self._warnings_timer.setInterval(0)
+        self._warnings_timer.timeout.connect(self._show_load_warnings)
         if self._store.load_warnings:
-            QTimer.singleShot(0, self._show_load_warnings)
+            self._warnings_timer.start()
 
     def set_store(self, store: BookmarksStore) -> None:
         """Swap the backing store (e.g. a project's own bookmarks file)."""
@@ -88,15 +104,19 @@ class BookmarksPanel(QWidget):
         self._store = store
         store.changed.connect(self._on_store_changed)
         if store.load_warnings:
-            QTimer.singleShot(0, self._show_load_warnings)
+            self._warnings_timer.start()
         self.refresh()
 
     def _build_toolbar(self) -> QHBoxLayout:
         toolbar = QHBoxLayout()
-        toolbar.addWidget(QLabel(self.tr("Filter:")))
-
         self._filter_edit = QLineEdit()
-        self._filter_edit.setPlaceholderText(self.tr("Search bookmarks"))
+        self._filter_edit.setPlaceholderText(self.tr("Search paths, tags and notes…"))
+        self._filter_edit.setToolTip(
+            self.tr('All words must match; use tag:name, "quoted phrase" or -exclude')
+        )
+        self._filter_edit.setClearButtonEnabled(True)
+        self._filter_edit.setAccessibleName(self.tr("Search bookmarks"))
+        self._filter_edit.setMinimumWidth(0)
         toolbar.addWidget(self._filter_edit, 1)
 
         self._filter_timer = QTimer(self)
@@ -105,14 +125,19 @@ class BookmarksPanel(QWidget):
         self._filter_timer.timeout.connect(self._populate)
         self._filter_edit.textChanged.connect(lambda _text: self._filter_timer.start())
 
+        menu = QMenu(self)
         for text, tooltip, callback in (
             (self.tr("Import…"), self.tr("Import bookmarks from a JSON file"), self._import),
             (self.tr("Export…"), self.tr("Export bookmarks to a JSON file"), self._export),
         ):
-            button = QToolButton(text=text)
-            button.setToolTip(tooltip)
-            button.clicked.connect(callback)
-            toolbar.addWidget(button)
+            action = menu.addAction(text, callback)
+            action.setToolTip(tooltip)
+        options = QToolButton(text="…")
+        options.setAccessibleName(self.tr("Bookmark options"))
+        options.setToolTip(self.tr("Import or export bookmarks"))
+        options.setMenu(menu)
+        options.setPopupMode(QToolButton.InstantPopup)
+        toolbar.addWidget(options)
         return toolbar
 
     def _build_tree(self) -> QTreeView:
@@ -124,19 +149,29 @@ class BookmarksPanel(QWidget):
         tree.setContextMenuPolicy(Qt.CustomContextMenu)
         tree.setIndentation(0)
         tree.setRootIsDecorated(False)
+        tree.setHeaderHidden(True)
+        tree.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         tree.header().setStretchLastSection(False)
         tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        tree.header().setSectionResizeMode(1, QHeaderView.ResizeToContents)
-        tree.header().setSectionResizeMode(2, QHeaderView.ResizeToContents)
-        tree.setItemDelegateForColumn(
-            0,
-            _BookmarksDelegate(tree, self.remove_bookmark),
-        )
-        tree.setItemDelegateForColumn(1, _TagChipsDelegate(tree))
-        tree.setItemDelegateForColumn(2, _ScopeBadgeDelegate(tree))
+        tree.setItemDelegate(_BookmarkRowDelegate(tree, self.remove_bookmark))
+        tree.setSelectionBehavior(QAbstractItemView.SelectRows)
         tree.doubleClicked.connect(self._open_index)
+        tree.activated.connect(self._open_index)
         tree.customContextMenuRequested.connect(self._show_context_menu)
+        self._add_shortcuts(tree)
         return tree
+
+    def _add_shortcuts(self, tree: QTreeView) -> None:
+        for text, shortcut, slot in (
+            (self.tr("Copy path"), QKeySequence.StandardKey.Copy, self._copy_selected),
+            (self.tr("Remove"), QKeySequence.StandardKey.Delete, self._remove_selected),
+            (self.tr("Focus search"), QKeySequence.StandardKey.Find, self._focus_search),
+        ):
+            action = QAction(text, tree)
+            action.setShortcut(shortcut)
+            action.setShortcutContext(Qt.WidgetWithChildrenShortcut)
+            action.triggered.connect(slot)
+            tree.addAction(action)
 
     def showEvent(self, event):
         super().showEvent(event)
@@ -229,46 +264,65 @@ class BookmarksPanel(QWidget):
         if self._active_tag not in tags:
             self._active_tag = None
         if tags != self._rendered_tags:
-            self._rebuild_tag_buttons(tags)
-        for tag, button in self._tag_buttons.items():
-            button.setChecked(tag == self._active_tag)
+            self._rebuild_tags(tags)
+        blocked = self._tag_combo.blockSignals(True)
+        self._tag_combo.setCurrentIndex(max(0, self._tag_combo.findData(self._active_tag)))
+        self._tag_combo.blockSignals(blocked)
 
-    def _rebuild_tag_buttons(self, tags: tuple[str, ...]) -> None:
-        while self._tags_layout.count():
-            item = self._tags_layout.takeAt(0)
-            if widget := item.widget():
-                widget.deleteLater()
-        self._tag_buttons.clear()
-        for tag in (None, *tags):
-            button = QToolButton(
-                text=self.tr("All") if tag is None else tag,
-                checkable=True,
-            )
-            button.clicked.connect(lambda _=False, value=tag: self._set_tag(value))
-            self._tags_layout.addWidget(button)
-            self._tag_buttons[tag] = button
-        self._tags_layout.addStretch(1)
+    def _rebuild_tags(self, tags: tuple[str, ...]) -> None:
+        blocked = self._tag_combo.blockSignals(True)
+        self._tag_combo.clear()
+        self._tag_combo.addItem(self.tr("All tags"), None)
+        for tag in tags:
+            self._tag_combo.addItem(tag, tag)
+        self._tag_combo.blockSignals(blocked)
         self._rendered_tags = tags
+
+    def _finish_tag_edit(self):
+        text = self._tag_combo.currentText().strip()
+        index = self._tag_combo.findText(text, Qt.MatchFixedString)
+        if index >= 0:
+            self._tag_combo.setCurrentIndex(index)
+        self._tag_combo.setEditText(self._tag_combo.itemText(self._tag_combo.currentIndex()))
 
     def _set_tag(self, tag: str | None) -> None:
         self._active_tag = tag
         self.refresh()
 
     def _populate(self) -> None:
-        game, project_root = self._context_provider()
-        active_game = str(game or "").upper()
-        active_project = normalize_root(project_root)
-        self._model.removeRows(0, self._model.rowCount())
-        bookmarks = self._store.matches(self._filter_edit.text(), self._active_tag)
-        for bookmark in sorted(bookmarks, key=lambda item: (-item.opened_at, -item.created_at)):
-            if bookmark.scope in ("pak", "unpacked"):
-                if bookmark.game.upper() != active_game:
-                    continue
-            elif bookmark.root != active_project:
-                continue
-            self._model.appendRow(self._row_items(bookmark))
+        active_game, active_project = self._context_key()
+        selection = self._tree.selectionModel()
+        selected = {index.data(Qt.UserRole) for index in selection.selectedRows()}
+        current = self._tree.currentIndex().data(Qt.UserRole)
+        scroll = self._tree.verticalScrollBar().value()
+        bookmarks = [
+            bookmark
+            for bookmark in sorted(
+                self._store.matches(self._filter_edit.text(), self._active_tag),
+                key=lambda item: (-item.opened_at, -item.created_at),
+            )
+            if self._in_context(bookmark, active_game, active_project)
+        ]
+        ids = [bookmark.id for bookmark in bookmarks]
+        if ids == self._rendered_ids:
+            for row, bookmark in enumerate(bookmarks):
+                self._fill_item(self._model.item(row, 0), bookmark)
+        else:
+            self._model.removeRows(0, self._model.rowCount())
+            for bookmark in bookmarks:
+                self._model.appendRow(self._row_items(bookmark))
+            self._rendered_ids = ids
+            for row, bookmark in enumerate(bookmarks):
+                index = self._model.index(row, 0)
+                if bookmark.id in selected:
+                    selection.select(index, selection.SelectionFlag.Select | selection.SelectionFlag.Rows)
+                if bookmark.id == current:
+                    selection.setCurrentIndex(index, selection.SelectionFlag.NoUpdate)
 
-        empty = self._model.rowCount() == 0
+        self._tree.doItemsLayout()
+        self._tree.verticalScrollBar().setValue(scroll)
+        self._count_label.setText(self.tr("{count} saved").format(count=len(bookmarks)))
+        empty = not bookmarks
         self._empty_label.setVisible(empty)
         self._tree.setVisible(not empty)
         if empty:
@@ -276,15 +330,77 @@ class BookmarksPanel(QWidget):
                 self.tr("No matching bookmarks") if len(self._store) else self.tr("No bookmarks")
             )
 
+    def _context_key(self) -> tuple[str, str]:
+        game, project_root = self._context_provider()
+        return str(game or "").upper(), normalize_root(project_root)
+
+    @staticmethod
+    def _in_context(bookmark: Bookmark, active_game: str, active_project: str) -> bool:
+        if bookmark.scope in ("pak", "unpacked"):
+            return bookmark.game.upper() == active_game
+        return bookmark.root == active_project
+
     def _row_items(self, bookmark: Bookmark) -> list[QStandardItem]:
-        path = QStandardItem(bookmark.path)
-        path.setData(bookmark.id, Qt.UserRole)
-        path.setToolTip(self._tooltip(bookmark))
-        tags = QStandardItem(", ".join(bookmark.tags))
-        tags.setData(bookmark.tags, Qt.UserRole)
-        scope = QStandardItem(self._scope_label(bookmark))
-        scope.setData(bookmark.scope, Qt.UserRole)
-        return [path, tags, scope]
+        item = QStandardItem()
+        self._fill_item(item, bookmark)
+        return [item]
+
+    def _fill_item(self, item: QStandardItem, bookmark: Bookmark) -> None:
+        item.setText(self._row_name(bookmark))
+        item.setData(bookmark, Qt.UserRole + 1)
+        item.setData(self._scope_label(bookmark), Qt.UserRole + 2)
+        item.setData(bookmark.id, Qt.UserRole)
+        item.setToolTip(self._tooltip(bookmark))
+        item.setData(self._accessible_text(bookmark), Qt.AccessibleTextRole)
+        item.setData(self._accessible_description(bookmark), Qt.AccessibleDescriptionRole)
+
+    @staticmethod
+    def _row_name(bookmark: Bookmark) -> str:
+        name = bookmark.path.rstrip('/').rsplit('/', 1)[-1]
+        return name + ('/' if bookmark.path.endswith('/') else '')
+
+    def _accessible_text(self, bookmark: Bookmark) -> str:
+        parts = [self._row_name(bookmark), self._scope_label(bookmark)]
+        if bookmark.tags:
+            parts.append(self.tr("Tags: {tags}").format(tags=", ".join(bookmark.tags)))
+        return ", ".join(parts)
+
+    def _accessible_description(self, bookmark: Bookmark) -> str:
+        parts = [self.tr("Path: {path}").format(path=bookmark.path)]
+        if bookmark.note:
+            parts.append(self.tr("Note: {note}").format(note=bookmark.note))
+        return "\n".join(parts)
+
+    def _selected_bookmarks(self) -> list[Bookmark]:
+        return [
+            bookmark
+            for index in self._tree.selectionModel().selectedRows()
+            if (bookmark := self._bookmark_at(index)) is not None
+        ]
+
+    def _copy_selected(self) -> None:
+        paths = [bookmark.path for bookmark in self._selected_bookmarks()]
+        if paths:
+            QApplication.clipboard().setText("\n".join(paths))
+
+    def _remove_selected(self) -> None:
+        bookmarks = self._selected_bookmarks()
+        if not bookmarks:
+            return
+        if len(bookmarks) > 1 and QMessageBox.question(
+            self,
+            self.tr("Remove bookmarks"),
+            self.tr("Remove {count} bookmarks?").format(count=len(bookmarks)),
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No,
+        ) != QMessageBox.Yes:
+            return
+        for bookmark in bookmarks:
+            self.remove_bookmark(bookmark.id)
+
+    def _focus_search(self) -> None:
+        self._filter_edit.setFocus(Qt.ShortcutFocusReason)
+        self._filter_edit.selectAll()
 
     def _bookmark_at(self, index: QModelIndex) -> Bookmark | None:
         item = self._model.item(index.row(), 0)
@@ -312,7 +428,10 @@ class BookmarksPanel(QWidget):
         elif chosen is copy_action:
             QApplication.clipboard().setText(bookmark.path)
         elif chosen is remove_action:
-            self.remove_bookmark(bookmark.id)
+            if self._tree.selectionModel().isSelected(self._tree.indexAt(position)):
+                self._remove_selected()
+            else:
+                self.remove_bookmark(bookmark.id)
 
     def _scope_label(self, bookmark: Bookmark) -> str:
         if bookmark.scope == "pak":
@@ -320,7 +439,7 @@ class BookmarksPanel(QWidget):
         return self.tr("Project") if bookmark.scope == "project" else self.tr("Unpacked")
 
     def _tooltip(self, bookmark: Bookmark) -> str:
-        parts = [bookmark.path]
+        parts = [bookmark.path, self.tr("Source: {scope}").format(scope=self._scope_label(bookmark))]
         if bookmark.note:
             parts.append(bookmark.note)
         if bookmark.tags:

@@ -6,18 +6,19 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QRunnable, Qt, QThreadPool, Signal
-from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPen, QPixmap
-from PySide6.QtWidgets import QApplication, QStyle
+lazy from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPen, QPixmap
+lazy from PySide6.QtWidgets import QApplication, QStyle
 
-from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.mesh.material_session import MeshMaterialSession
-from file_handlers.mesh.mesh_viewer import MeshThumbnailRenderer
-from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
-from utils.app_paths import application_root
-from utils.resource_file_utils import ResourceResolutionContext
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from file_handlers.mesh.material_session import MeshMaterialSession
+lazy from file_handlers.mesh.lit_preview import thumbnail
+lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
+lazy from utils.app_paths import application_root
+lazy from utils.resource_file_utils import ResourceResolutionContext
 
 
 THUMBNAIL_SIZE = 160
+MESH_BACKGROUND = (26, 26, 26)
 SOUND_EXTENSIONS = {"spck", "sbnk", "pck", "bnk"}
 THUMBNAIL_EXTENSIONS = SOUND_EXTENSIONS | {"mesh", "tex"}
 
@@ -65,13 +66,6 @@ class PakIconEntry:
 	label: str
 	path: str
 	is_dir: bool = False
-
-
-@dataclass(slots=True)
-class MeshThumbnailScene:
-	mesh: object
-	profiles: dict[str, object]
-	images: dict[str, tuple[str, object]]
 
 
 class PakIconModel(QAbstractListModel):
@@ -167,13 +161,13 @@ class _CachePruneTask(QRunnable):
 class _ThumbnailTask(QRunnable):
 	def __init__(
 		self, path, reader, cache_path, generation, texture_quality,
-		resource_context, resource_cache, upload_cache, signals,
+		resource_context, resource_cache, signals,
 	):
 		super().__init__()
 		self.path, self.reader, self.cache_path = path, reader, cache_path
 		self.generation, self.texture_quality, self.signals = generation, texture_quality, signals
 		self.resource_context = resource_context
-		self.resource_cache, self.upload_cache = resource_cache, upload_cache
+		self.resource_cache = resource_cache
 
 	def run(self):
 		result = QImage()
@@ -187,11 +181,11 @@ class _ThumbnailTask(QRunnable):
 				decoded = decode_tex_bytes_to_qimage(data)
 				result = decoded if decoded is not None else QImage()
 			elif ext == "mesh":
-				result = _prepare_mesh_scene(
+				result = _mesh_thumbnail(
 					data, self.path, self.texture_quality,
-					self.resource_context, self.resource_cache, self.upload_cache,
+					self.resource_context, self.resource_cache,
 				)
-			if isinstance(result, QImage) and not result.isNull():
+			if not result.isNull():
 				result = result.scaled(
 					THUMBNAIL_SIZE, THUMBNAIL_SIZE,
 					Qt.KeepAspectRatio, Qt.SmoothTransformation,
@@ -219,16 +213,11 @@ class PakThumbnailProvider(QObject):
 		self._pending: set[str] = set()
 		self._failed: set[str] = set()
 		self._resource_cache = OrderedDict()
-		self._upload_cache = OrderedDict()
 		self._signals = _ThumbnailSignals()
 		self._signals.ready.connect(self._on_ready)
 		self._pool = QThreadPool(self)
 		self._pool.setMaxThreadCount(1)  # CachedPakReader and mesh dependencies share one index.
 		QThreadPool.globalInstance().start(_CachePruneTask(cache_dir))
-		self._mesh_renderer = MeshThumbnailRenderer(
-			self._settings, THUMBNAIL_SIZE, None, self
-		)
-		self._mesh_renderer.rendered.connect(self._on_mesh_rendered)
 		style = QApplication.style()
 		self._folder = style.standardIcon(QStyle.SP_DirIcon)
 		self._file = style.standardIcon(QStyle.SP_FileIcon)
@@ -252,11 +241,6 @@ class PakThumbnailProvider(QObject):
 				digest.update(f"{Path(name).resolve()}:{stat.st_size}:{stat.st_mtime_ns}".encode())
 			except OSError:
 				digest.update(name.encode())
-		keys = (
-			"renderer_texture_quality", "mesh_viewer_use_vertex_colors",
-			"mesh_viewer_wireframe_mode", "mesh_viewer_lighting_mode",
-			"mesh_viewer_ambient", "mesh_viewer_diffuse",
-		)
 		if resource_context is not None:
 			digest.update(repr((
 				resource_context.project_dir,
@@ -264,7 +248,7 @@ class PakThumbnailProvider(QObject):
 				resource_context.path_prefix,
 				resource_context.game,
 			)).encode())
-		digest.update(repr(tuple(self._settings.get(key) for key in keys)).encode())
+		digest.update(repr((self._settings.get("renderer_texture_quality"),)).encode())
 		signature = digest.hexdigest()
 		if reader is self._source_reader and signature == self._signature:
 			return
@@ -276,12 +260,10 @@ class PakThumbnailProvider(QObject):
 		self._source_reader, self._reader, self._signature = reader, thumbnail_reader, signature
 		self._generation += 1
 		self._pool.clear()
-		self._mesh_renderer.cancel()
 		self._icons.clear()
 		self._pending.clear()
 		self._failed.clear()
 		self._resource_cache = OrderedDict()
-		self._upload_cache = OrderedDict()
 
 	def icon(self, path: str, is_dir: bool) -> QIcon:
 		if is_dir:
@@ -310,60 +292,35 @@ class PakThumbnailProvider(QObject):
 		self._pool.start(
 			_ThumbnailTask(
 				path, self._reader, cache_path, self._generation,
-				self._settings.get("renderer_texture_quality", "balanced"),
-				self._resource_context, self._resource_cache,
-				self._upload_cache, self._signals,
+				self._settings.get("renderer_texture_quality", "balanced"), self._resource_context,
+				self._resource_cache, self._signals,
 			)
 		)
 
 	def cancel_pending(self):
 		self._generation += 1
 		self._pool.clear()
-		self._mesh_renderer.cancel()
 		self._pending.clear()
 
-	def close(self):
-		self.cancel_pending()
-		self._mesh_renderer.close()
-
 	def _cache_path(self, path: str) -> Path:
-		key = hashlib.sha256(f"gl-v3:{self._signature}:{path.lower()}".encode()).hexdigest()
+		key = hashlib.sha256(f"device-v1:{self._signature}:{path.lower()}".encode()).hexdigest()
 		return self._cache_dir / key[:2] / f"{key}.png"
 
 	def _on_ready(self, path: str, generation: int, result):
 		if generation != self._generation:
 			return
-		if isinstance(result, MeshThumbnailScene):
-			self._mesh_renderer.enqueue(
-				(path, generation), result.mesh, result.profiles, result.images
-			)
-			return
-		self._finish(path, result)
-
-	def _on_mesh_rendered(self, token, image: QImage):
-		path, generation = token
-		if generation != self._generation:
-			return
-		if not image.isNull():
-			cache_path = self._cache_path(path)
-			cache_path.parent.mkdir(parents=True, exist_ok=True)
-			image.save(str(cache_path), "PNG")
-		self._finish(path, image)
-
-	def _finish(self, path: str, image: QImage):
 		self._pending.discard(path)
-		if not image.isNull():
-			self._icons[path] = QIcon(QPixmap.fromImage(image))
+		if not result.isNull():
+			self._icons[path] = QIcon(QPixmap.fromImage(result))
 		else:
 			self._failed.add(path)
 		self.ready.emit(path)
 
 
-def _prepare_mesh_scene(
+def _mesh_thumbnail(
 	data: bytes, path: str, quality: str,
-	resource_context: ResourceResolutionContext,
-	resource_cache=None, upload_cache=None,
-) -> MeshThumbnailScene:
+	resource_context: ResourceResolutionContext, resource_cache,
+) -> QImage:
 	handler = MeshHandler.from_bytes(
 		path,
 		data,
@@ -375,14 +332,13 @@ def _prepare_mesh_scene(
 		texture_quality=quality,
 		parse_in_subprocess=False,
 		resource_cache=resource_cache,
-		upload_cache=upload_cache,
 	)
-	materials.prepare_all()
-	for cache in (resource_cache, upload_cache):
-		while cache is not None and len(cache) > 32:
-			cache.popitem(last=False)
-	return MeshThumbnailScene(
-		handler.mesh,
-		dict(materials.profiles),
-		dict(materials.images),
-	)
+	materials.reload()
+	while len(resource_cache) > 32:
+		resource_cache.popitem(last=False)
+	pixels = thumbnail(handler, materials, THUMBNAIL_SIZE, MESH_BACKGROUND)
+	if pixels is None:
+		return QImage()
+	return QImage(
+		pixels.tobytes(), THUMBNAIL_SIZE, THUMBNAIL_SIZE, 4 * THUMBNAIL_SIZE, QImage.Format.Format_RGBA8888,
+	).copy()

@@ -1,10 +1,11 @@
 from typing import Any
 
 from file_handlers.base_handler import BaseFileHandler
-from file_handlers.sound.sound_profile import sound_profile_for_handler
-from utils.resource_file_utils import resource_version_from_path
-from .wel_file import WELFile, WELEventEntry
-from PySide6.QtGui import QStandardItem
+lazy from file_handlers.sound.sound_profile import sound_profile_for_handler
+lazy from utils.resource_file_utils import resource_version_from_path
+lazy from .wel_file import WELFile, WELEventEntry
+lazy from PySide6.QtGui import QStandardItem, QStandardItemModel
+lazy from .wel_viewer import WelViewer
 
 
 class WelHandler(BaseFileHandler):
@@ -47,7 +48,6 @@ class WelHandler(BaseFileHandler):
         if not self.wel:
             return
 
-        from PySide6.QtGui import QStandardItem, QStandardItemModel
 
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(["Field", "Value"])
@@ -120,8 +120,6 @@ class WelHandler(BaseFileHandler):
             free_area_item.appendRow([QStandardItem(f"slot[{index}]"), QStandardItem(str(value))])
 
     def create_viewer(self):
-        from .wel_viewer import WelViewer
-
         viewer = WelViewer(self)
         viewer.modified_changed.connect(self.modified_changed.emit)
         return viewer

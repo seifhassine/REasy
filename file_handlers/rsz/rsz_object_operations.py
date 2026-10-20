@@ -1,29 +1,21 @@
-"""
-Helper class for handling object operations in RSZ files.
-
-This file contains utility methods for:
-- Creating GameObjects
-- Deleting GameObjects
-- Handling components 
-- Managing folders
-"""
-
-from PySide6.QtWidgets import QMessageBox
-from .rsz_data_types import (
+import weakref
+lazy from PySide6.QtWidgets import QMessageBox
+lazy from .rsz_data_types import (
     ObjectData, ArrayData,
     UserDataData
 )
-from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from file_handlers.rsz.utils.rsz_embedded_utils import (
+lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
+lazy from file_handlers.rsz.utils.rsz_embedded_utils import (
     create_scn19_userdata_info,
     initialize_scn19_userdata_runtime,
     shift_embedded_instances_for_insertion,
+    create_embedded_instance_info,
 )
-from file_handlers.rsz.utils.rsz_field_utils import (
+lazy from file_handlers.rsz.utils.rsz_field_utils import (
     collect_userdata_reference_values,
     is_type_assignable,
 )
-from file_handlers.rsz.utils.rsz_gameobject_utils import (
+lazy from file_handlers.rsz.utils.rsz_gameobject_utils import (
     add_guid_to_settings,
     create_gameobject_entry,
     find_gameobject_by_id,
@@ -31,16 +23,19 @@ from file_handlers.rsz.utils.rsz_gameobject_utils import (
     remove_from_object_table,
     update_gameobject_hierarchy,
 )
+lazy from .rsz_array_operations import RszArrayOperations
+lazy from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszPrefabInfo
 
 
 class RszObjectOperations:
-    """Helper class for handling object creation and deletion in RSZ files"""
-    
     def __init__(self, viewer):
-        """Initialize with a reference to the RSZ viewer"""
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def create_folder(self, name: str, parent_id: int):
         """
@@ -91,7 +86,6 @@ class RszObjectOperations:
             "parent_id": parent_id
         }
     def create_gameobject(self, name, parent_id):
-        """Create a new GameObject with the given name and parent ID"""
         if not self.scn:
             return False
             
@@ -127,7 +121,7 @@ class RszObjectOperations:
                 "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(insertion_index),
                 "children": [],
             }
-            first_field.is_gameobject_or_folder_name = go_dict
+            first_field.is_gameobject_or_folder_name = go_dict["data"]
 
         self.scn.parsed_elements[insertion_index] = gameobject_fields
         object_table_index = len(self.scn.object_table)
@@ -151,11 +145,9 @@ class RszObjectOperations:
         }
 
     def _calculate_gameobject_insertion_index(self):
-        """Calculate the best insertion index for a new GameObject instance"""
         return len(self.scn.instance_infos)
 
     def delete_gameobject(self, gameobject_id):
-        """Delete a GameObject with the given ID"""
         if gameobject_id < 0 or gameobject_id >= len(self.scn.object_table):
             QMessageBox.warning(self.viewer, "Error", f"Invalid GameObject ID: {gameobject_id}")
             return False
@@ -174,7 +166,6 @@ class RszObjectOperations:
         return success
     
     def _collect_gameobject_hierarchy_by_reference(self, root_go):
-        """Collect all GameObjects in the hierarchy starting from the root"""
         go_objects = {go.id: go for go in self.scn.gameobjects}
         
         child_map = {}
@@ -204,7 +195,6 @@ class RszObjectOperations:
         return True
     
     def _delete_gameobject_directly(self, gameobject):
-        """Delete a GameObject and its hierarchy directly"""
         prefabs_to_delete = set()
         gameobject_refs_to_delete = self._collect_gameobject_hierarchy_by_reference(gameobject)
 
@@ -217,7 +207,6 @@ class RszObjectOperations:
             
             go_instance_id = self.scn.object_table[go.id]
             
-            #print(f"  Deleting GameObject instance {go_instance_id} (object_id: {go.id})")
         
             nested_objects = RszInstanceOperations.find_nested_objects(
                 self.scn.parsed_elements, go_instance_id, self.scn.object_table
@@ -240,11 +229,9 @@ class RszObjectOperations:
         return True
     
     def _delete_all_components_of_gameobject(self, gameobject):
-        """Delete all components attached to a GameObject"""
         if gameobject.component_count <= 0:
             return
             
-        #print(f"GameObject {gameobject.id} has {gameobject.component_count} components")
         
         if gameobject.id >= len(self.scn.object_table):
             print(f"Warning: GameObject ID {gameobject.id} is out of bounds, cannot delete components")
@@ -299,11 +286,9 @@ class RszObjectOperations:
             
         prefab_to_delete = self.scn.prefab_infos[prefab_id]
         
-        #print(f"  Removing prefab {prefab_id} with path: {path_str}")
         
         if prefab_to_delete in self.scn._prefab_str_map:
             del self.scn._prefab_str_map[prefab_to_delete]
-            #print(f"  Removed string map entry for prefab {prefab_id}")
         else:
             print(f"  Warning: Prefab {prefab_id} not found in string map")
         
@@ -315,25 +300,16 @@ class RszObjectOperations:
                 del self.scn._prefab_str_map[prefab]
 
         self.scn.prefab_infos = [e for e in self.scn.prefab_infos if e != prefab_to_delete]
-        #print(f"  Prefab {prefab_id} removed from prefab_infos array")
         
         print("deleting prefab number:", prefab_id)
         for go in self.scn.gameobjects:
             if go.prefab_id > prefab_id:
                 go.prefab_id -= 1
     
-        #print(f"  Updated {updated_count} objects referencing prefabs")
 
         return True
 
     def _update_instance_hierarchy(self, instance_id, parent_instance_id=None):
-        """
-        Update instance hierarchy with parent-child relationship
-        
-        Args:
-            instance_id: The instance ID to update
-            parent_instance_id: Optional parent instance ID
-        """
         if instance_id not in self.scn.instance_hierarchy:
             self.scn.instance_hierarchy[instance_id] = {"children": [], "parent": None}
         
@@ -357,7 +333,6 @@ class RszObjectOperations:
                 self.scn.instance_hierarchy[parent_instance_id]["children"].append(instance_id)
 
     def _calculate_component_insertion_index(self, gameobject):
-        """Calculate the best insertion index for a new component"""
         existing_component_instance_ids = []
         for comp_offset in range(1, gameobject.component_count + 1):
             comp_object_id = gameobject.id + comp_offset
@@ -373,7 +348,6 @@ class RszObjectOperations:
         if go_instance_id > 0:
             return max(go_instance_id + 1, len(self.scn.instance_infos))
 
-        # Fallback: append at end
         return len(self.scn.instance_infos)
     
     def _delete_folder_backing_instance(self, folder):
@@ -427,7 +401,6 @@ class RszObjectOperations:
         
         collect_folders_recursive(target_folder)
         
-        #print(f"Found {len(folders_to_delete)} folders to delete")
         
         folder_ids = {f.id for f in folders_to_delete}
         
@@ -436,7 +409,6 @@ class RszObjectOperations:
             if go.parent_id in folder_ids:
                 gameobjects_to_delete.append(go)
         
-        #print(f"Found {len(gameobjects_to_delete)} GameObjects to delete")
         
         for go in reversed(gameobjects_to_delete):
             self._delete_gameobject_directly(go)
@@ -454,9 +426,6 @@ class RszObjectOperations:
         self.viewer.mark_modified()
         return True
 
-    # -------------------------------
-    # UserData modifications (non-embedded RSZ)
-    # -------------------------------
     def _find_reference_parent_info(self, field_obj):
         """Locate parent instance/field and array context for a given field object."""
         parent_instance_id = None
@@ -492,8 +461,6 @@ class RszObjectOperations:
         return parent_instance_id, parent_field_name, is_array, array_data, element_index
 
     def _compute_object_insertion_index(self, parent_instance_id, parent_field_name, is_array, element_index=None):
-        """Compute insertion index for creating a new object instance based on its parent position."""
-        from .rsz_array_operations import RszArrayOperations
         if not self.viewer.array_operations:
             self.viewer.array_operations = RszArrayOperations(self.viewer)
         if parent_instance_id is None or parent_field_name is None:
@@ -623,7 +590,6 @@ class RszObjectOperations:
                 return True
 
             if not self.viewer.array_operations:
-                from .rsz_array_operations import RszArrayOperations
                 self.viewer.array_operations = RszArrayOperations(self.viewer)
             self.viewer.array_operations._delete_instance_and_children(current_instance_id)
             object_field.value = 0
@@ -650,7 +616,6 @@ class RszObjectOperations:
             )
         ):
             if not self.viewer.array_operations:
-                from .rsz_array_operations import RszArrayOperations
                 self.viewer.array_operations = RszArrayOperations(self.viewer)
             self.viewer.array_operations._delete_instance_and_children(current_instance_id)
             object_field.value = 0
@@ -674,8 +639,6 @@ class RszObjectOperations:
         return True
 
     def _compute_userdata_insertion_index(self, parent_instance_id, parent_field_name, is_array):
-        """Compute insertion index for creating a new userdata instance based on its parent position."""
-        from .rsz_array_operations import RszArrayOperations
         if not self.viewer.array_operations:
             self.viewer.array_operations = RszArrayOperations(self.viewer)
         if parent_instance_id is None or parent_field_name is None:
@@ -685,16 +648,11 @@ class RszObjectOperations:
         return self.viewer.array_operations._calculate_insertion_index(parent_instance_id, parent_field_name)
 
     def _ensure_header_userdata_string(self, string_value: str, type_id: int | None = None, crc_value: int | None = None):
-        """Ensure there is a header-level UserDataInfo entry for the given string (normal RSZ).
-        If creating a new entry, set its hash to the provided type_id and crc to crc_value when available.
-        """
         for ui in getattr(self.scn, 'userdata_infos', []) or []:
             if self.scn._userdata_str_map.get(ui) == string_value:
-                # Update the hash if a type_id is provided and it differs
                 if type_id is not None and ui.hash != type_id:
                     ui.hash = type_id
                 return ui
-        from file_handlers.rsz.rsz_file import RSZUserDataInfo
         new_ui = RSZUserDataInfo()
         new_ui.hash = int(type_id) if type_id is not None else 0
         new_ui.crc = self.viewer._parse_crc_value(crc_value) if crc_value is not None else 0
@@ -725,9 +683,6 @@ class RszObjectOperations:
         return False
 
     def _try_cleanup_unused_userdata_instance(self, instance_id: int) -> bool:
-        """If the given userdata instance is no longer referenced by any field, delete it and
-        its paired RSZUserDataInfo/header entry, and update references/ID mappings accordingly.
-        """
         if not (instance_id and 0 <= instance_id < len(self.scn.instance_infos)):
             return False
         refs = RszInstanceOperations.find_all_instance_references(self.scn.parsed_elements, instance_id)
@@ -755,9 +710,6 @@ class RszObjectOperations:
         return True
 
     def modify_userdata_field(self, userdata_field, new_string: str, selected_type: str) -> bool:
-        """Modify a UserDataData field in normal RSZ files according to sharing rules.
-        Returns True on success, False otherwise.
-        """
         if getattr(self.scn, 'has_embedded_rsz', False):
             return False
 
@@ -771,7 +723,6 @@ class RszObjectOperations:
         string_is_shared = False
 
         if current_instance_id > 0:
-            from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
             refs = RszInstanceOperations.find_all_instance_references(self.scn.parsed_elements, current_instance_id)
             total_refs = sum(len(v) for v in refs.values())
             our_only_ref = False
@@ -882,8 +833,6 @@ class RszObjectOperations:
         return True
         
     def create_component_for_gameobject(self, gameobject_instance_id, component_type):
-        """Create a new component on the specified GameObject"""
-        # Find the target GameObject
         target_go = next(
             (go for go in self.scn.gameobjects
              if self.scn.object_table[go.id] == gameobject_instance_id),
@@ -985,7 +934,6 @@ class RszObjectOperations:
         }
 
     def delete_component_from_gameobject(self, component_instance_id, owner_go_id=None):
-        """Delete a component from its GameObject"""
         if component_instance_id <= 0 or component_instance_id >= len(self.scn.instance_infos):
             raise ValueError(f"Invalid component instance ID: {component_instance_id}")
         
@@ -1017,7 +965,6 @@ class RszObjectOperations:
         
         to_delete_instances = sorted(nested_objects, reverse=True)
            
-        # Find and collect additional UserData instances referenced by the instances being deleted
         const_to_delete_instances = to_delete_instances.copy()
         for instance_id in const_to_delete_instances:
             fields = self.scn.parsed_elements.get(instance_id, {})
@@ -1028,7 +975,7 @@ class RszObjectOperations:
         userdata_reference_map = {}
         for key, instance in self.scn.parsed_elements.items():
             if key in to_delete_instances:
-                continue  # Skip instances that are already being deleted
+                continue
                 
             for userdata_id in collect_userdata_reference_values(instance, positive_only=False):
                 if userdata_id and userdata_id in to_delete_instances:
@@ -1040,7 +987,6 @@ class RszObjectOperations:
         to_delete_instances = []
         for instance_id in const_to_delete_instances:
             if instance_id in userdata_reference_map and userdata_reference_map[instance_id] > 0:
-                #print(f"  Excluding UserData instance {instance_id} from deletion as it's referenced {userdata_reference_map[instance_id]} times elsewhere")
                 continue
             to_delete_instances.append(instance_id)
 
@@ -1070,15 +1016,6 @@ class RszObjectOperations:
         return True
     
     def manage_gameobject_prefab(self, gameobject, new_prefab_path):
-        """Create or modify a prefab association for a GameObject
-        
-        Args:
-            gameobject_id: The GameObject's ID in the object table
-            new_prefab_path: Path string for the prefab
-            
-        Returns:
-            bool: True if the operation was successful
-        """
         used_elsewhere = False
         for go in self.scn.gameobjects:
             if go.prefab_id == gameobject.prefab_id:
@@ -1090,7 +1027,6 @@ class RszObjectOperations:
                 print("No prefab_infos array in scene")
                 return False
                 
-            from file_handlers.rsz.rsz_file import RszPrefabInfo
             new_prefab = RszPrefabInfo()
             
             prefab_id = len(self.scn.prefab_infos)
@@ -1124,14 +1060,7 @@ class RszObjectOperations:
         return True
 
     def _create_userdata_instance_for_field(self, field_type, current_insertion_index, userdata_string=None):
-        """
-        Create a UserDataData instance for a field.
-        - If the current RSZ file format supports embedded RSZ (SCN.19 style), create a
-          Scn19RSZUserDataInfo entry with embedded structures.
-        - Otherwise, create a standard RSZUserDataInfo (16-byte) entry.
-        This is called BEFORE the component instance is created to ensure proper ordering.
-        Returns the instance ID of the created UserDataData instance.
-        """
+        """Call it before creating the owning instance, so children come first."""
         type_info, type_id = self.type_registry.find_type_by_name(field_type)
         if not type_info:
             print(f"Warning: Type not found for UserDataData field: {field_type}")
@@ -1166,17 +1095,10 @@ class RszObjectOperations:
                 modified=False,
             )
         
-            def mark_modified_func():
-                userdata_info.modified = True
-                self.viewer.mark_modified()
-            userdata_info.mark_modified = mark_modified_func
-        
             self._create_embedded_instance_with_nested_objects(
                 userdata_info, type_info, type_id, field_type
             )
         else:
-            from file_handlers.rsz.rsz_file import RSZUserDataInfo
-
             userdata_info = RSZUserDataInfo()
             userdata_info.instance_id = current_insertion_index
             
@@ -1202,10 +1124,6 @@ class RszObjectOperations:
         return current_insertion_index
 
     def _create_embedded_instance_with_nested_objects(self, userdata_info, type_info, type_id, type_name):
-        """
-        Create an embedded instance with all its nested objects properly instantiated.
-        This follows the same pattern as create_component_for_gameobject to ensure proper field ordering.
-        """
         if not hasattr(userdata_info, 'embedded_instance_infos'):
             userdata_info.embedded_instance_infos = []
         if not hasattr(userdata_info, 'embedded_instances'):
@@ -1371,7 +1289,6 @@ class RszObjectOperations:
         userdata_info.embedded_rsz_header.userdata_count = len(getattr(userdata_info, 'embedded_userdata_infos', []))
     
     def _create_instance_info(self, type_id, crc):
-        """Create an instance info structure"""
         class InstanceInfo:
             def __init__(self):
                 self.type_id = 0
@@ -1383,17 +1300,7 @@ class RszObjectOperations:
         return info
     
     def _create_embedded_userdata_in_context(self, field_type, parent_rui, parent_instance_id=None, array_data=None):
-        """
-        Create a UserDataData with embedded RSZ within the parent's embedded context.
-        This is for nested embedded RSZ - the instance and RSZUserDataInfo are created
-        in the parent's embedded structures.
-        
-        Args:
-            field_type: The type name for the UserDataData
-            parent_rui: The parent RSZUserDataInfo context
-            parent_instance_id: The instance ID that owns the array (for field ordering)
-            array_data: The array that will contain this UserData (for field ordering)
-        """
+        """``parent_instance_id`` is the insertion index, not a parent ID; ``array_data`` is unused."""
         type_info, type_id = self.type_registry.find_type_by_name(field_type)
         if not type_info:
             print(f"Warning: Type not found for nested UserDataData field: {field_type}")
@@ -1432,13 +1339,6 @@ class RszObjectOperations:
             userdata_info.embedded_rsz_header.instance_count = 2
             userdata_info.embedded_rsz_header.userdata_count = 0
             
-            def mark_modified_func():
-                userdata_info.modified = True
-                if hasattr(parent_rui, 'mark_modified'):
-                    parent_rui.mark_modified()
-            
-            userdata_info.mark_modified = mark_modified_func
-            
             if type_info:
                 self._create_embedded_instance_with_nested_objects(
                     userdata_info, type_info, type_id, field_type
@@ -1454,11 +1354,9 @@ class RszObjectOperations:
             parent_rui.embedded_instance_infos = []
         
         while len(parent_rui.embedded_instance_infos) <= next_id:
-            from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
             null_info = create_embedded_instance_info(0, self.type_registry)
             parent_rui.embedded_instance_infos.append(null_info)
         
-        from file_handlers.rsz.utils.rsz_embedded_utils import create_embedded_instance_info
         instance_info = create_embedded_instance_info(type_id, self.type_registry)
         parent_rui.embedded_instance_infos[next_id] = instance_info
         

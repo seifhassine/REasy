@@ -6,11 +6,12 @@ from typing import Any, Dict
 import hashlib
 import json
 import os
-import requests
-from requests.adapters import HTTPAdapter
-from urllib3.util.retry import Retry
+lazy import requests
+lazy from requests.adapters import HTTPAdapter
+lazy from urllib3.util.retry import Retry
 
-from firebase.config.firebase_config import FirebaseConfig
+lazy from firebase.config.firebase_config import FirebaseConfig
+lazy from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
 
 _AUTH_PATH = os.path.join(
@@ -287,7 +288,6 @@ class RszCommunityTemplateManager:
         if game not in ALLOWED:
             return {"success": False, "message": "Unknown game id."}
 
-        from file_handlers.rsz.rsz_template_manager import RszTemplateManager
         meta = RszTemplateManager.load_metadata()
         tdata = meta.get("templates", {}).get(template_id)
         if not tdata:
@@ -353,8 +353,6 @@ class RszCommunityTemplateManager:
                 return {"success": False, "message": "Could not fetch file"}
 
             blob = file_r.content
-
-            from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
             md5  = hashlib.md5(blob).hexdigest()
             meta = json.loads(blob.decode("utf-8"))

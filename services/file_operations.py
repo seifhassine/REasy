@@ -12,16 +12,17 @@ from typing import Any
 
 from PySide6.QtCore import QFile
 
-from services.file_io import (
+lazy from services.file_io import (
     FileFingerprint,
     copy_file_atomically,
     file_fingerprint,
     reserve_new_file,
 )
+from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER
 
 MAX_FILE_OPERATIONS = 256
 FILE_OPERATION_PLAN_TTL_SECONDS = 10 * 60
-_PROTECTED_PARTS = frozenset({".git", ".reasy_project.json"})
+_PROTECTED_PARTS = frozenset({".git", PROJECT_METADATA_FOLDER, PROJECT_CONFIG_NAME})
 
 
 class FileOperationError(ValueError):
@@ -101,14 +102,11 @@ class _RollbackRecord:
 
 def _is_link_or_junction(path: Path) -> bool:
     try:
-        if path.is_symlink():
-            return True
-        is_junction = getattr(path, "is_junction", None)
-        if callable(is_junction) and is_junction():
+        if path.is_symlink() or path.is_junction():
             return True
         if os.name == "nt":
             try:
-                attributes = int(getattr(path.lstat(), "st_file_attributes", 0))
+                attributes = path.lstat().st_file_attributes
             except FileNotFoundError:
                 return False
             return bool(attributes & stat.FILE_ATTRIBUTE_REPARSE_POINT)
@@ -126,10 +124,7 @@ def _suffix_signature(path: Path) -> tuple[str, ...]:
 
 
 def _is_reserved_name(name: str) -> bool:
-    checker = getattr(os.path, "isreserved", None)
-    if callable(checker):
-        return bool(checker(name))
-    return Path(name).is_reserved()
+    return os.name == "nt" and os.path.isreserved(name)
 
 
 class FolderFileOperations:

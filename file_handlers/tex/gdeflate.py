@@ -3,7 +3,7 @@ from __future__ import annotations
 import ctypes
 import os
 import threading
-from concurrent.futures import ThreadPoolExecutor
+lazy from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 
@@ -43,7 +43,7 @@ def _load_library():
         if not path.is_file():
             continue
         try:
-            if os.name == "nt" and hasattr(os, "add_dll_directory"):
+            if os.name == "nt":
                 _DLL_DIR = os.add_dll_directory(str(path.parent))
             dll = ctypes.CDLL(str(path))
             dll.libdeflate_alloc_gdeflate_decompressor.restype = ctypes.c_void_p
@@ -78,7 +78,7 @@ def _parallel_ranges(tile_count: int) -> list[tuple[int, int]]:
     """Split large streams into balanced ranges without oversubscribing small ones."""
     if tile_count < _MIN_PARALLEL_TILES:
         return [(0, tile_count)]
-    available_workers = min(_MAX_WORKERS, os.cpu_count() or 1, tile_count // 4)
+    available_workers = min(_MAX_WORKERS, os.process_cpu_count() or 1, tile_count // 4)
     if available_workers < 2:
         return [(0, tile_count)]
 

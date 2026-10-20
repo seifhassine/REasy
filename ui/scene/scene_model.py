@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import numpy as np
+lazy import numpy as np
 
 
 @dataclass(slots=True)
@@ -10,6 +10,10 @@ class SceneDrawBatch:
     indices: np.ndarray
     material_name: str = ""
     part_index: int | None = None
+    alpha_test: bool = False
+    transparent: bool = False
+    # (LOD, number in ``mesh_lod_parts`` order) of the main geometry submesh; None for other batches.
+    submesh: tuple[int, int] | None = None
 
 
 @dataclass(slots=True)
@@ -21,18 +25,28 @@ class SceneDrawMesh:
     force_solid: bool = False
     ignore_highlight_filter: bool = False
     normals: np.ndarray | None = None
+    tangents: np.ndarray | None = None
     uvs: np.ndarray | None = None
+    uv1: np.ndarray | None = None
+    uv2: np.ndarray | None = None
     colors: np.ndarray | None = None
     material_name: str = ""
     batches: list[SceneDrawBatch] = field(default_factory=list)
     transform_matrix: np.ndarray | None = None
-    geometry_key: str = ""
+    bounds_minimum: np.ndarray | None = None
+    bounds_maximum: np.ndarray | None = None
+    # Whether the recalculated normals leave the edges' out (``via.render.Mesh``'s ``NREdgeExcluded``).
+    edge_excluded: bool = False
+    # ``via.render.Mesh``'s ``DecalReciveMode``; 0 is its default.
+    decal_receive_mode: int = 0
+    # ``via.render.Mesh``'s ``TransparentBias``; 0 is its default.
+    transparent_bias: float = 0.0
+    # One of ``stmesh_file.PLACEMENTS``.
+    speedtree_placement: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class SceneSkinningBinding:
-    """Immutable bind-pose vertex data for a renderer skinning backend."""
-
     positions: np.ndarray
     normals: np.ndarray | None
     joint_indices: np.ndarray
@@ -78,7 +92,3 @@ class SceneSkinningBinding:
         object.__setattr__(self, "normals", normals)
         object.__setattr__(self, "joint_indices", joints)
         object.__setattr__(self, "weights", weights)
-
-    @property
-    def group_count(self) -> int:
-        return (self.joint_indices.shape[1] + 3) // 4

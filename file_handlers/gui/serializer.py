@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from .errors import GuiWriteError
-from .model import GuiDocument
-from .profiles import GuiFormatProfile, gui_profile
+lazy from .errors import GuiWriteError
+lazy from .model import GuiDocument
+lazy from .profiles import GuiFormatProfile, gui_profile
 
 
 def serialize_gui(

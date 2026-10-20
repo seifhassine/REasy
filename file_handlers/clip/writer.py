@@ -5,7 +5,7 @@ from collections import Counter
 from copy import deepcopy
 
 from .enums import CLIP_MAGIC, PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
-from .parser import (
+lazy from .parser import (
     ParsedClip,
     header_size,
     iter_header_fields,
@@ -14,7 +14,7 @@ from .parser import (
     prop_size,
 )
 from .reader import ClipParserError
-from .structures import (
+lazy from .structures import (
     ActionKey,
     BoolKey,
     Key,
@@ -23,7 +23,7 @@ from .structures import (
     SpeedPoint,
     validate_path_point3d,
 )
-from utils.hash_util import murmur3_hash
+lazy from utils.hash_util import murmur3_hash
 
 
 INTERPOLATION_TYPE_HERMITE = 0x5
@@ -478,21 +478,21 @@ class ClipWriter:
             struct.pack_into("<Q", out, data_size_pos, len(out))
         if data_size_dup_pos is not None:
             struct.pack_into("<Q", out, data_size_dup_pos, len(out))
-        return bytes(out)
+        return out.take_bytes()
 
     @classmethod
     def _reachable_clip_infos(cls, parsed: ParsedClip) -> list:
         """Return track-owned ClipInfos in stable table order."""
         return cls._retain_reference_order(
             parsed.clip_infos,
-            [clip_info for track in parsed.tracks for clip_info in track.clip_infos],
+            [*track.clip_infos for track in parsed.tracks],
         )
 
     @staticmethod
     def _semantic_root_occurrences(parsed: ParsedClip) -> list:
         """Return live root occurrences, including repeated pointer values."""
         if parsed.tracks:
-            return [node for track in parsed.tracks for node in track.child_nodes]
+            return [*track.child_nodes for track in parsed.tracks]
         return [] if parsed.header.version >= 85 else list(parsed.root_nodes)
 
     def _rebuild_tables_from_graph(self, parsed: ParsedClip):
@@ -588,7 +588,7 @@ class ClipWriter:
             self._pack_contiguous_sequences(
                 self._retain_reference_order(
                     old_table,
-                    [key for sequence in key_sequences[kind] for key in sequence],
+                    [*sequence for sequence in key_sequences[kind]],
                 ),
                 key_sequences[kind],
                 "Property key",
@@ -606,7 +606,7 @@ class ClipWriter:
         speed_points = self._pack_contiguous_sequences(
             self._retain_reference_order(
                 parsed.speed_points,
-                [point for prop in properties for point in prop.speed_points_ref],
+                [*prop.speed_points_ref for prop in properties],
             ),
             [prop.speed_points_ref for prop in properties if prop.speed_points_ref],
             "Property speed-point",
@@ -644,7 +644,7 @@ class ClipWriter:
                 clip.root_node_count = len(clip.root_nodes)
         else:
             required_roots = (
-                [node for track in parsed.tracks for node in track.child_nodes]
+                [*track.child_nodes for track in parsed.tracks]
                 if parsed.tracks else old_root_nodes
             )
             # Root and track-child pointer tables can have different ordering,
@@ -697,7 +697,7 @@ class ClipWriter:
         node_roots = self._semantic_root_occurrences(parsed)
         all_nodes = self._walk_acyclic(node_roots, "child_nodes", "Node")
 
-        property_roots = [prop for node in all_nodes for prop in node.properties]
+        property_roots = [*node.properties for node in all_nodes]
         all_properties = self._walk_acyclic(property_roots, "child_properties", "Property")
         self._validate_counts(parsed, clip_infos, node_roots, all_nodes, all_properties)
         self._validate_single_ownership(parsed, all_nodes, all_properties)
@@ -771,7 +771,7 @@ class ClipWriter:
         interpolation_objects = [
             key for prop in all_properties for key in self._property_payload_keys(prop)
             if isinstance(key, Key)
-        ] + [point for prop in all_properties for point in prop.speed_points_ref]
+        ] + [*prop.speed_points_ref for prop in all_properties]
         for item in interpolation_objects:
             if (
                 item.interpolation_type in {INTERPOLATION_TYPE_HERMITE, INTERPOLATION_TYPE_BEZIER3D}
@@ -781,7 +781,7 @@ class ClipWriter:
 
         if parsed.header.version >= 85:
             for track in parsed.tracks:
-                clip_roots = [node for clip in track.clip_infos for node in clip.root_nodes]
+                clip_roots = [*clip.root_nodes for clip in track.clip_infos]
                 if self._identity_counts(track.child_nodes) != self._identity_counts(clip_roots):
                     raise ClipParserError(
                         "A v85+ track child occurrence must correspond to exactly one clip root occurrence"
@@ -928,7 +928,7 @@ class ClipWriter:
 
         rank = {id(item): index for index, item in enumerate(universe)}
         blocks.sort(key=lambda block: min(rank[id(item)] for item in block))
-        return [item for block in blocks for item in block]
+        return [*block for block in blocks]
 
     @staticmethod
     def _indices_for(items: list, index_by_id: dict[int, int], label: str) -> list[int]:

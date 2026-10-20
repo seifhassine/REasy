@@ -1,0 +1,69 @@
+{
+ "format": 1,
+ "game": "MHWS",
+ "resource_version": 240906211,
+ "scene": {
+  "subdivisionLevel": [
+   30.0
+  ]
+ },
+ "source": {
+  "buffer": "SceneInfo",
+  "fields": [
+   "subdivisionLevel"
+  ],
+  "captures": [
+   {
+    "capture": "MonsterHunterWilds_frame21612.rdc",
+    "draws": 2148,
+    "tessellated": 3,
+    "tessellated_without_buffer": 0,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        30.0
+       ]
+      },
+      "draws": 23
+     }
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame22611.rdc",
+    "draws": 929,
+    "tessellated": 0,
+    "tessellated_without_buffer": 0,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        30.0
+       ]
+      },
+      "draws": 20
+     }
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame64816.rdc",
+    "draws": 1924,
+    "tessellated": 6,
+    "tessellated_without_buffer": 0,
+    "other": 20,
+    "values": [
+     {
+      "fields": {
+       "subdivisionLevel": [
+        30.0
+       ]
+      },
+      "draws": 26
+     }
+    ]
+   }
+  ]
+ }
+}

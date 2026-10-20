@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
-from PySide6.QtCore import QCoreApplication, QLibraryInfo, QLocale, QTranslator
-from PySide6.QtGui import QGuiApplication
+lazy from PySide6.QtCore import QCoreApplication, QLibraryInfo, QLocale, QTranslator
+lazy from PySide6.QtGui import QGuiApplication
 
-from utils.app_paths import resource_path
+lazy from utils.app_paths import resource_path
 
 
 @dataclass(frozen=True)

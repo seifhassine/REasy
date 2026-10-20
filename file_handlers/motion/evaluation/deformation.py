@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Hashable
 from dataclasses import dataclass
-from typing import Hashable
 import math
 
 from ..mot.model import AnimationNode, KeyTrack, Motion, TrackFamily

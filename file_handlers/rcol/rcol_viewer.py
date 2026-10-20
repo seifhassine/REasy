@@ -5,7 +5,7 @@ from typing import Any
 import os
 import uuid
 
-import numpy as np
+lazy import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSignalBlocker
 from PySide6.QtWidgets import (
     QComboBox,
@@ -36,26 +36,27 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.rsz.rsz_handler import RszHandler
-from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-from file_handlers.pyside.component_selector import ComponentSelectorDialog
-from utils.id_manager import IdManager
+lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+lazy from file_handlers.pyside.component_selector import ComponentSelectorDialog
+lazy from utils.id_manager import IdManager
 
-from .request_set import IgnoreTag, RequestSet
-from .rcol_structures import RcolGroup, RcolShape
-from .shape_types import ShapeType, create_shape
+lazy from .request_set import IgnoreTag, RequestSet
+lazy from .rcol_structures import RcolGroup, RcolShape
+lazy from .shape_types import ShapeType, create_shape
 from .rcol_scene import SceneAttachment, build_scene_meshes
-from file_handlers.mesh.mesh_file import MeshFile
-from file_handlers.mesh.mesh_handler import MeshHandler
-from file_handlers.mesh.material_session import (
+lazy from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
+lazy from file_handlers.mesh.mesh_handler import MeshHandler
+lazy from file_handlers.mesh.material_session import (
     MeshMaterialCollection,
     MeshMaterialSession,
 )
-from ui.scene.mesh_scene import build_mesh_scene
+lazy from file_handlers.mesh.scene_lit import SceneDevicePreview
+lazy from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawMesh
-from ui.scene.scene_preview import ScenePreviewWidget
-from utils.number_format import format_display_value
-from utils.resource_file_utils import resolve_handler_resource_data
+lazy from ui.scene.scene_preview import ScenePreviewWidget
+lazy from utils.number_format import format_display_value
+lazy from utils.resource_file_utils import resolve_handler_resource_data
 
 
 MESH_LOAD_FAILED_TITLE = QT_TRANSLATE_NOOP("RcolViewer", "Mesh Load Failed")
@@ -83,8 +84,6 @@ class MeshAttachmentEntry:
 
 
 class RcolViewer(QWidget):
-    """High-level RCOL editor with relationship-first UX."""
-
     modified_changed = Signal(bool)
     NODE_ROLE = Qt.UserRole + 1
     TAB_ACTIONS = {
@@ -113,6 +112,7 @@ class RcolViewer(QWidget):
         self._headless_body: QVBoxLayout | None = None
         self._scene_preview: ScenePreviewWidget | None = None
         self._mesh_materials: MeshMaterialCollection | None = None
+        self._device_preview: SceneDevicePreview | None = None
         self._preview_tabs: QTabWidget | None = None
         self._dock_host: QMainWindow | None = None
         self._preview_dock: QDockWidget | None = None
@@ -140,7 +140,6 @@ class RcolViewer(QWidget):
     def rcol(self):
         return getattr(self.handler, "rcol", None)
 
-    # ---------- UI ----------
     def _setup_ui(self):
         outer_layout = QVBoxLayout(self)
         outer_layout.setContentsMargins(0, 0, 0, 0)
@@ -258,6 +257,8 @@ class RcolViewer(QWidget):
         self._scene_preview.texture_quality_changed.connect(
             self._mesh_materials.set_texture_quality
         )
+        self._device_preview = SceneDevicePreview(self._scene_preview, self._mesh_materials, self)
+        self._device_preview.set_active(True)
         preview_layout.addWidget(self._scene_preview, 1)
         self._preview_tabs.addTab(preview_tab, "3D")
 
@@ -306,6 +307,8 @@ class RcolViewer(QWidget):
         self._on_preview_dock_top_level_changed(dock.isFloating())
 
     def cleanup(self):
+        if self._device_preview is not None:
+            self._device_preview.set_active(False)
         materials, self._mesh_materials = self._mesh_materials, None
         if materials is not None:
             materials.clear()
@@ -328,7 +331,6 @@ class RcolViewer(QWidget):
         else:
             self._preview_dock.setWindowTitle("")
 
-    # ---------- Navigation ----------
     def _create_nav_tree(self) -> QTreeWidget:
         tree = QTreeWidget()
         tree.setHeaderHidden(True)
@@ -466,7 +468,6 @@ class RcolViewer(QWidget):
                 return tree, item
         return None
 
-    # ---------- Selection and rendering ----------
     def _on_tree_selection_changed(self):
         tree = self.sender()
         selected = tree.selectedItems() if isinstance(tree, QTreeWidget) else []
@@ -783,6 +784,7 @@ class RcolViewer(QWidget):
             app=getattr(self.handler, "app", None),
             resource_context=getattr(self.handler, "resource_context", None),
             game_version=getattr(self.handler, "game_version", ""),
+            load_mode=MeshLoadMode.LIGHT,
         )
         mesh = getattr(handler, "mesh", None)
         if mesh is None:
@@ -927,7 +929,6 @@ class RcolViewer(QWidget):
         fn(payload)
         self._refresh_scene_preview(payload)
 
-    # ---------- Helpers ----------
     def _row_text(self, label: str, text: str):
         value_label = QLabel(text)
         value_label.setWordWrap(False)
@@ -1622,7 +1623,6 @@ class RcolViewer(QWidget):
             return payload.auto_joint_index is not None and 0 <= payload.auto_joint_index < len(joints)
         return True
 
-    # ---------- Panels ----------
     def _render_groups_overview(self, _payload: NavPayload):
         self.detail_title.setText(self.tr("Groups"))
         self._row_text("Count", str(len(self.rcol.groups)))
@@ -1867,7 +1867,6 @@ class RcolViewer(QWidget):
         self._headless_body.addWidget(viewer)
 
 
-    # ---------- Data operations ----------
     def _add_group(self):
         group = RcolGroup()
         group.info.name = f"Group_{len(self.rcol.groups)}"

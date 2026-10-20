@@ -119,7 +119,7 @@ def _source_value(
     return first
 
 
-_UNSET = object()
+_UNSET = sentinel("_UNSET")
 
 
 def _sample_property(

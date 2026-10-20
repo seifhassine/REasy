@@ -4,7 +4,7 @@ import struct
 
 import numpy as np
 
-from .data import PrbData
+lazy from .data import PrbData
 
 
 _SUPPORTED_VERSIONS = frozenset((9, 10, 11))

@@ -17,8 +17,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.rsz.scn_scene_graph import ScnSceneGraph
-from ui.editor_widgets import (
+lazy from file_handlers.rsz.scn_scene_graph import ScnSceneGraph
+lazy from ui.editor_widgets import (
     EDITOR_META_ROLE,
     EDITOR_TITLE_ROLE,
     EditorListItemDelegate,

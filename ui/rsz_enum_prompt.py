@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from PySide6.QtWidgets import QMessageBox
+lazy from PySide6.QtWidgets import QMessageBox
 
 
 

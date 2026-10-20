@@ -1,11 +1,11 @@
 import threading
 import os
-import subprocess
 import sys
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, QUrl
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
+lazy from ui.update_progress_dialog import UpdateProgressDialog
 
 AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
     "UpdateNotificationManager", "Auto Update"
@@ -14,6 +14,7 @@ AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
 
 def is_windows() -> bool:
     return os.name == "nt"
+
 
 class UpdateNotificationManager:
     def __init__(self, main_window, current_version):
@@ -153,13 +154,6 @@ class UpdateNotificationManager:
             print(f"Auto-update confirm failed: {e}")
 
     def _start_auto_update(self):
-        try:
-            from ui.update_progress_dialog import UpdateProgressDialog
-        except Exception:
-            thread = threading.Thread(target=self._run_auto_update, daemon=True)
-            thread.start()
-            return
-
         if getattr(sys, 'frozen', False):
             base_dir = os.path.dirname(sys.executable)
         else:
@@ -178,67 +172,3 @@ class UpdateNotificationManager:
             ))
             self.open_latest_release_page()
         dlg.exec()
-
-    def _run_auto_update(self):
-        try:
-            if getattr(sys, 'frozen', False):
-                repo_root = os.path.dirname(sys.executable)
-            else:
-                repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-            script_path = os.path.join(repo_root, "resources", "scripts", "auto_update.ps1")
-
-            if not os.path.isfile(script_path):
-                def notify_missing():
-                    QMessageBox.warning(
-                        self.main_window,
-                        QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
-                        QCoreApplication.translate(
-                            "UpdateNotificationManager",
-                            "Auto-update script not found. Opening releases page instead.",
-                        ))
-                    self.open_latest_release_page()
-                QTimer.singleShot(0, notify_missing)
-                return
-
-            cmd = ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script_path]
-            result = subprocess.run(
-                cmd,
-                cwd=repo_root,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-            )
-
-            def notify_done():
-                if result.returncode == 0:
-                    QMessageBox.information(
-                        self.main_window,
-                        QCoreApplication.translate("UpdateNotificationManager", AUTO_UPDATE_TITLE),
-                        QCoreApplication.translate(
-                            "UpdateNotificationManager",
-                            "Update completed successfully. Please restart REasy to apply changes.",
-                        ))
-                else:
-                    msg = result.stderr.strip() or result.stdout.strip() or QCoreApplication.translate(
-                        "UpdateNotificationManager", "Unknown error"
-                    )
-                    QMessageBox.critical(
-                        self.main_window,
-                        QCoreApplication.translate("UpdateNotificationManager", "Auto Update Failed"),
-                        QCoreApplication.translate(
-                            "UpdateNotificationManager",
-                            "The update failed with code {return_code}.\n\nDetails:\n{details}",
-                        ).format(return_code=result.returncode, details=msg))
-            QTimer.singleShot(0, notify_done)
-        except Exception as exc:
-            error = str(exc)
-
-            def notify_error():
-                QMessageBox.critical(
-                    self.main_window,
-                    QCoreApplication.translate("UpdateNotificationManager", "Auto Update Error"),
-                    QCoreApplication.translate(
-                        "UpdateNotificationManager",
-                        "An unexpected error occurred during update.\n\n{error}",
-                    ).format(error=error))
-            QTimer.singleShot(0, notify_error)

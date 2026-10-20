@@ -1,0 +1,58 @@
+{
+ "format": 2,
+ "game": "RE9",
+ "resource_version": 251112994,
+ "unblended": "nearest_part",
+ "blended": "farthest_object_depth",
+ "source": {
+  "note": "README 'Forward meshlets': the glass (not blending, a meshlet) first; the blending umbrellas in the executable's order by their bones' boxes (stage113/re9_object_depth.py: all three tests; by each part's box, as fitted before, too; by the whole mesh's box the third the other way); the parts that do not blend nearest first across masters (re9_frame15176 5879-5914, README \"RE9's title diorama set\": made glass, crack, glass, crack at 3.76, 3.42, 4.06, 4.32 m, drawn crack, glass, glass, crack)",
+  "captures": [
+   {
+    "capture": "re9_frame7134.rdc",
+    "pak": "x0000-reasy_re9_forward_test.pak",
+    "draws": [
+     2670,
+     2693,
+     2697
+    ]
+   },
+   {
+    "capture": "re9_frame6335.rdc",
+    "pak": "x0000-reasy_re9_sort_test.pak",
+    "draws": [
+     2635,
+     2670,
+     2674
+    ]
+   },
+   {
+    "capture": "re9_frame4929.rdc",
+    "pak": "x0000-reasy_re9_sort2_test.pak",
+    "draws": [
+     2792,
+     2827,
+     2831
+    ]
+   },
+   {
+    "capture": "re9_frame15176.rdc",
+    "scene": "titlediorama_environment_common.scn (stage121/build_re9_capture.py)",
+    "draws": [
+     5879,
+     5884,
+     5894,
+     5899,
+     5909,
+     5914
+    ]
+   }
+  ],
+  "executable": {
+   "file": "re9_dump.exe",
+   "draw_task": "0x145593a70",
+   "gate": "MeshRenderer +0x36/+0x37",
+   "render_entry": "RenderEntry +0x3fd = 1 (0x14618f64e)",
+   "note": "README 'The forward blending order of five executables': one key per via.render.Mesh, ~trunc(clamp(z/w, 0, 1) x 4294967295) of its world box's centre (bones' boxes for a skinned mesh) moved by TransparentBias, plus the material's TransparentPriorityBias, stable ascending"
+  }
+ }
+}

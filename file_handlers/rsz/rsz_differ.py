@@ -4,11 +4,19 @@ from typing import Dict, List, Tuple, Optional, Any
 from dataclasses import dataclass
 from pathlib import Path
 
-from file_handlers.rsz.rsz_file import RszFile, RszGameObject, RszFolderInfo
-from file_handlers.rsz.rsz_handler import RszHandler
-from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
-from utils.hex_util import guid_le_to_str
-from utils.number_format import format_display_value, format_float_sequence, format_full_float
+lazy from file_handlers.rsz.rsz_file import RszFile, RszGameObject, RszFolderInfo
+lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
+lazy from utils.hex_util import guid_le_to_str
+lazy from utils.number_format import format_display_value, format_float_sequence, format_full_float
+lazy from file_handlers.rsz.rsz_data_types import (
+    ArrayData, StructData, ObjectData, ResourceData, UserDataData, BoolData, StringData, Float2Data, Float3Data,
+    Float4Data, Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData, Mat4Data, Int2Data, Int3Data, Int4Data,
+    Int4ColorData, Uint2Data, Uint3Data, S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data, F32Data,
+    F64Data, GuidData, GameObjectRefData, ColorData, PositionData, RangeData, RangeIData, OBBData, AABBData,
+    CapsuleData, AreaData, AreaDataOld, ConeData, LineSegmentData, PointData, SizeData, SphereData, CylinderData,
+    RectData, RuntimeTypeData, RawBytesData,
+)
 
 
 def _rsz_kind(rsz_file: RszFile) -> str:
@@ -866,18 +874,6 @@ class RszDiffer:
             changes.append(f"{path}: type changed from {type(val1).__name__} to {type(val2).__name__}")
             return changes
 
-        from file_handlers.rsz.rsz_data_types import (
-            ArrayData, StructData, ObjectData, ResourceData, UserDataData,
-            BoolData, StringData, Float2Data, Float3Data, Float4Data,
-            Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData, Mat4Data,
-            Int2Data, Int3Data, Int4Data, Int4ColorData, Uint2Data, Uint3Data,
-            S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
-            F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
-            PositionData, RangeData, RangeIData, OBBData, AABBData, CapsuleData,
-            AreaData, AreaDataOld, ConeData, LineSegmentData, PointData, SizeData, SphereData,
-            CylinderData, RectData, RuntimeTypeData, RawBytesData
-        )
-
         if isinstance(val1, (BoolData, S8Data, U8Data, S16Data, U16Data, S32Data, U32Data,
                             S64Data, U64Data, F32Data, F64Data)):
             if val1.value != val2.value:
@@ -1045,18 +1041,6 @@ class RszDiffer:
     def get_field_value_string(self, value) -> str:
         if value is None:
             return "null"
-
-        from file_handlers.rsz.rsz_data_types import (
-            ArrayData, StructData, ObjectData, ResourceData, UserDataData,
-            BoolData, StringData, Float2Data, Float3Data, Float4Data,
-            Vec2Data, Vec3Data, Vec3ColorData, Vec4Data, QuaternionData,
-            Int2Data, Int3Data, Int4Data, Int4ColorData, Uint2Data, Uint3Data,
-            S8Data, U8Data, S16Data, U16Data, S32Data, U32Data, S64Data, U64Data,
-            F32Data, F64Data, GuidData, GameObjectRefData, ColorData,
-            PositionData, RangeData, RangeIData, AABBData, OBBData, CapsuleData,
-            SphereData, CylinderData, ConeData, LineSegmentData, AreaDataOld, AreaData,
-            RectData, PointData, SizeData, RuntimeTypeData, RawBytesData, Mat4Data
-        )
 
         if isinstance(value, (BoolData, S8Data, U8Data, S16Data, U16Data, S32Data, U32Data,
                               S64Data, U64Data, F32Data, F64Data)):

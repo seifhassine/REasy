@@ -2,19 +2,28 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ..adapter import GuiPreviewControl, GuiPreviewScenario, GuiRuntimeEditorConfig
-from ..errors import GuiFormatError
+lazy from ..errors import GuiFormatError
 
-if TYPE_CHECKING:
-    from file_handlers.clip.enums import PropertyType
-    from utils.resource_file_utils import ResourceDataLoader
+lazy from file_handlers.clip.enums import PropertyType
+lazy from utils.resource_file_utils import ResourceDataLoader
 
-    from ..dependencies import GuiDependencyCatalog
-    from ..model import GuiDocument
-    from ..profiles import GuiFormatProfile
-    from ..scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
+lazy from ..dependencies import GuiDependencyCatalog
+lazy from ..model import GuiDocument
+lazy from ..profiles import GuiFormatProfile
+lazy from ..scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
+lazy from .codec import Dmc5GuiCodec
+lazy from .serializer import Dmc5GuiSerializer
+lazy from .scene import Dmc5GuiScene
+lazy from .preview_widget import Dmc5GuiCanvas
+lazy from .controllers import build_dmc5_preview_scenarios, discover_dmc5_controller_context, Dmc5PreviewState
+lazy from .custom_preview import (
+    dmc5_preview_controls, set_dmc5_preview_control, rebase_dmc5_custom_preview, export_dmc5_preview_preset,
+    import_dmc5_preview_preset,
+)
+lazy from .property_codec import encode_dmc5_gui_value
 
 
 DMC5_GUI_VERSION = 270020
@@ -58,8 +67,6 @@ class Dmc5GuiAdapter:
         source: str,
         profile: "GuiFormatProfile",
     ) -> "GuiDocument":
-        from .codec import Dmc5GuiCodec
-
         return Dmc5GuiCodec(data, source, profile).parse()
 
     def serialize(
@@ -67,8 +74,6 @@ class Dmc5GuiAdapter:
         document: "GuiDocument",
         profile: "GuiFormatProfile",
     ) -> bytes:
-        from .serializer import Dmc5GuiSerializer
-
         return Dmc5GuiSerializer(profile).build(document)
 
     def create_scene(
@@ -78,7 +83,6 @@ class Dmc5GuiAdapter:
         root: "GuiSceneNode",
     ) -> "GuiScene":
         self.require_profile(workspace.profile, resource.source)
-        from .scene import Dmc5GuiScene
 
         return Dmc5GuiScene(workspace, resource, root)
 
@@ -86,8 +90,6 @@ class Dmc5GuiAdapter:
         self,
         dependencies: "GuiDependencyCatalog | None" = None,
     ) -> Any:
-        from .preview_widget import Dmc5GuiCanvas
-
         return Dmc5GuiCanvas(dependencies)
 
     def preview_scenarios(
@@ -98,10 +100,6 @@ class Dmc5GuiAdapter:
         scene: "GuiScene",
     ) -> tuple[GuiPreviewScenario, ...]:
         self.require_profile(profile, gui_path)
-        from .controllers import (
-            build_dmc5_preview_scenarios,
-            discover_dmc5_controller_context,
-        )
 
         context = discover_dmc5_controller_context(gui_path, loader, profile)
         return build_dmc5_preview_scenarios(context, scene, gui_path, profile)
@@ -111,8 +109,6 @@ class Dmc5GuiAdapter:
         canvas: Any,
         scenario: GuiPreviewScenario | None,
     ) -> None:
-        from .controllers import Dmc5PreviewState
-
         state = scenario.state if scenario is not None else None
         if not isinstance(state, Dmc5PreviewState):
             state = Dmc5PreviewState()
@@ -132,8 +128,6 @@ class Dmc5GuiAdapter:
         scene: "GuiScene",
         selected_path: str | None,
     ) -> tuple[GuiPreviewControl, ...]:
-        from .custom_preview import dmc5_preview_controls
-
         return dmc5_preview_controls(
             scenarios,
             scenario,
@@ -151,8 +145,6 @@ class Dmc5GuiAdapter:
         *,
         inherit: bool = False,
     ) -> GuiPreviewScenario:
-        from .custom_preview import set_dmc5_preview_control
-
         return set_dmc5_preview_control(
             scenarios,
             scenario,
@@ -168,8 +160,6 @@ class Dmc5GuiAdapter:
         scenario: GuiPreviewScenario,
         scene: "GuiScene",
     ) -> GuiPreviewScenario:
-        from .custom_preview import rebase_dmc5_custom_preview
-
         return rebase_dmc5_custom_preview(scenarios, scenario, scene)
 
     def export_preview_preset(
@@ -177,8 +167,6 @@ class Dmc5GuiAdapter:
         gui_path: str,
         scenario: GuiPreviewScenario,
     ) -> dict[str, Any]:
-        from .custom_preview import export_dmc5_preview_preset
-
         return export_dmc5_preview_preset(gui_path, self.version, scenario)
 
     def import_preview_preset(
@@ -188,8 +176,6 @@ class Dmc5GuiAdapter:
         scenarios: tuple[GuiPreviewScenario, ...],
         scene: "GuiScene",
     ) -> GuiPreviewScenario:
-        from .custom_preview import import_dmc5_preview_preset
-
         return import_dmc5_preview_preset(
             gui_path,
             self.version,
@@ -204,8 +190,6 @@ class Dmc5GuiAdapter:
         value: Any,
         name: str,
     ) -> None:
-        from .property_codec import encode_dmc5_gui_value
-
         encode_dmc5_gui_value(kind, value, name)
 
 

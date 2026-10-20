@@ -7,7 +7,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame
 )
 
-from tools.outdated_files_detector import OutdatedFilesDetector, delete_files
+lazy from tools.outdated_files_detector import OutdatedFilesDetector, delete_files
 
 class OutdatedFilesDialog(QDialog):
     def __init__(self, parent=None, registry_path=None):

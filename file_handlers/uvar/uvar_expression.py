@@ -2,8 +2,8 @@ from typing import List
 import struct
 
 from .base_model import BaseModel, FileHandler
-from .uvar_node import UvarNode
-from .uvar_types import NodeConnection
+lazy from .uvar_node import UvarNode
+lazy from .uvar_types import NodeConnection
 
 class UvarExpression(BaseModel):
     

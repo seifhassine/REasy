@@ -1,17 +1,11 @@
 import os
 import json
 from datetime import datetime
-from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
+lazy from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
 
 class RszTemplateManager:
-    """
-    Template manager for RSZ GameObjects
-    Allows saving, categorizing, and loading GameObject templates
-    """
-    
     @staticmethod
     def get_template_root_directory():
-        """Get the root templates directory"""
         base_dir = os.getcwd()
         return os.path.join(base_dir, "templates")
     
@@ -73,19 +67,6 @@ class RszTemplateManager:
     
     @staticmethod
     def export_gameobject_to_template(viewer, gameobject_id, template_name, tags=None, description=""):
-        """
-        Export a GameObject to a template file
-        
-        Args:
-            viewer: RSZ viewer instance
-            gameobject_id: ID of the GameObject to export
-            template_name: Name for the template
-            tags: List of tags for the template
-            description: Optional description
-            
-        Returns:
-            dict: Result with success status and message
-        """
         if not template_name:
             return {"success": False, "message": "Template name is required"}
             
@@ -150,18 +131,6 @@ class RszTemplateManager:
     
     @staticmethod
     def import_template(viewer, template_id, parent_id=-1, new_name=None):
-        """
-        Import a GameObject template
-        
-        Args:
-            viewer: RSZ viewer instance
-            template_id: ID of the template to import
-            parent_id: ID of the parent GameObject (-1 for root)
-            new_name: Optional new name for the imported GameObject
-            
-        Returns:
-            dict: Result with success status and message
-        """
         try:
             metadata = RszTemplateManager.load_metadata()
             
@@ -215,16 +184,6 @@ class RszTemplateManager:
     
     @staticmethod
     def get_template_list(registry_filter=None, tag_filter=None):
-        """
-        Get a list of templates, optionally filtered by registry or tags
-        
-        Args:
-            registry_filter: Optional registry name to filter by
-            tag_filter: Optional tag to filter by
-            
-        Returns:
-            list: List of template info dictionaries
-        """
         metadata = RszTemplateManager.load_metadata()
         
         if "templates" not in metadata:
@@ -251,7 +210,6 @@ class RszTemplateManager:
     
     @staticmethod
     def get_all_tags():
-        """Get a list of all tags used across templates"""
         metadata = RszTemplateManager.load_metadata()
         
         if "templates" not in metadata:
@@ -265,7 +223,6 @@ class RszTemplateManager:
     
     @staticmethod
     def get_all_registries():
-        """Get a list of all registry names used across templates"""
         metadata = RszTemplateManager.load_metadata()
         
         if "templates" not in metadata:
@@ -341,15 +298,6 @@ class RszTemplateManager:
 
     @staticmethod
     def delete_template(template_id):
-        """
-        Delete a template
-        
-        Args:
-            template_id: ID of the template to delete
-            
-        Returns:
-            bool: True if successful, False otherwise
-        """
         metadata = RszTemplateManager.load_metadata()
         
         if "templates" not in metadata or template_id not in metadata["templates"]:

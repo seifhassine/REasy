@@ -8,8 +8,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Iterable
 
-from file_handlers.rcol.rcol_file import RcolFile
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rcol.rcol_file import RcolFile
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     GameObjectRefData,
     GuidData,
@@ -19,10 +19,11 @@ from file_handlers.rsz.rsz_data_types import (
     StructData,
     UserDataData,
 )
-from file_handlers.rsz.rsz_file import RszFile
-from ui.ai.file_migration import FileMigrationJob
-from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
-from utils.registry_manager import RegistryManager
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from ui.ai.file_migration import FileMigrationJob
+lazy from ui.ai.tool_registry import AssistantToolError, translate_tool_text as _tr
+lazy from utils.registry_manager import RegistryManager
+lazy from ui.ai import rsz_tools as model
 
 
 _INDEX_RE = re.compile(r"\[\d+\]")
@@ -31,7 +32,7 @@ _FORMAT_SUFFIX_RE = re.compile(
     re.IGNORECASE,
 )
 _DETAIL_LIMIT = 500
-_MISSING_DETAIL = object()
+_MISSING_DETAIL = sentinel("_MISSING_DETAIL")
 
 
 def load_type_registry(value: Any, field: str):
@@ -820,10 +821,6 @@ def overlay_rsz_values(
     change_selector=None,
     detail_limit: int | None = _DETAIL_LIMIT,
 ) -> dict[str, Any]:
-    # Imported lazily to keep the reusable RSZ data model independent of the
-    # assistant's migration tool registration.
-    from ui.ai import rsz_tools as model
-
     report = _Report(change_selector, detail_limit)
     source_segments = model._segments(source)
     destination_segments = model._segments(destination)
@@ -992,8 +989,6 @@ def overlay_rsz_values(
 
 
 def _structure_signature(rsz: RszFile, registry) -> tuple[Any, ...]:
-    from ui.ai import rsz_tools as model
-
     return tuple(
         (
             segment.id,

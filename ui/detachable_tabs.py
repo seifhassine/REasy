@@ -2,7 +2,7 @@ import sys
 from dataclasses import dataclass
 
 if sys.platform == "win32":
-    from ctypes import wintypes
+    lazy from ctypes import wintypes
 else:
     wintypes = None
 

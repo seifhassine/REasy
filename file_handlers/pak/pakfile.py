@@ -2,15 +2,17 @@ from __future__ import annotations
 import io
 import struct
 import threading
+import zlib
 from dataclasses import dataclass
-import zstandard as zstd
-from typing import TYPE_CHECKING, Optional, BinaryIO, List, Sequence
+lazy import zstandard as zstd
+lazy import numpy as np
+from typing import Callable, Optional, BinaryIO, List, Sequence
 
-if TYPE_CHECKING:
-    from .resolution import PakReaderInfo
+lazy from .resolution import PakReaderInfo
 
 
 MAGIC = 0x414B504B
+PAK_HEADER_SIZE = 16
 PAK_FLAG_HEADER_PADDING = 0x04
 PAK_FLAG_ENTRY_TABLE_KEY = 0x08
 PAK_FLAG_HEADER_MARKER = 0x10
@@ -79,6 +81,27 @@ class PakHeader:
     file_count: int
     fingerprint: int
 
+    @property
+    def entry_size(self) -> int:
+        return 48 if self.major == 4 else 24
+
+
+def read_pak_header(f: BinaryIO, label: str, *, supported_only: bool = True) -> PakHeader:
+    """An embedded child PAK's index may not name every entry."""
+    data = f.read(PAK_HEADER_SIZE)
+    if len(data) != PAK_HEADER_SIZE:
+        raise IOError("Invalid PAK header size")
+    header = PakHeader(*struct.unpack("<IBBHII", data))
+    if header.magic != MAGIC:
+        raise IOError("File is not a valid PAK file")
+    if (header.major, header.minor) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
+        raise IOError(f"Unsupported PAK version {header.major}.{header.minor}")
+    if supported_only and header.feature_flags & ~PAK_SUPPORTED_FLAGS:
+        raise IOError(f"Unsupported PAK flags {header.feature_flags} for file {label}")
+    if supported_only and _has_embedded_child_footer(f):
+        raise IOError(f"Embedded child PAK readers are not yet supported: {label}")
+    return header
+
 
 @dataclass
 class PakEntry:
@@ -99,7 +122,6 @@ class PakEntry:
 
     @property
     def stored_size(self) -> int:
-        """Number of bytes occupied by this entry in the PAK."""
         return int(self.compressed_size or self.decompressed_size)
 
 
@@ -118,23 +140,8 @@ class PakFile:
 
 
     def read_contents(self, f: BinaryIO, expected_paths: Optional[dict[int, str]] = None) -> None:
-        data = f.read(4 + 1 + 1 + 2 + 4 + 4)
-        if len(data) != 16:
-            raise IOError("Invalid PAK header size")
-        magic, maj, minr, features, file_count, fingerprint = struct.unpack("<IBBHII", data)
-        if magic != MAGIC:
-            raise IOError("File is not a valid PAK file")
-
-        if (maj, minr) not in {(4, 0), (4, 1), (4, 2), (2, 0)}:
-            raise IOError(f"Unsupported PAK version {maj}.{minr}")
-
-        unknown_flags = features & ~PAK_SUPPORTED_FLAGS
-        if unknown_flags:
-            raise IOError(f"Unsupported PAK flags {features} for file {self.filepath}")
-        if _has_embedded_child_footer(f):
-            raise IOError(f"Embedded child PAK readers are not yet supported: {self.filepath}")
-
-        self.header = PakHeader(magic, maj, minr, features, file_count, fingerprint)
+        self.header = read_pak_header(f, self.filepath)
+        maj, features, file_count = self.header.major, self.header.feature_flags, self.header.file_count
         self.entries.clear()
         self.availability_entries.clear()
         self.has_attr_bit20 = False
@@ -144,7 +151,7 @@ class PakFile:
         if file_count == 0:
             return
 
-        entry_size = 48 if maj == 4 else 24
+        entry_size = self.header.entry_size
         entry_table = bytearray(f.read(file_count * entry_size))
         if len(entry_table) != file_count * entry_size:
             raise IOError("Unexpected EOF reading PAK entry table")
@@ -176,16 +183,42 @@ class PakFile:
         self.chunk_table = _read_chunk_table(f) if (features & PAK_FLAG_CHUNK_TABLE) != 0 else ()
 
         buf = memoryview(entry_table)
-        off = 0
+        indices = range(file_count)
+        named_hashes = expected_paths
+        if expected_paths is not None:
+            # bit20 is checked over all rows, unmatched ones included: it affects RE4 availability.
+            rows = np.frombuffer(buf, dtype='<u4').reshape(file_count, entry_size // 4)
+            lower, upper = (rows[:, 0], rows[:, 1]) if maj == 4 else (rows[:, 5], rows[:, 4])
+            hashes = (upper.astype('<u8') << 32) | lower
+            if self.remap_pairs:
+                # Match the public hash aliases exactly as _resolve_expected_path.
+                named_hashes = dict(expected_paths)
+                for stored, public in self.remap_stored_to_public.items():
+                    if public in expected_paths:
+                        named_hashes.setdefault(stored, expected_paths[public])
+            wanted = np.fromiter(named_hashes, dtype='<u8')
+            # Vanilla tables are sorted: binary-search the requested hashes instead of ``np.isin`` over a million rows.
+            if hashes.size < 2 or bool(np.all(hashes[:-1] <= hashes[1:])):
+                starts = np.searchsorted(hashes, wanted, side='left')
+                ends = np.searchsorted(hashes, wanted, side='right')
+                indices = sorted(index for start, end in zip(starts, ends) for index in range(int(start), int(end)))
+            else:
+                indices = np.flatnonzero(np.isin(hashes, wanted))
+            if maj == 4:
+                self.has_attr_bit20 = bool(np.any(rows[:, 8] & 0x20))
         if maj == 4:
-            for _ in range(file_count):
-
+            for index in indices:
                 hash_lower, hash_upper, offset, csize, dsize, attrib, checksum = struct.unpack_from(
-                    "<IIqqqqq", buf, off
+                    "<IIqqqqq", buf, int(index) * 48
                 )
-                off += 48
                 compression = attrib & 0xF
                 encryption = (attrib & 0x00FF0000) >> 16
+                self.has_attr_bit20 = self.has_attr_bit20 or (attrib & 0x20) != 0
+                path = None
+                if expected_paths is not None:
+                    path = named_hashes.get((hash_upper << 32) | hash_lower)
+                    if path is None:
+                        continue
                 e = PakEntry(
                     hash_lower=hash_lower,
                     hash_upper=hash_upper,
@@ -196,32 +229,27 @@ class PakFile:
                     attributes=attrib,
                     compression=compression,
                     encryption=encryption,
+                    path=path,
                 )
-                self.has_attr_bit20 = self.has_attr_bit20 or (attrib & 0x20) != 0
-                if expected_paths is not None:
-                    p = self._resolve_expected_path(expected_paths, e.combined_hash)
-                    if p is None:
-                        continue
-                    e.path = p
                 self.entries.append(e)
                 if (attrib & 0x70) != 0:
                     self.availability_entries.append(e)
         else:
-            for _ in range(file_count):
-                offset, csize, hash_upper, hash_lower = struct.unpack_from("<qqII", buf, off)
-                off += 24
+            for index in indices:
+                offset, csize, hash_upper, hash_lower = struct.unpack_from("<qqII", buf, int(index) * 24)
+                path = None
+                if expected_paths is not None:
+                    path = named_hashes.get((hash_upper << 32) | hash_lower)
+                    if path is None:
+                        continue
                 e = PakEntry(
                     hash_lower=hash_lower,
                     hash_upper=hash_upper,
                     offset=offset,
                     compressed_size=csize,
                     decompressed_size=csize,
+                    path=path,
                 )
-                if expected_paths is not None:
-                    p = self._resolve_expected_path(expected_paths, e.combined_hash)
-                    if p is None:
-                        continue
-                    e.path = p
                 self.entries.append(e)
 
 
@@ -363,131 +391,96 @@ def _decrypt_pak_entry_data(entry_table: bytearray, key: bytearray) -> None:
         entry_table[i] ^= (i + key[i % 32] * key[i % 29]) & 0xFF
 
 
+def _inflate(data, size: int) -> bytes:
+    return zlib.decompress(data, zlib.MAX_WBITS, max(size, 1))
+
+
+def _inflate_raw(data, size: int) -> bytes:
+    return zlib.decompress(data, -zlib.MAX_WBITS, max(size, 1))
+
+
+def _unzstd(data, size: int) -> bytes:
+    return _get_thread_zstd_decompressor().decompress(data, max_output_size=size)
+
+
+_CODECS = {1: (_inflate, _inflate_raw, _unzstd), 2: (_unzstd, _inflate, _inflate_raw)}
+
+
+def _decompress(data, compression: int, size: int) -> bytes:
+    *tried, last = _CODECS[compression]
+    for codec in tried:
+        try:
+            return codec(data, size)
+        except (zlib.error, zstd.ZstdError):
+            pass
+    return last(data, size)
+
+
+def stream_reads(stream: BinaryIO) -> Callable[[int, int], bytes]:
+    def read(offset: int, size: int) -> bytes:
+        stream.seek(offset)
+        return stream.read(size)
+    return read
+
+
+def read_entry(entry: PakEntry, read: Callable[[int, int], bytes], *,
+               chunk_table: Sequence[PakChunkEntry] = ()) -> bytes:
+    """Reads and decompression are single calls that release the GIL, so threaded reads barely block each other."""
+    if _is_chunked_entry(entry, chunk_table):
+        chunks = []
+        remaining = int(entry.compressed_size)
+        chunk_id = int(entry.offset)
+        while remaining > 0:
+            chunks.append(chunk_table[chunk_id])
+            remaining -= chunks[-1].size
+            chunk_id += 1
+        start = min(chunk.offset for chunk in chunks)
+        end = max(chunk.offset + chunk.size for chunk in chunks)
+        stored = memoryview(read(start, end - start))
+        if len(stored) != end - start:
+            raise IOError("Unexpected EOF reading chunk payload")
+        payloads = (stored[chunk.offset - start:chunk.offset - start + chunk.size] for chunk in chunks)
+        data = b"".join(payload if len(payload) == CHUNK_UNCOMPRESSED_SIZE
+                        else _unzstd(payload, CHUNK_UNCOMPRESSED_SIZE * 2) for payload in payloads)
+        if len(data) < int(entry.decompressed_size):
+            raise IOError(
+                "Chunked entry uses an unsupported tail codec: "
+                f"hash {entry.combined_hash:016X}"
+            )
+        return data[:int(entry.decompressed_size)]
+
+    if entry.compression == 0:
+        return read(entry.offset, entry.stored_size)
+    data = read(entry.offset, int(entry.compressed_size))
+    if entry.encryption != 0:
+        size = [len(data)]
+        data = memoryview(_decrypt_resource(bytearray(data), size))[:size[0]]
+    if entry.compression not in _CODECS:
+        return bytes(data)
+    return _decompress(data, entry.compression, int(entry.decompressed_size))
+
+
 def _read_entry_raw(
     entry: PakEntry,
     read_stream: BinaryIO,
     out_stream: BinaryIO,
     *,
     chunk_table: Sequence[PakChunkEntry] = (),
-    zstd_decompressor=None,
 ) -> None:
-    if _is_chunked_entry(entry, chunk_table):
-        remaining = int(entry.compressed_size)
-        chunk_id = int(entry.offset)
-        try:
-            # Keep chunk-path decompressor instance local (chunk extraction is parallelized).
-            zstd_dctx = zstd.ZstdDecompressor()
-        except Exception:
-            zstd_dctx = None
-
-        while remaining > 0:
-            chunk = chunk_table[chunk_id]
-            read_stream.seek(chunk.offset)
-            payload = read_stream.read(chunk.size)
-            if len(payload) != chunk.size:
-                raise IOError("Unexpected EOF reading chunk payload")
-            if chunk.size == CHUNK_UNCOMPRESSED_SIZE:
-                out_stream.write(payload)
-            else:
-                if zstd_dctx is None:
-                    raise RuntimeError("zstandard module is required for chunked resource decompression")
-                out_stream.write(
-                    zstd_dctx.decompress(
-                        payload, max_output_size=CHUNK_UNCOMPRESSED_SIZE * 2
-                    )
-                )
-            remaining -= chunk.size
-            chunk_id += 1
-
-        if out_stream.tell() < int(entry.decompressed_size):
-            raise IOError(
-                "Chunked entry uses an unsupported tail codec: "
-                f"hash {entry.combined_hash:016X}"
-            )
-        out_stream.truncate(int(entry.decompressed_size))
-        out_stream.seek(0, io.SEEK_END)
+    if entry.compression != 0 or _is_chunked_entry(entry, chunk_table):
+        out_stream.write(read_entry(entry, stream_reads(read_stream), chunk_table=chunk_table))
         return
 
     read_stream.seek(entry.offset)
-    if entry.compression == 0:
-        size = entry.stored_size
-        
-        buffer_size = min(size, 64 * 1024 * 1024)
-        buffer = bytearray(buffer_size)
-        view = memoryview(buffer)
-        
-        remaining = size
-        while remaining > 0:
-            chunk_size = min(remaining, buffer_size)
-            n = read_stream.readinto(view[:chunk_size])
-            if n is None or n == 0:
-                break
-            out_stream.write(view[:n])
-            remaining -= n
-        return
-
-    size = int(entry.compressed_size)
-    data = bytearray(read_stream.read(size))
-    if entry.encryption != 0:
-        sr: List[int] = [size]
-        data = _decrypt_resource(data, sr)
-        size = sr[0]
-    
-    comp_view = memoryview(data)[:size]
-    try:
-        if entry.compression == 1:
-            import zlib
-
-            pos = out_stream.tell()
-            d = zlib.decompressobj()
-            try:
-                mv = comp_view
-                step = 256 * 1024
-                p = 0
-                while p < len(mv):
-                    out = d.decompress(mv[p : p + step])
-                    if out:
-                        out_stream.write(out)
-                    p += step
-                tail = d.flush()
-                if tail:
-                    out_stream.write(tail)
-            except zlib.error:
-                out_stream.seek(pos)
-                out_stream.truncate(pos)
-                d = zlib.decompressobj(-zlib.MAX_WBITS)
-                try:
-                    mv = comp_view
-                    step = 256 * 1024
-                    p = 0
-                    while p < len(mv):
-                        out = d.decompress(mv[p : p + step])
-                        if out:
-                            out_stream.write(out)
-                        p += step
-                    tail = d.flush()
-                    if tail:
-                        out_stream.write(tail)
-                except zlib.error:
-                    out_stream.seek(pos)
-                    out_stream.truncate(pos)
-                    dctx = zstd_decompressor or _get_thread_zstd_decompressor()
-                    dctx.copy_stream(io.BytesIO(bytes(comp_view)), out_stream)
-        elif entry.compression == 2:
-            pos = out_stream.tell()
-            dctx = zstd_decompressor or _get_thread_zstd_decompressor()
-            try:
-                dctx.copy_stream(io.BytesIO(bytes(comp_view)), out_stream)
-            except Exception:
-                out_stream.seek(pos)
-                out_stream.truncate(pos)
-                import zlib
-
-                try:
-                    out_stream.write(zlib.decompress(bytes(comp_view)))
-                except zlib.error:
-                    out_stream.write(zlib.decompress(bytes(comp_view), -zlib.MAX_WBITS))
-        else:
-            out_stream.write(comp_view.tobytes())
-    finally:
-        comp_view.release()
+    size = entry.stored_size
+    buffer_size = min(size, 64 * 1024 * 1024)
+    buffer = bytearray(buffer_size)
+    view = memoryview(buffer)
+    remaining = size
+    while remaining > 0:
+        chunk_size = min(remaining, buffer_size)
+        n = read_stream.readinto(view[:chunk_size])
+        if n is None or n == 0:
+            break
+        out_stream.write(view[:n])
+        remaining -= n

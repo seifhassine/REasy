@@ -1,0 +1,169 @@
+{
+ "format": 2,
+ "game": "PRAGMATA",
+ "resource_version": 251112995,
+ "raster": "GBufferMeshletListVS",
+ "shade": "GBufferVisibility",
+ "forward": "ForwardMeshletListVS",
+ "material_ids": {
+  "file": "systems/develop/meshshader/test.sdf",
+  "program": "DrawMaterialID",
+  "target": 2
+ },
+ "vertices": 378,
+ "tile_vertices": 160,
+ "visibility_format": 17,
+ "material_id_formats": [
+  53,
+  55,
+  56
+ ],
+ "table_tag": 4207405473,
+ "instance": {
+  "userParam": 0,
+  "visibleFlag": 1896874015,
+  "partsTableIndex": 2702970337,
+  "extendedBindlessIndex": 4294967295,
+  "miscParams": 14,
+  "skinningIndex": 16777215
+ },
+ "deferred": {
+  "steps": [
+   {
+    "program": "DeferredIndexBufferKey",
+    "groups": 1056,
+    "buffers": {
+     "DeferredTexturingIndicesBufferSRV": "indices",
+     "RWSortCounter": "counter",
+     "RWSortKey": "keys"
+    }
+   },
+   {
+    "program": "DeferredBuildBucket",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredGenerateDispatchIndirect",
+    "groups": 1,
+    "buffers": {
+     "DeferredTexturingOffsetUAV": "offsets",
+     "DeferredTexturingIndirectUAV": "arguments",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredRadixsort1stPass",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWSortKey": "sorted_keys",
+     "RWSortData": "order",
+     "RWBucket": "buckets"
+    }
+   }
+  ],
+  "bound": {
+   "material_ids": {
+    "DeferredTexturingIndicesBufferUAV": "indices",
+    "RWSortCounter": "counter",
+    "DeferredIndexUAV": "slots"
+   },
+   "transform": {
+    "DeferredTexturingOffsetSRV": "offsets",
+    "DeferredTexturingIndicesBufferSRV": "indices",
+    "SortData": "order",
+    "DeferredTexturingTransformedBufferUAV": "triangles"
+   },
+   "shade": {
+    "DeferredIndexSRV": "slots",
+    "DeferredTexturingTransformedBufferSRV": "triangles"
+   }
+  },
+  "roles": {
+   "counter": {
+    "size": 128
+   },
+   "buckets": {
+    "size": 16384
+   },
+   "offsets": {
+    "size": 32768
+   },
+   "arguments": {
+    "size": 131072
+   },
+   "indices": {
+    "texel_bytes": 4
+   },
+   "keys": {
+    "texel_bytes": 4
+   },
+   "sorted_keys": {
+    "texel_bytes": 4
+   },
+   "order": {
+    "texel_bytes": 4
+   },
+   "triangles": {
+    "texel_bytes": 60
+   },
+   "slots": {
+    "format": 42
+   }
+  },
+  "zeroed": [
+   "counter",
+   "buckets"
+  ],
+  "transform_ids": 64,
+  "arguments": {
+   "role": "arguments",
+   "bytes": 32
+  }
+ },
+ "transform": {
+  "program": "MeshletGeometryTransform",
+  "reads": [
+   "DeferredIndexSRV",
+   "DeferredTexturingTransformedBufferSRV"
+  ]
+ },
+ "bind_pose_skinned": true,
+ "source": {
+  "captures": [
+   {
+    "capture": "PRAGMATA_frame12414.rdc",
+    "draws": [
+     4663,
+     4808,
+     8370,
+     8382,
+     8518,
+     11567
+    ]
+   },
+   {
+    "capture": "PRAGMATA_frame15494.rdc",
+    "scene": "title.scn (stage123/build_pragmata_title.py)",
+    "draws": [
+     4233,
+     4246,
+     4251,
+     4257,
+     4263,
+     4271,
+     4290
+    ]
+   }
+  ],
+  "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
+  "deferred": "PRAGMATA_frame15494 4233-4290 (scratch stage133/pipeline_pragmata.log against stage124/pipeline_re9.log and pipeline_re9_shade.log of re9_frame15176 3564-3665): DrawMaterialID, then DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared and the same buffer sizes bound; the transformed triangles 60 bytes a texel (221184000 bytes at 2560x1440); env_deadfilament's MeshletGeometryTransform (4271) by the transform IDs' indirect dispatch, the shading (4290 on, PS_VisibleGBuffer) reading the slots and the transformed triangles; apart, PRAGMATA's own SceneInfo (628 bytes), the material-ID draw without RE9's extra target, and the shading's own blocks (WhitePtSrv, RWSceneEvent), as its other meshlet shading draws",
+  "bind_pose_skinned": "PRAGMATA_frame15494 (stage123/reasy_pragmata_title.lua turning the joints of sm61_039_00 and sm43_047_01 every frame): their records (2, geometry 121; 1, geometry 119) have skinningIndex 0xFFFFFF, drawn by the static meshlet path; REasy's bind pose at the records (stage107/mesh_at.py, scratch stage133) equals the game on all four targets of their 65,161 and 9,074 texels but one texel of target 3"
+ }
+}

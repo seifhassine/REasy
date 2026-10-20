@@ -5,7 +5,7 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import QApplication, QSizePolicy, QSplitter, QVBoxLayout, QWidget
 
-from ui.detachable_tabs import CustomNotebook
+lazy from ui.detachable_tabs import CustomNotebook
 
 
 class EditorGroupHost(QWidget):
@@ -140,9 +140,8 @@ class EditorGroupHost(QWidget):
 
     def all_floating_windows(self):
         return [
-            window
+            *notebook._floating_windows
             for notebook in self._notebooks
-            for window in notebook._floating_windows
         ]
 
     def ensure_group(self, index: int, orientation=Qt.Horizontal) -> CustomNotebook:

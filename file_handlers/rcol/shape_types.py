@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from utils.number_format import format_display_value, format_float_sequence
+lazy from utils.number_format import format_display_value, format_float_sequence
 
 
 def _vec_text(values):

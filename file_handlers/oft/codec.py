@@ -31,8 +31,6 @@ class OftCodec(Protocol):
 
 @dataclass(frozen=True, slots=True)
 class XorOftCodec:
-    """The rotated-key OFT wrapper used by DMC5 version 1."""
-
     profile: OftProfile
 
     def key(self, payload_size: int) -> bytes:
@@ -61,6 +59,16 @@ class XorOftCodec:
 
 
 OFT_CODECS: dict[int, OftCodec] = {1: XorOftCodec(oft_profile(1))}
+
+
+def detect_oft_version(data: bytes) -> int | None:
+    for version in sorted(OFT_CODECS):
+        try:
+            OFT_CODECS[version].decode(data)
+        except OftFormatError:
+            continue
+        return version
+    return None
 
 
 def oft_codec(version: int) -> OftCodec:

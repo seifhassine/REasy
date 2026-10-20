@@ -6,6 +6,7 @@ from file_handlers.base_handler import BaseFileHandler
 
 from .clip_file import ClipFile
 from .reader import ClipParserError
+lazy from .clip_viewer import ClipViewer
 
 
 class ClipHandler(BaseFileHandler):
@@ -56,8 +57,6 @@ class ClipHandler(BaseFileHandler):
         return result
 
     def create_viewer(self):
-        from .clip_viewer import ClipViewer
-
         viewer = ClipViewer(self)
         viewer.modified_changed.connect(self.modified_changed.emit)
         viewer.modified_changed.connect(lambda val: setattr(self, "modified", bool(val)))

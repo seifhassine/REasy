@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QModelIndex, QPersistentModelIndex, QTimer, Signal
+from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Signal
 from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
 
-from file_handlers.rsz.rsz_array_operations import RszArrayOperations
-from file_handlers.rsz.rsz_handler import RszViewer
-from file_handlers.rsz.rsz_lazy_loading import RszLazyNodeBuilder
-from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-from file_handlers.rsz.rsz_data_types import is_reference_type
-from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
-from ui.styles import get_color_scheme, get_tree_stylesheet
+lazy from file_handlers.rsz.rsz_array_operations import RszArrayOperations
+lazy from file_handlers.rsz.rsz_handler import RszViewer
+lazy from file_handlers.rsz.rsz_lazy_loading import RszLazyNodeBuilder
+lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
+lazy from file_handlers.rsz.rsz_data_types import is_reference_type
+lazy from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
+lazy from ui.qt_timers import call_later
+lazy from ui.styles import get_color_scheme, get_tree_stylesheet
 
 
 class ScnRawInspector(QFrame):
@@ -49,7 +50,7 @@ class ScnRawInspector(QFrame):
         self.title.setText(self.tr("Raw SCN | {name} | ID {instance_id}").format(
             name=raw_name, instance_id=instance_id
         ))
-        QTimer.singleShot(0, self, lambda iid=instance_id: select_instance_in_tree(getattr(self.viewer, "tree", None), iid, self._instance_indexes))
+        call_later(self, 0, lambda iid=instance_id: select_instance_in_tree(getattr(self.viewer, "tree", None), iid, self._instance_indexes))
 
     def clear(self, text: str | None = None) -> None:
         if text is None:

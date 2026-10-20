@@ -16,7 +16,6 @@ class ReEngineMeshLike(Protocol):
 
 
 def rig_from_re_engine_mesh(mesh: ReEngineMeshLike) -> Rig:
-    """Project a parsed RE Engine mesh skeleton into the evaluation model."""
     count = int(mesh.joint_count)
     if count < 0 or len(mesh.bones) < count or len(mesh.local_matrices) < count:
         raise ValueError("mesh skeleton arrays do not cover joint_count")
@@ -28,7 +27,7 @@ def rig_from_re_engine_mesh(mesh: ReEngineMeshLike) -> Rig:
         name_index = int(mesh.bone_indices[index])
         if name_index < 0 or name_index >= len(mesh.names):
             raise ValueError(f"mesh joint {index} has an invalid name index")
-        parent = int(getattr(mesh.bones[index], "parent_index"))
+        parent = int(mesh.bones[index].parent_index)
         inverse: Matrix4 | None = None
         if index < len(mesh.inverse_bind_matrices):
             values = tuple(float(value) for value in mesh.inverse_bind_matrices[index])
@@ -41,5 +40,6 @@ def rig_from_re_engine_mesh(mesh: ReEngineMeshLike) -> Rig:
             parent_index=None if parent < 0 else parent,
             rest=decompose_row_srt(mesh.local_matrices[index]),
             inverse_bind_matrix=inverse,
+            segment_scale_compensate=bool(mesh.bones[index].segment_scale),
         ))
     return Rig(joints)

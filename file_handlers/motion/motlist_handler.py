@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
 
-from .errors import MotionWriteError
+lazy from .errors import MotionWriteError
 from .format_registry import require_motion_format
 from .motlist_file import MotListFile
+lazy from .preview.widget import MotListPreviewWidget
 
 
 class MotListHandler(BaseFileHandler):
@@ -49,8 +50,6 @@ class MotListHandler(BaseFileHandler):
         return result
 
     def create_viewer(self):
-        from .preview.widget import MotListPreviewWidget
-
         viewer = MotListPreviewWidget(self)
         viewer.modified_changed.connect(self.modified_changed.emit)
         return viewer

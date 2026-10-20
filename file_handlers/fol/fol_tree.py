@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from .fol_file import FolFile, FolInstanceGroup
+lazy from .fol_file import FolFile, FolInstanceGroup
+lazy from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 
 def build_fol_tree_model(fol: FolFile):
-    from PySide6.QtGui import QStandardItem, QStandardItemModel
-
     model = QStandardItemModel()
     model.setHorizontalHeaderLabels(["Field", "Value"])
     model.appendRow([_item("version"), _item(str(fol.version))])
@@ -117,8 +116,6 @@ def _basename(path: str) -> str:
 
 
 def _item(text: str, tooltip: str = ""):
-    from PySide6.QtGui import QStandardItem
-
     item = QStandardItem(text)
     item.setEditable(False)
     item.setToolTip(tooltip or text)

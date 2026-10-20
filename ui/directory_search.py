@@ -9,11 +9,11 @@ from PySide6.QtCore import (
     QCoreApplication,
     QT_TRANSLATE_NOOP,
 )
-from PySide6.QtGui import (
+lazy from PySide6.QtGui import (
     QKeyEvent,
     QKeySequence
 )
-from PySide6.QtWidgets import (
+lazy from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -32,9 +32,10 @@ from PySide6.QtWidgets import (
     QPushButton,
 )
 
-from file_handlers.msg.msg_handler import MsgHandler
-from app_config import GAMES
-from utils.binary_search import create_binary_matcher, create_search_patterns
+lazy from file_handlers.msg.msg_handler import MsgHandler
+lazy from app_config import GAMES
+lazy from utils.binary_search import create_binary_matcher, create_search_patterns
+lazy from file_handlers.pak.reader import CachedPakReader
 
 PAK_SEARCH_TITLE = QT_TRANSLATE_NOOP("DirectorySearch", "PAK Search")
 
@@ -399,7 +400,6 @@ def search_pak_common(
 ):
     """Search files contained in all detected PAKs in a directory."""
     from file_handlers.pak import scan_all_pak_files, scan_pak_files
-    from file_handlers.pak.reader import CachedPakReader
 
     paks = (
         scan_all_pak_files(directory)

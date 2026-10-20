@@ -2,8 +2,9 @@
 Utility functions for embedded RSZ operations.
 """
 
-from utils.id_manager import EmbeddedIdManager
-from file_handlers.rsz.rsz_data_types import ArrayData, is_reference_type
+lazy from utils.id_manager import EmbeddedIdManager
+lazy from file_handlers.rsz.rsz_data_types import ArrayData, is_reference_type
+lazy from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
 
 
 def update_rsz_header_counts(rui, skip_instance_count=False):
@@ -64,7 +65,6 @@ def copy_embedded_rsz_header(source_header, target_header):
 
 def create_scn19_userdata_info(instance_id, type_id, type_name, parent_rui=None, crc=None):
     """Create a Scn19RSZUserDataInfo with the common identity fields populated."""
-    from file_handlers.rsz.scn_19.scn_19_structure import Scn19RSZUserDataInfo
 
     userdata_info = Scn19RSZUserDataInfo()
     userdata_info.instance_id = instance_id

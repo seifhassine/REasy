@@ -119,7 +119,7 @@ def _write_vlq(value: int) -> bytes:
     while value:
         encoded.insert(0, 0x80 | (value & 0x7F))
         value >>= 7
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 
 def _parse_midi_track(data: bytes, offset: int = 0) -> tuple[list[_MidiEvent], int]:
@@ -209,7 +209,7 @@ def _encode_midi_track(events: list[_MidiEvent]) -> bytes:
         else:
             running_status = None
         encoded += _write_vlq(event.delta) + body
-    return bytes(encoded)
+    return encoded.take_bytes()
 
 
 def parse_wwise_midi(data: bytes) -> WwiseMidi:

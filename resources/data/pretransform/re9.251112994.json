@@ -1,0 +1,95 @@
+{
+ "format": 2,
+ "game": "RE9",
+ "resource_version": 251112994,
+ "target": 2,
+ "source_holds_indices": true,
+ "destination_holds_buffer": true,
+ "blend": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentLight"
+  },
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentStandard"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalCluster"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalClusterExcludingEdge"
+ },
+ "write_by_submesh": true,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningInstanceIDVFXCS",
+  "PreTransformSkinningOptionalBufferCS",
+  "PreTransformSkinningOptionalBufferVFXCS",
+  "PreTransformSkinningOptionalBufferWithNormCS",
+  "PreTransformSkinningOptionalBufferWithNormVFXCS",
+  "PreTransformSkinningVFXCS",
+  "PreTransformStaticCS",
+  "PreTransformStaticVFXCS"
+ ],
+ "skin_by_range": true,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": true,
+ "copied_skin_whole": true,
+ "source": {
+  "captures": [
+   {
+    "capture": "re9_frame4686.rdc",
+    "draws": [
+     18780,
+     18970,
+     19977,
+     20167
+    ]
+   },
+   {
+    "capture": "re9_frame46687.rdc",
+    "draws": [
+     14202
+    ]
+   },
+   {
+    "capture": "re9_frame78646.rdc",
+    "draws": [
+     2105,
+     2115
+    ]
+   },
+   {
+    "capture": "re9_frame15176.rdc",
+    "draws": [
+     3302
+    ]
+   },
+   {
+    "capture": "re9_frame10984.rdc",
+    "draws": [
+     2574,
+     2609
+    ]
+   }
+  ],
+  "executable": "re9_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
+ }
+}

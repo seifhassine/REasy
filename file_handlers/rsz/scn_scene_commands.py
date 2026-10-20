@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-import numpy as np
+lazy import numpy as np
 
-from .scn_document_store import ScnDocumentStore
-from .scn_scene_adapters import CompositeMeshAdapter, TransformAdapter, decompose_trs
-from .scn_scene_graph import (
+lazy from .scn_document_store import ScnDocumentStore
+lazy from .scn_scene_adapters import CompositeMeshAdapter, TransformAdapter, decompose_trs
+lazy from .scn_scene_graph import (
     VIA_TRANSFORM,
     ScnLightProbeBinding,
     ScnObjectId,

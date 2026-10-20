@@ -3,13 +3,15 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 
+lazy import numpy as np
+
 from ..evaluation.binding import bind_motion
-from ..evaluation.deformation import (
+lazy from ..evaluation.deformation import (
     DeformationTarget,
     DeformationWeightEvaluator,
 )
 from ..evaluation.layering import LayeredPoseEvaluator, MotionLayer
-from ..evaluation.model import (
+lazy from ..evaluation.model import (
     DiagnosticSeverity,
     EvaluatedPose,
     MotionRigBinding,
@@ -20,13 +22,13 @@ from ..evaluation.profiles import MotionEvaluationProfile
 from ..evaluation.sampling import MotionEvaluator
 from ..mot.model import Motion
 from ..runtime.model import RuntimeRootMotionMode
-from .model import (
+lazy from .model import (
     MotionPreviewError,
     MotionPreviewSnapshot,
     PreviewLoopMode,
     RootDisplayMode,
 )
-from .root_motion import apply_runtime_root_motion
+lazy from .root_motion import apply_runtime_root_motion
 
 
 class MotionPreviewController:
@@ -44,8 +46,11 @@ class MotionPreviewController:
         self._evaluator: MotionEvaluator | LayeredPoseEvaluator | None = None
         self._deformation_evaluator: DeformationWeightEvaluator | None = None
         self._deformation_targets: tuple[DeformationTarget, ...] = ()
-        self._root_by_joint: tuple[int, ...] = ()
-        self._base_root_positions: dict[int, Vector3] = {}
+        # Bone pairs are (parent, child).
+        self._root_by_joint = np.zeros(0, dtype=np.int64)
+        self._joint_names: tuple[str, ...] = ()
+        self._bone_pairs: tuple[tuple[int, int], ...] = ()
+        self._base_root_positions: dict[int, np.ndarray] = {}
         self._root_motion_mode: RuntimeRootMotionMode | None = None
         self._root_cycle: tuple[EvaluatedPose, EvaluatedPose] | None = None
         self._static_snapshot: tuple[RootDisplayMode, MotionPreviewSnapshot] | None = None
@@ -67,7 +72,12 @@ class MotionPreviewController:
 
     @property
     def end_frame(self) -> float:
-        return self.motion.end_frame if self.motion is not None else 0.0
+        if self.motion is None:
+            return 0.0
+        if self.motion.end_frame > 0.0:
+            return self.motion.end_frame
+        return max((layer.timing.repeat.period for layer in self.layers if layer.timing.repeat is not None),
+                   default=0.0)
 
     @property
     def error_message(self) -> str:
@@ -87,7 +97,9 @@ class MotionPreviewController:
         self._evaluator = None
         self._deformation_evaluator = None
         self._deformation_targets = ()
-        self._root_by_joint = ()
+        self._root_by_joint = np.zeros(0, dtype=np.int64)
+        self._joint_names = ()
+        self._bone_pairs = ()
         self._base_root_positions.clear()
         self._root_motion_mode = None
         self._root_cycle = None
@@ -129,7 +141,13 @@ class MotionPreviewController:
         self._deformation_targets = tuple(deformation_targets)
         self._root_motion_mode = root_motion_mode
         self.binding = bind_motion(motion, rig, self.binding_strategy)
-        self._root_by_joint = rig.root_indices
+        self._root_by_joint = np.asarray(rig.root_indices, dtype=np.int64)
+        self._joint_names = tuple(joint.name for joint in rig.joints)
+        self._bone_pairs = tuple(
+            (joint.parent_index, index)
+            for index, joint in enumerate(rig.joints)
+            if joint.parent_index is not None
+        )
         if self.binding.has_errors:
             return False
         self._rebuild_evaluator()
@@ -173,9 +191,8 @@ class MotionPreviewController:
             self._root_motion_mode,
         )
         self._base_root_positions = {
-            index: self._matrix_translation(reference_pose.world_matrices[index])
-            for index, joint in enumerate(self.binding.rig.joints)
-            if joint.parent_index is None
+            int(index): reference_pose.world[index, 3, :3].copy()
+            for index in np.flatnonzero(self.binding.rig.parents < 0)
         }
 
     def set_deformation_enabled(self, enabled: bool) -> None:
@@ -198,8 +215,7 @@ class MotionPreviewController:
         return (
             self._root_motion_mode is not RuntimeRootMotionMode.CONTINUANCE
             or self._root_cycle is not None
-            and self._root_cycle[0].local_transforms
-            == self._root_cycle[1].local_transforms
+            and np.array_equal(self._root_cycle[0].local, self._root_cycle[1].local)
         )
 
     def set_frame(self, frame: float) -> float:
@@ -255,11 +271,8 @@ class MotionPreviewController:
             return True
         if self.loop_mode is PreviewLoopMode.ONCE:
             return False
-        return bool(self.motion and self.motion.looping)
-
-    @staticmethod
-    def _matrix_translation(matrix) -> Vector3:
-        return float(matrix[12]), float(matrix[13]), float(matrix[14])
+        # A still pose is held while its repeated layers play on.
+        return bool(self.motion and (self.motion.looping or self.motion.end_frame < self.end_frame))
 
     def sample(self) -> MotionPreviewSnapshot:
         if self._evaluator is None or self.binding is None or self.rig is None:
@@ -296,36 +309,20 @@ class MotionPreviewController:
             cycle_start=self._root_cycle[0] if self._root_cycle else None,
             cycle_end=self._root_cycle[1] if self._root_cycle else None,
         )
-        positions = [self._matrix_translation(matrix) for matrix in pose.world_matrices]
+        positions = pose.world[:, 3, :3].copy()
         root_deltas: dict[int, Vector3] = {}
         if self.root_display_mode is RootDisplayMode.LOCK_TRANSLATION:
             for root, base in self._base_root_positions.items():
-                current = positions[root]
-                root_deltas[root] = (
-                    current[0] - base[0],
-                    current[1] - base[1],
-                    current[2] - base[2],
-                )
-            positions = [
-                (
-                    position[0] - root_deltas.get(self._root_by_joint[index], (0.0, 0.0, 0.0))[0],
-                    position[1] - root_deltas.get(self._root_by_joint[index], (0.0, 0.0, 0.0))[1],
-                    position[2] - root_deltas.get(self._root_by_joint[index], (0.0, 0.0, 0.0))[2],
-                )
-                for index, position in enumerate(positions)
-            ]
-        pairs = tuple(
-            (joint.parent_index, index)
-            for index, joint in enumerate(self.rig.joints)
-            if joint.parent_index is not None
-        )
+                delta = positions[root] - base
+                root_deltas[root] = (float(delta[0]), float(delta[1]), float(delta[2]))
+                positions[self._root_by_joint == root] -= delta
         snapshot = MotionPreviewSnapshot(
             frame=self.current_frame,
             end_frame=self.end_frame,
             pose=pose,
-            joint_names=tuple(joint.name for joint in self.rig.joints),
-            joint_positions=tuple(positions),
-            bone_pairs=pairs,
+            joint_names=self._joint_names,
+            joint_positions=positions,
+            bone_pairs=self._bone_pairs,
             node_weights=pose.node_weights,
             root_deltas=tuple(sorted(root_deltas.items())),
             deformation_weights=(

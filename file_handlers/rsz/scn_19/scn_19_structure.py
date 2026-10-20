@@ -1,21 +1,23 @@
 import struct
 import traceback
-from file_handlers.rsz.rsz_data_types import (
+from file_handlers.rsz.rsz_data_types import WeakAttribute
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     StringData,
     ResourceData,
     is_reference_type,
     is_array_type
 )
-from utils.hex_util import align
-from utils.id_manager import EmbeddedIdManager
-from utils.hash_util import murmur3_hash  # Added import for murmur3_hash
-from file_handlers.rsz.rsz_build_utils import (
+lazy from utils.hex_util import align
+lazy from utils.id_manager import EmbeddedIdManager
+lazy from utils.hash_util import murmur3_hash
+lazy from file_handlers.rsz.rsz_build_utils import (
     calculate_wstring_offsets,
     pad_to_alignment,
     write_scn_gameobjects,
     write_wstring_entries,
 )
+lazy from file_handlers.rsz.rsz_file import RszFile
 
 _RSZ_V3_HEADER_FORMAT = "<4I Q Q"
 
@@ -41,7 +43,7 @@ class Scn19Header:
         self.info_count = 0
         self.resource_count = 0
         self.folder_count = 0
-        self.userdata_count = 0  # Note: SCN.19 doesn't actually have userdata but the field exists
+        self.userdata_count = 0  # unused in SCN.19; 0
         self.prefab_count = 0    
         self.folder_tbl = 0
         self.resource_info_tbl = 0
@@ -58,7 +60,7 @@ class Scn19Header:
          self.info_count,
          self.resource_count,
          self.folder_count,
-         self.userdata_count,  # Order is changed - userdata before prefab
+         self.userdata_count,
          self.prefab_count,    
          self.folder_tbl,
          self.resource_info_tbl,
@@ -66,28 +68,29 @@ class Scn19Header:
          self.userdata_info_tbl,
          self.data_offset) = struct.unpack_from(fmt, data, 0)
 
-# Special RSZUserDataInfo class for SCN.19 format
+# In SCN.19 its data is an embedded RSZ block, not a string reference.
 class Scn19RSZUserDataInfo:
-    SIZE = 24  # 24 bytes per entry in SCN.19
+    SIZE = 24
+    parent_userdata_rui = WeakAttribute()
+
     def __init__(self):
-        self.instance_id = 0    # 4 bytes: which instance this userdata is associated with
-        self.type_id = 0        # 4 bytes: type ID
-        self.json_path_hash = 0 # 4 bytes: hash of the JSON path
-        self.data_size = 0      # 4 bytes: size of the userdata block
-        self.rsz_offset = 0     # 8 bytes: offset to the data from RSZ start (uint64)
-        self.data = None        # The actual binary userdata content
-        self.original_data = None  # Store the original binary data for preservation
-        self.modified = False   # Track if this embedded structure was modified
+        self.instance_id = 0
+        self.type_id = 0
+        self.json_path_hash = 0  # murmur3 of the JSON path (UTF-16LE)
+        self.data_size = 0
+        self.rsz_offset = 0  # from the RSZ block start
+        self.data = None
+        self.original_data = None
+        self.modified = False
         self.value = ""         
         
         self.parent_userdata_rui = None
         
-        # Fields for embedded RSZ data
-        self.embedded_rsz_header = None      # Parsed RSZ header
-        self.embedded_object_table = []      # Object table entries
-        self.embedded_instance_infos = []    # Instance infos
-        self.embedded_userdata_infos = []    # RSZ userdata infos (if any)
-        self.embedded_instances = {}         # Parsed instances
+        self.embedded_rsz_header = None
+        self.embedded_object_table = []
+        self.embedded_instance_infos = []
+        self.embedded_userdata_infos = []
+        self.embedded_instances = {}
         
     def parse(self, data: bytes, offset: int) -> int:
         if offset + self.SIZE > len(data):
@@ -96,11 +99,10 @@ class Scn19RSZUserDataInfo:
          self.type_id,
          self.json_path_hash, 
          self.data_size, 
-         self.rsz_offset) = struct.unpack_from("<4IQ", data, offset)  # Parse as 4 uint32 + 1 uint64
+         self.rsz_offset) = struct.unpack_from("<4IQ", data, offset)
         return offset + self.SIZE
 
     def mark_modified(self):
-        """Mark this structure as modified"""
         self.modified = True
 
 class EmbeddedRSZHeader:
@@ -117,7 +119,7 @@ class EmbeddedRSZHeader:
         self.userdata_offset = 0
         
     def parse(self, data: bytes, offset: int) -> int:
-        fmt = "<5I I Q Q Q"  # 5 uint32s, 1 uint32 reserved, 3 uint64s
+        fmt = "<5I I Q Q Q"
         (self.magic,
          self.version,
          self.object_count,
@@ -142,24 +144,9 @@ class EmbeddedInstanceInfo:
         return offset + self.SIZE
 
 def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_depth=0, skip_data = False) -> bool:
-    """Parse an embedded RSZ block within SCN.19 userdata, with support for recursive embedded structures
-    
-    Args:
-        rui: The Scn19RSZUserDataInfo object containing the data to parse
-        type_registry: Optional type registry for parsing instance data
-        recursion_depth: Current recursion depth to prevent infinite loops
-        visited_blocks: Set of already visited block hashes to prevent cycles
-        
-    Returns:
-        bool: True if parsing was successful
-    """
-    
-    
-    # Skip if no data or already visited this exact data block (avoid cycles)
     if not rui.data or len(rui.data) < EmbeddedRSZHeader.SIZE:
         return False
         
-    # Store the original data for preservation
     rui.original_data = rui.data
     rui.modified = False
     
@@ -167,7 +154,6 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
     current_offset = embedded_header.parse(rui.data, 0)
     rui.embedded_rsz_header = embedded_header
     
-    # Create an embedded ID manager for this structure
     rui.id_manager = EmbeddedIdManager(rui.instance_id)
     
     if embedded_header.object_count == 0:
@@ -195,10 +181,7 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         instance_offset = inst_info.parse(rui.data, instance_offset)
         rui.embedded_instance_infos.append(inst_info)
     
-    # Parse instance data if data_offset is valid
     if embedded_header.data_offset < embedded_data_len:
-        #A complete mini RszFile-like object with the needed fields for _parse_instances
-        from file_handlers.rsz.rsz_file import RszFile
         mini_scn = RszFile()
         
         mini_scn.type_registry = type_registry
@@ -212,16 +195,12 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
         mini_scn.parsed_elements = {}
         mini_scn.instance_hierarchy = {} 
         
-        # For SCN.19 format, we need to handle embedded userdata as binary blocks, not string references
         mini_scn.rsz_userdata_infos = []
         mini_scn._rsz_userdata_str_map = {}
         
-        # Parse RSZ userdata if any exists in the embedded structure
         if embedded_header.userdata_count > 0 and embedded_header.userdata_offset < embedded_data_len:
-            # For SCN.19 format, userdata entries are Scn19RSZUserDataInfo objects (24 bytes each)
             userdata_offset = embedded_header.userdata_offset
             
-            # Parse all embedded userdata entries
             for ud_idx in range(embedded_header.userdata_count):
                     
                 embedded_rui = Scn19RSZUserDataInfo()
@@ -231,45 +210,34 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
                 userdata_desc = f"Embedded Binary Data (ID: {embedded_rui.instance_id}, Size: {embedded_rui.data_size})"
                 mini_scn._rsz_userdata_str_map[embedded_rui] = userdata_desc
                 
-                # Establish parent-child relationship for this userdata entry
                 if embedded_rui.instance_id not in mini_scn.instance_hierarchy:
                     mini_scn.instance_hierarchy[embedded_rui.instance_id] = {"children": [], "parent": rui.instance_id}
                 
-                # Calculate the absolute offset within this RSZ block
+                # rsz_offset is relative to this block's start.
                 abs_embedded_offset = embedded_rui.rsz_offset
                 
                 embedded_rui.data = memoryview(rui.data[abs_embedded_offset:abs_embedded_offset + embedded_rui.data_size])
         
-            # Initialize userdata lookup structures
             mini_scn._rsz_userdata_dict = {rui.instance_id: rui for rui in mini_scn.rsz_userdata_infos}
             mini_scn._rsz_userdata_set = set(mini_scn._rsz_userdata_dict.keys())
         
-        # Use the data portion for instance parsing
         mini_scn.data = memoryview(rui.data[embedded_header.data_offset:])
 
         mini_scn._warm_type_registry_cache()
 
-        # Parse all instances at once using the proper method
         mini_scn._parse_instances(mini_scn.data, skip_data)
         
-        # Store a reference to the parent userdata_rui for context
         mini_scn.parent_userdata_rui = rui
         
-        # Copy parsed elements to the current UserData object
         rui.embedded_instances = mini_scn.parsed_elements
         
-        # Process any embedded userdata structures found (recursive step)
         rui.embedded_userdata_infos = mini_scn.rsz_userdata_infos
         
-        # Register this mini_scn object in our registry
         domain = f"emb_{rui.instance_id}"
         
-        # Also store a reverse lookup from mini_scn to parent
         mini_scn.domain = domain
         
-        # Recursively parse any nested embedded RSZ userdata blocks
         for nested_idx, embedded_rui in enumerate(rui.embedded_userdata_infos):
-            # Recursively parse this nested RSZ structure
             nested_success = parse_embedded_rsz(
                 embedded_rui, 
                 type_registry, 
@@ -277,12 +245,10 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
                 skip_data
             )
             
-            # If successfully parsed, add it to the embedded_instances
             if nested_success:
                 rui.embedded_instances[embedded_rui.instance_id] = {
                     "embedded_rsz": embedded_rui
                 }
-                # ensure parent node in the hierarchy
                 if rui.instance_id not in mini_scn.instance_hierarchy:
                     mini_scn.instance_hierarchy[rui.instance_id] = {"children": []}
                 mini_scn.instance_hierarchy[rui.instance_id]["children"].append(embedded_rui.instance_id)
@@ -290,7 +256,6 @@ def parse_embedded_rsz(rui: Scn19RSZUserDataInfo, type_registry=None, recursion_
     return True
 
 def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
-    """Build function for SCN.19 files with modified header structure"""
     rsz_file.header.info_count = len(rsz_file.gameobjects)
     rsz_file.header.folder_count = len(rsz_file.folder_infos)
     rsz_file.header.resource_count = len(rsz_file.resource_infos)
@@ -304,7 +269,6 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         
     out = bytearray()
     
-    # 1) Write header - note the changed order of userdata_count and prefab_count
     out += struct.pack(
         "<4s5I5Q",
         rsz_file.header.signature,
@@ -313,14 +277,13 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         rsz_file.header.folder_count,
         rsz_file.header.userdata_count,  # userdata before prefab in SCN.19 (value is 0)
         rsz_file.header.prefab_count,
-        0,  # folder_tbl - placeholder
-        0,  # resource_info_tbl - placeholder
-        0,  # prefab_info_tbl - placeholder
-        0,  # userdata_info_tbl - placeholder (will remain 0)
-        0   # data_offset - placeholder
+        0,
+        0,
+        0,
+        0,
+        0
     )
 
-    # 2) Write gameobjects
     write_scn_gameobjects(out, rsz_file.gameobjects, prefab_before_ukn=True)
 
     pad_to_alignment(out)
@@ -367,7 +330,6 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         (new_prefab_offsets, rsz_file._prefab_str_map),
     )
 
-    # Write RSZ header/tables/userdata
     if rsz_file.rsz_header:
         if special_align_enabled:
             pad_to_alignment(out)
@@ -375,10 +337,8 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         rsz_start = len(out)
         rsz_file.header.data_offset = rsz_start
 
-        # Custom RSZ section build for SCN.19
         build_scn19_rsz_section(rsz_file, out, rsz_start)
 
-    # Before rewriting header, update all table offsets:
     rsz_file.header.folder_tbl = folder_tbl_offset
     rsz_file.header.resource_info_tbl = resource_info_tbl_offset
     rsz_file.header.prefab_info_tbl = prefab_info_tbl_offset
@@ -395,40 +355,28 @@ def build_scn_19(rsz_file, special_align_enabled = False) -> bytes:
         rsz_file.header.folder_tbl,
         rsz_file.header.resource_info_tbl,
         rsz_file.header.prefab_info_tbl,
-        rsz_file.header.userdata_info_tbl,  # Will be 0
+        rsz_file.header.userdata_info_tbl,
         rsz_file.header.data_offset
     )
     out[0:Scn19Header.SIZE] = header_bytes
     
-    return bytes(out)
+    return out.take_bytes()
 
 def build_embedded_rsz(rui, type_registry=None):
-    """Build embedded RSZ data from parsed instances into binary format
-    
-    Args:
-        rui: The Scn19RSZUserDataInfo object containing embedded RSZ data
-        type_registry: Optional type registry for handling types
-        
-    Returns:
-        bytes: The built binary data
-    """
     if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
         recalculate_json_path_hash(rui)
-        from file_handlers.rsz.rsz_file import RszFile
         mini_scn = RszFile()
         
         mini_scn.type_registry = type_registry
         mini_scn.rsz_header = rui.embedded_rsz_header
         
         filtered_instance_infos = []
-        old_to_new_idx = {}  # Map old indices to new indices
+        old_to_new_idx = {}
         
         valid_instance_ids = set(rui.embedded_instances.keys())
         
         if hasattr(rui, 'embedded_instance_infos'):
             for old_idx, info in enumerate(rui.embedded_instance_infos):
-                # Only keep instance infos that are not None AND have a corresponding entry in embedded_instances
-                # This ensures that deleted elements are completely removed
                 if info is not None and old_idx in valid_instance_ids:
                     old_to_new_idx[old_idx] = len(filtered_instance_infos)
                     filtered_instance_infos.append(info)
@@ -496,7 +444,6 @@ def build_embedded_rsz(rui, type_registry=None):
         mini_scn.rsz_header.instance_count = len(mini_scn.instance_infos)
         mini_scn.rsz_header.userdata_count = len(mini_scn.rsz_userdata_infos)
         
-        # Build header based on version
         if mini_scn.rsz_header.version >= 4:
             # Version 4+ has userdata_count and reserved
             rsz_header_bytes = struct.pack(
@@ -523,21 +470,17 @@ def build_embedded_rsz(rui, type_registry=None):
             )
         out += rsz_header_bytes
         
-        # Write object table
         for obj_id in mini_scn.object_table:
             out += struct.pack("<i", obj_id)
         
-        # Write instance infos
         instance_offset = len(out)
         for inst in mini_scn.instance_infos:
             out += struct.pack("<II", inst.type_id, inst.crc)
         
-        # Align to 16 bytes
         while len(out) % 16 != 0:
             out += b"\x00"
         userdata_offset = len(out)
         
-        # Calculate userdata offsets
         userdata_entries_start = len(out)
         
         sorted_rsz_userdata_infos = sorted(mini_scn.rsz_userdata_infos, key=lambda rui: rui.instance_id)
@@ -546,7 +489,6 @@ def build_embedded_rsz(rui, type_registry=None):
         userdata_data_start = ((userdata_data_start + 15) & ~15)
         current_data_offset = userdata_data_start
         
-        # Write userdata table entries
         for nested_rui in sorted_rsz_userdata_infos:
             data_content = getattr(nested_rui, "data", b"")
             if data_content is None:
@@ -562,14 +504,11 @@ def build_embedded_rsz(rui, type_registry=None):
                 rel_data_offset
             )
             
-            # Align each userdata block to 16 bytes
             current_data_offset += ((len(data_content) + 15) & ~15)
         
-        # Pad to start of userdata data
         while len(out) < userdata_data_start:
             out += b"\x00"
         
-        # Write userdata content
         for nested_rui in sorted_rsz_userdata_infos:
             data_content = getattr(nested_rui, "data", b"")
             if data_content is None:
@@ -577,11 +516,9 @@ def build_embedded_rsz(rui, type_registry=None):
                 
             out += data_content
             
-            # Align to 16 bytes
             while len(out) % 16 != 0:
                 out += b"\x00"
         
-        # Write instance data
         data_offset = len(out)
         try:
             for instance_id, fields in mini_scn.parsed_elements.items():
@@ -593,20 +530,16 @@ def build_embedded_rsz(rui, type_registry=None):
                                 expected_count = mini_scn._array_counters[array_id]
                                 if expected_count != len(field_data.values):
                                     print(f"Warning: Array count mismatch in {field_name} - expected {expected_count}, got {len(field_data.values)}")
-                                    # Force array length to match counter to prevent data corruption
                                     while len(field_data.values) < expected_count:
-                                        # Add padding elements if needed
                                         field_data.values.append(field_data.element_class())
             
             instance_data = mini_scn._write_instance_data()
             out += instance_data
         except Exception as e:
             print(f"Error in _write_instance_data: {e}")
-            import traceback
             traceback.print_exc()
             return b''
         
-        # Update RSZ header with correct offsets
         if mini_scn.rsz_header.version >= 4:
             new_rsz_header = struct.pack(
                 "<5I I Q Q Q",
@@ -636,13 +569,11 @@ def build_embedded_rsz(rui, type_registry=None):
         
         rui.modified = False
         
-        return bytes(out)
+        return out.take_bytes()
     
-    # Fallback to original data if no instances or structure to rebuild
     return rui.data if hasattr(rui, 'data') and rui.data else b""
 
 def _update_field_references(field_data, old_to_new_idx):
-    """Update references in fields to match new indices"""
     if is_reference_type(field_data):
         if field_data.value in old_to_new_idx:
             field_data.value = old_to_new_idx[field_data.value]
@@ -652,8 +583,6 @@ def _update_field_references(field_data, old_to_new_idx):
             _update_field_references(element, old_to_new_idx)
 
 def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
-    """Build the RSZ section specifically for SCN.19 format"""
-    
     non_empty_userdata_infos = []
     for rui in rsz_file.rsz_userdata_infos:
         if _has_userdata_payload(rui):
@@ -666,7 +595,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
             rsz_file.rsz_header.version,
             rsz_file.rsz_header.object_count,
             len(rsz_file.instance_infos),
-            len(non_empty_userdata_infos),  # Use filtered count
+            len(non_empty_userdata_infos),
             rsz_file.rsz_header.reserved,
             0,  # instance_offset - will update later
             0,  # data_offset - will update later 
@@ -728,7 +657,6 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
     current_data_offset = userdata_data_start
 
     for rui in sorted_rsz_userdata_infos:
-        # Always check for embedded instances and rebuild if needed
         if hasattr(rui, 'embedded_instances') and rui.embedded_instances:
             try:
                 rui.data = memoryview(build_embedded_rsz(rui, rsz_file.type_registry))
@@ -746,7 +674,7 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
             rui.instance_id,
             getattr(rui, "type_id", 0),
             getattr(rui, "json_path_hash", 0),
-            len(data_content),  # Original data size
+            len(data_content),
             rel_data_offset     # RSZ-relative offset (64-bit)
         )
         
@@ -803,8 +731,6 @@ def build_scn19_rsz_section(rsz_file, out: bytearray, rsz_start: int):
         out[rsz_start:rsz_start + rsz_file.rsz_header.SIZE] = new_rsz_header
 
 def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
-    """Parse SCN.19 RSZ userdata entries (24 bytes each with embedded binary data)"""
-    
     rsz_file.rsz_userdata_infos = []
     rsz_base_offset = rsz_file.header.data_offset
     current_offset = rsz_file._current_offset
@@ -848,10 +774,8 @@ def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
                         desc = f"Embedded RSZ: {obj_count} objects, {inst_count} instances, {parsed_count} parsed"
                         rsz_file.set_rsz_userdata_string(rui, desc)
                     else:
-                        # RSZ looked valid but failed to parse
                         rsz_file.set_rsz_userdata_string(rui, f"RSZ parse error (magic: 0x{magic:08X}, ver: {version})")
                 else:
-                    # Not a valid RSZ block, too small
                     rsz_file.set_rsz_userdata_string(rui, f"Not RSZ data - too small ({rui.data_size} bytes)")
             else:
                 rui.data = memoryview(b"")
@@ -860,7 +784,6 @@ def parse_scn19_rsz_userdata(rsz_file, data, skip_data = False):
             rui.data = memoryview(b"")
             rsz_file.set_rsz_userdata_string(rui, f"Error: {str(e)[:50]}...")
     
-    # Find the end of userdata section by finding the highest offset + size
     if rsz_file.rsz_userdata_infos:
         try:
             max_end_offset = max(

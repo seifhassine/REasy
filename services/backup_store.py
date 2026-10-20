@@ -4,7 +4,7 @@ from datetime import datetime
 from pathlib import Path
 import re
 
-from utils.app_paths import backups_directory
+lazy from utils.app_paths import backups_directory
 
 
 BACKUP_TIMESTAMP_FORMAT = "%Y%m%d_%H%M%S"

@@ -1,7 +1,8 @@
 """Shared tree operations for the direct RSZ editor UI."""
 
-from file_handlers.pyside.tree_model import DataTreeBuilder
-from file_handlers.rsz.rsz_data_types import is_reference_type
+lazy from file_handlers.pyside.tree_model import DataTreeBuilder
+lazy from file_handlers.rsz.rsz_data_types import is_reference_type
+lazy from file_handlers.pyside.tree_widget_factory import TreeWidgetFactory
 
 
 def create_array_element_node(viewer, index, element, embedded_context=None):
@@ -91,8 +92,6 @@ def append_array_element_node(
         return True
 
     if widget_factory is None:
-        from file_handlers.pyside.tree_widgets import TreeWidgetFactory
-
         widget_factory = TreeWidgetFactory
 
     child_item = child_index.internalPointer()

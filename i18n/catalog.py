@@ -3,7 +3,7 @@
 from collections import Counter
 from pathlib import Path
 import re
-from xml.etree import ElementTree
+lazy from xml.etree import ElementTree
 
 
 _PLACEHOLDER = re.compile(r"(?<!\{)\{[^{}]*\}(?!\})|%(?:L?\d+|n)")

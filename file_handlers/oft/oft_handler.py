@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.resource_file_utils import resource_version_from_path
 
-from .codec import OFT_CODECS
+from .codec import detect_oft_version
 from .oft_file import OftFile
+from .profiles import OftFormatError
+lazy from PySide6.QtGui import QStandardItem, QStandardItemModel
 
 
 class OftHandler(BaseFileHandler):
@@ -19,12 +21,12 @@ class OftHandler(BaseFileHandler):
     def read(self, data: bytes) -> None:
         version = resource_version_from_path(self.filepath, "oft")
         if version is None:
-            if len(OFT_CODECS) != 1:
-                raise ValueError(
-                    "cannot determine OFT version from the filename; multiple "
-                    "codecs are registered"
-                )
-            version = next(iter(OFT_CODECS))
+            version = detect_oft_version(data)
+        if version is None:
+            raise OftFormatError(
+                "cannot determine the OFT version of this file from its name "
+                "or contents"
+            )
         self.oft = OftFile.from_bytes(data, version=version)
         self.modified = False
 
@@ -41,7 +43,6 @@ class OftHandler(BaseFileHandler):
     def populate_treeview(self, tree, _parent_item, _metadata_map: dict) -> None:
         if self.oft is None:
             return
-        from PySide6.QtGui import QStandardItem, QStandardItemModel
 
         model = QStandardItemModel()
         model.setHorizontalHeaderLabels(["Field", "Value"])
@@ -57,11 +58,27 @@ class OftHandler(BaseFileHandler):
         font = self.oft.font()
         font_item = add("sfnt", font.sfnt_version.hex(" "))
         add("familyName", font.family_name or "", font_item)
+        add("styleName", font.name(2) or "", font_item)
         add("fullName", font.full_name or "", font_item)
+        add("postscriptName", font.name(6) or "", font_item)
         add("unitsPerEm", font.units_per_em, font_item)
         add("glyphCount", font.glyph_count, font_item)
         add("faces", len(font.face_offsets), font_item)
         add("tables", ", ".join(font.table_tags), font_item)
+        line_metrics = add("horizontalLineMetrics", "", font_item)
+        metrics = font.horizontal_line_metrics
+        if metrics is not None:
+            add("ascender", metrics.ascender, line_metrics)
+            add("descender", metrics.descender, line_metrics)
+            add("lineGap", metrics.line_gap, line_metrics)
+            add("maximumAdvance", metrics.maximum_advance, line_metrics)
+        cmaps = add("cmaps", len(font.cmaps), font_item)
+        for cmap in font.cmaps:
+            add(
+                f"platform{cmap.platform_id}/encoding{cmap.encoding_id}",
+                f"format {cmap.format}, {cmap.coverage_count} codepoints",
+                cmaps,
+            )
         tree.setModel(model)
         tree.expandToDepth(1)
 

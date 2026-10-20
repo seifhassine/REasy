@@ -39,16 +39,19 @@ def texture_quality_profile(value) -> TextureQualityProfile:
     return TEXTURE_QUALITY_PROFILES[normalize_texture_quality(value)]
 
 
+def mip_for_largest_side(header, max_dimension: int) -> int:
+    mip_count = max(1, int(getattr(header, "mip_count", 1)))
+    width = max(1, int(getattr(header, "width", 1)))
+    height = max(1, int(getattr(header, "height", 1)))
+    mip = 0
+    while mip + 1 < mip_count and max(width, height) > max_dimension:
+        width, height = max(1, width // 2), max(1, height // 2)
+        mip += 1
+    return mip
+
+
 def choose_texture_mip(tex, quality) -> int:
     profile = texture_quality_profile(quality)
     if profile.max_dimension is None:
         return 0
-
-    mip_count = max(1, int(getattr(tex.header, "mip_count", 1)))
-    width = max(1, int(getattr(tex.header, "width", 1)))
-    height = max(1, int(getattr(tex.header, "height", 1)))
-    mip = 0
-    while mip + 1 < mip_count and max(width, height) > profile.max_dimension:
-        width, height = max(1, width // 2), max(1, height // 2)
-        mip += 1
-    return mip
+    return mip_for_largest_side(tex.header, profile.max_dimension)

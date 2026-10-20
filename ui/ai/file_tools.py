@@ -7,17 +7,17 @@ import re
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from services.file_operations import (
+lazy from services.file_operations import (
     FILE_OPERATION_PLAN_TTL_SECONDS,
     FileOperationError,
     FileOperationPlan,
     FolderFileOperations,
 )
-from settings import AI_FILE_ACTION_MODES
-from ui.ai.action_policy import AiChangeDecision
-from ui.ai.tool_registry import (
+lazy from settings import AI_FILE_ACTION_MODES
+lazy from ui.ai.action_policy import AiChangeDecision
+lazy from ui.ai.tool_registry import (
     AssistantToolError,
     tool,
     translate_tool_text as _tr,

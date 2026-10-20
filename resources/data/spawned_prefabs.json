@@ -1,0 +1,20 @@
+{
+  "_comment": [
+    "Game script components that instantiate a prefab under their game object when the scene starts: the scene viewer",
+    "loads the prefab as a linked document there, as it loads a folder's linked scene.",
+    "Keyed by component type name. 'prefab' is the field path to the via.Prefab's Path (through objects, each step a",
+    "field name), at the highest graphics settings. 'children', when present, lists per-child overrides the component",
+    "applies to the instantiated prefab: 'list' the array field, 'name' the name of a child of the prefab's root (the",
+    "first so named), 'draw' its draw switch, applied as that child's DrawSelf.",
+    "RE4 (2026-10-18): chainsaw.PropsPrefabGenerator spawns each stage's visible foliage (st*_FoliageGroup.pfb; the",
+    "scene places only the shadow-casting _Shadow group). _LowPCPropsPrefabController is the low-PC preset's choice.",
+    "Read from re4_dump.exe (2026-10-18): applyRequestedState finds each _ChildName by a path relative to the spawned",
+    "object (a bare name: its child) and calls share.GameObjectStateSetMediator.requestSetState(child, update None,",
+    "draw _DrawState, layer 1), whose applier sets the child's DrawSelf (via.GameObject +0x13) to 'no layer holds",
+    "it off'."
+  ],
+  "chainsaw.PropsPrefabGenerator": {
+    "prefab": ["_PropsPrefabController", "_Item", "Path"],
+    "children": {"list": "_ChildOverrideStateList", "name": "_ChildName", "draw": "_DrawState"}
+  }
+}

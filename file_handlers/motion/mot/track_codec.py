@@ -3,10 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Sequence
 
-import numpy as np
+lazy import numpy as np
 
-from ..binary import ReadContext
-from ..errors import MotionParseError, MotionWriteError
+lazy from ..binary import ReadContext
+lazy from ..errors import MotionParseError, MotionWriteError
 from .model import KeyTrack, TrackFamily
 
 

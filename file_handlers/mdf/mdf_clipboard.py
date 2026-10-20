@@ -2,14 +2,14 @@ import json
 import os
 from typing import Any, Dict, List, Optional, Tuple
 
-from file_handlers.mdf.mdf_file import (
+lazy from file_handlers.mdf.mdf_file import (
     MatData,
     MatHeader,
     ParamHeader,
     TexHeader,
     GpbfHeader,
 )
-from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+lazy from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
 
 
 class MdfClipboard:

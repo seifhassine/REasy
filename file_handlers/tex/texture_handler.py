@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
+lazy from .tex_viewer import TexViewer
 
 
 class TextureViewerHandler(BaseFileHandler):
@@ -19,11 +20,9 @@ class TextureViewerHandler(BaseFileHandler):
         return bytes(self.raw_data)
 
     def create_viewer(self):
-        from .tex_viewer import TexViewer
-
         viewer = TexViewer(self)
         viewer.modified_changed.connect(self.modified_changed.emit)
         return viewer
 
-    def build_dds_bytes(self, image_index: int = 0) -> bytes:
+    def build_dds_bytes(self) -> bytes:
         return bytes(self.raw_data)

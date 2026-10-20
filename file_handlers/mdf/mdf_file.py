@@ -4,11 +4,43 @@ import struct
 from typing import List, Tuple
 
 from utils.binary_handler import BinaryHandler
-from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
-from utils.resource_file_utils import resource_version_from_path
+lazy from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
+lazy from utils.resource_file_utils import resource_version_from_path
 
 
 MDF_MAGIC = 0x0046444D
+# The engine's names of bits 0-9 of ``MatHeader.material_flags``, by bit index.
+MATERIAL_FLAG_NAMES = (
+    "BaseTwoSideEnable", "BaseAlphaTestEnable", "ShadowCastDisable", "VertexShaderUsed", "EmissiveUsed",
+    "TessellationEnable", "EnableIgnoreDepth", "AlphaMaskUsed", "ForcedTwoSideEnable", "TwoSideEnable",
+)
+BASE_TWO_SIDE_ENABLE, BASE_ALPHA_TEST_ENABLE, FORCED_TWO_SIDE_ENABLE = (
+    1 << MATERIAL_FLAG_NAMES.index(name) for name in ("BaseTwoSideEnable", "BaseAlphaTestEnable", "ForcedTwoSideEnable"))
+
+
+def transparent_priority_bias(flags: int) -> int:
+    """Version 31 and later only."""
+    value = (int(flags) >> 40) & 0xFF
+    return value - 0x100 if value & 0x80 else value
+
+
+class _MdfReader(BinaryHandler):
+    """Read only: the string cache assumes the bytes are never written."""
+
+    def __init__(self, data: bytes):
+        super().__init__(bytearray(data))
+        self._strings: dict[int, tuple[str, int]] = {}
+
+    def read_wstring(self, null_terminated: bool = True) -> str:
+        if not null_terminated:
+            return super().read_wstring(False)
+        start = self.tell
+        cached = self._strings.get(start)
+        if cached is None:
+            cached = self._strings[start] = (super().read_wstring(), self.tell)
+        else:
+            self.position = cached[1] - self.offset
+        return cached[0]
 
 
 @dataclass
@@ -19,10 +51,7 @@ class MdfHeader:
     options: int = 0
 
     def read(self, h: BinaryHandler):
-        self.magic = h.read_uint32()
-        self.version = h.read_int16()
-        self.material_count = h.read_int16()
-        self.options = h.read_int64()
+        self.magic, self.version, self.material_count, self.options = h.read('<Ihhq')
 
     def write(self, h: BinaryHandler):
         h.write_uint32(self.magic)
@@ -85,7 +114,7 @@ class MatHeader:
             self.gpbf_name_count = h.read_int32()
             self.gpbf_data_count = h.read_int32()
         if version >= 31:
-            self.BakeTextureArraySize = h.read_uint32() #seems to have no matching structure in mdf file itself, need to display this in UI (editable too)
+            self.BakeTextureArraySize = h.read_uint32()  # seems to match no structure in the file itself
             
         self.shader_type = h.read_int32()
         if version >= 31:
@@ -153,7 +182,6 @@ class MatHeader:
         cur += 4  # name hash
         if version == 6:
             cur += 8
-        # params_size, param_count, tex_count
         h.write_at(cur, '<i', self.params_size)
         cur += 4
         h.write_at(cur, '<i', self.param_count)
@@ -163,19 +191,17 @@ class MatHeader:
             cur += 4
         h.write_at(cur, '<i', self.tex_count)
         cur += 4
-        # gpbf counts (>=19)
         if version >= 19:
             h.write_at(cur, '<i', self.gpbf_name_count)
             cur += 4
             h.write_at(cur, '<i', self.gpbf_data_count)
             cur += 4
-        # skip ukn (>=31)
+        # skip BakeTextureArraySize
         if version >= 31:
             cur += 4
         # skip shader_type
         cur += 4
-        # skip material_flags
-        # ukn1 and shaderLODNum (>=31)
+        # skip material_flags (8 bytes from v31, else 4) and shaderLODNum (>=31)
         if version >= 31:
             cur += 12
             # v51 unknown long
@@ -183,7 +209,6 @@ class MatHeader:
                 cur += 8
         else:
             cur += 4
-        # param_header_offset, tex_header_offset
         h.write_at(cur, '<q', self.param_header_offset)
         cur += 8
         h.write_at(cur, '<q', self.tex_header_offset)
@@ -193,9 +218,8 @@ class MatHeader:
             cur += 8
         h.write_at(cur, '<q', self.params_offset)
         cur += 8
-        # mmtr offset (string)
         if version >= 31:
-            cur += 8  # mmtr offset value
+            cur += 8  # mmtr string offset
             h.write_at(cur, '<q', self.shaderLODRedirects_offset)
             cur += 8
 
@@ -209,10 +233,7 @@ class TexHeader:
     locked: int = 0
 
     def read(self, h: BinaryHandler, version: int):
-        type_off = h.read_int64()
-        self.hash = h.read_uint32()
-        self.ascii_hash = h.read_uint32()
-        path_off = h.read_int64()
+        type_off, self.hash, self.ascii_hash, path_off = h.read('<qIIq')
         self.tex_type = ""
         if type_off:
             with h.seek_jump_back(type_off):
@@ -264,22 +285,17 @@ class ParamHeader:
 
     def read(self, h: BinaryHandler, version: int):
         self._pos = h.tell
-        name_off = h.read_int64()
-        self.hash = h.read_uint32()
-        self.ascii_hash = h.read_uint32()
         if version >= 31:
-            self.param_rel_offset = h.read_int32()
-            comp = h.read_uint32()
+            name_off, self.hash, self.ascii_hash, self.param_rel_offset, comp = h.read('<qIIiI')
             self.component_count = comp & 0xFFFF
             self.component_locked = (comp >> 16) & 0xFFFF
         elif version >= 13:
-            self.param_rel_offset = h.read_int32()
-            self.component_count = h.read_int16()
-            self.component_locked = h.read_int16()
+            (name_off, self.hash, self.ascii_hash, self.param_rel_offset,
+             self.component_count, self.component_locked) = h.read('<qIIihh')
         else:
-            self.component_count = h.read_int32()
+            (name_off, self.hash, self.ascii_hash, self.component_count,
+             self.param_rel_offset) = h.read('<qIIii')
             self.component_locked = 0
-            self.param_rel_offset = h.read_int32()
         self._orig_rel_offset = self.param_rel_offset
         self._orig_component_count = self.component_count
         self.name = ""
@@ -322,9 +338,7 @@ class GpbfHeader:
     ascii_hash: int = 0
 
     def read(self, h: BinaryHandler):
-        name_off = h.read_int64()
-        self.utf16_hash = h.read_uint32()
-        self.ascii_hash = h.read_uint32()
+        name_off, self.utf16_hash, self.ascii_hash = h.read('<qII')
         self.name = ""
         if name_off:
             with h.seek_jump_back(name_off):
@@ -374,7 +388,7 @@ class MdfFile:
             return False
 
     def read(self, data: bytes, file_path: str = "") -> bool:
-        h = BinaryHandler(bytearray(data))
+        h = _MdfReader(data)
         self.header.read(h)
         if self.header.magic != MDF_MAGIC:
             raise ValueError("Not an MDF file")
@@ -472,10 +486,8 @@ class MdfFile:
                         if stored_component_count == 1:
                             values = (values,)
                         ph.parameter = tuple(values) + (0.0,) * (4 - stored_component_count)
-                        # Parsed relative offsets are authoritative.  Structural
-                        # material synchronization also sets this flag so the
-                        # legacy LayerColor convenience heuristic cannot move
-                        # an already verified ABI field during serialization.
+                        # Keep parsed or synced offsets so the LayerColor heuristic can't move verified ABI fields when
+                        # writing.
                         ph._layout_locked = True
                         mat.parameters.append(ph)
             mat.parameter_layout_size = int(mat.header.params_size)
@@ -492,7 +504,6 @@ class MdfFile:
                         mat.gpu_buffers.append((n, d))
                 h.seek(tell)
 
-            # Read ShaderLOD Redirects table and arrays (>=31)
             mat.shader_lod_redirects = []
             if version >= 31 and mat.header.shaderLODRedirects_offset and mat.header.shaderLODNum > 0:
                 with h.seek_jump_back(mat.header.shaderLODRedirects_offset):
@@ -534,18 +545,26 @@ class MdfFile:
                 mat.header.shaderLODRedirects_offset = 0
             mat.header.write(h, version, self.layout)
 
+        # From v40 Capcom's writer points every empty table of a kind at the first one.
+        shared_empty = {} if version >= 40 else None
+
+        def table_offset(kind, items):
+            if shared_empty is None or items:
+                return h.tell
+            return shared_empty.setdefault(kind, h.tell)
+
         for mat in self.materials:
-            mat.header.tex_header_offset = h.tell
+            mat.header.tex_header_offset = table_offset("textures", mat.textures)
             for th in mat.textures:
                 th.write(h, version)
 
         for mat in self.materials:
-            mat.header.param_header_offset = h.tell
+            mat.header.param_header_offset = table_offset("parameters", mat.parameters)
             for ph in mat.parameters:
                 ph.write(h, version)
 
         for mat in self.materials:
-            mat.header.gpbf_offset = h.tell
+            mat.header.gpbf_offset = table_offset("gpu_buffers", mat.gpu_buffers)
             mat.header.gpbf_name_count = mat.header.gpbf_data_count = len(mat.gpu_buffers)
             for name_hdr, data_hdr in mat.gpu_buffers:
                 name_hdr.write(h, is_value=False)
@@ -602,7 +621,7 @@ class MdfFile:
             if requested_size >= actual_size:
                 pad_end = requested_size - actual_size
             else:
-                if version == 6: # Dunno what kind of unholy optimization Capcom was doing here
+                if version == 6:  # Shipped v6 files pad by 4 bytes, not to a 16-byte boundary.
                     pad_end = 4 if (actual_size % 16) != 0 else 0
                 else:
                     pad_end = (16 - (actual_size % 16)) % 16
@@ -623,25 +642,20 @@ class MdfFile:
                     offsets: List[int] = []
                     for i in range(mat.header.shaderLODNum):
                         counts, elems = (mat.shader_lod_redirects[i] if i < len(mat.shader_lod_redirects) else ([], []))
-                        # counts array: size then 4-byte IDs
                         cofs = h.tell
                         h.write_int32(len(counts))
                         for v in counts:
                             h.write_int32(int(v))
                         offsets.append(cofs)
-                        # elems array: size then 4-byte IDs
                         eofs = h.tell
                         h.write_int32(len(elems))
                         for v in elems:
                             h.write_int32(int(v))
                         offsets.append(eofs)
-                    # Patch offsets table
                     for j, ofs in enumerate(offsets):
                         h.write_at(table_pos + j * 8, '<q', ofs)
-                    # Persist shaderLODRedirects_offset in header
                     mat.header.rewrite(h, version, self.layout)
                 else:
-                    # No shaderLODRedirects_offset: ensure header field is zeroed
                     mat.header.shaderLODRedirects_offset = 0
                     mat.header.rewrite(h, version, self.layout)
 

@@ -20,9 +20,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from file_handlers.sound.sound_metadata import SoundMetadata
-from file_handlers.sound.sound_profile import sound_profile_for_handler
-from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
+lazy from file_handlers.sound.sound_metadata import SoundMetadata
+lazy from file_handlers.sound.sound_profile import sound_profile_for_handler
+lazy from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
 
 
 SELECT_EVENT_TEXT = QT_TRANSLATE_NOOP(

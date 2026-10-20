@@ -304,7 +304,7 @@ class ClipParser:
                 stack.extend(reversed(getattr(item, child_attr)))
 
         if parsed.tracks:
-            node_roots = [node for track in parsed.tracks for node in track.child_nodes]
+            node_roots = [*track.child_nodes for track in parsed.tracks]
         elif parsed.header.version >= 85:
             node_roots = []
         else:
@@ -312,7 +312,7 @@ class ClipParser:
         live_nodes = list(walk_unique(node_roots, "child_nodes"))
         live_property_ids = {
             id(prop) for prop in walk_unique(
-                [prop for node in live_nodes for prop in node.properties],
+                [*node.properties for node in live_nodes],
                 "child_properties",
             )
         }

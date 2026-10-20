@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping
 
-import numpy as np
+lazy import numpy as np
 
-from .scn_scene_graph import (
+lazy from .scn_scene_graph import (
     ScnObjectId,
     ScnRenderableMesh,
     ScnSceneDocument,

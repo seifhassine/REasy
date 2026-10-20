@@ -1,7 +1,6 @@
 import struct
 import uuid
 import sys
-from types import MappingProxyType
 from file_handlers.rsz.rsz_data_types import (
     Int4Data, Int4ColorData, StructData, S8Data, U8Data, BoolData, S16Data, U16Data, S64Data, S32Data, U64Data, F64Data, F32Data,
     Vec2Data, Float2Data, RangeData, RangeIData, Float3Data, PositionData, Int3Data, Float4Data, QuaternionData,
@@ -10,10 +9,12 @@ from file_handlers.rsz.rsz_data_types import (
     ArrayData, MaybeObject, Uint2Data, Int2Data, Uint3Data, SizeData, PointData, AreaDataOld, get_type_class, 
     RectData, NON_ARRAY_PARSERS, LazyRawValues
 )
-from file_handlers.rsz.pfb_16.pfb_structure import Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata
-from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
-from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
-from file_handlers.rsz.rsz_build_utils import (
+lazy from file_handlers.rsz.pfb_16.pfb_structure import (
+    Pfb16Header, build_pfb_16, parse_pfb16_rsz_userdata, parse_pfb16_resources, Pfb16ResourceInfo,
+)
+lazy from file_handlers.rsz.scn_19.scn_19_structure import Scn19Header, build_scn_19, parse_scn19_rsz_userdata
+lazy from file_handlers.rsz.scn_18.scn_18_structure import Scn18Header, _parse_scn_18_resource_infos, build_scn_18
+lazy from file_handlers.rsz.rsz_build_utils import (
     calculate_wstring_offsets,
     pad_to_alignment,
     write_prefab_info_table,
@@ -23,7 +24,7 @@ from file_handlers.rsz.rsz_build_utils import (
     write_userdata_info_table,
     write_wstring_entries,
 )
-from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
+lazy from utils.hex_util import read_wstring, guid_le_to_str, align as _align 
 
 _STRUCT_DEFINITIONS = {
     "uint": "<I",
@@ -99,7 +100,6 @@ unpack_16float = _UNPACKERS["16float"]
 
 class _NonArrayFieldParser:
     __slots__ = (
-        "file",
         "data",
         "pos",
         "base_mod",
@@ -114,10 +114,9 @@ class _NonArrayFieldParser:
         "rsz_userdata_map",
     )
 
-    def __init__(self, file_obj):
-        self.file = file_obj
-        self.data = file_obj.data
-        self.base_mod = 0
+    def __init__(self, data, base_mod=0):
+        self.data = data
+        self.base_mod = base_mod
         self.pos = 0
         self.field_size = 0
         self.field_align = 1
@@ -131,6 +130,7 @@ class _NonArrayFieldParser:
 
     def reset_context(
         self,
+        data,
         base_mod,
         current_children,
         set_parent,
@@ -139,7 +139,7 @@ class _NonArrayFieldParser:
         rsz_userdata_by_id,
         rsz_userdata_map,
     ):
-        self.data = self.file.data
+        self.data = data
         self.base_mod = base_mod
         self.current_children = current_children
         self.set_parent = set_parent
@@ -607,7 +607,7 @@ class RszFile:
         self._gameobject_instance_ids = set()  # Set of gameobject instance IDs
         self._folder_instance_ids = set()      # Set of folder instance IDs
 
-        self._empty_fields = MappingProxyType({})
+        self._empty_fields = frozendict()
         self._path_lower = ""
         self._is_16 = False
         self._is_18 = False
@@ -692,7 +692,6 @@ class RszFile:
         self._parse_gameobject_ref_infos(data)
         
         if self._is_16:
-            from file_handlers.rsz.pfb_16.pfb_structure import parse_pfb16_resources
             self._current_offset = parse_pfb16_resources(self, data)
         else:
             self._parse_resource_infos(data)
@@ -1108,24 +1107,12 @@ class RszFile:
         element_class,
         base_mod: int,
     ):
-        raw = self.data[raw_start:raw_end]
+        data = self.data
+        raw = data[raw_start:raw_end]
         raw_copy_safe = base_mod == 0 and field_align <= 4
 
         def materialize():
-            parser = _NonArrayFieldParser(self)
-            parser.reset_context(
-                base_mod,
-                [],
-                lambda _idx, _parent: None,
-                lambda _candidate: False,
-                None,
-                self._rsz_userdata_dict,
-                self._rsz_userdata_str_map,
-            )
-            parser.data = self.data
-            parser.field_size = field_size
-            parser.field_align = field_align
-            parser.original_type = original_type
+            parser = _NonArrayFieldParser(data, base_mod)
             values = []
             append = values.append
             pos = raw_start
@@ -1144,31 +1131,30 @@ class RszFile:
         raw_end: int,
         parse_start: int,
         struct_fields_def: list,
-        current_instance_index: int,
-        original_type: str,
         max_align: int,
         base_mod: int,
     ):
-        raw = self.data[raw_start:raw_end]
+        data = self.data
+        raw = data[raw_start:raw_end]
         raw_copy_safe = base_mod == 0 and max_align <= 4
+        fields = tuple(field["_parse_cache"] for field in struct_fields_def)
 
         def materialize():
+            parser = _NonArrayFieldParser(data, base_mod)
+            configure = parser.configure
             struct_values = []
             current_pos = parse_start
-            parsed_elements = self.parsed_elements.setdefault(current_instance_index, {})
             for _ in range(count):
                 struct_element = {}
-                self.parsed_elements[current_instance_index] = struct_element
-                next_pos = self.parse_instance_fields(
-                    offset=current_pos,
-                    fields_def=struct_fields_def,
-                    current_instance_index=current_instance_index,
-                )
-                if next_pos <= current_pos or not struct_element:
+                pos = current_pos
+                for field_name, _rsz_type, fsize, field_align, _is_array, original_type, parser_func, _element_class in fields:
+                    configure(pos, fsize, field_align, original_type)
+                    struct_element[field_name] = parser_func(parser)
+                    pos = parser.pos
+                if pos <= current_pos or not struct_element:
                     break
                 struct_values.append(struct_element)
-                current_pos = next_pos
-            self.parsed_elements[current_instance_index] = parsed_elements
+                current_pos = pos
             return struct_values
 
         return LazyRawValues(count, materialize, raw, raw_copy_safe)
@@ -1673,7 +1659,7 @@ class RszFile:
                 if field_name in fields:
                     self._write_field_value(field_def, fields[field_name], out)
                     
-        return bytes(out)
+        return out.take_bytes()
     
     def get_resources_dynamically(self):
         """Get resources dynamically based on resource fields"""
@@ -1755,7 +1741,6 @@ class RszFile:
         return resources
 
     def rebuild_resources(self):
-        from file_handlers.rsz.pfb_16.pfb_structure import Pfb16ResourceInfo
         dynamic_resources = self.get_resources_dynamically()
         self.resource_infos.clear()
         self._resource_str_map.clear()
@@ -1985,7 +1970,7 @@ class RszFile:
         out[0:ScnHeader.SIZE] = header_bytes
         
         
-        return bytes(out)
+        return out.take_bytes()
 
     def _build_usr(self, special_align_enabled=False) -> bytes:
         self.header.resource_count = len(self.resource_infos)
@@ -2037,7 +2022,7 @@ class RszFile:
         )
         out[0:UsrHeader.SIZE] = header_bytes
 
-        return bytes(out)
+        return out.take_bytes()
 
     def _build_pfb(self, special_align_enabled = False) -> bytes:
         self.header.info_count = len(self.gameobjects)
@@ -2103,7 +2088,7 @@ class RszFile:
         )
         out[0:PfbHeader.SIZE] = header_bytes
 
-        return bytes(out)
+        return out.take_bytes()
     
     def _build_rsz_section(self, out: bytearray, special_align_enabled = False, update_header_data_offset: bool = True):
         """Build the RSZ section that's common to all file formats.
@@ -2189,7 +2174,7 @@ class RszFile:
 
         out = bytearray()
         self._build_rsz_section(out, special_align_enabled, update_header_data_offset=False)
-        return bytes(out)
+        return out.take_bytes()
 
     def build_validated(self, special_align_enabled=False) -> bytes:
         """Build and strictly verify a stable parse/build round trip."""
@@ -2310,9 +2295,10 @@ class RszFile:
         if parser_pool:
             non_array_parser = parser_pool.pop()
         else:
-            non_array_parser = _NonArrayFieldParser(self)
+            non_array_parser = _NonArrayFieldParser(self.data)
 
         non_array_parser.reset_context(
+            self.data,
             base_mod,
             current_children,
             set_parent,
@@ -2362,8 +2348,6 @@ class RszFile:
                                         raw_end,
                                         current_pos,
                                         struct_fields_def,
-                                        current_instance_index,
-                                        original_type,
                                         max(layout, field_align),
                                         base_mod,
                                     )

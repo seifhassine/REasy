@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 
-from utils.resource_file_utils import (
+lazy from utils.resource_file_utils import (
     ResourceDataLoader,
     ResourceResolutionContext,
     normalize_resource_path,

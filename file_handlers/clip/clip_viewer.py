@@ -39,7 +39,7 @@ from PySide6.QtWidgets import (
 
 from .enums import PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
 from .graph_operations import ClipGraphOperations
-from .metadata import (
+lazy from .metadata import (
     AUX_KEY_TABLE_NAMES,
     COMPONENT_LABELS,
     EXTRA_PROPERTY_MASK_NAMES,
@@ -66,13 +66,13 @@ from .structures import (
     Track,
     UserDataAssetInfo,
 )
-from .value_adapters import (
+lazy from .value_adapters import (
     apply_key_payload_text,
     key_payload_editable,
     key_payload_text,
     parse_path_point3d_text,
 )
-from utils.number_format import format_display_value, format_float_sequence, format_full_float
+lazy from utils.number_format import format_display_value, format_float_sequence, format_full_float
 
 
 KEY_OBJECT_TYPES = (Key, BoolKey, ActionKey, NoHermiteKey, SpeedPoint)
@@ -187,7 +187,7 @@ def _property_path_to(parsed, target: Property) -> tuple[Node, list[Property]] |
 
 def _iter_graph_nodes(parsed):
     if parsed.tracks:
-        roots = [node for track in parsed.tracks for node in track.child_nodes]
+        roots = [*track.child_nodes for track in parsed.tracks]
     elif parsed.header.version >= 85:
         roots = []
     else:
@@ -196,12 +196,12 @@ def _iter_graph_nodes(parsed):
 
 
 def _iter_graph_properties(parsed):
-    roots = [prop for node in _iter_graph_nodes(parsed) for prop in node.properties]
+    roots = [*node.properties for node in _iter_graph_nodes(parsed)]
     return ClipGraphOperations._walk_unique(roots, "child_properties")
 
 
 def _live_clip_infos(parsed) -> list[ClipInfo]:
-    return [clip for track in parsed.tracks for clip in track.clip_infos]
+    return [*track.clip_infos for track in parsed.tracks]
 
 
 def _live_reference_ids(parsed, attr: str) -> set[int]:
@@ -1397,6 +1397,10 @@ class ClipViewer(QWidget):
         self.modified = False
         self.current: dict[str, Any] | None = None
         self._key_table_internal = False
+        self._scroll_timer = QTimer(self)
+        self._scroll_timer.setSingleShot(True)
+        self._scroll_timer.setInterval(0)
+        self._scroll_timer.timeout.connect(self._scroll_timeline_to_current)
         self._build_ui()
         self._refresh()
 
@@ -1601,7 +1605,7 @@ class ClipViewer(QWidget):
         self._show_object(obj)
         self._update_section_visibility(obj)
         self._update_buttons(obj)
-        QTimer.singleShot(0, self._scroll_timeline_to_current)
+        self._scroll_timer.start()
 
     def _show_object(self, obj):
         if self.current and self.current.get("kind") == "oword":

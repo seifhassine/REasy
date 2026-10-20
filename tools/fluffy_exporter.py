@@ -1,17 +1,17 @@
 from __future__ import annotations
 import json
-import zipfile
+lazy import zipfile
 import tempfile
 from pathlib import Path
 
-from tools.pak_exporter import _ensure_packer, run_packer
+lazy from tools.pak_exporter import _ensure_packer, run_packer
+lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER
 
 _MODINFO_NAME = "modinfo.ini"
-_PROJECT_CONFIG_NAME = ".reasy_project.json"
 
 
 def _load_project_config(project_dir: Path) -> dict:
-    cfg_path = project_dir / _PROJECT_CONFIG_NAME
+    cfg_path = project_dir / PROJECT_CONFIG_NAME
     if cfg_path.exists():
         try:
             return json.loads(cfg_path.read_text())
@@ -59,9 +59,14 @@ def _write_bundled_pak(zf: zipfile.ZipFile, project_dir: Path, pak_name: str) ->
 
 def _write_project_files(zf: zipfile.ZipFile, project_dir: Path) -> None:
     for path in project_dir.rglob("*"):
-        if not path.is_file() or path.name == _PROJECT_CONFIG_NAME:
+        relative = path.relative_to(project_dir)
+        if (
+            not path.is_file()
+            or path.name == PROJECT_CONFIG_NAME
+            or PROJECT_METADATA_FOLDER in relative.parts
+        ):
             continue
-        zf.write(path, str(path.relative_to(project_dir)))
+        zf.write(path, str(relative))
 
 
 def create_fluffy_zip(project_dir: Path, zip_path: Path):

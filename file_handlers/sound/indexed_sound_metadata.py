@@ -8,13 +8,15 @@ from bisect import bisect_left
 from functools import lru_cache
 import re
 
-from utils.app_paths import resource_path
-from utils.resource_file_utils import resource_context_for_handler
+lazy from utils.app_paths import resource_path
+lazy from utils.resource_file_utils import resource_context_for_handler
 
-from .runtime_sound_index import request_runtime_sound_index
+lazy from .runtime_sound_index import request_runtime_sound_index
 from .sound_metadata import MessageSoundReference, SoundMetadata
-from .sound_resources import resource_key
+lazy from .sound_resources import resource_key
 from .wwise_schema import BNK_PLUGIN_NAMES, BNK_STANDARD_CUE_NAMES
+lazy from .bnk_parser import wwise_id_from_name
+lazy from file_handlers.wel.wel_file import WELFile
 
 
 STANDARD_CUE_FALLBACKS = {
@@ -882,7 +884,6 @@ class IndexedSoundMetadata(SoundMetadata):
             )
         if category == "trigger":
             raise ValueError(f"Unknown {self.game_name} trigger name: {text}")
-        from .bnk_parser import wwise_id_from_name
 
         return wwise_id_from_name(text)
 
@@ -911,8 +912,6 @@ class IndexedSoundMetadata(SoundMetadata):
         if resolved is None:
             return
         try:
-            from file_handlers.wel.wel_file import WELFile
-
             wel = WELFile()
             if not wel.read(resolved[1]):
                 return

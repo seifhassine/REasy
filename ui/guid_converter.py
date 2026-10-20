@@ -1,7 +1,7 @@
 
 import uuid
-from PySide6.QtCore import QCoreApplication
-from PySide6.QtWidgets import (
+lazy from PySide6.QtCore import QCoreApplication
+lazy from PySide6.QtWidgets import (
     QDialog,
     QVBoxLayout,
     QHBoxLayout,

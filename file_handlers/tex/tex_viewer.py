@@ -1,16 +1,29 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QPoint, QTimer
-import numpy as np
-from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
+from pathlib import Path
+from typing import Optional
+
+lazy import numpy as np
+from PySide6.QtCore import Qt, Signal, QPoint
+lazy from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QScrollArea,
-    QFileDialog, QMessageBox, QSlider
+    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QCheckBox,
+    QGroupBox, QScrollArea, QFileDialog, QInputDialog, QMessageBox, QSlider
 )
 
-from .texture_decoder import decode_dds_mip, decode_tex_mip
+lazy from ui.qt_timers import call_later
 
-_EXPORT_TEX_TITLE = QT_TRANSLATE_NOOP("TexViewer", "Export TEX")
+from . import authoring
+lazy from .dxgi import describe_format
+lazy from .flags import CHOICE, SWITCH, TYPE_MASK, TexSetting
+lazy from .profiles import tex_profile, tex_profiles, tex_version_for_game
+lazy from .texture_decoder import decode_dds_mip, decode_tex_mip, dds_info
+lazy from .dds import DDS_MAGIC
+
+# A cook carrying every member still fits in two rows.
+SETTINGS_PER_ROW = 4
+
+SETTING_GAP = 16
 
 
 class DraggableLabel(QLabel):
@@ -21,14 +34,14 @@ class DraggableLabel(QLabel):
         self.last_global_pos = QPoint()
         self.scroll_area = None
         self.viewer = None
-    
+
     def mousePressEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
             self.dragging = True
             self.last_global_pos = event.globalPosition().toPoint()
             self.setCursor(QCursor(Qt.ClosedHandCursor))
         super().mousePressEvent(event)
-    
+
     def mouseMoveEvent(self, event: QMouseEvent):
         if self.dragging and self.scroll_area:
             current_global_pos = event.globalPosition().toPoint()
@@ -39,13 +52,13 @@ class DraggableLabel(QLabel):
             h_bar.setValue(h_bar.value() - delta.x())
             v_bar.setValue(v_bar.value() - delta.y())
         super().mouseMoveEvent(event)
-    
+
     def mouseReleaseEvent(self, event: QMouseEvent):
         if event.button() == Qt.LeftButton:
             self.dragging = False
             self.setCursor(QCursor(Qt.OpenHandCursor))
         super().mouseReleaseEvent(event)
-    
+
     def wheelEvent(self, event: QWheelEvent):
         if self.viewer:
             current = self.viewer.zoom_slider.value()
@@ -54,11 +67,11 @@ class DraggableLabel(QLabel):
             event.accept()
         else:
             super().wheelEvent(event)
-    
+
     def enterEvent(self, event):
         self.setCursor(QCursor(Qt.OpenHandCursor))
         super().enterEvent(event)
-    
+
     def leaveEvent(self, event):
         if not self.dragging:
             self.setCursor(QCursor(Qt.ArrowCursor))
@@ -74,6 +87,7 @@ class TexViewer(QWidget):
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self.handler = handler
         self._modified = False
+        self.settings: dict[str, QWidget] = {}
         self.zoom_level = 1.0
         self.source_rgba = b""
         self.source_width = 0
@@ -97,21 +111,26 @@ class TexViewer(QWidget):
         layout = QVBoxLayout(self)
 
         top = QHBoxLayout()
-        top.addWidget(QLabel(self.tr("Image:")))
+        self.image_label = QLabel(self.tr("Image:"))
+        top.addWidget(self.image_label)
         self.image_index = QSpinBox()
         self.image_index.setMinimum(0)
         self.image_index.valueChanged.connect(self._refresh)
         top.addWidget(self.image_index)
 
-        top.addWidget(QLabel(self.tr("Mip:")))
+        self.mip_label = QLabel(self.tr("Mip:"))
+        top.addWidget(self.mip_label)
         self.mip_index = QSpinBox()
         self.mip_index.setMinimum(0)
         self.mip_index.valueChanged.connect(self._refresh)
         top.addWidget(self.mip_index)
 
-        self.reload_btn = QPushButton(self.tr("Reload"))
-        self.reload_btn.clicked.connect(self._refresh)
-        top.addWidget(self.reload_btn)
+        self.slice_label = QLabel(self.tr("Slice:"))
+        top.addWidget(self.slice_label)
+        self.slice_index = QSpinBox()
+        self.slice_index.setMinimum(0)
+        self.slice_index.valueChanged.connect(self._refresh)
+        top.addWidget(self.slice_index)
 
         top.addWidget(QLabel(self.tr("Channel:")))
         self.channel_box = QComboBox()
@@ -144,7 +163,16 @@ class TexViewer(QWidget):
         layout.addLayout(zoom_layout)
 
         self.info_label = QLabel("")
+        self.info_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.info_label)
+
+        self.settings_box = QGroupBox(self.tr("Settings"))
+        self.settings_layout = QVBoxLayout(self.settings_box)
+        self.settings_layout.setContentsMargins(6, 4, 6, 6)
+        self.settings_layout.setSpacing(4)
+        self.settings_content: QWidget | None = None
+        self.settings_rows: list[QHBoxLayout] = []
+        layout.addWidget(self.settings_box)
 
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(False)
@@ -155,93 +183,276 @@ class TexViewer(QWidget):
         self.img_label.setAlignment(Qt.AlignCenter)
         self.img_label.setScaledContents(False)
         self.scroll.setWidget(self.img_label)
-        layout.addWidget(self.scroll)
+        layout.addWidget(self.scroll, 1)
 
         exp = QHBoxLayout()
         self.export_dds_btn = QPushButton(self.tr("Export DDS"))
         self.export_dds_btn.clicked.connect(self._export_dds)
         exp.addWidget(self.export_dds_btn)
-
-        exp.addStretch()
+        self.export_label = QLabel("")
+        self.export_label.setWordWrap(True)
+        exp.addWidget(self.export_label, 1)
         layout.addLayout(exp)
 
+        author = QHBoxLayout()
+        author.addWidget(QLabel(self.tr("Cook:")))
+        self.cook_box = QComboBox()
+        self.cook_box.addItem(self.tr("Choose a game..."), None)
+        for profile in tex_profiles():
+            self.cook_box.addItem(f"{profile.display_name} ({profile.version})", profile.version)
+        author.addWidget(self.cook_box)
+        self.import_dds_btn = QPushButton(self.tr("Import DDS..."))
+        self.import_dds_btn.clicked.connect(self._import_dds)
+        author.addWidget(self.import_dds_btn)
+        self.convert_btn = QPushButton(self.tr("Convert to this cook"))
+        self.convert_btn.clicked.connect(self._convert_to_cook)
+        author.addWidget(self.convert_btn)
+        self.authoring_label = QLabel("")
+        self.authoring_label.setWordWrap(True)
+        self.authoring_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        author.addWidget(self.authoring_label, 1)
+        layout.addLayout(author)
 
     def _populate(self):
-        t = getattr(self.handler, 'tex', None)
+        tex = getattr(self.handler, 'tex', None)
         raw = getattr(self.handler, 'raw_data', b"")
-        is_tex = bool(t)
-        is_dds = raw[:4] == b'DDS '
+        info = None
+        if tex is None and raw[:4] == b'DDS ':
+            try:
+                info = dds_info(raw)
+            except ValueError:
+                info = None
 
-        self.export_dds_btn.setVisible(is_tex)
-        #self.export_tex_btn.setVisible(is_dds)
+        images, mips = 1, 1
+        if tex is not None:
+            images, mips = tex.header.image_count, tex.header.mip_count
+            self.image_label.setText(self.tr("Face:") if tex.header.is_cubemap else self.tr("Image:"))
+        elif info is not None:
+            images, mips = info.image_count, info.mip_count
+            self.image_label.setText(self.tr("Face:") if info.cubemap else self.tr("Image:"))
 
-        self.image_index.blockSignals(True)
-        self.mip_index.blockSignals(True)
+        for box in (self.image_index, self.mip_index, self.slice_index):
+            box.blockSignals(True)
+        self.image_index.setMaximum(max(0, images - 1))
+        self.mip_index.setMaximum(max(0, mips - 1))
+        for box in (self.image_index, self.mip_index, self.slice_index):
+            box.blockSignals(False)
 
-        if is_tex:
-            self.image_index.setMaximum(max(0, t.header.image_count - 1))
-            self.mip_index.setMaximum(max(0, t.header.mip_count - 1))
-        elif is_dds:
-            import struct
-            mip_count = struct.unpack_from('<I', raw, 28)[0] if len(raw) >= 32 else 1
-            self.image_index.setMaximum(0)
-            self.image_index.setEnabled(False)
-            self.mip_index.setMaximum(max(0, mip_count - 1))
-        else:
-            self.image_index.setMaximum(0)
-            self.mip_index.setMaximum(0)
+        self._show_selector(self.image_label, self.image_index, images > 1)
+        self._show_selector(self.mip_label, self.mip_index, mips > 1)
 
-        self.image_index.blockSignals(False)
-        self.mip_index.blockSignals(False)
+        self.export_dds_btn.setVisible(tex is not None)
+        self.export_label.setText(self._export_description(tex, info))
+        self.convert_btn.setVisible(tex is not None)
+        self._default_cook()
+        self._build_settings(tex)
         self._refresh()
 
-    def _refresh(self):
-        img_idx = self.image_index.value()
-        mip_idx = self.mip_index.value()
-        t = getattr(self.handler, 'tex', None)
-        if t:
-            try:
-                decoded = decode_tex_mip(t, img_idx, mip_idx)
-                from .dxgi import describe_format
-                d = describe_format(t.header.format)
-                fmt_info = f" | {d['name']} | {'BC' if d['compressed'] else 'RGB'} | {d['bits_per_pixel']}bpp"
-                self.info_label.setText(f"{decoded.width}x{decoded.height}{fmt_info}")
-                self.source_rgba = decoded.rgba
-                self.source_width = decoded.width
-                self.source_height = decoded.height
-                self._apply_channel_filter()
-            except Exception as e:
-                self.info_label.setText(self.tr("Failed to decode TEX mip: {error}").format(error=e))
-                self.source_rgba = b""
-                self.source_width = 0
-                self.source_height = 0
-                self.original_pixmap = None
-                self.img_label.clear()
+    @staticmethod
+    def _show_selector(label: QLabel, box: QSpinBox, visible: bool):
+        label.setVisible(visible)
+        box.setVisible(visible)
+
+    def _export_description(self, tex, info) -> str:
+        if tex:
+            header = tex.header
+            return self.tr("Exports every image, mip and slice: {images}, {mips}{slices}.").format(
+                images=self._noun(header.image_count, "face" if header.is_cubemap else "image"),
+                mips=self._noun(header.mip_count, "mip"),
+                slices=(
+                    ", " + self._noun(header.depth, "slice") if header.is_volume else ""
+                ),
+            )
+        if info:
+            return self.tr("Already a DDS: {images} x {mips}.").format(
+                images=self._noun(info.image_count, "image"),
+                mips=self._noun(info.mip_count, "mip"),
+            )
+        return ""
+
+    @staticmethod
+    def _noun(count: int, noun: str) -> str:
+        return f"{count} {noun if count == 1 else noun + 's'}"
+
+    def _setting_text(self) -> dict[str, tuple[str, str, tuple[str, str] | None]]:
+        return {
+            "resident": (
+                self.tr("Mip chain"),
+                self.tr(
+                    "The full chain ships as a separate resource under a streaming/ root; "
+                    "the resident copy is a tail of it, kept beside its full texture."
+                ),
+                (self.tr("Full texture (streamed)"), self.tr("Resident lower-detail copy")),
+            ),
+            "ev": (self.tr("EV"), self.tr("Exposure the effects apply as 2 ** EV."), None),
+            "texture_type": (self.tr("Type"), self.tr("The build's own via.render.TextureType."), None),
+            "streaming_mips": (
+                self.tr("Mips omitted"),
+                self.tr("Top mip levels this copy leaves out; they are in the full texture."),
+                None,
+            ),
+            "refiltered_normal": (
+                self.tr("Tail re-filtered"),
+                self.tr("This resident normal map's low mips were re-filtered, not sliced from the chain."),
+                None,
+            ),
+            "field_18_23": (
+                self.tr("Value 18-23"),
+                self.tr(
+                    "A 6-bit integer of unknown meaning; the engine converts it to a float."
+                ),
+                None,
+            ),
+            "opaque_flag": (self.tr("Flag 25"), self.tr("A boolean this reversal cannot name."), None),
+        }
+
+    def _build_settings(self, tex):
+        self.settings = {}
+        self.settings_rows = []
+        self.settings_box.setVisible(tex is not None)
+        if self.settings_content is not None:
+            self.settings_content.setParent(None)
+            self.settings_content.deleteLater()
+            self.settings_content = None
+        if tex is None:
             return
 
-        dds = b""
-        if hasattr(self.handler, 'build_dds_bytes'):
-            dds = self.handler.build_dds_bytes(img_idx)
-        elif getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ':
-            dds = self.handler.raw_data
-        if not dds:
+        settings = tex.header.tex_flags.settings(tex_profile(tex.header.version))
+        texts = self._setting_text()
+        content = QWidget()
+        strip = QVBoxLayout(content)
+        strip.setContentsMargins(0, 0, 0, 0)
+        strip.setSpacing(4)
+        for index, setting in enumerate(settings):
+            label, tooltip, states = texts[setting.field]
+            self._add_setting(index, setting, label, tooltip, states, strip)
+        for row in self.settings_rows:
+            row.addStretch()
+        self.settings_content = content
+        self.settings_layout.addWidget(content)
+
+    def _control(self, setting: TexSetting, label: str, tooltip: str, states) -> QWidget:
+        if states is not None:
+            return self._choice(list(states), setting.value, tooltip)
+        if setting.kind == SWITCH:
+            return self._checkbox(bool(setting.value), label, tooltip)
+        if setting.kind == CHOICE and setting.choices:
+            return self._choice(list(setting.choices), setting.value, tooltip)
+        return self._spin(setting.value, setting.maximum, tooltip)
+
+    def _add_setting(self, index: int, setting: TexSetting, label: str, tooltip: str, states, strip: QVBoxLayout):
+        control = self._control(setting, label, tooltip, states)
+        signal = (
+            control.toggled if isinstance(control, QCheckBox)
+            else control.currentIndexChanged if isinstance(control, QComboBox)
+            else control.valueChanged
+        )
+        signal.connect(self._apply_settings)
+        if index % SETTINGS_PER_ROW == 0:
+            self.settings_rows.append(QHBoxLayout())
+            self.settings_rows[-1].setContentsMargins(0, 0, 0, 0)
+            self.settings_rows[-1].setSpacing(SETTING_GAP)
+            strip.addLayout(self.settings_rows[-1])
+
+        cluster = QWidget()
+        line = QHBoxLayout(cluster)
+        line.setContentsMargins(0, 0, 0, 0)
+        line.setSpacing(4)
+        if not isinstance(control, QCheckBox):
+            line.addWidget(QLabel(label))
+        line.addWidget(control)
+        self.settings_rows[-1].addWidget(cluster)
+        self.settings[setting.field] = control
+
+    @staticmethod
+    def _checkbox(checked: bool, text: str, tooltip: str) -> QCheckBox:
+        box = QCheckBox(text)
+        box.setChecked(checked)
+        box.setToolTip(tooltip)
+        return box
+
+    @staticmethod
+    def _choice(items, index: int, tooltip: str) -> QComboBox:
+        box = QComboBox()
+        box.addItems(items)
+        box.setCurrentIndex(index)
+        box.setToolTip(tooltip)
+        return box
+
+    @staticmethod
+    def _spin(value: int, maximum: int, tooltip: str) -> QSpinBox:
+        box = QSpinBox()
+        box.setRange(0, maximum)
+        box.setValue(value)
+        box.setToolTip(tooltip)
+        return box
+
+    def _apply_settings(self, *_args):
+        tex = getattr(self.handler, 'tex', None)
+        if tex is None:
             return
+        values = {field: self._value(control) for field, control in self.settings.items()}
+        tex.header.flags = tex.header.tex_flags.encode(tex_profile(tex.header.version), **values)
+        self.modified = True
+        self._refresh()
+
+    @staticmethod
+    def _value(control: QWidget):
+        if isinstance(control, QCheckBox):
+            return control.isChecked()
+        if isinstance(control, QComboBox):
+            return control.currentIndex()
+        return control.value()
+
+    def _mip_slice_range(self, slices: int) -> int:
+        self.slice_index.blockSignals(True)
+        self.slice_index.setMaximum(slices - 1)
+        self.slice_index.blockSignals(False)
+        self._show_selector(self.slice_label, self.slice_index, slices > 1)
+        return self.slice_index.value()
+
+    def _refresh(self):
+        tex = getattr(self.handler, 'tex', None)
+        dds = b"" if tex is not None else self.handler.build_dds_bytes()
+        if tex is None and not dds:
+            return
+        image, mip = self.image_index.value(), self.mip_index.value()
         try:
-            decoded = decode_dds_mip(dds, mip_idx, img_idx)
-            self.info_label.setText(f"{decoded.width}x{decoded.height}")
-            self.source_rgba = decoded.rgba
-            self.source_width = decoded.width
-            self.source_height = decoded.height
-            self._apply_channel_filter()
-            self.export_dds_btn.setVisible(bool(t))
-            #self.export_tex_btn.setVisible(getattr(self.handler, 'raw_data', b"")[:4] == b'DDS ')
-        except Exception as e:
-            self.info_label.setText(self.tr("Failed to decode: {error}").format(error=e))
-            self.source_rgba = b""
-            self.source_width = 0
-            self.source_height = 0
-            self.original_pixmap = None
-            self.img_label.clear()
+            info = None if tex else dds_info(dds)
+            slices = tex.header.slice_count(mip) if tex else max(1, info.depth >> mip)
+            slice_index = self._mip_slice_range(slices)
+            decoded, dxgi_format, shape = self._subresource(tex, dds, info, image, mip, slice_index)
+        except Exception as error:
+            self._show_failure(self.tr("Failed to decode: {error}").format(error=error))
+            return
+
+        d = describe_format(dxgi_format)
+        parts = [
+            f"{decoded.width}x{decoded.height}",
+            f"slice {slice_index + 1}/{slices}" if slices > 1 else "",
+            f"{d['name']} | {'BC' if d['compressed'] else 'RGB'} | {d['bits_per_pixel']}bpp",
+            shape,
+        ]
+        self.info_label.setText(" | ".join(part for part in parts if part))
+        self.source_rgba = decoded.rgba
+        self.source_width = decoded.width
+        self.source_height = decoded.height
+        self._apply_channel_filter()
+
+    @staticmethod
+    def _subresource(tex, dds: bytes, info, image: int, mip: int, slice_index: int):
+        if tex is not None:
+            return decode_tex_mip(tex, image, mip, slice_index), tex.header.format, ""
+        shape = "volume" if info.is_volume else "cubemap" if info.cubemap else "2D"
+        return decode_dds_mip(dds, mip, image, slice_index), info.dxgi_format, shape
+
+    def _show_failure(self, message: str):
+        self.info_label.setText(message)
+        self.source_rgba = b""
+        self.source_width = 0
+        self.source_height = 0
+        self.original_pixmap = None
+        self.img_label.clear()
 
     def _apply_channel_filter(self):
         if not self.source_rgba or self.source_width <= 0 or self.source_height <= 0:
@@ -254,7 +465,7 @@ class TexViewer(QWidget):
         self.original_pixmap = filtered
         if self.is_initial_load:
             self.is_initial_load = False
-            QTimer.singleShot(0, self._fit_to_window)
+            call_later(self, 0, self._fit_to_window)
         else:
             self._apply_zoom()
 
@@ -329,14 +540,120 @@ class TexViewer(QWidget):
     def _reset_zoom(self):
         self.zoom_slider.setValue(100)
 
-    def _export_dds(self):
-        from .dds import DDS_MAGIC
+    def _default_cook(self):
+        tex = getattr(self.handler, "tex", None)
+        app = getattr(self.handler, "app", None)
+        version = tex.header.version if tex is not None else tex_version_for_game(
+            str(getattr(self.handler, "game_version", "") or getattr(app, "current_game", ""))
+        )
+        index = self.cook_box.findData(version) if version is not None else -1
+        if index >= 0:
+            self.cook_box.setCurrentIndex(index)
 
+    def _chosen_cook(self) -> Optional[int]:
+        version = self.cook_box.currentData()
+        if version is None:
+            self._show_failure(self.tr("Choose a game before importing a DDS."))
+        return version
+
+    def _import_dds(self):
+        path, _ = QFileDialog.getOpenFileName(self, self.tr("Import DDS"), "", "DDS files (*.dds)")
+        if not path:
+            return
+        try:
+            data = Path(path).read_bytes()
+        except OSError as error:
+            self._show_failure(str(error))
+            return
+        version = self._chosen_cook()
+        if version is None:
+            return
+        stem = Path(path).stem
+        if getattr(self.handler, "tex", None) is not None:
+            self._author(self.handler.import_dds, data, version=version, name=Path(path).name)
+        else:
+            self._write_new_tex(lambda **type_choice: authoring.import_dds(
+                data, version=version, name=stem, **type_choice), stem, version)
+
+    def _convert_to_cook(self):
+        version = self._chosen_cook()
+        if version is not None:
+            self._author(self.handler.convert_to, version=version)
+
+    def _run_authoring(self, call):
+        try:
+            return call()
+        except authoring.TypeNeedsChoice as choice:
+            picked = self._choose_type(choice)
+            return None if picked is None else call(**picked)
+        except authoring.AuthoringError as error:
+            self._show_failure(str(error))
+            return None
+
+    def _author(self, action, *args, **kwargs):
+        notes = self._run_authoring(lambda **picked: action(*args, **{**kwargs, **picked}))
+        if notes is None:
+            return
+        self._populate()
+        self.modified = True
+        self._sync_tab_path()
+        self._describe_authoring(notes, self.handler.tex.header.version)
+
+    def _sync_tab_path(self):
+        app = self.handler.app
+        tab = app._resolve_tab_from_widget(self) if app is not None else None
+        if tab is None or tab.handler is not self.handler:
+            return
+        tab.filename = self.handler.filepath
+        tab.update_tab_title()
+
+    def _write_new_tex(self, author, stem: str, version: int):
+        suggested = f"{stem}.tex.{version}"
+        path, _ = QFileDialog.getSaveFileName(
+            self, self.tr("Save .tex"), suggested, "TEX files (*.tex)"
+        )
+        if not path:
+            return
+        authored = self._run_authoring(author)
+        if authored is None:
+            return
+        try:
+            Path(path).write_bytes(authored.data)
+        except OSError as error:
+            self._show_failure(str(error))
+            return
+        self._describe_authoring(authored.notes, authored.version, path)
+        app = getattr(self.handler, "app", None)
+        if app is not None and hasattr(app, "add_tab"):
+            app.add_tab(filename=path)
+
+    def _choose_type(self, choice: authoring.TypeNeedsChoice):
+        if choice.options:
+            name, accepted = QInputDialog.getItem(
+                self, self.tr("Texture type"), str(choice), list(choice.options), 0, False
+            )
+            return {"type_name": name} if accepted else None
+        index, accepted = QInputDialog.getInt(
+            self, self.tr("Texture type index"), str(choice), 0, 0, TYPE_MASK
+        )
+        return {"type_index": index} if accepted else None
+
+    def _describe_authoring(self, notes, version: int, path: str = ""):
+        written = self.tr("Written as {name}.").format(
+            name=Path(path or str(getattr(self.handler, "filepath", "") or version)).name
+        )
+        self.authoring_label.setText(" ".join([written, *notes]))
+
+    def _export_dds(self):
         raw = getattr(self.handler, 'raw_data', b"")
         if raw[:4] == DDS_MAGIC.to_bytes(4, 'little'):
             return
 
-        dds = self.handler.build_dds_bytes(self.image_index.value())
+        try:
+            dds = self.handler.build_dds_bytes()
+        except ValueError as error:
+            QMessageBox.warning(self, self.tr("Export DDS"), str(error))
+            return
         if not dds:
             QMessageBox.warning(self, self.tr("Export DDS"), self.tr("No TEX data loaded."))
             return
@@ -347,4 +664,3 @@ class TexViewer(QWidget):
 
         with open(path, 'wb') as f:
             f.write(dds)
-

@@ -6,11 +6,12 @@ from PySide6.QtWidgets import (
     QDialogButtonBox, QWidget
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
-from PySide6.QtGui import QDoubleValidator, QIntValidator
+lazy from PySide6.QtGui import QDoubleValidator, QIntValidator
 
 import uuid
 
-from utils.number_format import format_float_sequence, format_full_float
+lazy from utils.number_format import format_float_sequence, format_full_float
+lazy from file_handlers.uvar import TypeKind, UvarFlags, Vec3, Int3, Uint3
 
 
 VALUE_LABEL_TEXT = QT_TRANSLATE_NOOP(
@@ -55,7 +56,6 @@ class UvarValueEditDialog(QDialog):
         
     def _create_input_widget(self, var_type, current_value):
         """Create type-specific input widget"""
-        from file_handlers.uvar import TypeKind, UvarFlags
         
         container = QWidget()
         layout = QHBoxLayout(container)
@@ -270,7 +270,6 @@ class UvarValueEditDialog(QDialog):
             
     def get_value(self):
         """Get the edited value"""
-        from file_handlers.uvar import TypeKind, Vec3, Int3, Uint3, UvarFlags
         
         if not self.input:
             return None

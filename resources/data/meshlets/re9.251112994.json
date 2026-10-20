@@ -1,0 +1,182 @@
+{
+ "format": 2,
+ "game": "RE9",
+ "resource_version": 251112994,
+ "raster": "GBufferMeshletListVS",
+ "shade": "GBufferVisibility",
+ "forward": "ForwardMeshletListVS",
+ "material_ids": {
+  "file": "systems/develop/meshshader/test.sdf",
+  "program": "DrawMaterialID",
+  "target": 2
+ },
+ "vertices": 378,
+ "tile_vertices": 160,
+ "visibility_format": 17,
+ "material_id_formats": [
+  53,
+  55,
+  56
+ ],
+ "table_tag": 4207405473,
+ "instance": {
+  "userParam": 0,
+  "visibleFlag": 1896906783,
+  "partsTableIndex": 2702970337,
+  "extendedBindlessIndex": 4294967295,
+  "miscParams": 14,
+  "skinningIndex": 16777215
+ },
+ "deferred": {
+  "steps": [
+   {
+    "program": "DeferredIndexBufferKey",
+    "groups": 1056,
+    "buffers": {
+     "DeferredTexturingIndicesBufferSRV": "indices",
+     "RWSortCounter": "counter",
+     "RWSortKey": "keys"
+    }
+   },
+   {
+    "program": "DeferredBuildBucket",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredGenerateDispatchIndirect",
+    "groups": 1,
+    "buffers": {
+     "DeferredTexturingOffsetUAV": "offsets",
+     "DeferredTexturingIndirectUAV": "arguments",
+     "RWBucket": "buckets"
+    }
+   },
+   {
+    "program": "DeferredRadixsort1stPass",
+    "groups": 1056,
+    "buffers": {
+     "SortKey": "keys",
+     "RWSortCounter": "counter",
+     "RWSortKey": "sorted_keys",
+     "RWSortData": "order",
+     "RWBucket": "buckets"
+    }
+   }
+  ],
+  "bound": {
+   "material_ids": {
+    "DeferredTexturingIndicesBufferUAV": "indices",
+    "RWSortCounter": "counter",
+    "DeferredIndexUAV": "slots"
+   },
+   "transform": {
+    "DeferredTexturingOffsetSRV": "offsets",
+    "DeferredTexturingIndicesBufferSRV": "indices",
+    "SortData": "order",
+    "DeferredTexturingTransformedBufferUAV": "triangles"
+   },
+   "shade": {
+    "DeferredIndexSRV": "slots",
+    "DeferredTexturingTransformedBufferSRV": "triangles"
+   }
+  },
+  "roles": {
+   "counter": {
+    "size": 128
+   },
+   "buckets": {
+    "size": 16384
+   },
+   "offsets": {
+    "size": 32768
+   },
+   "arguments": {
+    "size": 131072
+   },
+   "indices": {
+    "texel_bytes": 4
+   },
+   "keys": {
+    "texel_bytes": 4
+   },
+   "sorted_keys": {
+    "texel_bytes": 4
+   },
+   "order": {
+    "texel_bytes": 4
+   },
+   "triangles": {
+    "texel_bytes": 60
+   },
+   "slots": {
+    "format": 42
+   }
+  },
+  "zeroed": [
+   "counter",
+   "buckets"
+  ],
+  "transform_ids": 64,
+  "arguments": {
+   "role": "arguments",
+   "bytes": 32
+  }
+ },
+ "transform": {
+  "program": "MeshletGeometryTransform",
+  "reads": [
+   "DeferredIndexSRV",
+   "DeferredTexturingTransformedBufferSRV"
+  ]
+ },
+ "bind_pose_skinned": true,
+ "source": {
+  "captures": [
+   {
+    "capture": "re9_frame4566.rdc",
+    "draws": [
+     1278,
+     1285,
+     1290,
+     1431,
+     1647,
+     1659,
+     1674,
+     1678,
+     1693,
+     2199
+    ]
+   },
+   {
+    "capture": "re9_frame7423.rdc",
+    "draws": [
+     2275
+    ]
+   },
+   {
+    "capture": "re9_frame15176.rdc",
+    "scene": "titlediorama_environment_common.scn (stage121/build_re9_capture.py)",
+    "draws": [
+     3564,
+     3577,
+     3582,
+     3588,
+     3594,
+     3602,
+     3607,
+     3612,
+     3617,
+     3635
+    ]
+   }
+  ],
+  "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
+  "deferred": "re9_frame15176 3564-3617 (scratch stage124/pipeline_re9.log against stage107/pipeline_dd2.log of DD2_frame226100 13333-13370): DrawMaterialID, then DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared and the same buffer sizes bound (counter 128, buckets 16384, offsets 32768, arguments 131072, slots R32_UINT of the screen), the same group counts (1056, 1056, 1, 1056); the transformed triangles 60 bytes a texel (221184000 bytes at 2560x1440, DD2's); the transforms of env_default_clothwave, env_default_clothwave_rainwall, the tree's and env_default_leaf2 (3602, 3607, 3612, 3617) by the transform IDs' indirect dispatches (490, 141, 201, 1802 groups), the shading (3635 on) reading the slots and the transformed triangles",
+  "bind_pose_skinned": "re9_frame15176 (stage121/reasy_re9_pose.lua turning sm11_037_00's hinge every frame): the door's record (246, geometry 108) has skinningIndex 0xFFFFFF and visibleFlag 0x3100801F (bit 30, the decal-receive bit, clear, as for a skinned mesh), drawn by env_default's static hardware raster (2642; MeshletTOpacityMaskSkinningSoftwareRaster 2508 dispatched no group); REasy's bind pose at the record (stage107/mesh_at.py) equals the game on targets 0, 1, 4 (171,222 texels) and 3 (171,150), target 2 but its alpha (the harness's object unskinned); re9_frame6356's unposed door: the same words (record 252)"
+ }
+}

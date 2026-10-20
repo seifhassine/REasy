@@ -63,6 +63,10 @@ REasy GUI is currently available in English and Chinese.
   - Regex search in the file list is supported. 
  
 - **3D Scene Viewing and Editing**
+
+- **Cross-game Mesh Conversion**
+
+- **Material Editing**
   
 - **RSZ Extended File Viewing and Editing:**  
   - User, PFB and SCN files are supported with advanced editing.
@@ -130,9 +134,9 @@ REasy GUI is currently available in English and Chinese.
 
 - The first build requires Git and network access to initialize GDeflateNet and fetch the pinned GDeflateCore sources. Later builds reuse the cached native build.
 
-- Python 3.12+ is required.
+- Python 3.15 is required; the scripts create `.venv` with `py -3.15`.
 
-- If build.bat complains about not having 3.12+, then run python --version to check which version is being used by default.
+- If build.bat says Python 3.15 is required, check that `py -3.15 --version` works.
 
 - If you want to run REasy.py, make sure you either use the `run_reasy.bat` batch script or `python setup.py build_ext --inplace
 ` beforehand.
@@ -163,7 +167,7 @@ If you appreciate my work and would like to support the development of the tool,
 
 ## License, Contributions:
 
-REasy is under MIT license.
+REasy is under the [MIT License](LICENSE.txt). Use of the REasy name and logo is covered by [TRADEMARKS.md](TRADEMARKS.md).
 You are wlecome to contribute to the project. I am currently active and will review PRs.
 
 ## On AI-assisted contributions:
@@ -180,7 +184,7 @@ For more information, see:
 
 ## Explicit Content Attribution
 
-REasy requests that it not be credited, attributed, or otherwise identified as a tool used to create sexually explicit, pornographic, or otherwise NSFW content.
+The REasy name and logo may not be used to credit, attribute, or otherwise identify REasy as a tool used to create sexually explicit, pornographic, or otherwise NSFW content, or any content that breaks Capcom's terms or policies. REasy is an independent project, not affiliated with or endorsed by Capcom. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Responsible Use
 

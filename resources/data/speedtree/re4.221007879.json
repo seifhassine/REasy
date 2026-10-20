@@ -1,0 +1,115 @@
+{
+ "format": 3,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "programs": {
+  "shader_types": {
+   "BRANCH": [
+    "",
+    "Tree"
+   ],
+   "LEAF_TWO_SIDE": [
+    "A",
+    "TreeTwoSide"
+   ]
+  },
+  "material_markers": [
+   [
+    "A",
+    [
+     1,
+     25
+    ]
+   ]
+  ],
+  "kinds_taking_material_markers": [
+   "Tree",
+   "TreeTwoSide"
+  ]
+ },
+ "placements": {
+  "foliage": {
+   "stem": "{marker}{kind}Foliage{input}",
+   "input_types": {
+    "tree": "O2",
+    "grass": "O2"
+   },
+   "billboard_stem": null,
+   "buffers": {
+    "wind_state": {
+     "name": "SpeedTreeV8WindState",
+     "states": 1
+    },
+    "lod_transition": {
+     "name": "LodTransitionBuffer",
+     "shown": "0000803f"
+    }
+   },
+   "pivots": "PivotBuffer"
+  },
+  "component": {
+   "stem": "{marker}{kind}{input}",
+   "input_types": {
+    "tree": "O2",
+    "grass": "O2"
+   },
+   "billboard_stem": null,
+   "constants": [
+    {
+     "name": "SpeedTreeV8InstanceConstant",
+     "fields": {
+      "cbNearFadeStart": [
+       0.0
+      ],
+      "cbNearFadeRange": [
+       50.0
+      ],
+      "cbFarFadeStart": [
+       1000.0
+      ],
+      "cbFarFadeRange": [
+       250.0
+      ],
+      "cbAlphaScalar": [
+       1.0
+      ],
+      "cbBillboardAlphaScalar": [
+       1.0
+      ],
+      "cbMipAlphaScalar": [
+       1.0
+      ],
+      "cbSubsurfaceScalar": [
+       1.0
+      ],
+      "cbBillboardSubsurfaceScalar": [
+       1.0
+      ],
+      "cbGlossScalar": [
+       1.0
+      ],
+      "cbBillboardGlossScalar": [
+       1.0
+      ]
+     },
+     "world": "cbWorldMat",
+     "previous_world": "cbPrevWorldMat"
+    }
+   ],
+   "wind_state": {
+    "name": "SpeedTreeV8WindState",
+    "states": 1
+   },
+   "instance_inputs": {
+    "GENERIC4": "0000803f00000000"
+   },
+   "pivots": "PivotBuffer"
+  }
+ },
+ "source": {
+  "captures": "re4_frame165489 (re4_frame24212 alike): REasy's title-screen test (scratch stage125: reasy_re4_test.lua) spawning via.speedtree.SpeedTreeV8 components of sm14_515_03 (grass wind), sm15_530_00, sm15_520_00, sm15_524_00 (twice, 11 and 190 m), sm15_518_00, in the title's forest, whose own trees are the same meshes drawn as foliage (InstanceWorldInfo instances at every LOD)",
+  "programs": "re4_dump.exe's program table hashes (murmur3 of the ASCII names) every pass and optimize level's ATree, ATreeTwoSide, Tree, TreeTwoSide, Leaf, LeafTwoSide, FacingLeaf, FacingLeafTwoSide, Grass and Billboard[FaceCrossFading] programs, and via.render.ShaderType names SpeedTreeV8{Tree,TreeTwoSide,Leaf,LeafTwoSide,FacingLeaf,FacingLeafTwoSide,Grass,Billboards}{Default,Foliage}: the A marker is the tree kinds' alone. RE4's stmesh files hold BRANCH (164 clusters), LEAF_TWO_SIDE (251, each of a material with bit 1) and BILLBOARDS (30) clusters only. The captures draw BRANCH clusters ATreeO2 with bit 1 (an alpha-tested depth pre-pass) and TreeO2 without (none), LEAF_TWO_SIDE ones ATreeTwoSideO2 (the masters' LeafTwoSideO2 and FacingLeafTwoSideO2 are the same shaders, pre-pass included); the foliage ones the same with Foliage, grass and tree wind alike O2. No billboard is drawn (refused)",
+  "check": "speedtree_substitute.py RE4 re4_frame165489 (scratch stage126: re4_st_ids.py, record_re4_speedtree.py): every recorded draw, 13 component and 34 foliage G-buffer and depth pre-pass draws, equal with REasy's program, the cluster's streams and per-instance input, its states; two pre-passes drawn over the game's depth differ in 4 and 102 texels",
+  "buffers": "foliage: SpeedTreeV8WindState a constant buffer of one state, LodTransitionBuffer a float per instance (1.0 shown whole; the instances fading hold less), InstanceWorldInfo/IndirectIndicesBuffer as other instanced draws; components: SpeedTreeV8InstanceConstant (near fade 0 over 50, far fade 1000 over 250, the scalars 1, the component's transforms; byte-equal laid out), the wind state likewise, and the per-instance vertex input GENERIC4 (R32G32_FLOAT, written by a compute pass: 1.0, 0.0 for every component, 3 to 190 m). The wind is live in the captures (strength 0.18-0.38); REasy's at rest differs in 23 words. PivotBuffer is the file's group pivots as it holds them (256 float3, the unused ones the largest float; byte-equal in every recorded draw, and zero changes the output). WindInfo, WindParams and SpeedTreeV8MeshConstant (cbBillboardOpacityCosine per mesh) are left zero, as REasy binds them: zero, alone and together, changes no recorded draw (stage105/wind_zero.py)"
+ }
+}

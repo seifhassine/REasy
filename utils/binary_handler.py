@@ -1,10 +1,3 @@
-"""
-Common binary file handling utilities.
-
-This module provides a unified BinaryHandler class that can be used
-by different file format handlers to avoid code duplication.
-"""
-
 import struct
 from typing import Any, List, Tuple
 from contextlib import contextmanager
@@ -24,7 +17,6 @@ class BinaryHandler:
         
     @property
     def tell(self) -> int:
-        """Get current position in file."""
         return self.offset + self.position
         
     def seek(self, pos: int):
@@ -39,24 +31,15 @@ class BinaryHandler:
         
     @contextmanager
     def seek_temp(self, pos: int):
-        """Context manager for temporary seek operations."""
         saved = self.position
         try:
             self.seek(pos)
             yield
         finally:
             self.position = saved
-            
-    @contextmanager
-    def seek_jump_back(self, pos: int):
-        """Context manager for temporary seek operations (alias for seek_temp)."""
-        saved = self.position
-        try:
-            self.seek(pos)
-            yield
-        finally:
-            self.position = saved
-    
+
+    seek_jump_back = seek_temp
+
     def skip(self, count: int):
         self.position += count
         
@@ -163,12 +146,14 @@ class BinaryHandler:
     
     def read_wstring(self, null_terminated: bool = True) -> str:
         if null_terminated:
-            end = self.tell
-            while end < len(self.data) - 1:
-                if self.data[end] == 0 and self.data[end + 1] == 0:
-                    break
-                end += 2
-            result = self.data[self.tell:end].decode('utf-16le')
+            start = self.tell
+            end = self.data.find(b"\x00\x00", start)
+            # A zero pair across two characters is not the terminator.
+            while end != -1 and (end - start) % 2:
+                end = self.data.find(b"\x00\x00", end + 1)
+            if end == -1:
+                end = start + max(0, (len(self.data) - start) // 2) * 2
+            result = self.data[start:end].decode('utf-16le')
             self.position = end - self.offset + 2 
             return result
         else:

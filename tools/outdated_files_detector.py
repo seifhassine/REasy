@@ -1,7 +1,7 @@
 import os
 import traceback
-from file_handlers.rsz.rsz_file import RszFile
-from utils.registry_manager import RegistryManager
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from utils.registry_manager import RegistryManager
 
 class OutdatedFilesDetector:
     def __init__(self, type_registry_path=None):

@@ -7,18 +7,19 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
-from utils.app_paths import resource_path
-from utils.resource_file_utils import ResourceDataLoader
-from utils.type_registry import TypeRegistry
+lazy from utils.app_paths import resource_path
+lazy from utils.resource_file_utils import ResourceDataLoader
+lazy from utils.type_registry import TypeRegistry
 
-from ..adapter import GuiPreviewScenario
-from ..profiles import GuiFormatProfile
-from ..scene import GuiScene, GuiSceneNode, normalize_gui_resource_path
-from .runtime_scenarios import (
+lazy from ..adapter import GuiPreviewScenario
+lazy from ..profiles import GuiFormatProfile
+lazy from ..scene import GuiScene, GuiSceneNode, normalize_gui_resource_path
+lazy from .runtime_scenarios import (
     Dmc5CapturedPreview,
     FrozenStateMap,
     captured_dmc5_previews,
 )
+lazy from file_handlers.rsz.rsz_file import RszFile
 
 
 @dataclass(frozen=True, slots=True)
@@ -427,9 +428,8 @@ def build_dmc5_preview_scenarios(
         issues=authored_issues,
     )
     captured = [
-        scenario
+        *_captured_preview_scenarios(record, context, scene)
         for record in captures
-        for scenario in _captured_preview_scenarios(record, context, scene)
     ]
     captured_sources = {
         scenario.state.controller.active_source
@@ -704,7 +704,6 @@ def discover_dmc5_controller_context(
     candidates = catalog.paths_by_gui.get(expected, ())
     hosts: list[Dmc5ControllerHost] = []
     errors: list[str] = []
-    from file_handlers.rsz.rsz_file import RszFile
 
     for candidate in candidates:
         resolved = loader(candidate)

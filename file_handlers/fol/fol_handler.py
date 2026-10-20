@@ -4,8 +4,8 @@ import struct
 
 from file_handlers.base_handler import BaseFileHandler
 
-from .fol_file import FOL_MAGIC, FolFile
-from .fol_tree import build_fol_tree_model
+lazy from .fol_file import FOL_MAGIC, FolFile
+lazy from .fol_tree import build_fol_tree_model
 
 
 class FolHandler(BaseFileHandler):

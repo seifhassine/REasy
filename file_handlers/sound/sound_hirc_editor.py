@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import Qt
+lazy from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .bnk_parser import (
+lazy from .bnk_parser import (
     BnkAttenuationCurve,
     BnkGraphPoint,
     HircReference,
@@ -72,7 +72,7 @@ from .wwise_schema import (
     attenuation_targets,
     property_names,
 )
-from .wwise_v132 import set_v132_fields
+lazy from .wwise_v132 import set_v132_fields
 
 
 _SOURCE_HEADER_FIELDS = (

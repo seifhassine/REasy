@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resolve_handler_resource_data
+lazy from utils.resource_file_utils import resolve_handler_resource_data
 
-from .gui_file import GuiFile
+lazy from .gui_file import GuiFile
+lazy from .editor import GuiEditor
 
 
 class GuiHandler(BaseFileHandler):
@@ -41,7 +42,6 @@ class GuiHandler(BaseFileHandler):
     def create_viewer(self):
         if self.gui_file is None:
             return None
-        from .editor import GuiEditor
 
         self.viewer = GuiEditor(self)
         self.viewer.modified_changed.connect(self.modified_changed.emit)

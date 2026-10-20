@@ -1,0 +1,63 @@
+{
+ "format": 2,
+ "game": "ONIMUSHAWOTS",
+ "resource_version": 260605155,
+ "target": 1,
+ "source_holds_indices": true,
+ "destination_holds_buffer": true,
+ "blend": {
+  "3": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentLightest"
+  }
+ },
+ "blend_still": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalCluster"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalClusterExcludingEdge"
+ },
+ "write_by_submesh": true,
+ "skinning": [
+  "PreTransformSkinningOptionalBufferCS",
+  "PreTransformSkinningOptionalBufferVFXCS",
+  "PreTransformSkinningOptionalBufferWithNormCS",
+  "PreTransformSkinningOptionalBufferWithNormVFXCS"
+ ],
+ "skin_by_range": false,
+ "system_skins_blend": false,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": true,
+ "copied_skin_whole": false,
+ "source": {
+  "captures": [
+   {
+    "capture": "wots_frame136485.rdc",
+    "draws": [
+     19372
+    ]
+   },
+   {
+    "capture": "wots_frame25731.rdc",
+    "draws": [
+     7601,
+     7679
+    ]
+   }
+  ],
+  "executable": "OnimushaWotS_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
+ }
+}

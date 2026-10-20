@@ -1,11 +1,11 @@
 import struct
 
 from file_handlers.base_handler import BaseFileHandler
-from utils.resource_file_utils import resource_version_from_path
-from utils.registry_manager import RegistryManager
+lazy from utils.resource_file_utils import resource_version_from_path
+lazy from utils.registry_manager import RegistryManager
 
-from .rcol_file import RcolFile
-from .rcol_structures import RCOL_MAGIC
+lazy from .rcol_file import RcolFile
+lazy from .rcol_structures import RCOL_MAGIC
 
 
 class RcolHandler(BaseFileHandler):

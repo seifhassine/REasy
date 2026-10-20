@@ -1,0 +1,128 @@
+{
+ "format": 3,
+ "game": "PRAGMATA",
+ "resource_version": 251112995,
+ "programs": {
+  "shader_types": {
+   "BRANCH": [
+    "",
+    "Tree"
+   ],
+   "BRANCH_TWO_SIDE": [
+    "TS",
+    "Tree"
+   ],
+   "LEAF_TWO_SIDE": [
+    "ATS",
+    "Tree"
+   ]
+  },
+  "material_markers": [
+   [
+    "A",
+    [
+     1,
+     25
+    ]
+   ],
+   [
+    "TS",
+    [
+     0,
+     8
+    ]
+   ]
+  ],
+  "kinds_taking_material_markers": [
+   "Tree"
+  ]
+ },
+ "placements": {
+  "foliage": {
+   "stem": "SpeedTreeV8{marker}{kind}Foliage{input}",
+   "input_types": {
+    "tree": "O2Tree",
+    "grass": "O2Grass"
+   },
+   "billboard_stem": null,
+   "buffers": {
+    "wind_state": {
+     "name": "SpeedTreeV8WindState",
+     "states": 2
+    },
+    "lod_transition": {
+     "name": "LodTransitionBuffer",
+     "shown": "ffffffff"
+    }
+   }
+  },
+  "component": {
+   "stem": "SpeedTreeV8{marker}{kind}{input}",
+   "input_types": {
+    "tree": "O1",
+    "grass": "O1"
+   },
+   "billboard_stem": null,
+   "constants": [
+    {
+     "name": "SpeedTreeV8InstanceConstant",
+     "fields": {
+      "cbNearFadeStart": [
+       0.0
+      ],
+      "cbNearFadeRange": [
+       50.0
+      ],
+      "cbFarFadeStart": [
+       1500.0
+      ],
+      "cbFarFadeRange": [
+       250.0
+      ],
+      "cbAlphaScalar": [
+       1.0
+      ],
+      "cbBillboardAlphaScalar": [
+       1.0
+      ],
+      "cbMipAlphaScalar": [
+       1.0
+      ],
+      "cbSubsurfaceScalar": [
+       1.0
+      ],
+      "cbBillboardSubsurfaceScalar": [
+       1.0
+      ],
+      "cbGlossScalar": [
+       1.0
+      ],
+      "cbBillboardGlossScalar": [
+       1.0
+      ]
+     },
+     "world": "cbWorldMat",
+     "previous_world": "cbPrevWorldMat"
+    },
+    {
+     "name": "CBSTDraw",
+     "fields": {
+      "cbSTLodTransition": [
+       1.0
+      ],
+      "cbSTLodValue": [
+       0.0
+      ]
+     }
+    }
+   ]
+  }
+ },
+ "source": {
+  "capture": "PRAGMATA_frame21308 (PRAGMATA_frame190158, the set's first capture, showed the components alike)",
+  "test": "stage105/build_pragmata_test.py, reasy_pragmata_test.lua: via.speedtree.SpeedTreeV8 components of sm16_012_00 (grass, two-sided leaves) at 3 and 12 m, sm17_002_00 (branches, two-sided leaves) at 7 and 18 m, sm13_020_00 (two-sided branches and leaves) at 220 m",
+  "programs": "the G-buffer draws 6018-6107 and depth pre-passes 5293-5425 (PRAGMATA_frame21308; 5189-5269 and 4958-5046 of PRAGMATA_frame190158) run, by their vertex and pixel shaders, SpeedTreeV8ATreeO1 (BRANCH, material flag bit 1), SpeedTreeV8ATSTreeO1 (LEAF_TWO_SIDE with and without bit 0; BRANCH_TWO_SIDE with bit 1) and their DepthWrite programs; grass and tree alike O1 (SpeedTreeGlobalController.TreeOptimizeLevel 1). Every PRAGMATA stmesh's clusters are of these three batch types. The marker bits are the rule Dragon's Dogma 2's executable reads (bits 25 and 8 set by no PRAGMATA material). No PRAGMATA stmesh has billboards",
+  "constants": "every SpeedTree draw of the capture, at 3 to 220 m, binds these fields of SpeedTreeV8InstanceConstant (the vertex and pixel shaders') and CBSTDraw (the vertex shader's), the transforms the component's; cbAlphaScalar is the component's AlphaScalar field (PRAGMATA_frame21308: 0.5 for a component set to 0.5, events 5293 and 6018; no output of the SpeedTree programs depends on it, the draws holding the game's bytes with 1; no shipped PRAGMATA scene holds a SpeedTreeV8 component); WindInfo.windCount 0 (the wind list unread) and PivotBuffer zero, as REasy binds them (PRAGMATA_frame21308's hub holds a wind entry; the draws hold the game's bytes with WindInfo, WindParams and PivotBuffer zero) (scratch stage105/draw_inputs.py, cb_vars.py)",
+  "foliage": "PRAGMATA_frame21308 (scratch stage105: build_hub_fol.py, patch_hub_foliage.py): a .fol group of the hub's st13_100_static scene, sm16_012_00 (grass wind) x4, sm17_002_00 x2, sm13_020_00 x1; the pre-passes 5363-5441 and G-buffer draws 7849-7926 run SpeedTreeV8{marker}{kind}FoliageO2Grass/O2Tree by their vertex and pixel shaders (the grass input by the mesh's wind config). Their shaders read the wind state (two states, equal to REasy's at rest on every draw), the instances' LodTransitionBuffer words, the frame's wind list (WindInfo, WindParams) and PivotBuffer, and no density culling words; SpeedTreeV8MeshConstant (the grass draws') changes no output. Drawn with REasy's programs, geometry and states, and with WindInfo, WindParams and PivotBuffer zero as REasy binds them, every draw holds the game's bytes (speedtree_substitute.py, stage105/wind_zero.py). The game blends each instance toward its next LOD by its distance (the low 16 bits; the grass's last LOD collapses by low_detail_3d_distance, 15 m); REasy draws the most detailed LOD whole (0xffffffff)"
+ }
+}

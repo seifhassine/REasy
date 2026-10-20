@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
-from PySide6.QtWidgets import QFileDialog
+lazy from PySide6.QtCore import QCoreApplication
+lazy from PySide6.QtWidgets import QFileDialog
 
-from file_handlers.pak import normalize_pak_path
-from utils.app_paths import resource_path
+lazy from file_handlers.pak import normalize_pak_path
+lazy from utils.app_paths import resource_path
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,17 +28,10 @@ PAK_LIST_SPECS = (
         "MHST3_STM.list",
         ("MONSTER_HUNTER_STORIES_3_TWISTED_REFLECTION",),
     ),
-    PakListSpec("MHST3", "MHST3_DEMO_STM.list", is_default=False),
     PakListSpec("MHWilds", "MHWS_STM.list", ("MonsterHunterWilds",)),
     PakListSpec("O2", "O2_STM.list", ("Onimusha2",)),
-    PakListSpec("OnimushaWOTS", "ONIWOTS_STM.list", ("OnimushaWotS_Demo",)),
+    PakListSpec("OnimushaWOTS", "ONIWOTS_STM.list", ("OnimushaWotS",)),
     PakListSpec("Pragmata", "PRAGMATA_STM.list", ("PRAGMATA",)),
-    PakListSpec(
-        "Pragmata",
-        "PRAGMATA_DEMO_STM.list",
-        ("PRAGMATA SKETCHBOOK",),
-        is_default=False,
-    ),
     PakListSpec(
         "RE2RT",
         "RE2_RT_STM.list",
@@ -81,17 +76,28 @@ _PAK_LIST_GAME_BY_NAME = {
 
 def choose_pak_list_file(parent) -> str:
     return QFileDialog.getOpenFileName(
-        parent, parent.tr("Open list file"), str(resource_path("resources/data/lists")),
-        parent.tr("List files (*.list *.txt);;All files (*)"),
+        parent, QCoreApplication.translate("PakFileLists", "Open list file"), str(resource_path("resources/data/lists")),
+        QCoreApplication.translate("PakFileLists", "List files (*.list *.txt);;All files (*)"),
     )[0]
 
 def read_pak_list_file(path: str | Path) -> list[str]:
-    with Path(path).open("r", encoding="utf-8") as f:
-        return list(dict.fromkeys(
-            item
-            for line in f
-            if (item := normalize_pak_path(line, lowercase=True))
+    path = Path(path).resolve()
+    stat = path.stat()
+    signature = (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns)
+    # Share parsing across projects, but never their mutable path lists.
+    return list(_read_pak_list_cached(path, signature))
+
+
+@lru_cache(maxsize=2)
+def _read_pak_list_cached(path: Path, signature: tuple) -> tuple[str, ...]:
+    with path.open("r", encoding="utf-8-sig") as f:
+        paths = tuple(dict.fromkeys(
+            item for line in f if (item := normalize_pak_path(line, lowercase=True))
         ))
+    stat = path.stat()
+    if signature != (stat.st_size, stat.st_mtime_ns, stat.st_ctime_ns):
+        raise OSError(f"PAK list changed while loading: {path}")
+    return paths
 
 
 def game_for_pak_list_path(path: str | Path) -> str | None:

@@ -1,0 +1,72 @@
+{
+ "format": 2,
+ "game": "MHWS",
+ "resource_version": 240906211,
+ "unblended": "nearest_part",
+ "blended": "farthest_object_depth",
+ "source": {
+  "note": "README MH Wilds meshlet section and \"MH Wilds' forward sort, read from the executable\": basealpha_emit_roughtransparent (no blending) lens parts 2.49, 3.19, 3.99 m then the characters' 16.8, 18.0 m; then simple_volumeblend (blending): its forward meshlets, the characters (~16.7 m), the items' FakeAO 3.99, 3.19, 2.49 m; made in another order. The blending order read from MonsterHunterWilds_dump.exe (MeshRenderer draw task 0x14a92cdc0, key at 0x14a92e3c8-0x14a92e671, packed by 0x14aa14a00, sorted stably ascending by 0x14a7cda70): one key per via.render.Mesh component, ~(z/w of its world box's centre through the camera's view and projection, not reversed, scaled to 32 bits), plus each part's MDF TransparentPriorityBias (0 in these materials); MonsterHunterWilds_frame11055: all 11 objects in the game's order by their mesh boxes' centres (the Seikret's body 16.34 m deep after the hunter's 16.71-16.75 m, though its origin is farther; scratch stage110 test_forward_keys.py, verify_keys.py)",
+  "captures": [
+   {
+    "capture": "MonsterHunterWilds_frame14579.rdc",
+    "test": "stage104/build_mhws_forward.py",
+    "draws": [
+     18774,
+     18783,
+     18865,
+     18975,
+     18981,
+     19018,
+     19042
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame11609.rdc",
+    "test": "stage104/build_mhws_order.py",
+    "draws": [
+     18981,
+     18986,
+     18993,
+     19000,
+     19009,
+     19107,
+     19217,
+     19223,
+     19271,
+     19277,
+     19341,
+     19347,
+     19351
+    ]
+   },
+   {
+    "capture": "MonsterHunterWilds_frame11055.rdc",
+    "test": "stage106/build_mhws_capture.py",
+    "draws": [
+     20073,
+     20092,
+     20110,
+     20116,
+     20122,
+     20154,
+     20163,
+     20199,
+     20203,
+     20204,
+     20210,
+     20218,
+     20222,
+     20226,
+     20230
+    ]
+   }
+  ],
+  "executable": {
+   "file": "MonsterHunterWilds_dump.exe",
+   "draw_task": "0x14a92cdc0",
+   "gate": "MeshRenderer +0x35/+0x36",
+   "render_entry": "RenderEntry +0x3a9 = 1 (0x14b52b968)",
+   "note": "README 'The forward blending order of five executables': one key per via.render.Mesh, ~trunc(clamp(z/w, 0, 1) x 4294967295) of its world box's centre (bones' boxes for a skinned mesh) moved by TransparentBias, plus the material's TransparentPriorityBias, stable ascending"
+  }
+ }
+}

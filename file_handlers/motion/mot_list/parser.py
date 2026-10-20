@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from ..binary import ReadContext, align_up
-from ..errors import MotionParseError
+lazy from ..errors import MotionParseError
 from ..mot.parser import MotV65Parser
 from ..mot_tree.parser import MotTreeV4Parser
 from ..profiles import MotionFormatProfile

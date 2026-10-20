@@ -5,10 +5,10 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Mapping
 
-import numpy as np
+lazy import numpy as np
 
-from file_handlers.fol.fol_file import FolFile, FolTransform
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.fol.fol_file import FolFile, FolTransform
+lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     BoolData,
     OBBData,
@@ -18,18 +18,24 @@ from file_handlers.rsz.rsz_data_types import (
     StringData,
     StructData,
 )
-from file_handlers.rsz.rsz_file import RszFile
-from utils.resource_file_utils import normalize_resource_path
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from file_handlers.rsz.utils.rsz_instance_defaults import type_table
+lazy from file_handlers.stmesh.stmesh_file import COMPONENT, FOLIAGE
+lazy from utils.resource_file_utils import normalize_resource_path
+lazy from .scn_scene_adapters import TransformAdapter, FolderLinkAdapter, CompositeMeshAdapter, MeshAdapter
 
 
 VIA_FOLDER = "via.Folder"
 VIA_TRANSFORM = "via.Transform"
 VIA_RENDER_MESH = "via.render.Mesh"
+VIA_RENDER_BLEND_SHAPE_MESH_REBINDER = "via.render.BlendShapeMeshRebinder"
 VIA_RENDER_COMPOSITE_MESH = "via.render.CompositeMesh"
 VIA_RENDER_COMPOSITE_MESH_INSTANCE_GROUP = "via.render.CompositeMeshInstanceGroup"
 VIA_RENDER_COMPOSITE_MESH_TRANSFORM_CONTROLLER = "via.render.CompositeMeshTransformController"
 VIA_RENDER_LIGHT_PROBES = "via.render.LightProbes"
 VIA_LANDSCAPE_FOLIAGE = "via.landscape.Foliage"
+VIA_SPEEDTREE_V8 = "via.speedtree.SpeedTreeV8"
+SPAWNED_PREFABS_RESOURCE = "resources/data/spawned_prefabs.json"
 LIGHT_PROBE_PREVIEW_GAMES = frozenset({
     "DD2",
     "DMC5",
@@ -73,6 +79,7 @@ class ScnTransform:
     parent_joint: str = ""
     same_joints_constraint: bool = False
     absolute_scaling: bool = False
+    joint_segment_scale: bool = False
 
 
 @dataclass(slots=True)
@@ -109,6 +116,8 @@ class ScnFolderReference:
     source_folder_id: ScnObjectId
     linked_path: str
     folder_offset: tuple[float, float, float] | None
+    # Per object name, the ``DrawSelf`` a spawning component (``spawned_prefabs``) sets on its spawned prefab's objects.
+    child_draw: tuple[tuple[str, bool], ...] = ()
 
 
 @dataclass(slots=True)
@@ -157,6 +166,15 @@ class ScnRenderableMesh:
     source_transform_instance_id: int | None = None
     visible_by_default: bool = True
     enabled_parts: tuple[bool, ...] | None = None
+    normal_recalculation_enabled: bool = True
+    normal_recalc_edge_exclusion: bool = False
+    skin_weight_source: str = "primary"
+    # ``via.render.Mesh``'s ``DecalReciveMode``; 0 is its default.
+    decal_receive_mode: int = 0
+    # ``via.render.Mesh``'s ``TransparentBias``; 0 is its default.
+    transparent_bias: float = 0.0
+    # One of ``stmesh_file.PLACEMENTS``.
+    speedtree_placement: str | None = None
 
     @property
     def key(self) -> str:
@@ -460,6 +478,10 @@ def _object_ref_id(value) -> int:
     return int(value) if isinstance(value, int) else 0
 
 
+def spawned_prefabs() -> dict:
+    return type_table(SPAWNED_PREFABS_RESOURCE)
+
+
 def _first_name(fields: Mapping[str, object], fallback: str) -> str:
     return next((text for _name, text in _resource_string_fields(fields) if text), fallback)
 
@@ -488,7 +510,39 @@ class ScnSceneGraphBuilder:
         graph = ScnSceneGraph(root_document_id, root_instance_id)
         self._parse_source_document(root_scn, source_path, root_document_id, graph)
         self._instantiate_document(graph, root_document_id, root_instance_id, None, None, _identity(), (root_document_id,), 0)
+        self._hide_ancestor_copies(graph)
         return graph
+
+    @staticmethod
+    def _hide_ancestor_copies(graph: ScnSceneGraph) -> None:
+        """RE9's character prefabs repeat a mesh on a shadow-only child. RE4's breakable props keep a disabled whole
+        mesh on their root and draw it from the ``Before`` child, so only an enabled ancestor hides a copy."""
+        held: dict[tuple[str, ScnObjectId], list[ScnRenderableMesh]] = {}
+        enabled: dict[tuple[str, ScnObjectId], list[ScnRenderableMesh]] = {}
+        components = graph.components
+        for renderable in graph.renderables:
+            if renderable.source_kind == "mesh":
+                key = (renderable.document_instance_id, renderable.source_object_id)
+                held.setdefault(key, []).append(renderable)
+                component = components.get(renderable.source_component_id)
+                if component is None or _bool_field(component.fields, "Enabled", True):
+                    enabled.setdefault(key, []).append(renderable)
+        for (instance, object_id), renderables in held.items():
+            document = graph.documents.get(object_id.document_id)
+            current = None if document is None else document.objects.get(object_id)
+            seen = {object_id}
+            while current is not None:
+                parent = document.object_by_local_id.get(current.parent_id)
+                if parent is None or parent in seen:
+                    break
+                seen.add(parent)
+                above = enabled.get((instance, parent), ())
+                for renderable in renderables:
+                    if any(other.mesh_path == renderable.mesh_path
+                           and np.allclose(other.world_matrix, renderable.world_matrix, rtol=0.0, atol=1e-6)
+                           for other in above):
+                        renderable.visible_by_default = False
+                current = document.objects.get(parent)
 
     def _parse_source_document(self, scn, source_path: str, document_id: str, graph: ScnSceneGraph) -> ScnSceneDocument:
         existing = self._document_source_cache.get(document_id)
@@ -629,8 +683,6 @@ class ScnSceneGraphBuilder:
             self._add_object(document, folder, "folder", graph)
 
     def _extract_transform(self, component, graph, object_id) -> ScnTransform | None:
-        from .scn_scene_adapters import TransformAdapter
-
         try:
             return TransformAdapter(component.fields).read()
         except ValueError:
@@ -679,8 +731,10 @@ class ScnSceneGraphBuilder:
             compute(scene_object)
 
     def _collect_folder_references(self, document: ScnSceneDocument, graph: ScnSceneGraph) -> None:
+        spawners = spawned_prefabs()
         for scene_object in document.objects.values():
             if scene_object.kind != "folder":
+                self._collect_spawned_prefabs(document, scene_object, spawners)
                 continue
             if scene_object.type_name != VIA_FOLDER:
                 self._warn(
@@ -696,9 +750,33 @@ class ScnSceneGraphBuilder:
                 ScnFolderReference(scene_object.id, linked_path, self._folder_offset(scene_object.fields))
             )
 
-    def _folder_link_path(self, fields: Mapping[str, object]) -> str:
-        from .scn_scene_adapters import FolderLinkAdapter
+    def _collect_spawned_prefabs(self, document: ScnSceneDocument, scene_object: ScnSceneObject, spawners) -> None:
+        for component_id in scene_object.components:
+            component = document.components.get(component_id)
+            spawner = None if component is None else spawners.get(component.type_name)
+            if spawner is None or not _bool_field(component.fields, "Enabled", True):
+                continue
+            path = normalize_scene_path(
+                _strip_value(getattr(self._field_at(document, component.fields, spawner["prefab"]), "value", ""))
+            )
+            if not path:
+                continue
+            child_draw = []
+            children = spawner.get("children")
+            if children:
+                for entry in getattr(component.fields.get(children["list"]), "values", None) or ():
+                    fields = self._fields(document.rsz_file, _object_ref_id(entry))
+                    name = _strip_value(getattr(fields.get(children["name"]), "value", ""))
+                    if name:
+                        child_draw.append((name, _bool_field(fields, children["draw"], True)))
+            document.folder_references.append(ScnFolderReference(scene_object.id, path, None, tuple(child_draw)))
 
+    def _field_at(self, document: ScnSceneDocument, fields: Mapping[str, object], steps) -> object:
+        for step in steps[:-1]:
+            fields = self._fields(document.rsz_file, _object_ref_id(fields.get(step)))
+        return fields.get(steps[-1])
+
+    def _folder_link_path(self, fields: Mapping[str, object]) -> str:
         return FolderLinkAdapter(fields).scene_path()
 
     def _folder_offset(self, fields: Mapping[str, object]) -> tuple[float, float, float] | None:
@@ -767,6 +845,8 @@ class ScnSceneGraphBuilder:
                     document_instance_id,
                     base_world_matrix,
                 )
+            elif component.type_name == VIA_SPEEDTREE_V8:
+                self._append_speedtree_renderable(graph, document, source_object, component, document_instance_id)
             elif component.type_name == VIA_LANDSCAPE_FOLIAGE:
                 self._append_foliage_renderables(
                     graph,
@@ -833,7 +913,66 @@ class ScnSceneGraphBuilder:
                 component,
             ),
             enabled_parts=enabled_parts,
+            normal_recalculation_enabled=_bool_field(
+                component.fields,
+                "NormalRecalculationEnable",
+                True,
+            ),
+            normal_recalc_edge_exclusion=_bool_field(
+                component.fields,
+                "NREdgeExcluded",
+                False,
+            ),
+            skin_weight_source=self._skin_weight_source(
+                document,
+                source_object,
+            ),
+            decal_receive_mode=int(_numeric_field(component.fields, "DecalReciveMode", 0)),
+            transparent_bias=float(_numeric_field(component.fields, "TransparentBias", 0.0)),
         )
+
+    def _append_speedtree_renderable(self, graph, document, source_object, component, document_instance_id) -> None:
+        values = [value for _name, value in _resource_string_fields(component.fields) if value]
+        mesh_path = next((value for value in values if ".stmesh" in value.lower()), "")
+        mdf_path = next((value for value in values if ".mdf2" in value.lower()), "")
+        if not mesh_path:
+            self._warn_component(
+                graph, "missing_mesh_path",
+                f"via.speedtree.SpeedTreeV8 component {component.id.instance_id} has no usable mesh path.",
+                document, document_instance_id, source_object, component,
+            )
+            return
+        self._append_renderable(
+            graph,
+            source_object,
+            component,
+            document_instance_id,
+            normalize_scene_path(mesh_path),
+            normalize_scene_path(mdf_path) if mdf_path else "",
+            source_object.document_world_matrix,
+            source_object.world_matrix,
+            visible_by_default=self._renderable_visible(document, source_object, component),
+            speedtree_placement=COMPONENT,
+        )
+
+    @staticmethod
+    def _skin_weight_source(document, source_object) -> str:
+        current = source_object
+        while current is not None:
+            for component_id in current.components:
+                candidate = document.components.get(component_id)
+                if (
+                    candidate is not None
+                    and candidate.type_name == VIA_RENDER_BLEND_SHAPE_MESH_REBINDER
+                ):
+                    return "additional"
+            parent_id = document.object_by_local_id.get(current.parent_id)
+            current = (
+                document.objects.get(parent_id)
+                if parent_id is not None
+                else None
+            )
+        return "primary"
 
     def _append_composite_mesh_renderables(self, graph, document, source_object, component, document_instance_id, base_world_matrix) -> None:
         groups = self._nested_entries_from_fields(
@@ -893,6 +1032,24 @@ class ScnSceneGraphBuilder:
                         component,
                     ),
                     enabled_parts=enabled_parts,
+                    normal_recalculation_enabled=_bool_field(
+                        group_fields,
+                        "NormalRecalculationEnable",
+                        _bool_field(
+                            component.fields,
+                            "NormalRecalculationEnable",
+                            True,
+                        ),
+                    ),
+                    normal_recalc_edge_exclusion=_bool_field(
+                        group_fields,
+                        "NREdgeExcluded",
+                        _bool_field(
+                            component.fields,
+                            "NREdgeExcluded",
+                            False,
+                        ),
+                    ),
                 )
 
     def _append_foliage_renderables(self, graph, document, source_object, component, document_instance_id, base_world_matrix) -> None:
@@ -947,6 +1104,7 @@ class ScnSceneGraphBuilder:
                     source_kind="foliage",
                     source_group_instance_id=group.index,
                     source_transform_instance_id=transform_index,
+                    speedtree_placement=FOLIAGE,
                     visible_by_default=self._renderable_visible(
                         document,
                         source_object,
@@ -959,14 +1117,16 @@ class ScnSceneGraphBuilder:
         document: ScnSceneDocument,
         source_object: ScnSceneObject,
         component: ScnComponent,
+        drawn: Mapping[ScnObjectId, bool] | None = None,
     ) -> bool:
-        if not _bool_field(component.fields, "Enabled", True):
+        # ``DrawDefault`` means drawn in the main view; RE9 strand prefabs clear it on hair cards.
+        if not (_bool_field(component.fields, "Enabled", True) and _bool_field(component.fields, "DrawDefault", True)):
             return False
         current = source_object
         visited: set[ScnObjectId] = set()
         while current.id not in visited:
             visited.add(current.id)
-            if not current.draw_self:
+            if not (drawn.get(current.id, current.draw_self) if drawn else current.draw_self):
                 return False
             parent_id = document.object_by_local_id.get(current.parent_id)
             if parent_id is None:
@@ -993,6 +1153,12 @@ class ScnSceneGraphBuilder:
         source_transform_instance_id=None,
         visible_by_default=True,
         enabled_parts=None,
+        normal_recalculation_enabled=True,
+        normal_recalc_edge_exclusion=False,
+        skin_weight_source="primary",
+        decal_receive_mode=0,
+        transparent_bias=0.0,
+        speedtree_placement=None,
     ) -> None:
         graph.renderables.append(
             ScnRenderableMesh(
@@ -1008,6 +1174,12 @@ class ScnSceneGraphBuilder:
                 source_transform_instance_id=source_transform_instance_id,
                 visible_by_default=visible_by_default,
                 enabled_parts=enabled_parts,
+                normal_recalculation_enabled=normal_recalculation_enabled,
+                normal_recalc_edge_exclusion=normal_recalc_edge_exclusion,
+                skin_weight_source=skin_weight_source,
+                decal_receive_mode=decal_receive_mode,
+                transparent_bias=transparent_bias,
+                speedtree_placement=speedtree_placement,
             )
         )
 
@@ -1054,8 +1226,6 @@ class ScnSceneGraphBuilder:
         return True
 
     def _extract_composite_transform(self, fields: Mapping[str, object]) -> ScnTransform | None:
-        from .scn_scene_adapters import CompositeMeshAdapter
-
         try:
             return CompositeMeshAdapter(fields).read_transform()
         except ValueError:
@@ -1065,8 +1235,6 @@ class ScnSceneGraphBuilder:
         self,
         fields: Mapping[str, object],
     ) -> tuple[str, str, tuple[bool, ...] | None]:
-        from .scn_scene_adapters import MeshAdapter
-
         adapter = MeshAdapter(fields)
         return (*adapter.paths(), adapter.enabled_parts())
 
@@ -1160,6 +1328,27 @@ class ScnSceneGraphBuilder:
             child_chain,
             depth + 1,
         )
+        if folder_reference.child_draw:
+            self._apply_child_draw(graph, graph.documents[child_document_id], child_instance_id,
+                                   dict(folder_reference.child_draw))
+
+    def _apply_child_draw(self, graph, document, document_instance_id, child_draw: Mapping[str, bool]) -> None:
+        roots = {item.local_object_id for item in document.objects if document.objects[item].parent_id not in document.object_by_local_id}
+        drawn: dict[ScnObjectId, bool] = {}
+        named: set[str] = set()
+        for object_id, item in document.objects.items():
+            if item.parent_id in roots and item.name in child_draw and item.name not in named:
+                named.add(item.name)
+                drawn[object_id] = child_draw[item.name]
+        if not drawn:
+            return
+        for renderable in graph.renderables:
+            if renderable.document_instance_id != document_instance_id:
+                continue
+            source_object = document.objects.get(renderable.source_object_id)
+            component = document.components.get(renderable.source_component_id)
+            if source_object is not None and component is not None:
+                renderable.visible_by_default = self._renderable_visible(document, source_object, component, drawn)
 
     @staticmethod
     def _append_link(graph, document_instance_id, folder_reference, child_document_id, child_path, include_chain) -> int:

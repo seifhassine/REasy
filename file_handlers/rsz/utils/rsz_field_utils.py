@@ -1,14 +1,8 @@
-"""
-Utility functions for RSZ field operations.
-
-This module provides common field manipulation utilities to reduce code duplication.
-"""
-
 import copy
 import math
 import uuid
 
-from file_handlers.rsz.rsz_data_types import (
+lazy from file_handlers.rsz.rsz_data_types import (
     AABBData,
     ArrayData,
     GameObjectRefData,
@@ -22,7 +16,7 @@ from file_handlers.rsz.rsz_data_types import (
     is_reference_type,
     is_array_type,
 )
-from utils.enum_manager import EnumManager
+lazy from utils.enum_manager import EnumManager
 
 
 INTEGER_BOUNDS = {
@@ -89,7 +83,6 @@ def create_default_field_value(
 
 
 def create_field_value_from_definition(field_def, *, has_embedded_rsz=False):
-    """Create a field value directly from one registry field definition."""
     field_name = field_def.get("name", "")
     if not field_name:
         return None
@@ -119,7 +112,6 @@ def create_field_value_from_definition(field_def, *, has_embedded_rsz=False):
 
 
 def is_type_assignable(registry, actual_type: str, expected_type: str) -> bool:
-    """Return whether an RSZ instance type satisfies a declared reference type."""
     actual = str(actual_type or "").strip()
     expected = str(expected_type or "").strip()
     if not actual:
@@ -154,7 +146,6 @@ def validate_reference_type(registry, instance_infos, expected_type: str, instan
 
 
 def contains_resource_value(value) -> bool:
-    """Return whether a value tree contains a ResourceData field."""
     if isinstance(value, ResourceData):
         return True
     if isinstance(value, (ArrayData, StructData)):
@@ -400,7 +391,6 @@ def new_collection_element(
     allow_references: bool = False,
     has_embedded_rsz: bool = False,
 ):
-    """Create and coerce one collection element using registry definitions."""
     if isinstance(collection, StructData):
         type_info, _ = registry.find_type_by_name(collection.orig_type) if registry else (None, None)
         if not type_info:
@@ -439,13 +429,6 @@ def new_collection_element(
 
 
 def iter_field_reference_entries(fields):
-    """
-    Yield references from direct fields and one level of ArrayData elements.
-
-    Yields:
-        tuple: (field_name, reference_object, array_index)
-        array_index is None for direct fields.
-    """
     for field_name, field_data in fields.items():
         if is_reference_type(field_data):
             yield field_name, field_data, None
@@ -456,7 +439,6 @@ def iter_field_reference_entries(fields):
 
 
 def get_reference_id_and_type(obj):
-    """Return (instance_id, reference_type) for ObjectData/UserDataData references."""
     if isinstance(obj, ObjectData) and obj.value > 0:
         return obj.value, "object"
     if isinstance(obj, UserDataData) and obj.value > 0:
@@ -465,13 +447,6 @@ def get_reference_id_and_type(obj):
 
 
 def create_field_from_definition(viewer, field_def):
-    """
-    Build a field object from a type-registry field definition.
-
-    Returns:
-        tuple: (field_name, field_obj, field_orig_type, field_array, field_class)
-        or None when the definition has no field name.
-    """
     return create_field_value_from_definition(
         field_def,
         has_embedded_rsz=bool(getattr(getattr(viewer, "scn", None), "has_embedded_rsz", False)),
@@ -479,35 +454,16 @@ def create_field_from_definition(viewer, field_def):
 
 
 def iter_field_references(fields):
-    """Yield all direct and array-element reference objects in fields."""
     for _, ref_obj, _ in iter_field_reference_entries(fields):
         yield ref_obj
 
 
 def update_field_references(fields, reference_updater):
-    """
-    Update all references in fields using the provided updater function.
-    
-    Args:
-        fields: Dictionary of field_name -> field_data
-        reference_updater: Function that takes (field_data) and updates its references
-    """
     for ref_obj in iter_field_references(fields):
         reference_updater(ref_obj)
 
 
 def collect_reference_values(fields, reference_type=None, positive_only=True):
-    """
-    Collect reference values from fields.
-
-    Args:
-        fields: Dictionary of field_name -> field_data
-        reference_type: Optional class to filter by (ObjectData/UserDataData)
-        positive_only: When True, only collect values greater than 0
-
-    Returns:
-        set: Collected reference values
-    """
     values = set()
     for ref_obj in iter_field_references(fields):
         if reference_type is not None and not isinstance(ref_obj, reference_type):
@@ -519,24 +475,14 @@ def collect_reference_values(fields, reference_type=None, positive_only=True):
 
 
 def collect_object_reference_values(fields, positive_only=True):
-    """Collect ObjectData reference values from fields."""
     return collect_reference_values(fields, ObjectData, positive_only)
 
 
 def collect_userdata_reference_values(fields, positive_only=True):
-    """Collect UserDataData reference values from fields."""
     return collect_reference_values(fields, UserDataData, positive_only)
 
 
 def update_references_with_mapping(fields, id_mapping, deleted_ids=None):
-    """
-    Update all references in fields based on ID mapping and deleted IDs.
-    
-    Args:
-        fields: Dictionary of field_name -> field_data
-        id_mapping: Dictionary mapping old IDs to new IDs
-        deleted_ids: Optional set of deleted IDs (will be set to 0)
-    """
     def updater(ref_obj):
         if ref_obj.value > 0:
             if deleted_ids and ref_obj.value in deleted_ids:
@@ -548,28 +494,12 @@ def update_references_with_mapping(fields, id_mapping, deleted_ids=None):
 
 
 def update_references_of_type(fields, id_mapping, reference_type):
-    """
-    Update references of a specific reference class using an ID mapping.
-
-    Args:
-        fields: Dictionary of field_name -> field_data
-        id_mapping: Dictionary mapping old IDs to new IDs
-        reference_type: Reference class to update
-    """
     for ref_obj in iter_field_references(fields):
         if isinstance(ref_obj, reference_type) and ref_obj.value in id_mapping:
             ref_obj.value = id_mapping[ref_obj.value]
 
 
 def shift_references_above_threshold(fields, threshold, offset=1):
-    """
-    Shift all references above a threshold by the given offset.
-    
-    Args:
-        fields: Dictionary of field_name -> field_data
-        threshold: References >= this value will be shifted
-        offset: Amount to shift by (default: 1)
-    """
     def updater(ref_obj):
         if ref_obj.value >= threshold:
             ref_obj.value += offset
