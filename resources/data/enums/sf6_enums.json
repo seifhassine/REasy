@@ -5373,6 +5373,20 @@
 			"value": 2
 		}
 	],
+	"app.episodebattle.EB_BattlePart_Voice.eRequestType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "ElapsedTime",
+			"value": 1
+		},
+		{
+			"name": "TotalDamage",
+			"value": 2
+		}
+	],
 	"via.landscape.DummyPipelineType": [
 		{
 			"name": "Static",
@@ -11995,16 +12009,20 @@
 			"value": 3
 		},
 		{
-			"name": "Item",
+			"name": "AvatarCreation",
 			"value": 4
 		},
 		{
-			"name": "General",
+			"name": "Item",
 			"value": 5
 		},
 		{
-			"name": "Apparel",
+			"name": "General",
 			"value": 6
+		},
+		{
+			"name": "Apparel",
+			"value": 7
 		}
 	],
 	"nBattle.nHit.DAMAGE_ST": [
@@ -13241,32 +13259,36 @@
 			"value": 54
 		},
 		{
-			"name": "BONUS_FINISH",
+			"name": "HUD_LIBRA",
 			"value": 55
 		},
 		{
-			"name": "PARTS_INIT",
+			"name": "BONUS_FINISH",
 			"value": 56
 		},
 		{
-			"name": "SET_NOTIFY",
+			"name": "PARTS_INIT",
 			"value": 57
 		},
 		{
-			"name": "FACIAL",
+			"name": "SET_NOTIFY",
 			"value": 58
 		},
 		{
-			"name": "SOUND_REQ",
+			"name": "FACIAL",
 			"value": 59
 		},
 		{
-			"name": "WTM_CALL_MINION",
+			"name": "SOUND_REQ",
 			"value": 60
 		},
 		{
-			"name": "WTM_SET_GIMMICK_ACTION",
+			"name": "WTM_CALL_MINION",
 			"value": 61
+		},
+		{
+			"name": "WTM_SET_GIMMICK_ACTION",
+			"value": 62
 		}
 	],
 	"via.landscape.road.MeshDirection": [
@@ -20855,6 +20877,10 @@
 		{
 			"name": "NOTICE",
 			"value": 80
+		},
+		{
+			"name": "HUD_LIBRA",
+			"value": 81
 		}
 	],
 	"app.worldtour.WTHitDefine.Damage.Game.LockOnPriorityType": [
@@ -24685,6 +24711,26 @@
 		{
 			"name": "Projectile_Own",
 			"value": 134
+		},
+		{
+			"name": "Projectile_Own_Close",
+			"value": 135
+		},
+		{
+			"name": "Projectile_Own_Near",
+			"value": 136
+		},
+		{
+			"name": "Projectile_Own_Middle",
+			"value": 137
+		},
+		{
+			"name": "Projectile_Own_Far",
+			"value": 138
+		},
+		{
+			"name": "Projectile_Own_Behind",
+			"value": 139
 		},
 		{
 			"name": "BackCharge_Completion",
@@ -36522,6 +36568,10 @@
 			"value": 33
 		},
 		{
+			"name": "ESF_034",
+			"value": 34
+		},
+		{
 			"name": "GMNP",
 			"value": 60
 		},
@@ -39979,12 +40029,16 @@
 			"value": 53
 		},
 		{
+			"name": "NpcEnableEmoteReactType54",
+			"value": 54
+		},
+		{
 			"name": "NpcEnableEmoteReactTypeMaxValue",
-			"value": 53
+			"value": 54
 		},
 		{
 			"name": "NpcEnableEmoteReactTypeMaxCount",
-			"value": 54
+			"value": 55
 		}
 	],
 	"app.UIPartsItemRarity.GUI_PLAY_STATE": [
@@ -43474,16 +43528,20 @@
 			"value": 3
 		},
 		{
-			"name": "Ranking",
+			"name": "AvatarCreation",
 			"value": 4
 		},
 		{
-			"name": "Rewards",
+			"name": "Ranking",
 			"value": 5
 		},
 		{
-			"name": "MatchHistory",
+			"name": "Rewards",
 			"value": 6
+		},
+		{
+			"name": "MatchHistory",
+			"value": 7
 		}
 	],
 	"app.UIFlowUI50010.ShowWait.Status": [
@@ -44104,12 +44162,32 @@
 			"value": 48
 		},
 		{
+			"name": "CollaboEvent49",
+			"value": 49
+		},
+		{
+			"name": "CollaboEvent50",
+			"value": 50
+		},
+		{
+			"name": "CollaboEvent51",
+			"value": 51
+		},
+		{
+			"name": "CollaboEvent52",
+			"value": 52
+		},
+		{
+			"name": "CollaboEvent53",
+			"value": 53
+		},
+		{
 			"name": "CollaboEventMaxValue",
-			"value": 48
+			"value": 53
 		},
 		{
 			"name": "CollaboEventMaxCount",
-			"value": 49
+			"value": 54
 		}
 	],
 	"via.render.LightShaft.LightShaftType": [
@@ -51151,12 +51229,16 @@
 			"value": 50152
 		},
 		{
+			"name": "CircleFlierBackground50153",
+			"value": 50153
+		},
+		{
 			"name": "CircleFlierBackgroundMaxValue",
-			"value": 50152
+			"value": 50153
 		},
 		{
 			"name": "CircleFlierBackgroundMaxCount",
-			"value": 153
+			"value": 154
 		}
 	],
 	"app.UIFlowCustomRoomTableDetail.Training.MatchingPhase": [
@@ -65257,8 +65339,12 @@
 			"value": 17
 		},
 		{
-			"name": "Max",
+			"name": "EquipmentWithPerk",
 			"value": 18
+		},
+		{
+			"name": "Max",
+			"value": 19
 		},
 		{
 			"name": "Start",
@@ -65266,7 +65352,7 @@
 		},
 		{
 			"name": "End",
-			"value": 17
+			"value": 18
 		}
 	],
 	"app.UICFNCircleTopTabList.SwitchType": [
@@ -73507,6 +73593,10 @@
 			"value": 1
 		},
 		{
+			"name": "RECOVERABLE",
+			"value": 6
+		},
+		{
 			"name": "SUPER_COMBO",
 			"value": 2
 		},
@@ -78422,6 +78512,24 @@
 		{
 			"name": "Max",
 			"value": 2
+		}
+	],
+	"app.episodebattle.EB_BattlePart_Data.eEndCondition": [
+		{
+			"name": "TimeOut",
+			"value": 0
+		},
+		{
+			"name": "TotalDamage",
+			"value": 1
+		},
+		{
+			"name": "VoiceDataEnd",
+			"value": 2
+		},
+		{
+			"name": "ChallengeEnd",
+			"value": 3
 		}
 	],
 	"via.landscape.MapBakerBakeTarget": [
@@ -87490,12 +87598,20 @@
 			"value": 213
 		},
 		{
+			"name": "AttachmentIDs214",
+			"value": 214
+		},
+		{
+			"name": "AttachmentIDs215",
+			"value": 215
+		},
+		{
 			"name": "AttachmentIDsMaxValue",
-			"value": 213
+			"value": 215
 		},
 		{
 			"name": "AttachmentIDsMaxCount",
-			"value": 206
+			"value": 208
 		}
 	],
 	"app.error.ErrorCategory": [
@@ -101329,6 +101445,10 @@
 		{
 			"name": "SideSetting",
 			"value": 3
+		},
+		{
+			"name": "EmoteSetting",
+			"value": 4
 		}
 	],
 	"app.commentator.DamageConditionData.OptionFlag": [
@@ -105570,6 +105690,14 @@
 			"value": 23
 		},
 		{
+			"name": "BhTipsMediaDialogInfo24",
+			"value": 24
+		},
+		{
+			"name": "BhTipsMediaDialogInfo25",
+			"value": 25
+		},
+		{
 			"name": "BhTipsMediaDialogInfo10000",
 			"value": 10000
 		},
@@ -105579,7 +105707,7 @@
 		},
 		{
 			"name": "BhTipsMediaDialogInfoMaxCount",
-			"value": 21
+			"value": 23
 		}
 	],
 	"via.gui.Capture.CaptureAction": [
@@ -112772,20 +112900,168 @@
 			"value": 11352
 		},
 		{
-			"name": "TitleplateId11353",
-			"value": 11353
+			"name": "TitleplateId11355",
+			"value": 11355
 		},
 		{
-			"name": "TitleplateId11354",
-			"value": 11354
+			"name": "TitleplateId11357",
+			"value": 11357
+		},
+		{
+			"name": "TitleplateId11358",
+			"value": 11358
+		},
+		{
+			"name": "TitleplateId11359",
+			"value": 11359
+		},
+		{
+			"name": "TitleplateId11360",
+			"value": 11360
+		},
+		{
+			"name": "TitleplateId11361",
+			"value": 11361
+		},
+		{
+			"name": "TitleplateId11362",
+			"value": 11362
+		},
+		{
+			"name": "TitleplateId11364",
+			"value": 11364
+		},
+		{
+			"name": "TitleplateId11365",
+			"value": 11365
+		},
+		{
+			"name": "TitleplateId11366",
+			"value": 11366
+		},
+		{
+			"name": "TitleplateId11367",
+			"value": 11367
+		},
+		{
+			"name": "TitleplateId11368",
+			"value": 11368
+		},
+		{
+			"name": "TitleplateId11369",
+			"value": 11369
+		},
+		{
+			"name": "TitleplateId11370",
+			"value": 11370
+		},
+		{
+			"name": "TitleplateId11371",
+			"value": 11371
+		},
+		{
+			"name": "TitleplateId11372",
+			"value": 11372
+		},
+		{
+			"name": "TitleplateId11373",
+			"value": 11373
+		},
+		{
+			"name": "TitleplateId11374",
+			"value": 11374
+		},
+		{
+			"name": "TitleplateId11375",
+			"value": 11375
+		},
+		{
+			"name": "TitleplateId11376",
+			"value": 11376
+		},
+		{
+			"name": "TitleplateId11377",
+			"value": 11377
+		},
+		{
+			"name": "TitleplateId11378",
+			"value": 11378
+		},
+		{
+			"name": "TitleplateId11379",
+			"value": 11379
+		},
+		{
+			"name": "TitleplateId11380",
+			"value": 11380
+		},
+		{
+			"name": "TitleplateId11381",
+			"value": 11381
+		},
+		{
+			"name": "TitleplateId11382",
+			"value": 11382
+		},
+		{
+			"name": "TitleplateId11383",
+			"value": 11383
+		},
+		{
+			"name": "TitleplateId11384",
+			"value": 11384
+		},
+		{
+			"name": "TitleplateId11385",
+			"value": 11385
+		},
+		{
+			"name": "TitleplateId11386",
+			"value": 11386
+		},
+		{
+			"name": "TitleplateId11387",
+			"value": 11387
+		},
+		{
+			"name": "TitleplateId11388",
+			"value": 11388
+		},
+		{
+			"name": "TitleplateId11389",
+			"value": 11389
+		},
+		{
+			"name": "TitleplateId11390",
+			"value": 11390
+		},
+		{
+			"name": "TitleplateId11391",
+			"value": 11391
+		},
+		{
+			"name": "TitleplateId11392",
+			"value": 11392
+		},
+		{
+			"name": "TitleplateId11393",
+			"value": 11393
+		},
+		{
+			"name": "TitleplateId11394",
+			"value": 11394
+		},
+		{
+			"name": "TitleplateId11395",
+			"value": 11395
 		},
 		{
 			"name": "TitleplateIdMaxValue",
-			"value": 11354
+			"value": 11395
 		},
 		{
 			"name": "TitleplateIdMaxCount",
-			"value": 1340
+			"value": 1377
 		}
 	],
 	"via.gui.FreePolygonUpdateArg.ParamType": [
@@ -113307,6 +113583,16 @@
 		},
 		{
 			"name": "WorldPoint",
+			"value": 1
+		}
+	],
+	"app.LegendLightCtrl.eLightType": [
+		{
+			"name": "LegendSelect",
+			"value": 0
+		},
+		{
+			"name": "Emote",
 			"value": 1
 		}
 	],
@@ -121106,6 +121392,10 @@
 			"value": 16
 		},
 		{
+			"name": "RANDOM_ROT_Y",
+			"value": 32
+		},
+		{
 			"name": "DUMMY_OBJECT",
 			"value": 64
 		}
@@ -126093,6 +126383,16 @@
 		{
 			"name": "DailyTournamentSortTypeMaxCount",
 			"value": 6
+		}
+	],
+	"app.LinearStateMachineState": [
+		{
+			"name": "Continue",
+			"value": 0
+		},
+		{
+			"name": "Next",
+			"value": 1
 		}
 	],
 	"via.ScreenShotImageOrientation": [
@@ -135680,6 +135980,10 @@
 		{
 			"name": "EWtStore",
 			"value": 2
+		},
+		{
+			"name": "EAvatarRoom",
+			"value": 3
 		}
 	],
 	"app.global.TextureMovieController.MovieLayer": [
@@ -144714,6 +145018,10 @@
 			"value": 4
 		},
 		{
+			"name": "RandomRotY",
+			"value": 5
+		},
+		{
 			"name": "DummyObject",
 			"value": 6
 		}
@@ -147476,7 +147784,7 @@
 			"value": 80
 		},
 		{
-			"name": "_81",
+			"name": "HUD_LIBRA",
 			"value": 81
 		},
 		{
@@ -148262,6 +148570,24 @@
 			"value": 6
 		}
 	],
+	"app.LegendLightCtrl.eState": [
+		{
+			"name": "Setup",
+			"value": 0
+		},
+		{
+			"name": "Wait",
+			"value": 1
+		},
+		{
+			"name": "Load",
+			"value": 2
+		},
+		{
+			"name": "Instantiate",
+			"value": 3
+		}
+	],
 	"app.worldtour.WTEnvStayRequester.State": [
 		{
 			"name": "CityActiving",
@@ -148748,6 +149074,28 @@
 		{
 			"name": "Expander",
 			"value": 2
+		}
+	],
+	"app.episodebattle.EB_Progress_Data.eType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "StartSequence",
+			"value": 1
+		},
+		{
+			"name": "EndSequence",
+			"value": 2
+		},
+		{
+			"name": "Battle",
+			"value": 3
+		},
+		{
+			"name": "FinishBattle",
+			"value": 4
 		}
 	],
 	"CharacterAsset.EUParamType": [
@@ -158282,232 +158630,236 @@
 			"value": 92
 		},
 		{
-			"name": "eBattleHubInvite",
+			"name": "eAvatarRoomCharacterCreateShop",
 			"value": 93
 		},
 		{
-			"name": "eBattleHubInit",
+			"name": "eBattleHubInvite",
 			"value": 94
 		},
 		{
-			"name": "eBattleHubCheckAdmissionEvent",
+			"name": "eBattleHubInit",
 			"value": 95
 		},
 		{
-			"name": "eBattleHubCheckLearningAiAdmissionEvent",
+			"name": "eBattleHubCheckAdmissionEvent",
 			"value": 96
 		},
 		{
-			"name": "eBattleHubLearningAiNextRival",
+			"name": "eBattleHubCheckLearningAiAdmissionEvent",
 			"value": 97
 		},
 		{
-			"name": "eBattleHubLearningAiCharacterSelect",
+			"name": "eBattleHubLearningAiNextRival",
 			"value": 98
 		},
 		{
-			"name": "eBattleHubLearningAiQuit",
+			"name": "eBattleHubLearningAiCharacterSelect",
 			"value": 99
 		},
 		{
-			"name": "eBattleHubLogin",
+			"name": "eBattleHubLearningAiQuit",
 			"value": 100
 		},
 		{
-			"name": "eBattleHubMain",
+			"name": "eBattleHubLogin",
 			"value": 101
 		},
 		{
-			"name": "eBattleHubAvatarBattleIn",
+			"name": "eBattleHubMain",
 			"value": 102
 		},
 		{
-			"name": "eBattleHubAvatarBattleOut",
+			"name": "eBattleHubAvatarBattleIn",
 			"value": 103
 		},
 		{
-			"name": "eBattleHubCharacterCreateOpening",
+			"name": "eBattleHubAvatarBattleOut",
 			"value": 104
 		},
 		{
-			"name": "eBattleHubCharacterCreateShop",
+			"name": "eBattleHubCharacterCreateOpening",
 			"value": 105
 		},
 		{
-			"name": "eBattleHubIntroduction",
+			"name": "eBattleHubCharacterCreateShop",
 			"value": 106
 		},
 		{
-			"name": "eBattleHubPlayContact",
+			"name": "eBattleHubIntroduction",
 			"value": 107
 		},
 		{
-			"name": "eBattleHubPrePlayContact",
+			"name": "eBattleHubPlayContact",
 			"value": 108
 		},
 		{
-			"name": "eArcadeFighterSelect",
+			"name": "eBattleHubPrePlayContact",
 			"value": 109
 		},
 		{
-			"name": "eArcadeComicDemo",
+			"name": "eArcadeFighterSelect",
 			"value": 110
 		},
 		{
-			"name": "eArcadeStageMove",
+			"name": "eArcadeComicDemo",
 			"value": 111
 		},
 		{
-			"name": "eArcadeResult",
+			"name": "eArcadeStageMove",
 			"value": 112
 		},
 		{
-			"name": "eArcadeContinue",
+			"name": "eArcadeResult",
 			"value": 113
 		},
 		{
-			"name": "eArcadeStaffRoll",
+			"name": "eArcadeContinue",
 			"value": 114
 		},
 		{
-			"name": "eArcadeEndCard",
+			"name": "eArcadeStaffRoll",
 			"value": 115
 		},
 		{
-			"name": "eArcadePlayThanks",
+			"name": "eArcadeEndCard",
 			"value": 116
 		},
 		{
-			"name": "eLogin",
+			"name": "eArcadePlayThanks",
 			"value": 117
 		},
 		{
-			"name": "eGalleryTop",
+			"name": "eLogin",
 			"value": 118
 		},
 		{
-			"name": "eGalleryEventCmn",
+			"name": "eGalleryTop",
 			"value": 119
 		},
 		{
-			"name": "eGalleryEventWT",
+			"name": "eGalleryEventCmn",
 			"value": 120
 		},
 		{
-			"name": "eGalleryEventBH",
+			"name": "eGalleryEventWT",
 			"value": 121
 		},
 		{
-			"name": "eGalleryEventFG",
+			"name": "eGalleryEventBH",
 			"value": 122
 		},
 		{
-			"name": "eGalleryEventHT",
+			"name": "eGalleryEventFG",
 			"value": 123
 		},
 		{
-			"name": "eMameMain",
+			"name": "eGalleryEventHT",
 			"value": 124
 		},
 		{
-			"name": "eMameSpectate",
+			"name": "eMameMain",
 			"value": 125
 		},
 		{
-			"name": "eEsfCmn00",
+			"name": "eMameSpectate",
 			"value": 126
 		},
 		{
-			"name": "eWtfCmn00",
+			"name": "eEsfCmn00",
 			"value": 127
 		},
 		{
-			"name": "eCntVersusDemo",
+			"name": "eWtfCmn00",
 			"value": 128
 		},
 		{
-			"name": "eCommentatorResource",
+			"name": "eCntVersusDemo",
 			"value": 129
 		},
 		{
-			"name": "eCommentatorResourceWT",
+			"name": "eCommentatorResource",
 			"value": 130
 		},
 		{
-			"name": "eFGTrainingResource",
+			"name": "eCommentatorResourceWT",
 			"value": 131
 		},
 		{
-			"name": "eFGTutorialResource",
+			"name": "eFGTrainingResource",
 			"value": 132
 		},
 		{
-			"name": "eFGComboTrialResource",
+			"name": "eFGTutorialResource",
 			"value": 133
 		},
 		{
-			"name": "eFGCharacterGuideResource",
+			"name": "eFGComboTrialResource",
 			"value": 134
 		},
 		{
-			"name": "eFGReplayResource",
+			"name": "eFGCharacterGuideResource",
 			"value": 135
 		},
 		{
-			"name": "eBattleStats",
+			"name": "eFGReplayResource",
 			"value": 136
 		},
 		{
-			"name": "eAvatarRoomCmn",
+			"name": "eBattleStats",
 			"value": 137
 		},
 		{
-			"name": "eAvatarArcadeCmn",
+			"name": "eAvatarRoomCmn",
 			"value": 138
 		},
 		{
-			"name": "eAvatarTrainingCmn",
+			"name": "eAvatarArcadeCmn",
 			"value": 139
 		},
 		{
-			"name": "eCtrlBattleFlowSound",
+			"name": "eAvatarTrainingCmn",
 			"value": 140
 		},
 		{
-			"name": "eCommentatorSystem",
+			"name": "eCtrlBattleFlowSound",
 			"value": 141
 		},
 		{
-			"name": "eCommentatorSystemWT",
+			"name": "eCommentatorSystem",
 			"value": 142
 		},
 		{
-			"name": "eReturnHome",
+			"name": "eCommentatorSystemWT",
 			"value": 143
 		},
 		{
-			"name": "eFlowMain",
+			"name": "eReturnHome",
 			"value": 144
 		},
 		{
-			"name": "eInvite",
+			"name": "eFlowMain",
 			"value": 145
 		},
 		{
-			"name": "eTransitionActivityFlow",
+			"name": "eInvite",
 			"value": 146
 		},
 		{
-			"name": "eTransitionFlowMain",
+			"name": "eTransitionActivityFlow",
 			"value": 147
 		},
 		{
-			"name": "eResidentData",
+			"name": "eTransitionFlowMain",
 			"value": 148
 		},
 		{
-			"name": "eResident",
+			"name": "eResidentData",
 			"value": 149
+		},
+		{
+			"name": "eResident",
+			"value": 150
 		}
 	],
 	"app.worldtour.WTAreaManager.Priority": [
@@ -180274,12 +180626,24 @@
 			"value": 26
 		},
 		{
+			"name": "ProfileTheme27",
+			"value": 27
+		},
+		{
+			"name": "ProfileTheme28",
+			"value": 28
+		},
+		{
+			"name": "ProfileTheme29",
+			"value": 29
+		},
+		{
 			"name": "ProfileThemeMaxValue",
-			"value": 26
+			"value": 29
 		},
 		{
 			"name": "ProfileThemeMaxCount",
-			"value": 27
+			"value": 30
 		}
 	],
 	"via.gui.CurrentOutRangeItemOrder": [
@@ -180542,6 +180906,16 @@
 		{
 			"name": "ECanBe",
 			"value": 2
+		}
+	],
+	"app.episodebattle.EpisodeBattleSetting.eGameMode": [
+		{
+			"name": "LegendFighter",
+			"value": 0
+		},
+		{
+			"name": "WorldTour_NPC",
+			"value": 1
 		}
 	],
 	"app.worldtour.WTItemDefine.WTEquipCaptureSetting": [
@@ -194390,12 +194764,20 @@
 			"value": 33
 		},
 		{
+			"name": "BattlePass34",
+			"value": 34
+		},
+		{
+			"name": "BattlePass35",
+			"value": 35
+		},
+		{
 			"name": "BattlePassMaxValue",
-			"value": 33
+			"value": 35
 		},
 		{
 			"name": "BattlePassMaxCount",
-			"value": 34
+			"value": 36
 		}
 	],
 	"via.mame.KeyConfig.InputSequenceType": [
@@ -206376,8 +206758,12 @@
 			"value": 345
 		},
 		{
-			"name": "Max",
+			"name": "UIAvatarRandomMatchHideOpponentAccessory",
 			"value": 346
+		},
+		{
+			"name": "Max",
+			"value": 347
 		}
 	],
 	"app.network.api.Enum.EquipmentPerformanceInfoChangeFlag": [
@@ -207520,8 +207906,12 @@
 			"value": 43
 		},
 		{
-			"name": "Max",
+			"name": "EquipmentWithPerk",
 			"value": 44
+		},
+		{
+			"name": "Max",
+			"value": 45
 		},
 		{
 			"name": "Start",
@@ -207529,7 +207919,7 @@
 		},
 		{
 			"name": "End",
-			"value": 43
+			"value": 44
 		}
 	],
 	"app.UIFlowShop.SellCategory": [
@@ -210222,6 +210612,10 @@
 			"value": 37
 		},
 		{
+			"name": "PL_038",
+			"value": 38
+		},
+		{
 			"name": "PL_099",
 			"value": 99
 		},
@@ -210239,7 +210633,7 @@
 		},
 		{
 			"name": "MAX",
-			"value": 47
+			"value": 48
 		}
 	],
 	"via.render.SparseShadowTreeReductionPixel": [
@@ -214716,6 +215110,18 @@
 		{
 			"name": "UNIQUE_WTF029_1",
 			"value": 281
+		},
+		{
+			"name": "UNIQUE_WTF034_0",
+			"value": 282
+		},
+		{
+			"name": "UNIQUE_WTF034_1",
+			"value": 283
+		},
+		{
+			"name": "UNIQUE_WTF034_2",
+			"value": 284
 		}
 	],
 	"app.worldtour.mg.WTMiniGameUtility02.DroneUniqueParamIndex": [
@@ -214856,6 +215262,24 @@
 		{
 			"name": "Low",
 			"value": 1
+		}
+	],
+	"app.episodebattle.EB_BattlePart_Challenge.eType": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "ActionHit",
+			"value": 1
+		},
+		{
+			"name": "DriveImpact",
+			"value": 2
+		},
+		{
+			"name": "ActionGuard",
+			"value": 3
 		}
 	],
 	"app.network.api.Enum.CustomRoomPlayingField": [
@@ -230039,6 +230463,10 @@
 		{
 			"name": "EAtTheStartOfBh",
 			"value": 2
+		},
+		{
+			"name": "EAtTheStartOfTheAvatarRoom",
+			"value": 3
 		}
 	],
 	"app.UIFlowReward.UIFlowBattlePassChildTabChange.PlayState": [
