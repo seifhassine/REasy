@@ -50,7 +50,7 @@ _PROFILES: tuple[TexCookProfile, ...] = (
     TexCookProfile(28, LAYOUT_INLINE, ("MHRise",), enum_game="MHRise"),
     TexCookProfile(30, LAYOUT_INLINE, ("RE8",), enum_game="RE8"),
     TexCookProfile(34, LAYOUT_INLINE, ("RE2RT", "RE3RT"), enum_game="RE3RT"),
-    TexCookProfile(35, LAYOUT_INLINE, ("RE7",), enum_game="RE7RT"),
+    TexCookProfile(35, LAYOUT_INLINE, ("RE7RT",), enum_game="RE7RT"),
     TexCookProfile(143221013, LAYOUT_INLINE, ("RE4",), enum_game="RE4"),
     TexCookProfile(143230113, LAYOUT_INLINE, ("SF6",), enum_game="SF6"),
     TexCookProfile(190820018, LAYOUT_LEGACY, ("RE3", "REResistance"), enum_game="RE3", type_enum_offset=1),
