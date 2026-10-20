@@ -1,5 +1,6 @@
 import struct
 import traceback
+from file_handlers.rsz.rsz_data_types import WeakAttribute
 lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
     StringData,
@@ -70,6 +71,8 @@ class Scn19Header:
 # In SCN.19 its data is an embedded RSZ block, not a string reference.
 class Scn19RSZUserDataInfo:
     SIZE = 24
+    parent_userdata_rui = WeakAttribute()
+
     def __init__(self):
         self.instance_id = 0
         self.type_id = 0

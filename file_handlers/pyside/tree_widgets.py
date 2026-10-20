@@ -1,5 +1,5 @@
 import traceback
-from weakref import WeakSet
+import weakref
 from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox,
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog, QPushButton,
@@ -109,7 +109,7 @@ class AdvancedTreeView(QTreeView):
 
     def __init__(self, viewer):
         super().__init__(viewer)
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.highlight_manager = None
         self.setItemDelegate(AdvancedStyledDelegate(self))
         self.setUniformRowHeights(False)
@@ -132,6 +132,10 @@ class AdvancedTreeView(QTreeView):
         self._refresh_widgets_by_data = {}
         self.setSelectionMode(QTreeView.ExtendedSelection)
         self.clicked.connect(self._on_item_click)
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Delete:
@@ -272,7 +276,7 @@ class AdvancedTreeView(QTreeView):
             refresh = getattr(editor, "update_display", None)
             get_data = getattr(editor, "get_data", None)
             if callable(refresh) and callable(get_data) and (data := get_data()) is not None:
-                self._refresh_widgets_by_data.setdefault(id(data), WeakSet()).add(editor)
+                self._refresh_widgets_by_data.setdefault(id(data), weakref.WeakSet()).add(editor)
 
     def embed_forms(self, parent_modified_callback=None):
         self.parent_modified_callback = parent_modified_callback
@@ -1400,7 +1404,7 @@ class AdvancedTreeView(QTreeView):
         for fname, fdata in fields.items():
             field_node = viewer._create_field_dict(fname, fdata)
             if first: 
-                fdata.is_gameobject_or_folder_name = folder_dict
+                fdata.is_gameobject_or_folder_name = folder_dict["data"]
                 first = False
             settings_node["children"].append(field_node)
 
@@ -2090,7 +2094,7 @@ class AdvancedTreeView(QTreeView):
         for field_name, field_data in fields.items():
             field_node = parent_widget._create_field_dict(field_name, field_data)
             if field_name == ("Name"):
-                field_data.is_gameobject_or_folder_name = go_dict
+                field_data.is_gameobject_or_folder_name = go_dict["data"]
             settings_node["children"].append(field_node)
         
         component_count = go_data.get('component_count', 0)

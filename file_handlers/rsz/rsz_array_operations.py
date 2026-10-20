@@ -1,3 +1,4 @@
+import weakref
 lazy from PySide6.QtWidgets import QMessageBox
 lazy from file_handlers.rsz.rsz_data_types import (
     ArrayData,
@@ -18,9 +19,13 @@ lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
 
 class RszArrayOperations:
     def __init__(self, viewer):
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def create_array_element(
         self,

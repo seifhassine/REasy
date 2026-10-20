@@ -167,7 +167,7 @@ If you appreciate my work and would like to support the development of the tool,
 
 ## License, Contributions:
 
-REasy is under MIT license.
+REasy is under the [MIT License](LICENSE.txt). Use of the REasy name and logo is covered by [TRADEMARKS.md](TRADEMARKS.md).
 You are wlecome to contribute to the project. I am currently active and will review PRs.
 
 ## On AI-assisted contributions:
@@ -184,7 +184,7 @@ For more information, see:
 
 ## Explicit Content Attribution
 
-REasy requests that it not be credited, attributed, or otherwise identified as a tool used to create sexually explicit, pornographic, or otherwise NSFW content.
+The REasy name and logo may not be used to credit, attribute, or otherwise identify REasy as a tool used to create sexually explicit, pornographic, or otherwise NSFW content, or any content that breaks Capcom's terms or policies. REasy is an independent project, not affiliated with or endorsed by Capcom. See [TRADEMARKS.md](TRADEMARKS.md).
 
 ## Responsible Use
 

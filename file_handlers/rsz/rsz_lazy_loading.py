@@ -2,6 +2,7 @@
 RSZ Lazy Loading Support
 """
 
+import weakref
 lazy from ..pyside.tree_core import DeferredChildBuilder
 lazy from ..pyside.tree_model import DataTreeBuilder
 lazy from .rsz_data_types import (
@@ -18,10 +19,14 @@ CHUNK_SIZE = 100
 class RszLazyNodeBuilder:
     
     def __init__(self, viewer):
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.scn = viewer.scn
         self.name_helper = viewer.name_helper
         self.type_registry = viewer.type_registry
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def _defer_node(self, node, builder, expandable=True):
         node["deferred_builder"] = DeferredChildBuilder(builder)

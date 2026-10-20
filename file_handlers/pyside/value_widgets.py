@@ -13,6 +13,7 @@ lazy from PySide6.QtGui import (
 )
 import uuid
 import re
+import weakref
 import os
 import math
 
@@ -557,11 +558,15 @@ class GuidInput(BaseValueWidget):
 class OverwriteGuidLineEdit(QLineEdit):
     def __init__(self, guid_widget, parent=None):
         super().__init__(parent)
-        self.guid_widget = guid_widget
+        self._guid_widget = weakref.ref(guid_widget)
         self._history = []
         self._history_index = -1
         self._suspend_history = False
         self._restoring_history = False
+
+    @property
+    def guid_widget(self):
+        return self._guid_widget()
 
     def reset_history(self, text, cursor=None):
         if cursor is None:
@@ -1283,9 +1288,13 @@ class HexBytesInput(BaseValueWidget):
         self.raw_data.raw_bytes = new_bytes
 
 class OverwriteHexLineEdit(QLineEdit):
-    def __init__(self, parent=None, hex_widget=None):
+    def __init__(self, parent, hex_widget):
         super().__init__(parent)
-        self.hex_widget = hex_widget
+        self._hex_widget = weakref.ref(hex_widget)
+
+    @property
+    def hex_widget(self):
+        return self._hex_widget()
 
     def keyPressEvent(self, event):
         text = event.text()
@@ -1618,20 +1627,20 @@ class StringInput(BaseValueWidget):
         self._sync_bound_node_name(text)
 
     def _sync_bound_node_name(self, text):
-        node_dict = getattr(
+        label = getattr(
             self._data, "is_gameobject_or_folder_name", None
         )
-        if not isinstance(node_dict, dict):
+        if not isinstance(label, list):
             return
 
-        current_name = node_dict["data"][0]
+        current_name = label[0]
         id_part = (
             current_name[current_name.find("(ID:"):]
             if "(ID:" in current_name
             else ""
         )
         new_node_name = f"{text} {id_part}"
-        node_dict["data"][0] = new_node_name
+        label[0] = new_node_name
 
         tree_view = self._find_tree_view()
         if tree_view and tree_view.model():

@@ -1,4 +1,5 @@
 import traceback
+import weakref
 lazy from file_handlers.rsz.rsz_data_types import ObjectData, UserDataData, ArrayData, is_reference_type
 lazy from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
 lazy from utils.id_manager import EmbeddedIdManager
@@ -30,8 +31,12 @@ lazy from file_handlers.rsz.rsz_array_clipboard import RszArrayClipboard
 class RszEmbeddedArrayOperations:
     
     def __init__(self, viewer):
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.type_registry = viewer.type_registry
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def delete_array_element(self, array_data, element_index, fallback_rui):
         if not array_data or not hasattr(array_data, 'values') or element_index >= len(array_data.values):
@@ -895,8 +900,6 @@ class RszEmbeddedArrayOperations:
                 _register_instance(node)
 
         update_rsz_header_counts(rui)
-        if hasattr(rui, "mark_modified"):
-            rui.mark_modified()
 
         root_iid = all_nodes[-1].instance_id
         

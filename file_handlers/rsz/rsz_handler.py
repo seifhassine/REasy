@@ -1,4 +1,5 @@
 import functools
+import weakref
 from PySide6.QtCore import QCoreApplication, Signal, QModelIndex, Qt
 from PySide6.QtWidgets import (
     QWidget,
@@ -171,7 +172,15 @@ class RszHandler(BaseFileHandler):
             QMessageBox.No,
         )
         return reply == QMessageBox.Yes
-        
+
+    @property
+    def _viewer(self):
+        return None if self._viewer_ref is None else self._viewer_ref()
+
+    @_viewer.setter
+    def _viewer(self, viewer):
+        self._viewer_ref = None if viewer is None else weakref.ref(viewer)
+
     def create_viewer(self):
         viewer = RszViewer()
         viewer.scn = self.rsz_file
@@ -836,7 +845,7 @@ class RszViewer(QWidget):
 
             fields = self.scn.parsed_elements.get(go_instance_id)
             if fields is not None:
-                def build_gameobject_settings(go=go, go_dict=go_dict, fields=fields):
+                def build_gameobject_settings(go=go, label=go_dict["data"], fields=fields):
                     children = []
                     if not self.scn.is_pfb:
                         guid_data = create_guid_data(go.guid)
@@ -845,7 +854,7 @@ class RszViewer(QWidget):
                     first_field = True
                     for field_name, field_data in fields.items():
                         if first_field:
-                            field_data.is_gameobject_or_folder_name = go_dict
+                            field_data.is_gameobject_or_folder_name = label
                             first_field = False
                         children.append(self._create_field_dict(field_name, field_data, embedded_context=None))
                     return children
@@ -912,12 +921,12 @@ class RszViewer(QWidget):
             folder_dict["children"].append(settings_node)
             if folder_instance_id in self.scn.parsed_elements:
                 fields = self.scn.parsed_elements[folder_instance_id]
-                def build_folder_settings(folder_dict=folder_dict, fields=fields):
+                def build_folder_settings(label=folder_dict["data"], fields=fields):
                     children = []
                     first_field = True
                     for field_name, field_data in fields.items():
                         if first_field:
-                            field_data.is_gameobject_or_folder_name = folder_dict
+                            field_data.is_gameobject_or_folder_name = label
                             first_field = False
                         children.append(self._create_field_dict(field_name, field_data))
                     return children
@@ -1300,8 +1309,9 @@ class RszViewer(QWidget):
         )
 
     def embed_forms(self):
+        viewer = weakref.ref(self)
         def on_modified(changed_obj=None):
-            self.mark_modified(changed_obj)
+            viewer().mark_modified(changed_obj)
         self.tree.embed_forms(parent_modified_callback=on_modified)
 
     def rebuild(self) -> bytes:

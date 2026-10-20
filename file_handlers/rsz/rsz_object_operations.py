@@ -1,3 +1,4 @@
+import weakref
 lazy from PySide6.QtWidgets import QMessageBox
 lazy from .rsz_data_types import (
     ObjectData, ArrayData,
@@ -28,9 +29,13 @@ lazy from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszPrefabInfo
 
 class RszObjectOperations:
     def __init__(self, viewer):
-        self.viewer = viewer
+        self._viewer = weakref.ref(viewer)
         self.scn = viewer.scn
         self.type_registry = viewer.type_registry
+
+    @property
+    def viewer(self):
+        return self._viewer()
 
     def create_folder(self, name: str, parent_id: int):
         """
@@ -116,7 +121,7 @@ class RszObjectOperations:
                 "reasy_id": self.viewer.handler.id_manager.get_reasy_id_for_instance(insertion_index),
                 "children": [],
             }
-            first_field.is_gameobject_or_folder_name = go_dict
+            first_field.is_gameobject_or_folder_name = go_dict["data"]
 
         self.scn.parsed_elements[insertion_index] = gameobject_fields
         object_table_index = len(self.scn.object_table)
@@ -1090,11 +1095,6 @@ class RszObjectOperations:
                 modified=False,
             )
         
-            def mark_modified_func():
-                userdata_info.modified = True
-                self.viewer.mark_modified()
-            userdata_info.mark_modified = mark_modified_func
-        
             self._create_embedded_instance_with_nested_objects(
                 userdata_info, type_info, type_id, field_type
             )
@@ -1338,13 +1338,6 @@ class RszObjectOperations:
             userdata_info.embedded_rsz_header.object_count = 1
             userdata_info.embedded_rsz_header.instance_count = 2
             userdata_info.embedded_rsz_header.userdata_count = 0
-            
-            def mark_modified_func():
-                userdata_info.modified = True
-                if hasattr(parent_rui, 'mark_modified'):
-                    parent_rui.mark_modified()
-            
-            userdata_info.mark_modified = mark_modified_func
             
             if type_info:
                 self._create_embedded_instance_with_nested_objects(

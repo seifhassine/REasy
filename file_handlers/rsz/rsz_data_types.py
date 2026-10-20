@@ -1,8 +1,53 @@
 #From Enums_Internal
 
+import copy
+import weakref
+
 lazy from utils.number_format import format_float_sequence
 
-class ArrayData:
+
+class _BackReference(weakref.ref):
+    __slots__ = ()
+
+    def __deepcopy__(self, memo):
+        target = self()
+        return self if target is None else _BackReference(copy.deepcopy(target, memo))
+
+
+class WeakAttribute:
+    def __set_name__(self, owner, name):
+        self.name = name
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        try:
+            reference = instance.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(
+                f"{type(instance).__name__!r} object has no attribute {self.name!r}", name=self.name, obj=instance
+            ) from None
+        return None if reference is None else reference()
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.name] = None if value is None else _BackReference(value)
+
+    def __delete__(self, instance):
+        try:
+            del instance.__dict__[self.name]
+        except KeyError:
+            raise AttributeError(
+                f"{type(instance).__name__!r} object has no attribute {self.name!r}", name=self.name, obj=instance
+            ) from None
+
+
+class _DataValue:
+    _container_array = WeakAttribute()
+    _container_context = WeakAttribute()
+    _owning_context = WeakAttribute()
+
+
+class ArrayData(_DataValue):
     """Array container that stores values and element type"""
     def __init__(self, values=None, element_class=None, orig_type=""):
         self.values = values if values is not None else []
@@ -77,7 +122,7 @@ class LazyRawValues:
         return None
 
 
-class StructData:
+class StructData(_DataValue):
     """Container for struct type that can hold 0 or more embedded structures"""
     def __init__(self, values=None, orig_type: str = ""):
         self.values = values if values is not None else []
@@ -98,7 +143,7 @@ class StructData:
 _MISSING = sentinel("_MISSING")
 
 
-class _ValueData:
+class _ValueData(_DataValue):
     default_value = 0
 
     def __init__(self, value=_MISSING, orig_type: str = ""):
@@ -124,7 +169,7 @@ class _Utf16StringData(_ValueData):
         return cls(value, ctx.original_type)
 
 
-class ObjectData:
+class ObjectData(_DataValue):
     def __init__(self, value: int = 0, orig_type: str = ""):
         self.value = value
         self.orig_type = orig_type
@@ -139,7 +184,7 @@ class ObjectData:
 class ResourceData(_Utf16StringData):
     pass
 
-class UserDataData:
+class UserDataData(_DataValue):
     def __init__(self, value: int = 0, string: str = "", orig_type: str = ""):
         self.value = value
         self.string = string
@@ -196,7 +241,7 @@ class F64Data(_BinaryValueData):
 class StringData(_Utf16StringData):
     pass
 
-class Uint2Data:
+class Uint2Data(_DataValue):
     def __init__(self, x: int = 0, y: int = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -207,7 +252,7 @@ class Uint2Data:
         vals = ctx.read_struct(ctx.unpack_2int, 8)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class Uint3Data:
+class Uint3Data(_DataValue):
     def __init__(self, x: int = 0, y: int = 0, z: int = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -219,7 +264,7 @@ class Uint3Data:
         vals = ctx.read_struct(ctx.unpack_3int, 12)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class Int2Data:
+class Int2Data(_DataValue):
     def __init__(self, x: int = 0, y: int = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -230,7 +275,7 @@ class Int2Data:
         vals = ctx.read_struct(ctx.unpack_2int, 8)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class Int3Data:
+class Int3Data(_DataValue):
     def __init__(self, x: int = 0, y: int = 0, z: int = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -242,7 +287,7 @@ class Int3Data:
         vals = ctx.read_struct(ctx.unpack_3int, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class _Int4Data:
+class _Int4Data(_DataValue):
     def __init__(self, x: int = 0, y: int = 0, z: int = 0, w: int = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -261,7 +306,7 @@ class Int4Data(_Int4Data):
 class Int4ColorData(_Int4Data):
     pass
 
-class Float2Data:
+class Float2Data(_DataValue):
     def __init__(self, x: float = 0, y: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -272,7 +317,7 @@ class Float2Data:
         vals = ctx.read_struct(ctx.unpack_2float, ctx.field_size)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class Float3Data:
+class Float3Data(_DataValue):
     def __init__(self, x: float = 0, y: float = 0, z: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -284,7 +329,7 @@ class Float3Data:
         vals = ctx.read_struct(ctx.unpack_3float, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class _Float4Data:
+class _Float4Data(_DataValue):
     def __init__(self, x: float = 0, y: float = 0, z: float = 0, w: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -300,7 +345,7 @@ class _Float4Data:
 class Float4Data(_Float4Data):
     pass
 
-class Mat4Data:
+class Mat4Data(_DataValue):
     def __init__(self, values = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), orig_type: str = ""):
         self.values = []
         if isinstance(values, (tuple, list)):
@@ -326,7 +371,7 @@ class Mat4Data:
         values = ctx.read_struct(ctx.unpack_16float, ctx.field_size)
         return cls(values, ctx.original_type)
 
-class Vec2Data:
+class Vec2Data(_DataValue):
     def __init__(self, x: float = 0, y: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -337,7 +382,7 @@ class Vec2Data:
         vals = ctx.read_struct(ctx.unpack_2float, ctx.field_size)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class _Vec3FromFloat4Data:
+class _Vec3FromFloat4Data(_DataValue):
     def __init__(self, x: float = 0, y: float = 0, z: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -361,7 +406,7 @@ class Vec4Data(_Float4Data):
 class QuaternionData(_Float4Data):
     pass
 
-class _GuidBytesData:
+class _GuidBytesData(_DataValue):
     def __init__(self, guid_str: str = None, raw_bytes: bytes = None, orig_type: str = ""):
         if not guid_str:
             guid_str = "00000000-0000-0000-0000-000000000000"
@@ -382,7 +427,7 @@ class _GuidBytesData:
 class GuidData(_GuidBytesData):
     pass
 
-class ColorData:
+class ColorData(_DataValue):
     def __init__(self, r: int = 0, g: int = 0, b: int = 0, a: int = 0, orig_type: str = ""):
         self.r = r
         self.g = g
@@ -395,7 +440,7 @@ class ColorData:
         vals = ctx.read_struct(ctx.unpack_4ubyte, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], vals[3], ctx.original_type)
 
-class AABBData:
+class AABBData(_DataValue):
     def __init__(self, min_x: float = 0, min_y: float = 0, min_z: float = 0,
                  max_x: float = 0, max_y: float = 0, max_z: float = 0, orig_type: str = ""):
         self.min = Vec3Data(min_x, min_y, min_z)
@@ -408,7 +453,7 @@ class AABBData:
         max_vals = ctx.read_struct(ctx.unpack_4float, 16)
         return cls(min_vals[0], min_vals[1], min_vals[2], max_vals[0], max_vals[1], max_vals[2], ctx.original_type)
 
-class CapsuleData:
+class CapsuleData(_DataValue):
     def __init__(self, start: Vec3Data = Vec3Data(0,0,0, ""), end: Vec3Data = Vec3Data(0,0,0, ""), radius: float = 0, orig_type: str = ""):
         self.start = start
         self.end = end
@@ -425,7 +470,7 @@ class CapsuleData:
         radius = radius_vals[0]
         return cls(start_vec, end_vec, radius, ctx.original_type)
 
-class AreaData:
+class AreaData(_DataValue):
     def __init__(self, p0: Float2Data = Float2Data(0,0, ""), p1: Float2Data = Float2Data(0,0, ""), p2: Float2Data = Float2Data(0,0, ""), p3: Float2Data = Float2Data(0,0, ""), height: float = 0, bottom: float = 0, orig_type: str = ""):
         self.p0 = p0
         self.p1 = p1
@@ -450,7 +495,7 @@ class AreaData:
         ctx.skip(8)
         return cls(p0, p1, p2, p3, height, bottom, ctx.original_type)
 
-class AreaDataOld:
+class AreaDataOld(_DataValue):
     def __init__(self, p0: Vec2Data = Vec2Data(0,0, ""), p1: Vec2Data = Vec2Data(0,0, ""), p2: Vec2Data = Vec2Data(0,0, ""), p3: Vec2Data = Vec2Data(0,0, ""), height: float = 0, bottom: float = 0, orig_type: str = ""):
         self.p0 = p0
         self.p1 = p1
@@ -475,7 +520,7 @@ class AreaDataOld:
         ctx.skip(8)
         return cls(p0, p1, p2, p3, height, bottom, ctx.original_type)
 
-class ConeData:
+class ConeData(_DataValue):
     def __init__(self, position: Vec3Data = Vec3Data(0,0,0, ""), direction: Vec3Data = Vec3Data(0,0,0, ""), angle: float = 0, distance: float = 0, orig_type: str = ""):
         self.position = position
         self.direction = direction
@@ -493,7 +538,7 @@ class ConeData:
 
         return cls(position, direction, direction_vals[3], position_vals[3], ctx.original_type)
 
-class LineSegmentData:
+class LineSegmentData(_DataValue):
     def __init__(self, start: Vec3Data = Vec3Data(0,0,0, ""), end: Vec3Data = Vec3Data(0,0,0, ""), orig_type: str = ""):
         self.start = start
         self.end = end
@@ -507,7 +552,7 @@ class LineSegmentData:
         end = Vec3Data(end_vals[0], end_vals[1], end_vals[2], "Vec3")
         return cls(start, end, ctx.original_type)
 
-class OBBData:
+class OBBData(_DataValue):
     def __init__(self, values = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0), orig_type: str = ""):
         # OBB data is always 20 floats
         self.values = []
@@ -534,7 +579,7 @@ class OBBData:
         values = ctx.read_struct(ctx.unpack_20float, ctx.field_size)
         return cls(values, ctx.original_type)
 
-class PointData:
+class PointData(_DataValue):
     def __init__(self, x: float = 0, y: float = 0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -545,7 +590,7 @@ class PointData:
         values = ctx.read_struct(ctx.unpack_2float, 8)
         return cls(values[0], values[1], ctx.original_type)
 
-class PositionData:
+class PositionData(_DataValue):
     def __init__(self, x: float = 0.0, y: float = 0.0, z: float = 0.0, orig_type: str = ""):
         self.x = x
         self.y = y
@@ -557,7 +602,7 @@ class PositionData:
         vals = ctx.read_struct(ctx.unpack_3double, ctx.field_size)
         return cls(vals[0], vals[1], vals[2], ctx.original_type)
 
-class RangeData:
+class RangeData(_DataValue):
     def __init__(self, min: float = 0, max: float = 0, orig_type: str = ""):
         self.min = min
         self.max = max
@@ -568,7 +613,7 @@ class RangeData:
         vals = ctx.read_struct(ctx.unpack_2float, ctx.field_size)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class RangeIData:
+class RangeIData(_DataValue):
     def __init__(self, min: int = 0, max: int = 0, orig_type: str = ""):
         self.min = min
         self.max = max
@@ -579,7 +624,7 @@ class RangeIData:
         vals = ctx.read_struct(ctx.unpack_2int, ctx.field_size)
         return cls(vals[0], vals[1], ctx.original_type)
 
-class SizeData:
+class SizeData(_DataValue):
     def __init__(self, width: float = 0, height: float = 0, orig_type: str = ""):
         self.width = width
         self.height = height
@@ -590,7 +635,7 @@ class SizeData:
         values = ctx.read_struct(ctx.unpack_2float, 8)
         return cls(values[0], values[1], ctx.original_type)
 
-class SphereData:
+class SphereData(_DataValue):
     def __init__(self, center: Vec3Data = Vec3Data(0,0,0, ""), radius: float = 0, orig_type: str = ""):
         self.center = center
         self.radius = radius
@@ -602,7 +647,7 @@ class SphereData:
         center = Vec3Data(values[0], values[1], values[2], "Vec3")
         return cls(center, values[3], ctx.original_type)
 
-class CylinderData:
+class CylinderData(_DataValue):
     def __init__(self, center: Vec3Data = Vec3Data(0,0,0, ""), radius: float = 0, height: float = 0, orig_type: str = ""):
         self.center = center
         self.radius = radius
@@ -618,7 +663,7 @@ class CylinderData:
         center = Vec3Data(center_vals[0], center_vals[1], center_vals[2], "Vec3")
         return cls(center, center_vals[3], extent_vals[3], ctx.original_type)
 
-class RectData:
+class RectData(_DataValue):
     def __init__(self, min_x: float = 0, min_y: float = 0, max_x: float = 0, max_y: float = 0, orig_type: str = ""):
         self.min_x = min_x
         self.min_y = min_y
@@ -642,7 +687,7 @@ class RuntimeTypeData(_ValueData):
         value = ctx.read_string_utf8()
         return cls(value, ctx.original_type)
 
-class MaybeObject:
+class MaybeObject(_DataValue):
     def __init__(self, orig_type: str = ""):
         self.orig_type = orig_type
 
@@ -655,7 +700,7 @@ class MaybeObject:
         ctx.set_parent(candidate, ctx.current_instance_index)
         return ObjectData(candidate, ctx.original_type)
 
-class RawBytesData:
+class RawBytesData(_DataValue):
     """Stores raw bytes exactly as read from file"""
     def __init__(self, raw_bytes: bytes = bytes(0), field_size: int = 1, orig_type: str = ""):
         # Normalize memoryview slices to bytes so parsed fields stay deepcopy-safe.

@@ -2,6 +2,7 @@
 Consolidated tree infrastructure that handles both eager and lazy-loading approaches.
 """
 
+import weakref
 from PySide6.QtCore import Qt, QModelIndex, QAbstractItemModel
 from typing import Callable, Any
 lazy from utils.number_format import format_display_value
@@ -27,14 +28,14 @@ class DeferredChildBuilder:
 
 
 class TreeItem:
-    __slots__ = ("raw", "data", "parent",
+    __slots__ = ("raw", "data", "_parent",
                  "_raw_children", "_children", "_children_list", "_child_to_row",
-                 "_deferred_builder", "_children_built", "_expandable_hint")
+                 "_deferred_builder", "_children_built", "_expandable_hint", "__weakref__")
 
     def __init__(self, data, parent=None):
         self.raw = data
         self.data = data["data"] if isinstance(data, dict) and "data" in data else data
-        self.parent = parent
+        self._parent = None if parent is None else weakref.ref(parent)
 
         self._deferred_builder = data.get("deferred_builder") if isinstance(data, dict) else None
         self._children_built = False
@@ -49,6 +50,10 @@ class TreeItem:
         self._children: dict[int, "TreeItem"] = {}
         self._children_list = None
         self._child_to_row = {}
+
+    @property
+    def parent(self):
+        return None if self._parent is None else self._parent()
 
     def child_count(self) -> int:
         self._ensure_children_built()

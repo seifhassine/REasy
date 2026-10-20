@@ -1021,20 +1021,6 @@ class RszArrayClipboard:
         userdata_info._rsz_userdata_str_map = {}
         userdata_info.modified = False
         
-        def mark_modified_func():
-            userdata_info.modified = True
-            if hasattr(userdata_info, 'parent_userdata_rui') and userdata_info.parent_userdata_rui:
-                parent = userdata_info.parent_userdata_rui
-                if hasattr(parent, 'modified'):
-                    parent.modified = True
-                if hasattr(parent, 'parent_userdata_rui') and parent.parent_userdata_rui:
-                    top_parent = parent.parent_userdata_rui
-                    if hasattr(top_parent, 'modified'):
-                        top_parent.modified = True
-            viewer.mark_modified()
-        
-        userdata_info.mark_modified = mark_modified_func
-        
         target_instance_relative_id = len(instances)  # Last instance position
         userdata_info.embedded_object_table = [target_instance_relative_id]
         
