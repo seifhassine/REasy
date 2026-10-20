@@ -1,76 +1,69 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-**/node_modules/
 *$py.class
-settings.json
-.cache/
+.venv
 myevn/
-.sonar/**
-tools/reasy_tex_gdeflate_helper/bin/
-tools/diff_lists.py
-tools/reasy_tex_gdeflate_helper/obj/
+*.prof
 
-# Distribution / packaging
+# Build and packaging output
 build/
-scn/
 dist/
 *.egg-info/
 *.spec
-/tests/personal
-backups/
+**/node_modules/
+tools/reasy_tex_gdeflate_helper/bin/
+tools/reasy_tex_gdeflate_helper/obj/
+
+# Editor, analysis and OS files
+.vscode/
+.sonar/**
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Local app data written when running from the source tree
+settings.json
+/bookmarks.json
+/.reasy_bookmarks.json
 .clipboard
+.cache/
+backups/
+resources/i18n/*.qm
+secrets
+
+# Local workspace folders and files
 src
 templates
 downloads
 projects
 Mods
 exports
-
+scn/
 plans
-.mmtr_corpus
 dev
 docs
-run_reasy_debug.bat
-
-# VS Code settings (if you don't want to share them)
-.vscode/
-
-# OS-specific files
-.DS_Store
-Thumbs.db
-
-# Log files
-*.log
-
-# Local Tests
-/tests/**
-resources/i18n/**.qm
-secrets
+.mmtr_corpus
+.investigation_assets
 extracted_mesh_samples/**
+run_reasy_debug.bat
 Murmur3.1sc
-tools/audit_extracted_mesh_samples.py
-tools/audit_mesh_blendshape_remaps.py
-tools/audit_mesh_external_buffers.py
-tools/check_pak_codec_metadata.py
-tools/dump_mesh_blendshape_remap_case.py
-tools/extract_all_mesh_samples.py
-tools/validate_mesh_bt_python.py
-tools/scan_embedded_rsz_corpus.py
-tools/light_pass_catalog.py
-tools/surface_output_catalog.py
-tools/sampler_catalog.py
-tools/engine_input_catalog.py
-tools/frame_constant_catalog.py
-tools/system_textures.py
-tools/build_cache.py
-tools/capture_bindings.py
-tools/capture_light_passes.py
-tools/renderdoc_replay.py
-tools/mesh_conversion_checks.py
-tools/mesh_partition_checks.py
-tools/type_analysis.py
-reversing/pak_loading_info/pak_load_trace.py
+
+# Local tests
+/tests/**
+
+# Local reverse-engineering artifacts
+/.tmp*
+/captures/
+/tmp/
+/.research/
+/reversing/mesh_blendshapes/readme.md
+/reversing/re3_sound/files/
+reversing/pak_loading_info/*
+*.bt
+!/MESH.bt
 
 # Local animation-format research
 /DMC5_MOTION_SEMANTICS_AUDIT.md
@@ -95,30 +88,31 @@ tools/motlist_template_base.bt.in
 tools/summarize_mot_deep.py
 tools/verify_dmc5_motion_corpus.py
 
-# Local reverse-engineering artifacts
-/.tmp*
-/captures/
-/tmp/
-/reversing/mesh_blendshapes/readme.md
-/reversing/re3_sound/files/
-reversing/pak_loading_info/*
-/.research/
-*.bt
-!/MESH.bt
-tools/build_re_sound_metadata.py
-.freebuff/project-id
-.venv
+# Local tool scripts
 tools/apply_spanish_translations.py
-tools/create_spanish_skeleton.py
-.investigation_assets
-*.prof
-
-# Local app data written when running from the source tree
-/bookmarks.json
-/.reasy_bookmarks.json
-
+tools/audit_extracted_mesh_samples.py
+tools/audit_mesh_blendshape_remaps.py
 tools/audit_mesh_conversion.py
-tests/test_scn_parser.py
-tests/test_pak_mod_warning_banner.py
-reversing/pak_loading_info/readme.md
+tools/audit_mesh_external_buffers.py
+tools/build_cache.py
+tools/build_re_sound_metadata.py
+tools/capture_bindings.py
+tools/capture_light_passes.py
+tools/check_pak_codec_metadata.py
+tools/create_spanish_skeleton.py
+tools/diff_lists.py
+tools/dump_mesh_blendshape_remap_case.py
+tools/engine_input_catalog.py
+tools/extract_all_mesh_samples.py
+tools/frame_constant_catalog.py
+tools/light_pass_catalog.py
+tools/mesh_conversion_checks.py
+tools/mesh_partition_checks.py
+tools/renderdoc_replay.py
+tools/sampler_catalog.py
+tools/scan_embedded_rsz_corpus.py
 tools/shader_tools.md
+tools/surface_output_catalog.py
+tools/system_textures.py
+tools/type_analysis.py
+tools/validate_mesh_bt_python.py
