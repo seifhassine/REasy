@@ -197,7 +197,7 @@ class REasyEditorApp(QMainWindow):
         self.output_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self.output_dock.setWidget(self.console_widget)
         self.addDockWidget(Qt.BottomDockWidgetArea, self.output_dock)
-        self.output_dock.setVisible(self.settings.get("show_debug_console", True))
+        self.output_dock.setVisible(self.settings.get("show_debug_console", False))
         self.output_dock.visibilityChanged.connect(self.output_action.setChecked)
         self.output_dock.visibilityChanged.connect(
             lambda visible: self.settings.__setitem__("show_debug_console", bool(visible))
@@ -261,7 +261,7 @@ class REasyEditorApp(QMainWindow):
                 self._stop_ai_chat_visibility_tracking
             )
 
-        if self.settings.get("show_debug_console", True):
+        if self.settings.get("show_debug_console", False):
             sys.stdout = ConsoleRedirector(self.console_widget, sys.stdout)
             sys.stderr = ConsoleRedirector(self.console_widget, sys.stderr)
             print("Debug console started.")
@@ -524,12 +524,12 @@ class REasyEditorApp(QMainWindow):
             view_menu,
             self.tr("Toggle Output"),
             lambda: self.toggle_debug_console(
-                not self.settings.get("show_debug_console", True)
+                not self.settings.get("show_debug_console", False)
             ),
             "view_debug_console",
         )
         self.output_action.setCheckable(True)
-        self.output_action.setChecked(bool(self.settings.get("show_debug_console", True)))
+        self.output_action.setChecked(bool(self.settings.get("show_debug_console", False)))
         view_menu.addSeparator()
         add_action(
             view_menu,

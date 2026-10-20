@@ -25,8 +25,8 @@ LEGACY_SHORTCUT_DEFAULTS = {
 }
 DEFAULT_SETTINGS = {
     "rcol_json_path": "", 
-    "show_debug_console": True,
-    "show_ai_chat": True,
+    "show_debug_console": False,
+    "show_ai_chat": False,
     "ai_provider": DEEPSEEK_PROVIDER.id,
     "deepseek_model": DEEPSEEK_PROVIDER.default_model,
     "deepseek_context_window_tokens": 0,
