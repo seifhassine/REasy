@@ -586,6 +586,8 @@ natives/stm/escape/character/enemy/em9000/mesh/em9000_hight.tex.34
 natives/stm/escape/character/enemy/em9000/mesh/em9000_tearpush_hgt.tex.34
 natives/stm/escape/character/enemy/em9000/mesh/kevlar_ditail_nrm.tex.34
 natives/stm/escape/character/enemy/em9000/mesh/skin_ditail_nrm.tex.34
+natives/stm/escape/character/enemy/em9007/mesh/em9007.mdf2.21
+natives/stm/escape/character/enemy/em9007/mesh/em9007.mesh.2109108288
 natives/stm/escape/character/enemy/em9007/mesh/em9007_tentaclec00_albm.tex.34
 natives/stm/escape/character/enemy/em9007/mesh/em9007_tentaclec00_nrmr.tex.34
 natives/stm/escape/character/enemy/em9030/animation/bank/em9030.motbank.3
@@ -31871,6 +31873,7 @@ natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.ar
 natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.de
 natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.en
 natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.es
+natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.es419
 natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.fr
 natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.hi
 natives/stm/sectionroot/ui/ui1000/tex/healthwarning.tex.34.it
