@@ -75,20 +75,26 @@ def analyze_wave_activity(wav_path, width, sensitivity=0.52):
     }
 
 
-def write_wave_channel(source_path, output_path, channel_index):
-    """Write one zero-based channel from a decoded PCM16 WAV as mono."""
+def write_wave_preview(source_path, output_path, channel=-1, normalize=False):
+    """Write one zero-based channel (all when negative) of a PCM16 WAV, optionally
+    peak-normalized; return the applied gain factor."""
 
     with wave.open(str(source_path), "rb") as source:
-        channels, sample_width, rate, frames = (
-            source.getnchannels(), source.getsampwidth(),
-            source.getframerate(), source.getnframes(),
-        )
-        if sample_width != 2 or not 0 <= channel_index < channels:
+        params = source.getparams()
+        if params.sampwidth != 2 or channel >= params.nchannels:
             raise ValueError("Decoded WAV has an unsupported channel layout.")
-        samples = np.frombuffer(source.readframes(frames), dtype="<i2")
+        samples = np.frombuffer(source.readframes(params.nframes), dtype="<i2")
+    samples = samples.reshape(-1, params.nchannels)
+    if channel >= 0:
+        samples = samples[:, channel:channel + 1]
+    peak = int(np.abs(samples.astype(np.int32)).max(initial=0))
+    gain = 32767 / peak if normalize and peak else 1.0
+    if gain != 1.0:
+        samples = np.round(samples * gain).clip(-32768, 32767).astype("<i2")
     with wave.open(str(output_path), "wb") as output:
-        output.setparams((1, 2, rate, frames, "NONE", ""))
-        output.writeframes(samples[channel_index::channels].tobytes())
+        output.setparams(params._replace(nchannels=samples.shape[1]))
+        output.writeframes(np.ascontiguousarray(samples).tobytes())
+    return gain
 
 
 def write_wave_segment(source_path, output_path, start_ms, end_ms):

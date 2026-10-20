@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 import shutil
 lazy import subprocess
@@ -115,7 +116,7 @@ lazy from .sound_resources import (
 lazy from .sound_waveform import (
     WaveformWidget,
     analyze_wave_activity,
-    write_wave_channel,
+    write_wave_preview,
     write_wave_edit,
 )
 from .wwise_schema import STRUCTURED_BANK_VERSIONS, is_hirc_bus, is_hirc_plugin
@@ -287,7 +288,7 @@ class SoundViewer(QWidget):
         self._decoded_cache: dict[int, tuple] = {}
         self._wave_edits: dict[int, list[str]] = {}
         self._preview_audio_path = None
-        self._channel_audio_path = None
+        self._derived_audio_path = None
         self._preview_source_id = None
         self._resume_position_ms = 0
         self._stopped_source_id = None
@@ -1061,6 +1062,11 @@ class SoundViewer(QWidget):
             self.tr("Preview the complete mix or solo one channel; audio data is not modified.")
         )
         bar.addWidget(self.channel_combo)
+        self.normalize_check = QCheckBox(self.tr("Normalize"))
+        self.normalize_check.setToolTip(
+            self.tr("Boost the preview to full scale; audio data is not modified.")
+        )
+        bar.addWidget(self.normalize_check)
         self.speed_slider = QSlider(Qt.Horizontal)
         self.speed_slider.setRange(50, 200)
         self.speed_slider.setValue(100)
@@ -1158,7 +1164,8 @@ class SoundViewer(QWidget):
         self.player.setAudioOutput(self.audio_out)
         self.vol_slider.valueChanged.connect(lambda value: self.audio_out.setVolume(value / 100))
         self.speed_slider.valueChanged.connect(self._on_speed_changed)
-        self.channel_combo.currentIndexChanged.connect(self._on_channel_changed)
+        self.channel_combo.currentIndexChanged.connect(self._on_preview_option_changed)
+        self.normalize_check.toggled.connect(self._on_preview_option_changed)
         self.pos_slider.sliderPressed.connect(lambda: setattr(self, "_is_seeking", True))
         self.pos_slider.sliderReleased.connect(self._on_seek_done)
         self.pos_slider.sliderMoved.connect(lambda value: self.pos_cur.setText(self._fmt_ms(value)))
@@ -1312,11 +1319,12 @@ class SoundViewer(QWidget):
             pass
         # Decoded media lives in _decoded_cache until the file is re-parsed or
         # the viewer closes, so replays never re-run vgmstream.
-        self._remove_file(self._channel_audio_path)
+        self._remove_file(self._derived_audio_path)
         self._current_audio = (None, None)
         self._preview_audio_path = None
-        self._channel_audio_path = None
+        self._derived_audio_path = None
         self._preview_source_id = None
+        self.normalize_check.setText(self.tr("Normalize"))
         self.channel_combo.blockSignals(True)
         self.channel_combo.clear()
         self.channel_combo.addItem(self.tr("Mix"), -1)
@@ -1441,24 +1449,31 @@ class SoundViewer(QWidget):
             )
         )
 
-    def _on_channel_changed(self, index):
-        mix_path = self._current_audio[1]
-        if not mix_path or index < 0:
-            return
-        channel = int(self.channel_combo.itemData(index))
-        new_path = mix_path
-        try:
-            if channel >= 0:
-                descriptor, new_path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wav")
-                os.close(descriptor)
-                write_wave_channel(mix_path, new_path, channel)
-        except (OSError, ValueError, wave.Error) as exc:
-            self._remove_file(new_path if new_path != mix_path else None)
-            QMessageBox.warning(self, self.tr("Channel Preview"), str(exc))
-            return
-        self._remove_file(self._channel_audio_path)
-        self._channel_audio_path = new_path if new_path != mix_path else None
-        self._start_preview(new_path, start_ms=self.player.position())
+    def _on_preview_option_changed(self, _value=None):
+        if self._current_audio[1] and self.channel_combo.currentIndex() >= 0:
+            self._refresh_preview(start_ms=self.player.position())
+
+    def _refresh_preview(self, *, start_ms):
+        mix_path, old_path = self._current_audio[1], self._derived_audio_path
+        channel = int(self.channel_combo.currentData())
+        normalize = self.normalize_check.isChecked()
+        path, gain = mix_path, 1.0
+        if channel >= 0 or normalize:
+            descriptor, path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wav")
+            os.close(descriptor)
+            try:
+                gain = write_wave_preview(mix_path, path, channel, normalize)
+            except (OSError, ValueError, wave.Error) as exc:
+                self._remove_file(path)
+                QMessageBox.warning(self, self.tr("Preview"), str(exc))
+                return
+        self._derived_audio_path = path if path != mix_path else None
+        self.normalize_check.setText(
+            self.tr("Normalize ({gain:+.1f} dB)").format(gain=20 * math.log10(gain))
+            if normalize else self.tr("Normalize")
+        )
+        self._start_preview(path, start_ms=start_ms)
+        self._remove_file(old_path)
 
     def _cached_audio(self, track):
         """Return the cached decoded pair for ``track``, decoding once on demand."""
@@ -1501,12 +1516,10 @@ class SoundViewer(QWidget):
 
         edits = self._wave_edits.get(self._preview_source_id)
         mix_path = edits[-1] if edits else self._decoded_cache[self._preview_source_id][1]
-        channel_path, self._channel_audio_path = self._channel_audio_path, None
         self._current_audio = (self._current_audio[0], mix_path)
         self.waveform.clear()
         self._configure_channels(mix_path)
-        self._start_preview(mix_path, start_ms=start_ms)
-        self._remove_file(channel_path)
+        self._refresh_preview(start_ms=start_ms)
         self._update_wave_edit_buttons()
 
     def _queue_waveform(self, wav_path):
