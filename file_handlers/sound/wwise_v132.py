@@ -1050,13 +1050,13 @@ def _music_switch(r: _Reader) -> None:
         rows = []
         for index in range(count):
             with r.section(f"{index + 1}"):
-                key_offset = r.pos
-                key = r.scalar("Value", "u32")
-                branch_offset = r.pos
+                key_field = len(r.fields)
+                r.scalar("Value", "u32")
+                branch_field = len(r.fields)
                 branch = r.scalar("Branch or audio object", "u32", editable=False)
                 r.scalar("Weight", "u16")
                 r.scalar("Probability", "u16")
-                rows.append((key, key_offset, branch_offset, branch))
+                rows.append((key_field, branch_field, branch))
         # Classify the packed branch union using the same depth traversal Wwise uses.
         levels: dict[int, int] = {}
         kinds: dict[int, bool] = {}
@@ -1066,38 +1066,38 @@ def _music_switch(r: _Reader) -> None:
             if index >= count or index in kinds:
                 continue
             levels[index] = level
-            branch = rows[index][3]
+            branch = rows[index][2]
             child_index, child_count = branch & 0xFFFF, branch >> 16
             leaf = level >= depth or child_index >= count or child_count > count - child_index
             kinds[index] = leaf
             if not leaf:
                 pending.extend((child_index + item, level + 1) for item in range(child_count))
-        for index, (_key, key_offset, offset, branch) in enumerate(rows):
+        branch_fields = {branch_field for _key, branch_field, _branch in rows}
+        replacements = []
+        for index, (key_field, branch_field, branch) in enumerate(rows):
             base = f"Decision tree/{index + 1}"
+            offset = r.fields[branch_field].offset
             level = levels.get(index, 0)
             if 0 < level <= len(group_types):
                 category = "switch" if group_types[level - 1] == 0 else "state"
-                key_field = next(
-                    item for item, field in enumerate(r.fields)
-                    if field.offset == key_offset and field.label == "Value"
-                )
                 r.fields[key_field] = replace(
                     r.fields[key_field], id_kind=f"{category}_value",
                 )
-            source = next(field for field in r.fields if field.offset == offset)
-            r.fields.remove(source)
             if kinds.get(index, True):
-                r.fields.append(WwiseField(
+                replacements.append(WwiseField(
                     f"{base}/Audio object", "Audio object", "u32", offset, 4,
                     branch, (), "hirc", "decision leaf",
                 ))
             else:
-                r.fields.extend((
+                replacements.extend((
                     WwiseField(f"{base}/First child", "First child", "bit", offset, 4,
                                branch & 0xFFFF, (), mask=0xFFFF),
                     WwiseField(f"{base}/Child count", "Child count", "bit", offset, 4,
                                branch >> 16, (), editable=False, mask=0xFFFF0000, shift=16),
                 ))
+        r.fields = [
+            field for item, field in enumerate(r.fields) if item not in branch_fields
+        ] + replacements
 
 
 def _playlist_node(r: _Reader, remaining: list[int], index: list[int]) -> None:
