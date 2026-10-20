@@ -17,6 +17,7 @@ from PySide6.QtGui import (
     QPainter,
     QPalette,
     QPen,
+    QRegion,
 )
 from PySide6.QtWidgets import (
     QAbstractButton,
@@ -24,8 +25,12 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
+    QStyle,
+    QStyleOptionTab,
+    QStylePainter,
     QTabBar,
     QTabWidget,
+    QToolButton,
     QWidget,
 )
 
@@ -426,6 +431,41 @@ class DetachTabBar(QTabBar):
         self.setToolTip(
             self.tr("Drag to reorder or move between editor groups. Drag away to detach.")
         )
+        self._sync_visibility()
+
+    def tabInserted(self, index):
+        super().tabInserted(index)
+        self._sync_visibility()
+
+    def tabRemoved(self, index):
+        super().tabRemoved(index)
+        self._sync_visibility()
+
+    def set_tab_shown(self, index: int, shown: bool):
+        self.setTabVisible(index, shown)
+        self._sync_visibility()
+
+    def _sync_visibility(self):
+        # Without a visible tab the bar is 0 x 0, which Windows shows at 160 x 160 once the window is native.
+        self.setVisible(any(self.isTabVisible(index) for index in range(self.count())))
+
+    def paintEvent(self, event):
+        current = self.currentIndex()
+        if current < 0 or self.isTabVisible(current):
+            super().paintEvent(event)
+            return
+        # QTabBar paints the current tab even when it is hidden, so paint the visible ones here.
+        painter = QStylePainter(self)
+        clip = QRegion(self.rect())
+        for button in self.findChildren(QToolButton, options=Qt.FindDirectChildrenOnly):
+            if button.isVisible():
+                clip -= QRegion(button.geometry())
+        painter.setClipRegion(clip)
+        for index in range(self.count()):
+            if self.isTabVisible(index):
+                option = QStyleOptionTab()
+                self.initStyleOption(option, index)
+                painter.drawControl(QStyle.CE_TabBarTab, option)
 
     def _reset_drag(self):
         self._page = None
@@ -526,6 +566,8 @@ class CustomNotebook(QTabWidget):
         self.tabBar().setTabButton(index, QTabBar.RightSide, _TabCloseButton(self, page))
         if tooltip := getattr(page, "_reasy_tab_tooltip", ""):
             self.setTabToolTip(index, tooltip)
+        if getattr(file_tab, "hide_notebook_tab", False):
+            self.tabBar().set_tab_shown(index, False)
         return index
 
     def _update_close_buttons(self, _index):
@@ -618,7 +660,7 @@ class CustomNotebook(QTabWidget):
         bar.setAccessibleTabName(index, state.accessible_name)
         bar.setTabData(index, state.data)
         bar.setTabTextColor(index, state.text_color)
-        bar.setTabVisible(index, state.visible)
+        bar.set_tab_shown(index, state.visible)
 
     def _tab_drop_accent(self):
         provider = getattr(self.app_instance, "_theme_accent_color", None)

@@ -131,12 +131,9 @@ class ProjectSessionManager:
             notebook = self.notebook_for(widget)
             if notebook is None:
                 notebook = self._restore_notebook_for(tab)
-            index = notebook.indexOf(widget)
-            if index == -1:
-                index = notebook.addTab(widget, "")
+            if notebook.indexOf(widget) == -1:
+                notebook.addTab(widget, "")
             tab.update_tab_title()
-            if getattr(tab, "hide_notebook_tab", False):
-                notebook.tabBar().setTabVisible(index, False)
 
         if session.current_widget and (current_book := self.notebook_for(session.current_widget)) is not None:
             current_book.setCurrentWidget(session.current_widget)

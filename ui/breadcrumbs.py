@@ -52,11 +52,12 @@ class BreadcrumbBar(QFrame):
 
     def _rebuild(self, current=None, _previous=None) -> None:
         self._clear()
-        if self._tab is None:
+        file_segments = self._file_segments()
+        if not file_segments:
             self.hide()
             return
         self.show()
-        for position, (label, callback, tooltip) in enumerate(self._file_segments()):
+        for position, (label, callback, tooltip) in enumerate(file_segments):
             if position:
                 self._separator()
             self._button(label, callback, tooltip)
@@ -92,7 +93,7 @@ class BreadcrumbBar(QFrame):
 
         filename = str(getattr(tab, "filename", "") or "")
         if not filename:
-            return [(self.tr("Untitled"), lambda: None, self.tr("Untitled"))]
+            return []
         path = Path(filename)
         sessions = getattr(getattr(self.app_window, "project_workspace", None), "sessions", None)
         session = sessions.session_for_tab(tab) if sessions is not None else None

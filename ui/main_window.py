@@ -1066,6 +1066,10 @@ class REasyEditorApp(QMainWindow):
 
     def _finish_workbench_restore(self, snapshot: dict, workbench: dict) -> None:
         active_project = snapshot.get("active_project")
+        if not active_project and not self.project_workspace.sessions.get(None).tabs:
+            # Scenes aren't restored; show the selected project, as closing the last scene does.
+            if session := self.project_workspace.current_project_session():
+                active_project = session.path
 
         def finish():
             self.editor_groups.restore_layout(snapshot.get("editor_groups", {}))
@@ -1122,7 +1126,10 @@ class REasyEditorApp(QMainWindow):
         self._stop_ai_chat_visibility_tracking()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.shutdown()
-        for tab in list(self.tabs.values()):
+        tabs = list(self.tabs.values())
+        # As in _close_tab_object: a tab leaves the registry before its widgets go.
+        self.tabs.clear()
+        for tab in tabs:
             try:
                 tab.cleanup()
             except Exception as exc:

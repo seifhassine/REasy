@@ -591,7 +591,6 @@ class ScnSceneTab:
         index = self.parent_notebook.indexOf(self.notebook_widget)
         if index != -1:
             self.parent_notebook.setTabText(index, self.title)
-            self.parent_notebook.tabBar().setTabVisible(index, not self.hide_notebook_tab)
 
     def _on_graphs_changed(self) -> None:
         self.rebuild_owned_scn_paths(self.preview.graphs)
@@ -1044,8 +1043,7 @@ class ScnSceneController:
             "ScnSceneWorkspace", "Scene {number}"
         ).format(number=self.counter))
         tab.parent_notebook = self.app.notebook
-        index = self.app.notebook.addTab(tab.notebook_widget, tab.title)
-        self.app.notebook.tabBar().setTabVisible(index, False)
+        self.app.notebook.addTab(tab.notebook_widget, tab.title)
         self.app.tabs[tab.notebook_widget] = tab
         self.app.project_workspace.sessions.add_global_tab(tab)
         self.focus(tab)
