@@ -87,7 +87,6 @@ class IndexedSoundMetadata(SoundMetadata):
         self._live_events: dict[int, tuple[str, ...]] = {}
         self._reverse: dict[str, dict[str, tuple[int, ...]]] = {}
         self._package_banks: dict[tuple[str, int], tuple[str, ...]] | None = None
-        self._prefetch_event_banks: dict[tuple[str, int], tuple[str, ...]] | None = None
         self._source_groups: dict[int, tuple[dict, ...]] | None = None
         self._message_sources: dict[str, tuple[int, ...]] = {}
         self._message_references: dict[
@@ -593,11 +592,11 @@ class IndexedSoundMetadata(SoundMetadata):
         )
 
     def _source_event_records(
-        self, source_id: int, media_path: str | None = None
+        self, source_id: int, media_path: str | None = None, index: str = "source"
     ) -> tuple[dict, ...]:
         source_id = int(source_id) & 0xFFFFFFFF
-        values = self.data.get("source_events", {}).get(str(source_id), ())
-        table = self.data.get("source_event_records", ())
+        values = self.data.get(f"{index}_events", {}).get(str(source_id), ())
+        table = self.data.get(f"{index}_event_records", ())
         if table:
             records = tuple(
                 {"bank": table[index][0], "event": table[index][1]}
@@ -610,13 +609,14 @@ class IndexedSoundMetadata(SoundMetadata):
         if not media_path:
             return records
         media = resource_key(media_path)
+        # Asked from the media side: voice-type banks (MHWilds event_dia_player_f01_m) each
+        # declare one event bank, while that bank has several media holders.
+        prefetch_events = {resource_key(path) for path in self.prefetch_event_banks(source_id, media)}
         return tuple(
             record for record in records
             if any(
-                media in (
-                    self.embedded_media_banks(source_id, event_path)
-                    + self.prefetch_media_banks(source_id, event_path)
-                )
+                media in self.embedded_media_banks(source_id, event_path)
+                or resource_key(event_path) in prefetch_events
                 for event_path in self.data.get("banks", {}).get(
                     str(record.get("bank", "")), {}
                 ).get("paths", ())
@@ -626,7 +626,15 @@ class IndexedSoundMetadata(SoundMetadata):
     def source_event_labels(
         self, source_id: int, media_path: str | None = None
     ) -> tuple[str, ...]:
-        records = self._source_event_records(source_id, media_path)
+        records = self._source_event_records(source_id, media_path) + self._source_event_records(
+            source_id, media_path, "midi_source"
+        )
+        if not records and media_path:
+            # No event bank links to this copy (an identical duplicate or a variant bank);
+            # the events playing its Source ID still play it.
+            records = self._source_event_records(source_id) + self._source_event_records(
+                source_id, None, "midi_source"
+            )
         bank_events = self.data.get("bank_events", {})
         labels = []
         for record in records:
@@ -790,20 +798,12 @@ class IndexedSoundMetadata(SoundMetadata):
             return runtime.prefetch_event_banks(
                 source_id, resource_key(media_path or self.source_path)
             )
-        key = (resource_key(media_path or self.source_path), int(source_id) & 0xFFFFFFFF)
-        if self._prefetch_event_banks is None:
-            reverse: dict[tuple[str, int], list[str]] = {}
-            for bank, sources in self.data.get("prefetch_media_by_bank", {}).items():
-                for raw_id, paths in sources.items():
-                    for path in _strings(paths):
-                        reverse.setdefault(
-                            (resource_key(path), int(raw_id)), []
-                        ).append(bank)
-            self._prefetch_event_banks = {
-                item: tuple(dict.fromkeys(banks))
-                for item, banks in reverse.items()
-            }
-        return self._prefetch_event_banks.get(key, ())
+        values = (
+            self.data.get("prefetch_events_by_media", {})
+            .get(resource_key(media_path or self.source_path), {})
+            .get(str(int(source_id) & 0xFFFFFFFF), ())
+        )
+        return _strings(values)
 
     def source_event_banks(
         self, source_id: int, media_path: str | None = None

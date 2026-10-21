@@ -1,8 +1,8 @@
-"""Exact editable layouts for the modern Wwise banks used by RE Engine games.
+"""Exact editable layouts for the Wwise banks used by RE Engine games.
 
 The original public API is retained for Wwise v132 compatibility. The same
-compact reader covers RE8's v135, MHRise/RE4's v140, MHWilds/RE9's v145,
-and Pragmata/Onimusha: Way of the Sword's v150 structures.
+compact reader covers DMC5/RE2's v125, RE8's v135, MHRise/RE4's v140,
+MHWilds/RE9's v145, and Pragmata/Onimusha: Way of the Sword's v150 structures.
 """
 
 from __future__ import annotations
@@ -37,6 +37,7 @@ _ACCUM = {
     0: "None", 1: "Exclusive", 2: "Additive", 3: "Multiply",
     4: "Boolean", 5: "Maximum", 6: "Filter",
 }
+_ACCUM_125 = {0: "Exclusive", 1: "Additive", 2: "Multiply"}
 _SYNC = {
     0: "Immediate", 1: "Next grid", 2: "Next bar", 3: "Next beat",
     4: "Next marker", 5: "Next user marker", 6: "Entry marker",
@@ -83,6 +84,10 @@ _BUILT_IN = {
     0: "None", 1: "Distance", 2: "Azimuth", 3: "Elevation",
     4: "Emitter cone", 5: "Obstruction", 6: "Occlusion",
     7: "Listener cone", 8: "Diffraction", 9: "Transmission loss",
+}
+_BUILT_IN_126 = {
+    0: "None", 1: "Distance", 2: "Azimuth", 3: "Elevation",
+    4: "Object angle", 5: "Obstruction", 6: "Occlusion",
 }
 _PLUGIN_TYPE = {
     0: "None", 1: "Codec", 2: "Source", 3: "Effect",
@@ -190,8 +195,10 @@ class _Reader:
         "u32": "I", "i32": "i", "f32": "f", "f64": "d", "bool": "B",
     }
 
-    def __init__(self, data: bytes, version: int = 132):
+    def __init__(self, data: bytes, version: int = 132, feedback: bool = False):
         self.data, self.pos, self.version = data, 0, int(version)
+        # v126 and older nodes end with a feedback bus when the bank header enables it.
+        self.feedback = bool(feedback)
         self.fields: list[WwiseField] = []
         self.parts: list[str] = []
         self.anchors: dict[str, int] = {}
@@ -379,8 +386,9 @@ def _state_properties(r: _Reader, names: dict[int, str] | None = None) -> None:
         for index in range(count):
             with r.section(f"{index + 1}"):
                 r.var("Property", enum=names, editable=False)
-                r.scalar("Accumulation", "u8", enum=_ACCUM)
-                r.scalar("Stored in decibels", "u8", enum=_BOOL)
+                r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
+                if r.version > 126:
+                    r.scalar("Stored in decibels", "u8", enum=_BOOL)
     with r.section("State groups"):
         count = r.var("Group count", editable=False)
         for index in range(count):
@@ -435,7 +443,7 @@ def _typed_rtpc_input(r: _Reader, label: str = "Input ID") -> int:
 
     field_index = len(r.fields)
     source_id = r.scalar(label, "u32")
-    modern = r.version >= 144
+    modern = r.version > 140
     source_type = r.scalar(
         "Input type", "u8", enum=_RTPC_TYPE_145 if modern else _RTPC_TYPE_140
     )
@@ -464,7 +472,7 @@ def _rtpc(
         for index in range(count):
             with r.section(f"{index + 1}"):
                 _typed_rtpc_input(r)
-                r.scalar("Accumulation", "u8", enum=_ACCUM)
+                r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
                 r.var("Target property", enum=names, editable=False)
                 r.scalar("Curve ID", "u32", id_kind="curve")
                 r.scalar("Scaling", "u8", enum=_SCALING)
@@ -518,8 +526,61 @@ def _metadata(r: _Reader, *, node: bool) -> None:
                 r.scalar("Shared effect", "u8", enum=_BOOL)
 
 
+def _positioning_129(r: _Reader) -> None:
+    """Positioning before Wwise v130: 3D is its own bit and owns the attenuation ID."""
+
+    flags = r.flags("Routing", (
+        ("Override parent positioning", 0),
+        ("3D positioning available", 4),
+    ))
+    if not (flags & 0x01 and flags & 0x10):
+        return
+    # Bit 4 (v126-) or 6 (v127-129) is the 3D position type; 1 has no automation path.
+    automation_bit = 4 if r.version <= 126 else 6
+    bits = r.flags("3D flags", (
+        ("Spatialization", 0, 1 if r.version <= 126 else 2, _SPATIALIZATION),
+        ("Hold emitter position and orientation", 3),
+        ("3D position type", automation_bit, 1, {0: "Automated path", 1: "Emitter"}),
+        ("Loop 3D automation path", 5),
+    ) if r.version <= 126 else (
+        ("Spatialization", 0, 2, _SPATIALIZATION),
+        ("Hold emitter position and orientation", 3),
+        ("Hold listener orientation", 4),
+        ("Loop 3D automation path", 5),
+        ("3D position type", automation_bit, 1, {0: "Automated path", 1: "Emitter"}),
+    ))
+    r.scalar("Attenuation", "u32", id_kind="hirc", reference_role="attenuation")
+    if not (bits >> automation_bit) & 1:
+        _automation_path(r)
+
+
+def _automation_path(r: _Reader) -> None:
+    r.scalar("Path mode", "u8", enum=_PATH_MODE)
+    r.scalar("Transition time (ms)", "i32")
+    vertex_count = r.scalar("Vertex count", "u32", editable=False)
+    def vertex(_index):
+        r.scalar("X", "f32")
+        r.scalar("Y", "f32")
+        r.scalar("Z", "f32")
+        r.scalar("Duration (ms)", "i32")
+    _items(r, "Path vertices", vertex_count, vertex)
+    item_count = r.scalar("Path count", "u32", editable=False)
+    def path(_index):
+        r.scalar("First vertex", "u32")
+        r.scalar("Vertex count", "u32", editable=False)
+    _items(r, "Paths", item_count, path)
+    def ranges(_index):
+        r.scalar("X random range", "f32")
+        r.scalar("Y random range", "f32")
+        r.scalar("Z random range", "f32")
+    _items(r, "Path randomization", item_count, ranges)
+
+
 def _positioning(r: _Reader) -> None:
     with r.section("Positioning"):
+        if r.version <= 129:
+            _positioning_129(r)
+            return
         flags = r.flags("Routing", (
             ("Override parent positioning", 0),
             ("Listener-relative routing", 1),
@@ -534,8 +595,8 @@ def _positioning(r: _Reader) -> None:
                 ("Enable attenuation", 3),
                 ("Hold emitter position and orientation", 4),
                 ("Hold listener orientation", 5),
-                ("Enable diffraction", 6),
-                ("Do not loop 3D automation path", 7),
+                ("Loop 3D automation path", 6),
+                ("Enable diffraction", 7),
             ))
         else:
             r.flags("3D flags", (
@@ -544,28 +605,8 @@ def _positioning(r: _Reader) -> None:
                 ("Hold listener orientation", 4),
                 ("Loop 3D automation path", 5),
             ))
-        position_type = (flags >> 5) & 0x03
-        if position_type == 0:
-            return
-        r.scalar("Path mode", "u8", enum=_PATH_MODE)
-        r.scalar("Transition time (ms)", "i32")
-        vertex_count = r.scalar("Vertex count", "u32", editable=False)
-        def vertex(_index):
-            r.scalar("X", "f32")
-            r.scalar("Y", "f32")
-            r.scalar("Z", "f32")
-            r.scalar("Duration (ms)", "i32")
-        _items(r, "Path vertices", vertex_count, vertex)
-        item_count = r.scalar("Path count", "u32", editable=False)
-        def path(_index):
-            r.scalar("First vertex", "u32")
-            r.scalar("Vertex count", "u32", editable=False)
-        _items(r, "Paths", item_count, path)
-        def ranges(_index):
-            r.scalar("X random range", "f32")
-            r.scalar("Y random range", "f32")
-            r.scalar("Z random range", "f32")
-        _items(r, "Path randomization", item_count, ranges)
+        if (flags >> 5) & 0x03:
+            _automation_path(r)
 
 
 def _aux(r: _Reader) -> None:
@@ -634,6 +675,12 @@ def _node_base(r: _Reader) -> None:
         _advanced(r)
         _state_properties(r)
         _rtpc(r)
+        _feedback(r)
+
+
+def _feedback(r: _Reader) -> None:
+    if r.version <= 126 and r.feedback:
+        r.scalar("Feedback bus", "u32", id_kind="hirc", reference_role="feedback bus")
 
 
 def _children(r: _Reader) -> None:
@@ -658,7 +705,7 @@ def _source(r: _Reader, section: str = "Source") -> None:
             ("Language-specific", 0), ("Prefetch", 1),
             ("Non-cacheable", 3), ("Has source", 7),
         ))
-        if plugin & 0x0F == 2:
+        if plugin & 0x0F in ((2, 5) if r.version <= 126 else (2,)):
             size = r.scalar("Plug-in parameter bytes", "u32", editable=False)
             _plugin_parameters(r, plugin, size)
 
@@ -749,9 +796,10 @@ def _transitions(r: _Reader) -> None:
 
 def _state(r: _Reader) -> None:
     names = property_names("state", r.version)
+    width = "u8" if r.version <= 126 else "u16"
     with r.section("State values"):
-        count = r.scalar("Value count", "u16", editable=False)
-        ids = [r.scalar(f"Value {index + 1} property", "u16", enum=names, editable=False) for index in range(count)]
+        count = r.scalar("Value count", width, editable=False)
+        ids = [r.scalar(f"Value {index + 1} property", width, enum=names, editable=False) for index in range(count)]
         for prop_id in ids:
             r.scalar(f"{names.get(prop_id, f'Property 0x{prop_id:04X}')} value", "f32")
 
@@ -1068,7 +1116,10 @@ def _music_switch(r: _Reader) -> None:
             levels[index] = level
             branch = rows[index][2]
             child_index, child_count = branch & 0xFFFF, branch >> 16
-            leaf = level >= depth or child_index >= count or child_count > count - child_index
+            # The root is a branch; a depth-0 tree packs it as first child 1, count 0.
+            leaf = index > 0 and (
+                level >= depth or child_index >= count or child_count > count - child_index
+            )
             kinds[index] = leaf
             if not leaf:
                 pending.extend((child_index + item, level + 1) for item in range(child_count))
@@ -1448,6 +1499,16 @@ def _fx(r: _Reader) -> None:
                 r.scalar("Slot", "u8")
                 r.scalar("Source ID", "u32", id_kind="source")
     _rtpc(r, names=names)
+    if r.version <= 126:
+        r.scalar("Reserved 1", "u8", editable=False, visible=False)
+        r.scalar("Reserved 2", "u8", editable=False, visible=False)
+        with r.section("RTPC initial values"):
+            count = r.scalar("Value count", "u16", editable=False)
+            for index in range(count):
+                with r.section(f"{index + 1}"):
+                    r.var("Property", enum=names or property_names("state", r.version), editable=False)
+                    r.scalar("Value", "f32")
+        return
     _state_properties(r, names=names)
     with r.section("Plug-in property values"):
         count = r.scalar("Value count", "u16", editable=False)
@@ -1455,13 +1516,13 @@ def _fx(r: _Reader) -> None:
         for index in range(count):
             with r.section(f"{index + 1}"):
                 r.var("Property", enum=names, editable=False)
-                r.scalar("Accumulation", "u8", enum=_ACCUM)
+                r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
                 r.scalar("Value", "f32")
 
 
 def _bus(r: _Reader) -> None:
     output = r.scalar("Output bus", "u32", id_kind="hirc", reference_role="output bus")
-    if not output:
+    if not output and r.version > 126:
         r.scalar("Audio device", "u32", id_kind="hirc", reference_role="audio device")
     _properties(r, ranges=False)
     _positioning(r)
@@ -1503,6 +1564,7 @@ def _bus(r: _Reader) -> None:
     _metadata(r, node=False)
     _rtpc(r)
     _state_properties(r)
+    _feedback(r)
 
 
 def _envelope(r: _Reader) -> None:
@@ -1520,8 +1582,11 @@ def _chunk_bkhd(r: _Reader) -> None:
     r.scalar("Bank generator version", "u32", editable=False)
     r.scalar("SoundBank ID", "u32", id_kind="bank")
     r.scalar("Language ID", "u32", id_kind="language")
-    r.scalar("Unused alternate value", "u16", editable=False, visible=False)
-    r.scalar("Device allocated", "u16", enum=_BOOL)
+    if r.version <= 126:
+        r.scalar("Feedback in bank", "u32", enum=_BOOL, editable=False)
+    else:
+        r.scalar("Unused alternate value", "u16", editable=False, visible=False)
+        r.scalar("Device allocated", "u16", enum=_BOOL)
     r.scalar("Project ID", "u32", id_kind="project", editable=False)
     if r.version >= 142:
         r.scalar("SoundBank type", "u32", enum=_BANK_TYPE)
@@ -1570,7 +1635,8 @@ def _chunk_stmg(r: _Reader) -> None:
         r.scalar("Filter behavior", "u16", enum=_FILTER_BEHAVIOR)
     r.scalar("Volume threshold (dB)", "f32")
     r.scalar("Maximum voices", "u16")
-    r.scalar("Maximum dangerous virtual voices", "u16")
+    if r.version > 126:
+        r.scalar("Maximum dangerous virtual voices", "u16")
 
     count = r.scalar("State group count", "u32", editable=False)
     with r.section("State groups"):
@@ -1604,7 +1670,7 @@ def _chunk_stmg(r: _Reader) -> None:
                 r.scalar("Ramping", "u32", enum=_RAMP)
                 r.scalar("Ramp up", "f32")
                 r.scalar("Ramp down", "f32")
-                r.scalar("Built-in parameter", "u8", enum=_BUILT_IN)
+                r.scalar("Built-in parameter", "u8", enum=_BUILT_IN if r.version > 126 else _BUILT_IN_126)
 
     count = r.scalar("Acoustic texture count", "u32", editable=False)
     with r.section("Acoustic textures"):
@@ -1681,17 +1747,30 @@ _PARSERS = {
     0x15: _audio_device,
     0x16: _envelope,
 }
+# v126 and older number the types after 0x0F differently (0x10/0x11 are feedback).
+_PARSERS_126 = {
+    **{type_id: parser for type_id, parser in _PARSERS.items() if type_id <= 0x0E},
+    0x12: _fx,
+    0x13: _fx,
+    0x14: _bus,
+    0x15: _envelope,
+    0x16: _envelope,
+    0x17: _audio_device,
+}
 
 
 def parse_structured_object(
-    type_id: int, payload: bytes, version: int
+    type_id: int, payload: bytes, version: int, *, feedback: bool = False
 ) -> WwiseObjectLayout:
-    """Return an exact field map for one supported modern HIRC payload."""
+    """Return an exact field map for one supported HIRC payload.
 
-    reader = _Reader(payload, version)
+    ``feedback`` is the v126-and-older bank header flag that adds a feedback bus to nodes.
+    """
+
+    reader = _Reader(payload, version, feedback)
     try:
         reader.scalar("Object ID", "u32", editable=False, visible=False)
-        parser = _PARSERS.get(int(type_id))
+        parser = (_PARSERS_126 if version <= 126 else _PARSERS).get(int(type_id))
         if parser is None:
             raise _LayoutError(
                 f"HIRC type 0x{int(type_id):02X} has no v{version} layout"

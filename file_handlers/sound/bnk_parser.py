@@ -27,6 +27,7 @@ lazy from .wwise_schema import (
     fx_property_names,
     integer_properties,
     property_names,
+    _ACTION_ALL_SCOPES,
     _ACTION_EVENT_TARGETS,
     _ACTION_EXTERNAL_TARGET_KINDS,
     _ACTION_SET_VALUE_TYPES,
@@ -340,6 +341,7 @@ class HircObject:
     fx_plugin: BnkFxPlugin | None = None
     structure: WwiseObjectLayout | None = None
     bank_version: int | None = None
+    bank_feedback: bool = False
 
 
 _PLAYBACK_TARGET_TYPES = frozenset({
@@ -478,6 +480,8 @@ class BnkEvent:
     source_ids: tuple[int, ...] = ()
     reachable_object_ids: tuple[int, ...] = ()
     unresolved_ids: tuple[int, ...] = ()
+    # Sources reached only through a MIDI target; which notes play them is not decoded.
+    midi_source_ids: tuple[int, ...] = ()
 
 
 @dataclass(slots=True)
@@ -623,7 +627,7 @@ def parse_bnk(data: bytes) -> BnkParseResult:
     indexed = {entry.source_id: entry for entry in media}
 
     hirc = _read_hirc_objects(chunks.get("HIRC"), warnings, version)
-    _decode_hirc_objects(hirc.objects, version)
+    _decode_hirc_objects(hirc.objects, version, _read_bank_feedback(chunks.get("BKHD"), version))
     if hirc.objects and version not in STRUCTURED_BANK_VERSIONS:
         warnings.append(
             f"No structured HIRC schema is registered for Wwise bank version {version}"
@@ -693,7 +697,7 @@ def parse_bnk(data: bytes) -> BnkParseResult:
         warnings.append("HIRC ended before all declared objects were read")
 
     bank_chunks = []
-    if version in {132, 135, 140, 145, 150}:
+    if version in STRUCTURED_BANK_VERSIONS:
         for record in chunk_records:
             decoded = parse_structured_chunk(record.chunk_id, record.payload, version)
             if decoded is None:
@@ -1003,6 +1007,17 @@ def _read_bank_header(
     return bank_id, language_id, project_id
 
 
+def _chunks_feedback(chunks: list[ChunkRecord], version: int | None) -> bool:
+    header = next((chunk.payload for chunk in chunks if chunk.chunk_id == b"BKHD"), None)
+    return _read_bank_feedback(header, version)
+
+
+def _read_bank_feedback(chunk: bytes | None, version: int | None) -> bool:
+    if not chunk or version is None or not 26 < version <= 126 or len(chunk) < 16:
+        return False
+    return bool(struct.unpack_from("<I", chunk, 12)[0] & 1)
+
+
 def _read_didx(chunk: bytes | None) -> list[BnkEmbeddedAudio]:
     if not chunk:
         return []
@@ -1068,8 +1083,10 @@ def _decode_hirc_payload(
     known_ids = set(by_id)
     obj.bank_version = bank_version
     obj.type_name = _hirc_type_name(obj.type_id, bank_version)
-    if bank_version in {132, 135, 140, 145, 150}:
-        obj.structure = parse_structured_object(obj.type_id, obj.payload, bank_version)
+    if bank_version in STRUCTURED_BANK_VERSIONS:
+        obj.structure = parse_structured_object(
+            obj.type_id, obj.payload, bank_version, feedback=obj.bank_feedback
+        )
     if obj.type_id == 0x04:
         obj.event_action_ids = _parse_event_action_ids(obj.payload)
     elif obj.type_id == 0x01:
@@ -1257,12 +1274,15 @@ def _resolve_fx_state_property_names(objects: list[HircObject]) -> None:
             )
 
 
-def _decode_hirc_objects(objects: list[HircObject], bank_version: int | None = None) -> None:
+def _decode_hirc_objects(
+    objects: list[HircObject], bank_version: int | None = None, feedback: bool = False
+) -> None:
     if bank_version not in STRUCTURED_BANK_VERSIONS:
         return
     by_id = {obj.object_id: obj for obj in objects if obj.object_id}
     layout = _hirc_layout(bank_version)
     for obj in objects:
+        obj.bank_feedback = feedback
         _decode_hirc_payload(obj, bank_version, by_id, layout)
     _infer_hirc_parents(objects, by_id)
     known_ids = set(by_id)
@@ -1278,6 +1298,7 @@ def _decode_one_hirc_object(obj: HircObject, objects: list[HircObject]) -> None:
     if bank_version not in STRUCTURED_BANK_VERSIONS:
         return
     by_id = {item.object_id: item for item in objects if item.object_id}
+    obj.bank_feedback = any(item.bank_feedback for item in objects)
     _decode_hirc_payload(obj, bank_version, by_id, _hirc_layout(bank_version))
     if obj.parent_id is None:
         for parent in objects:
@@ -1402,7 +1423,8 @@ def _parse_fx_plugin(payload: bytes) -> BnkFxPlugin | None:
     return BnkFxPlugin(plugin_id, name, parameters, 12, 12 + parameter_size)
 
 
-def _action_target_kind(type_key: int, bank_version: int | None = None) -> str:
+def _action_target_kind(action_type: int, bank_version: int | None = None) -> str:
+    type_key = action_type & 0xFF00
     if (bank_version or 0) >= 150 and type_key == 0x1B00:
         return "trigger"
     if type_key in _ACTION_EXTERNAL_TARGET_KINDS:
@@ -1413,7 +1435,7 @@ def _action_target_kind(type_key: int, bank_version: int | None = None) -> str:
         (bank_version or 0) >= 150 and type_key in {0x1500, 0x1600, 0x1700}
     ):
         return "event"
-    return "object"
+    return "all" if action_type & 0xFF in _ACTION_ALL_SCOPES else "object"
 
 
 def _parse_action_exceptions(
@@ -1451,7 +1473,7 @@ def _decode_action(obj: HircObject) -> None:
         type_key, _ACTION_TYPE_NAMES.get(type_key, f"Action 0x{type_key:04X}")
     )
     obj.action_raw_id = struct.unpack_from("<I", payload, 6)[0]
-    obj.action_target_kind = _action_target_kind(type_key, obj.bank_version)
+    obj.action_target_kind = _action_target_kind(action_type, obj.bank_version)
     if obj.action_target_kind in {"object", "event"}:
         obj.action_target_id = obj.action_raw_id
     obj.action_target_is_bus = len(payload) > 10 and bool(payload[10] & 1)
@@ -2024,8 +2046,11 @@ def _resolve_events(objects: list[HircObject]) -> list[BnkEvent]:
     for event_obj in (obj for obj in objects if obj.type_id == 0x04):
         reachable: list[int] = []
         sources: list[int] = []
+        midi_sources: list[int] = []
+        midi_targets: list[int] = []
         unresolved: list[int] = []
         visited: set[int] = set()
+        sink = sources
 
         def walk(object_id: int) -> None:
             if not object_id or object_id in visited:
@@ -2052,19 +2077,31 @@ def _resolve_events(objects: list[HircObject]) -> list[BnkEvent]:
                 ):
                     walk(obj.action_target_id)
                 return
-            sources.extend(source.source_id for source in obj.sources if source.source_id)
+            sink.extend(source.source_id for source in obj.sources if source.source_id)
             for child_id in obj.child_ids:
                 walk(child_id)
+            # MIDI segments play the hierarchy their notes drive (MHWilds dialogue).
+            midi_targets.extend(
+                field.target_id for field in obj.reference_fields
+                if field.role == "MIDI target" and field.target_id in by_id
+            )
 
         for action_id in event_obj.event_action_ids:
             walk(action_id)
+        # Walked after every direct path, so a source reached both ways stays direct.
+        sink = midi_sources
+        for target_id in midi_targets:
+            walk(target_id)
+        direct = set(sources)
+        midi_only = tuple(dict.fromkeys(s for s in midi_sources if s not in direct))
         events.append(
             BnkEvent(
                 object_id=event_obj.object_id,
                 action_ids=event_obj.event_action_ids,
-                source_ids=tuple(dict.fromkeys(sources)),
+                source_ids=tuple(dict.fromkeys(sources)) + midi_only,
                 reachable_object_ids=tuple(reachable),
                 unresolved_ids=tuple(dict.fromkeys(unresolved)),
+                midi_source_ids=midi_only,
             )
         )
     return events
@@ -3206,6 +3243,7 @@ def _edit_hirc_chunk(
     chunk: bytes,
     *,
     bank_version: int,
+    feedback: bool = False,
     event_actions: dict[int, list[int] | tuple[int, ...]],
     action_targets: dict[int, int],
     hirc_upserts: dict[int | tuple[int, int], tuple[int, bytes]],
@@ -3217,7 +3255,7 @@ def _edit_hirc_chunk(
     if not parsed.complete:
         raise ValueError("Refusing to edit a truncated HIRC chunk")
     objects = parsed.objects
-    _decode_hirc_objects(objects, bank_version)
+    _decode_hirc_objects(objects, bank_version, feedback)
 
     def group_by_id():
         grouped: dict[int, list[HircObject]] = {}
@@ -3260,7 +3298,7 @@ def _edit_hirc_chunk(
                     struct.pack_into("<I", payload, offset, renames[old])
             obj.payload = bytes(payload)
             obj.object_id = renames.get(obj.object_id, obj.object_id)
-        _decode_hirc_objects(objects, bank_version)
+        _decode_hirc_objects(objects, bank_version, feedback)
 
     by_id = group_by_id()
     upsert_reference_baselines = {}
@@ -3379,7 +3417,7 @@ def _edit_hirc_chunk(
         _pack_hirc(objects), bank_version=bank_version
     )
     objects = reparsed.objects
-    _decode_hirc_objects(objects, bank_version)
+    _decode_hirc_objects(objects, bank_version, feedback)
     by_id = group_by_id()
     remaining_objects = [
         obj for obj in objects if obj.object_id not in deleted_hirc_ids
@@ -3454,12 +3492,12 @@ def _edit_hirc_chunk(
 
 
 def _hirc_source_map(
-    payload: bytes, bank_version: int
+    payload: bytes, bank_version: int, feedback: bool = False
 ) -> dict[tuple[int, int, int], tuple[BnkSource, ...]]:
     """Decode every HIRC object that carries bank source records."""
 
     parsed = _read_hirc_objects(payload, bank_version=bank_version)
-    _decode_hirc_objects(parsed.objects, bank_version)
+    _decode_hirc_objects(parsed.objects, bank_version, feedback)
     return _decoded_hirc_source_map(parsed.objects)
 
 
@@ -3874,8 +3912,7 @@ class BnkEditModel:
         ]
         if len(matches) != 1:
             raise ValueError(f"Expected exactly one {name} chunk; found {len(matches)}")
-        version = 132 if self.result.bank_version == 125 else self.result.bank_version
-        decoded = parse_structured_chunk(key, bytes(payload), version)
+        decoded = parse_structured_chunk(key, bytes(payload), self.result.bank_version)
         if decoded is None or not decoded.structure.complete:
             reason = decoded.structure.error if decoded else "unsupported chunk"
             raise ValueError(f"Refusing incomplete {name} settings: {reason}")
@@ -3962,7 +3999,7 @@ def _rewrite_bnk(
                 f"found {len(matches)}"
             )
         decoded = parse_structured_chunk(
-            chunk_id, bytes(payload), 132 if bank_version == 125 else bank_version
+            chunk_id, bytes(payload), bank_version
         )
         if decoded is None or not decoded.structure.complete:
             reason = decoded.structure.error if decoded else "unsupported chunk"
@@ -3980,13 +4017,15 @@ def _rewrite_bnk(
         if hirc_index is None:
             raise ValueError("BNK has no HIRC chunk")
         infer_source_renames = hirc_source_renames is None
+        feedback = _chunks_feedback(chunks, bank_version)
         sources_before = (
-            _hirc_source_map(chunks[hirc_index].payload, bank_version)
+            _hirc_source_map(chunks[hirc_index].payload, bank_version, feedback)
             if infer_source_renames else None
         )
         payload = bytes(hirc_payload) if hirc_payload is not None else _edit_hirc_chunk(
             chunks[hirc_index].payload,
             bank_version=bank_version,
+            feedback=feedback,
             event_actions=event_actions,
             action_targets=action_targets,
             hirc_upserts=hirc_upserts,
@@ -4001,7 +4040,7 @@ def _rewrite_bnk(
         renames = (
             _source_id_renames(
                 sources_before,
-                _hirc_source_map(chunks[hirc_index].payload, bank_version),
+                _hirc_source_map(chunks[hirc_index].payload, bank_version, feedback),
             )
             if infer_source_renames else hirc_source_renames
         )
@@ -4038,7 +4077,7 @@ def _rewrite_bnk_media(
             _read_hirc_objects(chunks[hirc_index].payload, bank_version=bank_version)
             if hirc_index is not None else _HircReadResult([], b"", False)
         )
-        _decode_hirc_objects(hirc.objects, bank_version)
+        _decode_hirc_objects(hirc.objects, bank_version, _chunks_feedback(chunks, bank_version))
     sources = [*obj.sources for obj in hirc.objects]
     source_ids = {source.source_id for source in sources}
     embedded_ids = {source.source_id for source in sources if source.stream_type == 0}

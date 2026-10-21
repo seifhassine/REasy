@@ -166,6 +166,8 @@ class ActionPickerDialog(QDialog):
             target = self._metadata.id_label("trigger", action.raw_id)
         elif action.target_kind == "event":
             target = self._metadata.id_label("event", action.target_id, event=True)
+        elif action.target_kind == "all":
+            target = self.tr("All objects")
         else:
             obj = self._objects.get(action.target_id)
             target = (
@@ -1020,6 +1022,8 @@ class HircPropertiesDialog(QDialog):
                 self.tr("State") if prefix == "state" else self.tr("Switch"),
                 self.action_value,
             )
+        elif obj.action_target_kind == "all":
+            self.form.addRow(self.tr("Target"), QLabel(self.tr("All objects")))
         else:
             self.raw_target = self._line(raw_id)
             self.form.addRow(self.tr("External ID"), self.raw_target)
@@ -1388,6 +1392,8 @@ class HircPropertiesDialog(QDialog):
             elif obj.action_settings and obj.action_settings.kind in {"state", "switch"}:
                 target_id = self.action_value.object_id(self.tr("Value"))
                 target_is_bus = obj.action_target_is_bus
+            elif self.action_target_kind == "all":
+                target_id, target_is_bus = obj.action_raw_id or 0, obj.action_target_is_bus
             else:
                 target_id = _number(self.raw_target.text(), "External ID")
                 target_is_bus = obj.action_target_is_bus

@@ -283,7 +283,9 @@ class RuntimeSoundIndex:
         localized = [path for path in holders if _locale_suffix(path) == locale]
         if len(localized) == 1:
             return tuple(localized)
-        return ()
+        # A language-neutral bank serves every locale (MHWilds event_dia_npc_cat_*_m).
+        neutral = [path for path in holders if not _locale_suffix(path)]
+        return tuple(neutral) if len(neutral) == 1 else ()
 
     def prefetch_event_banks(self, source_id: int, media_path: str) -> tuple[str, ...]:
         """Return banks declaring prefetch for a source.
@@ -308,7 +310,13 @@ class RuntimeSoundIndex:
             return tuple(dict.fromkeys(matched))
         locale = _locale_suffix(current)
         localized = [bank for bank in declarers if _locale_suffix(bank) == locale]
-        return tuple(dict.fromkeys(localized)) if len(localized) == 1 else ()
+        if len(localized) == 1:
+            return tuple(localized)
+        # The only holder, language-neutral, serves every locale's declaration.
+        holders = self.embedded_by_source.get(int(source_id) & 0xFFFFFFFF, ())
+        if not locale and all(path == current for path in holders):
+            return tuple(dict.fromkeys(declarers))
+        return ()
 
     def source_event_banks(self, source_id: int, media_path: str) -> tuple[str, ...]:
         source_id = int(source_id) & 0xFFFFFFFF

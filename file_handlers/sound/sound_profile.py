@@ -105,7 +105,7 @@ class SoundGameProfile:
     def split_bank_family(self, path: str) -> str:
         """Identify event/media siblings while retaining the language suffix."""
         return re.sub(
-            r"_(?:es|ev|m(?:_[a-z0-9]+)?|media)(?=(?:\.[^/.]+)?$)",
+            r"_(?:es|ev(?:_str)?|m(?:_[a-z0-9]+)?|media)(?=(?:\.[^/.]+)?$)",
             "", sound_media_key(path),
         )
 

@@ -136,6 +136,12 @@ lazy from .wwise_media import (
 lazy from tools.github_downloader import GitHubToolDownloader
 
 
+# Objects that play sources without an event: effects and music nodes.
+_OBJECT_USER_TYPES = frozenset({
+    "FX Share Set", "FX Custom", "Music Segment", "Music Switch", "Music Random/Sequence",
+})
+_MUSIC_USER_ROLES = {"stinger segment": "Stinger", "transition segment": "Transition"}
+
 _COLUMNS = [
     QT_TRANSLATE_NOOP("SoundViewer", "#"),
     QT_TRANSLATE_NOOP("SoundViewer", "Source ID"),
@@ -276,6 +282,7 @@ class SoundViewer(QWidget):
         self._modified = False
         self._parse_result = None
         self._parsed_tracks = []
+        self._object_users: dict[int, tuple[str, ...]] = {}
         self._visible_tracks = []
         self._resolved_media = {}
         self._active_event_id = None
@@ -2700,12 +2707,42 @@ class SoundViewer(QWidget):
             )
         )
 
+    @staticmethod
+    def _collect_object_users(result) -> dict[int, tuple[str, ...]]:
+        """Non-event users in this bank: effects loading plug-in media (reverb IRs), and the
+        music stingers and transition segments that triggers and transitions play."""
+        by_id = {obj.object_id: obj for obj in result.objects}
+
+        def sources(object_id, seen):
+            obj = by_id.get(object_id)
+            if obj is not None and object_id not in seen:
+                seen.add(object_id)
+                yield from (source.source_id for source in obj.sources if source.source_id)
+                for child in obj.child_ids:
+                    yield from sources(child, seen)
+
+        users: dict[int, list[str]] = {}
+        for obj in result.objects:
+            if obj.type_name not in _OBJECT_USER_TYPES or not obj.structure:
+                continue
+            label = f"{obj.type_name} {obj.object_id}"
+            for field in obj.structure.fields:
+                if field.label == "Source ID" and field.path.startswith("Plug-in media/"):
+                    users.setdefault(field.value, []).append(label)
+                elif field.reference_role in _MUSIC_USER_ROLES:
+                    for source_id in sources(field.value, set()):
+                        users.setdefault(source_id, []).append(
+                            f"{_MUSIC_USER_ROLES[field.reference_role]} of {label}"
+                        )
+        return {source_id: tuple(dict.fromkeys(labels)) for source_id, labels in users.items()}
+
     def _apply_result(self, result):
         self._refresh_sound_profile(result)
         self._resolved_media.clear()
         self._purge_decoded_cache()
         self._parse_result = result
         self._parsed_tracks = result.tracks
+        self._object_users = self._collect_object_users(result)
         self._update_role_banner(result)
         self._populate_event_filters(result)
         self._populate_bank_filters(result)
@@ -3072,6 +3109,12 @@ class SoundViewer(QWidget):
             return f"{name}{value}"
         if kind == "trigger":
             return self._sound_metadata.id_label("trigger", raw_id)
+        if kind == "all":
+            exceptions = len(settings.exceptions) if settings else 0
+            return (
+                self.tr("All objects except {count}").format(count=exceptions)
+                if exceptions else self.tr("All objects")
+            )
         if kind == "event":
             return self._sound_metadata.id_label("event", target_id, event=True)
         return (
@@ -3767,11 +3810,14 @@ class SoundViewer(QWidget):
             elif kind == "game_parameter":
                 prefix, object_id = self.tr("Game Parameter"), action.raw_id
                 detail = self._action_summary(action)
+            elif kind == "all":
+                prefix, object_id = self.tr("All objects"), 0
+                detail = self._action_summary(action)
             else:
                 prefix, object_id = self.tr("Trigger"), action.raw_id
                 detail = self._action_summary(action)
             key = (f"external_{kind}", action.object_id)
-            add(key, "external", object_id, prefix, detail, "external", depth)
+            add(key, "external", object_id, prefix, detail, "any" if kind == "all" else "external", depth)
             edges.append((parent, key))
 
         def visit_action(action_id, parent, depth, path):
@@ -4510,7 +4556,7 @@ class SoundViewer(QWidget):
                 for event_id in track.event_ids
             ) or self._sound_metadata.source_event_labels(
                 track.source_id, media_path
-            )
+            ) or self._object_users.get(track.source_id, ())
             if needle and needle not in str(track.source_id) and not any(
                 needle in value.casefold() for value in used_by_values
             ):

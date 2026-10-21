@@ -164,6 +164,8 @@ _ACTION_EXTERNAL_TARGET_KINDS = {
     0x1D00: "trigger",
 }
 _ACTION_EVENT_TARGETS = frozenset({0x1500, 0x1600, 0x1700, 0x2100, 0x2300})
+# Action type low byte: All, All (game object), All except, All except (game object).
+_ACTION_ALL_SCOPES = frozenset({0x04, 0x05, 0x08, 0x09})
 _ACTION_SET_VALUE_TYPES = frozenset({
     0x0800, 0x0900, 0x0A00, 0x0B00,
     0x0C00, 0x0D00, 0x0E00, 0x0F00, 0x2000, 0x3000,
