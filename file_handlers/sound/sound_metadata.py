@@ -161,6 +161,11 @@ class SoundMetadata:
 
         return ()
 
+    def object_user_labels(self, source_id: int) -> tuple[str, ...]:
+        """ non-event users (effects, stingers, transitions) recorded in other banks"""
+
+        return ()
+
     def label(
         self, category: str, object_id: int, *, event: bool = False
     ) -> str:

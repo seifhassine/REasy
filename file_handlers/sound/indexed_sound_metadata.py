@@ -827,6 +827,11 @@ class IndexedSoundMetadata(SoundMetadata):
         )
         return tuple(dict.fromkeys(int(value) & 0xFFFFFFFF for value in values))
 
+    def object_user_labels(self, source_id: int) -> tuple[str, ...]:
+        return _strings(
+            self.data.get("object_users", {}).get(str(int(source_id) & 0xFFFFFFFF), ())
+        )
+
     def label(self, category: str, object_id: int, *, event: bool = False) -> str:
         object_id = int(object_id) & 0xFFFFFFFF
         names = self.event_names(object_id) if event else self.names(category, object_id)

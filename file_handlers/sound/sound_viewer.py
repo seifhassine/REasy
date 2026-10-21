@@ -97,6 +97,7 @@ from .bnk_parser import (
     embedded_wem_view,
     extract_embedded_wem,
     format_bnk_property_value,
+    object_users,
     parse_wem_metadata,
     patch_hirc_reference,
     set_action_fields,
@@ -135,12 +136,6 @@ lazy from .wwise_media import (
 )
 lazy from tools.github_downloader import GitHubToolDownloader
 
-
-# Objects that play sources without an event: effects and music nodes.
-_OBJECT_USER_TYPES = frozenset({
-    "FX Share Set", "FX Custom", "Music Segment", "Music Switch", "Music Random/Sequence",
-})
-_MUSIC_USER_ROLES = {"stinger segment": "Stinger", "transition segment": "Transition"}
 
 _COLUMNS = [
     QT_TRANSLATE_NOOP("SoundViewer", "#"),
@@ -2707,42 +2702,13 @@ class SoundViewer(QWidget):
             )
         )
 
-    @staticmethod
-    def _collect_object_users(result) -> dict[int, tuple[str, ...]]:
-        """Non-event users in this bank: effects loading plug-in media (reverb IRs), and the
-        music stingers and transition segments that triggers and transitions play."""
-        by_id = {obj.object_id: obj for obj in result.objects}
-
-        def sources(object_id, seen):
-            obj = by_id.get(object_id)
-            if obj is not None and object_id not in seen:
-                seen.add(object_id)
-                yield from (source.source_id for source in obj.sources if source.source_id)
-                for child in obj.child_ids:
-                    yield from sources(child, seen)
-
-        users: dict[int, list[str]] = {}
-        for obj in result.objects:
-            if obj.type_name not in _OBJECT_USER_TYPES or not obj.structure:
-                continue
-            label = f"{obj.type_name} {obj.object_id}"
-            for field in obj.structure.fields:
-                if field.label == "Source ID" and field.path.startswith("Plug-in media/"):
-                    users.setdefault(field.value, []).append(label)
-                elif field.reference_role in _MUSIC_USER_ROLES:
-                    for source_id in sources(field.value, set()):
-                        users.setdefault(source_id, []).append(
-                            f"{_MUSIC_USER_ROLES[field.reference_role]} of {label}"
-                        )
-        return {source_id: tuple(dict.fromkeys(labels)) for source_id, labels in users.items()}
-
     def _apply_result(self, result):
         self._refresh_sound_profile(result)
         self._resolved_media.clear()
         self._purge_decoded_cache()
         self._parse_result = result
         self._parsed_tracks = result.tracks
-        self._object_users = self._collect_object_users(result)
+        self._object_users = object_users(result)
         self._update_role_banner(result)
         self._populate_event_filters(result)
         self._populate_bank_filters(result)
@@ -4556,7 +4522,9 @@ class SoundViewer(QWidget):
                 for event_id in track.event_ids
             ) or self._sound_metadata.source_event_labels(
                 track.source_id, media_path
-            ) or self._object_users.get(track.source_id, ())
+            ) or self._object_users.get(
+                track.source_id, ()
+            ) or self._sound_metadata.object_user_labels(track.source_id)
             if needle and needle not in str(track.source_id) and not any(
                 needle in value.casefold() for value in used_by_values
             ):

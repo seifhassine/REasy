@@ -939,6 +939,42 @@ def parse_wem_metadata(
     )
 
 
+# objects that play sources without an event: effects and music nodes.
+_OBJECT_USER_TYPES = frozenset({
+    "FX Share Set", "FX Custom", "Music Segment", "Music Switch", "Music Random/Sequence",
+})
+_MUSIC_USER_ROLES = {"stinger segment": "Stinger", "transition segment": "Transition"}
+
+
+def object_users(result) -> dict[int, tuple[str, ...]]:
+    """Non event users in a bank: effects loading plug in media (reverb IRs), and the
+    music stingers and transition segments that triggers and transitions play"""
+    by_id = {obj.object_id: obj for obj in result.objects}
+
+    def sources(object_id, seen):
+        obj = by_id.get(object_id)
+        if obj is not None and object_id not in seen:
+            seen.add(object_id)
+            yield from (source.source_id for source in obj.sources if source.source_id)
+            for child in obj.child_ids:
+                yield from sources(child, seen)
+
+    users: dict[int, list[str]] = {}
+    for obj in result.objects:
+        if obj.type_name not in _OBJECT_USER_TYPES or not obj.structure:
+            continue
+        label = f"{obj.type_name} {obj.object_id}"
+        for field in obj.structure.fields:
+            if field.label == "Source ID" and field.path.startswith("Plug-in media/"):
+                users.setdefault(field.value, []).append(label)
+            elif field.reference_role in _MUSIC_USER_ROLES:
+                for source_id in sources(field.value, set()):
+                    users.setdefault(source_id, []).append(
+                        f"{_MUSIC_USER_ROLES[field.reference_role]} of {label}"
+                    )
+    return {source_id: tuple(dict.fromkeys(labels)) for source_id, labels in users.items()}
+
+
 def wwise_id_from_name(name: str) -> int:
     """Return Audiokinetic's lowercase 32-bit FNV-1 ShortID."""
 
