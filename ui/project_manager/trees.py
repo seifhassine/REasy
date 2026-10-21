@@ -22,7 +22,20 @@ class PakPathModel(QAbstractItemModel):
         super().__init__(parent)
         self.paths = paths
         self.directory_icon, self.file_icon = directory_icon, file_icon
-        self.root = _PakNode(end=len(paths))
+        self.root = _PakNode(self._native_prefix(paths), end=len(paths))
+
+    @staticmethod
+    def _native_prefix(paths) -> str:
+        if not paths or not paths[0].startswith('natives/'):
+            return ''
+        prefix = paths[0][:paths[0].find('/', len('natives/')) + 1]
+        return prefix if prefix and paths[-1].startswith(prefix) else ''
+
+    def display_parts(self, path: str) -> list[str]:
+        """Row names from the top level down to ``path``."""
+        if path.startswith(self.root.path):
+            path = path[len(self.root.path):]
+        return [part for part in path.rstrip('/').split('/') if part]
 
     def _children(self, node):
         if node.children is None:

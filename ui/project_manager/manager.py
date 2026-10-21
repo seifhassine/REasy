@@ -793,8 +793,7 @@ class ProjectManager(QDockWidget):
         self._update_path_label()
 
         if ok:
-            self.model_sys.setRootPath(self.unpacked_dir)
-            self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+            self._show_sys_root()
             self._update_project_cfg({"unpacked_dir": self.unpacked_dir})
         else:
             QMessageBox.warning(
@@ -834,6 +833,16 @@ class ProjectManager(QDockWidget):
         exp = self._expected_native()
         root = _safe_path(root)
         return not exp or bool(root and (path := _safe_path(root.joinpath(*exp), root)) and path.is_dir())
+
+    def _native_root(self, root: str) -> str:
+        exp = self._expected_native()
+        native = os.path.join(root, *exp)
+        return native if exp and os.path.isdir(native) else root
+
+    def _show_sys_root(self):
+        root = self._native_root(self.unpacked_dir)
+        self.model_sys.setRootPath(root)
+        self.tree_sys.setRootIndex(self.model_sys.index(root))
 
 
     def expected_native_tuple(self, game: str | None = None) -> tuple[str, ...]:
@@ -1031,8 +1040,7 @@ class ProjectManager(QDockWidget):
             self.pak_filter_edit.setText(state.get("filter_text", ""))
             self.pak_filter_edit.blockSignals(previous)
             if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
-                self.model_sys.setRootPath(self.unpacked_dir)
-                self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+                self._show_sys_root()
             self.tree_pak.setModel(
                 self._pak_filter_proxy if state.get("filter_text") else self._pak_tree_model
             )
@@ -1127,8 +1135,7 @@ class ProjectManager(QDockWidget):
                 raise OSError(error)
             self.unpacked_dir = result['unpacked_dir'] or None
             if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
-                self.model_sys.setRootPath(self.unpacked_dir)
-                self.tree_sys.setRootIndex(self.model_sys.index(self.unpacked_dir))
+                self._show_sys_root()
             self.pak_dir = result['pak_game_dir'] or None
             self._pak_list_path = result['pak_list_path'] or None
             self._pak_selected_paks = result['selected_paks']
@@ -1690,7 +1697,8 @@ class ProjectManager(QDockWidget):
         hdr.setSectionResizeMode(0, QHeaderView.Stretch)
         hdr.setStretchLastSection(False)
         hdr.setMinimumSectionSize(100)
-        self.tree_proj.setRootIndex(self._proj_proxy.mapFromSource(self.model_proj.index(self.project_dir or "")))
+        root = self._native_root(self.project_dir) if self.project_dir else ""
+        self.tree_proj.setRootIndex(self._proj_proxy.mapFromSource(self.model_proj.index(root)))
 
     def _project_search_paths(self):
         """Return (relative, absolute) file paths under the active project."""
@@ -1788,7 +1796,7 @@ class ProjectManager(QDockWidget):
         if model is None:
             return False
         index = QModelIndex()
-        for part in (p for p in path.rstrip("/").split("/") if p):
+        for part in model.display_parts(path):
             child = None
             for row in range(model.rowCount(index)):
                 candidate = model.index(row, 0, index)
@@ -2034,7 +2042,9 @@ class ProjectManager(QDockWidget):
             return self._proj_proxy.mapFromSource(source) if source.isValid() else QModelIndex()
         model = tree.model()
         parent = QModelIndex()
-        for part in (part for part in key.rstrip("/").replace("\\", "/").split("/") if part):
+        key = key.replace("\\", "/")
+        parts = model.display_parts(key) if isinstance(model, PakPathModel) else [p for p in key.rstrip("/").split("/") if p]
+        for part in parts:
             child = QModelIndex()
             for row in range(model.rowCount(parent) if model is not None else 0):
                 candidate = model.index(row, 0, parent)
