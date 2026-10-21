@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors
 
-lazy from .bookmarks import normalize_tag
+lazy from .bookmarks import display_bookmark_path, normalize_tag
 
 _ACTION_HIT_SIZE, _ACTION_SPACING = 24, 1
 _ACTION_RIGHT, _MIN_TEXT_WIDTH = 3, 60
@@ -245,6 +245,10 @@ class _PakActionsDelegate(_ActionIconsDelegate):
         path = index.data(Qt.UserRole + 2)
         return path if isinstance(path, str) else ""
 
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        option.text = display_bookmark_path(option.text)
+
     def _row_state(self, index):
         folder = self._folder_path(index)
         path = folder or self._leaf_path(index)
@@ -444,7 +448,7 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
         metrics = option.fontMetrics
         subtitle = self._subtitle_rect(option, reserved)
         chips, chips_left = self._tag_chip_layout(metrics, subtitle, bookmark.tags)
-        directory = bookmark.path.rstrip('/').rpartition('/')[0]
+        directory = bookmark.display_path.rstrip('/').rpartition('/')[0]
         if directory:
             width = chips_left - 8 - subtitle.left() if chips else subtitle.width()
             if width > 16:

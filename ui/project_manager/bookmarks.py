@@ -18,8 +18,14 @@ _BOOKMARKS_VERSION = 1
 _BOOKMARK_SCOPES = frozenset(("pak", "project", "unpacked"))
 _BookmarkKey = tuple[str, str, str]
 _TAG_MAX_LEN = 24
+_NATIVE_PREFIX = re.compile(r"^natives/[^/]+/", re.IGNORECASE)
 
 BOOKMARKS_PROJECT_NAME = ".reasy_bookmarks.json"
+
+
+def display_bookmark_path(path: str) -> str:
+    """``path`` without its natives/<platform>/ folder, as the browser trees show it."""
+    return _NATIVE_PREFIX.sub("", path, count=1) or path
 
 
 def bookmarks_path() -> Path:
@@ -210,6 +216,10 @@ class Bookmark:
     note: str = ""
     created_at: float = 0.0
     opened_at: float = 0.0
+
+    @property
+    def display_path(self) -> str:
+        return display_bookmark_path(self.path)
 
     def to_dict(self) -> dict:
         return {
@@ -498,7 +508,7 @@ class BookmarksStore(QObject):
 
     @staticmethod
     def _search_blob(bookmark: Bookmark) -> str:
-        return " ".join([bookmark.path, bookmark.note, *bookmark.tags]).lower()
+        return " ".join([bookmark.display_path, bookmark.note, *bookmark.tags]).lower()
 
     def _blob(self, bookmark: Bookmark) -> str:
         blob = self._search_blobs.get(bookmark.id)

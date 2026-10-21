@@ -1385,6 +1385,8 @@ class ProjectManager(QDockWidget):
         pat = QRegularExpression(text)
         if not pat.isValid():
             pat = QRegularExpression(QRegularExpression.escape(text))
+        elif text.startswith("^"):
+            pat = QRegularExpression("^(?:natives/[^/]+/)?" + text[1:])
         pat.setPatternOptions(QRegularExpression.CaseInsensitiveOption)
         proxy.setFilterRegularExpression(pat)
         self.tree_pak.setModel(proxy)
@@ -1705,6 +1707,8 @@ class ProjectManager(QDockWidget):
         if not self.project_dir:
             return []
         root = self.project_dir
+        native = self._native_root(root)
+        native_key = os.path.normcase(native) + os.sep
         out = []
         for dirpath, dirnames, filenames in os.walk(root):
             dirnames[:] = [d for d in dirnames if not d.startswith('.')]
@@ -1712,7 +1716,8 @@ class ProjectManager(QDockWidget):
                 if name.startswith('.'):
                     continue
                 full = os.path.join(dirpath, name)
-                out.append((os.path.relpath(full, root).replace('\\', '/'), full))
+                base = native if os.path.normcase(full).startswith(native_key) else root
+                out.append((os.path.relpath(full, base).replace('\\', '/'), full))
         out.sort(key=lambda item: item[0])
         return out
 

@@ -29,7 +29,7 @@ lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
 
 lazy from .bookmark_dialog import BookmarkDialog
-lazy from .bookmarks import Bookmark, BookmarksStore, normalize_root
+lazy from .bookmarks import Bookmark, BookmarksStore, display_bookmark_path, normalize_root
 lazy from .delegate import _BookmarkRowDelegate
 
 _ContextProvider = Callable[[], tuple[str | None, str | None]]
@@ -237,7 +237,7 @@ class BookmarksPanel(QWidget):
         dialog = BookmarkDialog(
             self,
             title=self.tr("Edit bookmark") if existing else self.tr("Bookmark & tag"),
-            path=existing.path if existing else path,
+            path=existing.display_path if existing else display_bookmark_path(path),
             tags=existing.tags if existing else (),
             note=existing.note if existing else "",
             completer_tags=self._store.all_tags(str(context_game or ""), str(context_root or "")),
@@ -403,7 +403,7 @@ class BookmarksPanel(QWidget):
         return ", ".join(parts)
 
     def _accessible_description(self, bookmark: Bookmark) -> str:
-        parts = [self.tr("Path: {path}").format(path=bookmark.path)]
+        parts = [self.tr("Path: {path}").format(path=bookmark.display_path)]
         if bookmark.note:
             parts.append(self.tr("Note: {note}").format(note=bookmark.note))
         return "\n".join(parts)
@@ -476,7 +476,7 @@ class BookmarksPanel(QWidget):
         return self.tr("Project") if bookmark.scope == "project" else self.tr("Unpacked")
 
     def _tooltip(self, bookmark: Bookmark) -> str:
-        parts = [bookmark.path, self.tr("Source: {scope}").format(scope=self._scope_label(bookmark))]
+        parts = [bookmark.display_path, self.tr("Source: {scope}").format(scope=self._scope_label(bookmark))]
         if bookmark.note:
             parts.append(bookmark.note)
         if bookmark.tags:
