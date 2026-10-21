@@ -538,7 +538,7 @@ def _positioning_129(r: _Reader) -> None:
     # Bit 4 (v126-) or 6 (v127-129) is the 3D position type; 1 has no automation path.
     automation_bit = 4 if r.version <= 126 else 6
     bits = r.flags("3D flags", (
-        ("Spatialization", 0, 1 if r.version <= 126 else 2, _SPATIALIZATION),
+        ("Spatialization", 0, 1, _SPATIALIZATION),
         ("Hold emitter position and orientation", 3),
         ("3D position type", automation_bit, 1, {0: "Automated path", 1: "Emitter"}),
         ("Loop 3D automation path", 5),

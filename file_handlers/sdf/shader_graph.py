@@ -2406,7 +2406,7 @@ def generate_graph_hlsl(graph: ShaderGraph, contract: ShaderContract, *, early_d
 
 
 _SAMPLING = re.compile(r'\.(?:Sample\w*|Gather\w*)\(')
-_DECLARATION = re.compile(r'^(\s*)(?:precise\s+)?\w+(?:<[\w, ]*>)?\s+(\w+)\s*=\s*(.*);\s*$')
+_DECLARATION = re.compile(r'^(\s*+)(?:precise\s++)?\w++(?:<[\w, ]*+>)?\s++(\w++)\s*+=\s*+(.*);\s*+$')
 _NAME_TOKEN = re.compile(r'\b[A-Za-z_]\w*\b')
 _ASSIGNED = re.compile(r'(?<![\w.])([A-Za-z_]\w*)(?:\.\w+|\[[^\]]*\])*\s*(?:[-+*/%&|^]|<<|>>)?=(?!=)'
                        r'|(?:\+\+|--)\s*([A-Za-z_]\w*)\b|\b([A-Za-z_]\w*)\s*(?:\+\+|--)')
