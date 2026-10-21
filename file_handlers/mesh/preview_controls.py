@@ -5,6 +5,8 @@ from PySide6.QtWidgets import (
     QComboBox, QCompleter, QHBoxLayout, QLabel, QPushButton, QSlider, QSpinBox, QToolButton, QWidget,
 )
 
+lazy from ui.icons import line_icon
+
 
 def make_searchable(combo, placeholder):
     combo.setEditable(True)
@@ -46,11 +48,11 @@ class ComboStepper(QWidget):
         row.setSpacing(2)
         self.previous = QToolButton(self)
         self.next = QToolButton(self)
-        for button, direction, text, arrow in (
-            (self.previous, -1, self.tr("Previous {item}"), Qt.LeftArrow),
-            (self.next, 1, self.tr("Next {item}"), Qt.RightArrow),
+        for button, direction, text, icon in (
+            (self.previous, -1, self.tr("Previous {item}"), "chevron_left"),
+            (self.next, 1, self.tr("Next {item}"), "chevron_right"),
         ):
-            button.setArrowType(arrow)
+            button.setIcon(line_icon(icon))
             button.setAccessibleName(text.format(item=label))
             button.setToolTip(text.format(item=label))
             button.clicked.connect(lambda _checked=False, step=direction: (on_step or self.step)(step))
@@ -120,8 +122,9 @@ class MorphControls(QWidget):
         self.percent.setKeyboardTracking(False)
         self.percent.setAccessibleName(self.tr("Morph strength percentage"))
         self.percent.setFixedWidth(self.percent.sizeHint().width())
-        self.play_button = QPushButton(self.tr("Play"), self)
+        self.play_button = QPushButton(line_icon("play"), "", self)
         self.play_button.setCheckable(True)
+        self.play_button.setAccessibleName(self.tr("Play"))
         self.play_button.setToolTip(self.tr("Loop smoothly between base pose and the selected morph."))
         self.reset_button = QPushButton(self.tr("Base pose"), self)
         self.reset_button.setToolTip(self.tr("Stop playback and return to the undeformed mesh."))
@@ -191,7 +194,8 @@ class MorphControls(QWidget):
 
     def _play(self, checked):
         self._timer.stop()
-        self.play_button.setText(self.tr("Pause") if checked else self.tr("Play"))
+        self.play_button.setIcon(line_icon("pause" if checked else "play"))
+        self.play_button.setAccessibleName(self.tr("Pause") if checked else self.tr("Play"))
         if checked:
             self._sync_interval()
             self._phase = acos(1.0 - 2.0 * self.weight) / tau

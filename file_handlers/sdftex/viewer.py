@@ -15,11 +15,24 @@ lazy from ui.scene.mesh_scene import build_mesh_scene
 lazy from ui.scene.scene_model import SceneDrawMesh
 lazy from ui.scene.scene_preview import ScenePreviewWidget
 lazy from utils.resource_file_utils import resource_context_for_handler
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 lazy from .geometry import (BakeCancelled, Grid, bake_levels, covering_grid,
                        geometry_bounds_at_native_center, mesh_bounds, surface_mesh)
 lazy from .mesh_resource import reference_path
 lazy from .sdftex_file import SdfTexFile, StorageFormat, supported_formats
+
+
+def _signed_rgb(samples, scale: float):
+    t = np.clip(np.abs(samples)/scale, 0, 1)[..., None]
+    color = np.where((samples < 0)[..., None], np.array((.12, .45, 1)), np.array((1, .42, .08)))
+    return np.ascontiguousarray(np.rint((1+(color-1)*t)*255), dtype=np.uint8)
+
+
+def _legend_ramp(width: int = 120, height: int = 10) -> QPixmap:
+    rgb = np.repeat(_signed_rgb(np.linspace(-1.0, 1.0, width), 1.0)[None], height, axis=0)
+    return QPixmap.fromImage(QImage(rgb.data, width, height, rgb.strides[0], QImage.Format_RGB888).copy())
 
 
 class _SliceImage(QLabel):
@@ -29,6 +42,9 @@ class _SliceImage(QLabel):
         super().__init__()
         self.setAlignment(Qt.AlignCenter)
         self.setMinimumSize(220, 220)
+        colors = current_colors()
+        self.setStyleSheet(f"QLabel {{ background: {colors['canvas_bg']}; border: 1px solid {colors['border_subtle']};"
+                           " border-radius: 3px; }")
         self._source = QPixmap()
         self.setMouseTracking(True)
 
@@ -64,6 +80,7 @@ class DistanceFieldViewer(QWidget):
         self._surface = None
         self._gl = self._device = None
         layout = QVBoxLayout(self)
+        layout.setSpacing(6)
         row = QHBoxLayout()
         row.addWidget(QLabel(self.tr("Quality level:")))
         self.quality = QComboBox()
@@ -74,6 +91,7 @@ class DistanceFieldViewer(QWidget):
         self.info = QLabel()
         self.info.setWordWrap(True)
         self.info.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        set_style_role(self.info, tone="muted")
         layout.addWidget(self.info)
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs, 1)
@@ -98,7 +116,15 @@ class DistanceFieldViewer(QWidget):
         self.sample_label = QLabel(self.tr("Move over the slice to inspect exact decoded samples."))
         self.sample_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         slices.addWidget(self.sample_label)
-        slices.addWidget(QLabel(self.tr("Blue: inside · Orange: outside · White: zero · Distances in mesh-local units")))
+        legend = QHBoxLayout()
+        legend.setSpacing(8)
+        ramp = QLabel()
+        ramp.setPixmap(_legend_ramp())
+        legend.addWidget(ramp)
+        legend_text = QLabel(self.tr("Blue: inside · Orange: outside · White: zero · Distances in mesh-local units"))
+        set_style_role(legend_text, tone="muted")
+        legend.addWidget(legend_text, 1)
+        slices.addLayout(legend)
         self.tabs.addTab(slice_tab, self.tr("Distance slices"))
         surface_tab = QWidget()
         self.surface_layout = QVBoxLayout(surface_tab)
@@ -115,12 +141,14 @@ class DistanceFieldViewer(QWidget):
         self.stride.valueChanged.connect(self._invalidate_surface)
         row.addWidget(self.stride)
         self.surface_button = QPushButton(self.tr("Build zero surface"))
+        self.surface_button.setIcon(line_icon("cube"))
         self.surface_button.clicked.connect(self._build_surface)
         row.addWidget(self.surface_button)
         row.addStretch()
         self.surface_layout.addLayout(row)
         self.surface_status = QLabel(self.tr("This previews the distance field, not engine distance-field shadows/GI."))
         self.surface_status.setWordWrap(True)
+        set_style_role(self.surface_status, tone="muted")
         self.surface_layout.addWidget(self.surface_status)
         self.tabs.addTab(surface_tab, self.tr("3D zero surface"))
         self.set_document(document)
@@ -178,11 +206,7 @@ class DistanceFieldViewer(QWidget):
             return
         samples = self._slice()
         scale = max(abs(float(self.values.min())), abs(float(self.values.max())), 1e-20)
-        t = np.clip(np.abs(samples)/scale, 0, 1)[..., None]
-        inside = np.array((.12, .45, 1))
-        outside = np.array((1, .42, .08))
-        color = np.where((samples < 0)[..., None], inside, outside)
-        rgb = np.ascontiguousarray(np.rint((1+(color-1)*t)*255), dtype=np.uint8)
+        rgb = _signed_rgb(samples, scale)
         image = QImage(rgb.data, rgb.shape[1], rgb.shape[0], rgb.strides[0], QImage.Format_RGB888).copy()
         self.image.set_image(image)
         self.slice_label.setText(f'{self.slice_slider.value()+1}/{self.slice_slider.maximum()+1}')
@@ -250,6 +274,7 @@ class MeshDistanceFieldDialog(QDialog):
         self.path_label = QLabel()
         self.path_label.setWordWrap(True)
         self.path_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        set_style_role(self.path_label, tone="muted")
         layout.addWidget(self.path_label)
         resource_context_for_handler(handler)
         self.bounds = mesh_bounds(handler.mesh)
@@ -323,6 +348,7 @@ class MeshDistanceFieldDialog(QDialog):
         self.sign_mode.currentIndexChanged.connect(lambda i: self.thickness.setEnabled(i == 1))
         row.addWidget(self.thickness)
         self.bake_button = QPushButton(self.tr('Bake from LOD 0…'))
+        set_style_role(self.bake_button, variant="primary")
         self.bake_button.setEnabled(handler.supports_editing() and self.complete_geometry)
         self.bake_button.setToolTip(geometry_error)
         self.bake_button.clicked.connect(self._bake)
@@ -332,10 +358,12 @@ class MeshDistanceFieldDialog(QDialog):
         note = QLabel(self.tr('Bake uses undeformed LOD 0 geometry. It is staged in memory; save the mesh to write '
                              'MESH + streaming + SDFTEX together. No files are changed by previewing.'))
         note.setWordWrap(True)
+        set_style_role(note, tone="muted")
         layout.addWidget(note)
         self.result_label = QLabel()
         self.result_label.setWordWrap(True)
         self.result_label.setText(geometry_error)
+        set_style_role(self.result_label, tone="warning")
         layout.addWidget(self.result_label)
         close = QDialogButtonBox(QDialogButtonBox.Close)
         close.rejected.connect(self.reject)
@@ -393,7 +421,9 @@ class MeshDistanceFieldDialog(QDialog):
             self.result_label.setText(self.tr('Bake staged. Max encoding error per level: {} local units.{}').format(
                 ', '.join(f'{error:.6g}' for error in errors),
                 self.tr(' Warning: interior samples reach the grid edge; use a larger grid.') if boundary_inside else ''))
+            set_style_role(self.result_label, tone="warning" if boundary_inside else "success")
         except BakeCancelled:
             self.result_label.setText(self.tr('Bake cancelled. The previous volume was kept.'))
+            set_style_role(self.result_label, tone="muted")
         except Exception as error:
             QMessageBox.warning(self, self.tr('Could not bake distance field'), str(error))

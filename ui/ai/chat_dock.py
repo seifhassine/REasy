@@ -25,6 +25,8 @@ from PySide6.QtGui import (
     QKeyEvent,
     QPainter,
     QPen,
+    QTextCharFormat,
+    QTextCursor,
     QTextDocument,
     QTextLength,
     QTextTable,
@@ -70,6 +72,11 @@ lazy from services.ai.credential_store import (
 )
 lazy from settings import AI_FILE_ACTION_MODES
 lazy from ui.ai.tools import ReasyAssistantTools, assistant_system_prompt
+lazy from ui.editor_widgets import ElidedLabel, strip_button, styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
+
+_FORMAT_FAMILY_COLORS = {"Mdf": "#6cb6ff", "Msg": "#b89cff", "Rsz": "#6fcf97"}
 
 
 @dataclass(frozen=True)
@@ -130,7 +137,7 @@ class _AnimatedDots(QWidget):
         self._timer = QTimer(self)
         self._timer.setInterval(90)
         self._timer.timeout.connect(self._advance)
-        self.setFixedSize(44, 24)
+        self.setFixedSize(22, 16)
         self.setAttribute(Qt.WA_TransparentForMouseEvents)
 
     def set_accent(self, accent: QColor):
@@ -157,25 +164,19 @@ class _AnimatedDots(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(Qt.NoPen)
 
-        center_y = self.height() / 2 + 1
+        top = self.height() / 2 - 2
         for index in range(3):
             wave = (math.sin(self._phase * 0.52 - index * 1.45) + 1) / 2
-            radius = 2.7 + (wave * 1.25)
             color = QColor(self._accent)
-            color.setAlpha(int(75 + wave * 180))
+            color.setAlpha(int(60 + wave * 195))
             painter.setBrush(color)
-            center_x = 10 + index * 12
-            painter.drawEllipse(
-                QRectF(
-                    center_x - radius,
-                    center_y - radius - wave * 2.2,
-                    radius * 2,
-                    radius * 2,
-                )
-            )
+            painter.drawRoundedRect(QRectF(2 + index * 7, top, 4, 4), 1, 1)
 
 
 class _ContextUsageRing(QWidget):
+    _RING = 14
+    _STROKE = 2.5
+
     def __init__(self, accent: QColor, parent=None):
         super().__init__(parent)
         self._accent = QColor(accent)
@@ -187,7 +188,10 @@ class _ContextUsageRing(QWidget):
         self._animation = QPropertyAnimation(self, b"displayRatio", self)
         self._animation.setDuration(240)
         self._animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        self.setFixedSize(40, 40)
+        self.setFixedSize(
+            self._RING + 5 + self.fontMetrics().horizontalAdvance("100%") + 2,
+            20,
+        )
         self.setAccessibleName(self.tr("Context usage"))
 
     def _get_display_ratio(self) -> float:
@@ -250,43 +254,40 @@ class _ContextUsageRing(QWidget):
 
     def paintEvent(self, event):
         del event
+        colors = current_colors()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        diameter = min(self.width(), self.height()) - 7
+        inset = 1 + self._STROKE / 2
+        diameter = self._RING - self._STROKE
         circle = QRectF(
-            (self.width() - diameter) / 2,
+            inset,
             (self.height() - diameter) / 2,
             diameter,
             diameter,
         )
-        track_pen = QPen(QColor("#343b46"), 4.5)
-        track_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
-        painter.setPen(track_pen)
+        painter.setPen(QPen(QColor(colors["border_strong"]), self._STROKE))
         painter.setBrush(Qt.NoBrush)
         painter.drawEllipse(circle)
 
         ratio = self._display_ratio
         progress = QColor(self._accent)
         if ratio >= self._compaction_ratio:
-            progress = QColor("#ef6b78")
+            progress = QColor(colors["danger"])
         elif ratio >= self._compaction_ratio * 0.80:
-            progress = QColor("#e7b75f")
+            progress = QColor(colors["warning"])
 
         if ratio > 0:
-            progress_pen = QPen(progress, 4.5)
-            progress_pen.setCapStyle(Qt.PenCapStyle.RoundCap)
+            progress_pen = QPen(progress, self._STROKE)
+            progress_pen.setCapStyle(Qt.PenCapStyle.FlatCap)
             painter.setPen(progress_pen)
             painter.drawArc(circle, 90 * 16, -int(ratio * 360 * 16))
 
-        painter.setPen(QColor("#e7edf4"))
-        font = painter.font()
-        font.setPixelSize(9)
-        font.setBold(True)
-        painter.setFont(font)
+        painter.setPen(QColor(colors["text_muted"]))
+        text_left = self._RING + 5
         painter.drawText(
-            self.rect(),
-            Qt.AlignmentFlag.AlignCenter,
+            QRectF(text_left, 0, self.width() - text_left, self.height()),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
             f"{round(ratio * 100)}%",
         )
 
@@ -296,26 +297,23 @@ class _ActivityIndicator(QFrame):
         super().__init__(parent)
         self.setObjectName("assistantActivity")
         row = QHBoxLayout(self)
-        row.setContentsMargins(12, 9, 12, 9)
-        row.setSpacing(10)
+        row.setContentsMargins(8, 6, 8, 6)
+        row.setSpacing(6)
 
         self.dots = _AnimatedDots(accent, self)
         row.addWidget(self.dots, 0, Qt.AlignTop)
 
         text_column = QVBoxLayout()
-        text_column.setSpacing(1)
+        text_column.setSpacing(4)
         self.status = QLabel(self)
         self.status.setObjectName("activityStatus")
         self.status.setWordWrap(True)
         text_column.addWidget(self.status)
-        hint = QLabel(self.tr("REasy is working — please wait or use Stop."))
-        hint.setObjectName("activityHint")
-        hint.setWordWrap(True)
-        text_column.addWidget(hint)
         self.progress = QProgressBar(self)
         self.progress.setObjectName("activityProgress")
+        self.progress.setProperty("thin", True)
         self.progress.setTextVisible(False)
-        self.progress.setFixedHeight(5)
+        self.progress.setFixedHeight(3)
         self.progress.hide()
         text_column.addWidget(self.progress)
         row.addLayout(text_column, 1)
@@ -366,37 +364,62 @@ def _normalize_markdown_tables(text: str) -> str:
     return "\n".join(lines)
 
 
-def _markdown_to_html(text: str) -> str:
+def _style_markdown(document: QTextDocument, colors: dict):
+    links, code_spans, code_blocks = [], [], []
+    block = document.begin()
+    while block.isValid():
+        in_code_block = block.blockFormat().nonBreakableLines()
+        if in_code_block:
+            code_blocks.append(block.position())
+        fragments = block.begin()
+        while not fragments.atEnd():
+            fragment = fragments.fragment()
+            span = (fragment.position(), fragment.length())
+            char_format = fragment.charFormat()
+            if char_format.isAnchor():
+                links.append(span)
+            elif in_code_block or char_format.fontFixedPitch():
+                code_spans.append((span, in_code_block))
+            fragments += 1
+        block = block.next()
+
+    cursor = QTextCursor(document)
+    link_format = QTextCharFormat()
+    link_format.setForeground(QColor(colors["accent"]))
+    code_background = QColor(colors["input_bg"])
+    for position in code_blocks:
+        cursor.setPosition(position)
+        block_format = cursor.blockFormat()
+        block_format.setBackground(code_background)
+        cursor.setBlockFormat(block_format)
+    for start, length in links:
+        cursor.setPosition(start)
+        cursor.setPosition(start + length, QTextCursor.KeepAnchor)
+        cursor.mergeCharFormat(link_format)
+    for (start, length), in_code_block in code_spans:
+        code_format = QTextCharFormat()
+        code_format.setFontFamilies([colors["mono_font"], "monospace"])
+        if not in_code_block:
+            code_format.setBackground(code_background)
+        cursor.setPosition(start)
+        cursor.setPosition(start + length, QTextCursor.KeepAnchor)
+        cursor.mergeCharFormat(code_format)
+
+
+def _markdown_to_html(text: str, colors: dict | None = None) -> str:
     """Render model Markdown without exposing literal formatting markers."""
 
+    colors = colors or current_colors()
     document = QTextDocument()
-    document.setDefaultStyleSheet(
-        """
-        body { color: #edf2f7; font-size: 10pt; }
-        p { margin: 0 0 8px 0; }
-        ul, ol { margin-top: 4px; margin-bottom: 8px; }
-        li { margin-bottom: 3px; }
-        a { color: #66c7ff; text-decoration: none; }
-        code {
-            color: #d9ecff;
-            background-color: #171b21;
-            font-family: Consolas, monospace;
-        }
-        pre {
-            color: #d9ecff;
-            background-color: #171b21;
-            font-family: Consolas, monospace;
-            white-space: pre-wrap;
-        }
-        """
-    )
     document.setMarkdown(_normalize_markdown_tables(text))
+    _style_markdown(document, colors)
     for frame in document.rootFrame().childFrames():
         if isinstance(frame, QTextTable):
             table_format = frame.format()
             table_format.setWidth(
                 QTextLength(QTextLength.PercentageLength, 100)
             )
+            table_format.setBorderBrush(QColor(colors["border"]))
             frame.setFormat(table_format)
     return document.toHtml()
 
@@ -407,7 +430,12 @@ class _MessageCanvas(QWidget):
     def minimumSizeHint(self):
         hint = super().minimumSizeHint()
         hint.setWidth(0)
-        hint.setHeight(self.sizeHint().height())
+        layout = self.layout()
+        if layout is not None and layout.hasHeightForWidth() and self.width() > 0:
+            # Full-width rows wrap at the canvas width, not at their hint width.
+            hint.setHeight(layout.totalHeightForWidth(self.width()))
+        else:
+            hint.setHeight(self.sizeHint().height())
         return hint
 
 
@@ -418,7 +446,10 @@ class _WrappingLabel(QLabel):
         super().__init__(text, parent)
         self.setWordWrap(True)
         self.setMinimumWidth(0)
-        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
+        # Keep the height-for-width flag that setWordWrap put on the policy.
+        policy = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
+        policy.setHeightForWidth(True)
+        self.setSizePolicy(policy)
 
     def minimumSizeHint(self):
         hint = super().minimumSizeHint()
@@ -429,36 +460,42 @@ class _WrappingLabel(QLabel):
 class _MessageRow(QWidget):
     def __init__(self, role: str, text: str, parent=None):
         super().__init__(parent)
-        longest_line = max((len(line) for line in text.splitlines()), default=0)
-        self._natural_width = max(128, min(520, 60 + min(longest_line, 70) * 6))
+        self._markdown = text if role == "assistant" else None
         self.setObjectName("messageRow")
-        row = QHBoxLayout(self)
-        row.setContentsMargins(3, 4, 3, 4)
-        row.setSpacing(8)
+        column = QVBoxLayout(self)
+        column.setContentsMargins(0, 6, 0, 2)
+        column.setSpacing(3)
 
         if role == "user":
-            avatar_text, accessible_name = self.tr("YOU"), self.tr("You")
-            bubble_name, avatar_name = "userBubble", "userAvatar"
+            caption_text = self.tr("You")
+            bubble_name, self._icon = "userBubble", ("user", "text_subtle")
         elif role == "assistant":
-            avatar_text, accessible_name = self.tr("AI"), self.tr("AI Assistant")
-            bubble_name, avatar_name = "assistantBubble", "assistantAvatar"
+            caption_text = self.tr("AI Assistant")
+            bubble_name, self._icon = "assistantBubble", ("bot", "accent")
         elif role == "tool_error":
-            avatar_text, accessible_name = "!", self.tr("REasy action error")
-            bubble_name, avatar_name = "errorBubble", "errorAvatar"
+            caption_text = self.tr("REasy action error")
+            bubble_name, self._icon = "errorBubble", ("error", "danger")
         else:
-            avatar_text, accessible_name = "!", self.tr("Error")
-            bubble_name, avatar_name = "errorBubble", "errorAvatar"
+            caption_text = self.tr("Error")
+            bubble_name, self._icon = "errorBubble", ("error", "danger")
 
-        avatar = QLabel(avatar_text, self)
-        avatar.setObjectName(avatar_name)
-        avatar.setAccessibleName(accessible_name)
-        avatar.setAlignment(Qt.AlignCenter)
-        avatar.setFixedSize(30, 30)
+        caption = QHBoxLayout()
+        caption.setSpacing(5)
+        self._caption_icon = QLabel(self)
+        self._caption_icon.setObjectName("messageRoleIcon")
+        self._caption_icon.setFixedSize(12, 12)
+        caption.addWidget(self._caption_icon)
+        caption_label = QLabel(caption_text, self)
+        caption_label.setObjectName("messageRole")
+        caption_label.setProperty("heading", "caption")
+        caption_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        caption.addWidget(caption_label, 1)
+        column.addLayout(caption)
 
         self.bubble = QFrame(self)
         self.bubble.setObjectName(bubble_name)
         bubble_layout = QVBoxLayout(self.bubble)
-        bubble_layout.setContentsMargins(12, 10, 12, 11)
+        bubble_layout.setContentsMargins(8, 5, 8, 6)
         bubble_layout.setSpacing(0)
 
         self.body = QLabel(self.bubble)
@@ -473,28 +510,22 @@ class _MessageRow(QWidget):
         self.body.setMinimumWidth(0)
         if role == "assistant":
             self.body.setTextFormat(Qt.RichText)
-            self.body.setText(_markdown_to_html(text))
         else:
             self.body.setTextFormat(Qt.PlainText)
             self.body.setText(text)
         bubble_layout.addWidget(self.body)
-
-        if role == "user":
-            row.addStretch(1)
-            row.addWidget(self.bubble, 0, Qt.AlignTop)
-            row.addWidget(avatar, 0, Qt.AlignTop)
-        else:
-            row.addWidget(avatar, 0, Qt.AlignTop)
-            row.addWidget(self.bubble, 0, Qt.AlignTop)
-            row.addStretch(1)
+        column.addWidget(self.bubble)
 
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.apply_theme(current_colors())
 
-    def set_bubble_maximum_width(self, width: int):
-        self.bubble.setMinimumWidth(0)
-        self.bubble.setMaximumWidth(width)
-        self.bubble.setMinimumWidth(min(width, self._natural_width))
-        self.body.setMaximumWidth(max(120, width - 24))
+    def apply_theme(self, colors: dict):
+        name, token = self._icon
+        self._caption_icon.setPixmap(
+            line_icon(name, colors[token]).pixmap(12, 12)
+        )
+        if self._markdown is not None:
+            self.body.setText(_markdown_to_html(self._markdown, colors))
 
 
 class _ToolEvent(QFrame):
@@ -502,16 +533,17 @@ class _ToolEvent(QFrame):
         super().__init__(parent)
         self.setObjectName("toolEvent")
         row = QHBoxLayout(self)
-        row.setContentsMargins(43, 3, 8, 4)
-        row.setSpacing(8)
+        row.setContentsMargins(10, 1, 4, 1)
+        row.setSpacing(6)
 
         marker = QLabel(self)
         marker.setObjectName("toolEventMarker")
-        marker.setFixedSize(6, 6)
+        marker.setFixedSize(5, 5)
         row.addWidget(marker, 0, Qt.AlignVCenter)
 
         label = _WrappingLabel(text, self)
         label.setObjectName("toolEventText")
+        label.setProperty("tone", "subtle")
         label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         row.addWidget(label, 1)
         self.setMinimumWidth(0)
@@ -532,7 +564,7 @@ class _ToolResultCard(QWidget):
         self.setMinimumWidth(0)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
         row = QHBoxLayout(self)
-        row.setContentsMargins(43, 4, 8, 5)
+        row.setContentsMargins(0, 4, 0, 4)
         row.setSpacing(0)
 
         card = QFrame(self)
@@ -541,13 +573,14 @@ class _ToolResultCard(QWidget):
         card.setMinimumWidth(0)
         card.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Minimum)
         card_layout = QVBoxLayout(card)
-        card_layout.setContentsMargins(11, 9, 11, 9)
-        card_layout.setSpacing(6)
+        card_layout.setContentsMargins(8, 6, 8, 6)
+        card_layout.setSpacing(3)
 
         header = QHBoxLayout()
-        header.setSpacing(7)
+        header.setSpacing(6)
         title_label = _WrappingLabel(title, card)
         title_label.setObjectName("toolResultTitle")
+        title_label.setProperty("heading", "section")
         header.addWidget(title_label, 1)
 
         status_label = QLabel(
@@ -556,6 +589,14 @@ class _ToolResultCard(QWidget):
         )
         status_label.setObjectName("toolResultStatus")
         status_label.setProperty("tone", outcome.status)
+        status_label.setProperty(
+            "badge",
+            {
+                "completed": "success",
+                "partial": "warning",
+                "failed": "danger",
+            }.get(outcome.status, "neutral"),
+        )
         status_label.setAlignment(Qt.AlignCenter)
         header.addWidget(status_label, 0, Qt.AlignTop)
         card_layout.addLayout(header)
@@ -569,6 +610,7 @@ class _ToolResultCard(QWidget):
                 card,
             )
             field.setObjectName("toolResultField")
+            field.setProperty("tone", "muted")
             field.setTextInteractionFlags(Qt.TextSelectableByMouse)
             card_layout.addWidget(field)
 
@@ -584,6 +626,7 @@ class _ToolResultCard(QWidget):
                 card,
             )
             metrics.setObjectName("toolResultMetrics")
+            metrics.setProperty("tone", "subtle")
             metrics.setTextInteractionFlags(Qt.TextSelectableByMouse)
             card_layout.addWidget(metrics)
 
@@ -601,6 +644,8 @@ class _ToolResultCard(QWidget):
 
             details_button = QPushButton(self.tr("Show details"), card)
             details_button.setObjectName("toolResultDetailsButton")
+            details_button.setProperty("variant", "disclosure")
+            details_button.setIcon(line_icon("chevron_right"))
             details_button.setCheckable(True)
             details_button.setSizePolicy(
                 QSizePolicy.Maximum,
@@ -609,6 +654,9 @@ class _ToolResultCard(QWidget):
 
             def toggle_details(checked: bool):
                 details_label.setVisible(checked)
+                details_button.setIcon(
+                    line_icon("chevron_down" if checked else "chevron_right")
+                )
                 details_button.setText(
                     self.tr("Hide details")
                     if checked
@@ -671,21 +719,20 @@ class _EmptyState(QFrame):
         super().__init__(parent)
         self.setObjectName("assistantEmptyState")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(24, 44, 24, 30)
-        layout.setSpacing(9)
+        layout.setContentsMargins(16, 28, 16, 16)
+        layout.setSpacing(6)
 
-        avatar_row = QHBoxLayout()
-        avatar_row.addStretch(1)
-        avatar = QLabel("AI", self)
+        avatar = QLabel(self)
         avatar.setObjectName("emptyAvatar")
         avatar.setAlignment(Qt.AlignCenter)
-        avatar.setFixedSize(46, 46)
-        avatar_row.addWidget(avatar)
-        avatar_row.addStretch(1)
-        layout.addLayout(avatar_row)
+        avatar.setPixmap(
+            line_icon("bot", current_colors()["text_subtle"]).pixmap(24, 24)
+        )
+        layout.addWidget(avatar)
 
         title = QLabel(self.tr("Ready when you are"), self)
         title.setObjectName("emptyTitle")
+        title.setProperty("heading", "section")
         title.setAlignment(Qt.AlignCenter)
         title.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         title.setMinimumWidth(0)
@@ -696,13 +743,15 @@ class _EmptyState(QFrame):
             self,
         )
         description.setObjectName("emptyDescription")
+        description.setProperty("tone", "muted")
         description.setAlignment(Qt.AlignCenter)
         description.setWordWrap(True)
         layout.addWidget(description)
 
-        layout.addSpacing(7)
+        layout.addSpacing(8)
         formats_label = QLabel(self.tr("Supported formats"), self)
         formats_label.setObjectName("emptyFormatsLabel")
+        formats_label.setProperty("heading", "caption")
         formats_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(formats_label)
 
@@ -715,13 +764,13 @@ class _EmptyState(QFrame):
         )
         for formats in format_rows:
             formats_row = QHBoxLayout()
-            formats_row.setSpacing(6)
+            formats_row.setSpacing(4)
             formats_row.addStretch(1)
             for name, family in formats:
                 chip = QLabel(name, self)
                 chip.setObjectName(f"empty{family}Chip")
                 chip.setAlignment(Qt.AlignCenter)
-                chip.setMinimumWidth(42)
+                chip.setMinimumWidth(44)
                 formats_row.addWidget(chip)
             formats_row.addStretch(1)
             layout.addLayout(formats_row)
@@ -828,7 +877,7 @@ acting on file state. Return only the compacted memory.
         super().__init__(self.tr("AI Assistant"), app_window)
         self.setObjectName("mdfAssistantDock")
         self.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        self.setMinimumWidth(350)
+        self.setMinimumWidth(300)
         self.resize(420, 760)
 
         self.app_window = app_window
@@ -871,7 +920,6 @@ acting on file state. Return only the compacted memory.
         self._scroll_start_timer.timeout.connect(self._start_scroll_animation)
 
         self._build_ui()
-        self.setMinimumWidth(350)
         self.apply_theme()
         self._reset_conversation(clear_transcript=False)
 
@@ -880,16 +928,17 @@ acting on file state. Return only the compacted memory.
         content.setObjectName("mdfAssistantContent")
         self._content = content
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(9)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         header = QFrame(content)
         header.setObjectName("assistantHeader")
+        set_style_role(header, surface="toolbar")
         header_layout = QVBoxLayout(header)
-        header_layout.setContentsMargins(10, 10, 10, 10)
-        header_layout.setSpacing(8)
+        header_layout.setContentsMargins(6, 6, 6, 4)
+        header_layout.setSpacing(4)
         provider_row = QHBoxLayout()
-        provider_row.setSpacing(7)
+        provider_row.setSpacing(4)
 
         self.provider_combo = QComboBox(header)
         self.provider_combo.setObjectName("assistantProvider")
@@ -911,7 +960,9 @@ acting on file state. Return only the compacted memory.
         self.provider_combo.setCurrentIndex(max(0, provider_index))
         self.provider_combo.setAccessibleName(self.tr("AI provider"))
         self.provider_combo.setToolTip(self.tr("AI provider"))
-        self.provider_combo.setFixedWidth(94)
+        self.provider_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToContents
+        )
         provider_row.addWidget(self.provider_combo)
 
         self.model_combo = QComboBox(header)
@@ -934,13 +985,12 @@ acting on file state. Return only the compacted memory.
             QSizePolicy.Expanding,
             QSizePolicy.Fixed,
         )
-        self.model_combo.setMinimumWidth(110)
+        self.model_combo.setMinimumWidth(80)
         provider_row.addWidget(self.model_combo, 1)
 
         self.new_chat_button = QPushButton(self.tr("New Chat"), header)
         self.new_chat_button.setObjectName("newChatButton")
-        self.new_chat_button.setToolTip(self.tr("Start a new conversation"))
-        self.new_chat_button.setFixedWidth(82)
+        strip_button(self.new_chat_button, "add", tooltip=self.tr("Start a new conversation"))
         self.new_chat_button.clicked.connect(self.new_chat)
         provider_row.addWidget(self.new_chat_button)
         header_layout.addLayout(provider_row)
@@ -948,8 +998,8 @@ acting on file state. Return only the compacted memory.
         summary = QWidget(header)
         summary.setObjectName("assistantHeaderSummary")
         summary_row = QHBoxLayout(summary)
-        summary_row.setContentsMargins(2, 0, 2, 0)
-        summary_row.setSpacing(7)
+        summary_row.setContentsMargins(0, 0, 0, 0)
+        summary_row.setSpacing(6)
 
         self.settings_toggle = QToolButton(summary)
         self.settings_toggle.setObjectName("assistantSettingsToggle")
@@ -959,18 +1009,19 @@ acting on file state. Return only the compacted memory.
             self.tr("Show connection and model settings")
         )
         self.settings_toggle.setCheckable(True)
+        self.settings_toggle.setAutoRaise(True)
         self.settings_toggle.setToolButtonStyle(
             Qt.ToolButtonTextBesideIcon
         )
+        set_style_role(self.settings_toggle, variant="disclosure")
         summary_row.addWidget(self.settings_toggle)
-        summary_row.addStretch(1)
 
-        self.context_hint = QLabel(summary)
+        self.context_hint = styled_label(parent=summary, tone="subtle")
         self.context_hint.setObjectName("contextWindowHint")
         self.context_hint.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.context_hint.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
         self.context_hint.setMinimumWidth(0)
-        summary_row.addWidget(self.context_hint)
+        summary_row.addWidget(self.context_hint, 1)
 
         self.context_usage_ring = _ContextUsageRing(
             self._accent_color(),
@@ -983,15 +1034,16 @@ acting on file state. Return only the compacted memory.
         )
         header_layout.addWidget(summary)
 
-        self.settings_panel = QWidget(header)
+        self.settings_panel = QWidget(content)
         self.settings_panel.setObjectName("assistantSettingsPanel")
+        set_style_role(self.settings_panel, surface="section")
         settings_layout = QVBoxLayout(self.settings_panel)
         settings_layout.setContentsMargins(8, 8, 8, 8)
-        settings_layout.setSpacing(8)
+        settings_layout.setSpacing(6)
 
         connection_row = QHBoxLayout()
         connection_row.setContentsMargins(0, 0, 0, 0)
-        connection_row.setSpacing(8)
+        connection_row.setSpacing(6)
         self.api_key_edit = QLineEdit(self.settings_panel)
         self.api_key_edit.setObjectName("assistantApiKey")
         self.api_key_edit.setEchoMode(QLineEdit.Password)
@@ -1044,18 +1096,20 @@ acting on file state. Return only the compacted memory.
 
         self.api_key_help = QFrame(self.settings_panel)
         self.api_key_help.setObjectName("assistantApiKeyHelp")
+        set_style_role(self.api_key_help, banner="info")
         setup_layout = QVBoxLayout(self.api_key_help)
-        setup_layout.setContentsMargins(10, 8, 10, 8)
-        setup_layout.setSpacing(4)
+        setup_layout.setContentsMargins(0, 0, 0, 0)
+        setup_layout.setSpacing(2)
 
-        setup_title = QLabel(
+        setup_title = styled_label(
             self.tr("Set up DeepSeek"),
             self.api_key_help,
+            heading="panel",
         )
         setup_title.setObjectName("assistantApiKeyHelpTitle")
         setup_layout.addWidget(setup_title)
 
-        setup_text = QLabel(self.api_key_help)
+        setup_text = styled_label(parent=self.api_key_help, tone="muted")
         setup_text.setObjectName("assistantApiKeyHelpText")
         setup_text.setTextFormat(Qt.RichText)
         setup_text.setText(
@@ -1102,13 +1156,12 @@ acting on file state. Return only the compacted memory.
         self.thinking_controls = QWidget(self.settings_panel)
         self.thinking_controls.setObjectName("thinkingControls")
         thinking_row = QHBoxLayout(self.thinking_controls)
-        thinking_row.setContentsMargins(2, 0, 2, 0)
-        thinking_row.setSpacing(7)
+        thinking_row.setContentsMargins(0, 0, 0, 0)
+        thinking_row.setSpacing(6)
 
         thinking_label = QLabel(self.tr("Thinking"), self.thinking_controls)
         thinking_label.setObjectName("thinkingModeLabel")
         thinking_label.setToolTip(self.tr("DeepSeek thinking mode"))
-        thinking_label.setFixedWidth(56)
         thinking_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         thinking_row.addWidget(thinking_label)
 
@@ -1122,11 +1175,11 @@ acting on file state. Return only the compacted memory.
                 "Enabled reasons before answering; Disabled responds directly."
             )
         )
-        self.thinking_combo.setFixedWidth(116)
+        self.thinking_combo.setMinimumWidth(72)
         self.thinking_combo.currentIndexChanged.connect(
             self._save_thinking_mode
         )
-        thinking_row.addWidget(self.thinking_combo)
+        thinking_row.addWidget(self.thinking_combo, 1)
 
         self.reasoning_effort_label = QLabel(
             self.tr("Effort"),
@@ -1156,18 +1209,16 @@ acting on file state. Return only the compacted memory.
         self.reasoning_effort_combo.currentIndexChanged.connect(
             self._save_reasoning_effort
         )
-        thinking_row.addWidget(self.reasoning_effort_combo)
-        thinking_row.addStretch(1)
+        thinking_row.addWidget(self.reasoning_effort_combo, 1)
         settings_layout.addWidget(self.thinking_controls)
         self._refresh_thinking_controls()
 
         context_row = QHBoxLayout()
-        context_row.setContentsMargins(2, 0, 2, 0)
-        context_row.setSpacing(7)
+        context_row.setContentsMargins(0, 0, 0, 0)
+        context_row.setSpacing(6)
         context_label = QLabel(self.tr("Context"), self.settings_panel)
         context_label.setObjectName("contextWindowLabel")
         context_label.setToolTip(self.tr("Context window"))
-        context_label.setFixedWidth(56)
         context_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
         context_row.addWidget(context_label)
 
@@ -1181,7 +1232,6 @@ acting on file state. Return only the compacted memory.
                 "override when you want earlier compaction."
             )
         )
-        self.context_combo.setFixedWidth(116)
         for tokens in self.CONTEXT_WINDOW_OPTIONS:
             self.context_combo.addItem(
                 self._context_option_label(tokens),
@@ -1198,14 +1248,14 @@ acting on file state. Return only the compacted memory.
             )
             configured_index = self.context_combo.count() - 1
         self.context_combo.setCurrentIndex(configured_index)
+        self.context_combo.setMinimumWidth(72)
         self.context_combo.currentIndexChanged.connect(self._save_context_window)
-        context_row.addWidget(self.context_combo)
-        context_row.addStretch(1)
+        context_row.addWidget(self.context_combo, 1)
         settings_layout.addLayout(context_row)
 
         file_actions_row = QHBoxLayout()
-        file_actions_row.setContentsMargins(2, 0, 2, 0)
-        file_actions_row.setSpacing(7)
+        file_actions_row.setContentsMargins(0, 0, 0, 0)
+        file_actions_row.setSpacing(6)
         file_actions_label = QLabel(
             self.tr("File actions"),
             self.settings_panel,
@@ -1214,7 +1264,6 @@ acting on file state. Return only the compacted memory.
         file_actions_label.setToolTip(
             self.tr("Confirmation policy for scoped local file operations")
         )
-        file_actions_label.setFixedWidth(72)
         file_actions_row.addWidget(file_actions_label)
 
         self.file_action_mode_combo = QComboBox(self.settings_panel)
@@ -1250,6 +1299,7 @@ acting on file state. Return only the compacted memory.
                 "once remembers each approved folder until that request ends."
             )
         )
+        self.file_action_mode_combo.setMinimumWidth(96)
         self.file_action_mode_combo.currentIndexChanged.connect(
             self._save_file_action_mode
         )
@@ -1281,8 +1331,13 @@ acting on file state. Return only the compacted memory.
             self._save_file_autopilot_trash
         )
         settings_layout.addWidget(self.file_autopilot_trash_check)
+        form_labels = (thinking_label, context_label, file_actions_label)
+        for label in (*form_labels, self.reasoning_effort_label):
+            set_style_role(label, tone="muted")
+        label_width = max(label.sizeHint().width() for label in form_labels)
+        for label in form_labels:
+            label.setMinimumWidth(label_width)
         self._refresh_file_action_controls()
-        header_layout.addWidget(self.settings_panel)
 
         self.settings_toggle.toggled.connect(
             self._header_settings_toggled
@@ -1298,9 +1353,11 @@ acting on file state. Return only the compacted memory.
         self._set_settings_expanded(settings_expanded)
         self._refresh_context_window_ui()
         layout.addWidget(header)
+        layout.addWidget(self.settings_panel)
 
         self.transcript = QScrollArea(content)
         self.transcript.setObjectName("mdfAssistantTranscript")
+        set_style_role(self.transcript, surface="view")
         self.transcript.setFrameShape(QFrame.NoFrame)
         self.transcript.setWidgetResizable(True)
         self.transcript.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -1314,8 +1371,8 @@ acting on file state. Return only the compacted memory.
             QSizePolicy.Preferred,
         )
         self.messages_layout = QVBoxLayout(self.message_canvas)
-        self.messages_layout.setContentsMargins(0, 2, 0, 2)
-        self.messages_layout.setSpacing(3)
+        self.messages_layout.setContentsMargins(8, 4, 8, 6)
+        self.messages_layout.setSpacing(2)
         self.empty_state = _EmptyState(self.message_canvas)
         self.messages_layout.addWidget(self.empty_state)
         self.messages_layout.addStretch(1)
@@ -1330,20 +1387,25 @@ acting on file state. Return only the compacted memory.
         )
         layout.addWidget(self.activity_indicator)
 
-        self.privacy_note = QLabel(
-            self._privacy_text(),
-            content,
-        )
-        self.privacy_note.setObjectName("assistantPrivacy")
-        self.privacy_note.setWordWrap(True)
-        layout.addWidget(self.privacy_note)
-
         self.composer = QFrame(content)
         self.composer.setObjectName("assistantComposer")
         self.composer.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         composer_layout = QVBoxLayout(self.composer)
-        composer_layout.setContentsMargins(10, 8, 8, 8)
-        composer_layout.setSpacing(5)
+        composer_layout.setContentsMargins(6, 6, 6, 6)
+        composer_layout.setSpacing(6)
+
+        privacy_row = QHBoxLayout()
+        privacy_row.setContentsMargins(2, 0, 0, 0)
+        privacy_row.setSpacing(5)
+        self._privacy_icon = QLabel(self.composer)
+        self._privacy_icon.setFixedSize(12, 12)
+        privacy_row.addWidget(self._privacy_icon, 0, Qt.AlignVCenter)
+        self.privacy_note = ElidedLabel(self.composer)
+        self.privacy_note.setObjectName("assistantPrivacy")
+        set_style_role(self.privacy_note, tone="subtle")
+        privacy_row.addWidget(self.privacy_note, 1)
+        composer_layout.addLayout(privacy_row)
+        self._refresh_privacy_note()
 
         self._idle_placeholder = self.tr("Message AI…")
         self.input = _ChatInput(self.composer)
@@ -1355,7 +1417,7 @@ acting on file state. Return only the compacted memory.
 
         actions = QHBoxLayout()
         actions.setContentsMargins(2, 0, 0, 0)
-        actions.setSpacing(7)
+        actions.setSpacing(4)
         self.status_label = QLabel(self.tr("Enter sends  |  Shift+Enter new line"))
         self.status_label.setObjectName("assistantStatus")
         self.status_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
@@ -1364,6 +1426,8 @@ acting on file state. Return only the compacted memory.
 
         self.stop_button = QPushButton(self.tr("Stop"), self.composer)
         self.stop_button.setObjectName("stopButton")
+        self.stop_button.setToolTip(self.tr("Stop the current request"))
+        set_style_role(self.stop_button, variant="danger")
         self.stop_button.setEnabled(False)
         self.stop_button.hide()
         self.stop_button.clicked.connect(self.stop)
@@ -1371,6 +1435,8 @@ acting on file state. Return only the compacted memory.
 
         self.send_button = QPushButton(self.tr("Send"), self.composer)
         self.send_button.setObjectName("sendButton")
+        self.send_button.setToolTip(self.tr("Send the message (Enter)"))
+        set_style_role(self.send_button, variant="primary")
         self.send_button.clicked.connect(self.send_message)
         actions.addWidget(self.send_button)
         composer_layout.addLayout(actions)
@@ -1379,485 +1445,81 @@ acting on file state. Return only the compacted memory.
         self.setWidget(content)
 
     def _accent_color(self) -> QColor:
-        if hasattr(self.app_window, "_theme_accent_color"):
-            try:
-                accent = QColor(self.app_window._theme_accent_color())
-                if accent.isValid():
-                    return accent
-            except Exception:
-                pass
-        accent = QColor(
-            self.app_window.settings.get("tree_highlight_color", "#00aaff")
-        )
-        return accent if accent.isValid() else QColor("#00aaff")
+        return QColor(current_colors()["accent"])
 
     def apply_theme(self):
-        accent = self._accent_color()
-        accent_hex = accent.name()
-        accent_hover = accent.lighter(118).name()
-        accent_pressed = accent.darker(118).name()
-        user_bubble = accent.darker(155).name()
-        contrast = (
-            "#101419"
-            if (accent.red() * 299 + accent.green() * 587 + accent.blue() * 114)
-            / 1000
-            > 150
-            else "#ffffff"
-        )
+        c = current_colors()
+        accent = QColor(c["accent"])
         self.activity_indicator.set_accent(accent)
         self.context_usage_ring.set_accent(accent)
+        self.stop_button.setIcon(line_icon("stop", c["danger"]))
+        self._privacy_icon.setPixmap(
+            line_icon("info", c["text_subtle"]).pixmap(12, 12)
+        )
+        for row in self._message_rows:
+            row.apply_theme(c)
+        chip_rules = "".join(
+            f"QLabel#empty{family}Chip {{ border-left-color: {color}; }}"
+            for family, color in _FORMAT_FAMILY_COLORS.items()
+        )
         self._content.setStyleSheet(
             f"""
-            QWidget#mdfAssistantContent {{
-                background-color: #171a1f;
-                color: #edf2f7;
-            }}
-            QWidget#messageCanvas, QWidget#messageRow {{
+            QWidget#mdfAssistantContent {{ background-color: {c['panel']}; }}
+            QWidget#assistantHeaderSummary, QWidget#thinkingControls,
+            QFrame#assistantEmptyState, QFrame#toolEvent {{
                 background: transparent;
             }}
-            QFrame#assistantHeader {{
-                background-color: #20242b;
-                border: 1px solid #303640;
-                border-radius: 13px;
+            QLabel#emptyMdfChip, QLabel#emptyMsgChip, QLabel#emptyRszChip {{
+                color: {c['text']}; background-color: {c['surface']};
+                border: 1px solid {c['border_subtle']};
+                border-left: 2px solid {c['border_strong']}; border-radius: 2px;
+                padding: 1px 6px; font-family: "{c['mono_font']}"; font-size: 11px;
             }}
-            QWidget#assistantHeaderSummary {{
-                background: transparent;
-            }}
-            QWidget#assistantSettingsPanel {{
-                background-color: #1c2026;
-                border: 1px solid #2e353f;
-                border-radius: 9px;
-            }}
-            QToolButton#assistantSettingsToggle {{
-                color: #aeb8c4;
-                background: transparent;
-                border: none;
-                padding: 3px 4px;
-                font-size: 8.5pt;
-                font-weight: 600;
-            }}
-            QToolButton#assistantSettingsToggle:hover,
-            QToolButton#assistantSettingsToggle:checked {{
-                color: {accent_hover};
-            }}
-            QLabel#emptyAvatar {{
-                background-color: {accent_hex};
-                color: {contrast};
-                border: none;
-                border-radius: 23px;
-                font-size: 11pt;
-                font-weight: 700;
-            }}
-            QPushButton#newChatButton {{
-                color: #aeb8c4;
-                background-color: transparent;
-                border: 1px solid #38404b;
-                border-radius: 8px;
-                padding: 5px 10px;
-                min-width: 0px;
-            }}
-            QPushButton#newChatButton:hover {{
-                color: #ffffff;
-                background-color: #2a3039;
-                border-color: #4a5563;
-            }}
-            QLineEdit#assistantApiKey, QLineEdit#assistantEndpoint,
-            QComboBox#assistantProvider, QComboBox#assistantModel,
-            QComboBox#assistantContextWindow,
-            QComboBox#assistantFileActionMode,
-            QComboBox#assistantThinkingMode,
-            QComboBox#assistantReasoningEffort {{
-                color: #dce3ea;
-                background-color: #171a20;
-                border: 1px solid #343b46;
-                border-radius: 8px;
-                padding: 6px 8px;
-                min-height: 20px;
-            }}
-            QLineEdit#assistantApiKey:focus, QLineEdit#assistantEndpoint:focus,
-            QComboBox#assistantProvider:focus, QComboBox#assistantModel:focus,
-            QComboBox#assistantContextWindow:focus,
-            QComboBox#assistantFileActionMode:focus,
-            QComboBox#assistantThinkingMode:focus,
-            QComboBox#assistantReasoningEffort:focus {{
-                border-color: {accent_hex};
-            }}
-            QComboBox#assistantProvider::drop-down,
-            QComboBox#assistantModel::drop-down,
-            QComboBox#assistantContextWindow::drop-down,
-            QComboBox#assistantFileActionMode::drop-down,
-            QComboBox#assistantThinkingMode::drop-down,
-            QComboBox#assistantReasoningEffort::drop-down {{
-                border: none;
-                width: 22px;
-            }}
-            QComboBox#assistantProvider QAbstractItemView,
-            QComboBox#assistantModel QAbstractItemView,
-            QComboBox#assistantContextWindow QAbstractItemView,
-            QComboBox#assistantFileActionMode QAbstractItemView,
-            QComboBox#assistantThinkingMode QAbstractItemView,
-            QComboBox#assistantReasoningEffort QAbstractItemView {{
-                color: #edf2f7;
-                background-color: #20242b;
-                border: 1px solid #3a424e;
-                selection-background-color: {user_bubble};
-                outline: none;
-            }}
-            QWidget#thinkingControls {{
-                background: transparent;
-            }}
-            QLabel#contextWindowLabel, QLabel#thinkingModeLabel,
-            QLabel#reasoningEffortLabel,
-            QLabel#assistantFileActionModeLabel {{
-                color: #aeb8c4;
-                background-color: transparent;
-                font-size: 8.5pt;
-            }}
-            QLabel#contextWindowHint {{
-                color: #77828f;
-                background-color: transparent;
-                font-size: 8pt;
-            }}
-            QFrame#assistantApiKeyHelp {{
-                background-color: #20262e;
-                border: 1px solid #35404c;
-                border-radius: 8px;
-            }}
-            QLabel#assistantApiKeyHelpTitle {{
-                color: #dce3ea;
-                background-color: transparent;
-                font-size: 8pt;
-                font-weight: 600;
-            }}
-            QLabel#assistantApiKeyHelpText {{
-                color: #9aa7b5;
-                background-color: transparent;
-                font-size: 8pt;
-            }}
-            QCheckBox#rememberApiKey,
-            QCheckBox#assistantFileAutopilotTrash {{
-                color: #aeb8c4;
-                background: transparent;
-                spacing: 6px;
-                font-size: 8pt;
-            }}
-            QCheckBox#rememberApiKey::indicator,
-            QCheckBox#assistantFileAutopilotTrash::indicator {{
-                width: 13px;
-                height: 13px;
-                border: 1px solid #46505d;
-                border-radius: 4px;
-                background-color: #171a20;
-            }}
-            QCheckBox#rememberApiKey::indicator:checked,
-            QCheckBox#assistantFileAutopilotTrash::indicator:checked {{
-                background-color: {accent_hex};
-                border-color: {accent_hex};
-            }}
-            QCheckBox#rememberApiKey:disabled,
-            QCheckBox#assistantFileAutopilotTrash:disabled {{
-                color: #69737f;
-            }}
-            QScrollArea#mdfAssistantTranscript {{
-                background: transparent;
-                border: none;
-            }}
-            QScrollArea#mdfAssistantTranscript > QWidget > QWidget {{
-                background: transparent;
-            }}
-            QScrollBar:vertical {{
-                background: transparent;
-                width: 7px;
-                margin: 2px 0px;
-            }}
-            QScrollBar::handle:vertical {{
-                background: #46505d;
-                min-height: 28px;
-                border-radius: 3px;
-            }}
-            QScrollBar::handle:vertical:hover {{
-                background: #5b6776;
-            }}
-            QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical,
-            QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{
-                background: transparent;
-                border: none;
-                height: 0px;
-            }}
-            QFrame#assistantEmptyState {{
-                background: transparent;
-                border: none;
-            }}
-            QLabel#emptyTitle {{
-                color: #f0f4f8;
-                background-color: transparent;
-                font-size: 12pt;
-                font-weight: 700;
-            }}
-            QLabel#emptyDescription {{
-                color: #929daa;
-                background-color: transparent;
-                font-size: 9.5pt;
-            }}
-            QLabel#emptyFormatsLabel {{
-                color: #707c89;
-                background: transparent;
-                font-size: 7.5pt;
-                font-weight: 600;
-            }}
-            QLabel#emptyMdfChip, QLabel#emptyMsgChip,
-            QLabel#emptyRszChip {{
-                border-radius: 6px;
-                padding: 3px 8px;
-                font-size: 7.5pt;
-                font-weight: 700;
-            }}
-            QLabel#emptyMdfChip {{
-                color: #a9d8ff;
-                background-color: #1d3346;
-                border: 1px solid #315a78;
-            }}
-            QLabel#emptyMsgChip {{
-                color: #d6c1ff;
-                background-color: #302943;
-                border: 1px solid #544675;
-            }}
-            QLabel#emptyRszChip {{
-                color: #b9e4ca;
-                background-color: #20382e;
-                border: 1px solid #35634c;
-            }}
-            QFrame#assistantBubble, QFrame#errorBubble, QFrame#userBubble {{
-                border-radius: 12px;
-            }}
-            QFrame#assistantBubble {{
-                background-color: #232830;
-                border: 1px solid #333b46;
+            {chip_rules}
+
+            QFrame#assistantBubble, QFrame#userBubble, QFrame#errorBubble {{
+                background: transparent; border: none;
+                border-left: 2px solid {c['border_strong']};
+                border-top-right-radius: 3px; border-bottom-right-radius: 3px;
             }}
             QFrame#userBubble {{
-                background-color: {user_bubble};
-                border: 1px solid {accent_hex};
+                background-color: {c['surface']}; border-left-color: {c['accent']};
             }}
             QFrame#errorBubble {{
-                background-color: #3a252a;
-                border: 1px solid #74404a;
-            }}
-            QLabel#assistantAvatar, QLabel#userAvatar, QLabel#errorAvatar {{
-                border: none;
-                border-radius: 15px;
-                font-size: 7.5pt;
-                font-weight: 700;
-            }}
-            QLabel#assistantAvatar {{
-                color: {contrast};
-                background-color: {accent_hex};
-            }}
-            QLabel#userAvatar {{
-                color: #e9eef4;
-                background-color: #3a424d;
-            }}
-            QLabel#errorAvatar {{
-                color: #ffe9ec;
-                background-color: #74404a;
-                font-size: 11pt;
-            }}
-            QLabel#messageBody {{
-                color: #edf2f7;
-                background: transparent;
-                border: none;
-                font-size: 10pt;
-            }}
-            QFrame#toolEvent {{
-                background: transparent;
-                border: none;
+                background-color: {c['danger_soft']}; border-left-color: {c['danger']};
             }}
             QLabel#toolEventMarker {{
-                background-color: {accent_hex};
-                border: none;
-                border-radius: 3px;
-            }}
-            QLabel#toolEventText {{
-                color: #7f8b98;
-                background: transparent;
-                font-size: 8.5pt;
-            }}
-            QWidget#toolResultRow {{
-                background: transparent;
+                background-color: {c['text_subtle']}; border-radius: 1px;
             }}
             QFrame#toolResultCard {{
-                background-color: #20252c;
-                border: 1px solid #3b4652;
-                border-left: 3px solid {accent_hex};
-                border-radius: 9px;
+                background-color: {c['surface']};
+                border: 1px solid {c['border_subtle']};
+                border-left: 2px solid {c['success']}; border-radius: 3px;
             }}
-            QFrame#toolResultCard[tone="partial"] {{
-                border-left-color: #e7b75f;
-            }}
-            QFrame#toolResultCard[tone="failed"] {{
-                border-left-color: #ef6b78;
-            }}
+            QFrame#toolResultCard[tone="partial"] {{ border-left-color: {c['warning']}; }}
+            QFrame#toolResultCard[tone="failed"] {{ border-left-color: {c['danger']}; }}
             QFrame#toolResultCard[tone="cancelled"],
             QFrame#toolResultCard[tone="no_changes"] {{
-                border-left-color: #7f8b98;
-            }}
-            QLabel#toolResultTitle {{
-                color: #eaf0f6;
-                background: transparent;
-                font-size: 9pt;
-                font-weight: 600;
-            }}
-            QLabel#toolResultStatus {{
-                color: #bcefd5;
-                background-color: #263e35;
-                border: 1px solid #315846;
-                border-radius: 7px;
-                padding: 2px 7px;
-                font-size: 7.5pt;
-                font-weight: 600;
-            }}
-            QLabel#toolResultStatus[tone="partial"] {{
-                color: #f4d99d;
-                background-color: #403722;
-                border-color: #65552d;
-            }}
-            QLabel#toolResultStatus[tone="failed"] {{
-                color: #ffd5da;
-                background-color: #462b31;
-                border-color: #70404a;
-            }}
-            QLabel#toolResultStatus[tone="cancelled"],
-            QLabel#toolResultStatus[tone="no_changes"] {{
-                color: #c2cad3;
-                background-color: #30363e;
-                border-color: #454e59;
-            }}
-            QLabel#toolResultField {{
-                color: #bec8d3;
-                background: transparent;
-                font-size: 8pt;
-            }}
-            QLabel#toolResultMetrics {{
-                color: #91a0af;
-                background: transparent;
-                font-size: 8pt;
+                border-left-color: {c['border_strong']};
             }}
             QLabel#toolResultDetails {{
-                color: #aab5c1;
-                background-color: #191d22;
-                border: 1px solid #303844;
-                border-radius: 6px;
-                padding: 7px;
-                font-family: monospace;
-                font-size: 8pt;
+                color: {c['text_muted']}; background-color: {c['input_bg']};
+                border: 1px solid {c['border_subtle']}; border-radius: 3px;
+                padding: 4px 6px; font-family: "{c['mono_font']}";
             }}
-            QPushButton#toolResultDetailsButton {{
-                color: {accent_hex};
-                background: transparent;
-                border: none;
-                padding: 2px 0px;
-                font-size: 8pt;
-            }}
-            QPushButton#toolResultDetailsButton:hover {{
-                color: {accent_hover};
-                text-decoration: underline;
-            }}
+
             QFrame#assistantActivity {{
-                background-color: #1d2932;
-                border: 1px solid {accent_hex};
-                border-radius: 11px;
-            }}
-            QLabel#activityStatus {{
-                color: #eaf6ff;
-                background: transparent;
-                font-size: 9.5pt;
-                font-weight: 600;
-            }}
-            QLabel#activityHint {{
-                color: #8fa3b4;
-                background: transparent;
-                font-size: 8pt;
-            }}
-            QProgressBar#activityProgress {{
-                background-color: #303b45;
-                border: none;
-                border-radius: 2px;
-            }}
-            QProgressBar#activityProgress::chunk {{
-                background-color: {accent_hex};
-                border-radius: 2px;
-            }}
-            QLabel#assistantPrivacy {{
-                color: #7f8995;
-                background: transparent;
-                font-size: 8pt;
-                padding: 0px 3px;
+                background-color: {c['panel']};
+                border: none; border-top: 1px solid {c['border_subtle']};
             }}
             QFrame#assistantComposer {{
-                background-color: #20242b;
-                border: 1px solid #3a424d;
-                border-radius: 13px;
+                background-color: {c['panel']};
+                border: none; border-top: 1px solid {c['border_subtle']};
             }}
-            QFrame#assistantComposer[busy="true"] {{
-                border-color: {accent_hex};
-            }}
-            QPlainTextEdit#mdfAssistantInput {{
-                color: #f1f4f7;
-                background-color: transparent;
-                border: none;
-                border-radius: 8px;
-                padding: 5px 6px;
-                selection-background-color: {user_bubble};
-            }}
-            QPlainTextEdit#mdfAssistantInput:focus {{
-                background-color: #1b1f25;
-            }}
-            QPlainTextEdit#mdfAssistantInput:read-only {{
-                color: #7f8995;
-                background-color: transparent;
-            }}
-            QLabel#assistantStatus {{
-                color: #77828f;
-                background: transparent;
-                font-size: 7.8pt;
-            }}
-            QLabel#assistantStatus[state="busy"] {{
-                color: {accent_hover};
-            }}
-            QLabel#assistantStatus[state="error"] {{
-                color: #ef9aa9;
-            }}
-            QPushButton#sendButton {{
-                color: {contrast};
-                background-color: {accent_hex};
-                border: none;
-                border-radius: 9px;
-                padding: 7px 14px;
-                min-width: 48px;
-                font-weight: 700;
-            }}
-            QPushButton#sendButton:hover {{
-                background-color: {accent_hover};
-            }}
-            QPushButton#sendButton:pressed {{
-                background-color: {accent_pressed};
-            }}
-            QPushButton#sendButton:disabled {{
-                color: #7d8792;
-                background-color: #343b44;
-            }}
-            QPushButton#stopButton {{
-                color: #f3d9dd;
-                background-color: #3b292e;
-                border: 1px solid #70404a;
-                border-radius: 9px;
-                padding: 6px 12px;
-                min-width: 42px;
-            }}
-            QPushButton#stopButton:hover {{
-                color: #ffffff;
-                background-color: #503139;
-                border-color: #965363;
-            }}
+            QPlainTextEdit#mdfAssistantInput {{ padding: 3px 4px; }}
+            QLabel#assistantStatus {{ color: {c['text_subtle']}; }}
+            QLabel#assistantStatus[state="busy"] {{ color: {c['accent']}; }}
+            QLabel#assistantStatus[state="error"] {{ color: {c['danger']}; }}
             """
         )
 
@@ -1896,7 +1558,7 @@ acting on file state. Return only the compacted memory.
     def _header_settings_toggled(self, expanded: bool):
         self._set_settings_expanded(expanded, persist=True)
 
-    def _privacy_text(self) -> str:
+    def _refresh_privacy_note(self):
         destination = (
             self.tr(
                 "Requested REasy context is sent to the configured local AI "
@@ -1905,10 +1567,13 @@ acting on file state. Return only the compacted memory.
             if self._provider_config().loopback_only
             else self.tr("Requested REasy context is sent to DeepSeek.")
         )
-        return self.tr(
+        note = self.tr(
             "Editor changes stay unsaved until you request a save. Scoped file "
             "operations follow the File actions policy above. {}"
         ).format(destination)
+        self.privacy_note.setText(destination)
+        self.privacy_note.setToolTip(note)
+        self.privacy_note.setAccessibleDescription(note)
 
     def _provider_changed(self, _index: int):
         provider = self._provider_config()
@@ -1927,7 +1592,7 @@ acting on file state. Return only the compacted memory.
         self.endpoint_edit.setVisible(provider.endpoint_setting is not None)
         self._refresh_api_key_help()
         if hasattr(self, "privacy_note"):
-            self.privacy_note.setText(self._privacy_text())
+            self._refresh_privacy_note()
 
         configured_context = self._configured_context_window()
         context_index = self.context_combo.findData(configured_context)
@@ -1969,7 +1634,11 @@ acting on file state. Return only the compacted memory.
 
     def _connect_model_editor(self):
         editor = self.model_combo.lineEdit()
-        if editor is None or editor.property("saveOnEditingFinished"):
+        if editor is None:
+            return
+        # Show long model names from their start in a narrow dock.
+        editor.setCursorPosition(0)
+        if editor.property("saveOnEditingFinished"):
             return
         editor.setProperty("saveOnEditingFinished", True)
         editor.editingFinished.connect(self._save_model)
@@ -3169,10 +2838,6 @@ acting on file state. Return only the compacted memory.
             self.tr("The assistant is working…") if busy else self._idle_placeholder
         )
 
-        self.composer.setProperty("busy", busy)
-        self.composer.style().unpolish(self.composer)
-        self.composer.style().polish(self.composer)
-
         state = "busy" if busy else ("error" if status == self.tr("Error") else "ready")
         self.status_label.setProperty("state", state)
         self.status_label.setText(
@@ -3203,7 +2868,6 @@ acting on file state. Return only the compacted memory.
 
     def _append_message(self, role: str, text: str):
         row = _MessageRow(role, text, self.message_canvas)
-        row.set_bubble_maximum_width(self._message_maximum_width())
         self._message_rows.append(row)
         self._insert_transcript_widget(row)
 
@@ -3269,16 +2933,6 @@ acting on file state. Return only the compacted memory.
         self._scroll_animation.setEndValue(end_value)
         self._scroll_animation.setEasingCurve(QEasingCurve.Type.OutCubic)
         self._scroll_animation.start()
-
-    def _message_maximum_width(self) -> int:
-        content_width = self.widget().width() if self.widget() is not None else 420
-        return max(220, min(560, content_width - 76))
-
-    def resizeEvent(self, event):
-        super().resizeEvent(event)
-        maximum_width = self._message_maximum_width()
-        for row in self._message_rows:
-            row.set_bubble_maximum_width(maximum_width)
 
     def shutdown(self):
         """Abort work and animation before the main window closes."""

@@ -173,12 +173,7 @@ class PfbMotionPreviewWidget(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
-        settings = getattr(getattr(self.handler, "app", None), "settings", None)
-        self.workspace = MotionEditorWorkspace(
-            self.tr("Motion Editor"),
-            settings=settings if isinstance(settings, dict) else None,
-            parent=self,
-        )
+        self.workspace = MotionEditorWorkspace(self.tr("Motion Editor"), parent=self)
         root.addWidget(self.workspace)
 
         self.target_label = QLabel(self.tr("Model"))

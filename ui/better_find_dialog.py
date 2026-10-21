@@ -2,12 +2,15 @@ import os
 from shiboken6 import isValid
 from PySide6.QtCore import QCoreApplication, Qt, QModelIndex
 from PySide6.QtWidgets import (
-    QDockWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QCheckBox,
+    QDockWidget, QVBoxLayout, QHBoxLayout, QLineEdit, QCheckBox,
     QPushButton, QPlainTextEdit, QListWidget, QSplitter, QRadioButton,
-    QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView, QMainWindow
+    QSpinBox, QDoubleSpinBox, QWidget, QAbstractItemView, QMainWindow, QToolButton
 )
 
+lazy from ui.editor_widgets import search_field, styled_label
+lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
+lazy from ui.styles import set_style_role
 lazy from utils.number_format import format_display_value, format_float_sequence
 
 
@@ -157,7 +160,7 @@ class BetterFindDialog(QDockWidget):
             except Exception:
                 pass
 
-        self.resize(460, 330)
+        self.resize(460, 400)
         call_later(self, 0, lambda: self.setFloating(True))
 
         self.shared_mode = shared_mode
@@ -173,15 +176,39 @@ class BetterFindDialog(QDockWidget):
         self.setWidget(content)
 
         root = QVBoxLayout(content)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+
+        bar = QWidget()
+        set_style_role(bar, surface="toolbar")
+        bar_layout = QVBoxLayout(bar)
+        bar_layout.setContentsMargins(6, 6, 6, 6)
+        bar_layout.setSpacing(6)
+        root.addWidget(bar)
 
         srow = QHBoxLayout()
-        srow.addWidget(QLabel(self.tr("Search:")))
-        self.search_entry = QLineEdit(placeholderText=self.tr("Enter text…"))
+        srow.setSpacing(4)
+        self.search_entry = search_field(QLineEdit(placeholderText=self.tr("Enter text…")))
         self.search_entry.returnPressed.connect(self.find_all)
-        srow.addWidget(self.search_entry)
-        root.addLayout(srow)
+        srow.addWidget(self.search_entry, 1)
+        find_all_button = QPushButton(self.tr("Find All"), clicked=self.find_all)
+        set_style_role(find_all_button, variant="primary", compact=True)
+        srow.addWidget(find_all_button)
+        for icon, tip, slot in (
+            ("arrow_up", self.tr("Previous"), self.find_previous),
+            ("arrow_down", self.tr("Next"), self.find_next),
+        ):
+            button = QToolButton()
+            button.setIcon(line_icon(icon))
+            button.setToolTip(tip)
+            button.clicked.connect(slot)
+            srow.addWidget(button)
+        bar_layout.addLayout(srow)
 
         opts = QHBoxLayout()
+        opts.setSpacing(10)
+        match_label = styled_label(self.tr("Match in:"), tone="muted")
+        opts.addWidget(match_label)
         self.opt_name = QRadioButton(self.tr("Name"))
         self.opt_value = QRadioButton(self.tr("Value"))
         self.opt_both = QRadioButton(self.tr("Both"))
@@ -189,18 +216,31 @@ class BetterFindDialog(QDockWidget):
         opts.addWidget(self.opt_name)
         opts.addWidget(self.opt_value)
         opts.addWidget(self.opt_both)
+        opts.addStretch()
+        bar_layout.addLayout(opts)
+
+        checks = QHBoxLayout()
+        checks.setSpacing(12)
         self.case_box = QCheckBox(self.tr("Case sensitive"))
-        opts.addWidget(self.case_box)
+        checks.addWidget(self.case_box)
         self.include_advanced_box = QCheckBox(self.tr("Include Advanced Information"))
         self.include_advanced_box.setChecked(True)
-        opts.addWidget(self.include_advanced_box)
-        opts.addStretch()
-        root.addLayout(opts)
+        checks.addWidget(self.include_advanced_box)
+        checks.addStretch()
+        bar_layout.addLayout(checks)
+
+        body = QVBoxLayout()
+        body.setContentsMargins(6, 6, 6, 4)
+        body.setSpacing(4)
+        root.addLayout(body, 1)
 
         splitter = QSplitter(Qt.Vertical)
+        splitter.setChildrenCollapsible(False)
 
         res_col = QVBoxLayout()
-        res_col.addWidget(QLabel(self.tr("Results:")))
+        res_col.setContentsMargins(0, 0, 0, 0)
+        res_col.setSpacing(4)
+        res_col.addWidget(styled_label(self.tr("Results:"), heading="caption"))
         self.result_list = QListWidget()
         self.result_list.itemDoubleClicked.connect(lambda _: self._select(self.result_list.currentRow()))
         res_col.addWidget(self.result_list)
@@ -209,28 +249,23 @@ class BetterFindDialog(QDockWidget):
         splitter.addWidget(rwidget)
 
         prev_col = QVBoxLayout()
-        prev_col.addWidget(QLabel(self.tr("Preview:")))
+        prev_col.setContentsMargins(0, 4, 0, 0)
+        prev_col.setSpacing(4)
+        prev_col.addWidget(styled_label(self.tr("Preview:"), heading="caption"))
         self.preview = QPlainTextEdit(readOnly=True)
+        self.preview.setPlaceholderText(self.tr("Select a result to see its path and value."))
+        set_style_role(self.preview, mono=True)
         prev_col.addWidget(self.preview)
         pwidget = QWidget()
         pwidget.setLayout(prev_col)
         splitter.addWidget(pwidget)
+        splitter.setSizes([200, 110])
 
-        root.addWidget(splitter, 1)
+        body.addWidget(splitter, 1)
 
-        nav = QHBoxLayout()
-        nav.addWidget(QPushButton(self.tr("Find All"), clicked=self.find_all))
-        nav.addStretch()
-        nav.addWidget(QPushButton(self.tr("Previous"), clicked=self.find_previous))
-        nav.addWidget(QPushButton(self.tr("Next"), clicked=self.find_next))
-        nav.addStretch()
-        nav.addWidget(QPushButton(self.tr("Close"), clicked=self.close))
-        root.addLayout(nav)
+        self.status = styled_label("", tone="muted")
+        body.addWidget(self.status)
 
-        self.status = QLabel("")
-        root.addWidget(self.status)
-        
-        self._apply_theme()
         self.search_entry.setFocus()
 
     def _record_match(self, name: str, value: str, full_path: str, rows):
@@ -548,105 +583,6 @@ class BetterFindDialog(QDockWidget):
                 self.status.setText(self.tr("Tree reloaded - search reset"))
         except RuntimeError:
             pass
-    
-    def _apply_theme(self):
-        colors = {
-            "bg": "#2b2b2b",
-            "fg": "#ffffff",
-            "input_bg": "#3b3b3b",
-            "list_bg": "#353535",
-            "border": "#555555",
-            "highlight": "#00aaff",
-            "button_bg": "#404040",
-            "button_hover": "#4a4a4a",
-            "selection": "rgba(0, 170, 255, 0.3)"
-        }
-        
-        self.setStyleSheet(f"""
-            QDockWidget#better_find_dialog {{
-                background-color: {colors['bg']};
-                color: {colors['fg']};
-            }}
-            QDockWidget#better_find_dialog QWidget#better_find_content {{
-                background-color: {colors['bg']};
-                color: {colors['fg']};
-            }}
-            QLabel {{
-                color: {colors['fg']};
-            }}
-            QLineEdit {{
-                background-color: {colors['input_bg']};
-                color: {colors['fg']};
-                border: 1px solid {colors['border']};
-                padding: 5px;
-                border-radius: 3px;
-            }}
-            QLineEdit:focus {{
-                border: 1px solid {colors['highlight']};
-            }}
-            QRadioButton, QCheckBox {{
-                color: {colors['fg']};
-                spacing: 5px;
-            }}
-            QRadioButton::indicator, QCheckBox::indicator {{
-                width: 16px;
-                height: 16px;
-                background-color: {colors['input_bg']};
-                border: 1px solid {colors['border']};
-                border-radius: 2px;
-            }}
-            QRadioButton::indicator:checked, QCheckBox::indicator:checked {{
-                background-color: {colors['highlight']};
-                border-color: {colors['highlight']};
-            }}
-            QRadioButton::indicator {{
-                border-radius: 8px;
-            }}
-            QListWidget {{
-                background-color: {colors['list_bg']};
-                color: {colors['fg']};
-                border: 1px solid {colors['border']};
-                border-radius: 3px;
-                padding: 2px;
-            }}
-            QListWidget::item {{
-                padding: 3px;
-                border-radius: 2px;
-            }}
-            QListWidget::item:selected {{
-                background-color: {colors['selection']};
-                color: {colors['fg']};
-            }}
-            QListWidget::item:hover {{
-                background-color: {colors['button_hover']};
-            }}
-            QPlainTextEdit {{
-                background-color: {colors['input_bg']};
-                color: {colors['fg']};
-                border: 1px solid {colors['border']};
-                border-radius: 3px;
-                padding: 5px;
-                font-family: monospace;
-            }}
-            QPushButton {{
-                background-color: {colors['button_bg']};
-                color: {colors['fg']};
-                border: 1px solid {colors['border']};
-                padding: 6px 12px;
-                border-radius: 3px;
-                min-width: 80px;
-            }}
-            QPushButton:hover {{
-                background-color: {colors['button_hover']};
-            }}
-            QPushButton:pressed {{
-                background-color: {colors['border']};
-            }}
-            QSplitter::handle {{
-                background-color: {colors['border']};
-                height: 3px;
-            }}
-        """)
     
     def showEvent(self, event):
         super().showEvent(event)

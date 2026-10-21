@@ -1,8 +1,9 @@
 from PySide6.QtWidgets import (
-	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
+	QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLineEdit,
 	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
 )
 from PySide6.QtCore import Qt, Signal
+lazy from ui.editor_widgets import styled_label, tool_button
 from .motbank_file import MotlistItem
 
 
@@ -30,20 +31,33 @@ class MotbankViewer(QWidget):
 
 	def _setup_ui(self):
 		layout = QVBoxLayout(self)
+		layout.setContentsMargins(8, 8, 8, 8)
+		layout.setSpacing(8)
 
-		row = QHBoxLayout()
-		row.addWidget(QLabel("Uvar Path:"))
+		paths = QGridLayout()
+		paths.setHorizontalSpacing(8)
+		paths.setVerticalSpacing(6)
+		paths.setColumnStretch(1, 1)
+		for row, text in enumerate(("Uvar Path:", "Jmap Path:")):
+			label = styled_label(text, tone="muted")
+			label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+			paths.addWidget(label, row, 0)
 		self.uvar_edit = QLineEdit()
 		self.uvar_edit.textChanged.connect(self._on_uvar_changed)
-		row.addWidget(self.uvar_edit)
-		layout.addLayout(row)
-
-		row2 = QHBoxLayout()
-		row2.addWidget(QLabel("Jmap Path:"))
+		paths.addWidget(self.uvar_edit, 0, 1)
 		self.jmap_edit = QLineEdit()
 		self.jmap_edit.textChanged.connect(self._on_jmap_changed)
-		row2.addWidget(self.jmap_edit)
-		layout.addLayout(row2)
+		paths.addWidget(self.jmap_edit, 1, 1)
+		layout.addLayout(paths)
+
+		btns = QHBoxLayout()
+		btns.setSpacing(2)
+		self.add_btn = tool_button("add", slot=self._on_add, text=self.tr("Add"))
+		self.del_btn = tool_button("delete", slot=self._on_delete, text=self.tr("Delete"))
+		btns.addWidget(self.add_btn)
+		btns.addWidget(self.del_btn)
+		btns.addStretch()
+		layout.addLayout(btns)
 
 		self.table = QTableWidget(0, 4)
 		self.table.setHorizontalHeaderLabels(["Path", "BankID", "BankType", "MaskBits"])
@@ -51,19 +65,23 @@ class MotbankViewer(QWidget):
 		self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
 		self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 		self.table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+		self.table.verticalHeader().setDefaultSectionSize(24)
+		self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
 		self.table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.table.itemChanged.connect(self._on_item_changed)
-		layout.addWidget(self.table)
+		self.table.itemSelectionChanged.connect(self._update_delete_button)
+		layout.addWidget(self.table, 1)
+		self._update_delete_button()
 
-		btns = QHBoxLayout()
-		self.add_btn = QPushButton(self.tr("Add"))
-		self.add_btn.clicked.connect(self._on_add)
-		self.del_btn = QPushButton(self.tr("Delete"))
-		self.del_btn.clicked.connect(self._on_delete)
-		btns.addWidget(self.add_btn)
-		btns.addWidget(self.del_btn)
-		btns.addStretch()
-		layout.addLayout(btns)
+	def _update_delete_button(self):
+		self.del_btn.setEnabled(bool(self.table.selectedIndexes()))
+
+	@staticmethod
+	def _table_item(text: str, column: int) -> QTableWidgetItem:
+		item = QTableWidgetItem(text)
+		if column:
+			item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
+		return item
 
 	def _populate(self):
 		mb = self.handler.motbank
@@ -79,10 +97,10 @@ class MotbankViewer(QWidget):
 		self.table.blockSignals(True)
 		self.table.setRowCount(len(mb.items))
 		for r, it in enumerate(mb.items):
-			self.table.setItem(r, 0, QTableWidgetItem(it.path))
-			self.table.setItem(r, 1, QTableWidgetItem(str(it.bank_id)))
-			self.table.setItem(r, 2, QTableWidgetItem(str(it.bank_type)))
-			self.table.setItem(r, 3, QTableWidgetItem(str(it.bank_type_mask_bits)))
+			self.table.setItem(r, 0, self._table_item(it.path, 0))
+			self.table.setItem(r, 1, self._table_item(str(it.bank_id), 1))
+			self.table.setItem(r, 2, self._table_item(str(it.bank_type), 2))
+			self.table.setItem(r, 3, self._table_item(str(it.bank_type_mask_bits), 3))
 		self.table.blockSignals(False)
 
 	def _on_uvar_changed(self, text: str):
@@ -125,7 +143,7 @@ class MotbankViewer(QWidget):
 		r = self.table.rowCount()
 		self.table.insertRow(r)
 		for c, txt in enumerate(["", "0", "0", "0"]):
-			self.table.setItem(r, c, QTableWidgetItem(txt))
+			self.table.setItem(r, c, self._table_item(txt, c))
 		self.table.blockSignals(False)
 		self.modified = True
 

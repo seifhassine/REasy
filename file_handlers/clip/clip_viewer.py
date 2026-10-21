@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox,
     QFormLayout,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -29,6 +28,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSlider,
     QSplitter,
     QTableWidget,
@@ -73,10 +73,16 @@ lazy from .value_adapters import (
     parse_path_point3d_text,
 )
 lazy from utils.number_format import format_display_value, format_float_sequence, format_full_float
+lazy from ui.editor_widgets import delete_button, editor_strip, search_field, set_invalid, styled_label, toolbar_separator
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, qcolor, set_style_role
 
 
 KEY_OBJECT_TYPES = (Key, BoolKey, ActionKey, NoHermiteKey, SpeedPoint)
-INVALID_FIELD_STYLE = "border: 1px solid #cc3333;"
+_TIMELINE_TOKENS = (
+    "view_bg", "view_alt", "header_bg", "gutter", "border", "border_subtle", "border_strong",
+    "text", "text_bright", "text_muted", "text_disabled", "accent", "selection_solid", "row_hover",
+)
 TIMELINE_ROOT_NODES_LABEL = QT_TRANSLATE_NOOP(
     "ClipTimelineCanvas", "Root Nodes"
 )
@@ -223,12 +229,15 @@ def _live_user_data_assets(parsed) -> list[UserDataAssetInfo]:
     return [asset for asset in parsed.user_data_assets if id(asset) in wanted]
 
 
-def _row_background_color(selected: bool, hovered: bool, row_index: int) -> QColor:
+def _row_background_color(colors: dict[str, QColor], selected: bool, row_index: int) -> QColor:
     if selected:
-        return QColor("#303b48")
-    if hovered:
-        return QColor("#2d333a")
-    return QColor("#25282c") if row_index % 2 else QColor("#202327")
+        return colors["selection_solid"]
+    return colors["view_alt"] if row_index % 2 else colors["view_bg"]
+
+
+def _mark_invalid(edit: QLineEdit, error: Exception | None = None):
+    set_invalid(edit, error is not None)
+    edit.setToolTip(str(error) if error is not None else "")
 
 
 def _replace_oword_reference(parsed, index: int, new_values: PathPoint3DValue):
@@ -299,6 +308,8 @@ class ClipTimelineCanvas(QWidget):
         self.row_h = 32
         self.header_h = 28
         self.margin = 10
+        self._paint_colors: dict[str, QColor] = {}
+        self._cursor_shape = None
         self.setMouseTracking(True)
         self.setMinimumHeight(300)
 
@@ -561,15 +572,20 @@ class ClipTimelineCanvas(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.fillRect(self.rect(), self.palette().base())
+        self._paint_colors = {name: qcolor(current_colors()[name]) for name in _TIMELINE_TOKENS}
+        painter.fillRect(self.rect(), self._paint_colors["view_bg"])
         if not self.parsed:
             return
         self.items = []
         self._sync_label_width()
-        self._paint_header(painter)
+        for row_index, row in enumerate(self.rows):
+            self._paint_row_background(painter, row_index, row)
+        self._paint_grid(painter)
+        painter.setRenderHint(QPainter.Antialiasing, True)
         for row_index, row in enumerate(self.rows):
             self._paint_row(painter, row_index, row)
+        painter.setRenderHint(QPainter.Antialiasing, False)
+        self._paint_header(painter)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -577,38 +593,74 @@ class ClipTimelineCanvas(QWidget):
             self._sync_label_width()
             self.setMinimumWidth(self.label_w + self._timeline_width() + self.margin)
 
-    def _paint_header(self, painter: QPainter):
-        y = 0
-        painter.fillRect(0, y, self.width(), self.header_h, QColor("#2f343a"))
-        painter.setPen(QColor("#f2f2f2"))
-        painter.drawText(10, 0, self.label_w - 16, self.header_h, Qt.AlignVCenter, self.tr("Timeline"))
-        painter.setPen(QColor("#525b64"))
+    def moveEvent(self, event):
+        # The ruler is pinned to the visible top, so a scroll needs a full repaint.
+        super().moveEvent(event)
+        self.update()
+
+    def _header_top(self) -> int:
+        visible = self.visibleRegion().boundingRect()
+        return max(0, visible.top()) if not visible.isEmpty() else 0
+
+    def _in_header(self, y: float) -> bool:
+        return y < self._header_top() + self.header_h
+
+    def _paint_grid(self, painter: QPainter):
+        colors = self._paint_colors
+        painter.setPen(colors["border_subtle"])
+        for tick in self._ticks(self._duration()):
+            x = self._frame_to_x(tick)
+            painter.drawLine(x, self.header_h, x, self.height())
+        painter.setPen(colors["border"])
         painter.drawLine(self.label_w - 1, 0, self.label_w - 1, self.height())
+
+    def _paint_header(self, painter: QPainter):
+        colors = self._paint_colors
+        y = self._header_top()
+        painter.fillRect(0, y, self.width(), self.header_h, colors["header_bg"])
+        painter.setPen(colors["gutter"])
+        painter.drawLine(0, y + self.header_h - 1, self.width(), y + self.header_h - 1)
+        painter.setPen(colors["border"])
+        painter.drawLine(self.label_w - 1, y, self.label_w - 1, y + self.header_h - 1)
+        painter.setPen(colors["text_muted"])
+        painter.drawText(10, y, self.label_w - 16, self.header_h, Qt.AlignVCenter, self.tr("Timeline"))
         duration = self._duration()
         for tick in self._ticks(duration):
             x = self._frame_to_x(tick)
-            painter.setPen(QColor("#7f8790"))
-            painter.drawLine(x, self.header_h - 6, x, self.height())
-            painter.setPen(QColor("#f2f2f2"))
-            painter.drawText(x + 3, 0, 70, self.header_h, Qt.AlignVCenter, _frame_text(tick))
+            painter.setPen(colors["border_strong"])
+            painter.drawLine(x, y + self.header_h - 6, x, y + self.header_h - 2)
+            painter.setPen(colors["text_muted"])
+            painter.drawText(x + 3, y, 70, self.header_h, Qt.AlignVCenter, _frame_text(tick))
+
+    def _row_selected(self, row: dict[str, Any]) -> bool:
+        obj = row.get("obj")
+        return bool(self.selected and obj is not None and obj is self.selected.get("obj"))
+
+    def _paint_row_background(self, painter: QPainter, row_index: int, row: dict[str, Any]):
+        colors = self._paint_colors
+        y = self.header_h + row_index * self.row_h
+        selected = self._row_selected(row)
+        painter.fillRect(0, y, self.width(), self.row_h, _row_background_color(colors, selected, row_index))
+        if selected:
+            painter.fillRect(0, y, 2, self.row_h, colors["accent"])
+        elif self.hover_row is row:
+            painter.fillRect(0, y, self.width(), self.row_h, colors["row_hover"])
+        painter.setPen(colors["border_subtle"])
+        painter.drawLine(0, y + self.row_h - 1, self.width(), y + self.row_h - 1)
 
     def _paint_row(self, painter: QPainter, row_index: int, row: dict[str, Any]):
+        colors = self._paint_colors
         y = self.header_h + row_index * self.row_h
-        selected = self.selected and row.get("obj") is not None and row.get("obj") is self.selected.get("obj")
-        hovered = self.hover_row is row
-        bg = _row_background_color(bool(selected), hovered, row_index)
-        painter.fillRect(0, y, self.width(), self.row_h, bg)
-        painter.setPen(QColor("#4b5158"))
-        painter.drawLine(0, y + self.row_h - 1, self.width(), y + self.row_h - 1)
+        selected = self._row_selected(row)
         indent = row.get("depth", 0) * 16
         if row["kind"] == "section":
-            painter.setPen(QColor("#9ea7b1"))
+            painter.setPen(colors["text_muted"])
             painter.drawText(10 + indent, y, self.label_w - 18 - indent, self.row_h, Qt.AlignVCenter, row["label"])
             return
         x = 10 + indent
         if self._row_has_children(row):
             rect = self._toggle_rect(row_index, row)
-            painter.setPen(QColor("#b8c0c8"))
+            painter.setPen(colors["text_muted"])
             if not self._row_is_expanded(row):
                 points = [
                     QPoint(int(rect.left()) + 4, int(rect.top()) + 4),
@@ -621,7 +673,7 @@ class ClipTimelineCanvas(QWidget):
                     QPoint(int(rect.right()) - 3, int(rect.top()) + 5),
                     QPoint(int(rect.center().x()), int(rect.bottom()) - 4),
                 ]
-            painter.setBrush(QColor("#b8c0c8"))
+            painter.setBrush(colors["text_muted"])
             painter.drawPolygon(points)
             x += 16
         else:
@@ -629,25 +681,45 @@ class ClipTimelineCanvas(QWidget):
         label_x = x
         text_w = max(20, self.label_w - label_x - 10)
         text = painter.fontMetrics().elidedText(row["label"], Qt.ElideRight, text_w)
-        painter.setPen(QColor("#ffffff") if selected else QColor("#e1e5ea"))
+        disabled = isinstance(row.get("obj"), Track) and not row["obj"].enable
+        painter.setPen(colors["text_disabled"] if disabled else colors["text_bright"] if selected else colors["text"])
         painter.drawText(label_x, y + 2, text_w, 16, Qt.AlignVCenter, text)
-        subtitle = self._row_subtitle(row)
-        if subtitle:
+        badge, badge_color = row.get("badge"), row.get("badge_color")
+        chip = bool(badge) and isinstance(badge_color, QColor)
+        subtitle = " | ".join(
+            str(value) for value in ((None if chip else badge), row.get("owner_badge"), row.get("meta")) if value
+        )
+        if chip or subtitle:
             font = painter.font()
             small_font = painter.font()
             point_size = small_font.pointSizeF()
             if point_size > 0:
                 small_font.setPointSizeF(max(7.0, point_size - 1.5))
             painter.setFont(small_font)
-            painter.setPen(QColor("#9aa3ad"))
-            painter.drawText(
-                label_x,
-                y + 17,
-                text_w,
-                13,
-                Qt.AlignVCenter,
-                painter.fontMetrics().elidedText(subtitle, Qt.ElideRight, text_w),
-            )
+            sub_x, sub_w = label_x, text_w
+            if chip:
+                metrics = painter.fontMetrics()
+                chip_w = min(92, metrics.horizontalAdvance(str(badge)) + 10, sub_w)
+                chip_rect = QRectF(sub_x, y + 18, chip_w, 12)
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(badge_color)
+                painter.drawRoundedRect(chip_rect, 2, 2)
+                painter.setPen(colors["text_bright"])
+                painter.drawText(
+                    chip_rect, Qt.AlignCenter, metrics.elidedText(str(badge), Qt.ElideRight, chip_w - 4)
+                )
+                sub_x += chip_w + 6
+                sub_w -= chip_w + 6
+            if subtitle and sub_w > 12:
+                painter.setPen(colors["text_muted"])
+                painter.drawText(
+                    sub_x,
+                    y + 17,
+                    sub_w,
+                    13,
+                    Qt.AlignVCenter,
+                    painter.fontMetrics().elidedText(subtitle, Qt.ElideRight, sub_w),
+                )
             painter.setFont(font)
         obj = row.get("obj")
         if isinstance(obj, ClipInfo):
@@ -695,53 +767,50 @@ class ClipTimelineCanvas(QWidget):
                 self._paint_key(painter, row_index, key, obj)
             for sp in obj.speed_points_ref:
                 self._paint_key(painter, row_index, sp, obj, color=QColor("#e4c15d"), kind="speed_point")
-    @staticmethod
-
-    def _row_subtitle(row: dict[str, Any]) -> str:
-        parts = [str(value) for value in (row.get("badge"), row.get("owner_badge"), row.get("meta")) if value]
-        return " | ".join(parts)
 
     def _paint_range(self, painter: QPainter, row_index: int, obj, start: float, end: float, color: QColor, kind: str, **extra):
+        colors = self._paint_colors
         if end < start:
             start, end = end, start
         y = self.header_h + row_index * self.row_h + 8
         x1 = self._frame_to_x(start)
         x2 = self._frame_to_x(end)
         rect = QRectF(x1, y, max(4, x2 - x1), 14)
-        painter.setPen(QPen(QColor("#151719"), 1))
+        painter.setPen(QPen(colors["gutter"], 1))
         painter.setBrush(color)
-        painter.drawRoundedRect(rect, 3, 3)
+        painter.drawRoundedRect(rect, 2, 2)
         hovered = self.hover_item and self.hover_item.get("obj") is obj
         if hovered:
-            painter.setPen(QPen(QColor("#d7dde5"), 1))
+            painter.setPen(QPen(colors["text_muted"], 1))
             painter.setBrush(Qt.NoBrush)
-            painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), 4, 4)
+            painter.drawRoundedRect(rect.adjusted(-2, -2, 2, 2), 3, 3)
         if self.selected and self.selected.get("obj") is obj:
-            painter.setPen(QPen(QColor("#ffffff"), 2))
+            painter.setPen(QPen(colors["accent"], 2))
             painter.setBrush(Qt.NoBrush)
-            painter.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), 4, 4)
+            painter.drawRoundedRect(rect.adjusted(-1, -1, 1, 1), 3, 3)
         self.items.append({"kind": kind, "obj": obj, "rect": rect, "row": row_index, **extra})
 
     def _paint_key(self, painter: QPainter, row_index: int, obj, owner_prop: Property, color=QColor("#e08d4f"), kind="key"):
+        colors = self._paint_colors
         frame = getattr(obj, "frame", 0.0)
         x = self._frame_to_x(frame)
         y = self.header_h + row_index * self.row_h + 15
         points = [QPoint(x, y - 7), QPoint(x + 6, y), QPoint(x, y + 7), QPoint(x - 6, y)]
-        painter.setPen(QPen(QColor("#151719"), 1))
+        painter.setPen(QPen(colors["gutter"], 1))
         painter.setBrush(color)
         painter.drawPolygon(points)
         hovered = self.hover_item and self.hover_item.get("obj") is obj
         if hovered:
-            painter.setPen(QPen(QColor("#d7dde5"), 1))
+            painter.setPen(QPen(colors["text_muted"], 1))
             painter.setBrush(Qt.NoBrush)
             painter.drawEllipse(x - 9, y - 9, 18, 18)
         if self.selected and self.selected.get("obj") is obj:
-            painter.setPen(QPen(QColor("#ffffff"), 2))
+            painter.setPen(QPen(colors["accent"], 2))
             painter.setBrush(Qt.NoBrush)
             painter.drawEllipse(x - 8, y - 8, 16, 16)
         if self.selected and (self.selected.get("obj") is owner_prop or self.selected.get("owner_prop") is owner_prop):
             text = painter.fontMetrics().elidedText(key_payload_text(owner_prop, obj), Qt.ElideRight, 120)
-            painter.setPen(QColor("#dce3ea"))
+            painter.setPen(colors["text"])
             painter.drawText(x + 10, y - 12, 124, 16, Qt.AlignVCenter, text)
         owner_list = _key_owner_list(owner_prop, obj)
         self.items.append({
@@ -755,7 +824,7 @@ class ClipTimelineCanvas(QWidget):
         })
 
     def mousePressEvent(self, event):
-        if event.button() != Qt.LeftButton:
+        if event.button() != Qt.LeftButton or self._in_header(event.position().y()):
             return
         row = self._row_at(event.position().y())
         row_index = self._row_index(row) if row else -1
@@ -787,6 +856,28 @@ class ClipTimelineCanvas(QWidget):
             "start_frame": self._x_to_frame(event.position().x()),
             "orig": self._range_values(item),
         }
+        self._set_cursor(Qt.CursorShape.ClosedHandCursor if mode == "move" else Qt.CursorShape.SizeHorCursor)
+
+    def _set_cursor(self, shape):
+        if shape == self._cursor_shape:
+            return
+        self._cursor_shape = shape
+        if shape is None:
+            self.unsetCursor()
+        else:
+            self.setCursor(shape)
+
+    def _hover_cursor(self, pos, item):
+        if not item:
+            return None
+        rect = item["rect"]
+        if item["kind"] in {"clip_info", "node", "property"} and (
+            abs(pos.x() - rect.left()) <= 6 or abs(pos.x() - rect.right()) <= 6
+        ):
+            return Qt.CursorShape.SizeHorCursor
+        if item["kind"] in {"clip_info", "node", "property", "key", "speed_point"}:
+            return Qt.CursorShape.OpenHandCursor
+        return None
 
     def _owner_list_for_row(self, row):
         kind = row["kind"]
@@ -847,16 +938,22 @@ class ClipTimelineCanvas(QWidget):
         if self.drag:
             self.drag = None
             self.graph_changed.emit()
+            self._set_cursor(self._hover_cursor(event.position(), self._item_at(event.position())))
 
     def leaveEvent(self, event):
         self.hover_item = None
         self.hover_row = None
         self.setToolTip("")
+        self._set_cursor(None)
         self.update()
 
     def _update_hover(self, pos):
-        item = self._item_at(pos)
-        row = self._row_at(pos.y())
+        if self._in_header(pos.y()):
+            item = row = None
+        else:
+            item = self._item_at(pos)
+            row = self._row_at(pos.y())
+        self._set_cursor(self._hover_cursor(pos, item))
         if item is self.hover_item and row is self.hover_row:
             return
         self.hover_item = item
@@ -1419,46 +1516,68 @@ class ClipViewer(QWidget):
 
     def _build_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
-        bar = QHBoxLayout()
-        self.status = QLabel()
-        bar.addWidget(self.status)
-        bar.addWidget(QLabel(self.tr("Frames")))
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        toolbar, bar = editor_strip(spacing=6)
+
+        def separator():
+            bar.addSpacing(2)
+            bar.addWidget(toolbar_separator(20))
+            bar.addSpacing(2)
+
+        def caption(text, tooltip):
+            label = styled_label(text, tone="muted")
+            label.setToolTip(tooltip)
+            bar.addWidget(label)
+
+        frames_tip = self.tr("Total clip length in frames.")
+        caption(self.tr("Frames"), frames_tip)
         self.duration_spin = QDoubleSpinBox()
         self.duration_spin.setRange(0.0, 1_000_000.0)
         self.duration_spin.setDecimals(3)
         self.duration_spin.setSingleStep(1.0)
+        self.duration_spin.setMinimumWidth(96)
+        self.duration_spin.setToolTip(frames_tip)
         bar.addWidget(self.duration_spin)
-        self.timeline_filter = QLineEdit()
+        separator()
+        self.timeline_filter = search_field(QLineEdit())
         self.timeline_filter.setPlaceholderText(self.tr("Filter"))
+        self.timeline_filter.setToolTip(self.tr("Show rows whose name, type or frames contain this text."))
         self.timeline_filter.setMaximumWidth(220)
         bar.addWidget(self.timeline_filter)
         self.timeline_view = QComboBox()
-        for label, mode in (
-            (self.tr("Focused"), "focused"),
-            (self.tr("Overview"), "overview"),
-            (self.tr("Details"), "details"),
+        for label, mode, tooltip in (
+            (self.tr("Focused"), "focused", self.tr("Expand only the selected clip, node or property.")),
+            (self.tr("Overview"), "overview", self.tr("Hide clip contents and properties.")),
+            (self.tr("Details"), "details", self.tr("Expand every node and property.")),
         ):
             self.timeline_view.addItem(label, mode)
+            self.timeline_view.setItemData(self.timeline_view.count() - 1, tooltip, Qt.ItemDataRole.ToolTipRole)
         self.timeline_view.setMaximumWidth(120)
+        self.timeline_view.setToolTip(self.tr("How much of the clip graph the timeline expands."))
         bar.addWidget(self.timeline_view)
-        bar.addWidget(QLabel(self.tr("Zoom")))
+        separator()
+        zoom_tip = self.tr("Timeline zoom.")
+        caption(self.tr("Zoom"), zoom_tip)
         self.zoom_slider = QSlider(Qt.Horizontal)
         self.zoom_slider.setRange(25, 2000)
         self.zoom_slider.setSingleStep(5)
         self.zoom_slider.setPageStep(25)
         self.zoom_slider.setValue(100)
         self.zoom_slider.setMaximumWidth(180)
+        self.zoom_slider.setToolTip(zoom_tip)
         bar.addWidget(self.zoom_slider)
-        self.zoom_label = QLabel("1.00x")
+        self.zoom_label = styled_label("1.00x", tone="muted", mono=True)
         self.zoom_label.setMinimumWidth(44)
         bar.addWidget(self.zoom_label)
         self.snap_check = QCheckBox(self.tr("Snap"))
         self.snap_check.setChecked(True)
+        self.snap_check.setToolTip(self.tr("Snap dragged ranges and keys to whole frames."))
         bar.addWidget(self.snap_check)
         bar.addStretch(1)
         self.add_btn = QPushButton(self.tr("Add"))
+        self.add_btn.setIcon(line_icon("add"))
+        self.add_btn.setToolTip(self.tr("Add an item for the current selection."))
         self.add_menu = QMenu(self.add_btn)
         self.add_btn.setMenu(self.add_menu)
         self.add_actions = {
@@ -1471,11 +1590,21 @@ class ClipViewer(QWidget):
             "speed": self.add_menu.addAction(self.tr("Speed Point")),
         }
         self.dup_btn = QPushButton(self.tr("Duplicate"))
-        self.del_btn = QPushButton(self.tr("Delete"))
+        self.dup_btn.setIcon(line_icon("copy"))
+        self.dup_btn.setToolTip(self.tr("Duplicate the selected item."))
+        self.del_btn = delete_button(self.tr("Delete"))
+        self.del_btn.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
+        self.del_btn.setToolTip(self.tr("Delete the selected item."))
+        # Keeps the menu arrow inside the compact button.
+        self.add_btn.setStyleSheet(
+            "QPushButton { padding-right: 20px; } QPushButton::menu-indicator { right: 5px; }"
+        )
         for button in (self.add_btn, self.dup_btn, self.del_btn):
+            set_style_role(button, compact=True)
             bar.addWidget(button)
-        layout.addLayout(bar)
+        layout.addWidget(toolbar)
         splitter = QSplitter(Qt.Horizontal)
+        splitter.setHandleWidth(4)
         self.timeline = ClipTimelineCanvas()
         self.timeline.selection_changed.connect(self._select)
         self.timeline.graph_changed.connect(self._timeline_graph_changed)
@@ -1490,45 +1619,56 @@ class ClipViewer(QWidget):
         self.timeline_scroll.setWidget(self.timeline)
         splitter.addWidget(self.timeline_scroll)
         inspector = QWidget()
-        right = QVBoxLayout(inspector)
-        right.setContentsMargins(4, 0, 0, 0)
-        inspector_header = QHBoxLayout()
-        inspector_header.setContentsMargins(0, 0, 0, 0)
-        self.title = QLabel(self.tr("No selection"))
-        self.title.setStyleSheet("font-weight: bold;")
+        inspector_layout = QVBoxLayout(inspector)
+        inspector_layout.setContentsMargins(0, 0, 0, 0)
+        inspector_layout.setSpacing(0)
+        inspector_bar, inspector_header = editor_strip("header", (8, 0, 8, 0), 6)
+        inspector_bar.setFixedHeight(32)
+        self.title = styled_label(self.tr("No selection"), heading="section")
         inspector_header.addWidget(self.title, 1)
         self.advanced = QCheckBox(self.tr("Advanced"))
+        self.advanced.setToolTip(self.tr("Show raw and version-specific fields."))
         inspector_header.addWidget(self.advanced)
-        right.addLayout(inspector_header)
-        self.path_label = QLabel()
-        self.path_label.setStyleSheet("color: #aeb7c2;")
+        inspector_layout.addWidget(inspector_bar)
+        right = QVBoxLayout()
+        right.setContentsMargins(8, 6, 8, 8)
+        right.setSpacing(6)
+        inspector_layout.addLayout(right, 1)
+        self.path_label = styled_label(tone="muted")
         self.path_label.setWordWrap(True)
         right.addWidget(self.path_label)
-        self.validation_label = QLabel()
-        self.validation_label.setStyleSheet("color: #ffcf66;")
+        self.validation_label = styled_label(banner="warning")
         self.validation_label.setWordWrap(True)
         right.addWidget(self.validation_label)
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
         self.form_host = QWidget()
         self.form = QFormLayout(self.form_host)
+        self.form.setContentsMargins(0, 0, 0, 0)
+        self.form.setHorizontalSpacing(8)
+        self.form.setVerticalSpacing(4)
         self.scroll.setWidget(self.form_host)
         right.addWidget(self.scroll, 1)
         self.related = QListWidget()
         self.related.itemClicked.connect(self._related_clicked)
-        self.contents_label = QLabel(self.tr("Contents"))
+        self.contents_label = styled_label(self.tr("Contents"), heading="caption")
         right.addWidget(self.contents_label)
         right.addWidget(self.related, 1)
         relation_bar = QHBoxLayout()
+        relation_bar.setSpacing(4)
         self.move_up_btn = QPushButton(self.tr("Move Up"))
+        self.move_up_btn.setIcon(line_icon("arrow_up"))
         self.move_down_btn = QPushButton(self.tr("Move Down"))
+        self.move_down_btn.setIcon(line_icon("arrow_down"))
         for button in (self.move_up_btn, self.move_down_btn):
+            set_style_role(button, compact=True)
             relation_bar.addWidget(button)
+        relation_bar.addStretch(1)
         right.addLayout(relation_bar)
         self.key_header = QWidget()
         key_bar = QHBoxLayout(self.key_header)
         key_bar.setContentsMargins(0, 0, 0, 0)
-        self.key_label = QLabel(self.tr("Keys / Speed Points"))
+        self.key_label = styled_label(self.tr("Keys / Speed Points"), heading="caption")
         key_bar.addWidget(self.key_label)
         key_bar.addStretch(1)
         right.addWidget(self.key_header)
@@ -1542,6 +1682,10 @@ class ClipViewer(QWidget):
         splitter.addWidget(inspector)
         splitter.setSizes([900, 360])
         layout.addWidget(splitter, 1)
+        footer, footer_layout = editor_strip("footer", (10, 3, 10, 3), 6)
+        self.status = styled_label(tone="muted")
+        footer_layout.addWidget(self.status)
+        layout.addWidget(footer)
         for action, slot in (
             (self.add_actions["track"], self._add_track),
             (self.add_actions["clip"], self._add_clip),
@@ -1812,7 +1956,7 @@ class ClipViewer(QWidget):
         scrollbar = self.timeline_scroll.verticalScrollBar()
         top = scrollbar.value()
         bottom = top + self.timeline_scroll.viewport().height()
-        if y < top:
+        if y < top + self.timeline.header_h:
             scrollbar.setValue(max(0, y - self.timeline.row_h))
         elif y + self.timeline.row_h > bottom:
             scrollbar.setValue(min(scrollbar.maximum(), y - self.timeline_scroll.viewport().height() + self.timeline.row_h * 2))
@@ -1831,25 +1975,26 @@ class ClipViewer(QWidget):
                 else:
                     value = edit.text()
                 setattr(obj, attr, value)
-                edit.setStyleSheet("")
+                _mark_invalid(edit)
                 self._object_changed(obj)
-            except Exception:
-                edit.setStyleSheet(INVALID_FIELD_STYLE)
+            except Exception as exc:
+                _mark_invalid(edit, exc)
         edit.editingFinished.connect(commit)
         self.form.addRow(label, edit)
 
     def _guid_line(self, obj, attr: str, label: str):
         edit = QLineEdit(_guid_text(getattr(obj, attr, b"")))
+        set_style_role(edit, mono=True)
         edit.setProperty("clip_obj_id", id(obj))
         edit.setProperty("clip_attr", attr)
         def commit():
             try:
                 setattr(obj, attr, _parse_guid_text(edit.text()))
                 edit.setText(_guid_text(getattr(obj, attr)))
-                edit.setStyleSheet("")
+                _mark_invalid(edit)
                 self._object_changed(obj)
-            except Exception:
-                edit.setStyleSheet(INVALID_FIELD_STYLE)
+            except Exception as exc:
+                _mark_invalid(edit, exc)
         edit.editingFinished.connect(commit)
         self.form.addRow(label, edit)
 
@@ -1953,11 +2098,11 @@ class ClipViewer(QWidget):
             try:
                 new_values = parse_path_point3d_text(edit.text())
                 _replace_oword_reference(self.parsed, index, new_values)
-                edit.setStyleSheet("")
+                _mark_invalid(edit)
                 self._mark_modified()
                 self.timeline.update()
-            except Exception:
-                edit.setStyleSheet(INVALID_FIELD_STYLE)
+            except Exception as exc:
+                _mark_invalid(edit, exc)
         edit.editingFinished.connect(commit)
         self.form.addRow("Path Point", edit)
 
@@ -2117,11 +2262,13 @@ class ClipViewer(QWidget):
                 self.ops.register_key_reference(key)
                 with self._blocked_key_table():
                     item.setBackground(QBrush())
+                    item.setToolTip("")
                 self._mark_modified()
                 self.timeline.refresh_object_row(prop)
-        except Exception:
+        except Exception as exc:
             with self._blocked_key_table():
-                item.setBackground(QColor("#663333"))
+                item.setBackground(qcolor(current_colors()["danger_soft"]))
+                item.setToolTip(str(exc))
 
     def _key_rows(self, prop: Property):
         rows: list[tuple[str, object]] = []
@@ -2171,10 +2318,10 @@ class ClipViewer(QWidget):
                 return
             try:
                 if apply_key_payload_text(prop, key, edit.text()):
-                    edit.setStyleSheet("")
+                    _mark_invalid(edit)
                     self._object_changed(key)
-            except Exception:
-                edit.setStyleSheet(INVALID_FIELD_STYLE)
+            except Exception as exc:
+                _mark_invalid(edit, exc)
         edit.editingFinished.connect(commit)
         self.form.addRow("Value", edit)
 
@@ -2213,10 +2360,10 @@ class ClipViewer(QWidget):
                 if len(values) != expected:
                     raise ValueError("Wrong tuple length")
                 key.interpolation_ref = values
-                edit.setStyleSheet("")
+                _mark_invalid(edit)
                 self._object_changed(key)
-            except Exception:
-                edit.setStyleSheet(INVALID_FIELD_STYLE)
+            except Exception as exc:
+                _mark_invalid(edit, exc)
         edit.editingFinished.connect(commit)
         self.form.addRow("Curve Controls", edit)
 
@@ -2656,7 +2803,9 @@ class ClipViewer(QWidget):
     @staticmethod
 
     def _action(action, visible: bool):
-        action.setVisible(visible)
+        # Buttons stay in place and only disable, so the bars do not reflow.
+        if not isinstance(action, QPushButton):
+            action.setVisible(visible)
         action.setEnabled(visible)
 
     def _clear_form(self):

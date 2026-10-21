@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QHeaderView, QLabel, QLineEdit, QMessageBox, QPushButton, QStyledItemDelegate, QTableView, QVBoxLayout,
 )
 
+lazy from ui.styles import current_colors
 lazy from .blender.mapping import ACTIONS, ADD, DROP, EXACT, LOADED, MANUAL, MERGE, NAME, POSITION, ROLE
 
 SOURCE, VERTICES, TARGET, UNMAPPED, FOUND, OFFSET = range(6)
@@ -87,9 +88,9 @@ class BoneMappingModel(QAbstractTableModel):
                 return row.action
         if role == Qt.ForegroundRole:
             if column == OFFSET and offset is not None and offset > self.limit:
-                return QBrush(QColor("#d9534f"))
+                return QBrush(QColor(current_colors()["danger"]))
             if column == TARGET and not row.mapped and row.weighted:
-                return QBrush(QColor("#e0a030"))
+                return QBrush(QColor(current_colors()["warning"]))
         if role == Qt.ToolTipRole and column == OFFSET and offset is not None and offset > self.limit:
             return self.tr("The model's bone sits far from this joint: the reference may be the wrong one, "
                            "or the model is not fitted to its skeleton.")

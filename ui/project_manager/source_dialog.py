@@ -13,6 +13,7 @@ class SelectSourceDialog(QDialog):
         self._rb_paks.setChecked(bool(paks_checked))
 
         lay = QVBoxLayout(self)
+        lay.setSpacing(8)
         lay.addWidget(QLabel(
             self.tr("Choose project source for {game}:").format(game=game_name)
         ))

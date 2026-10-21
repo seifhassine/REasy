@@ -4,19 +4,25 @@ from pathlib import Path
 from typing import List
 from contextlib import contextmanager
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QPoint, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QSize
+from PySide6.QtCore import (
+	QT_TRANSLATE_NOOP, QEvent, Qt, QPoint, QTimer, QSortFilterProxyModel, QRegularExpression, QStringListModel, QSize,
+)
 
 
-from PySide6.QtGui import QStandardItemModel, QStandardItem, QColor
+from PySide6.QtGui import QStandardItemModel, QStandardItem
 
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
 	QFileDialog, QLineEdit, QCheckBox, QComboBox, QInputDialog,
 	QMessageBox, QTreeView, QListView, QAbstractItemView, QMenu, QApplication,
-	QSlider, QStackedWidget, QStyle, QToolButton
+	QSlider, QStackedWidget, QToolButton, QWidget, QFrame, QSplitter, QButtonGroup
 )
 
-lazy from settings import DEFAULT_SETTINGS, load_settings
+lazy from settings import load_settings
+lazy from ui.breadcrumbs import breadcrumb_separator
+lazy from ui.editor_widgets import editor_strip, search_field, styled_label, tool_button, toolbar_separator
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
 lazy from app_config import GAMES
 
 lazy from file_handlers.pak import scan_pak_files
@@ -45,22 +51,22 @@ class PakBrowserDialog(QDialog):
 	def __init__(self, parent=None):
 		super().__init__(parent)
 		self.setWindowTitle(self.tr("PAK Browser"))
-		self.resize(900, 600)
+		self.resize(960, 660)
 		lay = QVBoxLayout(self)
+		lay.setContentsMargins(0, 0, 0, 0)
+		lay.setSpacing(0)
 
 		settings = getattr(parent, 'settings', None) or load_settings()
-		highlight_color = settings.get(
-			"tree_highlight_color", DEFAULT_SETTINGS["tree_highlight_color"]
-		)
-		self._highlight_color = QColor(highlight_color)
 
-		top = QHBoxLayout()
-		lay.addLayout(top)
+		toolbar, top = editor_strip("toolbar", (8, 6, 8, 6), 6)
+		lay.addWidget(toolbar)
 
 		self.dir_edit = QLineEdit(self)
 		self.dir_edit.setPlaceholderText(self.tr("Game directory (optional, for scan)"))
 		top.addWidget(self.dir_edit, 1)
-		top.addWidget(QPushButton(self.tr("Browse…"), clicked=self._choose_dir))
+		top.addWidget(tool_button("folder_open", self.tr("Browse…"), self._choose_dir, parent=self))
+		top.addWidget(QPushButton(line_icon("refresh"), self.tr("Scan"), clicked=self._scan_dir))
+		top.addWidget(toolbar_separator(18))
 		top.addWidget(QLabel(self.tr("Game:")))
 		self.game_combo = QComboBox(self)
 		self.game_combo.addItems(GAMES)
@@ -72,36 +78,65 @@ class PakBrowserDialog(QDialog):
 		if initial_game in GAMES:
 			self.game_combo.setCurrentText(initial_game)
 		top.addWidget(self.game_combo)
-		self.mod_warning = QLabel(self.tr(
-			"⚠ Modded PAKs detected in the game folder (mod payloads or "
-			"invalidated entries). Please disable your mods and rescan."))
-		self.mod_warning.setWordWrap(True)
-		self.mod_warning.setStyleSheet(
-			"color: #ff6b6b; font-weight: 600; background: rgba(255,80,80,0.10); "
-			"border: 1px solid rgba(255,80,80,0.35); border-radius: 4px; padding: 6px 8px;"
-		)
-		self.mod_warning.hide()
-		lay.addWidget(self.mod_warning)
-		top.addWidget(QPushButton(self.tr("Scan"), clicked=self._scan_dir))
 
+		body = QVBoxLayout()
+		body.setContentsMargins(8, 8, 8, 8)
+		body.setSpacing(6)
+		lay.addLayout(body, 1)
+
+		self.mod_warning = QFrame(self)
+		self.mod_warning.setProperty("banner", "danger")
+		warning_row = QHBoxLayout(self.mod_warning)
+		warning_row.setContentsMargins(0, 0, 0, 0)
+		warning_row.setSpacing(8)
+		warning_icon = QLabel()
+		warning_icon.setPixmap(line_icon("warning", current_colors()["danger"]).pixmap(16, 16))
+		warning_row.addWidget(warning_icon, 0, Qt.AlignTop)
+		warning_text = QLabel(self.tr(
+			"Modded PAKs detected in the game folder (mod payloads or "
+			"invalidated entries). Please disable your mods and rescan."))
+		warning_text.setWordWrap(True)
+		warning_row.addWidget(warning_text, 1)
+		self.mod_warning.hide()
+		body.addWidget(self.mod_warning)
+
+		splitter = QSplitter(Qt.Vertical, self)
+		splitter.setChildrenCollapsible(False)
+		body.addWidget(splitter, 1)
+
+		pak_panel = QWidget()
+		pak_layout = QVBoxLayout(pak_panel)
+		pak_layout.setContentsMargins(0, 0, 0, 4)
+		pak_layout.setSpacing(4)
 		row2 = QHBoxLayout()
-		lay.addLayout(row2)
-		row2.addWidget(QLabel(self.tr("PAK files:")))
+		row2.setSpacing(2)
+		pak_title = styled_label(self.tr("PAK files:"), heading="panel")
+		row2.addWidget(pak_title)
 		row2.addStretch(1)
-		row2.addWidget(QPushButton(self.tr("Load .list…"), clicked=self._load_list_file))
-		row2.addWidget(QPushButton(self.tr("Add PAK…"),   clicked=self._add_paks))
-		row2.addWidget(QPushButton(self.tr("Remove"),     clicked=self._remove_paks))
-		row2.addWidget(QPushButton(self.tr("Move Up"),    clicked=lambda: self._move_selected(-1)))
-		row2.addWidget(QPushButton(self.tr("Move Down"),  clicked=lambda: self._move_selected(+1)))
+		row2.addWidget(tool_button("list", self.tr("Load .list…"), self._load_list_file, text=self.tr("Load .list…"), parent=self))
+		row2.addWidget(tool_button("add", self.tr("Add PAK…"), self._add_paks, text=self.tr("Add PAK…"), parent=self))
+		row2.addWidget(toolbar_separator(18))
+		self._remove_pak_btn = tool_button("remove", self.tr("Remove"), self._remove_paks, parent=self)
+		self._move_up_btn = tool_button("arrow_up", self.tr("Move Up"), self._move_selected_up, parent=self)
+		self._move_down_btn = tool_button("arrow_down", self.tr("Move Down"), self._move_selected_down, parent=self)
+		for button in (self._remove_pak_btn, self._move_up_btn, self._move_down_btn):
+			button.setEnabled(False)
+			row2.addWidget(button)
+		pak_layout.addLayout(row2)
 
 		self.pak_list = QListWidget(self)
-		lay.addWidget(self.pak_list, 1)
+		self.pak_list.itemSelectionChanged.connect(self._update_pak_buttons)
+		pak_layout.addWidget(self.pak_list, 1)
+		splitter.addWidget(pak_panel)
 
-
+		browser_panel = QWidget()
+		browser_layout = QVBoxLayout(browser_panel)
+		browser_layout.setContentsMargins(0, 4, 0, 0)
+		browser_layout.setSpacing(4)
 		mid = QHBoxLayout()
-		lay.addLayout(mid)
-		mid.addWidget(QLabel(self.tr("Filter:")))
-		self.filter_edit = QLineEdit(self)
+		mid.setSpacing(8)
+		browser_layout.addLayout(mid)
+		self.filter_edit = search_field(QLineEdit(self))
 		self.filter_edit.setPlaceholderText(self.tr("Search (supports regex)"))
 		self._filter_timer = QTimer(self)
 		self._filter_timer.setSingleShot(True)
@@ -131,17 +166,26 @@ class PakBrowserDialog(QDialog):
 		self.icon_size_slider.setRange(48, 160)
 		self.icon_size_slider.setValue(88)
 		self.icon_size_slider.setTracking(False)
-		self.icon_size_slider.setFixedWidth(90)
+		self.icon_size_slider.setFixedWidth(96)
 		self.icon_size_slider.setToolTip(self.tr("Icon size"))
 		self.icon_size_slider.valueChanged.connect(self._set_icon_size)
+		slider_policy = self.icon_size_slider.sizePolicy()
+		slider_policy.setRetainSizeWhenHidden(True)
+		self.icon_size_slider.setSizePolicy(slider_policy)
 		self.icon_size_slider.hide()
 		mid.addWidget(self.icon_size_slider)
-		self.view_mode_btn = QToolButton(self)
-		self.view_mode_btn.setCheckable(True)
-		self.view_mode_btn.setAutoRaise(True)
+		view_buttons = QHBoxLayout()
+		view_buttons.setSpacing(0)
+		tree_mode_btn = tool_button("list", self.tr("Switch to tree view"), parent=self)
+		self.view_mode_btn = tool_button("grid", self.tr("Switch to icons view"), parent=self)
+		self._view_mode_group = QButtonGroup(self)
+		for button in (tree_mode_btn, self.view_mode_btn):
+			button.setCheckable(True)
+			self._view_mode_group.addButton(button)
+			view_buttons.addWidget(button)
+		tree_mode_btn.setChecked(True)
 		self.view_mode_btn.toggled.connect(self._set_view_mode)
-		mid.addWidget(self.view_mode_btn)
-		self._update_view_mode_button(False)
+		mid.addLayout(view_buttons)
 
 		self.tree = QTreeView(self)
 		self.tree.setUniformRowHeights(True)
@@ -174,7 +218,25 @@ class PakBrowserDialog(QDialog):
 		self.view_stack = QStackedWidget(self)
 		self.view_stack.addWidget(self.tree)
 		self.view_stack.addWidget(self.icon_view)
-		lay.addWidget(self.view_stack, 3)
+		self._empty_hint = styled_label(self.tr(
+			"Scan a game folder or add PAK files, then load a .list file to browse their contents."
+		), self.view_stack, emptyState=True)
+		self._empty_hint.setWordWrap(True)
+		self._empty_hint.setAttribute(Qt.WA_TransparentForMouseEvents)
+		self.view_stack.installEventFilter(self)
+		self._crumbs = QFrame(self)
+		self._crumbs.setObjectName("editorBreadcrumbs")
+		self._crumbs.setFixedHeight(26)
+		self._crumbs_layout = QHBoxLayout(self._crumbs)
+		self._crumbs_layout.setContentsMargins(2, 0, 2, 0)
+		self._crumbs_layout.setSpacing(0)
+		self._crumbs.hide()
+		browser_layout.addWidget(self._crumbs)
+		browser_layout.addWidget(self.view_stack, 1)
+		splitter.addWidget(browser_panel)
+		splitter.setStretchFactor(0, 0)
+		splitter.setStretchFactor(1, 1)
+		splitter.setSizes([130, 420])
 		self._tree_model = None
 		self._flat_model: QStringListModel | None = None
 		self._flat_model_valid_only: QStringListModel | None = None
@@ -184,18 +246,26 @@ class PakBrowserDialog(QDialog):
 
 
 		out = QHBoxLayout()
-		lay.addLayout(out)
+		out.setSpacing(6)
+		body.addLayout(out)
 		out.addWidget(QLabel(self.tr("Output directory:")))
 		self.out_edit = QLineEdit(self)
 		out.addWidget(self.out_edit, 1)
-		out.addWidget(QPushButton(self.tr("Choose…"), clicked=self._choose_out))
-		out.addStretch(1)
+		out.addWidget(tool_button("folder_open", self.tr("Choose…"), self._choose_out, parent=self))
+
+		footer, actions = editor_strip("footer", (8, 6, 8, 6), 6)
+		lay.addWidget(footer)
+		self.loading_label = styled_label(parent=self, tone="muted")
+		self.loading_label.setVisible(False)
+		actions.addWidget(self.loading_label)
+		actions.addStretch(1)
 		self.dump_valid_btn = QPushButton(self.tr(DUMP_VALID_PATHS_TITLE), clicked=self._dump_valid_files)
 		self.dump_valid_btn.setVisible(False)
-		self.dump_valid_btn.setStyleSheet(f"QPushButton {{ background-color: {self._highlight_color.name()}; color: white; }}")
-		out.addWidget(self.dump_valid_btn)
-		out.addWidget(QPushButton(self.tr("Extract Selected"), clicked=self._extract_selected))
-		out.addWidget(QPushButton(self.tr("Extract All"), clicked=self._extract_all))
+		actions.addWidget(self.dump_valid_btn)
+		actions.addWidget(QPushButton(self.tr("Extract All"), clicked=self._extract_all))
+		extract_selected_btn = QPushButton(self.tr("Extract Selected"), clicked=self._extract_selected)
+		extract_selected_btn.setProperty("variant", "primary")
+		actions.addWidget(extract_selected_btn)
 
 		self._all_manifest_paths: List[str] = []
 		self._base_paths: List[str] = []
@@ -209,10 +279,22 @@ class PakBrowserDialog(QDialog):
 		self.include_stubs_cb.toggled.connect(self._on_resolution_changed)
 		self._scanned_root = ""
 		self._loading_depth = 0
-		self.loading_label = QLabel(self)
-		self.loading_label.setStyleSheet(f"color: {self._highlight_color.name()}; font-weight: 600;")
-		self.loading_label.setVisible(False)
-		lay.addWidget(self.loading_label)
+
+	def eventFilter(self, watched, event):
+		if watched is self.view_stack and event.type() == QEvent.Resize:
+			self._empty_hint.setGeometry(self.view_stack.rect())
+		return super().eventFilter(watched, event)
+
+	def _update_pak_buttons(self):
+		selected = bool(self.pak_list.selectedItems())
+		for button in (self._remove_pak_btn, self._move_up_btn, self._move_down_btn):
+			button.setEnabled(selected)
+
+	def _move_selected_up(self):
+		self._move_selected(-1)
+
+	def _move_selected_down(self):
+		self._move_selected(+1)
 
 	@contextmanager
 	def _loading(self, message: str):
@@ -345,7 +427,8 @@ class PakBrowserDialog(QDialog):
 
 	def _apply_filter_now(self):
 		text = self.filter_edit.text().strip()
-		
+		self._empty_hint.setVisible(not self._all_manifest_paths)
+
 		if not self._all_manifest_paths:
 			model = QStandardItemModel()
 			model.setHorizontalHeaderLabels([self.tr("Paths")])
@@ -428,6 +511,8 @@ class PakBrowserDialog(QDialog):
 					build(item, child, full + "/", False)
 		
 		build(model.invisibleRootItem(), root, "", True)
+		# The recursive closure holds self and the model in a cycle; empty its cell.
+		del build
 		self.tree.setModel(model)
 		self._tree_model = model
 		
@@ -457,18 +542,47 @@ class PakBrowserDialog(QDialog):
 
 	def _set_view_mode(self, icons: bool):
 		self.view_stack.setCurrentIndex(int(icons))
+		self._empty_hint.raise_()
 		self.icon_size_slider.setVisible(icons)
-		self._update_view_mode_button(icons)
 		if icons:
 			self._rebuild_icon_model()
+		else:
+			self._update_breadcrumbs()
 
-	def _update_view_mode_button(self, icons: bool):
-		style = QApplication.style()
-		pixmap = QStyle.SP_FileDialogDetailedView if icons else QStyle.SP_FileDialogListView
-		self.view_mode_btn.setIcon(style.standardIcon(pixmap))
-		self.view_mode_btn.setToolTip(
-			self.tr("Switch to tree view") if icons else self.tr("Switch to icons view")
+	def _update_breadcrumbs(self):
+		show = (
+			self.view_stack.currentWidget() is self.icon_view
+			and bool(self._all_manifest_paths)
+			and not self.filter_edit.text().strip()
 		)
+		self._crumbs.setVisible(show)
+		while self._crumbs_layout.count():
+			if widget := self._crumbs_layout.takeAt(0).widget():
+				widget.deleteLater()
+		if not show:
+			return
+		root = self._crumb_button("", "")
+		root.setIcon(line_icon("home"))
+		root.setToolTip(self.tr("Root folder"))
+		parts = [part for part in self._icon_directory.split("/") if part]
+		for index, part in enumerate(parts):
+			self._crumbs_layout.addWidget(breadcrumb_separator(self._crumbs))
+			self._crumb_button(part, "/".join(parts[:index + 1]))
+		self._crumbs_layout.addStretch(1)
+
+	def _crumb_button(self, text: str, path: str) -> QToolButton:
+		button = QToolButton(self._crumbs)
+		button.setObjectName("breadcrumbButton")
+		button.setAutoRaise(True)
+		button.setText(text)
+		button.setProperty("path", path)
+		button.clicked.connect(self._open_breadcrumb)
+		self._crumbs_layout.addWidget(button)
+		return button
+
+	def _open_breadcrumb(self):
+		self._icon_directory = self.sender().property("path")
+		self._rebuild_icon_model()
 
 	def _set_icon_size(self, size: int):
 		if not hasattr(self, "icon_view"):
@@ -549,6 +663,7 @@ class PakBrowserDialog(QDialog):
 		self._thumbnail_provider.cancel_pending()
 		self._icon_model.set_entries(entries)
 		self._schedule_visible_thumbnails()
+		self._update_breadcrumbs()
 
 	def _open_icon_entry(self, index):
 		if not index.isValid():

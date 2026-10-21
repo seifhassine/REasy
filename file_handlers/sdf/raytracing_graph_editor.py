@@ -15,7 +15,10 @@ from .raytracing_abi import validate_raytracing_replacement
 from .raytracing_graph import (RAY_BUILTINS, RAY_STAGES, RayField, RayStructure, RayTracingGraphProject,
     build_raytracing_graph, generate_raytracing_library, new_raytracing_graph)
 from .shader_graph import MAX_PROJECT_LENGTH, ShaderGraphError, node_pins
-lazy from .shader_graph_editor import _ShaderGraphScene, _ShaderGraphView
+lazy from .shader_graph_editor import _ShaderGraphScene, _ShaderGraphView, show_status
+lazy from ui.editor_widgets import styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 
 
 class RayTracingGraphEditor(QWidget):
@@ -33,15 +36,21 @@ class RayTracingGraphEditor(QWidget):
             'field0 / field1 labels are used where names were stripped. Nothing changes until Apply. '
             'Extra exports do not create runtime shader-table records.'))
         self.note.setWordWrap(True)
+        set_style_role(self.note, banner="info")
         root.addWidget(self.note)
         toolbar = QHBoxLayout()
+        toolbar.setSpacing(4)
         self.export_selector = QComboBox()
         toolbar.addWidget(self.export_selector, 1)
-        for label, callback in [(self.tr('Add export'), self._add_export), (self.tr('Edit export'), self._edit_export),
-                                (self.tr('Remove export'), self._remove_export),
-                                (self.tr('Types / bindings'), self._edit_interface),
-                                (self.tr('Open graph'), self._open), (self.tr('Save graph'), self._save)]:
+        for label, icon, callback in [(self.tr('Add export'), 'add', self._add_export),
+                                      (self.tr('Edit export'), 'edit', self._edit_export),
+                                      (self.tr('Remove export'), 'remove', self._remove_export),
+                                      (self.tr('Types / bindings'), 'variable', self._edit_interface),
+                                      (self.tr('Open graph'), 'folder_open', self._open),
+                                      (self.tr('Save graph'), 'save', self._save)]:
             button = QPushButton(label)
+            button.setIcon(line_icon(icon))
+            set_style_role(button, compact=True)
             button.clicked.connect(callback)
             toolbar.addWidget(button)
         root.addLayout(toolbar)
@@ -56,27 +65,36 @@ class RayTracingGraphEditor(QWidget):
         self.tabs.addTab(self.view, self.tr('Export graph'))
         self.source = QPlainTextEdit()
         self.source.setReadOnly(True)
+        set_style_role(self.source, mono=True)
         self.tabs.addTab(self.source, self.tr('Generated library'))
         splitter.addWidget(self.tabs)
         inspector = QWidget()
         form = QVBoxLayout(inspector)
-        form.addWidget(QLabel(self.tr('Selected node properties (typed JSON)')))
+        form.setContentsMargins(0, 0, 0, 0)
+        form.setSpacing(4)
+        form.addWidget(styled_label(self.tr('Selected node properties (typed JSON)'), heading="panel"))
         self.properties = QPlainTextEdit()
+        set_style_role(self.properties, mono=True)
         form.addWidget(self.properties)
         self.set_properties = QPushButton(self.tr('Update node'))
         self.set_properties.clicked.connect(self._update_node)
         form.addWidget(self.set_properties)
-        form.addWidget(QLabel(self.tr('Click an output socket, then its input.\nDelete removes selected nodes / links.')))
+        form.addWidget(styled_label(self.tr('Click an output socket, then its input.\nDelete removes selected nodes / links.'), tone="muted"))
         splitter.addWidget(inspector)
         splitter.setSizes([220, 760, 260])
         root.addWidget(splitter, 1)
         buttons = QHBoxLayout()
-        for label, callback in [(self.tr('Generate source'), self._generate), (self.tr('Compile / validate'), self._compile),
-                                (self.tr('Export compiled library'), self._export_library)]:
+        buttons.setSpacing(4)
+        for label, icon, callback in [(self.tr('Generate source'), 'refresh', self._generate),
+                                      (self.tr('Compile / validate'), 'check', self._compile),
+                                      (self.tr('Export compiled library'), 'export', self._export_library)]:
             button = QPushButton(label)
+            button.setIcon(line_icon(icon))
             button.clicked.connect(callback)
             buttons.addWidget(button)
+        buttons.addStretch(1)
         self.apply_button = QPushButton(self.tr('Apply to selected program'))
+        set_style_role(self.apply_button, variant="primary")
         self.apply_button.setEnabled(False)
         self.apply_button.clicked.connect(self._apply)
         buttons.addWidget(self.apply_button)
@@ -89,7 +107,7 @@ class RayTracingGraphEditor(QWidget):
         self.scene.node_selected.connect(self._select_node)
         self.scene.graph_changed.connect(self._changed)
         self.scene.layout_changed.connect(self._retain)
-        self.scene.message.connect(self.status.setText)
+        self.scene.message.connect(self._scene_message)
 
     def set_program(self, program):
         self.program = program
@@ -102,12 +120,15 @@ class RayTracingGraphEditor(QWidget):
         except ValueError as exc:
             self.project = None
             self.scene.set_graph(None, None)
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             self.setEnabled(False)
             return
         self.setEnabled(True)
         self._refresh_exports()
-        self.status.setText(self.tr('Replacement workspace ready. Build and validate before applying.'))
+        show_status(self.status, self.tr('Replacement workspace ready. Build and validate before applying.'))
+
+    def _scene_message(self, text: str) -> None:
+        show_status(self.status, text)
 
     def clear_program(self):
         self.project = self.library = self.compiled = self.program = None
@@ -125,7 +146,7 @@ class RayTracingGraphEditor(QWidget):
         self.apply_button.setEnabled(False)
         self.source.clear()
         self._retain()
-        self.status.setText(self.tr('Graph changed. Compile / validate to check this replacement.'))
+        show_status(self.status, self.tr('Graph changed. Compile / validate to check this replacement.'))
 
     def _export(self):
         index = self.export_selector.currentIndex()
@@ -248,7 +269,7 @@ class RayTracingGraphEditor(QWidget):
             self.project.to_bytes()
         except ValueError as exc:
             node.properties = previous
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             return
         self.scene.rebuild(select_node=node.node_id)
         self._changed()
@@ -291,7 +312,7 @@ class RayTracingGraphEditor(QWidget):
         try:
             export = self.project.add_export(**values)
         except ValueError as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             return
         self._refresh_exports(export.name)
         self._changed()
@@ -313,7 +334,7 @@ class RayTracingGraphEditor(QWidget):
                                   for role, name in candidate.bindings.items()}
             candidate.validate()
         except ValueError as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             return
         self.project = candidate
         self._refresh_exports(updated.name)
@@ -324,7 +345,7 @@ class RayTracingGraphEditor(QWidget):
         if export is None:
             return
         if export.name in self.project.bindings.values():
-            self.status.setText(self.tr('Change the envelope binding before removing a selected export.'))
+            show_status(self.status, self.tr('Change the envelope binding before removing a selected export.'), "warning")
             return
         self.project.exports.remove(export)
         self._refresh_exports()
@@ -356,7 +377,7 @@ class RayTracingGraphEditor(QWidget):
             candidate.bindings = data['bindings']
             candidate.validate()
         except (ValueError, KeyError, TypeError) as exc:
-            self.status.setText(f'{type(exc).__name__}: {exc}' if not isinstance(exc, ValueError) else str(exc))
+            show_status(self.status, f'{type(exc).__name__}: {exc}' if not isinstance(exc, ValueError) else str(exc), "danger")
             return
         self.project = candidate
         self._refresh_exports()
@@ -366,11 +387,11 @@ class RayTracingGraphEditor(QWidget):
         try:
             source = generate_raytracing_library(self.project)
         except ValueError as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             return
         self.source.setPlainText(source)
         self.tabs.setCurrentWidget(self.source)
-        self.status.setText(self.tr('Generated the entire library from graph declarations.'))
+        show_status(self.status, self.tr('Generated the entire library from graph declarations.'))
 
     def _compile(self):
         self.compiled = None
@@ -381,12 +402,12 @@ class RayTracingGraphEditor(QWidget):
             compiled = build_raytracing_graph(self.project, diagnostics=diagnostics)
             validate_raytracing_replacement(self.library, compiled)
         except ValueError as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             return
         self.compiled = compiled
         self.apply_button.setEnabled(True)
-        self.status.setText('\n'.join((self.tr('Native DXC compilation / validation and selected-program ABI checks passed.'),
-                                       *diagnostics)))
+        passed = self.tr('Native DXC compilation / validation and selected-program ABI checks passed.')
+        show_status(self.status, '\n'.join((passed, *diagnostics)), "success")
 
     def _apply(self):
         if self.compiled is None or not self.apply_button.isEnabled():
@@ -402,7 +423,7 @@ class RayTracingGraphEditor(QWidget):
                 raise ShaderGraphError('Graph project is too large')
             self.project = RayTracingGraphProject.from_bytes(Path(path).read_bytes())
         except (OSError, ValueError) as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
             return
         self._refresh_exports()
         self._changed()
@@ -418,14 +439,14 @@ class RayTracingGraphEditor(QWidget):
         try:
             self._save_bytes(self.project.to_bytes(), self.tr('Save ray-tracing graph'), self.tr('Ray graph (*.raygraph.json)'))
         except (OSError, ValueError) as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")
 
     def _export_library(self):
         if self.compiled is None:
-            self.status.setText(self.tr('Compile the graph before exporting its library.'))
+            show_status(self.status, self.tr('Compile the graph before exporting its library.'), "warning")
             return
         try:
             self._save_bytes(serialize_raytracing_library(self.compiled), self.tr('Export compiled DXR library'),
                              self.tr('DXR library (*.dxrlib)'))
         except (OSError, ValueError) as exc:
-            self.status.setText(str(exc))
+            show_status(self.status, str(exc), "danger")

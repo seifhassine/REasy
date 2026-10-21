@@ -14,6 +14,9 @@ from PySide6.QtWidgets import (
 
 lazy from services.file_io import write_files_atomically
 lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.editor_widgets import DisclosureButton, styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 from .conversion import conversion_targets
 lazy from .conversion_geometry import retains_meshlets
 lazy from .conversion_preview import MeshConversionPreview, part_color
@@ -162,28 +165,24 @@ class MeshConversionDialog(QDialog):
         self.setWindowTitle(self.tr("Cross-game mesh converter"))
         self.resize(1240, 820)
         self.setMinimumSize(960, 680)
-        self.setStyleSheet("""
-            QFrame#conversionOptions { border: 1px solid palette(mid); border-radius: 10px; }
-            QLabel#conversionTitle { font-size: 21px; font-weight: 600; }
-            QLabel#conversionStep { font-weight: 600; color: palette(highlight); }
-            QPushButton#conversionCheck { padding: 10px; font-weight: 600; }
-            QLabel#conversionStatus { border: 1px solid palette(mid); border-radius: 10px; padding: 8px 12px; }
-        """)
         layout = QVBoxLayout(self)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
         header = QHBoxLayout()
         titles = QVBoxLayout()
-        title = QLabel(self.tr("Cross-game mesh converter"))
+        titles.setSpacing(2)
+        title = styled_label(self.tr("Cross-game mesh converter"), heading="title")
         title.setObjectName("conversionTitle")
         titles.addWidget(title)
-        subtitle = QLabel(self.tr("Choose a build, explore the result, then export.") + "  ·  " +
-                          Path(handler.filepath or "Untitled mesh").name)
+        subtitle = styled_label(self.tr("Choose a build, explore the result, then export.") + "  ·  " +
+                                Path(handler.filepath or "Untitled mesh").name, tone="muted")
         subtitle.setTextFormat(Qt.PlainText)
         titles.addWidget(subtitle)
         header.addLayout(titles, 1)
-        self.status = QLabel(self.tr("Ready to compare"))
+        self.status = QLabel()
         self.status.setObjectName("conversionStatus")
-        header.addWidget(self.status)
+        self._set_status(self.tr("Ready to compare"))
+        header.addWidget(self.status, 0, Qt.AlignTop)
         layout.addLayout(header)
         split = QSplitter(Qt.Horizontal)
         layout.addWidget(split, 1)
@@ -255,17 +254,19 @@ class MeshConversionDialog(QDialog):
         self.source_mdf.textChanged.connect(self._invalidate)
         self._update_target_info()
 
+    def _set_status(self, text: str, tone: str = "neutral") -> None:
+        self.status.setText(text)
+        set_style_role(self.status, badge=tone)
+
     def _build_options(self):
         options = QFrame()
         options.setObjectName("conversionOptions")
+        set_style_role(options, surface="card")
         options.setMinimumWidth(270)
         options.setMaximumWidth(360)
         layout = QVBoxLayout(options)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        step = QLabel(self.tr("1  CHOOSE YOUR DESTINATION"))
-        step.setObjectName("conversionStep")
-        layout.addWidget(step)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
         form = QFormLayout()
         form.setRowWrapPolicy(QFormLayout.WrapAllRows)
         self.target_combo = QComboBox()
@@ -320,7 +321,7 @@ class MeshConversionDialog(QDialog):
             "Optional MDF file or game resource path, including a custom MDF. An explicit choice is always "
             "used; leave blank to consult materials only when the mesh is ambiguous."))
         self.source_mdf_button = QToolButton(options)
-        self.source_mdf_button.setText("…")
+        self.source_mdf_button.setIcon(line_icon("folder_open"))
         self.source_mdf_button.setToolTip(self.tr("Choose source MDF"))
         self.source_mdf_button.clicked.connect(self._choose_source_mdf)
         self.source_mdf_panel = QWidget(options)
@@ -362,16 +363,12 @@ class MeshConversionDialog(QDialog):
             self.source_mdf_panel.hide()
             self.source_skin_help.hide()
         self._update_source_controls()
-        axes_toggle = QToolButton()
+        axes_toggle = DisclosureButton(self.tr("Advanced · override coordinates"))
         self.axes_toggle = axes_toggle
         coordinate_info = QLabel(self.tr("Native game coordinates are handled automatically."))
         self.coordinate_info = coordinate_info
         coordinate_info.setWordWrap(True)
         layout.addWidget(coordinate_info)
-        axes_toggle.setText(self.tr("Advanced · override coordinates"))
-        axes_toggle.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        axes_toggle.setArrowType(Qt.RightArrow)
-        axes_toggle.setCheckable(True)
         layout.addWidget(axes_toggle)
         axes_panel = QWidget()
         self.axes_panel = axes_panel
@@ -397,9 +394,9 @@ class MeshConversionDialog(QDialog):
         layout.addWidget(axes_panel)
         axes_panel.hide()
         axes_toggle.toggled.connect(axes_panel.setVisible)
-        axes_toggle.toggled.connect(lambda checked: axes_toggle.setArrowType(Qt.DownArrow if checked else Qt.RightArrow))
         self.check_button = QPushButton(self.tr("Preview conversion"))
         self.check_button.setObjectName("conversionCheck")
+        set_style_role(self.check_button, variant="primary")
         self.check_button.setShortcut("Ctrl+Return")
         self.check_button.setToolTip(self.tr("Build and validate the comparison (Ctrl+Enter)."))
         self.check_button.clicked.connect(self._check)
@@ -416,8 +413,8 @@ class MeshConversionDialog(QDialog):
         self.progress.hide()
         layout.addWidget(self.progress)
         layout.addStretch(1)
-        note = QLabel(self.tr("Your source stays intact. The preview shows decoded geometry; target materials, "
-                              "textures and animation retargeting are separate resources."))
+        note = styled_label(self.tr("Your source stays intact. The preview shows decoded geometry; target materials, "
+                                    "textures and animation retargeting are separate resources."), tone="subtle")
         note.setWordWrap(True)
         layout.addWidget(note)
         scroll = QScrollArea(self)
@@ -541,7 +538,7 @@ class MeshConversionDialog(QDialog):
         self._update_summary()
         self._update_target_info()
         self._update_source_controls()
-        self.status.setText(self.tr("Preview needs updating"))
+        self._set_status(self.tr("Preview needs updating"))
         self.report.setPlainText(self.tr("Settings changed; preview conversion again."))
         self._update_save()
 
@@ -591,14 +588,14 @@ class MeshConversionDialog(QDialog):
         self._task.signals.finished.connect(self._checked)
         self._task.signals.stage.connect(self._conversion_stage)
         self._set_busy(True)
-        self.status.setText(self.tr("Building your preview…"))
+        self._set_status(self.tr("Building your preview…"), "info")
         self.report.setPlainText(self.tr("Adapting geometry and validating the target format…"))
         QThreadPool.globalInstance().start(self._task)
 
     @Slot(str)
     def _conversion_stage(self, stage):
         if not self._closed and self._task is not None:
-            self.status.setText(self.tr(stage))
+            self._set_status(self.tr(stage), "info")
 
     @Slot(object, object, str)
     def _checked(self, result, mesh, error):
@@ -610,7 +607,7 @@ class MeshConversionDialog(QDialog):
         self._set_busy(False)
         self._update_source_controls()
         if error:
-            self.status.setText(self.tr("Conversion needs attention"))
+            self._set_status(self.tr("Conversion needs attention"), "danger")
             self.preview.clear_target(self.tr("Conversion unavailable · see the report"))
             self.report.setPlainText(error)
             self.details.setCurrentWidget(self.report)
@@ -649,13 +646,14 @@ class MeshConversionDialog(QDialog):
                 message += "\n\n" + self.tr("Target setup:") + "\n"
                 message += "\n".join(f"• {item}" for item in result.requirements)
             if result.losses:
-                self.status.setText(self.tr("Review this change") if len(result.losses) == 1
-                                    else self.tr("Review {} changes").format(len(result.losses)))
+                self._set_status(self.tr("Review this change") if len(result.losses) == 1
+                                 else self.tr("Review {} changes").format(len(result.losses)), "warning")
                 message += "\n\n" + self.tr("Changes requiring approval:") + "\n"
                 message += "\n".join(f"• {item}" for item in result.losses)
                 self.details.setCurrentWidget(self.report)
             else:
-                self.status.setText(self.tr("Review target setup") if result.requirements else self.tr("Ready to export"))
+                self._set_status(self.tr("Review target setup") if result.requirements else self.tr("Ready to export"),
+                                 "warning" if result.requirements else "success")
                 message += "\n" + self.tr("No representational data loss detected.")
                 self.details.setCurrentWidget(self.report if result.requirements else self.summary)
             self.report.setPlainText(message)
@@ -682,7 +680,7 @@ class MeshConversionDialog(QDialog):
         version = self.handler._file_version_from_path(self.handler.filepath) if self.handler.filepath else None
         self._blending = True
         self._set_busy(True)
-        self.status.setText(self.tr("Building the Blender scene…"))
+        self._set_status(self.tr("Building the Blender scene…"), "info")
         self.report.setPlainText(self.tr("Exporting to Blender and importing it back to verify the round trip…"))
         self._blender_jobs.start(
             lambda: export_blend(mesh, target, blender=blender, title=title, file_version=version or None,
@@ -697,7 +695,7 @@ class MeshConversionDialog(QDialog):
         self._update_source_controls()
         if error:
             self.result = None
-            self.status.setText(self.tr("Blender export needs attention"))
+            self._set_status(self.tr("Blender export needs attention"), "danger")
             self.preview.clear_target(self.tr("Blender export unavailable · see the report"))
             self.report.setPlainText(error)
             self.details.setCurrentWidget(self.report)
@@ -710,7 +708,7 @@ class MeshConversionDialog(QDialog):
         self.files.setItem(0, 0, QTableWidgetItem(exported.path.name))
         self.files.setItem(0, 1, QTableWidgetItem(self.tr("{} objects").format(exported.objects)))
         self.files.setItem(0, 2, QTableWidgetItem(f"{exported.path.stat().st_size / 1024:,.0f} KiB"))
-        self.status.setText(self.tr("Ready to export"))
+        self._set_status(self.tr("Ready to export"), "success")
         self.report.setPlainText(self.tr(
             "Round trip verified: importing this scene unchanged reproduces the mesh bit for bit.") + "\n\n" +
             self.tr("Edit it in Blender, save, then use Import .blend… on the mesh toolbar. Edits are applied "
@@ -729,7 +727,7 @@ class MeshConversionDialog(QDialog):
         except OSError as exc:
             QMessageBox.warning(self, self.tr("Blender export failed"), str(exc))
             return
-        self.status.setText(self.tr("Export complete"))
+        self._set_status(self.tr("Export complete"), "success")
         self.report.setPlainText(self.tr("Exported:\n") + filename)
         self.details.setCurrentWidget(self.report)
 
@@ -757,6 +755,6 @@ class MeshConversionDialog(QDialog):
         except (ValueError, OSError) as exc:
             QMessageBox.warning(self, self.tr("Mesh export failed"), str(exc))
             return
-        self.status.setText(self.tr("Export complete"))
+        self._set_status(self.tr("Export complete"), "success")
         self.report.setPlainText(self.tr("Exported:\n") + "\n".join(outputs))
         self.details.setCurrentWidget(self.report)

@@ -8,7 +8,6 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
-    QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
@@ -22,6 +21,7 @@ lazy from ui.editor_widgets import (
     EDITOR_META_ROLE,
     EDITOR_TITLE_ROLE,
     EditorListItemDelegate,
+    styled_label,
 )
 
 
@@ -68,11 +68,12 @@ class ScnGameObjectVisibilityPanel(QWidget):
             self.tr("Restore visibility from the PFB's authored settings.")
         )
         self.reset_button.setEnabled(False)
+        self.reset_button.setProperty("compact", True)
         self.reset_button.clicked.connect(self.reset_to_authored)
         controls.addWidget(self.reset_button)
         layout.addLayout(controls)
 
-        self.focus_status = QLabel()
+        self.focus_status = styled_label(tone="muted")
         self.focus_status.setWordWrap(True)
         self.focus_status.hide()
         layout.addWidget(self.focus_status)

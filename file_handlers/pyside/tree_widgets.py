@@ -2,7 +2,7 @@ import traceback
 import weakref
 from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLayout, QCheckBox,
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
-                               QLineEdit, QInputDialog, QApplication, QDialog, QPushButton,
+                               QLineEdit, QInputDialog, QApplication, QDialog, QDialogButtonBox,
                                QStyle, QStyleOptionViewItem)
 lazy from PySide6.QtGui import QCursor, QIcon, QPalette
 from PySide6.QtCore import (
@@ -35,6 +35,7 @@ lazy from file_handlers.pyside.value_widgets import StringInput
 lazy from file_handlers.rsz.rsz_gameobject_clipboard import RszGameObjectClipboard
 lazy from file_handlers.rsz.utils.rsz_embedded_utils import find_embedded_context
 lazy from file_handlers.rsz.rsz_data_types import UserDataData
+lazy from ui.editor_widgets import icon_action, styled_label
 
 
 _DATA_BLOCK_LABEL = "Data Block"
@@ -102,6 +103,9 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
 
 class AdvancedTreeView(QTreeView):
     TRANSLATION_CHAR_LIMIT = 2500
+    # Name labels shrink by one indent per level below this depth so values share one column.
+    VALUE_COLUMN_DEPTH = 7
+    MIN_LABEL_WIDTH = 96
     """
     A QTreeView that uses an advanced delegate or a simpler delegate,
     and supports expansions.
@@ -267,9 +271,23 @@ class AdvancedTreeView(QTreeView):
         super().setModel(model)
 
     def setIndexWidget(self, index, widget):
+        if widget is not None:
+            self._align_value_column(index, widget)
         super().setIndexWidget(index, widget)
         if widget is not None:
             self._register_refresh_widgets(widget)
+
+    def _align_value_column(self, index, widget):
+        label = widget.findChild(QLabel)
+        if label is None or label.minimumWidth() != self.label_width:
+            return
+        depth = 0
+        parent = index.parent()
+        while parent.isValid():
+            depth += 1
+            parent = parent.parent()
+        shift = (self.VALUE_COLUMN_DEPTH - depth) * self.indentation()
+        label.setMinimumWidth(max(self.MIN_LABEL_WIDTH, self.label_width + shift))
 
     def _register_refresh_widgets(self, widget):
         for editor in (widget, *widget.findChildren(QWidget)):
@@ -403,7 +421,10 @@ class AdvancedTreeView(QTreeView):
         layout.setContentsMargins(2, 0, 2, 0)
         layout.setSpacing(5)
         marker = QLabel(self.tr("[OUTDATED]"), container)
-        marker.setStyleSheet("color: red;")
+        marker.setProperty("tone", "warning")
+        marker.setToolTip(
+            self.tr("Resource paths changed. Right-click here and choose Refresh Resources List.")
+        )
         layout.addWidget(marker)
         header = QLabel(resources_node.data[0], container)
         layout.addWidget(header)
@@ -427,9 +448,10 @@ class AdvancedTreeView(QTreeView):
 
 
         if item.data and item.data[0] == _DATA_BLOCK_LABEL:
-            exp_act = menu.addAction(self.tr("Export Data Block"))
-            imp_act = menu.addAction(self.tr("Import Data from Exports folder"))
-            translate_all_act = menu.addAction(self.tr("Translate All GameObject Names"))
+            exp_act = icon_action(menu, "export", self.tr("Export Data Block"))
+            imp_act = icon_action(menu, "import", self.tr("Import Data from Exports folder"))
+            menu.addSeparator()
+            translate_all_act = icon_action(menu, "globe", self.tr("Translate All GameObject Names"))
             action = menu.exec_(QCursor.pos())
             if action == exp_act:
                 RszGameObjectClipboard.export_datablock(self.viewer)
@@ -461,8 +483,9 @@ class AdvancedTreeView(QTreeView):
             return
 
     def _handle_resource_menu(self, menu, index, item_info):
-        edit_action = menu.addAction(self.tr("Edit Resource Path"))
-        delete_sel    = menu.addAction(self.tr("Delete Selected Resources…"))
+        edit_action = icon_action(menu, "edit", self.tr("Edit Resource Path"))
+        menu.addSeparator()
+        delete_sel = icon_action(menu, "delete", self.tr("Delete Selected Resources…"), danger=True)
         action = menu.exec_(QCursor.pos())
         if action == edit_action:
             self.edit_resource(index, item_info['resource_index'])
@@ -472,10 +495,10 @@ class AdvancedTreeView(QTreeView):
             self.delete_resources(sel)
 
     def _handle_resources_section_menu(self, menu):
-        add_action = menu.addAction(self.tr("Add New Resource"))
+        add_action = icon_action(menu, "add", self.tr("Add New Resource"))
         rebuild_action = None
         if(self.viewer.handler.auto_resource_management):
-            rebuild_action = menu.addAction(self.tr("Refresh Resources List"))
+            rebuild_action = icon_action(menu, "refresh", self.tr("Refresh Resources List"))
         action = menu.exec_(QCursor.pos())
         if action == add_action:
             self.add_resource()
@@ -483,8 +506,9 @@ class AdvancedTreeView(QTreeView):
             self._rebuild_resources_list()
 
     def _handle_component_menu(self, menu, index, item_info):
-        copy_action = menu.addAction(self.tr("Copy Component"))
-        delete_action = menu.addAction(self.tr("Delete Component"))
+        copy_action = icon_action(menu, "copy", self.tr("Copy Component"))
+        menu.addSeparator()
+        delete_action = icon_action(menu, "delete", self.tr("Delete Component"), danger=True)
         action = menu.exec_(QCursor.pos())
         if action == delete_action:
             self.delete_component(index, item_info['component_instance_id'])
@@ -492,48 +516,57 @@ class AdvancedTreeView(QTreeView):
             self.copy_component(item_info['component_instance_id'])
 
     def _handle_gameobject_menu(self, menu, index, item_info, has_go_clipboard, has_component_clipboard, item):
-        menu.addAction(self.tr("Add Component"))
+        icon_action(menu, "component", self.tr("Add Component"))
         if has_component_clipboard:
-            menu.addAction(self.tr("Paste Component"))
-        menu.addAction(self.tr("Create Child GameObject"))
-        menu.addAction(self.tr("Copy GameObject"))
+            icon_action(menu, "paste", self.tr("Paste Component"))
+        icon_action(menu, "add", self.tr("Create Child GameObject"))
+        menu.addSeparator()
+        icon_action(menu, "copy", self.tr("Copy GameObject"))
         if has_go_clipboard:
-            menu.addAction(self.tr("Paste GameObject as Child"))
-        menu.addAction(self.tr("Template Manager"))
-        menu.addAction(self.tr("Export as Template"))
-        menu.addAction(self.tr("Translate Name"))
-        
+            icon_action(menu, "paste", self.tr("Paste GameObject as Child"))
+        menu.addSeparator()
+        icon_action(menu, "template", self.tr("Template Manager"))
+        icon_action(menu, "export", self.tr("Export as Template"))
+        menu.addSeparator()
+        icon_action(menu, "globe", self.tr("Translate Name"))
+
         parent_widget = self.viewer
         go_has_prefab = self._get_prefab_info(parent_widget, item_info, item)
-        menu.addAction(self.tr("Modify Prefab Path") if go_has_prefab else self.tr("Associate with Prefab"))
-        
-        menu.addAction(self.tr("Delete GameObject"))
+        icon_action(
+            menu, "link", self.tr("Modify Prefab Path") if go_has_prefab else self.tr("Associate with Prefab")
+        )
+
+        menu.addSeparator()
+        icon_action(menu, "delete", self.tr("Delete GameObject"), danger=True)
         action = menu.exec_(QCursor.pos())
         if(action): 
             self._process_gameobject_action(action, index)
 
     def _handle_root_menu(self, menu, index, has_go_clipboard):
-        menu.addAction(self.tr("Create GameObject"))
+        icon_action(menu, "add", self.tr("Create GameObject"))
         if has_go_clipboard:
-            menu.addAction(self.tr("Paste GameObject"))
-        menu.addAction(self.tr("Template Manager"))
+            icon_action(menu, "paste", self.tr("Paste GameObject"))
+        menu.addSeparator()
+        icon_action(menu, "template", self.tr("Template Manager"))
         action = menu.exec_(QCursor.pos())
         if action:
             self._process_root_action(action, index)
 
     def _handle_root_folders_menu(self, menu, index, has_go_clipboard):
-        menu.addAction(self.tr("Create Folder"))          
+        icon_action(menu, "new_folder", self.tr("Create Folder"))
         action = menu.exec_(QCursor.pos())
         if action:
             self._process_root_action(action, index)
 
     def _handle_folder_menu(self, menu, index, has_go_clipboard):
-        menu.addAction(self.tr("Create GameObject"))
-        menu.addAction(self.tr("Create Sub-Folder"))         
+        icon_action(menu, "add", self.tr("Create GameObject"))
+        icon_action(menu, "new_folder", self.tr("Create Sub-Folder"))
         if has_go_clipboard:
-            menu.addAction(self.tr("Paste GameObject"))
-        menu.addAction(self.tr("Delete Folder"))
-        menu.addAction(self.tr("Translate Name"))
+            icon_action(menu, "paste", self.tr("Paste GameObject"))
+        menu.addSeparator()
+        icon_action(menu, "globe", self.tr("Translate Name"))
+        menu.addSeparator()
+        icon_action(menu, "delete", self.tr("Delete Folder"), danger=True)
         action = menu.exec_(QCursor.pos())
         if action:
             self._process_folder_action(action, index)
@@ -543,7 +576,7 @@ class AdvancedTreeView(QTreeView):
             return
             
         actions = {}
-        add_action = menu.addAction(self.tr("Add Element..."))
+        add_action = icon_action(menu, "add", self.tr("Add Element..."))
         actions[add_action] = lambda: self.add_array_element(
             index, item_info['array_type'], item_info['data_obj'], item
         )
@@ -555,12 +588,14 @@ class AdvancedTreeView(QTreeView):
             
             elements_count = clipboard.get_elements_count_from_clipboard(self)
             if elements_count > 1:
-                paste_action = menu.addAction(self.tr("Paste Group ({} elements)").format(elements_count))
+                paste_action = icon_action(
+                    menu, "paste", self.tr("Paste Group ({} elements)").format(elements_count)
+                )
                 actions[paste_action] = lambda: self.paste_array_elements(
                     index, item_info['array_type'], item_info['data_obj'], item
                 )
             else: 
-                paste_action = menu.addAction(self.tr("Paste Element"))
+                paste_action = icon_action(menu, "paste", self.tr("Paste Element"))
                 actions[paste_action] = lambda: self.paste_array_element(
                     index, item_info['data_obj'], item
                 )
@@ -583,21 +618,25 @@ class AdvancedTreeView(QTreeView):
         selected_indices = self.get_selected_array_elements(item_info['parent_array_item'])
         
         if len(selected_indices) > 1:
-            copy_action = menu.addAction(self.tr("Copy Group ({} elements)").format(len(selected_indices)))
+            copy_action = icon_action(
+                menu, "copy", self.tr("Copy Group ({} elements)").format(len(selected_indices))
+            )
             actions[copy_action] = lambda: self.copy_array_elements(
                 item_info['parent_array_item'], selected_indices, index
             )
 
-            delete_action = menu.addAction(self.tr("Delete Group ({} elements)").format(len(selected_indices)))
+            delete_action = icon_action(
+                menu, "delete", self.tr("Delete Group ({} elements)").format(len(selected_indices)), danger=True
+            )
             actions[delete_action] = lambda: self.delete_array_elements(
                 item_info['parent_array_item'], selected_indices
             )
         else:
             item = index.internalPointer()
-            copy_action = menu.addAction(self.tr("Copy Element"))
+            copy_action = icon_action(menu, "copy", self.tr("Copy Element"))
             actions[copy_action] = lambda: self.copy_array_element(item)
 
-            delete_action = menu.addAction(self.tr("Delete Element"))
+            delete_action = icon_action(menu, "delete", self.tr("Delete Element"), danger=True)
             actions[delete_action] = lambda: self.delete_array_element(
                 item_info['parent_array_item'], item_info['element_index']
             )
@@ -606,16 +645,16 @@ class AdvancedTreeView(QTreeView):
         if element_obj.__class__.__name__ == "ObjectData" and not item_info.get("is_embedded"):
             menu.addSeparator()
             if element_obj.value == 0:
-                init_action = menu.addAction(self.tr("Initialize Object..."))
+                init_action = icon_action(menu, "add", self.tr("Initialize Object..."))
                 actions[init_action] = lambda: self._process_object_reference_action(
                     index, element_obj, action="initialize"
                 )
             else:
-                change_action = menu.addAction(self.tr("Change Object Type..."))
+                change_action = icon_action(menu, "edit", self.tr("Change Object Type..."))
                 actions[change_action] = lambda: self._process_object_reference_action(
                     index, element_obj, action="change"
                 )
-                delete_action = menu.addAction(self.tr("Delete Object"))
+                delete_action = icon_action(menu, "delete", self.tr("Delete Object"), danger=True)
                 actions[delete_action] = lambda: self._process_object_reference_action(
                     index, element_obj, action="delete"
                 )
@@ -631,16 +670,17 @@ class AdvancedTreeView(QTreeView):
 
         actions = {}
         if object_data.value == 0:
-            init_action = menu.addAction(self.tr("Initialize Object..."))
+            init_action = icon_action(menu, "add", self.tr("Initialize Object..."))
             actions[init_action] = lambda: self._process_object_reference_action(
                 index, object_data, action="initialize"
             )
         else:
-            change_action = menu.addAction(self.tr("Change Object Type..."))
+            change_action = icon_action(menu, "edit", self.tr("Change Object Type..."))
             actions[change_action] = lambda: self._process_object_reference_action(
                 index, object_data, action="change"
             )
-            delete_action = menu.addAction(self.tr("Delete Object"))
+            menu.addSeparator()
+            delete_action = icon_action(menu, "delete", self.tr("Delete Object"), danger=True)
             actions[delete_action] = lambda: self._process_object_reference_action(
                 index, object_data, action="delete"
             )
@@ -2743,9 +2783,9 @@ class AdvancedTreeView(QTreeView):
         widget = self.indexWidget(array_index)
         label = widget.findChild(QLabel)
         label.setText(
-            TreeWidgetFactory.tr(
+            TreeWidgetFactory.themed_summary(TreeWidgetFactory.tr(
                 "{name} <span style='color: #666;'>(Array: {count} items)</span>"
-            ).format(name=array_item.data[0], count=len(data_obj.values))
+            )).format(name=array_item.data[0], count=len(data_obj.values))
         )
 
         model.addChildren(array_item, children_raw)
@@ -3138,10 +3178,12 @@ class AdvancedTreeView(QTreeView):
         dialog = QDialog(self)
         dialog.setWindowTitle(self.tr("Import Options"))
         dialog.setModal(True)
-        dialog.resize(400, 200)
-        
+        dialog.setMinimumWidth(400)
+
         layout = QVBoxLayout(dialog)
-        
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
         desc_label = QLabel(self.tr("Choose whether to randomize IDs during import:"))
         desc_label.setWordWrap(True)
         layout.addWidget(desc_label)
@@ -3155,27 +3197,25 @@ class AdvancedTreeView(QTreeView):
         )
         layout.addWidget(randomize_ids)
         
-        note_label = QLabel(
+        note_label = styled_label(
             self.tr(
                 "Internal references are kept whether or not IDs are randomized."
-            )
+            ),
+            tone="subtle",
         )
         note_label.setWordWrap(True)
-        note_label.setStyleSheet("color: gray; font-size: 10px;")
         layout.addWidget(note_label)
-        
-        button_layout = QHBoxLayout()
-        cancel_button = QPushButton(self.tr("Cancel"))
-        import_button = QPushButton(self.tr("Import"))
+        layout.addStretch(1)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        import_button = buttons.button(QDialogButtonBox.Ok)
+        import_button.setText(self.tr("Import"))
         import_button.setDefault(True)
-        
-        button_layout.addWidget(cancel_button)
-        button_layout.addStretch()
-        button_layout.addWidget(import_button)
-        layout.addLayout(button_layout)
-        
-        cancel_button.clicked.connect(dialog.reject)
-        import_button.clicked.connect(dialog.accept)
+        buttons.button(QDialogButtonBox.Cancel).setText(self.tr("Cancel"))
+        layout.addWidget(buttons)
+
+        buttons.rejected.connect(dialog.reject)
+        buttons.accepted.connect(dialog.accept)
         
         if dialog.exec_() == QDialog.Accepted:
             result = RszGameObjectClipboard.import_datablock(

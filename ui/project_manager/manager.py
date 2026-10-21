@@ -8,19 +8,19 @@ from time import monotonic
 from urllib.parse import quote, unquote
 
 from PySide6.QtCore import (
-    QModelIndex, QRect, QRegularExpression, QSize, QSortFilterProxyModel,
+    QModelIndex, QRect, QRectF, QRegularExpression, QSize, QSortFilterProxyModel,
     QStringListModel,
     QT_TRANSLATE_NOOP, QTimer, Qt, QUrl,
     qInstallMessageHandler,
 )
 from PySide6.QtGui import (
-    QColor, QDesktopServices, QPainter, QPen, QStandardItem,
+    QAbstractFileIconProvider, QColor, QDesktopServices, QPainter, QPen, QStandardItem,
     QStandardItemModel,
 )
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QDialogButtonBox,
-    QDockWidget, QFileDialog, QFileSystemModel, QFrame, QHeaderView,
-    QHBoxLayout, QLabel, QLineEdit, QMenu, QMessageBox, QProgressBar,
+    QDockWidget, QFileDialog, QFileSystemModel, QFrame, QGridLayout, QHeaderView,
+    QLabel, QLineEdit, QMenu, QMessageBox, QProgressBar,
     QPushButton, QSizePolicy, QStyle, QTextEdit, QToolButton, QTreeView,
     QVBoxLayout, QWidget,
 )
@@ -33,7 +33,10 @@ lazy from services.file_operations import FileOperationError, FolderFileOperatio
 lazy from tools.fluffy_exporter import create_fluffy_zip
 lazy from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
 lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.editor_widgets import ElidedLabel, editor_strip, styled_label, tool_button
+lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
+lazy from ui.styles import current_colors, set_style_role
 lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER, application_root
 lazy from utils.resource_file_utils import resource_key
 
@@ -91,34 +94,38 @@ def _safe_path(path, root=None):
 __all__ = ["ProjectManager"]  
 
 class _LoadingSpinner(QWidget):
-    def __init__(self, parent: QWidget | None = None, size: int = 34):
+    def __init__(self, parent: QWidget | None = None, size: int = 28):
         super().__init__(parent)
         self._angle = 0
         self._timer = QTimer(self)
+        self._timer.setInterval(16)
         self._timer.timeout.connect(self._step)
-        self._timer.start(16)
         self.setFixedSize(size, size)
 
     def sizeHint(self) -> QSize:
         return self.size()
+
+    def showEvent(self, event):
+        self._timer.start()
+        super().showEvent(event)
+
+    def hideEvent(self, event):
+        self._timer.stop()
+        super().hideEvent(event)
 
     def _step(self):
         self._angle = (self._angle + 12) % 360
         self.update()
 
     def paintEvent(self, _event):
+        colors = current_colors()
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        r = self.rect().adjusted(4, 4, -4, -4)
-
-        bg_pen = QPen(QColor(255, 255, 255, 45), 3)
-        p.setPen(bg_pen)
+        r = QRectF(self.rect()).adjusted(3, 3, -3, -3)
+        p.setPen(QPen(QColor(colors["border"]), 2.5))
         p.drawEllipse(r)
-
-        fg_pen = QPen(QColor(120, 200, 255, 235), 3)
-        fg_pen.setCapStyle(Qt.RoundCap)
-        p.setPen(fg_pen)
-        p.drawArc(r, int((90 - self._angle) * 16), int(-110 * 16))
+        p.setPen(QPen(QColor(colors["accent"]), 2.5))
+        p.drawArc(r, int((90 - self._angle) * 16), int(-100 * 16))
 
 
 def _read_project_sources(config) -> dict:
@@ -142,6 +149,59 @@ class _ProjectFilesProxy(QSortFilterProxyModel):
             if name in (PROJECT_CONFIG_NAME, BOOKMARKS_PROJECT_NAME, PROJECT_METADATA_FOLDER):
                 return False
         return True
+
+
+_DECORATION_ROLE = int(Qt.DecorationRole)
+
+
+class _LineIconFileSystemModel(QFileSystemModel):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        # The base provider skips the shell icon lookups this model would replace anyway.
+        self._icon_provider = QAbstractFileIconProvider()
+        self.setIconProvider(self._icon_provider)
+        self._icons = (line_icon("file"), line_icon("folder"))
+
+    def data(self, index, role=Qt.DisplayRole):
+        # Views call this for every role of every painted row: other roles leave before any other Python work.
+        if role != _DECORATION_ROLE or index.column():
+            return super().data(index, role)
+        return self._icons[self.isDir(index)]
+
+
+class _EmptyState(QWidget):
+    def __init__(self, icon_name: str, parent=None):
+        super().__init__(parent)
+        self._icon_name = icon_name
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setAttribute(Qt.WA_StyledBackground, True)
+        set_style_role(self, surface="view")
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(16, 16, 16, 16)
+        lay.setSpacing(8)
+        lay.addStretch(1)
+        self._icon = QLabel(self)
+        self._icon.setAlignment(Qt.AlignCenter)
+        lay.addWidget(self._icon)
+        self._label = styled_label(parent=self, tone="muted")
+        self._label.setAlignment(Qt.AlignCenter)
+        self._label.setWordWrap(True)
+        lay.addWidget(self._label)
+        self.button = QPushButton(self)
+        self.button.setProperty("compact", True)
+        lay.addWidget(self.button, 0, Qt.AlignHCenter)
+        lay.addStretch(2)
+
+    def setText(self, text: str) -> None:
+        self._label.setText(text)
+
+    def text(self) -> str:
+        return self._label.text()
+
+    def showEvent(self, event):
+        icon = line_icon(self._icon_name, current_colors()["text_subtle"])
+        self._icon.setPixmap(icon.pixmap(QSize(24, 24), self.devicePixelRatioF()))
+        super().showEvent(event)
 
 
 class ProjectManager(QDockWidget):
@@ -285,93 +345,99 @@ class ProjectManager(QDockWidget):
         c = QWidget(self)
         c.setObjectName("projectBrowserBody")
         self.setWidget(c)
+        # Views sit flush with the dock edges, under the line closing the toolbar above them.
+        c.setStyleSheet("QWidget#projectBrowserBody QTreeView { border: none; }")
         body_lay = QVBoxLayout(c)
         body_lay.setContentsMargins(0, 0, 0, 0)
         body_lay.setSpacing(0)
-        self.view_rail = ViewRail(
-            c,
-            accent_provider=lambda: QColor(weak_self().app_win.settings.get("tree_highlight_color", "#00aaff")),
+
+        self.project_bar, project_lay = editor_strip(margins=(8, 3, 4, 3), spacing=2)
+        self.project_bar.setAttribute(Qt.WA_StyledBackground, True)
+        self.project_label = ElidedLabel(self.project_bar)
+        set_style_role(self.project_label, heading="panel")
+        project_lay.addWidget(self.project_label, 1)
+        self.btn_conf = tool_button(
+            "settings",
+            self.tr("Fluffy Mod Manager package settings (mod name, author, description, screenshot)"),
+            self._proj_settings,
+            parent=self.project_bar,
         )
+        project_lay.addWidget(self.btn_conf)
+        export_menu = QMenu(self.project_bar)
+        export_menu.setToolTipsVisible(True)
+        self.btn_zip = export_menu.addAction(self.tr("Export Fluffy ZIP"), self._export_zip)
+        self.btn_zip.setToolTip(self.tr("Build a mod package (ZIP with modinfo.ini) to install with Fluffy Mod Manager"))
+        self.btn_pak = export_menu.addAction(self.tr("Export .PAK"), self._export_mod)
+        self.btn_pak.setToolTip(self.tr("Build a native .pak mod to copy into the game's game folder (no mod manager)"))
+        self.btn_export = QToolButton(self.project_bar)
+        self.btn_export.setIcon(line_icon("export"))
+        self.btn_export.setText(self.tr("Export"))
+        self.btn_export.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.btn_export.setToolTip(self.tr("Build the mod as a Fluffy Mod Manager ZIP or a native .PAK"))
+        self.btn_export.setMenu(export_menu)
+        self.btn_export.setPopupMode(QToolButton.InstantPopup)
+        project_lay.addWidget(self.btn_export)
+        body_lay.addWidget(self.project_bar)
+
+        self.view_rail = ViewRail(c)
         body_lay.addWidget(self.view_rail)
         page = QWidget(c)
         body_lay.addWidget(page, 1)
         lay = QVBoxLayout(page)
-        lay.setContentsMargins(2,2,2,2)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
 
-        # Top: path display + browse (contextual for Unpacked vs PAK)
-        path_bar = QHBoxLayout()
-        lay.addLayout(path_bar)
-        self.path_label = QLabel()
-        # Ignored: long paths must clip instead of forcing the dock wider
-        self.path_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        path_bar.addWidget(self.path_label, 1)
-        self.path_label.setMinimumSize(20, 20)
-        self.btn_browse = QPushButton(self.tr("…"), clicked=self._browse)
-        self.btn_browse.setProperty("compact", True)
-        path_bar.addWidget(self.btn_browse)
+        self.view_toolbar = QWidget(page)
+        self.view_toolbar.setObjectName("projectBrowserToolbar")
+        self.view_toolbar.setAttribute(Qt.WA_StyledBackground, True)
+        set_style_role(self.view_toolbar, surface="section")
+        toolbar_lay = QVBoxLayout(self.view_toolbar)
+        toolbar_lay.setContentsMargins(6, 4, 6, 6)
+        toolbar_lay.setSpacing(4)
+        lay.addWidget(self.view_toolbar)
 
-        # PAK controls (visible on the PAK tab only)
-        pak_bar = QHBoxLayout()
-        lay.addLayout(pak_bar)
-        self.btn_scan_paks = QPushButton(self.tr("Scan"), clicked=self._scan_paks)
-        self.btn_scan_paks.setProperty("compact", True)
-        self.btn_scan_paks.setToolTip(self.tr("Scan game folder for .pak files"))
-        pak_bar.addWidget(self.btn_scan_paks)
-        self.btn_load_list = QPushButton(self.tr("…"), clicked=self._choose_pak_list)
-        self.btn_load_list.setProperty("compact", True)
-        self.btn_load_list.setToolTip(self.tr("Load .list/.txt file listing PAK contents"))
-        pak_bar.addWidget(self.btn_load_list)
-        self.pak_list_label = QLabel()
-        self.pak_list_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        self.pak_list_label.setMinimumSize(10, 20)
-        pak_bar.addWidget(self.pak_list_label, 1)
-        self._mod_paks_found = False
-        self.mod_warning = QLabel("")
-        self.mod_warning.setWordWrap(True)
-        self.mod_warning.setStyleSheet(
-            "color: #ff6b6b; font-weight: 600; background: rgba(255,80,80,0.10); "
-            "border: 1px solid rgba(255,80,80,0.35); border-radius: 4px; padding: 6px 8px;"
+        sources = QGridLayout()
+        sources.setContentsMargins(0, 0, 0, 0)
+        sources.setHorizontalSpacing(6)
+        sources.setVerticalSpacing(2)
+        sources.setColumnStretch(1, 1)
+        toolbar_lay.addLayout(sources)
+        self.path_caption = styled_label(parent=self.view_toolbar, tone="muted")
+        sources.addWidget(self.path_caption, 0, 0)
+        self.path_label = ElidedLabel(self.view_toolbar, Qt.ElideMiddle)
+        sources.addWidget(self.path_label, 0, 1)
+        self.btn_scan_paks = tool_button(
+            "refresh", self.tr("Scan game folder for .pak files"), self._scan_paks, parent=self.view_toolbar
         )
+        sources.addWidget(self.btn_scan_paks, 0, 2)
+        self.btn_browse = tool_button("folder_open", slot=self._browse, parent=self.view_toolbar)
+        sources.addWidget(self.btn_browse, 0, 3)
+
+        self.pak_list_caption = styled_label(self.tr("File list"), self.view_toolbar, tone="muted")
+        sources.addWidget(self.pak_list_caption, 1, 0)
+        self.pak_list_label = ElidedLabel(self.view_toolbar, Qt.ElideMiddle)
+        sources.addWidget(self.pak_list_label, 1, 1)
+        self.btn_load_list = tool_button(
+            "list", self.tr("Load .list/.txt file listing PAK contents"), self._choose_pak_list, parent=self.view_toolbar
+        )
+        sources.addWidget(self.btn_load_list, 1, 3)
+        self._set_pak_list_display(None)
+        self._mod_paks_found = False
+        self.mod_warning = styled_label("", self.view_toolbar, banner="warning")
+        self.mod_warning.setWordWrap(True)
         self.mod_warning.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.mod_warning.hide()
-        lay.addWidget(self.mod_warning)
-        self._update_path_label()
-
-        # Project header: name + export actions (always visible)
-        self.project_bar = QWidget(c)
-        project_lay = QHBoxLayout(self.project_bar)
-        project_lay.setContentsMargins(0, 0, 0, 0)
-        project_lay.setSpacing(4)
-        self.project_label = QLabel(self.tr("<i>No project open</i>"))
-        self.project_label.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
-        project_lay.addWidget(self.project_label, 1)
-        self.btn_conf = QToolButton(self.project_bar)
-        self.btn_conf.setText("⚙")
-        self.btn_conf.setToolTip(self.tr("Fluffy Mod Manager package settings (mod name, author, description, screenshot)"))
-        self.btn_conf.clicked.connect(self._proj_settings)
-        self.btn_zip = QPushButton(self.tr("Export Fluffy ZIP"), clicked=self._export_zip)
-        self.btn_zip.setProperty("compact", True)
-        self.btn_zip.setToolTip(self.tr("Build a mod package (ZIP with modinfo.ini) to install with Fluffy Mod Manager"))
-        self.btn_pak = QPushButton(self.tr("Export .PAK"), clicked=self._export_mod)
-        self.btn_pak.setProperty("compact", True)
-        self.btn_pak.setToolTip(self.tr("Build a native .pak mod to copy into the game's game folder (no mod manager)"))
-        project_lay.addWidget(self.btn_conf)
-        project_lay.addWidget(self.btn_zip)
-        project_lay.addWidget(self.btn_pak)
-        lay.addWidget(self.project_bar)
+        toolbar_lay.addWidget(self.mod_warning)
 
         # Search bars (visible only on their respective tabs)
-        pak_search = QHBoxLayout()
-        lay.addLayout(pak_search)
         self.pak_filter_edit, self._pak_filter_timer = \
             self._build_search_bar(self._apply_pak_filter_now)
-        pak_search.addWidget(self.pak_filter_edit, 1)
-
-        proj_search = QHBoxLayout()
-        lay.addLayout(proj_search)
+        toolbar_lay.addWidget(self.pak_filter_edit)
         self.proj_filter_edit, self._proj_filter_timer = \
             self._build_search_bar(self._apply_proj_filter_now)
-        proj_search.addWidget(self.proj_filter_edit, 1)
+        toolbar_lay.addWidget(self.proj_filter_edit)
+        self._update_path_label()
+        self._set_project_label(None)
 
         self._global_bookmarks_store = BookmarksStore(bookmarks_path(), parent=self)
         self.bookmarks = BookmarksPanel(
@@ -383,11 +449,11 @@ class ProjectManager(QDockWidget):
         lay.addWidget(self.bookmarks)
         self.bookmarks.hide()
 
-        for b in (self.btn_conf, self.btn_zip, self.btn_pak):
+        for b in (self.btn_conf, self.btn_zip, self.btn_pak, self.btn_export):
             b.setEnabled(False)
-            
-        self.model_sys,  self.tree_sys  = QFileSystemModel(self), _DndTree()
-        self.model_proj, self.tree_proj = QFileSystemModel(self), _DropTree(self)
+
+        self.model_sys,  self.tree_sys  = _LineIconFileSystemModel(self), _DndTree()
+        self.model_proj, self.tree_proj = _LineIconFileSystemModel(self), _DropTree(self)
         self._proj_proxy = _ProjectFilesProxy(self)
         self._proj_proxy.setSourceModel(self.model_proj)
         self.tree_proj.hide()
@@ -397,7 +463,7 @@ class ProjectManager(QDockWidget):
         self.tree_pak.setHeaderHidden(True)
         self.tree_pak.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.tree_pak.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.tree_pak.setIndentation(8)
+        self.tree_pak.setIndentation(12)
         self.tree_pak.hide()
         self._pak_tree_model = None
         self._pak_all_paths: list[str] = []
@@ -422,20 +488,22 @@ class ProjectManager(QDockWidget):
         for tree, model in ((self.tree_sys, self.model_sys), (self.tree_proj, self._proj_proxy)):
             tree.setModel(model)
             tree.setContextMenuPolicy(Qt.CustomContextMenu)
-            tree.setIndentation(8)
+            tree.setIndentation(12)
             tree.setUniformRowHeights(True)
             tree.setAllColumnsShowFocus(True)
+            tree.setHeaderHidden(True)
             tree.hideColumn(1)
             tree.hideColumn(2)
-            
+            tree.hideColumn(3)
+
             hdr = tree.header()
             hdr.setSectionResizeMode(0, QHeaderView.Stretch)
-            hdr.setSectionResizeMode(3, QHeaderView.Fixed)
-            hdr.resizeSection(3, 100)
             hdr.setStretchLastSection(False)
             hdr.setMinimumSectionSize(100)
             hdr.sectionResized.connect(self._on_section_resized)
 
+        for tree in (self.tree_sys, self.tree_proj, self.tree_pak):
+            tree.setTextElideMode(Qt.ElideMiddle)
         self.tree_sys .setItemDelegateForColumn(0, _ActionsDelegate(self, False))
         self.tree_proj.setItemDelegateForColumn(0, _ActionsDelegate(self, True))
         # Hide dock toggle from global context menus
@@ -469,45 +537,26 @@ class ProjectManager(QDockWidget):
         lay.addWidget(self.tree_sys)
         lay.addWidget(self.tree_proj)
         lay.addWidget(self.tree_pak)
-        self.sys_placeholder = QLabel(self.tr("Please choose unpacked game directory using the Browse button above"))
-        self.sys_placeholder.setAlignment(Qt.AlignCenter)
-        self.sys_placeholder.setWordWrap(True)
-        self.sys_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.pak_placeholder = QLabel("")
-        self.pak_placeholder.setAlignment(Qt.AlignCenter)
-        self.pak_placeholder.setWordWrap(True)
-        self.pak_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.sys_placeholder = _EmptyState("folder_open", page)
+        self.sys_placeholder.button.setText(self.tr("Choose Folder…"))
+        self.sys_placeholder.button.clicked.connect(self._browse)
+        self.pak_placeholder = _EmptyState("box", page)
+        self.pak_placeholder.button.clicked.connect(self._pak_placeholder_action)
         lay.addWidget(self.sys_placeholder)
         lay.addWidget(self.pak_placeholder)
 
         self.loading_overlay = QFrame(c)
-        self.loading_overlay.setStyleSheet("background-color: rgba(9, 12, 16, 118);")
+        set_style_role(self.loading_overlay, surface="view")
         self.loading_overlay.hide()
         overlay_layout = QVBoxLayout(self.loading_overlay)
-        overlay_layout.setContentsMargins(24, 24, 24, 24)
+        overlay_layout.setContentsMargins(16, 16, 16, 16)
+        overlay_layout.setSpacing(10)
         overlay_layout.addStretch(1)
-
-        self.loading_card = QFrame(self.loading_overlay)
-        self.loading_card.setStyleSheet(
-            "QFrame {"
-            "background-color: rgba(24, 28, 36, 220);"
-            "border: 1px solid rgba(255, 255, 255, 32);"
-            "border-radius: 12px;"
-            "}"
-        )
-        card_layout = QVBoxLayout(self.loading_card)
-        card_layout.setContentsMargins(26, 20, 26, 18)
-        card_layout.setSpacing(12)
-
-        self.loading_spinner = _LoadingSpinner(self.loading_card, size=36)
-        card_layout.addWidget(self.loading_spinner, alignment=Qt.AlignHCenter)
-
-        self.loading_label = QLabel(self.tr("Loading project..."), self.loading_card)
+        self.loading_spinner = _LoadingSpinner(self.loading_overlay)
+        overlay_layout.addWidget(self.loading_spinner, alignment=Qt.AlignHCenter)
+        self.loading_label = styled_label(self.tr("Loading project..."), self.loading_overlay, tone="muted")
         self.loading_label.setAlignment(Qt.AlignCenter)
-        self.loading_label.setStyleSheet("color: rgba(245, 248, 255, 230); font-size: 14px; font-weight: 600;")
-        card_layout.addWidget(self.loading_label)
-
-        overlay_layout.addWidget(self.loading_card, alignment=Qt.AlignHCenter)
+        overlay_layout.addWidget(self.loading_label)
         overlay_layout.addStretch(1)
 
         self.view_rail.currentChanged.connect(self._switch_tab)
@@ -699,21 +748,28 @@ class ProjectManager(QDockWidget):
 
     def _update_path_label(self):
         if self._active_tab == "pak":
-            self.path_label.setText(self.tr("Game folder (PAKs): {path}").format(
-                path=self.pak_dir or self.tr("<i>not set</i>")
-            ))
+            caption, path = self.tr("Game folder"), self.pak_dir
             self.btn_browse.setToolTip(self.tr("Select Game Directory (contains .pak)"))
         elif self._active_tab == "proj":
-            self.path_label.setText(self.tr("Project Directory: {path}").format(
-                path=self.project_dir or self.tr("<i>No project open</i>")
-            ))
+            caption, path = self.tr("Project folder"), self.project_dir
             self.btn_browse.setToolTip(self.tr("Change the project folder"))
         elif self._active_tab == "bm":
-            self.path_label.setText(self.tr("Bookmarks"))
+            caption, path = self.tr("Bookmarks"), None
             self.btn_browse.setToolTip(self.tr("Browse for game directory"))
         else:
-            self.path_label.setText(self.tr("Unpacked Game folder: {}").format(self.unpacked_dir or self.tr('<i>not set</i>')))
+            caption, path = self.tr("Unpacked folder"), self.unpacked_dir
             self.btn_browse.setToolTip(self.tr("Select unpacked Game folder"))
+        invalid = self._active_tab == "sys" and bool(path) and not self._check_folder(path)
+        empty_text = self.tr("No project open") if self._active_tab == "proj" else self.tr("Not set")
+        self.path_caption.setText(caption)
+        self.path_label.setText(path or empty_text)
+        self.path_label.setToolTip(path or "")
+        set_style_role(self.path_label, tone="danger" if invalid else "" if path else "subtle")
+
+    def _set_project_label(self, proj_dir) -> None:
+        self.project_label.setText(os.path.basename(proj_dir) if proj_dir else self.tr("No project open"))
+        self.project_label.setToolTip(proj_dir or "")
+        set_style_role(self.project_label, tone="" if proj_dir else "muted")
 
     def _browse(self):
         if self._active_tab == "proj":
@@ -734,10 +790,7 @@ class ProjectManager(QDockWidget):
     def _apply_unpacked_root(self, path):
         self.unpacked_dir = os.path.abspath(path)
         ok = self._check_folder(path)
-        tick,color = ("✓","green") if ok else ("✗","red")
-        self.path_label.setText(self.tr("Unpacked Game folder: <span style='color:{color}'>{tick}</span> {dir}").format(color=color, tick=tick, dir=self.unpacked_dir))
-        if self._active_tab == "proj":
-            self._update_path_label()
+        self._update_path_label()
 
         if ok:
             self.model_sys.setRootPath(self.unpacked_dir)
@@ -820,17 +873,28 @@ class ProjectManager(QDockWidget):
     def _update_placeholders(self):
         sys_ok = bool(self.unpacked_dir) and self._check_folder(self.unpacked_dir)
         if self._active_tab == "sys":
+            if not sys_ok:
+                self.sys_placeholder.setText(
+                    self.tr("Expected sub‑folder \"{}\".").format('/'.join(self._expected_native()))
+                    if self.unpacked_dir else self.tr("No unpacked game folder selected.")
+                )
             self.tree_sys.setVisible(sys_ok)
             self.sys_placeholder.setVisible(not sys_ok)
         else:
             self.sys_placeholder.setVisible(False)
         if self._active_tab == "pak":
             if not self.pak_dir:
-                self.pak_placeholder.setText(self.tr("Please choose game directory (contains .pak) using the Browse button above"))
+                self.pak_placeholder.setText(
+                    self.tr("No game folder selected. Choose the folder that contains the .pak files.")
+                )
+                self.pak_placeholder.button.setText(self.tr("Choose Folder…"))
                 self.pak_placeholder.setVisible(True)
                 self.tree_pak.setVisible(False)
             elif not self._pak_base_paths:
-                self.pak_placeholder.setText(self.tr("Please load a list using the … button above"))
+                self.pak_placeholder.setText(
+                    self.tr("No file list loaded. A .list file names the paths stored in the PAKs.")
+                )
+                self.pak_placeholder.button.setText(self.tr("Load File List…"))
                 self.pak_placeholder.setVisible(True)
                 self.tree_pak.setVisible(False)
             else:
@@ -839,10 +903,17 @@ class ProjectManager(QDockWidget):
         else:
             self.pak_placeholder.setVisible(False)
 
+    def _pak_placeholder_action(self):
+        if self.pak_dir:
+            self._choose_pak_list()
+        else:
+            self._browse()
+
     def _update_tab_controls_state(self):
         on_pak = (self._active_tab == "pak")
         on_proj = (self._active_tab == "proj")
-        for w in (self.btn_scan_paks, self.btn_load_list, self.pak_list_label,
+        self.view_toolbar.setVisible(self._active_tab != "bm")
+        for w in (self.btn_scan_paks, self.btn_load_list, self.pak_list_caption, self.pak_list_label,
                   self.pak_filter_edit):
             w.setVisible(on_pak)
             w.setEnabled(on_pak and self.tree_pak.isEnabled())
@@ -852,7 +923,8 @@ class ProjectManager(QDockWidget):
     def _build_search_bar(self, apply_now, placeholder=None):
         """Create a debounced search bar wired to *apply_now*."""
         edit = QLineEdit(self)
-        edit.setPlaceholderText(placeholder or self.tr("Search (regex) – shows flat list; clear for tree view"))
+        edit.setPlaceholderText(placeholder or self.tr("Filter (regex)"))
+        edit.setToolTip(self.tr("Search (regex) – shows flat list; clear for tree view"))
         edit.setClearButtonEnabled(True)
         timer = QTimer(self)
         timer.setSingleShot(True)
@@ -999,13 +1071,11 @@ class ProjectManager(QDockWidget):
         self._reset_project_sources()
         self._apply_bookmarks_store(proj_dir)
         self.tree_pak.setEnabled(not proj_dir)
-        for b in (self.btn_conf, self.btn_zip, self.btn_pak):
+        for b in (self.btn_conf, self.btn_zip, self.btn_pak, self.btn_export):
             b.setEnabled(bool(proj_dir))
         self.proj_filter_edit.clear()
+        self._set_project_label(proj_dir)
         if proj_dir:
-            self.project_label.setText(self.tr("<b>Project: {name}</b>").format(
-                name=os.path.basename(proj_dir)
-            ))
             self.model_proj.setRootPath(proj_dir)
             self._show_proj_tree()
             if self._restore_project_state(proj_dir):
@@ -1022,7 +1092,6 @@ class ProjectManager(QDockWidget):
             self._project_load_started_at = monotonic()
             QTimer.singleShot(120, self, lambda: self._finish_project_load(ticket, proj_dir, on_loaded))
         else:
-            self.project_label.setText(self.tr("<i>No project open</i>"))
             self._show_proj_tree()
             self._set_loading_overlay(False)
         self._update_tab_controls_state()
@@ -1110,7 +1179,7 @@ class ProjectManager(QDockWidget):
         self._mod_paks_found = modded
         if self._mod_paks_found:
             self.mod_warning.setText(self.tr(
-                "⚠ Modded PAKs detected in the game folder (mod payloads or "
+                "Modded PAKs detected in the game folder (mod payloads or "
                 "invalidated entries). Please disable your mods and rescan."
             ))
         self.mod_warning.setVisible(self._active_tab == "pak" and self._mod_paks_found)
@@ -1151,8 +1220,9 @@ class ProjectManager(QDockWidget):
         self._update_placeholders()
 
     def _set_pak_list_display(self, path: str | None):
-        self.pak_list_label.setText(os.path.basename(path) if path else "")
+        self.pak_list_label.setText(os.path.basename(path) if path else self.tr("Not loaded"))
         self.pak_list_label.setToolTip(path or "")
+        set_style_role(self.pak_list_label, tone="" if path else "subtle")
 
     def _load_pak_list_file(self, path: str, rebuild: bool = True):
         try:
@@ -1615,10 +1685,9 @@ class ProjectManager(QDockWidget):
         self.tree_proj.setModel(self._proj_proxy)
         self.tree_proj.hideColumn(1)
         self.tree_proj.hideColumn(2)
+        self.tree_proj.hideColumn(3)
         hdr = self.tree_proj.header()
         hdr.setSectionResizeMode(0, QHeaderView.Stretch)
-        hdr.setSectionResizeMode(3, QHeaderView.Fixed)
-        hdr.resizeSection(3, 100)
         hdr.setStretchLastSection(False)
         hdr.setMinimumSectionSize(100)
         self.tree_proj.setRootIndex(self._proj_proxy.mapFromSource(self.model_proj.index(self.project_dir or "")))
@@ -1667,7 +1736,7 @@ class ProjectManager(QDockWidget):
         old_model = self.model_proj
         old_model.setOption(QFileSystemModel.DontWatchForChanges, True)
 
-        self.model_proj = QFileSystemModel(self)
+        self.model_proj = _LineIconFileSystemModel(self)
         self.model_proj.setRootPath(self.project_dir or "")
         self._proj_proxy.setSourceModel(self.model_proj)
         self._show_proj_tree()
@@ -1807,10 +1876,12 @@ class ProjectManager(QDockWidget):
     def _choose_game(self) -> str | None:
         dlg = QDialog(self)
         dlg.setWindowTitle(self.tr("Select Game"))
+        dlg.setMinimumWidth(380)
         lay = QVBoxLayout(dlg)
+        lay.setSpacing(8)
 
-        info_lbl = QLabel()                  
-        info_lbl.setStyleSheet("font-weight:bold;")
+        info_lbl = QLabel()
+        info_lbl.setWordWrap(True)
         lay.addWidget(info_lbl)
 
         combo = QComboBox()
@@ -2058,7 +2129,11 @@ class ProjectManager(QDockWidget):
         dlg = QDialog(self)
         dlg.setWindowTitle(self.tr("REE.Packer output"))
         v = QVBoxLayout(dlg)
+        v.setSpacing(6)
+        status = styled_label(self.tr("Packing {name}…").format(name=pak_name), dlg, tone="muted")
+        v.addWidget(status)
         log = QTextEdit(readOnly=True, lineWrapMode=QTextEdit.NoWrap)
+        set_style_role(log, mono=True)
         v.addWidget(log)
         bar = QProgressBar()
         bar.setRange(0, 0)
@@ -2084,6 +2159,8 @@ class ProjectManager(QDockWidget):
             code, out = fut.result()
             bar.hide()
             log.append(out)
+            status.setText(self.tr("Finished") if code == 0 else self.tr("Failed"))
+            set_style_role(status, tone="success" if code == 0 else "danger")
             if code == 0:
                 self._show_export_done_dialog(
                     self.tr("Export completed.\nPAK file saved to:\n{}").format(dest_path),

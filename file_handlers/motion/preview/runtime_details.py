@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 
-lazy from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -10,6 +9,8 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+lazy from ui.styles import set_style_role
 
 from ..profiles import MotionFormatProfile
 from .entity_session import EntityMotionSession, ResolvedMotionTarget
@@ -34,9 +35,7 @@ class MotionRuntimeDebugDialog(QDialog):
         self.text = QPlainTextEdit()
         self.text.setReadOnly(True)
         self.text.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
-        self.text.setFont(
-            QFontDatabase.systemFont(QFontDatabase.SystemFont.FixedFont)
-        )
+        set_style_role(self.text, mono=True)
         layout.addWidget(self.text, 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)

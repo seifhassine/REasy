@@ -12,14 +12,20 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QPushButton,
     QSpinBox,
     QTableView,
     QVBoxLayout,
     QWidget,
 )
 
+lazy from ui.editor_widgets import styled_label, tool_button
 from .mcambank_file import ErrFlags, MotionCameraBankElement, McambankFile
+
+
+def _field_label(text: str) -> QLabel:
+    label = styled_label(text, tone="muted")
+    label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+    return label
 
 
 class MotionCameraTableModel(QAbstractTableModel):
@@ -67,6 +73,8 @@ class MotionCameraTableModel(QAbstractTableModel):
 
         entry = self._items[index.row()]
 
+        if role == Qt.TextAlignmentRole and index.column():
+            return int(Qt.AlignRight | Qt.AlignVCenter)
         if role in (Qt.DisplayRole, Qt.EditRole):
             column = index.column()
             if column == 0:
@@ -168,50 +176,62 @@ class McambankViewer(QWidget):
             self.modified_changed.emit(value)
 
     def _setup_ui(self):
+        self.setObjectName("mcambankViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
 
         header_group = QGroupBox(self.tr("Header"))
         header_layout = QGridLayout(header_group)
+        header_layout.setHorizontalSpacing(8)
+        header_layout.setVerticalSpacing(6)
 
-        header_layout.addWidget(QLabel("Version:"), 0, 0)
+        header_layout.addWidget(_field_label("Version:"), 0, 0)
         self.version_spin = QSpinBox()
         self.version_spin.setRange(0, 0xFFFF)
         self.version_spin.valueChanged.connect(self._on_version_changed)
         header_layout.addWidget(self.version_spin, 0, 1)
 
-        header_layout.addWidget(QLabel("Master Size:"), 0, 2)
+        header_layout.addWidget(_field_label("Master Size:"), 0, 2)
         self.master_size_edit = QLineEdit()
         self.master_size_edit.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.master_size_edit.setPlaceholderText("0")
+        self.master_size_edit.setMaximumWidth(160)
         self.master_size_edit.editingFinished.connect(self._on_master_size_changed)
         header_layout.addWidget(self.master_size_edit, 0, 3)
+        header_layout.setColumnStretch(4, 1)
 
-        header_layout.addWidget(QLabel("Err Flags:"), 1, 0)
+        header_layout.addWidget(_field_label("Err Flags:"), 1, 0)
         flags_widget = QWidget()
         flags_layout = QHBoxLayout(flags_widget)
         flags_layout.setContentsMargins(0, 0, 0, 0)
+        flags_layout.setSpacing(12)
         for flag, label in self.FLAG_ORDER:
             cb = QCheckBox(self.tr(label))
             cb.stateChanged.connect(self._on_err_flag_changed)
             flags_layout.addWidget(cb)
             self.flag_checkboxes[flag] = cb
         flags_layout.addStretch()
-        header_layout.addWidget(flags_widget, 1, 1, 1, 3)
+        header_layout.addWidget(flags_widget, 1, 1, 1, 4)
 
         layout.addWidget(header_group)
 
         path_group = QGroupBox(self.tr("External Resources"))
         path_layout = QGridLayout(path_group)
+        path_layout.setHorizontalSpacing(8)
+        path_layout.setVerticalSpacing(6)
+        path_layout.setColumnStretch(1, 1)
 
-        path_layout.addWidget(QLabel("User Variables:"), 0, 0)
+        path_layout.addWidget(_field_label("User Variables:"), 0, 0)
         self.uvar_edit = QLineEdit()
         self.uvar_edit.textChanged.connect(self._on_uvar_changed)
-        path_layout.addWidget(self.uvar_edit, 0, 1, 1, 3)
+        path_layout.addWidget(self.uvar_edit, 0, 1)
 
-        path_layout.addWidget(QLabel("Joint Map:"), 1, 0)
+        path_layout.addWidget(_field_label("Joint Map:"), 1, 0)
         self.jmap_edit = QLineEdit()
         self.jmap_edit.textChanged.connect(self._on_jmap_changed)
-        path_layout.addWidget(self.jmap_edit, 1, 1, 1, 3)
+        path_layout.addWidget(self.jmap_edit, 1, 1)
 
         layout.addWidget(path_group)
 
@@ -220,6 +240,15 @@ class McambankViewer(QWidget):
         self.table_model.rowsInserted.connect(self._on_model_rows_changed)
         self.table_model.rowsRemoved.connect(self._on_model_rows_changed)
 
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(2)
+        self.add_btn = tool_button("add", slot=self._on_add, text=self.tr("Add"))
+        self.del_btn = tool_button("delete", slot=self._on_delete, text=self.tr("Delete"))
+        btn_row.addWidget(self.add_btn)
+        btn_row.addWidget(self.del_btn)
+        btn_row.addStretch()
+        layout.addLayout(btn_row)
+
         self.table = QTableView()
         self.table.setModel(self.table_model)
         header = self.table.horizontalHeader()
@@ -227,21 +256,16 @@ class McambankViewer(QWidget):
         for col in range(1, len(MotionCameraTableModel.HEADERS)):
             header.setSectionResizeMode(col, QHeaderView.Interactive)
             header.resizeSection(col, 110)
+        self.table.verticalHeader().setDefaultSectionSize(24)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
-        layout.addWidget(self.table)
+        self.table.selectionModel().selectionChanged.connect(self._update_delete_button)
+        layout.addWidget(self.table, 1)
+        self._update_delete_button()
 
-        btn_row = QHBoxLayout()
-        self.add_btn = QPushButton(self.tr("Add"))
-        self.add_btn.clicked.connect(self._on_add)
-        btn_row.addWidget(self.add_btn)
-
-        self.del_btn = QPushButton(self.tr("Delete"))
-        self.del_btn.clicked.connect(self._on_delete)
-        btn_row.addWidget(self.del_btn)
-        btn_row.addStretch()
-        layout.addLayout(btn_row)
+    def _update_delete_button(self, *_args):
+        self.del_btn.setEnabled(self.table.selectionModel().hasSelection())
 
     def _populate(self):
         bank = self.handler.mcambank

@@ -1,15 +1,16 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
                               QGridLayout, QLabel, QComboBox, QCheckBox, QSizePolicy,
-                              QTreeView, QApplication, QSlider, QToolButton, QInputDialog, QMessageBox)
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer
+                              QTreeView, QApplication, QSlider, QStyle, QInputDialog, QMessageBox)
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer, QRect, QRectF
 lazy from PySide6.QtGui import (
     QDoubleValidator,
     QRegularExpressionValidator,
     QIntValidator,
     QColor,
-    QPalette,
     QFontMetrics,
     QKeySequence,
+    QPainter,
+    QPainterPath,
 )
 import uuid
 import re
@@ -19,6 +20,8 @@ import math
 
 lazy from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
 lazy from file_handlers.pyside.component_selector import ComponentSelectorDialog
+lazy from ui.editor_widgets import set_invalid, tool_button
+lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
 lazy from ui.widgets_utils import ColorPreviewButton
 lazy from utils.number_format import format_display_value, format_full_float
@@ -27,39 +30,33 @@ lazy from utils.resource_file_utils import (
 )
 
 
-_COMPONENT_LABEL_STYLE = """
-    QLabel {
-        margin: 0;
-        padding: 0;
-        border: none;
-    }
-"""
-
-_COMPONENT_INPUT_STYLE = """
-    QLineEdit {
-        margin: 0;
-        padding: 1px 2px;
-        border: 1px solid #888888;
-    }
-    QLineEdit:focus {
-        border: 1px solid #aaaaaa;
-    }
-    QLineEdit[invalid="true"] {
-        border: 1px solid red;
-    }
-"""
-
-_INVALID_BORDER_STYLE = "border: 1px solid red;"
-_INDENTED_INPUT_STYLE = "margin-left: 6px;"
-
 ADD_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Add Resource")
 OPEN_RESOURCE_TITLE = QT_TRANSLATE_NOOP("StringInput", "Open Resource")
 
+_AXIS_COLORS = {
+    "x": "#d9534f", "y": "#5cb85c", "z": "#4a8fe0", "w": "#8a8d94",
+    "r": "#d9534f", "g": "#5cb85c", "b": "#4a8fe0", "a": "#8a8d94",
+}
 
-def _set_invalid_state(widget, invalid):
-    widget.setProperty("invalid", invalid)
-    widget.style().unpolish(widget)
-    widget.style().polish(widget)
+
+class AxisLineEdit(QLineEdit):
+    def __init__(self, axis=None, parent=None):
+        super().__init__(parent)
+        color = _AXIS_COLORS.get(axis)
+        self._color = QColor(color) if color else None
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        color = self._color
+        if color is None:
+            return
+        frame = self.rect().adjusted(1, 1, -1, -1)
+        clip = QPainterPath()
+        clip.addRoundedRect(QRectF(frame), 2, 2)
+        painter = QPainter(self)
+        painter.setClipPath(clip)
+        painter.fillRect(QRect(frame.left(), frame.top(), 2, frame.height()), color)
+        painter.end()
 
 
 def _create_component_inputs(grid, components, validator_factory, input_width):
@@ -67,22 +64,20 @@ def _create_component_inputs(grid, components, validator_factory, input_width):
     last_index = len(components) - 1
     for i, comp in enumerate(components):
         label = QLabel(comp)
-        label.setFixedWidth(8)
+        label.setFixedWidth(10)
         label.setAlignment(Qt.AlignCenter)
-        label.setStyleSheet(_COMPONENT_LABEL_STYLE)
+        label.setProperty("tone", "subtle")
 
-        line_edit = QLineEdit()
+        line_edit = AxisLineEdit(comp.lower())
         line_edit.setValidator(validator_factory())
         line_edit.setFixedWidth(input_width)
-        line_edit.setFixedHeight(20)
         line_edit.setProperty("component", comp.lower())
-        line_edit.setStyleSheet(_COMPONENT_INPUT_STYLE)
 
         col_offset = (i * 3) + 2
         grid.addWidget(label, 0, col_offset)
         grid.addWidget(line_edit, 0, col_offset + 1)
         if i < last_index:
-            grid.setColumnMinimumWidth(col_offset + 2, 3)
+            grid.setColumnMinimumWidth(col_offset + 2, 4)
         inputs.append(line_edit)
     return inputs
 
@@ -196,23 +191,19 @@ class ClipboardContentError(ValueError):
 class VectorClipboardMixin:
     clipboard_precision = 8
 
-    clipboard_button_width = 44
-
-    def _create_clipboard_button(self, text, tooltip, handler):
-        button = QToolButton(self)
+    def _create_clipboard_button(self, icon_name, text, tooltip, handler):
+        button = tool_button(icon_name, tooltip, handler, parent=self)
         button.setText(text)
-        button.setToolTip(tooltip)
-        button.setFixedWidth(self.clipboard_button_width)
-        button.clicked.connect(handler)
         self.layout.addWidget(button)
         return button
 
     def _setup_clipboard_buttons(self):
+        self.layout.addSpacing(2)
         self.copy_button = self._create_clipboard_button(
-            self.tr("Copy"), self.tr("Copy values to clipboard"), self._copy_values_to_clipboard
+            "copy", self.tr("Copy"), self.tr("Copy values to clipboard"), self._copy_values_to_clipboard
         )
         self.paste_button = self._create_clipboard_button(
-            self.tr("Paste"), self.tr("Paste values from clipboard"), self._paste_values_from_clipboard
+            "paste", self.tr("Paste"), self.tr("Paste values from clipboard"), self._paste_values_from_clipboard
         )
 
     def _format_clipboard_value(self, value):
@@ -289,7 +280,7 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
         
         self.inputs = []
         for coord in self.fields:
-            line_edit = QLineEdit()
+            line_edit = AxisLineEdit(coord)
             line_edit.setValidator(QDoubleValidator())
             line_edit.setFixedWidth(self.input_width)
             line_edit.setProperty("coord", coord)
@@ -299,10 +290,10 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
 
         self._setup_clipboard_buttons()
         self.layout.addStretch()
-            
+
         if data:
             self.set_data(data)
-            
+
         for input_field in self.inputs:
             input_field.textEdited.connect(self._on_value_changed)
 
@@ -312,7 +303,7 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
         values = self._data_values()
         for input_field, val in zip(self.inputs, values):
             input_field.setText(format_full_float(val, self.precision))
-            input_field.setStyleSheet("")
+            set_invalid(input_field, False)
 
     def setValues(self, values):
         for input_field, val in zip(self.inputs, values):
@@ -329,16 +320,16 @@ class FloatVectorInput(VectorClipboardMixin, BaseValueWidget):
             new_values = tuple(self._parse_input_value(input_field) for input_field in self.inputs)
             self._set_data_values(new_values)
             for input_field in self.inputs:
-                input_field.setStyleSheet("")
+                set_invalid(input_field, False)
             self.valueChanged.emit(new_values)
             self.mark_modified()
         except ValueError:
             for input_field in self.inputs:
                 try:
                     self._parse_input_value(input_field)
-                    input_field.setStyleSheet("")
+                    set_invalid(input_field, False)
                 except ValueError:
-                    input_field.setStyleSheet(_INVALID_BORDER_STYLE)
+                    set_invalid(input_field, True)
 
     def _data_values(self):
         return tuple(getattr(self._data, field) for field in self.fields)
@@ -378,7 +369,11 @@ class GuidInput(BaseValueWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.line_edit = OverwriteGuidLineEdit(self)
-        self.line_edit.setFixedWidth(238)
+        self.line_edit.setProperty("mono", True)
+        self.line_edit.ensurePolished()
+        self.line_edit.setFixedWidth(
+            self.line_edit.fontMetrics().horizontalAdvance("0" * 36) + 18
+        )
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
         self.line_edit.textEdited.connect(self._on_text_edited)
@@ -386,19 +381,16 @@ class GuidInput(BaseValueWidget):
         self._PENDING_ATTR = "__pending_guid_state"
         self._history_anchor = None
 
-        self.gen_button = QToolButton()
+        self.layout.addSpacing(2)
+        self.gen_button = tool_button("wand", self.tr("Generate a random GUID"), self._generate_guid, parent=self)
         self.gen_button.setText(self.tr("Generate"))
-        self.gen_button.setToolTip(self.tr("Generate a random GUID"))
-        self.gen_button.setFixedWidth(60)
         self.layout.addWidget(self.gen_button)
-        self.gen_button.clicked.connect(self._generate_guid)
-        
-        self.reset_button = QToolButton()
+
+        self.reset_button = tool_button(
+            "reset", self.tr("Reset to null GUID (all zeros)"), self._reset_guid, parent=self
+        )
         self.reset_button.setText(self.tr("Reset"))
-        self.reset_button.setToolTip(self.tr("Reset to null GUID (all zeros)"))
-        self.reset_button.setFixedWidth(40)
         self.layout.addWidget(self.reset_button)
-        self.reset_button.clicked.connect(self._reset_guid)
 
     def _generate_guid(self):
         if not self._data:
@@ -422,7 +414,7 @@ class GuidInput(BaseValueWidget):
         self._data.guid_str = text
         self.valueChanged.emit(text)
         self.mark_modified()
-        self.line_edit.setStyleSheet("")
+        set_invalid(self.line_edit, False)
         self._clear_pending_guid()
         self._history_anchor = ("valid", text)
 
@@ -517,13 +509,13 @@ class GuidInput(BaseValueWidget):
             self._data.guid_str = formatted
             self.valueChanged.emit(formatted)
             self.mark_modified()
-            self.line_edit.setStyleSheet("")
+            set_invalid(self.line_edit, False)
             self._clear_pending_guid()
             self._history_anchor = ("valid", formatted)
         else:
             cursor_snapshot = self.line_edit.cursorPosition()
             self._remember_pending_guid(formatted, cursor_snapshot)
-            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
+            set_invalid(self.line_edit, True)
 
     def update_display(self):
         if not self._data:
@@ -551,9 +543,9 @@ class GuidInput(BaseValueWidget):
             self.line_edit.apply_text(display_text, cursor=cursor_pos, record_history=False)
 
         if is_valid:
-            self.line_edit.setStyleSheet("")
+            set_invalid(self.line_edit, False)
         else:
-            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
+            set_invalid(self.line_edit, True)
 
 class OverwriteGuidLineEdit(QLineEdit):
     def __init__(self, guid_widget, parent=None):
@@ -672,9 +664,9 @@ class NumberInput(BaseValueWidget):
                 if old_value != value:
                     self.valueChanged.emit(value)
                     self.mark_modified()
-                self.line_edit.setStyleSheet("")
+                set_invalid(self.line_edit, False)
         except ValueError:
-            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
+            set_invalid(self.line_edit, True)
 
 class F32Input(NumberInput):
     def __init__(self, parent=None):
@@ -738,8 +730,8 @@ class IntVectorInput(BaseValueWidget):
         super().__init__(parent)
         
         self.inputs = []
-        for _ in self.fields:
-            line_edit = QLineEdit()
+        for axis in self.fields:
+            line_edit = AxisLineEdit(axis)
             validator = QIntValidator()
             line_edit.setValidator(validator)
             line_edit.setMaxLength(self.max_length)
@@ -784,10 +776,10 @@ class IntVectorInput(BaseValueWidget):
             for input_field in self.inputs:
                 try:
                     value = self._parse_input_value(input_field.text())
-                    input_field.setStyleSheet("")
+                    set_invalid(input_field, False)
                         
                 except ValueError:
-                    input_field.setStyleSheet(_INVALID_BORDER_STYLE)
+                    set_invalid(input_field, True)
                     valid_input = False
                     value = 0
                     
@@ -979,17 +971,19 @@ class BoundsInput(BaseValueWidget):
         for i, name in enumerate(self._COMPONENTS, 1):
             hdr = QLabel(name)
             hdr.setAlignment(Qt.AlignCenter)
+            hdr.setProperty("tone", "subtle")
             grid.addWidget(hdr, 0, i)
 
         def make_row(row_idx: int, title: str):
             lbl = QLabel(title)
             lbl.setFixedWidth(self._LABEL_W)
             lbl.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            lbl.setProperty("tone", "muted")
             grid.addWidget(lbl, row_idx, 0)
 
             edits = []
-            for col in range(1, len(self._COMPONENTS) + 1):
-                le = QLineEdit()
+            for col, axis in enumerate(self._COMPONENTS.lower(), 1):
+                le = AxisLineEdit(axis)
                 le.setValidator(QDoubleValidator())
                 le.setFixedWidth(self._FIELD_W)
                 le.setAlignment(Qt.AlignLeft)
@@ -1085,13 +1079,15 @@ class OBBInput(BaseValueWidget):
         
         labels = ['AxisX', 'AxisY', 'AxisZ', 'Center', 'Extent']
         for i, label in enumerate(labels):
-            grid.addWidget(QLabel(label), i, 0, alignment=Qt.AlignRight)
-            
+            row_label = QLabel(label)
+            row_label.setProperty("tone", "muted")
+            grid.addWidget(row_label, i, 0, alignment=Qt.AlignRight)
+
         self.inputs = []
         for row in range(5):
             row_inputs = []
-            for col in range(4):
-                line_edit = QLineEdit()
+            for col, axis in enumerate("xyzw"):
+                line_edit = AxisLineEdit(axis)
                 line_edit.setValidator(QDoubleValidator())
                 line_edit.setFixedWidth(100)
                 line_edit.setAlignment(Qt.AlignLeft)
@@ -1163,28 +1159,15 @@ class HexBytesInput(BaseValueWidget):
         self.max_size = 0
         self.overwrite_mode = True 
         self.edit_second_digit = False
-        
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(2)
-        
+
         self.text_field = OverwriteHexLineEdit(self, hex_widget=self)
-        font = self.text_field.font()
-        font.setFamily("Courier New")
-        font.setPointSize(9) 
-        self.text_field.setFont(font)
-        self.text_field.textEdited.connect(self._on_text_edited) 
+        self.text_field.setProperty("mono", True)
+        self.text_field.ensurePolished()
+        self.text_field.textEdited.connect(self._on_text_edited)
         self.text_field.setMinimumWidth(15)
-        
-        
-        layout.addWidget(self.text_field, 1) 
-        
-        self.normal_palette = self.text_field.palette()
-        self.warning_palette = QPalette(self.normal_palette)
-        self.warning_palette.setColor(QPalette.Base, QColor(255, 240, 240)) 
-        
-        self.setLayout(layout)
-        
+        self.layout.addWidget(self.text_field)
+        self.layout.addStretch(1)
+
         size_policy = self.sizePolicy()
         size_policy.setHorizontalPolicy(QSizePolicy.Expanding)
         self.setSizePolicy(size_policy)
@@ -1211,17 +1194,10 @@ class HexBytesInput(BaseValueWidget):
                 self.text_field.setCursorPosition(cursor_pos) 
             self.text_field.blockSignals(False)
         
-            current_size = len(raw_bytes)
-            
             if self.max_size > 0:
                 char_width = self.text_field.fontMetrics().averageCharWidth()
-                width = (self.max_size * 3.05) * char_width 
-                self.text_field.setMinimumWidth(min(800, max(100, width))) 
-                
-            if self.max_size > 0 and current_size >= self.max_size:
-                self.text_field.setPalette(self.warning_palette)
-            else:
-                self.text_field.setPalette(self.normal_palette)
+                width = (self.max_size * 3.05) * char_width + 14
+                self.text_field.setMinimumWidth(min(800, max(100, width)))
         except Exception as e:
             print(f"Error displaying raw bytes data: {e}")
             self.text_field.setText(self.tr("[Error displaying data]"))
@@ -1359,31 +1335,27 @@ class StringInput(BaseValueWidget):
             self.line_edit.blockSignals(True)
             self.line_edit.setText(self._data.value.rstrip('\x00'))
             self.line_edit.blockSignals(False)
-            fm = QFontMetrics(self.line_edit.font())
-            text_width = fm.horizontalAdvance(self._data.value) + 10
-            new_width = max(text_width, self.minimum_width)
-            self.line_edit.setFixedWidth(new_width)
-        
+            self._fit_width(self._data.value)
+
         if isinstance(self._data, ResourceData):
             if self.resource_indicator is None:
-                self.resource_indicator = QLabel(self.tr("Resource"))
-                self.resource_indicator.setStyleSheet("color: yellow; padding: 2px; border-radius: 2px;")
-                self.layout.addWidget(self.resource_indicator)
-            
+                # Inside the field, so resource paths keep the value column.
+                self.resource_indicator = self.line_edit.addAction(line_icon("file"), QLineEdit.LeadingPosition)
+                self.resource_indicator.setToolTip(self.tr("Resource"))
+                self._fit_width(self._data.value)
+
             if self.open_button is None:
-                self.open_button = QToolButton()
+                self.open_button = tool_button(
+                    "external", self.tr("Open resource file"), self._on_open_clicked, parent=self
+                )
                 self.open_button.setText(self.tr("Open"))
-                self.open_button.setToolTip(self.tr("Open resource file"))
-                self.open_button.setFixedWidth(60)
-                self.open_button.clicked.connect(self._on_open_clicked)
                 self.layout.addWidget(self.open_button)
-            
+
             if self.add_open_button is None:
-                self.add_open_button = QToolButton()
+                self.add_open_button = tool_button(
+                    "new_file", self.tr("Add resource file to project"), self._on_add_clicked, parent=self
+                )
                 self.add_open_button.setText(self.tr("Add"))
-                self.add_open_button.setToolTip(self.tr("Add resource file to project"))
-                self.add_open_button.setFixedWidth(50)
-                self.add_open_button.clicked.connect(self._on_add_clicked)
                 self.layout.addWidget(self.add_open_button)
             
             self.layout.addStretch()
@@ -1621,10 +1593,16 @@ class StringInput(BaseValueWidget):
         self._data.value = text
         self.valueChanged.emit(text)
         self.mark_modified()
-        fm = QFontMetrics(self.line_edit.font())
-        text_width = fm.horizontalAdvance(text) + 10
-        self.line_edit.setFixedWidth(max(text_width, self.minimum_width))
+        self._fit_width(text)
         self._sync_bound_node_name(text)
+
+    def _fit_width(self, text):
+        width = QFontMetrics(self.line_edit.font()).horizontalAdvance(text) + 18
+        if self.resource_indicator is not None:
+            style = self.line_edit.style()
+            icon_size = style.pixelMetric(QStyle.PM_LineEditIconSize, None, self.line_edit)
+            width += icon_size + 6 + style.pixelMetric(QStyle.PM_LineEditIconMargin, None, self.line_edit)
+        self.line_edit.setFixedWidth(max(width, self.minimum_width))
 
     def _sync_bound_node_name(self, text):
         label = getattr(
@@ -1687,10 +1665,10 @@ class UserDataInput(BaseValueWidget):
         self.line_edit.setMinimumWidth(200) 
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
-        self.modify_button = QToolButton()
+        self.modify_button = tool_button(
+            "edit", self.tr("Edit userdata string and instance type"), self._on_modify_clicked, parent=self
+        )
         self.modify_button.setText(self.tr("Modify…"))
-        self.modify_button.setToolTip(self.tr("Edit userdata string and instance type"))
-        self.modify_button.clicked.connect(self._on_modify_clicked)
         self.layout.addWidget(self.modify_button)
         self.layout.addStretch()
         self.line_edit.textChanged.connect(self._on_value_changed)
@@ -1806,16 +1784,6 @@ class BoolInput(BaseValueWidget):
         self.checkbox = QCheckBox()
         self.checkbox.setText("")
         self.checkbox.setFixedWidth(20)
-        self.checkbox.setStyleSheet("""
-            QCheckBox {
-                background-color: transparent;
-                padding: 2px;
-            }
-            QCheckBox::indicator {
-                width: 16px;
-                height: 16px;
-            }
-        """)
         self.layout.addWidget(self.checkbox)
         self.layout.addStretch()
         self.checkbox.stateChanged.connect(self._on_state_changed)
@@ -1836,34 +1804,28 @@ class BaseRangeInput(BaseValueWidget):
     def __init__(self, data=None, parent=None):
         super().__init__(parent)
         
-        self.layout.setSpacing(4)
-        
+        self.layout.setSpacing(10)
+
         self.inputs = []
-        for i, (name, property_name) in enumerate(
-            [(self.tr("Min"), "min"), (self.tr("Max"), "max")]
+        for name, property_name in (
+            (self.tr("Min"), "min"), (self.tr("Max"), "max")
         ):
             container = QWidget()
             container_layout = QHBoxLayout(container)
             container_layout.setContentsMargins(0, 0, 0, 0)
-            container_layout.setSpacing(2)
-            
+            container_layout.setSpacing(4)
+
             label = QLabel(name)
-            label.setFixedWidth(33)
-            label.setStyleSheet("padding-right: 2px;")
+            label.setProperty("tone", "muted")
             container_layout.addWidget(label)
-            
+
             line_edit = QLineEdit()
             line_edit.setValidator(self._create_validator())
             line_edit.setFixedWidth(80)
             line_edit.setProperty("name", property_name)
             line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet("margin-left: 2px;")
             container_layout.addWidget(line_edit)
-            
-            if i == 0:
-                container.setFixedWidth(120)
-                container.setStyleSheet("margin-right: 6px;")
-            
+
             self.layout.addWidget(container)
             self.inputs.append(line_edit)
         
@@ -1946,6 +1908,14 @@ class RangeIInput(BaseRangeInput):
     def _fallback_values(self):
         return (0, 0)
 
+class _EnumComboBox(QComboBox):
+    def showPopup(self):
+        view = self.view()
+        content = view.sizeHintForColumn(0) + view.verticalScrollBar().sizeHint().width() + 8
+        view.setMinimumWidth(max(self.width(), content))
+        super().showPopup()
+
+
 class EnumInput(BaseValueWidget):
     valueChanged = Signal(int)
     
@@ -1958,14 +1928,15 @@ class EnumInput(BaseValueWidget):
         self.line_edit.setAlignment(Qt.AlignLeft)
         self.layout.addWidget(self.line_edit)
         
-        self.combo_box = QComboBox()
+        self.combo_box = _EnumComboBox()
         self.combo_box.setFixedWidth(150)
-        self.combo_box.setMaxVisibleItems(15) 
-        self.combo_box.view().setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded) 
+        self.combo_box.setMaxVisibleItems(15)
+        self.combo_box.view().setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self.layout.addWidget(self.combo_box)
-        
+
         self.line_edit.textChanged.connect(self._on_text_changed)
         self.combo_box.currentIndexChanged.connect(self._on_combo_changed)
+        self.combo_box.currentTextChanged.connect(self.combo_box.setToolTip)
         
     def set_enum_values(self, enum_values):
         self.enum_values = enum_values
@@ -1999,8 +1970,9 @@ class EnumInput(BaseValueWidget):
                 
         if not found_match:
             self.combo_box.setCurrentIndex(-1)
-            
+
         self.combo_box.blockSignals(False)
+        self.combo_box.setToolTip(self.combo_box.currentText())
                 
     def update_display(self):
         if not self._data:
@@ -2028,9 +2000,9 @@ class EnumInput(BaseValueWidget):
                 
                 self.update_combo_selection()
                 
-            self.line_edit.setStyleSheet("")
+            set_invalid(self.line_edit, False)
         except ValueError:
-            self.line_edit.setStyleSheet(_INVALID_BORDER_STYLE)
+            set_invalid(self.line_edit, True)
             
     def _on_combo_changed(self, index):
         if not self._data or index < 0 or index >= len(self.enum_values):
@@ -2064,10 +2036,10 @@ class Mat4Input(BaseValueWidget):
         self.inputs = []
         for row in range(4):
             row_inputs = []
-            for col in range(4):
-                line_edit = QLineEdit()
+            for col, axis in enumerate("xyzw"):
+                line_edit = AxisLineEdit(axis)
                 line_edit.setValidator(QDoubleValidator())
-                line_edit.setFixedWidth(75) 
+                line_edit.setFixedWidth(75)
                 line_edit.setFixedHeight(24)
                 line_edit.setAlignment(Qt.AlignLeft)
                 grid.addWidget(line_edit, row, col)
@@ -2151,7 +2123,7 @@ class ColorInput(BaseValueWidget):
         grid.setColumnMinimumWidth(1, 6) 
 
         self.inputs = _create_component_inputs(
-            grid, ["R", "G", "B", "A"], lambda: QIntValidator(0, 255), 28
+            grid, ["R", "G", "B", "A"], lambda: QIntValidator(0, 255), 42
         )
         
         self.layout.addLayout(grid)
@@ -2261,7 +2233,7 @@ class ColorInput(BaseValueWidget):
                 value = 0
 
             values.append(value)
-            _set_invalid_state(input_field, not valid)
+            set_invalid(input_field, not valid)
             if not valid:
                 input_field.setText(format_display_value(value))
         return values, valid
@@ -2291,7 +2263,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
         grid.setColumnMinimumWidth(1, 6)
 
         self.inputs = _create_component_inputs(
-            grid, ["R", "G", "B"], lambda: _double_validator(6), 60
+            grid, ["R", "G", "B"], lambda: _double_validator(6), 72
         )
         
         self.layout.addLayout(grid)
@@ -2326,7 +2298,7 @@ class Vec3ColorInput(VectorClipboardMixin, BaseValueWidget):
                 
                 values.append(value)
                 
-                _set_invalid_state(input_field, not valid)
+                set_invalid(input_field, not valid)
                 
                 if not valid:
                     input_field.setText(format_display_value(value))
@@ -2431,43 +2403,34 @@ class CapsuleInput(BaseValueWidget):
         super().__init__(parent)
         
         grid = QGridLayout()
-        grid.setSpacing(4) 
+        grid.setSpacing(4)
         grid.setAlignment(Qt.AlignLeft)
         self.layout.addLayout(grid)
-        
-        grid.addWidget(QLabel(self.tr("Start:")), 0, 0, alignment=Qt.AlignRight)
-        grid.addWidget(QLabel(self.tr("End:")), 1, 0, alignment=Qt.AlignRight)
-        grid.addWidget(QLabel(self.tr("Radius:")), 2, 0, alignment=Qt.AlignRight)
-        
+
+        for row, title in enumerate((self.tr("Start:"), self.tr("End:"), self.tr("Radius:"))):
+            row_label = QLabel(title)
+            row_label.setProperty("tone", "muted")
+            grid.addWidget(row_label, row, 0, alignment=Qt.AlignRight)
+
         self.start_inputs = []
-        for i, coord in enumerate(['X', 'Y', 'Z']):
-            grid.addWidget(QLabel(coord), 0, (i*2)+1, alignment=Qt.AlignRight | Qt.AlignVCenter)
-            
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(80)
-            line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet(_INDENTED_INPUT_STYLE)
-            grid.addWidget(line_edit, 0, (i*2)+2)
-            self.start_inputs.append(line_edit)
-            
         self.end_inputs = []
-        for i, coord in enumerate(['X', 'Y', 'Z']):
-            grid.addWidget(QLabel(coord), 1, (i*2)+1, alignment=Qt.AlignRight | Qt.AlignVCenter)
-            
-            line_edit = QLineEdit()
-            line_edit.setValidator(QDoubleValidator())
-            line_edit.setFixedWidth(80)
-            line_edit.setAlignment(Qt.AlignLeft)
-            line_edit.setStyleSheet(_INDENTED_INPUT_STYLE)
-            grid.addWidget(line_edit, 1, (i*2)+2)
-            self.end_inputs.append(line_edit)
-            
+        for row, inputs in enumerate((self.start_inputs, self.end_inputs)):
+            for i, coord in enumerate(['X', 'Y', 'Z']):
+                axis_label = QLabel(coord)
+                axis_label.setProperty("tone", "subtle")
+                grid.addWidget(axis_label, row, (i*2)+1, alignment=Qt.AlignRight | Qt.AlignVCenter)
+
+                line_edit = AxisLineEdit(coord.lower())
+                line_edit.setValidator(QDoubleValidator())
+                line_edit.setFixedWidth(80)
+                line_edit.setAlignment(Qt.AlignLeft)
+                grid.addWidget(line_edit, row, (i*2)+2)
+                inputs.append(line_edit)
+
         self.radius_input = QLineEdit()
         self.radius_input.setValidator(QDoubleValidator())
         self.radius_input.setFixedWidth(80)
         self.radius_input.setAlignment(Qt.AlignLeft)
-        self.radius_input.setStyleSheet(_INDENTED_INPUT_STYLE)
         grid.addWidget(self.radius_input, 2, 2)
         
         self.layout.addStretch()

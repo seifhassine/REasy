@@ -4,9 +4,12 @@ from pathlib import Path
 from PySide6.QtCore    import Qt
 from PySide6.QtGui     import QPixmap
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox
+    QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QDialogButtonBox,
+    QToolButton, QFileDialog, QMessageBox, QFormLayout, QCheckBox
 )
+
+lazy from ui.editor_widgets import styled_label
+lazy from ui.icons import line_icon
 
 lazy from .project_config import load_project_config, save_project_config
 
@@ -20,7 +23,10 @@ class ProjectSettingsDialog(QDialog):
         self.cfg = load_project_config(project_dir)
 
         layout = QVBoxLayout(self)
+        layout.setSpacing(10)
         form = QFormLayout()
+        form.setHorizontalSpacing(10)
+        form.setVerticalSpacing(6)
         layout.addLayout(form)
 
         fields = (
@@ -40,28 +46,27 @@ class ProjectSettingsDialog(QDialog):
         form.addRow(self.bundle_chk)
 
         pic_layout = QHBoxLayout()
+        pic_layout.setSpacing(4)
         self.pic_edit = QLineEdit(self.cfg.get("screenshot", ""))
-        self.pic_btn  = QPushButton("…")
+        self.pic_btn  = QToolButton()
+        self.pic_btn.setIcon(line_icon("folder_open"))
+        self.pic_btn.setToolTip(self.tr("Select Screenshot"))
         self.pic_btn.clicked.connect(self._choose_image)
         pic_layout.addWidget(self.pic_edit)
         pic_layout.addWidget(self.pic_btn)
         form.addRow(self.tr("Screenshot:"), pic_layout)
 
-        self.preview = QLabel(alignment=Qt.AlignCenter)
+        self.preview = styled_label(surface="recessed", tone="subtle")
+        self.preview.setAlignment(Qt.AlignCenter)
         self.preview.setFixedSize(160, 90)
-        layout.addWidget(self.preview)
+        form.addRow("", self.preview)
         self._reload_preview()
 
-        # Buttons
-        btns = QHBoxLayout()
-        layout.addLayout(btns)
-        btn_ok = QPushButton(self.tr("OK"))
-        btn_ok.clicked.connect(self._save)
-        btn_cancel = QPushButton(self.tr("Cancel"))
-        btn_cancel.clicked.connect(self.reject)
-        btns.addStretch(1)
-        btns.addWidget(btn_ok)
-        btns.addWidget(btn_cancel)
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self._save)
+        buttons.rejected.connect(self.reject)
+        layout.addStretch(1)
+        layout.addWidget(buttons)
 
     def _choose_image(self):
         fn, _ = QFileDialog.getOpenFileName(
@@ -96,6 +101,7 @@ class ProjectSettingsDialog(QDialog):
                 Qt.SmoothTransformation))
         else:
             self.preview.clear()
+            self.preview.setText(self.tr("No screenshot"))
 
     def _save(self):
         self.cfg.update({

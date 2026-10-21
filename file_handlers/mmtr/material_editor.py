@@ -10,7 +10,7 @@ lazy from utils.app_paths import PROJECT_METADATA_FOLDER
 lazy from services.file_io import write_files_atomically
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt, Signal
-from PySide6.QtGui import QAction, QFont
+from PySide6.QtGui import QAction, QColor
 from PySide6.QtWidgets import (
     QComboBox,
     QCheckBox,
@@ -116,6 +116,9 @@ lazy from .profiles.renderer_inputs import (
 )
 lazy from .render_settings import RenderSettingsDialog
 lazy from .vertex_values import PER_VERTEX_KIND
+lazy from ui.editor_widgets import delete_button, editor_strip, pane_header, search_field, strip_button, styled_label, toolbar_separator
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 
 def _default_for_type(value_type: str) -> tuple[float, ...]:
@@ -293,35 +296,36 @@ class MmtrMaterialEditor(QWidget):
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        header = QHBoxLayout()
-        title = self.title = QLabel(self.tr("Material Editor"))
-        font = QFont(title.font())
-        font.setBold(True)
-        font.setPointSize(max(14, font.pointSize() + 4))
-        title.setFont(font)
-        header.addWidget(title)
-        header.addWidget(QLabel(self.tr("Name")))
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        header, header_row = editor_strip()
+        title = self.title = styled_label(self.tr("Material Editor"), heading="panel")
+        header_row.addWidget(title)
+        header_row.addWidget(toolbar_separator())
+        name_label = styled_label(self.tr("Name"), tone="muted")
+        header_row.addWidget(name_label)
         self.material_name = QLineEdit()
-        self.material_name.setMinimumWidth(220)
+        self.material_name.setMinimumWidth(180)
+        self.material_name.setMaximumWidth(420)
         self.material_name.editingFinished.connect(self._material_name_changed)
-        header.addWidget(self.material_name)
-        self.profile_badge = QLabel()
+        header_row.addWidget(self.material_name, 1)
+        self.profile_badge = styled_label(badge="neutral")
         self.profile_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.profile_badge.setStyleSheet(
-            "QLabel { background:#334b5e; color:#e8f3fa; border-radius:6px; padding:6px 10px; }"
-        )
-        header.addWidget(self.profile_badge)
-        root.addLayout(header)
+        self.profile_badge.hide()
+        header_row.addWidget(self.profile_badge)
+        header_row.addStretch(1)
+        root.addWidget(header)
 
+        body = QVBoxLayout()
+        body.setContentsMargins(8, 6, 8, 6)
+        body.setSpacing(6)
+        root.addLayout(body, 1)
         self.provenance_note = QLabel()
         self.provenance_note.setWordWrap(True)
-        self.provenance_note.setStyleSheet(
-            "QLabel { background:#3f3523; color:#f1e6c8; border-radius:6px; padding:7px 10px; }"
-        )
+        set_style_role(self.provenance_note, banner="warning")
         self.provenance_note.hide()
-        root.addWidget(self.provenance_note)
+        body.addWidget(self.provenance_note)
 
-        toolbar = QHBoxLayout()
         def action(label, callback):
             value = QAction(label, self)
             value.triggered.connect(callback)
@@ -348,65 +352,70 @@ class MmtrMaterialEditor(QWidget):
             button = QToolButton(self)
             button.setText(label)
             button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+            button.setAutoRaise(True)
             menu = QMenu(button)
             for item in actions:
                 menu.addAction(item) if item is not None else menu.addSeparator()
             button.setMenu(menu)
-            toolbar.addWidget(button)
             return button
 
         self.graph_menu = menu_button(self.tr("Graph"), (self.open_action, self.save_action))
         self.add_menu = menu_button(self.tr("Add"), (self.add_parameter_action, self.add_texture_action, None,
             self.new_function_action, self.import_function_action))
-        menu_button(self.tr("Selection"), (self.edit_function_action, self.extract_function_action, self.insert_function_action,
-            None, self.delete_node_action, self.remove_input_action))
-        self.fit_button = QPushButton(self.tr("Fit Graph"))
+        selection_menu = menu_button(self.tr("Selection"), (self.edit_function_action, self.extract_function_action,
+            self.insert_function_action, None, self.delete_node_action, self.remove_input_action))
+        self.fit_button = strip_button(QPushButton(self.tr("Fit Graph")), "fit")
         self.fit_button.clicked.connect(self.fit_graph)
-        toolbar.addWidget(self.fit_button)
-        self.arrange_button = QPushButton(self.tr("Arrange"))
+        self.arrange_button = strip_button(QPushButton(self.tr("Arrange")), "graph")
         self.arrange_button.clicked.connect(self._arrange_graph)
-        toolbar.addWidget(self.arrange_button)
-        self.render_settings_button = QPushButton(self.tr("Render Settings…"))
+        self.render_settings_button = strip_button(QPushButton(self.tr("Render Settings…")), "settings")
         self.render_settings_button.setToolTip(self.tr(
             "Double-sided, transparent, shadows and every pass's blend, depth and culling state."))
         self.render_settings_button.clicked.connect(self._edit_render_settings)
-        toolbar.addWidget(self.render_settings_button)
-        toolbar.addStretch(1)
+        header_row.addWidget(self.render_settings_button)
         self.advanced_menu = menu_button(self.tr("Advanced"), (self.implementations_action,))
-        root.addLayout(toolbar)
+        header_row.addWidget(self.advanced_menu)
+        graph_bar, graph_row = editor_strip("header")
+        for widget in (self.graph_menu, self.add_menu, selection_menu, toolbar_separator(),
+                       self.fit_button, self.arrange_button):
+            graph_row.addWidget(widget)
+        graph_row.addStretch(1)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         palette_page = QWidget()
         palette_layout = QVBoxLayout(palette_page)
         palette_layout.setContentsMargins(0, 0, 0, 0)
+        palette_layout.setSpacing(0)
         self.palette_title = QLabel(self.tr("This Material"))
-        palette_title_font = QFont(self.palette_title.font())
-        palette_title_font.setBold(True)
-        self.palette_title.setFont(palette_title_font)
-        palette_layout.addWidget(self.palette_title)
-        self.search = QLineEdit()
+        palette_layout.addWidget(pane_header(self.palette_title))
+        palette_body = QVBoxLayout()
+        palette_body.setContentsMargins(6, 6, 6, 6)
+        palette_body.setSpacing(4)
+        palette_layout.addLayout(palette_body, 1)
+        self.search = search_field(QLineEdit())
         self.search.setPlaceholderText(self.tr("Search inputs and nodes…"))
         self.search.textChanged.connect(self._filter_palette)
-        palette_layout.addWidget(self.search)
+        palette_body.addWidget(self.search)
         self.every_pass_inputs = QCheckBox(self.tr("Engine inputs for every pass"))
         self.every_pass_inputs.setToolTip(self.tr(
             "Also list engine inputs that reach no pass drawing the visible image, such as shadow-only data."
         ))
         self.every_pass_inputs.toggled.connect(lambda _checked: self._populate_palette())
-        palette_layout.addWidget(self.every_pass_inputs)
+        palette_body.addWidget(self.every_pass_inputs)
         self.palette = QTreeWidget()
         self.palette.setHeaderHidden(True)
         self.palette.currentItemChanged.connect(self._palette_item_selected)
         self.palette.itemDoubleClicked.connect(
             lambda _item, _column: self._add_palette_node()
         )
-        palette_layout.addWidget(self.palette, 1)
+        palette_body.addWidget(self.palette, 1)
         self.add_selected_button = QPushButton(
             self.tr("Add Selected to Graph")
         )
+        self.add_selected_button.setIcon(line_icon("add"))
         self.add_selected_button.setEnabled(False)
         self.add_selected_button.clicked.connect(self._add_palette_node)
-        palette_layout.addWidget(self.add_selected_button)
+        palette_body.addWidget(self.add_selected_button)
         splitter.addWidget(palette_page)
 
         self.scene = _ShaderGraphScene(self)
@@ -422,22 +431,26 @@ class MmtrMaterialEditor(QWidget):
         self.scene.message.connect(self._show_message)
         self.view.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.view.customContextMenuRequested.connect(self._graph_context_menu)
-        splitter.addWidget(self.view)
+        graph_page = QWidget()
+        graph_layout = QVBoxLayout(graph_page)
+        graph_layout.setContentsMargins(0, 0, 0, 0)
+        graph_layout.setSpacing(0)
+        graph_layout.addWidget(graph_bar)
+        graph_layout.addWidget(self.view, 1)
+        splitter.addWidget(graph_page)
 
         inspector = QWidget()
         inspector_layout = QVBoxLayout(inspector)
         inspector_layout.setContentsMargins(0, 0, 0, 0)
+        inspector_layout.setSpacing(0)
         self.selection_title = QLabel(self.tr("Select a node to edit it."))
-        selection_font = QFont(self.selection_title.font())
-        selection_font.setBold(True)
-        selection_font.setPointSize(max(11, selection_font.pointSize() + 1))
-        self.selection_title.setFont(selection_font)
         self.selection_title.setWordWrap(True)
-        inspector_layout.addWidget(self.selection_title)
+        inspector_layout.addWidget(pane_header(self.selection_title))
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         self.properties_host = QWidget()
         self.properties = QFormLayout(self.properties_host)
+        self.properties.setContentsMargins(8, 8, 8, 8)
         scroll.setWidget(self.properties_host)
         inspector_layout.addWidget(scroll, 1)
         splitter.addWidget(inspector)
@@ -445,14 +458,15 @@ class MmtrMaterialEditor(QWidget):
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
         splitter.setSizes([270, 900, 350])
-        root.addWidget(splitter, 1)
+        body.addWidget(splitter, 1)
 
         footer = QHBoxLayout()
+        footer.setSpacing(8)
         self.status = QLabel(self.tr("Open a master material to begin."))
         self.status.setWordWrap(True)
         footer.addWidget(self.status, 1)
         self.variant_button = QPushButton(self.tr("Create Variant…"))
-        self.variant_button.setMinimumWidth(170)
+        set_style_role(self.variant_button, variant="primary")
         self.variant_button.setEnabled(False)
         self.variant_button.setToolTip(
             self.tr(
@@ -461,7 +475,7 @@ class MmtrMaterialEditor(QWidget):
         )
         self.variant_button.clicked.connect(self._create_variant)
         footer.addWidget(self.variant_button)
-        root.addLayout(footer)
+        body.addLayout(footer)
 
     def _refresh_document_contract(self) -> None:
         document = self._document
@@ -532,11 +546,10 @@ class MmtrMaterialEditor(QWidget):
             self._dirty = project_upgraded
         self.setEnabled(self._contract is not None)
         self.profile_badge.setText(document.profile.display_name)
+        self.profile_badge.show()
         if self._contract is None:
             self.provenance_note.setText(self._unavailable_interface_note())
-            self.provenance_note.setStyleSheet(
-                "QLabel { background:#263746; color:#dceaf5; border-radius:6px; padding:7px 10px; }"
-            )
+            set_style_role(self.provenance_note, banner="info")
             self.provenance_note.show()
         elif self._project.source_material_model:
             self.provenance_note.clear()
@@ -547,15 +560,11 @@ class MmtrMaterialEditor(QWidget):
                     "Some original connections could not be recovered. Connecting a disconnected input creates new behavior."
                 )
             )
-            self.provenance_note.setStyleSheet(
-                "QLabel { background:#3f3523; color:#f1e6c8; border-radius:6px; padding:7px 10px; }"
-            )
+            set_style_role(self.provenance_note, banner="warning")
             self.provenance_note.show()
         if unreadable_sidecar:
             self.provenance_note.setText(unreadable_sidecar)
-            self.provenance_note.setStyleSheet(
-                "QLabel { background:#4a2a2a; color:#f5dede; border-radius:6px; padding:7px 10px; }"
-            )
+            set_style_role(self.provenance_note, banner="danger")
             self.provenance_note.show()
         if self._contract is None:
             self.profile_badge.setToolTip(self._unavailable_interface_note())
@@ -632,6 +641,7 @@ class MmtrMaterialEditor(QWidget):
                 "Edit this material through Advanced → Native Shader Overrides. "
                 "Parameter and texture definitions cannot be changed in this mode."
             ))
+            set_style_role(self.provenance_note, banner="info")
             self.provenance_note.show()
         elif previous:
             self.add_parameter_action.setEnabled(self._can_edit_interface())
@@ -1151,6 +1161,10 @@ class MmtrMaterialEditor(QWidget):
                 InputUsage.UNKNOWN: self.tr("Usage unverified"),
             }[usage]
             item.setText(0, f"[{badge}] {item.text(0)}")
+            item.setForeground(0, QColor(current_colors()["text_subtle"]))
+            font = item.font(0)
+            font.setItalic(True)
+            item.setFont(0, font)
         item.setToolTip(0, item.toolTip(0) + "\n\n" + usage.label + "\n" + usage.explanation)
 
     def _add_usage_property(self, kind, definition) -> None:
@@ -1483,7 +1497,7 @@ class MmtrMaterialEditor(QWidget):
             return
         if node.properties.get("authoring_origin") == "user_function":
             origin = QLabel(self.tr("User Function Asset"))
-            origin.setStyleSheet("QLabel { color:#d6a8ff; font-weight:600; }")
+            set_style_role(origin, badge="accent")
             self.properties.addRow(self.tr("Source"), origin)
         if node.kind == "material_surface":
             note = QLabel(
@@ -1762,7 +1776,7 @@ class MmtrMaterialEditor(QWidget):
         if node.kind != "material_surface" and not bool(
             node.properties.get("semantic_reconstruction_boundary", False)
         ):
-            delete = QPushButton(self.tr("Delete Node"))
+            delete = delete_button(self.tr("Delete Node"))
             delete.clicked.connect(lambda _checked=False, identity=node.node_id: self._delete_node(identity))
             self.properties.addRow(delete)
 
@@ -2162,8 +2176,7 @@ class MmtrMaterialEditor(QWidget):
         self.variant_button.setEnabled(ready)
         self.status.setText(message)
         self.status.setToolTip(details)
-        color = "#d8c27a" if warning else "#80c99b" if ready else "#dc8585"
-        self.status.setStyleSheet(f"QLabel {{ color:{color}; }}")
+        set_style_role(self.status, tone="warning" if warning else "success" if ready else "danger")
 
     def _refresh_readiness(self) -> None:
         self._last_build = None

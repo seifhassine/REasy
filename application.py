@@ -7,11 +7,12 @@ import sys
 
 import PySide6
 from PySide6.QtCore import QCoreApplication, QLocale
-from PySide6.QtWidgets import QApplication, QMessageBox, QStyleFactory
+from PySide6.QtWidgets import QApplication, QMessageBox
 
 lazy from i18n.catalog import validate_catalog
 from i18n.language_manager import LanguageManager
 from settings import load_settings
+from ui.styles import ReasyStyle
 from utils.app_paths import application_root
 from utils.garbage_collection import configure_garbage_collector
 from utils.native_build import ensure_fastmesh, ensure_fast_pakresolve
@@ -51,7 +52,7 @@ def main(argv=None) -> int:
 
     QLocale.setDefault(QLocale.c())
     app = QApplication(argv)
-    app.setStyle(QStyleFactory.create("Fusion"))
+    app.setStyle(ReasyStyle())
 
     # Import after native preparation because PAK modules use the native hash helper.
     from ui.main_window import REasyEditorApp

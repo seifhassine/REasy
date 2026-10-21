@@ -1,75 +1,108 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-
-from PySide6.QtCore import QEvent, QPointF, QRect, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPalette
+from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPen
 from PySide6.QtWidgets import QToolTip, QWidget
+
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
 
 
 class ViewRail(QWidget):
-    ITEM_H = 52
-    ICON_SIZE = 17.0
-    TOP_MARGIN = 3
-    SPACING = 3
-    RAIL_HEIGHT = 58
-    SIDE_MARGIN = 6
-    TITLE_DY = 23
-    SUB_DY = 36
+    RAIL_HEIGHT = 30
+    ICON_SIZE = 16
+    ICON_GAP = 6
+    SIDE_MARGIN = 4
+    ITEM_PADDING = 6
+    ACCENT = 2
 
     currentChanged = Signal(str)
 
-    def __init__(self, parent: QWidget | None = None,
-                 accent_provider: Callable[[], QColor] | None = None):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("projectBrowserViewRail")
-        self._accent_provider = accent_provider
         self._current = ""
         self._hover = -1
         self._rects: list[QRect] = []
-        # Unbound painters, called with self: bound methods kept here would make the rail a cycle.
+        self._compact = False
+        self._keyboard_focus = False
         self._items = (
-            ("sys", self.tr("Game Files"), self.tr("unpacked copy"),
-             self.tr("Game Files\n\nExtracted game assets, used as read-only reference."),
-             ViewRail._paint_unpacked),
-            ("proj", self.tr("My Mod"), self.tr("your project"),
-             self.tr("My Mod\n\nThe mod's own files. Edits here are what gets exported."),
-             ViewRail._paint_project),
-            ("pak", self.tr("PAK Files"), self.tr("game archives"),
-             self.tr("PAK Files\n\nPaths inside the game's .pak archives."),
-             ViewRail._paint_pak),
-            ("bm", self.tr("Bookmarks"), self.tr("saved paths"),
-             self.tr("Bookmarks\n\nSaved paths and folders you visit often."),
-             ViewRail._paint_bookmark),
+            ("sys", "folder_open", self.tr("Game Files"),
+             self.tr("Game Files\n\nExtracted game assets, used as read-only reference.")),
+            ("proj", "briefcase", self.tr("My Mod"),
+             self.tr("My Mod\n\nThe mod's own files. Edits here are what gets exported.")),
+            ("pak", "box", self.tr("PAK Files"),
+             self.tr("PAK Files\n\nPaths inside the game's .pak archives.")),
+            ("bm", "bookmark", self.tr("Bookmarks"),
+             self.tr("Bookmarks\n\nSaved paths and folders you visit often.")),
         )
-        self._title_font, self._sub_font = self._make_fonts()
         self.setFixedHeight(self.RAIL_HEIGHT)
         self.setCursor(Qt.PointingHandCursor)
         self.setMouseTracking(True)
-
-    def _make_fonts(self):
-        title = QFont(self.font())
-        title.setWeight(QFont.DemiBold)
-        sub = QFont(self.font())
-        if sub.pointSizeF() > 0:
-            sub.setPointSizeF(max(6.4, round(sub.pointSizeF() * 0.78, 1)))
-        elif sub.pixelSize() > 0:
-            sub.setPixelSize(max(9, round(sub.pixelSize() * 0.78)))
-        else:
-            sub.setPointSizeF(7.0)
-        return title, sub
-
+        self.setFocusPolicy(Qt.TabFocus)
+        self.setAccessibleName(self.tr("Project Browser views"))
 
     def set_current(self, view_id: str) -> None:
         """Highlight *view_id* without emitting :attr:`currentChanged`."""
         if view_id == self._current:
             return
         self._current = view_id
+        self._sync_accessible_description()
+        self._layout_items()
         self.update()
 
     def current(self) -> str:
         return self._current
 
+    def sizeHint(self) -> QSize:
+        return QSize(len(self._items) * 72, self.RAIL_HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(len(self._items) * (self.ICON_SIZE + 12), self.RAIL_HEIGHT)
+
+    def _choose(self, index: int) -> None:
+        if 0 <= index < len(self._items) and self._items[index][0] != self._current:
+            self.set_current(self._items[index][0])
+            self.currentChanged.emit(self._current)
+
+    def _current_index(self) -> int:
+        return next((i for i, item in enumerate(self._items) if item[0] == self._current), 0)
+
+    def _sync_accessible_description(self) -> None:
+        index = self._current_index()
+        self.setAccessibleDescription(self._items[index][2] if self._current else "")
+
+    def keyPressEvent(self, event):
+        self._keyboard_focus = True
+        index = self._current_index()
+        key = event.key()
+        if key == Qt.Key_Left:
+            self._choose(max(0, index - 1))
+        elif key == Qt.Key_Right:
+            self._choose(min(len(self._items) - 1, index + 1))
+        elif key == Qt.Key_Home:
+            self._choose(0)
+        elif key == Qt.Key_End:
+            self._choose(len(self._items) - 1)
+        else:
+            super().keyPressEvent(event)
+
+    def focusInEvent(self, event):
+        # The focus frame is for keyboard users; focus the window hands over on activation stays unmarked.
+        self._keyboard_focus = event.reason() in (Qt.TabFocusReason, Qt.BacktabFocusReason)
+        self.update()
+        super().focusInEvent(event)
+
+    def focusOutEvent(self, event):
+        self._keyboard_focus = False
+        self.update()
+        super().focusOutEvent(event)
+
+    def changeEvent(self, event):
+        if event.type() == QEvent.FontChange:
+            self._layout_items()
+            self.update()
+        super().changeEvent(event)
 
     def leaveEvent(self, event):
         self._hover = -1
@@ -83,15 +116,8 @@ class ViewRail(QWidget):
             self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() != Qt.LeftButton:
-            return
-        idx = self._item_at(event.position().toPoint())
-        if 0 <= idx < len(self._items):
-            view_id = self._items[idx][0]
-            if view_id != self._current:
-                self._current = view_id
-                self.update()
-                self.currentChanged.emit(view_id)
+        if event.button() == Qt.LeftButton:
+            self._choose(self._item_at(event.position().toPoint()))
 
     def event(self, ev):
         if ev.type() == QEvent.ToolTip:
@@ -105,102 +131,81 @@ class ViewRail(QWidget):
         self._layout_items()
         super().resizeEvent(event)
 
-
     def paintEvent(self, _event):
+        colors = current_colors()
+        accent = QColor(colors["accent"])
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
-
-        p.fillRect(self.rect(), QColor("#232427"))
-        p.fillRect(0, self.height() - 1, self.width(), 1, QColor("#33343a"))
-
-        pal = self.palette()
-        window_text = QColor(pal.color(QPalette.Current, QPalette.WindowText))
-        accent = self._accent()
-
+        p.fillRect(self.rect(), QColor(colors["panel"]))
+        p.fillRect(0, self.height() - 1, self.width(), 1, QColor(colors["border_subtle"]))
         if not self._rects:
             self._layout_items()
-        for i, (view_id, caption, subcaption, _tip, painter_fn) in enumerate(self._items):
+        metrics = QFontMetrics(self.font())
+        pens = {
+            "active": QPen(QColor(colors["text_bright"])),
+            "hover": QPen(QColor(colors["text"])),
+            "idle": QPen(QColor(colors["text_muted"])),
+        }
+        icon_colors = {"active": colors["accent"], "hover": colors["text"], "idle": colors["text_muted"]}
+        hover_fill = QColor(colors["surface"])
+        dpr = self.devicePixelRatioF()
+        for i, (view_id, icon_name, caption, _tip) in enumerate(self._items):
             r = self._rects[i]
             active = view_id == self._current
             hovered = i == self._hover
-
-            if active or hovered:
-                bg = QColor(accent) if active else QColor(window_text)
-                bg.setAlpha(26 if active else 16)
-                p.setPen(Qt.NoPen)
-                p.setBrush(bg)
-                p.drawRoundedRect(r.adjusted(2, 2, -2, -2), 8, 8)
-
+            if hovered and not active:
+                p.fillRect(r.adjusted(0, 0, 0, -1), hover_fill)
             if active:
-                p.setPen(Qt.NoPen)
-                p.setBrush(accent)
-                p.drawRoundedRect(
-                    QRectF(r.left() + 10, r.y() + r.height() - 3.5, r.width() - 20, 3),
-                    1.5, 1.5,
-                )
+                p.fillRect(r.left(), self.height() - self.ACCENT, r.width(), self.ACCENT, accent)
+            state = "active" if active else "hover" if hovered else "idle"
 
-            if active:
-                color = QColor(accent)
-            elif hovered:
-                color = QColor(window_text)
-                color.setAlpha(220)
-            else:
-                color = QColor(window_text)
-                color.setAlpha(160)
+            room = r.width() - self.ICON_SIZE - self.ICON_GAP - 2 * self.ITEM_PADDING
+            show_text = room > 0 and (active or not self._compact)
+            text = metrics.elidedText(caption, Qt.ElideRight, room) if show_text else ""
+            if len(text.rstrip("…")) < 3:
+                text = ""
+            text_width = metrics.horizontalAdvance(text) if text else 0
+            content = self.ICON_SIZE + (self.ICON_GAP + text_width if text else 0)
+            x = r.left() + (r.width() - content) // 2
+            icon_top = r.top() + (r.height() - self.ICON_SIZE) // 2
+            icon = line_icon(icon_name, icon_colors[state])
+            p.drawPixmap(x, icon_top, icon.pixmap(QSize(self.ICON_SIZE, self.ICON_SIZE), dpr))
+            if text:
+                p.setPen(pens[state])
+                p.drawText(QRect(x + self.ICON_SIZE + self.ICON_GAP, r.top(), text_width + 1, r.height()),
+                           Qt.AlignLeft | Qt.AlignVCenter, text)
 
-            caption_color = QColor(accent) if active else QColor(color)
-            caption_color.setAlpha(235 if (active or hovered) else 150)
-
-            p.save()
-            p.translate(r.center().x() - self.ICON_SIZE / 2.0, r.top() + 3)
-            painter_fn(self, p, color)
-            p.restore()
-
-            p.setFont(self._title_font)
-            metrics = p.fontMetrics()
-            elided = metrics.elidedText(caption, Qt.ElideRight, r.width() - 4)
-            p.setPen(QPen(caption_color))
-            p.drawText(
-                QRectF(r.left(), r.top() + self.TITLE_DY, r.width(), 13),
-                Qt.AlignHCenter | Qt.AlignVCenter,
-                elided,
-            )
-
-            sub_color = QColor(caption_color)
-            sub_color.setAlpha(int(caption_color.alpha() * 0.72))
-            p.setFont(self._sub_font)
-            smetrics = p.fontMetrics()
-            selided = smetrics.elidedText(subcaption, Qt.ElideRight, r.width() - 4)
-            p.setPen(QPen(sub_color))
-            p.drawText(
-                QRectF(r.left(), r.top() + self.SUB_DY, r.width(), 13),
-                Qt.AlignHCenter | Qt.AlignVCenter,
-                selided,
-            )
-
-    def _accent(self) -> QColor:
-        color = None
-        if self._accent_provider is not None:
-            try:
-                color = self._accent_provider()
-            except Exception:
-                color = None
-        if not isinstance(color, QColor) or not color.isValid():
-            color = QColor(self.palette().color(QPalette.Current, QPalette.Highlight))
-        return color
+        if self.hasFocus() and self._keyboard_focus and self._rects:
+            p.setPen(QPen(accent, 1))
+            p.setBrush(Qt.NoBrush)
+            p.drawRect(QRectF(self._rects[self._current_index()]).adjusted(1.5, 1.5, -1.5, -2.5))
 
     def _layout_items(self):
+        """Captions get their width plus an equal share of the rest; short of room only the current one is shown."""
         self._rects = []
         n = len(self._items)
         if not n:
             return
-        avail = self.width() - self.SIDE_MARGIN * 2 - self.SPACING * (n - 1)
-        w = max(44, avail // n)
+        avail = max(0, self.width() - self.SIDE_MARGIN * 2)
+        metrics = QFontMetrics(self.font())
+        natural = [self.ICON_SIZE + self.ICON_GAP + metrics.horizontalAdvance(item[2]) + 2 * self.ITEM_PADDING
+                   for item in self._items]
+        spare = avail - sum(natural)
+        self._compact = spare < 0
+        if not self._compact:
+            widths = [width + spare * (i + 1) // n - spare * i // n for i, width in enumerate(natural)]
+        else:
+            widths = [avail * (i + 1) // n - avail * i // n for i in range(n)]
+            current = self._current_index() if self._current else -1
+            icon_width = self.ICON_SIZE + 2 * self.ITEM_PADDING
+            active_width = min(natural[current], avail - (n - 1) * icon_width) if current >= 0 else 0
+            if active_width > widths[current if current >= 0 else 0]:
+                rest = avail - active_width
+                others = [rest * (i + 1) // (n - 1) - rest * i // (n - 1) for i in range(n - 1)]
+                widths = others[:current] + [active_width] + others[current:]
         x = self.SIDE_MARGIN
-        y = self.TOP_MARGIN
-        for _ in self._items:
-            self._rects.append(QRect(x, y, w, self.ITEM_H))
-            x += w + self.SPACING
+        for width in widths:
+            self._rects.append(QRect(x, 0, width, self.RAIL_HEIGHT))
+            x += width
 
     def _item_at(self, pos) -> int:
         if not self._rects:
@@ -209,82 +214,3 @@ class ViewRail(QWidget):
             if r.contains(pos):
                 return i
         return -1
-
-
-    def _pen(self, color: QColor, width: float = 1.5) -> QPen:
-        pen = QPen(color, width)
-        pen.setCapStyle(Qt.RoundCap)
-        pen.setJoinStyle(Qt.RoundJoin)
-        return pen
-
-    def _paint_unpacked(self, p: QPainter, color: QColor):
-        """Open folder."""
-        s = self.ICON_SIZE
-        p.setPen(self._pen(color))
-        p.setBrush(Qt.NoBrush)
-        back = QPainterPath()
-        back.moveTo(1.5, s - 2.2)
-        back.lineTo(1.5, 3.4)
-        back.quadTo(1.5, 2.3, 2.6, 2.3)
-        back.lineTo(6.0, 2.3)
-        back.quadTo(6.9, 2.3, 7.4, 3.05)
-        back.lineTo(8.5, 4.6)
-        back.lineTo(s - 2.0, 4.6)
-        p.drawPath(back)
-        front = QPainterPath()
-        front.moveTo(1.5, s - 2.2)
-        front.lineTo(4.3, 6.4)
-        front.lineTo(s - 1.6, 6.4)
-        front.lineTo(s - 4.4, s - 2.2)
-        front.closeSubpath()
-        p.drawPath(front)
-
-    def _paint_project(self, p: QPainter, color: QColor):
-        """Briefcase."""
-        s = self.ICON_SIZE
-        p.setPen(self._pen(color))
-        p.setBrush(Qt.NoBrush)
-        p.drawRoundedRect(QRectF(1.8, 5.8, s - 3.6, 9.2), 2.0, 2.0)
-        hx0, hx1 = s * 0.36, s * 0.64
-        handle = QPainterPath()
-        handle.moveTo(hx0, 5.8)
-        handle.lineTo(hx0, 4.1)
-        handle.quadTo(hx0, 3.0, hx0 + 1.1, 3.0)
-        handle.lineTo(hx1 - 1.1, 3.0)
-        handle.quadTo(hx1, 3.0, hx1, 4.1)
-        handle.lineTo(hx1, 5.8)
-        p.drawPath(handle)
-        p.drawLine(QPointF(1.8, 9.9), QPointF(s - 1.8, 9.9))
-
-    def _paint_pak(self, p: QPainter, color: QColor):
-        """Isometric archive cube."""
-        s = self.ICON_SIZE
-        cx = s / 2.0
-        p.setPen(self._pen(color))
-        p.setBrush(Qt.NoBrush)
-        cube = QPainterPath()
-        cube.moveTo(cx, 1.9)
-        cube.lineTo(s - 2.4, 5.3)
-        cube.lineTo(s - 2.4, 11.7)
-        cube.lineTo(cx, s - 1.9)
-        cube.lineTo(2.4, 11.7)
-        cube.lineTo(2.4, 5.3)
-        cube.closeSubpath()
-        p.drawPath(cube)
-        p.drawLine(QPointF(2.4, 5.3), QPointF(cx, 8.6))
-        p.drawLine(QPointF(s - 2.4, 5.3), QPointF(cx, 8.6))
-        p.drawLine(QPointF(cx, 8.6), QPointF(cx, s - 1.9))
-
-    def _paint_bookmark(self, p: QPainter, color: QColor):
-        """Filled bookmark ribbon."""
-        s = self.ICON_SIZE
-        path = QPainterPath()
-        path.moveTo(4.6, 2.2)
-        path.lineTo(s - 4.6, 2.2)
-        path.lineTo(s - 4.6, s - 2.1)
-        path.lineTo(s / 2.0, s - 5.4)
-        path.lineTo(4.6, s - 2.1)
-        path.closeSubpath()
-        p.setPen(Qt.NoPen)
-        p.setBrush(color)
-        p.drawPath(path)

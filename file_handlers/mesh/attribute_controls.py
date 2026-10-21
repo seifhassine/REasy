@@ -1,9 +1,11 @@
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
-    QComboBox, QHBoxLayout, QLabel, QSizePolicy, QSpinBox, QToolButton, QVBoxLayout, QWidget,
+    QComboBox, QHBoxLayout, QLabel, QSizePolicy, QSpinBox, QVBoxLayout, QWidget,
 )
 
+lazy from ui.editor_widgets import DisclosureButton, styled_label
 lazy from ui.scene.mesh_attributes import HEAT_COLORS
+lazy from ui.styles import current_colors
 lazy from .preview_controls import ComboStepper, make_searchable
 
 
@@ -37,28 +39,24 @@ class AttributeControls(QWidget):
         self.scale.setSuffix(self.tr(" checks / UV tile"))
         self.scale.setAccessibleName(self.tr("UV checker density"))
         row.addWidget(self.scale)
-        self.minimum = QLabel(self)
+        self.minimum = styled_label(parent=self, tone="muted")
         self.ramp = QLabel(self)
         self.ramp.setFixedSize(120, 12)
-        self.maximum = QLabel(self)
+        self.maximum = styled_label(parent=self, tone="muted")
         for widget in (self.minimum, self.ramp, self.maximum):
             row.addWidget(widget)
-        self.guide_button = QToolButton(self)
-        self.guide_button.setCheckable(True)
-        self.guide_button.setAutoRaise(True)
-        self.guide_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.guide_button.setArrowType(Qt.RightArrow)
+        self.guide_button = DisclosureButton("", self)
         self.guide_button.setToolTip(self.tr("Explain the colors, values, and limitations of this view."))
-        self.guide_button.toggled.connect(self._toggle_guide)
         row.addWidget(self.guide_button)
         row.addStretch()
         layout.addLayout(row)
-        self.legend = QLabel(self)
+        self.legend = styled_label(parent=self, tone="muted")
         self.legend.setTextFormat(Qt.PlainText)
         self.legend.setWordWrap(True)
         self.legend.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(self.legend)
         self.legend.hide()
+        self.guide_button.toggled.connect(self.legend.setVisible)
         # What drawing the attribute on the graphics device tells (``AttributesPreview.status``).
         self.status = QLabel(self)
         self.status.setTextFormat(Qt.PlainText)
@@ -74,10 +72,6 @@ class AttributeControls(QWidget):
     def set_status(self, lines):
         self.status.setText("\n".join(lines))
         self.status.setVisible(bool(lines))
-
-    def _toggle_guide(self, visible):
-        self.legend.setVisible(visible)
-        self.guide_button.setArrowType(Qt.DownArrow if visible else Qt.RightArrow)
 
     def set_view(self, view, mesh, name):
         if self.view is view and self._name == name:
@@ -180,4 +174,5 @@ class AttributeControls(QWidget):
             self.maximum.setText(limits[1])
             stops = ", ".join(f"stop:{i / (len(colors) - 1):.3f} rgb({int(r*255)}, {int(g*255)}, {int(b*255)})"
                               for i, (r, g, b) in enumerate(colors))
-            self.ramp.setStyleSheet(f"background: qlineargradient(x1:0,y1:0,x2:1,y2:0,{stops}); border-radius:3px;")
+            self.ramp.setStyleSheet(f"background: qlineargradient(x1:0,y1:0,x2:1,y2:0,{stops}); border-radius:3px; "
+                                    f"border: 1px solid {current_colors()['border']};")

@@ -6,11 +6,12 @@ if sys.platform == "win32":
 else:
     wintypes = None
 
-from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import (
     QAction,
     QColor,
     QCursor,
+    QFont,
     QGuiApplication,
     QIcon,
     QKeySequence,
@@ -25,6 +26,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
+    QStackedWidget,
     QStyle,
     QStyleOptionTab,
     QStylePainter,
@@ -33,6 +35,8 @@ from PySide6.QtWidgets import (
     QToolButton,
     QWidget,
 )
+
+lazy from ui.styles import current_colors
 
 
 @dataclass(slots=True)
@@ -65,20 +69,39 @@ class _TabCloseButton(QAbstractButton):
         if index >= 0:
             self.notebook.tabCloseRequested.emit(index)
 
+    def _tab_hovered(self, bar: QTabBar, index: int) -> bool:
+        return bar.tabRect(index).contains(bar.mapFromGlobal(QCursor.pos()))
+
+    def _text_offset(self, bar: QTabBar, index: int) -> float:
+        """Vertical offset that lines the cross up with the tab text; the accent border sits above it."""
+        option = QStyleOptionTab()
+        bar.initStyleOption(option, index)
+        text = bar.style().subElementRect(QStyle.SE_TabBarTabText, option, bar)
+        return self.mapFromParent(text.center()).y() - self.rect().center().y()
+
     def paintEvent(self, _event):
+        bar = self.parentWidget()
+        index = self.notebook.indexOf(self.page)
+        hovered = self.underMouse()
+        active = self.notebook.currentWidget() is self.page
+        if index < 0 or not (hovered or active or self._tab_hovered(bar, index)):
+            return
+        colors = current_colors()
+        offset = max(-2.0, min(2.0, self._text_offset(bar, index)))
+        area = QRectF(self.rect()).adjusted(2, 2, -2, -2).translated(0, offset)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
-        if self.underMouse() or self.isDown():
+        if hovered or self.isDown():
             painter.setPen(Qt.NoPen)
-            painter.setBrush(QColor(255, 255, 255, 42 if self.isDown() else 28))
-            painter.drawEllipse(self.rect().adjusted(1, 1, -1, -1))
-        active = self.notebook.currentWidget() is self.page
-        pen = QPen(QColor("#eef0f3" if self.underMouse() or active else "#9b9da3"))
-        pen.setWidthF(1.45)
+            painter.setBrush(QColor(colors["surface_active" if self.isDown() else "surface_hover"]))
+            painter.drawRoundedRect(area, 3, 3)
+        pen = QPen(QColor(colors["text_bright" if hovered else "text" if active else "text_muted"]))
+        pen.setWidthF(1.4)
         pen.setCapStyle(Qt.RoundCap)
         painter.setPen(pen)
-        painter.drawLine(6, 6, 12, 12)
-        painter.drawLine(12, 6, 6, 12)
+        center = area.center()
+        painter.drawLine(center + QPointF(-3, -3), center + QPointF(3, 3))
+        painter.drawLine(center + QPointF(3, -3), center + QPointF(-3, 3))
 
 
 class _TabDropIndicator(QWidget):
@@ -99,7 +122,7 @@ class _TabDropIndicator(QWidget):
         self.update()
 
     def paintEvent(self, _event):
-        accent = self.notebook._tab_drop_accent()
+        accent = QColor(current_colors()["accent"])
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing)
         wash, outline = QColor(accent), QColor(accent)
@@ -108,7 +131,7 @@ class _TabDropIndicator(QWidget):
         painter.fillRect(self.rect(), wash)
         painter.setPen(QPen(outline, 1.25))
         painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -2, -2), 5, 5)
+        painter.drawRoundedRect(self.rect().adjusted(1, 1, -2, -2), 3, 3)
         marker = QPen(accent, 3)
         marker.setCapStyle(Qt.RoundCap)
         painter.setPen(marker)
@@ -159,10 +182,6 @@ class FloatingTabWindow(QMainWindow):
         self.setFocusPolicy(Qt.StrongFocus)
 
         main_window = self._main_window()
-        if main_window:
-            self.setStyleSheet(main_window.styleSheet())
-            self.setPalette(main_window.palette())
-            self.setFont(main_window.font())
         tab_menu = self.menuBar().addMenu(self.tr("Tab"))
         tab_menu.addAction(self.tr("Reattach"), self.close)
         if main_window and not getattr(self.file_tab, "skip_detached_menus", False):
@@ -195,6 +214,8 @@ class FloatingTabWindow(QMainWindow):
                 action.setShortcutContext(Qt.ApplicationShortcut)
 
     def _copy_menu(self, source, destination):
+        destination.setProperty("iconMenu", source.property("iconMenu"))
+        destination.setStyleSheet(source.styleSheet())
         for action in source.actions():
             submenu = action.menu()
             if action.objectName() == "find_search":
@@ -202,7 +223,7 @@ class FloatingTabWindow(QMainWindow):
             elif action.isSeparator():
                 destination.addSeparator()
             elif submenu:
-                self._copy_menu(submenu, destination.addMenu(submenu.title()))
+                self._copy_menu(submenu, destination.addMenu(submenu.icon(), submenu.title()))
             else:
                 destination.addAction(action)
 
@@ -431,6 +452,12 @@ class DetachTabBar(QTabBar):
         self.setToolTip(
             self.tr("Drag to reorder or move between editor groups. Drag away to detach.")
         )
+        # EditorGroupHost sets inactiveGroup on the tab bars of groups that are not active.
+        colors = current_colors()
+        self.setStyleSheet(
+            f'QTabBar#documentTabBar[inactiveGroup="true"]::tab:selected {{'
+            f' border-top-color: {colors["border_strong"]}; color: {colors["text"]}; }}'
+        )
         self._sync_visibility()
 
     def tabInserted(self, index):
@@ -553,6 +580,39 @@ class CustomNotebook(QTabWidget):
         self.tabBar().setContextMenuPolicy(Qt.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._show_context_menu)
         self._drop_indicator = _TabDropIndicator(self)
+        self._page_stack = self.findChild(QStackedWidget, "qt_tabwidget_stackedwidget")
+        self._page_stack.installEventFilter(self)
+
+    def eventFilter(self, watched, event):
+        if watched is self._page_stack and event.type() == QEvent.Paint and not self.count():
+            self._paint_empty_hint(watched)
+        return super().eventFilter(watched, event)
+
+    def _paint_empty_hint(self, widget: QWidget):
+        app = self.app_instance
+        action = app.findChild(QAction, "file_open", Qt.FindDirectChildrenOnly) if isinstance(app, QWidget) else None
+        shortcut = action.shortcut().toString(QKeySequence.NativeText) if action is not None else ""
+        if shortcut:
+            hint = self.tr(
+                "Open a file from the Project Browser, drop one here, or press {shortcut}."
+            ).format(shortcut=shortcut)
+        else:
+            hint = self.tr("Open a file from the Project Browser or drop one here.")
+        colors = current_colors()
+        line = widget.fontMetrics().height()
+        top = widget.rect().center().y() - line
+        width = widget.width() - 32
+        title_font = QFont(widget.font())
+        title_font.setWeight(QFont.Weight.DemiBold)
+        painter = QPainter(widget)
+        painter.setFont(title_font)
+        painter.setPen(QColor(colors["text_muted"]))
+        painter.drawText(QRect(16, top, width, line), Qt.AlignCenter, self.tr("No open files"))
+        painter.setFont(widget.font())
+        painter.setPen(QColor(colors["text_subtle"]))
+        painter.drawText(
+            QRect(16, top + line + 4, width, line * 3), Qt.AlignHCenter | Qt.AlignTop | Qt.TextWordWrap, hint
+        )
 
     def addTab(self, widget: QWidget, *args):
         return self._finish_insert(super().addTab(widget, *args), widget)
@@ -661,17 +721,6 @@ class CustomNotebook(QTabWidget):
         bar.setTabData(index, state.data)
         bar.setTabTextColor(index, state.text_color)
         bar.set_tab_shown(index, state.visible)
-
-    def _tab_drop_accent(self):
-        provider = getattr(self.app_instance, "_theme_accent_color", None)
-        if callable(provider):
-            try:
-                if (accent := QColor(provider())).isValid():
-                    return accent
-            except (RuntimeError, TypeError):
-                pass
-        accent = self.palette().color(QPalette.Highlight)
-        return accent if accent.isValid() else QColor("#00aaff")
 
     def _drop_geometry(self):
         bar = self.tabBar()

@@ -2,7 +2,6 @@ from PySide6.QtCore import QEvent, QObject, Qt
 lazy from PySide6.QtGui import QKeySequence
 lazy from PySide6.QtWidgets import QMenu, QToolButton
 
-lazy from ui.styles import get_color_scheme
 lazy from .preview_controls import find_combo_data
 
 
@@ -15,9 +14,6 @@ class MeshNavigation(QObject):
         self.last_attribute = viewer.attribute_combo.currentData() or viewer.attribute_combo.itemData(1)
         self.menu = QMenu(viewer.navigation_button)
         self.context_menu = QMenu(self.inspector.tree)
-        disabled = get_color_scheme()["text_disabled"]
-        for menu in (self.menu, self.context_menu):
-            menu.setStyleSheet(f"QMenu::item:disabled {{ color: {disabled}; }}")
         self.actions, self.bindings = {}, {}
         specs = (
             ("search", self.tr("Find material / submesh"), "Ctrl+F", self.focus_search, False),

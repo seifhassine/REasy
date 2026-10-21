@@ -1,7 +1,44 @@
 from __future__ import annotations
 
-lazy from PySide6.QtCore import QCoreApplication, QEvent, QTimer, Qt
-lazy from PySide6.QtWidgets import QLabel, QWidget
+lazy from PySide6.QtCore import QCoreApplication, QEvent, QSize, QTimer, Qt
+lazy from PySide6.QtWidgets import QHBoxLayout, QLabel, QWidget
+
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
+
+
+def overlay_panel_stylesheet(name: str, *, dense_fields: bool = False) -> str:
+    """Opaque panel over a viewport: QFrame#name with #nameHeader, #nameBody and QLabel#nameTitle parts."""
+    c = current_colors()
+    sheet = f"""
+        QFrame#{name} {{
+            background-color: {c['panel']}; border: 1px solid {c['border']}; border-radius: 4px;
+        }}
+        QWidget#{name}Header {{
+            background-color: {c['header_bg']}; border: none;
+            border-top-left-radius: 3px; border-top-right-radius: 3px;
+        }}
+        QWidget#{name}Body {{
+            background-color: transparent; border: none; border-top: 1px solid {c['border_subtle']};
+        }}
+        QLabel#{name}Title {{ color: {c['text_muted']}; font-weight: 600; }}
+        QLabel#overlayFieldLabel {{ color: {c['text_muted']}; }}
+        QLabel#overlayStatus {{ color: {c['text_subtle']}; }}
+    """
+    if dense_fields:
+        sheet += f"QFrame#{name} QComboBox, QFrame#{name} QAbstractSpinBox {{ padding-top: 1px; padding-bottom: 1px; }}"
+    return sheet
+
+
+def add_overlay_header(panel: QWidget, name: str, left_margin: int = 3) -> QHBoxLayout:
+    bar = QWidget(panel)
+    bar.setObjectName(f"{name}Header")
+    bar.setAttribute(Qt.WA_StyledBackground, True)
+    header = QHBoxLayout(bar)
+    header.setContentsMargins(left_margin, 2, 3, 2)
+    header.setSpacing(1)
+    panel.layout().addWidget(bar)
+    return header
 
 
 class ViewportOverlayManager:
@@ -43,9 +80,12 @@ class ViewportOverlayManager:
         if fold_button is not None:
             widget._viewport_fold_button = fold_button
             fold_button.clicked.connect(lambda: self.toggle_fold(widget))
-        grip = QLabel("◢", widget)
+        grip = QLabel(widget)
         grip.setObjectName("overlayResizeGrip")
+        grip.setPixmap(line_icon("resize", current_colors()["text_subtle"]).pixmap(QSize(10, 10),
+                                                                                  widget.devicePixelRatioF()))
         grip.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
+        grip.setContentsMargins(0, 0, 2, 2)
         grip.setCursor(Qt.SizeFDiagCursor)
         grip.setFixedHeight(12)
         grip.setToolTip(QCoreApplication.translate("ViewportOverlay", "Resize panel"))
@@ -153,8 +193,10 @@ class ViewportOverlayManager:
             overlay._viewport_expanded_minimum_size = overlay.minimumSize()
             overlay.setMinimumSize(0, 0)
         body.setVisible(not folding)
+        if grip := overlay.findChild(QLabel, "overlayResizeGrip", Qt.FindChildOption.FindDirectChildrenOnly):
+            grip.setVisible(not folding)
         if button := getattr(overlay, "_viewport_fold_button", None):
-            button.setText("▸" if folding else "▾")
+            button.setIcon(line_icon("chevron_right" if folding else "chevron_down"))
             button.setToolTip(
                 QCoreApplication.translate(
                     "ViewportOverlay",

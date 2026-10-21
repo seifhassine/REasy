@@ -2,23 +2,26 @@ from __future__ import annotations
 
 import weakref
 
-from PySide6.QtCore import QEvent, QRectF, Qt
-from PySide6.QtGui import QPalette, QPainter, QPen
-from PySide6.QtWidgets import QHBoxLayout, QLabel, QStyle, QToolButton, QWidget
+from PySide6.QtCore import QEvent, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtWidgets import QHBoxLayout, QWidget
 
-# Arrows pointing toward the window edge the browser collapses to.
+lazy from ui.editor_widgets import styled_label, tool_button
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
+
+# Glyph text kept for tests and screen readers; the button shows the icon.
 _MINIMIZE_ARROW = {
     Qt.LeftDockWidgetArea: "‹",
     Qt.RightDockWidgetArea: "›",
     Qt.TopDockWidgetArea: "▲",
     Qt.BottomDockWidgetArea: "▼",
 }
-# Arrows on the side tab pointing back into the window.
-_EXPAND_ARROW = {
-    Qt.LeftDockWidgetArea: "›",
-    Qt.RightDockWidgetArea: "‹",
-    Qt.TopDockWidgetArea: "▼",
-    Qt.BottomDockWidgetArea: "▲",
+_MINIMIZE_ICON = {
+    Qt.LeftDockWidgetArea: "chevron_left",
+    Qt.RightDockWidgetArea: "chevron_right",
+    Qt.TopDockWidgetArea: "chevron_up",
+    Qt.BottomDockWidgetArea: "chevron_down",
 }
 
 
@@ -29,22 +32,18 @@ class DockTitleBar(QWidget):
         super().__init__(dock)
         self.setObjectName("projectBrowserTitleBar")
         self.setAttribute(Qt.WA_StyledBackground, True)
-        self.title_label = QLabel(dock.windowTitle(), self)
+        self.title_label = styled_label(dock.windowTitle(), self, heading="panel")
 
-        self.redock_btn = QToolButton(self)
-        self.redock_btn.setAutoRaise(True)
-        self.redock_btn.setIcon(self.style().standardIcon(QStyle.SP_TitleBarNormalButton))
-        self.redock_btn.setToolTip(self.tr("Dock back into the main window"))
-        self.redock_btn.clicked.connect(dock.redock)
-
-        self.min_btn = QToolButton(self)
-        self.min_btn.setAutoRaise(True)
-        self.min_btn.setToolTip(self.tr("Minimize to side tab"))
-        self.min_btn.clicked.connect(dock.minimize_to_side_tab)
+        self.redock_btn = tool_button("dock", self.tr("Dock back into the main window"), dock.redock, parent=self)
+        self.min_btn = tool_button(
+            "chevron_left", self.tr("Minimize to side tab"), dock.minimize_to_side_tab, parent=self
+        )
+        for button in (self.redock_btn, self.min_btn):
+            button.setIconSize(QSize(14, 14))
 
         lay = QHBoxLayout(self)
-        lay.setContentsMargins(6, 1, 1, 1)
-        lay.setSpacing(1)
+        lay.setContentsMargins(8, 2, 3, 2)
+        lay.setSpacing(2)
         lay.addWidget(self.title_label, 1)
         lay.addWidget(self.redock_btn)
         lay.addWidget(self.min_btn)
@@ -52,6 +51,7 @@ class DockTitleBar(QWidget):
     def sync(self, floating: bool, area):
         self.redock_btn.setVisible(floating)
         self.min_btn.setText(_MINIMIZE_ARROW.get(area, "‹"))
+        self.min_btn.setIcon(line_icon(_MINIMIZE_ICON.get(area, "chevron_left")))
 
     def mouseDoubleClickEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -75,8 +75,9 @@ class DockTitleBar(QWidget):
 class SideTab(QWidget):
     """Edge tab shown while the Project Browser is minimized."""
 
-    THICKNESS = 22
+    THICKNESS = 24
     LENGTH = 150
+    ICON_SIZE = 12
 
     def __init__(self, dock):
         super().__init__(dock.app_win)
@@ -133,27 +134,45 @@ class SideTab(QWidget):
         if event.button() == Qt.LeftButton:
             self.dock.restore_from_side_tab()
 
+    def _accent_edge(self) -> QRect:
+        r = self.rect()
+        if self._area == Qt.RightDockWidgetArea:
+            return QRect(r.right() - 1, 0, 2, r.height())
+        if self._area == Qt.TopDockWidgetArea:
+            return QRect(0, 0, r.width(), 2)
+        if self._area == Qt.BottomDockWidgetArea:
+            return QRect(0, r.bottom() - 1, r.width(), 2)
+        return QRect(0, 0, 2, r.height())
+
     def paintEvent(self, _event):
+        colors = current_colors()
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        pal = self.palette()
-        group = QPalette.Current
+        p.setPen(QPen(QColor(colors["border"])))
+        p.setBrush(QColor(colors["surface_hover" if self._hover else "header_bg"]))
+        p.drawRoundedRect(QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5), 3, 3)
         if self._hover:
-            bg, fg = QPalette.Highlight, QPalette.HighlightedText
-        else:
-            bg, fg = QPalette.Button, QPalette.ButtonText
-        p.setPen(QPen(pal.color(group, QPalette.Mid)))
-        p.setBrush(pal.color(group, bg))
-        p.drawRoundedRect(self.rect().adjusted(1, 1, -1, -1), 7, 7)
-        text = f"{_EXPAND_ARROW.get(self._area, '›')}  {self.dock.windowTitle()}"
-        p.setPen(pal.color(group, fg))
+            p.fillRect(self._accent_edge(), QColor(colors["accent"]))
         p.translate(self.rect().center())
         if self._area == Qt.LeftDockWidgetArea:
             p.rotate(-90)
         elif self._area == Qt.RightDockWidgetArea:
             p.rotate(90)
+        # Drawn in rotated space: "down" there points into the window on the left, right and top edges.
+        arrow = "chevron_up" if self._area == Qt.BottomDockWidgetArea else "chevron_down"
+        title = self.dock.windowTitle()
+        metrics = p.fontMetrics()
+        gap = 4
+        width = self.ICON_SIZE + gap + metrics.horizontalAdvance(title)
+        left = -width / 2
+        icon = line_icon(arrow, colors["text_bright" if self._hover else "text_muted"])
+        p.drawPixmap(
+            QRectF(left, -self.ICON_SIZE / 2, self.ICON_SIZE, self.ICON_SIZE).toRect(),
+            icon.pixmap(QSize(self.ICON_SIZE, self.ICON_SIZE), self.devicePixelRatioF()),
+        )
+        p.setPen(QColor(colors["text_bright" if self._hover else "text"]))
         p.drawText(
-            QRectF(-self.LENGTH / 2, -self.THICKNESS / 2, self.LENGTH, self.THICKNESS),
-            Qt.AlignCenter,
-            text,
+            QRectF(left + self.ICON_SIZE + gap, -self.THICKNESS / 2, width, self.THICKNESS),
+            Qt.AlignLeft | Qt.AlignVCenter,
+            title,
         )

@@ -141,7 +141,7 @@ class _DropTree(_UrlDragTree):
 
         if blocked:
             QMessageBox.warning(
-                self, "Add Blocked",
-                "These items are outside the selected unpacked game folder and were ignored:\n"
-                + "\n".join(blocked)
+                self, self.tr("Add Blocked"),
+                self.tr("These items are outside the selected unpacked game folder and were ignored:")
+                + "\n" + "\n".join(blocked)
             )

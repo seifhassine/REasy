@@ -5,7 +5,7 @@ from contextlib import suppress
 from dataclasses import dataclass, fields, is_dataclass, replace
 
 import numpy as np
-from PySide6.QtCore import QElapsedTimer, QEvent, QTimer, Qt, Signal
+from PySide6.QtCore import QElapsedTimer, QEvent, QSize, QTimer, Qt, Signal
 from PySide6.QtGui import QColor, QCursor, QPainter
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -13,8 +13,10 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QSizePolicy,
     QSpinBox,
     QToolButton,
+    QToolTip,
     QVBoxLayout,
     QWidget,
 )
@@ -30,7 +32,8 @@ from file_handlers.tex.texture_quality import (
     normalize_texture_quality,
 )
 from settings import save_settings
-lazy from ui.editor_widgets import EmbeddedPopupComboBox
+lazy from ui.editor_widgets import EmbeddedPopupComboBox, tool_button
+lazy from ui.icons import line_icon
 from ui.orbit_camera import OrbitCameraMixin
 lazy from ui.qt_timers import call_later
 lazy from .device_frames import LIMIT_MOST, FrameWindow
@@ -52,7 +55,7 @@ lazy from .scene_marks import (
 lazy from .scene_model import SceneDrawBatch, SceneDrawMesh, SceneSkinningBinding
 lazy from .scene_skinning import SceneSkinning
 lazy from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
-lazy from .viewport_overlay import ViewportOverlayManager
+lazy from .viewport_overlay import ViewportOverlayManager, add_overlay_header, overlay_panel_stylesheet
 
 
 
@@ -165,8 +168,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._settings = settings if isinstance(settings, dict) else None
         self._controls = controls
         self.orthographic = False
-        if controls == "mesh":
-            self.setToolTip(self.tr("Left drag: orbit · Right or middle drag: pan · Wheel: zoom"))
         self._background = background
         self._init_orbit_camera(
             rot_x=float(initial_rotation[0]),
@@ -254,6 +255,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._stepped_seen: float | None = None
         self._strands_stepped = None
         self._overlays = ViewportOverlayManager(self, HOVER_DETECT_KEY)
+        self._hud_labels: list[QLabel] = []
 
         self.setFocusPolicy(Qt.StrongFocus)
         self.setMouseTracking(True)
@@ -264,34 +266,32 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def _build_overlay(self):
         self.overlay = QFrame(self)
         self.overlay.setObjectName("viewportHud")
-        self.overlay.setStyleSheet("""
-            QFrame#viewportHud { background:rgba(11,15,20,190); border:1px solid rgba(92,110,128,170); border-radius:6px; color:#dce3ea; }
-            QWidget#viewportHudBody { background-color:transparent; border:0; }
-            QLabel { color:#dce3ea; background-color:transparent; font-size:11px; }
-            QLabel#overlayResizeGrip { color:#5d6f80; background-color:transparent; font-size:10px; }
-            QToolButton { background-color:transparent; border:1px solid #33414e; color:#dce3ea; border-radius:3px; padding:0px; }
-            QToolButton:hover { background:#253342; border-color:#4eb4a6; }
-            QComboBox, QSpinBox, QDoubleSpinBox { background:#151b22; border:1px solid #33414e; color:#e8eef5; padding:2px 4px; min-height:18px; }
-            QCheckBox { color:#dce3ea; background-color:transparent; font-size:11px; }
-        """)
+        self.overlay.setStyleSheet(overlay_panel_stylesheet("viewportHud", dense_fields=True))
         layout = QVBoxLayout(self.overlay)
-        layout.setContentsMargins(8, 6, 8, 6)
-        layout.setSpacing(4)
-        header = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        header = add_overlay_header(self.overlay, "viewportHud", left_margin=8)
         self.fps_label = QLabel(self.tr("0 FPS"), self.overlay)
-        self.overlay_fold_button = self._overlay_button("▾", self.tr("Fold panel"))
+        self.fps_label.setObjectName("viewportHudTitle")
+        self.overlay_fold_button = self._overlay_button("chevron_down", self.tr("Fold panel"))
         self.fullscreen_button = self._overlay_button(
-            "⛶", self.tr("Fullscreen viewport"), self._toggle_view_fullscreen
+            "fullscreen", self.tr("Fullscreen viewport"), self._toggle_view_fullscreen
         )
         header.addWidget(self.fps_label, 1)
+        help_text = {
+            "mesh": self.tr("Left drag: orbit · Right or middle drag: pan · Wheel: zoom"),
+            "scene": "\n".join((self.tr("Hold H to hover/select viewport objects."),
+                                self.tr("Main REasy shortcuts are disabled in Scene tabs."))),
+        }.get(self._controls)
+        if help_text:
+            header.addWidget(self._overlay_button("question", help_text, self._show_help_tip))
         header.addWidget(self.fullscreen_button)
         header.addWidget(self.overlay_fold_button)
-        layout.addLayout(header)
         self.overlay_body = QWidget(self.overlay)
         self.overlay_body.setObjectName("viewportHudBody")
         self.overlay_body.setAttribute(Qt.WA_StyledBackground, True)
         body_layout = QVBoxLayout(self.overlay_body)
-        body_layout.setContentsMargins(0, 0, 0, 0)
+        body_layout.setContentsMargins(8, 6, 8, 2)
         body_layout.setSpacing(4)
         layout.addWidget(self.overlay_body)
 
@@ -301,20 +301,27 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             "scene": self._build_scene_controls,
         }
         builders.get(self._controls, self._build_scene_controls)(body_layout)
+        self._align_hud_labels()
 
         self.setup_viewport_overlay(self.overlay, self.overlay_body, self.overlay_fold_button)
         self.overlay.adjustSize()
         self.place_viewport_overlays()
 
-    def _overlay_button(self, text: str, tip: str, slot=None) -> QToolButton:
-        button = QToolButton(self.overlay)
-        button.setText(text)
-        button.setToolTip(tip)
-        button.setFixedSize(max(18, 8 * len(str(text)) + 12), 18)
-        if slot:
-            button.clicked.connect(slot)
+    def _overlay_button(self, icon: str, tip: str, slot=None) -> QToolButton:
+        button = tool_button(icon, tip, slot, parent=self.overlay)
+        button.setIconSize(QSize(14, 14))
+        button.setFixedSize(20, 20)
         button.setFocusPolicy(Qt.NoFocus)
         return button
+
+    def _show_help_tip(self) -> None:
+        button = self.sender()
+        QToolTip.showText(button.mapToGlobal(button.rect().bottomLeft()), button.toolTip(), button)
+
+    def show_fullscreen_state(self, fullscreen: bool) -> None:
+        self.fullscreen_button.setIcon(line_icon("fullscreen_exit" if fullscreen else "fullscreen"))
+        self.fullscreen_button.setToolTip(
+            self.tr("Leave fullscreen (F11 or Esc)") if fullscreen else self.tr("Fullscreen viewport"))
 
     def setup_viewport_overlay(
         self,
@@ -351,7 +358,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         )
         for widget in self._fullscreen_restore.hidden_widgets:
             widget.hide()
-        self.fullscreen_button.setText("x")
+        self.show_fullscreen_state(True)
         window.showFullScreen()
         call_later(self, 0, self._after_fullscreen_change)
 
@@ -386,7 +393,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._fullscreen_transition = True
         restore = self._fullscreen_restore
         self._fullscreen_restore = None
-        self.fullscreen_button.setText("⛶")
+        self.show_fullscreen_state(False)
         for widget in restore.hidden_widgets:
             with suppress(RuntimeError):
                 widget.show()
@@ -420,19 +427,25 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._add_texture_quality_control(layout)
         self._add_antialiasing_control(layout)
         self._add_fps_limit_control(layout)
+        self._add_separator(layout)
         self._add_control_row(
             layout,
-            self.tr("Speed"), self._camera_spin("camera_speed", 0.01, 50.0, 0.1),
-            self.tr("Look"), self._camera_spin("camera_look", 0.01, 2.0, 0.01),
+            self.tr("Speed"), self._camera_spin("camera_speed", 0.01, 50.0, 0.1, self.tr("Fly speed of the camera.")),
+            self.tr("Look"), self._camera_spin("camera_look", 0.01, 2.0, 0.01, self.tr("Mouse look sensitivity.")),
         )
         self._add_control_row(
             layout,
-            self.tr("Wheel"), self._camera_spin("camera_wheel", 0.001, 2.0, 0.01),
-            self.tr("Fast"), self._camera_spin("camera_boost", 1.0, 20.0, 0.25),
-            self.tr("Slow"), self._camera_spin("camera_slow", 0.01, 1.0, 0.05),
+            self.tr("Wheel"), self._camera_spin("camera_wheel", 0.001, 2.0, 0.01,
+                                                self.tr("How far a wheel step moves the camera, times its speed.")),
+            self.tr("Fast"), self._camera_spin("camera_boost", 1.0, 20.0, 0.25,
+                                               self.tr("Speed multiplier while Shift is held.")),
+            self.tr("Slow"), self._camera_spin("camera_slow", 0.01, 1.0, 0.05,
+                                               self.tr("Speed multiplier while Ctrl is held.")),
         )
+        self._add_separator(layout)
         self._add_light_control(layout)
         self.probe_exposure_spin = self._float_spin(0.01, 2.0, 0.01, self.probe_exposure, self._set_probe_exposure)
+        self.probe_exposure_spin.setToolTip(self.tr("Exposure of the light probes' lighting and of the probe points."))
         self._shown_under("textures", self._add_control_row(layout, self.tr("Probe Exp"), self.probe_exposure_spin))
         self.probe_viz_combo = self._data_combo(
             (
@@ -444,10 +457,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._set_probe_viz_mode,
             self.probe_viz_mode,
         )
+        self.probe_viz_combo.setToolTip(self.tr("Light probes drawn in the viewport: their volumes, points, or both."))
         self.probe_viz_points_spin = QSpinBox(self.overlay)
         self.probe_viz_points_spin.setRange(100, 50000)
         self.probe_viz_points_spin.setSingleStep(500)
-        self.probe_viz_points_spin.setFixedWidth(62)
+        self.probe_viz_points_spin.setProperty("scrub", True)
+        self.probe_viz_points_spin.setToolTip(self.tr("Most probe points drawn."))
         self.probe_viz_points_spin.setValue(self.probe_viz_points)
         self.probe_viz_points_spin.valueChanged.connect(self._set_probe_viz_points)
         self._add_control_row(
@@ -458,10 +473,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self.probe_viz_points_spin,
         )
         self.probe_status_label = QLabel("", self.overlay)
+        self.probe_status_label.setObjectName("overlayStatus")
         self.probe_status_label.setWordWrap(True)
-        self.probe_status_label.setStyleSheet("color:#7fced6; background-color:transparent; font-size:10px;")
         layout.addWidget(self.probe_status_label)
         self._refresh_probe_status_label()
+        self._add_separator(layout)
         self.gizmo_mode_combo = self._data_combo(
             (
                 (self.tr("Position"), "position"),
@@ -473,14 +489,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         )
         self._add_control_row(layout, self.tr("Gizmo"), self.gizmo_mode_combo)
         self._add_highlight_filter_control(layout)
-        note = QLabel(self.tr("Hold H to hover/select viewport objects."), self.overlay)
-        note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
-        layout.addWidget(note)
-        shortcut_note = QLabel(
-            self.tr("Main REasy shortcuts are disabled in Scene tabs."), self.overlay
-        )
-        shortcut_note.setStyleSheet("color:#7f8b96; background-color:transparent; font-size:10px;")
-        layout.addWidget(shortcut_note)
 
     def _add_light_control(self, layout: QVBoxLayout):
         self.scene_shading_combo = self._data_combo(((self.tr("Textures"), "textures"),), self.set_shading)
@@ -524,7 +532,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def _add_fps_limit_control(self, layout: QVBoxLayout):
         fps_spin = QSpinBox(self.overlay)
         fps_spin.setRange(0, LIMIT_MOST)
-        fps_spin.setFixedWidth(50)
+        fps_spin.setProperty("scrub", True)
         fps_spin.setValue(self._fps_limit)
         fps_spin.setToolTip(
             self.tr("Frame rate of the viewport, animation poses and the game's strand chain; 0 is uncapped (strands "
@@ -593,13 +601,33 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
 
     def _add_control_row(self, layout: QVBoxLayout, *items):
         row = QHBoxLayout()
-        for item in items:
-            row.addWidget(QLabel(item, self.overlay) if isinstance(item, str) else item)
+        row.setSpacing(6)
+        for index, item in enumerate(items):
+            if isinstance(item, str):
+                label = QLabel(item, self.overlay)
+                label.setObjectName("overlayFieldLabel")
+                label.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+                if index == 0 and len(items) > 1:
+                    self._hud_labels.append(label)
+                item = label
+            row.addWidget(item)
         layout.addLayout(row)
         return row
 
+    def _align_hud_labels(self) -> None:
+        width = max((label.sizeHint().width() for label in self._hud_labels), default=0)
+        for label in self._hud_labels:
+            label.setFixedWidth(width)
+
+    def _add_separator(self, layout: QVBoxLayout) -> None:
+        line = QFrame(self.overlay)
+        line.setFrameShape(QFrame.HLine)
+        layout.addWidget(line)
+
     def _data_combo(self, items, slot, current=None) -> EmbeddedPopupComboBox:
         combo = EmbeddedPopupComboBox(self.overlay)
+        # Items added later, such as Game lighting, widen it and the panel.
+        combo.setSizeAdjustPolicy(EmbeddedPopupComboBox.AdjustToContents)
         for label, data in items:
             combo.addItem(label, data)
         if current is not None and (index := combo.findData(current)) >= 0:
@@ -612,21 +640,25 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         spin.setRange(minimum, maximum)
         spin.setDecimals(3 if step < 0.01 else 2)
         spin.setSingleStep(step)
-        spin.setFixedWidth(58)
+        spin.setProperty("scrub", True)
         spin.setValue(value)
         spin.valueChanged.connect(slot)
         return spin
 
-    def _camera_spin(self, attr: str, minimum: float, maximum: float, step: float) -> QDoubleSpinBox:
-        return self._float_spin(minimum, maximum, step, getattr(self, attr), lambda value: self._set_camera_setting(attr, f"scene_{attr}", value))
+    def _camera_spin(self, attr: str, minimum: float, maximum: float, step: float, tip: str) -> QDoubleSpinBox:
+        spin = self._float_spin(minimum, maximum, step, getattr(self, attr), lambda value: self._set_camera_setting(attr, f"scene_{attr}", value))
+        spin.setToolTip(tip)
+        return spin
 
     def _build_mesh_controls(self, layout: QVBoxLayout):
         self._add_texture_quality_control(layout)
         self._add_antialiasing_control(layout)
         self._add_fps_limit_control(layout)
+        self._add_separator(layout)
 
         self.wf_combo = self._wireframe_combo()
         self.line_spin = self._float_spin(0.5, 8.0, 0.1, self.line_width, self._set_line_width)
+        self.line_spin.setToolTip(self.tr("Width of the wireframe's lines, in pixels."))
         self._add_control_row(
             layout,
             self.tr("Wireframe"),
@@ -646,6 +678,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         )
         self.amb_spin = self._float_spin(0.0, 1.0, 0.05, self.ambient, self._set_ambient)
         self.diff_spin = self._float_spin(0.0, 1.0, 0.05, self.diffuse, self._set_diffuse)
+        self.amb_spin.setToolTip(self.tr("Ambient light: the brightness of faces turned away from the light."))
+        self.diff_spin.setToolTip(self.tr("Diffuse light: the brightness the light adds to faces turned to it."))
         self._shown_under("textures", self._add_control_row(
             layout, self.tr("Light"), self.light_combo, self.tr("Amb"), self.amb_spin, self.tr("Diff"),
             self.diff_spin))
@@ -753,6 +787,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         combo = getattr(self, "scene_shading_combo", None)
         if combo is None:
             self._add_light_control(self.overlay_body.layout())
+            self._align_hud_labels()
             self.overlay.adjustSize()
             self.place_viewport_overlays()
             combo = self.scene_shading_combo
@@ -762,6 +797,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             combo.blockSignals(False)
         self._game_offered = True
         self._apply_shading()
+        # The panel is sized again once the combo box's new item has reached the layouts.
+        self._overlays.place_later()
 
     def set_shading(self, shading: str) -> None:
         if shading not in ("game", "textures"):

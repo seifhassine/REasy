@@ -9,6 +9,7 @@ lazy from file_handlers.rsz.rsz_handler import RszHandler
 lazy from file_handlers.rsz.scn_scene_graph import ScnSceneGraphBuilder
 lazy from file_handlers.rsz.scn_scene_loader import ScnSceneSource
 lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
+lazy from ui.styles import set_style_role
 lazy from utils.resource_file_utils import resource_key
 lazy from .chain_catalog import strand_catalog_for
 lazy from .controls import LoadedSet, StrandsControls
@@ -50,6 +51,8 @@ class PfbStrandsPreview(QSplitter):
         self.scene = ScnScenePreviewWidget(self, sources_getter=self._sources)
         self.scene.preview.strands_source = self._strands
         layout.addWidget(self.scene, 1)
+        self.scene.status_label.setContentsMargins(6, 3, 6, 3)
+        set_style_role(self.scene.status_label, tone='muted')
         layout.addWidget(self.scene.status_label)
         self.addWidget(shown)
         self.controls = StrandsControls(self, str(getattr(handler, 'filepath', '') or ''), editing=True)

@@ -4,10 +4,13 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QFileDialog, QTreeWidget, QTreeWidgetItem, QHeaderView,
-    QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame
+    QMessageBox, QProgressDialog, QApplication, QGroupBox, QStackedWidget
 )
 
 lazy from tools.outdated_files_detector import OutdatedFilesDetector, delete_files
+lazy from ui.editor_widgets import styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 class OutdatedFilesDialog(QDialog):
     def __init__(self, parent=None, registry_path=None):
@@ -23,67 +26,74 @@ class OutdatedFilesDialog(QDialog):
         
     def _create_ui(self):
         layout = QVBoxLayout(self)
-        
-        info_frame = QFrame()
-        info_frame.setStyleSheet("border-radius: 5px; padding: 10px;")
-        info_layout = QVBoxLayout(info_frame)
-        info_label = QLabel(self.tr(
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
+
+        info_label = styled_label(self.tr(
             "<b>Note:</b> This tool detects files that are incompatible with your selected RSZ template "
             "(.json file). Make sure to use the latest .json if you want to check for outdated mods."
-        ))
+        ), banner="info")
         info_label.setWordWrap(True)
-        info_font = info_label.font()
-        info_font.setPointSize(info_font.pointSize() + 1)
-        info_label.setFont(info_font)
-        info_layout.addWidget(info_label)
-        layout.addWidget(info_frame)
-        
+        layout.addWidget(info_label)
+
         config_group = QGroupBox(self.tr("Configuration"))
         config_layout = QVBoxLayout(config_group)
-        
+        config_layout.setSpacing(6)
+
         registry_layout = QHBoxLayout()
         self.registry_label = QLabel(self.tr("RSZ JSON Path: Not set"))
+        self.registry_label.setWordWrap(True)
+        self.registry_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.browse_registry_btn = QPushButton(self.tr("Browse..."))
+        set_style_role(self.browse_registry_btn, compact=True)
         self.browse_registry_btn.clicked.connect(self._browse_registry)
         registry_layout.addWidget(self.registry_label, 1)
         registry_layout.addWidget(self.browse_registry_btn)
         config_layout.addLayout(registry_layout)
-        
+
         dir_layout = QHBoxLayout()
         self.dir_label = QLabel(self.tr("Directory: Not selected"))
+        self.dir_label.setWordWrap(True)
+        self.dir_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.browse_dir_btn = QPushButton(self.tr("Browse..."))
+        set_style_role(self.browse_dir_btn, compact=True)
         self.browse_dir_btn.clicked.connect(self._browse_directory)
         dir_layout.addWidget(self.dir_label, 1)
         dir_layout.addWidget(self.browse_dir_btn)
         config_layout.addLayout(dir_layout)
-        
+
         layout.addWidget(config_group)
-        
+
         self.scan_btn = QPushButton(self.tr("Scan for Outdated Files"))
-        self.scan_btn.setMinimumHeight(40)
-        font = self.scan_btn.font()
-        font.setBold(True)
-        self.scan_btn.setFont(font)
+        self.scan_btn.setIcon(line_icon("search"))
+        set_style_role(self.scan_btn, variant="primary")
         self.scan_btn.clicked.connect(self._scan_directory)
         self.scan_btn.setEnabled(False)
-        layout.addWidget(self.scan_btn)
-        
+        scan_layout = QHBoxLayout()
+        scan_layout.addStretch()
+        scan_layout.addWidget(self.scan_btn)
+        layout.addLayout(scan_layout)
+
         results_group = QGroupBox(self.tr("Results"))
         results_layout = QVBoxLayout(results_group)
-        
+        results_layout.setSpacing(6)
+
         self.results_tree = QTreeWidget()
         self.results_tree.setHeaderLabels([
             self.tr("File Path"), self.tr("Mismatching Types Count")
         ])
-        self.results_tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.results_tree.header().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         self.results_tree.header().setSectionsMovable(True)
         self.results_tree.header().setSectionsClickable(True)
-        self.results_tree.header().setStretchLastSection(False)
-        self.results_tree.setColumnWidth(0, 500)
         self.results_tree.setSelectionMode(QTreeWidget.ExtendedSelection)
-        results_layout.addWidget(self.results_tree)
-        
+        self._results_stack = QStackedWidget()
+        results_placeholder = styled_label(self.tr("Run a scan to list outdated files."), emptyState=True)
+        self._results_stack.addWidget(results_placeholder)
+        self._results_stack.addWidget(self.results_tree)
+        results_layout.addWidget(self._results_stack, 1)
+
         action_layout = QHBoxLayout()
+        action_layout.setSpacing(6)
         self.select_all_btn = QPushButton(self.tr("Select All"))
         self.select_all_btn.clicked.connect(self._select_all)
         self.deselect_all_btn = QPushButton(self.tr("Deselect All"))
@@ -94,24 +104,26 @@ class OutdatedFilesDialog(QDialog):
         self.move_btn.setEnabled(False)
         
         self.delete_btn = QPushButton(self.tr("Delete Selected Files"))
+        self.delete_btn.setIcon(line_icon("delete", current_colors()["danger"]))
+        set_style_role(self.delete_btn, variant="danger")
         self.delete_btn.clicked.connect(self._delete_selected)
         self.delete_btn.setEnabled(False)
         self.results_tree.itemChanged.connect(self._on_item_checked)
-        
+
         action_layout.addWidget(self.select_all_btn)
         action_layout.addWidget(self.deselect_all_btn)
         action_layout.addStretch()
         action_layout.addWidget(self.move_btn)
+        action_layout.addSpacing(12)
         action_layout.addWidget(self.delete_btn)
-        
+
         results_layout.addLayout(action_layout)
-        layout.addWidget(results_group)
-        
+        layout.addWidget(results_group, 1)
+
         bottom_layout = QHBoxLayout()
         bottom_layout.addStretch()
         self.close_btn = QPushButton(self.tr("Close"))
         self.close_btn.clicked.connect(self.close)
-        self.close_btn.setMinimumWidth(120)
         bottom_layout.addWidget(self.close_btn)
         layout.addLayout(bottom_layout)
         
@@ -222,7 +234,7 @@ class OutdatedFilesDialog(QDialog):
         
         progress.setValue(total_files)
         self.scan_results = results
-        
+
         signals_were_blocked = self.results_tree.blockSignals(True)
         try:
             if len(results) > 500:
@@ -231,7 +243,8 @@ class OutdatedFilesDialog(QDialog):
                 self._populate_tree(results)
         finally:
             self.results_tree.blockSignals(signals_were_blocked)
-        
+        self._results_stack.setCurrentWidget(self.results_tree)
+
         QMessageBox.information(
             self, 
             self.tr("Scan Complete"),

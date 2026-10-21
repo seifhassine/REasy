@@ -21,9 +21,16 @@ from PySide6.QtWidgets import (
     QProgressDialog,
     QTreeWidget,
     QTreeWidgetItem,
+    QWidget,
+    QGridLayout,
+    QFormLayout,
+    QHeaderView,
 )
 from PySide6.QtWidgets import QComboBox
 
+lazy from ui.editor_widgets import editor_strip, styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
 lazy from utils.type_registry import TypeRegistry
 lazy from utils.number_format import format_display_value
 lazy from tools.rsz_field_value_finder import format_value
@@ -163,107 +170,123 @@ class RszCsvExtractorDialog(QDialog):
         self._scanning = False
 
         self.setWindowTitle(self.tr("CSV Extractor (RSZ Data Matcher)"))
-        self.setMinimumSize(980, 760)
+        self.setMinimumSize(820, 560)
+        self.resize(1080, 780)
         self._build_ui()
         jp = self.json_path_edit.text().strip()
         if jp and os.path.isfile(jp):
             self._start_async_load_types(jp)
 
     def _build_ui(self):
-        layout = QVBoxLayout(self)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        types_group = QGroupBox(self.tr("Type Data Source"))
-        tlay = QHBoxLayout()
+        sources = QWidget()
+        sources.setProperty("surface", "toolbar")
+        tlay = QGridLayout(sources)
+        tlay.setContentsMargins(8, 6, 8, 6)
+        tlay.setHorizontalSpacing(6)
+        tlay.setVerticalSpacing(4)
+        tlay.setColumnStretch(1, 1)
         self.json_path_edit = QLineEdit(self.settings.get("rcol_json_path", ""))
-        tlay.addWidget(QLabel(self.tr("JSON Path:")))
-        tlay.addWidget(self.json_path_edit)
+        self.json_path_edit.setToolTip(self.tr("Type Data Source"))
+        tlay.addWidget(QLabel(self.tr("JSON Path:")), 0, 0)
+        tlay.addWidget(self.json_path_edit, 0, 1)
         browse = QPushButton(self.tr("Browse..."))
-        tlay.addWidget(browse)
-        types_group.setLayout(tlay)
-        layout.addWidget(types_group)
+        tlay.addWidget(browse, 0, 2)
 
         browse.clicked.connect(self._browse_json)
         self.json_path_edit.editingFinished.connect(lambda: self._start_async_load_types(self.json_path_edit.text().strip()))
 
-        root_group = QGroupBox(self.tr("Search Root"))
-        rlay = QHBoxLayout()
         self.root_dir_edit = QLineEdit(self.settings.get("unpacked_path", ""))
-        rlay.addWidget(QLabel(self.tr("Directory:")))
-        rlay.addWidget(self.root_dir_edit)
+        self.root_dir_edit.setToolTip(self.tr("Search Root"))
+        tlay.addWidget(QLabel(self.tr("Directory:")), 1, 0)
+        tlay.addWidget(self.root_dir_edit, 1, 1)
         root_browse = QPushButton(self.tr("Browse..."))
-        rlay.addWidget(root_browse)
+        tlay.addWidget(root_browse, 1, 2)
         self.recursive_check = QCheckBox(self.tr("Recursive"))
         self.recursive_check.setChecked(True)
-        rlay.addWidget(self.recursive_check)
-        
-        root_group.setLayout(rlay)
-        layout.addWidget(root_group)
+        tlay.addWidget(self.recursive_check, 1, 3)
+        root.addWidget(sources)
         root_browse.clicked.connect(self._browse_root)
 
-        splitter = QSplitter(Qt.Horizontal)
-        splitter.addWidget(self._build_side("A"))
-        splitter.addWidget(self._build_side("B"))
-        splitter.setSizes([480, 480])
-        layout.addWidget(splitter)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+        root.addLayout(layout, 1)
 
-        rules_group = QGroupBox(self.tr("Match Rules & Field Constraints"))
-        rg_lay = QVBoxLayout()
-        
-        add_lay = QHBoxLayout()
-        
-        add_lay.addWidget(QLabel(self.tr("A Field:")))
+        self._field_count_labels: Dict[str, QLabel] = {}
+        sides = QSplitter(Qt.Horizontal)
+        sides.setChildrenCollapsible(False)
+        sides.addWidget(self._build_side("A"))
+        sides.addWidget(self._build_side("B"))
+        sides.setSizes([480, 480])
+
+        rules_group = QGroupBox(self.tr("Match Rules & Field Constraints").replace("&", "&&"))
+        add_lay = QGridLayout(rules_group)
+        add_lay.setContentsMargins(6, 4, 6, 6)
+        add_lay.setHorizontalSpacing(6)
+        add_lay.setVerticalSpacing(4)
+        add_lay.setColumnStretch(1, 2)
+        add_lay.setColumnStretch(3, 1)
+
+        add_lay.addWidget(QLabel(self.tr("A Field:")), 0, 0)
         self.a_field_combo = QComboBox()
         self.a_field_combo.setEditable(False)
-        add_lay.addWidget(self.a_field_combo)
-        
+        add_lay.addWidget(self.a_field_combo, 0, 1)
+
         self.a_constraint_type_combo = QComboBox()
         for text, value in self._constraint_type_options():
             self.a_constraint_type_combo.addItem(text, value)
-        add_lay.addWidget(self.a_constraint_type_combo)
-        
+        add_lay.addWidget(self.a_constraint_type_combo, 0, 2)
+
         self.a_constraint_value_edit = QLineEdit()
         self.a_constraint_value_edit.setPlaceholderText(self.tr("Value (if needed)"))
-        add_lay.addWidget(self.a_constraint_value_edit)
-        
-        add_lay.addWidget(QLabel("↔"))
-        
-        add_lay.addWidget(QLabel(self.tr("B Field:")))
+        add_lay.addWidget(self.a_constraint_value_edit, 0, 3)
+
+        add_lay.addWidget(QLabel(self.tr("B Field:")), 1, 0)
         self.b_field_combo = QComboBox()
         self.b_field_combo.setEditable(False)
-        add_lay.addWidget(self.b_field_combo)
-        
+        add_lay.addWidget(self.b_field_combo, 1, 1)
+
         self.b_constraint_type_combo = QComboBox()
         for text, value in self._constraint_type_options():
             self.b_constraint_type_combo.addItem(text, value)
-        add_lay.addWidget(self.b_constraint_type_combo)
-        
+        add_lay.addWidget(self.b_constraint_type_combo, 1, 2)
+
         self.b_constraint_value_edit = QLineEdit()
         self.b_constraint_value_edit.setPlaceholderText(self.tr("Value (if needed)"))
-        add_lay.addWidget(self.b_constraint_value_edit)
-        
-        add_btn = QPushButton(self.tr("Add Rule"))
-        remove_btn = QPushButton(self.tr("Remove Selected"))
-        add_lay.addWidget(add_btn)
-        add_lay.addWidget(remove_btn)
-        
-        rg_lay.addLayout(add_lay)
+        add_lay.addWidget(self.b_constraint_value_edit, 1, 3)
+
+        add_btn = QPushButton(line_icon("add"), self.tr("Add Rule"))
+        remove_btn = QPushButton(line_icon("remove"), self.tr("Remove Selected"))
+        add_lay.addWidget(add_btn, 0, 4)
+        add_lay.addWidget(remove_btn, 1, 4)
 
         self.rules_list = QListWidget()
+        self.rules_list.setMinimumHeight(44)
         self.rules_list.setMaximumHeight(120)
-        rg_lay.addWidget(self.rules_list)
-        
-        rules_group.setLayout(rg_lay)
-        layout.addWidget(rules_group)
+        add_lay.addWidget(self.rules_list, 2, 0, 1, 5)
 
-        run_lay = QHBoxLayout()
+        config = QWidget()
+        config_lay = QVBoxLayout(config)
+        config_lay.setContentsMargins(0, 0, 0, 2)
+        config_lay.setSpacing(8)
+        config_lay.addWidget(sides, 1)
+        config_lay.addWidget(rules_group)
+
         self.preview_btn = QPushButton(self.tr("Preview Matches"))
+        self.preview_btn.setProperty("variant", "primary")
         self.export_btn = QPushButton(self.tr("Export CSV…"))
         self.export_btn.setEnabled(False)
-        run_lay.addWidget(self.preview_btn)
-        run_lay.addWidget(self.export_btn)
-        layout.addLayout(run_lay)
-        
+
+        results = QWidget()
+        results_lay = QVBoxLayout(results)
+        results_lay.setContentsMargins(0, 2, 0, 0)
+        results_lay.setSpacing(6)
         export_options_lay = QHBoxLayout()
+        export_options_lay.setSpacing(12)
         self.include_filenames_check = QCheckBox(self.tr("Include file names in CSV"))
         self.include_filenames_check.setChecked(True)
         self.include_filenames_check.setToolTip(
@@ -280,21 +303,37 @@ class RszCsvExtractorDialog(QDialog):
         self.allow_same_file_check.stateChanged.connect(self._on_allow_same_file_changed)
         
         export_options_lay.addStretch()
-        layout.addLayout(export_options_lay)
+        results_lay.addLayout(export_options_lay)
 
         self.results_tree = QTreeWidget()
         self.results_tree.setHeaderLabels([
             self.tr("Key"), self.tr("A Count"), self.tr("B Count")
         ])
-        layout.addWidget(self.results_tree)
+        self.results_tree.setRootIsDecorated(False)
+        self.results_tree.setUniformRowHeights(True)
+        self.results_tree.setMinimumHeight(56)
+        self.results_tree.header().setStretchLastSection(False)
+        self.results_tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        results_lay.addWidget(self.results_tree, 1)
 
-        self.status_label = QLabel(self.tr("Ready"))
-        self.status_label.setStyleSheet("QLabel { color: gray; }")
-        layout.addWidget(self.status_label)
+        splitter = QSplitter(Qt.Vertical)
+        splitter.setChildrenCollapsible(False)
+        splitter.addWidget(config)
+        splitter.addWidget(results)
+        splitter.setStretchFactor(0, 3)
+        splitter.setStretchFactor(1, 2)
+        layout.addWidget(splitter, 1)
 
+        footer, footer_lay = editor_strip("footer", (8, 6, 8, 6), 6)
+        self.status_label = styled_label(self.tr("Ready"), tone="muted")
+        footer_lay.addWidget(self.status_label, 1)
+        footer_lay.addWidget(self.preview_btn)
+        footer_lay.addWidget(self.export_btn)
+        footer_lay.addSpacing(10)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        footer_lay.addWidget(buttons)
+        root.addWidget(footer)
 
         self.preview_btn.clicked.connect(self._start_preview)
         self.export_btn.clicked.connect(self._export_csv)
@@ -319,50 +358,75 @@ class RszCsvExtractorDialog(QDialog):
     def _build_side(self, label: str):
         box = QGroupBox(self.tr("Set {label}").format(label=label))
         lay = QVBoxLayout()
+        lay.setContentsMargins(6, 4, 6, 6)
+        lay.setSpacing(6)
+        form = QFormLayout()
+        form.setHorizontalSpacing(8)
+        form.setVerticalSpacing(6)
+        lay.addLayout(form)
 
-        pat_lay = QHBoxLayout()
         self.__dict__[f"pattern_{label}"] = QLineEdit("*")
-        pat_lay.addWidget(QLabel(self.tr("Filename Pattern:")))
-        pat_lay.addWidget(self.__dict__[f"pattern_{label}"])
-        lay.addLayout(pat_lay)
-
         typelay = QHBoxLayout()
+        typelay.setSpacing(10)
+        typelay.addWidget(self.__dict__[f"pattern_{label}"], 1)
         self.__dict__[f"scn_{label}"] = QCheckBox("SCN")
         self.__dict__[f"pfb_{label}"] = QCheckBox("PFB")
         self.__dict__[f"user_{label}"] = QCheckBox("USER")
         self.__dict__[f"scn_{label}"].setChecked(True)
         self.__dict__[f"pfb_{label}"].setChecked(True)
         self.__dict__[f"user_{label}"].setChecked(True)
-        typelay.addWidget(QLabel(self.tr("Types:")))
+        types_label = styled_label(self.tr("Types:"), tone="muted")
+        typelay.addWidget(types_label)
         typelay.addWidget(self.__dict__[f"scn_{label}"])
         typelay.addWidget(self.__dict__[f"pfb_{label}"])
         typelay.addWidget(self.__dict__[f"user_{label}"])
-        lay.addLayout(typelay)
+        form.addRow(self.tr("Filename Pattern:"), typelay)
 
         type_lay = QHBoxLayout()
+        type_lay.setSpacing(8)
         self.__dict__[f"type_edit_{label}"] = QLineEdit()
-        self.__dict__[f"type_id_label_{label}"] = QLabel(self.tr("ID: -"))
-        type_lay.addWidget(QLabel(self.tr("RSZ Type:")))
+        self.__dict__[f"type_id_label_{label}"] = styled_label(self.tr("ID: -"), tone="muted", mono=True)
+        self.__dict__[f"type_id_label_{label}"].setTextInteractionFlags(Qt.TextSelectableByMouse)
         type_lay.addWidget(self.__dict__[f"type_edit_{label}"], 1)
         type_lay.addWidget(self.__dict__[f"type_id_label_{label}"])
-        lay.addLayout(type_lay)
+        form.addRow(self.tr("RSZ Type:"), type_lay)
 
-        fields_group = QGroupBox(self.tr("Fields to Output (from {label})").format(label=label))
-        fields_v = QVBoxLayout()
-        self.__dict__[f"fields_list_{label}"] = QListWidget()
-        self.__dict__[f"fields_list_{label}"].setSelectionMode(QListWidget.MultiSelection)
-        fields_v.addWidget(QLabel(self.tr("Choose fields to include as CSV columns")))
-        fields_v.addWidget(self.__dict__[f"fields_list_{label}"])
-        fields_group.setLayout(fields_v)
-        lay.addWidget(fields_group)
-        self.__dict__[f"cap_fields_{label}"] = self.__dict__[f"fields_list_{label}"]
-        self.__dict__[f"fields_list_{label}"].itemSelectionChanged.connect(self._mark_dirty)
+        fields_header = QHBoxLayout()
+        fields_title = styled_label(self.tr("Fields to Output (from {label})").format(label=label), heading="panel")
+        fields_header.addWidget(fields_title)
+        fields_header.addStretch()
+        count_label = styled_label(tone="subtle")
+        fields_header.addWidget(count_label)
+        self._field_count_labels[label] = count_label
+        lay.addSpacing(2)
+        lay.addLayout(fields_header)
+        fields_list = QListWidget()
+        fields_list.setSelectionMode(QListWidget.MultiSelection)
+        fields_list.setToolTip(self.tr("Choose fields to include as CSV columns"))
+        fields_list.setMinimumHeight(56)
+        fields_title.setToolTip(fields_list.toolTip())
+        lay.addWidget(fields_list, 1)
+        self.__dict__[f"fields_list_{label}"] = fields_list
+        self.__dict__[f"cap_fields_{label}"] = fields_list
+        fields_list.itemSelectionChanged.connect(self._mark_dirty)
+        fields_list.itemSelectionChanged.connect(self._update_field_counts)
+        fields_list.model().rowsInserted.connect(self._update_field_counts)
+        fields_list.model().rowsRemoved.connect(self._update_field_counts)
+        fields_list.model().modelReset.connect(self._update_field_counts)
 
         box.setLayout(lay)
 
         self.__dict__[f"type_edit_{label}"].editingFinished.connect(lambda L=label: self._on_type_resolved(L))
+        self._update_field_counts()
 
         return box
+
+    def _update_field_counts(self, *_):
+        for label, count_label in self._field_count_labels.items():
+            fields_list = self.__dict__[f"fields_list_{label}"]
+            count_label.setText(self.tr("{selected} of {total} selected").format(
+                selected=len(fields_list.selectedItems()), total=fields_list.count()
+            ))
 
     def _browse_json(self):
         cur = self.json_path_edit.text()
@@ -510,6 +574,10 @@ class RszCsvExtractorDialog(QDialog):
         popup.setUniformItemSizes(True)
         popup.setMinimumWidth(360)
         popup.setMaximumHeight(240)
+        colors = current_colors()
+        popup.setStyleSheet(
+            f"QListWidget {{ background-color: {colors['menu_bg']}; border: 1px solid {colors['border']}; }}"
+        )
         popup.hide()
 
         debounce = QTimer(edit)

@@ -5,10 +5,11 @@ import numpy as np
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QHeaderView,
-    QLabel, QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
+    QLineEdit, QPushButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget,
 )
 
 lazy from ui.scene.mesh_scene import mesh_lod_parts
+lazy from ui.editor_widgets import styled_label
 
 
 CAMERA_VIEWS = {
@@ -70,10 +71,9 @@ class MeshInspector(QWidget):
         self._visibility_history = deque(maxlen=32)
         self._items = []
         self.setMinimumWidth(300)
+        self.panel_title = self.tr("Inspect mesh")
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 0, 0, 0)
-        title = QLabel(self.tr("Inspect mesh"))
-        layout.addWidget(title)
+        layout.setContentsMargins(6, 6, 6, 6)
         camera = QHBoxLayout()
         self.camera_combo = QComboBox(self)
         for label, name in (
@@ -136,8 +136,8 @@ class MeshInspector(QWidget):
         actions.addWidget(self.frame_button, 0, 0)
         for button in (self.frame_button, self.isolate_button, self.show_all_button, self.back_button):
             button.setProperty("compact", True)
-        self.summary = QLabel(self)
-        self.selection_summary = QLabel(self)
+        self.summary = styled_label(parent=self, tone="muted")
+        self.selection_summary = styled_label(parent=self, tone="muted")
         for label in (self.summary, self.selection_summary):
             label.setTextFormat(Qt.PlainText)
             label.setWordWrap(True)

@@ -246,10 +246,13 @@ class FileTab:
 
             self.viewer = new_viewer
             if self.viewer:
+                # The fallback tree stays parented to the page and would show behind the viewer.
+                self.tree.hide()
                 layout.addWidget(self.viewer)
                 self.viewer.modified_changed.connect(self._on_viewer_modified)
             else:
                 layout.addWidget(self.tree)
+                self.tree.show()
                 if not is_handler_type(self.handler, "RszHandler"):
                     self.refresh_tree()
 

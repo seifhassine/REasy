@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 lazy from PySide6.QtCore import Qt
-lazy from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -11,7 +10,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-lazy from ui.styles import get_color_scheme
+lazy from ui.styles import current_colors
 
 
 class MotionEditorPane(QFrame):
@@ -27,8 +26,8 @@ class MotionEditorPane(QFrame):
         header = QFrame(self)
         header.setObjectName("motionPaneHeader")
         self.header_layout = QHBoxLayout(header)
-        self.header_layout.setContentsMargins(6, 3, 4, 3)
-        self.header_layout.setSpacing(3)
+        self.header_layout.setContentsMargins(8, 4, 4, 4)
+        self.header_layout.setSpacing(4)
         self.title_label = QLabel(title.upper(), header)
         self.title_label.setObjectName("motionPaneTitle")
         self.header_layout.addWidget(self.title_label)
@@ -38,7 +37,7 @@ class MotionEditorPane(QFrame):
         self.body = QWidget(self)
         self.body.setObjectName("motionPaneBody")
         self.body_layout = QVBoxLayout(self.body)
-        self.body_layout.setContentsMargins(4, 4, 4, 4)
+        self.body_layout.setContentsMargins(6, 6, 6, 6)
         self.body_layout.setSpacing(4)
         root.addWidget(self.body, 1)
 
@@ -49,13 +48,7 @@ class MotionEditorPane(QFrame):
 class MotionEditorWorkspace(QWidget):
     """Reusable three-pane shell with a compact editor toolbar."""
 
-    def __init__(
-        self,
-        title: str,
-        *,
-        settings: dict | None = None,
-        parent: QWidget | None = None,
-    ):
+    def __init__(self, title: str, *, parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("motionEditorWorkspace")
         root = QVBoxLayout(self)
@@ -65,8 +58,8 @@ class MotionEditorWorkspace(QWidget):
         self.top_bar = QFrame(self)
         self.top_bar.setObjectName("motionEditorTopBar")
         self.toolbar = QHBoxLayout(self.top_bar)
-        self.toolbar.setContentsMargins(12, 7, 10, 7)
-        self.toolbar.setSpacing(8)
+        self.toolbar.setContentsMargins(8, 4, 8, 4)
+        self.toolbar.setSpacing(6)
         self.title_label = QLabel(title, self.top_bar)
         self.title_label.setObjectName("motionWorkspaceTitle")
         self.toolbar.addWidget(self.title_label)
@@ -77,26 +70,19 @@ class MotionEditorWorkspace(QWidget):
         self.splitter.setObjectName("motionWorkspaceSplitter")
         self.splitter.setChildrenCollapsible(False)
         root.addWidget(self.splitter, 1)
-        self.setStyleSheet(_editor_stylesheet(settings or {}))
+        self.setStyleSheet(_editor_stylesheet())
 
     def add_pane(self, pane: MotionEditorPane, stretch: int) -> None:
         self.splitter.addWidget(pane)
         self.splitter.setStretchFactor(self.splitter.count() - 1, stretch)
 
 
-def _editor_stylesheet(settings: dict) -> str:
-    colors = get_color_scheme(settings.get("tree_highlight_color"))
-    background = QColor(colors["bg"])
-    panel = background.lighter(120).name()
-    header = background.lighter(138).name()
-    viewport = background.darker(118).name()
-    border = colors["border"]
-    input_bg = colors["input_bg"]
-    highlight = colors["highlight"]
+def _editor_stylesheet() -> str:
+    c = current_colors()
     return f"""
-        QWidget#motionEditorWorkspace {{ background: {background.name()}; }}
+        QWidget#motionEditorWorkspace {{ background: {c['gutter']}; }}
         QFrame#motionEditorTopBar {{
-            background: {header}; border-bottom: 1px solid {border};
+            background: {c['header_bg']}; border-bottom: 1px solid {c['gutter']};
         }}
         QWidget#motionEditorWorkspace QLabel {{
             background: transparent; border: none;
@@ -104,87 +90,44 @@ def _editor_stylesheet(settings: dict) -> str:
         QWidget#motionEditorWorkspace QCheckBox {{
             background: transparent; border: none;
         }}
-        QLabel#motionWorkspaceTitle {{
-            font-size: 14px; font-weight: 600; padding-right: 12px;
+        QWidget#motionEditorWorkspace QLabel#motionWorkspaceTitle {{
+            color: {c['text_bright']}; font-weight: 600; padding-right: 8px;
         }}
         QFrame#motionEditorPane {{
-            background: {panel}; border: none;
+            background: {c['panel']}; border: none;
         }}
         QFrame#motionPaneHeader {{
-            background: {header}; border-bottom: 1px solid {border};
+            background: {c['header_bg']}; border-bottom: 1px solid {c['border_subtle']};
         }}
-        QLabel#motionPaneTitle {{
-            color: rgba(255,255,255,180); font-size: 9px;
-            font-weight: 700; letter-spacing: 1px;
+        QWidget#motionEditorWorkspace QLabel#motionPaneTitle {{
+            color: {c['text_muted']}; font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
         }}
-        QLabel#motionInspectorLabel {{
-            color: rgba(255,255,255,145); font-size: 9px;
-            font-weight: 700; margin-top: 6px;
+        QWidget#motionEditorWorkspace QLabel#motionInspectorLabel {{
+            color: {c['text_subtle']}; font-size: 11px; font-weight: 700; letter-spacing: 0.6px;
+            margin-top: 6px;
         }}
-        QLabel#motionCountLabel {{
-            color: rgba(255,255,255,170); background: {input_bg};
-            border-radius: 7px; padding: 1px 6px;
+        QWidget#motionEditorWorkspace QLabel#motionCountLabel {{
+            color: {c['text_muted']}; background: {c['surface_alt']};
+            border: 1px solid {c['border_subtle']}; border-radius: 3px; padding: 0px 5px;
         }}
-        QLabel#motionNotice {{
-            background: rgba(219,154,57,35); color: rgba(255,235,205,230);
-            border: 1px solid rgba(219,154,57,90); border-radius: 3px;
-            padding: 6px 8px;
+        QWidget#motionEditorWorkspace QLabel#motionNotice {{
+            background: {c['warning_soft']}; color: {c['text']};
+            border: none; border-left: 3px solid {c['warning']}; border-radius: 2px;
+            padding: 4px 8px;
         }}
-        QLabel#motionStatusBar {{
-            color: rgba(255,255,255,145); border-top: 1px solid {border};
-            padding: 5px 2px 1px 2px;
+        QWidget#motionEditorWorkspace QLabel#motionStatusBar {{
+            color: {c['text_muted']}; border-top: 1px solid {c['border_subtle']};
+            padding: 4px 4px 2px 4px;
         }}
-        QWidget#motionPaneBody {{ background: {panel}; }}
+        QWidget#motionPaneBody {{ background: {c['panel']}; }}
         QFrame#motionEditorPane[role="viewport"] QWidget#motionPaneBody {{
-            background: {viewport};
-        }}
-        QSplitter#motionWorkspaceSplitter::handle {{
-            background: {border}; width: 1px;
-        }}
-        QWidget#motionEditorWorkspace QLineEdit,
-        QWidget#motionEditorWorkspace QComboBox,
-        QWidget#motionEditorWorkspace QDoubleSpinBox {{
-            background: {input_bg}; border: 1px solid {border};
-            border-radius: 3px; padding: 2px 4px; min-height: 16px;
-        }}
-        QWidget#motionEditorWorkspace QListWidget {{
-            background: {background.name()}; border: 1px solid {border};
-            border-radius: 3px; outline: none;
+            background: {c['view_bg']};
         }}
         QWidget#motionEditorWorkspace QListWidget::item {{
-            border-bottom: 1px solid rgba(255,255,255,18);
+            border-bottom: 1px solid {c['border_subtle']};
         }}
-        QWidget#motionEditorWorkspace QListWidget::item:hover {{
-            background: rgba(255,255,255,14);
-        }}
-        QWidget#motionEditorWorkspace QListWidget::item:selected {{
-            background: {highlight};
-        }}
-        QWidget#motionEditorWorkspace QPushButton,
-        QWidget#motionEditorWorkspace QToolButton {{
-            background: {input_bg}; border: 1px solid {border};
-            border-radius: 3px; padding: 2px 5px;
-            min-width: 0; min-height: 16px;
-        }}
-        QWidget#motionEditorWorkspace QPushButton:hover,
-        QWidget#motionEditorWorkspace QToolButton:hover {{
-            background: {header};
-        }}
-        QWidget#motionEditorWorkspace QPushButton:checked,
-        QWidget#motionEditorWorkspace QToolButton:checked {{
-            background: {highlight};
-        }}
+        QWidget#motionEditorWorkspace QPushButton {{ padding: 3px 8px; }}
         QWidget#motionPlaybackControls {{
-            border-top: 1px solid {border}; padding-top: 5px;
-        }}
-        QWidget#motionEditorWorkspace QSlider::groove:horizontal {{
-            height: 4px; background: {input_bg}; border-radius: 2px;
-        }}
-        QWidget#motionEditorWorkspace QSlider::sub-page:horizontal {{
-            background: {highlight}; border-radius: 2px;
-        }}
-        QWidget#motionEditorWorkspace QSlider::handle:horizontal {{
-            width: 10px; margin: -4px 0; background: white;
-            border: 1px solid {border}; border-radius: 5px;
+            border-top: 1px solid {c['border_subtle']}; padding-top: 4px;
         }}
     """

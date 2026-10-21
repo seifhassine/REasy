@@ -17,9 +17,13 @@ from PySide6.QtWidgets import (
     QSplitter,
     QMessageBox,
     QComboBox,
+    QFormLayout,
+    QFrame,
+    QGridLayout,
 )
 
 lazy from file_handlers.mdf.mdf_template_manager import MdfTemplateManager
+lazy from ui.editor_widgets import editor_strip, search_field, styled_label
 
 
 IMPORT_TEMPLATE_TITLE = QT_TRANSLATE_NOOP(
@@ -57,86 +61,108 @@ class MdfTemplateManagerDialog(QDialog):
 
     def _create_ui(self) -> None:
         main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
 
         splitter = QSplitter(Qt.Horizontal)
+        splitter.setChildrenCollapsible(False)
         main_layout.addWidget(splitter, 1)
 
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setContentsMargins(8, 8, 4, 8)
+        left_layout.setSpacing(6)
 
-        filter_layout = QHBoxLayout()
+        self.search_edit = search_field(QLineEdit())
+        self.search_edit.setPlaceholderText(self.tr("Search templates..."))
+        left_layout.addWidget(self.search_edit)
+
         self.tag_combo = QComboBox()
         self.tag_combo.addItem(self.tr("All Tags"), None)
-        filter_layout.addWidget(QLabel(self.tr("Tag:")))
-        filter_layout.addWidget(self.tag_combo, 1)
-
-        self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText(self.tr("Search templates..."))
-        filter_layout.addWidget(self.search_edit, 2)
-
-        left_layout.addLayout(filter_layout)
+        self.tag_combo.setToolTip(self.tr("Tag:"))
+        left_layout.addWidget(self.tag_combo)
 
         self.template_list = QListWidget()
         self.template_list.setSelectionMode(QListWidget.SingleSelection)
         left_layout.addWidget(self.template_list, 1)
+        self.empty_list_label = styled_label(self.tr("No templates found"), emptyState=True)
+        self.empty_list_label.setWordWrap(True)
+        self.empty_list_label.hide()
+        left_layout.addWidget(self.empty_list_label, 1)
 
         splitter.addWidget(left_panel)
 
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
-        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setContentsMargins(4, 8, 8, 8)
+        right_layout.setSpacing(6)
 
-        name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel(self.tr("Name:")))
+        form = QFormLayout()
+        form.setHorizontalSpacing(8)
+        form.setVerticalSpacing(6)
         self.name_edit = QLineEdit()
-        name_layout.addWidget(self.name_edit, 1)
-        right_layout.addLayout(name_layout)
+        form.addRow(self.tr("Name:"), self.name_edit)
 
-        tags_layout = QHBoxLayout()
-        tags_layout.addWidget(QLabel(self.tr("Tags:")))
         self.tags_edit = QLineEdit()
         self.tags_edit.setPlaceholderText(self.tr("Comma separated tags"))
-        tags_layout.addWidget(self.tags_edit, 1)
-        right_layout.addLayout(tags_layout)
+        form.addRow(self.tr("Tags:"), self.tags_edit)
 
-        right_layout.addWidget(QLabel(self.tr("Description:")))
         self.description_edit = QTextEdit()
-        right_layout.addWidget(self.description_edit, 1)
+        form.addRow(self.tr("Description:"), self.description_edit)
+        right_layout.addLayout(form, 1)
 
-        right_layout.addWidget(QLabel(self.tr("Preview:")))
+        autosave_hint = styled_label(self.tr("Changes are saved automatically."), tone="subtle")
+        right_layout.addWidget(autosave_hint)
+
+        preview_title = styled_label(self.tr("Preview:"), heading="panel")
+        right_layout.addSpacing(4)
+        right_layout.addWidget(preview_title)
+        preview_frame = QFrame()
+        preview_frame.setProperty("surface", "recessed")
+        preview_layout = QVBoxLayout(preview_frame)
+        preview_layout.setContentsMargins(8, 6, 8, 6)
+        preview_layout.setSpacing(4)
         self.preview_label = QLabel(self.tr("Select a template to preview its details."))
         self.preview_label.setWordWrap(True)
         self.preview_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        right_layout.addWidget(self.preview_label)
+        preview_layout.addWidget(self.preview_label)
 
+        meta = QGridLayout()
+        meta.setHorizontalSpacing(16)
+        meta.setVerticalSpacing(2)
         self.source_label = QLabel(self.tr("Source File: -"))
-        right_layout.addWidget(self.source_label)
         self.version_label = QLabel(self.tr("Source Version: -"))
-        right_layout.addWidget(self.version_label)
         self.created_label = QLabel(self.tr("Created: -"))
-        right_layout.addWidget(self.created_label)
         self.modified_label = QLabel(self.tr("Modified: -"))
-        right_layout.addWidget(self.modified_label)
+        for index, label in enumerate(
+            (self.source_label, self.version_label, self.created_label, self.modified_label)
+        ):
+            label.setProperty("tone", "muted")
+            meta.addWidget(label, index // 2, index % 2)
+        meta.setColumnStretch(1, 1)
+        preview_layout.addLayout(meta)
+        right_layout.addWidget(preview_frame)
 
         actions_row = QHBoxLayout()
-        self.import_button = QPushButton(self.tr(IMPORT_TEMPLATE_TITLE))
-        actions_row.addWidget(self.import_button)
+        actions_row.setSpacing(6)
+        actions_row.addStretch(1)
         self.delete_button = QPushButton(self.tr(DELETE_TEMPLATE_TITLE))
+        self.delete_button.setProperty("variant", "danger")
         actions_row.addWidget(self.delete_button)
+        self.import_button = QPushButton(self.tr(IMPORT_TEMPLATE_TITLE))
+        self.import_button.setProperty("variant", "primary")
+        actions_row.addWidget(self.import_button)
         right_layout.addLayout(actions_row)
-
-        right_layout.addStretch(1)
-
-        close_row = QHBoxLayout()
-        close_row.addStretch(1)
-        self.close_button = QPushButton(self.tr("Close"))
-        close_row.addWidget(self.close_button)
-        right_layout.addLayout(close_row)
 
         splitter.addWidget(right_panel)
         splitter.setStretchFactor(0, 2)
         splitter.setStretchFactor(1, 3)
+
+        footer, close_row = editor_strip("footer", (8, 6, 8, 6), -1)
+        close_row.addStretch(1)
+        self.close_button = QPushButton(self.tr("Close"))
+        close_row.addWidget(self.close_button)
+        main_layout.addWidget(footer)
 
         if self.viewer is None:
             self.import_button.setEnabled(False)
@@ -216,6 +242,9 @@ class MdfTemplateManagerDialog(QDialog):
                 chosen_row = row
 
         self.template_list.blockSignals(False)
+        has_templates = self.template_list.count() > 0
+        self.template_list.setVisible(has_templates)
+        self.empty_list_label.setVisible(not has_templates)
 
         if chosen_row != -1:
             self.template_list.setCurrentRow(chosen_row)

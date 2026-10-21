@@ -5,14 +5,17 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 
-from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QRunnable, Qt, QThreadPool, Signal
-lazy from PySide6.QtGui import QColor, QIcon, QImage, QPainter, QPen, QPixmap
-lazy from PySide6.QtWidgets import QApplication, QStyle
+from PySide6.QtCore import (
+	QAbstractListModel, QCoreApplication, QModelIndex, QObject, QRectF, QRunnable, Qt, QThreadPool, Signal,
+)
+lazy from PySide6.QtGui import QColor, QFont, QIcon, QImage, QPainter, QPainterPath, QPixmap
 
 lazy from file_handlers.mesh.mesh_handler import MeshHandler
 lazy from file_handlers.mesh.material_session import MeshMaterialSession
 lazy from file_handlers.mesh.lit_preview import thumbnail
 lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
+lazy from ui.icons import line_pixmap
+lazy from ui.styles import current_colors
 lazy from utils.app_paths import application_root
 lazy from utils.resource_file_utils import ResourceResolutionContext
 
@@ -21,6 +24,21 @@ THUMBNAIL_SIZE = 160
 MESH_BACKGROUND = (26, 26, 26)
 SOUND_EXTENSIONS = {"spck", "sbnk", "pck", "bnk"}
 THUMBNAIL_EXTENSIONS = SOUND_EXTENSIONS | {"mesh", "tex"}
+_TILE_FAMILIES = {
+	"mesh": ("cube", "#3fb6d6"),
+	"tex": ("image", "#d6604f"),
+	"material": ("palette", "#5fbf5f"),
+	"scene": ("layers", "#e09a3a"),
+	"prefab": ("gameobject", "#e09a3a"),
+	"data": ("variable", "#b07fd6"),
+	"sound": ("sound", "#5f8ad9"),
+	"text": ("text", "#a0a3aa"),
+	"file": ("file", None),
+}
+_TILE_FAMILY_BY_EXTENSION = {
+	"mesh": "mesh", "tex": "tex", "mdf2": "material", "scn": "scene", "pfb": "prefab",
+	"user": "data", "msg": "text", **{extension: "sound" for extension in SOUND_EXTENSIONS},
+}
 
 
 def thumbnail_cache_directory() -> Path:
@@ -43,20 +61,65 @@ def is_streaming_mesh(path: str) -> bool:
 	return "streaming" in parts and resource_extension(path) == "mesh"
 
 
-def _streaming_mesh_icon() -> QIcon:
+def _tile_family(path: str) -> str:
+	return _TILE_FAMILY_BY_EXTENSION.get(resource_extension(path), "file")
+
+
+def _asset_tile(family: str, image: QImage | None = None, caption: str = "") -> QIcon:
+	colors = current_colors()
+	icon_name, strip = _TILE_FAMILIES[family]
+	size = THUMBNAIL_SIZE
+	pixmap = QPixmap(size, size)
+	pixmap.fill(Qt.transparent)
+	painter = QPainter(pixmap)
+	painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+	card = QRectF(6, 6, size - 12, size - 12)
+	shape = QPainterPath()
+	shape.addRoundedRect(card, 7, 7)
+	painter.fillPath(shape, QColor(colors["surface"]))
+	painter.setClipPath(shape)
+	if image is not None and not image.isNull():
+		fitted = image.scaled(card.size().toSize(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+		painter.drawImage(
+			QRectF(card.center().x() - fitted.width() / 2, card.center().y() - fitted.height() / 2,
+				fitted.width(), fitted.height()),
+			fitted,
+		)
+	else:
+		glyph = 56
+		top = card.center().y() - glyph / 2 - (10 if caption else 4)
+		painter.drawPixmap(
+			int(card.center().x() - glyph / 2), int(top), line_pixmap(icon_name, colors["text_subtle"], glyph)
+		)
+		if caption:
+			font = QFont(painter.font())
+			font.setPixelSize(17)
+			font.setWeight(QFont.DemiBold)
+			painter.setFont(font)
+			painter.setPen(QColor(colors["text_muted"]))
+			painter.drawText(
+				QRectF(card.left(), top + glyph + 6, card.width(), 26), Qt.AlignHCenter | Qt.AlignTop, caption
+			)
+	if strip:
+		painter.fillRect(QRectF(card.left(), card.bottom() - 7, card.width(), 7), QColor(strip))
+	painter.end()
+	return QIcon(pixmap)
+
+
+def _folder_tile() -> QIcon:
+	colors = current_colors()
 	pixmap = QPixmap(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
 	pixmap.fill(Qt.transparent)
 	painter = QPainter(pixmap)
 	painter.setRenderHint(QPainter.Antialiasing)
-	painter.setBrush(QColor(38, 44, 52))
-	painter.setPen(QPen(QColor(74, 144, 226), 3))
-	painter.drawRoundedRect(8, 8, THUMBNAIL_SIZE - 16, THUMBNAIL_SIZE - 16, 10, 10)
-	font = painter.font()
-	font.setBold(True)
-	font.setPixelSize(15)
-	painter.setFont(font)
-	painter.setPen(QColor(220, 232, 245))
-	painter.drawText(pixmap.rect(), Qt.AlignCenter, "STREAMING\nMESH")
+	back = QPainterPath()
+	back.addRoundedRect(QRectF(20, 36, 120, 94), 7, 7)
+	tab = QPainterPath()
+	tab.addRoundedRect(QRectF(20, 28, 54, 20), 6, 6)
+	painter.fillPath(back.united(tab), QColor(colors["surface_active"]))
+	front = QPainterPath()
+	front.addRoundedRect(QRectF(20, 52, 120, 78), 7, 7)
+	painter.fillPath(front, QColor(colors["text_subtle"]))
 	painter.end()
 	return QIcon(pixmap)
 
@@ -218,14 +281,11 @@ class PakThumbnailProvider(QObject):
 		self._pool = QThreadPool(self)
 		self._pool.setMaxThreadCount(1)  # CachedPakReader and mesh dependencies share one index.
 		QThreadPool.globalInstance().start(_CachePruneTask(cache_dir))
-		style = QApplication.style()
-		self._folder = style.standardIcon(QStyle.SP_DirIcon)
-		self._file = style.standardIcon(QStyle.SP_FileIcon)
-		self._sound = style.standardIcon(QStyle.SP_MediaVolume)
-		self._streaming_mesh = _streaming_mesh_icon()
-		placeholder = QPixmap(THUMBNAIL_SIZE, THUMBNAIL_SIZE)
-		placeholder.fill(Qt.transparent)
-		self._preview_placeholder = QIcon(placeholder)
+		self._folder = _folder_tile()
+		self._type_tiles: dict[str, QIcon] = {}
+		self._streaming_mesh = _asset_tile(
+			"mesh", caption=QCoreApplication.translate("PakThumbnailProvider", "Streaming")
+		)
 
 	def set_source(
 		self,
@@ -268,13 +328,16 @@ class PakThumbnailProvider(QObject):
 	def icon(self, path: str, is_dir: bool) -> QIcon:
 		if is_dir:
 			return self._folder
-		ext = resource_extension(path)
 		if is_streaming_mesh(path):
 			return self._streaming_mesh
-		if ext in SOUND_EXTENSIONS:
-			return self._sound
-		fallback = self._preview_placeholder if ext in {"mesh", "tex"} else self._file
-		return self._icons.get(path, fallback)
+		icon = self._icons.get(path)
+		if icon is not None:
+			return icon
+		family = _tile_family(path)
+		tile = self._type_tiles.get(family)
+		if tile is None:
+			tile = self._type_tiles[family] = _asset_tile(family)
+		return tile
 
 	def request(self, path: str):
 		if is_streaming_mesh(path):
@@ -285,7 +348,7 @@ class PakThumbnailProvider(QObject):
 			return
 		cache_path = self._cache_path(path)
 		if cache_path.is_file():
-			self._icons[path] = QIcon(str(cache_path))
+			self._icons[path] = _asset_tile(_tile_family(path), QImage(str(cache_path)))
 			self.ready.emit(path)
 			return
 		self._pending.add(path)
@@ -311,7 +374,7 @@ class PakThumbnailProvider(QObject):
 			return
 		self._pending.discard(path)
 		if not result.isNull():
-			self._icons[path] = QIcon(QPixmap.fromImage(result))
+			self._icons[path] = _asset_tile(_tile_family(path), result)
 		else:
 			self._failed.add(path)
 		self.ready.emit(path)

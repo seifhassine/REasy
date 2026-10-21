@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PySide6.QtCore import QModelIndex, QPersistentModelIndex, Signal
-from PySide6.QtWidgets import QFrame, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QVBoxLayout, QWidget
 
 lazy from file_handlers.rsz.rsz_array_operations import RszArrayOperations
 lazy from file_handlers.rsz.rsz_handler import RszViewer
@@ -11,8 +11,9 @@ lazy from file_handlers.rsz.rsz_lazy_loading import RszLazyNodeBuilder
 lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
 lazy from file_handlers.rsz.rsz_data_types import is_reference_type
 lazy from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
+lazy from ui.editor_widgets import styled_label
 lazy from ui.qt_timers import call_later
-lazy from ui.styles import get_color_scheme, get_tree_stylesheet
+lazy from ui.styles import current_colors, get_tree_stylesheet
 
 
 class ScnRawInspector(QFrame):
@@ -32,7 +33,7 @@ class ScnRawInspector(QFrame):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(6, 6, 6, 6)
         layout.setSpacing(4)
-        self.title = QLabel(self.tr("Raw SCN"), self)
+        self.title = styled_label(self.tr("Raw SCN"), self, heading="panel")
         layout.addWidget(self.title)
 
         self.body = QWidget(self)
@@ -59,7 +60,7 @@ class ScnRawInspector(QFrame):
             )
         self._reset()
         self.title.setText(self.tr("Raw SCN"))
-        hint = QLabel(text, self.body)
+        hint = styled_label(text, self.body, tone="muted")
         hint.setWordWrap(True)
         self.body_layout.addWidget(hint)
 
@@ -79,7 +80,7 @@ class ScnRawInspector(QFrame):
         viewer.type_registry = getattr(document.rsz_file, "type_registry", None) or getattr(handler, "type_registry", None)
         viewer.game_version = getattr(document.rsz_file, "game_version", "") or getattr(handler, "game_version", "")
         viewer.show_advanced = False
-        viewer.tree.setStyleSheet(get_tree_stylesheet(get_color_scheme()))
+        viewer.tree.setStyleSheet(get_tree_stylesheet(current_colors()))
         viewer.name_helper = RszViewerNameHelper(viewer.scn, viewer.type_registry)
         viewer.array_operations = RszArrayOperations(viewer)
         viewer.object_operations = RszObjectOperations(viewer)

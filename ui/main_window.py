@@ -19,7 +19,8 @@ from settings import DEFAULT_SETTINGS, load_settings, normalize_settings, save_s
 lazy from app_config import CURRENT_VERSION, GAMES
 lazy from ui.changelog_dialog import ChangelogDialog
 lazy from ui.settings_dialog import SettingsDialog
-lazy from ui.styles import get_color_scheme, get_main_stylesheet
+lazy from ui.icons import line_icon
+lazy from ui.styles import apply_theme, current_colors, get_color_scheme
 lazy from utils.app_paths import resource_path
 
 from PySide6.QtCore import (
@@ -34,10 +35,6 @@ from PySide6.QtGui import (
     QAction,
     QKeySequence,
     QDesktopServices,
-    QColor,
-    QPainter,
-    QPen,
-    QPixmap,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -47,6 +44,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QFileDialog,
     QInputDialog,
+    QHBoxLayout,
     QVBoxLayout,
     QLabel,
     QDialog,
@@ -58,14 +56,14 @@ from PySide6.QtWidgets import (
     QDockWidget,
 )
 
-lazy from ui.console_logger import ConsoleWidget, ConsoleRedirector
+lazy from ui.console_logger import ConsoleWidget, ConsoleRedirector, OutputTitleBar
 lazy from ui.ai.chat_dock import AiChatDock
 lazy from ui.breadcrumbs import BreadcrumbBar
 lazy from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 lazy from ui.editor_groups import EditorGroupHost
 lazy from ui.directory_search import search_directory_for_type
 lazy from ui.highlight_menu_controller import HighlightMenuController
-lazy from ui.homepage import HomePageStack, HomePageWidget
+lazy from ui.homepage import RECENT_FILES_SHOWN, HomePageStack, HomePageWidget
 lazy from tools.hash_calculator import HashCalculator
 
 lazy from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
@@ -138,6 +136,7 @@ class REasyEditorApp(QMainWindow):
             on_new_project=self.new_project,
             on_open_project=self.open_project,
             on_reopen_last=self.reopen_last_closed_file,
+            on_reopen=self.reopen_closed_file,
             parent=self,
         )
         self._set_app_icon_callback = set_app_icon
@@ -177,7 +176,9 @@ class REasyEditorApp(QMainWindow):
 
         self.highlight_menu_controller = HighlightMenuController(self)
 
+        self._create_menubar_corner()
         self._create_menus()
+        self._update_homepage_shortcuts()
 
         self.editor_groups.activePageChanged.connect(self._on_active_page_changed)
         self.editor_groups.layoutChanged.connect(self._refresh_homepage)
@@ -185,9 +186,16 @@ class REasyEditorApp(QMainWindow):
 
         self.status_bar = QStatusBar()
         self.status_bar.setContentsMargins(0, 0, 0, 0)
-        self.status_bar.setMaximumHeight(20)
+        self.status_bar.setSizeGripEnabled(False)
         self.setStatusBar(self.status_bar)
         self.status_bar.showMessage(self.tr("Ready"))
+        self.game_status_label = QLabel(self.status_bar)
+        self.game_status_label.setContentsMargins(0, 0, 8, 0)
+        self.game_status_label.setToolTip(
+            self.tr("Game used to read RSZ files. Change it in File > Settings.")
+        )
+        self.status_bar.addPermanentWidget(self.game_status_label)
+        self._refresh_status_info()
 
         self._apply_style(self._build_theme_colors())
 
@@ -196,6 +204,7 @@ class REasyEditorApp(QMainWindow):
         self.output_dock.setObjectName("outputDock")
         self.output_dock.setAllowedAreas(Qt.BottomDockWidgetArea | Qt.TopDockWidgetArea)
         self.output_dock.setWidget(self.console_widget)
+        self.output_dock.setTitleBarWidget(OutputTitleBar(self.output_dock, self.console_widget))
         self.addDockWidget(Qt.BottomDockWidgetArea, self.output_dock)
         self.output_dock.setVisible(self.settings.get("show_debug_console", False))
         self.output_dock.visibilityChanged.connect(self.output_action.setChecked)
@@ -231,7 +240,8 @@ class REasyEditorApp(QMainWindow):
             self._on_ai_chat_action_triggered
         )
 
-        self.ai_chat_button = QToolButton(self.menuBar())
+        corner = self.menuBar().cornerWidget(Qt.TopRightCorner)
+        self.ai_chat_button = QToolButton(corner)
         self.ai_chat_button.setObjectName("aiAssistantMenuButton")
         self.ai_chat_button.setText(self.tr("AI"))
         self.ai_chat_button.setAccessibleName(self.tr("AI Assistant"))
@@ -240,8 +250,7 @@ class REasyEditorApp(QMainWindow):
         )
         self.ai_chat_button.setCheckable(True)
         self.ai_chat_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.ai_chat_button.setIconSize(QSize(12, 12))
-        self.ai_chat_button.setFixedHeight(18)
+        self.ai_chat_button.setIconSize(QSize(14, 14))
         self.ai_chat_button.setChecked(ai_chat_visible)
         self.ai_chat_button.clicked.connect(
             lambda _checked=False: ai_chat_action.trigger()
@@ -249,11 +258,8 @@ class REasyEditorApp(QMainWindow):
         self.ai_chat_dock.visibilityChanged.connect(
             self._sync_ai_chat_controls
         )
-        self.menuBar().setCornerWidget(
-            self.ai_chat_button,
-            Qt.TopRightCorner,
-        )
-        self._apply_ai_menu_button_style()
+        corner.layout().addWidget(self.ai_chat_button)
+        self._apply_menubar_corner_style()
         self._ai_chat_visibility_tracking = True
         app = QApplication.instance()
         if app is not None:
@@ -281,13 +287,11 @@ class REasyEditorApp(QMainWindow):
 
     def _refresh_homepage(self):
         show_notebook = self.editor_groups.count() > 0 or self.proj_dock.isVisible()
-        recent_label = self.tr("No recently closed files yet.")
-        if self._closed_file_history:
-            _, _, decoded_target = ProjectManager.decode_history_entry(self._closed_file_history[-1])
-            recent_label = self.tr("Last closed: {filename}").format(
-                filename=os.path.basename(decoded_target)
-            )
-        self.home_stack.refresh(show_notebook, recent_label, bool(self._closed_file_history))
+        recent = []
+        for entry in reversed(self._closed_file_history[-RECENT_FILES_SHOWN:]):
+            _, _, decoded_target = ProjectManager.decode_history_entry(entry)
+            recent.append((os.path.basename(decoded_target), os.path.dirname(decoded_target), entry))
+        self.home_stack.refresh(show_notebook, recent)
 
     def _on_active_page_changed(self, page=None):
         self._update_highlight_menu_visibility()
@@ -416,33 +420,36 @@ class REasyEditorApp(QMainWindow):
 
     def _create_menus(self):
         menubar = self.menuBar()
-        self.update_notification.update_update_menu(force=True, menubar=menubar)
-        configured_shortcuts = self.settings.get("keyboard_shortcuts", {})
+        self.update_notification.update_update_menu()
 
-        def shortcut(name):
-            return QKeySequence(
-                configured_shortcuts.get(name, DEFAULT_SETTINGS["keyboard_shortcuts"].get(name, ""))
-            )
-
-        def create_action(text, callback, shortcut_name=None):
+        def create_action(text, callback, shortcut_name=None, icon=None):
             action = QAction(text, self)
+            if icon:
+                action.setIcon(line_icon(icon))
             if shortcut_name:
                 action.setObjectName(shortcut_name)
-                action.setShortcut(shortcut(shortcut_name))
+                action.setShortcut(self._configured_shortcut(shortcut_name))
             action.triggered.connect(callback)
             return action
 
-        def add_action(menu, text, callback, shortcut_name=None):
-            action = create_action(text, callback, shortcut_name)
+        def add_action(menu, text, callback, shortcut_name=None, icon=None):
+            action = create_action(text, callback, shortcut_name, icon)
             menu.addAction(action)
             return action
 
-        file_menu = menubar.addMenu(self.tr("File"))
+        def add_icon_menu(title):
+            menu = menubar.addMenu(title)
+            # Qt adds the icon column to the item's left padding; start the text where plain menus do.
+            menu.setProperty("iconMenu", True)
+            menu.setStyleSheet('QMenu[iconMenu="true"]::item { padding-left: 6px; }')
+            return menu
 
-        open_act = create_action(self.tr("Open File..."), self.on_open, "file_open")
+        file_menu = add_icon_menu(self.tr("File"))
 
-        new_proj_act = create_action(self.tr("New Project (Create Mod)..."), self.new_project)
-        open_proj_act = create_action(self.tr("Project Library..."), self.open_project)
+        open_act = create_action(self.tr("Open File..."), self.on_open, "file_open", "folder_open")
+
+        new_proj_act = create_action(self.tr("New Project (Create Mod)..."), self.new_project, icon="new_folder")
+        open_proj_act = create_action(self.tr("Project Library..."), self.open_project, icon="folder")
         close_proj_act = create_action(self.tr("Close Project"), self.close_project)
         file_menu.insertSeparator(open_act)
         file_menu.insertAction(open_act, new_proj_act)
@@ -453,7 +460,7 @@ class REasyEditorApp(QMainWindow):
 
         file_menu.addAction(open_act)
 
-        add_action(file_menu, self.tr("Save"), self.on_direct_save, "file_save")
+        add_action(file_menu, self.tr("Save"), self.on_direct_save, "file_save", "save")
         add_action(
             file_menu,
             self.tr("Save All Modified Files"),
@@ -461,27 +468,29 @@ class REasyEditorApp(QMainWindow):
             "file_save_all",
         )
         add_action(file_menu, self.tr("Save As..."), self.on_save, "file_save_as")
-        add_action(file_menu, self.tr("Restore Backup..."), self.on_restore_backup)
-        add_action(file_menu, self.tr("Reload"), self.reload_file, "file_reload")
-        add_action(file_menu, self.tr("Close Tab"), self.close_current_tab, "file_close_tab")
+        add_action(file_menu, self.tr("Restore Backup..."), self.on_restore_backup, icon="reset")
+        add_action(file_menu, self.tr("Reload"), self.reload_file, "file_reload", "refresh")
+        add_action(file_menu, self.tr("Close Tab"), self.close_current_tab, "file_close_tab", "close")
         add_action(
             file_menu,
             self.tr("Reopen Last Closed File"),
             self.reopen_last_closed_file,
             "file_reopen_closed",
+            "undo",
         )
 
         self.recently_closed_menu = file_menu.addMenu(self.tr("Recently Closed Files"))
+        self.recently_closed_menu.setIcon(line_icon("clock"))
         self.recently_closed_menu.aboutToShow.connect(self._populate_recently_closed_menu)
 
         file_menu.addSeparator()
 
-        add_action(file_menu, self.tr("Settings"), self.open_settings_dialog)
+        add_action(file_menu, self.tr("Settings"), self.open_settings_dialog, icon="settings")
         add_action(file_menu, self.tr("Exit"), self.close)
 
-        find_menu = menubar.addMenu(self.tr("Find"))
+        find_menu = add_icon_menu(self.tr("Find"))
 
-        add_action(find_menu, self.tr("Find"), self.open_find_dialog, "find_search")
+        add_action(find_menu, self.tr("Find"), self.open_find_dialog, "find_search", "search")
         add_action(
             find_menu,
             self.tr("Search Directory for GUID"),
@@ -513,13 +522,13 @@ class REasyEditorApp(QMainWindow):
             "find_rsz_field_value",
         )
 
-        view_menu = menubar.addMenu(self.tr("View"))
+        view_menu = add_icon_menu(self.tr("View"))
         self.view_menu = view_menu
 
         add_action(
-            view_menu, self.tr("Previous Tab"), self.goto_previous_tab, "view_prev_tab"
+            view_menu, self.tr("Previous Tab"), self.goto_previous_tab, "view_prev_tab", "arrow_left"
         )
-        add_action(view_menu, self.tr("Next Tab"), self.goto_next_tab, "view_next_tab")
+        add_action(view_menu, self.tr("Next Tab"), self.goto_next_tab, "view_next_tab", "arrow_right")
         self.output_action = add_action(
             view_menu,
             self.tr("Toggle Output"),
@@ -536,29 +545,31 @@ class REasyEditorApp(QMainWindow):
             self.tr("Split Editor Right"),
             lambda: self.split_active_editor(Qt.Horizontal),
             "editor_split_right",
+            "split",
         )
         add_action(
             view_menu,
             self.tr("Split Editor Down"),
             lambda: self.split_active_editor(Qt.Vertical),
             "editor_split_down",
+            "split_down",
         )
 
         self.scene_menu = menubar.addMenu(self.tr("Scene"))
         self.scene_menu.aboutToShow.connect(lambda: self.scenes.populate_scene_menu(self.scene_menu))
 
-        tools_menu = menubar.addMenu(self.tr("Tools"))
-        add_action(tools_menu, self.tr("GUID Converter"), self.open_guid_converter)
-        add_action(tools_menu, self.tr("Hash Calculator"), self.open_hash_calculator)
+        tools_menu = add_icon_menu(self.tr("Tools"))
+        add_action(tools_menu, self.tr("GUID Converter"), self.open_guid_converter, icon="key")
+        add_action(tools_menu, self.tr("Hash Calculator"), self.open_hash_calculator, icon="hash")
         add_action(
             tools_menu,
             self.tr("Outdated Files Detector"),
             self.open_outdated_files_detector,
         )
-        add_action(tools_menu, self.tr("RSZ Diff Viewer"), self.open_rsz_differ)
-        add_action(tools_menu, self.tr("PAK Browser"), self.open_pak_browser)
-        add_action(tools_menu, self.tr("File List Generator"), self.open_file_list_generator)
-        add_action(tools_menu, self.tr("Import Mesh from Blender…"), self.import_mesh_from_blender)
+        add_action(tools_menu, self.tr("RSZ Diff Viewer"), self.open_rsz_differ, icon="compare")
+        add_action(tools_menu, self.tr("PAK Browser"), self.open_pak_browser, icon="box")
+        add_action(tools_menu, self.tr("File List Generator"), self.open_file_list_generator, icon="list")
+        add_action(tools_menu, self.tr("Import Mesh from Blender…"), self.import_mesh_from_blender, icon="import")
 
         tools_menu.addSeparator()
 
@@ -568,10 +579,10 @@ class REasyEditorApp(QMainWindow):
             self.open_rsz_csv_extractor,
         )
 
-        help_menu = menubar.addMenu(self.tr("Help"))
-        add_action(help_menu, self.tr("About"), self.show_about)
+        help_menu = add_icon_menu(self.tr("Help"))
+        add_action(help_menu, self.tr("About"), self.show_about, icon="info")
         add_action(help_menu, self.tr("What's new?"), self.show_changelog)
-        add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki)
+        add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki, icon="external")
 
         donate_menu = menubar.addMenu(self.tr("Donate"))
         add_action(donate_menu, self.tr("Support REasy"), self.show_donate_dialog)
@@ -753,74 +764,74 @@ class REasyEditorApp(QMainWindow):
         dialog = RszCsvExtractorDialog(self, self.settings)
         dialog.exec()
 
-    def _theme_accent_color(self) -> QColor:
-        default_color = DEFAULT_SETTINGS["tree_highlight_color"]
-        color_value = self.settings.get("tree_highlight_color", default_color)
-        color = QColor(color_value)
-        if not color.isValid():
-            color = QColor(default_color)
-        return color
-
     def _build_theme_colors(self) -> dict:
-        return get_color_scheme(self._theme_accent_color().name())
+        return get_color_scheme(self.settings.get("tree_highlight_color"))
 
     def _apply_style(self, colors):
-        self.setStyleSheet(get_main_stylesheet(colors))
-        self.home_widget.set_theme(colors, self._theme_accent_color().name())
-        self._apply_ai_menu_button_style()
+        apply_theme(QApplication.instance(), colors)
+        self.home_widget.set_theme(colors)
+        self._apply_menubar_corner_style()
         if hasattr(self, "ai_chat_dock"):
             self.ai_chat_dock.apply_theme()
         if hasattr(self, "project_workspace"):
             self.project_workspace.apply_style()
 
-    def _apply_ai_menu_button_style(self):
-        if not hasattr(self, "ai_chat_button"):
+    def _create_menubar_corner(self):
+        corner = QWidget(self.menuBar())
+        corner.setObjectName("menuBarCorner")
+        layout = QHBoxLayout(corner)
+        layout.setContentsMargins(0, 0, 4, 0)
+        layout.setSpacing(4)
+        self.update_button = QToolButton(corner)
+        self.update_button.setObjectName("updateMenuButton")
+        self.update_button.setPopupMode(QToolButton.InstantPopup)
+        self.update_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.update_button.setIconSize(QSize(14, 14))
+        self.update_button.hide()
+        layout.addWidget(self.update_button)
+        self.menuBar().setCornerWidget(corner, Qt.TopRightCorner)
+
+    def _apply_menubar_corner_style(self):
+        corner = self.menuBar().cornerWidget(Qt.TopRightCorner)
+        if corner is None:
             return
-        accent = self._theme_accent_color().name()
-        self.ai_chat_button.setIcon(self._make_ai_bot_icon(accent))
-        self.ai_chat_button.setStyleSheet(
+        colors = current_colors()
+        self.update_button.setIcon(line_icon("import", colors["warning"]))
+        if hasattr(self, "ai_chat_button"):
+            self.ai_chat_button.setIcon(line_icon("bot"))
+        corner.setStyleSheet(
             f"""
-            QToolButton#aiAssistantMenuButton {{
+            QWidget#menuBarCorner {{ background: transparent; }}
+            QToolButton#aiAssistantMenuButton, QToolButton#updateMenuButton {{
                 background: transparent;
-                color: #c4c4c4;
                 border: 1px solid transparent;
-                border-radius: 6px;
-                padding: 0px 8px;
-                margin: 0px 6px 0px 4px;
-                min-height: 0px;
+                border-radius: 3px;
+                padding: 2px 8px 2px 6px;
                 font-weight: 600;
             }}
-            QToolButton#aiAssistantMenuButton:hover,
-            QToolButton#aiAssistantMenuButton:checked {{
-                background: {accent};
-                color: white;
-                border-color: {accent};
+            QToolButton#aiAssistantMenuButton {{ color: {colors['text_muted']}; }}
+            QToolButton#aiAssistantMenuButton:hover {{
+                background: {colors['surface_hover']};
+                color: {colors['text_bright']};
             }}
+            QToolButton#aiAssistantMenuButton:checked {{
+                background: {colors['accent_soft']};
+                color: {colors['text_bright']};
+                border-color: {colors['accent_border']};
+            }}
+            QToolButton#updateMenuButton {{ color: {colors['warning']}; }}
+            QToolButton#updateMenuButton:hover, QToolButton#updateMenuButton:pressed {{
+                background: {colors['warning_soft']};
+                border-color: {colors['warning_border']};
+            }}
+            QToolButton#updateMenuButton::menu-indicator {{ image: none; width: 0px; }}
             """
         )
 
-    @staticmethod
-    def _make_ai_bot_icon(accent: str) -> QIcon:
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        outline = QPen(QColor("#c4cdd8"), 1.2)
-        painter.setPen(outline)
-        painter.setBrush(QColor("#1f2b38"))
-        painter.drawRoundedRect(3, 5, 10, 8, 2, 2)
-        painter.drawLine(8, 2, 8, 5)
-        painter.drawEllipse(7, 1, 2, 2)
-        painter.drawLine(2, 9, 3, 9)
-        painter.drawLine(13, 9, 14, 9)
-
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(QColor(accent))
-        painter.drawEllipse(5, 8, 2, 2)
-        painter.drawEllipse(9, 8, 2, 2)
-        painter.end()
-        return QIcon(pixmap)
+    def _refresh_status_info(self):
+        self.game_status_label.setText(
+            self.tr("Game: {game}").format(game=self.settings.get("game_version", "RE4"))
+        )
 
     def _on_ai_chat_action_triggered(self, visible: bool):
         visible = bool(visible)
@@ -1138,6 +1149,7 @@ class REasyEditorApp(QMainWindow):
 
     def update_from_app_settings(self):
         self._apply_parsed_shader_budget()
+        self._refresh_status_info()
         active_tabs = set(self.project_workspace.sessions.active_tabs())
         for tab in self.tabs.values():
             if hasattr(tab, 'handler') and is_handler_type(tab.handler, "RszHandler"):
@@ -1163,11 +1175,22 @@ class REasyEditorApp(QMainWindow):
                 except Exception as e:
                     print(f"Error setting shortcut for {action_name}: {e}")
         self._update_general_shortcut_state()
+        self._update_homepage_shortcuts()
 
         if hasattr(self, "menuBar"):
             menubar = self.menuBar()
             if menubar:
                 menubar.update()
+
+    def _configured_shortcut(self, name) -> QKeySequence:
+        configured = self.settings.get("keyboard_shortcuts", {})
+        return QKeySequence(configured.get(name, DEFAULT_SETTINGS["keyboard_shortcuts"].get(name, "")))
+
+    def _update_homepage_shortcuts(self):
+        self.home_widget.set_shortcuts(*(
+            self._configured_shortcut(name).toString(QKeySequence.NativeText)
+            for name in ("file_open", "file_reopen_closed")
+        ))
 
     def open_guid_converter(self):
         self._show_singleton_dialog(

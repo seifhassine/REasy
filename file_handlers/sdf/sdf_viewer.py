@@ -6,9 +6,7 @@ import struct
 from PySide6.QtCore import QSignalBlocker, Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
-    QHBoxLayout,
     QHeaderView,
-    QLabel,
     QLineEdit,
     QMessageBox,
     QPlainTextEdit,
@@ -30,6 +28,8 @@ lazy from .program_overview import SdfProgramOverview
 lazy from .raytracing import raytracing_export_fields, serialize_raytracing_library
 lazy from .shader_authoring_editor import SdfShaderAuthoringEditor
 lazy from .state_editor import SdfStateEditor
+lazy from ui.editor_widgets import editor_strip, search_field, strip_button, styled_label
+lazy from ui.styles import set_style_role
 
 
 def _hex_offset(value: int) -> str:
@@ -87,12 +87,16 @@ class SdfViewer(QWidget):
         self._history_transition = False
         self._disassembly_cache: dict[tuple[int, int], str] = {}
 
+        self.setObjectName("sdfViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         root = QVBoxLayout(self)
-        controls = QHBoxLayout()
-        self.summary = QLabel()
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        strip, controls = editor_strip()
+        self.summary = styled_label(tone="muted")
         controls.addWidget(self.summary, 1)
         if self._editor_only:
-            root.addLayout(controls)
+            root.addWidget(strip)
             self.tabs = QTabWidget()
             root.addWidget(self.tabs, 1)
             self._initialize_history()
@@ -103,7 +107,7 @@ class SdfViewer(QWidget):
         self._program_tree_generation = 0
         self._program_view_generation = 0
         self._rendered_program_tabs: dict[str, int] = {}
-        self.hardware_variant_label = QLabel(self.tr("Hardware variant"))
+        self.hardware_variant_label = styled_label(self.tr("Hardware variant"), tone="muted")
         controls.addWidget(self.hardware_variant_label)
         self.target_selector = QComboBox()
         self.target_selector.setMinimumContentsLength(18)
@@ -114,16 +118,16 @@ class SdfViewer(QWidget):
             self.tr("Show only passes used for a particular rendering purpose.")
         )
         controls.addWidget(self.purpose_filter)
-        self.filter = QLineEdit()
+        self.filter = search_field(QLineEdit())
         self.filter.setPlaceholderText(self.tr("Find a pass…"))
         controls.addWidget(self.filter)
-        self.undo_button = QPushButton(self.tr("Undo"))
-        self.redo_button = QPushButton(self.tr("Redo"))
+        self.undo_button = strip_button(QPushButton(), "undo", tooltip=self.tr("Undo"))
+        self.redo_button = strip_button(QPushButton(), "redo", tooltip=self.tr("Redo"))
         self.undo_button.setEnabled(False)
         self.redo_button.setEnabled(False)
         controls.addWidget(self.undo_button)
         controls.addWidget(self.redo_button)
-        root.addLayout(controls)
+        root.addWidget(strip)
 
         self.main_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.programs = QTreeWidget()
@@ -182,6 +186,7 @@ class SdfViewer(QWidget):
         self.disassembly = QPlainTextEdit()
         self.disassembly.setReadOnly(True)
         self.disassembly.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        set_style_role(self.disassembly, mono=True)
         self.advanced_tabs.addTab(self.disassembly, self.tr("Shader assembly"))
         self.diagnostics = QTreeWidget()
         self.diagnostics.setHeaderLabels(
@@ -200,7 +205,10 @@ class SdfViewer(QWidget):
         self.main_splitter.setStretchFactor(0, 1)
         self.main_splitter.setStretchFactor(1, 2)
         self.main_splitter.setSizes([360, 1080])
-        root.addWidget(self.main_splitter, 1)
+        body = QVBoxLayout()
+        body.setContentsMargins(6, 6, 6, 6)
+        body.addWidget(self.main_splitter)
+        root.addLayout(body, 1)
 
         self.programs.currentItemChanged.connect(self._selection_changed)
         self.tabs.currentChanged.connect(self._active_tab_changed)

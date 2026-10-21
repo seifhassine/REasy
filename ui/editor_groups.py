@@ -6,6 +6,7 @@ from PySide6.QtCore import QEvent, Qt, Signal
 from PySide6.QtWidgets import QApplication, QSizePolicy, QSplitter, QVBoxLayout, QWidget
 
 lazy from ui.detachable_tabs import CustomNotebook
+lazy from ui.styles import set_style_role
 
 
 class EditorGroupHost(QWidget):
@@ -34,7 +35,7 @@ class EditorGroupHost(QWidget):
         splitter = QSplitter(orientation, parent)
         splitter.setObjectName("editorGroupSplitter")
         splitter.setChildrenCollapsible(False)
-        splitter.setHandleWidth(2)
+        splitter.setHandleWidth(4)
         return splitter
 
     def _configure_notebook(self, notebook: CustomNotebook) -> None:
@@ -84,7 +85,16 @@ class EditorGroupHost(QWidget):
         if notebook not in self._notebooks:
             return
         self._active_notebook = notebook
+        self._sync_active_group()
         self.activePageChanged.emit(notebook.currentWidget())
+
+    def _sync_active_group(self) -> None:
+        active = self.active_notebook() if len(self._notebooks) > 1 else None
+        for notebook in self._notebooks:
+            bar = notebook.tabBar()
+            inactive = active is not None and notebook is not active
+            if bool(bar.property("inactiveGroup")) != inactive:
+                set_style_role(bar, inactiveGroup=inactive)
 
     def _on_tab_reattached(self, notebook: CustomNotebook) -> None:
         self._activate(notebook)
@@ -279,6 +289,7 @@ class EditorGroupHost(QWidget):
             self.activePageChanged.emit(self._active_notebook.currentWidget())
         if changed:
             self._update_primary_reference()
+            self._sync_active_group()
             self.layoutChanged.emit()
 
     def _remove_notebook(self, notebook: CustomNotebook) -> bool:
@@ -376,6 +387,7 @@ class EditorGroupHost(QWidget):
         active = state.get("active_group", 0)
         if isinstance(active, int) and 0 <= active < len(self._notebooks):
             self._active_notebook = self._notebooks[active]
+        self._sync_active_group()
 
     def _restore_tree(self, tree: dict) -> None:
         referenced: list[int] = []

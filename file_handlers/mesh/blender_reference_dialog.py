@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
 
 lazy from settings import app_settings, remember_setting
 lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.editor_widgets import styled_label
+lazy from ui.styles import set_style_role
 lazy from utils.resource_file_utils import resource_context_for_app, resource_version_from_path, streaming_companion_path
 
 from .blender import Reference, reference_bones, suggest
@@ -98,9 +100,10 @@ class ReferencePicker(QDialog):
         self.setWindowTitle(self.tr("Choose a reference mesh"))
         self.resize(820, 600)
         layout = QVBoxLayout(self)
-        intro = QLabel(self.tr(
+        intro = styled_label(self.tr(
             "The new mesh takes the reference's game, skeleton, LOD layout and engine data. Its own geometry, "
-            "materials and morphs are replaced by the scene's. Pick a mesh whose skeleton the model is rigged to."))
+            "materials and morphs are replaced by the scene's. Pick a mesh whose skeleton the model is rigged to."),
+            tone="muted")
         intro.setWordWrap(True)
         layout.addWidget(intro)
 
@@ -192,7 +195,7 @@ class ReferencePicker(QDialog):
         if self.project is not None and self.project[0] == game:
             self.reader = self.project[1]
             self.paths.setStringList(_mesh_paths(self.reader))
-            self.info.setText(self.tr("Using the open project's game files."))
+            self._tell(self.tr("Using the open project's game files."))
 
     def _browse_directory(self):
         chosen = QFileDialog.getExistingDirectory(self, self.tr("Game installation folder"), self.directory.text())
@@ -205,7 +208,7 @@ class ReferencePicker(QDialog):
         if not directory:
             return
         self._remember_directory(game, directory)
-        self.info.setText(self.tr("Indexing the game files…"))
+        self._tell(self.tr("Indexing the game files…"))
         self.load_game.setEnabled(False)
         self._indexing.start(lambda: open_game_files(game, directory), self._game_opened, self._game_failed)
 
@@ -213,11 +216,11 @@ class ReferencePicker(QDialog):
         self.load_game.setEnabled(True)
         self.reader, paths = result
         self.paths.setStringList(paths)
-        self.info.setText(self.tr("{count} meshes. Select one.").format(count=len(paths)))
+        self._tell(self.tr("{count} meshes. Select one.").format(count=len(paths)))
 
     def _game_failed(self, error):
         self.load_game.setEnabled(True)
-        self.info.setText(self.tr("The game files could not be read: {error}").format(error=error))
+        self._tell(self.tr("The game files could not be read: {error}").format(error=error), "danger")
 
     def _remember_directory(self, game, directory):
         directories = dict(self._directories(), **{game: directory})
@@ -239,6 +242,10 @@ class ReferencePicker(QDialog):
             self.file.setText(path)
             self._load(lambda: load_disk_reference(path), Path(path).name)
 
+    def _tell(self, text: str, tone: str = "") -> None:
+        self.info.setText(text)
+        set_style_role(self.info, tone=tone)
+
     def _close_jobs(self):
         self._indexing.close()
         self._loads.close()
@@ -254,16 +261,16 @@ class ReferencePicker(QDialog):
     def _load(self, work, label):
         self.choice = None
         self.buttons.button(QDialogButtonBox.Ok).setEnabled(False)
-        self.info.setText(self.tr("Reading {name}…").format(name=label))
+        self._tell(self.tr("Reading {name}…").format(name=label))
         self._loads.start(work, lambda choice: self._show(choice, ""), lambda error: self._show(None, error))
 
     def _show(self, choice, error):
         self.choice = None if error else choice
         self.buttons.button(QDialogButtonBox.Ok).setEnabled(self.choice is not None)
         if error:
-            self.info.setText(self.tr("This mesh cannot be a reference: {error}").format(error=error))
+            self._tell(self.tr("This mesh cannot be a reference: {error}").format(error=error), "danger")
         elif choice is not None:
-            self.info.setText(self._describe(choice))
+            self._tell(self._describe(choice))
 
     def _describe(self, choice):
         mesh = choice.mesh

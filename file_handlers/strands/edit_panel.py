@@ -15,6 +15,8 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QDou
 from file_handlers.clsp.clsp_file import ShapeKind
 lazy from file_handlers.clsp.placement import hung_joints
 lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 lazy from utils.hash_util import murmur3_hash_utf16le
 lazy from utils.resource_file_utils import resource_context_for_handler, resource_key
 
@@ -236,11 +238,12 @@ class StrandEditPanel(QWidget):
         self.snap = _button(self.tr("Snap roots to mesh"), self.tr(
             "Move each strand chosen whole so its root lies on the nearest point of the mesh it is bound to."),
             partial(self._operate, lambda edit, strands: edit.snap_roots(strands, self.session.surfaces[0])))
+        delete = _button(self.tr("Delete"), self.tr(
+            "Delete the strands chosen (Delete); the guides are kept, as the other strands follow them."), self._delete)
+        set_style_role(delete, variant="danger")
         grid.addLayout(_row(self.snap, _button(self.tr("Reset"), self.tr(
             "Give the strands chosen back the shape, widths, vertex counts and guides the file read had."),
-            partial(self._operate, StrandEdit.reset)), _button(self.tr("Delete"), self.tr(
-                "Delete the strands chosen (Delete); the guides are kept, as the other strands follow them."),
-                self._delete)), 5, 0, 1, 3)
+            partial(self._operate, StrandEdit.reset)), delete), 5, 0, 1, 3)
         self.operations = operations
         layout.addWidget(operations)
 
@@ -327,6 +330,8 @@ class StrandEditPanel(QWidget):
         self.undo = _button(self.tr("Undo"), self.tr("Ctrl+Z in the viewport"), lambda: self.tool.undo())
         self.redo = _button(self.tr("Redo"), self.tr("Ctrl+Y or Ctrl+Shift+Z in the viewport"),
                             lambda: self.tool.redo())
+        self.undo.setIcon(line_icon("undo"))
+        self.redo.setIcon(line_icon("redo"))
         layout.addLayout(_row(self.undo, self.redo))
 
         form = QFormLayout(shown := QGroupBox(self.tr("Drawn")))
@@ -363,6 +368,7 @@ class StrandEditPanel(QWidget):
         self.collider_buttons = (
             _button(self.tr("Copy"), self.tr("Add a copy of the collider to its file, and pick it."), self._copy),
             _button(self.tr("Delete"), self.tr("Remove the collider from its file."), self._remove_collider))
+        set_style_role(self.collider_buttons[1], variant="danger")
         self.new_collider = _button(self.tr("New collider…"), self.tr(
             "Add a sphere, capsule, tapered capsule, box or plane to a collider file, on a joint, at the joint: then "
             "move it with the gizmo or edit it here."), self._new_collider)
@@ -419,6 +425,8 @@ class StrandEditPanel(QWidget):
 
         self.save = _button(self.tr("Save edits"), self.tr(
             "Write the edited files: into the open project at their game paths, or into a folder chosen."), self._save)
+        self.save.setIcon(line_icon("save", current_colors()["accent_text"]))
+        set_style_role(self.save, variant="primary")
         layout.addWidget(self.save)
         self.saved = plain_label("")
         layout.addWidget(self.saved)

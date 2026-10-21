@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSpinBox,
     QTabWidget,
     QVBoxLayout,
@@ -26,6 +27,7 @@ lazy from .sdf_file import (
     FILL_MODE_NAMES,
     STENCIL_OPERATION_NAMES,
 )
+lazy from ui.styles import set_style_role
 
 
 def _combo_value(combo: QComboBox) -> int:
@@ -67,6 +69,7 @@ class SdfStateEditor(QWidget):
         self._active_blend_target = 0
 
         root = QVBoxLayout(self)
+        root.setContentsMargins(6, 6, 6, 6)
         self.scope = QComboBox(self)
         self.scope.addItem(self.tr("This pass only"), True)
         self.scope.addItem(self.tr("All passes using this preset"), False)
@@ -78,6 +81,7 @@ class SdfStateEditor(QWidget):
                 )
             )
             help_label.setWordWrap(True)
+            set_style_role(help_label, tone="muted")
             root.addWidget(help_label)
             scope_row = QHBoxLayout()
             scope_row.addWidget(QLabel(self.tr("Edit scope:")))
@@ -212,6 +216,7 @@ class SdfStateEditor(QWidget):
     def _shared_label(self) -> QLabel:
         label = QLabel()
         label.setWordWrap(True)
+        set_style_role(label, tone="muted")
         return label
 
     def _build_rasterizer(self) -> None:
@@ -243,6 +248,8 @@ class SdfStateEditor(QWidget):
         form.addRow(self.tr("Depth-bias clamp"), self.depth_bias_clamp)
         form.addRow(self.tr("Slope-scaled bias"), self.slope_bias)
         button = QPushButton(self.tr("Apply rasterizer state"))
+        set_style_role(button, variant="primary")
+        button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         button.clicked.connect(self._apply_rasterizer)
         form.addRow(button)
         self.forms.addWidget(self.raster_group)
@@ -282,6 +289,8 @@ class SdfStateEditor(QWidget):
         write_layout.addStretch(1)
         form.addRow(self.tr("Write channels"), write_row)
         button = QPushButton(self.tr("Apply complete blend state"))
+        set_style_role(button, variant="primary")
+        button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         button.clicked.connect(self._apply_blend)
         form.addRow(button)
         self.forms.addWidget(self.blend_group)
@@ -327,6 +336,8 @@ class SdfStateEditor(QWidget):
         faces.addTab(back_page, self.tr("Back face"))
         form.addRow(faces)
         button = QPushButton(self.tr("Apply depth / stencil state"))
+        set_style_role(button, variant="primary")
+        button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         button.clicked.connect(self._apply_depth)
         form.addRow(button)
         self.forms.addWidget(self.depth_group)

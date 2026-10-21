@@ -26,17 +26,19 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
 )
 
 from .uvs_file import UvsPattern, UvsSequence, UvsTexture
 lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
-lazy from file_handlers.tex.tex_viewer import TexViewer
+lazy from file_handlers.tex.tex_viewer import TexViewer, checker_brush
 lazy from utils.number_format import format_display_value
 lazy from utils.resource_file_utils import resolve_handler_resource_data
+lazy from ui.editor_widgets import editor_strip, strip_button, styled_label, tool_button
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 
-PLAY_BUTTON_TEXT = QT_TRANSLATE_NOOP("UvsViewer", "▶ Play")
+PLAY_BUTTON_TEXT = QT_TRANSLATE_NOOP("UvsViewer", "Play")
 INVALID_VALUE_TITLE = QT_TRANSLATE_NOOP("UvsViewer", "Invalid value")
 
 
@@ -180,26 +182,29 @@ class UvsPreviewWidget(QWidget):
         return best
 
     def paintEvent(self, _):
+        colors = current_colors()
         p = QPainter(self)
-        p.fillRect(self.rect(), QColor(30, 30, 30))
+        p.fillRect(self.rect(), QColor(colors["canvas_bg"]))
 
         pat = self._current_pattern()
         pm = self._pixmaps.get(pat.texture_index) if pat and pat.texture_index >= 0 else None
         draw_area = self._find_draw_area(pm, pat)
 
-        p.fillRect(draw_area, QColor(60, 60, 60))
         if not pat:
+            p.setPen(QColor(colors["text_subtle"]))
+            p.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self.tr("Select a pattern to preview it."))
             return
+        p.setBrushOrigin(draw_area.topLeft().toPoint())
+        p.fillRect(draw_area, checker_brush(colors))
 
+        missing = False
         if pm and not pm.isNull():
             if self._crop_selected_only and pat:
                 p.drawPixmap(draw_area.toRect(), pm, self._source_rect(pm, pat).toRect())
             else:
                 p.drawPixmap(draw_area.toRect(), pm)
         else:
-            if self._missing_state.get(pat.texture_index, False):
-                p.setPen(QPen(QColor(190, 190, 190)))
-                p.drawText(draw_area, Qt.AlignmentFlag.AlignCenter, "No preview texture found in loaded PAKs")
+            missing = self._missing_state.get(pat.texture_index, False)
 
         if pat and self._show_cutouts and pat.cutout_uvs:
             pts = [self._uv_to_widget(pat, draw_area, u, v) for (u, v) in pat.cutout_uvs]
@@ -213,24 +218,32 @@ class UvsPreviewWidget(QWidget):
             for pt in pts:
                 p.drawEllipse(pt, 4, 4)
 
-        if not self._uvs or self._sequence_index < 0 or self._sequence_index >= len(self._uvs.sequences):
-            return
+        if (self._uvs and 0 <= self._sequence_index < len(self._uvs.sequences)
+                and not self._crop_selected_only):
+            seq = self._uvs.sequences[self._sequence_index]
+            for i, sp in enumerate(seq.patterns):
+                rr = self._pattern_rect(sp, draw_area)
+                p.setBrush(Qt.BrushStyle.NoBrush)
+                if i == self._pattern_index:
+                    p.setPen(QPen(QColor(255, 215, 0), 2))
+                    p.drawRect(rr)
+                    p.setBrush(QColor(255, 215, 0))
+                    for h in self._rect_handles(rr).values():
+                        p.drawRect(h)
+                else:
+                    p.setPen(QPen(QColor(80, 220, 255), 1))
+                    p.drawRect(rr)
 
-        if self._crop_selected_only:
-            return
-
-        seq = self._uvs.sequences[self._sequence_index]
-        for i, sp in enumerate(seq.patterns):
-            rr = self._pattern_rect(sp, draw_area)
-            if i == self._pattern_index:
-                p.setPen(QPen(QColor(255, 215, 0), 2))
-                p.drawRect(rr)
-                p.setBrush(QColor(255, 215, 0))
-                for h in self._rect_handles(rr).values():
-                    p.drawRect(h)
-            else:
-                p.setPen(QPen(QColor(80, 220, 255), 1))
-                p.drawRect(rr)
+        if missing:
+            # Last, on an opaque plate, so the overlay lines do not run through the text.
+            text = self.tr("No preview texture found in loaded PAKs")
+            plate = QRectF(p.fontMetrics().boundingRect(text)).adjusted(-8, -4, 8, 4)
+            plate.moveCenter(draw_area.center())
+            p.setPen(QPen(QColor(colors["border_subtle"]), 1))
+            p.setBrush(QColor(colors["canvas_bg"]))
+            p.drawRoundedRect(plate, 3, 3)
+            p.setPen(QColor(colors["text_muted"]))
+            p.drawText(plate, Qt.AlignmentFlag.AlignCenter, text)
 
     def _to_uv(self, pos: QPointF, draw_rect: QRectF) -> tuple[float, float]:
         u = (pos.x() - draw_rect.left()) / max(1e-6, draw_rect.width())
@@ -408,12 +421,11 @@ class UvsViewer(QWidget):
         self._reload_cutouts()
         self._set_loading(False)
 
-    def _create_detail_field(self, layout: QVBoxLayout, label: str, placeholder: str, callback) -> QLineEdit:
-        layout.addWidget(QLabel(f"   {label}"))
+    def _create_detail_field(self, layout: QFormLayout, label: str, placeholder: str, callback) -> QLineEdit:
         field = QLineEdit()
         field.setPlaceholderText(placeholder)
         field.editingFinished.connect(callback)
-        layout.addWidget(field)
+        layout.addRow(styled_label(label, tone="muted"), field)
         return field
 
     def _setup_ui(self):
@@ -433,24 +445,34 @@ class UvsViewer(QWidget):
 
         textures_panel = QWidget()
         textures_layout = QVBoxLayout(textures_panel)
-        textures_layout.addWidget(QLabel(self.tr("Textures")))
-        textures_layout.addLayout(self._toolbar(self._add_texture, self._remove_texture, extra=[(self.tr("Custom Texture"), self._load_custom_texture_for_selected), (self.tr("Clear Custom Texture"), self._clear_custom_texture_for_selected)]))
+        textures_layout.setContentsMargins(0, 0, 0, 4)
+        textures_layout.setSpacing(4)
+        textures_layout.addWidget(self._section(
+            self.tr("Textures"), self._add_texture, self._remove_texture,
+            self.tr("Add texture"), self.tr("Remove selected texture"),
+            extra=[(self.tr("Custom Texture"), "image", self._load_custom_texture_for_selected),
+                   (self.tr("Clear Custom Texture"), "close", self._clear_custom_texture_for_selected)]))
         self.textures_table = self._table(["Index", "Albedo Path", "State"])
         self.textures_table.itemChanged.connect(self._on_texture_changed)
         self.textures_table.itemSelectionChanged.connect(self._on_texture_selected)
         textures_layout.addWidget(self.textures_table)
 
-        details_row = QVBoxLayout()
+        details_row = QFormLayout()
+        details_row.setContentsMargins(4, 0, 4, 0)
         details_row.setSpacing(4)
-        self.normal_path_edit = self._create_detail_field(details_row, "Normal Path", "Normal Path", self._on_texture_detail_changed)
-        self.specular_path_edit = self._create_detail_field(details_row, "Specular Path", "Specular Path", self._on_texture_detail_changed)
-        self.alpha_path_edit = self._create_detail_field(details_row, "Alpha Path", "Alpha Path", self._on_texture_detail_changed)
+        self.normal_path_edit = self._create_detail_field(details_row, self.tr("Normal Path"), "Normal Path", self._on_texture_detail_changed)
+        self.specular_path_edit = self._create_detail_field(details_row, self.tr("Specular Path"), "Specular Path", self._on_texture_detail_changed)
+        self.alpha_path_edit = self._create_detail_field(details_row, self.tr("Alpha Path"), "Alpha Path", self._on_texture_detail_changed)
         textures_layout.addLayout(details_row)
 
         sequences_panel = QWidget()
         sequences_layout = QVBoxLayout(sequences_panel)
-        sequences_layout.addWidget(QLabel(self.tr("Sequences")))
-        sequences_layout.addLayout(self._toolbar(self._add_sequence, self._remove_sequence, extra=[(self.tr("✨ Animation Creator"), self._open_animation_creator)]))
+        sequences_layout.setContentsMargins(0, 0, 0, 0)
+        sequences_layout.setSpacing(4)
+        sequences_layout.addWidget(self._section(
+            self.tr("Sequences"), self._add_sequence, self._remove_sequence,
+            self.tr("Add sequence"), self.tr("Remove selected sequence"),
+            extra=[(self.tr("Animation Creator…"), "wand", self._open_animation_creator)]))
         self.sequences_table = self._table(["Index", "Pattern Count"])
         self.sequences_table.itemSelectionChanged.connect(self._on_sequence_selected)
         sequences_layout.addWidget(self.sequences_table)
@@ -462,16 +484,19 @@ class UvsViewer(QWidget):
 
         right = QWidget()
         right_layout = QVBoxLayout(right)
-        right_layout.addWidget(QLabel(self.tr("Patterns")))
-        right_layout.addLayout(self._toolbar(self._add_pattern, self._remove_pattern))
+        right_layout.setContentsMargins(0, 0, 0, 0)
+        right_layout.setSpacing(4)
+        right_layout.addWidget(self._section(
+            self.tr("Patterns"), self._add_pattern, self._remove_pattern,
+            self.tr("Add pattern"), self.tr("Remove selected pattern")))
         self.patterns_table = self._table(["Index", "Flags", "Left", "Top", "Right", "Bottom", "Texture", "Cutouts"])
         self.patterns_table.itemChanged.connect(self._on_pattern_changed)
         self.patterns_table.itemSelectionChanged.connect(self._on_pattern_selected)
         right_layout.addWidget(self.patterns_table)
 
-        cutouts_label = QLabel(self.tr("Cutout UVs"))
-        right_layout.addWidget(cutouts_label)
-        right_layout.addLayout(self._toolbar(self._add_cutout, self._remove_cutout))
+        right_layout.addWidget(self._section(
+            self.tr("Cutout UVs"), self._add_cutout, self._remove_cutout,
+            self.tr("Add cutout point"), self.tr("Remove selected cutout point")))
         self.cutouts_table = self._table(["Index", "U", "V"])
         self.cutouts_table.itemChanged.connect(self._on_cutout_changed)
         right_layout.addWidget(self.cutouts_table)
@@ -479,7 +504,10 @@ class UvsViewer(QWidget):
         preview_group = QGroupBox(self.tr("Playback"))
         pv_layout = QVBoxLayout(preview_group)
         ctl = QHBoxLayout()
+        ctl.setSpacing(6)
         self.play_btn = QPushButton(self.tr(PLAY_BUTTON_TEXT))
+        self.play_btn.setIcon(line_icon("play"))
+        set_style_role(self.play_btn, compact=True)
         self.play_btn.clicked.connect(self._toggle_play)
         self.frame_slider = QSlider(Qt.Orientation.Horizontal)
         self.frame_slider.valueChanged.connect(self._on_frame_slider)
@@ -762,7 +790,7 @@ class UvsViewer(QWidget):
             preview_label.setPixmap(QPixmap())
             return
         if not base or base.isNull():
-            canvas.fill(QColor(60, 60, 60))
+            canvas.fill(QColor(current_colors()["canvas_bg"]))
 
         painter = QPainter(canvas)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -879,7 +907,10 @@ class UvsViewer(QWidget):
                 self.preview_label = QLabel(self.tr("Preview unavailable"))
                 self.preview_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.preview_label.setMinimumHeight(220)
-                self.preview_label.setStyleSheet("QLabel { background-color: #222; border: 1px solid #444; }")
+                colors = current_colors()
+                self.preview_label.setStyleSheet(
+                    f"QLabel {{ background-color: {colors['canvas_bg']}; border: 1px solid {colors['border_subtle']};"
+                    f" border-radius: 3px; color: {colors['text_muted']}; }}")
                 root.addWidget(self.preview_label)
 
                 buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -971,35 +1002,17 @@ class UvsViewer(QWidget):
             self.patterns_table.selectRow(self._selected_pattern)
         self._mark_modified()
 
-    def _toolbar(self, add_cb, remove_cb, extra=None):
-        row = QHBoxLayout()
-        add_btn = QPushButton("➕")
-        self._icon_toolbar_button(add_btn)
-        add_btn.clicked.connect(add_cb)
-        rm_btn = QPushButton("🗑️")
-        self._icon_toolbar_button(rm_btn)
-        rm_btn.clicked.connect(remove_cb)
-        row.addWidget(add_btn)
-        row.addWidget(rm_btn)
-        if extra:
-            for label, cb in extra:
-                btn = QPushButton(label)
-                self._compact_button(btn)
-                btn.clicked.connect(cb)
-                row.addWidget(btn)
+    def _section(self, title: str, add_cb, remove_cb, add_tip: str, remove_tip: str, extra=None) -> QWidget:
+        strip, row = editor_strip("header", margins=(8, 3, 4, 3), spacing=2)
+        row.addWidget(styled_label(title, heading="panel"))
         row.addStretch()
-        return row
-
-    def _icon_toolbar_button(self, btn: QPushButton):
-        btn.setStyleSheet("QPushButton { min-width: 0px; max-width: 24px; padding: 0px; }")
-        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        btn.setFixedSize(24, 24)
-
-    def _compact_button(self, btn: QPushButton):
-        btn.setStyleSheet("QPushButton { min-width: 0px; }")
-        btn.setMinimumWidth(0)
-        btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
-        btn.setFixedWidth(btn.sizeHint().width())
+        for text, icon, cb in extra or ():
+            btn = strip_button(QPushButton(text), icon)
+            btn.clicked.connect(cb)
+            row.addWidget(btn)
+        for icon, tip, cb in (("add", add_tip, add_cb), ("delete", remove_tip, remove_cb)):
+            row.addWidget(tool_button(icon, tip, cb))
+        return strip
 
     def _table(self, headers: list[str]) -> QTableWidget:
         table = QTableWidget(0, len(headers))
@@ -1354,20 +1367,24 @@ class UvsViewer(QWidget):
     def _toggle_play(self):
         if self.play_timer.isActive():
             self.play_timer.stop()
-            self.play_btn.setText(self.tr(PLAY_BUTTON_TEXT))
+            self._show_play_state(False)
             return
         seq = self._current_sequence()
         if not seq or len(seq.patterns) <= 1:
             return
         ms = int(1000 / max(1, self.fps_spin.value()))
         self.play_timer.start(ms)
-        self.play_btn.setText(self.tr("⏸ Pause"))
+        self._show_play_state(True)
+
+    def _show_play_state(self, playing: bool):
+        self.play_btn.setText(self.tr("Pause") if playing else self.tr(PLAY_BUTTON_TEXT))
+        self.play_btn.setIcon(line_icon("pause" if playing else "play"))
 
     def _advance_frame(self):
         seq = self._current_sequence()
         if not seq or len(seq.patterns) <= 1:
             self.play_timer.stop()
-            self.play_btn.setText(self.tr(PLAY_BUTTON_TEXT))
+            self._show_play_state(False)
             return
         nxt = self._selected_pattern + 1
         if nxt >= len(seq.patterns):
@@ -1375,7 +1392,7 @@ class UvsViewer(QWidget):
                 nxt = 0
             else:
                 self.play_timer.stop()
-                self.play_btn.setText(self.tr(PLAY_BUTTON_TEXT))
+                self._show_play_state(False)
                 return
         self.frame_slider.setValue(nxt)
 

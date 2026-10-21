@@ -5,13 +5,16 @@ from typing import Optional
 
 lazy import numpy as np
 from PySide6.QtCore import Qt, Signal, QPoint
-lazy from PySide6.QtGui import QImage, QPixmap, QCursor, QMouseEvent, QWheelEvent
+lazy from PySide6.QtGui import QBrush, QColor, QImage, QPainter, QPixmap, QCursor, QMouseEvent, QWheelEvent
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QCheckBox,
     QGroupBox, QScrollArea, QFileDialog, QInputDialog, QMessageBox, QSlider
 )
 
+lazy from ui.editor_widgets import editor_strip, styled_label, toolbar_separator
+lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
+lazy from ui.styles import current_colors, set_style_role
 
 from . import authoring
 lazy from .dxgi import describe_format
@@ -78,6 +81,37 @@ class DraggableLabel(QLabel):
         super().leaveEvent(event)
 
 
+_CHECKER_TILE = 8
+_checker_cache: dict = {}
+
+
+def checker_brush(colors: dict) -> QBrush:
+    key = (colors["surface"], colors["surface_alt"])
+    if key not in _checker_cache:
+        tile = QPixmap(_CHECKER_TILE * 2, _CHECKER_TILE * 2)
+        tile.fill(QColor(colors["surface"]))
+        painter = QPainter(tile)
+        painter.fillRect(0, 0, _CHECKER_TILE, _CHECKER_TILE, QColor(colors["surface_alt"]))
+        painter.fillRect(_CHECKER_TILE, _CHECKER_TILE, _CHECKER_TILE, _CHECKER_TILE, QColor(colors["surface_alt"]))
+        painter.end()
+        _checker_cache.clear()
+        _checker_cache[key] = QBrush(tile)
+    return _checker_cache[key]
+
+
+class TextureCanvas(QScrollArea):
+    def paintEvent(self, event):
+        colors = current_colors()
+        painter = QPainter(self.viewport())
+        painter.fillRect(self.viewport().rect(), QColor(colors["canvas_bg"]))
+        image = self.widget()
+        pixmap = image.pixmap() if image is not None else None
+        if pixmap is not None and not pixmap.isNull():
+            painter.setBrushOrigin(image.geometry().topLeft())
+            painter.fillRect(image.geometry(), checker_brush(colors))
+        painter.end()
+
+
 class TexViewer(QWidget):
     modified_changed = Signal(bool)
 
@@ -109,62 +143,70 @@ class TexViewer(QWidget):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        top = QHBoxLayout()
-        self.image_label = QLabel(self.tr("Image:"))
+        toolbar, top = editor_strip()
+        self.image_label = styled_label(self.tr("Image:"), tone="muted")
         top.addWidget(self.image_label)
         self.image_index = QSpinBox()
         self.image_index.setMinimum(0)
         self.image_index.valueChanged.connect(self._refresh)
         top.addWidget(self.image_index)
 
-        self.mip_label = QLabel(self.tr("Mip:"))
+        self.mip_label = styled_label(self.tr("Mip:"), tone="muted")
         top.addWidget(self.mip_label)
         self.mip_index = QSpinBox()
         self.mip_index.setMinimum(0)
         self.mip_index.valueChanged.connect(self._refresh)
         top.addWidget(self.mip_index)
 
-        self.slice_label = QLabel(self.tr("Slice:"))
+        self.slice_label = styled_label(self.tr("Slice:"), tone="muted")
         top.addWidget(self.slice_label)
         self.slice_index = QSpinBox()
         self.slice_index.setMinimum(0)
         self.slice_index.valueChanged.connect(self._refresh)
         top.addWidget(self.slice_index)
 
-        top.addWidget(QLabel(self.tr("Channel:")))
+        channel_label = styled_label(self.tr("Channel:"), tone="muted")
+        top.addWidget(channel_label)
         self.channel_box = QComboBox()
         self.channel_box.addItems(["RGBA", "R", "G", "B", "A", "RGB"])
         self.channel_box.currentIndexChanged.connect(self._apply_channel_filter)
         top.addWidget(self.channel_box)
-        top.addStretch()
-        layout.addLayout(top)
+        top.addSpacing(4)
+        top.addWidget(toolbar_separator())
+        top.addSpacing(4)
 
-        zoom_layout = QHBoxLayout()
-        zoom_layout.addWidget(QLabel(self.tr("Zoom:")))
+        zoom_title = styled_label(self.tr("Zoom:"), tone="muted")
+        top.addWidget(zoom_title)
         self.zoom_slider = QSlider(Qt.Horizontal)
         self.zoom_slider.setMinimum(10)
         self.zoom_slider.setMaximum(500)
         self.zoom_slider.setValue(100)
-        self.zoom_slider.setTickPosition(QSlider.TicksBelow)
-        self.zoom_slider.setTickInterval(50)
+        self.zoom_slider.setFixedWidth(160)
         self.zoom_slider.valueChanged.connect(self._on_zoom_changed)
-        zoom_layout.addWidget(self.zoom_slider)
+        top.addWidget(self.zoom_slider)
         self.zoom_label = QLabel("100%")
-        self.zoom_label.setMinimumWidth(50)
-        zoom_layout.addWidget(self.zoom_label)
+        self.zoom_label.setMinimumWidth(40)
+        set_style_role(self.zoom_label, tone="muted")
+        top.addWidget(self.zoom_label)
         self.fit_btn = QPushButton(self.tr("Fit to Window"))
+        self.fit_btn.setIcon(line_icon("fit"))
+        set_style_role(self.fit_btn, compact=True)
         self.fit_btn.clicked.connect(self._fit_to_window)
-        zoom_layout.addWidget(self.fit_btn)
+        top.addWidget(self.fit_btn)
         self.reset_zoom_btn = QPushButton("100%")
+        set_style_role(self.reset_zoom_btn, compact=True)
         self.reset_zoom_btn.clicked.connect(self._reset_zoom)
-        zoom_layout.addWidget(self.reset_zoom_btn)
-        zoom_layout.addStretch()
-        layout.addLayout(zoom_layout)
+        top.addWidget(self.reset_zoom_btn)
+        top.addStretch()
+        layout.addWidget(toolbar)
 
-        self.info_label = QLabel("")
-        self.info_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        layout.addWidget(self.info_label)
+        body = QVBoxLayout()
+        body.setContentsMargins(8, 6, 8, 6)
+        body.setSpacing(6)
+        layout.addLayout(body, 1)
 
         self.settings_box = QGroupBox(self.tr("Settings"))
         self.settings_layout = QVBoxLayout(self.settings_box)
@@ -172,9 +214,9 @@ class TexViewer(QWidget):
         self.settings_layout.setSpacing(4)
         self.settings_content: QWidget | None = None
         self.settings_rows: list[QHBoxLayout] = []
-        layout.addWidget(self.settings_box)
+        body.addWidget(self.settings_box)
 
-        self.scroll = QScrollArea()
+        self.scroll = TextureCanvas()
         self.scroll.setWidgetResizable(False)
         self.scroll.setAlignment(Qt.AlignCenter)
         self.img_label = DraggableLabel()
@@ -183,25 +225,36 @@ class TexViewer(QWidget):
         self.img_label.setAlignment(Qt.AlignCenter)
         self.img_label.setScaledContents(False)
         self.scroll.setWidget(self.img_label)
-        layout.addWidget(self.scroll, 1)
+        body.addWidget(self.scroll, 1)
+
+        self.info_label = QLabel("")
+        self.info_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        set_style_role(self.info_label, tone="muted", mono=True)
+        body.addWidget(self.info_label)
 
         exp = QHBoxLayout()
+        exp.setSpacing(6)
         self.export_dds_btn = QPushButton(self.tr("Export DDS"))
+        self.export_dds_btn.setIcon(line_icon("export"))
         self.export_dds_btn.clicked.connect(self._export_dds)
         exp.addWidget(self.export_dds_btn)
         self.export_label = QLabel("")
         self.export_label.setWordWrap(True)
+        set_style_role(self.export_label, tone="muted")
         exp.addWidget(self.export_label, 1)
-        layout.addLayout(exp)
+        body.addLayout(exp)
 
         author = QHBoxLayout()
-        author.addWidget(QLabel(self.tr("Cook:")))
+        author.setSpacing(6)
+        cook_label = styled_label(self.tr("Cook:"), tone="muted")
+        author.addWidget(cook_label)
         self.cook_box = QComboBox()
         self.cook_box.addItem(self.tr("Choose a game..."), None)
         for profile in tex_profiles():
             self.cook_box.addItem(f"{profile.display_name} ({profile.version})", profile.version)
         author.addWidget(self.cook_box)
         self.import_dds_btn = QPushButton(self.tr("Import DDS..."))
+        self.import_dds_btn.setIcon(line_icon("import"))
         self.import_dds_btn.clicked.connect(self._import_dds)
         author.addWidget(self.import_dds_btn)
         self.convert_btn = QPushButton(self.tr("Convert to this cook"))
@@ -210,8 +263,9 @@ class TexViewer(QWidget):
         self.authoring_label = QLabel("")
         self.authoring_label.setWordWrap(True)
         self.authoring_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        set_style_role(self.authoring_label, tone="muted")
         author.addWidget(self.authoring_label, 1)
-        layout.addLayout(author)
+        body.addLayout(author)
 
     def _populate(self):
         tex = getattr(self.handler, 'tex', None)
@@ -434,6 +488,7 @@ class TexViewer(QWidget):
             shape,
         ]
         self.info_label.setText(" | ".join(part for part in parts if part))
+        set_style_role(self.info_label, tone="muted")
         self.source_rgba = decoded.rgba
         self.source_width = decoded.width
         self.source_height = decoded.height
@@ -448,6 +503,7 @@ class TexViewer(QWidget):
 
     def _show_failure(self, message: str):
         self.info_label.setText(message)
+        set_style_role(self.info_label, tone="danger")
         self.source_rgba = b""
         self.source_width = 0
         self.source_height = 0

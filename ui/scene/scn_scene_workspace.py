@@ -5,8 +5,8 @@ from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, Qt
-lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap
+from PySide6.QtCore import QCoreApplication, QSize, QT_TRANSLATE_NOOP, QTimer, Qt
+lazy from PySide6.QtGui import QIcon
 lazy from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -19,7 +19,6 @@ lazy from PySide6.QtWidgets import (
     QLineEdit,
     QMenu,
     QMenuBar,
-    QStyle,
     QStatusBar,
     QTabBar,
     QToolBar,
@@ -34,13 +33,27 @@ from file_handlers.rsz.scn_scene_loader import ScnSceneLoader, ScnSceneSource, h
 lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
 lazy from file_handlers.rsz.scn_document_store import ScnDocumentStore
 lazy from file_handlers.rsz.rsz_handler import RszHandler
+lazy from ui.editor_widgets import styled_label, tool_button
+lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
 lazy from ui.scene.scn_raw_inspector import ScnRawInspector
+lazy from ui.scene.viewport_overlay import add_overlay_header, overlay_panel_stylesheet
+lazy from ui.styles import current_colors, set_style_role
 
 
 ALREADY_OPEN_TEXT = QT_TRANSLATE_NOOP(
     "ScnSceneWorkspace", "{source} is already open in {scene}."
 )
+
+
+def _inspector_stylesheet() -> str:
+    c = current_colors()
+    return overlay_panel_stylesheet("sceneInspector") + f"""
+        QLabel#sceneStatus {{ color: {c['text_subtle']}; }}
+        QFrame#rawScenePreview {{
+            background-color: {c['panel']}; border: 1px solid {c['border_subtle']}; border-radius: 4px;
+        }}
+    """
 
 
 def _file_source_path(filename: str | None, project_dir: str | None, unpacked_dir: str | None) -> tuple[str, str]:
@@ -131,11 +144,10 @@ class ScnSceneTab:
 
         self.notebook_widget = QWidget()
         self.notebook_widget.parent_tab = self
-        self._scn_icon = self.notebook_widget.style().standardIcon(QStyle.SP_DirIcon)
-        self._gameobject_icon = self._make_gameobject_icon()
-        self._remove_icon = self._make_remove_icon()
-        self._eye_icon = self._make_eye_icon(False)
-        self._eye_off_icon = self._make_eye_icon(True)
+        self._scn_icon = line_icon("folder")
+        self._gameobject_icon = line_icon("gameobject")
+        self._eye_icon = line_icon("eye")
+        self._eye_off_icon = line_icon("eye_off", current_colors()["text_subtle"])
         layout = QVBoxLayout(self.notebook_widget)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -155,51 +167,39 @@ class ScnSceneTab:
         panel = QFrame(self.preview.preview)
         panel.setObjectName("sceneInspector")
         panel.viewport_anchor = "right"
-        panel.setMinimumSize(460, 44)
+        panel.setMinimumSize(380, 44)
         panel.setMaximumSize(1120, 1040)
-        panel.resize(680, 860)
-        panel.setStyleSheet("""
-            QFrame#sceneInspector { background:rgba(9,13,18,218); border:1px solid rgba(90,108,126,180); border-radius:8px; color:#dce3ea; }
-            QWidget#sceneInspectorBody { background-color:transparent; border:0; }
-            QLabel { color:#dce3ea; background-color:transparent; }
-            QLabel#sceneStatus { color:#9fb0bf; background-color:transparent; font-size:10px; }
-            QLabel#overlayResizeGrip { color:#5d6f80; background-color:transparent; font-size:10px; }
-            QTreeWidget { background:rgba(8,12,16,185); border:1px solid #2d3640; outline:0; padding:2px; }
-            QTreeWidget::item { padding:3px 4px; }
-            QTreeWidget::item:selected { background:#276f75; }
-            QFrame#rawScenePreview { background:rgba(12,17,23,170); border:1px solid #2d3640; border-radius:5px; }
-            QLineEdit { background:#101720; color:#dce3ea; border:1px solid #3a4652; border-radius:4px; padding:4px; selection-background-color:#276f75; }
-            QToolButton { background:#1a232c; border:1px solid #3a4652; padding:3px; border-radius:4px; }
-            QToolButton:hover { background:#253342; border-color:#4eb4a6; }
-            QToolButton:disabled { color:#69737d; background:#121820; }
-        """)
+        panel.resize(520, 860)
+        panel.setStyleSheet(_inspector_stylesheet())
         self.source_panel = panel
 
         side = QVBoxLayout(panel)
-        side.setContentsMargins(10, 10, 10, 10)
-        side.setSpacing(6)
+        side.setContentsMargins(0, 0, 0, 0)
+        side.setSpacing(0)
 
-        header = QHBoxLayout()
+        header = add_overlay_header(panel, "sceneInspector")
         self.source_fold_button = self._tool_button(
-            "v", QCoreApplication.translate("ScnSceneWorkspace", "Fold panel")
+            "chevron_down", QCoreApplication.translate("ScnSceneWorkspace", "Fold panel")
         )
         self.source_label = QLabel(panel)
-        self.menu_button = self._tool_button("≡", QCoreApplication.translate("ScnSceneWorkspace", "Scene menu"), lambda: self._show_scene_popup(self.menu_button.mapToGlobal(self.menu_button.rect().bottomLeft())))
-        self.add_button = self._tool_button(QStyle.SP_FileDialogNewFolder, QCoreApplication.translate("ScnSceneWorkspace", "Add open SCN or PFB"), self._show_add_source_popup)
-        self.save_button = self._tool_button(QStyle.SP_DialogSaveButton, QCoreApplication.translate("ScnSceneWorkspace", "Save scene"), self.direct_save)
-        self.remove_button = self._tool_button(self._remove_icon, QCoreApplication.translate("ScnSceneWorkspace", "Remove selected from scene"), self.remove_selected_sources)
-        self.rename_button = self._tool_button(QStyle.SP_FileDialogDetailedView, QCoreApplication.translate("ScnSceneWorkspace", "Rename scene"), lambda: self.app.scenes.rename_scene(self))
-        self.close_button = self._tool_button(QStyle.SP_DialogCloseButton, QCoreApplication.translate("ScnSceneWorkspace", "Close scene"), lambda: self.app.scenes.close_scene(self))
+        self.source_label.setObjectName("sceneInspectorTitle")
+        self.menu_button = self._tool_button("menu", QCoreApplication.translate("ScnSceneWorkspace", "Scene menu"), lambda: self._show_scene_popup(self.menu_button.mapToGlobal(self.menu_button.rect().bottomLeft())))
+        self.add_button = self._tool_button("add", QCoreApplication.translate("ScnSceneWorkspace", "Add open SCN or PFB"), self._show_add_source_popup)
+        self.save_button = self._tool_button("save", QCoreApplication.translate("ScnSceneWorkspace", "Save scene"), self.direct_save)
+        self.remove_button = self._tool_button("remove", QCoreApplication.translate("ScnSceneWorkspace", "Remove selected from scene"), self.remove_selected_sources)
+        self.rename_button = self._tool_button("edit", QCoreApplication.translate("ScnSceneWorkspace", "Rename scene"), lambda: self.app.scenes.rename_scene(self))
+        self.close_button = self._tool_button("close", QCoreApplication.translate("ScnSceneWorkspace", "Close scene"), lambda: self.app.scenes.close_scene(self))
         header.addWidget(self.source_fold_button)
         header.addWidget(self.source_label, 1)
-        for button in (self.menu_button, self.add_button, self.save_button, self.remove_button, self.rename_button, self.close_button):
+        for button in (self.add_button, self.remove_button, self.save_button, self.rename_button, self.menu_button):
             header.addWidget(button)
-        side.addLayout(header)
+        header.addSpacing(4)
+        header.addWidget(self.close_button)
         self.source_body = QWidget(panel)
         self.source_body.setObjectName("sceneInspectorBody")
         self.source_body.setAttribute(Qt.WA_StyledBackground, True)
         body = QVBoxLayout(self.source_body)
-        body.setContentsMargins(0, 0, 0, 0)
+        body.setContentsMargins(6, 6, 6, 2)
         body.setSpacing(6)
         side.addWidget(self.source_body, 1)
         self.preview.status_label.setObjectName("sceneStatus")
@@ -227,17 +227,11 @@ class ScnSceneTab:
         self.preview.preview.setup_viewport_overlay(panel, self.source_body, self.source_fold_button)
         self.preview.preview.place_viewport_overlays()
 
-    def _tool_button(self, icon: QStyle.StandardPixmap | QIcon | str, tip: str, slot=None) -> QToolButton:
-        button = QToolButton(self.notebook_widget)
-        if isinstance(icon, str):
-            button.setText(icon)
-        else:
-            button.setIcon(icon if isinstance(icon, QIcon) else self.notebook_widget.style().standardIcon(icon))
-        button.setToolTip(tip)
-        button.setFixedSize(26, 26)
+    def _tool_button(self, icon: str, tip: str, slot=None, parent: QWidget | None = None) -> QToolButton:
+        button = tool_button(icon, tip, slot, parent=parent or self.notebook_widget)
+        button.setIconSize(QSize(16, 16))
+        button.setFixedSize(24, 24)
         button.setFocusPolicy(Qt.NoFocus)
-        if slot:
-            button.clicked.connect(slot)
         return button
 
     def _popup_button(self, text: str, slot=None, enabled: bool = True) -> QToolButton:
@@ -249,6 +243,12 @@ class ScnSceneTab:
         if slot:
             button.clicked.connect(slot)
         return button
+
+    @staticmethod
+    def _popup_note(text: str, parent: QWidget) -> QLabel:
+        label = styled_label(text, parent, tone="muted")
+        label.setWordWrap(True)
+        return label
 
     def _discard_scene_popup(self) -> None:
         if self._scene_popup is not None:
@@ -263,32 +263,33 @@ class ScnSceneTab:
             panel = QFrame(self.preview.preview)
             panel.setObjectName("sceneInspector")
             panel.viewport_anchor = "manual"
-            panel.setMinimumSize(560, 180)
+            panel.setMinimumSize(420, 120)
             panel.setMaximumSize(980, 820)
             panel.resize(660, 420)
             panel.setStyleSheet(self.source_panel.styleSheet())
             outer = QVBoxLayout(panel)
-            outer.setContentsMargins(8, 8, 8, 8)
-            outer.setSpacing(6)
-            header = QHBoxLayout()
-            self._scene_popup_fold = self._popup_button("v")
+            outer.setContentsMargins(0, 0, 0, 0)
+            outer.setSpacing(0)
+            header = add_overlay_header(panel, "sceneInspector")
+            self._scene_popup_fold = self._tool_button(
+                "chevron_down", QCoreApplication.translate("ScnSceneWorkspace", "Fold panel"), parent=panel)
             self._scene_popup_title = QLabel(panel)
+            self._scene_popup_title.setObjectName("sceneInspectorTitle")
             header.addWidget(self._scene_popup_fold)
             header.addWidget(self._scene_popup_title, 1)
-            header.addWidget(self._popup_button("x", panel.hide))
-            outer.addLayout(header)
+            header.addWidget(self._tool_button(
+                "close", QCoreApplication.translate("ScnSceneWorkspace", "Close"), panel.hide, parent=panel))
             self._scene_popup_body_widget = QWidget(panel)
             self._scene_popup_body_widget.setObjectName("sceneInspectorBody")
             self._scene_popup_body_widget.setAttribute(Qt.WA_StyledBackground, True)
             self._scene_popup_body = QVBoxLayout(self._scene_popup_body_widget)
-            self._scene_popup_body.setContentsMargins(0, 0, 0, 0)
+            self._scene_popup_body.setContentsMargins(8, 8, 8, 4)
             self._scene_popup_body.setSpacing(6)
             outer.addWidget(self._scene_popup_body_widget, 1)
             self.preview.preview.setup_viewport_overlay(panel, self._scene_popup_body_widget, self._scene_popup_fold)
             self._scene_popup = panel
         self._scene_popup_title.setText(title)
-        self._scene_popup_body_widget.show()
-        self._scene_popup_fold.setText("v")
+        self.preview.preview.set_viewport_overlay_folded(self._scene_popup, False)
         self._clear_layout(self._scene_popup_body)
         return self._scene_popup, self._scene_popup_body
 
@@ -339,7 +340,7 @@ class ScnSceneTab:
         self._fullscreen_restore = (window, window.windowState(), hidden)
         for widget, _visible in hidden:
             widget.hide()
-        self.preview.preview.fullscreen_button.setText("x")
+        self.preview.preview.show_fullscreen_state(True)
         window.showFullScreen()
         call_later(self.notebook_widget, 0, self._after_view_fullscreen_change)
 
@@ -354,7 +355,7 @@ class ScnSceneTab:
             with suppress(RuntimeError):
                 widget.setVisible(visible)
         with suppress(RuntimeError):
-            self.preview.preview.fullscreen_button.setText("⛶")
+            self.preview.preview.show_fullscreen_state(False)
         with suppress(RuntimeError):
             if state & Qt.WindowFullScreen:
                 window.setWindowState(state)
@@ -388,7 +389,7 @@ class ScnSceneTab:
             QCoreApplication.translate("ScnSceneWorkspace", "Add SCN or PFB")
         )
         if not sources:
-            body.addWidget(QLabel(QCoreApplication.translate(
+            body.addWidget(self._popup_note(QCoreApplication.translate(
                 "ScnSceneWorkspace", "Open an SCN or PFB from a PAK first."
             ), panel))
         for source in sources:
@@ -428,52 +429,6 @@ class ScnSceneTab:
             self.update_source_summary()
             self.app.project_workspace._sync_tabs()
             self._scene_popup.hide()
-
-    @staticmethod
-    def _painted_icon(draw) -> QIcon:
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(QColor(0, 0, 0, 0))
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        draw(painter)
-        painter.end()
-        return QIcon(pixmap)
-
-    @staticmethod
-    def _make_gameobject_icon() -> QIcon:
-        def draw(painter):
-            painter.setPen(QPen(QColor("#dce3ea"), 1.2))
-            painter.setBrush(QColor("#222a33"))
-            painter.drawRoundedRect(2, 5, 12, 7, 3, 3)
-            painter.drawEllipse(4, 7, 2, 2)
-            painter.drawEllipse(10, 7, 2, 2)
-        return ScnSceneTab._painted_icon(draw)
-
-    @staticmethod
-    def _make_remove_icon() -> QIcon:
-        def draw(painter):
-            painter.setPen(QPen(QColor("#dce3ea"), 1.4))
-            painter.drawEllipse(3, 3, 10, 10)
-            painter.drawLine(5, 8, 11, 8)
-        return ScnSceneTab._painted_icon(draw)
-
-    @staticmethod
-    def _make_eye_icon(closed: bool) -> QIcon:
-        def draw(painter):
-            path = QPainterPath()
-            path.moveTo(1.5, 8)
-            path.cubicTo(4.0, 3.8, 12.0, 3.8, 14.5, 8)
-            path.cubicTo(12.0, 12.2, 4.0, 12.2, 1.5, 8)
-            painter.setPen(QPen(QColor("#dce3ea"), 1.3))
-            painter.setBrush(QColor(0, 0, 0, 0))
-            painter.drawPath(path)
-            if closed:
-                painter.setPen(QPen(QColor("#e06c75"), 1.8))
-                painter.drawLine(3, 12, 13, 4)
-            else:
-                painter.setBrush(QColor("#dce3ea"))
-                painter.drawEllipse(6, 6, 4, 4)
-        return ScnSceneTab._painted_icon(draw)
 
     def add_source(self, source: ScnSceneSource, owned_keys: set[str] | None = None) -> bool:
         if owned_keys is None:
@@ -728,7 +683,7 @@ class ScnSceneTab:
         can_add_source = self.app.scenes.can_add_source(active_source)
         scenes = self.app.scenes.tabs()
         if not scenes:
-            body.addWidget(QLabel(
+            body.addWidget(self._popup_note(
                 QCoreApplication.translate("ScnSceneWorkspace", "No scenes."), panel
             ))
         for scene in scenes:
@@ -746,17 +701,19 @@ class ScnSceneTab:
                 (QCoreApplication.translate("ScnSceneWorkspace", "Delete"), lambda tab=scene: self.app.scenes.close_scene(tab), True),
             ]
             self._add_popup_row(scene.title, actions)
-        body.addWidget(self._popup_button(
+        create = self._popup_button(
             QCoreApplication.translate("ScnSceneWorkspace", "Create Scene"),
             self._popup_run(self._create_scene),
-        ))
+        )
+        set_style_role(create, variant="primary")
+        body.addWidget(create)
         self._show_popup_at(global_pos)
 
     def _release_fullscreen(self):
         restore = self._fullscreen_restore
         if restore is not None:
             self._fullscreen_restore = None
-            self.preview.preview.fullscreen_button.setText("⛶")
+            self.preview.preview.show_fullscreen_state(False)
         return restore
 
     def _adopt_fullscreen(self, restore) -> None:
@@ -766,7 +723,7 @@ class ScnSceneTab:
         for widget, _visible in restore[2]:
             with suppress(RuntimeError):
                 widget.hide()
-        self.preview.preview.fullscreen_button.setText("x")
+        self.preview.preview.show_fullscreen_state(True)
         call_later(self.notebook_widget, 0, self._after_view_fullscreen_change)
 
     def _handoff_fullscreen(self, scene, action) -> None:

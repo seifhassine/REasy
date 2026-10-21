@@ -28,6 +28,7 @@ lazy from PySide6.QtGui import (
 from PySide6.QtWidgets import QWidget
 
 lazy from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer
+lazy from ui.styles import current_colors
 
 lazy from ..dependencies import GuiDependencyCatalog
 lazy from ..errors import GuiSceneError
@@ -668,13 +669,14 @@ class Dmc5GuiCanvas(QWidget):
         return QRectF(origin, origin + size), scale
 
     def paintEvent(self, _event) -> None:  # noqa: N802
+        colors = current_colors()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-        painter.fillRect(self.rect(), QColor(24, 26, 30))
+        painter.fillRect(self.rect(), QColor(colors["canvas_bg"]))
         stage, scale = self._stage()
         painter.fillRect(stage, QColor(2, 4, 6))
-        painter.setPen(QPen(QColor(68, 75, 82), 1.0))
+        painter.setPen(QPen(QColor(colors["border_strong"]), 1.0))
         painter.drawRect(stage)
         if self._scene is None:
             return
@@ -688,6 +690,17 @@ class Dmc5GuiCanvas(QWidget):
             self._draw_layout(painter)
         self._draw_guides(painter)
         painter.restore()
+        self._draw_navigation_hint(painter, stage, colors)
+
+    def _draw_navigation_hint(self, painter: QPainter, stage: QRectF, colors: dict) -> None:
+        if self.height() - stage.bottom() < 18:
+            return
+        painter.setPen(QColor(colors["text_subtle"]))
+        painter.drawText(
+            QRectF(10.0, stage.bottom() + 2.0, max(1.0, self.width() - 20.0), 16.0),
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            self.tr("{zoom}% · Ctrl+Wheel to zoom · Middle-drag to pan").format(zoom=round(self._zoom * 100)),
+        )
 
     def _draw_preview(self, painter: QPainter) -> None:
         current: set[tuple[str, str]] = set()
@@ -2305,6 +2318,9 @@ class Dmc5GuiCanvas(QWidget):
 
     def _draw_layout(self, painter: QPainter) -> None:
         assert self._scene is not None
+        outline = QColor(current_colors()["text_muted"])
+        outline.setAlpha(130)
+        outline_pen = QPen(outline, 0.0)
         for node in self._scene.draw_nodes:
             if node is self._scene.root:
                 continue
@@ -2312,17 +2328,21 @@ class Dmc5GuiCanvas(QWidget):
             fill = self._color(node)
             fill.setAlpha(35 if node.effective_visible else 10)
             painter.fillPath(path, fill)
-            painter.setPen(QPen(QColor(80, 190, 255, 150), 0.0))
+            painter.setPen(outline_pen)
             painter.drawPath(path)
 
     def _draw_guides(self, painter: QPainter) -> None:
         if self._scene is None:
             return
+        colors = current_colors()
+        selected_color = QColor(colors["accent"])
+        guide_color = QColor(colors["text_muted"])
+        guide_color.setAlpha(90)
         for node in self._scene.draw_nodes:
             if node is self._scene.root or (not self._guides and node is not self._selected):
                 continue
             pen = QPen(
-                QColor(255, 211, 105, 235) if node is self._selected else QColor(80, 195, 205, 90),
+                selected_color if node is self._selected else guide_color,
                 0.0,
             )
             if not node.effective_visible:
@@ -3090,6 +3110,7 @@ class Dmc5GuiCanvas(QWidget):
         if event.button() == Qt.MouseButton.MiddleButton:
             self._panning = True
             self._pan_start = event.position()
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
             return
         if event.button() != Qt.MouseButton.LeftButton or self._scene is None:
             return super().mousePressEvent(event)
@@ -3110,6 +3131,7 @@ class Dmc5GuiCanvas(QWidget):
             self._drag_node = node
             self._drag_start = point
             self._drag_origin = node.world_position
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
 
     def mouseMoveEvent(self, event) -> None:  # noqa: N802
         if self._panning:
@@ -3161,12 +3183,14 @@ class Dmc5GuiCanvas(QWidget):
     def mouseReleaseEvent(self, event) -> None:  # noqa: N802
         if event.button() == Qt.MouseButton.MiddleButton:
             self._panning = False
+            self.setCursor(Qt.CursorShape.ArrowCursor)
             return
         if event.button() == Qt.MouseButton.LeftButton and self._drag_node is not None:
             node = self._drag_node
             transient = self._transient
             self._drag_node = None
             self._transient = None
+            self.setCursor(Qt.CursorShape.ArrowCursor)
             if transient is not None:
                 self.node_moved.emit(node, transient[1], transient[2])
             self._apply_layout()

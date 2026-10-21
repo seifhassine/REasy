@@ -8,7 +8,9 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, Q
 
 lazy from file_handlers.mesh.device_preview import gather_master
 lazy from ui.background_jobs import BackgroundJobs
+lazy from ui.editor_widgets import styled_label
 lazy from ui.scene.device_frames import LIMIT_MOST
+lazy from ui.styles import set_style_role
 lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
 lazy from file_handlers.mmtr.pretransform import chain_level, pretransform_catalog_for
 lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
@@ -147,13 +149,15 @@ class StrandsControls(QScrollArea):
         self.resource = None
         if not prefab:
             self.resource = self._prefab_row(layout)
-        layout.addWidget(QLabel(self.tr('Strand sets')))
+        layout.addWidget(styled_label(self.tr('Strand sets'), heading='section'))
         self.sets = QListWidget(body)
         self.sets.setToolTip(self.tr('The prefab\'s objects drawing strands, with the strands file each draws.'))
         self.sets.currentRowChanged.connect(self._choose)
         layout.addWidget(self.sets)
-        layout.addWidget(plain_label(self.tr('Strands are drawn by the game\'s chain in Game lighting, over the mesh '
-                                             'their set is bound to.')))
+        note = plain_label(self.tr('Strands are drawn by the game\'s chain in Game lighting, over the mesh '
+                                   'their set is bound to.'))
+        set_style_role(note, tone='muted')
+        layout.addWidget(note)
         self.options = QWidget(body)
         layout.addWidget(self.options)
         form = QFormLayout(self.options)
@@ -214,7 +218,7 @@ class StrandsControls(QScrollArea):
             self.status.setText(self.tr('Choose the prefab holding the strands.'))
 
     def _prefab_row(self, layout) -> QComboBox:
-        layout.addWidget(QLabel(self.tr('Prefab (PFB)')))
+        layout.addWidget(styled_label(self.tr('Prefab (PFB)'), heading='section'))
         combo = QComboBox()
         combo.setEditable(True)
         combo.setInsertPolicy(QComboBox.NoInsert)

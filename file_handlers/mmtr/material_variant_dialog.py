@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
 )
 
 lazy from file_handlers.mdf.mdf_file import MdfFile
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 lazy from utils.resource_file_utils import normalize_resource_path
 
 lazy from .material_variant import (
@@ -76,9 +78,7 @@ class MaterialVariantDialog(QDialog):
             )
         )
         intro.setWordWrap(True)
-        intro.setStyleSheet(
-            "QLabel { background:#243b2d; color:#d9f1df; border-radius:6px; padding:9px 11px; }"
-        )
+        set_style_role(intro, banner="info")
         root.addWidget(intro)
 
         project = QLabel(
@@ -87,6 +87,7 @@ class MaterialVariantDialog(QDialog):
             )
         )
         project.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        set_style_role(project, tone="muted")
         root.addWidget(project)
 
         source_title = QLabel(
@@ -95,19 +96,25 @@ class MaterialVariantDialog(QDialog):
             )
         )
         source_title.setWordWrap(True)
+        set_style_role(source_title, heading="section")
+        root.addSpacing(4)
         root.addWidget(source_title)
 
         source_tools = QHBoxLayout()
+        source_tools.setSpacing(4)
         self.source_search = QLineEdit()
         self.source_search.setPlaceholderText(
             self.tr("Search Project, PAK, and System MDF results…")
         )
+        self.source_search.addAction(line_icon("search"), QLineEdit.ActionPosition.LeadingPosition)
         self.source_search.textChanged.connect(self._filter_sources)
         source_tools.addWidget(self.source_search, 1)
         disk_button = QPushButton(self.tr("Add disk MDF…"))
+        disk_button.setIcon(line_icon("folder_open"))
         disk_button.clicked.connect(self._add_disk_source)
         source_tools.addWidget(disk_button)
         self.pak_button = QPushButton(self.tr("Add PAK path…"))
+        self.pak_button.setIcon(line_icon("box"))
         self.pak_button.setEnabled(callable(self._pak_loader))
         self.pak_button.clicked.connect(self._add_pak_source)
         source_tools.addWidget(self.pak_button)
@@ -118,6 +125,7 @@ class MaterialVariantDialog(QDialog):
         root.addWidget(self.source_results, 1)
         self.source_status = QLabel()
         self.source_status.setWordWrap(True)
+        set_style_role(self.source_status, tone="muted")
         root.addWidget(self.source_status)
 
         form = QFormLayout()
@@ -146,7 +154,10 @@ class MaterialVariantDialog(QDialog):
         root.addLayout(form)
         self._mmtr_output_changed(self.mmtr_output.text())
 
-        root.addWidget(QLabel(self.tr("Materials to assign in the selected MDF")))
+        materials_title = QLabel(self.tr("Materials to assign in the selected MDF"))
+        set_style_role(materials_title, heading="section")
+        root.addSpacing(4)
+        root.addWidget(materials_title)
         self.materials = QListWidget()
         root.addWidget(self.materials, 1)
         note = QLabel(
@@ -156,6 +167,7 @@ class MaterialVariantDialog(QDialog):
             )
         )
         note.setWordWrap(True)
+        set_style_role(note, tone="muted")
         root.addWidget(note)
 
         self.buttons = QDialogButtonBox(

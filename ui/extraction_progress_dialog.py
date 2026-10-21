@@ -1,8 +1,11 @@
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QLabel, QProgressBar, 
+    QDialog, QVBoxLayout, QProgressBar, 
     QPushButton, QHBoxLayout
 )
 from PySide6.QtCore import Qt, Signal, QTimer, QElapsedTimer, QObject, Slot
+
+lazy from ui.editor_widgets import styled_label
+lazy from ui.styles import set_style_role
 
 
 class ProgressSignals(QObject):
@@ -26,27 +29,36 @@ class ExtractionProgressDialog(QDialog):
         self.setWindowFlags(self.windowFlags() & ~Qt.WindowContextHelpButtonHint)
         
         layout = QVBoxLayout()
-        
-        self.status_label = QLabel(
-            self.tr("Extracting {total_files:,} files...").format(total_files=total_files)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(6)
+
+        self.status_label = styled_label(
+            self.tr("Extracting {total_files:,} files...").format(total_files=total_files),
+            heading="section",
         )
+        self.status_label.setWordWrap(True)
         layout.addWidget(self.status_label)
-        
+
         self.progress_bar = QProgressBar()
         self.progress_bar.setMaximum(total_files)
         self.progress_bar.setValue(0)
         layout.addWidget(self.progress_bar)
-        
-        self.details_label = QLabel(
+
+        self.details_label = styled_label(
             self.tr("{completed_files:,} / {total_files:,} files").format(
                 completed_files=0, total_files=total_files
-            )
+            ),
+            tone="muted",
         )
-        layout.addWidget(self.details_label)
-        
-        self.time_label = QLabel(self.tr("Time elapsed: 00:00"))
-        layout.addWidget(self.time_label)
-        
+
+        self.time_label = styled_label(self.tr("Time elapsed: 00:00"), tone="muted")
+        details_layout = QHBoxLayout()
+        details_layout.addWidget(self.details_label)
+        details_layout.addStretch()
+        details_layout.addWidget(self.time_label)
+        layout.addLayout(details_layout)
+        layout.addSpacing(4)
+
         button_layout = QHBoxLayout()
         button_layout.addStretch()
         self.cancel_button = QPushButton(self.tr("Cancel"))
@@ -83,6 +95,7 @@ class ExtractionProgressDialog(QDialog):
         
         if self.completed_files >= self.total_files:
             self.status_label.setText(self.tr("Extraction complete!"))
+            set_style_role(self.status_label, tone="success")
             self.cancel_button.setText(self.tr("Close"))
     
     def update_elapsed_time(self):
@@ -113,6 +126,7 @@ class ExtractionProgressDialog(QDialog):
         ).format(minutes=minutes, seconds=seconds))
         
         self.status_label.setText(self.tr("Extraction complete!"))
+        set_style_role(self.status_label, tone="success")
         self.cancel_button.setText(self.tr("Close"))
         self.progress_bar.setValue(self.total_files)
         self.details_label.setText(self.tr(
@@ -124,6 +138,7 @@ class ExtractionProgressDialog(QDialog):
     def on_extraction_error(self, error_msg: str):
         self.update_timer.stop()
         self.status_label.setText(self.tr("Error: {error}").format(error=error_msg))
+        set_style_role(self.status_label, tone="danger")
         self.cancel_button.setText(self.tr("Close"))
     
     def closeEvent(self, event):

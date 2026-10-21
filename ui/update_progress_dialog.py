@@ -4,6 +4,9 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPro
 from PySide6.QtWidgets import QApplication
 import os
 
+lazy from ui.editor_widgets import styled_label
+lazy from ui.styles import set_style_role
+
 
 class UpdateProgressDialog(QDialog):
     def __init__(self, parent=None):
@@ -24,6 +27,9 @@ class UpdateProgressDialog(QDialog):
         self._log = QTextEdit(self)
         self._log.setReadOnly(True)
         self._log.setLineWrapMode(QTextEdit.NoWrap)
+        set_style_role(self._log, mono=True)
+
+        self._status = styled_label(self.tr("Updating REasy…"), self, heading="section")
 
         self._progress = QProgressBar(self)
         self._progress.setRange(0, 0)
@@ -34,16 +40,23 @@ class UpdateProgressDialog(QDialog):
 
         self._close_button = QPushButton(self.tr("Close"), self)
         self._close_button.setEnabled(False)
+        set_style_role(self._close_button, variant="primary")
         self._close_button.clicked.connect(self.accept)
 
         btns = QHBoxLayout()
+        btns.setSpacing(6)
         btns.addStretch(1)
         btns.addWidget(self._cancel_button)
         btns.addWidget(self._close_button)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self._log)
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(6)
+        layout.addWidget(self._log, 1)
+        layout.addSpacing(2)
+        layout.addWidget(self._status)
         layout.addWidget(self._progress)
+        layout.addSpacing(2)
         layout.addLayout(btns)
         self.setLayout(layout)
 
@@ -102,13 +115,15 @@ class UpdateProgressDialog(QDialog):
         self._cancel_button.setEnabled(False)
         self._close_button.setEnabled(True)
         if exit_code == 0:
-            self._log.append("\n" + self.tr("Staging completed."))
+            message = self.tr("Staging completed.")
+            set_style_role(self._status, tone="success")
         else:
-            self._log.append(
-                "\n" + self.tr("Update failed with code {exit_code}. See log above for details.").format(
-                    exit_code=exit_code
-                )
+            message = self.tr("Update failed with code {exit_code}. See log above for details.").format(
+                exit_code=exit_code
             )
+            set_style_role(self._status, tone="danger")
+        self._status.setText(message)
+        self._log.append("\n" + message)
 
     def _on_cancel(self):
         if self._process and self._process.state() == QProcess.Running:

@@ -10,11 +10,14 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFileDialog,
+    QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QTabWidget,
     QVBoxLayout,
@@ -29,7 +32,9 @@ lazy from tools.wwise_toolchain import (
     validate_wwise_installation,
     wwise_profile_for_game,
 )
+lazy from ui.editor_widgets import styled_label
 lazy from ui.keyboard_shortcuts import create_shortcuts_tab
+lazy from ui.styles import current_colors
 
 
 class SettingsDialog(QDialog):
@@ -64,148 +69,83 @@ class SettingsDialog(QDialog):
         self.wwise_game = ""
 
         self.setWindowTitle(self.tr("Settings"))
-        self.resize(500, 400)
+        # Tall enough for the General tab, but never past the screen so OK/Cancel stay visible.
+        available = self.screen().availableGeometry()
+        self.resize(min(700, available.width() - 40), min(700, available.height() - 60))
         self._build_ui()
 
     def _build_ui(self):
         main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(8, 8, 8, 8)
+        main_layout.setSpacing(8)
 
         tab_widget = QTabWidget()
-        main_layout.addWidget(tab_widget)
+        main_layout.addWidget(tab_widget, 1)
 
-        general_tab = QWidget()
+        general_tab = QScrollArea()
+        general_tab.setWidgetResizable(True)
+        general_tab.setFrameShape(QFrame.NoFrame)
         tab_widget.addTab(general_tab, self.tr("General"))
-        general_layout = QVBoxLayout(general_tab)
-        general_layout.setSpacing(15)
+        general_body = QWidget()
+        general_tab.setWidget(general_body)
+        general_layout = QVBoxLayout(general_body)
+        general_layout.setContentsMargins(0, 8, 4, 0)
+        general_layout.setSpacing(8)
+        row_labels = []
 
-        general_layout.addWidget(QLabel(self.tr("RSZ JSON Path:")), 0, Qt.AlignBottom)
-        json_path_layout = QHBoxLayout()
-        json_path_layout.setContentsMargins(0, 0, 0, 0)
-        self.json_entry = QLineEdit(self.settings.get("rcol_json_path", ""))
-        self.json_browse_button = QPushButton(self.tr("Browse..."))
-        json_path_layout.addWidget(self.json_entry)
-        json_path_layout.addWidget(self.json_browse_button)
-        general_layout.addLayout(json_path_layout)
+        def add_row(form, text, field):
+            label = QLabel(text)
+            row_labels.append(label)
+            form.addRow(label, field)
+            return label
 
-        general_layout.addWidget(QLabel(self.tr("VGMStream CLI Path:")), 0, Qt.AlignBottom)
-        vgmstream_layout = QHBoxLayout()
-        vgmstream_layout.setContentsMargins(0, 0, 0, 0)
-        self.vgmstream_entry = QLineEdit(self.settings.get("vgmstream_cli_path", ""))
-        self.vgmstream_browse_button = QPushButton(self.tr("Browse..."))
-        vgmstream_layout.addWidget(self.vgmstream_entry)
-        vgmstream_layout.addWidget(self.vgmstream_browse_button)
-        general_layout.addLayout(vgmstream_layout)
-
-        general_layout.addWidget(QLabel(self.tr("Blender Executable (.blend export/import):")), 0, Qt.AlignBottom)
-        blender_layout = QHBoxLayout()
-        blender_layout.setContentsMargins(0, 0, 0, 0)
-        self.blender_entry = QLineEdit(self.settings.get("blender_path", ""))
-        self.blender_entry.setPlaceholderText(self.tr("Found automatically when installed"))
-        self.blender_browse_button = QPushButton(self.tr("Browse..."))
-        blender_layout.addWidget(self.blender_entry)
-        blender_layout.addWidget(self.blender_browse_button)
-        general_layout.addLayout(blender_layout)
-
-        game_version_layout = QHBoxLayout()
-        game_version_layout.setContentsMargins(0, 0, 0, 0)
-        game_version_layout.addWidget(QLabel(self.tr("Game Version (Reload Required):")))
+        game_form = self._add_section(general_layout, self.tr("Game"))
         self.game_version_combo = QComboBox()
         self.game_version_combo.addItems(GAMES)
         self.game_version_combo.setCurrentText(self.settings.get("game_version", "RE4"))
-        game_version_layout.addWidget(self.game_version_combo)
-        general_layout.addLayout(game_version_layout)
+        add_row(game_form, self.tr("Game Version (Reload Required):"), self._fixed_field(self.game_version_combo))
+
+        self.json_entry = QLineEdit(self.settings.get("rcol_json_path", ""))
+        self.json_browse_button = self._browse_button()
+        add_row(game_form, self.tr("RSZ JSON Path:"), self._path_row(self.json_entry, self.json_browse_button))
 
         self.wwise_label = QLabel()
-        general_layout.addWidget(self.wwise_label, 0, Qt.AlignBottom)
-        wwise_layout = QHBoxLayout()
-        wwise_layout.setContentsMargins(0, 0, 0, 0)
+        self.wwise_label.setWordWrap(True)
         self.wwise_entry = QLineEdit()
-        self.wwise_browse_button = QPushButton(self.tr("Browse..."))
-        wwise_layout.addWidget(self.wwise_entry)
-        wwise_layout.addWidget(self.wwise_browse_button)
-        general_layout.addLayout(wwise_layout)
+        self.wwise_browse_button = self._browse_button()
+        game_form.addRow(self.wwise_label, self._path_row(self.wwise_entry, self.wwise_browse_button))
         self._on_wwise_game_changed(self.game_version_combo.currentText())
 
-        translation_layout = QHBoxLayout()
-        translation_layout.setContentsMargins(0, 0, 0, 0)
-        translation_layout.addWidget(QLabel(self.tr("Translation Target Language:")))
-        self.translation_combo = QComboBox()
-        for code, name in self._TRANSLATION_LANGUAGES:
-            self.translation_combo.addItem(self.tr(name), code)
-        translation_index = self.translation_combo.findData(
-            self.settings.get("translation_target_language", "en")
+        tools_form = self._add_section(general_layout, self.tr("Tools"))
+        self.vgmstream_entry = QLineEdit(self.settings.get("vgmstream_cli_path", ""))
+        self.vgmstream_browse_button = self._browse_button()
+        add_row(
+            tools_form, self.tr("VGMStream CLI Path:"),
+            self._path_row(self.vgmstream_entry, self.vgmstream_browse_button),
         )
-        if translation_index >= 0:
-            self.translation_combo.setCurrentIndex(translation_index)
-        translation_layout.addWidget(self.translation_combo)
-        general_layout.addLayout(translation_layout)
+        self.blender_entry = QLineEdit(self.settings.get("blender_path", ""))
+        self.blender_entry.setPlaceholderText(self.tr("Found automatically when installed"))
+        self.blender_browse_button = self._browse_button()
+        add_row(
+            tools_form, self.tr("Blender Executable (.blend export/import):"),
+            self._path_row(self.blender_entry, self.blender_browse_button),
+        )
 
-        theme_color_layout = QHBoxLayout()
-        theme_color_layout.setContentsMargins(0, 0, 0, 0)
-        theme_color_layout.addWidget(QLabel(self.tr("Theme Color:")))
+        interface_form = self._add_section(general_layout, self.tr("Interface"))
         self.theme_color_button = QPushButton()
-        self.theme_color_button.setFixedWidth(140)
+        self.theme_color_button.setFixedSize(44, 22)
+        self.theme_color_button.setToolTip(self.tr("Select Theme Color"))
+        self.theme_color_button.setCursor(Qt.PointingHandCursor)
+        self._theme_color_text = styled_label(tone="muted", mono=True)
+        theme_color_row = QHBoxLayout()
+        theme_color_row.setContentsMargins(0, 0, 0, 0)
+        theme_color_row.setSpacing(8)
+        theme_color_row.addWidget(self.theme_color_button)
+        theme_color_row.addWidget(self._theme_color_text)
+        theme_color_row.addStretch()
         self._update_theme_color_button()
-        theme_color_layout.addWidget(self.theme_color_button)
-        theme_color_layout.addStretch()
-        general_layout.addLayout(theme_color_layout)
+        add_row(interface_form, self.tr("Theme Color:"), theme_color_row)
 
-        self.debug_box = QCheckBox(self.tr("Show Debug Console"))
-        self.debug_box.setChecked(self.settings.get("show_debug_console", False))
-        general_layout.addWidget(self.debug_box)
-
-        self.rsz_advanced_box = QCheckBox(
-            self.tr("Show advanced settings for RSZ files (Reload Required)")
-        )
-        self.rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
-        general_layout.addWidget(self.rsz_advanced_box)
-
-        self.backup_box = QCheckBox(self.tr("Create backup on save"))
-        self.backup_box.setChecked(self.settings.get("backup_on_save", True))
-        general_layout.addWidget(self.backup_box)
-
-        self.save_workspace_box = QCheckBox(self.tr("Remember workspace between sessions"))
-        self.save_workspace_box.setChecked(
-            self.settings.get("save_workspace_on_close", True)
-        )
-        general_layout.addWidget(self.save_workspace_box)
-
-        self.confirmation_prompt_box = QCheckBox(
-            self.tr("Show confirmation prompts for RSZ actions")
-        )
-        self.confirmation_prompt_box.setChecked(
-            self.settings.get("confirmation_prompt", True)
-        )
-        general_layout.addWidget(self.confirmation_prompt_box)
-
-        self.verify_rsz_crc_on_open_box = QCheckBox(
-            self.tr("Verify RSZ CRCs against registry when opening files")
-        )
-        self.verify_rsz_crc_on_open_box.setChecked(
-            self.settings.get("verify_rsz_crc_on_open", True)
-        )
-        general_layout.addWidget(self.verify_rsz_crc_on_open_box)
-
-        shader_cache_layout = QHBoxLayout()
-        shader_cache_layout.setContentsMargins(0, 0, 0, 0)
-        shader_cache_label = QLabel(self.tr("Parsed shader cache (MB):"))
-        shader_cache_label.setToolTip(self.tr(
-            "Memory for parsed shader files no open view uses, kept for later views; the least recently used go "
-            "first. 0 keeps only what open views use."
-        ))
-        shader_cache_layout.addWidget(shader_cache_label)
-        self.shader_cache_spin = QSpinBox()
-        self.shader_cache_spin.setRange(0, 1 << 20)
-        self.shader_cache_spin.setSingleStep(256)
-        self.shader_cache_spin.setValue(self.settings["parsed_shader_cache_mb"])
-        self.shader_cache_spin.setToolTip(shader_cache_label.toolTip())
-        shader_cache_layout.addWidget(self.shader_cache_spin)
-        shader_cache_layout.addStretch()
-        general_layout.addLayout(shader_cache_layout)
-
-        ui_language_layout = QHBoxLayout()
-        ui_language_layout.setContentsMargins(0, 0, 0, 0)
-        ui_language_layout.addWidget(QLabel(self.tr("UI Language (Restart Recommended):")))
         self.ui_language_combo = QComboBox()
         self.ui_language_combo.addItem(self.tr("System"), "system")
         for info in LanguageManager.instance().available_languages():
@@ -215,9 +155,80 @@ class SettingsDialog(QDialog):
         )
         if ui_language_index >= 0:
             self.ui_language_combo.setCurrentIndex(ui_language_index)
-        ui_language_layout.addWidget(self.ui_language_combo)
-        general_layout.addLayout(ui_language_layout)
+        add_row(
+            interface_form, self.tr("UI Language (Restart Recommended):"),
+            self._fixed_field(self.ui_language_combo),
+        )
+
+        self.translation_combo = QComboBox()
+        for code, name in self._TRANSLATION_LANGUAGES:
+            self.translation_combo.addItem(self.tr(name), code)
+        translation_index = self.translation_combo.findData(
+            self.settings.get("translation_target_language", "en")
+        )
+        if translation_index >= 0:
+            self.translation_combo.setCurrentIndex(translation_index)
+        add_row(
+            interface_form, self.tr("Translation Target Language:"),
+            self._fixed_field(self.translation_combo),
+        )
+
+        self.debug_box = QCheckBox(self.tr("Show Debug Console"))
+        self.debug_box.setChecked(self.settings.get("show_debug_console", False))
+        interface_form.addRow(self.debug_box)
+
+        editor_form = self._add_section(general_layout, self.tr("Editor"))
+        self.rsz_advanced_box = QCheckBox(
+            self.tr("Show advanced settings for RSZ files (Reload Required)")
+        )
+        self.rsz_advanced_box.setChecked(self.settings.get("show_rsz_advanced", True))
+        editor_form.addRow(self.rsz_advanced_box)
+
+        self.backup_box = QCheckBox(self.tr("Create backup on save"))
+        self.backup_box.setChecked(self.settings.get("backup_on_save", True))
+        editor_form.addRow(self.backup_box)
+
+        self.save_workspace_box = QCheckBox(self.tr("Remember workspace between sessions"))
+        self.save_workspace_box.setChecked(
+            self.settings.get("save_workspace_on_close", True)
+        )
+        editor_form.addRow(self.save_workspace_box)
+
+        self.confirmation_prompt_box = QCheckBox(
+            self.tr("Show confirmation prompts for RSZ actions")
+        )
+        self.confirmation_prompt_box.setChecked(
+            self.settings.get("confirmation_prompt", True)
+        )
+        editor_form.addRow(self.confirmation_prompt_box)
+
+        self.verify_rsz_crc_on_open_box = QCheckBox(
+            self.tr("Verify RSZ CRCs against registry when opening files")
+        )
+        self.verify_rsz_crc_on_open_box.setChecked(
+            self.settings.get("verify_rsz_crc_on_open", True)
+        )
+        editor_form.addRow(self.verify_rsz_crc_on_open_box)
+
+        self.shader_cache_spin = QSpinBox()
+        self.shader_cache_spin.setRange(0, 1 << 20)
+        self.shader_cache_spin.setSingleStep(256)
+        self.shader_cache_spin.setValue(self.settings["parsed_shader_cache_mb"])
+        shader_cache_label = add_row(
+            editor_form, self.tr("Parsed shader cache (MB):"), self._fixed_field(self.shader_cache_spin)
+        )
+        shader_cache_label.setToolTip(self.tr(
+            "Memory for parsed shader files no open view uses, kept for later views; the least recently used go "
+            "first. 0 keeps only what open views use."
+        ))
+        self.shader_cache_spin.setToolTip(shader_cache_label.toolTip())
         general_layout.addStretch()
+
+        # One label column width for every section, so the fields line up.
+        label_width = max(label.sizeHint().width() for label in row_labels)
+        for label in row_labels:
+            label.setMinimumWidth(label_width)
+        self.wwise_label.setFixedWidth(label_width)
 
         shortcuts_tab = create_shortcuts_tab()
         tab_widget.addTab(shortcuts_tab, self.tr("Keyboard Shortcuts"))
@@ -234,7 +245,7 @@ class SettingsDialog(QDialog):
             lambda: shortcuts_tab.reset_shortcut(self.shortcuts, self)
         )
         shortcuts_tab.shortcuts_list.itemDoubleClicked.connect(
-            lambda _item: shortcuts_tab.edit_shortcut(self.shortcuts, self)
+            lambda *_args: shortcuts_tab.edit_shortcut(self.shortcuts, self)
         )
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -251,17 +262,53 @@ class SettingsDialog(QDialog):
         )
         self.theme_color_button.clicked.connect(self._choose_theme_color)
 
+    @staticmethod
+    def _add_section(layout, title):
+        card = QFrame()
+        card.setProperty("surface", "card")
+        card_layout = QVBoxLayout(card)
+        card_layout.setContentsMargins(0, 0, 0, 0)
+        card_layout.setSpacing(0)
+        header = styled_label(title, surface="header", heading="section")
+        header.setContentsMargins(8, 5, 8, 5)
+        card_layout.addWidget(header)
+        form = QFormLayout()
+        form.setContentsMargins(10, 8, 10, 10)
+        form.setHorizontalSpacing(12)
+        form.setVerticalSpacing(6)
+        form.setLabelAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+        form.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        card_layout.addLayout(form)
+        layout.addWidget(card)
+        return form
+
+    def _browse_button(self):
+        button = QPushButton(self.tr("Browse..."))
+        button.setProperty("compact", True)
+        return button
+
+    @staticmethod
+    def _path_row(entry, button):
+        row = QHBoxLayout()
+        row.setContentsMargins(0, 0, 0, 0)
+        row.setSpacing(4)
+        row.addWidget(entry, 1)
+        row.addWidget(button)
+        return row
+
+    @staticmethod
+    def _fixed_field(widget):
+        widget.setMinimumWidth(220)
+        return widget
+
     def _update_theme_color_button(self):
         color_value = self.selected_theme_color
-        self.theme_color_button.setText(color_value.upper())
-        color = QColor(color_value)
-        text_color = "#000000"
-        if color.isValid():
-            brightness = 0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue()
-            if brightness < 186:
-                text_color = "#ffffff"
+        self._theme_color_text.setText(color_value.upper())
+        colors = current_colors()
         self.theme_color_button.setStyleSheet(
-            f"background-color: {color_value}; border: 1px solid #555555; color: {text_color};"
+            f"QPushButton {{ background-color: {color_value}; border: 1px solid {colors['border_strong']};"
+            f" border-radius: 3px; padding: 0px; min-width: 0px; min-height: 0px; }}"
+            f" QPushButton:hover {{ border-color: {colors['text_muted']}; }}"
         )
 
     def _choose_theme_color(self):

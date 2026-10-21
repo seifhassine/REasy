@@ -114,7 +114,6 @@ class MotListPreviewWidget(QWidget):
             self.tr("MOTLIST Editor  ·  {name}").format(
                 name=self.handler.model.name or self.tr("Untitled")
             ),
-            settings=settings if isinstance(settings, dict) else None,
             parent=self,
         )
         root.addWidget(self.workspace)

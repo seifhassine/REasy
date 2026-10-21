@@ -1,13 +1,15 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem, 
-    QLabel, QLineEdit, QTextEdit, QPushButton, QComboBox, 
+    QDialog, QVBoxLayout, QHBoxLayout, QListWidget, QListWidgetItem,
+    QLabel, QLineEdit, QTextEdit, QPushButton, QComboBox,
     QWidget, QSplitter, QMessageBox, QInputDialog,
-    QMenu
+    QMenu, QFormLayout
 )
 
 lazy from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 lazy from ui.community_templates_dialog import CommunityTemplatesDialog
+lazy from ui.editor_widgets import editor_strip, search_field, styled_label
+lazy from ui.icons import line_icon
 
 class TemplateManagerDialog(QDialog):
     template_imported = Signal(dict)
@@ -30,111 +32,137 @@ class TemplateManagerDialog(QDialog):
     
     def _create_ui(self):
         main_layout = QVBoxLayout(self)
-        
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
         splitter = QSplitter(Qt.Horizontal)
-        
+        splitter.setChildrenCollapsible(False)
+
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(0, 0, 0, 0)
-        
+        left_layout.setContentsMargins(8, 8, 4, 8)
+        left_layout.setSpacing(6)
+
+        self.search_input = search_field(QLineEdit())
+        self.search_input.setPlaceholderText(self.tr("Search templates..."))
+        left_layout.addWidget(self.search_input)
+
         filter_layout = QHBoxLayout()
-        
+        filter_layout.setSpacing(6)
+
         self.registry_combo = QComboBox()
         self.registry_combo.addItem(self.tr("All Registries"), None)
-        filter_layout.addWidget(QLabel(self.tr("Registry:")))
-        filter_layout.addWidget(self.registry_combo)
-        
+        self.registry_combo.setToolTip(self.tr("Registry:"))
+        filter_layout.addWidget(self.registry_combo, 1)
+
         self.tag_combo = QComboBox()
         self.tag_combo.addItem(self.tr("All Tags"), None)
-        filter_layout.addWidget(QLabel(self.tr("Tag:")))
-        filter_layout.addWidget(self.tag_combo)
-        
-        self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText(self.tr("Search templates..."))
-        filter_layout.addWidget(self.search_input)
-        
+        self.tag_combo.setToolTip(self.tr("Tag:"))
+        filter_layout.addWidget(self.tag_combo, 1)
+
         left_layout.addLayout(filter_layout)
-        
+
         self.template_list = QListWidget()
         self.template_list.setContextMenuPolicy(Qt.CustomContextMenu)
         left_layout.addWidget(self.template_list, 1)
-        
-        self.community_button = QPushButton(self.tr("Browse Community Templates"))
+        self.empty_list_label = styled_label(self.tr("No templates found"), emptyState=True)
+        self.empty_list_label.setWordWrap(True)
+        self.empty_list_label.hide()
+        left_layout.addWidget(self.empty_list_label, 1)
+
+        self.community_button = QPushButton(line_icon("globe"), self.tr("Browse Community Templates"))
         self.community_button.clicked.connect(self._open_community_templates)
         left_layout.addWidget(self.community_button)
-        
+
         right_panel = QWidget()
         right_layout = QVBoxLayout(right_panel)
         right_layout.setContentsMargins(0, 0, 0, 0)
-        
+        right_layout.setSpacing(0)
+
         self.template_details = QWidget()
         details_layout = QVBoxLayout(self.template_details)
-        
-        name_layout = QHBoxLayout()
-        name_layout.addWidget(QLabel(self.tr("Name:")))
+        details_layout.setContentsMargins(4, 8, 8, 8)
+        details_layout.setSpacing(6)
+
+        details_form = QFormLayout()
+        details_form.setHorizontalSpacing(8)
+        details_form.setVerticalSpacing(6)
         self.name_edit = QLineEdit()
-        name_layout.addWidget(self.name_edit, 1)
-        details_layout.addLayout(name_layout)
-        
-        registry_layout = QHBoxLayout()
-        registry_layout.addWidget(QLabel(self.tr("Registry:")))
+        details_form.addRow(self.tr("Name:"), self.name_edit)
+
         self.registry_label = QLabel()
-        registry_layout.addWidget(self.registry_label, 1)
-        details_layout.addLayout(registry_layout)
-        
-        tags_layout = QHBoxLayout()
-        tags_layout.addWidget(QLabel(self.tr("Tags:")))
+        self.registry_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        details_form.addRow(self.tr("Registry:"), self.registry_label)
+
         self.tags_edit = QLineEdit()
         self.tags_edit.setPlaceholderText(self.tr("Enter tags separated by commas"))
-        tags_layout.addWidget(self.tags_edit, 1)
-        details_layout.addLayout(tags_layout)
-        
-        details_layout.addWidget(QLabel(self.tr("Description:")))
+        details_form.addRow(self.tr("Tags:"), self.tags_edit)
+
         self.description_edit = QTextEdit()
-        details_layout.addWidget(self.description_edit)
-        
-        self.created_label = QLabel()
-        details_layout.addWidget(self.created_label)
-        
-        self.modified_label = QLabel()
-        details_layout.addWidget(self.modified_label)
-        
+        self.description_edit.setAcceptRichText(False)
+        details_form.addRow(self.tr("Description:"), self.description_edit)
+        details_layout.addLayout(details_form, 1)
+
+        self.created_label = styled_label(tone="subtle")
+        self.modified_label = styled_label(tone="subtle")
+
+        dates_layout = QHBoxLayout()
+        dates_layout.setSpacing(16)
+        dates_layout.addWidget(self.created_label)
+        dates_layout.addWidget(self.modified_label)
+        dates_layout.addStretch()
+        details_layout.addLayout(dates_layout)
+
         details_button_layout = QHBoxLayout()
-        
-        self.update_button = QPushButton(self.tr("Update Template"))
+        details_button_layout.setSpacing(6)
+        details_button_layout.addStretch()
+
+        self.update_button = QPushButton(line_icon("save"), self.tr("Update Template"))
         details_button_layout.addWidget(self.update_button)
-        
+
         self.delete_button = QPushButton(self.tr("Delete Template"))
+        self.delete_button.setProperty("variant", "danger")
         details_button_layout.addWidget(self.delete_button)
-        
+
         details_layout.addLayout(details_button_layout)
-        
-        right_layout.addWidget(self.template_details)
-        
-        import_layout = QHBoxLayout()
-        
+
+        right_layout.addWidget(self.template_details, 1)
+        self.empty_details_label = styled_label(self.tr("Select a template to see its details"), tone="subtle")
+        self.empty_details_label.setAlignment(Qt.AlignCenter)
+        right_layout.addWidget(self.empty_details_label, 1)
+
+        import_bar, import_layout = editor_strip("footer", (8, 6, 8, 6), 6)
+
         self.parent_combo = QComboBox()
-        self.parent_combo.addItem(self.tr("Create at Root"), -1)
+        self.parent_combo.addItem(line_icon("home"), self.tr("Create at Root"), -1)
         import_layout.addWidget(QLabel(self.tr("Parent:")))
         import_layout.addWidget(self.parent_combo, 1)
-        
+
         self.import_name_edit = QLineEdit()
         self.import_name_edit.setPlaceholderText(self.tr("Use template name"))
         import_layout.addWidget(QLabel(self.tr("Name:")))
         import_layout.addWidget(self.import_name_edit, 1)
-        
+
         self.import_button = QPushButton(self.tr("Import Template"))
+        self.import_button.setProperty("variant", "primary")
+        self.import_button.setEnabled(False)
         import_layout.addWidget(self.import_button)
-        
-        right_layout.addLayout(import_layout)
-        
+
         splitter.addWidget(left_panel)
         splitter.addWidget(right_panel)
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
         splitter.setSizes([300, 500])
-        
-        main_layout.addWidget(splitter)
-        
-        self.template_details.setVisible(False)
+
+        main_layout.addWidget(splitter, 1)
+        main_layout.addWidget(import_bar)
+
+        self._show_details(False)
+
+    def _show_details(self, visible):
+        self.template_details.setVisible(visible)
+        self.empty_details_label.setVisible(not visible)
+        self.import_button.setEnabled(visible and self.viewer is not None)
     
     def _connect_signals(self):
         self.tag_combo.currentIndexChanged.connect(self._on_filter_changed)
@@ -183,7 +211,11 @@ class TemplateManagerDialog(QDialog):
             
             item.setToolTip(tooltip)
             self.template_list.addItem(item)
-    
+
+        has_templates = self.template_list.count() > 0
+        self.template_list.setVisible(has_templates)
+        self.empty_list_label.setVisible(not has_templates)
+
     def _load_filters(self):
         """Load filter options for registries and tags"""
         current_registry = self.registry_combo.currentData()
@@ -217,15 +249,15 @@ class TemplateManagerDialog(QDialog):
     def _populate_parent_combo(self):
         """Populate the parent selection combo with available GameObjects and folders"""
         self.parent_combo.clear()
-        self.parent_combo.addItem(self.tr("Create at Root"), -1)
-        
+        self.parent_combo.addItem(line_icon("home"), self.tr("Create at Root"), -1)
+
         if not self.viewer or not hasattr(self.viewer, "scn"):
             return
-            
+        gameobject_icon = line_icon("gameobject")
+
         def add_gameobject(go_id, name, level=0):
-            indent = "  " * level
-            display_name = f"{indent}└─ {name}"
-            self.parent_combo.addItem(display_name, go_id)
+            display_name = "    " * level + name
+            self.parent_combo.addItem(gameobject_icon, display_name, go_id)
             
             for child_go in self.viewer.scn.gameobjects:
                 if child_go.parent_id == go_id:
@@ -250,6 +282,7 @@ class TemplateManagerDialog(QDialog):
                 if not folder_name:
                     folder_name = self.tr("Folder {id}").format(id=folder.id)
                 self.parent_combo.addItem(
+                    line_icon("folder"),
                     self.tr("Folder: {folder_name}").format(folder_name=folder_name), folder.id
                 )
     
@@ -257,7 +290,7 @@ class TemplateManagerDialog(QDialog):
         """Handle template selection"""
         selected_items = self.template_list.selectedItems()
         if not selected_items:
-            self.template_details.setVisible(False)
+            self._show_details(False)
             self.current_template_id = None
             return
             
@@ -294,9 +327,9 @@ class TemplateManagerDialog(QDialog):
             if not self.import_name_edit.text():
                 self.import_name_edit.setText(template_info.get("name", ""))
             
-            self.template_details.setVisible(True)
+            self._show_details(True)
         else:
-            self.template_details.setVisible(False)
+            self._show_details(False)
     
     def _on_filter_changed(self):
         """Handle filter selection changes"""
@@ -373,7 +406,7 @@ class TemplateManagerDialog(QDialog):
             )
             if template_id == self.current_template_id:
                 self.current_template_id = None
-                self.template_details.setVisible(False)
+                self._show_details(False)
             self._load_templates()
             self._load_filters()
         else:

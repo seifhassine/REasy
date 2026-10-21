@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QSplitter,
     QSizePolicy,
     QTabWidget,
+    QToolButton,
     QAbstractItemView,
     QInputDialog,
     QDoubleSpinBox,
@@ -55,6 +56,9 @@ lazy from file_handlers.mesh.scene_lit import SceneDevicePreview
 lazy from ui.scene.mesh_scene import build_mesh_scene
 from ui.scene.scene_model import SceneDrawMesh
 lazy from ui.scene.scene_preview import ScenePreviewWidget
+lazy from ui.editor_widgets import styled_label, tool_button
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 lazy from utils.number_format import format_display_value
 lazy from utils.resource_file_utils import resolve_handler_resource_data
 
@@ -87,10 +91,10 @@ class RcolViewer(QWidget):
     modified_changed = Signal(bool)
     NODE_ROLE = Qt.UserRole + 1
     TAB_ACTIONS = {
-        "groups": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Group"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Group"), "add_fn": "_add_group", "remove_fn": "_remove_selected_group", "kind": "group"},
-        "request_sets": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Request"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Request"), "add_fn": "_add_request_set", "remove_fn": "_remove_selected_request_set", "kind": "request_set"},
-        "ignore_tags": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Tag"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Tag"), "add_fn": "_add_ignore_tag", "remove_fn": "_remove_selected_ignore_tag", "kind": "ignore_tag"},
-        "auto_joints": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "+ Joint"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "- Joint"), "add_fn": "_add_auto_joint", "remove_fn": "_remove_selected_auto_joint", "kind": "auto_joint"},
+        "groups": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "Add Group"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "Remove Group"), "add_fn": "_add_group", "remove_fn": "_remove_selected_group", "kind": "group"},
+        "request_sets": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "Add Request"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "Remove Request"), "add_fn": "_add_request_set", "remove_fn": "_remove_selected_request_set", "kind": "request_set"},
+        "ignore_tags": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "Add Tag"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "Remove Tag"), "add_fn": "_add_ignore_tag", "remove_fn": "_remove_selected_ignore_tag", "kind": "ignore_tag"},
+        "auto_joints": {"add_label": QT_TRANSLATE_NOOP("RcolViewer", "Add Joint"), "remove_label": QT_TRANSLATE_NOOP("RcolViewer", "Remove Joint"), "add_fn": "_add_auto_joint", "remove_fn": "_remove_selected_auto_joint", "kind": "auto_joint"},
     }
 
     def __init__(self, handler):
@@ -99,8 +103,8 @@ class RcolViewer(QWidget):
         self._modified = False
         self.nav_tabs: QTabWidget | None = None
         self.nav_trees: dict[str, QTreeWidget] = {}
-        self.add_tab_btn: QPushButton | None = None
-        self.remove_tab_btn: QPushButton | None = None
+        self.add_tab_btn: QToolButton | None = None
+        self.remove_tab_btn: QToolButton | None = None
         self.tab_actions_row: QWidget | None = None
         self.detail_title: QLabel | None = None
         self.path_label: QLabel | None = None
@@ -150,8 +154,8 @@ class RcolViewer(QWidget):
         content = QWidget(self._dock_host)
         self._dock_host.setCentralWidget(content)
         layout = QVBoxLayout(content)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
         splitter = QSplitter(Qt.Horizontal, self)
         layout.addWidget(splitter, 3)
@@ -159,8 +163,8 @@ class RcolViewer(QWidget):
         left_panel = QFrame()
         left_panel.setObjectName("rcolLeftPanel")
         left_layout = QVBoxLayout(left_panel)
-        left_layout.setContentsMargins(8, 8, 8, 8)
-        left_layout.setSpacing(6)
+        left_layout.setContentsMargins(0, 0, 0, 0)
+        left_layout.setSpacing(0)
         self.nav_tabs = QTabWidget()
         self.nav_tabs.setDocumentMode(True)
         self.nav_tabs.currentChanged.connect(self._on_nav_tab_changed)
@@ -180,13 +184,14 @@ class RcolViewer(QWidget):
             self.nav_tabs.addTab(self.nav_trees["auto_joints"], self.tr("Auto Joints"))
         self.tab_actions_row = QWidget()
         action_layout = QHBoxLayout(self.tab_actions_row)
-        action_layout.setContentsMargins(0, 0, 0, 0)
-        self.add_tab_btn = QPushButton("+")
-        self.remove_tab_btn = QPushButton("-")
-        self.add_tab_btn.clicked.connect(self._on_add_for_active_tab)
-        self.remove_tab_btn.clicked.connect(self._on_remove_for_active_tab)
-        action_layout.addWidget(self.add_tab_btn)
-        action_layout.addWidget(self.remove_tab_btn)
+        action_layout.setContentsMargins(4, 4, 4, 4)
+        action_layout.setSpacing(2)
+        self.add_tab_btn = tool_button("add", slot=self._on_add_for_active_tab)
+        self.remove_tab_btn = tool_button("remove", slot=self._on_remove_for_active_tab)
+        for button in (self.add_tab_btn, self.remove_tab_btn):
+            button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            action_layout.addWidget(button)
+        action_layout.addStretch()
         left_layout.addWidget(self.tab_actions_row)
 
         splitter.addWidget(left_panel)
@@ -194,10 +199,10 @@ class RcolViewer(QWidget):
         right_panel = QFrame()
         right_panel.setObjectName("rcolRightPanel")
         right_layout = QVBoxLayout(right_panel)
-        right_layout.setContentsMargins(12, 10, 12, 10)
-        right_layout.setSpacing(8)
+        right_layout.setContentsMargins(10, 8, 10, 8)
+        right_layout.setSpacing(4)
 
-        self.detail_title = QLabel(self.tr("Select a node"))
+        self.detail_title = styled_label(self.tr("Select a node"), heading="section")
         self.detail_title.setObjectName("rcolDetailTitle")
         self.path_label = QLabel("")
         self.path_label.setObjectName("rcolPath")
@@ -221,16 +226,19 @@ class RcolViewer(QWidget):
 
         preview_tab = QFrame()
         preview_layout = QVBoxLayout(preview_tab)
-        preview_layout.setContentsMargins(10, 8, 10, 8)
-        preview_layout.setSpacing(4)
+        preview_layout.setContentsMargins(8, 6, 8, 8)
+        preview_layout.setSpacing(6)
         self._preview_hint = QLabel(self.tr("Select a shape or request set to highlight it."))
         self._preview_hint.setObjectName("rcolPath")
         preview_layout.addWidget(self._preview_hint)
         mesh_actions_row = QHBoxLayout()
-        self._load_mesh_button = QPushButton(self.tr("Load Mesh…"))
+        mesh_actions_row.setSpacing(6)
+        self._load_mesh_button = QPushButton(line_icon("folder_open"), self.tr("Load Mesh…"))
+        set_style_role(self._load_mesh_button, compact=True)
         self._load_mesh_button.clicked.connect(self._on_load_mesh_clicked)
         mesh_actions_row.addWidget(self._load_mesh_button)
-        self._load_mesh_from_pak_button = QPushButton(self.tr("Load Mesh from PAK"))
+        self._load_mesh_from_pak_button = QPushButton(line_icon("import"), self.tr("Load Mesh from PAK"))
+        set_style_role(self._load_mesh_from_pak_button, compact=True)
         self._load_mesh_from_pak_button.clicked.connect(self._on_load_mesh_from_pak_clicked)
         mesh_actions_row.addWidget(self._load_mesh_from_pak_button)
         self._mesh_pak_path_input = QLineEdit(preview_tab)
@@ -264,7 +272,7 @@ class RcolViewer(QWidget):
 
         headless_tab = QFrame()
         headless_panel = QVBoxLayout(headless_tab)
-        headless_panel.setContentsMargins(10, 8, 10, 8)
+        headless_panel.setContentsMargins(8, 6, 8, 8)
         headless_panel.setSpacing(4)
         self._headless_status = QLabel("")
         self._headless_status.setObjectName("rcolPath")
@@ -276,13 +284,6 @@ class RcolViewer(QWidget):
         headless_panel.addWidget(headless_body_host, 1)
         self._preview_tabs.addTab(headless_tab, "RSZ")
 
-        self.setStyleSheet(
-            """
-            QFrame#rcolLeftPanel, QFrame#rcolRightPanel { border: 1px solid rgba(127,127,127,0.22); border-radius: 8px; }
-            QLabel#rcolDetailTitle { font-size: 15px; font-weight: 650; }
-            QLabel#rcolHeadlessTitle { font-size: 13px; font-weight: 600; }
-            """
-        )
         self._ensure_preview_dock()
 
     def _ensure_preview_dock(self):
@@ -300,11 +301,9 @@ class RcolViewer(QWidget):
             | QDockWidget.DockWidgetMovable
             | QDockWidget.DockWidgetFloatable
         )
-        dock.topLevelChanged.connect(self._on_preview_dock_top_level_changed)
         dock.setWidget(self._preview_tabs)
         host_window.addDockWidget(Qt.BottomDockWidgetArea, dock)
         self._preview_dock = dock
-        self._on_preview_dock_top_level_changed(dock.isFloating())
 
     def cleanup(self):
         if self._device_preview is not None:
@@ -322,14 +321,6 @@ class RcolViewer(QWidget):
             if self._dock_host is not None:
                 self._dock_host.removeDockWidget(dock)
             dock.deleteLater()
-
-    def _on_preview_dock_top_level_changed(self, is_floating: bool):
-        if self._preview_dock is None:
-            return
-        if is_floating:
-            self._preview_dock.setWindowTitle(self.tr("RCOL 3D/RSZ"))
-        else:
-            self._preview_dock.setWindowTitle("")
 
     def _create_nav_tree(self) -> QTreeWidget:
         tree = QTreeWidget()
@@ -380,10 +371,10 @@ class RcolViewer(QWidget):
             for s_idx, shape in enumerate(group.shapes):
                 self._add_item(
                     tree,
-                    f"• [{s_idx}] {shape.info.name or self.tr('Shape {number}').format(number=s_idx + 1)}",
+                    f"[{s_idx}] {shape.info.name or self.tr('Shape {number}').format(number=s_idx + 1)}",
                     NavPayload(kind="shape", group_index=g_idx, shape_index=s_idx, mirror=False),
                     parent=regular_root,
-                )
+                ).setIcon(0, line_icon("box"))
             if supports_mirror_shapes:
                 mirror_shapes = group.extra_shapes or []
                 mirror_root = self._add_item(
@@ -395,10 +386,10 @@ class RcolViewer(QWidget):
                 for s_idx, shape in enumerate(mirror_shapes):
                     self._add_item(
                         tree,
-                        f"◦ [{s_idx}] {shape.info.name or self.tr('Mirror Shape {number}').format(number=s_idx + 1)}",
+                        f"[{s_idx}] {shape.info.name or self.tr('Mirror Shape {number}').format(number=s_idx + 1)}",
                         NavPayload(kind="shape", group_index=g_idx, shape_index=s_idx, mirror=True),
                         parent=mirror_root,
-                    )
+                    ).setIcon(0, line_icon("compare"))
         tree.expandToDepth(2)
 
     def _populate_request_sets_section(self, tree: QTreeWidget):
@@ -1440,6 +1431,9 @@ class RcolViewer(QWidget):
         row.setSpacing(6)
         spins: list[QDoubleSpinBox] = []
         for i in range(size):
+            axis_label = QLabel("XYZW"[i])
+            axis_label.setProperty("tone", "subtle")
+            row.addWidget(axis_label)
             spin = QDoubleSpinBox()
             spin.setDecimals(6)
             spin.setRange(-1000000.0, 1000000.0)
@@ -1532,13 +1526,12 @@ class RcolViewer(QWidget):
             item.setText(0, f"[{payload.group_index}] {group.info.name or default_name}")
         elif payload.kind == "shape" and payload.group_index is not None and payload.shape_index is not None:
             shape = self._get_shape(payload)
-            prefix = "◦" if payload.mirror else "•"
             default_name = (
                 self.tr("Mirror Shape {number}")
                 if payload.mirror
                 else self.tr("Shape {number}")
             ).format(number=payload.shape_index + 1)
-            item.setText(0, f"{prefix} [{payload.shape_index}] {shape.info.name or default_name}")
+            item.setText(0, f"[{payload.shape_index}] {shape.info.name or default_name}")
         elif payload.kind == "request_set" and payload.request_index is not None:
             item.setText(0, self._request_set_label(payload.request_index))
         elif payload.kind == "ignore_tag" and payload.ignore_index is not None:

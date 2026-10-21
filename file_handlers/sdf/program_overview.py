@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-lazy from PySide6.QtGui import QColor, QFont, QPainter, QPainterPath, QPen, QPolygonF
+lazy from PySide6.QtGui import QColor, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import (
     QFrame,
     QLabel,
@@ -12,6 +12,9 @@ from PySide6.QtWidgets import (
 )
 
 lazy from .models import RESOURCE_KINDS, SdfProgram, humanize_identifier, stage_display_name
+lazy from .pipeline_view import STAGE_COLORS
+lazy from .shader_graph_editor import paint_node_card
+lazy from ui.styles import current_colors, set_style_role
 
 
 def _human(value: str) -> str:
@@ -28,23 +31,13 @@ def _joined(values, *, limit: int = 10) -> str:
 class PassBehaviorCanvas(QWidget):
     action_requested = Signal(str)
 
-    _TONES = {
-        "input": ("#17384b", "#67b8e3"),
-        "shader": ("#322758", "#b59af0"),
-        "state": ("#493719", "#e0b65f"),
-        "output": ("#173d31", "#6bd0a4"),
-        "resource": ("#27333b", "#91a7b5"),
-        "compute": ("#4b2946", "#dc86c9"),
-        "neutral": ("#2b3036", "#68727c"),
-    }
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self._model: dict[str, object] = {}
         self._regions: list[tuple[QRectF, str]] = []
         self._hover_action = ""
         self.setMouseTracking(True)
-        self.setMinimumSize(500, 410)
+        self.setMinimumSize(440, 390)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     @property
@@ -64,11 +57,10 @@ class PassBehaviorCanvas(QWidget):
         if action:
             self._regions.append((QRectF(rect), action))
 
-    @staticmethod
-    def _rounded_path(rect: QRectF, radius: float = 9.0) -> QPainterPath:
-        path = QPainterPath()
-        path.addRoundedRect(rect, radius, radius)
-        return path
+    def _outline_pen(self, colors: dict, action: str) -> QPen:
+        if action and action == self._hover_action:
+            return QPen(QColor(colors["accent"]), 1.5)
+        return QPen(QColor(colors["node_border"]), 1.0)
 
     def _draw_panel(
         self,
@@ -79,30 +71,23 @@ class PassBehaviorCanvas(QWidget):
         tone: str,
         action: str,
     ) -> None:
-        fill, outline = self._TONES.get(tone, self._TONES["neutral"])
-        hovered = bool(action and action == self._hover_action)
-        painter.setPen(QPen(QColor(outline), 2.4 if hovered else 1.25))
-        panel_fill = QColor(fill)
-        if hovered:
-            panel_fill = panel_fill.lighter(118)
-        painter.setBrush(panel_fill)
-        painter.drawPath(self._rounded_path(rect))
-        painter.setPen(QColor("#f2f4f7"))
+        colors = current_colors()
+        paint_node_card(painter, rect, 28, band=QColor(STAGE_COLORS.get(tone, STAGE_COLORS["neutral"])),
+                        outline=self._outline_pen(colors, action))
+        painter.setPen(QColor(colors["text_bright"]))
         font = painter.font()
         font.setBold(True)
-        font.setPointSize(max(8, font.pointSize()))
         painter.setFont(font)
         painter.drawText(
-            rect.adjusted(11, 9, -11, -8),
-            Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft,
-            title.upper(),
+            QRectF(rect.left() + 10, rect.top() + 3, rect.width() - 20, 25),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            title,
         )
         font.setBold(False)
-        font.setPointSize(max(8, font.pointSize() - 1))
         painter.setFont(font)
-        painter.setPen(QColor("#dce2e8"))
+        painter.setPen(QColor(colors["text_muted"]))
         painter.drawText(
-            rect.adjusted(11, 35, -11, -8),
+            rect.adjusted(10, 36, -10, -8),
             Qt.TextFlag.TextWordWrap,
             detail,
         )
@@ -110,9 +95,10 @@ class PassBehaviorCanvas(QWidget):
 
     @staticmethod
     def _draw_arrow(painter: QPainter, left: QRectF, right: QRectF) -> None:
+        color = QColor(current_colors()["wire"])
         start = QPointF(left.right() + 3, left.center().y())
         end = QPointF(right.left() - 4, right.center().y())
-        painter.setPen(QPen(QColor("#73808c"), 1.7))
+        painter.setPen(QPen(color, 1.5))
         painter.drawLine(start, end)
         arrow = QPolygonF(
             [
@@ -121,7 +107,7 @@ class PassBehaviorCanvas(QWidget):
                 QPointF(end.x() - 8, end.y() + 5),
             ]
         )
-        painter.setBrush(QColor("#73808c"))
+        painter.setBrush(color)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.drawPolygon(arrow)
 
@@ -131,23 +117,23 @@ class PassBehaviorCanvas(QWidget):
         rect: QRectF,
         resources: tuple[tuple[str, int], ...],
     ) -> None:
-        hovered = self._hover_action == "resources"
-        painter.setPen(QPen(QColor("#91a7b5"), 2.2 if hovered else 1.0))
-        painter.setBrush(QColor("#222a30").lighter(112 if hovered else 100))
-        painter.drawRoundedRect(rect, 8, 8)
-        painter.setPen(QColor("#dce2e8"))
+        colors = current_colors()
+        painter.setPen(self._outline_pen(colors, "resources"))
+        painter.setBrush(QColor(colors["node_bg"]))
+        painter.drawRoundedRect(rect, 4, 4)
+        painter.setPen(QColor(colors["text_muted"]))
         font = painter.font()
         font.setBold(True)
         painter.setFont(font)
         painter.drawText(
             rect.adjusted(10, 7, -10, -5),
             Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft,
-            self.tr("BOUND INPUTS"),
+            self.tr("Bound inputs"),
         )
         font.setBold(False)
         painter.setFont(font)
         if not resources:
-            painter.setPen(QColor("#9da7b1"))
+            painter.setPen(QColor(colors["text_subtle"]))
             painter.drawText(
                 rect.adjusted(10, 30, -10, -7),
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
@@ -155,7 +141,7 @@ class PassBehaviorCanvas(QWidget):
             )
         else:
             count = len(resources)
-            gap = 7.0
+            gap = 6.0
             width = max(62.0, (rect.width() - 20 - gap * (count - 1)) / count)
             for index, (label, value) in enumerate(resources):
                 chip = QRectF(
@@ -164,10 +150,10 @@ class PassBehaviorCanvas(QWidget):
                     width,
                     rect.height() - 40,
                 )
-                painter.setPen(QPen(QColor("#53616c"), 1))
-                painter.setBrush(QColor("#303a42"))
-                painter.drawRoundedRect(chip, 6, 6)
-                painter.setPen(QColor("#e8edf1"))
+                painter.setPen(QPen(QColor(colors["border_subtle"]), 1))
+                painter.setBrush(QColor(colors["surface_alt"]))
+                painter.drawRoundedRect(chip, 3, 3)
+                painter.setPen(QColor(colors["text_bright"]))
                 bold = painter.font()
                 bold.setBold(True)
                 painter.setFont(bold)
@@ -178,7 +164,7 @@ class PassBehaviorCanvas(QWidget):
                 )
                 bold.setBold(False)
                 painter.setFont(bold)
-                painter.setPen(QColor("#b9c2ca"))
+                painter.setPen(QColor(colors["text_muted"]))
                 painter.drawText(
                     QRectF(chip.left() + 3, chip.top() + 24, chip.width() - 6, chip.height() - 26),
                     Qt.AlignmentFlag.AlignHCenter | Qt.TextFlag.TextWordWrap,
@@ -193,37 +179,43 @@ class PassBehaviorCanvas(QWidget):
         features: tuple[str, ...],
         action: str,
     ) -> None:
-        painter.setPen(QColor("#aeb8c2"))
+        colors = current_colors()
+        painter.setPen(QColor(colors["text_muted"]))
+        font = painter.font()
+        font.setBold(True)
+        painter.setFont(font)
         painter.drawText(
             QRectF(rect.left(), rect.top(), rect.width(), 21),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-            self.tr("ACTIVE BEHAVIOR"),
+            self.tr("Active behavior"),
         )
+        font.setBold(False)
+        painter.setFont(font)
         x = rect.left()
-        y = rect.top() + 27
+        y = rect.top() + 26
         font_metrics = painter.fontMetrics()
         for feature in features or (self.tr("Default behavior"),):
-            width = min(rect.width(), max(72.0, font_metrics.horizontalAdvance(feature) + 22.0))
+            width = min(rect.width(), max(64.0, font_metrics.horizontalAdvance(feature) + 20.0))
             if x + width > rect.right() and x > rect.left():
                 x = rect.left()
-                y += 31
-            chip = QRectF(x, y, width, 25)
-            hovered = action == self._hover_action
-            painter.setPen(QPen(QColor("#667582"), 1.5 if hovered else 1.0))
-            painter.setBrush(QColor("#30373e").lighter(112 if hovered else 100))
-            painter.drawRoundedRect(chip, 12, 12)
-            painter.setPen(QColor("#dce2e8"))
+                y += 28
+            chip = QRectF(x, y, width, 22)
+            painter.setPen(self._outline_pen(colors, action) if action else QPen(QColor(colors["border"]), 1.0))
+            painter.setBrush(QColor(colors["surface_alt"]))
+            painter.drawRoundedRect(chip, 3, 3)
+            painter.setPen(QColor(colors["text"]))
             painter.drawText(chip, Qt.AlignmentFlag.AlignCenter, feature)
-            x += width + 7
+            x += width + 6
         self._remember(rect, action)
 
     def paintEvent(self, _event) -> None:
+        colors = current_colors()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.fillRect(self.rect(), QColor("#181c20"))
+        painter.fillRect(self.rect(), QColor(colors["canvas_bg"]))
         self._regions.clear()
         if not self._model:
-            painter.setPen(QColor("#c5ccd3"))
+            painter.setPen(QColor(colors["text_muted"]))
             painter.drawText(
                 self.rect(),
                 Qt.AlignmentFlag.AlignCenter,
@@ -233,20 +225,20 @@ class PassBehaviorCanvas(QWidget):
 
         margin = 14.0
         purpose_rect = QRectF(margin, margin, self.width() - margin * 2, 62)
-        hovered = self._hover_action == "program"
-        painter.setPen(QPen(QColor("#56636f"), 1.7 if hovered else 1.0))
-        painter.setBrush(QColor("#232a30").lighter(112 if hovered else 100))
-        painter.drawRoundedRect(purpose_rect, 9, 9)
-        painter.setPen(QColor("#eef1f4"))
+        painter.setPen(self._outline_pen(colors, "program"))
+        painter.setBrush(QColor(colors["surface"]))
+        painter.drawRoundedRect(purpose_rect, 4, 4)
+        painter.setPen(QColor(colors["text_bright"]))
         font = painter.font()
         font.setBold(True)
-        font.setPointSize(max(9, font.pointSize() + 1))
         painter.setFont(font)
         painter.drawText(
             purpose_rect.adjusted(12, 8, -12, -8),
             Qt.TextFlag.TextWordWrap,
             str(self._model.get("purpose", "")),
         )
+        font.setBold(False)
+        painter.setFont(font)
         self._remember(purpose_rect, "program")
 
         nodes = tuple(self._model.get("nodes", ()))
@@ -343,21 +335,22 @@ class SdfProgramOverview(QScrollArea):
         content = QWidget()
         self.setWidget(content)
         root = QVBoxLayout(content)
+        root.setContentsMargins(10, 8, 10, 8)
+        root.setSpacing(4)
 
         self.title = QLabel(self.tr("Select a program"))
-        title_font = QFont(self.title.font())
-        title_font.setBold(True)
-        title_font.setPointSize(max(title_font.pointSize() + 4, 14))
-        self.title.setFont(title_font)
+        set_style_role(self.title, heading="section")
         self.title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         root.addWidget(self.title)
 
         self.subtitle = QLabel()
         self.subtitle.setWordWrap(True)
+        set_style_role(self.subtitle, tone="muted")
         root.addWidget(self.subtitle)
         self.status = QLabel()
         self.status.setWordWrap(True)
         root.addWidget(self.status)
+        root.addSpacing(4)
 
         self.canvas = PassBehaviorCanvas()
         self.canvas.action_requested.connect(self.navigate_requested)
@@ -370,6 +363,7 @@ class SdfProgramOverview(QScrollArea):
         )
         hint.setWordWrap(True)
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        set_style_role(hint, tone="subtle")
         root.addWidget(hint)
         root.addStretch(1)
 
@@ -395,6 +389,7 @@ class SdfProgramOverview(QScrollArea):
                 count=note_count
             )
         )
+        set_style_role(self.status, tone="warning" if note_count else "muted")
         self.canvas.set_model(
             {
                 "purpose": self.tr(
@@ -457,6 +452,7 @@ class SdfProgramOverview(QScrollArea):
                 self.tr("Ready to author · ray-tracing graphs and compiled shader replacement") if library else
                 self.tr("Ready to author · all stored pass behavior is decoded")
             )
+        set_style_role(self.status, tone="warning" if note_count else "success")
 
         if library:
             purpose = self.tr("Traces rays through the library's named exports using DispatchRays.")

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QFormLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QDoubleSpinBox, QFormLayout, QVBoxLayout, QWidget
 
 from collections.abc import Callable, Mapping
 
 lazy from file_handlers.mmtr.material_preview import PreviewMaterial
 lazy from file_handlers.mmtr.shown_image import target_lanes
+lazy from ui.editor_widgets import styled_label
 
 
 def preview_material(surface, parameters: Callable[[], Mapping[str, float]] | None = None) -> PreviewMaterial:
@@ -72,7 +73,7 @@ class MaterialShaderControls(QWidget):
         self._lane_names = {"rgb": self.tr("Color (RGB)"), "r": self.tr("Red"), "g": self.tr("Green"),
                             "b": self.tr("Blue"), "a": self.tr("Alpha")}
         form.addRow(self.tr("Channels"), self.lanes)
-        self.status = QLabel(self)
+        self.status = styled_label(parent=self, tone="muted")
         self.status.setTextFormat(Qt.PlainText)
         self.status.setWordWrap(True)
         self.status.setTextInteractionFlags(Qt.TextSelectableByMouse)

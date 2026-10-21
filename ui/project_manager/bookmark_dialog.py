@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QCompleter,
     QDialog,
     QDialogButtonBox,
+    QFormLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+lazy from ui.editor_widgets import styled_label
 lazy from ui.qt_timers import call_later
 
 lazy from .bookmarks import normalize_tag, normalize_tags
@@ -40,14 +42,19 @@ class BookmarkDialog(QDialog):
         completer_tags = tuple(completer_tags)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel(self.tr("Path:")))
-        path_label = QLabel(path)
+        layout.setSpacing(10)
+        form = QFormLayout()
+        form.setLabelAlignment(Qt.AlignRight | Qt.AlignTop)
+        form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+        form.setHorizontalSpacing(10)
+        form.setVerticalSpacing(6)
+        layout.addLayout(form)
+        path_label = styled_label(path, tone="muted")
         path_label.setWordWrap(True)
         path_label.setTextFormat(Qt.PlainText)
         path_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        layout.addWidget(path_label)
+        form.addRow(self._form_label(self.tr("Path:")), path_label)
 
-        layout.addWidget(QLabel(self.tr("Tags:")))
         self.tags_edit = QLineEdit(self)
         self.tags_edit.setText(", ".join(tags))
         self.tags_edit.setPlaceholderText(self.tr("Comma separated tags"))
@@ -56,7 +63,7 @@ class BookmarkDialog(QDialog):
             completer.setCaseSensitivity(Qt.CaseInsensitive)
             completer.setCompletionMode(QCompleter.PopupCompletion)
             self.tags_edit.setCompleter(completer)
-        layout.addWidget(self.tags_edit)
+        form.addRow(self._form_label(self.tr("Tags:")), self.tags_edit)
 
         self._tag_buttons = {}
         if completer_tags:
@@ -69,7 +76,7 @@ class BookmarkDialog(QDialog):
                 button.setToolTip(self.tr("Toggle tag"))
                 color = _tag_color(tag)
                 button.setStyleSheet(
-                    "QToolButton { border: 1px solid %s; border-radius: 9px; padding: 2px 8px; }"
+                    "QToolButton { border: 1px solid %s; border-radius: 3px; padding: 1px 8px; }"
                     "QToolButton:checked { background: %s; color: %s; }"
                     % (color.name(), color.name(), _chip_fg(color).name())
                 )
@@ -77,20 +84,18 @@ class BookmarkDialog(QDialog):
                 chips_layout.addWidget(button)
                 self._tag_buttons[tag] = button
             chips_layout.addStretch(1)
-            layout.addWidget(QLabel(self.tr("Quick tags:")))
             chips_scroll = QScrollArea()
             chips_scroll.setWidget(chips_widget)
             chips_scroll.setWidgetResizable(True)
             chips_scroll.setFrameShape(QScrollArea.NoFrame)
             chips_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-            chips_scroll.setFixedHeight(chips_widget.sizeHint().height() + 24)
-            layout.addWidget(chips_scroll)
+            chips_scroll.setFixedHeight(chips_widget.sizeHint().height() + 14)
+            form.addRow(self._form_label(self.tr("Quick tags:")), chips_scroll)
 
-        layout.addWidget(QLabel(self.tr("Note:")))
         self.note_edit = QPlainTextEdit(self)
         self.note_edit.setPlainText(note)
         self.note_edit.setMaximumHeight(80)
-        layout.addWidget(self.note_edit)
+        form.addRow(self._form_label(self.tr("Note:")), self.note_edit)
 
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
@@ -104,6 +109,12 @@ class BookmarkDialog(QDialog):
         self.tags_edit.returnPressed.connect(self.accept)
         self._refresh_chips()
         call_later(self, 0, self.tags_edit.setFocus)
+
+    def _form_label(self, text: str) -> QLabel:
+        label = styled_label(text, self, tone="muted")
+        # Lines the label up with the text inside the field next to it.
+        label.setContentsMargins(0, 4, 0, 0)
+        return label
 
     def tags(self) -> list[str]:
         return [

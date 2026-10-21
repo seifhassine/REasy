@@ -9,8 +9,9 @@ from file_handlers.pyside.value_widgets import (
     SizeInput, RectInput
 )
 lazy from utils.enum_manager import EnumManager
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
 
-lazy from PySide6.QtGui import QIcon
 lazy from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
     QWidget,
@@ -91,6 +92,11 @@ class TreeWidgetFactory:
         return _TreeIndexWidget(parent)
 
     @staticmethod
+    def themed_summary(text):
+        # The translated markup carries #666; swap in the theme's subtle text color.
+        return text.replace("#666", current_colors()["text_subtle"])
+
+    @staticmethod
     def _add_collection_summary(
         layout,
         name_text,
@@ -111,7 +117,7 @@ class TreeWidgetFactory:
                 "(Struct: {count} items)</span>"
             )
         label.setText(
-            summary_text.format(
+            TreeWidgetFactory.themed_summary(summary_text).format(
                 name=name_text, count=len(data_obj.values)
             )
         )
@@ -202,15 +208,14 @@ class TreeWidgetFactory:
 
     @staticmethod
     def _add_icon_widget(layout, widget, node_type, name_text):
-        icon = QIcon(f"resources/icons/{node_type}.png")
         icon_label = QLabel()
         icon_label.setFixedWidth(16)
-        icon_label.setPixmap(icon.pixmap(16, 16))
+        icon_label.setPixmap(line_icon(node_type).pixmap(16, 16))
 
         text_label = QLabel(name_text)
-        text_label.setStyleSheet("padding-left: 2px;")
 
         layout.addWidget(icon_label)
+        layout.addSpacing(2)
         layout.addWidget(text_label, 1)
         widget.setFixedHeight(30)
 

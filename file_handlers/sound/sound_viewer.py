@@ -16,13 +16,14 @@ from pathlib import Path
 import platform
 
 from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QUrl, Signal
-from PySide6.QtGui import QKeySequence, QShortcut
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeySequence, QPainter, QShortcut
 lazy from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
     QComboBox,
     QDialog,
+    QDialogButtonBox,
     QDoubleSpinBox,
     QFileDialog,
     QFrame,
@@ -40,8 +41,11 @@ from PySide6.QtWidgets import (
     QProgressDialog,
     QPushButton,
     QSlider,
+    QSpacerItem,
     QSplitter,
     QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
     QTabWidget,
     QTableWidget,
     QTableWidgetItem,
@@ -83,7 +87,10 @@ lazy from tools.wwise_toolchain import (
     validate_wwise_installation,
     wwise_profile_for_game,
 )
+lazy from ui.editor_widgets import editor_strip, styled_label, toolbar_separator
+lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
+lazy from ui.styles import current_colors, set_style_role
 
 from .bnk_parser import (
     WWISE_ANY_OBJECT_ID,
@@ -145,7 +152,6 @@ _COLUMNS = [
     QT_TRANSLATE_NOOP("SoundViewer", "Format"),
     QT_TRANSLATE_NOOP("SoundViewer", "Used by"),
 ]
-_MUTED_TEXT_STYLE = "color: #b8bdc7;"
 _AUDIO_FILTER = "Sound Replacement (*.wem *.wav);;WEM Files (*.wem);;WAV Files (*.wav)"
 _MIDI_FILTER = "MIDI Replacement (*.mid *.wmid);;MIDI Files (*.mid);;Wwise MIDI (*.wmid)"
 _IR_FILTER = "Impulse Response (*.wav *.wir);;WAV Files (*.wav);;Compiled IR (*.wir)"
@@ -156,6 +162,116 @@ _vgmstream_downloader = None
 def _sound_surface(widget: QWidget) -> QWidget:
     widget.setProperty("reasySoundSurface", True)
     return widget
+
+
+def _panel(title: str = "") -> tuple[QFrame, QHBoxLayout, QVBoxLayout]:
+    panel = QFrame()
+    outer = QVBoxLayout(panel)
+    outer.setContentsMargins(0, 0, 0, 0)
+    outer.setSpacing(0)
+    header = QFrame()
+    header.setFixedHeight(32)
+    set_style_role(header, surface="header")
+    header_layout = QHBoxLayout(header)
+    header_layout.setContentsMargins(8, 0, 6, 0)
+    header_layout.setSpacing(6)
+    if title:
+        header_layout.addWidget(styled_label(title, heading="panel"))
+    outer.addWidget(header)
+    body = QVBoxLayout()
+    body.setContentsMargins(6, 6, 6, 6)
+    body.setSpacing(6)
+    outer.addLayout(body, 1)
+    return panel, header_layout, body
+
+
+def _paint_empty_hint(view, text: str):
+    painter = QPainter(view.viewport())
+    painter.setPen(QColor(current_colors()["text_subtle"]))
+    painter.drawText(
+        view.viewport().rect().adjusted(12, 16, -12, -12),
+        int(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop | Qt.TextFlag.TextWordWrap),
+        text,
+    )
+    painter.end()
+
+
+class _HintListWidget(QListWidget):
+    def __init__(self, hint: str):
+        super().__init__()
+        self._hint = hint
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self.count():
+            _paint_empty_hint(self, self._hint)
+
+
+class _HintTableWidget(QTableWidget):
+    def __init__(self, rows: int, columns: int, hint: str):
+        super().__init__(rows, columns)
+        self._hint = hint
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if not self.rowCount():
+            _paint_empty_hint(self, self._hint)
+
+
+class _TwoLineDelegate(QStyledItemDelegate):
+    """Draws "title\\ndetail" item text as a title line over a smaller muted detail."""
+
+    @staticmethod
+    def _detail_font(font: QFont) -> QFont:
+        detail = QFont(font)
+        if font.pointSizeF() > 0:
+            detail.setPointSizeF(max(7.0, font.pointSizeF() - 1))
+        return detail
+
+    @staticmethod
+    def _metrics(font: QFont, widget) -> QFontMetrics:
+        return QFontMetrics(font, widget) if widget is not None else QFontMetrics(font)
+
+    def sizeHint(self, option, index):
+        lines = str(index.data(Qt.ItemDataRole.DisplayRole) or "").split("\n")
+        height = (
+            self._metrics(option.font, option.widget).height()
+            + self._metrics(self._detail_font(option.font), option.widget).height() * (len(lines) - 1)
+        )
+        return QSize(super().sizeHint(option, index).width(), height + 8)
+
+    def paint(self, painter, option, index):
+        opt = QStyleOptionViewItem(option)
+        self.initStyleOption(opt, index)
+        title, _, detail = str(index.data(Qt.ItemDataRole.DisplayRole) or "").partition("\n")
+        opt.text = ""
+        widget = opt.widget
+        style = widget.style() if widget is not None else QApplication.style()
+        style.drawControl(QStyle.ControlElement.CE_ItemViewItem, opt, painter, widget)
+        colors = current_colors()
+        selected = bool(opt.state & QStyle.StateFlag.State_Selected)
+        rect = opt.rect.adjusted(8, 4, -6, -4)
+        painter.save()
+        painter.setFont(opt.font)
+        metrics = painter.fontMetrics()
+        painter.setPen(QColor(colors["text_bright" if selected else "text"]))
+        painter.drawText(
+            QRect(rect.left(), rect.top(), rect.width(), metrics.height()),
+            int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+            metrics.elidedText(title, Qt.TextElideMode.ElideRight, rect.width()),
+        )
+        top = rect.top() + metrics.height()
+        painter.setFont(self._detail_font(opt.font))
+        metrics = painter.fontMetrics()
+        painter.setPen(QColor(colors["text_muted"]))
+        for line in detail.split("\n") if detail else ():
+            painter.drawText(
+                QRect(rect.left(), top, rect.width(), metrics.height()),
+                int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter),
+                metrics.elidedText(line, Qt.TextElideMode.ElideRight, rect.width()),
+            )
+            top += metrics.height()
+        painter.restore()
 
 
 def _asset_preferences(system: str, machine: str) -> list[str]:
@@ -243,20 +359,30 @@ class FlowLayout(QLayout):
         x = effective.x()
         y = effective.y()
         line_height = 0
+        line = []
         h_spacing = self._h_spacing if self._h_spacing >= 0 else self.spacing()
         v_spacing = self._v_spacing if self._v_spacing >= 0 else self.spacing()
+
+        def place_line():
+            for item, item_x in line:
+                size = item.sizeHint()
+                item.setGeometry(QRect(QPoint(item_x, y + (line_height - size.height()) // 2), size))
 
         for item in self._items:
             next_x = x + item.sizeHint().width() + h_spacing
             if next_x - h_spacing > effective.right() and line_height > 0:
+                if not test_only:
+                    place_line()
+                line = []
                 x = effective.x()
                 y += line_height + v_spacing
                 next_x = x + item.sizeHint().width() + h_spacing
                 line_height = 0
-            if not test_only:
-                item.setGeometry(QRect(QPoint(x, y), item.sizeHint()))
+            line.append((item, x))
             x = next_x
             line_height = max(line_height, item.sizeHint().height())
+        if not test_only:
+            place_line()
         return y + line_height - rect.y() + margins.bottom()
 
 
@@ -524,39 +650,46 @@ class SoundViewer(QWidget):
         self._cleanup_audio()
         shutil.rmtree(self._temp_dir, ignore_errors=True)
 
-    def _make_btn(self, text, icon, callback, *, enabled=True):
+    def _make_btn(self, text, icon, callback, *, enabled=True, compact=False, variant=None):
         button = QPushButton(text)
-        button.setIcon(self.style().standardIcon(icon))
+        # Icons on primary and danger buttons follow the button's text color.
+        tint = {"primary": "accent_text", "danger": "danger"}.get(variant)
+        button.setIcon(line_icon(icon, current_colors()[tint] if tint else None))
         button.setEnabled(enabled)
         button.clicked.connect(callback)
+        roles = {"compact": True} if compact else {}
+        if variant:
+            roles["variant"] = variant
+        if roles:
+            set_style_role(button, **roles)
         return button
 
     def _make_tool_btn(self, icon, callback, tooltip, *, enabled=True):
         button = QToolButton()
         button.setIcon(self.style().standardIcon(icon))
+        button.setIconSize(QSize(18, 18))
         button.setEnabled(enabled)
         button.clicked.connect(callback)
         button.setToolTip(tooltip)
         button.setAutoRaise(True)
-        button.setFixedSize(30, 30)
+        button.setFixedSize(28, 28)
         return button
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 12, 12, 12)
-        layout.setSpacing(8)
-        header = QHBoxLayout()
-        header.setSpacing(12)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        header_bar, header = editor_strip("toolbar", (10, 6, 10, 6), 12)
         heading = QVBoxLayout()
-        title = QLabel(self.tr("Sound Modding"))
-        title.setStyleSheet("font-weight: 600; font-size: 18px;")
-        self.summary_label = QLabel(self.tr("Reading the sound container…"))
-        self.summary_label.setStyleSheet(_MUTED_TEXT_STYLE)
+        heading.setSpacing(2)
+        title = styled_label(self.tr("Sound Modding"), heading="section")
+        self.summary_label = styled_label(self.tr("Reading the sound container…"), tone="muted")
         heading.addWidget(title)
         heading.addWidget(self.summary_label)
+        heading.addStretch()
         header.addLayout(heading, 1)
-        header.addWidget(self._build_role_header())
-        layout.addLayout(header)
+        header.addLayout(self._build_role_header())
+        layout.addWidget(header_bar)
 
         self.tabs = QTabWidget()
         self.tabs.setObjectName("soundEditorTabs")
@@ -572,31 +705,31 @@ class SoundViewer(QWidget):
             index = self.tabs.addTab(page, title)
             self.tabs.setTabVisible(index, False)
         layout.addWidget(self.tabs, 1)
-        self.status = QLabel("")
+        footer, footer_layout = editor_strip("footer", (10, 4, 10, 4), 6)
+        self.status = styled_label("", tone="muted")
         self.status.setWordWrap(True)
-        self.status.setStyleSheet(_MUTED_TEXT_STYLE)
-        layout.addWidget(self.status)
+        footer_layout.addWidget(self.status)
+        layout.addWidget(footer)
         self._setup_player()
 
     def _build_role_header(self):
-        container = _sound_surface(QWidget())
-        container.setMaximumWidth(520)
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout = QHBoxLayout()
         layout.setSpacing(12)
         text = QVBoxLayout()
         text.setSpacing(2)
-        self.role_title = QLabel(self.tr("Sound container"))
-        self.role_title.setStyleSheet("font-weight: 600;")
-        self.role_help = QLabel("")
+        self.role_title = styled_label(self.tr("Sound container"), heading="panel")
+        self.role_help = styled_label("", tone="muted")
         self.role_help.setWordWrap(True)
+        self.role_help.setMaximumWidth(420)
         text.addWidget(self.role_title)
         text.addWidget(self.role_help)
-        layout.addLayout(text, 1)
+        text.addStretch()
+        layout.addLayout(text)
         actions = QVBoxLayout()
+        actions.setSpacing(4)
         self.streaming_pck_btn = self._make_btn(
             self.tr("Open Full Streaming PCK…"),
-            QStyle.SP_DirOpenIcon,
+            "folder_open",
             self._on_open_streaming_pck,
         )
         self.streaming_pck_btn.setToolTip(self.tr(
@@ -606,130 +739,134 @@ class SoundViewer(QWidget):
         actions.addWidget(self.streaming_pck_btn)
         self.companion_btn = self._make_btn(
             self.tr("Open Companion…"),
-            QStyle.SP_DirOpenIcon,
+            "folder_open",
             self._on_open_companion,
         )
         self.companion_btn.hide()
         actions.addWidget(self.companion_btn)
+        actions.addStretch()
         layout.addLayout(actions)
-        return container
+        return layout
 
     def _build_mod_tab(self):
         page = QWidget()
         layout = QVBoxLayout(page)
+        layout.setContentsMargins(0, 0, 0, 0)
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.setChildrenCollapsible(False)
-        splitter.setHandleWidth(6)
+        splitter.setHandleWidth(4)
 
-        self.event_panel = QGroupBox(self.tr("1. Choose an event"))
+        self.event_panel, _event_header, event_layout = _panel(self.tr("1. Choose an event"))
         self.event_panel.setMinimumWidth(230)
         self.event_panel.setMaximumWidth(340)
-        event_layout = QVBoxLayout(self.event_panel)
         self.event_search = QLineEdit()
         self.event_search.setPlaceholderText(self.tr("Find event name, ShortID, or source ID"))
+        self.event_search.setClearButtonEnabled(True)
         self.event_search.textChanged.connect(self._on_event_search_changed)
         event_layout.addWidget(self.event_search)
         self.event_list = QListWidget()
-        self.event_list.setMinimumWidth(220)
+        self.event_list.setMinimumWidth(210)
+        self.event_list.setItemDelegate(_TwoLineDelegate(self.event_list))
         self.event_list.currentItemChanged.connect(self._on_event_filter_changed)
         event_layout.addWidget(self.event_list)
         row = QHBoxLayout()
-        self.quick_add_event_btn = self._make_btn(self.tr("New Event…"), QStyle.SP_FileDialogNewFolder, self._on_add_event)
-        self.quick_edit_event_btn = self._make_btn(self.tr("Edit Actions…"), QStyle.SP_FileDialogDetailedView, self._on_edit_filtered_event, enabled=False)
+        row.setSpacing(6)
+        self.quick_add_event_btn = self._make_btn(self.tr("New Event…"), "add", self._on_add_event)
+        self.quick_edit_event_btn = self._make_btn(self.tr("Edit Actions…"), "edit", self._on_edit_filtered_event, enabled=False)
         row.addWidget(self.quick_add_event_btn)
         row.addWidget(self.quick_edit_event_btn)
         event_layout.addLayout(row)
-        self.profile_note = QLabel()
+        self.profile_note = styled_label(banner="warning")
         self.profile_note.setWordWrap(True)
-        self.profile_note.setStyleSheet(_MUTED_TEXT_STYLE)
         event_layout.addWidget(self.profile_note)
-        self.event_context_label = QLabel("")
+        self.event_context_label = styled_label("", tone="muted")
         self.event_context_label.setWordWrap(True)
-        self.event_context_label.setStyleSheet(_MUTED_TEXT_STYLE)
         event_layout.addWidget(self.event_context_label)
         splitter.addWidget(self.event_panel)
 
-        source_panel = QGroupBox(self.tr("2. Edit playback flow and audio"))
-        source_layout = QVBoxLayout(source_panel)
-        search = QHBoxLayout()
-        self.source_context_label = QLabel(self.tr("All media sources"))
-        self.source_context_label.setStyleSheet("font-weight: 600;")
+        source_panel, source_header, source_layout = _panel(self.tr("2. Edit playback flow and audio"))
+        source_layout.setContentsMargins(0, 0, 0, 0)
+        self.source_context_label = styled_label(self.tr("All media sources"), tone="muted")
         self.source_search = QLineEdit()
         self.source_search.setPlaceholderText(self.tr("Filter source ID or used by"))
+        self.source_search.setClearButtonEnabled(True)
         self.source_search.setMaximumWidth(220)
         self.source_search.textChanged.connect(lambda _text: self._populate(self._parsed_tracks))
-        search.addWidget(self.source_context_label)
-        search.addStretch()
-        search.addWidget(self.source_search)
-        source_layout.addLayout(search)
+        source_header.addStretch()
+        source_header.addWidget(self.source_context_label)
+        source_header.addWidget(self.source_search)
 
         self.mod_content_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.mod_content_splitter.setChildrenCollapsible(False)
-        self.mod_content_splitter.setHandleWidth(6)
+        self.mod_content_splitter.setHandleWidth(4)
         source_layout.addWidget(self.mod_content_splitter, 1)
 
-        self.flow_group = QGroupBox(self.tr("Event playback graph"))
+        self.flow_group = QFrame()
         flow = QVBoxLayout(self.flow_group)
-        graph_help = QLabel(self.tr(
-            "Hover a node to trace its links. Double-click to edit; scroll to zoom; "
-            "drag to move the graph."
-        ))
-        graph_help.setWordWrap(True)
-        graph_help.setStyleSheet(_MUTED_TEXT_STYLE)
-        flow.addWidget(graph_help)
+        flow.setContentsMargins(6, 6, 6, 6)
+        flow.setSpacing(6)
         flow_header = QHBoxLayout()
-        self.flow_context_label = QLabel("")
-        self.flow_context_label.setStyleSheet("font-weight: 600;")
-        flow_header.addWidget(self.flow_context_label)
+        flow_header.setSpacing(6)
+        flow_header.addWidget(styled_label(self.tr("Event playback graph"), heading="caption"))
         flow_header.addStretch()
         self.flow_all_objects_btn = self._make_btn(
-            self.tr("All Objects"), QStyle.SP_FileDialogDetailedView,
-            self._show_flow_in_all_objects,
+            self.tr("All Objects"), "graph",
+            self._show_flow_in_all_objects, compact=True,
         )
         flow_header.addWidget(self.flow_all_objects_btn)
-        flow_header.addWidget(self._make_btn(self.tr("Fit"), QStyle.SP_DesktopIcon, lambda: self.event_graph.fit_graph()))
+        flow_header.addWidget(self._make_btn(self.tr("Fit"), "fit", lambda: self.event_graph.fit_graph(), compact=True))
         flow.addLayout(flow_header)
+        self.flow_context_label = styled_label("", heading="section")
+        flow.addWidget(self.flow_context_label)
+        graph_help = styled_label(self.tr(
+            "Hover a node to trace its links. Double-click to edit; scroll to zoom; "
+            "drag to move the graph."
+        ), tone="subtle")
+        graph_help.setWordWrap(True)
+        flow.addWidget(graph_help)
         self.event_graph = EventFlowGraph()
         self.event_graph.node_selected.connect(self._on_flow_node_selected)
         self.event_graph.node_activated.connect(self._on_flow_node_activated)
         flow.addWidget(self.event_graph)
-        self.flow_selection_label = QLabel(self.tr("Select a node for details; double-click to edit or preview."))
+        self.flow_selection_label = styled_label(self.tr("Select a node for details; double-click to edit or preview."), tone="muted")
         self.flow_selection_label.setWordWrap(True)
-        self.flow_selection_label.setStyleSheet(_MUTED_TEXT_STYLE)
         flow.addWidget(self.flow_selection_label)
         context_actions = QHBoxLayout()
-        self.flow_edit_btn = self._make_btn(self.tr("Edit…"), QStyle.SP_FileDialogContentsView, self._on_edit_flow_node, enabled=False)
-        self.flow_add_action_btn = self._make_btn(self.tr("Add Action…"), QStyle.SP_FileDialogNewFolder, self._on_add_action, enabled=False)
-        self.flow_detach_btn = self._make_btn(self.tr("Detach Action"), QStyle.SP_ArrowLeft, self._on_detach_flow_action, enabled=False)
-        self.flow_connect_btn = self._make_btn(self.tr("Connect Child…"), QStyle.SP_ArrowRight, self._on_connect_flow_child, enabled=False)
-        self.flow_disconnect_btn = self._make_btn(self.tr("Disconnect Child…"), QStyle.SP_ArrowLeft, self._on_disconnect_flow_child, enabled=False)
-        self.flow_delete_btn = self._make_btn(self.tr("Delete Event"), QStyle.SP_TrashIcon, self._on_delete_filtered_event, enabled=False)
+        context_actions.setSpacing(6)
+        self.flow_edit_btn = self._make_btn(self.tr("Edit…"), "edit", self._on_edit_flow_node, enabled=False, compact=True)
+        self.flow_add_action_btn = self._make_btn(self.tr("Add Action…"), "add", self._on_add_action, enabled=False, compact=True)
+        self.flow_detach_btn = self._make_btn(self.tr("Detach Action"), "unlink", self._on_detach_flow_action, enabled=False, compact=True)
+        self.flow_connect_btn = self._make_btn(self.tr("Connect Child…"), "link", self._on_connect_flow_child, enabled=False, compact=True)
+        self.flow_disconnect_btn = self._make_btn(self.tr("Disconnect Child…"), "unlink", self._on_disconnect_flow_child, enabled=False, compact=True)
+        self.flow_delete_btn = self._make_btn(
+            self.tr("Delete Event"), "delete", self._on_delete_filtered_event,
+            enabled=False, compact=True, variant="danger",
+        )
         for button in (
             self.flow_edit_btn, self.flow_add_action_btn, self.flow_detach_btn,
             self.flow_connect_btn, self.flow_disconnect_btn, self.flow_delete_btn,
         ):
             context_actions.addWidget(button)
+        context_actions.addStretch()
         flow.addLayout(context_actions)
         self.mod_content_splitter.addWidget(self.flow_group)
 
         media_panel = _sound_surface(QWidget())
         media_layout = QVBoxLayout(media_panel)
-        media_layout.setContentsMargins(0, 0, 0, 0)
+        media_layout.setContentsMargins(6, 6, 6, 6)
         media_layout.setSpacing(6)
 
         media_layout.addWidget(self._build_table(), 1)
         card = QFrame()
-        card.setFrameShape(QFrame.Shape.StyledPanel)
+        set_style_role(card, surface="card")
         card_layout = QVBoxLayout(card)
         card_layout.setContentsMargins(8, 6, 8, 6)
-        card_layout.setSpacing(4)
-        self.source_title = QLabel(self.tr("Select a media source"))
-        self.source_title.setStyleSheet("font-weight: 600;")
+        card_layout.setSpacing(2)
+        self.source_title = styled_label(self.tr("Select a media source"), heading="section")
         self.source_help = QLabel("")
         self.source_help.setWordWrap(True)
-        self.source_usage = QLabel("")
+        self.source_usage = styled_label("", tone="muted")
         self.source_usage.setWordWrap(True)
-        self.source_usage.setStyleSheet(_MUTED_TEXT_STYLE)
         card_layout.addWidget(self.source_title)
         card_layout.addWidget(self.source_help)
         card_layout.addWidget(self.source_usage)
@@ -738,12 +875,13 @@ class SoundViewer(QWidget):
         settings_layout = QVBoxLayout(self._rep_settings_host)
         settings_layout.setContentsMargins(0, 0, 0, 0)
         import_row = QHBoxLayout()
-        import_row.setSpacing(12)
+        import_row.setSpacing(6)
 
         def import_control(label, combo):
-            caption = QLabel(label)
-            caption.setStyleSheet(_MUTED_TEXT_STYLE)
+            caption = styled_label(label, tone="muted")
             combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+            if import_row.count():
+                import_row.addSpacing(10)
             import_row.addWidget(caption)
             import_row.addWidget(combo)
 
@@ -848,9 +986,8 @@ class SoundViewer(QWidget):
         ))
         advanced.addWidget(self.compression_channels_combo, 4, 1)
 
-        self.advanced_compression_note = QLabel("")
+        self.advanced_compression_note = styled_label("", tone="muted")
         self.advanced_compression_note.setWordWrap(True)
-        self.advanced_compression_note.setStyleSheet(_MUTED_TEXT_STYLE)
         advanced.addWidget(self.advanced_compression_note, 5, 0, 1, 3)
         advanced.setColumnStretch(2, 1)
         group_layout.addWidget(self.advanced_compression_host)
@@ -864,34 +1001,44 @@ class SoundViewer(QWidget):
         self.play_btn = self._make_tool_btn(QStyle.SP_MediaPlay, self._on_play, self.tr("Play"), enabled=False)
         self.stop_btn = self._make_tool_btn(QStyle.SP_MediaStop, self._on_stop, self.tr("Stop"), enabled=False)
         self.rep_settings_btn = self._make_btn(
-            self.tr("Replacement Settings…"), QStyle.SP_FileDialogInfoView,
-            self._on_replacement_settings,
+            self.tr("Replacement Settings…"), "settings",
+            self._on_replacement_settings, compact=True,
         )
-        self.rep_wem = self._make_btn(self.tr("Replace Audio…"), QStyle.SP_BrowserReload, self._on_replace, enabled=False)
+        self.rep_wem = self._make_btn(self.tr("Replace Audio…"), "import", self._on_replace, enabled=False, compact=True)
         self.rep_wem.setToolTip(self.tr(
             "WAV import uses the codec, quality and sample rate from Replacement Settings; the defaults match the "
             "original WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV "
             "has none."
         ))
-        self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), QStyle.SP_FileDialogDetailedView, self._on_edit_wem_metadata, enabled=False)
-        self.exp_wem = self._make_btn(self.tr("Export WEM…"), QStyle.SP_DialogSaveButton, self._on_export_wem, enabled=False)
-        self.exp_wav = self._make_btn(self.tr("Export WAV…"), QStyle.SP_DialogSaveButton, self._on_export_wav, enabled=False)
-        self.rep_bulk = self._make_btn(self.tr("Bulk Replace…"), QStyle.SP_DirOpenIcon, self._on_bulk_replace)
+        self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), "bookmark", self._on_edit_wem_metadata, enabled=False, compact=True)
+        self.exp_wem = self._make_btn(self.tr("Export WEM…"), "export", self._on_export_wem, enabled=False, compact=True)
+        self.exp_wav = self._make_btn(self.tr("Export WAV…"), "export", self._on_export_wav, enabled=False, compact=True)
+        self.rep_bulk = self._make_btn(self.tr("Bulk Replace…"), "layers", self._on_bulk_replace, compact=True)
         self.add_audio_source = self._make_btn(
-            self.tr("Add Audio Source…"), QStyle.SP_FileDialogNewFolder,
-            self._on_add_audio_source,
+            self.tr("Add Audio Source…"), "add",
+            self._on_add_audio_source, compact=True,
         )
         self.add_pck_source = self.add_audio_source  # Legacy UI attribute.
-        self.exp_all = self._make_btn(self.tr("Export All…"), QStyle.SP_DialogSaveButton, self._on_export_all)
+        self.exp_all = self._make_btn(self.tr("Export All…"), "export", self._on_export_all, compact=True)
 
-        actions_flow = FlowLayout()
-        actions_flow.setSpacing(6)
-        for button in (
-            self.rep_settings_btn, self.rep_wem, self.meta_wem, self.exp_wem,
-            self.exp_wav, self.rep_bulk, self.exp_all, self.add_audio_source,
-        ):
-            actions_flow.addWidget(button)
-        media_layout.addLayout(actions_flow)
+        actions = QGridLayout()
+        actions.setContentsMargins(0, 0, 0, 0)
+        actions.setHorizontalSpacing(8)
+        actions.setVerticalSpacing(4)
+        for row, (caption, buttons) in enumerate((
+            (self.tr("Selected source"), (self.rep_wem, self.meta_wem, self.exp_wem, self.exp_wav)),
+            (self.tr("Container"), (self.rep_settings_btn, self.rep_bulk, self.exp_all, self.add_audio_source)),
+        )):
+            label = styled_label(caption, heading="caption")
+            label.setMinimumHeight(22)
+            actions.addWidget(label, row, 0, Qt.AlignmentFlag.AlignTop)
+            actions_flow = FlowLayout()
+            actions_flow.setSpacing(4)
+            for button in buttons:
+                actions_flow.addWidget(button)
+            actions.addLayout(actions_flow, row, 1)
+        actions.setColumnStretch(1, 1)
+        media_layout.addLayout(actions)
         media_layout.addWidget(self._build_preview_controls())
         self.mod_content_splitter.addWidget(media_panel)
         self.mod_content_splitter.setStretchFactor(0, 3)
@@ -908,26 +1055,30 @@ class SoundViewer(QWidget):
     def _build_bank_graph_tab(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        self.bank_capability_label = QLabel("")
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        summary, summary_layout = editor_strip("toolbar", (10, 5, 10, 5), 6)
+        self.bank_capability_label = styled_label("", tone="muted")
         self.bank_capability_label.setWordWrap(True)
-        self.bank_capability_label.setStyleSheet("font-weight: 600;")
-        layout.addWidget(self.bank_capability_label)
+        summary_layout.addWidget(self.bank_capability_label)
+        layout.addWidget(summary)
         splitter = QSplitter(Qt.Horizontal)
         splitter.setChildrenCollapsible(False)
-        splitter.setHandleWidth(6)
-        browser = _sound_surface(QWidget())
+        splitter.setHandleWidth(4)
+        browser, browser_header, browser_layout = _panel()
         browser.setMinimumWidth(230)
         browser.setMaximumWidth(340)
-        browser_layout = QVBoxLayout(browser)
-        browser_layout.setContentsMargins(0, 0, 0, 0)
         self.bank_type_filter = QComboBox()
         self.bank_type_filter.currentIndexChanged.connect(self._populate_bank_objects)
-        browser_layout.addWidget(self.bank_type_filter)
+        browser_header.setContentsMargins(6, 0, 6, 0)
+        browser_header.addWidget(self.bank_type_filter, 1)
         self.bank_search = QLineEdit()
         self.bank_search.setPlaceholderText(self.tr("Find type, ShortID, source ID, or capability"))
+        self.bank_search.setClearButtonEnabled(True)
         self.bank_search.textChanged.connect(self._populate_bank_objects)
         browser_layout.addWidget(self.bank_search)
-        self.bank_object_list = QListWidget()
+        self.bank_object_list = _HintListWidget(self.tr("No objects match the current filter."))
+        self.bank_object_list.setItemDelegate(_TwoLineDelegate(self.bank_object_list))
         self.bank_object_list.currentItemChanged.connect(self._on_bank_object_changed)
         browser_layout.addWidget(self.bank_object_list)
         splitter.addWidget(browser)
@@ -935,45 +1086,54 @@ class SoundViewer(QWidget):
         editor = _sound_surface(QWidget())
         editor_layout = QVBoxLayout(editor)
         editor_layout.setContentsMargins(0, 0, 0, 0)
-        self.hirc_duplicate_btn = self._make_btn(self.tr("Duplicate…"), QStyle.SP_FileDialogNewFolder, self._on_duplicate_hirc, enabled=False)
-        self.hirc_rename_btn = self._make_btn(self.tr("Rename ID…"), QStyle.SP_FileDialogDetailedView, self._on_rename_hirc, enabled=False)
-        self.hirc_delete_btn = self._make_btn(self.tr("Delete"), QStyle.SP_TrashIcon, self._on_delete_hirc, enabled=False)
-        self.hirc_properties_btn = self._make_btn(self.tr("Properties…"), QStyle.SP_FileDialogContentsView, self._on_edit_hirc, enabled=False)
-        self.hirc_connect_btn = self._make_btn(self.tr("Connect Child…"), QStyle.SP_ArrowRight, self._on_connect_hirc, enabled=False)
-        self.hirc_disconnect_btn = self._make_btn(self.tr("Disconnect Child…"), QStyle.SP_ArrowLeft, self._on_disconnect_hirc, enabled=False)
-        self.hirc_reference_btn = self._make_btn(self.tr("Retarget Link…"), QStyle.SP_BrowserReload, self._on_retarget_hirc_reference, enabled=False)
-        common = QHBoxLayout()
+        editor_layout.setSpacing(0)
+        self.hirc_duplicate_btn = self._make_btn(self.tr("Duplicate…"), "copy", self._on_duplicate_hirc, enabled=False, compact=True)
+        self.hirc_rename_btn = self._make_btn(self.tr("Rename ID…"), "hash", self._on_rename_hirc, enabled=False, compact=True)
+        self.hirc_delete_btn = self._make_btn(
+            self.tr("Delete"), "delete", self._on_delete_hirc,
+            enabled=False, compact=True, variant="danger",
+        )
+        self.hirc_properties_btn = self._make_btn(self.tr("Properties…"), "details", self._on_edit_hirc, enabled=False, compact=True)
+        self.hirc_connect_btn = self._make_btn(self.tr("Connect Child…"), "link", self._on_connect_hirc, enabled=False, compact=True)
+        self.hirc_disconnect_btn = self._make_btn(self.tr("Disconnect Child…"), "unlink", self._on_disconnect_hirc, enabled=False, compact=True)
+        self.hirc_reference_btn = self._make_btn(self.tr("Retarget Link…"), "target", self._on_retarget_hirc_reference, enabled=False, compact=True)
+        toolbar = QFrame()
+        set_style_role(toolbar, surface="header")
+        tools = FlowLayout(toolbar)
+        tools.setContentsMargins(6, 5, 6, 5)
+        tools.setSpacing(4)
         for button in (
             self.hirc_properties_btn, self.hirc_duplicate_btn,
             self.hirc_connect_btn, self.hirc_disconnect_btn,
         ):
-            common.addWidget(button)
-        common.addStretch()
-        editor_layout.addLayout(common)
-        advanced = QGroupBox(self.tr("Advanced / destructive"))
-        advanced_layout = QHBoxLayout(advanced)
+            tools.addWidget(button)
+        tools.addWidget(toolbar_separator(20))
+        advanced = styled_label(self.tr("Advanced / destructive"), heading="caption")
+        advanced.setMinimumHeight(22)
+        tools.addWidget(advanced)
         for button in (
             self.hirc_rename_btn, self.hirc_delete_btn,
             self.hirc_reference_btn,
         ):
-            advanced_layout.addWidget(button)
-        advanced_layout.addStretch()
-        editor_layout.addWidget(advanced)
-        graph_legend = QLabel(self.tr(
+            tools.addWidget(button)
+        editor_layout.addWidget(toolbar)
+        editor_body = QVBoxLayout()
+        editor_body.setContentsMargins(6, 6, 6, 6)
+        editor_body.setSpacing(6)
+        graph_legend = styled_label(self.tr(
             "Direct parents  →  <b>Selected object</b>  →  Direct children"
             " &nbsp; · &nbsp; Hover a node to trace its links"
-        ))
+        ), tone="muted")
         graph_legend.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        graph_legend.setStyleSheet(_MUTED_TEXT_STYLE)
-        editor_layout.addWidget(graph_legend)
+        editor_body.addWidget(graph_legend)
         self.bank_graph = EventFlowGraph()
         self.bank_graph.node_selected.connect(self._on_bank_graph_node_selected)
         self.bank_graph.node_activated.connect(self._on_bank_graph_node_activated)
-        editor_layout.addWidget(self.bank_graph, 1)
-        self.bank_detail = QLabel(self.tr("Select a HIRC object."))
+        editor_body.addWidget(self.bank_graph, 1)
+        self.bank_detail = styled_label(self.tr("Select a HIRC object."), tone="muted")
         self.bank_detail.setWordWrap(True)
-        self.bank_detail.setStyleSheet(_MUTED_TEXT_STYLE)
-        editor_layout.addWidget(self.bank_detail)
+        editor_body.addWidget(self.bank_detail)
+        editor_layout.addLayout(editor_body, 1)
         splitter.addWidget(editor)
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
@@ -984,31 +1144,37 @@ class SoundViewer(QWidget):
     def _build_bank_settings_tab(self):
         page = QWidget()
         layout = QVBoxLayout(page)
-        hint = QLabel(self.tr(
-            "Double-click an editable value to change a global SoundBank setting."
-        ))
-        hint.setWordWrap(True)
-        hint.setStyleSheet(_MUTED_TEXT_STYLE)
-        layout.addWidget(hint)
-        selector = QHBoxLayout()
-        selector.addWidget(QLabel(self.tr("Chunk")))
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        toolbar, selector = editor_strip("toolbar", (10, 5, 10, 5), 6)
+        selector.addWidget(styled_label(self.tr("Chunk"), tone="muted"))
         self.bank_chunk_combo = QComboBox()
+        self.bank_chunk_combo.setMinimumContentsLength(28)
         self.bank_chunk_combo.currentIndexChanged.connect(self._show_bank_chunk)
-        selector.addWidget(self.bank_chunk_combo, 1)
+        selector.addWidget(self.bank_chunk_combo)
+        selector.addStretch(1)
         self.bank_chunk_apply = self._make_btn(
-            self.tr("Apply Settings"), QStyle.SP_DialogApplyButton,
-            self._apply_bank_chunk, enabled=False,
+            self.tr("Apply Settings"), "check",
+            self._apply_bank_chunk, enabled=False, variant="primary",
         )
         selector.addWidget(self.bank_chunk_apply)
-        layout.addLayout(selector)
-        self.bank_chunk_note = QLabel("")
+        layout.addWidget(toolbar)
+        body = QVBoxLayout()
+        body.setContentsMargins(8, 6, 8, 8)
+        body.setSpacing(6)
+        hint = styled_label(self.tr(
+            "Double-click an editable value to change a global SoundBank setting."
+        ), tone="muted")
+        hint.setWordWrap(True)
+        body.addWidget(hint)
+        self.bank_chunk_note = styled_label("", tone="muted")
         self.bank_chunk_note.setWordWrap(True)
-        self.bank_chunk_note.setStyleSheet(_MUTED_TEXT_STYLE)
-        layout.addWidget(self.bank_chunk_note)
+        body.addWidget(self.bank_chunk_note)
         self.bank_chunk_host = _sound_surface(QWidget())
         self.bank_chunk_layout = QVBoxLayout(self.bank_chunk_host)
         self.bank_chunk_layout.setContentsMargins(0, 0, 0, 0)
-        layout.addWidget(self.bank_chunk_host, 1)
+        body.addWidget(self.bank_chunk_host, 1)
+        layout.addLayout(body, 1)
         self._bank_chunk_editor = None
         return page
 
@@ -1018,44 +1184,60 @@ class SoundViewer(QWidget):
             dialog.setWindowTitle(self.tr("Replacement Settings"))
             layout = QVBoxLayout(dialog)
             layout.addWidget(self._rep_settings_host)
-            row = QHBoxLayout()
-            row.addStretch()
-            row.addWidget(self._make_btn(
-                self.tr("Close"), QStyle.SP_DialogCloseButton, dialog.hide,
-            ))
-            layout.addLayout(row)
+            buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            buttons.rejected.connect(dialog.hide)
+            layout.addWidget(buttons)
             self._settings_dialog = dialog
         self._settings_dialog.show()
         self._settings_dialog.raise_()
         self._settings_dialog.activateWindow()
 
     def _build_preview_controls(self):
-        group = QGroupBox(self.tr("Preview controls"))
+        group = QFrame()
+        set_style_role(group, surface="card")
         layout = QVBoxLayout(group)
-        layout.setSpacing(4)
+        layout.setContentsMargins(8, 6, 8, 8)
+        layout.setSpacing(6)
         bar = QHBoxLayout()
         bar.setSpacing(6)
         bar.addWidget(self.play_btn)
         bar.addWidget(self.stop_btn)
         bar.addSpacing(4)
-        self.pos_cur = QLabel("0:00")
+        self.pos_cur = styled_label("0:00", tone="muted", mono=True)
         self.pos_slider = QSlider(Qt.Horizontal)
         self.pos_slider.setEnabled(False)
-        self.pos_tot = QLabel("0:00")
-        for label in (self.pos_cur, self.pos_tot):
-            label.setStyleSheet(_MUTED_TEXT_STYLE)
+        self.pos_tot = styled_label("0:00", tone="muted", mono=True)
         bar.addWidget(self.pos_cur)
         bar.addWidget(self.pos_slider, 1)
         bar.addWidget(self.pos_tot)
         bar.addSpacing(8)
+        volume_icon = QLabel()
+        volume_icon.setPixmap(line_icon("sound").pixmap(16, 16))
+        volume_icon.setToolTip(self.tr("Volume."))
+        self.vol_slider = QSlider(Qt.Horizontal)
+        self.vol_slider.setRange(0, 100)
+        self.vol_slider.setValue(70)
+        self.vol_slider.setFixedWidth(90)
+        self.vol_slider.setToolTip(self.tr("Volume."))
+        bar.addWidget(volume_icon)
+        bar.addWidget(self.vol_slider)
+        layout.addWidget(styled_label(self.tr("Preview controls"), heading="caption"))
+        layout.addLayout(bar)
+        self.waveform = WaveformWidget(selectable=True)
+        layout.addWidget(self.waveform)
+
+        # Flow rows wrap instead of squeezing button text in a narrow panel.
+        options = FlowLayout()
+        options.setSpacing(6)
         self.skip_btn = self._make_btn(
             self.tr("Skip Silence"),
-            QStyle.SP_MediaSkipForward,
+            "skip_forward",
             self._on_skip,
             enabled=False,
+            compact=True,
         )
         self.skip_btn.setToolTip(self.tr("Jump to the next activity segment."))
-        bar.addWidget(self.skip_btn)
+        options.addWidget(self.skip_btn)
         self.channel_combo = QComboBox()
         self.channel_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.channel_combo.addItem(self.tr("Mix"), -1)
@@ -1063,12 +1245,13 @@ class SoundViewer(QWidget):
         self.channel_combo.setToolTip(
             self.tr("Preview the complete mix or solo one channel; audio data is not modified.")
         )
-        bar.addWidget(self.channel_combo)
+        options.addWidget(self.channel_combo)
         self.normalize_check = QCheckBox(self.tr("Normalize"))
         self.normalize_check.setToolTip(
             self.tr("Boost the preview to full scale; audio data is not modified.")
         )
-        bar.addWidget(self.normalize_check)
+        options.addWidget(self.normalize_check)
+        options.addItem(QSpacerItem(4, 0))
         self.speed_slider = QSlider(Qt.Horizontal)
         self.speed_slider.setRange(50, 200)
         self.speed_slider.setValue(100)
@@ -1076,64 +1259,52 @@ class SoundViewer(QWidget):
         self.speed_slider.setPageStep(25)
         self.speed_slider.setFixedWidth(90)
         self.speed_slider.setToolTip(self.tr("Playback speed (50%–200%)."))
-        self.speed_label = QLabel("1.00×")
-        self.speed_label.setStyleSheet(_MUTED_TEXT_STYLE)
-        bar.addWidget(self.speed_slider)
-        bar.addWidget(self.speed_label)
-        self.vol_slider = QSlider(Qt.Horizontal)
-        self.vol_slider.setRange(0, 100)
-        self.vol_slider.setValue(70)
-        self.vol_slider.setFixedWidth(90)
-        self.vol_slider.setToolTip(self.tr("Volume."))
-        volume_icon = QLabel()
-        volume_icon.setPixmap(
-            self.style().standardIcon(QStyle.SP_MediaVolume).pixmap(14, 14)
-        )
-        bar.addWidget(volume_icon)
-        bar.addWidget(self.vol_slider)
-        layout.addLayout(bar)
-        self.waveform = WaveformWidget(selectable=True)
-        layout.addWidget(self.waveform)
+        self.speed_label = styled_label("1.00×", tone="muted", mono=True)
+        self.speed_label.setToolTip(self.tr("Playback speed (50%–200%)."))
+        options.addWidget(self.speed_slider)
+        options.addWidget(self.speed_label)
+        layout.addLayout(options)
         layout.addLayout(self._build_wave_edit_bar())
         return group
 
     def _build_wave_edit_bar(self):
-        bar = QHBoxLayout()
-        bar.setSpacing(6)
+        bar = FlowLayout()
+        bar.setSpacing(4)
 
-        def add(text, icon, callback, tooltip):
-            button = self._make_btn(text, icon, callback, enabled=False)
+        def add(text, icon, callback, tooltip, variant=None):
+            button = self._make_btn(text, icon, callback, enabled=False, compact=True, variant=variant)
             button.setToolTip(tooltip)
             bar.addWidget(button)
             return button
 
         self.wave_edit_buttons = [
-            add(self.tr("Silence"), QStyle.SP_MediaVolumeMuted, partial(self._on_wave_edit, "silence"),
+            add(self.tr("Silence"), "mute", partial(self._on_wave_edit, "silence"),
                 self.tr("Silence the selected range.")),
-            add(self.tr("Trim"), QStyle.SP_DialogDiscardButton, partial(self._on_wave_edit, "trim"),
+            add(self.tr("Trim"), "cut", partial(self._on_wave_edit, "trim"),
                 self.tr("Remove the selected range.")),
-            add(self.tr("Crop"), QStyle.SP_FileDialogContentsView, partial(self._on_wave_edit, "crop"),
+            add(self.tr("Crop"), "crop", partial(self._on_wave_edit, "crop"),
                 self.tr("Keep only the selected range.")),
         ]
-        bar.addStretch(1)
+        bar.addItem(QSpacerItem(12, 0))
         self.wave_history_buttons = [
-            add(self.tr("Undo"), QStyle.SP_ArrowBack, partial(self._drop_wave_edits, start=-1),
+            add(self.tr("Undo"), "undo", partial(self._drop_wave_edits, start=-1),
                 self.tr("Undo the last edit.")),
-            add(self.tr("Discard"), QStyle.SP_DialogResetButton, partial(self._drop_wave_edits, start=0),
+            add(self.tr("Discard"), "reset", partial(self._drop_wave_edits, start=0),
                 self.tr("Discard all edits.")),
         ]
         self.wave_apply_btn = add(
-            self.tr("Apply Edits"), QStyle.SP_DialogApplyButton, self._on_apply_wave_edits,
+            self.tr("Apply Edits"), "check", self._on_apply_wave_edits,
             self.tr(
                 "Encode the edited audio with Wwise at maximum quality and replace this "
                 "source. After Trim or Crop the original loop points and markers no "
                 "longer line up, so they are not kept."
             ),
+            variant="primary",
         )
         return bar
 
     def _build_table(self):
-        self.table = QTableWidget(0, len(_COLUMNS))
+        self.table = _HintTableWidget(0, len(_COLUMNS), self.tr("No media sources to show."))
         self.table.setHorizontalHeaderLabels([self.tr(value) for value in _COLUMNS])
         header = self.table.horizontalHeader()
         for column in (0, 1, 3):
@@ -1141,6 +1312,8 @@ class SoundViewer(QWidget):
         for column in (2, 4, 5):
             header.setSectionResizeMode(column, QHeaderView.Stretch)
         self.table.verticalHeader().hide()
+        self.table.setShowGrid(False)
+        self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -1153,7 +1326,7 @@ class SoundViewer(QWidget):
         # Rows are sorted in _populate: QTableWidget's built-in sorting drops
         # Python-owned items under PySide6, emptying moved rows.
         header.setSectionsClickable(True)
-        header.setSortIndicatorShown(False)
+        header.setSortIndicatorShown(True)
         header.sectionClicked.connect(self._on_header_clicked)
         self._sort_column, self._sort_order = 0, False
         self._style_sort_header()
@@ -4497,6 +4670,10 @@ class SoundViewer(QWidget):
             font = item.font()
             font.setBold(column == self._sort_column)
             item.setFont(font)
+        self.table.horizontalHeader().setSortIndicator(
+            self._sort_column,
+            Qt.SortOrder.DescendingOrder if self._sort_order else Qt.SortOrder.AscendingOrder,
+        )
 
     def _populate(self, tracks):
         selected = self._selected()[1]

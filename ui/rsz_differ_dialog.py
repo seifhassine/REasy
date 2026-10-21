@@ -1,44 +1,28 @@
 from PySide6.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
-    QTreeWidget, QTreeWidgetItem, QGroupBox,
+    QTreeWidget, QTreeWidgetItem, QWidget,
     QTextEdit, QFileDialog, QMessageBox, QTabWidget,
-    QLineEdit, QFrame
+    QLineEdit
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QThread, Signal
-from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QColor, QDragEnterEvent, QDropEvent
 from pathlib import Path
 from typing import List, Optional
 import os
 
 from file_handlers.rsz.rsz_differ import RszDiffer, DiffResult
+lazy from ui.editor_widgets import editor_strip, styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 
 COMPARE_FILES_TEXT = QT_TRANSLATE_NOOP("RszDifferDialog", "Compare Files")
-
-
-DROP_LABEL_DEFAULT_STYLE = """
-    QLabel {
-        background-color: #f0f0f0;
-        padding: 10px;
-        border: 2px dashed #ccc;
-        border-radius: 5px;
-        color: #333;
-    }
-    QLabel:hover {
-        background-color: #e8e8e8;
-        border-color: #999;
-    }
-"""
-
-DROP_LABEL_ACCEPT_STYLE = """
-    QLabel {
-        background-color: #e0f0e0;
-        padding: 10px;
-        border: 2px solid #4CAF50;
-        border-radius: 5px;
-        color: #333;
-    }
-"""
+_STATUS_MARKS = {
+    "added": ("add", "success"),
+    "removed": ("remove", "danger"),
+    "modified": ("edit", "warning"),
+    "changed": ("edit", "warning"),
+}
 
 
 RSZ_EXTENSIONS = {'.scn', '.pfb', '.user'}
@@ -81,18 +65,19 @@ class DropLabel(QLabel):
     def __init__(self, text="", parent=None):
         super().__init__(text, parent)
         self.setAcceptDrops(True)
-        self.setStyleSheet(DROP_LABEL_DEFAULT_STYLE)
+        self.setAlignment(Qt.AlignCenter)
+        self.setProperty("dropZone", True)
 
     def dragEnterEvent(self, event: QDragEnterEvent):
         files = _collect_rsz_files(event)
         if files:
             event.acceptProposedAction()
-            self.setStyleSheet(DROP_LABEL_ACCEPT_STYLE)
+            set_style_role(self, dragActive=True)
         else:
             event.ignore()
 
     def dragLeaveEvent(self, event):
-        self.setStyleSheet(DROP_LABEL_DEFAULT_STYLE)
+        set_style_role(self, dragActive=False)
 
     def dropEvent(self, event: QDropEvent):
         files = _collect_rsz_files(event)
@@ -101,7 +86,7 @@ class DropLabel(QLabel):
             self.file_dropped.emit(files[0])
         else:
             event.ignore()
-        self.setStyleSheet(DROP_LABEL_DEFAULT_STYLE)
+        set_style_role(self, dragActive=False)
 
 
 class DiffWorker(QThread):
@@ -202,58 +187,55 @@ class RszDifferDialog(QDialog):
         
     def setup_ui(self):
         self.setWindowTitle(self.tr("RSZ File Diff"))
-        self.setMinimumSize(1200, 800)
-        
+        self.setMinimumSize(760, 520)
+        self.resize(1100, 760)
+
         self.setAcceptDrops(True)
-        
-        layout = QVBoxLayout(self)
-        
+
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        root.addWidget(self.create_json_bar())
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+        root.addLayout(layout, 1)
+
         file_section = self.create_file_section()
         layout.addWidget(file_section)
-        
+
         self.compare_button = QPushButton(self.tr(COMPARE_FILES_TEXT))
         self.compare_button.clicked.connect(self.compare_files)
         self.compare_button.setEnabled(False)
-        self.compare_button.setStyleSheet("""
-            QPushButton {
-                padding: 10px 20px;
-                font-weight: bold;
-                font-size: 11pt;
-                margin: 10px;
-            }
-        """)
-        layout.addWidget(self.compare_button)
-        
+        self.compare_button.setProperty("variant", "primary")
+        compare_row = QHBoxLayout()
+        instructions = styled_label(self.tr(
+            "Tip: You can drag and drop 2 RSZ files (SCN/PFB/USER) at once onto this dialog"
+        ), tone="muted")
+        instructions.setWordWrap(True)
+        compare_row.addWidget(instructions, 1)
+        compare_row.addWidget(self.compare_button)
+        layout.addLayout(compare_row)
+
         self.result_tabs = QTabWidget()
-        
+
         self.summary_widget = self.create_summary_widget()
         self.show_initial_summary()
-        self.result_tabs.addTab(self.summary_widget, self.tr("Summary"))
-        
+        self.result_tabs.addTab(self.summary_widget, line_icon("info"), self.tr("Summary"))
+
         self.gameobject_tree = self.create_diff_tree()
         self.show_initial_tree_message(self.gameobject_tree)
-        self.result_tabs.addTab(self.gameobject_tree, self.tr("GameObjects"))
-        
+        self.result_tabs.addTab(self.gameobject_tree, line_icon("gameobject"), self.tr("GameObjects"))
+
         self.folder_tree = self.create_diff_tree()
         self.show_initial_tree_message(self.folder_tree)
-        self.result_tabs.addTab(self.folder_tree, self.tr("Folders"))
-        
-        layout.addWidget(self.result_tabs)
-        
-    def create_file_section(self) -> QGroupBox:
-        group = QGroupBox(self.tr(
-            "This diff viewer is still highly EXPERIMENTAL. Results might not be accurate."
-        ))
-        layout = QVBoxLayout()
-        
-        instructions = QLabel(self.tr(
-            "Tip: You can drag and drop 2 RSZ files (SCN/PFB/USER) at once onto this dialog"
-        ))
-        instructions.setWordWrap(True)
-        instructions.setStyleSheet("QLabel { font-style: italic; padding: 5px; }")
-        layout.addWidget(instructions)
-        
-        json_layout = QHBoxLayout()
+        self.result_tabs.addTab(self.folder_tree, line_icon("folder"), self.tr("Folders"))
+
+        layout.addWidget(self.result_tabs, 1)
+
+    def create_json_bar(self) -> QWidget:
+        bar, json_layout = editor_strip("toolbar", (8, 6, 8, 6), 6)
         json_layout.addWidget(QLabel(self.tr("JSON File (Default):")))
         self.json_path_input = QLineEdit()
         self.json_path_input.setText(self.json_path or "")
@@ -263,86 +245,119 @@ class RszDifferDialog(QDialog):
         self.json_browse_button = QPushButton(self.tr("Browse..."))
         self.json_browse_button.clicked.connect(self.browse_json_path)
         json_layout.addWidget(self.json_browse_button)
-        layout.addLayout(json_layout)
-        
-        separator = QFrame()
-        separator.setFrameShape(QFrame.HLine)
-        separator.setFrameShadow(QFrame.Sunken)
-        layout.addWidget(separator)
-        
-        self._add_file_controls(layout, 1)
-        self._add_file_controls(layout, 2)
+        return bar
 
-        group.setLayout(layout)
-        return group
+    def create_file_section(self) -> QWidget:
+        section = QWidget()
+        layout = QVBoxLayout(section)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(8)
 
-    def _add_file_controls(self, layout, file_number: int):
+        warning = styled_label(self.tr(
+            "This diff viewer is still highly EXPERIMENTAL. Results might not be accurate."
+        ), banner="warning")
+        warning.setWordWrap(True)
+        layout.addWidget(warning)
+
+        files = QHBoxLayout()
+        files.setSpacing(12)
+        files.addLayout(self._add_file_controls(1), 1)
+        files.addLayout(self._add_file_controls(2), 1)
+        layout.addLayout(files)
+        return section
+
+    def _add_file_controls(self, file_number: int) -> QVBoxLayout:
         prefix = f"file{file_number}"
         file_caption = (self.tr("File 1:"), self.tr("File 2:"))[file_number - 1]
         override_caption = (self.tr("File 1 JSON Override:"), self.tr("File 2 JSON Override:"))[file_number - 1]
         override_placeholder = (self.tr("Optional JSON file for File 1..."), self.tr("Optional JSON file for File 2..."))[file_number - 1]
+        column = QVBoxLayout()
+        column.setSpacing(6)
 
-        def add_browse_row(caption, widget, callback):
-            row = QHBoxLayout()
-            row.addWidget(QLabel(caption))
-            row.addWidget(widget, 1)
-            button = QPushButton(self.tr("Browse..."))
-            button.clicked.connect(callback)
-            row.addWidget(button)
-            layout.addLayout(row)
-            return button
-
-        file_label = DropLabel(self.tr("Drop RSZ file here or click Browse..."))
-        file_label.file_dropped.connect(lambda path: self.load_file(file_number, path))
-        setattr(self, f"{prefix}_label", file_label)
-        file_button = add_browse_row(
-            file_caption, file_label, lambda _checked=False: self.select_file(file_number)
-        )
+        header = QHBoxLayout()
+        caption = styled_label(file_caption, heading="panel")
+        header.addWidget(caption)
+        header.addStretch()
+        file_button = QPushButton(line_icon("folder_open"), self.tr("Browse..."))
+        file_button.clicked.connect(lambda _checked=False: self.select_file(file_number))
+        header.addWidget(file_button)
+        column.addLayout(header)
         setattr(self, f"{prefix}_button", file_button)
 
+        file_label = DropLabel(self.tr("Drop RSZ file here or click Browse..."))
+        file_label.setMinimumHeight(48)
+        file_label.file_dropped.connect(lambda path: self.load_file(file_number, path))
+        setattr(self, f"{prefix}_label", file_label)
+        column.addWidget(file_label)
+
+        row = QHBoxLayout()
+        override_label = styled_label(override_caption, tone="muted")
+        row.addWidget(override_label)
         json_input = QLineEdit()
         json_input.setPlaceholderText(override_placeholder)
         json_input.textChanged.connect(lambda text: self.on_file_json_path_changed(file_number, text))
         setattr(self, f"{prefix}_json_input", json_input)
-        json_button = add_browse_row(
-            override_caption, json_input,
-            lambda _checked=False: self.browse_file_json_path(file_number),
-        )
+        row.addWidget(json_input, 1)
+        json_button = QPushButton(self.tr("Browse..."))
+        json_button.clicked.connect(lambda _checked=False: self.browse_file_json_path(file_number))
+        row.addWidget(json_button)
         setattr(self, f"{prefix}_json_button", json_button)
-        
+        column.addLayout(row)
+        return column
+
     def create_summary_widget(self) -> QTextEdit:
         widget = QTextEdit()
         widget.setReadOnly(True)
+        c = current_colors()
+        widget.document().setDefaultStyleSheet(
+            f"h2, h3 {{ color: {c['text_bright']}; font-size: medium; font-weight: 600; }}"
+            f"h2 {{ margin-bottom: 6px; }}"
+            f"h3 {{ color: {c['text_muted']}; margin-top: 12px; margin-bottom: 2px; }}"
+            f".muted {{ color: {c['text_muted']}; }}"
+            f".added {{ color: {c['success']}; }}"
+            f".removed {{ color: {c['danger']}; }}"
+            f".modified {{ color: {c['warning']}; }}"
+        )
         return widget
-        
+
     def create_diff_tree(self) -> QTreeWidget:
         tree = QTreeWidget()
-        tree.setAlternatingRowColors(False) 
+        tree.setAlternatingRowColors(False)
+        tree.setUniformRowHeights(True)
+        tree.setProperty("mono", True)
         tree.setHeaderLabels([self.tr("Object/Field"), self.tr("Change"), self.tr("Value")])
-        tree.setColumnWidth(0, 450)
-        tree.setColumnWidth(1, 120)
-        tree.setColumnWidth(2, 500)
-        
-        tree.setStyleSheet("""
-            QTreeWidget {
-                font-family: 'Consolas', 'Monaco', monospace;
-                font-size: 10pt;
-                outline: none;
-            }
-            QTreeWidget::item {
-                padding: 3px 5px;
-            }
-            QHeaderView::section {
-                padding: 6px;
-                font-weight: 600;
-                font-size: 10pt;
-            }
-        """)
-        
+        tree.setColumnWidth(0, 380)
+        tree.setColumnWidth(1, 110)
         tree.setSortingEnabled(False)
-        
+
         return tree
-    
+
+    @staticmethod
+    def _set_tree_message(tree: QTreeWidget, text: str):
+        tree.clear()
+        item = QTreeWidgetItem([text, "", ""])
+        item.setFlags(Qt.NoItemFlags)
+        item.setForeground(0, QColor(current_colors()["text_subtle"]))
+        tree.addTopLevelItem(item)
+
+    def _mark_status(self, item: QTreeWidgetItem, status: str, *, icon: bool = True):
+        mark = _STATUS_MARKS.get(status)
+        if mark is None:
+            return
+        color = current_colors()[mark[1]]
+        item.setForeground(1, QColor(color))
+        if icon:
+            item.setIcon(0, line_icon(mark[0], color))
+
+    @staticmethod
+    def _group_item(text: str, icon: str) -> QTreeWidgetItem:
+        item = QTreeWidgetItem([text, "", ""])
+        item.setIcon(0, line_icon(icon))
+        font = item.font(0)
+        font.setBold(True)
+        item.setFont(0, font)
+        return item
+
     def show_initial_summary(self):
         heading = self.tr("No Comparison Performed")
         instructions = self.tr(
@@ -353,27 +368,19 @@ class RszDifferDialog(QDialog):
         pfb_type = self.tr("• PFB files (Prefab)")
         user_type = self.tr("• USER files (User data)")
         html = f"""
-        <html>
-        <body style="font-family: 'Segoe UI', Arial, sans-serif;">
-            <h3 style="color: #666;">{heading}</h3>
-            <p style="color: #888;">{instructions}</p>
-            <hr style="border: 1px solid #e0e0e0;">
-            <p style="color: #888; font-size: 10pt;">
-                {supported}<br>
-                {scn_type}<br>
-                {pfb_type}<br>
-                {user_type}<br>
-            </p>
-        </body>
-        </html>
+        <h3>{heading}</h3>
+        <p class="muted">{instructions}</p>
+        <p class="muted">
+            {supported}<br>
+            {scn_type}<br>
+            {pfb_type}<br>
+            {user_type}
+        </p>
         """
         self.summary_widget.setHtml(html)
-    
+
     def show_initial_tree_message(self, tree: QTreeWidget):
-        item = QTreeWidgetItem([
-            self.tr("Select files and click Compare to see differences"), "", ""
-        ])
-        tree.addTopLevelItem(item)
+        self._set_tree_message(tree, self.tr("Select files and click Compare to see differences"))
     
     def on_json_path_changed(self, text: str):
         self.json_path = text if text else None
@@ -450,10 +457,12 @@ class RszDifferDialog(QDialog):
                 self.file1_data = data
                 self.file1_path = file_path
                 self.file1_label.setText(file_name)
+                self.file1_label.setToolTip(file_path)
             else:
                 self.file2_data = data
                 self.file2_path = file_path
                 self.file2_label.setText(file_name)
+                self.file2_label.setToolTip(file_path)
                 
             if self.file1_data and self.file2_data:
                 self.compare_button.setEnabled(True)
@@ -571,16 +580,16 @@ class RszDifferDialog(QDialog):
 {embedded_section}
 <h3>{gameobjects_heading}</h3>
 <ul>
-<li><span style="color: green;">{gameobjects_added}</span></li>
-<li><span style="color: red;">{gameobjects_removed}</span></li>
-<li><span style="color: orange;">{gameobjects_modified}</span></li>
+<li><span class="added">{gameobjects_added}</span></li>
+<li><span class="removed">{gameobjects_removed}</span></li>
+<li><span class="modified">{gameobjects_modified}</span></li>
 </ul>
 
 <h3>{folders_heading}</h3>
 <ul>
-<li><span style="color: green;">{folders_added}</span></li>
-<li><span style="color: red;">{folders_removed}</span></li>
-<li><span style="color: orange;">{folders_modified}</span></li>
+<li><span class="added">{folders_added}</span></li>
+<li><span class="removed">{folders_removed}</span></li>
+<li><span class="modified">{folders_modified}</span></li>
 </ul>
 """
         self.summary_widget.setHtml(text)
@@ -588,21 +597,21 @@ class RszDifferDialog(QDialog):
     def update_gameobject_tree(self):
         self.gameobject_tree.clear()
         
-        gameobjects_root = QTreeWidgetItem([self.tr("🎮 GameObjects"), "", ""])
-        embedded_root = QTreeWidgetItem([self.tr("📦 Embedded RSZ"), "", ""])
+        gameobjects_root = self._group_item(self.tr("GameObjects"), "gameobject")
+        embedded_root = self._group_item(self.tr("Embedded RSZ"), "layers")
         status_labels = {
             "added": self.tr("added"),
             "removed": self.tr("removed"),
             "modified": self.tr("modified"),
         }
-        
+
         go_changes = 0
         embedded_changes = 0
-        
+
         for diff in self.diff_result.gameobject_diffs:
             if diff.guid and diff.guid.startswith("embedded"):
-                item = QTreeWidgetItem([f"  {diff.name}", "", ""])
-                
+                item = QTreeWidgetItem([diff.name, "", ""])
+
                 if diff.details and "\n" in diff.details:
                     for change_line in diff.details.split("\n"):
                         if change_line.strip():
@@ -610,24 +619,25 @@ class RszDifferDialog(QDialog):
                             if ":" in clean_change:
                                 field, value = clean_change.split(":", 1)
                                 child = QTreeWidgetItem([
-                                    f"    {field}", self.tr("modified"), value.strip()
+                                    field, self.tr("modified"), value.strip()
                                 ])
+                                self._mark_status(child, "modified", icon=False)
                             else:
-                                child = QTreeWidgetItem([f"    {clean_change}", "", ""])
+                                child = QTreeWidgetItem([clean_change, "", ""])
                             item.addChild(child)
                 else:
                     item.setText(2, diff.details or "")
-                
+
                 embedded_root.addChild(item)
                 embedded_changes += 1
-                
+
             else:
-                status_icon = {"added": "➕", "removed": "➖", "modified": "✏️"}.get(diff.status, "•")
                 item = QTreeWidgetItem([
-                    f"{status_icon} {diff.name}", status_labels.get(diff.status, diff.status), ""
+                    diff.name, status_labels.get(diff.status, diff.status), ""
                 ])
+                self._mark_status(item, diff.status)
                 item.setData(0, Qt.UserRole, diff.guid)
-                
+
                 if diff.details:
                     if "\n" in diff.details:
                         for change_line in diff.details.split("\n"):
@@ -636,59 +646,63 @@ class RszDifferDialog(QDialog):
                                 if ":" in clean_change:
                                     field, value = clean_change.split(":", 1)
                                     child = QTreeWidgetItem([
-                                        f"  {field}", self.tr("changed"), value.strip()
+                                        field, self.tr("changed"), value.strip()
                                     ])
+                                    self._mark_status(child, "changed", icon=False)
                                 else:
-                                    child = QTreeWidgetItem([f"  {clean_change}", "", ""])
+                                    child = QTreeWidgetItem([clean_change, "", ""])
                                 item.addChild(child)
                     else:
                         item.setText(2, diff.details)
-                
+
                 gameobjects_root.addChild(item)
                 go_changes += 1
-        
+
         if go_changes > 0:
             gameobjects_root.setText(0, self.tr(
-                "🎮 GameObjects ({count} changes)"
+                "GameObjects ({count} changes)"
             ).format(count=go_changes))
             gameobjects_root.setExpanded(True)
             self.gameobject_tree.addTopLevelItem(gameobjects_root)
-        
+
         if embedded_changes > 0:
             embedded_root.setText(0, self.tr(
-                "📦 Embedded RSZ ({count} changes)"
+                "Embedded RSZ ({count} changes)"
             ).format(count=embedded_changes))
             embedded_root.setExpanded(True)
             self.gameobject_tree.addTopLevelItem(embedded_root)
-            
+
+        if not go_changes and not embedded_changes:
+            self._set_tree_message(self.gameobject_tree, self.tr("No GameObject changes detected"))
+
     def update_folder_tree(self):
         self.folder_tree.clear()
-        
+
         if not self.diff_result.folder_diffs:
-            no_changes = QTreeWidgetItem([self.tr("No folder changes detected"), "", ""])
-            self.folder_tree.addTopLevelItem(no_changes)
+            self._set_tree_message(self.folder_tree, self.tr("No folder changes detected"))
             return
-        
-        folders_root = QTreeWidgetItem([
-            self.tr("📁 Folder Changes ({count})").format(
+
+        folders_root = self._group_item(
+            self.tr("Folder Changes ({count})").format(
                 count=len(self.diff_result.folder_diffs)
-            ), "", ""
-        ])
+            ), "folder"
+        )
         status_labels = {
             "added": self.tr("added"),
             "removed": self.tr("removed"),
             "modified": self.tr("modified"),
         }
-        
+
         for diff in self.diff_result.folder_diffs:
-            status_icon = {"added": "➕", "removed": "➖", "modified": "✏️"}.get(diff.status, "📁")
-            
             item = QTreeWidgetItem([
-                f"{status_icon} {diff.path}",
+                diff.path,
                 status_labels.get(diff.status, diff.status),
                 diff.details or "",
             ])
-            
+            self._mark_status(item, diff.status)
+            if diff.status not in _STATUS_MARKS:
+                item.setIcon(0, line_icon("folder"))
+
             folders_root.addChild(item)
         
         folders_root.setExpanded(True)

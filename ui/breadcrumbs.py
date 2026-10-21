@@ -4,8 +4,21 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QPersistentModelIndex, Qt
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QToolButton
+from PySide6.QtCore import QPersistentModelIndex, QSize, Qt
+from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMenu, QSizePolicy, QToolButton
+
+lazy from ui.editor_widgets import tool_button, toolbar_separator
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
+
+
+def breadcrumb_separator(parent) -> QLabel:
+    label = QLabel(parent)
+    label.setObjectName("breadcrumbSeparator")
+    label.setPixmap(line_icon("chevron_right", current_colors()["text_subtle"]).pixmap(QSize(12, 12)))
+    label.setFixedWidth(14)
+    label.setAlignment(Qt.AlignCenter)
+    return label
 
 
 class BreadcrumbBar(QFrame):
@@ -14,11 +27,23 @@ class BreadcrumbBar(QFrame):
         self.app_window = app_window
         self.setObjectName("editorBreadcrumbs")
         self.setFrameShape(QFrame.NoFrame)
-        self.setMinimumHeight(28)
-        self.setMaximumHeight(32)
+        self.setFixedHeight(26)
         self._layout = QHBoxLayout(self)
-        self._layout.setContentsMargins(7, 1, 7, 1)
-        self._layout.setSpacing(1)
+        self._layout.setContentsMargins(6, 0, 6, 0)
+        self._layout.setSpacing(0)
+        colors = current_colors()
+        self.setStyleSheet(f"""
+            QToolButton#breadcrumbButton[segment="current"] {{ color: {colors['text_bright']}; }}
+            QToolButton#breadcrumbButton[segment="current"]:hover,
+            QToolButton#breadcrumbButton[segment="current"]:pressed {{
+                background: transparent; color: {colors['text_bright']};
+            }}
+            QToolButton#breadcrumbButton[segment="static"]:hover,
+            QToolButton#breadcrumbButton[segment="static"]:pressed {{
+                background: transparent; color: {colors['text_muted']};
+            }}
+            QToolButton#breadcrumbButton::menu-indicator {{ image: none; width: 0px; }}
+        """)
         self._tab = None
         self._tree = None
         self._selection_model = None
@@ -60,20 +85,30 @@ class BreadcrumbBar(QFrame):
         for position, (label, callback, tooltip) in enumerate(file_segments):
             if position:
                 self._separator()
-            self._button(label, callback, tooltip)
+            if label is None:
+                self._overflow_button(callback)
+            else:
+                self._button(label, callback, tooltip, "current" if position == len(file_segments) - 1 else None)
 
         current = current if current is not None and current.isValid() else (
             self._selection_model.currentIndex() if self._selection_model is not None else None
         )
         object_segments = self._object_segments(current)
         if object_segments:
-            divider = QLabel("  •  ", self)
+            self._layout.addSpacing(6)
+            divider = toolbar_separator(14)
             divider.setObjectName("breadcrumbDivider")
             self._layout.addWidget(divider)
+            self._layout.addSpacing(6)
             for position, (label, persistent) in enumerate(object_segments):
                 if position:
                     self._separator()
-                self._button(label, lambda idx=persistent: self._select_index(idx), label)
+                self._button(
+                    label,
+                    lambda idx=persistent: self._select_index(idx),
+                    label,
+                    "current" if position == len(object_segments) - 1 else None,
+                )
         self._layout.addStretch(1)
 
     def _file_segments(self):
@@ -81,12 +116,12 @@ class BreadcrumbBar(QFrame):
         virtual = str(getattr(tab, "pak_source_path", "") or "").replace("\\", "/")
         if virtual:
             parts = [part for part in virtual.split("/") if part]
-            segments = [(self.tr("PAK"), lambda: None, virtual)]
+            segments = [(self.tr("PAK"), None, virtual)]
             for index, part in enumerate(parts):
                 prefix = "/".join(parts[: index + 1])
                 callback = (
                     (lambda path=prefix + "/": self.app_window.proj_dock._reveal_pak_folder(path))
-                    if index < len(parts) - 1 else lambda: None
+                    if index < len(parts) - 1 else None
                 )
                 segments.append((part, callback, prefix))
             return self._compact(segments)
@@ -117,7 +152,7 @@ class BreadcrumbBar(QFrame):
                 lambda target=target, scope=scope:
                 self.app_window.proj_dock._reveal_filesystem_folder(target, scope)
             )
-            segments.append((part, callback if index < len(parts) - 1 else lambda: None, str(current)))
+            segments.append((part, callback if index < len(parts) - 1 else None, str(current)))
         return self._compact(segments)
 
     @staticmethod
@@ -130,9 +165,10 @@ class BreadcrumbBar(QFrame):
 
     @staticmethod
     def _compact(segments):
+        """Fold the middle of long paths into one entry whose label is None and callback the hidden segments."""
         if len(segments) <= 7:
             return segments
-        return [segments[0], ("…", lambda: None, ""), *segments[-5:]]
+        return [segments[0], (None, segments[1:-5], ""), *segments[-5:]]
 
     @staticmethod
     def _object_segments(index):
@@ -147,21 +183,37 @@ class BreadcrumbBar(QFrame):
             current = current.parent()
         return list(reversed(segments))[-6:]
 
-    def _button(self, text, callback, tooltip):
+    def _button(self, text, callback, tooltip, segment=None):
         button = QToolButton(self)
         button.setObjectName("breadcrumbButton")
+        button.setProperty("segment", segment or ("link" if callback is not None else "static"))
         button.setText(str(text))
         button.setToolTip(str(tooltip or text))
         button.setAccessibleName(str(text))
         button.setAutoRaise(True)
         button.setSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        button.clicked.connect(lambda _checked=False: callback())
+        if callback is not None:
+            button.clicked.connect(lambda _checked=False: callback())
+        self._layout.addWidget(button)
+
+    def _overflow_button(self, hidden):
+        button = tool_button("more", self.tr("Show hidden path segments"), parent=self)
+        button.setObjectName("breadcrumbButton")
+        button.setProperty("segment", "link")
+        button.setIconSize(QSize(14, 14))
+        button.setPopupMode(QToolButton.InstantPopup)
+        menu = QMenu(button)
+        for label, callback, tooltip in hidden:
+            action = menu.addAction(str(label))
+            action.setToolTip(str(tooltip or label))
+            action.setEnabled(callback is not None)
+            if callback is not None:
+                action.triggered.connect(lambda _checked=False, callback=callback: callback())
+        button.setMenu(menu)
         self._layout.addWidget(button)
 
     def _separator(self):
-        label = QLabel("›", self)
-        label.setObjectName("breadcrumbSeparator")
-        self._layout.addWidget(label)
+        self._layout.addWidget(breadcrumb_separator(self))
 
     def _select_index(self, persistent) -> None:
         if self._tree is None or not persistent.isValid():

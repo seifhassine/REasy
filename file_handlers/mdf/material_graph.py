@@ -26,9 +26,12 @@ lazy from file_handlers.material_names import is_private_material_parameter, res
 lazy from file_handlers.mmtr.material_usage import InputUsage, MaterialInputUsage, material_input_usage
 lazy from file_handlers.sdf.models import humanize_identifier
 lazy from file_handlers.sdf.shader_graph_editor import _ShaderGraphView, connection_path
+lazy from ui.editor_widgets import editor_strip, strip_button, styled_label
+lazy from ui.styles import current_colors, set_style_role
 lazy from .material_layout import MaterialDescriptorLayout
 lazy from .mdf_file import MATERIAL_FLAG_NAMES
 
+_READABLE_SCALE = 0.75
 _BEHAVIOR_FLAGS = (
     (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Casts shadows"), True, "ShadowCastDisable"),
     (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Emission feature"), False, "EmissiveUsed"),
@@ -305,50 +308,49 @@ class MaterialGraphEdge(QGraphicsPathItem):
         self.setPath(connection_path(start, end, 75.0))
 
 
+def _node_stylesheet(accent: str) -> str:
+    c = current_colors()
+    return (
+        f"QFrame#materialGraphNode {{ background:{c['node_bg']}; border:1px solid {c['node_border']};"
+        f" border-top:3px solid {accent}; border-radius:4px; }}"
+        " .QWidget { background:transparent; }"
+        f" QLabel#materialGraphNodeTitle {{ background:{c['node_header']}; color:{c['text_bright']};"
+        f" border:none; border-bottom:1px solid {c['node_border']}; padding:5px 8px; font-weight:600; }}"
+        f" QLabel#materialGraphNodeSubtitle {{ color:{c['text_subtle']}; }}"
+        f" QLabel#materialGraphNote {{ color:{c['warning']}; }}"
+        f" QLabel#materialGraphPreview {{ background:{c['canvas_bg']}; border:1px solid {c['border_subtle']};"
+        f" border-radius:3px; color:{c['text_subtle']}; }}"
+    )
+
+
 class MaterialGraphNodeFrame(QFrame):
     def __init__(self, title: str, subtitle: str, accent: str, width: int):
         super().__init__()
         self.setObjectName("materialGraphNode")
         self.setMinimumWidth(width)
         self.setMaximumWidth(width)
-        self.setStyleSheet(
-            "QFrame#materialGraphNode {"
-            " background:#242b32; border:1px solid #46515b; border-radius:8px; }"
-            "QLabel { color:#dce2e7; border:none; background:transparent; }"
-            "QLineEdit,QDoubleSpinBox { background:#171c21; color:#edf1f4;"
-            " border:1px solid #53606b; border-radius:4px; padding:3px; }"
-            "QCheckBox { color:#edf1f4; border:none; }"
-            "QPushButton { background:#303a43; color:#edf1f4;"
-            " border:1px solid #65727d; border-radius:4px; padding:5px; }"
-        )
+        self.setStyleSheet(_node_stylesheet(accent))
         root = QVBoxLayout(self)
-        root.setContentsMargins(10, 9, 10, 10)
-        root.setSpacing(7)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
         title_label = QLabel(title)
-        font = title_label.font()
-        font.setBold(True)
-        font.setPointSize(max(10, font.pointSize() + 1))
-        title_label.setFont(font)
-        title_label.setStyleSheet(
-            f"color:{accent}; border:none; background:transparent;"
-        )
+        title_label.setObjectName("materialGraphNodeTitle")
         root.addWidget(title_label)
-        if subtitle:
-            subtitle_label = QLabel(subtitle)
-            subtitle_label.setWordWrap(True)
-            subtitle_label.setStyleSheet(
-                "color:#9facb7; border:none; background:transparent;"
-            )
-            root.addWidget(subtitle_label)
         self.content = QVBoxLayout()
+        self.content.setContentsMargins(8, 6, 8, 8)
         self.content.setSpacing(6)
         root.addLayout(self.content)
+        if subtitle:
+            subtitle_label = QLabel(subtitle)
+            subtitle_label.setObjectName("materialGraphNodeSubtitle")
+            subtitle_label.setWordWrap(True)
+            self.content.addWidget(subtitle_label)
 
     def add_control(self, label: str, control: QWidget, tooltip: str) -> None:
         row = QWidget()
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(7)
+        layout.setSpacing(6)
         name = QLabel(label)
         name.setMinimumWidth(126)
         name.setWordWrap(True)
@@ -368,7 +370,7 @@ class MaterialGraphNodeFrame(QFrame):
         warning.setWordWrap(True)
         warning.setStyleSheet(
             "QLabel#materialContractMismatch {"
-            " color:#ff7474; border:none; background:transparent; font-weight:600; }"
+            f" color:{current_colors()['danger']}; font-weight:600; }}"
         )
         self.content.addWidget(warning)
 
@@ -389,38 +391,36 @@ class MdfMaterialGraph(QWidget):
         self._edges: list[QGraphicsPathItem] = []
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(8, 8, 8, 8)
-        header = QHBoxLayout()
-        title = QLabel(self.tr("Material Graph"))
-        title_font = title.font()
-        title_font.setBold(True)
-        title_font.setPointSize(max(13, title_font.pointSize() + 3))
-        title.setFont(title_font)
-        header.addWidget(title)
-        self.status = QLabel()
-        self.status.setWordWrap(True)
-        header.addWidget(self.status, 1)
-        fit = QPushButton(self.tr("Fit graph"))
-        zoom_out = QPushButton("−")
-        zoom_in = QPushButton("+")
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        header, header_row = editor_strip()
+        title = styled_label(self.tr("Material Graph"), heading="panel")
+        header_row.addWidget(title)
+        header_row.addSpacing(6)
+        self.status = styled_label(badge="neutral")
+        header_row.addWidget(self.status)
+        header_row.addStretch(1)
+        fit = strip_button(QPushButton(self.tr("Fit graph")), "fit")
+        zoom_out = strip_button(QPushButton(), "zoom_out", tooltip=self.tr("Zoom out"))
+        zoom_in = strip_button(QPushButton(), "zoom_in", tooltip=self.tr("Zoom in"))
         fit.clicked.connect(self.fit_graph)
         zoom_out.clicked.connect(lambda: self.view.scale(0.85, 0.85))
         zoom_in.clicked.connect(lambda: self.view.scale(1.18, 1.18))
-        header.addWidget(fit)
-        header.addWidget(zoom_out)
-        header.addWidget(zoom_in)
-        root.addLayout(header)
+        header_row.addWidget(fit)
+        header_row.addWidget(zoom_out)
+        header_row.addWidget(zoom_in)
+        root.addWidget(header)
 
         self.scene = QGraphicsScene(self)
         self.view = _ShaderGraphView()
-        self.view.setMinimumSize(0, 560)
+        self.view.setMinimumSize(0, 240)
         self.view.setScene(self.scene)
         root.addWidget(self.view, 1)
         # A child timer dies with the graph; ``QTimer.singleShot`` would run on a deleted graph.
         self._fit_timer = QTimer(self)
         self._fit_timer.setSingleShot(True)
         self._fit_timer.setInterval(0)
-        self._fit_timer.timeout.connect(self.fit_graph)
+        self._fit_timer.timeout.connect(self._show_initial_view)
 
     def set_material(
         self,
@@ -451,6 +451,7 @@ class MdfMaterialGraph(QWidget):
         if material is None:
             self.status.show()
             self.status.setText(self.tr("No material selected"))
+            set_style_role(self.status, badge="neutral")
             self.status.setToolTip("")
             self.scene.setSceneRect(QRectF(0, 0, 900, 500))
             return
@@ -541,7 +542,7 @@ class MdfMaterialGraph(QWidget):
         match = self._match
         if not match.resolved:
             text = self.tr("Master material not found")
-            tone = "#594a2d"
+            tone = "warning"
         elif match.verified:
             self.status.clear()
             self.status.setToolTip("")
@@ -549,12 +550,10 @@ class MdfMaterialGraph(QWidget):
             return
         else:
             text = self.tr("Material inputs do not match the master material")
-            tone = "#633b3b"
+            tone = "danger"
         self.status.show()
         self.status.setText(text)
-        self.status.setStyleSheet(
-            f"QLabel {{ background:{tone}; color:#f0f3f5; border-radius:6px; padding:6px 9px; }}"
-        )
+        set_style_role(self.status, badge=tone)
         self.status.setToolTip("")
 
     def _add_node(self, widget: QWidget, x: float, y: float, tag) -> QGraphicsProxyWidget:
@@ -580,9 +579,9 @@ class MdfMaterialGraph(QWidget):
         if usage is InputUsage.USED:
             return
         label = QLabel(usage.label)
+        label.setObjectName("materialGraphNote")
         label.setWordWrap(True)
         label.setToolTip(usage.explanation)
-        label.setStyleSheet("color:#b8a67a; font-size:11px;")
         layout.addWidget(label)
 
     def _parameter_node(self, group: str, members) -> MaterialGraphNodeFrame:
@@ -747,7 +746,7 @@ class MdfMaterialGraph(QWidget):
         button.setStyleSheet(
             "QPushButton {"
             f"background:{color.name(QColor.NameFormat.HexArgb)}; color:{text_color};"
-            "border:1px solid #7a8791; border-radius:4px; padding:5px;"
+            f"border:1px solid {current_colors()['border_strong']}; border-radius:3px; padding:3px 6px;"
             "}"
         )
 
@@ -766,11 +765,9 @@ class MdfMaterialGraph(QWidget):
         )
         self._add_usage_label(node.content, self._input_usage.texture(texture.tex_type))
         preview = QLabel()
+        preview.setObjectName("materialGraphPreview")
         preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
         preview.setMinimumHeight(88)
-        preview.setStyleSheet(
-            "background:#161b20; border:1px solid #46515b; border-radius:5px; color:#8f9aa3;"
-        )
         pixmap = self._texture_preview_provider(texture) if callable(self._texture_preview_provider) else None
         if isinstance(pixmap, str):
             preview.setToolTip(pixmap)
@@ -858,6 +855,15 @@ class MdfMaterialGraph(QWidget):
         )
         if self.view.transform().m11() > 1.0:
             self.view.resetTransform()
+
+    def _show_initial_view(self) -> None:
+        self.fit_graph()
+        if self.scene.items() and self.view.transform().m11() < _READABLE_SCALE:
+            # Fitting a tall graph makes nodes unreadable; open readable at its top-left instead.
+            self.view.resetTransform()
+            self.view.scale(_READABLE_SCALE, _READABLE_SCALE)
+            for bar in (self.view.horizontalScrollBar(), self.view.verticalScrollBar()):
+                bar.setValue(bar.minimum())
 
 
 __all__ = [

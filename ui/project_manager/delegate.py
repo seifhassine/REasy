@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from typing import NamedTuple
+
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt
-from PySide6.QtGui import QColor, QPalette, QPixmap
+from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPalette
 from PySide6.QtWidgets import (
     QApplication,
     QStyle,
@@ -10,12 +12,15 @@ from PySide6.QtWidgets import (
     QToolTip,
 )
 
-lazy from .bookmarks import normalize_tag
-lazy from .constants import make_close_pixmap, make_plus_pixmap, make_star_pixmap
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
 
-_ACTION_HIT_SIZE, _ACTION_SPACING = 26, 1
+lazy from .bookmarks import normalize_tag
+
+_ACTION_HIT_SIZE, _ACTION_SPACING = 24, 1
 _ACTION_RIGHT, _MIN_TEXT_WIDTH = 3, 60
-_Action = tuple[QPixmap, str]
+_ACTION_ICON_SIZE = 16
+_STAR_COLOR = "#ffd700"
 _BOOKMARK_SCOPE_COLORS = {"pak": "#f59e0b", "project": "#4a7c59", "unpacked": "#64748b"}
 _TAG_PALETTE = (
     "#4caf50", "#2196f3", "#ff9800", "#9c27b0", "#e91e63",
@@ -41,15 +46,30 @@ def _tag_color(tag: str) -> QColor:
     return QColor(_TAG_PALETTE[color_hash % len(_TAG_PALETTE)])
 
 
+class _ActionIcon(NamedTuple):
+    name: str
+    color: str | None = None
+    hover_tone: str | None = None
+
+    def icon(self, hovered: bool) -> QIcon:
+        if hovered and self.hover_tone:
+            return line_icon(self.name, current_colors()[self.hover_tone])
+        return line_icon(self.name, self.color)
+
+
+_Action = tuple[_ActionIcon, str]
+
+
 class _ActionIconsDelegate(QStyledItemDelegate):
     """Subclasses route clicks in ``editorEvent``."""
 
     def __init__(self, parent):
         super().__init__(parent)
         self.column_width = 200
-        self.plus = make_plus_pixmap()
-        self.star_on = make_star_pixmap(True)
-        self.star_off = make_star_pixmap(False)
+        self.plus = _ActionIcon("add", hover_tone="accent")
+        self.star_on = _ActionIcon("star_filled", _STAR_COLOR)
+        self.star_off = _ActionIcon("star")
+        self._pointer = QPoint(-1, -1)
         parent.setMouseTracking(True)
         parent.viewport().setMouseTracking(True)
 
@@ -85,18 +105,26 @@ class _ActionIconsDelegate(QStyledItemDelegate):
     def _action_tooltip(self, action_id: str, index) -> str:
         return action_id.replace("_", " ").title()
 
+    def _paint_actions(self, painter, option, actions) -> None:
+        row_hovered = bool(option.state & QStyle.State_MouseOver)
+        for rect, (action_icon, _action_id) in zip(self._action_rects(option, len(actions)), actions):
+            hovered = row_hovered and rect.contains(self._pointer)
+            if hovered:
+                painter.setPen(Qt.NoPen)
+                painter.setBrush(QColor(current_colors()["surface_hover"]))
+                painter.drawRoundedRect(QRectF(rect.adjusted(2, 2, -2, -2)), 3, 3)
+            icon_rect = QRect(0, 0, _ACTION_ICON_SIZE, _ACTION_ICON_SIZE)
+            icon_rect.moveCenter(rect.center())
+            action_icon.icon(hovered).paint(
+                painter, icon_rect, Qt.AlignCenter, QIcon.Active if hovered else QIcon.Normal)
+
     def paint(self, painter, option, index):
         actions = self._row_actions(index)
         visible, reserved = self._action_layout(option, len(actions))
-        rects = self._action_rects(option, len(actions))
         if visible and self._actions_revealed(option):
             painter.save()
-            for rect, (icon, _action_id) in zip(rects, actions):
-                if option.state & QStyle.State_MouseOver:
-                    painter.fillRect(rect.adjusted(2, 2, -2, -2), QColor(255, 255, 255, 18))
-                x = rect.left() + (rect.width() - icon.width()) // 2
-                y = rect.top() + (rect.height() - icon.height()) // 2
-                painter.drawPixmap(x, y, icon)
+            painter.setRenderHint(QPainter.Antialiasing)
+            self._paint_actions(painter, option, actions)
             painter.restore()
 
         text_option = QStyleOptionViewItem(option)
@@ -128,6 +156,14 @@ class _ActionIconsDelegate(QStyledItemDelegate):
         )
         return True
 
+    def editorEvent(self, ev, model, option, index):
+        # Repaint the row so the hover fill follows the pointer between its actions.
+        if ev.type() == QEvent.MouseMove:
+            self._pointer = _event_point(ev)
+            if option.widget is not None:
+                option.widget.viewport().update(option.rect)
+        return False
+
     def sizeHint(self, option, index):
         hint = super().sizeHint(option, index)
         hint.setHeight(max(_ACTION_HIT_SIZE, hint.height()))
@@ -142,7 +178,7 @@ class _ActionsDelegate(_ActionIconsDelegate):
         super().__init__(parent)
         self.mgr, self.for_project = mgr, for_project
 
-        self.close = make_close_pixmap()
+        self.close = _ActionIcon("close", hover_tone="danger")
 
     def _row_state(self, index):
         path = self.mgr._index_path(index)
@@ -169,7 +205,7 @@ class _ActionsDelegate(_ActionIconsDelegate):
 
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
-            return False
+            return super().editorEvent(ev, model, option, index)
         actions, path, bookmark_info = self._row_state(index)
         pos = self._action_at(ev, option, len(actions))
         if pos is None:
@@ -240,7 +276,7 @@ class _PakActionsDelegate(_ActionIconsDelegate):
 
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
-            return False
+            return super().editorEvent(ev, model, option, index)
         actions, path, bookmark_info = self._row_state(index)
         pos = self._action_at(ev, option, len(actions))
         if pos is None:
@@ -278,7 +314,7 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
 
     def editorEvent(self, ev, model, option, index):
         if ev.type() != QEvent.MouseButtonRelease or ev.button() != Qt.LeftButton:
-            return False
+            return super().editorEvent(ev, model, option, index)
         actions = self._row_actions(index)
         pos = self._action_at(ev, option, len(actions))
         if pos is None:
@@ -358,7 +394,7 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
     def _paint_chip(painter, chip: QRect, label: str, color: QColor) -> None:
         painter.setPen(Qt.NoPen)
         painter.setBrush(color)
-        painter.drawRoundedRect(QRectF(chip), chip.height() / 2, chip.height() / 2)
+        painter.drawRoundedRect(QRectF(chip), 3, 3)
         painter.setPen(_chip_fg(color))
         painter.drawText(chip, Qt.AlignCenter, label)
 
@@ -388,13 +424,17 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
         badge = QRectF(rect.right() - badge_width, rect.top() + 1,
                        badge_width, max(18, option.fontMetrics.height() + 2))
         color = QColor(_BOOKMARK_SCOPE_COLORS[bookmark.scope])
-        painter.setPen(Qt.NoPen)
-        painter.setBrush(color)
-        painter.drawRoundedRect(badge, 6, 6)
-        painter.setPen(_chip_fg(color))
+        fill, edge = QColor(color), QColor(color)
+        fill.setAlpha(46)
+        edge.setAlpha(150)
+        painter.setRenderHint(QPainter.Antialiasing)
+        painter.setPen(edge)
+        painter.setBrush(fill)
+        painter.drawRoundedRect(badge.adjusted(0.5, 0.5, -0.5, -0.5), 3, 3)
+        painter.setPen(color.lighter(140))
         painter.drawText(badge, Qt.AlignCenter, scope)
         font = painter.font()
-        font.setBold(True)
+        font.setWeight(QFont.DemiBold)
         painter.setFont(font)
         line_height = max(22, option.fontMetrics.height())
         title = QRect(rect.left(), rect.top(), max(0, rect.width() - badge_width - 8), line_height)
@@ -417,9 +457,7 @@ class _BookmarkRowDelegate(_ActionIconsDelegate):
         for chip, label, color, _overflow in chips:
             self._paint_chip(painter, chip, label, color)
         if visible and self._actions_revealed(option):
-            for action_rect, (icon, _action_id) in zip(self._action_rects(option, len(actions)), actions):
-                painter.drawPixmap(action_rect.center().x() - icon.width() // 2,
-                                   action_rect.center().y() - icon.height() // 2, icon)
+            self._paint_actions(painter, option, actions)
         painter.restore()
 
     def sizeHint(self, option, index):

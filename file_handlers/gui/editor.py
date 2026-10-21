@@ -54,7 +54,9 @@ from file_handlers.motion.mot_clip.model import (
     ClipKey,
     ClipProperty,
 )
-lazy from ui.styles import get_color_scheme
+lazy from ui.editor_widgets import editor_strip, styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 lazy from .adapter import GuiPreviewControl, GuiPreviewScenario
 lazy from .dependencies import GuiDependencyCatalog
@@ -86,6 +88,9 @@ ASCII_EVENT_MODES = frozenset(
     {ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT}
 )
 _EDITOR_MODES = ("layout", "preview", "interact")
+_MODE_BADGES = {"layout": "neutral", "preview": "accent", "interact": "warning"}
+_SCENARIO_BADGES = {"partial": "warning", "complete": "success", "custom": "info"}
+_AXIS_COMPONENTS = {"x": "x", "r": "x", "y": "y", "g": "y", "z": "z", "b": "z"}
 
 
 def _category(name: str, kind: PropertyType) -> str:
@@ -137,12 +142,10 @@ def _same_value(left: Any, right: Any) -> bool:
 def _toolbar_heading(text: str) -> QLabel:
     label = QLabel(text)
     label.setObjectName("guiToolbarHeading")
-    return label
-
-
-def _runtime_field_label(text: str) -> QLabel:
-    label = QLabel(text)
-    label.setProperty("role", "fieldLabel")
+    font = label.font()
+    font.setCapitalization(QFont.Capitalization.AllUppercase)
+    label.setFont(font)
+    set_style_role(label, heading="caption")
     return label
 
 
@@ -152,176 +155,30 @@ def _mode_button(text: str, object_name: str, tooltip: str) -> QPushButton:
     button.setProperty("role", "mode")
     button.setCheckable(True)
     button.setToolTip(tooltip)
+    set_style_role(button, compact=True)
     return button
 
 
+def _toolbar(object_name: str, parent: QWidget) -> QFrame:
+    bar = QFrame(parent)
+    bar.setObjectName(object_name)
+    set_style_role(bar, surface="toolbar")
+    return bar
+
+
 def _editor_stylesheet() -> str:
-    colors = get_color_scheme()
+    colors = current_colors()
     return f"""
-        QWidget#guiEditor QLabel {{
-            background: transparent;
+        /* Compact buttons in a crowded bar would otherwise shrink below their text. */
+        QWidget#guiEditor QPushButton[role="mode"] {{ min-width: 46px; }}
+        QWidget#guiEditor QPushButton[role="utility"] {{ min-width: 56px; }}
+        QWidget#guiEditor QAbstractSpinBox[role="vectorComponent"] {{ padding-left: 4px; }}
+        QWidget#guiEditor QLabel#guiVectorComponentLabel {{
+            color: {colors['text_muted']}; font-weight: 600;
         }}
-        QWidget#guiEditor QLineEdit,
-        QWidget#guiEditor QAbstractSpinBox,
-        QWidget#guiEditor QComboBox {{
-            color: #edf1f5;
-            background: #3a3f45;
-            border: 1px solid #59616a;
-            border-radius: 3px;
-            padding: 2px 4px;
-        }}
-        QWidget#guiEditor QLineEdit:focus,
-        QWidget#guiEditor QAbstractSpinBox:focus,
-        QWidget#guiEditor QComboBox:focus {{
-            background: #3d434a;
-            border-color: #3da1ad;
-        }}
-        QWidget#guiEditor QLineEdit:disabled,
-        QWidget#guiEditor QAbstractSpinBox:disabled,
-        QWidget#guiEditor QComboBox:disabled {{
-            color: #7f8993;
-            background: #30343a;
-            border-color: #484f56;
-        }}
-        QWidget#guiEditor QAbstractSpinBox[role="vectorComponent"] {{
-            padding-left: 3px;
-            padding-right: 2px;
-        }}
-        QWidget#guiEditor QFrame#guiDocumentBar,
-        QWidget#guiEditor QFrame#guiPreviewBar {{
-            background: #34383d;
-            border: 1px solid {colors['border']};
-            border-radius: 5px;
-        }}
-        QWidget#guiEditor QFrame#guiRuntimeSettings {{
-            background: #30343a;
-            border: 1px solid {colors['border']};
-            border-radius: 5px;
-        }}
-        QWidget#guiEditor QLabel#guiToolbarHeading {{
-            color: #9da8b3;
-            font-size: 9px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        }}
-        QWidget#guiEditor QLabel#guiModeDescription {{
-            color: #aeb7c2;
-            padding-left: 4px;
-        }}
-        QWidget#guiEditor QLabel#guiDocumentStatus {{
-            color: #b9c2cb;
-            padding: 0 4px;
-        }}
-        QWidget#guiEditor QLabel#guiModeStatus {{
-            color: white;
-            font-size: 10px;
-            font-weight: 700;
-            border: 1px solid #68737d;
-            border-radius: 9px;
-            padding: 3px 9px;
-        }}
-        QWidget#guiEditor QLabel#guiModeStatus[mode="layout"] {{
-            background: #4a535c;
-        }}
-        QWidget#guiEditor QLabel#guiModeStatus[mode="preview"] {{
-            background: #176d79;
-            border-color: #3da1ad;
-        }}
-        QWidget#guiEditor QLabel#guiModeStatus[mode="interact"] {{
-            background: #855a1d;
-            border-color: #c8923c;
-        }}
-        QWidget#guiEditor QLabel#guiModeStatus[activity="playing"] {{
-            background: #287044;
-            border-color: #4ba66c;
-        }}
-        QWidget#guiEditor QPushButton[role="mode"] {{
-            min-width: 62px;
-            min-height: 20px;
-            padding: 4px 10px;
-            background: {colors['input_bg']};
-            border: 1px solid {colors['border']};
-            border-radius: 3px;
-        }}
-        QWidget#guiEditor QPushButton[role="mode"]:hover {{
-            background: #4a5057;
-            border-color: #71808d;
-        }}
-        QWidget#guiEditor QPushButton#guiLayoutModeButton:checked {{
-            background: #526170;
-            border-color: #8295a6;
-        }}
-        QWidget#guiEditor QPushButton#guiPreviewModeButton:checked {{
-            background: #176d79;
-            border-color: #45a9b5;
-        }}
-        QWidget#guiEditor QPushButton#guiInteractionModeButton:checked {{
-            background: #855a1d;
-            border-color: #d09a43;
-        }}
-        QWidget#guiEditor QPushButton[role="document"],
-        QWidget#guiEditor QPushButton[role="utility"],
-        QWidget#guiEditor QToolButton[role="transport"],
-        QWidget#guiEditor QToolButton[role="settings"] {{
-            min-width: 0;
-            min-height: 20px;
-            padding: 4px 8px;
-            background: {colors['input_bg']};
-            border: 1px solid {colors['border']};
-            border-radius: 3px;
-        }}
-        QWidget#guiEditor QPushButton[role="document"]:hover,
-        QWidget#guiEditor QPushButton[role="utility"]:hover,
-        QWidget#guiEditor QToolButton[role="transport"]:hover,
-        QWidget#guiEditor QToolButton[role="settings"]:hover {{
-            background: #4a5057;
-            border-color: #71808d;
-        }}
-        QWidget#guiEditor QPushButton[role="utility"]:checked,
-        QWidget#guiEditor QToolButton[role="settings"]:checked {{
-            background: #176d79;
-            border-color: #45a9b5;
-        }}
-        QWidget#guiEditor QToolButton[role="transport"]:checked {{
-            background: #287044;
-            border-color: #4ba66c;
-        }}
-        QWidget#guiEditor QPushButton[role="document"]:disabled,
-        QWidget#guiEditor QToolButton[role="transport"]:disabled {{
-            color: #737d87;
-            background: #30343a;
-            border-color: #454b51;
-        }}
-        QWidget#guiEditor QFrame#guiRuntimeSettings QLabel[role="fieldLabel"] {{
-            color: #aeb7c2;
-            font-size: 10px;
-        }}
-        QWidget#guiEditor QLabel#guiFrameTotal {{
-            color: #9da8b3;
-            min-width: 36px;
-        }}
-        QWidget#guiEditor QLabel#guiScenarioCoverage {{
-            color: #c8d0d8;
-            background: #41474e;
-            border: 1px solid #5b646d;
-            border-radius: 8px;
-            padding: 2px 7px;
-        }}
-        QWidget#guiEditor QLabel#guiScenarioCoverage[status="partial"] {{
-            color: #f2d39b;
-            background: #594723;
-            border-color: #876b32;
-        }}
-        QWidget#guiEditor QLabel#guiScenarioCoverage[status="complete"] {{
-            color: #c9ead3;
-            background: #294e39;
-            border-color: #42785a;
-        }}
-        QWidget#guiEditor QLabel#guiScenarioCoverage[status="custom"] {{
-            color: #c9e8ed;
-            background: #234c55;
-            border-color: #3f7f8a;
-        }}
+        QWidget#guiEditor QLabel#guiVectorComponentLabel[axis="x"] {{ color: #e0625c; }}
+        QWidget#guiEditor QLabel#guiVectorComponentLabel[axis="y"] {{ color: #6fbf5f; }}
+        QWidget#guiEditor QLabel#guiVectorComponentLabel[axis="z"] {{ color: #5c9cf0; }}
     """
 
 
@@ -359,28 +216,20 @@ class GuiEditor(QWidget):
         self.setObjectName("guiEditor")
         self.setStyleSheet(_editor_stylesheet())
         outer = QVBoxLayout(self)
-        outer.setContentsMargins(5, 5, 5, 5)
-        outer.setSpacing(5)
+        outer.setContentsMargins(0, 0, 0, 0)
+        outer.setSpacing(0)
 
-        document_bar = QFrame(self)
+        document_bar, tools = editor_strip()
         document_bar.setObjectName("guiDocumentBar")
-        tools = QHBoxLayout(document_bar)
-        tools.setContentsMargins(7, 5, 7, 5)
-        tools.setSpacing(5)
         self.undo_button = QPushButton("Undo")
-        self.undo_button.setIcon(
-            self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowBack)
-        )
+        self.undo_button.setIcon(line_icon("undo"))
         self.redo_button = QPushButton("Redo")
-        self.redo_button.setIcon(
-            self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowForward)
-        )
+        self.redo_button.setIcon(line_icon("redo"))
         self.fit_button = QPushButton("Fit canvas")
+        self.fit_button.setIcon(line_icon("fit"))
         self.fit_button.setToolTip("Fit the authored GUI canvas in the viewport")
         self.reset_button = QPushButton("Revert file")
-        self.reset_button.setIcon(
-            self.style().standardIcon(QStyle.StandardPixmap.SP_DialogResetButton)
-        )
+        self.reset_button.setIcon(line_icon("reset", current_colors()["danger"]))
         self.reset_button.setToolTip("Discard all unsaved GUI edits")
         for button in (
             self.undo_button,
@@ -388,20 +237,19 @@ class GuiEditor(QWidget):
             self.fit_button,
             self.reset_button,
         ):
-            button.setProperty("role", "document")
+            set_style_role(button, compact=True)
             tools.addWidget(button)
+        set_style_role(self.reset_button, variant="danger")
         tools.addStretch(1)
-        self.status = QLabel()
+        self.status = styled_label(tone="muted")
         self.status.setObjectName("guiDocumentStatus")
         tools.addWidget(self.status)
         outer.addWidget(document_bar)
 
-        preview_bar = QFrame(self)
+        preview_bar, preview_tools = editor_strip()
         preview_bar.setObjectName("guiPreviewBar")
-        preview_tools = QHBoxLayout(preview_bar)
-        preview_tools.setContentsMargins(7, 5, 7, 5)
-        preview_tools.setSpacing(5)
         preview_tools.addWidget(_toolbar_heading("MODE"))
+        preview_tools.addSpacing(2)
         self.mode_group = QButtonGroup(self)
         self.mode_group.setExclusive(True)
         self.layout_mode_button = _mode_button(
@@ -429,19 +277,22 @@ class GuiEditor(QWidget):
             self.mode_group.addButton(button, index)
             preview_tools.addWidget(button)
 
-        self.mode_status = QLabel()
+        preview_tools.addSpacing(6)
+        self.mode_status = styled_label(badge="neutral")
         self.mode_status.setObjectName("guiModeStatus")
         self.mode_status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         preview_tools.addWidget(self.mode_status)
-        self.mode_description = QLabel()
+        self.mode_description = styled_label(tone="muted")
         self.mode_description.setObjectName("guiModeDescription")
         self.mode_description.setMaximumWidth(320)
+        # Shrinks before the toolbar buttons do; the tooltip has the full text.
+        self.mode_description.setMinimumWidth(40)
         preview_tools.addWidget(self.mode_description)
         preview_tools.addStretch(1)
+        preview_tools.addSpacing(8)
 
         preview_tools.addWidget(_toolbar_heading("PLAYBACK"))
         self.restart_button = QToolButton()
-        self.restart_button.setProperty("role", "transport")
         self.restart_button.setToolButtonStyle(
             Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
@@ -453,7 +304,6 @@ class GuiEditor(QWidget):
         self.restart_button.setText("Restart")
         self.restart_button.setToolTip("Restart the selected animation")
         self.play_button = QToolButton()
-        self.play_button.setProperty("role", "transport")
         self.play_button.setToolButtonStyle(
             Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
@@ -462,6 +312,7 @@ class GuiEditor(QWidget):
         self.play_button.setToolTip("Play the selected animation")
         preview_tools.addWidget(self.restart_button)
         preview_tools.addWidget(self.play_button)
+        preview_tools.addSpacing(6)
         preview_tools.addWidget(_toolbar_heading("Frame"))
         self.preview_frame = QDoubleSpinBox()
         self.preview_frame.setDecimals(2)
@@ -470,23 +321,27 @@ class GuiEditor(QWidget):
         self.preview_frame.setMaximumWidth(74)
         self.preview_frame.setToolTip("Current animation frame")
         preview_tools.addWidget(self.preview_frame)
-        self.preview_frame_total = QLabel("/ 0")
+        self.preview_frame_total = styled_label("/ 0", tone="muted")
         self.preview_frame_total.setObjectName("guiFrameTotal")
+        self.preview_frame_total.setMinimumWidth(36)
         preview_tools.addWidget(self.preview_frame_total)
+        preview_tools.addSpacing(6)
 
         self.guides_button = QPushButton("Guides")
         self.guides_button.setProperty("role", "utility")
         self.guides_button.setCheckable(True)
+        self.guides_button.setIcon(line_icon("grid"))
+        set_style_role(self.guides_button, compact=True)
         self.guides_button.setToolTip(
             "Show selection and object-boundary guides over the viewport"
         )
         preview_tools.addWidget(self.guides_button)
         self.preview_settings_button = QToolButton()
-        self.preview_settings_button.setProperty("role", "settings")
         self.preview_settings_button.setCheckable(True)
         self.preview_settings_button.setText("Preview settings")
+        self.preview_settings_button.setIcon(line_icon("settings"))
         self.preview_settings_button.setToolButtonStyle(
-            Qt.ToolButtonStyle.ToolButtonTextOnly
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
         )
         self.preview_settings_button.setToolTip(
             "Show viewport, localization, input, and preview scenario"
@@ -507,14 +362,13 @@ class GuiEditor(QWidget):
         )
         outer.addWidget(preview_bar)
 
-        self.preview_settings_panel = QFrame(self)
-        self.preview_settings_panel.setObjectName("guiRuntimeSettings")
+        self.preview_settings_panel = _toolbar("guiRuntimeSettings", self)
         settings = QGridLayout(self.preview_settings_panel)
-        settings.setContentsMargins(9, 7, 9, 7)
-        settings.setHorizontalSpacing(7)
-        settings.setVerticalSpacing(5)
+        settings.setContentsMargins(10, 6, 10, 6)
+        settings.setHorizontalSpacing(6)
+        settings.setVerticalSpacing(4)
         settings.addWidget(_toolbar_heading("PREVIEW CONTEXT"), 0, 0)
-        settings.addWidget(_runtime_field_label("Viewport"), 0, 1)
+        settings.addWidget(styled_label("Viewport", tone="muted"), 0, 1)
         self.output_width = QSpinBox()
         self.output_height = QSpinBox()
         for field, value in ((self.output_width, 1920), (self.output_height, 1080)):
@@ -523,11 +377,11 @@ class GuiEditor(QWidget):
             field.setMaximumWidth(78)
             field.editingFinished.connect(self._output_size_changed)
         settings.addWidget(self.output_width, 0, 2)
-        size_separator = QLabel("×")
+        size_separator = styled_label("×", tone="subtle")
         size_separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
         settings.addWidget(size_separator, 0, 3)
         settings.addWidget(self.output_height, 0, 4)
-        settings.addWidget(_runtime_field_label("Safe area"), 0, 5)
+        settings.addWidget(styled_label("Safe area", tone="muted"), 0, 5)
         self.safe_area_ratio = QDoubleSpinBox()
         self.safe_area_ratio.setDecimals(3)
         self.safe_area_ratio.setRange(0.01, 1.0)
@@ -539,7 +393,7 @@ class GuiEditor(QWidget):
         self.safe_area_ratio.setToolTip(self.runtime_editor.safe_area_tooltip)
         self.safe_area_ratio.valueChanged.connect(self._safe_area_changed)
         settings.addWidget(self.safe_area_ratio, 0, 6)
-        settings.addWidget(_runtime_field_label("Language ID"), 0, 7)
+        settings.addWidget(styled_label("Language ID", tone="muted"), 0, 7)
         self.preview_language = QSpinBox()
         self.preview_language.setRange(0, 255)
         self.preview_language.setValue(self.runtime_editor.default_language)
@@ -549,16 +403,16 @@ class GuiEditor(QWidget):
         )
         self.preview_language.valueChanged.connect(self._preview_language_changed)
         settings.addWidget(self.preview_language, 0, 8)
-        settings.addWidget(_runtime_field_label("Input"), 0, 9)
+        settings.addWidget(styled_label("Input", tone="muted"), 0, 9)
         self.preview_input = QComboBox()
         self.preview_input.addItems(self.runtime_editor.input_devices)
-        self.preview_input.setMaximumWidth(95)
+        self.preview_input.setMaximumWidth(120)
         self.preview_input.setToolTip(self.runtime_editor.input_tooltip)
         self.preview_input.currentIndexChanged.connect(self._preview_input_changed)
         settings.addWidget(self.preview_input, 0, 10)
         settings.setColumnStretch(11, 1)
 
-        settings.addWidget(_runtime_field_label("Preview scenario"), 1, 1)
+        settings.addWidget(styled_label("Preview scenario", tone="muted"), 1, 1)
         self.preview_scenario = QComboBox()
         self.preview_scenario.setMaximumWidth(420)
         self.preview_scenario.setToolTip(self.runtime_editor.scenario_tooltip)
@@ -566,11 +420,14 @@ class GuiEditor(QWidget):
             self._preview_scenario_changed
         )
         settings.addWidget(self.preview_scenario, 1, 2, 1, 5)
-        self.preview_scenario_status = QLabel("File default")
+        self.preview_scenario_status = styled_label("File default", badge="neutral")
         self.preview_scenario_status.setObjectName("guiScenarioCoverage")
-        settings.addWidget(self.preview_scenario_status, 1, 7, 1, 2)
+        settings.addWidget(
+            self.preview_scenario_status, 1, 7, 1, 2, Qt.AlignmentFlag.AlignLeft
+        )
         self.customize_preview_button = QPushButton("Customize")
         self.customize_preview_button.setProperty("role", "utility")
+        set_style_role(self.customize_preview_button, compact=True)
         self.customize_preview_button.setToolTip(
             "Create preview-only runtime values from the selected state"
         )
@@ -578,6 +435,7 @@ class GuiEditor(QWidget):
         settings.addWidget(self.customize_preview_button, 1, 9)
         self.reset_custom_preview_button = QPushButton("Reset custom")
         self.reset_custom_preview_button.setProperty("role", "utility")
+        set_style_role(self.reset_custom_preview_button, compact=True)
         self.reset_custom_preview_button.setToolTip(
             "Discard the custom preview state without changing the GUI file"
         )
@@ -587,6 +445,7 @@ class GuiEditor(QWidget):
         outer.addWidget(self.preview_settings_panel)
 
         splitter = QSplitter()
+        splitter.setHandleWidth(4)
         self.tree = QTreeWidget()
         self.tree.setHeaderHidden(True)
         self.tree.setMinimumWidth(210)
@@ -647,8 +506,13 @@ class GuiEditor(QWidget):
         self.preview_control_layout.setContentsMargins(7, 7, 7, 7)
         self.preview_control_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         tools = QHBoxLayout()
+        tools.setSpacing(4)
         self.save_preview_preset_button = QPushButton("Save preset")
+        self.save_preview_preset_button.setIcon(line_icon("save"))
         self.load_preview_preset_button = QPushButton("Load preset")
+        self.load_preview_preset_button.setIcon(line_icon("folder_open"))
+        for button in (self.save_preview_preset_button, self.load_preview_preset_button):
+            set_style_role(button, compact=True)
         self.save_preview_preset_button.clicked.connect(self._save_preview_preset)
         self.load_preview_preset_button.clicked.connect(self._load_preview_preset)
         tools.addWidget(self.save_preview_preset_button)
@@ -692,8 +556,13 @@ class GuiEditor(QWidget):
         self.key_table.itemChanged.connect(self._key_changed)
         layout.addWidget(self.key_table, 1)
         buttons = QHBoxLayout()
+        buttons.setSpacing(4)
         self.add_key_button = QPushButton("Add key")
+        self.add_key_button.setIcon(line_icon("add"))
         self.remove_key_button = QPushButton("Remove key")
+        self.remove_key_button.setIcon(line_icon("remove"))
+        for button in (self.add_key_button, self.remove_key_button):
+            set_style_role(button, compact=True)
         self.add_key_button.clicked.connect(self._add_key)
         self.remove_key_button.clicked.connect(self._remove_key)
         buttons.addWidget(self.add_key_button)
@@ -870,21 +739,17 @@ class GuiEditor(QWidget):
 
     def _show_properties(self, node: GuiSceneNode) -> None:
         self._clear_layout(self.property_layout)
-        title = QLabel(node.object.name)
-        font = QFont(title.font())
-        font.setPointSize(font.pointSize() + 2)
-        font.setBold(True)
-        title.setFont(font)
+        title = styled_label(node.object.name, heading="section")
         self.property_layout.addWidget(title)
-        subtitle = QLabel(node.object.type_name.removeprefix("via.gui."))
-        subtitle.setStyleSheet("color: #999")
+        subtitle = styled_label(node.object.type_name.removeprefix("via.gui."), tone="muted", mono=True)
         self.property_layout.addWidget(subtitle)
         binding_layers = self.scene.bindings_for(node)
         imported = node.resource.document is not self.document
         if imported:
-            note = QLabel(
+            note = styled_label(
                 f"Imported from {node.resource.key}. Property edits become local "
-                "overrides; definition edits are localized automatically."
+                "overrides; definition edits are localized automatically.",
+                banner="info",
             )
             note.setWordWrap(True)
             self.property_layout.addWidget(note)
@@ -1113,14 +978,17 @@ class GuiEditor(QWidget):
                 row, pair = divmod(index, components_per_row)
                 label = QLabel(component.upper())
                 label.setObjectName("guiVectorComponentLabel")
+                if component in _AXIS_COMPONENTS:
+                    label.setProperty("axis", _AXIS_COMPONENTS[component])
                 label.setAlignment(
                     Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
                 )
                 layout.addWidget(label, row, pair * 2)
                 field = QDoubleSpinBox()
                 field.setProperty("role", "vectorComponent")
+                field.setProperty("scrub", True)
                 field.setMinimumWidth(44)
-                field.setMaximumWidth(96)
+                field.setMaximumWidth(112)
                 field.setSizePolicy(
                     QSizePolicy.Policy.Ignored,
                     QSizePolicy.Policy.Fixed,
@@ -1891,13 +1759,11 @@ class GuiEditor(QWidget):
             description = "Rendered and editable · drag to move elements"
         self.mode_status.setText(status)
         self.mode_status.setToolTip(description)
-        self.mode_status.setProperty("mode", mode)
-        self.mode_status.setProperty("activity", "playing" if playing else "idle")
+        set_style_role(
+            self.mode_status, badge="success" if playing else _MODE_BADGES.get(mode, "neutral")
+        )
         self.mode_description.setText(description)
         self.mode_description.setToolTip(description)
-        style = self.mode_status.style()
-        style.unpolish(self.mode_status)
-        style.polish(self.mode_status)
         self.mode_status.update()
 
     def _runtime_settings_toggled(self, enabled: bool) -> None:
@@ -2053,15 +1919,17 @@ class GuiEditor(QWidget):
             "Edit custom" if scenario.custom else "Customize"
         )
         if not scenario.custom and not self._customizing_preview:
-            note = QLabel(
+            note = styled_label(
                 "Customize this state to control understood game-runtime values "
-                "without changing the GUI file."
+                "without changing the GUI file.",
+                tone="muted",
             )
             note.setWordWrap(True)
             self.preview_control_body.addWidget(note)
             button = QPushButton("Customize this state")
+            set_style_role(button, variant="primary")
             button.clicked.connect(self._customize_preview)
-            self.preview_control_body.addWidget(button)
+            self.preview_control_body.addWidget(button, 0, Qt.AlignmentFlag.AlignLeft)
             self.preview_control_body.addStretch(1)
             return
         selected_path = (
@@ -2078,13 +1946,14 @@ class GuiEditor(QWidget):
                 selected_path,
             )
         except Exception as exc:
-            note = QLabel(f"Custom preview controls are unavailable: {exc}")
+            note = styled_label(f"Custom preview controls are unavailable: {exc}", banner="warning")
             note.setWordWrap(True)
             self.preview_control_body.addWidget(note)
             return
-        note = QLabel(
+        note = styled_label(
             "Preview-only controls. File properties remain editable in the "
-            "Properties tab and are the only values written into the GUI."
+            "Properties tab and are the only values written into the GUI.",
+            tone="muted",
         )
         note.setWordWrap(True)
         self.preview_control_body.addWidget(note)
@@ -2102,7 +1971,7 @@ class GuiEditor(QWidget):
                 form.addRow(control.label, self._preview_control_widget(control))
             self.preview_control_body.addWidget(box)
         if not controls:
-            empty = QLabel("No understood runtime controls are available here.")
+            empty = styled_label("No understood runtime controls are available here.", tone="subtle")
             empty.setWordWrap(True)
             self.preview_control_body.addWidget(empty)
         self.preview_control_body.addStretch(1)
@@ -2210,9 +2079,7 @@ class GuiEditor(QWidget):
             if scenario.coverage != "File default"
             else "default"
         )
-        self.preview_scenario_status.setProperty("status", status)
-        self.preview_scenario_status.style().unpolish(self.preview_scenario_status)
-        self.preview_scenario_status.style().polish(self.preview_scenario_status)
+        set_style_role(self.preview_scenario_status, badge=_SCENARIO_BADGES.get(status, "neutral"))
         details = [scenario.description, *scenario.issues]
         self.preview_scenario_status.setToolTip("\n".join(details))
         self.preview_scenario.setToolTip(

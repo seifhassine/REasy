@@ -2,6 +2,7 @@ from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QScrollAr
 lazy from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES
 lazy from .material_function_editor import apply_buttons, function_canvas
 from .material_loop import loop_body, loop_properties
+lazy from ui.styles import set_style_role
 
 
 class MaterialLoopDialog(QDialog):
@@ -16,6 +17,7 @@ class MaterialLoopDialog(QDialog):
         root = QVBoxLayout(self)
         note = QLabel(self.tr('The step executes at least once. Continue controls whether another iteration runs. State values receive their selected updates together after each step.'))
         note.setWordWrap(True)
+        set_style_role(note, banner="info")
         root.addWidget(note)
         self.tabs = QTabWidget()
         self.editor = function_canvas(body, self, parent, allow_defaults=False)
@@ -35,6 +37,7 @@ class MaterialLoopDialog(QDialog):
         self.states = {key: value for key, value in self.states.items() if any(p['pin_id'] == key for p in inputs)}
         widget = QWidget()
         form = QFormLayout(widget)
+        form.setContentsMargins(8, 8, 8, 8)
 
         def choice(options, current):
             combo = QComboBox()

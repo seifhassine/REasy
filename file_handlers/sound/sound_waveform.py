@@ -5,9 +5,11 @@ from __future__ import annotations
 import wave
 
 lazy import numpy as np
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QPoint, Qt, Signal
 lazy from PySide6.QtGui import QColor, QPainter, QPen
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QSizePolicy, QWidget
+
+lazy from ui.styles import current_colors
 
 def analyze_wave_activity(wav_path, width, sensitivity=0.52):
     """Return normalized peaks and merged activity ranges for PCM16 WAV audio."""
@@ -166,7 +168,8 @@ class WaveformWidget(QWidget):
         super().__init__(parent)
         self._peaks, self._ranges, self._position = [], [], 0.0
         self._selectable, self._anchor, self._selection = selectable, None, None
-        self.setFixedHeight(60)
+        self.setFixedHeight(76)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         legend = self.tr("Blue: waveform · Green: activity · Dark: silence · Yellow: play position")
         if selectable:
             legend += "\n" + self.tr("Click to seek · Drag to select a range")
@@ -218,27 +221,45 @@ class WaveformWidget(QWidget):
         super().mouseReleaseEvent(event)
 
     def paintEvent(self, _event):
+        colors = current_colors()
         painter = QPainter(self)
         bounds = self.rect().adjusted(0, 0, -1, -1)
-        painter.fillRect(bounds, QColor("#1e1e1e"))
-        painter.setPen(QPen(QColor("#3d3d3d")))
-        painter.drawRect(bounds)
+        painter.fillRect(bounds, QColor(colors["input_bg"]))
         if not self._peaks:
-            painter.setPen(QPen(QColor("#8a8a8a")))
+            painter.setPen(QPen(QColor(colors["border_subtle"])))
+            painter.drawRect(bounds)
+            painter.setPen(QPen(QColor(colors["text_subtle"])))
             painter.drawText(bounds, Qt.AlignCenter, self.tr("Waveform appears after preview"))
             return
         width, middle = max(1, bounds.width()), bounds.center().y()
         for start, end in self._ranges:
             left, right = round(start * width), round(end * width)
             painter.fillRect(left, 1, max(1, right - left), bounds.height() - 1, QColor(39, 76, 49, 150))
+        selection = None
+        if self._selection:
+            left, right = (round(value * width) for value in self._selection)
+            selection = left, max(left + 1, right)
+            fill = QColor(colors["accent"])
+            fill.setAlpha(56)
+            painter.fillRect(left, 1, selection[1] - left, bounds.height() - 1, fill)
+        painter.setPen(QPen(QColor(colors["border_subtle"])))
+        painter.drawLine(1, middle, bounds.right() - 1, middle)
         painter.setPen(QPen(QColor("#7ab6ff")))
         scale = max(1, len(self._peaks) - 1)
         for index, peak in enumerate(self._peaks):
             x, amplitude = round(index * width / scale), round((bounds.height() / 2 - 2) * peak)
             painter.drawLine(x, middle - amplitude, x, middle + amplitude)
-        if self._selection:
-            left, right = (round(value * width) for value in self._selection)
-            painter.fillRect(left, 1, max(1, right - left), bounds.height() - 1, QColor(249, 214, 107, 60))
+        if selection:
+            painter.setPen(QPen(QColor(colors["accent"])))
+            for x in selection:
+                painter.drawLine(x, 1, x, bounds.bottom() - 1)
+        painter.setPen(QPen(QColor(colors["border_subtle"])))
+        painter.drawRect(bounds)
         cursor = round(self._position * width)
-        painter.setPen(QPen(QColor("#f9d66b")))
+        playhead = QColor("#f9d66b")
+        painter.setPen(QPen(playhead))
         painter.drawLine(cursor, 1, cursor, bounds.bottom() - 1)
+        # A cap tells the playhead apart from the selection edges.
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(playhead)
+        painter.drawPolygon([QPoint(cursor - 4, 1), QPoint(cursor + 4, 1), QPoint(cursor, 5)])

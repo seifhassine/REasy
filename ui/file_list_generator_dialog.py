@@ -13,7 +13,8 @@ from PySide6.QtWidgets import (
 )
 lazy from settings import app_settings, remember_setting
 lazy from ui.background_jobs import run_job
-lazy from ui.styles import get_color_scheme
+lazy from ui.editor_widgets import editor_strip, styled_label
+lazy from ui.styles import current_colors
 lazy from tools.file_list_search import format_duration
 from tools.file_list_generator import (
     ExePathExtractor,
@@ -60,13 +61,11 @@ class FileListGeneratorDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(self.tr("File List Generator"))
-        self.resize(920, 780)
-        self.setMinimumSize(720, 680)
+        self.resize(920, 760)
+        self.setMinimumSize(720, 640)
         self._busy = False
         self._analysis_ready = False
-        settings = app_settings(parent) or {}
-        self._colors = get_color_scheme(settings.get("tree_highlight_color"))
-        
+
         self.analyzer = ExtensionAnalyzer()
         self.game_exe_path = None
         self.list_file_path = None
@@ -79,16 +78,12 @@ class FileListGeneratorDialog(QDialog):
         self._create_ui()
         self._search_preferences()
     
-    def _button(self, text, callback, *, height=None, bold=False, tooltip=None):
+    def _button(self, text, callback, *, primary=False, tooltip=None):
         button = QPushButton(text)
         button.clicked.connect(callback)
         button.setAutoDefault(False)
-        if height is not None:
-            button.setMinimumHeight(height)
-        if bold:
-            font = button.font()
-            font.setBold(True)
-            button.setFont(font)
+        if primary:
+            button.setProperty("variant", "primary")
         if tooltip:
             button.setToolTip(tooltip)
         return button
@@ -109,37 +104,41 @@ class FileListGeneratorDialog(QDialog):
         return field, browse
 
     def _create_ui(self):
-        layout = QVBoxLayout(self)
-        self._create_info_section(layout)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        self._create_info_section(root)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+        root.addLayout(layout, 1)
         self._create_config_section(layout)
-        layout.setContentsMargins(18, 18, 18, 14)
-        layout.setSpacing(12)
         self._create_run_button(layout)
         self._create_results_section(layout)
-        self._create_bottom_buttons(layout)
+        self._create_bottom_buttons(layout, root)
         self._update_actions()
-    
+
     def _create_info_section(self, layout):
         info_frame = QFrame()
-        info_frame.setFrameShape(QFrame.NoFrame)
+        info_frame.setProperty("surface", "toolbar")
         info_layout = QVBoxLayout(info_frame)
-        
+        info_layout.setContentsMargins(10, 8, 10, 8)
+
         info_label = QLabel(self.tr(
             "<b>Build and improve game file lists</b><br>"
             "Select a game executable, analyze its extensions, then discover paths or improve an existing list."
         ))
         info_label.setWordWrap(True)
-        info_font = info_label.font()
-        info_font.setPointSize(info_font.pointSize() + 1)
-        info_label.setFont(info_font)
         info_layout.addWidget(info_label)
-        
+
         layout.addWidget(info_frame)
     
     def _create_config_section(self, layout):
         self.config_group = QGroupBox(self.tr("1. Sources and path options"))
         config_layout = QVBoxLayout(self.config_group)
         source_form = QFormLayout()
+        source_form.setHorizontalSpacing(8)
+        source_form.setVerticalSpacing(6)
         config_layout.addLayout(source_form)
 
         self.exe_label, self.browse_exe_btn = self._source_row(
@@ -153,25 +152,16 @@ class FileListGeneratorDialog(QDialog):
             self.tr("Existing list path"), self._browse_list_file, self.clear_list_btn,
         )
 
-        ext_label = QLabel(self.tr("<b>Extensions to analyze:</b> {extensions}").format(
-            extensions=", ".join(self.analyzer.target_extensions)
-        ))
-        ext_label.setWordWrap(True)
-        ext_label.setStyleSheet(f"color: {self._colors['text_muted']};")
-        config_layout.addWidget(ext_label)
-        
-        prefix_layout = QHBoxLayout()
         prefix_label = QLabel(self.tr("Path Prefix:"))
         self.prefix_input = QLineEdit(self.path_prefix)
         self.prefix_input.setPlaceholderText(
             self.tr("e.g., {prefix}").format(prefix="natives/stm/")
         )
         self.prefix_input.textChanged.connect(self._on_prefix_changed)
-        prefix_layout.addWidget(prefix_label)
-        prefix_layout.addWidget(self.prefix_input)
-        config_layout.addLayout(prefix_layout)
+        source_form.addRow(prefix_label, self.prefix_input)
 
         options_layout = QHBoxLayout()
+        options_layout.setSpacing(12)
         self.variation_checkbox = QCheckBox(self.tr("x64 / language variants"))
         self.variation_checkbox.setToolTip(self.tr(
             "Add extra x64/language variations when collecting or extracting paths"
@@ -187,26 +177,33 @@ class FileListGeneratorDialog(QDialog):
         options_layout.addWidget(self.streaming_checkbox)
         options_layout.addStretch()
         config_layout.addLayout(options_layout)
-        
+
+        ext_label = styled_label(self.tr("<b>Extensions to analyze:</b> {extensions}").format(
+            extensions=", ".join(self.analyzer.target_extensions)
+        ), tone="muted")
+        ext_label.setWordWrap(True)
+        config_layout.addWidget(ext_label)
+
         layout.addWidget(self.config_group)
     
     def _create_run_button(self, layout):
         buttons_layout = QHBoxLayout()
-        
-        self.run_btn = self._button(self.tr("Run Analysis"), self._run_analysis, height=40, bold=True)
+        buttons_layout.setSpacing(10)
+
+        self.run_btn = self._button(self.tr("Run Analysis"), self._run_analysis, primary=True)
         buttons_layout.addWidget(self.run_btn)
-        self.status_label = QLabel(self.tr("Select a game executable to begin."))
+        self.status_label = styled_label(self.tr("Select a game executable to begin."), tone="muted")
         self.status_label.setWordWrap(True)
         self.status_label.setTextFormat(Qt.PlainText)
         buttons_layout.addWidget(self.status_label, 1)
         layout.addLayout(buttons_layout)
 
         self.extract_exe_btn = self._button(
-            self.tr("Extract from EXE"), self._extract_paths_from_exe, bold=True,
+            self.tr("Extract from EXE"), self._extract_paths_from_exe,
             tooltip=self.tr("Scan embedded file paths in the selected executable."),
         )
         self.extract_dump_btn = self._button(
-            self.tr("Extract memory dump"), self._extract_paths_from_dump, bold=True,
+            self.tr("Extract memory dump"), self._extract_paths_from_dump,
             tooltip=self.tr("Scan file paths in a saved memory dump or binary file."),
         )
     
@@ -237,33 +234,38 @@ class FileListGeneratorDialog(QDialog):
         self.results_tree.itemDoubleClicked.connect(self._on_item_double_clicked)
         results_layout.addWidget(self.results_tree)
         
-        self.results_hint = QLabel(self.tr("Run analysis to discover extensions. Double-click a Versions cell to edit it."))
+        self.results_hint = styled_label(self.tr("Run analysis to discover extensions. Double-click a Versions cell to edit it."), tone="muted")
         self.results_hint.setWordWrap(True)
         self.results_hint.setTextFormat(Qt.PlainText)
-        self.results_hint.setStyleSheet(f"color: {self._colors['text_muted']};")
         results_layout.addWidget(self.results_hint)
         layout.addWidget(self.results_group, 1)
 
-    def _create_bottom_buttons(self, layout):
+    def _create_bottom_buttons(self, layout, root):
         self.actions_tabs = QTabWidget()
         discovery = QWidget()
         discovery_layout = QVBoxLayout(discovery)
-        discovery_hint = QLabel(self.tr(
+        discovery_layout.setContentsMargins(4, 8, 4, 4)
+        discovery_layout.setSpacing(8)
+        discovery_hint = styled_label(self.tr(
             "Collect referenced paths from the game's PAK files, or scan an executable or memory dump. "
             "Variant options above apply to these discovery actions."
-        ))
+        ), tone="muted")
         discovery_hint.setWordWrap(True)
         discovery_layout.addWidget(discovery_hint)
         discovery_buttons = QHBoxLayout()
+        discovery_buttons.setSpacing(6)
         self.collect_paths_btn = self._button(self.tr("Collect from PAKs"), self._collect_paths)
         for button in (self.collect_paths_btn, self.extract_exe_btn, self.extract_dump_btn):
-            button.setMinimumHeight(36)
             discovery_buttons.addWidget(button)
+        discovery_buttons.addStretch()
         discovery_layout.addLayout(discovery_buttons)
+        discovery_layout.addStretch()
         self.actions_tabs.addTab(discovery, self.tr("Discover paths"))
 
         improve = QWidget()
         improve_layout = QVBoxLayout(improve)
+        improve_layout.setContentsMargins(4, 8, 4, 4)
+        improve_layout.setSpacing(6)
         mode_layout = QHBoxLayout()
         mode_label = QLabel(self.tr("Improvement mode:"))
         self.improver_combo = QComboBox()
@@ -287,7 +289,7 @@ class FileListGeneratorDialog(QDialog):
         self.improver_combo.currentIndexChanged.connect(self._update_improver_description)
         mode_layout.addWidget(mode_label)
         mode_layout.addWidget(self.improver_combo, 1)
-        self.improve_list_btn = self._button(self.tr("Improve and export…"), self._run_selected_improver, height=36)
+        self.improve_list_btn = self._button(self.tr("Improve and export…"), self._run_selected_improver)
         mode_layout.addWidget(self.improve_list_btn)
         improve_layout.addLayout(mode_layout)
         compute_layout = QHBoxLayout()
@@ -335,23 +337,22 @@ class FileListGeneratorDialog(QDialog):
         self.improver_description = QLabel()
         self.improver_description.setWordWrap(True)
         improve_layout.addWidget(self.improver_description)
-        self.improver_requirement = QLabel(self.tr("Requires analysis and an existing list. Results are exported to a file you choose."))
+        self.improver_requirement = styled_label(self.tr("Requires analysis and an existing list. Results are exported to a file you choose."), tone="muted")
         self.improver_requirement.setWordWrap(True)
-        self.improver_requirement.setStyleSheet(f"color: {self._colors['text_muted']};")
         improve_layout.addWidget(self.improver_requirement)
+        improve_layout.addStretch()
         self._update_improver_description(0)
         self.actions_tabs.addTab(improve, self.tr("Improve existing list"))
         layout.addWidget(self.actions_tabs)
 
-        bottom_layout = QHBoxLayout()
+        footer, bottom_layout = editor_strip("footer", (8, 6, 8, 6), -1)
         bottom_layout.addStretch()
-        
+
         self.close_btn = QPushButton(self.tr("Close"))
         self.close_btn.clicked.connect(self.close)
-        self.close_btn.setMinimumWidth(120)
         bottom_layout.addWidget(self.close_btn)
-        
-        layout.addLayout(bottom_layout)
+
+        root.addWidget(footer)
     
     def _browse_game_exe(self):
         file_path, _ = QFileDialog.getOpenFileName(
@@ -591,6 +592,7 @@ class FileListGeneratorDialog(QDialog):
     
     def _display_results(self):
         self.results_tree.clear()
+        colors = current_colors()
         source_labels = {
             "Dumper": self.tr("Dumper"),
             "List": self.tr("List"),
@@ -607,7 +609,7 @@ class FileListGeneratorDialog(QDialog):
             item.setData(1, Qt.UserRole, versions)
             
             color_key = {"Dumper": "success", "List": "info"}.get(source, "text_muted")
-            item.setForeground(2, QColor(self._colors[color_key]))
+            item.setForeground(2, QColor(colors[color_key]))
             for column in range(3):
                 item.setToolTip(column, item.text(column))
             

@@ -7,10 +7,13 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QSignalBlocker, Qt, Signal
 lazy from PySide6.QtGui import (
-    QFont, QKeySequence, QPalette, QShortcut, QStandardItem,
+    QColor, QKeySequence, QShortcut, QStandardItem,
     QStandardItemModel,
 )
 
+lazy from ui.editor_widgets import editor_strip, pane_header, search_field, set_invalid, styled_label, tool_button
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 lazy from utils.number_format import format_full_float
 lazy from file_handlers.sound.sound_waveform import WaveformWidget
 lazy from file_handlers.sound import sound_profile_for_handler
@@ -18,6 +21,9 @@ lazy from file_handlers.msg.msg_sound_player import MsgSoundPreviewSession, conf
 
 
 CHAR_COUNT_TEXT = QT_TRANSLATE_NOOP("MsgViewer", "{count} chars")
+SOUNDID_TOOLTIP = QT_TRANSLATE_NOOP(
+    "MsgViewer", "Resolved through Wwise trigger and event metadata during sound scans"
+)
 
 _AUDIO_LOCALE_PREFERENCES = {
     0: ("ja",), 1: ("en",), 2: ("fr",), 3: ("it",), 4: ("de",),
@@ -52,191 +58,150 @@ class MsgViewer(QWidget):
 
     def _setup_ui(self):
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(4, 4, 4, 4)
-        layout.setSpacing(4)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        header_frame = QFrame()
-        header_frame.setFrameStyle(QFrame.StyledPanel)
-        header_frame.setMaximumHeight(70)
-        header_layout = QVBoxLayout(header_frame)
-        header_layout.setContentsMargins(6, 4, 6, 4)
-        header_layout.setSpacing(3)
+        toolbar, controls_row = editor_strip(margins=(6, 4, 6, 4))
 
-        controls_row = QHBoxLayout()
-        
-        title_label = QLabel("📝")
-        title_font = QFont()
-        title_font.setPointSize(11)
-        title_font.setBold(True)
-        title_label.setFont(title_font)
-        controls_row.addWidget(title_label)
-        
-        self.status_label = QLabel(self.tr("● Ready"))
-        controls_row.addWidget(self.status_label)
-        
-        controls_row.addWidget(self._create_separator())
-        
-        lang_group = QHBoxLayout()
-        lang_group.addWidget(QLabel("🌐"))
+        language_icon = QLabel()
+        language_icon.setPixmap(line_icon("globe").pixmap(16, 16))
+        language_icon.setToolTip(self.tr("Language"))
+        controls_row.addWidget(language_icon)
         self.language_combo = QComboBox()
         self.language_combo.setMinimumWidth(150)
-        
+        self.language_combo.setToolTip(self.tr("Language"))
+
         for i, lang_code in enumerate(self.handler.useLanguages):
             lang_name = self.handler.get_language_name(lang_code)
             self.language_combo.addItem(f"{lang_name} ({lang_code})", i)
-            
+
         self.language_combo.currentIndexChanged.connect(self._on_language_changed)
-        lang_group.addWidget(self.language_combo)
-        controls_row.addLayout(lang_group)
+        controls_row.addWidget(self.language_combo)
 
         controls_row.addWidget(self._create_separator())
 
-        entry_group = QHBoxLayout()
-        self.add_btn = QPushButton("➕")
-        self.add_btn.setToolTip(self.tr("Add Entry"))
-        self.add_btn.setMaximumWidth(35)
-        self.add_btn.clicked.connect(self._on_add_entry)
-        entry_group.addWidget(self.add_btn)
-
-        self.del_btn = QPushButton("🗑️")
-        self.del_btn.setToolTip(self.tr("Delete Entry"))
-        self.del_btn.setMaximumWidth(35)
-        self.del_btn.clicked.connect(self._on_delete_entry)
-        entry_group.addWidget(self.del_btn)
-
-        self.duplicate_btn = QPushButton("📋")
-        self.duplicate_btn.setToolTip(self.tr("Duplicate Entry"))
-        self.duplicate_btn.setMaximumWidth(35)
-        self.duplicate_btn.clicked.connect(self._on_duplicate_entry)
-        entry_group.addWidget(self.duplicate_btn)
-        controls_row.addLayout(entry_group)
+        self.add_btn = tool_button("add", self.tr("Add Entry"), self._on_add_entry)
+        self.del_btn = tool_button("delete", self.tr("Delete Entry"), self._on_delete_entry)
+        self.duplicate_btn = tool_button(
+            "copy", self.tr("Duplicate Entry"), self._on_duplicate_entry
+        )
+        for button in (self.add_btn, self.del_btn, self.duplicate_btn):
+            controls_row.addWidget(button)
 
         controls_row.addWidget(self._create_separator())
 
-        io_group = QHBoxLayout()
-        self.import_btn = QPushButton(self.tr("📥 Import JSON"))
-        self.import_btn.setToolTip(self.tr("Import entries from JSON"))
-        self.import_btn.clicked.connect(self._on_import_json)
-        io_group.addWidget(self.import_btn)
-
-        self.export_btn = QPushButton(self.tr("📤 Export JSON"))
-        self.export_btn.setToolTip(self.tr("Export entries to JSON"))
-        self.export_btn.clicked.connect(self._on_export_json)
-        io_group.addWidget(self.export_btn)
-        controls_row.addLayout(io_group)
+        self.import_btn = tool_button(
+            "import", self.tr("Import entries from JSON"), self._on_import_json, text=self.tr("Import JSON")
+        )
+        controls_row.addWidget(self.import_btn)
+        self.export_btn = tool_button(
+            "export", self.tr("Export entries to JSON"), self._on_export_json, text=self.tr("Export JSON")
+        )
+        controls_row.addWidget(self.export_btn)
 
         controls_row.addWidget(self._create_separator())
 
-        stats_group = QHBoxLayout()
-        self.entry_count_label = QLabel(f"📊 {len(self.handler.entries)}")
-        self.entry_count_label.setToolTip(self.tr("Entry count"))
-        stats_group.addWidget(self.entry_count_label)
-        
-        self.lang_count_label = QLabel(f"🌍 {len(self.handler.useLanguages)}")
-        self.lang_count_label.setToolTip(self.tr("Language count"))
-        stats_group.addWidget(self.lang_count_label)
-        controls_row.addLayout(stats_group)
-
-        controls_row.addWidget(self._create_separator())
-
-        self.scan_sounds_btn = QPushButton(self.tr("🔍 Scan Sounds"))
-        self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
-        self.scan_sounds_btn.clicked.connect(self._on_scan_sounds)
+        self.scan_sounds_btn = tool_button(
+            "sound", self._sound_scan_tooltip(), self._on_scan_sounds, text=self.tr("Scan Sounds")
+        )
         controls_row.addWidget(self.scan_sounds_btn)
 
         controls_row.addStretch()
-        header_layout.addLayout(controls_row)
-        layout.addWidget(header_frame, 0)
 
-        search_frame = QFrame()
-        search_frame.setFrameStyle(QFrame.StyledPanel)
-        search_frame.setMaximumHeight(40)
-        search_layout = QHBoxLayout(search_frame)
-        search_layout.setContentsMargins(6, 3, 6, 3)
-        search_layout.setSpacing(6)
+        self.entry_count_label = styled_label(tone="muted")
+        self.entry_count_label.setToolTip(self.tr("Entry count"))
+        controls_row.addWidget(self.entry_count_label)
+        controls_row.addSpacing(8)
+        self.lang_count_label = styled_label(tone="muted")
+        self.lang_count_label.setToolTip(self.tr("Language count"))
+        controls_row.addWidget(self.lang_count_label)
+        self._update_stats()
 
-        search_label = QLabel("🔍")
-        search_layout.addWidget(search_label)
-        
-        self.search_edit = QLineEdit()
-        self.search_edit.setPlaceholderText(self.tr("Search entries by name, content, or UUID..."))
-        self.search_edit.textChanged.connect(self._on_search_text_changed)
-        search_layout.addWidget(self.search_edit)
+        controls_row.addWidget(self._create_separator())
 
-        self.case_sensitive_cb = QCheckBox(self.tr("Case sensitive"))
-        search_layout.addWidget(self.case_sensitive_cb)
-        self.case_sensitive_cb.toggled.connect(self._perform_search)
-
-        self.clear_search_btn = QPushButton("✖️")
-        self.clear_search_btn.setMaximumWidth(30)
-        self.clear_search_btn.setToolTip(self.tr("Clear search"))
-        self.clear_search_btn.clicked.connect(self._clear_search)
-        search_layout.addWidget(self.clear_search_btn)
-
-        self.search_results_label = QLabel("")
-        self.search_results_label.setMinimumWidth(100)
-        search_layout.addWidget(self.search_results_label)
-        layout.addWidget(search_frame, 0)
+        self.status_label = styled_label(self.tr("Ready"), tone="muted")
+        controls_row.addWidget(self.status_label)
+        layout.addWidget(toolbar, 0)
 
         splitter = QSplitter(Qt.Horizontal)
         splitter.setChildrenCollapsible(False)
 
         tree_widget = QWidget()
         tree_layout = QVBoxLayout(tree_widget)
-        tree_layout.setContentsMargins(4, 4, 4, 4)
-        tree_layout.setSpacing(2)
-        
-        tree_header = QLabel(self.tr("📋 Message Entries"))
-        tree_header_font = QFont()
-        tree_header_font.setBold(True)
-        tree_header.setFont(tree_header_font)
-        tree_layout.addWidget(tree_header)
-        
+        tree_layout.setContentsMargins(0, 0, 0, 0)
+        tree_layout.setSpacing(0)
+
+        self.search_results_label = styled_label("", tone="muted")
+        entries_header = pane_header(self.tr("Message Entries"), self.search_results_label)
+        entries_header.layout().setSpacing(6)
+        tree_layout.addWidget(entries_header)
+
+        search_bar = QWidget()
+        search_layout = QHBoxLayout(search_bar)
+        search_layout.setContentsMargins(6, 6, 6, 6)
+        search_layout.setSpacing(8)
+
+        self.search_edit = search_field(QLineEdit())
+        self.search_edit.setPlaceholderText(self.tr("Search entries by name, content, or UUID..."))
+        self.search_edit.textChanged.connect(self._on_search_text_changed)
+        search_layout.addWidget(self.search_edit, 1)
+
+        self.case_sensitive_cb = QCheckBox(self.tr("Case sensitive"))
+        search_layout.addWidget(self.case_sensitive_cb)
+        self.case_sensitive_cb.toggled.connect(self._perform_search)
+        tree_layout.addWidget(search_bar)
+
         self.tree = QTreeView()
+        self.tree.setStyleSheet("QTreeView { border: none; }")
         self.tree.setEditTriggers(QTreeView.DoubleClicked | QTreeView.EditKeyPressed)
         self.tree.setSelectionBehavior(QTreeView.SelectRows)
         self.tree.setRootIsDecorated(False)
         self.tree.setSortingEnabled(True)
         self.tree.clicked.connect(self._on_tree_clicked)
-        tree_layout.addWidget(self.tree)
-        
+        tree_layout.addWidget(self.tree, 1)
+
         splitter.addWidget(tree_widget)
 
         details_widget = QWidget()
-        details_layout = QVBoxLayout(details_widget)
-        details_layout.setContentsMargins(4, 4, 4, 4)
-        details_layout.setSpacing(4)
-        
-        details_header = QLabel(self.tr("✏️ Entry Details"))
-        details_header_font = QFont()
-        details_header_font.setBold(True)
-        details_header.setFont(details_header_font)
-        details_layout.addWidget(details_header)
+        details_outer = QVBoxLayout(details_widget)
+        details_outer.setContentsMargins(0, 0, 0, 0)
+        details_outer.setSpacing(0)
+        details_outer.addWidget(pane_header(self.tr("Entry Details")))
 
-        info_group = QGroupBox(self.tr("📄 Entry Information"))
+        details_body = QWidget()
+        details_layout = QVBoxLayout(details_body)
+        details_layout.setContentsMargins(8, 6, 8, 8)
+        details_layout.setSpacing(8)
+        details_outer.addWidget(details_body, 1)
+
+        info_group = QGroupBox(self.tr("Entry Information"))
         info_layout = QFormLayout(info_group)
         info_layout.setFieldGrowthPolicy(QFormLayout.ExpandingFieldsGrow)
+        info_layout.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        info_layout.setHorizontalSpacing(8)
+        info_layout.setVerticalSpacing(6)
 
         self.uuid_edit = QLineEdit()
         self.uuid_edit.setPlaceholderText("xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx")
+        self.uuid_edit.setProperty("mono", True)
+        self.uuid_edit.ensurePolished()
+        self.uuid_edit.setMinimumWidth(self.uuid_edit.fontMetrics().horizontalAdvance("0" * 36) + 18)
         self.uuid_edit.textChanged.connect(self._on_uuid_changed)
-        info_layout.addRow("🆔 UUID:", self.uuid_edit)
+        info_layout.addRow(self.tr("UUID:"), self.uuid_edit)
 
         self.name_edit = QLineEdit()
         self.name_edit.setPlaceholderText("Entry name...")
         self.name_edit.textChanged.connect(self._on_name_changed)
-        info_layout.addRow(self.tr("📛 Name:"), self.name_edit)
+        info_layout.addRow(self.tr("Name:"), self.name_edit)
 
         self.soundid_edit = QLineEdit()
         self.soundid_edit.setPlaceholderText("0")
-        self.soundid_edit.setToolTip(self.tr(
-            "Resolved through Wwise trigger and event metadata during sound scans"
-        ))
+        self.soundid_edit.setToolTip(self.tr(SOUNDID_TOOLTIP))
         self.soundid_edit.textChanged.connect(self._on_soundid_changed)
-        info_layout.addRow("🔊 SoundID:", self.soundid_edit)
+        info_layout.addRow(self.tr("SoundID:"), self.soundid_edit)
 
-        self.index_label = QLabel("—")
-        info_layout.addRow("🔢 Index/Hash:", self.index_label)
+        self.index_label = styled_label("—", tone="muted")
+        info_layout.addRow(self.tr("Index/Hash:"), self.index_label)
 
         details_layout.addWidget(info_group)
 
@@ -246,55 +211,61 @@ class MsgViewer(QWidget):
         self.msg_waveform.hide()
         details_layout.addWidget(self.msg_waveform)
 
-        content_group = QGroupBox(self.tr("💬 Content"))
+        content_group = QGroupBox(self.tr("Content"))
         content_layout = QVBoxLayout(content_group)
-        
+        content_layout.setSpacing(4)
+
         content_header = QHBoxLayout()
         content_header.addWidget(QLabel(self.tr("Message text:")))
         content_header.addStretch()
-        
-        self.char_count_label = QLabel(self.tr(CHAR_COUNT_TEXT).format(count=0))
+
+        self.char_count_label = styled_label(self.tr(CHAR_COUNT_TEXT).format(count=0), tone="subtle")
         content_header.addWidget(self.char_count_label)
         content_layout.addLayout(content_header)
-        
+
         self.content_edit = QTextEdit()
-        self.content_edit.setMaximumHeight(100)
-        self.content_edit.setMinimumHeight(60)
+        self.content_edit.setMinimumHeight(80)
         self.content_edit.textChanged.connect(self._on_content_text_changed)
         self.content_edit.textChanged.connect(self._update_char_count)
-        content_layout.addWidget(self.content_edit)
-        details_layout.addWidget(content_group)
+        content_layout.addWidget(self.content_edit, 1)
+        details_layout.addWidget(content_group, 1)
 
-        self.attributes_group = QGroupBox(self.tr("⚙️ Attributes"))
+        self.attributes_group = QGroupBox(self.tr("Attributes"))
         attributes_main_layout = QVBoxLayout(self.attributes_group)
-        
+        attributes_main_layout.setSpacing(4)
+
         attr_controls = QHBoxLayout()
-        self.add_attr_btn = QPushButton(self.tr("➕ Add Attribute"))
+        attr_controls.setSpacing(6)
+        self.add_attr_btn = QPushButton(line_icon("add"), self.tr("Add Attribute"))
+        set_style_role(self.add_attr_btn, compact=True)
         self.add_attr_btn.clicked.connect(self._on_add_attribute)
         attr_controls.addWidget(self.add_attr_btn)
-        
-        self.remove_attr_btn = QPushButton(self.tr("➖ Remove Attribute"))
+
+        self.remove_attr_btn = QPushButton(line_icon("remove", current_colors()["danger"]), self.tr("Remove Attribute"))
+        set_style_role(self.remove_attr_btn, compact=True, variant="danger")
         self.remove_attr_btn.clicked.connect(self._on_remove_attribute)
         attr_controls.addWidget(self.remove_attr_btn)
         attr_controls.addStretch()
-        
+
         attributes_main_layout.addLayout(attr_controls)
-        
+
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setFrameShape(QFrame.NoFrame)
-        
+
         scroll_widget = QWidget()
         self.attributes_layout = QVBoxLayout(scroll_widget)
+        self.attributes_layout.setContentsMargins(0, 0, 0, 0)
+        self.attributes_layout.setSpacing(4)
         self.attributes_layout.addStretch()
-        
+
         scroll_area.setWidget(scroll_widget)
         attributes_main_layout.addWidget(scroll_area)
-        
+
         details_layout.addWidget(self.attributes_group, 1)
 
         splitter.addWidget(details_widget)
-        
+
         splitter.setSizes([800, 500])
         layout.addWidget(splitter, 1)
 
@@ -344,7 +315,7 @@ class MsgViewer(QWidget):
             {"entry_index": entry_index, "field_type": "sound"}, Qt.UserRole
         )
         if not entry.get("name"):
-            name_item.setForeground(QPalette().color(QPalette.Disabled, QPalette.Text))
+            name_item.setForeground(QColor(current_colors()["text_subtle"]))
         return [name_item, preview_item, uuid_item, sound_item]
 
     def _install_tree_model(self, model):
@@ -412,10 +383,6 @@ class MsgViewer(QWidget):
 
     def _show_all_entries(self):
         self._populate_tree()
-
-    def _clear_search(self):
-        self.search_edit.clear()
-        self._show_all_entries()
 
     def _update_search_results(self, matches=None):
         if matches is None:
@@ -487,8 +454,7 @@ class MsgViewer(QWidget):
             self.current_language = 0
         self.language_combo.setCurrentIndex(self.current_language)
         self.language_combo.blockSignals(False)
-        self.entry_count_label.setText(f"📊 {len(self.handler.entries)}")
-        self.lang_count_label.setText(f"🌍 {len(self.handler.useLanguages)}")
+        self._update_stats()
         self._populate_tree()
         self._update_details_panel()
 
@@ -534,6 +500,8 @@ class MsgViewer(QWidget):
         self.soundid_edit.blockSignals(True)
         self.soundid_edit.setText(str(entry.get("SoundID", 0)))
         self.soundid_edit.blockSignals(False)
+        self._set_field_invalid(self.uuid_edit, None)
+        self._set_field_invalid(self.soundid_edit, None, self.tr(SOUNDID_TOOLTIP))
 
         if self.handler._by_hash(self.handler.header["version"]):
             self.index_label.setText(f"Hash: {entry.get('nameHash', 0)}")
@@ -563,6 +531,8 @@ class MsgViewer(QWidget):
         self.uuid_edit.clear()
         self.name_edit.clear()
         self.soundid_edit.clear()
+        self._set_field_invalid(self.uuid_edit, None)
+        self._set_field_invalid(self.soundid_edit, None, self.tr(SOUNDID_TOOLTIP))
         self.content_edit.clear()
         self.index_label.setText("—")
         self.char_count_label.setText(self.tr(CHAR_COUNT_TEXT).format(count=0))
@@ -580,14 +550,15 @@ class MsgViewer(QWidget):
         if not self.handler.userParamNames:
             no_attrs_label = QLabel(self.tr("No attributes defined"))
             no_attrs_label.setObjectName("readOnlyInfo")
+            no_attrs_label.setProperty("tone", "subtle")
             self.attributes_layout.insertWidget(0, no_attrs_label)
             return
-        
+
         for idx, (name, value) in enumerate(zip(self.handler.userParamNames, entry.get("attributes", []))):
             attr_frame = QFrame()
-            attr_frame.setFrameStyle(QFrame.StyledPanel)
             attr_layout = QHBoxLayout(attr_frame)
-            attr_layout.setContentsMargins(5, 5, 5, 5)
+            attr_layout.setContentsMargins(0, 0, 0, 0)
+            attr_layout.setSpacing(6)
             
             name_edit = QLineEdit()
             name_edit.setText(name)
@@ -595,9 +566,7 @@ class MsgViewer(QWidget):
             name_edit.setMaximumWidth(150)
             name_edit.textChanged.connect(lambda v, i=idx: self._on_attribute_name_changed(v, i))
             attr_layout.addWidget(name_edit)
-            
-            attr_layout.addWidget(QLabel(":"))
-            
+
             attr_type = self.handler.userParamTypes[idx] if idx < len(self.handler.userParamTypes) else -1
             
             if attr_type == 0:
@@ -617,10 +586,11 @@ class MsgViewer(QWidget):
             
             attr_layout.addWidget(editor)
             
-            delete_btn = QPushButton("🗑️")
-            delete_btn.setMaximumWidth(30)
-            delete_btn.setToolTip(self.tr("Delete attribute '{name}'").format(name=name))
-            delete_btn.clicked.connect(lambda checked, i=idx, n=name: self._on_delete_single_attribute(i, n))
+            delete_btn = tool_button(
+                "delete",
+                self.tr("Delete attribute '{name}'").format(name=name),
+                lambda checked, i=idx, n=name: self._on_delete_single_attribute(i, n),
+            )
             attr_layout.addWidget(delete_btn)
             
             self.attributes_layout.insertWidget(idx, attr_frame)
@@ -678,12 +648,10 @@ class MsgViewer(QWidget):
             self._update_details_panel()
 
     def _update_stats(self):
-        self.entry_count_label.setText(f"📊 {len(self.handler.entries)}")
-        self.entry_count_label.setToolTip(
+        self.entry_count_label.setText(
             self.tr("Entries: {count}").format(count=len(self.handler.entries))
         )
-        self.lang_count_label.setText(f"🌍 {len(self.handler.useLanguages)}")
-        self.lang_count_label.setToolTip(
+        self.lang_count_label.setText(
             self.tr("Languages: {count}").format(count=len(self.handler.useLanguages))
         )
 
@@ -722,12 +690,18 @@ class MsgViewer(QWidget):
             uuid_item = self.tree.model().item(idx_model.row(), 2)
             if uuid_item:
                 uuid_item.setText(text)
+            self._set_field_invalid(self.uuid_edit, None)
         else:
-            QMessageBox.warning(
-                self,
-                self.tr("Invalid UUID"),
+            self._set_field_invalid(
+                self.uuid_edit,
                 self.tr("Please enter a valid GUID format:\nxxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"),
             )
+
+    @staticmethod
+    def _set_field_invalid(field, message, tooltip=""):
+        invalid = message is not None
+        field.setToolTip(message if invalid else tooltip)
+        set_invalid(field, invalid)
 
     def _on_name_changed(self):
         sel = self.tree.selectionModel()
@@ -898,11 +872,10 @@ class MsgViewer(QWidget):
             self.handler.handle_edit({"entry_index": entry_idx, "field_type": "SoundID"}, text, "", None, self.tree)
             self._invalidate_sound_scan()
             self._set_modified(True)
+            self._set_field_invalid(self.soundid_edit, None, self.tr(SOUNDID_TOOLTIP))
         else:
-            QMessageBox.warning(
-                self,
-                self.tr("Invalid SoundID"),
-                self.tr("Please enter a valid integer value."),
+            self._set_field_invalid(
+                self.soundid_edit, self.tr("Please enter a valid integer value."), self.tr(SOUNDID_TOOLTIP)
             )
 
     def _on_attribute_name_changed(self, text, attr_idx):
@@ -1082,7 +1055,7 @@ class MsgViewer(QWidget):
         self._sound_session.stop()
         self._sound_scan_pending = True
         self.scan_sounds_btn.setEnabled(False)
-        self.scan_sounds_btn.setText(self.tr("🔍 Scanning Sounds…"))
+        self.scan_sounds_btn.setText(self.tr("Scanning Sounds…"))
         self.status_label.setText(self.tr("Scanning exact sound references…"))
         self._sound_session.scan(
             (entry.get("uuid", ""), entry.get("SoundID", 0))
@@ -1095,7 +1068,7 @@ class MsgViewer(QWidget):
         self._sound_catalog = result.catalog
         self._sound_references = result.references
         self.scan_sounds_btn.setEnabled(True)
-        self.scan_sounds_btn.setText(self.tr("🔍 Scan Sounds"))
+        self.scan_sounds_btn.setText(self.tr("Scan Sounds"))
         self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
         self._refresh_sound_column()
 
@@ -1125,7 +1098,7 @@ class MsgViewer(QWidget):
     def _on_sound_scan_failed(self, message: str) -> None:
         self._sound_scan_pending = False
         self.scan_sounds_btn.setEnabled(True)
-        self.scan_sounds_btn.setText(self.tr("🔍 Scan Sounds"))
+        self.scan_sounds_btn.setText(self.tr("Scan Sounds"))
         self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
         self.status_label.setText(self._idle_status_text())
         QMessageBox.warning(self, self.tr("Sound Scan Error"), message)
@@ -1140,7 +1113,7 @@ class MsgViewer(QWidget):
         self._sound_scan_pending = False
         if hasattr(self, "scan_sounds_btn"):
             self.scan_sounds_btn.setEnabled(True)
-            self.scan_sounds_btn.setText(self.tr("🔍 Scan Sounds"))
+            self.scan_sounds_btn.setText(self.tr("Scan Sounds"))
             self.scan_sounds_btn.setToolTip(self._sound_scan_tooltip())
         self._refresh_sound_column()
 
@@ -1311,7 +1284,7 @@ class MsgViewer(QWidget):
             self._sound_session.seek(per_mille)
 
     def _idle_status_text(self) -> str:
-        return self.tr("● Modified") if self.modified else self.tr("● Ready")
+        return self.tr("Modified") if self.modified else self.tr("Ready")
 
     def cleanup(self) -> None:
         self._cleanup_sound()

@@ -1,13 +1,25 @@
 import uuid
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt
 from PySide6.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QTreeWidget, QTreeWidgetItem,
-    QHeaderView, QLabel, QPushButton, QLineEdit, QSpinBox, QFrame, QMessageBox, QFileDialog, QGroupBox
+    QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QTreeWidget, QTreeWidgetItem,
+    QHeaderView, QLabel, QLineEdit, QSpinBox, QFrame, QMessageBox, QFileDialog, QGroupBox
 )
+
+lazy from ui.editor_widgets import set_invalid, styled_label, tool_button
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 
 TEXT_FILE_FILTER = "Text Files (*.txt);;All Files (*)"
 IMPORT_IDS_TITLE = QT_TRANSLATE_NOOP("CfilViewer", "Import IDs")
+_GUID_SAMPLE = "00000000-0000-0000-0000-000000000000"
+
+
+def _setup_guid_editor(editor):
+    editor.setPlaceholderText(_GUID_SAMPLE)
+    editor.setProperty("mono", True)
+    editor.ensurePolished()
+    editor.setFixedWidth(editor.fontMetrics().horizontalAdvance(_GUID_SAMPLE) + 18)
 
 
 class _TreeCellWidget(QWidget):
@@ -52,29 +64,26 @@ class CfilViewer(QWidget):
         layout.setSpacing(8)
 
         header_frame = QFrame()
-        header_layout = QVBoxLayout(header_frame)
-        title_row = QHBoxLayout()
-        title = QLabel(self.tr("🧩 CFIL Editor"))
-        title_row.addWidget(title)
-        title_row.addStretch()
-        header_layout.addLayout(title_row)
+        header_layout = QGridLayout(header_frame)
+        header_layout.setContentsMargins(0, 0, 0, 0)
+        header_layout.setHorizontalSpacing(8)
+        header_layout.setVerticalSpacing(6)
+        header_layout.setColumnStretch(2, 1)
 
-        controls_row = QHBoxLayout()
         self.layer_index_spin = QSpinBox()
         self.layer_index_spin.setRange(0, 255)
         self.layer_index_label = QLabel("Layer Index:")
-        controls_row.addWidget(self.layer_index_label)
-        controls_row.addWidget(self.layer_index_spin)
+        header_layout.addWidget(self.layer_index_label, 0, 0)
+        header_layout.addWidget(self.layer_index_spin, 0, 1, Qt.AlignLeft)
 
         self.layer_guid_edit = QLineEdit()
-        self.layer_guid_edit.setPlaceholderText("00000000-0000-0000-0000-000000000000")
+        _setup_guid_editor(self.layer_guid_edit)
         self.layer_guid_label = QLabel("Layer GUID:")
-        controls_row.addWidget(self.layer_guid_label)
-        controls_row.addWidget(self.layer_guid_edit)
-        controls_row.addStretch()
-        header_layout.addLayout(controls_row)
-        
-        v7_row1 = QHBoxLayout()
+        header_layout.addWidget(self.layer_guid_label, 1, 0)
+        header_layout.addWidget(self.layer_guid_edit, 1, 1, Qt.AlignLeft)
+
+        status_row = QHBoxLayout()
+        status_row.setSpacing(2)
         self.status_edit = QLineEdit()
         self.status_edit.setPlaceholderText("0")
         self.status_edit.setMaximumWidth(150)
@@ -87,45 +96,42 @@ class CfilViewer(QWidget):
         )
         self.status_edit.setToolTip(self.status_tooltip)
         self.status_label = QLabel("Status (uint32):")
-        v7_row1.addWidget(self.status_label)
-        
-        self.status_info_icon = QLabel("ℹ️")
-        self.status_info_icon.setToolTip(self.status_tooltip)
-        self.status_info_icon.setStyleSheet("QLabel { color: #6495ED; font-size: 14px; }")
-        self.status_info_icon.setCursor(Qt.WhatsThisCursor)
-        self.status_info_icon.mousePressEvent = lambda event: self._show_status_info()
-        v7_row1.addWidget(self.status_info_icon)
-        
-        v7_row1.addWidget(self.status_edit)
-        
+        status_row.addWidget(self.status_edit)
+
+        self.status_info_icon = tool_button("info", self.status_tooltip, self._show_status_info)
+        self.status_info_icon.setIcon(line_icon("info", current_colors()["info"]))
+        status_row.addWidget(self.status_info_icon)
+        status_row.addStretch()
+        header_layout.addWidget(self.status_label, 2, 0)
+        header_layout.addLayout(status_row, 2, 1)
+
         self.material_id_guid_edit = QLineEdit()
-        self.material_id_guid_edit.setPlaceholderText("00000000-0000-0000-0000-000000000000")
+        _setup_guid_editor(self.material_id_guid_edit)
         self.material_id_guid_label = QLabel("Material ID GUID:")
-        v7_row1.addWidget(self.material_id_guid_label)
-        v7_row1.addWidget(self.material_id_guid_edit)
-        v7_row1.addStretch()
-        header_layout.addLayout(v7_row1)
+        header_layout.addWidget(self.material_id_guid_label, 3, 0)
+        header_layout.addWidget(self.material_id_guid_edit, 3, 1, Qt.AlignLeft)
+        for label in (
+            self.layer_index_label, self.layer_guid_label, self.status_label, self.material_id_guid_label
+        ):
+            label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            set_style_role(label, tone="muted")
         layout.addWidget(header_frame)
 
         self.mask_group = QGroupBox("Mask GUIDs")
         mask_group_layout = QVBoxLayout(self.mask_group)
-        
-        mask_bar = QHBoxLayout()
-        self.add_mask_btn = QPushButton(self.tr("➕ Add"))
-        self.del_mask_btn = QPushButton(self.tr("🗑️ Remove"))
-        self.up_mask_btn = QPushButton(self.tr("⬆️ Move Up"))
-        self.down_mask_btn = QPushButton(self.tr("⬇️ Move Down"))
-        self.import_mask_btn = QPushButton(self.tr("Import"))
-        self.export_mask_btn = QPushButton(self.tr("Export"))
-        mask_bar.addWidget(self.add_mask_btn)
-        mask_bar.addWidget(self.del_mask_btn)
-        mask_bar.addWidget(self.up_mask_btn)
-        mask_bar.addWidget(self.down_mask_btn)
-        mask_bar.addWidget(self.import_mask_btn)
-        mask_bar.addWidget(self.export_mask_btn)
-        mask_bar.addStretch()
+        mask_group_layout.setSpacing(4)
+
+        (
+            mask_bar,
+            self.add_mask_btn,
+            self.del_mask_btn,
+            self.up_mask_btn,
+            self.down_mask_btn,
+            self.import_mask_btn,
+            self.export_mask_btn,
+        ) = self._create_list_toolbar()
         mask_group_layout.addLayout(mask_bar)
-        
+
         self.mask_tree = QTreeWidget()
         self.mask_tree.setColumnCount(2)
         self.mask_tree.setHeaderLabels([self.tr("Item"), self.tr("Value")])
@@ -134,27 +140,25 @@ class CfilViewer(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.mask_tree.setIndentation(16)
         mask_group_layout.addWidget(self.mask_tree)
-        layout.addWidget(self.mask_group)
-        
+        self._mask_empty_label = self._create_empty_label()
+        mask_group_layout.addWidget(self._mask_empty_label)
+        layout.addWidget(self.mask_group, 1)
+
         self.mat_attr_group = QGroupBox("Material Attribute GUIDs")
         mat_attr_group_layout = QVBoxLayout(self.mat_attr_group)
-        
-        mat_attr_bar = QHBoxLayout()
-        self.add_mat_attr_btn = QPushButton(self.tr("➕ Add"))
-        self.del_mat_attr_btn = QPushButton(self.tr("🗑️ Remove"))
-        self.up_mat_attr_btn = QPushButton(self.tr("⬆️ Move Up"))
-        self.down_mat_attr_btn = QPushButton(self.tr("⬇️ Move Down"))
-        self.import_mat_attr_btn = QPushButton(self.tr("Import"))
-        self.export_mat_attr_btn = QPushButton(self.tr("Export"))
-        mat_attr_bar.addWidget(self.add_mat_attr_btn)
-        mat_attr_bar.addWidget(self.del_mat_attr_btn)
-        mat_attr_bar.addWidget(self.up_mat_attr_btn)
-        mat_attr_bar.addWidget(self.down_mat_attr_btn)
-        mat_attr_bar.addWidget(self.import_mat_attr_btn)
-        mat_attr_bar.addWidget(self.export_mat_attr_btn)
-        mat_attr_bar.addStretch()
+        mat_attr_group_layout.setSpacing(4)
+
+        (
+            mat_attr_bar,
+            self.add_mat_attr_btn,
+            self.del_mat_attr_btn,
+            self.up_mat_attr_btn,
+            self.down_mat_attr_btn,
+            self.import_mat_attr_btn,
+            self.export_mat_attr_btn,
+        ) = self._create_list_toolbar()
         mat_attr_group_layout.addLayout(mat_attr_bar)
-        
+
         self.mat_attr_tree = QTreeWidget()
         self.mat_attr_tree.setColumnCount(2)
         self.mat_attr_tree.setHeaderLabels([self.tr("Item"), self.tr("Value")])
@@ -163,7 +167,9 @@ class CfilViewer(QWidget):
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self.mat_attr_tree.setIndentation(16)
         mat_attr_group_layout.addWidget(self.mat_attr_tree)
-        layout.addWidget(self.mat_attr_group)
+        self._mat_attr_empty_label = self._create_empty_label()
+        mat_attr_group_layout.addWidget(self._mat_attr_empty_label)
+        layout.addWidget(self.mat_attr_group, 1)
 
         self.layer_index_spin.valueChanged.connect(self._on_layer_index_changed)
         self.layer_guid_edit.editingFinished.connect(self._on_layer_guid_edited)
@@ -181,6 +187,46 @@ class CfilViewer(QWidget):
         self.down_mat_attr_btn.clicked.connect(self._on_move_mat_attr_down)
         self.import_mat_attr_btn.clicked.connect(self._on_import_mat_attrs)
         self.export_mat_attr_btn.clicked.connect(self._on_export_mat_attrs)
+        self.mask_tree.itemSelectionChanged.connect(self._update_list_buttons)
+        self.mat_attr_tree.itemSelectionChanged.connect(self._update_list_buttons)
+
+    def _create_list_toolbar(self):
+        bar = QHBoxLayout()
+        bar.setSpacing(2)
+        buttons = []
+        for icon_name, tooltip, text in (
+            ("add", self.tr("Add"), None),
+            ("delete", self.tr("Remove"), None),
+            ("arrow_up", self.tr("Move Up"), None),
+            ("arrow_down", self.tr("Move Down"), None),
+            ("import", None, self.tr("Import")),
+            ("export", None, self.tr("Export")),
+        ):
+            if icon_name == "import":
+                separator = QFrame()
+                separator.setFrameShape(QFrame.VLine)
+                bar.addSpacing(4)
+                bar.addWidget(separator)
+                bar.addSpacing(4)
+            button = tool_button(icon_name, tooltip or "", text=text or "")
+            bar.addWidget(button)
+            buttons.append(button)
+        bar.addStretch()
+        return (bar, *buttons)
+
+    def _create_empty_label(self):
+        label = styled_label(self.tr("No entries. Use Add to create one."), emptyState=True)
+        label.hide()
+        return label
+
+    def _update_list_buttons(self):
+        for tree, buttons in (
+            (self.mask_tree, (self.del_mask_btn, self.up_mask_btn, self.down_mask_btn)),
+            (self.mat_attr_tree, (self.del_mat_attr_btn, self.up_mat_attr_btn, self.down_mat_attr_btn)),
+        ):
+            has_selection = bool(tree.selectedItems())
+            for button in buttons:
+                button.setEnabled(has_selection)
 
     def _refresh_ui_from_model(self):
         cfil = self.handler.cfil
@@ -242,18 +288,24 @@ class CfilViewer(QWidget):
                 widget = self._create_guid_widget(g, i, 'materialAttributeGuids')
                 self.mat_attr_tree.setItemWidget(it, 1, widget)
 
+        for tree, empty_label in (
+            (self.mask_tree, self._mask_empty_label),
+            (self.mat_attr_tree, self._mat_attr_empty_label),
+        ):
+            has_items = tree.topLevelItemCount() > 0
+            tree.setVisible(has_items)
+            empty_label.setVisible(not has_items)
+        self._update_list_buttons()
+
     def _create_guid_widget(self, guid: uuid.UUID, index: int, attr_name: str):
         row_widget = _TreeCellWidget()
         row_layout = QHBoxLayout(row_widget)
         row_layout.setContentsMargins(0, 2, 0, 2)
         row_layout.setSpacing(4)
         editor = QLineEdit(str(guid))
-        editor.setPlaceholderText("00000000-0000-0000-0000-000000000000")
-        sample = "00000000-0000-0000-0000-000000000000"
-        fm = editor.fontMetrics()
-        editor.setFixedWidth(fm.horizontalAdvance(sample) + 16)
+        _setup_guid_editor(editor)
         row_layout.addWidget(editor, 0, Qt.AlignVCenter | Qt.AlignLeft)
-        
+
         def on_text_changed():
             cfil = self.handler.cfil
             if not cfil or cfil.version == 3:
@@ -264,8 +316,10 @@ class CfilViewer(QWidget):
                 if 0 <= index < len(guid_list) and guid_list[index] != val:
                     guid_list[index] = val
                     self._mark_modified()
+                valid = True
             except Exception:
-                pass
+                valid = False
+            set_invalid(editor, not valid)
         
         editor.textChanged.connect(on_text_changed)
         return row_widget

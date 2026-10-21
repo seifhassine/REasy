@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import math
 from collections import Counter
 
-from PySide6.QtCore import Qt, QTimer, Signal
-lazy from PySide6.QtGui import QBrush, QColor, QFont, QPainterPath, QPen
-from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QSizePolicy
+from PySide6.QtCore import QLineF, QRectF, Qt, QTimer, Signal
+lazy from PySide6.QtGui import QBrush, QColor, QFont, QFontMetrics, QPainter, QPainterPath, QPen
+from PySide6.QtWidgets import QGraphicsItem, QGraphicsScene, QGraphicsView, QSizePolicy
+
+lazy from ui.styles import current_colors
 
 
 class EventFlowGraph(QGraphicsView):
@@ -17,21 +20,22 @@ class EventFlowGraph(QGraphicsView):
     node_selected = Signal(str, object)
     node_activated = Signal(str, object)
     _WIDTH, _HEIGHT, _X_GAP, _Y_GAP = 158, 68, 44, 12
+    _HEADER, _GRID = 22, 16
     _COLORS = {
-        "event": ("#67459b", "#a78ad0"),
-        "action": ("#1769aa", "#69afe5"),
-        "object": ("#455a64", "#90a4ae"),
-        "selected": ("#755b19", "#f0c85a"),
-        "any": ("#3b4252", "#7b8496"),
-        "ready": ("#2e7d4f", "#72c095"),
-        "partial": ("#9a6200", "#e0ad4d"),
-        "missing": ("#8f3232", "#dc7373"),
+        "event": "#67459b",
+        "action": "#1769aa",
+        "object": "#455a64",
+        "any": "#3b4252",
+        "ready": "#2e7d4f",
+        "partial": "#9a6200",
+        "missing": "#8f3232",
     }
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setScene(QGraphicsScene(self))
-        self.setBackgroundBrush(QBrush(QColor("#202226")))
+        self.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        self.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
@@ -70,11 +74,42 @@ class EventFlowGraph(QGraphicsView):
             item = item.parentItem()
         return None
 
+    def drawBackground(self, painter, rect):
+        colors = current_colors()
+        painter.fillRect(rect, QColor(colors["canvas_bg"]))
+        scale = self.transform().m11()
+        step = self._GRID
+        if step * scale < 6:
+            step *= 4
+        if step * scale < 6:
+            return
+        major_step = self._GRID * 4
+        minor_lines, major_lines = [], []
+        x = math.floor(rect.left() / step) * step
+        while x <= rect.right():
+            (major_lines if x % major_step == 0 else minor_lines).append(
+                QLineF(x, rect.top(), x, rect.bottom())
+            )
+            x += step
+        y = math.floor(rect.top() / step) * step
+        while y <= rect.bottom():
+            (major_lines if y % major_step == 0 else minor_lines).append(
+                QLineF(rect.left(), y, rect.right(), y)
+            )
+            y += step
+        painter.save()
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        painter.setPen(QPen(QColor(colors["canvas_grid_minor"]), 0))
+        painter.drawLines(minor_lines)
+        painter.setPen(QPen(QColor(colors["canvas_grid_major"]), 0))
+        painter.drawLines(major_lines)
+        painter.restore()
+
     def clear_message(self, message: str):
         self._reset_items()
         self.scene().clear()
         item = self.scene().addText(message)
-        item.setDefaultTextColor(QColor("#c1c5cc"))
+        item.setDefaultTextColor(QColor(current_colors()["text_muted"]))
         item.setPos(16, 16)
         self.scene().setSceneRect(0, 0, 600, 180)
         self.setAlignment(Qt.AlignLeft | Qt.AlignTop)
@@ -114,7 +149,8 @@ class EventFlowGraph(QGraphicsView):
             for node in nodes
         }
         titles = {node["key"]: node["title"] for node in nodes}
-        edge_pen = QPen(QColor("#777e88"), 1.3)
+        colors = current_colors()
+        edge_pen = QPen(QColor(colors["wire"]), 1.3)
         for source, target in valid_edges:
             x1, y1 = positions[source]
             x2, y2 = positions[target]
@@ -134,12 +170,23 @@ class EventFlowGraph(QGraphicsView):
 
         title_font = QFont(self.font())
         title_font.setBold(True)
+        title_metrics = QFontMetrics(title_font)
+        body_brush = QBrush(QColor(colors["node_bg"]))
+        border = colors["node_border"]
+        accent = colors["accent"]
+        title_color, selected_title_color = QColor(colors["text_bright"]), QColor(colors["accent_text"])
+        detail_color = QColor(colors["text_muted"])
+        title_y = (self._HEADER - title_metrics.height()) / 2 + 1
         for node in nodes:
             x, y = positions[node["key"]]
-            fill, outline = self._COLORS.get(node["tone"], self._COLORS["object"])
+            tone = node["tone"]
+            header_color = accent if tone == "selected" else self._COLORS.get(tone, self._COLORS["object"])
             tag = (node["kind"], int(node["object_id"]))
-            width = 2.4 if node.get("selected") else 1.4
-            rect = scene.addRect(x, y, self._WIDTH, self._HEIGHT, QPen(QColor(outline), width), QBrush(QColor(fill)))
+            outline, width = (accent, 2.0) if node.get("selected") else (border, 1.0)
+            body_path = QPainterPath()
+            body_path.addRoundedRect(QRectF(x, y, self._WIDTH, self._HEIGHT), 3, 3)
+            rect = scene.addPath(body_path, QPen(QColor(outline), width), body_brush)
+            rect.setFlag(QGraphicsItem.GraphicsItemFlag.ItemClipsChildrenToShape, True)
             rect.setZValue(1)
             rect.setData(0, tag)
             rect.setToolTip(node["detail"])
@@ -148,17 +195,29 @@ class EventFlowGraph(QGraphicsView):
             self._node_rects[tag] = rect
             if node.get("selected"):
                 self._center_point = (x + self._WIDTH / 2, y + self._HEIGHT / 2)
-            title = scene.addText(node["title"], title_font)
-            title.setZValue(2)
-            title.setDefaultTextColor(QColor("white"))
-            title.setTextWidth(self._WIDTH - 16)
-            title.setPos(x + 7, y + 4)
+            header_path = QPainterPath()
+            header_path.addRoundedRect(QRectF(x, y, self._WIDTH, self._HEADER), 3, 3)
+            square = QPainterPath()
+            square.addRect(QRectF(x, y + self._HEADER / 2, self._WIDTH, self._HEADER / 2))
+            # Children are added through the scene, which owns them; a parented wrapper may not.
+            header = scene.addPath(header_path.united(square), Qt.PenStyle.NoPen, QColor(header_color))
+            header.setParentItem(rect)
+            header.setData(0, tag)
+            header.setToolTip(node["detail"])
+            title = scene.addSimpleText(
+                title_metrics.elidedText(node["title"], Qt.TextElideMode.ElideRight, self._WIDTH - 16),
+                title_font,
+            )
+            title.setParentItem(rect)
+            title.setBrush(selected_title_color if tone == "selected" else title_color)
+            title.setPos(x + 8, y + title_y)
             title.setData(0, tag)
+            title.setToolTip(f"{node['title']}\n{node['detail']}")
             detail = scene.addText(node["detail"])
-            detail.setZValue(2)
-            detail.setDefaultTextColor(QColor("#e1e4e8"))
-            detail.setTextWidth(self._WIDTH - 16)
-            detail.setPos(x + 7, y + 31)
+            detail.setParentItem(rect)
+            detail.setDefaultTextColor(detail_color)
+            detail.setTextWidth(self._WIDTH - 8)
+            detail.setPos(x + 4, y + self._HEADER + 2)
             detail.setData(0, tag)
 
         width = max(x + self._WIDTH for x, _y in positions.values()) + 20
@@ -181,7 +240,7 @@ class EventFlowGraph(QGraphicsView):
             old.setPen(QPen(QColor(old.data(1)), float(old.data(2))))
         self._selected_tag = tag if tag in self._node_rects else None
         if self._selected_tag:
-            self._node_rects[tag].setPen(QPen(QColor("#ffffff"), 3.0))
+            self._node_rects[tag].setPen(QPen(QColor(current_colors()["accent"]), 2.0))
         self._focus_edges(self._selected_tag)
 
     def _queue_node(self, tag, activate=False):
@@ -203,9 +262,10 @@ class EventFlowGraph(QGraphicsView):
         if tag == self._edge_focus_tag:
             return
         self._edge_focus_tag = tag
-        normal = QPen(QColor("#777e88"), 1.3)
-        dim = QPen(QColor("#3f444c"), 1.0)
-        focus = QPen(QColor("#ffd166"), 2.5)
+        colors = current_colors()
+        normal = QPen(QColor(colors["wire"]), 1.3)
+        dim = QPen(QColor(colors["border"]), 1.0)
+        focus = QPen(QColor(colors["accent"]), 2.5)
         for item, source, target in self._edge_items:
             connected = tag is not None and tag in (source, target)
             item.setPen(focus if connected else dim if tag is not None else normal)

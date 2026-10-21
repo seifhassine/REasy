@@ -10,12 +10,14 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFileDialog,
     QFormLayout,
+    QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QSizePolicy,
     QSpinBox,
     QTabWidget,
     QTableWidget,
@@ -31,6 +33,8 @@ lazy from .dxc import dxc_available
 lazy from .hlsl import hlsl_compiler_available
 lazy from .hlsl_target import compile_hlsl_for_target, uses_dxc
 lazy from .state_editor import select_preserved
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 
 def _spin(maximum=0xFFFF) -> QSpinBox:
@@ -105,6 +109,7 @@ class SdfProgramEditor(QWidget):
         self._program_generation = 0
         self._binding_rows: list[tuple[int, int, object, object]] = []
         root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
         self.tabs = QTabWidget()
         root.addWidget(self.tabs)
         self._build_general()
@@ -139,8 +144,11 @@ class SdfProgramEditor(QWidget):
         form.addRow(self.tr("Compute threads/group"), group_host)
         self.general_note = QLabel()
         self.general_note.setWordWrap(True)
+        set_style_role(self.general_note, tone="muted")
         form.addRow(self.general_note)
         button = QPushButton(self.tr("Apply pass settings"))
+        set_style_role(button, variant="primary")
+        button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         button.clicked.connect(self._apply_general)
         form.addRow(button)
         self.tabs.addTab(page, self.tr("Pass setup"))
@@ -155,6 +163,7 @@ class SdfProgramEditor(QWidget):
             )
         )
         note.setWordWrap(True)
+        set_style_role(note, tone="muted")
         layout.addWidget(note)
         self.shaders = QTreeWidget()
         self.shaders.setHeaderLabels(
@@ -170,6 +179,11 @@ class SdfProgramEditor(QWidget):
         self.compile_shader = QPushButton(self.tr("Compile HLSL…"))
         self.export_shader = QPushButton(self.tr("Export…"))
         self.clear_shader = QPushButton(self.tr("Unbind stage"))
+        self.import_shader.setIcon(line_icon("import"))
+        self.compile_shader.setIcon(line_icon("code"))
+        self.export_shader.setIcon(line_icon("export"))
+        self.clear_shader.setIcon(line_icon("remove", current_colors()["danger"]))
+        set_style_role(self.clear_shader, variant="danger")
         self.import_shader.clicked.connect(self._import_shader)
         self.compile_shader.clicked.connect(self._compile_shader)
         self.export_shader.clicked.connect(self._export_shader)
@@ -185,6 +199,7 @@ class SdfProgramEditor(QWidget):
         page = QWidget()
         layout = QVBoxLayout(page)
         note.setWordWrap(True)
+        set_style_role(note, tone="muted")
         layout.addWidget(note)
         table = QTableWidget(0, len(headers))
         table.setHorizontalHeaderLabels(headers)
@@ -196,6 +211,10 @@ class SdfProgramEditor(QWidget):
             if index == 2:
                 buttons.addStretch(1)
             button = QPushButton(label)
+            if index == 2:
+                set_style_role(button, variant="primary")
+            else:
+                button.setIcon(line_icon(("add", "remove")[index]))
             button.clicked.connect(slot)
             buttons.addWidget(button)
         layout.addLayout(buttons)
@@ -224,7 +243,7 @@ class SdfProgramEditor(QWidget):
             self.binding_table.header().setSectionResizeMode(column, QHeaderView.ResizeMode.ResizeToContents)
         self.binding_table.currentItemChanged.connect(self._binding_selected)
         root.addWidget(self.binding_table, 1)
-        metadata_host = QWidget()
+        metadata_host = QGroupBox(self.tr("Interface metadata"))
         metadata_form = QFormLayout(metadata_host)
         self.resource_name = QLineEdit()
         metadata_form.addRow(self.tr("Engine binding name"), self.resource_name)
@@ -243,12 +262,15 @@ class SdfProgramEditor(QWidget):
             )
         )
         self.metadata_note.setWordWrap(True)
+        set_style_role(self.metadata_note, tone="muted")
         metadata_form.addRow(self.metadata_note)
         self.metadata_apply = QPushButton(self.tr("Apply interface metadata"))
+        set_style_role(self.metadata_apply, variant="primary")
+        self.metadata_apply.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.metadata_apply.clicked.connect(self._apply_metadata)
         metadata_form.addRow(self.metadata_apply)
         root.addWidget(metadata_host)
-        form_host = QWidget()
+        form_host = QGroupBox(self.tr("Stage bindings"))
         form = QFormLayout(form_host)
         self.binding_type = QComboBox()
         form.addRow(self.tr("Resource class"), self.binding_type)
@@ -267,6 +289,8 @@ class SdfProgramEditor(QWidget):
             self.stage_enabled.append(enabled)
             self.stage_slots.append(slot)
         self.binding_apply = QPushButton(self.tr("Apply selected binding"))
+        set_style_role(self.binding_apply, variant="primary")
+        self.binding_apply.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self.binding_apply.clicked.connect(self._apply_binding)
         form.addRow(self.binding_apply)
         root.addWidget(form_host)
@@ -396,6 +420,7 @@ class SdfProgramEditor(QWidget):
         self.inputs.setEnabled(layout is not None)
         if layout is None:
             self.input_validation.setText(self.tr("This pass does not define mesh inputs."))
+            set_style_role(self.input_validation, tone="muted")
             return
         for element in layout.elements:
             self._add_input_row(element)
@@ -413,6 +438,7 @@ class SdfProgramEditor(QWidget):
         self.input_validation.setText(
             " · ".join(messages) if messages else self.tr("Layout semantics match reflected vertex inputs.")
         )
+        set_style_role(self.input_validation, tone="warning" if messages else "muted")
 
     def _remove_input_row(self) -> None:
         row = self.inputs.currentRow()

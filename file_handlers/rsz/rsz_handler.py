@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QMessageBox,
     QToolButton,
-    QHBoxLayout,
     QMenu,
     QTabWidget,
 )
@@ -24,7 +23,8 @@ lazy from file_handlers.rsz.rsz_data_types import (
 )
 lazy from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 lazy from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError, RszFolderInfo, RszResourceInfo
-lazy from ui.styles import get_color_scheme, get_tree_stylesheet
+lazy from ui.editor_widgets import editor_strip, tool_button
+lazy from ui.styles import current_colors, get_tree_stylesheet
 lazy from ..pyside.tree_model import DataTreeBuilder
 lazy from ..pyside.tree_core import DeferredChildBuilder
 lazy from ..pyside.tree_widgets import AdvancedTreeView
@@ -192,8 +192,7 @@ class RszHandler(BaseFileHandler):
         if hasattr(self, 'highlight_manager') and self.highlight_manager:
             viewer.tree.highlight_manager = self.highlight_manager
 
-        colors = get_color_scheme()
-        viewer.tree.setStyleSheet(get_tree_stylesheet(colors))
+        viewer.tree.setStyleSheet(get_tree_stylesheet(current_colors()))
         viewer._initialize_editor_services()
         viewer.populate_tree()
 
@@ -378,12 +377,11 @@ class RszViewer(QWidget):
             return
         if self.scene_button is not None:
             return
-        scene_bar = QWidget(self)
+        scene_bar, row = editor_strip(margins=(6, 2, 6, 2))
         scene_bar.setObjectName("rszSceneBar")
-        row = QHBoxLayout(scene_bar)
-        row.setContentsMargins(4, 4, 4, 0)
         row.addStretch(1)
-        self.scene_button = QToolButton(scene_bar)
+        self.scene_button = tool_button("layers", parent=scene_bar)
+        self.scene_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.scene_button.setPopupMode(QToolButton.InstantPopup)
         self.scene_button.setMenu(QMenu(self.scene_button))
         self.scene_button.menu().aboutToShow.connect(self._populate_scene_button_menu)
@@ -1165,11 +1163,18 @@ class RszViewer(QWidget):
         type_name = self._get_embedded_type_name(root_instance_id, rui) if root_instance_id else "UserData"
 
         reference_count = self._count_embedded_rsz_references(rui)
+        colors = current_colors()
         multi_ref_indicator = ""
         if reference_count > 1:
-            multi_ref_indicator = f" <span style='color: #FF00FF;'>(multi-reference: {reference_count})</span>"
+            multi_ref_indicator = (
+                f" <span style='color: {colors['warning']};'>(multi-reference: {reference_count})</span>"
+            )
             rui.reference_count = reference_count
-        root_node = DataTreeBuilder.create_data_node(f"{field_name}: {type_name} <span style='color: #FFFF00;'>(embedded RSZ)</span>{multi_ref_indicator}", "")
+        root_node = DataTreeBuilder.create_data_node(
+            f"{field_name}: {type_name} <span style='color: {colors['info']};'>(embedded RSZ)</span>"
+            f"{multi_ref_indicator}",
+            "",
+        )
         
         hierarchy = getattr(rui, 'embedded_instance_hierarchy', None)
         if not hierarchy and hasattr(rui, 'embedded_instances'):

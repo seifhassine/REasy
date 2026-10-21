@@ -1,5 +1,6 @@
 from pathlib import Path
 
+lazy from PySide6.QtCore import QCoreApplication
 lazy from PySide6.QtWidgets import QMessageBox
 
 
@@ -53,12 +54,13 @@ class RszEnumPromptController:
         if expected and expected != current:
             ans = QMessageBox.question(
                 app,
-                "Enum Mismatch Detected",
-                (
-                    f"The selected type registry appears to be for {expected}, "
-                    f"but enums are set to {current}.\n\n"
-                    f"Switch enums to {expected}?"
-                ),
+                QCoreApplication.translate("RszEnumPromptController", "Enum Mismatch Detected"),
+                QCoreApplication.translate(
+                    "RszEnumPromptController",
+                    "The selected type registry appears to be for {expected}, "
+                    "but enums are set to {current}.\n\n"
+                    "Switch enums to {expected}?",
+                ).format(expected=expected, current=current),
                 QMessageBox.Yes | QMessageBox.No,
             )
             if ans == QMessageBox.Yes:

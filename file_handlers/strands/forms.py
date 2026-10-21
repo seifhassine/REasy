@@ -17,6 +17,8 @@ from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QCompleter, Q
 
 from file_handlers.clsp.clsp_file import CollisionShape, ShapeKind
 
+lazy from ui.editor_widgets import set_invalid
+lazy from ui.styles import set_style_role
 lazy from .gpus import AnimationCurve, CurveKey, GpuStrandsPreset
 
 _CONTEXT = "StrandForms"
@@ -129,8 +131,19 @@ def _tag(text: str) -> int | None:
     return value if 0 <= value < 1 << 64 else None
 
 
+def _hex_field(text: str) -> QLineEdit:
+    edit = QLineEdit(text)
+    set_style_role(edit, mono=True)
+    edit.textChanged.connect(partial(_mark_tag, edit))
+    return edit
+
+
+def _mark_tag(edit: QLineEdit, text: str) -> None:
+    set_invalid(edit, _tag(text) is None)
+
+
 def tag_edit(get, put) -> QLineEdit:
-    edit = QLineEdit(f"{get():016X}")
+    edit = _hex_field(f"{get():016X}")
     edit.setToolTip(translate("StrandForms", "The tag bits, in hexadecimal: a collider collides with the strands "
                                              "when its tag and their physics preset's share a bit."))
 
@@ -503,7 +516,7 @@ class NewColliderDialog(QDialog):
         self._end_chosen = False
         self.joint.chosen.connect(lambda name: self._end_chosen or self.end_joint.setCurrentText(name))
         self.end_joint.chosen.connect(lambda _name: setattr(self, "_end_chosen", True))
-        self.tag = QLineEdit(f"{tag:016X}")
+        self.tag = _hex_field(f"{tag:016X}")
         self.tag.setToolTip(translate("StrandForms", "The tag bits, in hexadecimal: a collider collides with the "
                                                      "strands when its tag and their physics preset's share a bit."))
         self.size = QDoubleSpinBox()
@@ -553,7 +566,7 @@ class PresetImportDialog(QDialog):
         layout.addWidget(QLabel(self.tr("{name} replaces the set's preset whole, saved at the set's preset path. Its "
                                         "collision tag:").format(name=name)))
         self.choices = QButtonGroup(self)
-        self.typed = QLineEdit(f"{kept:016X}")
+        self.typed = _hex_field(f"{kept:016X}")
         for number, text in enumerate((self.tr("The set's, kept: {tag:016X}").format(tag=kept),
                                        self.tr("The preset's own: {tag:016X}").format(tag=imported),
                                        self.tr("This one:"))):

@@ -12,6 +12,8 @@ import uuid
 
 lazy from utils.number_format import format_float_sequence, format_full_float
 lazy from file_handlers.uvar import TypeKind, UvarFlags, Vec3, Int3, Uint3
+lazy from file_handlers.pyside.value_widgets import AxisLineEdit
+lazy from ui.editor_widgets import styled_label
 
 
 VALUE_LABEL_TEXT = QT_TRANSLATE_NOOP(
@@ -35,10 +37,11 @@ class UvarValueEditDialog(QDialog):
         
         # Main layout
         layout = QVBoxLayout(self)
-        
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
         # Type label
-        type_label = QLabel(self.tr("Type: {type}").format(type=var_type.name))
-        type_label.setStyleSheet("font-weight: bold; color: #4EC9B0;")
+        type_label = styled_label(self.tr("Type: {type}").format(type=var_type.name), heading="section")
         layout.addWidget(type_label)
         
         # Create type-specific input widget
@@ -59,7 +62,8 @@ class UvarValueEditDialog(QDialog):
         
         container = QWidget()
         layout = QHBoxLayout(container)
-        layout.setContentsMargins(0, 10, 0, 10)
+        layout.setContentsMargins(0, 4, 0, 4)
+        layout.setSpacing(6)
         
         # Check if this is a vector type based on flags
         is_vec3_flag = bool(self.var_flags & UvarFlags.IsVec3) if self.var_flags else False
@@ -111,6 +115,7 @@ class UvarValueEditDialog(QDialog):
                 placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
                 minimum_width=280,
             )
+            self.input.setProperty("mono", True)
             
         elif var_type in (TypeKind.Vec2, TypeKind.Vec3, TypeKind.Vec4):
             self._create_vector_input(
@@ -196,7 +201,7 @@ class UvarValueEditDialog(QDialog):
         self.inputs = []
         for component, value in zip(('X', 'Y', 'Z'), values):
             layout.addWidget(QLabel(f"{component}:"))
-            input_field = QLineEdit()
+            input_field = AxisLineEdit(component.lower())
             if var_type == type_kind.Single:
                 input_field.setValidator(QDoubleValidator())
                 input_field.setText(format_full_float(value, 8))
@@ -237,7 +242,7 @@ class UvarValueEditDialog(QDialog):
         self.inputs = []
         for component, value in zip(('X', 'Y', 'Z', 'W'), values):
             layout.addWidget(QLabel(f"{component}:"))
-            input_field = QLineEdit()
+            input_field = AxisLineEdit(component.lower())
             input_field.setValidator(QDoubleValidator())
             input_field.setText(format_full_float(value, 8))
             input_field.setMaximumWidth(100)

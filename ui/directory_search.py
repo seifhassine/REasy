@@ -30,9 +30,12 @@ lazy from PySide6.QtWidgets import (
     QComboBox,
     QDialogButtonBox,
     QPushButton,
+    QStackedWidget,
 )
 
 lazy from file_handlers.msg.msg_handler import MsgHandler
+lazy from ui.editor_widgets import editor_strip, styled_label
+lazy from ui.styles import set_style_role
 lazy from app_config import GAMES
 lazy from utils.binary_search import create_binary_matcher, create_search_patterns
 lazy from file_handlers.pak.reader import CachedPakReader
@@ -75,15 +78,20 @@ def create_hex_search_dialog(parent):
     """Custom dialog for hex search with byte order option"""
     dialog = QDialog(parent)
     dialog.setWindowTitle(QCoreApplication.translate("DirectorySearch", "Hex Search"))
+    dialog.setMinimumWidth(420)
     layout = QVBoxLayout(dialog)
+    layout.setContentsMargins(12, 12, 12, 12)
+    layout.setSpacing(8)
 
     label = QLabel(QCoreApplication.translate(
         "DirectorySearch",
         "Enter hexadecimal bytes (e.g., FF A9 00 3D or FFA9003D):",
     ))
     layout.addWidget(label)
-    
+
     hex_input = QLineEdit()
+    hex_input.setPlaceholderText("FF A9 00 3D")
+    set_style_role(hex_input, mono=True)
     layout.addWidget(hex_input)
 
     byte_order_check = QCheckBox(
@@ -109,7 +117,10 @@ def create_hex_search_dialog(parent):
 def create_integer_search_dialog(parent):
     dialog = QDialog(parent)
     dialog.setWindowTitle(QCoreApplication.translate("DirectorySearch", "Integer Search"))
+    dialog.setMinimumWidth(420)
     layout = QVBoxLayout(dialog)
+    layout.setContentsMargins(12, 12, 12, 12)
+    layout.setSpacing(6)
 
     integer_types = (
         ("int32", -(2**31), 2**31 - 1),
@@ -133,8 +144,11 @@ def create_integer_search_dialog(parent):
 
     value_label = QLabel()
     value_input = QLineEdit()
+    set_style_role(value_input, mono=True)
+    layout.addSpacing(4)
     layout.addWidget(value_label)
     layout.addWidget(value_input)
+    layout.addSpacing(4)
 
     def update_limits():
         _, minimum, maximum = integer_types[type_combo.currentIndex()]
@@ -278,9 +292,28 @@ def search_items_with_progress(
     results_dialog.setWindowTitle(
         QCoreApplication.translate("DirectorySearch", "Search Results")
     )
-    results_dialog.resize(600, 400)
+    results_dialog.resize(680, 440)
     layout = QVBoxLayout(results_dialog)
-    layout.addWidget(QLabel(rtext))
+    layout.setContentsMargins(0, 0, 0, 0)
+    layout.setSpacing(0)
+
+    header, header_layout = editor_strip("toolbar", (8, 6, 8, 6), 8)
+    query_label = QLabel(rtext)
+    query_label.setWordWrap(True)
+    header_layout.addWidget(query_label, 1)
+    count_label = styled_label(
+        QCoreApplication.translate("DirectorySearch", "Matches: {count}").format(count=0),
+        tone="muted",
+    )
+    header_layout.addWidget(count_label, 0, Qt.AlignTop)
+    layout.addWidget(header)
+
+    body = QVBoxLayout()
+    body.setContentsMargins(6, 6, 6, 6)
+    body.setSpacing(6)
+    layout.addLayout(body, 1)
+    results_stack = QStackedWidget()
+    body.addWidget(results_stack, 1)
 
     def handle_copy(self, event: QKeyEvent):
         if event.matches(QKeySequence.Copy):
@@ -292,7 +325,11 @@ def search_items_with_progress(
     result_list = QListWidget()
     result_list.setSelectionMode(QListWidget.ExtendedSelection)
     result_list.keyPressEvent = handle_copy.__get__(result_list, QListWidget)
-    
+    result_list.setToolTip(QCoreApplication.translate(
+        "DirectorySearch", "Double-click a file to open it. Ctrl+C copies the selected paths."
+    ))
+    set_style_role(result_list, mono=True)
+
     def handle_double_click(item):
         entry_data = item.data(Qt.UserRole)
         try:
@@ -302,7 +339,9 @@ def search_items_with_progress(
             pass
 
     result_list.itemDoubleClicked.connect(handle_double_click)
-    layout.addWidget(result_list)
+    results_stack.addWidget(result_list)
+    empty_label = styled_label(QCoreApplication.translate("DirectorySearch", "No matching files."), emptyState=True)
+    results_stack.addWidget(empty_label)
 
     if result_actions:
         actions_row = QHBoxLayout()
@@ -311,7 +350,7 @@ def search_items_with_progress(
             btn = QPushButton(label)
             btn.clicked.connect(lambda _=False, fn=action_fn: fn(result_list))
             actions_row.addWidget(btn)
-        layout.addLayout(actions_row)
+        body.addLayout(actions_row)
 
     result_queue = queue.Queue()
     cancel_event = threading.Event()
@@ -342,6 +381,11 @@ def search_items_with_progress(
                 result_item = QListWidgetItem(label)
                 result_item.setData(Qt.UserRole, entry_data)
                 result_list.addItem(result_item)
+                count_label.setText(
+                    QCoreApplication.translate("DirectorySearch", "Matches: {count}").format(
+                        count=result_list.count()
+                    )
+                )
         except queue.Empty:
             continue
 
@@ -351,6 +395,8 @@ def search_items_with_progress(
 
     progress.close()
     if not cancel_event.is_set():
+        if not result_list.count():
+            results_stack.setCurrentWidget(empty_label)
         results_dialog.show()
 
 

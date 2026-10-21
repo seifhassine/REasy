@@ -10,7 +10,19 @@ from PySide6.QtWidgets import QGraphicsScene, QGraphicsView, QSizePolicy, QWidge
 
 lazy from .models import RESOURCE_KINDS, STAGE_KEYS, SdfProgram
 lazy from .sdf_file import write_channels
+lazy from .shader_graph_editor import draw_canvas_grid, paint_node_card
+lazy from ui.styles import current_colors, qcolor
 
+STAGE_COLORS = {
+    "input": "#6fb6df",
+    "shader": "#ac8de5",
+    "state": "#d7ad58",
+    "output": "#6bc69c",
+    "resource": "#8599a6",
+    "compute": "#d283c1",
+    "absent": "#515861",
+    "neutral": "#68727c",
+}
 
 _STAGE_TITLES = {
     "vertex": QT_TRANSLATE_NOOP("SdfPipelineGraph", "Vertex shader"),
@@ -31,35 +43,28 @@ class SdfPipelineGraph(QGraphicsView):
     _WIDTH = 154
     _HEIGHT = 72
     _GAP = 38
-    _COLORS = {
-        "input": ("#315e7d", "#6fb6df"),
-        "shader": ("#553b83", "#ac8de5"),
-        "state": ("#674d22", "#d7ad58"),
-        "output": ("#276148", "#6bc69c"),
-        "resource": ("#34434d", "#8599a6"),
-        "compute": ("#6b3d61", "#d283c1"),
-        "absent": ("#292d32", "#515861"),
-    }
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setScene(QGraphicsScene(self))
-        self.setBackgroundBrush(QBrush(QColor("#1d2024")))
         self.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
-        self.setMinimumHeight(310)
+        self.setMinimumHeight(200)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self._nodes: dict[str, object] = {}
         self.clear_message(self.tr("Select a program to see its executable pipeline."))
+
+    def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
+        draw_canvas_grid(painter, rect)
 
     def clear_message(self, message: str) -> None:
         scene = self.scene()
         scene.clear()
         item = scene.addText(message)
-        item.setDefaultTextColor(QColor("#c8cdd4"))
+        item.setDefaultTextColor(QColor(current_colors()["text_muted"]))
         item.setPos(18, 18)
         scene.setSceneRect(0, 0, 720, 200)
         self._nodes.clear()
@@ -78,36 +83,48 @@ class SdfPipelineGraph(QGraphicsView):
 
     def _node(self, key: str, title: str, detail: str, x: float, y: float, tone: str, payload=None):
         scene = self.scene()
-        fill, outline = self._COLORS[tone]
+        colors = current_colors()
         node_path = QPainterPath()
-        node_path.addRoundedRect(QRectF(x, y, self._WIDTH, self._HEIGHT), 8, 8)
-        rect = scene.addPath(
-            node_path,
-            QPen(QColor(outline), 1.5),
-            QBrush(QColor(fill)),
+        node_path.addRoundedRect(QRectF(x, y, self._WIDTH, self._HEIGHT), 4, 4)
+        rect = scene.addPath(node_path, QPen(Qt.PenStyle.NoPen), QBrush(QColor(colors["node_bg"])))
+        header_path = QPainterPath()
+        header_path.addRect(QRectF(x, y, self._WIDTH, 26))
+        band_path = QPainterPath()
+        band_path.addRect(QRectF(x, y, self._WIDTH, 3))
+        parts = (
+            scene.addPath(node_path.intersected(header_path), QPen(Qt.PenStyle.NoPen),
+                          QBrush(QColor(colors["node_header"]))),
+            scene.addPath(node_path.intersected(band_path), QPen(Qt.PenStyle.NoPen),
+                          QBrush(QColor(STAGE_COLORS[tone]))),
+            scene.addPath(node_path, QPen(QColor(colors["node_border"]), 1.0), QBrush(Qt.BrushStyle.NoBrush)),
         )
-        rect.setData(0, (key, payload))
-        rect.setToolTip(detail)
+        for part in (rect, *parts):
+            part.setData(0, (key, payload))
+            part.setToolTip(detail)
+            part.setCursor(Qt.CursorShape.PointingHandCursor)
         title_font = QFont(self.font())
         title_font.setBold(True)
         label = scene.addText(title, title_font)
-        label.setDefaultTextColor(QColor("white"))
+        label.setDefaultTextColor(QColor(colors["text_bright"]))
         label.setTextWidth(self._WIDTH - 14)
-        label.setPos(x + 7, y + 5)
+        label.setPos(x + 6, y + 2)
         label.setData(0, (key, payload))
+        label.setCursor(Qt.CursorShape.PointingHandCursor)
         sub = scene.addText(detail)
-        sub.setDefaultTextColor(QColor("#d5d9de"))
+        sub.setDefaultTextColor(QColor(colors["text_muted"]))
         sub.setTextWidth(self._WIDTH - 14)
-        sub.setPos(x + 7, y + 32)
+        sub.setPos(x + 6, y + 28)
         sub.setData(0, (key, payload))
+        sub.setCursor(Qt.CursorShape.PointingHandCursor)
         self._nodes[key] = rect
         return rect
 
-    def _edge(self, source: str, target: str, *, color="#77818b") -> None:
+    def _edge(self, source: str, target: str, *, color="") -> None:
         left = self._nodes.get(source)
         right = self._nodes.get(target)
         if left is None or right is None:
             return
+        color = color or current_colors()["wire"]
         a, b = left.sceneBoundingRect(), right.sceneBoundingRect()
         vertically_aligned = abs(a.center().x() - b.center().x()) < self._WIDTH * 0.5
         if vertically_aligned:
@@ -419,7 +436,7 @@ class PipelineStatePreview(QWidget):
         self._program: SdfProgram | None = None
         self._render_target_index = 0
         self._state_overrides: dict[str, dict[str, object]] = {}
-        self.setMinimumSize(620, 260)
+        self.setMinimumSize(480, 220)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
     def set_program(self, program: SdfProgram | None) -> None:
@@ -439,24 +456,24 @@ class PipelineStatePreview(QWidget):
         self.update()
 
     def _panel(self, painter: QPainter, rect: QRectF, title: str) -> QRectF:
-        painter.setPen(QPen(QColor("#4f5863"), 1))
-        painter.setBrush(QColor("#252a30"))
-        painter.drawRoundedRect(rect, 7, 7)
-        painter.setPen(QColor("#e5e8ec"))
+        paint_node_card(painter, rect, 26)
+        painter.setPen(QColor(current_colors()["text_bright"]))
         font = painter.font()
         font.setBold(True)
         painter.setFont(font)
-        painter.drawText(rect.adjusted(12, 7, -8, -4), Qt.AlignmentFlag.AlignTop, title)
+        painter.drawText(QRectF(rect.left() + 10, rect.top(), rect.width() - 18, 26),
+                         Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, title)
         font.setBold(False)
         painter.setFont(font)
-        return rect.adjusted(12, 34, -12, -10)
+        return rect.adjusted(12, 36, -12, -10)
 
     def paintEvent(self, _event):
+        colors = current_colors()
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        painter.fillRect(self.rect(), QColor("#1b1e22"))
+        painter.fillRect(self.rect(), QColor(colors["canvas_bg"]))
         if self._program is None:
-            painter.setPen(QColor("#c8cdd4"))
+            painter.setPen(QColor(colors["text_muted"]))
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, self.tr("Select a program."))
             return
         margin, gap = 10.0, 10.0
@@ -476,21 +493,18 @@ class PipelineStatePreview(QWidget):
             ),
         )
         if self._state_overrides:
-            badge = QRectF(self.width() - 155, 16, 137, 25)
-            painter.setPen(QPen(QColor("#d7ad58"), 1))
-            painter.setBrush(QColor("#4e3a19"))
-            painter.drawRoundedRect(badge, 12, 12)
-            painter.setPen(QColor("#f2dcac"))
-            painter.drawText(
-                badge,
-                Qt.AlignmentFlag.AlignCenter,
-                self.tr("LIVE · NOT APPLIED"),
-            )
+            text = self.tr("Live · not applied")
+            width = painter.fontMetrics().horizontalAdvance(text) + 16
+            badge = QRectF(self.width() - margin - width - 6, margin + 4, width, 18)
+            painter.setPen(QPen(QColor(colors["warning"]), 1))
+            painter.setBrush(qcolor(colors["warning_soft"]))
+            painter.drawRoundedRect(badge, 3, 3)
+            painter.drawText(badge, Qt.AlignmentFlag.AlignCenter, text)
 
     def _paint_raster(self, painter: QPainter, rect: QRectF) -> None:
         state = self._program.rasterizer_state
         if state is None:
-            painter.setPen(QColor("#aeb4bb"))
+            painter.setPen(QColor(current_colors()["text_muted"]))
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.tr("No rasterizer state"))
             return
         override = self._state_overrides.get("rasterizer", {})
@@ -540,13 +554,13 @@ class PipelineStatePreview(QWidget):
             flags.append("MSAA")
         if value("antialiased_line_enable"):
             flags.append("AA lines")
-        painter.setPen(QColor("#c9ced5"))
+        painter.setPen(QColor(current_colors()["text_muted"]))
         painter.drawText(rect.adjusted(0, rect.height() - 42, 0, 0), Qt.TextFlag.TextWordWrap, " · ".join(flags))
 
     def _paint_depth(self, painter: QPainter, rect: QRectF) -> None:
         state = self._program.depth_stencil_state
         if state is None:
-            painter.setPen(QColor("#aeb4bb"))
+            painter.setPen(QColor(current_colors()["text_muted"]))
             painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, self.tr("No depth/stencil state"))
             return
         override = self._state_overrides.get("depth", {})
@@ -556,14 +570,14 @@ class PipelineStatePreview(QWidget):
         bar = QRectF(rect.left() + 5, rect.top() + 12, rect.width() - 10, 34)
         painter.setBrush(QColor("#314157"))
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.drawRoundedRect(bar, 5, 5)
+        painter.drawRoundedRect(bar, 3, 3)
         marker_x = bar.left() + stored_depth * bar.width()
         source_x = bar.left() + source_depth * bar.width()
         painter.setPen(QPen(QColor("#8fb2dd"), 3))
         painter.drawLine(QPointF(marker_x, bar.top()), QPointF(marker_x, bar.bottom()))
         painter.setPen(QPen(QColor("#efb45d"), 3))
         painter.drawLine(QPointF(source_x, bar.top()), QPointF(source_x, bar.bottom()))
-        painter.setPen(QColor("#d8dde3"))
+        painter.setPen(QColor(current_colors()["text"]))
         verdict = self.tr("fragment passes") if accepted else self.tr("fragment rejected")
         painter.drawText(
             QRectF(rect.left(), bar.bottom() + 9, rect.width(), 24),
@@ -579,7 +593,7 @@ class PipelineStatePreview(QWidget):
             status.append("stencil disabled")
         if value("depth_bounds_test_enable"):
             status.append("depth bounds")
-        painter.setPen(QColor("#c9ced5"))
+        painter.setPen(QColor(current_colors()["text_muted"]))
         painter.drawText(rect.adjusted(0, 96, 0, 0), Qt.TextFlag.TextWordWrap, "\n".join(status))
 
     def _paint_blend(self, painter: QPainter, rect: QRectF) -> None:
@@ -608,10 +622,10 @@ class PipelineStatePreview(QWidget):
         for index, (label, color) in enumerate(labels):
             x = rect.left() + index * (swatch_width + 7)
             swatch = QRectF(x, rect.top() + 10, swatch_width, 55)
-            painter.setPen(QColor("#707984"))
+            painter.setPen(QColor(current_colors()["border_strong"]))
             painter.setBrush(QColor.fromRgbF(*color))
-            painter.drawRoundedRect(swatch, 4, 4)
-            painter.setPen(QColor("#d8dde3"))
+            painter.drawRoundedRect(swatch, 3, 3)
+            painter.setPen(QColor(current_colors()["text"]))
             painter.drawText(QRectF(x, swatch.bottom() + 3, swatch_width, 22), Qt.AlignmentFlag.AlignCenter, label)
         if target is None:
             detail = "no blend state"
@@ -623,7 +637,7 @@ class PipelineStatePreview(QWidget):
                 f"A: {target.source_alpha_blend} {target.alpha_blend_operation} {target.destination_alpha_blend}\n"
                 f"write {target.write_channels}"
             )
-        painter.setPen(QColor("#c9ced5"))
+        painter.setPen(QColor(current_colors()["text_muted"]))
         painter.drawText(rect.adjusted(0, 100, 0, 0), Qt.TextFlag.TextWordWrap, detail)
 
 

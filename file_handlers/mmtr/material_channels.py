@@ -6,6 +6,8 @@ from PySide6.QtWidgets import (
 )
 
 lazy from .pass_purpose import purpose_title
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 
 
 translate = QCoreApplication.translate
@@ -93,6 +95,7 @@ class ChannelPanel(QWidget):
         note = QLabel(self.tr("Each channel is a value the shader writes. Show one on the node, then put nodes "
                               "between the master's output and the surface's input to change it."))
         note.setWordWrap(True)
+        set_style_role(note, tone="muted")
         layout.addWidget(note)
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels((self.tr("Channel"), self.tr("Type"), self.tr("Passes"), self.tr("Drawn for")))
@@ -100,6 +103,7 @@ class ChannelPanel(QWidget):
         layout.addWidget(self.tree)
         buttons = QHBoxLayout()
         self.restore = QPushButton(self.tr("Restore Original"))
+        self.restore.setIcon(line_icon("reset"))
         self.restore.setToolTip(self.tr("Wire the selected channel straight from the master again."))
         self.restore.clicked.connect(self._restore)
         buttons.addWidget(self.restore)

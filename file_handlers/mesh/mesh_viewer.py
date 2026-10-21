@@ -33,8 +33,9 @@ from file_handlers.mmtr.profiles import mmtr_profile_for_game
 from file_handlers.mmtr.textures_view import UvPattern
 from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY
 lazy from settings import app_settings, remember_setting
+lazy from ui.editor_widgets import editor_strip, pane_header, styled_label
+lazy from ui.icons import line_icon
 from ui.qt_timers import call_later
-lazy from ui.styles import get_color_scheme
 lazy from ui.scene.mesh_scene import (
     mesh_geometry_choices,
     mesh_scene_payloads,
@@ -66,6 +67,23 @@ _BOUNDS_COLOUR, _PIVOT_COLOUR, _SKELETON_COLOUR = (0.2, 0.9, 1.0), (1.0, 0.35, 0
 # Pixels at pixel ratio 1.
 _LABEL_MARGIN = 4
 _DEVICE_SHADINGS = ("attributes", "lit", "textures")
+
+
+# Buttons match the combo boxes' height.
+_TOOLBAR_STYLESHEET = """
+    QPushButton { padding: 3px 8px; min-height: 18px; max-height: 18px; }
+    QToolButton { padding: 3px 6px; min-height: 18px; max-height: 18px; }
+    QToolButton[popupMode="2"] { padding-right: 18px; }
+"""
+
+
+def _tool_bar(parent: QWidget, name: str, surface: str) -> tuple[QWidget, QHBoxLayout]:
+    bar, layout = editor_strip(surface, margins=(6, 4, 6, 4))
+    bar.setParent(parent)
+    bar.setObjectName(name)
+    bar.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+    bar.setStyleSheet(_TOOLBAR_STYLESHEET)
+    return bar, layout
 
 
 def _shown_shading(shadings) -> str | None:
@@ -121,8 +139,8 @@ class MeshViewer(QWidget):
         self._data_tree_populated = False
         self._material_table_populated = False
         self._layout = QVBoxLayout(self)
-        self._layout.setContentsMargins(8, 8, 8, 8)
-        self._layout.setSpacing(6)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.viewport = None
         self._build_ui()
@@ -146,11 +164,11 @@ class MeshViewer(QWidget):
                 self.preview_splitter.setStretchFactor(1, 0)
             except Exception as e:
                 self.preview_splitter.insertWidget(
-                    0, QLabel(self.tr("Failed to create viewer: {}").format(e))
+                    0, self._empty_state(self.tr("Failed to create viewer: {}").format(e), "danger")
                 )
         else:
             self.preview_splitter.insertWidget(
-                0, QLabel(self.tr("No mesh buffer data available to display"))
+                0, self._empty_state(self.tr("No mesh buffer data available to display"), "muted")
             )
         self._populate_geometry_controls()
         self._refresh_geometry()
@@ -203,6 +221,13 @@ class MeshViewer(QWidget):
                                                   self.shader_preview)
         call_later(self, 0, self._reload_materials)
 
+    def _empty_state(self, text: str, tone: str) -> QLabel:
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignCenter)
+        label.setWordWrap(True)
+        label.setProperty("tone", tone)
+        return label
+
     def _shown_inspection(self):
         return self.viewport.inspection if self.viewport is not None else None
 
@@ -233,62 +258,39 @@ class MeshViewer(QWidget):
         import_into_viewer(self)
 
     def _build_ui(self):
-        toolbar = QWidget(self)
-        toolbar.setObjectName("meshToolbar")
-        colors = get_color_scheme((self._settings_store() or {}).get("tree_highlight_color"))
-        toolbar.setStyleSheet(f"""
-            QWidget#meshToolbar QPushButton, QWidget#meshToolbar QToolButton {{
-                background: {colors['surface_alt']}; border: 1px solid {colors['border']};
-                border-radius: 3px; padding: 4px 9px; min-width: 0px;
-            }}
-            QWidget#meshToolbar QPushButton:hover, QWidget#meshToolbar QToolButton:hover {{
-                background: {colors['surface_hover']};
-            }}
-            QWidget#meshToolbar QPushButton:checked {{
-                background: {colors['selection']}; border-color: {colors['accent']};
-            }}
-            QWidget#meshToolbar QPushButton:disabled, QWidget#meshToolbar QToolButton:disabled {{
-                color: {colors['text_disabled']};
-            }}
-        """)
-        tools = QVBoxLayout(toolbar)
-        tools.setContentsMargins(0, 0, 0, 0)
-        tools.setSpacing(6)
-        panels = QHBoxLayout()
-        panels.setSpacing(4)
-        self.inspect_button = QPushButton(self.tr("Inspect"), self)
-        self.inspect_button.setToolTip(self.tr("Materials, submeshes, selection, and camera views. Ctrl+F searches the list."))
-        self.panel_toggle_btn = QPushButton(self.tr("Textures"), self)
-        self.panel_toggle_btn.setToolTip(self.tr("Resolved material textures."))
-        self.data_toggle_btn = QPushButton(self.tr("Mesh data"), self)
-        self.data_toggle_btn.setToolTip(self.tr("Resource paths and parsed mesh structure."))
-        for button in (self.inspect_button, self.panel_toggle_btn, self.data_toggle_btn):
-            button.setCheckable(True)
-            panels.addWidget(button)
-        panels.addStretch()
-        self.sdftex_button = QPushButton(self.tr("Distance field…"), self)
+        toolbar, panels = _tool_bar(self, "meshToolbar", "toolbar")
+        self.sdftex_button = QPushButton(line_icon("cube"), self.tr("Distance field…"), self)
         self.sdftex_button.clicked.connect(self._open_distance_field)
         panels.addWidget(self.sdftex_button)
-        self.convert_button = QPushButton(self.tr("Convert mesh…"), self)
+        self.convert_button = QPushButton(line_icon("export"), self.tr("Convert mesh…"), self)
         self.convert_button.clicked.connect(self._open_conversion)
         self.convert_button.setEnabled(self.handler.supports_editing())
         panels.addWidget(self.convert_button)
-        self.blend_import_button = QPushButton(self.tr("Import .blend…"), self)
+        self.blend_import_button = QPushButton(line_icon("import"), self.tr("Import .blend…"), self)
         self.blend_import_button.setToolTip(self.tr(
             "Apply edits from a .blend exported by Convert mesh… › Blender. Untouched data stays bit-exact."))
         self.blend_import_button.clicked.connect(self._import_blend)
         self.blend_import_button.setEnabled(self.handler.supports_editing())
         panels.addWidget(self.blend_import_button)
-        tools.addLayout(panels)
+        panels.addStretch()
+        self.inspect_button = QPushButton(line_icon("layers"), self.tr("Inspect"), self)
+        self.inspect_button.setToolTip(self.tr("Materials, submeshes, selection, and camera views. Ctrl+F searches the list."))
+        self.panel_toggle_btn = QPushButton(line_icon("image"), self.tr("Textures"), self)
+        self.panel_toggle_btn.setToolTip(self.tr("Resolved material textures."))
+        self.data_toggle_btn = QPushButton(line_icon("details"), self.tr("Mesh data"), self)
+        self.data_toggle_btn.setToolTip(self.tr("Resource paths and parsed mesh structure."))
+        for button in (self.inspect_button, self.panel_toggle_btn, self.data_toggle_btn):
+            button.setCheckable(True)
+            panels.addWidget(button)
+        self._layout.addWidget(toolbar)
 
-        view = QHBoxLayout()
-        view.setSpacing(6)
+        view_bar, view = _tool_bar(self, "meshViewToolbar", "chrome")
         view.addWidget(QLabel(self.tr("Geometry")))
         self.geometry_combo = QComboBox(self)
         self.geometry_combo.setAccessibleName(self.tr("Geometry and LOD"))
         self.geometry_combo.currentIndexChanged.connect(self._on_geometry_changed)
         view.addWidget(self.geometry_combo)
-        view.addSpacing(6)
+        view.addSpacing(8)
         view.addWidget(QLabel(self.tr("View")))
         self.attribute_combo = QComboBox(self)
         self.attribute_combo.setAccessibleName(self.tr("Displayed mesh attribute"))
@@ -300,19 +302,21 @@ class MeshViewer(QWidget):
         self.attribute_combo.currentIndexChanged.connect(self._on_attribute_changed)
         view.addWidget(self.attribute_combo)
         self.attribute_toggle = QToolButton(self)
-        self.attribute_toggle.setText("↔")
+        self.attribute_toggle.setIcon(line_icon("compare"))
         self.attribute_toggle.setAccessibleName(self.tr("Compare surface and attribute"))
         self.attribute_toggle.setToolTip(self.tr("Switch between the surface and the last attribute view. Shortcut: V in the viewport."))
         self.attribute_toggle.setEnabled(False)
         view.addWidget(self.attribute_toggle)
+        view.addSpacing(8)
 
         self.display_button = QToolButton(self)
         self.display_button.setText(self.tr("Display"))
+        self.display_button.setIcon(line_icon("eye"))
+        self.display_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         self.display_button.setToolTip(self.tr("Vertex colors, bounds, and pivot overlays."))
         self.display_button.setPopupMode(QToolButton.InstantPopup)
         display_menu = QMenu(self.display_button)
         display_menu.setToolTipsVisible(True)
-        display_menu.setStyleSheet(f"QMenu::item:disabled {{ color: {colors['text_disabled']}; }}")
         self.vertex_colors_action = QAction(self.tr("Vertex colors"), self)
         self.vertex_colors_action.setToolTip(self.tr("Multiply textured preview by mesh vertex colors"))
         self.bounds_action = QAction(self.tr("Bounds"), self)
@@ -326,27 +330,30 @@ class MeshViewer(QWidget):
         self.pivots_action.toggled.connect(self._on_overlay_toggled)
         self.display_button.setMenu(display_menu)
         view.addWidget(self.display_button)
-        self.fit_button = QPushButton(self.tr("Fit visible"), self)
-        self.fit_button.setStyleSheet(f"min-width: {self.fit_button.fontMetrics().horizontalAdvance(self.fit_button.text())}px;")
+        self.fit_button = QPushButton(line_icon("fit"), self.tr("Fit visible"), self)
         self.fit_button.setToolTip(self.tr("Frame visible submeshes. F frames the selection, or visible geometry when nothing is selected."))
         self.fit_button.clicked.connect(lambda: self.viewport.fit_geometry() if self.viewport else None)
         view.addWidget(self.fit_button)
         self.navigation_button = QToolButton(self)
         self.navigation_button.setText(self.tr("Navigate"))
+        self.navigation_button.setIcon(line_icon("camera"))
+        self.navigation_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self.navigation_button.setPopupMode(QToolButton.InstantPopup)
         self.navigation_button.setToolTip(self.tr("Camera views, selection commands, and viewport shortcuts."))
         view.addWidget(self.navigation_button)
         view.addStretch()
-        tools.addLayout(view)
-        self._layout.addWidget(toolbar)
+        self._layout.addWidget(view_bar)
 
         self.attribute_controls = AttributeControls(self)
+        self.attribute_controls.setContentsMargins(6, 4, 6, 4)
         self.attribute_controls.changed.connect(
             lambda: self.viewport.refresh_attribute_colors() if self.viewport else None)
         self._layout.addWidget(self.attribute_controls)
         self.morph_controls = MorphControls(self, frame_interval=lambda:
             self.viewport._frame_interval() if self.viewport else 0)
+        self.morph_controls.setContentsMargins(6, 4, 6, 4)
         self.morph_controls.changed.connect(self._refresh_geometry)
-        self.preview_status = QLabel(self)
+        self.preview_status = styled_label(parent=self, banner="danger")
         self.preview_status.setTextFormat(Qt.PlainText)
         self.preview_status.setWordWrap(True)
         self.preview_status.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -357,15 +364,24 @@ class MeshViewer(QWidget):
         self.preview_splitter.setChildrenCollapsible(False)
         self._layout.addWidget(self.preview_splitter, 1)
         self._layout.addWidget(self.morph_controls)
-        self.sidebar = QStackedWidget(self)
-        self.preview_splitter.addWidget(self.sidebar)
+        self.sidebar_panel = QWidget(self)
+        sidebar_layout = QVBoxLayout(self.sidebar_panel)
+        sidebar_layout.setContentsMargins(0, 0, 0, 0)
+        sidebar_layout.setSpacing(0)
+        self.sidebar_title = QLabel()
+        header = pane_header(self.sidebar_title)
+        header.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
+        header.layout().setContentsMargins(8, 5, 8, 5)
+        sidebar_layout.addWidget(header)
+        self.sidebar = QStackedWidget(self.sidebar_panel)
+        sidebar_layout.addWidget(self.sidebar, 1)
+        self.preview_splitter.addWidget(self.sidebar_panel)
         self.inspector = MeshInspector(self)
         self.sidebar.addWidget(self.inspector)
 
         self.material_panel = QWidget(self)
         side_layout = QVBoxLayout(self.material_panel)
-        side_layout.setContentsMargins(0, 0, 0, 0)
-        side_layout.addWidget(QLabel(self.tr("Resolved material textures")))
+        side_layout.setContentsMargins(6, 6, 6, 6)
         self.mdf_label = QLabel(self.tr("MDF: unresolved"), self.material_panel)
         self.mdf_label.setTextFormat(Qt.PlainText)
         self.mdf_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
@@ -399,8 +415,8 @@ class MeshViewer(QWidget):
         self.material_table.itemSelectionChanged.connect(self._update_texture_preview)
         side_layout.addWidget(self.material_table, 1)
 
-        self.texture_preview = QLabel(
-            self.tr("Select a material to preview its texture.")
+        self.texture_preview = styled_label(
+            self.tr("Select a material to preview its texture."), surface="recessed", tone="muted"
         )
         self.texture_preview.setAlignment(Qt.AlignCenter)
         self.texture_preview.setMinimumHeight(140)
@@ -411,8 +427,7 @@ class MeshViewer(QWidget):
 
         self.data_panel = QWidget(self)
         data_layout = QVBoxLayout(self.data_panel)
-        data_layout.setContentsMargins(0, 0, 0, 0)
-        data_layout.addWidget(QLabel(self.tr("Parsed mesh structure")))
+        data_layout.setContentsMargins(6, 6, 6, 6)
         self.sdftex_label = QLabel(self.data_panel)
         self.sdftex_label.setTextFormat(Qt.PlainText)
         self.sdftex_label.setWordWrap(True)
@@ -425,9 +440,12 @@ class MeshViewer(QWidget):
         self.data_tree.header().setSectionResizeMode(1, QHeaderView.Stretch)
         data_layout.addWidget(self.data_tree, 1)
         self.sidebar.addWidget(self.data_panel)
-        self.sidebar.hide()
+        self.sidebar_panel.hide()
         self._panel_buttons = ((self.inspect_button, self.inspector), (self.panel_toggle_btn, self.material_panel),
                                (self.data_toggle_btn, self.data_panel))
+        self._panel_titles = {self.inspector: self.inspector.panel_title,
+                              self.material_panel: self.tr("Resolved material textures"),
+                              self.data_panel: self.tr("Parsed mesh structure")}
         for button, panel in self._panel_buttons:
             button.toggled.connect(lambda visible, page=panel: self._set_panel(page, visible))
         self._refresh_sdftex_path()
@@ -549,7 +567,8 @@ class MeshViewer(QWidget):
     def _set_panel(self, panel, visible):
         if visible:
             self.sidebar.setCurrentWidget(panel)
-        self.sidebar.setVisible(visible)
+            self.sidebar_title.setText(self._panel_titles[panel])
+        self.sidebar_panel.setVisible(visible)
         if not visible and self.viewport is not None:
             self.viewport.setFocus()
         for button, page in self._panel_buttons:

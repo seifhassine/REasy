@@ -1,6 +1,9 @@
 from PySide6.QtWidgets import (
-    QApplication, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QWidget, QMessageBox
+    QApplication, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QWidget,
+    QMessageBox
 )
+lazy from ui.editor_widgets import styled_label
+lazy from ui.styles import set_style_role
 lazy from utils.hash_util import murmur3_hash
 
 
@@ -8,16 +11,23 @@ class HashCalculator(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(self.tr("Hash Calculator"))
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(440)
 
         main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(12, 12, 12, 12)
+        main_layout.setSpacing(8)
         input_layout = QHBoxLayout()
-        result_layout = QVBoxLayout()
+        input_layout.setSpacing(6)
+        result_layout = QGridLayout()
+        result_layout.setHorizontalSpacing(10)
+        result_layout.setVerticalSpacing(6)
+        result_layout.setColumnStretch(1, 1)
 
         self.input_label = QLabel(self.tr("Input String:"))
         self.input_field = QLineEdit()
+        self.input_field.returnPressed.connect(self.calculate_hash)
         input_layout.addWidget(self.input_label)
-        input_layout.addWidget(self.input_field)
+        input_layout.addWidget(self.input_field, 1)
 
         self.hash_type_label = QLabel(self.tr("Hash Type:"))
         self.hash_type_combo = QComboBox()
@@ -26,50 +36,53 @@ class HashCalculator(QWidget):
         input_layout.addWidget(self.hash_type_combo)
 
         self.calculate_button = QPushButton(self.tr("Calculate Hash"))
+        set_style_role(self.calculate_button, variant="primary")
         self.calculate_button.clicked.connect(self.calculate_hash)
+        button_layout = QHBoxLayout()
+        button_layout.addStretch()
+        button_layout.addWidget(self.calculate_button)
 
-        utf8_group_layout = QVBoxLayout()
-        utf8_label = QLabel(self.tr("UTF-8 Results:"))
-        utf8_label.setStyleSheet("font-weight: bold")
-        utf8_group_layout.addWidget(utf8_label)
-
+        utf8_label = styled_label(self.tr("UTF-8 Results:"), heading="section")
         self.result_label_hex_utf8 = QLabel(self.tr("Hex:"))
-        self.result_field_hex_utf8 = QLineEdit()
-        self.result_field_hex_utf8.setReadOnly(True)
-
+        self.result_field_hex_utf8 = self._result_field()
         self.result_label_num_utf8 = QLabel(self.tr("Number:"))
-        self.result_field_num_utf8 = QLineEdit()
-        self.result_field_num_utf8.setReadOnly(True)
+        self.result_field_num_utf8 = self._result_field()
 
-        utf8_group_layout.addWidget(self.result_label_hex_utf8)
-        utf8_group_layout.addWidget(self.result_field_hex_utf8)
-        utf8_group_layout.addWidget(self.result_label_num_utf8)
-        utf8_group_layout.addWidget(self.result_field_num_utf8)
-        
-        utf16_group_layout = QVBoxLayout()
-        utf16_label = QLabel(self.tr("UTF-16 Results:"))
-        utf16_label.setStyleSheet("font-weight: bold")
-        utf16_group_layout.addWidget(utf16_label)
-
+        utf16_label = styled_label(self.tr("UTF-16 Results:"), heading="section")
         self.result_label_hex_utf16 = QLabel(self.tr("Hex:"))
-        self.result_field_hex_utf16 = QLineEdit()
-        self.result_field_hex_utf16.setReadOnly(True)
-
+        self.result_field_hex_utf16 = self._result_field()
         self.result_label_num_utf16 = QLabel(self.tr("Number:"))
-        self.result_field_num_utf16 = QLineEdit()
-        self.result_field_num_utf16.setReadOnly(True)
+        self.result_field_num_utf16 = self._result_field()
 
-        utf16_group_layout.addWidget(self.result_label_hex_utf16)
-        utf16_group_layout.addWidget(self.result_field_hex_utf16)
-        utf16_group_layout.addWidget(self.result_label_num_utf16)
-        utf16_group_layout.addWidget(self.result_field_num_utf16)
-
-        result_layout.addLayout(utf8_group_layout)
-        result_layout.addLayout(utf16_group_layout)
+        rows = (
+            (utf8_label, None),
+            (self.result_label_hex_utf8, self.result_field_hex_utf8),
+            (self.result_label_num_utf8, self.result_field_num_utf8),
+            (utf16_label, None),
+            (self.result_label_hex_utf16, self.result_field_hex_utf16),
+            (self.result_label_num_utf16, self.result_field_num_utf16),
+        )
+        for row, (label, field) in enumerate(rows):
+            if field is None:
+                if row:
+                    label.setContentsMargins(0, 8, 0, 0)
+                result_layout.addWidget(label, row, 0, 1, 2)
+            else:
+                set_style_role(label, tone="muted")
+                result_layout.addWidget(label, row, 0)
+                result_layout.addWidget(field, row, 1)
 
         main_layout.addLayout(input_layout)
-        main_layout.addWidget(self.calculate_button)
+        main_layout.addLayout(button_layout)
         main_layout.addLayout(result_layout)
+        main_layout.addStretch()
+
+    @staticmethod
+    def _result_field():
+        field = QLineEdit()
+        field.setReadOnly(True)
+        set_style_role(field, mono=True)
+        return field
 
     def calculate_hash(self):
         input_text = self.input_field.text()
@@ -81,15 +94,17 @@ class HashCalculator(QWidget):
         try:
             result_utf8 = murmur3_hash(input_text.encode("utf-8"))
             result_utf16 = murmur3_hash(input_text.encode("utf-16le"))
-            
+
             self.result_field_hex_utf8.setText(f"0x{result_utf8:08X}")
             self.result_field_num_utf8.setText(f"{result_utf8}")
-            
+
             self.result_field_hex_utf16.setText(f"0x{result_utf16:08X}")
             self.result_field_num_utf16.setText(f"{result_utf16}")
 
         except Exception as e:
-            QMessageBox.critical(self, self.tr("Error"), f"Failed to calculate hash: {e}")
+            QMessageBox.critical(
+                self, self.tr("Error"), self.tr("Failed to calculate hash: {error}").format(error=e)
+            )
 
 
 if __name__ == "__main__":

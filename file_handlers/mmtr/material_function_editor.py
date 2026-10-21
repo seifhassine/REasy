@@ -6,7 +6,7 @@ from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox,
-    QLabel, QLineEdit, QPushButton, QSpinBox, QTabWidget, QTreeWidgetItem, QVBoxLayout,
+    QLabel, QLineEdit, QSpinBox, QTabWidget, QTreeWidgetItem, QVBoxLayout,
 )
 
 from file_handlers.sdf.shader_graph import (
@@ -15,6 +15,7 @@ from file_handlers.sdf.shader_graph import (
 )
 lazy from file_handlers.sdf.shader_graph import validate_node_update
 lazy from file_handlers.sdf.shader_graph_editor import add_palette_templates, _resource_object_controls
+lazy from ui.editor_widgets import delete_button
 from .material_editor import MmtrMaterialEditor
 lazy from .material_function import (
     MaterialFunctionAsset, MaterialFunctionPin, expand_material_functions,
@@ -25,6 +26,7 @@ lazy from file_handlers.sdf.shader_graph_buffer import structured_buffer_stride
 from file_handlers.sdf.shader_graph_texture import (TEXTURE_OBJECT_TYPES, TEXTURE_SPATIAL_WIDTHS,
     TEXTURE_ELEMENT_TYPES, WRITABLE_TEXTURE_DIMENSIONS, texture_object_parts, texture_object_type, texture_object_sample_count)
 lazy from file_handlers.sdf.shader_graph_texture import TEXTURE_TEMPLATES
+lazy from ui.styles import set_style_role
 
 
 PORT_TYPES = (
@@ -64,6 +66,7 @@ def function_canvas(asset, dialog, owner, **options):
 
 def apply_buttons(dialog, layout):
     buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Apply | QDialogButtonBox.StandardButton.Cancel)
+    set_style_role(buttons.button(QDialogButtonBox.StandardButton.Apply), variant="primary")
     buttons.button(QDialogButtonBox.StandardButton.Apply).clicked.connect(dialog.accept)
     buttons.rejected.connect(dialog.reject)
     layout.addWidget(buttons)
@@ -85,6 +88,7 @@ class MaterialFunctionCanvas(MmtrMaterialEditor):
         self.title.setText(self.tr("Function"))
         self.material_name.setText(asset.name)
         self.profile_badge.setText(asset.source_profile or self.tr("Portable"))
+        self.profile_badge.show()
         self.graph_menu.hide()
         self.variant_button.hide()
         self.advanced_menu.hide()
@@ -144,7 +148,7 @@ class MaterialFunctionCanvas(MmtrMaterialEditor):
         if not issues:
             self.profile_badge.setText(self._function_profile() or self.tr("Portable"))
         self.status.setText(issues[0].message if issues else self.tr("Ready. Changes apply only to this function instance."))
-        self.status.setStyleSheet("QLabel { color:#dc8585; }" if issues else "QLabel { color:#80c99b; }")
+        set_style_role(self.status, tone="danger" if issues else "success")
 
     def _populate_palette(self):
         super()._populate_palette()
@@ -316,7 +320,7 @@ class MaterialFunctionCanvas(MmtrMaterialEditor):
                 control.setValue(component)
                 control.valueChanged.connect(lambda v, index=index, kind=kind: self._set_default(identity, index, v if kind.startswith('float') else int(v)))
                 self.properties.addRow(self.tr("Default ") + "XYZW"[index], control)
-        delete = QPushButton(self.tr("Remove Port"))
+        delete = delete_button(self.tr("Remove Port"))
         delete.clicked.connect(lambda: self._delete_node(node.node_id))
         self.properties.addRow(delete)
 
@@ -410,6 +414,7 @@ class MaterialBranchDialog(QDialog):
         root = QVBoxLayout(self)
         note = QLabel(self.tr("Only the selected arm executes. Named inputs and results are shared between tabs; calculations are independent."))
         note.setWordWrap(True)
+        set_style_role(note, banner="info")
         root.addWidget(note)
         self.tabs = QTabWidget()
         self.editors = []

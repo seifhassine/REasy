@@ -5,12 +5,12 @@ from __future__ import annotations
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
-    QLabel,
     QMessageBox,
     QVBoxLayout,
 )
 
 lazy from tools.riff_metadata import RiffLoop, RiffMarker, RiffMetadata
+lazy from ui.editor_widgets import styled_label
 
 lazy from .sound_hirc_editor import RowsEditor, _number
 
@@ -33,22 +33,25 @@ class RiffMetadataDialog(QDialog):
             self.tr("Wwise {version}").format(version=profile.required_version_text)
             if profile else self.tr("the compatible Wwise authoring version")
         )
-        label = QLabel(
+        label = styled_label(
             info + "\n" + self.tr(
                 "Loop end is inclusive. Changing metadata decodes and lossy "
                 "re-encodes the existing WEM through {authoring}."
-            ).format(authoring=authoring)
+            ).format(authoring=authoring),
+            tone="muted",
         )
         label.setWordWrap(True)
         layout.addWidget(label)
-        layout.addWidget(QLabel(self.tr("Sample loops")))
+        layout.addSpacing(4)
+        layout.addWidget(styled_label(self.tr("Sample loops"), heading="caption"))
         self.loops = RowsEditor(
             [self.tr("Start sample"), self.tr("End sample (inclusive)"), self.tr("Play count (0 = infinite)"), self.tr("Type"), self.tr("Cue ID")],
             ((item.start_sample, item.end_sample, item.play_count, item.loop_type, item.cue_id) for item in metadata.loops),
             ("0", str(max(0, (count or 1) - 1)), "0", "0", "0"),
         )
         layout.addWidget(self.loops, 1)
-        layout.addWidget(QLabel(self.tr("Cue markers")))
+        layout.addSpacing(4)
+        layout.addWidget(styled_label(self.tr("Cue markers"), heading="caption"))
         self.markers = RowsEditor(
             [self.tr("Cue ID"), self.tr("Sample offset"), self.tr("Label")],
             ((item.cue_id, item.sample_offset, item.label) for item in metadata.markers),

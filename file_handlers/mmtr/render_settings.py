@@ -9,6 +9,8 @@ from PySide6.QtWidgets import (
 )
 
 lazy from file_handlers.sdf.state_editor import SdfStateEditor
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 
 lazy from .pass_purpose import PURPOSES, pass_purpose, purpose_title
 lazy from .pipeline_settings import (
@@ -43,6 +45,7 @@ class RenderSettingsDialog(QDialog):
             checkbox.setToolTip(setting.display_description)
             checkbox.clicked.connect(lambda _checked, item=setting: self._toggle(item))
             count = QLabel()
+            set_style_role(count, tone="muted")
             row.addWidget(checkbox, 1)
             row.addWidget(count)
             plain_layout.addLayout(row)
@@ -54,6 +57,7 @@ class RenderSettingsDialog(QDialog):
         note = QLabel(self.tr("Every field of the selected pass's pipeline state. Changes are saved into a copy of "
                               "the state private to that pass."))
         note.setWordWrap(True)
+        set_style_role(note, tone="muted")
         pass_layout.addWidget(note)
         selector = QHBoxLayout()
         self.purpose_filter = QComboBox()
@@ -67,9 +71,12 @@ class RenderSettingsDialog(QDialog):
         self.purpose_filter.currentIndexChanged.connect(lambda _index: self._refresh())
         selector.addWidget(self.purpose_filter)
         self.pass_list = QComboBox()
+        self.pass_list.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.pass_list.setMinimumContentsLength(24)
         self.pass_list.currentIndexChanged.connect(lambda _index: self._show_pass())
         selector.addWidget(self.pass_list, 1)
         self.restore = QPushButton(self.tr("Restore Pass"))
+        self.restore.setIcon(line_icon("reset"))
         self.restore.setToolTip(self.tr("Give the selected pass its original pipeline state again."))
         self.restore.clicked.connect(self._restore_pass)
         selector.addWidget(self.restore)

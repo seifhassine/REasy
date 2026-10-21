@@ -7,12 +7,10 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGridLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QListWidget,
     QListWidgetItem,
-    QPushButton,
     QScrollArea,
     QSplitter,
     QSizePolicy,
@@ -22,6 +20,8 @@ from PySide6.QtWidgets import (
 
 lazy from file_handlers.sound.sound_metadata import SoundMetadata
 lazy from file_handlers.sound.sound_profile import sound_profile_for_handler
+lazy from ui.editor_widgets import editor_strip, pane_header, styled_label, tool_button
+lazy from ui.styles import set_style_role
 lazy from .wel_file import WELEventEntry, WELFile, WELFreeArea, WELPrioritySerialized
 
 
@@ -47,39 +47,42 @@ class WelViewer(QWidget):
         )
         self._syncing = False
 
+        self.setObjectName("welViewer")
+        self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        root_layout.setSpacing(0)
 
-        header_box = QGroupBox(self.tr("WEL Header"))
-        header_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        header_box.setMinimumHeight(56)
-        header_box.setMaximumHeight(68)
-        header_form = QFormLayout(header_box)
-        header_form.setContentsMargins(8, 6, 8, 6)
-        header_form.setVerticalSpacing(4)
+        toolbar, toolbar_layout = editor_strip(margins=(8, 4, 6, 4), spacing=6)
+        bank_path_label = styled_label("Bank path", tone="muted")
+        toolbar_layout.addWidget(bank_path_label)
         self.bank_path_input = QLineEdit()
         self.bank_path_input.setPlaceholderText("UTF-16 bank path")
         self.bank_path_input.textEdited.connect(self._on_bank_path_changed)
-        header_form.addRow(QLabel("Bank path"), self.bank_path_input)
-        root_layout.addWidget(header_box)
+        toolbar_layout.addWidget(self.bank_path_input, 1)
+        toolbar_layout.addSpacing(6)
 
-        toolbar_layout = QHBoxLayout()
-        self.add_event_btn = QPushButton(self.tr("Add Event"))
-        self.remove_event_btn = QPushButton(self.tr("Remove Event"))
-        self.add_event_btn.clicked.connect(self._on_add_event)
-        self.remove_event_btn.clicked.connect(self._on_remove_event)
+        self.add_event_btn = tool_button("add", slot=self._on_add_event, text=self.tr("Add Event"))
+        self.remove_event_btn = tool_button("delete", slot=self._on_remove_event, text=self.tr("Remove Event"))
         toolbar_layout.addWidget(self.add_event_btn)
         toolbar_layout.addWidget(self.remove_event_btn)
-        root_layout.addLayout(toolbar_layout)
+        root_layout.addWidget(toolbar)
 
         splitter = QSplitter(Qt.Horizontal)
 
         left_panel = QWidget()
         left_layout = QVBoxLayout(left_panel)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.addWidget(QLabel(self.tr("Events")))
+        left_layout.setSpacing(0)
+        left_layout.addWidget(pane_header(self.tr("Events")))
         self.event_list = QListWidget()
+        self.event_list.setStyleSheet("QListWidget { border: none; }")
         self.event_list.currentRowChanged.connect(self._on_event_selected)
-        left_layout.addWidget(self.event_list)
+        left_layout.addWidget(self.event_list, 1)
+        self._empty_events_label = styled_label(self.tr("No events. Use Add Event to create one."), emptyState=True)
+        self._empty_events_label.setWordWrap(True)
+        self._empty_events_label.hide()
+        left_layout.addWidget(self._empty_events_label, 1)
 
         splitter.addWidget(left_panel)
         splitter.addWidget(self._build_detail_panel())
@@ -89,16 +92,19 @@ class WelViewer(QWidget):
 
         root_layout.addWidget(splitter, 1)
 
+        self.event_list.model().rowsInserted.connect(self._update_empty_state)
+        self.event_list.model().rowsRemoved.connect(self._update_empty_state)
+        self.event_list.model().modelReset.connect(self._update_empty_state)
         self._load_from_handler()
 
     def _build_detail_panel(self) -> QWidget:
         panel = QWidget()
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(8)
+        layout.setSpacing(0)
 
         self.detail_title = QLabel(self.tr(SELECT_EVENT_TEXT))
-        layout.addWidget(self.detail_title)
+        layout.addWidget(pane_header(self.detail_title))
 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
@@ -106,12 +112,13 @@ class WelViewer(QWidget):
 
         content = QWidget()
         content_layout = QVBoxLayout(content)
-        content_layout.setContentsMargins(0, 0, 4, 0)
+        content_layout.setContentsMargins(8, 6, 8, 8)
         content_layout.setSpacing(8)
 
         core_box = QGroupBox(self.tr("Core"))
         core_form = QFormLayout(core_box)
         core_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
+        core_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.trigger_id = self._create_number_edit()
         self.event_id = self._create_number_edit()
         self.joint_hash = self._create_number_edit()
@@ -132,6 +139,7 @@ class WelViewer(QWidget):
         flags_box = QGroupBox(self.tr("Flags"))
         flags_form = QFormLayout(flags_box)
         flags_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
+        flags_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.tracking = QCheckBox()
         self.rotation = QCheckBox()
         self.disable_obs_ocl = QCheckBox()
@@ -153,6 +161,7 @@ class WelViewer(QWidget):
         priority_box = QGroupBox(self.tr("Priority"))
         priority_form = QFormLayout(priority_box)
         priority_form.setFieldGrowthPolicy(QFormLayout.FieldsStayAtSizeHint)
+        priority_form.setLabelAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.id1 = self._create_number_edit()
         self.id2 = self._create_number_edit()
         self.id3 = self._create_number_edit()
@@ -177,16 +186,16 @@ class WelViewer(QWidget):
         priority_form.addRow("Mode (enum)", self.mode)
         priority_form.addRow("Release Time (i16)", self.release_time)
         content_layout.addWidget(priority_box)
+        self._share_label_column((core_form, flags_form, priority_form))
 
         free_area_box = QGroupBox(self.tr("Game-side slots (partially understood)"))
         free_area_layout = QVBoxLayout(free_area_box)
-        help_text = QLabel(self.tr(
+        help_text = styled_label(self.tr(
             "These are 16 packed game-side slots (0–7: 4-bit, 8–11: 8-bit, "
             "12–15: signed 16-bit). Their exact meanings are not proven, so "
             "REasy preserves every value."
-        ))
+        ), tone="subtle")
         help_text.setWordWrap(True)
-        help_text.setStyleSheet("color: palette(mid);")
         free_area_layout.addWidget(help_text)
         free_grid = QGridLayout()
         self.free_slots = []
@@ -210,6 +219,19 @@ class WelViewer(QWidget):
 
         self._bind_change_handlers()
         return panel
+
+    @staticmethod
+    def _share_label_column(forms) -> None:
+        labels = [
+            form.itemAt(row, QFormLayout.ItemRole.LabelRole).widget()
+            for form in forms
+            for row in range(form.rowCount())
+        ]
+        width = max(label.sizeHint().width() for label in labels)
+        for label in labels:
+            label.setMinimumWidth(width)
+            label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+            set_style_role(label, tone="muted")
 
     def _create_number_edit(self) -> QLineEdit:
         edit = QLineEdit()
@@ -276,6 +298,13 @@ class WelViewer(QWidget):
             self.event_list.setCurrentRow(0)
         else:
             self._set_detail_enabled(False)
+        self._update_empty_state()
+
+    def _update_empty_state(self, *_args):
+        has_events = self.event_list.count() > 0
+        self.event_list.setVisible(has_events)
+        self._empty_events_label.setVisible(not has_events)
+        self.remove_event_btn.setEnabled(has_events)
 
     def _on_event_selected(self, row: int):
         wel = self.handler.wel

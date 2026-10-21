@@ -10,7 +10,6 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtWidgets import (
-    QAbstractSpinBox,
     QDoubleSpinBox,
     QHBoxLayout,
     QLabel,
@@ -106,8 +105,8 @@ class MotionPlaybackControls(QWidget):
         self.frame_spin.setObjectName("motionFrameSpin")
         self.frame_spin.setDecimals(2)
         self.frame_spin.setSingleStep(0.25)
-        self.frame_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.frame_spin.setMaximumWidth(60)
+        self.frame_spin.setProperty("scrub", True)
+        self.frame_spin.setMaximumWidth(64)
         self.frame_spin.valueChanged.connect(self._on_frame_changed)
         timeline.addWidget(self.frame_spin)
         self.frame_total_label = QLabel("/ 0")
@@ -125,12 +124,12 @@ class MotionPlaybackControls(QWidget):
             )
         )
         self.restart_button.setToolTip(self.tr("Restart animation"))
-        self.restart_button.setFixedSize(24, 22)
+        self.restart_button.setFixedSize(24, 24)
         self.restart_button.clicked.connect(self.restart)
         playback.addWidget(self.restart_button)
         self.play_button = QToolButton()
         self.play_button.setObjectName("motionPlayButton")
-        self.play_button.setFixedSize(24, 22)
+        self.play_button.setFixedSize(24, 24)
         self.play_button.clicked.connect(self.toggle)
         playback.addWidget(self.play_button)
 
@@ -139,8 +138,8 @@ class MotionPlaybackControls(QWidget):
         self.speed_spin.setSingleStep(0.05)
         self.speed_spin.setValue(1.0)
         self.speed_spin.setSuffix("×")
-        self.speed_spin.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
-        self.speed_spin.setMaximumWidth(58)
+        self.speed_spin.setProperty("scrub", True)
+        self.speed_spin.setMaximumWidth(64)
         self.speed_spin.setToolTip(self.tr("Playback speed"))
         self.speed_spin.valueChanged.connect(self.controller.set_speed)
         playback.addWidget(self.speed_spin)

@@ -5,11 +5,12 @@ from pathlib import Path
 
 from PySide6.QtCore import QCoreApplication, Qt
 from PySide6.QtWidgets import (
-    QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QLabel, QMessageBox, QTextEdit, QVBoxLayout,
+    QCheckBox, QDialog, QDialogButtonBox, QFileDialog, QMessageBox, QTextEdit, QVBoxLayout,
 )
 
 lazy from settings import app_settings, remember_setting
 lazy from ui.background_jobs import run_job
+lazy from ui.editor_widgets import styled_label
 lazy from utils.resource_file_utils import resource_version_from_path, streaming_companion_path
 
 lazy from .blender import (
@@ -75,9 +76,8 @@ class BlendImportReview(QDialog):
         self.setWindowTitle(self.tr("Import from Blender"))
         self.resize(760, 500)
         layout = QVBoxLayout(self)
-        heading = QLabel(title)
+        heading = styled_label(title, heading="section")
         heading.setTextFormat(Qt.PlainText)
-        heading.setStyleSheet("font-weight: 600;")
         layout.addWidget(heading)
         self.modifiers = QCheckBox(self.tr("Apply Blender modifiers (armatures excepted)"), self)
         self.modifiers.setChecked(True)

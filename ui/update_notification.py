@@ -1,7 +1,7 @@
 import threading
 import os
 import sys
-from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, QUrl
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
@@ -68,11 +68,12 @@ class UpdateNotificationManager:
         QTimer.singleShot(2000, self.update_update_menu)
             
             
-    def update_update_menu(self, force=False, menubar=None):
-        if menubar is None:
-            menubar = self.main_window.menuBar()
+    def update_update_menu(self):
+        button = self.main_window.update_button
         if self._update_menu:
-            menubar.removeAction(self._update_menu.menuAction())
+            button.setMenu(None)
+            button.hide()
+            self._update_menu.deleteLater()
             self._update_menu = None
 
         if self.is_new_version_available():
@@ -80,19 +81,12 @@ class UpdateNotificationManager:
                 self._update_check_timer.stop()
                 self._update_check_timer = None
 
-            update_menu = QMenu(
-                QCoreApplication.translate("UpdateNotificationManager", "🔶 NEW VERSION AVAILABLE"),
-                self.main_window,
-            )
+            update_menu = QMenu(button)
 
             update_action = QAction(
                 QCoreApplication.translate("UpdateNotificationManager", "View on Github"),
                 self.main_window,
             )
-            font = update_action.font()
-            font.setBold(True)
-            update_action.setFont(font)
-            update_menu.setStyleSheet("QMenu { color: red; font-weight: bold; }")
             update_action.triggered.connect(self.open_latest_release_page)
             update_menu.addAction(update_action)
 
@@ -104,12 +98,20 @@ class UpdateNotificationManager:
                 auto_update_action.triggered.connect(self._confirm_and_start_auto_update)
                 update_menu.addAction(auto_update_action)
 
-            menubar.addMenu(update_menu)
+            button.setText(QCoreApplication.translate("UpdateNotificationManager", "Update Available"))
+            button.setToolTip(QCoreApplication.translate(
+                "UpdateNotificationManager", "REasy {version} is available"
+            ).format(version=self.latest_version))
+            button.setMenu(update_menu)
+            button.show()
             self._update_menu = update_menu
 
             if not self._auto_update_prompted and is_windows() and getattr(sys, 'frozen', False):
                 self._auto_update_prompted = True
                 QTimer.singleShot(500, self._prompt_auto_update_dialog)
+
+        # QMenuBar sizes its corner widget only when the corner is set, shown or hidden.
+        self.main_window.menuBar().setCornerWidget(button.parentWidget(), Qt.TopRightCorner)
 
     def _prompt_auto_update_dialog(self):
         try:

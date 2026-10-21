@@ -1,6 +1,8 @@
 from PySide6.QtWidgets import QPushButton
 from PySide6.QtGui import QColor, QPainter, QPixmap, QPen, QBrush
 
+lazy from ui.styles import current_colors
+
 
 # ============================================================================
 # Color preview UI utilities
@@ -50,7 +52,6 @@ class ColorPreviewButton(QPushButton):
         super().__init__(parent)
         self._color = QColor(255, 255, 255, 255)
         self._has_alpha = True
-        self.setStyleSheet("QPushButton { border: 1px solid #888888; }")
     
     def setColor(self, r, g, b, a=255):
         self._color = QColor(int(r), int(g), int(b), int(a))
@@ -70,8 +71,9 @@ class ColorPreviewButton(QPushButton):
             _paint_checkerboard(painter, rect)
         
         painter.fillRect(rect, self._color)
-        
-        painter.setPen(QPen(QColor(136, 136, 136), 1))
+
+        frame = "text_subtle" if self.underMouse() and self.isEnabled() else "border_strong"
+        painter.setPen(QPen(QColor(current_colors()[frame]), 1))
         painter.drawRect(self.rect().adjusted(0, 0, -1, -1))
         
         painter.end()

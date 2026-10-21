@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
-from PySide6.QtWidgets import QDialog, QLabel, QProgressBar, QPushButton, QVBoxLayout
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QVBoxLayout
 
 
 class _Signals(QObject):
@@ -76,7 +76,10 @@ class _JobDialog(QDialog):
         self.setWindowTitle(title)
         self.setMinimumWidth(380)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(6)
         self.status = QLabel(status or self.tr("Preparing…"))
+        self.status.setWordWrap(True)
         layout.addWidget(self.status)
         self.progress = QProgressBar()
         self.progress.setRange(0, 0)
@@ -85,7 +88,11 @@ class _JobDialog(QDialog):
         if cancellable:
             self.cancel_button = QPushButton(self.tr("Cancel"))
             self.cancel_button.clicked.connect(self.reject)
-            layout.addWidget(self.cancel_button)
+            buttons = QHBoxLayout()
+            buttons.setContentsMargins(0, 4, 0, 0)
+            buttons.addStretch()
+            buttons.addWidget(self.cancel_button)
+            layout.addLayout(buttons)
         self.job = _Job(operation, self)
         self.job.progress.connect(self._progress)
         self.job.finished.connect(self.accept)

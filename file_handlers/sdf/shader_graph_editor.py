@@ -47,6 +47,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSplitter,
     QTabWidget,
     QTreeWidget,
@@ -63,6 +64,9 @@ lazy from file_handlers.mmtr.material_loop import new_loop_properties
 lazy from file_handlers.mmtr.material_loop_editor import MaterialLoopDialog
 lazy from file_handlers.mmtr.surface_meaning import shader_bytes
 lazy from services.file_io import write_files_atomically
+lazy from ui.icons import line_icon
+lazy from ui.editor_widgets import delete_button, editor_strip, pane_header, search_field, strip_button, styled_label, toolbar_separator
+lazy from ui.styles import current_colors, set_style_role
 
 lazy from . import dxc
 lazy from .aggregate_values import constant_value_fields
@@ -131,7 +135,75 @@ _TYPE_COLORS = {
     "uint4": "#d9be5d",
 }
 
+_NODE_HUES = {
+    "input": "#24465c",
+    "output": "#3e3158",
+    "parameter": "#4b3a2b",
+    "texture_sample": "#2d4e45",
+    "constant": "#3e3d50",
+    "material_parameter": "#6a472d",
+    "material_texture": "#286052",
+    "material_surface": "#60477b",
+    "material_function": "#4e477f",
+    "texture_coordinates": "#28546a",
+    "sample_texture": "#286052",
+}
+_DEFAULT_NODE_HUE = "#303b45"
+_BOUNDARY_NODE_HUE = "#60477b"
+_USER_FUNCTION_NODE_HUE = "#4d5e96"
+_INTERFACE_ONLY_NODE_HUE = "#69572e"
+
+_GRAPH_TOKENS = ("canvas_bg", "canvas_grid_minor", "canvas_grid_major", "node_bg", "node_header", "node_border",
+                 "accent", "text_bright", "text_muted")
+_graph_palette_cache: list = [None, None]
+
 translate = QCoreApplication.translate
+
+
+def graph_palette() -> dict:
+    colors = current_colors()
+    if _graph_palette_cache[0] != colors:
+        _graph_palette_cache[:] = [colors, {name: QColor(colors[name]) for name in _GRAPH_TOKENS}]
+    return _graph_palette_cache[1]
+
+
+def draw_canvas_grid(painter: QPainter, rect: QRectF, minor: int = 24, major: int = 96) -> None:
+    palette = graph_palette()
+    painter.fillRect(rect, palette["canvas_bg"])
+    for spacing, color in ((minor, palette["canvas_grid_minor"]), (major, palette["canvas_grid_major"])):
+        painter.setPen(QPen(color, 1.0))
+        left = int(rect.left()) - int(rect.left()) % spacing
+        top = int(rect.top()) - int(rect.top()) % spacing
+        for x in range(left, int(rect.right()) + spacing, spacing):
+            painter.drawLine(x, rect.top(), x, rect.bottom())
+        for y in range(top, int(rect.bottom()) + spacing, spacing):
+            painter.drawLine(rect.left(), y, rect.right(), y)
+
+
+def paint_node_card(painter: QPainter, rect: QRectF, header_height: float, *, header: QColor | None = None,
+                    band: QColor | None = None, outline: QPen | None = None) -> None:
+    palette = graph_palette()
+    path = QPainterPath()
+    path.addRoundedRect(rect, 4.0, 4.0)
+    painter.fillPath(path, palette["node_bg"])
+    painter.save()
+    painter.setClipPath(path)
+    painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), header_height),
+                     palette["node_header"] if header is None else header)
+    if band is not None:
+        painter.fillRect(QRectF(rect.left(), rect.top(), rect.width(), 3.0), band)
+    painter.restore()
+    border = QPen(palette["node_border"], 1.0)
+    painter.setPen(border)
+    painter.drawLine(QPointF(rect.left(), rect.top() + header_height), QPointF(rect.right(), rect.top() + header_height))
+    painter.setPen(border if outline is None else outline)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawPath(path)
+
+
+def show_status(label: QLabel, text: str, tone: str = "") -> None:
+    label.setText(text)
+    set_style_role(label, tone=tone)
 
 
 def _display_name(value: str) -> str:
@@ -163,7 +235,7 @@ def _wide_integer_control(value_type, value, update):
             number = int(control.text(), 10)
             shader_value_literal(value_type.rstrip('234'), [number])
         except ValueError:
-            control.setStyleSheet('QLineEdit { border: 1px solid #e07070; }')
+            control.setStyleSheet(f"QLineEdit {{ border-color: {current_colors()['danger']}; }}")
             return
         control.setStyleSheet('')
         update(number)
@@ -171,13 +243,13 @@ def _wide_integer_control(value_type, value, update):
     return control
 
 
-_SEVERITY_COLORS = {"error": "#db7878", "warning": "#d9b666", "info": "#76b8df"}
+_SEVERITY_TONES = {"error": "danger", "warning": "warning", "info": "info"}
 
 
 def _diagnostic_item(label: str, severity: str, text: str) -> QTreeWidgetItem:
     item = QTreeWidgetItem([label, text])
-    if severity in _SEVERITY_COLORS:
-        item.setForeground(0, QColor(_SEVERITY_COLORS[severity]))
+    if severity in _SEVERITY_TONES:
+        item.setForeground(0, QColor(current_colors()[_SEVERITY_TONES[severity]]))
     return item
 
 
@@ -523,10 +595,14 @@ def _code_properties(form, node, apply):
     body = QPlainTextEdit(str(node.properties.get("body", "")))
     body.setMinimumHeight(180)
     body.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+    set_style_role(body, mono=True)
     note = QLabel(translate("SdfShaderGraphEditor",
                             "Assign every output in the body; each starts at zero. The body reads only its inputs."))
     note.setWordWrap(True)
+    set_style_role(note, tone="muted")
     button = QPushButton(translate("SdfShaderGraphEditor", "Apply Code"))
+    set_style_role(button, variant="primary")
+    button.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
     button.clicked.connect(lambda: apply(inputs.text(), outputs.text(), body.toPlainText()))
     form.addRow(translate("SdfShaderGraphEditor", "Inputs"), inputs)
     form.addRow(translate("SdfShaderGraphEditor", "Outputs"), outputs)
@@ -645,7 +721,7 @@ def connection_path(start: QPointF, end: QPointF, min_distance: float) -> QPaint
 
 
 class _ShaderPortItem(QGraphicsEllipseItem):
-    SIZE = 12.0
+    SIZE = 10.0
 
     def __init__(self, node_item: "_ShaderNodeItem", pin: ShaderPin):
         super().__init__(-self.SIZE / 2, -self.SIZE / 2, self.SIZE, self.SIZE, node_item)
@@ -653,7 +729,7 @@ class _ShaderPortItem(QGraphicsEllipseItem):
         self.pin = pin
         color = QColor(_TYPE_COLORS.get(pin.value_type, "#a7b0b7"))
         self.setBrush(QBrush(color))
-        self.setPen(QPen(color.lighter(145), 1.2))
+        self.setPen(QPen(graph_palette()["node_bg"], 1.5))
         self.setAcceptHoverEvents(True)
         self.setToolTip(f"{pin.label} · {_friendly_pin_type(pin.value_type)}")
         self.setZValue(4)
@@ -705,7 +781,7 @@ class _ShaderPortItem(QGraphicsEllipseItem):
 
 class _ShaderNodeItem(QGraphicsObject):
     WIDTH = 300.0
-    HEADER = 42.0
+    HEADER = 30.0
     ROW = 25.0
 
     def __init__(self, node: ShaderGraphNode, contract: ShaderContract, pin_filter=None):
@@ -746,38 +822,26 @@ class _ShaderNodeItem(QGraphicsObject):
     def boundingRect(self) -> QRectF:
         return QRectF(-8.0, -3.0, self.WIDTH + 16.0, self.height + 6.0)
 
+    def _hue(self) -> str:
+        properties = self.node.properties
+        if bool(properties.get("interface_only", False)):
+            return _INTERFACE_ONLY_NODE_HUE
+        if properties.get("authoring_origin") == "user_function":
+            return _USER_FUNCTION_NODE_HUE
+        if properties.get("semantic_reconstruction_boundary"):
+            return _BOUNDARY_NODE_HUE
+        return _NODE_HUES.get(self.node.kind, _DEFAULT_NODE_HUE)
+
     def paint(self, painter: QPainter, _option, _widget=None) -> None:
-        body = QRectF(0.0, 0.0, self.WIDTH, self.height)
+        palette = graph_palette()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        selected = self.isSelected()
-        painter.setPen(QPen(QColor("#78aee5" if selected else "#4e5a64"), 2.0 if selected else 1.2))
-        painter.setBrush(QColor("#232a31"))
-        painter.drawRoundedRect(body, 8.0, 8.0)
-        header = QRectF(0.0, 0.0, self.WIDTH, self.HEADER)
-        header_color = {
-            "input": "#24465c",
-            "output": "#3e3158",
-            "parameter": "#4b3a2b",
-            "texture_sample": "#2d4e45",
-            "constant": "#3e3d50",
-            "material_parameter": "#6a472d",
-            "material_texture": "#286052",
-            "material_surface": "#60477b",
-            "material_function": "#4e477f",
-            "texture_coordinates": "#28546a",
-            "sample_texture": "#286052",
-        }.get(self.node.kind, "#303b45")
-        if self.node.properties.get("semantic_reconstruction_boundary"):
-            header_color = "#60477b"
-        if self.node.properties.get("authoring_origin") == "user_function":
-            header_color = "#4d5e96"
-        if bool(self.node.properties.get("interface_only", False)):
-            header_color = "#69572e"
-        painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(header_color))
-        painter.drawRoundedRect(header, 8.0, 8.0)
-        painter.fillRect(QRectF(0.0, self.HEADER - 8.0, self.WIDTH, 8.0), QColor(header_color))
-        painter.setPen(QColor("#f0f3f5"))
+        hue = QColor(self._hue())
+        header = palette["node_header"]
+        tint = QColor.fromRgbF(*(base + (accent - base) * 0.45 for base, accent in (
+            (header.redF(), hue.redF()), (header.greenF(), hue.greenF()), (header.blueF(), hue.blueF()))))
+        paint_node_card(painter, QRectF(0.0, 0.0, self.WIDTH, self.height), self.HEADER, header=tint,
+                        band=hue.lighter(190), outline=QPen(palette["accent"], 2.0) if self.isSelected() else None)
+        painter.setPen(palette["text_bright"])
         title_font = QFont(painter.font())
         title_font.setBold(True)
         painter.setFont(title_font)
@@ -787,14 +851,14 @@ class _ShaderNodeItem(QGraphicsObject):
                 title=title
             )
         painter.drawText(
-            QRectF(12.0, 0.0, self.WIDTH - 24.0, self.HEADER),
+            QRectF(10.0, 3.0, self.WIDTH - 20.0, self.HEADER - 3.0),
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
-            painter.fontMetrics().elidedText(title, Qt.TextElideMode.ElideRight, int(self.WIDTH - 24)),
+            painter.fontMetrics().elidedText(title, Qt.TextElideMode.ElideRight, int(self.WIDTH - 20)),
         )
         painter.setFont(QFont())
+        painter.setPen(palette["text_muted"])
         for index, pin in enumerate(self.inputs):
             top = self.HEADER + index * self.ROW
-            painter.setPen(QColor("#d8dee3"))
             painter.drawText(
                 QRectF(13.0, top, (self.WIDTH * 0.6 if self.outputs else self.WIDTH) - 26.0, self.ROW),
                 Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
@@ -803,7 +867,6 @@ class _ShaderNodeItem(QGraphicsObject):
             )
         for index, pin in enumerate(self.outputs):
             top = self.HEADER + index * self.ROW
-            painter.setPen(QColor("#d8dee3"))
             painter.drawText(
                 QRectF(self.WIDTH * 0.6 if self.inputs else 13.0, top,
                     (self.WIDTH * 0.4 - 13.0) if self.inputs else self.WIDTH - 26.0, self.ROW),
@@ -1051,7 +1114,7 @@ class _ShaderGraphScene(QGraphicsScene):
             return
         if self._pending_wire is None:
             self._pending_wire = QGraphicsPathItem()
-            self._pending_wire.setPen(QPen(QColor("#a2cef4"), 2.0))
+            self._pending_wire.setPen(QPen(graph_palette()["accent"], 2.0))
             self._pending_wire.setZValue(1)
             self.addItem(self._pending_wire)
         start = self.pending_source.scenePos()
@@ -1101,7 +1164,7 @@ class _ShaderGraphView(QGraphicsView):
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.setMinimumSize(580, 480)
+        self.setMinimumSize(320, 240)
 
     def fit_scene(self) -> None:
         bounds = self.scene().itemsBoundingRect()
@@ -1109,16 +1172,7 @@ class _ShaderGraphView(QGraphicsView):
             self.fitInView(bounds.adjusted(-45.0, -45.0, 45.0, 45.0), Qt.AspectRatioMode.KeepAspectRatio)
 
     def drawBackground(self, painter: QPainter, rect: QRectF) -> None:
-        painter.fillRect(rect, QColor("#151a1f"))
-        minor, major = 24, 96
-        for spacing, color in ((minor, "#222a31"), (major, "#2c363f")):
-            painter.setPen(QPen(QColor(color), 1.0))
-            left = int(rect.left()) - int(rect.left()) % spacing
-            top = int(rect.top()) - int(rect.top()) % spacing
-            for x in range(left, int(rect.right()) + spacing, spacing):
-                painter.drawLine(x, rect.top(), x, rect.bottom())
-            for y in range(top, int(rect.bottom()) + spacing, spacing):
-                painter.drawLine(rect.left(), y, rect.right(), y)
+        draw_canvas_grid(painter, rect)
 
     def wheelEvent(self, event) -> None:
         if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
@@ -1179,27 +1233,33 @@ class SdfShaderGraphEditor(QWidget):
 
     def _build_ui(self) -> None:
         root = QVBoxLayout(self)
-        root.setContentsMargins(8, 8, 8, 8)
-        header = QHBoxLayout()
-        title = self.title_label = QLabel(self.tr("Replacement Shader Graph"))
-        font = title.font()
-        font.setBold(True)
-        font.setPointSize(max(13, font.pointSize() + 3))
-        title.setFont(font)
-        header.addWidget(title)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
+        header, header_row = editor_strip()
+        title = self.title_label = styled_label(self.tr("Replacement Shader Graph"), heading="panel")
+        header_row.addWidget(title)
         self.pass_label = QLabel(self.tr("Select a compiled pass."))
         self.pass_label.setWordWrap(True)
-        header.addWidget(self.pass_label, 1)
-        header.addWidget(QLabel(self.tr("Stage")))
+        set_style_role(self.pass_label, tone="muted")
+        header_row.addSpacing(6)
+        header_row.addWidget(self.pass_label, 1)
+        stage_label = styled_label(self.tr("Stage"), tone="muted")
+        header_row.addWidget(stage_label)
         self.stage_selector = QComboBox()
         self.stage_selector.currentIndexChanged.connect(self._stage_changed)
-        header.addWidget(self.stage_selector)
+        header_row.addWidget(self.stage_selector)
         self.contract_badge = QLabel()
-        self.contract_badge.setMinimumWidth(220)
         self.contract_badge.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        header.addWidget(self.contract_badge)
-        root.addLayout(header)
+        set_style_role(self.contract_badge, badge="neutral")
+        self.contract_badge.hide()
+        header_row.addSpacing(4)
+        header_row.addWidget(self.contract_badge)
+        root.addWidget(header)
 
+        body = QVBoxLayout()
+        body.setContentsMargins(8, 6, 8, 6)
+        body.setSpacing(6)
+        root.addLayout(body, 1)
         provenance = self.provenance_label = QLabel(
             self.tr(
                 "This workspace builds a replacement for the selected compiled stage; it does not show the original "
@@ -1207,53 +1267,50 @@ class SdfShaderGraphEditor(QWidget):
             )
         )
         provenance.setWordWrap(True)
-        provenance.setStyleSheet(
-            "QLabel { background:#3f3523; color:#f1e6c8; border-radius:6px; padding:7px 10px; }"
-        )
-        root.addWidget(provenance)
+        set_style_role(provenance, banner="info")
+        body.addWidget(provenance)
 
-        toolbar = QHBoxLayout()
-        self.new_button = QPushButton(self.tr("New replacement graph"))
-        self.open_project_button = QPushButton(self.tr("Open graph project…"))
-        self.save_project_button = QPushButton(self.tr("Save graph project…"))
-        self.fit_button = QPushButton(self.tr("Fit graph"))
-        self.arrange_button = QPushButton(self.tr("Arrange graph"))
-        self.delete_button = QPushButton(self.tr("Delete selected"))
+        self.new_button = strip_button(QPushButton(), "new_file", tooltip=self.tr("New replacement graph"))
+        self.open_project_button = strip_button(QPushButton(), "folder_open", tooltip=self.tr("Open graph project…"))
+        self.save_project_button = strip_button(QPushButton(), "save", tooltip=self.tr("Save graph project…"))
+        self.fit_button = strip_button(QPushButton(), "fit", tooltip=self.tr("Fit graph"))
+        self.arrange_button = strip_button(QPushButton(), "graph", tooltip=self.tr("Arrange graph"))
+        self.delete_button = strip_button(QPushButton(), "delete", tooltip=self.tr("Delete selected"))
         self.new_button.clicked.connect(self._new_graph)
         self.open_project_button.clicked.connect(self._open_project)
         self.save_project_button.clicked.connect(self._save_project)
         self.fit_button.clicked.connect(self.fit_graph)
         self.arrange_button.clicked.connect(self._arrange_graph)
         self.delete_button.clicked.connect(self._delete_selected)
-        for button in (
-            self.new_button,
-            self.open_project_button,
-            self.save_project_button,
-            self.fit_button,
-            self.arrange_button,
-            self.delete_button,
-        ):
-            toolbar.addWidget(button)
-        toolbar.addStretch(1)
-        root.addLayout(toolbar)
+        graph_bar, graph_row = editor_strip("header")
+        for widget in (self.new_button, self.open_project_button, self.save_project_button, toolbar_separator(),
+                       self.fit_button, self.arrange_button, self.delete_button):
+            graph_row.addWidget(widget)
+        graph_row.addStretch(1)
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
         palette_page = QWidget()
         palette_layout = QVBoxLayout(palette_page)
         palette_layout.setContentsMargins(0, 0, 0, 0)
-        palette_layout.addWidget(QLabel(self.tr("Add a node")))
-        self.palette_search = QLineEdit()
+        palette_layout.setSpacing(0)
+        palette_layout.addWidget(pane_header(self.tr("Add a node")))
+        palette_body = QVBoxLayout()
+        palette_body.setContentsMargins(6, 6, 6, 6)
+        palette_body.setSpacing(4)
+        palette_layout.addLayout(palette_body, 1)
+        self.palette_search = search_field(QLineEdit())
         self.palette_search.setPlaceholderText(self.tr("Find values, textures, or math…"))
         self.palette_search.textChanged.connect(self._filter_palette)
-        palette_layout.addWidget(self.palette_search)
+        palette_body.addWidget(self.palette_search)
         self.palette = QTreeWidget()
         self.palette.setHeaderHidden(True)
         self.palette.setRootIsDecorated(True)
         self.palette.itemDoubleClicked.connect(lambda _item, _column: self._add_palette_node())
-        palette_layout.addWidget(self.palette, 1)
+        palette_body.addWidget(self.palette, 1)
         add_button = QPushButton(self.tr("Add selected node"))
+        add_button.setIcon(line_icon("add"))
         add_button.clicked.connect(self._add_palette_node)
-        palette_layout.addWidget(add_button)
+        palette_body.addWidget(add_button)
         splitter.addWidget(palette_page)
 
         self.scene = _ShaderGraphScene(self)
@@ -1264,31 +1321,43 @@ class SdfShaderGraphEditor(QWidget):
         self.scene.node_selected.connect(self._node_selected)
         self.scene.node_activated.connect(self._edit_function_region)
         self.scene.message.connect(self._show_message)
-        splitter.addWidget(self.view)
+        graph_page = QWidget()
+        graph_layout = QVBoxLayout(graph_page)
+        graph_layout.setContentsMargins(0, 0, 0, 0)
+        graph_layout.setSpacing(0)
+        graph_layout.addWidget(graph_bar)
+        graph_layout.addWidget(self.view, 1)
+        splitter.addWidget(graph_page)
 
         self.inspector_tabs = QTabWidget()
         self.properties_scroll = QScrollArea()
         self.properties_scroll.setWidgetResizable(True)
         self.properties_host = QWidget()
         self.properties_form = QFormLayout(self.properties_host)
+        self.properties_form.setContentsMargins(8, 8, 8, 8)
         self.properties_scroll.setWidget(self.properties_host)
         self.inspector_tabs.addTab(self.properties_scroll, self.tr("Properties"))
 
         source_page = QWidget()
         source_layout = QVBoxLayout(source_page)
+        source_layout.setContentsMargins(6, 6, 6, 6)
+        source_layout.setSpacing(4)
         source_actions = QHBoxLayout()
-        regenerate = QPushButton(self.tr("Generate from graph"))
-        import_source = QPushButton(self.tr("Open HLSL…"))
-        export_source = QPushButton(self.tr("Save HLSL…"))
+        source_actions.setSpacing(4)
+        regenerate = strip_button(QPushButton(self.tr("Generate from graph")), "refresh", variant="")
+        import_source = strip_button(QPushButton(self.tr("Open HLSL…")), "folder_open", variant="")
+        export_source = strip_button(QPushButton(self.tr("Save HLSL…")), "save", variant="")
         regenerate.clicked.connect(self._regenerate_source)
         import_source.clicked.connect(self._open_hlsl)
         export_source.clicked.connect(self._save_hlsl)
         source_actions.addWidget(regenerate)
         source_actions.addWidget(import_source)
         source_actions.addWidget(export_source)
+        source_actions.addStretch(1)
         source_layout.addLayout(source_actions)
         self.source_editor = QPlainTextEdit()
         self.source_editor.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        set_style_role(self.source_editor, mono=True)
         self.source_editor.textChanged.connect(self._source_changed)
         source_layout.addWidget(self.source_editor, 1)
         self._developer_source_page = source_page
@@ -1296,13 +1365,17 @@ class SdfShaderGraphEditor(QWidget):
         diagnostics_page = QWidget()
         self.validation_page = diagnostics_page
         diagnostics_layout = QVBoxLayout(diagnostics_page)
+        diagnostics_layout.setContentsMargins(6, 6, 6, 6)
+        diagnostics_layout.setSpacing(4)
         self.diagnostics_summary = QLabel()
         self.diagnostics_summary.setWordWrap(True)
+        set_style_role(self.diagnostics_summary, tone="muted")
         diagnostics_layout.addWidget(self.diagnostics_summary)
         self.diagnostics = QTreeWidget()
         self.diagnostics.setHeaderLabels([self.tr("Status"), self.tr("Diagnostic")])
         self.diagnostics.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self.diagnostics.header().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self.diagnostics.setRootIsDecorated(False)
         diagnostics_layout.addWidget(self.diagnostics, 1)
         self.inspector_tabs.addTab(diagnostics_page, self.tr("Validation"))
         splitter.addWidget(self.inspector_tabs)
@@ -1310,17 +1383,19 @@ class SdfShaderGraphEditor(QWidget):
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
         splitter.setSizes([245, 780, 420])
-        root.addWidget(splitter, 1)
+        body.addWidget(splitter, 1)
 
         footer = QHBoxLayout()
+        footer.setSpacing(8)
         self.message = QLabel()
         self.message.setWordWrap(True)
         footer.addWidget(self.message, 1)
         self.apply_button = QPushButton(self.tr("Apply Replacement"))
+        set_style_role(self.apply_button, variant="primary")
         self.apply_button.clicked.connect(self._apply)
         self.apply_button.setEnabled(False)
         footer.addWidget(self.apply_button)
-        root.addLayout(footer)
+        body.addLayout(footer)
 
     @property
     def graph(self) -> ShaderGraph | None:
@@ -1467,12 +1542,12 @@ class SdfShaderGraphEditor(QWidget):
             self._show_message(
                 self.tr(
                     "Authoring a replacement; the current compiled shader stays unchanged until Apply. "
-                    "Connect outputs, then compile. Clicking a connected input removes its link."
+                    "Connect outputs, then compile. Alt-click a port to disconnect it; Ctrl+wheel zooms."
                 )
             )
         else:
             self.apply_button.setEnabled(False)
-            self._set_badge(self.tr("High-level replacement unavailable"), "#633b3b", "#f5dddd")
+            self._set_badge(self.tr("High-level replacement unavailable"), "danger")
             self._show_message(
                 self.tr(
                     "This compiled stage is kept unchanged: its structure or side effects cannot be rebuilt from "
@@ -1653,13 +1728,10 @@ class SdfShaderGraphEditor(QWidget):
         if node is None or self._contract is None:
             label = QLabel(self.tr("Select a node to edit it. Ports are connected directly in the graph."))
             label.setWordWrap(True)
+            set_style_role(label, tone="muted")
             self.properties_form.addRow(label)
             return
-        heading = QLabel(node_title(node))
-        font = heading.font()
-        font.setBold(True)
-        font.setPointSize(max(11, font.pointSize() + 1))
-        heading.setFont(font)
+        heading = styled_label(node_title(node), heading="section")
         self.properties_form.addRow(heading)
         self.properties_form.addRow(self.tr("Node ID"), QLabel(node.node_id[:12]))
         _precision_properties(self.properties_form, node,
@@ -1818,7 +1890,7 @@ class SdfShaderGraphEditor(QWidget):
             note.setWordWrap(True)
             self.properties_form.addRow(note)
         if node.kind != "output":
-            remove = QPushButton(self.tr("Delete node"))
+            remove = delete_button(self.tr("Delete node"))
             remove.clicked.connect(lambda _checked=False, identity=node.node_id: self._delete_node(identity))
             self.properties_form.addRow(remove)
 
@@ -1955,11 +2027,11 @@ class SdfShaderGraphEditor(QWidget):
         errors = [item for item in diagnostics if item.severity == "error"]
         warnings = [item for item in diagnostics if item.severity == "warning"]
         if errors:
-            self._set_badge(self.tr("{count} graph issues").format(count=len(errors)), "#663a3a", "#f5dddd")
+            self._set_badge(self.tr("{count} graph issues").format(count=len(errors)), "danger")
         elif warnings:
-            self._set_badge(self.tr("Graph ready · contract changed"), "#65512f", "#f3e8ce")
+            self._set_badge(self.tr("Graph ready · contract changed"), "warning")
         else:
-            self._set_badge(self.tr("Graph ready · reflected contract"), "#28533f", "#dcf3e8")
+            self._set_badge(self.tr("Graph ready · reflected contract"), "success")
         self._show_graph_diagnostics(diagnostics)
         if regenerate and not errors and self._contract.stage in SHADER_GRAPH_STAGES:
             try:
@@ -2007,7 +2079,7 @@ class SdfShaderGraphEditor(QWidget):
                 False,
             )
         self._invalidate_compilation()
-        self._set_badge(self.tr("Custom HLSL · compile required"), "#384a5d", "#dcebf5")
+        self._set_badge(self.tr("Custom HLSL · compile required"), "info")
 
     def set_source_page_visible(self, visible: bool) -> None:
         index = self.inspector_tabs.indexOf(self._developer_source_page)
@@ -2284,7 +2356,7 @@ class SdfShaderGraphEditor(QWidget):
         if not quiet:
             self.inspector_tabs.setCurrentWidget(self.validation_page)
         if compatible:
-            self._set_badge(self.tr("Replacement verified · ready to apply"), "#215a42", "#dcf5e8")
+            self._set_badge(self.tr("Replacement verified · ready to apply"), "success")
 
     def _show_compile_failure(self, message: str) -> None:
         self._invalidate_compilation()
@@ -2293,12 +2365,12 @@ class SdfShaderGraphEditor(QWidget):
         self.diagnostics_summary.setText(
             self.tr("The background replacement build failed. The original shader was not changed.")
         )
-        self._set_badge(self.tr("Replacement build failed"), "#663a3a", "#f5dddd")
+        self._set_badge(self.tr("Replacement build failed"), "danger")
 
-    def _set_badge(self, text: str, background: str, foreground: str) -> None:
+    def _set_badge(self, text: str, tone: str) -> None:
         self.contract_badge.setText(text)
-        self.contract_badge.setStyleSheet(
-            f"QLabel {{ background:{background}; color:{foreground}; border-radius:5px; padding:5px; }}")
+        set_style_role(self.contract_badge, badge=tone)
+        self.contract_badge.show()
 
     def _show_contract_report(self, issues, compatible: bool) -> None:
         self.diagnostics.clear()

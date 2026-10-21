@@ -15,7 +15,10 @@ lazy from ui.scene.mesh_scene import (
     mesh_geometry_choices, mesh_scene_payloads, payload_records_have_complete_attribute,
 )
 from ui.scene.scene_preview import ScenePreviewWidget
+lazy from ui.editor_widgets import styled_label
+lazy from ui.icons import line_icon
 lazy from ui.scene.mesh_preview import MeshPreviewScene
+lazy from ui.styles import current_colors
 lazy from .scene_textures import plain_preview
 lazy from .preview_controls import MorphControls, find_combo_data
 
@@ -95,9 +98,9 @@ class MeshConversionPreview(QWidget):
                              (self.tr("Normals"), "normals"), (self.tr("Weights"), "skin_weights")):
             self.mode_combo.addItem(label, value)
         self.mode_combo.setToolTip(self.tr("Normals: RGB = XYZ. Weights: color = strongest joint; brightness = its weight."))
-        self.fit_button = QPushButton(self.tr("Fit both"), self)
+        self.fit_button = QPushButton(line_icon("fit"), self.tr("Fit both"), self)
         self.fit_button.setToolTip(self.tr("Frame both models together at the same scale and world origin."))
-        self.spin_button = QPushButton(self.tr("Turntable"), self)
+        self.spin_button = QPushButton(line_icon("refresh"), self.tr("Turntable"), self)
         self.spin_button.setCheckable(True)
         self.spin_button.setToolTip(self.tr("Slowly rotate both models. Drag or scroll either view to take control."))
         for widget in (self.geometry_combo, self.mode_combo):
@@ -116,28 +119,31 @@ class MeshConversionPreview(QWidget):
         splitter.setChildrenCollapsible(False)
         self.views, self.notes, self.stacks, self.placeholders, self.headings = [], [], [], [], []
         self._devices = []
+        colors = current_colors()
         for index, title in enumerate((self.tr("BEFORE · Source"), self.tr("AFTER · Converted"))):
             panel = QFrame(splitter)
             panel.setObjectName("conversionPreviewPanel")
-            panel.setStyleSheet("QFrame#conversionPreviewPanel { border:1px solid #43505e; border-radius:7px; }")
+            panel.setStyleSheet("QFrame#conversionPreviewPanel { border: 1px solid %s; border-radius: 4px; }"
+                                % colors["border_subtle"])
             column = QVBoxLayout(panel)
-            heading = QLabel(title, panel)
+            column.setContentsMargins(6, 6, 6, 6)
+            column.setSpacing(4)
+            heading = styled_label(title, panel, heading="panel", tone="info" if index == 0 else "success")
             heading.setTextFormat(Qt.PlainText)
             heading.setWordWrap(True)
-            heading.setStyleSheet("font-weight:600; color:" + ("#86c5f4" if index == 0 else "#85ddbd") + ";")
             column.addWidget(heading)
             stack = QStackedLayout()
             view = _ComparisonViewport(panel)
             self._devices.append(plain_preview(view, self))
             view.camera_changed.connect(self._camera_changed)
-            placeholder = QLabel(panel)
+            placeholder = styled_label(parent=panel, tone="muted")
             placeholder.setAlignment(Qt.AlignCenter)
             placeholder.setWordWrap(True)
             placeholder.setTextFormat(Qt.PlainText)
             stack.addWidget(view)
             stack.addWidget(placeholder)
             column.addLayout(stack, 1)
-            note = QLabel(panel)
+            note = styled_label(parent=panel, tone="muted")
             note.setTextFormat(Qt.PlainText)
             note.setWordWrap(True)
             column.addWidget(note)
@@ -152,7 +158,7 @@ class MeshConversionPreview(QWidget):
             max((view._frame_interval() for view in self.views), default=0))
         self.morph_combo = self.morph_controls.combo
         layout.addWidget(self.morph_controls)
-        hint = QLabel(self.tr("Linked views · Drag to orbit · Right-drag to pan · Scroll to zoom · Geometry preview, without game materials"), self)
+        hint = styled_label(self.tr("Linked views · Drag to orbit · Right-drag to pan · Scroll to zoom · Geometry preview, without game materials"), self, tone="subtle")
         hint.setWordWrap(True)
         layout.addWidget(hint)
 

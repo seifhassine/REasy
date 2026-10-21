@@ -2,9 +2,10 @@ import os
 import shutil
 from pathlib import Path
 
-lazy from PySide6.QtCore import QCoreApplication, QSignalBlocker, QTimer, Qt
-lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
-lazy from PySide6.QtWidgets import QFileDialog, QMessageBox, QSizePolicy, QStyle, QTabBar, QToolBar, QToolButton
+lazy from PySide6.QtCore import QCoreApplication, QSignalBlocker, QSize, QTimer, Qt
+lazy from PySide6.QtWidgets import QFileDialog, QMessageBox, QSizePolicy, QTabBar, QToolBar, QToolButton
+
+lazy from ui.icons import line_icon
 
 lazy from .project_sessions import ProjectSessionManager
 
@@ -14,7 +15,7 @@ class ProjectWorkspaceController:
         self.host = host
         self.sessions = ProjectSessionManager(notebook, tab_lookup, group_host)
         self.group_host = group_host
-        self._scene_icon = self._make_scene_icon()
+        self._scene_icon = line_icon("globe")
         self._tab_order = []
 
         self.toolbar = QToolBar(self.tr("Projects"), host)
@@ -34,7 +35,7 @@ class ProjectWorkspaceController:
         self.tab_bar.setUsesScrollButtons(True)
         self.tab_bar.setSelectionBehaviorOnRemove(QTabBar.SelectPreviousTab)
         self.tab_bar.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.tab_bar.setMinimumHeight(32)
+        self.tab_bar.setIconSize(QSize(14, 14))
         self.tab_bar.currentChanged.connect(self._on_tab_changed)
         self.tab_bar.tabMoved.connect(self._on_tab_moved)
         self.toolbar.addWidget(self.tab_bar)
@@ -52,48 +53,31 @@ class ProjectWorkspaceController:
 
     def apply_style(self):
         colors = self.host._build_theme_colors()
-        accent = colors["accent"]
-        bar_bg, tab_bg, hover_bg = colors["tab_bar_bg"], colors["surface"], colors["surface_hover"]
-        foreground, muted = colors["text"], colors["text_muted"]
         self.toolbar.setStyleSheet(f"""
-            QToolBar#projectWorkspaceBar {{ background: {bar_bg}; border: none;
-                border-bottom: 1px solid {colors['border_subtle']}; padding: 0px 4px; spacing: 0; }}
-            QTabBar#projectWorkspaceTabs {{ background: {bar_bg}; border: none; padding-left: 2px; }}
-            QTabBar#projectWorkspaceTabs::tab {{ background: transparent; color: {muted};
-                border: 1px solid transparent; padding: 4px 10px;
-                min-width: 120px; max-width: 250px; min-height: 16px;
-                margin: 2px 1px 2px 0px; border-radius: 7px; }}
-            QTabBar#projectWorkspaceTabs::tab:hover:!selected {{ background: {hover_bg}; color: {foreground}; }}
-            QTabBar#projectWorkspaceTabs::tab:selected {{ background: {tab_bg}; color: {foreground};
-                border-color: {colors['border']}; border-left: 2px solid {accent}; font-weight: 600; }}
-            QToolButton#projectTabClose {{ background: transparent; color: {muted}; border: none;
-                border-radius: 7px; font-size: 15px; font-weight: 500; }}
-            QToolButton#projectTabClose:hover {{ background: {colors['surface_active']}; color: {foreground}; }}
+            QToolBar#projectWorkspaceBar {{ background: {colors['chrome_bg']}; border: none;
+                border-bottom: 1px solid {colors['gutter']}; padding: 0px; spacing: 0; }}
+            QTabBar#projectWorkspaceTabs {{ background: {colors['chrome_bg']}; border: none; }}
+            QTabBar#projectWorkspaceTabs::tab {{ background: transparent; color: {colors['text_muted']};
+                border: none; border-top: 2px solid transparent; border-right: 1px solid {colors['gutter']};
+                min-width: 110px; max-width: 250px; min-height: 18px;
+                margin: 0px; padding: 4px 6px 5px 10px; }}
+            QTabBar#projectWorkspaceTabs::tab:first {{ margin-left: 4px; }}
+            QTabBar#projectWorkspaceTabs::tab:hover:!selected {{ background: {colors['surface']}; color: {colors['text']}; }}
+            QTabBar#projectWorkspaceTabs::tab:selected {{ background: {colors['tab_active_bg']};
+                color: {colors['text_bright']}; border-top-color: {colors['accent']}; }}
+            QToolButton#projectTabClose {{ background: transparent; border: none; border-radius: 3px; padding: 1px; }}
+            QToolButton#projectTabClose:hover {{ background: {colors['surface_active']}; }}
         """)
 
     def _close_button(self, callback, tip):
         button = QToolButton(self.tab_bar)
         button.setObjectName("projectTabClose")
-        button.setText("×")
+        button.setIcon(line_icon("close"))
+        button.setIconSize(QSize(12, 12))
         button.setToolTip(tip)
         button.setFixedSize(18, 18)
         button.clicked.connect(lambda _checked=False: QTimer.singleShot(0, self.toolbar, callback))
         return button
-
-    @staticmethod
-    def _make_scene_icon() -> QIcon:
-        pixmap = QPixmap(16, 16)
-        pixmap.fill(Qt.transparent)
-        painter = QPainter(pixmap)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setPen(QPen(QColor("#cfd8e3"), 1.4))
-        painter.setBrush(QColor("#1f2a36"))
-        painter.drawRoundedRect(2, 5, 12, 8, 2, 2)
-        painter.drawEllipse(6, 7, 4, 4)
-        painter.drawLine(5, 5, 8, 2)
-        painter.drawLine(8, 2, 11, 5)
-        painter.end()
-        return QIcon(pixmap)
 
     @staticmethod
     def tr(text: str) -> str:
@@ -327,7 +311,7 @@ class ProjectWorkspaceController:
     def _sync_tabs(self):
         scenes = getattr(self.host, "scenes", None)
         scene_tabs = scenes.tabs() if scenes else ()
-        project_icon = self.host.style().standardIcon(QStyle.SP_DirIcon)
+        project_icon = line_icon("briefcase")
         entries = self._ordered_entries([
             (session.key, project_icon, session.title, session.path, lambda key=session.key: self.close(key), self.tr("Close project"))
             for session in self.sessions.project_sessions()

@@ -15,6 +15,8 @@ from file_handlers.sdf.sdf_viewer import SdfViewer
 lazy from services.backup_store import create_backup
 lazy from ui.background_jobs import run_job
 lazy from ui.file_tab import open_tabs_for_paths, tab_output_path
+lazy from ui.icons import line_icon
+lazy from ui.styles import set_style_role
 lazy from utils.resource_file_utils import (
     normalize_resource_path,
     resource_context_for_handler,
@@ -64,6 +66,7 @@ def open_master_for_object(app, path: str, data: bytes, scope: ObjectScope, *, p
 class MmtrViewer(SdfViewer):
     def __init__(self, handler, parent=None):
         super().__init__(handler, parent, editor_only=True)
+        self.setObjectName("mmtrViewer")
         self.material_editor = MmtrMaterialEditor(self)
         self.material_editor.source_path = str(getattr(handler, "filepath", "") or "")
         context = resource_context_for_handler(handler)
@@ -90,6 +93,7 @@ class MmtrViewer(SdfViewer):
     def _add_scope_banner(self) -> None:
         scope = self.object_scope
         row = QHBoxLayout()
+        row.setContentsMargins(8, 6, 8, 2)
         name = str(scope.material.header.mat_name or self.tr("Unnamed material"))
         if scope.mdf_handler is not None:
             text = self.tr("Editing the shader of {material} in {mdf} only. Save it with Create Variant: the master "
@@ -100,10 +104,11 @@ class MmtrViewer(SdfViewer):
                            "{material}.").format(material=name)
         banner = QLabel(text)
         banner.setWordWrap(True)
-        banner.setStyleSheet("QLabel { background:#263746; color:#dceaf5; border-radius:6px; padding:7px 10px; }")
+        set_style_role(banner, banner="info")
         row.addWidget(banner, 1)
         if scope.mdf_handler is None:
             users = QPushButton(self.tr("Objects Using It…"))
+            users.setIcon(line_icon("search"))
             users.setToolTip(self.tr("Find the MDF materials that use this master in the project, unpacked files "
                                      "and game PAKs."))
             users.clicked.connect(self._show_master_users)
@@ -188,7 +193,7 @@ class MmtrViewer(SdfViewer):
         self.material_editor.status.setText(
             self.tr("Material saved.")
         )
-        self.material_editor.status.setStyleSheet("QLabel { color:#80c99b; }")
+        set_style_role(self.material_editor.status, tone="success")
 
     def _project_dir_for_output(self, path: str) -> str:
         app = getattr(self.handler, "app", None)

@@ -5,10 +5,10 @@ from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
 	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QComboBox,
 	QGroupBox, QGridLayout, QCheckBox, QSpinBox, QSplitter, QTabWidget, QSizePolicy,
-	QMessageBox, QToolButton, QStyle, QStackedWidget
+	QMessageBox, QStackedWidget, QFrame
 )
-lazy from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap, QPolygon
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSize, QPoint
+lazy from PySide6.QtGui import QPixmap
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 lazy from file_handlers.mesh.material_resolver import MeshMaterialResolver
 lazy from file_handlers.mmtr.material_context import MaterialInstanceContext
 lazy from file_handlers.mmtr.material_family import bind_drawn_master, parsed_master
@@ -25,6 +25,9 @@ lazy from .mdf_template_manager import MdfTemplateManager
 lazy from ui.mdf_template_export_dialog import MdfTemplateExportDialog
 lazy from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
 lazy from ui.widgets_utils import get_color_preview_brush
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
+lazy from ui.editor_widgets import editor_strip, search_field, styled_label, tool_button
 lazy from .material_graph import MdfMaterialGraph, is_color_parameter, layer_color_channel, pick_parameter_color, unit_value
 
 
@@ -84,16 +87,20 @@ class MdfViewer(QWidget):
 
 	def _setup_ui(self):
 		layout = QVBoxLayout(self)
-		layout.setContentsMargins(8, 8, 8, 8)
+		layout.setContentsMargins(0, 0, 0, 0)
+		layout.setSpacing(0)
 		self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
-		head = QHBoxLayout()
-		head.addWidget(QLabel("MDF Version:"))
+		header, head = editor_strip()
+		version_label = styled_label("MDF Version:", tone="muted")
+		head.addWidget(version_label)
 		self.version_edit = QLineEdit()
 		self.version_edit.setReadOnly(False)
 		self.version_edit.setMaximumWidth(80)
+		set_style_role(self.version_edit, mono=True)
 		self.version_edit.textChanged.connect(self._on_version_changed)
 		head.addWidget(self.version_edit)
+		head.addSpacing(8)
 		self.meshlet_check = QCheckBox(self.tr("Meshlet Material"))
 		self.meshlet_check.setToolTip(
 			self.tr("Sets bit 0 of the MDF header options field.")
@@ -101,61 +108,35 @@ class MdfViewer(QWidget):
 		self.meshlet_check.stateChanged.connect(self._on_meshlet_changed)
 		head.addWidget(self.meshlet_check)
 		head.addStretch(1)
-		layout.addLayout(head)
+		layout.addWidget(header)
 
 		splitter = QSplitter()
 		splitter.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-		layout.addWidget(splitter)
+		body = QVBoxLayout()
+		body.setContentsMargins(6, 6, 6, 6)
+		body.addWidget(splitter)
+		layout.addLayout(body, 1)
 
 		left_panel = QWidget()
 		left_v = QVBoxLayout(left_panel)
-		flt = QHBoxLayout()
-		flt.setSpacing(6)
-		self.filter_edit = QLineEdit()
+		left_v.setContentsMargins(0, 0, 0, 0)
+		left_v.setSpacing(0)
+		toolbar_strip, toolbar = editor_strip("header", margins=(4, 3, 4, 3), spacing=2)
+		self.filter_edit = search_field(QLineEdit())
 		self.filter_edit.setPlaceholderText(self.tr("Filter materials..."))
 		self.filter_edit.textChanged.connect(self._on_filter_changed)
-		flt.addWidget(self.filter_edit, 1)
-		flt.addStretch()
-		left_v.addLayout(flt)
-
-		toolbar = QHBoxLayout()
-		toolbar.setSpacing(4)
-		self.add_btn = self._create_material_tool_button(
-			self._make_toolbar_icon("add", QColor(74, 144, 226)),
-			self.tr("Add a new material"),
-			self.tr("Add"),
-			self._on_add_material,
-		)
-		self.del_btn = self._create_material_tool_button(
-			QStyle.SP_TrashIcon,
-			self.tr("Delete selected material(s)"),
-			self.tr("Delete"),
-			self._on_delete_material,
-		)
-		self.copy_btn = self._create_material_tool_button(
-			self._make_toolbar_icon("copy", QColor(95, 185, 125)),
-			self.tr("Copy selected material(s) to clipboard"),
-			self.tr("Copy"),
-			self._on_copy_materials,
-		)
-		self.paste_btn = self._create_material_tool_button(
-			self._make_toolbar_icon("paste", QColor(255, 193, 79)),
-			self.tr("Paste material(s) from clipboard"),
-			self.tr("Paste"),
-			self._on_paste_materials,
-		)
-		self.export_btn = self._create_material_tool_button(
-			self._make_toolbar_icon("export", QColor(153, 102, 255)),
-			self.tr("Export selected material as template"),
-			self.tr("Export"),
-			self._on_export_material,
-		)
-		self.template_btn = self._create_material_tool_button(
-			self._make_toolbar_icon("templates", QColor(233, 89, 80)),
-			self.tr("Open the MDF template manager"),
-			self.tr("Templates"),
-			self._open_template_manager,
-		)
+		self.add_btn = tool_button("add", self.tr("Add a new material"), self._on_add_material)
+		self.add_btn.setText(self.tr("Add"))
+		self.del_btn = tool_button("delete", self.tr("Delete selected material(s)"), self._on_delete_material)
+		self.del_btn.setText(self.tr("Delete"))
+		self.copy_btn = tool_button("copy", self.tr("Copy selected material(s) to clipboard"), self._on_copy_materials)
+		self.copy_btn.setText(self.tr("Copy"))
+		self.paste_btn = tool_button("paste", self.tr("Paste material(s) from clipboard"), self._on_paste_materials)
+		self.paste_btn.setText(self.tr("Paste"))
+		self.export_btn = tool_button("export", self.tr("Export selected material as template"), self._on_export_material)
+		self.export_btn.setText(self.tr("Export"))
+		self.template_btn = tool_button("template", self.tr("Open the MDF template manager"), self._open_template_manager)
+		self.template_btn.setText(self.tr("Templates"))
 		for btn in (
 			self.add_btn,
 			self.del_btn,
@@ -166,7 +147,11 @@ class MdfViewer(QWidget):
 		):
 			toolbar.addWidget(btn)
 		toolbar.addStretch(1)
-		left_v.addLayout(toolbar)
+		left_v.addWidget(toolbar_strip)
+		filter_row = QHBoxLayout()
+		filter_row.setContentsMargins(0, 4, 0, 4)
+		filter_row.addWidget(self.filter_edit)
+		left_v.addLayout(filter_row)
 		self.materials_table = QTableWidget(0, 1)
 		self.materials_table.setHorizontalHeaderLabels([self.tr("Materials")])
 		self.materials_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
@@ -190,24 +175,30 @@ class MdfViewer(QWidget):
 
 		overview = QWidget()
 		ov = QGridLayout(overview)
-		ov.addWidget(QLabel("Material Name"), 0, 0)
+		ov.setContentsMargins(8, 8, 8, 8)
+		ov.setHorizontalSpacing(8)
+		ov.setVerticalSpacing(6)
+		ov.addWidget(styled_label("Material Name", tone="muted"), 0, 0)
 		self.matname_edit = QLineEdit()
 		self.matname_edit.textChanged.connect(self._on_matname_changed)
 		ov.addWidget(self.matname_edit, 0, 1)
-		ov.addWidget(QLabel("Name Hash"), 0, 2)
+		ov.addWidget(styled_label("Name Hash", tone="muted"), 0, 2)
 		self.matname_hash_label = QLabel("0x00000000")
+		self.matname_hash_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+		set_style_role(self.matname_hash_label, mono=True)
 		ov.addWidget(self.matname_hash_label, 0, 3)
-		ov.addWidget(QLabel("mmtrPath"), 1, 0)
+		ov.addWidget(styled_label("mmtrPath", tone="muted"), 1, 0)
 		self.mmtr_edit = QLineEdit()
 		self.mmtr_edit.textChanged.connect(self._on_mmtr_changed)
 		ov.addWidget(self.mmtr_edit, 1, 1, 1, 2)
 		self.edit_shader_button = QPushButton(self.tr("Edit Shader…"))
+		self.edit_shader_button.setIcon(line_icon("edit"))
 		self.edit_shader_button.setToolTip(self.tr(
 			"Open this material's master material in the material editor, for this object only or for every object "
 			"using it."))
 		self.edit_shader_button.clicked.connect(self._edit_shader)
 		ov.addWidget(self.edit_shader_button, 1, 3)
-		ov.addWidget(QLabel("ShaderType"), 2, 0)
+		ov.addWidget(styled_label("ShaderType", tone="muted"), 2, 0)
 		self.shader_combo = QComboBox()
 		self._shader_names = [
 			"Standard","Decal","DecalWithMetallic","DecalNRMR","Transparent","Distortion",
@@ -218,13 +209,13 @@ class MdfViewer(QWidget):
 		self.shader_combo.addItems(self._shader_names)
 		self.shader_combo.currentIndexChanged.connect(self._on_shader_changed)
 		ov.addWidget(self.shader_combo, 2, 1)
-		self.bake_texture_label = QLabel("BakeTextureArraySize")
+		self.bake_texture_label = styled_label("BakeTextureArraySize", tone="muted")
 		ov.addWidget(self.bake_texture_label, 3, 0)
 		self.bake_texture_spin = QSpinBox()
 		self.bake_texture_spin.setRange(0, 2147483647)
 		self.bake_texture_spin.valueChanged.connect(self._on_bake_texture_changed)
 		ov.addWidget(self.bake_texture_spin, 3, 1)
-		self.ukn_label = QLabel("Unknown 64")
+		self.ukn_label = styled_label("Unknown 64", tone="muted")
 		ov.addWidget(self.ukn_label, 3, 2)
 		self.ukn_edit = QLineEdit()
 		self.ukn_edit.setPlaceholderText("0 (or 0x...)" )
@@ -232,6 +223,8 @@ class MdfViewer(QWidget):
 		ov.addWidget(self.ukn_edit, 3, 3)
 		self.flags_group = QGroupBox("Material Flags")
 		fg = QGridLayout(self.flags_group)
+		fg.setHorizontalSpacing(12)
+		fg.setVerticalSpacing(6)
 		self._flags1_names = list(MATERIAL_FLAG_NAMES)
 		self.flags1_checks = [QCheckBox(n) for n in self._flags1_names]
 		for i, cb in enumerate(self.flags1_checks):
@@ -240,12 +233,12 @@ class MdfViewer(QWidget):
 		self.transparent_zpostpass_check = QCheckBox("TransparentZPostPassEnable")
 		self.transparent_zpostpass_check.stateChanged.connect(self._on_flags_changed)
 		fg.addWidget(self.transparent_zpostpass_check, 2, 0, 1, 2)
-		fg.addWidget(QLabel("Tessellation"), 3, 0)
+		fg.addWidget(styled_label("Tessellation", tone="muted"), 3, 0)
 		self.tess_spin = QSpinBox()
 		self.tess_spin.setRange(0, 63)
 		self.tess_spin.valueChanged.connect(self._on_flags_changed)
 		fg.addWidget(self.tess_spin, 3, 1)
-		fg.addWidget(QLabel("Phong"), 3, 2)
+		fg.addWidget(styled_label("Phong", tone="muted"), 3, 2)
 		self.phong_spin = QSpinBox()
 		self.phong_spin.setRange(0, 255)
 		self.phong_spin.valueChanged.connect(self._on_flags_changed)
@@ -257,7 +250,10 @@ class MdfViewer(QWidget):
 		self.flags2_checks = [QCheckBox(n) for n in self._flags2_names]
 		for i, cb in enumerate(self.flags2_checks):
 			cb.stateChanged.connect(self._on_flags_changed)
-			fg.addWidget(cb, 4 + (i // 4), i % 4)
+			fg.addWidget(cb, 5 + (i // 4), i % 4)
+		fg.addWidget(self._separator(), 4, 0, 1, 5)
+		self._flags3_separator = self._separator()
+		fg.addWidget(self._flags3_separator, 7, 0, 1, 5)
 		
 		self._flags3_names = [
 			"TransparentDistortionEnable","AlphaUsed","BakeTextureUseSecondaryUV","ForwardPrepassEnabled",
@@ -266,25 +262,28 @@ class MdfViewer(QWidget):
 		self.flags3_checks = [QCheckBox(n) for n in self._flags3_names]
 		for i, cb in enumerate(self.flags3_checks):
 			cb.stateChanged.connect(self._on_flags_changed)
-			fg.addWidget(cb, 6 + (i // 4), i % 4)
+			fg.addWidget(cb, 8 + (i // 4), i % 4)
 		
-		self.transparent_priority_bias_label = QLabel("TransparentPriorityBias")
-		fg.addWidget(self.transparent_priority_bias_label, 8, 0)
+		self.transparent_priority_bias_label = styled_label("TransparentPriorityBias", tone="muted")
+		fg.addWidget(self.transparent_priority_bias_label, 10, 0)
 		self.transparent_priority_bias_spin = QSpinBox()
 		self.transparent_priority_bias_spin.setRange(-128, 127)
 		self.transparent_priority_bias_spin.valueChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.transparent_priority_bias_spin, 8, 1)
+		fg.addWidget(self.transparent_priority_bias_spin, 10, 1)
 		
 		ov.addWidget(self.flags_group, 4, 0, 1, 4)
 		ov.setRowStretch(5, 1)
 		self.overview_tab_idx = self.tabs.addTab(overview, self.tr("Overview"))
 
 		textures_tab = QWidget()
-		tg = QGridLayout(textures_tab)
+		tg = QVBoxLayout(textures_tab)
+		tg.setContentsMargins(6, 6, 6, 6)
+		tg.setSpacing(4)
 		self.textures_table = QTableWidget(0, 3)
 		self.textures_table.setHorizontalHeaderLabels([
-			self.tr("Type"), self.tr("Path"), self.tr("Locked 🔒")
+			self.tr("Type"), self.tr("Path"), self.tr("Locked")
 		])
+		self.textures_table.horizontalHeaderItem(2).setIcon(line_icon("lock"))
 		self._set_header_tooltip(self.textures_table, 2, self.tr(
 			"Checked: the game can't change this texture at runtime; setTexture() is skipped and the file's value stays."))
 		self.textures_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -292,23 +291,24 @@ class MdfViewer(QWidget):
 		self.textures_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 		self.textures_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.textures_table.itemChanged.connect(self._on_texture_changed)
-		tg.addWidget(self.textures_table, 0, 0, 1, 3)
 		self.tex_add_btn = QPushButton(self.tr("Add"))
 		self.tex_del_btn = QPushButton(self.tr("Delete"))
 		self.tex_add_btn.clicked.connect(self._on_add_texture)
 		self.tex_del_btn.clicked.connect(self._on_delete_texture)
-		tg.addWidget(self.tex_add_btn, 1, 1)
-		tg.addWidget(self.tex_del_btn, 1, 2)
+		tg.addLayout(self._table_actions((self.tex_add_btn, "add"), (self.tex_del_btn, "delete")))
+		tg.addWidget(self.textures_table, 1)
 		self.textures_tab_idx = self.tabs.addTab(textures_tab, self.tr("Textures"))
 
 		params_tab = QWidget()
-		pg = QGridLayout(params_tab)
+		pg = QVBoxLayout(params_tab)
+		pg.setContentsMargins(6, 6, 6, 6)
+		pg.setSpacing(4)
 		self.params_info_label = QLabel("")
 		self.params_info_label.setWordWrap(True)
-		pg.addWidget(self.params_info_label, 0, 0, 1, 3)
+		set_style_role(self.params_info_label, banner="danger")
+		self.params_info_label.hide()
 
 		self.params_stack = QStackedWidget()
-		pg.addWidget(self.params_stack, 1, 0, 1, 3)
 
 		self.par_add_btn = QPushButton(self.tr("Add"))
 		self.par_add_above_btn = QPushButton(self.tr("Add Above"))
@@ -316,31 +316,35 @@ class MdfViewer(QWidget):
 		self.par_add_btn.clicked.connect(self._on_add_param)
 		self.par_add_above_btn.clicked.connect(self._on_add_param_above)
 		self.par_del_btn.clicked.connect(self._on_delete_param)
-		pg.addWidget(self.par_add_btn, 2, 0)
-		pg.addWidget(self.par_add_above_btn, 2, 1)
-		pg.addWidget(self.par_del_btn, 2, 2)
+		pg.addLayout(self._table_actions(
+			(self.par_add_btn, "add"), (self.par_add_above_btn, "arrow_up"), (self.par_del_btn, "delete")))
+		pg.addWidget(self.params_info_label)
+		pg.addWidget(self.params_stack, 1)
 		self.params_tab_idx = self.tabs.addTab(params_tab, self.tr("Parameters"))
 
 		gpbf_tab = QWidget()
-		gg = QGridLayout(gpbf_tab)
+		gg = QVBoxLayout(gpbf_tab)
+		gg.setContentsMargins(6, 6, 6, 6)
+		gg.setSpacing(4)
 		self.gpbf_table = QTableWidget(0, 2)
 		self.gpbf_table.setHorizontalHeaderLabels([self.tr("Name"), self.tr("Data")])
 		self.gpbf_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
 		self.gpbf_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
 		self.gpbf_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.gpbf_table.itemChanged.connect(self._on_gpbf_changed)
-		gg.addWidget(self.gpbf_table, 0, 0, 1, 3)
 		self.gpbf_add_btn = QPushButton(self.tr("Add"))
 		self.gpbf_del_btn = QPushButton(self.tr("Delete"))
 		self.gpbf_add_btn.clicked.connect(self._on_add_gpbf)
 		self.gpbf_del_btn.clicked.connect(self._on_delete_gpbf)
-		gg.addWidget(self.gpbf_add_btn, 1, 1)
-		gg.addWidget(self.gpbf_del_btn, 1, 2)
+		gg.addLayout(self._table_actions((self.gpbf_add_btn, "add"), (self.gpbf_del_btn, "delete")))
+		gg.addWidget(self.gpbf_table, 1)
 		self.gpbf_tab_idx = self.tabs.addTab(gpbf_tab, self.tr("GPU Buffers"))
 
 		self.shaderLODRedirects_tab = QWidget()
 		tx = QGridLayout(self.shaderLODRedirects_tab)
-		tx.addWidget(QLabel("ShaderLOD Count"), 0, 0)
+		tx.setContentsMargins(6, 6, 6, 6)
+		tx.setSpacing(6)
+		tx.addWidget(styled_label("ShaderLOD Count", tone="muted"), 0, 0)
 		self.shaderLOD_count_spin = QSpinBox()
 		self.shaderLOD_count_spin.setRange(0, 2048)
 		self.shaderLOD_count_spin.valueChanged.connect(self._on_shaderLOD_count_changed)
@@ -364,81 +368,23 @@ class MdfViewer(QWidget):
 		if model:
 			model.setHeaderData(column, Qt.Horizontal, tooltip, Qt.ToolTipRole)
 
-	def _make_toolbar_icon(self, kind: str, color: QColor) -> QIcon:
-		size = 24
-		pix = QPixmap(size, size)
-		pix.fill(Qt.transparent)
-		painter = QPainter(pix)
-		painter.setRenderHint(QPainter.Antialiasing)
-		painter.setBrush(color)
-		painter.setPen(Qt.NoPen)
-		radius = 6
-		painter.drawRoundedRect(1, 1, size - 2, size - 2, radius, radius)
+	@staticmethod
+	def _separator() -> QFrame:
+		line = QFrame()
+		line.setFrameShape(QFrame.Shape.HLine)
+		return line
 
-		painter.setBrush(Qt.white)
-		painter.setPen(Qt.NoPen)
-		center = pix.rect().center()
-
-		if kind == "add":
-			thickness = 3
-			painter.fillRect(center.x() - thickness // 2, 6, thickness, size - 12, Qt.white)
-			painter.fillRect(6, center.y() - thickness // 2, size - 12, thickness, Qt.white)
-		elif kind == "copy":
-			painter.setOpacity(0.85)
-			painter.drawRoundedRect(6, 6, 11, 13, 2, 2)
-			painter.setOpacity(1.0)
-			painter.drawRoundedRect(9, 9, 11, 13, 2, 2)
-		elif kind == "paste":
-			painter.drawRoundedRect(7, 9, 10, 11, 2, 2)
-			painter.drawRect(9, 11, 6, 2)
-			painter.drawRect(9, 14, 6, 2)
-			painter.drawRect(9, 17, 6, 2)
-			painter.drawRoundedRect(8, 5, 8, 5, 2, 2)
-			painter.setBrush(color)
-			painter.drawRect(10, 5, 4, 2)
-			painter.setBrush(Qt.white)
-			painter.drawRect(11, 4, 2, 2)
-		elif kind == "export":
-			painter.drawRoundedRect(7, 9, 10, 9, 2, 2)
-			points = [
-				QPoint(center.x(), center.y() - 6),
-				QPoint(center.x() - 5, center.y() - 1),
-				QPoint(center.x() - 1, center.y() - 1),
-				QPoint(center.x() - 1, center.y() + 5),
-				QPoint(center.x() + 1, center.y() + 5),
-				QPoint(center.x() + 1, center.y() - 1),
-				QPoint(center.x() + 5, center.y() - 1),
-			]
-			painter.drawPolygon(QPolygon(points))
-		elif kind == "templates":
-			gap = 3
-			cell = 4
-			for row in range(2):
-				for col in range(2):
-					x = 6 + col * (cell + gap)
-					y = 6 + row * (cell + gap)
-					painter.drawRoundedRect(x, y, cell, cell, 1, 1)
-			painter.setOpacity(0.8)
-			painter.drawRoundedRect(12, 14, 6, 6, 1, 1)
-		else:
-			painter.drawEllipse(center, 4, 4)
-
-		painter.end()
-		return QIcon(pix)
-
-	def _create_material_tool_button(self, icon, tooltip: str, text: str, callback):
-		btn = QToolButton()
-		if isinstance(icon, QIcon):
-			btn.setIcon(icon)
-		else:
-			btn.setIcon(self.style().standardIcon(icon))
-		btn.setAutoRaise(True)
-		btn.setToolButtonStyle(Qt.ToolButtonIconOnly)
-		btn.setIconSize(QSize(20, 20))
-		btn.setToolTip(tooltip)
-		btn.setText(text)
-		btn.clicked.connect(callback)
-		return btn
+	@staticmethod
+	def _table_actions(*buttons) -> QHBoxLayout:
+		row = QHBoxLayout()
+		row.setSpacing(4)
+		for button, icon in buttons:
+			destructive = icon == "delete"
+			button.setIcon(line_icon(icon, current_colors()["danger"] if destructive else None))
+			set_style_role(button, compact=True, variant="danger" if destructive else "")
+			row.addWidget(button)
+		row.addStretch(1)
+		return row
 
 	def _populate(self):
 		m = self.handler.mdf
@@ -631,6 +577,7 @@ class MdfViewer(QWidget):
 			cb.setChecked(bool((alpha >> (24 + bit)) & 1))
 			cb.blockSignals(False)
 		
+		self._flags3_separator.setVisible(version >= 31)
 		for bit, cb in enumerate(self.flags3_checks):
 			cb.blockSignals(True)
 			if version >= 31:
@@ -794,9 +741,10 @@ class MdfViewer(QWidget):
 		while self.params_stack.count() <= mat_index:
 			table = QTableWidget(0, 8)
 			table.setHorizontalHeaderLabels([
-				self.tr("Name"), self.tr("Components"), self.tr("Locked 🔒"),
+				self.tr("Name"), self.tr("Components"), self.tr("Locked"),
 				"X", "Y", "Z", "W", self.tr("Color"),
 			])
+			table.horizontalHeaderItem(2).setIcon(line_icon("lock"))
 			self._set_header_tooltip(table, 2, self.tr(
 				"Checked: the game can't change this parameter at runtime; setFloat() is skipped and the file's value stays."))
 			table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
@@ -1070,11 +1018,10 @@ class MdfViewer(QWidget):
 		if len(segments) > 1:
 			messages.append(self.tr("LayerColor: Only one RGB sequence is allowed."))
 		if messages:
-			self.params_info_label.setStyleSheet("color:#c00;font-weight:600;")
 			self.params_info_label.setText("\n".join(sorted(set(messages))))
 		else:
-			self.params_info_label.setStyleSheet("")
 			self.params_info_label.setText("")
+		self.params_info_label.setVisible(bool(messages))
 
 	def _edit_shader(self):
 		m = self.handler.mdf

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from PySide6.QtCore import QModelIndex, Qt, QTimer, Signal
+from PySide6.QtCore import QModelIndex, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QKeySequence, QStandardItem, QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -23,6 +23,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+lazy from ui.editor_widgets import styled_label, tool_button
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 lazy from .bookmark_dialog import BookmarkDialog
 lazy from .bookmarks import Bookmark, BookmarksStore, normalize_root
@@ -50,15 +54,24 @@ class BookmarksPanel(QWidget):
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(4)
-        layout.addLayout(self._build_toolbar())
+        layout.setSpacing(0)
+        toolbar = QWidget(self)
+        toolbar.setObjectName("projectBrowserToolbar")
+        toolbar.setAttribute(Qt.WA_StyledBackground, True)
+        set_style_role(toolbar, surface="section")
+        toolbar_layout = QVBoxLayout(toolbar)
+        toolbar_layout.setContentsMargins(6, 6, 6, 6)
+        toolbar_layout.setSpacing(4)
+        toolbar_layout.addLayout(self._build_toolbar())
+        layout.addWidget(toolbar)
 
         filters = QHBoxLayout()
+        filters.setSpacing(6)
         self._tag_combo = QComboBox()
         self._tag_combo.setEditable(True)
         self._tag_combo.setInsertPolicy(QComboBox.NoInsert)
         self._tag_combo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
-        self._tag_combo.setMinimumContentsLength(10)
+        self._tag_combo.setMinimumContentsLength(6)
         self._tag_combo.setMinimumWidth(0)
         self._tag_combo.setMaxVisibleItems(12)
         self._tag_combo.setAccessibleName(self.tr("Filter by tag"))
@@ -69,20 +82,40 @@ class BookmarksPanel(QWidget):
         self._tag_combo.currentIndexChanged.connect(lambda: self._set_tag(self._tag_combo.currentData()))
         self._tag_combo.lineEdit().editingFinished.connect(self._finish_tag_edit)
         filters.addWidget(self._tag_combo, 1)
-        self._count_label = QLabel()
+        self._count_label = styled_label(tone="muted")
         filters.addWidget(self._count_label)
-        layout.addLayout(filters)
+        toolbar_layout.addLayout(filters)
 
         self._model = QStandardItemModel(self)
         self._model.setHorizontalHeaderLabels([self.tr("Bookmarks")])
         self._tree = self._build_tree()
         layout.addWidget(self._tree)
 
-        self._empty_label = QLabel(self.tr("No bookmarks"))
+        self._empty_state = QWidget(self)
+        self._empty_state.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self._empty_state.setAttribute(Qt.WA_StyledBackground, True)
+        set_style_role(self._empty_state, surface="view")
+        empty_layout = QVBoxLayout(self._empty_state)
+        empty_layout.setContentsMargins(16, 16, 16, 16)
+        empty_layout.setSpacing(6)
+        empty_layout.addStretch(1)
+        self._empty_icon = QLabel(self._empty_state)
+        self._empty_icon.setAlignment(Qt.AlignCenter)
+        empty_layout.addWidget(self._empty_icon)
+        self._empty_label = styled_label(self.tr("No bookmarks"), self._empty_state, tone="muted")
         self._empty_label.setAlignment(Qt.AlignCenter)
-        self._empty_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self._empty_label.hide()
-        layout.addWidget(self._empty_label)
+        empty_layout.addWidget(self._empty_label)
+        self._empty_hint = styled_label(
+            self.tr("Click the star on a file or folder, or right-click it and choose Bookmark & tag…"),
+            self._empty_state,
+            tone="subtle",
+        )
+        self._empty_hint.setAlignment(Qt.AlignCenter)
+        self._empty_hint.setWordWrap(True)
+        empty_layout.addWidget(self._empty_hint)
+        empty_layout.addStretch(2)
+        self._empty_state.hide()
+        layout.addWidget(self._empty_state)
 
         self._store.changed.connect(self._on_store_changed)
         # Deferred until the panel is up; a child timer dies with the panel.
@@ -132,9 +165,10 @@ class BookmarksPanel(QWidget):
         ):
             action = menu.addAction(text, callback)
             action.setToolTip(tooltip)
-        options = QToolButton(text="…")
+        options = tool_button("more", self.tr("Import or export bookmarks"))
+        # The icon already reads as a menu: no arrow, and no room kept for one.
+        options.setStyleSheet("QToolButton::menu-indicator { image: none; width: 0px; }")
         options.setAccessibleName(self.tr("Bookmark options"))
-        options.setToolTip(self.tr("Import or export bookmarks"))
         options.setMenu(menu)
         options.setPopupMode(QToolButton.InstantPopup)
         toolbar.addWidget(options)
@@ -175,6 +209,8 @@ class BookmarksPanel(QWidget):
 
     def showEvent(self, event):
         super().showEvent(event)
+        icon = line_icon("bookmark", current_colors()["text_subtle"])
+        self._empty_icon.setPixmap(icon.pixmap(QSize(24, 24), self.devicePixelRatioF()))
         self.refresh()
 
     def is_bookmarked(self, scope, path, root="", game="") -> bool:
@@ -323,12 +359,13 @@ class BookmarksPanel(QWidget):
         self._tree.verticalScrollBar().setValue(scroll)
         self._count_label.setText(self.tr("{count} saved").format(count=len(bookmarks)))
         empty = not bookmarks
-        self._empty_label.setVisible(empty)
+        self._empty_state.setVisible(empty)
         self._tree.setVisible(not empty)
         if empty:
             self._empty_label.setText(
                 self.tr("No matching bookmarks") if len(self._store) else self.tr("No bookmarks")
             )
+            self._empty_hint.setVisible(not len(self._store))
 
     def _context_key(self) -> tuple[str, str]:
         game, project_root = self._context_provider()

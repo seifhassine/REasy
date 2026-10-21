@@ -1,5 +1,8 @@
-from PySide6.QtWidgets import (QDialog, QVBoxLayout, QLineEdit, QListWidget, 
-                              QDialogButtonBox, QLabel)
+from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLineEdit, QListWidget,
+                              QDialogButtonBox)
+
+lazy from ui.editor_widgets import search_field, styled_label
+
 
 class ComponentSelectorDialog(QDialog):
     """Dialog for selecting a component type with filtering and autocomplete"""
@@ -15,23 +18,32 @@ class ComponentSelectorDialog(QDialog):
         self.resize(500, 400)
         
         layout = QVBoxLayout(self)
-        
-        self.status_label = QLabel(self.tr("Loading components..."))
-        layout.addWidget(self.status_label)
-        
-        self.search_input = QLineEdit()
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
+
+        self.status_label = styled_label(self.tr("Loading components..."), tone="muted")
+
+        self.search_input = search_field(QLineEdit())
         self.search_input.setPlaceholderText(
             self.tr("Type component name (e.g. 'chainsaw.GmOptionSleep')")
         )
         layout.addWidget(self.search_input)
-        
+
         self.component_list = QListWidget()
-        layout.addWidget(self.component_list)
-        
+        layout.addWidget(self.component_list, 1)
+
+        self._empty_label = styled_label(self.tr("No matching types"), emptyState=True)
+        self._empty_label.hide()
+        layout.addWidget(self._empty_label, 1)
+
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
-        layout.addWidget(button_box)
+        footer = QHBoxLayout()
+        footer.setSpacing(8)
+        footer.addWidget(self.status_label, 1)
+        footer.addWidget(button_box)
+        layout.addLayout(footer)
         
         self.all_component_types = []
         self._load_component_types()
@@ -98,9 +110,11 @@ class ComponentSelectorDialog(QDialog):
                     break
         
         self.component_list.addItems(matching_types)
-        
+
         if self.component_list.count() > 0:
             self.component_list.setCurrentRow(0)
+        self.component_list.setVisible(bool(matching_types))
+        self._empty_label.setVisible(not matching_types)
             
         if self.required_parent_name:
             self.status_label.setText(

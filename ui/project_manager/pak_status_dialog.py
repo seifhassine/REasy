@@ -29,8 +29,10 @@ class DownloadStatusDialog(QDialog):
         self._prog.setRange(0, 100)
         self._prog.setValue(0)
 
+        lay.setSpacing(8)
         lay.addWidget(self._lbl)
         lay.addWidget(self._prog)
+        lay.addStretch(1)
 
         self._bridge = _Bridge()
         self._bridge.prog.connect(self._prog.setValue)

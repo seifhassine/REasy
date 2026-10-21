@@ -38,6 +38,9 @@ lazy from tools.rsz_field_value_finder import (
     scan_file,
     value_matches,
 )
+lazy from ui.editor_widgets import editor_strip, styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors
 lazy from utils.type_registry import TypeRegistry
 
 
@@ -107,20 +110,25 @@ class RszFieldValueFinderDialog(QDialog):
         self.progress_dialog: Optional[QProgressDialog] = None
 
         self.setWindowTitle(self.tr("Find/Replace RSZ Field Value"))
-        self.setMinimumSize(850, 560)
+        self.setMinimumSize(760, 520)
         self.resize(1000, 650)
         self.setup_ui()
         if self.json_path_edit.text():
             self.load_type_registry()
         
     def setup_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 10, 10, 10)
-        layout.setSpacing(8)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        search_group = QGroupBox(self.tr("Search"))
-        search_layout = QGridLayout(search_group)
+        search_bar = QWidget()
+        search_bar.setProperty("surface", "toolbar")
+        search_layout = QGridLayout(search_bar)
+        search_layout.setContentsMargins(8, 6, 8, 6)
+        search_layout.setHorizontalSpacing(6)
+        search_layout.setVerticalSpacing(4)
         search_layout.setColumnStretch(1, 1)
+        root.addWidget(search_bar)
 
         self.json_path_edit = QLineEdit(self.settings.get("rcol_json_path", ""))
         search_layout.addWidget(QLabel(self.tr("Type Registry:")), 0, 0)
@@ -129,7 +137,7 @@ class RszFieldValueFinderDialog(QDialog):
             QPushButton(self.tr("Browse..."), clicked=self.browse_json_path), 0, 2
         )
         search_layout.addWidget(
-            QPushButton(self.tr("Reload"), clicked=self.load_type_registry), 0, 3
+            QPushButton(line_icon("refresh"), self.tr("Reload"), clicked=self.load_type_registry), 0, 3
         )
 
         self.dir_edit = QLineEdit()
@@ -146,13 +154,23 @@ class RszFieldValueFinderDialog(QDialog):
         self.type_combo.setEditable(True)
         self.type_combo.currentTextChanged.connect(self.on_type_changed)
         search_layout.addWidget(QLabel(self.tr("Type:")), 2, 0)
-        search_layout.addWidget(self.type_combo, 2, 1)
-        self.type_id_label = QLabel(self.tr("ID: -"))
-        search_layout.addWidget(self.type_id_label, 2, 2)
-        search_button = QPushButton(self.tr("Search"), clicked=self.start_search)
+        type_row = QHBoxLayout()
+        type_row.setSpacing(8)
+        type_row.addWidget(self.type_combo, 1)
+        self.type_id_label = styled_label(self.tr("ID: -"), tone="muted", mono=True)
+        self.type_id_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        type_row.addWidget(self.type_id_label)
+        search_layout.addLayout(type_row, 2, 1)
+        search_button = QPushButton(line_icon("search", current_colors()["accent_text"]), self.tr("Search"),
+                                    clicked=self.start_search)
         search_button.setDefault(True)
-        search_layout.addWidget(search_button, 2, 3)
-        layout.addWidget(search_group)
+        search_button.setProperty("variant", "primary")
+        search_layout.addWidget(search_button, 2, 2, 1, 2)
+
+        layout = QVBoxLayout()
+        layout.setContentsMargins(8, 8, 8, 8)
+        layout.setSpacing(8)
+        root.addLayout(layout, 1)
 
         options_tabs = QTabWidget()
         options_tabs.setMinimumWidth(290)
@@ -160,7 +178,7 @@ class RszFieldValueFinderDialog(QDialog):
 
         fields_page = QWidget()
         fields_layout = QVBoxLayout(fields_page)
-        fields_layout.setContentsMargins(8, 8, 8, 8)
+        fields_layout.setContentsMargins(0, 6, 0, 0)
         self.fields_list = QListWidget()
         self.fields_list.setSelectionMode(QListWidget.NoSelection)
         self.fields_list.itemChanged.connect(self.on_display_fields_changed)
@@ -170,36 +188,41 @@ class RszFieldValueFinderDialog(QDialog):
 
         filters_page = QWidget()
         filters_layout = QVBoxLayout(filters_page)
-        filters_layout.setContentsMargins(8, 8, 8, 8)
+        filters_layout.setContentsMargins(0, 6, 0, 0)
+        filters_layout.setSpacing(6)
 
         self.constraint_field_combo = QComboBox()
         self.constraint_value_edit = QLineEdit()
         self.constraint_value_edit.setPlaceholderText(self.tr("Text to match"))
         self.replace_value_edit = QLineEdit()
         filter_form = QFormLayout()
+        filter_form.setHorizontalSpacing(8)
+        filter_form.setVerticalSpacing(6)
         filter_form.addRow(self.tr("Field:"), self.constraint_field_combo)
         filter_form.addRow(self.tr("Find:"), self.constraint_value_edit)
         filter_form.addRow(self.tr("Replace:"), self.replace_value_edit)
         filters_layout.addLayout(filter_form)
 
         filter_actions = QHBoxLayout()
+        filter_actions.setSpacing(6)
         filter_actions.addWidget(
-            QPushButton(self.tr("Add Filter"), clicked=self.add_constraint)
+            QPushButton(line_icon("filter"), self.tr("Add Filter"), clicked=self.add_constraint)
         )
         filter_actions.addWidget(
-            QPushButton(self.tr("Replace All"), clicked=self.replace_all)
+            QPushButton(line_icon("remove"), self.tr("Remove Filter"), clicked=self.remove_constraint)
         )
         filters_layout.addLayout(filter_actions)
 
         self.constraints_list = QListWidget()
         filters_layout.addWidget(self.constraints_list, 1)
-        filters_layout.addWidget(
-            QPushButton(self.tr("Remove Filter"), clicked=self.remove_constraint)
-        )
+        replace_button = QPushButton(self.tr("Replace All"), clicked=self.replace_all)
+        replace_button.setProperty("variant", "danger")
+        filters_layout.addWidget(replace_button)
         options_tabs.addTab(filters_page, self.tr("Find / Replace"))
 
         results_group = QGroupBox(self.tr("Results"))
         results_layout = QVBoxLayout(results_group)
+        results_layout.setContentsMargins(6, 4, 6, 6)
         self.results_splitter = QSplitter(Qt.Vertical)
         self.results_splitter.setChildrenCollapsible(False)
 
@@ -232,14 +255,13 @@ class RszFieldValueFinderDialog(QDialog):
         self.main_splitter.setSizes([300, 700])
         layout.addWidget(self.main_splitter, 1)
 
-        footer = QHBoxLayout()
-        self.status_bar = QLabel(self.tr("Ready"))
-        self.status_bar.setStyleSheet("QLabel { color: gray; }")
+        footer_bar, footer = editor_strip("footer", (8, 6, 8, 6), -1)
+        self.status_bar = styled_label(self.tr("Ready"), tone="muted")
         footer.addWidget(self.status_bar, 1)
         button_box = QDialogButtonBox(QDialogButtonBox.Close)
         button_box.rejected.connect(self.reject)
         footer.addWidget(button_box)
-        layout.addLayout(footer)
+        root.addWidget(footer_bar)
         
     def browse_json_path(self):
         current_path = self.json_path_edit.text()
@@ -347,7 +369,7 @@ class RszFieldValueFinderDialog(QDialog):
                 QApplication.processEvents()
                 
             if type_items:
-                self.type_id_label.setText(
+                self.status_bar.setText(
                     self.tr("Loaded {count} types").format(count=len(type_items))
                 )
         finally:

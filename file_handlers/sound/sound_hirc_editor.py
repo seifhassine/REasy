@@ -5,6 +5,7 @@ from __future__ import annotations
 from dataclasses import replace
 
 lazy from PySide6.QtCore import Qt
+lazy from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QCheckBox,
@@ -73,6 +74,9 @@ from .wwise_schema import (
     property_names,
 )
 lazy from .wwise_v132 import set_v132_fields
+lazy from ui.editor_widgets import styled_label
+lazy from ui.icons import line_icon
+lazy from ui.styles import current_colors, set_style_role
 
 
 _SOURCE_HEADER_FIELDS = (
@@ -80,6 +84,20 @@ _SOURCE_HEADER_FIELDS = (
     "In-memory media bytes", "Source flags", "Plug-in parameter bytes",
 )
 _PLUGIN_IDS_BY_NAME = {name: plugin_id for plugin_id, name in BNK_PLUGIN_NAMES.items()}
+
+
+def _button(text, icon):
+    button = QPushButton(text)
+    button.setIcon(line_icon(icon))
+    set_style_role(button, compact=True)
+    return button
+
+
+def _resize_within_screen(dialog, width, height):
+    screen = dialog.screen()
+    if screen is not None:
+        height = min(height, int(screen.availableGeometry().height() * 0.85))
+    dialog.resize(width, height)
 
 
 class ActionPickerDialog(QDialog):
@@ -94,15 +112,18 @@ class ActionPickerDialog(QDialog):
         self._metadata = getattr(parent, "_sound_metadata", SoundMetadata())
 
         layout = QVBoxLayout(self)
-        hint = QLabel(self.tr("Actions run from top to bottom. Add existing Actions, then reorder them."))
+        hint = styled_label(self.tr("Actions run from top to bottom. Add existing Actions, then reorder them."), tone="muted")
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
         columns = QHBoxLayout()
+        columns.setSpacing(8)
         available = QVBoxLayout()
-        available.addWidget(QLabel(self.tr("Available")))
+        available.setSpacing(4)
+        available.addWidget(styled_label(self.tr("Available"), heading="caption"))
         self.filter_edit = QLineEdit()
         self.filter_edit.setPlaceholderText(self.tr("Filter actions"))
+        self.filter_edit.setClearButtonEnabled(True)
         available.addWidget(self.filter_edit)
         self.available_list = QListWidget()
         self.available_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
@@ -110,24 +131,30 @@ class ActionPickerDialog(QDialog):
         columns.addLayout(available, 1)
 
         moves = QVBoxLayout()
+        moves.setSpacing(4)
         moves.addStretch()
-        self.add_button = QPushButton(self.tr("Add →"))
-        self.remove_button = QPushButton(self.tr("← Remove"))
-        moves.addWidget(self.add_button)
-        moves.addWidget(self.remove_button)
+        self.add_button = _button(self.tr("Add"), "arrow_right")
+        self.add_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.remove_button = _button(self.tr("Remove"), "arrow_left")
+        for button in (self.add_button, self.remove_button):
+            button.setMinimumWidth(92)
+            moves.addWidget(button)
         moves.addStretch()
         columns.addLayout(moves)
 
         selected = QVBoxLayout()
-        selected.addWidget(QLabel(self.tr("Used by event")))
+        selected.setSpacing(4)
+        selected.addWidget(styled_label(self.tr("Used by event"), heading="caption"))
         self.selected_list = QListWidget()
         self.selected_list.setSelectionMode(QListWidget.SelectionMode.ExtendedSelection)
         selected.addWidget(self.selected_list)
         order = QHBoxLayout()
-        self.up_button = QPushButton(self.tr("Move Up"))
-        self.down_button = QPushButton(self.tr("Move Down"))
+        order.setSpacing(4)
+        self.up_button = _button(self.tr("Move Up"), "arrow_up")
+        self.down_button = _button(self.tr("Move Down"), "arrow_down")
         order.addWidget(self.up_button)
         order.addWidget(self.down_button)
+        order.addStretch()
         selected.addLayout(order)
         columns.addLayout(selected, 1)
         layout.addLayout(columns)
@@ -269,9 +296,10 @@ class RowsEditor(QWidget):
         layout.addWidget(self.table)
         if not fixed:
             buttons = QHBoxLayout()
-            add = QPushButton(self.tr("Add Row"))
-            remove = QPushButton(self.tr("Remove Row"))
-            up, down = QPushButton(self.tr("Move Up")), QPushButton(self.tr("Move Down"))
+            buttons.setSpacing(4)
+            add = _button(self.tr("Add Row"), "add")
+            remove = _button(self.tr("Remove Row"), "remove")
+            up, down = _button(self.tr("Move Up"), "arrow_up"), _button(self.tr("Move Down"), "arrow_down")
             add.clicked.connect(lambda: self.add_row(self.defaults))
             remove.clicked.connect(self.remove_rows)
             up.clicked.connect(lambda: self.move_row(-1))
@@ -370,8 +398,7 @@ class NamedIdEdit(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.edit = QLineEdit(str(int(current or 0)))
         self.edit.setPlaceholderText(self.tr("name or numeric ID"))
-        self.name = QLabel()
-        self.name.setStyleSheet("color: #b8bdc7;")
+        self.name = styled_label(tone="muted")
         layout.addWidget(self.edit, 1)
         layout.addWidget(self.name, 1)
         self.edit.textChanged.connect(self._refresh)
@@ -389,8 +416,13 @@ class NamedIdEdit(QWidget):
             self.name.setText(" / ".join(names) or self.tr("unresolved name"))
             bindings = self.metadata.bindings(self.category, object_id)
             self.setToolTip("\n".join(bindings))
+            valid = True
         except ValueError:
             self.name.setText(self.tr("invalid or ambiguous"))
+            valid = False
+        if bool(self.edit.property("invalid")) == valid:
+            set_style_role(self.edit, invalid=not valid)
+            set_style_role(self.name, tone="muted" if valid else "danger")
 
     def object_id(self, label="ID"):
         try:
@@ -425,7 +457,8 @@ class PropertyRowsEditor(QWidget):
         self.table.setMinimumHeight(145)
         layout.addWidget(self.table)
         buttons = QHBoxLayout()
-        add, remove = QPushButton(self.tr("Add Property")), QPushButton(self.tr("Remove"))
+        buttons.setSpacing(4)
+        add, remove = _button(self.tr("Add Property"), "add"), _button(self.tr("Remove"), "remove")
         add.clicked.connect(lambda: self.add_row())
         remove.clicked.connect(self.remove_rows)
         buttons.addWidget(add)
@@ -683,7 +716,8 @@ class AttenuationEditor(QWidget):
         self.curve_editors = []
         layout.addWidget(self.curves, 1)
         controls = QHBoxLayout()
-        add, remove = QPushButton(self.tr("Add Curve")), QPushButton(self.tr("Remove Curve"))
+        controls.setSpacing(4)
+        add, remove = _button(self.tr("Add Curve"), "add"), _button(self.tr("Remove Curve"), "remove")
         add.clicked.connect(lambda: self._add_curve())
         remove.clicked.connect(self._remove_curve)
         controls.addWidget(add)
@@ -768,6 +802,7 @@ class WwiseFieldsEditor(QWidget):
         tree.header().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         tree.header().setStretchLastSection(True)
+        read_only_color = QColor(current_colors()["text_subtle"])
         roots = {}
         for field in layout.fields:
             if not field.visible or any(
@@ -816,9 +851,10 @@ class WwiseFieldsEditor(QWidget):
             )
             if field.editable and not field.reference_role:
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
+                item.setToolTip(1, self.tr("Double-click to edit."))
             else:
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                item.setForeground(1, tree.palette().brush(tree.foregroundRole()))
+                item.setForeground(1, read_only_color)
             self._items[field.path] = item
         tree.expandToDepth(0)
         layout_box = QVBoxLayout(self)
@@ -870,11 +906,10 @@ class HircPropertiesDialog(QDialog):
         self.objects = tuple(objects)
         self.metadata = getattr(parent, "_sound_metadata", SoundMetadata())
         self.setWindowTitle(self.tr("Edit {type} {id}").format(type=obj.type_name, id=obj.object_id))
-        self.resize(780, 610)
+        _resize_within_screen(self, 780, 610)
         layout = QVBoxLayout(self)
-        hint = QLabel(self.tr("Only the fields shown below are rebuilt; every other byte in this HIRC object is preserved."))
+        hint = styled_label(self.tr("Only the fields shown below are rebuilt; every other byte in this HIRC object is preserved."), tone="muted")
         hint.setWordWrap(True)
-        hint.setStyleSheet("color: #b8bdc7;")
         layout.addWidget(hint)
         form_content = QWidget()
         self.form = QFormLayout(form_content)
@@ -1315,7 +1350,7 @@ class HircPropertiesDialog(QDialog):
             return
         if obj.fx_plugin:
             self.kind, data = "fx", obj.fx_plugin
-            self.resize(900, 720)
+            _resize_within_screen(self, 900, 720)
             self.form.addRow(
                 self.tr("Wwise plug-in"), QLabel(f"{data.name} · 0x{data.plugin_id:08X}")
             )
@@ -1339,7 +1374,7 @@ class HircPropertiesDialog(QDialog):
             return
         if obj.attenuation:
             self.kind, data = "attenuation", obj.attenuation
-            self.resize(900, 820)
+            _resize_within_screen(self, 900, 820)
             self.cone_enabled = QCheckBox(self.tr("Enable directional cone"))
             self.cone_enabled.setChecked(data.cone is not None)
             self.form.addRow("", self.cone_enabled)
