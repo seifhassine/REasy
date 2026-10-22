@@ -2425,15 +2425,10 @@ class ReasyAssistantTools(
                 for tab in session.tabs:
                     append(tab, session)
 
-        # Also list the UI's own tabs, in case a direct-open or detached tab is in no session.
+        # Also list the UI's own tabs, in case a direct-open tab is in no session.
         tab_lookup = getattr(self.app, "tabs", {})
         extra_tabs = list(tab_lookup.values()) if hasattr(tab_lookup, "values") else []
         extra_tabs.append(active_tab)
-        notebook = getattr(manager, "notebook", None)
-        extra_tabs.extend(
-            getattr(window, "file_tab", None)
-            for window in getattr(notebook, "_floating_windows", ())
-        )
         session_for_tab = getattr(manager, "session_for_tab", None)
         for tab in extra_tabs:
             session = session_for_tab(tab) if callable(session_for_tab) else None

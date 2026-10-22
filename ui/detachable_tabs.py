@@ -6,7 +6,7 @@ if sys.platform == "win32":
 else:
     wintypes = None
 
-from PySide6.QtCore import QEvent, QPoint, QPointF, QRect, QRectF, QSize, Qt, QTimer, Signal
+from PySide6.QtCore import QEvent, QLine, QPoint, QPointF, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import (
     QAction,
     QColor,
@@ -15,14 +15,15 @@ from PySide6.QtGui import (
     QGuiApplication,
     QIcon,
     QKeySequence,
+    QMouseEvent,
     QPainter,
-    QPalette,
     QPen,
     QRegion,
 )
 from PySide6.QtWidgets import (
     QAbstractButton,
     QApplication,
+    QDockWidget,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -36,7 +37,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+lazy from ui.editor_groups import EditorGroupHost
+lazy from ui.qt_timers import call_later
 lazy from ui.styles import current_colors
+
+_WM_MOVING, _WM_EXITSIZEMOVE = 0x0216, 0x0232
 
 
 @dataclass(slots=True)
@@ -50,6 +55,10 @@ class _TabState:
     text_color: QColor
     enabled: bool
     visible: bool
+
+
+def _floating_size(page: QWidget) -> QSize:
+    return page.size().expandedTo(QSize(720, 480)).boundedTo(QSize(1600, 1200))
 
 
 class _TabCloseButton(QAbstractButton):
@@ -104,92 +113,23 @@ class _TabCloseButton(QAbstractButton):
         painter.drawLine(center + QPointF(3, -3), center + QPointF(-3, 3))
 
 
-class _TabDropIndicator(QWidget):
-    def __init__(self, notebook: "CustomNotebook"):
-        super().__init__(notebook)
-        self.notebook = notebook
-        self.marker_x = 0
-        self.empty = False
-        self.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self.setFocusPolicy(Qt.NoFocus)
-        self.hide()
-
-    def show_target(self, geometry: QRect, marker_x: int, empty: bool):
-        self.marker_x, self.empty = marker_x, empty
-        self.setGeometry(geometry)
-        self.raise_()
-        self.show()
-        self.update()
-
-    def paintEvent(self, _event):
-        accent = QColor(current_colors()["accent"])
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing)
-        wash, outline = QColor(accent), QColor(accent)
-        wash.setAlpha(34)
-        outline.setAlpha(185)
-        painter.fillRect(self.rect(), wash)
-        painter.setPen(QPen(outline, 1.25))
-        painter.setBrush(Qt.NoBrush)
-        painter.drawRoundedRect(self.rect().adjusted(1, 1, -2, -2), 3, 3)
-        marker = QPen(accent, 3)
-        marker.setCapStyle(Qt.RoundCap)
-        painter.setPen(marker)
-        x = max(3, min(self.marker_x, self.width() - 4))
-        painter.drawLine(x, 4, x, max(4, self.height() - 5))
-        if self.empty:
-            painter.setPen(self.palette().color(QPalette.Text))
-            painter.drawText(
-                self.rect().adjusted(15, 0, -8, 0),
-                Qt.AlignLeft | Qt.AlignVCenter,
-                self.tr("Drop tab here"),
-            )
-
-
 class FloatingTabWindow(QMainWindow):
-    """Top-level home for a detached live page and both drag directions."""
 
-    _HEADER_HEIGHT = 34
-
-    def __init__(
-        self,
-        page: QWidget,
-        state: _TabState,
-        notebook: "CustomNotebook",
-        return_index: int,
-        set_app_icon=None,
-    ):
-        super().__init__()
-        self.page, self.notebook = page, notebook
-        self.tab_state, self.return_index = state, return_index
-        self.file_tab = getattr(page, "parent_tab", None)
-        self._reattach_on_close = True
-        self._dragging = False
-        self._drag_moved = False
-        self._drag_origin = QPoint()
-        self._drag_hotspot = QPoint()
-        self._drop_target = None
-        self._filter_installed = False
-        self._drag_poll = QTimer(self)
-        self._drag_poll.setInterval(24)
-        self._drag_poll.timeout.connect(self._poll_native_drag)
-        if set_app_icon:
-            set_app_icon(self)
-
-        self.setWindowTitle(state.title)
-        self.setCentralWidget(page)
-        page.show()
-        self.setFocusPolicy(Qt.StrongFocus)
-
-        main_window = self._main_window()
-        tab_menu = self.menuBar().addMenu(self.tr("Tab"))
-        tab_menu.addAction(self.tr("Reattach"), self.close)
-        if main_window and not getattr(self.file_tab, "skip_detached_menus", False):
+    def __init__(self, root: "EditorGroupHost"):
+        super().__init__(root.window(), Qt.Window)
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self._discarding = False
+        self._title_drag_start = None
+        main_window = root.app_window
+        self.host = EditorGroupHost(CustomNotebook(), main_window, self, root=root)
+        self.setCentralWidget(self.host)
+        self.host.activePageChanged.connect(self.sync_title)
+        if set_icon := getattr(main_window, "_set_app_icon_callback", None):
+            set_icon(self)
+        self.menuBar().addMenu(self.tr("Tab")).addAction(self.tr("Reattach"), self.close)
+        if isinstance(main_window, QMainWindow):
             self._setup_main_window_actions(main_window)
-
-    def _main_window(self):
-        candidate = self.notebook.app_instance or self.notebook.window()
-        return candidate if isinstance(candidate, QMainWindow) else None
+        root._windows.append(self)
 
     def _setup_main_window_actions(self, main_window):
         self._find_action = QAction(self.tr("Find"), self)
@@ -227,220 +167,74 @@ class FloatingTabWindow(QMainWindow):
             else:
                 destination.addAction(action)
 
-    @staticmethod
-    def _event_position(event):
-        getter = getattr(event, "globalPosition", None)
-        return getter().toPoint() if callable(getter) else QCursor.pos()
+    def pages(self) -> list[QWidget]:
+        return self.host.pages()
 
-    def _start_drag(self, *, moved=False, origin=None):
-        if self._dragging:
-            return
-        self._dragging = True
-        self._drag_moved = moved
-        self._drag_origin = QPoint(self.pos() if origin is None else origin)
-        self._drop_target = None
-        self.notebook.clear_floating_drop_target()
-
-    def begin_tab_drag(self, global_position: QPoint, hotspot: QPoint):
-        """Continue the tab gesture with the OS moving this final window."""
-        self._drag_hotspot = QPoint(hotspot)
-        self._start_drag(moved=True)
-        self._move_with_pointer(global_position)
-        handle = self.windowHandle()
-        if handle and handle.startSystemMove():
-            return
-        if app := QApplication.instance():
-            app.installEventFilter(self)
-            self._filter_installed = True
-        self.setCursor(Qt.ClosedHandCursor)
-
-    def _move_with_pointer(self, global_position: QPoint):
-        position = global_position - self._drag_hotspot
-        screen = QGuiApplication.screenAt(global_position) or QGuiApplication.primaryScreen()
-        if screen:
-            area = screen.availableGeometry()
-            edge = min(180, self.width())
-            position.setX(max(area.left() - self.width() + edge,
-                              min(position.x(), area.right() - edge + 1)))
-            position.setY(max(area.top(), min(
-                position.y(), area.bottom() - self._HEADER_HEIGHT + 1
-            )))
-        self.move(position)
-        self._update_drag(global_position)
-
-    def _update_drag(self, global_position: QPoint):
-        if not self._dragging:
-            return
-        self._drag_moved |= (
-            self.pos() - self._drag_origin
-        ).manhattanLength() >= QApplication.startDragDistance()
-        self._drop_target = self.notebook.update_floating_drop_target(
-            global_position
-        ) if self._drag_moved else None
-        if self._drop_target is None:
-            self.notebook.clear_floating_drop_target()
-
-    def _finish_drag(self, global_position: QPoint, *, cancel=False):
-        if not self._dragging:
-            return
-        self._update_drag(global_position)
-        drop_target = (
-            (self.notebook, self.return_index)
-            if cancel
-            else self._drop_target
-        )
-        self._clear_drag()
-        if drop_target is not None:
-            self._dock(*drop_target)
-        else:
-            self.raise_()
-            self.activateWindow()
-
-    def _clear_drag(self):
-        if self._filter_installed:
-            if app := QApplication.instance():
-                app.removeEventFilter(self)
-            self._filter_installed = False
-        self._drag_poll.stop()
-        self._dragging = False
-        self._drag_moved = False
-        self._drop_target = None
-        self.unsetCursor()
-        self.notebook.clear_floating_drop_target()
-
-    def _dock(self, target: "CustomNotebook", index: int):
-        page = self.takeCentralWidget()
-        if page is None:
-            return
-        self._reattach_on_close = False
-        self.hide()
-        self.notebook._reattach_window(self, page, index=index, target=target)
-        self.close()
-
-    def eventFilter(self, watched, event):
-        if self._filter_installed:
-            if event.type() == QEvent.MouseMove:
-                if event.buttons() & Qt.LeftButton:
-                    self._move_with_pointer(self._event_position(event))
-            if event.type() == QEvent.MouseButtonRelease and event.button() == Qt.LeftButton:
-                position = self._event_position(event)
-                QTimer.singleShot(0, lambda: self._finish_drag(position))
-            if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Escape:
-                self._finish_drag(QCursor.pos(), cancel=True)
-                return True
-        return super().eventFilter(watched, event)
-
-    def event(self, event):
-        event_type = event.type()
-        if wintypes is None and event_type == QEvent.NonClientAreaMouseButtonPress:
-            if event.button() == Qt.LeftButton:
-                self._start_drag()
-        elif self._dragging and event_type == QEvent.NonClientAreaMouseMove:
-            self._update_drag(self._event_position(event))
-        elif self._dragging and event_type == QEvent.NonClientAreaMouseButtonRelease:
-            if event.button() == Qt.LeftButton:
-                position = self._event_position(event)
-                QTimer.singleShot(0, lambda: self._finish_drag(position))
-        return super().event(event)
-
-    def nativeEvent(self, event_type, message):
-        if wintypes is not None and not self._filter_installed:
-            try:
-                native = wintypes.MSG.from_address(int(message))
-                if native.message == 0x00A1 and int(native.wParam) == 2:
-                    self._start_drag()  # WM_NCLBUTTONDOWN / HTCAPTION
-                elif native.message == 0x0216 and self._dragging:
-                    self._update_drag(QCursor.pos())  # WM_MOVING
-                elif native.message in (0x00A2, 0x0232) and self._dragging:
-                    position = QCursor.pos()  # WM_NCLBUTTONUP / WM_EXITSIZEMOVE
-                    QTimer.singleShot(0, lambda: self._finish_drag(position))
-            except (AttributeError, TypeError, ValueError, OSError):
-                pass
-        return super().nativeEvent(event_type, message)
-
-    def moveEvent(self, event):
-        super().moveEvent(event)
-        if wintypes is None and QGuiApplication.mouseButtons() & Qt.LeftButton:
-            if not self._dragging:
-                self._start_drag(origin=event.oldPos())
-            self._update_drag(QCursor.pos())
-            self._drag_poll.start()
-
-    def _poll_native_drag(self):
-        if not self._dragging:
-            self._drag_poll.stop()
-        elif QGuiApplication.mouseButtons() & Qt.LeftButton:
-            self._update_drag(QCursor.pos())
-        else:
-            self._finish_drag(QCursor.pos())
-
-    def set_tab_title(self, title: str):
-        self.tab_state.title = title
-        self.setWindowTitle(title)
-
-    def close_without_reattach(self):
-        self._reattach_on_close = False
-        page = self.takeCentralWidget()
-        self.close()
-        if page:
-            page.setParent(None)
-
-    def closeEvent(self, event):
-        self._clear_drag()
-        if self.file_tab and hasattr(self.file_tab, "_find_dialog"):
-            try:
-                if self.file_tab._find_dialog and self.file_tab._find_dialog.isVisible():
-                    self.file_tab._find_dialog.close()
-            except RuntimeError:
-                pass
-        page = self.centralWidget()
-        if self._reattach_on_close and page:
-            self.takeCentralWidget()
-            self.notebook._reattach_window(self, page)
-        else:
-            self.notebook._forget_floating_window(self)
-        main_window = self._main_window()
-        if main_window and hasattr(main_window, "_on_tab_changed_for_find"):
-            QTimer.singleShot(0, main_window._on_tab_changed_for_find)
-        super().closeEvent(event)
+    def sync_title(self, _page=None):
+        notebook = self.host.active_notebook()
+        self.setWindowTitle(notebook.tabText(notebook.currentIndex()))
 
     def open_find_dialog(self):
-        if not self.file_tab:
-            main_window = self._main_window()
-            if main_window:
-                self.file_tab = next((
-                    tab for tab in getattr(main_window, "tabs", {}).values()
-                    if getattr(tab, "notebook_widget", None) is self.centralWidget()
-                ), None)
-        if self.file_tab:
-            self.file_tab.open_find_dialog()
+        tab = getattr(self.host.app_window, "tabs", {}).get(self.host.active_page())
+        if tab is not None:
+            tab.open_find_dialog()
         else:
             QMessageBox.warning(
                 self, self.tr("Warning"),
                 self.tr("Cannot open find dialog for this tab"),
             )
 
-    def keyPressEvent(self, event):
-        if (
-            not getattr(self.file_tab, "suppress_general_shortcuts", False)
-            and event.modifiers() == Qt.ControlModifier
-            and event.key() == Qt.Key_F
-        ):
-            self.open_find_dialog()
-            event.accept()
-        else:
-            super().keyPressEvent(event)
+    def discard(self):
+        self._discarding = True
+        self.close()
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() == QEvent.ActivationChange and self.isActiveWindow():
+            self.host.root.raise_window(self)
+
+    def nativeEvent(self, event_type, message):
+        if wintypes is not None:
+            kind = wintypes.MSG.from_address(int(message)).message
+            if kind == _WM_MOVING:
+                self.title_dragged(QCursor.pos())
+            elif kind == _WM_EXITSIZEMOVE and self._title_drag_start is not None:
+                self.title_released(QCursor.pos())
+        return super().nativeEvent(event_type, message)
+
+    def title_dragged(self, pos: QPoint):
+        root = self.host.root
+        if self._title_drag_start is None:
+            self._title_drag_start = self.pos()
+            root.set_dragging(True)
+        root.update_drag(pos, self.pages(), exclude=self)
+
+    def title_released(self, pos: QPoint):
+        root, moved = self.host.root, self.pos() != self._title_drag_start
+        target = root.update_drag(pos, self.pages(), exclude=self)
+        self._title_drag_start = None
+        root.set_dragging(False)
+        if moved and target is not None:
+            call_later(root, 0, lambda pages=self.pages(): root.dock(pages, target))
+
+    def closeEvent(self, event):
+        root = self.host.root
+        for dock in self.findChildren(QDockWidget):
+            dock.close()
+        if not self._discarding:
+            root.redock(self)
+        if self in root._windows:
+            root._windows.remove(self)
+        super().closeEvent(event)
 
 
 class DetachTabBar(QTabBar):
-    _DETACH_MARGIN = 36
+    _UNDOCK_MARGIN = 16
 
     def __init__(self, notebook: "CustomNotebook"):
         super().__init__(notebook)
         self.notebook = notebook
-        self._page = None
-        self._press_position = QPoint()
-        self._hotspot_x = 0
+        self._grab = None
         self.setObjectName("documentTabBar")
         self.setDocumentMode(True)
         self.setDrawBase(False)
@@ -494,79 +288,44 @@ class DetachTabBar(QTabBar):
                 self.initStyleOption(option, index)
                 painter.drawControl(QStyle.CE_TabBarTab, option)
 
-    def _reset_drag(self):
-        self._page = None
-        self._hotspot_x = 0
-        self.unsetCursor()
-
     def mousePressEvent(self, event):
-        self._reset_drag()
-        if event.button() == Qt.LeftButton:
-            index = self.tabAt(event.position().toPoint())
-            if index >= 0:
-                self._page = self.notebook.widget(index)
-                self._press_position = event.position().toPoint()
-                self._hotspot_x = self._press_position.x() - self.tabRect(index).left()
+        self._grab = None
+        index = self.tabAt(event.position().toPoint())
+        if event.button() == Qt.LeftButton and index >= 0:
+            self._grab = self.notebook.widget(index), event.position().toPoint().x() - self.tabRect(index).left()
         super().mousePressEvent(event)
 
     def mouseMoveEvent(self, event):
-        position = event.position().toPoint()
-        dragging = (
-            self._page is not None
-            and event.buttons() & Qt.LeftButton
-            and (position - self._press_position).manhattanLength()
-            >= QApplication.startDragDistance()
-        )
-        if not dragging:
-            return super().mouseMoveEvent(event)
-        self.setCursor(Qt.ClosedHandCursor)
-        global_position = event.globalPosition().toPoint()
-        if self.notebook._locate_group_drop_target(
-            global_position, exclude=self.notebook
-        ) is not None:
-            page, hotspot = self._page, self._hotspot_x
-            self._reset_drag()
-            size = self.notebook._detached_window_size(page)
-            hotspot = QPoint(min(max(hotspot, 24), max(24, size.width() - 24)), 18)
-            self.notebook.detach_widget(
-                page, global_position, drag_hotspot=hotspot
-            )
+        position = event.globalPosition().toPoint()
+        if self.notebook.dragging():
+            self.notebook.drag_to(position)
             return
         super().mouseMoveEvent(event)
-        if self._outside(position):
-            page, hotspot = self._page, self._hotspot_x
-            self._reset_drag()
-            size = self.notebook._detached_window_size(page)
-            hotspot = QPoint(min(max(hotspot, 24), max(24, size.width() - 24)), 18)
-            self.notebook.detach_widget(
-                page, global_position, drag_hotspot=hotspot
-            )
+        band = self.notebook.header_rect().adjusted(0, -self._UNDOCK_MARGIN, 0, self._UNDOCK_MARGIN)
+        if self._grab and event.buttons() & Qt.LeftButton and not band.contains(position):
+            page, offset = self._grab
+            self._grab = None
+            super().mouseReleaseEvent(QMouseEvent(
+                QEvent.MouseButtonRelease, event.position(), event.globalPosition(),
+                Qt.LeftButton, Qt.NoButton, event.modifiers(),
+            ))
+            self.notebook.begin_drag([page], QPoint(offset + 4, 36))
+            self.notebook.drag_to(position)
 
     def mouseReleaseEvent(self, event):
-        super().mouseReleaseEvent(event)
-        self._reset_drag()
-
-    def _outside(self, position: QPoint):
-        horizontal = self.shape() in (
-            QTabBar.RoundedNorth, QTabBar.RoundedSouth,
-            QTabBar.TriangularNorth, QTabBar.TriangularSouth,
-        )
-        coordinate, extent = (
-            (position.y(), self.height()) if horizontal
-            else (position.x(), self.width())
-        )
-        return coordinate < -self._DETACH_MARGIN or coordinate > extent + self._DETACH_MARGIN
+        self._grab = None
+        if self.notebook.dragging():
+            self.notebook.end_drag(event.globalPosition().toPoint())
+        else:
+            super().mouseReleaseEvent(event)
 
 
 class CustomNotebook(QTabWidget):
-    tabDetached = Signal(QWidget)
-    tabReattached = Signal(QWidget)
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.app_instance = None
-        self._floating_windows = []
-        self._set_icon_callback = None
+        self._drag = None
+        self._header_press = None
         self.setObjectName("documentNotebook")
         self.setTabBar(DetachTabBar(self))
         self.setDocumentMode(True)
@@ -579,11 +338,13 @@ class CustomNotebook(QTabWidget):
         self.currentChanged.connect(self._update_close_buttons)
         self.tabBar().setContextMenuPolicy(Qt.CustomContextMenu)
         self.tabBar().customContextMenuRequested.connect(self._show_context_menu)
-        self._drop_indicator = _TabDropIndicator(self)
         self._page_stack = self.findChild(QStackedWidget, "qt_tabwidget_stackedwidget")
         self._page_stack.installEventFilter(self)
 
     def eventFilter(self, watched, event):
+        if self._drag is not None and event.type() == QEvent.KeyPress and event.key() == Qt.Key_Escape:
+            self.end_drag()
+            return True
         if watched is self._page_stack and event.type() == QEvent.Paint and not self.count():
             self._paint_empty_hint(watched)
         return super().eventFilter(watched, event)
@@ -614,6 +375,12 @@ class CustomNotebook(QTabWidget):
             QRect(16, top + line + 4, width, line * 3), Qt.AlignHCenter | Qt.AlignTop | Qt.TextWordWrap, hint
         )
 
+    def host(self) -> "EditorGroupHost | None":
+        widget = self.parentWidget()
+        while widget is not None and not isinstance(widget, EditorGroupHost):
+            widget = widget.parentWidget()
+        return widget
+
     def addTab(self, widget: QWidget, *args):
         return self._finish_insert(super().addTab(widget, *args), widget)
 
@@ -628,6 +395,19 @@ class CustomNotebook(QTabWidget):
             self.setTabToolTip(index, tooltip)
         if getattr(file_tab, "hide_notebook_tab", False):
             self.tabBar().set_tab_shown(index, False)
+        return index
+
+    def take_page(self, page: QWidget) -> _TabState:
+        index = self.indexOf(page)
+        state = self._capture_state(index)
+        self.removeTab(index)
+        return state
+
+    def put_page(self, page: QWidget, state: _TabState, index: int = -1) -> int:
+        index = self.insertTab(index, page, state.icon, state.title)
+        self._restore_state(index, state)
+        self.setCurrentIndex(index)
+        page.show()
         return index
 
     def _update_close_buttons(self, _index):
@@ -649,12 +429,12 @@ class CustomNotebook(QTabWidget):
         self.setCurrentIndex(index)
         menu = QMenu(self)
         page = self.widget(index)
-        host = getattr(self, "_editor_group_host", None)
+        host = self.host()
         split_right = menu.addAction(self.tr("Split Right"))
         split_down = menu.addAction(self.tr("Split Down"))
-        split_right.setEnabled(host is not None)
-        split_down.setEnabled(host is not None)
         detach = menu.addAction(self.tr("Move into New Window"))
+        for action in (split_right, split_down, detach):
+            action.setEnabled(host is not None)
         menu.addSeparator()
         close = menu.addAction(self.tr("Close Tab"))
         close_others = menu.addAction(self.tr("Close Other Tabs"))
@@ -674,7 +454,7 @@ class CustomNotebook(QTabWidget):
         elif chosen is split_down:
             host.split_page(page, Qt.Vertical)
         elif chosen is detach:
-            self.detach_tab(index)
+            host.root.float_pages([page], QRect(QCursor.pos() - QPoint(160, 18), _floating_size(page)))
         elif chosen is close:
             self.on_tab_close_requested(index)
         elif chosen is close_others:
@@ -722,120 +502,90 @@ class CustomNotebook(QTabWidget):
         bar.setTabTextColor(index, state.text_color)
         bar.set_tab_shown(index, state.visible)
 
-    def _drop_geometry(self):
-        bar = self.tabBar()
-        height = bar.height()
-        top = bar.mapTo(self, QPoint()).y() if height else 0
-        return QRect(0, top, max(1, self.width()), height or max(32, self.fontMetrics().height() + 14))
-
-    def _drop_position(self, global_position: QPoint):
-        if not self.isVisible():
-            return None
-        target = self._drop_geometry()
-        global_target = QRect(self.mapToGlobal(target.topLeft()), target.size())
-        if not global_target.adjusted(0, -6, 0, 8).contains(global_position):
-            return None
-        bar = self.tabBar()
-        visible = [i for i in range(bar.count()) if bar.isTabVisible(i)]
-        if not visible:
-            return bar.count(), 9, True
-        x = bar.mapFromGlobal(global_position).x()
-        origin = bar.mapTo(self, QPoint()).x() - target.left()
-        for index in visible:
-            rect = bar.tabRect(index)
-            if x < rect.center().x():
-                return index, origin + rect.left(), False
-        return bar.count(), origin + bar.tabRect(visible[-1]).right() + 1, False
-
-    def _group_notebooks(self):
-        host = getattr(self, "_editor_group_host", None)
-        return host.notebooks() if host is not None else (self,)
-
-    def _locate_group_drop_target(self, global_position: QPoint, *, exclude=None):
-        for notebook in self._group_notebooks():
-            if notebook is exclude:
-                continue
-            if (target := notebook._drop_position(global_position)) is not None:
-                index, marker, empty = target
-                return notebook, index, marker, empty
-        return None
-
-    def update_floating_drop_target(self, global_position: QPoint):
-        target = self._locate_group_drop_target(global_position)
-        self.clear_floating_drop_target()
-        if target is None:
-            return None
-        notebook, index, marker, empty = target
-        notebook._drop_indicator.show_target(notebook._drop_geometry(), marker, empty)
-        return notebook, index
-
-    def clear_floating_drop_target(self):
-        for notebook in self._group_notebooks():
-            notebook._drop_indicator.hide()
-
-    @staticmethod
-    def _detached_window_size(page: QWidget):
-        return page.size().expandedTo(QSize(720, 480)).boundedTo(QSize(1600, 1200))
-
-    def detach_widget(self, page: QWidget, position=None, *, drag_hotspot=None):
-        index = self.indexOf(page)
-        return None if index < 0 else self.detach_tab(
-            index, position, drag_hotspot=drag_hotspot
-        )
-
-    def detach_tab(self, index: int, position=None, *, drag_hotspot=None):
-        page = self.widget(index)
-        if page is None:
-            return None
-        state = self._capture_state(index)
-        content_size = self._detached_window_size(page)
-        self.removeTab(index)
-        window = FloatingTabWindow(
-            page, state, self, index, self._set_icon_callback
-        )
-        self._floating_windows.append(window)
-        size = content_size + QSize(0, window.menuBar().sizeHint().height())
-        window.resize(size)
-        live_drag = position is not None and drag_hotspot is not None
-        if position is not None and not live_drag:
-            window.move(position - QPoint(min(160, size.width() // 3), 18))
-        window.show()
-        window.raise_()
-        self.tabDetached.emit(page)
-        if self.app_instance and hasattr(
-            self.app_instance, "_check_and_close_shared_find_dialog"
-        ):
-            self.app_instance._check_and_close_shared_find_dialog()
-        if live_drag:
-            window.begin_tab_drag(position, drag_hotspot)
-        else:
-            window.activateWindow()
-        return window
-
-    def _reattach_window(self, window, page, *, index=None, target=None):
-        destination = target or self
-        index = window.return_index if index is None else index
-        index = min(max(index, 0), destination.count())
-        index = destination.insertTab(
-            index, page, window.tab_state.icon, window.tab_state.title
-        )
-        destination._restore_state(index, window.tab_state)
-        destination.setCurrentIndex(index)
-        page.show()
-        self._forget_floating_window(window)
-        destination.tabReattached.emit(page)
-        return index
-
-    def _forget_floating_window(self, window):
-        if window in self._floating_windows:
-            self._floating_windows.remove(window)
-
-    def floating_window_for(self, page):
-        return next((window for window in self._floating_windows if window.page is page), None)
-
     def set_page_title(self, page, title: str):
         index = self.indexOf(page)
         if index >= 0:
             self.setTabText(index, title)
-        elif window := self.floating_window_for(page):
-            window.set_tab_title(title)
+            if isinstance(window := self.window(), FloatingTabWindow):
+                window.sync_title()
+
+    def global_rect(self) -> QRect:
+        return QRect(self.mapToGlobal(QPoint()), self.size())
+
+    def header_rect(self) -> QRect:
+        bar = self.tabBar()
+        height = bar.height() if bar.isVisible() else self.fontMetrics().height() + 14
+        return QRect(self.mapToGlobal(QPoint()), QSize(self.width(), height))
+
+    def content_rect(self) -> QRect:
+        return self.global_rect().adjusted(0, self.header_rect().height(), 0, 0)
+
+    def holds_any(self, pages) -> bool:
+        return any(self.indexOf(page) >= 0 for page in pages)
+
+    def holds_only(self, pages) -> bool:
+        return self.count() > 0 and {self.widget(index) for index in range(self.count())} <= set(pages)
+
+    def insert_position(self, pos: QPoint) -> tuple[int, QLine]:
+        bar, header = self.tabBar(), self.header_rect()
+        x = bar.mapFromGlobal(pos).x()
+        visible = [index for index in range(bar.count()) if bar.isTabVisible(index)]
+        index = next((i for i in visible if x < bar.tabRect(i).center().x()), bar.count())
+        if index < bar.count():
+            edge = bar.tabRect(index).left()
+        else:
+            edge = bar.tabRect(visible[-1]).right() + 1 if visible else 4
+        x = bar.mapToGlobal(QPoint(edge, 0)).x()
+        return index, QLine(x, header.top() + 3, x, header.bottom() - 3)
+
+    def dragging(self) -> bool:
+        return self._drag is not None
+
+    def begin_drag(self, pages, hotspot: QPoint):
+        host = self.host()
+        size = host.window().size() if host.is_whole_window(pages) else _floating_size(pages[0])
+        self._drag = pages, QRect(-hotspot, size), self.tabText(self.indexOf(pages[0]))
+        QApplication.setOverrideCursor(Qt.ClosedHandCursor)
+        QApplication.instance().installEventFilter(self)
+        host.root.set_dragging(True)
+
+    def drag_to(self, pos: QPoint):
+        pages, ghost, title = self._drag
+        return self.host().root.update_drag(pos, pages, ghost.translated(pos), title)
+
+    def end_drag(self, pos: QPoint | None = None):
+        target = self.drag_to(pos) if pos is not None else None
+        pages, self._drag = self._drag[0], None
+        QApplication.instance().removeEventFilter(self)
+        QApplication.restoreOverrideCursor()
+        root = self.host().root
+        root.set_dragging(False)
+        if target is not None:
+            root.dock(pages, target)
+
+    def mousePressEvent(self, event):
+        position = event.position().toPoint()
+        on_header = self.count() and position.y() < self.header_rect().height()
+        self._header_press = position if event.button() == Qt.LeftButton and on_header else None
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event):
+        position = event.globalPosition().toPoint()
+        if self._drag is not None:
+            self.drag_to(position)
+        elif self._header_press is not None and (
+            (event.position().toPoint() - self._header_press).manhattanLength() >= QApplication.startDragDistance()
+        ):
+            self.begin_drag([self.widget(index) for index in range(self.count())],
+                            QPoint(min(self._header_press.x(), 240), 36))
+            self._header_press = None
+            self.drag_to(position)
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        self._header_press = None
+        if self._drag is not None:
+            self.end_drag(event.globalPosition().toPoint())
+        else:
+            super().mouseReleaseEvent(event)

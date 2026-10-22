@@ -111,28 +111,23 @@ class ProjectSessionManager:
 
     def _hide_session(self, session: ProjectSession) -> None:
         self._capture_session(session)
+        docked = self.notebooks()
         for tab in session.tabs:
             widget = tab.notebook_widget
             notebook = self.notebook_for(widget)
-            index = notebook.indexOf(widget) if notebook is not None else -1
-            if index != -1:
-                tab._editor_group_index = self.group_index_for(widget)
-                notebook.removeTab(index)
+            if notebook in docked:
+                tab._editor_group_index = docked.index(notebook)
+                notebook.removeTab(notebook.indexOf(widget))
                 widget.hide()
 
         self._show_windows(session, False)
 
     def _restore_session(self, session: ProjectSession) -> None:
-        detached = {window.file_tab for window in self.windows_for(session.tabs)}
         for tab in session.tabs:
-            if tab in detached or getattr(tab, "_workspace_hidden", False):
+            if getattr(tab, "_workspace_hidden", False):
                 continue
-            widget = tab.notebook_widget
-            notebook = self.notebook_for(widget)
-            if notebook is None:
-                notebook = self._restore_notebook_for(tab)
-            if notebook.indexOf(widget) == -1:
-                notebook.addTab(widget, "")
+            if self.notebook_for(tab.notebook_widget) is None:
+                self._restore_notebook_for(tab).addTab(tab.notebook_widget, "")
             tab.update_tab_title()
 
         if session.current_widget and (current_book := self.notebook_for(session.current_widget)) is not None:
@@ -150,7 +145,7 @@ class ProjectSessionManager:
     def _capture_session(self, session: ProjectSession) -> None:
         widgets = [
             notebook.widget(index)
-            for notebook in self.notebooks()
+            for notebook in self._all_notebooks()
             for index in range(notebook.count())
         ]
         docked = [tab for widget in widgets if (tab := self.tab_lookup.get(widget)) in session.tabs]
@@ -161,11 +156,10 @@ class ProjectSessionManager:
         session.current_widget = current_widget if self.tab_lookup.get(current_widget) in session.tabs else None
 
     def windows_for(self, tabs) -> list[Any]:
-        return [
-            window for notebook in self.notebooks()
-            for window in getattr(notebook, "_floating_windows", [])
-            if getattr(window, "file_tab", None) in tabs
-        ]
+        if self.group_host is None:
+            return []
+        pages = {tab.notebook_widget for tab in tabs}
+        return [window for window in self.group_host.floating_windows() if pages.intersection(window.pages())]
 
     def set_tab_hidden(self, tab: Any, hidden: bool) -> None:
         if bool(getattr(tab, "_workspace_hidden", False)) == hidden:
@@ -176,38 +170,36 @@ class ProjectSessionManager:
     def _hide_tab(self, tab: Any) -> None:
         widget = tab.notebook_widget
         notebook = self.notebook_for(widget)
-        if notebook is not None and (index := notebook.indexOf(widget)) != -1:
+        if notebook is not None:
             tab._editor_group_index = self.group_index_for(widget)
-            notebook.removeTab(index)
+            notebook.removeTab(notebook.indexOf(widget))
             widget.hide()
+            if self.group_host is not None:
+                self.group_host.prune_empty_groups()
         if (session := self.session_for_tab(tab)) and session.current_widget is widget:
             session.current_widget = None
-        for window in self.windows_for([tab]):
-            window.setVisible(False)
 
     def _show_tab(self, tab: Any) -> None:
-        session = self.session_for_tab(tab)
-        active = session is self.get(self.active_key)
-        windows = self.windows_for([tab])
-        if active and not windows and self.notebook_for(tab.notebook_widget) is None:
+        if self.session_for_tab(tab) is self.get(self.active_key) and self.notebook_for(tab.notebook_widget) is None:
             self._restore_notebook_for(tab).addTab(tab.notebook_widget, "")
             tab.update_tab_title()
-        for window in windows:
-            window.setVisible(active)
 
     def _show_windows(self, session: ProjectSession, visible: bool) -> None:
         for window in self.windows_for(session.tabs):
-            window.setVisible(visible and not getattr(window.file_tab, "_workspace_hidden", False))
+            window.setVisible(visible)
 
     def notebooks(self):
         if self.group_host is not None:
             return self.group_host.notebooks()
         return (self.notebook,) if self.notebook is not None else ()
 
+    def _all_notebooks(self):
+        return self.group_host.all_notebooks() if self.group_host is not None else self.notebooks()
+
     def notebook_for(self, widget):
         if widget is None:
             return None
-        return next((notebook for notebook in self.notebooks() if notebook.indexOf(widget) >= 0), None)
+        return next((notebook for notebook in self._all_notebooks() if notebook.indexOf(widget) >= 0), None)
 
     def current_widget(self):
         if self.group_host is not None:

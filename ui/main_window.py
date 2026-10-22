@@ -143,7 +143,6 @@ class REasyEditorApp(QMainWindow):
         self.notebook.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.notebook.setMinimumSize(50, 50)
         self.notebook.app_instance = self
-        self.notebook._set_icon_callback = set_app_icon
         self.editor_groups = EditorGroupHost(self.notebook, self, central_widget)
         self.breadcrumbs = BreadcrumbBar(self, central_widget)
         editor_shell = QWidget(central_widget)
@@ -282,7 +281,7 @@ class REasyEditorApp(QMainWindow):
         self._refresh_homepage()
 
     def _refresh_homepage(self):
-        show_notebook = self.editor_groups.count() > 0 or self.proj_dock.isVisible()
+        show_notebook = self.editor_groups.count() > 0 or self.editor_groups.dragging or self.proj_dock.isVisible()
         recent = []
         for entry in reversed(self._closed_file_history[-RECENT_FILES_SHOWN:]):
             _, _, decoded_target = ProjectManager.decode_history_entry(entry)
@@ -299,9 +298,6 @@ class REasyEditorApp(QMainWindow):
 
     def _notebooks(self):
         return self.editor_groups.notebooks()
-
-    def _floating_windows(self):
-        return self.editor_groups.all_floating_windows()
 
     def document_title_for_tab(self, tab) -> str:
         target = str(getattr(tab, "pak_source_path", "") or getattr(tab, "filename", "") or "")
@@ -931,37 +927,26 @@ class REasyEditorApp(QMainWindow):
                 target = getattr(tab, "pak_source_path", None) or getattr(tab, "filename", None)
                 if not target:
                     continue
-                notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
-                if notebook is not None:
-                    group = self.editor_groups.notebooks().index(notebook)
-                    tab_order = notebook.indexOf(tab.notebook_widget)
-                else:
-                    parent_notebook = getattr(tab, "parent_notebook", None)
-                    group = (
-                        self.editor_groups.notebooks().index(parent_notebook)
-                        if parent_notebook in self.editor_groups.notebooks() else 0
-                    )
-                    tab_order = order
-                window = next(
-                    (candidate for candidate in self._floating_windows() if candidate.file_tab is tab),
-                    None,
+                window, group, tab_order = self.editor_groups.locate(tab.notebook_widget) or (
+                    -1, getattr(tab, "_editor_group_index", 0), order
                 )
                 entries.append({
                     "target": self._history_entry_for_tab(tab),
                     "project": session.path,
+                    "window": window,
                     "group": group,
                     "order": tab_order,
                     "active": tab is active_tab,
-                    "detached": window is not None,
-                    "window_geometry": (
-                        self._encode_window_bytes(window.saveGeometry()) if window is not None else ""
-                    ),
                 })
         return {
             "projects": projects,
             "active_project": self.current_project,
             "tabs": entries,
             "editor_groups": self.editor_groups.snapshot(),
+            "floating_windows": [
+                {"geometry": self._encode_window_bytes(window.saveGeometry()), "editor_groups": window.host.snapshot()}
+                for window in self.editor_groups.floating_windows()
+            ],
         }
 
     @staticmethod
@@ -1007,32 +992,43 @@ class REasyEditorApp(QMainWindow):
             if snapshot.get("editor_groups", {}).get("orientation") == "vertical"
             else Qt.Horizontal
         )
+        saved_windows = [item for item in snapshot.get("floating_windows", []) if isinstance(item, dict)]
+        floating = {}
+
+        def host_for(window):
+            if not 0 <= window < len(saved_windows):
+                return self.editor_groups
+            if window not in floating:
+                floating[window] = FloatingTabWindow(self.editor_groups)
+                geometry = self._decode_window_bytes(saved_windows[window].get("geometry"))
+                if not geometry.isEmpty():
+                    self._restore_geometry(floating[window], geometry)
+                floating[window].show()
+            return floating[window].host
 
         def restore_entries(project_path):
             matching = sorted(
                 (entry for entry in entries if entry.get("project") == project_path),
-                key=lambda entry: (int(entry.get("group", 0)), int(entry.get("order", 0))),
+                key=lambda entry: (
+                    int(entry.get("window", -1)), int(entry.get("group", 0)), int(entry.get("order", 0))
+                ),
             )
             for entry in matching:
                 tab = self._restore_workbench_entry(entry)
                 if tab is None:
                     continue
-                self.editor_groups.move_page_to_group(
+                host_for(int(entry.get("window", -1))).move_page_to_group(
                     tab.notebook_widget,
                     max(0, int(entry.get("group", 0))),
                     orientation,
                 )
-                if entry.get("detached"):
-                    notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
-                    window = notebook.detach_widget(tab.notebook_widget) if notebook is not None else None
-                    geometry = self._decode_window_bytes(entry.get("window_geometry"))
-                    if window is not None and not geometry.isEmpty():
-                        self._restore_geometry(window, geometry)
 
         queue = list(projects)
 
         def restore_next_project():
             if not queue:
+                for window, restored in floating.items():
+                    restored.host.restore_layout(saved_windows[window].get("editor_groups", {}))
                 self._finish_workbench_restore(snapshot, workbench)
                 return
             project = queue.pop(0)
@@ -1139,6 +1135,8 @@ class REasyEditorApp(QMainWindow):
                 tab.cleanup()
             except Exception as exc:
                 print(f"Warning: Error cleaning up tab during shutdown: {exc}")
+        for window in self.editor_groups.floating_windows():
+            window.discard()
         event.accept()
 
     def update_from_app_settings(self):
@@ -1258,10 +1256,9 @@ class REasyEditorApp(QMainWindow):
                                                                             "the top of the editor."))
             return
 
-        for window in self._floating_windows():
-            if window.page == active.notebook_widget:
-                active.open_find_dialog()
-                return
+        if self.editor_groups.window_for(active.notebook_widget) is not None:
+            active.open_find_dialog()
+            return
         if not self._shared_find_dialog or not isinstance(self._shared_find_dialog, BetterFindDialog):
             self._shared_find_dialog = BetterFindDialog(file_tab=active, parent=self, shared_mode=True)
         else:
@@ -1277,15 +1274,8 @@ class REasyEditorApp(QMainWindow):
 
         if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog and self._shared_find_dialog.isVisible():
             active = self.get_active_tab()
-            if active:
-                is_detached = False
-                for window in self._floating_windows():
-                    if window.page == active.notebook_widget:
-                        is_detached = True
-                        break
-
-                if not is_detached:
-                    self._shared_find_dialog.set_file_tab(active)
+            if active and self.editor_groups.window_for(active.notebook_widget) is None:
+                self._shared_find_dialog.set_file_tab(active)
 
     def _check_and_close_shared_find_dialog(self):
         """Close the shared find dialog if no tabs are left in the main window"""
@@ -1322,16 +1312,7 @@ class REasyEditorApp(QMainWindow):
                         else:
                             tab.modified = False
                             tab.update_tab_title()
-                    notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
-                    index = notebook.indexOf(tab.notebook_widget) if notebook is not None else -1
-                    if index != -1:
-                        notebook.setCurrentIndex(index)
-                        self.editor_groups.activate_page(tab.notebook_widget)
-                    else:
-                        for window in self.project_workspace.sessions.windows_for([tab]):
-                            window.show()
-                            window.raise_()
-                            window.activateWindow()
+                    self.editor_groups.activate_page(tab.notebook_widget)
                     return tab
 
         tab = None
@@ -1429,7 +1410,7 @@ class REasyEditorApp(QMainWindow):
         aw = QApplication.activeWindow()
         widgets = [self.editor_groups.active_page(), QApplication.focusWidget()]
         if isinstance(aw, FloatingTabWindow):
-            widgets.insert(0, aw.centralWidget())
+            widgets.insert(0, aw.host.active_page())
         for widget in widgets:
             tab = self._resolve_tab_from_widget(widget)
             if tab in active_tabs or getattr(tab, "suppress_general_shortcuts", False):
@@ -1503,15 +1484,8 @@ class REasyEditorApp(QMainWindow):
         if not tab:
             return
         notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
-        index = notebook.indexOf(tab.notebook_widget) if notebook is not None else -1
-        if index == -1:
-            windows = self.project_workspace.sessions.windows_for([tab])
-            if windows:
-                windows[0].close()
-                notebook = self.project_workspace.sessions.notebook_for(tab.notebook_widget)
-                index = notebook.indexOf(tab.notebook_widget) if notebook is not None else -1
-        if index != -1:
-            self.close_tab(index, notebook=notebook)
+        if notebook is not None:
+            self.close_tab(notebook.indexOf(tab.notebook_widget), notebook=notebook)
 
     def _resolve_tab_from_widget(self, widget):
         w = widget
@@ -1659,18 +1633,11 @@ class REasyEditorApp(QMainWindow):
     def _close_tab_object(self, tab, *, record_history=True):
         widget = tab.notebook_widget
         self._leave_view_fullscreen(tab)
-        for window in self.project_workspace.sessions.windows_for([tab]):
-            try:
-                window.close_without_reattach()
-            except RuntimeError:
-                pass
-
         if record_history and tab.filename:
             self._record_closed_file(self._history_entry_for_tab(tab))
 
         self.tabs.pop(widget, None)
         self.editor_groups.remove_page(widget)
-        self.editor_groups.prune_empty_groups()
         self.project_workspace.sessions.remove_tab(tab)
         tab.cleanup()
         self._refresh_document_titles()

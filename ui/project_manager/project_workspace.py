@@ -42,7 +42,6 @@ class ProjectWorkspaceController:
         self.host.addToolBar(Qt.TopToolBarArea, self.toolbar)
         notebook.currentChanged.connect(lambda _index: self._sync_tabs())
         notebook.tabBar().tabMoved.connect(self.sessions.capture_active_order)
-        notebook.tabReattached.connect(self.sessions.capture_active_order)
         if group_host is not None:
             group_host.layoutChanged.connect(self._on_editor_layout_changed)
         self.apply_style()
@@ -216,24 +215,15 @@ class ProjectWorkspaceController:
 
         widget = getattr(tab, "notebook_widget", None)
         notebook = self.sessions.notebook_for(widget)
-        index = notebook.indexOf(widget) if notebook is not None else -1
-        if index != -1:
-            notebook.setCurrentIndex(index)
+        if notebook is not None:
+            notebook.setCurrentWidget(widget)
             if self.group_host is not None:
                 self.group_host.activate_page(widget)
             ensure_loaded = getattr(getattr(tab, "preview", None), "ensure_loaded", None)
             if callable(ensure_loaded):
                 ensure_loaded()
-            self._sync_tabs()
-            return True
-
-        windows = self.sessions.windows_for([tab])
-        for window in windows:
-            window.show()
-            window.raise_()
-            window.activateWindow()
         self._sync_tabs()
-        return bool(windows)
+        return notebook is not None
 
     def delete_project(self, project_path: Path) -> bool:
         key = ProjectSessionManager.key_for(project_path)
