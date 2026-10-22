@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import threading
 
-from settings import DEFAULT_SETTINGS
+from settings import load_settings
 
 # A parsed file takes about 3x its size in memory (measured 3.1 to 3.3x on RE4 and RE9 masters and light-pass files).
 COST_PER_BYTE = 3
@@ -74,7 +74,7 @@ class _ParsedFiles:
             kept -= entry.cost
 
 
-_files = _ParsedFiles(DEFAULT_SETTINGS["parsed_shader_cache_mb"] << 20)
+_files = _ParsedFiles(load_settings()["parsed_shader_cache_mb"] << 20)
 
 
 def set_budget(megabytes: int) -> None:

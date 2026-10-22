@@ -1,6 +1,8 @@
 import threading
 import os
 import sys
+lazy import json
+lazy import urllib.request
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
@@ -37,17 +39,10 @@ class UpdateNotificationManager:
 
     def check_for_updates(self):
         try:
-            import requests
-
-            resp = requests.get(
-                "https://api.github.com/repos/seifhassine/REasy/releases/latest",
-                timeout=5,
-                headers={"Accept": "application/vnd.github+json"}
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                self.latest_version = data.get("tag_name", "")
-                self.latest_release_url = data.get("html_url", "https://github.com/seifhassine/REasy/releases")
+            with urllib.request.urlopen("https://api.github.com/repos/seifhassine/REasy/releases/latest", timeout=5) as resp:
+                data = json.load(resp)
+            self.latest_version = data.get("tag_name", "")
+            self.latest_release_url = data.get("html_url", "https://github.com/seifhassine/REasy/releases")
         except Exception as e:
             print(f"Update check failed: {e}")
 

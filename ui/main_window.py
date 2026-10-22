@@ -117,7 +117,6 @@ class REasyEditorApp(QMainWindow):
         except Exception as e:
             self.settings = normalize_settings()
             print(f"Error loading settings: {e}")
-        self._apply_parsed_shader_budget()
 
         ensure_projects_root()
         self.current_project = None
@@ -197,8 +196,6 @@ class REasyEditorApp(QMainWindow):
         self.status_bar.addPermanentWidget(self.game_status_label)
         self._refresh_status_info()
 
-        self._apply_style(self._build_theme_colors())
-
         self.console_widget = ConsoleWidget()
         self.output_dock = QDockWidget(self.tr("Output"), self)
         self.output_dock.setObjectName("outputDock")
@@ -259,7 +256,6 @@ class REasyEditorApp(QMainWindow):
             self._sync_ai_chat_controls
         )
         corner.layout().addWidget(self.ai_chat_button)
-        self._apply_menubar_corner_style()
         self._ai_chat_visibility_tracking = True
         app = QApplication.instance()
         if app is not None:
@@ -771,10 +767,8 @@ class REasyEditorApp(QMainWindow):
         apply_theme(QApplication.instance(), colors)
         self.home_widget.set_theme(colors)
         self._apply_menubar_corner_style()
-        if hasattr(self, "ai_chat_dock"):
-            self.ai_chat_dock.apply_theme()
-        if hasattr(self, "project_workspace"):
-            self.project_workspace.apply_style()
+        self.ai_chat_dock.apply_theme()
+        self.project_workspace.apply_style()
 
     def _create_menubar_corner(self):
         corner = QWidget(self.menuBar())
@@ -1148,7 +1142,7 @@ class REasyEditorApp(QMainWindow):
         event.accept()
 
     def update_from_app_settings(self):
-        self._apply_parsed_shader_budget()
+        set_budget(self.settings["parsed_shader_cache_mb"])
         self._refresh_status_info()
         active_tabs = set(self.project_workspace.sessions.active_tabs())
         for tab in self.tabs.values():
@@ -1157,9 +1151,6 @@ class REasyEditorApp(QMainWindow):
                 tab.handler.set_confirmation_prompts(self.settings.get("confirmation_prompt", True))
                 if tab in active_tabs:
                     tab.handler.set_game_version(self.settings.get("game_version", "RE4"))
-
-    def _apply_parsed_shader_budget(self):
-        set_budget(self.settings["parsed_shader_cache_mb"])
 
     def open_settings_dialog(self):
         SettingsDialog(self).exec()
