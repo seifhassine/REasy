@@ -1640,6 +1640,7 @@ def _material_texture_bindings(
     semantics,
     *,
     compiled_contract,
+    required: bool = True,
 ) -> tuple[MaterialTextureBinding, ...]:
     bindings = []
     for definition in project.textures:
@@ -1648,7 +1649,7 @@ def _material_texture_bindings(
         name = _material_texture_name(definition)
         resource = next((item for item in contract.resources if item.name == name), None)
         if resource is None or not resource.sampleable:
-            if (document.material_interface.parameter_storage in BINDLESS_PARAMETER_STORAGES
+            if (not required or document.material_interface.parameter_storage in BINDLESS_PARAMETER_STORAGES
                     or any(n.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES
                            for n in project.graph.nodes)):
                 continue
@@ -2019,7 +2020,9 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
             cached = prepared.get(cache_key)
             if cached is None:
                 if authored is not None:
-                    adjusted, candidate_layout = _augmented_contract(project, base_contract, profile, document, shader_role)
+                    # A body reads only its template's resources; added material textures would become new bindings.
+                    adjusted, candidate_layout = _augmented_contract(project, base_contract, profile, document,
+                                                                     shader_role, augment_textures=False)
                     rebound = authored._bind_material_interface_for_compilation(base_contract, adjusted, project, profile)
                     adjusted = rebound.contract
                     generated = rebound.generate(adjusted, early_depth_stencil=execution.early_depth_stencil, source_profile=project.source_profile)
@@ -2116,6 +2119,7 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
                 document,
                 semantics,
                 compiled_contract=candidate_contract,
+                required=authored is None,
             )
             used_texture_names = {
                 resource.name
