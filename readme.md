@@ -71,7 +71,7 @@ The list follows the source code; the latest release may be behind.
 
 Grab the latest build from [Releases](https://github.com/seifhassine/REasy/releases/latest) and run `REasy.exe`.
 
-To run from source on Windows you need Python 3.15 (`py -3.15 --version` should work), Git, and the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+To run from source on Windows you need Python 3.15 (`py -3.15 --version` should work), Git, and the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the "Desktop development with C++" workload, which includes the Windows SDK (10.0.20348 or newer; the current Windows 11 SDK works). The SDK is the C++ one with the Direct3D 12 headers, not .NET. Running a release `REasy.exe` needs neither.
 
 - `run_reasy.bat` sets up `.venv` on first launch and starts REasy.
 - `build.bat` builds a standalone `REasy.exe` into `dist`.
