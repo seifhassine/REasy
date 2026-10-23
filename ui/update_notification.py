@@ -3,10 +3,11 @@ import os
 import sys
 lazy import json
 lazy import urllib.request
-from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl
+from PySide6.QtCore import QCoreApplication, QObject, QT_TRANSLATE_NOOP, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import QMenu, QMessageBox
 from PySide6.QtGui import QDesktopServices
+lazy from ui.qt_timers import call_later
 lazy from ui.update_progress_dialog import UpdateProgressDialog
 
 AUTO_UPDATE_TITLE = QT_TRANSLATE_NOOP(
@@ -18,24 +19,29 @@ def is_windows() -> bool:
     return os.name == "nt"
 
 
-class UpdateNotificationManager:
+class UpdateNotificationManager(QObject):
+    check_finished = Signal()
+
     def __init__(self, main_window, current_version):
-        self.main_window = main_window
+        super().__init__(main_window)
         self.current_version = current_version
         self.latest_version = None
         self.latest_release_url = None
         self._update_menu = None
-        self._update_check_timer = None
         self._auto_update_prompted = False
+        self.check_finished.connect(self.update_update_menu)
 
-        QTimer.singleShot(1000, lambda: threading.Thread(
-            target=self.check_for_updates, daemon=True).start())
-
-        self._update_check_timer = QTimer(main_window)
-        self._update_check_timer.timeout.connect(self._periodic_update_check)
+        self._update_check_timer = QTimer(self)
+        self._update_check_timer.timeout.connect(self._start_update_check)
         self._update_check_timer.start(10 * 60 * 1000)
+        call_later(self, 1000, self._start_update_check)
 
-        QTimer.singleShot(2000, self.update_update_menu)
+    @property
+    def main_window(self):
+        return self.parent()
+
+    def _start_update_check(self):
+        threading.Thread(target=self.check_for_updates, daemon=True).start()
 
     def check_for_updates(self):
         try:
@@ -43,6 +49,7 @@ class UpdateNotificationManager:
                 data = json.load(resp)
             self.latest_version = data.get("tag_name", "")
             self.latest_release_url = data.get("html_url", "https://github.com/seifhassine/REasy/releases")
+            self.check_finished.emit()
         except Exception as e:
             print(f"Update check failed: {e}")
 
@@ -58,11 +65,6 @@ class UpdateNotificationManager:
         url = self.latest_release_url or "https://github.com/seifhassine/REasy/releases"
         QDesktopServices.openUrl(QUrl(url))
 
-    def _periodic_update_check(self):
-        threading.Thread(target=self.check_for_updates, daemon=True).start()
-        QTimer.singleShot(2000, self.update_update_menu)
-            
-            
     def update_update_menu(self):
         button = self.main_window.update_button
         if self._update_menu:
