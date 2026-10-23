@@ -4,6 +4,7 @@ import struct
 import threading
 import zlib
 from dataclasses import dataclass
+from functools import cache
 lazy import zstandard as zstd
 lazy import numpy as np
 from typing import Callable, Optional, BinaryIO, List, Sequence
@@ -125,11 +126,23 @@ class PakEntry:
         return int(self.compressed_size or self.decompressed_size)
 
 
+@cache
+def _row_types():
+    """An index row, and the entry table rows of PAK versions 4 and 2."""
+    row = np.dtype([("hash", "<u8"), ("offset", "<i8"), ("compressed_size", "<i8"), ("decompressed_size", "<i8"),
+                    ("attributes", "<i8"), ("checksum", "<i8")])
+    v4 = np.dtype([("lower", "<u4"), ("upper", "<u4"), ("offset", "<i8"), ("compressed_size", "<i8"),
+                   ("decompressed_size", "<i8"), ("attributes", "<i8"), ("checksum", "<i8")])
+    v2 = np.dtype([("offset", "<i8"), ("compressed_size", "<i8"), ("upper", "<u4"), ("lower", "<u4")])
+    return row, v4, v2
+
+
 class PakFile:
     def __init__(self) -> None:
         self.header: Optional[PakHeader] = None
-        self.entries: List[PakEntry] = []
-        self.availability_entries: List[PakEntry] = []
+        # Kept entries in their physical order, as index rows, and each one's path (None while unnamed).
+        self.rows = None
+        self.names: List[Optional[str]] = []
         self.has_attr_bit20: bool = False
         self.filepath: str = ""
         self._fs: Optional[BinaryIO] = None
@@ -138,12 +151,29 @@ class PakFile:
         self.remap_pairs: List[tuple[int, int]] = []
         self.remap_stored_to_public: dict[int, int] = {}
 
+    def entry(self, index: int) -> PakEntry:
+        """The kept entry ``index``, made now; its path is the file's name for it."""
+        row = self.rows[index]
+        hashed, attributes = int(row["hash"]), int(row["attributes"])
+        return PakEntry(hash_lower=hashed & 0xFFFFFFFF, hash_upper=hashed >> 32, offset=int(row["offset"]),
+                        compressed_size=int(row["compressed_size"]), decompressed_size=int(row["decompressed_size"]),
+                        checksum=int(row["checksum"]), attributes=attributes, compression=attributes & 0xF,
+                        encryption=(attributes & 0x00FF0000) >> 16, path=self.names[index])
+
+    @property
+    def entries(self) -> List[PakEntry]:
+        return [self.entry(index) for index in range(len(self.names))]
+
+    def available_rows(self):
+        """Kept entries whose attributes gate them (0x70)."""
+        return np.flatnonzero(self.rows["attributes"] & 0x70) if self.names else ()
 
     def read_contents(self, f: BinaryIO, expected_paths: Optional[dict[int, str]] = None) -> None:
         self.header = read_pak_header(f, self.filepath)
         maj, features, file_count = self.header.major, self.header.feature_flags, self.header.file_count
-        self.entries.clear()
-        self.availability_entries.clear()
+        row_type, v4, v2 = _row_types()
+        self.rows = np.zeros(0, row_type)
+        self.names = []
         self.has_attr_bit20 = False
         self.chunk_table = ()
         self.remap_pairs.clear()
@@ -182,14 +212,14 @@ class PakFile:
 
         self.chunk_table = _read_chunk_table(f) if (features & PAK_FLAG_CHUNK_TABLE) != 0 else ()
 
-        buf = memoryview(entry_table)
-        indices = range(file_count)
-        named_hashes = expected_paths
+        table = np.frombuffer(entry_table, dtype=v4 if maj == 4 else v2)
+        hashes = (table["upper"].astype("<u8") << np.uint64(32)) | table["lower"]
+        if maj == 4:
+            self.has_attr_bit20 = bool(np.any(table["attributes"] & 0x20))
+        kept = np.arange(file_count)
+        names: List[Optional[str]] = [None] * file_count
         if expected_paths is not None:
-            # bit20 is checked over all rows, unmatched ones included: it affects RE4 availability.
-            rows = np.frombuffer(buf, dtype='<u4').reshape(file_count, entry_size // 4)
-            lower, upper = (rows[:, 0], rows[:, 1]) if maj == 4 else (rows[:, 5], rows[:, 4])
-            hashes = (upper.astype('<u8') << 32) | lower
+            named_hashes = expected_paths
             if self.remap_pairs:
                 # Match the public hash aliases exactly as _resolve_expected_path.
                 named_hashes = dict(expected_paths)
@@ -200,57 +230,26 @@ class PakFile:
             # Vanilla tables are sorted: binary-search the requested hashes instead of ``np.isin`` over a million rows.
             if hashes.size < 2 or bool(np.all(hashes[:-1] <= hashes[1:])):
                 starts = np.searchsorted(hashes, wanted, side='left')
-                ends = np.searchsorted(hashes, wanted, side='right')
-                indices = sorted(index for start, end in zip(starts, ends) for index in range(int(start), int(end)))
+                counts = np.searchsorted(hashes, wanted, side='right') - starts
+                # Every row of each range, in order.
+                kept = np.sort(np.repeat(starts, counts) + np.arange(int(counts.sum()))
+                               - np.repeat(np.cumsum(counts) - counts, counts)).astype(np.int64)
             else:
-                indices = np.flatnonzero(np.isin(hashes, wanted))
-            if maj == 4:
-                self.has_attr_bit20 = bool(np.any(rows[:, 8] & 0x20))
+                kept = np.flatnonzero(np.isin(hashes, wanted))
+            names = [named_hashes.get(value) for value in hashes[kept].tolist()]
+            named = [index for index, name in enumerate(names) if name is not None]
+            if len(named) != len(names):
+                kept, names = kept[named], [names[index] for index in named]
+        rows = np.zeros(len(kept), row_type)
+        rows["hash"] = hashes[kept]
+        for field in ("offset", "compressed_size"):
+            rows[field] = table[field][kept]
         if maj == 4:
-            for index in indices:
-                hash_lower, hash_upper, offset, csize, dsize, attrib, checksum = struct.unpack_from(
-                    "<IIqqqqq", buf, int(index) * 48
-                )
-                compression = attrib & 0xF
-                encryption = (attrib & 0x00FF0000) >> 16
-                self.has_attr_bit20 = self.has_attr_bit20 or (attrib & 0x20) != 0
-                path = None
-                if expected_paths is not None:
-                    path = named_hashes.get((hash_upper << 32) | hash_lower)
-                    if path is None:
-                        continue
-                e = PakEntry(
-                    hash_lower=hash_lower,
-                    hash_upper=hash_upper,
-                    offset=offset,
-                    compressed_size=csize,
-                    decompressed_size=dsize,
-                    checksum=checksum,
-                    attributes=attrib,
-                    compression=compression,
-                    encryption=encryption,
-                    path=path,
-                )
-                self.entries.append(e)
-                if (attrib & 0x70) != 0:
-                    self.availability_entries.append(e)
+            for field in ("decompressed_size", "attributes", "checksum"):
+                rows[field] = table[field][kept]
         else:
-            for index in indices:
-                offset, csize, hash_upper, hash_lower = struct.unpack_from("<qqII", buf, int(index) * 24)
-                path = None
-                if expected_paths is not None:
-                    path = named_hashes.get((hash_upper << 32) | hash_lower)
-                    if path is None:
-                        continue
-                e = PakEntry(
-                    hash_lower=hash_lower,
-                    hash_upper=hash_upper,
-                    offset=offset,
-                    compressed_size=csize,
-                    decompressed_size=csize,
-                    path=path,
-                )
-                self.entries.append(e)
+            rows["decompressed_size"] = rows["compressed_size"]
+        self.rows, self.names = rows, names
 
 
 
@@ -386,9 +385,15 @@ def _decrypt_pak_entry_data(entry_table: bytearray, key: bytearray) -> None:
     _decrypt_key(key)
     if not key:
         return
-    size = len(entry_table)
-    for i in range(size):
-        entry_table[i] ^= (i + key[i % 32] * key[i % 29]) & 0xFF
+    # Byte i is XORed with (i + key[i % 32] * key[i % 29]) & 0xFF, which repeats every lcm(256, 32 * 29) bytes.
+    period = 7424
+    at = np.arange(period, dtype=np.int64)
+    held = np.frombuffer(bytes(key), np.uint8).astype(np.int64)
+    mask = ((at + held[at % 32] * held[at % 29]) & 0xFF).astype(np.uint8)
+    table = np.frombuffer(entry_table, np.uint8)
+    whole = len(table) // period * period
+    table[:whole].reshape(-1, period)[:] ^= mask
+    table[whole:] ^= mask[:len(table) - whole]
 
 
 def _inflate(data, size: int) -> bytes:

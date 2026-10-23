@@ -371,13 +371,8 @@ class _ProgramResources:
 
 
 @dataclass(frozen=True, slots=True)
-class SdfProgramTables(_ProgramResources):
-    target_index: int
-    program_index: int
-    record_index: int
-    name_offset: int
-    name: str
-    shaders: tuple[SdfShaderReference, ...]
+class SdfResourceTables:
+    """What a program record's resource fields point at; records with equal fields share them."""
     total_stage_binding_count: int
     per_stage_binding_counts: tuple[tuple[int, int, int, int, int, int], ...]
     distinct_resource_counts: tuple[int, int, int, int, int]
@@ -450,14 +445,32 @@ class _Lazy(Sequence):
         return item
 
 
+@dataclass(frozen=True, slots=True)
+class SdfTableGroup:
+    """Programs, as (target index, program index), sharing ``tables``; ``shaders`` holds those read with them."""
+    programs: tuple[tuple[int, int], ...]
+    tables: SdfResourceTables | SdfProgram
+    shaders: tuple[SdfShaderReference, ...]
+
+
 class LazyPrograms(_Lazy):
     """``lock`` is shared by the file's targets."""
 
-    def __init__(self, names: tuple[str, ...], tables: Callable[[int], SdfProgramTables],
-                 parse: Callable[[int], SdfProgram], lock):
+    def __init__(self, names: tuple[str, ...], parse: Callable[[int], SdfProgram],
+                 groups: Callable[[], tuple[SdfTableGroup, ...]], lock):
+        super().__init__(parse, len(names), lock)
         self.names = names
-        self.tables = _Lazy(tables, len(names), lock)
-        super().__init__(lambda index: parse(self.tables[index].program_index), len(names), lock)
+        self._groups = groups
+
+    def table_groups(self) -> tuple[SdfTableGroup, ...]:
+        """Reads no shader."""
+        with self._lock:
+            return self._groups()
+
+
+def program_names(target) -> tuple[str, ...]:
+    programs = target.programs
+    return programs.names if isinstance(programs, LazyPrograms) else tuple(program.name for program in programs)
 
 
 @dataclass(frozen=True, slots=True)
@@ -467,16 +480,23 @@ class SdfTarget:
     display_name: str
     selection_capability_bit: int | None
     programs: tuple[SdfProgram, ...] | LazyPrograms
+    # Each program name's indices in ``programs``.
+    program_indices: dict[str, tuple[int, ...]] = field(init=False, repr=False, compare=False)
+
+    def __post_init__(self) -> None:
+        indices: dict[str, tuple[int, ...]] = {}
+        for index, name in enumerate(program_names(self)):
+            indices[name] = indices.get(name, ()) + (index,)
+        object.__setattr__(self, "program_indices", indices)
 
 
-def program_tables(target) -> Sequence[SdfProgram | SdfProgramTables]:
-    programs = target.programs
-    return programs.tables if isinstance(programs, LazyPrograms) else programs
-
-
-def program_names(target) -> tuple[str, ...]:
-    programs = target.programs
-    return programs.names if isinstance(programs, LazyPrograms) else tuple(program.name for program in programs)
+def resource_groups(document) -> tuple[SdfTableGroup, ...]:
+    """Each group's first program follows the previous group's in record order. A drawn document groups the programs
+    of a target by shared tables and reads no shader; a whole one holds each program alone, with its shaders."""
+    return tuple(group for target in document.targets for group in (
+        target.programs.table_groups() if isinstance(target.programs, LazyPrograms) else
+        (SdfTableGroup(((target.index, program.program_index),), program, program.shaders)
+         for program in target.programs)))
 
 
 @dataclass(slots=True)

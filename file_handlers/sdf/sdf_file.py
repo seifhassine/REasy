@@ -1,3 +1,4 @@
+"""See docs/internals/sdf-format.md."""
 from __future__ import annotations
 
 from functools import partial
@@ -36,14 +37,15 @@ lazy from .models import (
     LazyPrograms,
     SdfNamedResource,
     SdfProgram,
-    SdfProgramTables,
     SdfRasterizerState,
+    SdfResourceTables,
     SdfSemanticNote,
     SdfShaderReference,
     SdfSpirvInterfaceVariable,
     SdfSpirvInputElement,
     SdfSpirvInputSignature,
     SdfSpirvModule,
+    SdfTableGroup,
     SdfTarget,
     program_names,
 )
@@ -164,6 +166,7 @@ class _SdfParser:
         self.cb_cache: dict[tuple[int, int], tuple[SdfConstantBuffer, ...]] = {}
         self.variable_cache: dict[tuple[int, int, int], tuple[SdfConstantVariable, ...]] = {}
         self.resource_cache: dict[tuple[str, int, int], tuple[SdfNamedResource, ...]] = {}
+        self.tables_cache: dict[tuple, SdfResourceTables] = {}
         self.notes: dict[tuple[str, str], SdfSemanticNote] = {}
         self.discarded_authoring_ranges: list[SdfDiscardedAuthoringRange] = []
         self.baseline_input_signatures: dict[
@@ -253,8 +256,8 @@ class _SdfParser:
                 programs = LazyPrograms(
                     tuple(self._record_name(record_base + program_index)
                           for program_index in range(target_program_count)),
-                    partial(self._target_tables, target_index, record_base),
                     partial(self._drawn_program, target_index, record_base),
+                    partial(self._table_groups, target_index, record_base, target_program_count),
                     lock,
                 )
             else:
@@ -369,22 +372,32 @@ class _SdfParser:
             end=self.shader_binary_offset,
         )
 
-    def _target_tables(self, target_index: int, record_base: int, program_index: int) -> SdfProgramTables:
-        return self._program_tables(target_index, program_index, record_base + program_index)
+    def _table_groups(self, target_index: int, record_base: int, count: int) -> tuple[SdfTableGroup, ...]:
+        """A group's tables are read and checked with its first program's name."""
+        table_fields = 1 + 2 * len(self.profile.stages)
+        found: dict[tuple, list[tuple[int, int]]] = {}
+        for program_index, record in enumerate(self.records[record_base:record_base + count]):
+            key = tuple(record[table_fields:])
+            programs = found.get(key)
+            if programs is None:
+                found[key] = [(target_index, program_index)]
+            else:
+                programs.append((target_index, program_index))
+        return tuple(SdfTableGroup(tuple(programs), self._shared_tables(key, record_base + programs[0][1]), ())
+                     for key, programs in found.items())
 
-    def _program_tables(self, target_index: int, program_index: int, record_index: int) -> SdfProgramTables:
+    def _shared_tables(self, key: tuple, record_index: int) -> SdfResourceTables:
+        tables = self.tables_cache.get(key)
+        if tables is None:
+            tables = self.tables_cache[key] = self._resource_tables(record_index, self._record_name(record_index))
+        return tables
+
+    def _resource_tables(self, record_index: int, name: str) -> SdfResourceTables:
         reader = self.reader
         stage_count = len(self.profile.stages)
-        name_offset, *fields = self.records[record_index]
-        pointers, sizes = fields[:stage_count], fields[stage_count:2 * stage_count]
-        total_stage_bindings, counts, *fields = fields[2 * stage_count:]
+        total_stage_bindings, counts, *fields = self.records[record_index][1 + 2 * stage_count:]
         distinct_counts, binding_pointers, metadata_pointers = (
             tuple(fields[:5]), fields[5:10], fields[10:15])
-        name = self._record_name(record_index)
-        shaders = tuple(
-            self._shader_reference(stage.key, pointer, size, name, target_index=target_index)
-            for stage, pointer, size in zip(self.profile.stages, pointers, sizes)
-        )
         per_stage_counts = tuple(
             tuple(counts[kind * stage_count:(kind + 1) * stage_count]) for kind in range(len(RESOURCE_KINDS))
         )
@@ -398,13 +411,7 @@ class _SdfParser:
             self._parse_named_resources(RESOURCE_KINDS[kind], metadata_pointers[kind], distinct_counts[kind], name)
             for kind in range(1, 5)
         )
-        return SdfProgramTables(
-            target_index=target_index,
-            program_index=program_index,
-            record_index=record_index,
-            name_offset=name_offset,
-            name=name,
-            shaders=shaders,
+        return SdfResourceTables(
             total_stage_binding_count=total_stage_bindings,
             per_stage_binding_counts=per_stage_counts,
             distinct_resource_counts=distinct_counts,
@@ -444,8 +451,15 @@ class _SdfParser:
                     f"{reader.label}: program {record_index} reserved record range "
                     f"+0x{relative_offset:X} is non-zero"
                 )
-        tables = self._program_tables(target_index, program_index, record_index)
-        name, shaders = tables.name, tables.shaders
+        stage_count = len(self.profile.stages)
+        name_offset, *fields = self.records[record_index]
+        name = self._record_name(record_index)
+        shaders = tuple(
+            self._shader_reference(stage.key, pointer, size, name, target_index=target_index)
+            for stage, pointer, size in zip(self.profile.stages, fields[:stage_count],
+                                            fields[stage_count:2 * stage_count])
+        )
+        tables = self._resource_tables(record_index, name)
 
         input_layout = self._parse_input_layout(
             reader.u64(
@@ -556,7 +570,7 @@ class _SdfParser:
             program_index=program_index,
             record_index=record_index,
             record_offset=record,
-            name_offset=tables.name_offset,
+            name_offset=name_offset,
             name=name,
             input_signature=input_signature,
             shaders=shaders,

@@ -1,9 +1,13 @@
 import os
 import re
-from collections.abc import Iterator, Mapping
+from bisect import bisect_left
+from collections.abc import Iterator, Mapping, Sequence
 from concurrent.futures import Future, ThreadPoolExecutor
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 from pathlib import Path
+from threading import Lock
 from typing import Callable, Iterable, Optional, Tuple
 from weakref import WeakKeyDictionary
 
@@ -11,8 +15,11 @@ lazy from app_config import GAME_NATIVE_PATHS
 lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 
 
-_PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, tuple[object, dict[str, list[str]]]]" = WeakKeyDictionary()
+_PAK_PATH_LOOKUP_CACHE: "WeakKeyDictionary[object, tuple[object, _PakPathLookup]]" = WeakKeyDictionary()
+# Per reader: builds its lookup once while other threads that need it wait.
+_PAK_PATH_LOOKUP_LOCKS: "WeakKeyDictionary[object, Lock]" = WeakKeyDictionary()
 _DIR_PATH_LOOKUP_CACHE: dict[str, dict[str, str]] = {}
+_HELD_FOLDERS: ContextVar[dict | None] = ContextVar("held_folders", default=None)
 _PLATFORM_SUFFIX = r'\.(?:stm|x64)'
 _VERSION_SUFFIX = rf'\.\d+(?:{_PLATFORM_SUFFIX})?'
 _SUFFIX = rf'(?:{_VERSION_SUFFIX}|{_PLATFORM_SUFFIX})'
@@ -78,19 +85,117 @@ class ResourceLocation:
 _READERS = ThreadPoolExecutor(max_workers=min(8, os.process_cpu_count() or 1), thread_name_prefix="Resource reads")
 
 
+def submit_read(read: Callable, /, *args) -> Future:
+    """Runs a resource read on the reader threads."""
+    return _READERS.submit(read, *args)
+
+
 def _read_bytes(location: ResourceLocation) -> bytes | None:
     found = location.read()
     return None if found is None else found[1]
 
 
+@dataclass(frozen=True, slots=True)
+class ReadOnUse:
+    """A file that ``PrefetchedFiles`` reads when it is first asked for, not ahead."""
+    location: ResourceLocation
+
+
 class PrefetchedFiles(Mapping):
+    """Reads ``ResourceLocation`` values ahead on the reader threads: the ``AHEAD`` given after the last one asked
+    for, in the order given. One asked for before its turn is read then and the ones it passed when they are asked
+    for, so a drawing that asks in another order holds no more than that window. ``ReadOnUse`` ones are read on
+    first use."""
+    AHEAD = 64
+
     def __init__(self, files: Mapping = ()):
-        self._files = {path: _READERS.submit(_read_bytes, value) if isinstance(value, ResourceLocation) else value
-                       for path, value in files.items()}
+        # A ResourceLocation value is a read not started yet.
+        self._files = dict(files)
+        self._locations = {path: value if isinstance(value, ResourceLocation) else value.location
+                           for path, value in files.items() if isinstance(value, (ResourceLocation, ReadOnUse))}
+        self._order = [path for path, value in files.items() if isinstance(value, ResourceLocation)]
+        self._places = {path: place for place, path in enumerate(self._order)}
+        # The place after the last one asked for.
+        self._next = 0
+        self._lock = Lock()
+        with self._lock:
+            self._ahead()
+
+    def _ahead(self) -> None:
+        """Under the lock."""
+        for path in self._order[self._next:self._next + self.AHEAD]:
+            value = self._files[path]
+            if isinstance(value, ResourceLocation):
+                self._files[path] = _READERS.submit(_read_bytes, value)
+
+    def release(self) -> None:
+        """Gives up the files read: a file asked for again is read again."""
+        with self._lock:
+            for path, location in self._locations.items():
+                self._files[path] = ReadOnUse(location)
+
+    def forget(self, path: str) -> None:
+        """Gives up one file read, as ``release`` does."""
+        with self._lock:
+            if path in self._locations:
+                self._files[path] = ReadOnUse(self._locations[path])
+
+    def holds(self, files: Mapping) -> bool:
+        """Whether every path of ``files`` it has is the same file: located at the same place, or the same bytes."""
+        for path, value in files.items():
+            if path not in self._files:
+                continue
+            given = value.location if isinstance(value, ReadOnUse) else value
+            if isinstance(given, ResourceLocation):
+                if self._locations.get(path) != given:
+                    return False
+            elif path in self._locations or not (self._files[path] is given or self._files[path] == given):
+                return False
+        return True
+
+    def add(self, files: Mapping) -> None:
+        """Reads ahead the paths of ``files`` it does not have yet."""
+        added = {path: value for path, value in files.items() if path not in self._files}
+        with self._lock:
+            self._files.update(added)
+            self._locations.update((path, value if isinstance(value, ResourceLocation) else value.location)
+                                   for path, value in added.items() if isinstance(value, (ResourceLocation, ReadOnUse)))
+            for path, value in added.items():
+                if isinstance(value, ResourceLocation):
+                    self._places[path] = len(self._order)
+                    self._order.append(path)
+            self._ahead()
 
     def __getitem__(self, path: str) -> bytes | None:
         value = self._files[path]
-        return value.result() if isinstance(value, Future) else value
+        place = self._places.get(path)
+        if place is not None:
+            with self._lock:
+                self._next = place + 1
+                self._ahead()
+                value = self._files[path]
+                if isinstance(value, ResourceLocation):
+                    # Asked for before its turn.
+                    value = self._files[path] = _READERS.submit(_read_bytes, value)
+        if isinstance(value, ReadOnUse):
+            read = None
+            with self._lock:
+                value = self._files[path]
+                if isinstance(value, ReadOnUse):
+                    read, location = Future(), value.location
+                    value = self._files[path] = read
+            if read is not None:
+                # Read outside the lock, so other files are asked for meanwhile.
+                try:
+                    read.set_result(_read_bytes(location))
+                except BaseException as exc:
+                    with self._lock:
+                        self._files[path] = ReadOnUse(location)
+                    read.set_exception(exc)
+                    raise
+        if isinstance(value, Future):
+            return value.result()
+        return value
 
     def __iter__(self) -> Iterator[str]:
         return iter(self._files)
@@ -231,24 +336,43 @@ def _select_matching_path(paths: list[str], parent=None, *, allow_dialog: bool =
         return paths[0]
 
 
-def _build_pak_path_lookup(pak_cached_reader) -> dict[str, list[str]]:
+class _PakPathLookup:
+    """Known PAK paths by lookup key: a key matches the paths it is, or is with dotted suffixes after the last slash
+    taken off (``_iter_lookup_keys``), in the order the reader gave them."""
+    __slots__ = ("_keys", "_order", "_paths")
+
+    def __init__(self, paths: Sequence[str]):
+        self._paths = paths
+        keys = []
+        for path in paths:
+            key = _normalize_lookup_path(path)
+            keys.append(path if key == path else key)
+        self._order = sorted(range(len(keys)), key=keys.__getitem__)
+        self._keys = [keys[index] for index in self._order]
+
+    def get(self, needle: str) -> list[str] | None:
+        keys, found = self._keys, []
+        for at in range(bisect_left(keys, needle), len(keys)):
+            key = keys[at]
+            if not key.startswith(needle):
+                break
+            rest = key[len(needle):]
+            if not rest or rest[0] == "." and "/" not in rest:
+                found.append(self._order[at])
+        return [self._paths[index] for index in sorted(found)] or None
+
+
+def _build_pak_path_lookup(pak_cached_reader) -> _PakPathLookup:
     cached_known_paths = getattr(pak_cached_reader, "cached_known_paths", None)
-    paths = list(
+    return _PakPathLookup(list(
         cached_known_paths()
         if callable(cached_known_paths)
         else pak_cached_reader.cached_paths(include_unknown=False)
-    )
-
-    lookup: dict[str, list[str]] = {}
-    for original_path in paths:
-        normalized_path = _normalize_lookup_path(original_path)
-        for lookup_key in _iter_lookup_keys(normalized_path):
-            lookup.setdefault(lookup_key, []).append(original_path)
-    return lookup
+    ))
 
 
 def _match_pak_lookup(
-    lookup: dict[str, list[str]],
+    lookup: _PakPathLookup,
     patterns: Iterable[str],
     parent=None,
     *,
@@ -291,13 +415,15 @@ def find_matching_pak_path(
         return None
 
     revision = getattr(pak_cached_reader, "path_lookup_revision", None)
-    cached = _PAK_PATH_LOOKUP_CACHE.get(pak_cached_reader)
-    rebuilt = cached is None or (revision is not None and cached[0] != revision)
-    if rebuilt:
-        cached_norm = _build_pak_path_lookup(pak_cached_reader)
-        _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = revision, cached_norm
-    else:
-        cached_norm = cached[1]
+    lock = _PAK_PATH_LOOKUP_LOCKS.setdefault(pak_cached_reader, Lock())
+    with lock:
+        cached = _PAK_PATH_LOOKUP_CACHE.get(pak_cached_reader)
+        rebuilt = cached is None or (revision is not None and cached[0] != revision)
+        if rebuilt:
+            cached_norm = _build_pak_path_lookup(pak_cached_reader)
+            _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = revision, cached_norm
+        else:
+            cached_norm = cached[1]
 
     pattern_list = list(patterns)
     options = {"allow_selection_dialog": allow_selection_dialog, "require_unique": require_unique}
@@ -305,8 +431,9 @@ def find_matching_pak_path(
     if found or revision is not None or rebuilt:
         return match
 
-    cached_norm = _build_pak_path_lookup(pak_cached_reader)
-    _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = revision, cached_norm
+    with lock:
+        cached_norm = _build_pak_path_lookup(pak_cached_reader)
+        _PAK_PATH_LOOKUP_CACHE[pak_cached_reader] = revision, cached_norm
     return _match_pak_lookup(cached_norm, pattern_list, parent, **options)[1]
 
 
@@ -323,6 +450,27 @@ def _get_dir_path_lookup(dir_path: str) -> dict[str, str]:
     return lookup
 
 
+@contextmanager
+def held_folder_lookups() -> Iterator[None]:
+    """Within it (one gather) each folder a resource lookup looks into is looked into once, on this thread: what the
+    project folder holds is what it held when the gather looked first."""
+    token = _HELD_FOLDERS.set({})
+    try:
+        yield
+    finally:
+        _HELD_FOLDERS.reset(token)
+
+
+def _looked(look: Callable, path: str):
+    held = _HELD_FOLDERS.get()
+    if held is None:
+        return look(path)
+    key = look, path
+    if key not in held:
+        held[key] = look(path)
+    return held[key]
+
+
 def _locate_in_root(
     resource_path: str,
     root_dir: str,
@@ -331,7 +479,7 @@ def _locate_in_root(
     cache_entries: bool = True,
     require_unique: bool = False,
 ) -> Optional[str]:
-    if not root_dir or not os.path.isdir(root_dir):
+    if not root_dir or not _looked(os.path.isdir, root_dir):
         return None
 
     normalized_resource = _normalize_lookup_path(resource_path)
@@ -341,7 +489,7 @@ def _locate_in_root(
     base_file_path = os.path.join(root_dir, full_path.replace("/", os.sep))
     dir_path = os.path.dirname(base_file_path)
     base_name = os.path.basename(base_file_path)
-    if not os.path.isdir(dir_path):
+    if not _looked(os.path.isdir, dir_path):
         return None
 
     if require_unique:
@@ -352,7 +500,7 @@ def _locate_in_root(
     else:
         prefix = base_name + "."
         target_name = next(
-            (entry for entry in os.listdir(dir_path)
+            (entry for entry in _looked(os.listdir, dir_path)
              if entry == base_name or entry.startswith(prefix)),
             None,
         )

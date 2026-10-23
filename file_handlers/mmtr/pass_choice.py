@@ -4,7 +4,6 @@ from __future__ import annotations
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 lazy from file_handlers.mdf.mdf_file import BASE_ALPHA_TEST_ENABLE, BASE_TWO_SIDE_ENABLE
-lazy from file_handlers.sdf.models import program_names
 lazy from file_handlers.sdf.sdf_file import COMPARE_EQUAL
 
 from .material_preview import TranslatedError
@@ -42,7 +41,7 @@ def gbuffer_program_name(material_flags: int, route: str) -> str:
 
 
 def _named_program(document, target: int, name: str, purpose: str, wrong_purpose: str) -> int:
-    found = [index for index, named in enumerate(program_names(document.sdf.targets[target])) if named == name]
+    found = document.sdf.targets[target].program_indices.get(name, ())
     if len(found) != 1:
         raise PassChoiceError(QT_TRANSLATE_NOOP("PassChoice", "The master has {count} programs named {name}."),
                               {"count": len(found), "name": name})
@@ -75,20 +74,21 @@ def gbuffer_program(document, target: int, material_flags: int, route: str) -> i
 
 
 def scene_program(document, target: int, material_flags: int, route: str) -> tuple[str, int]:
-    if gbuffer_program_name(material_flags, route) in program_names(document.sdf.targets[target]):
+    if gbuffer_program_name(material_flags, route) in document.sdf.targets[target].program_indices:
         return "gbuffer", gbuffer_program(document, target, material_flags, route)
     return "forward", _named_program(document, target, forward_program_name(material_flags, route), "forward",
                                      QT_TRANSLATE_NOOP("PassChoice", "Program {name} does not draw forward."))
 
 
 def has_scene_program(document, target: int, material_flags: int, route: str) -> bool:
-    return any(name in (gbuffer_program_name(material_flags, route), forward_program_name(material_flags, route))
-               for name in program_names(document.sdf.targets[target]))
+    indices = document.sdf.targets[target].program_indices
+    return (gbuffer_program_name(material_flags, route) in indices
+            or forward_program_name(material_flags, route) in indices)
 
 
 def own_passes(document, target: int, material_flags: int, route: str) -> tuple[str, ...]:
-    names = set(program_names(document.sdf.targets[target]))
-    return tuple(sorted(name for name in MESH_PROGRAMS if own_program_name(material_flags, name, route) in names))
+    indices = document.sdf.targets[target].program_indices
+    return tuple(sorted(name for name in MESH_PROGRAMS if own_program_name(material_flags, name, route) in indices))
 
 
 def own_program(document, target: int, material_flags: int, name: str, route: str) -> int:

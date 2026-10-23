@@ -358,10 +358,7 @@ class TexturesView:
         if not 1 <= anisotropy <= _MOST_ANISOTROPY:
             raise ValueError(f"anisotropy lies in [1, {_MOST_ANISOTROPY}], not {anisotropy}")
         self.device, self.size, self._probes = device, tuple(size), probes
-        self._image = device.texture(DXGI_FORMAT_R8G8B8A8_TYPELESS, self.size, RENDER_TARGET)
-        self.shown = device.texture(DXGI_FORMAT_R32_UINT, self.size, UNORDERED_ACCESS)
-        resource, read, _stencil = DEPTH_VIEWS[DXGI_FORMAT_D32_FLOAT]
-        self.depth = (read, device.texture(resource, self.size, DEPTH_STENCIL))
+        self._screen()
         self._sampler = ((_ANISOTROPIC if anisotropy > 1 else _LINEAR), _WRAP, _WRAP, _WRAP, 0.0, anisotropy, 1,
                          (0.0, 0.0, 0.0, 0.0), 0.0, 3.402823466e38)
         scene = device.scene
@@ -370,10 +367,41 @@ class TexturesView:
         self._geometries = [self._held(geometry) for geometry in geometries]
         self._objects = [self._object(geometry) for geometry in
                          (range(len(self._geometries)) if objects is None else objects)]
-        indices: dict[tuple[int, int], tuple[int, int]] = {}
-        self._first = [scene.clear(DXGI_FORMAT_D32_FLOAT, self.depth[1]), self._background_step()]
-        self._batches = [self._batch_step(batch, indices) for batch in batches]
+        self._given = list(batches)
+        self._indices: dict[tuple[int, int], tuple[int, int]] = {}
+        self._steps()
+
+    def _screen(self) -> None:
+        self._image = self.device.texture(DXGI_FORMAT_R8G8B8A8_TYPELESS, self.size, RENDER_TARGET)
+        self.shown = self.device.texture(DXGI_FORMAT_R32_UINT, self.size, UNORDERED_ACCESS)
+        resource, read, _stencil = DEPTH_VIEWS[DXGI_FORMAT_D32_FLOAT]
+        self.depth = (read, self.device.texture(resource, self.size, DEPTH_STENCIL))
+
+    def _steps(self) -> None:
+        self._first = [self.device.scene.clear(DXGI_FORMAT_D32_FLOAT, self.depth[1]), self._background_step()]
+        self._batches = [self._batch_step(batch, self._indices) for batch in self._given]
         self._last = self._packing_step()
+
+    def resize(self, size: Sequence[int]) -> None:
+        """New targets and steps; the geometries, objects and textures stay."""
+        old = [self._image, self.shown, self.depth[1]]
+        self.size = tuple(size)
+        self._screen()
+        self._steps()
+        self.device.release(old)
+
+    def add(self, geometries: Sequence[ViewGeometry], batches: Sequence[ViewBatch], *,
+            objects: Sequence[int] | None = None) -> None:
+        """Adds ``geometries`` and ``objects`` after its own; ``batches`` are all it draws, in order: those it drew
+        before keep their steps."""
+        first = len(self._geometries)
+        self._geometries += [self._held(geometry) for geometry in geometries]
+        self._objects += [self._object(geometry) for geometry in
+                          (range(first, len(self._geometries)) if objects is None else objects)]
+        recorded = {id(batch): step for batch, step in zip(self._given, self._batches)}
+        self._given = list(batches)
+        self._batches = [recorded[id(batch)] if id(batch) in recorded else self._batch_step(batch, self._indices)
+                         for batch in self._given]
 
     def _held(self, geometry: ViewGeometry) -> _Held:
         positions = _floats(geometry.positions, 3)
@@ -399,7 +427,7 @@ class TexturesView:
                          for group in range(groups)]
         scene = self.device.scene
         # Own buffers, written in place: another geometry with the same bytes keeps its own.
-        vertices = [(scene.buffer(data, 0), stride) for data, stride, _forms in streams]
+        vertices = [(scene.buffer(data, 0, 1), stride) for data, stride, _forms in streams]
         return _Held(count, geometry.uvs is not None, geometry.colours is not None, bones, vertices, tuple(elements))
 
     def _object(self, geometry: int) -> _Object:
@@ -409,7 +437,7 @@ class TexturesView:
         scene = self.device.scene
         placed = _placed_bytes(_IDENTITY)
         palette = _identity_palette(scene, held.bones)
-        return _Object(held, [scene.buffer(placed, 0), placed], palette)
+        return _Object(held, [scene.buffer(placed, 0, 1), placed], palette)
 
     def _placed(self) -> dict:
         width, height = self.size
@@ -420,9 +448,9 @@ class TexturesView:
         vertex, pixel = _shaders()[1:3]
         return self.device.scene.draw(self._placed() | {
             "vertex_shader": vertex, "pixel_shader": pixel,
-            "vertex_buffers": [(self.device.buffer(_COVERING), 8)],
+            "vertex_buffers": [(self.device.buffer(_COVERING, 1), 8)],
             "elements": (("REASY_STREAM", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, 0, 0),),
-            "indices": self.device.buffer(np.arange(3, dtype="<u4").tobytes()), "draw": (3, 1, 0, 0, 0),
+            "indices": self.device.buffer(np.arange(3, dtype="<u4").tobytes(), 1), "draw": (3, 1, 0, 0, 0),
             "rasterizer": _RASTERIZER, "depth_stencil": _NO_DEPTH_STENCIL, "blend": (0, 0, [_UNBLENDED]),
             "tables": [(RANGE_CBV, 0, 0, 1, 0, 5, ((0, self._background[0]),))],
             "targets": [(DXGI_FORMAT_R8G8B8A8_UNORM, self._image)], "depth": None})
@@ -446,7 +474,7 @@ class TexturesView:
             indices = np.ascontiguousarray(batch.indices, "<u4").reshape(-1)
             if len(indices) % 3 or (indices >= held.count).any():
                 raise ValueError("a batch's indices are not triangles of its geometry's vertices")
-            checked[key] = self.device.buffer(indices.tobytes()), len(indices)
+            checked[key] = self.device.buffer(indices.tobytes(), 1), len(indices)
         index_buffer, count = checked[key]
         states = batch.states
         tested = states.depth_function is not None
@@ -455,7 +483,7 @@ class TexturesView:
         _index, form, texture = self.device.read(TEXTURE_2D, (0, _PLAIN.get(form, form), *shape, texels))
         tables = [(RANGE_CBV, 0, 0, 1, 0, 0, ((0, self._view[0]),)),
                   (RANGE_CBV, 1, 0, 1, 0, 0, ((0, self.device.buffer(
-                      struct.pack("<4f2I8x", *batch.tint, int(batch.cutout), int(batch.coloured)))),)),
+                      struct.pack("<4f2I8x", *batch.tint, int(batch.cutout), int(batch.coloured)), 1)),)),
                   (RANGE_CBV, 2, 0, 1, 0, 1, ((0, placed.placed[0]),)),
                   (RANGE_SRV, 0, 0, 1, TEXTURE_2D, 5, ((0, form, texture),)),
                   (RANGE_SAMPLER, 0, 0, 1, 0, 5, ((0, *self._sampler),))]
@@ -474,6 +502,9 @@ class TexturesView:
                               states.depth_function if tested else _NO_DEPTH_STENCIL[2], *_NO_DEPTH_STENCIL[3:]),
             "blend": (0, 0, [(*blend, states.channels & _COLOUR)]), "tables": tables,
             "targets": [(DXGI_FORMAT_R8G8B8A8_UNORM, self._image)], "depth": (DXGI_FORMAT_D32_FLOAT, self.depth[1])})
+
+    def close(self) -> None:
+        self.device.close()
 
     def place(self, placed: int, world) -> None:
         """``world`` is 3 x 4."""

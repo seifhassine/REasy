@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 3,
  "game": "MHWS",
  "resource_version": 240906211,
  "raster": "GBufferMeshletVS",
@@ -102,7 +102,9 @@
   "arguments": {"role": "arguments", "bytes": 32}
  },
  "transform": {"program": "MeshletGeometryTransform", "reads": ["DeferredIndexSRV", "DeferredTexturingTransformedBufferSRV"]},
+ "lods": {"thresholds": "half_reciprocal", "gate": "record_flag", "lod_settings": {"path": "art/model/earth_lodsettings.lod", "version": 3}, "bias": 0.0, "speedtree_bias": 0.0, "near": false, "fraction": true, "base_fov": false},
  "source": {
+  "lods": "lods: plain meshlet thresholds by the writer 0x14aa373c0 (its one caller 0x14aa243f7, in the mesh loader 0x14aa23740; scratch lod3b/mhws-writer/fn_373.txt): with the mesh header's lod_hash nonzero and an art/model/earth_lodsettings.lod.3 record of that key whose mask bit 31 (isMeshletLodParameter, record reader 0x1404a9ce0) is set, a = 0.5/e0 and b = 0.5/e1, T = [0, b, (b-a)*w + a ..., a] as truncated halves; else T_k = k, never the key-0 record. Biases: CullingLODBias.y is MPMR.LODBias from cGraphicsSetting._MeshletLodBias and SpeedTreeMeshletLODBias is _LodBiasSpeedTree (applyGraphicsSettingCore 0x14929e5d0), 0 in every PC preset of graphicspreset.user.3, and MonsterHunterWilds_frame15118 (8291, 13081) and MonsterHunterWilds_frame27469 record 0 for both (scratch lod3b/runtime-constants/cull_MHWS_15118.log). test.sdf MeshletRendererInstanceCulling (target 2 program 5): no near rule, the word ((lod << 5 | frac * 31) << 24)",
   "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
   "captures": [
    {

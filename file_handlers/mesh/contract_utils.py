@@ -326,13 +326,23 @@ class ContractValidator:
                                    int(layout.gpu_meshlet_offset) + start)
 
     def assert_meshlet_positions_in_bounds(self, mesh_buffer: object) -> None:
-        for chunk_index, chunk in enumerate(mesh_buffer.mply_chunks):
-            tolerance = max(abs(math.ldexp(1.0, int(chunk.flags.relative_aabb_scale_exponent) - 143)), 1e-6)
-            minimum = np.asarray(chunk.cluster_aabb.minimum, dtype=np.float64) - tolerance
-            maximum = np.asarray(chunk.cluster_aabb.maximum, dtype=np.float64) + tolerance
-            self.require(not ((chunk.positions < minimum) | (chunk.positions > maximum)).any(),
-                         f"MPLY chunk[{chunk_index}].positions", "must lie inside its native decoded cluster AABB",
-                         "out-of-bounds position")
+        chunks = mesh_buffer.mply_chunks
+        if not chunks:
+            return
+        # Every chunk's positions against its box at once; the first chunk with one outside is told.
+        tolerances = np.array([max(abs(math.ldexp(1.0, int(chunk.flags.relative_aabb_scale_exponent) - 143)), 1e-6)
+                               for chunk in chunks])[:, None]
+        centers = np.array([chunk.cluster_aabb.center for chunk in chunks], np.float64)
+        extents = np.array([chunk.cluster_aabb.half_extent for chunk in chunks], np.float64)
+        positions = [chunk.positions for chunk in chunks]
+        counts = [len(values) for values in positions]
+        positions = np.concatenate(positions)
+        outside = ((positions < np.repeat(centers - extents - tolerances, counts, axis=0))
+                   | (positions > np.repeat(centers + extents + tolerances, counts, axis=0))).any(axis=1)
+        if outside.any():
+            chunk_index = int(np.repeat(np.arange(len(chunks)), counts)[outside.argmax()])
+            self.require(False, f"MPLY chunk[{chunk_index}].positions",
+                         "must lie inside its native decoded cluster AABB", "out-of-bounds position")
 
     def assert_late_buffer_layouts(self, mesh: object, mesh_buffer: object, element_headers) -> None:
         header = mesh.header

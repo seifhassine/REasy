@@ -11,7 +11,7 @@ import numpy as np
 from file_handlers.clsp.clsp_file import CollisionShape
 lazy from file_handlers.mmtr.engine_buffers import Camera
 lazy from file_handlers.mmtr.light_passes import LightPasses, Source
-from file_handlers.mmtr.material_preview import VIEW_DIMENSIONS, PreviewMaterial
+from file_handlers.mmtr.material_preview import VIEW_DIMENSIONS, PreviewMaterial, TexelRows
 lazy from file_handlers.mmtr.mesh_render import DEPTH_VIEWS
 lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
 lazy from file_handlers.mmtr.resident import UNORDERED_ACCESS
@@ -144,7 +144,11 @@ class StrandChain:
         given = {f"render.vertices{side}": scene.buffer(bytes(_VERTEX_BYTES * first.vertex_count), UNORDERED_ACCESS)
                  for side in (NOW, BEFORE)}
         given["render.shading_info"] = scene.buffer(bytes(_SHADING_RECORD), UNORDERED_ACCESS)
-        given[MASK] = self.device.read(VIEW_DIMENSIONS["texture2d"], (0, *source.mask))[1:]
+        form, *shape, texels = source.mask
+        if isinstance(texels, TexelRows):
+            # The scene lets go of the rows it reads; the content keeps its own for the next scene.
+            texels = TexelRows(texels.rows)
+        given[MASK] = self.device.read(VIEW_DIMENSIONS["texture2d"], (0, form, *shape, texels))[1:]
         if source.binding is not None:
             rest = source.binding.rest_mesh
             given |= {"binding.table": scene.buffer(source.binding.table, 0),

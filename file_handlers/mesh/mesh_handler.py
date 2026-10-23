@@ -309,9 +309,17 @@ class MeshHandler(BaseFileHandler):
         self._pending_sdftex_outputs.clear()
         self.sdftex = MeshDistanceField(self)
         self.mesh = self._parse(data, self.load_mode)
+        if self.load_mode is not MeshLoadMode.FULL:
+            self._streaming_data_cache.clear()
         self.modified = False
 
     def whole_mesh(self) -> Optional[MeshFile]:
+        """Raises the ValueError a FULL read of the file raises."""
+        if self.mesh is not None and self.mesh.load_mode is MeshLoadMode.SCENE:
+            held, failure = self.mesh.scene_contract()
+            if not held:
+                raise ValueError(failure)
+            return self.mesh
         if self.mesh is not None and self.mesh.is_full:
             return self.mesh
         data = None if self.reread is None else self.reread()

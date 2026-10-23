@@ -14,6 +14,7 @@ lazy from file_handlers.rsz.utils.rsz_name_helper import RszViewerNameHelper
 lazy from ui.editor_widgets import styled_label
 lazy from ui.qt_timers import call_later
 lazy from ui.styles import current_colors, get_tree_stylesheet
+lazy from utils.number_format import format_display_value
 
 
 class ScnRawInspector(QFrame):
@@ -132,21 +133,34 @@ def select_instance_in_tree(tree, instance_id: int, cache: dict[int, QPersistent
     tree.scrollTo(index)
 
 
-def _find_instance_index(model, instance_id: int, parent=QModelIndex(), visited=None) -> QModelIndex:
-    visited = visited if visited is not None else set()
+def _find_instance_index(model, instance_id: int) -> QModelIndex:
+    """The instance's first node in tree order: of the nodes built so far, else of all (building fields)."""
     needle = f"(ID: {instance_id})"
-    for row in range(model.rowCount(parent)):
-        index = model.index(row, 0, parent)
-        if str(model.data(index) or "") == "Advanced Information":
+    rows = _instance_rows(model.rootItem, instance_id, needle, set(), False) \
+        or _instance_rows(model.rootItem, instance_id, needle, set(), True)
+    index = QModelIndex()
+    for row in rows or ():
+        index = model.index(row, 0, index)
+    return index
+
+
+def _instance_rows(item, instance_id: int, needle: str, visited: set, build: bool) -> list[int] | None:
+    if not (build or item.built):
+        return None
+    for row in range(item.child_count()):
+        child = item.child(row)
+        data = child.data
+        text = format_display_value(data[0] if isinstance(data, (list, tuple)) else data)
+        if text == "Advanced Information":
             continue
-        raw = getattr(index.internalPointer(), "raw", {}) or {}
+        raw = child.raw or {}
         obj = raw.get("obj")
         node_id = obj.value if is_reference_type(obj) else raw.get("instance_id")
-        if node_id == instance_id or needle in str(model.data(index) or ""):
-            return index
+        if node_id == instance_id or needle in text:
+            return [row]
         if node_id is not None and node_id in visited:
             continue
         visited.add(node_id)
-        if (hit := _find_instance_index(model, instance_id, index, visited)).isValid():
-            return hit
-    return QModelIndex()
+        if (rows := _instance_rows(child, instance_id, needle, visited, build)) is not None:
+            return [row, *rows]
+    return None

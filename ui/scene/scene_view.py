@@ -6,6 +6,7 @@ lazy import numpy as np
 
 lazy from file_handlers.mmtr.engine_buffers import Camera
 lazy from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight
+lazy from utils.native_build import ensure_fastmesh
 
 lazy from .scene_model import SceneDrawBatch
 
@@ -23,7 +24,8 @@ class SceneShape:
 class SceneGeometry:
     """``vertices`` is the index of the first shown mesh with the same vertices, whose shape, UVs and influences it
     shares. ``colour`` is white for meshes with vertex colours. ``solid`` meshes fill in every wireframe mode.
-    ``edge_excluded``, ``decal_receive_mode`` and ``transparent_bias`` come from the ``via.render.Mesh`` component."""
+    ``edge_excluded``, ``decal_receive_mode`` and ``transparent_bias`` come from the ``via.render.Mesh`` component.
+    ``more_uvs`` are its other UV sets."""
     key: str
     vertices: int
     uvs: np.ndarray | None
@@ -36,6 +38,7 @@ class SceneGeometry:
     decal_receive_mode: int = field(default=0, kw_only=True)
     transparent_bias: float = field(default=0.0, kw_only=True)
     speedtree_placement: str | None = field(default=None, kw_only=True)
+    more_uvs: tuple[np.ndarray, ...] = field(default=(), kw_only=True)
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -49,11 +52,21 @@ class ScenePose:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class ScenePlacement:
-    """``shape`` is shared by meshes with the same vertices; ``world`` is 3 x 4; ``pose`` None is the rest pose."""
+    """``shape`` is shared by meshes with the same vertices; ``world`` is 3 x 4; ``pose`` None is the rest pose.
+    Placements of meshes placed and posed as before are the same objects."""
     shape: SceneShape
     world: np.ndarray
     bones: np.ndarray | None
     pose: ScenePose | None = None
+
+
+def moved_placements(placements, before) -> np.ndarray:
+    """Whether each of ``placements`` is another than ``before``'s, or past its end; all, with none before."""
+    if before is None:
+        return np.ones(len(placements), bool)
+    moved = np.zeros(len(placements), bool)
+    moved[np.frombuffer(ensure_fastmesh().moved_rows(placements, before), np.int64)] = True
+    return moved
 
 
 @dataclass(frozen=True, slots=True)
@@ -91,4 +104,4 @@ class SceneView:
                       orthographic=self.orthographic)
 
 
-__all__ = ["SceneGeometry", "ScenePlacement", "ScenePose", "SceneShape", "SceneView"]
+__all__ = ["SceneGeometry", "ScenePlacement", "ScenePose", "SceneShape", "SceneView", "moved_placements"]

@@ -56,6 +56,32 @@ def scn_source_identity_keys(source: ScnSceneSource) -> set[str]:
     return scn_identity_keys(scoped_document_path(source.project_dir, source.path))
 
 
+def scene_source_file(source: ScnSceneSource | None) -> str:
+    """The file a source was opened from; its resources are looked for beside it too."""
+    handler = source.handler if source is not None else None
+    return str((source.path if source is not None else "") or getattr(handler, "filepath", "") or "")
+
+
+def read_scene_resource(context: ResourceResolutionContext | None, normalized: str,
+                        source_file: str) -> tuple[str, bytes] | None:
+    """A normalized resource path's file and bytes: in the source's context, as a path, or beside the source's file.
+    It reads files only, so the resource readers run it with a context made on the UI thread."""
+    if not normalized:
+        return None
+    hit = context.resolve(normalized, allow_selection_dialog=False) if context is not None else None
+    if hit is not None:
+        return hit
+    direct = Path(normalized)
+    if direct.is_file():
+        return str(direct), direct.read_bytes()
+    source_path = Path(source_file)
+    if source_path.is_file():
+        sibling = source_path.parent / direct.name
+        if sibling.is_file():
+            return str(sibling), sibling.read_bytes()
+    return None
+
+
 class ScnSceneLoader:
     def __init__(self, document_store: ScnDocumentStore | None = None):
         self.document_store = document_store or ScnDocumentStore()
@@ -142,39 +168,21 @@ class ScnSceneLoader:
         normalized = normalize_scene_path(resource_path)
         if not normalized:
             return None
-
-        handler = source.handler if source is not None else None
-        is_scn = ".scn" in normalized.lower() and source is not None
         context = self.resource_context_for_source(source)
-
-        def found(path: str, data: bytes) -> ScnResolvedResource:
-            if is_scn and context:
-                path = self._project_resource_path(
-                    path,
-                    context.project_dir,
-                    context.unpacked_dir,
-                    context.path_prefix,
-                )
-            return self._linked_scn_resource(source, path, data) if is_scn else ScnResolvedResource(path=path, data=data)
-
-        hit = (
-            context.resolve(normalized, allow_selection_dialog=False)
-            if context is not None
-            else None
-        )
-        if hit is not None:
-            return found(hit[0], hit[1])
-
-        direct = Path(normalized)
-        if direct.is_file():
-            return found(str(direct), direct.read_bytes())
-
-        source_path = Path(str((source.path if source is not None else "") or getattr(handler, "filepath", "") or ""))
-        if source_path.is_file():
-            sibling = source_path.parent / direct.name
-            if sibling.is_file():
-                return found(str(sibling), sibling.read_bytes())
-        return None
+        hit = read_scene_resource(context, normalized, scene_source_file(source))
+        if hit is None:
+            return None
+        path, data = hit
+        if ".scn" not in normalized.lower() or source is None:
+            return ScnResolvedResource(path=path, data=data)
+        if context:
+            path = self._project_resource_path(
+                path,
+                context.project_dir,
+                context.unpacked_dir,
+                context.path_prefix,
+            )
+        return self._linked_scn_resource(source, path, data)
 
     def _linked_scn_resource(self, source: ScnSceneSource, path: str, data: bytes) -> ScnResolvedResource:
         handler = getattr(source, "handler", None)

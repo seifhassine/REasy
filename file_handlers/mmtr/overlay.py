@@ -662,7 +662,7 @@ class Overlay:
         steps = [self._backgrounds[key]]
         depth = self.depth
         if scene is not None:
-            steps += scene.steps(self.view, self.image, scene_shown, self._view)
+            steps += scene.steps(self.view, self.image, scene_shown, camera)
             if not scene_shown.filled:
                 depth = scene.seen_depth
         if len(marks):

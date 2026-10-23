@@ -153,10 +153,27 @@ class ChainPasses:
         if level.blend is not None:
             held[WEIGHTS] = scene.buffer(weight_list(level.blend, deformation.weights), 0)
         if level.normals is not None:
-            zeros = bytes(destination.accumulator_size)
-            held[ACCUMULATOR] = scene.buffer(zeros, UNORDERED_ACCESS)
+            held[ACCUMULATOR] = scene.buffer(bytes(destination.accumulator_size), UNORDERED_ACCESS)
             held[VERTEX_WORDS] = self.device.buffer(level.normals.vertex_words)
             held[INDEX_WORDS] = self.device.buffer(level.normals.index_words)
+        self._made(deformed, skin)
+
+    def change(self, owner: int, deformation: Deformation, skin: Callable[[ChainStep, Mapping[str, int]], int]) -> None:
+        """Another deformation of the object's level (other groups enabled): its steps, into the buffers held."""
+        deformed = self._objects[owner]
+        self.device.release([bound for bound, _layout, _step in deformed.blends])
+        deformed.deformation, deformed.steps, deformed.blends, deformed.skinning = deformation, [], [], None
+        if WEIGHTS in deformed.held:
+            self.device.scene.write(deformed.held[WEIGHTS], weight_list(deformation.level.blend, deformation.weights))
+        self._made(deformed, skin)
+        if deformed.morphed is not None:
+            self._copy_morphed(deformed)
+
+    def _made(self, deformed: _Deformed, skin: Callable[[ChainStep, Mapping[str, int]], int]) -> None:
+        deformation, held = deformed.deformation, deformed.held
+        level = deformation.level
+        if level.normals is not None:
+            zeros = bytes(deformation.destination.accumulator_size)
             deformed.steps.append(self.device.copy(held[ACCUMULATOR], self.device.buffer(zeros)))
         for step in deformation.steps():
             if step.material is not None and level.blend is not None and deformed.skinning is None:
@@ -170,13 +187,18 @@ class ChainPasses:
         """The returned buffer holds the blend-shaped, unskinned positions from the next run on."""
         deformed = self._objects[owner]
         if deformed.morphed is None:
-            if deformed.skinning is None:
-                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                    "MaterialPreview", "The renderer's passes leave no blend-shaped positions before skinning this "
-                                       "mesh's LOD."))
-            deformed.morphed = self.device.scene.buffer(bytes(deformed.deformation.destination.size), 0)
-            deformed.steps.insert(deformed.skinning, self.device.copy(deformed.morphed, deformed.held[DESTINATION]))
+            self._copy_morphed(deformed)
         return deformed.morphed
+
+    def _copy_morphed(self, deformed: _Deformed) -> None:
+        """The step copying the blend-shaped positions out before skinning, into ``morphed`` (made once)."""
+        if deformed.skinning is None:
+            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                "MaterialPreview", "The renderer's passes leave no blend-shaped positions before skinning this "
+                                   "mesh's LOD."))
+        if deformed.morphed is None:
+            deformed.morphed = self.device.scene.buffer(bytes(deformed.deformation.destination.size), 0)
+        deformed.steps.insert(deformed.skinning, self.device.copy(deformed.morphed, deformed.held[DESTINATION]))
 
     def morphed(self, owner: int) -> int | None:
         return self._objects[owner].morphed

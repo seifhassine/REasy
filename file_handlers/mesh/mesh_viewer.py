@@ -2626,10 +2626,10 @@ class _MeshViewport(ScenePreviewWidget):
                              orthographic=bool(self.orthographic))
 
     def _device_frame_shows(self, view, frame) -> bool:
-        """The camera is not compared: a frame from the previous camera still matches."""
+        """The camera and the parts shown are not compared: a frame of the previous ones still matches."""
         drawn = frame.view
         return (isinstance(view, LitView) and type(drawn) is type(view)
-                and (drawn.geometry, drawn.visible, drawn.size) == (view.geometry, view.visible, view.size)
+                and (drawn.geometry, drawn.size) == (view.geometry, view.size)
                 and (not isinstance(view, AttributeView) or drawn.attribute == view.attribute))
 
     def lit_refusal(self) -> str:

@@ -8,8 +8,9 @@ import threading
 
 from settings import load_settings
 
-# A parsed file takes about 3x its size in memory (measured 3.1 to 3.3x on RE4 and RE9 masters and light-pass files).
-COST_PER_BYTE = 3
+# A master whose every program is read (MmtrDocument.skinning_contracts) keeps up to 7.5x its size in memory, its
+# bytes included; drawn alone, masters keep 1.2 to 2.3x and light-pass files 1.1x, which this over-counts.
+COST_PER_BYTE = 8
 
 
 @dataclass(slots=True)

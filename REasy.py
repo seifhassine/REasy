@@ -3,9 +3,14 @@
 
 lazy import ctypes
 import multiprocessing
+import multiprocessing.spawn
+import os
 import sys
 import tempfile
 from pathlib import Path
+
+if __name__ == "__mp_main__" or multiprocessing.spawn.is_forking(sys.argv):
+    os.environ["OPENBLAS_NUM_THREADS"] = "1"
 
 from app_config import CURRENT_VERSION, GAMES
 lazy from application import main as run_application

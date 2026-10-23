@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Callable
 
 lazy import numpy as np
 
 lazy from file_handlers.mesh.contract_utils import layer_payloads, layer_vertex_offset
+lazy from file_handlers.mmtr.meshlets import meshlet_runs
 
 lazy from .scene_model import SceneDrawBatch, SceneDrawMesh
 lazy from .mesh_attributes import (
@@ -88,6 +89,38 @@ def mesh_lod_parts(
             part_index = int(getattr(group, "group_id", group_index))
             parts.extend((part_index, submesh) for submesh in group.submeshes)
     return parts
+
+
+def meshlet_part_runs(mesh, lod_index: int = 0) -> list[int] | None:
+    """The lengths of the runs of the main geometry's ``mesh_lod_parts`` a scene draws as one part (``meshlet_runs``);
+    None for a mesh of no meshlets."""
+    layout = getattr(getattr(mesh, "mesh_buffer", None), "meshlet_layout", None)
+    if layout is None or not layout.gpu_data:
+        return None
+    return [count for mesh_data in mesh.meshes if 0 <= lod_index < len(mesh_data.lods)
+            for group in mesh_data.lods[lod_index].mesh_groups for count in meshlet_runs(group.submeshes)]
+
+
+def _joined_runs(batches: list[SceneDrawBatch], starts: list[int], runs: list[int],
+                 indices: np.ndarray) -> list[SceneDrawBatch]:
+    """A batch per run of ``runs``, a view of ``indices`` from its first batch's ``starts`` to its last's end."""
+    run_of, number = {}, 0
+    for count in runs:
+        run_of.update((number + offset, (number, count)) for offset in range(count))
+        number += count
+    joined, begun = [], {}
+    for batch, start in zip(batches, starts):
+        lod, number = batch.submesh
+        first, count = run_of[number]
+        if count == 1:
+            joined.append(batch)
+        elif number == first:
+            begun[first] = len(joined), start
+            joined.append(replace(batch, submesh=(lod, first), submeshes=count))
+        else:
+            at, from_start = begun[first]
+            joined[at].indices = indices[from_start:start + len(batch.indices)]
+    return joined
 
 
 def mesh_scene_payloads(
@@ -274,7 +307,11 @@ def build_mesh_scene(
     attribute_view: MeshAttributeView | None = None,
     normal_recalculation_enabled: bool = True,
     normal_recalc_edge_exclusion: bool = False,
+    include_tangents: bool = True,
+    join_meshlet_runs: bool = False,
 ) -> list[SceneDrawMesh]:
+    """``join_meshlet_runs``: a batch per run of a meshlet mesh's submeshes (``meshlet_part_runs``), as scenes draw
+    them."""
     mesh_buffer = getattr(mesh, "mesh_buffer", None)
     if mesh_buffer is None:
         return []
@@ -296,13 +333,13 @@ def build_mesh_scene(
 
     vertices = np.concatenate(vertex_chunks)
     normals = merge_attribute(records, "normals", 3, np.float32)
-    tangent_xyz = merge_attribute(records, "tangents", 3, np.float32)
+    tangent_xyz = merge_attribute(records, "tangents", 3, np.float32) if include_tangents else None
     tangent_w = merge_attribute(
         records,
         "tangent_handedness",
         1,
         np.float32,
-    )
+    ) if include_tangents else None
     tangents = None
     if tangent_xyz is not None or tangent_w is not None:
         tangent_count = (
@@ -386,6 +423,7 @@ def build_mesh_scene(
                 material_name = material_key(material_name)
         batches.append(
             SceneDrawBatch(
+                # Made a view of the mesh's indices below.
                 indices=batch_indices,
                 material_name=material_name,
                 part_index=part_index,
@@ -399,6 +437,15 @@ def build_mesh_scene(
         return []
 
     indices = np.concatenate(index_chunks)
+    start, starts = 0, []
+    for batch in batches:
+        count = len(batch.indices)
+        batch.indices = indices[start:start + count]
+        starts.append(start)
+        start += count
+    runs = meshlet_part_runs(mesh, lod_index) if join_meshlet_runs and layer == "main" else None
+    if runs is not None and len(runs) < len(parts):
+        batches = _joined_runs(batches, starts, runs, indices)
     if (
         layer == "main"
         and normal_recalculation_enabled

@@ -131,6 +131,8 @@ class MmtrDocument:
     )
     source_label: str = ""
     notes: tuple[MmtrSemanticNote, ...] = ()
+    # Sizes of the constant buffers named exactly as the profile's user material buffers.
+    material_buffer_sizes: tuple[int, ...] = field(kw_only=True)
     material_family: object | None = field(default=None, repr=False)
     _program_lookup: dict[tuple[int, int], MmtrProgramSemantics] = field(
         default_factory=dict,

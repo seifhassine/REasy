@@ -13,6 +13,9 @@ class NativeModuleError(ImportError):
 
 
 def _build_native_module(module_name):
+    # Already imported: no need to read and hash the source again.
+    if module_name in sys.modules:
+        return sys.modules[module_name]
     src = Path(__file__).resolve().parent.parent / 'native' / f'{module_name}.c'
     cache = src.parent / '.cache' / sys.implementation.cache_tag
     cached = cache / (module_name + '-' + hashlib.sha256(src.read_bytes()).hexdigest()[:16]) if src.exists() else None

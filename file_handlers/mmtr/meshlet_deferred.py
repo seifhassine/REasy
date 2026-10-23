@@ -99,6 +99,10 @@ class DeferredPasses:
             self._chain = [self._dispatch(step, engine) for step in self.catalog.steps]
         return self._chain
 
+    def forget_chain(self) -> None:
+        """The scene's meshlet buffers the dispatches read were made again."""
+        self._chain = None
+
     def entry(self, stage: str, resource) -> tuple | None:
         role = self.catalog.bound[stage].get(resource.name)
         return None if role is None else self._entry(role)

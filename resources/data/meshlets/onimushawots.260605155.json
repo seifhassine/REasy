@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 3,
  "game": "ONIMUSHAWOTS",
  "resource_version": 260605155,
  "raster": "GBufferMeshletListVS",
@@ -134,6 +134,19 @@
    "DeferredTexturingTransformedBufferSRV"
   ]
  },
+ "lods": {
+  "thresholds": "half_reciprocal",
+  "gate": null,
+  "lod_settings": {
+   "path": "art/model/slash_lodsettings.lod",
+   "version": 4
+  },
+  "bias": -1.0,
+  "speedtree_bias": -1.0,
+  "near": true,
+  "fraction": true,
+  "base_fov": true
+ },
  "source": {
   "captures": [
    {
@@ -156,6 +169,7 @@
   ],
   "note": "wots_frame28857: the forward meshlets drawn by the mesh-shader variants (AForwardMeshletListMS/ASMS) with the master's ForwardMeshletList pixel shader, which its ForwardMeshletListVS program holds too; REasy draws the vertex-shader variant, as for the raster",
   "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
-  "deferred": "wots_frame136485 20770-20799 (scratch stage107/pipeline_wots.log against stage107/pipeline_mhws.log of MonsterHunterWilds_frame15118 11260-11289): DrawMaterialID, then test.sdf's DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared, the same buffer sizes bound (counter 128, buckets 16384, offsets 32768, arguments 131072, slots R32_UINT of the screen) and the same group counts (1056, 1056, 1, 1056); the transforms (20807-20895) by indirect dispatches of the transform IDs, the shading (20914 on) reading the slots and the transformed triangles"
+  "deferred": "wots_frame136485 20770-20799 (scratch stage107/pipeline_wots.log against stage107/pipeline_mhws.log of MonsterHunterWilds_frame15118 11260-11289): DrawMaterialID, then test.sdf's DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared, the same buffer sizes bound (counter 128, buckets 16384, offsets 32768, arguments 131072, slots R32_UINT of the screen) and the same group counts (1056, 1056, 1, 1056); the transforms (20807-20895) by indirect dispatches of the transform IDs, the shading (20914 on) reading the slots and the transformed triangles",
+  "lods": "lods: plain meshlet thresholds by the writer 0x1408bb9c0 (its caller 0x1408b7027; scratch lod3b/xcheck/wots_writer.txt): with the mesh header's lod_hash nonzero and an art/model/slash_lodsettings.lod.4 record of that key, DD2's T = [0, b, (b-a)*w + a ..., a] without its header check; else the file's. Biases -1 and -1: the PCHighest preset's _MPMRLodBias and _LodBiasSpeedTree (applyGraphicsSettingAppExtension), recorded in wots_frame25731 6280, 8823 (scratch lod3b/runtime-constants/cull_WOTS_wots_frame25731.log) with SpeedTreeSmallObjectCullingAndFlags bit 16 set and the base-FOV half 1.50390625, the frame's P00 1.50447 truncated: k = f16(P00)/P00, k^2 on the distance metric. MeshletRendererInstanceCulling (WOTS_t2_008): the near rule, the word ((lod << 5 | frac * 31) << 24)"
  }
 }

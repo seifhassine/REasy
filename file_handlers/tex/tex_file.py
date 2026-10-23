@@ -319,10 +319,11 @@ class TexFile:
             for index in range(total)
         ]
         offset = 0
+        data = memoryview(self._data)
         for index, entry in enumerate(stored):
             if entry.stored_size <= 0 or entry.offset != offset:
                 return None
-            chunk = self._data[payload + offset : payload + offset + entry.stored_size]
+            chunk = data[payload + offset : payload + offset + entry.stored_size]
             if len(chunk) != entry.stored_size:
                 return None
             span = mips[index].size * max(1, depth >> (index % mip_count))
@@ -342,47 +343,75 @@ class TexFile:
     def mip_span(self, index: int) -> int:
         return self.mips[index].size * self.header.slice_count(index % self.header.mip_count)
 
-    def _read_mip_bytes(self, index: int) -> bytes:
+    def _stream(self, index: int) -> Optional[Tuple[int, int, int]]:
+        """(offset, stored bytes, inflated bytes) of a GDeflate mip's stream; None for a mip stored as it is."""
+        if not self.stored_mips:
+            return None
+        stored = self.stored_mips[index]
+        start = self._payload_offset + stored.offset
+        chunk = memoryview(self._data)[start : start + stored.stored_size]
+        if not is_gdeflate_payload(chunk):
+            return None
+        return start, stored.stored_size, gdeflate_uncompressed_size(chunk, self.mip_span(index))
+
+    def _mip_bytes(self, index: int) -> Tuple[bytes, int, int]:
+        """(buffer, offset, size) of the mip's payload, in place; a GDeflate mip is decompressed."""
         mip = self.mips[index]
         span = self.mip_span(index)
         if not self.stored_mips:
-            return self._data[mip.offset : mip.offset + span]
+            return self._data, mip.offset, max(0, min(span, len(self._data) - mip.offset))
 
         stored = self.stored_mips[index]
         start = self._payload_offset + stored.offset
-        chunk = self._data[start : start + stored.stored_size]
+        chunk = memoryview(self._data)[start : start + stored.stored_size]
         if is_gdeflate_payload(chunk):
-            return decompress_gdeflate(chunk, gdeflate_uncompressed_size(chunk, span))[:span]
-        return chunk[:span]
+            data = decompress_gdeflate(chunk, gdeflate_uncompressed_size(chunk, span))
+            return data, 0, min(span, len(data))
+        return self._data, start, min(span, len(chunk))
 
-    def read_mip_level(self, level: int, image_index: int = 0) -> bytes:
+    def stored_mip_rows(self, level: int, image_index: int = 0) -> tuple:
+        """``mip_rows``, but a GDeflate mip as it is stored: (buffer, offset, pitch, row bytes, rows, stream bytes,
+        inflated bytes), its rows lying from the start of the stream at ``offset`` once inflated."""
         index = self.mip_index(level, image_index)
-        mip = self.mips[index]
+        stream = self._stream(index)
+        if stream is None:
+            return self.mip_rows(level, image_index)
+        start, stored, inflated = stream
+        return (self._data, start, *self._row_layout(level, index, min(self.mip_span(index), inflated)), stored,
+                inflated)
+
+    def mip_rows(self, level: int, image_index: int = 0) -> Tuple[bytes, int, int, int, int]:
+        """(buffer, offset, pitch, row bytes, rows): the mip's rows of texels (of blocks, for block-compressed
+        formats) in place, depth slices one after another."""
+        index = self.mip_index(level, image_index)
+        buffer, offset, size = self._mip_bytes(index)
+        return (buffer, offset, *self._row_layout(level, index, size))
+
+    def _row_layout(self, level: int, index: int, size: int) -> Tuple[int, int, int]:
+        """(pitch, row bytes, rows) of the mip whose payload holds ``size`` bytes."""
+        pitch = self.mips[index].pitch
         width = max(1, self.header.width >> level)
         height = max(1, self.header.height >> level)
-        slices = self.header.slice_count(level)
-        raw = self._read_mip_bytes(index)
-        return self._repack_pitch(raw, width, height, slices, mip.pitch)
-
-    def _repack_pitch(self, raw: bytes, width: int, height: int, slices: int, source_pitch: int) -> bytes:
-        _size, expected_pitch, row_step = natural_mip_layout(self.header.format, width, height)
-        row_count = (height + (row_step - 1)) // row_step
-        needed = row_count * slices * source_pitch
-        if source_pitch < 0 or len(raw) < needed:
+        _size, row_bytes, row_step = natural_mip_layout(self.header.format, width, height)
+        rows = (height + (row_step - 1)) // row_step * self.header.slice_count(level)
+        needed = rows * pitch
+        if pitch < 0 or size < needed:
             raise TexFormatError(
-                f"a {width}x{height} mip needs {needed} bytes at pitch {source_pitch}, "
-                f"but its payload holds {len(raw)}"
+                f"a {width}x{height} mip needs {needed} bytes at pitch {pitch}, but its payload holds {size}"
             )
-
-        rows = row_count * slices
-        if source_pitch == expected_pitch:
-            return bytes(raw[: rows * expected_pitch])
-        if (rows - 1) * source_pitch + expected_pitch > len(raw):
+        if pitch != row_bytes and (rows - 1) * pitch + row_bytes > size:
             raise TexFormatError(
-                f"a {width}x{height} mip's last row at pitch {source_pitch} runs past its {len(raw)}-byte payload"
+                f"a {width}x{height} mip's last row at pitch {pitch} runs past its {size}-byte payload"
             )
-        source = np.frombuffer(raw, np.uint8)
-        return np.lib.stride_tricks.as_strided(source, (rows, expected_pitch), (source_pitch, 1)).tobytes()
+        return pitch, row_bytes, rows
+
+    def read_mip_level(self, level: int, image_index: int = 0) -> bytes:
+        """The mip's rows packed tightly."""
+        buffer, offset, pitch, row_bytes, rows = self.mip_rows(level, image_index)
+        if pitch == row_bytes:
+            return bytes(buffer[offset : offset + rows * row_bytes])
+        source = np.frombuffer(buffer, np.uint8, (rows - 1) * pitch + row_bytes, offset)
+        return np.lib.stride_tricks.as_strided(source, (rows, row_bytes), (pitch, 1)).tobytes()
 
     def read_slice(self, level: int, image_index: int = 0, slice_index: int = 0) -> Optional[bytes]:
         slices = self.header.slice_count(level)

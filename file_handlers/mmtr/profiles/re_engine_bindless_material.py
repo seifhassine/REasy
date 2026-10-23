@@ -450,9 +450,19 @@ def material_record_accesses(
 
 @dataclass(frozen=True, slots=True)
 class MaterialTextureAccess:
+    """``addressed``: some read names a mip or a texel of the texture outright (loads, sizes, gathers, explicit
+    levels), so the texture is read whole."""
     byte_offset: int
     dimension: str
     resource: ShaderContractResource | None = None  # None: descriptor heap.
+    addressed: bool = False
+
+
+# Texture operations taking a handle that name a mip or texel outright: a texture streamed from a later mip reads
+# other texels through them.
+_ADDRESSED = re.compile(
+    r"@dx\.op\.(?:textureLoad|getDimensions|sampleLevel|sampleCmpLevelZero|sampleCmpLevel|textureGather|"
+    rf"textureGatherCmp|calculateLOD)[.\w]*\(i32 \d+, %dx\.types\.Handle ({_VALUE})")
 
 
 def material_texture_accesses(
@@ -480,7 +490,10 @@ def _material_texture_accesses(instructions, contract, accesses):
     by_id = {(r.register_class, r.resource_id): r for r in contract.resources}
     by_binding = {(r.register_class, r.register_space, r.bind_point): r for r in contract.resources}
     heap_sources = {}
+    # The record word's byte offset of each texture handle.
+    handles: dict[str, int] = {}
     result = set()
+    instructions = list(instructions)
     for value, body in instructions:
         if not body.startswith("add ") and "@dx.op." not in body:
             continue
@@ -494,12 +507,20 @@ def _material_texture_accesses(instructions, contract, accesses):
         elif "@dx.op.annotateHandle(" in body and (match := _ANNOTATE.search(body)):
             if match[1] in heap_sources and int(match[2]) & 255 in DXIL_TEXTURE_KINDS:
                 result.add(MaterialTextureAccess(heap_sources[match[1]], DXIL_TEXTURE_KINDS[int(match[2]) & 255]))
+                handles[value] = heap_sources[match[1]]
+            elif match[1] in handles:
+                handles[value] = handles[match[1]]
         else:
             resource = bound_resource(body, by_id, by_binding)
             if resource is not None and resource.input_type == "texture" and resource.dimension in DXIL_TEXTURE_KINDS.values():
                 index = _TEXTURE_INDEX.search(body)
                 if index and index[1] in sources:
                     result.add(MaterialTextureAccess(sources[index[1]], resource.dimension, resource))
+                    handles[value] = sources[index[1]]
+    addressed = {handles[match[1]] for _value, body in instructions
+                 if (match := _ADDRESSED.search(body)) and match[1] in handles}
+    result = {MaterialTextureAccess(item.byte_offset, item.dimension, item.resource, True)
+              if item.byte_offset in addressed else item for item in result}
     return tuple(sorted(result, key=lambda item: (item.byte_offset, item.dimension,
         item.resource.register_space if item.resource else -1,
         item.resource.bind_point if item.resource else -1)))

@@ -198,6 +198,8 @@ class MeshMaterialCollection(QObject):
         self._reset_callbacks: dict[str, object] = {}
         self._batching = False
         self._profile_owners: dict[str, str] = {}
+        # Each enabled session's names among the owners, so a change of one session redoes only its own.
+        self._owned: dict[str, tuple[str, ...]] = {}
         self._resource_cache = BoundedCache()
         self._cache_generation = 0
 
@@ -207,6 +209,14 @@ class MeshMaterialCollection(QObject):
 
     def __contains__(self, key: object) -> bool:
         return key in self._sessions
+
+    @staticmethod
+    def start_parses() -> None:
+        MeshMaterialResolver.start_mdf_parses()
+
+    @staticmethod
+    def stop_parses() -> None:
+        MeshMaterialResolver.stop_mdf_parses()
 
     @staticmethod
     def prefetch(handler, explicit_mdf_path: str = "") -> None:
@@ -253,7 +263,7 @@ class MeshMaterialCollection(QObject):
         session._collection = None
         session.reset.disconnect(self._reset_callbacks.pop(key))
         session.deleteLater()
-        self.refresh()
+        self._refresh_owner(key)
 
     def clear(self) -> None:
         self._batching = True
@@ -278,7 +288,7 @@ class MeshMaterialCollection(QObject):
         else:
             self._enabled.discard(key)
         if before != enabled:
-            self.refresh()
+            self._refresh_owner(key)
 
     def set_texture_quality(self, quality: str) -> None:
         quality = normalize_texture_quality(quality)
@@ -297,16 +307,36 @@ class MeshMaterialCollection(QObject):
     def refresh(self) -> None:
         if self._batching:
             return
-        owners = {}
+        owners, owned = {}, {}
         for key, session in self._sessions.items():
             if key in self._enabled:
-                for name in session.profiles:
+                owned[key] = names = tuple(session.profiles)
+                for name in names:
                     if owners.setdefault(name, key) != key:
                         raise ValueError(f"duplicate viewport material key {name!r}")
-        self._profile_owners = owners
+        self._profile_owners, self._owned = owners, owned
+        if self.viewport is not None:
+            self.viewport.materials_changed()
+
+    def _refresh_owner(self, key: str) -> None:
+        """``refresh`` once only ``key``'s session changed (added, reloaded, removed, enabled or not): the others' names
+        stay theirs. A scene adds thousands of sessions one at a time."""
+        if self._batching:
+            return
+        session = self._sessions.get(key)
+        names = tuple(session.profiles) if session is not None and key in self._enabled else ()
+        owners = self._profile_owners
+        for name in names:
+            if owners.get(name, key) != key:
+                raise ValueError(f"duplicate viewport material key {name!r}")
+        for name in self._owned.pop(key, ()):
+            del owners[name]
+        if names:
+            self._owned[key] = names
+            owners.update(dict.fromkeys(names, key))
         if self.viewport is not None:
             self.viewport.materials_changed()
 
     def _on_reset(self, key: str) -> None:
         if key in self._enabled:
-            self.refresh()
+            self._refresh_owner(key)

@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 lazy from file_handlers.mesh.lit_preview import LitOverlays, engine_camera, free_camera
+lazy from file_handlers.mesh.scene_pick import ScenePicker
 lazy from file_handlers.mmtr.engine_buffers import Camera
 lazy from file_handlers.mmtr.overlay import GRID, project_points
 lazy from file_handlers.mmtr.overlay_scene import ALL_EDGES, NO_EDGES, VISIBLE_EDGES, SceneShown
@@ -87,8 +88,6 @@ class _FullscreenRestore:
 
 
 IDENTITY4 = np.identity(4, dtype=np.float32)
-HOVER_PICK_INTERVAL = 1.0 / 15.0
-HOVER_PICK_MIN_PIXELS = 4.0
 HOVER_DETECT_KEY = Qt.Key_H
 
 
@@ -152,8 +151,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._device_content = 0
         self._device_motion = 0
         self._device_scene: tuple[tuple[SceneGeometry, ...], list[SceneDrawMesh]] | None = None
+        # The device scene's meshes and each one's number by key.
+        self._device_numbers: tuple[list[SceneDrawMesh], dict[str, int]] | None = None
         self._device_before: tuple | None = None
-        self._device_placed: tuple[int, tuple[ScenePlacement, ...]] | None = None
+        self._device_placed: tuple[int, tuple[ScenePlacement, ...], list[SceneDrawMesh]] | None = None
+        # Keys of the meshes placed or posed otherwise since the placements were made; None: any.
+        self._device_moving: set[str] | None = None
         self._device_shapes: dict[int, SceneShape] = {}
         self._device_overlays_made: tuple = (None, None)
         self._device_probes_made: tuple = ((), None)
@@ -162,7 +165,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self.strands_source = None
         self.wrinkle_source = None
         self.edit_tool = None
-        self._device_pick: tuple[str, tuple[int, int]] | None = None
+        # Picks the mesh at a texel of the frame shown, from what it drew.
+        self._picker = ScenePicker()
         self._mesh_poses: dict[str, ScenePose] = {}
 
         self._settings = settings if isinstance(settings, dict) else None
@@ -192,9 +196,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._gizmo_projection = None
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
-        self._pending_scene_pick: tuple[str, np.ndarray] | None = None
-        self._last_hover_pick_time = 0.0
-        self._last_hover_pick_pos: np.ndarray | None = None
         self._material_parameters: dict[str, dict[str, float]] = {}
         self._hidden_keys: set[str] = set()
         self._hidden_parts: dict[str, frozenset[int]] = {}
@@ -768,7 +769,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         matrices: np.ndarray,
     ) -> None:
         self._skinning.update_palette(key, matrices)
-        self._device_motion += 1
+        self._device_moved({key})
         self.update()
 
     def update_mesh_skinning_source(
@@ -844,7 +845,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._mesh_poses.pop(key, None)
         else:
             self._mesh_poses[key] = pose
-        self._device_motion += 1
+        self._device_moved({key})
         self.update()
 
     def clear_mesh_skinning(self, keys: set[str] | None = None) -> None:
@@ -981,7 +982,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         for mesh in matches:
             mesh.transform_matrix = np.asarray(matrices[mesh.key], dtype=np.float32).reshape(4, 4)
         if matches:
-            self._device_motion += 1
+            self._device_moved({mesh.key for mesh in matches})
         if recompute_bounds:
             self._recompute_bounds()
             self._refresh_selection_bounds()
@@ -1009,8 +1010,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                 raise ValueError(f"mesh {key!r} has a nonfinite draw transform")
             delta = world @ np.linalg.inv(authored)
             draw_matrices[str(key)] = delta.astype(np.float32, copy=False)
+        self._device_moved(self._mesh_draw_matrices.keys() | draw_matrices.keys())
         self._mesh_draw_matrices = draw_matrices
-        self._device_motion += 1
         self.update()
 
     def clear_mesh_draw_transforms(self) -> None:
@@ -1116,7 +1117,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if values.keys() != self._material_parameters.keys():
             self._device_rebound(())
         else:
-            self._device_motion += 1
+            self._device_moved(())
         self._material_parameters = values
         self.update()
 
@@ -1145,7 +1146,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                 event.accept()
                 return
             if self._hover_detect_down:
-                self._queue_scene_pick("click", self._screen_pos(event))
+                self._scene_pick("click", self._screen_pos(event))
             else:
                 self.object_clicked.emit("")
             self._set_gizmo_hover(self._pick_gizmo_axis(self._screen_pos(event)))
@@ -1221,10 +1222,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             return
         if self._controls != "mesh" and event.key() == HOVER_DETECT_KEY:
             if not event.isAutoRepeat():
-                self._hover_detect_down, self._last_hover_pick_time, self._last_hover_pick_pos = True, 0.0, None
+                self._hover_detect_down = True
                 pos = self.mapFromGlobal(QCursor.pos())
                 if self.rect().contains(pos):
-                    self._update_scene_hover(np.array((pos.x(), pos.y()), dtype=np.float32), force=True)
+                    self._update_scene_hover(np.array((pos.x(), pos.y()), dtype=np.float32))
             event.accept()
             return
         action = self.freecam.key_action(event)
@@ -1242,7 +1243,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def keyReleaseEvent(self, event):
         if self._controls != "mesh" and event.key() == HOVER_DETECT_KEY:
             if not event.isAutoRepeat():
-                self._hover_detect_down, self._last_hover_pick_pos = False, None
+                self._hover_detect_down = False
                 self._set_hover_key("")
             event.accept()
             return
@@ -1263,13 +1264,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._unlock_scene_cursor()
         self._finish_gizmo_drag(commit=True)
         self._set_hover_key("")
-        self._hover_detect_down, self._last_hover_pick_pos = False, None
+        self._hover_detect_down = False
         self.freecam.clear_input()
         super().focusOutEvent(event)
 
     def leaveEvent(self, event):
         self._set_hover_key("")
-        self._last_hover_pick_pos = None
         if self.edit_tool is not None:
             self.edit_tool.leave()
         super().leaveEvent(event)
@@ -1291,23 +1291,30 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._gizmo_hover_axis = axis
         self.update()
 
-    def _update_scene_hover(self, pos: np.ndarray, *, force: bool = False) -> None:
-        now = time.perf_counter()
-        if not force and self._last_hover_pick_pos is not None and float(np.linalg.norm(pos - self._last_hover_pick_pos)) < HOVER_PICK_MIN_PIXELS:
-            return
-        if not force and now - self._last_hover_pick_time < HOVER_PICK_INTERVAL:
-            return
-        self._last_hover_pick_time = now
-        self._last_hover_pick_pos = pos.copy()
+    def _update_scene_hover(self, pos: np.ndarray) -> None:
         axis = self._pick_gizmo_axis(pos)
         self._set_gizmo_hover(axis)
         if axis is None:
-            self._queue_scene_pick("hover", pos)
+            self._scene_pick("hover", pos)
         else:
             self._set_hover_key("")
 
-    def _queue_scene_pick(self, kind: str, pos: np.ndarray) -> None:
-        self._pending_scene_pick = (kind, np.asarray(pos, dtype=np.float32).copy())
+    def _scene_pick(self, kind: str, pos: np.ndarray) -> None:
+        """At once, on the CPU, from what the frame shown drew."""
+        frame = self._device_frame
+        pickable = getattr(frame, "pickable", None)
+        key = ""
+        if pickable is not None and frame.view.content == self._device_content and self._device_window is not None \
+                and not self._device_window.isHidden():
+            camera = frame.view.camera()
+            width, height = camera.size
+            ratio = width / max(self.width(), 1)
+            texel = min(max(int(pos[0] * ratio), 0), width - 1), min(max(int(pos[1] * ratio), 0), height - 1)
+            geometries, meshes = self._device_content_shown()
+            number = self._picker.pick(camera, texel, geometries, self.device_motion(), pickable, frame.view.hidden,
+                                       frame.view.hidden_parts)
+            key = "" if number is None or number >= len(meshes) else meshes[number].key
+        self._finish_scene_pick(kind, key)
         self.update()
 
     def _move_scene_camera(self, dx: float, dy: float, buttons) -> None:
@@ -1562,7 +1569,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if drag["tool"] is not None:
             drag["tool"].gizmo_drag(matrix)
         self._apply_light_probe_drag_matrix(matrix)
-        self._device_motion += 1
+        self._device_moved(drag["matrices"])
         self.update()
 
     def _finish_gizmo_drag(self, *, commit: bool) -> None:
@@ -1586,7 +1593,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if not commit and drag.get("probe_matrices"):
             self._restore_light_probe_drag_matrices()
         self._gizmo_drag = None
-        self._device_motion += 1
+        self._device_moved(drag["matrices"])
         if committed:
             self.gizmo_transform_committed.emit((committed, bool(drag.get("whole_scene"))))
         if committed or drag.get("probe_matrices"):
@@ -1776,7 +1783,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._invalidate_probe_viz_points()
         self._hover_key = self._hover_block_key = ""
         self._hover_detect_down = False
-        self._pending_scene_pick = self._last_hover_pick_pos = None
         self._selection_center = self._gizmo_drag = self._gizmo_projection = None
 
     def closeEvent(self, event):
@@ -1851,7 +1857,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         return self._device_probes_made[1]
 
     def _device_overlays(self, meshes: list[SceneDrawMesh], background: tuple[int, int, int]) -> LitOverlays:
-        numbers = {mesh.key: number for number, mesh in enumerate(meshes)}
+        numbers = self._device_numbered(meshes)
         selected = frozenset(numbers[key] for key in self._selection_keys if key in numbers)
         pulse = round(255 * (0.22 + 0.10 * np.sin(time.perf_counter() * 3.5))) if selected else 56
         mode = self.wireframe_mode
@@ -1860,7 +1866,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             hovered=numbers.get(self._hover_key) if self._hover_key else None, selected=selected,
             selection_colour=(255, 219, 46, pulse), outline=max(1, round(2 * self._view_pixels()[0]
                                                                          / max(self.width(), 1))),
-            pick=None if self._device_pick is None else self._device_pick[1], filled=mode != "wire")
+            filled=mode != "wire")
         probes = self._controls != "mesh"
         boxes = self._light_probe_box_entries() if probes and self.probe_viz_mode in {"volumes", "all"} else []
         points, colours = (self._probe_viz_points() if probes and self.probe_viz_mode in {"points", "all"}
@@ -1880,20 +1886,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                 scene=scene)
         return self._device_overlays_made[1]
 
-    def device_picked(self, content: int, texel, mesh: int | None) -> None:
-        pick = self._device_pick
-        if pick is None or content != self._device_content or tuple(texel) != pick[1]:
-            return
-        self._device_pick = None
-        meshes = self._device_content_shown()[1]
-        self._finish_scene_pick(pick[0], "" if mesh is None or mesh >= len(meshes) else meshes[mesh].key)
-        self.update()
-
-    def _device_texel(self, pos: np.ndarray) -> tuple[int, int]:
-        width, height = self._view_pixels()
-        ratio = width / max(self.width(), 1)
-        return (min(max(int(pos[0] * ratio), 0), width - 1), min(max(int(pos[1] * ratio), 0), height - 1))
-
     def _show_device_rate(self) -> None:
         if self._device_frames and self._presented_clock.isValid():
             self._show_fps(self._presented * 1000.0 / max(self._presented_clock.elapsed(), 1))
@@ -1901,10 +1893,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._presented_clock.start()
 
     def _device_frame_shows(self, view, frame) -> bool:
+        """Parts hidden are not compared: a frame of the previous ones still matches."""
         drawn = frame.view
         return (isinstance(view, SceneView)
-                and (drawn.content, drawn.size, drawn.hidden, drawn.hidden_parts, drawn.game)
-                == (view.content, view.size, view.hidden, view.hidden_parts, view.game))
+                and (drawn.content, drawn.size, drawn.hidden, drawn.game)
+                == (view.content, view.size, view.hidden, view.game))
 
     def _device_changed(self) -> None:
         self._device_content += 1
@@ -1919,7 +1912,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         for mesh in self._meshes:
             if mesh.key in keys:
                 self._device_shapes.pop(id(mesh), None)
-        self._device_motion += 1
+        self._device_moved()
 
     def _device_reshaped(self, mesh: SceneDrawMesh) -> None:
         geometries, meshes = self._device_scene or (None, [])
@@ -1929,7 +1922,20 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._device_changed()
             return
         self._device_shapes.pop(id(mesh), None)
+        self._device_moved({mesh.key})
+
+    def _device_numbered(self, meshes: list[SceneDrawMesh]) -> dict[str, int]:
+        if self._device_numbers is None or self._device_numbers[0] is not meshes:
+            self._device_numbers = meshes, {mesh.key: number for number, mesh in enumerate(meshes)}
+        return self._device_numbers[1]
+
+    def _device_moved(self, keys=None) -> None:
+        """The meshes ``keys`` (None: any) are placed or posed otherwise."""
         self._device_motion += 1
+        if keys is None or self._device_moving is None:
+            self._device_moving = None
+        else:
+            self._device_moving.update(keys)
 
     def _device_content_shown(self) -> tuple[tuple[SceneGeometry, ...], list[SceneDrawMesh]]:
         if self._device_scene is None:
@@ -1952,11 +1958,17 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             for batch in mesh.batches or [SceneDrawBatch(indices=mesh.indices, material_name=mesh.material_name)]:
                 shared = id(batch.indices), count
                 if shared not in triangles_of:
-                    indices = np.asarray(batch.indices, np.uint32).reshape(-1)
+                    indices = np.asarray(batch.indices, np.uint32)
+                    if indices.ndim != 1:
+                        indices = indices.reshape(-1)
                     triangles = indices[:len(indices) // 3 * 3].reshape(-1, 3)
-                    triangles_of[shared] = triangles[(triangles < count).all(axis=1)].reshape(-1)
+                    inside = (triangles < count).all(axis=1)
+                    # A batch whose triangles are all whole and of the mesh's vertices is shared, not copied.
+                    triangles_of[shared] = indices if inside.all() and len(indices) % 3 == 0 \
+                        else triangles[inside].reshape(-1)
                 if len(triangles_of[shared]):
-                    batches.append(replace(batch, indices=triangles_of[shared]))
+                    batches.append(batch if triangles_of[shared] is batch.indices
+                                   else replace(batch, indices=triangles_of[shared]))
             if not batches:
                 continue
             skin = self._skinning.influences(mesh.key)
@@ -1964,11 +1976,14 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             if self._vertex_colours(mesh, count) is None:
                 given = np.asarray(mesh.color, np.float64).reshape(-1)[:4]
                 flat[:len(given)] = given
-            uvs = None
+            sets = []
             if mesh.uvs is not None and np.size(mesh.uvs) == count * 2:
-                if id(mesh.uvs) not in uvs_of:
-                    uvs_of[id(mesh.uvs)] = np.array(mesh.uvs, np.float32).reshape(-1, 2)
-                uvs = uvs_of[id(mesh.uvs)]
+                for given in (mesh.uvs, mesh.uv1, mesh.uv2):
+                    if given is not None and np.size(given) == count * 2:
+                        if id(given) not in uvs_of:
+                            uvs_of[id(given)] = np.asarray(given, np.float32).reshape(-1, 2)
+                        sets.append(uvs_of[id(given)])
+            uvs = sets[0] if sets else None
             number = len(geometries)
             if skin is None:
                 number = first.setdefault((id(mesh.vertices), id(mesh.normals), id(mesh.colors), id(mesh.uvs)), number)
@@ -1977,7 +1992,8 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                                             solid=bool(mesh.force_solid), edge_excluded=mesh.edge_excluded,
                                             decal_receive_mode=mesh.decal_receive_mode,
                                             transparent_bias=mesh.transparent_bias,
-                                            speedtree_placement=mesh.speedtree_placement))
+                                            speedtree_placement=mesh.speedtree_placement,
+                                            more_uvs=tuple(sets[1:])))
             meshes.append(mesh)
         return tuple(geometries), meshes
 
@@ -2042,21 +2058,35 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self.update()
 
     def device_motion(self) -> tuple[ScenePlacement, ...]:
-        if self._device_placed is not None and self._device_placed[0] == self._device_motion:
-            return self._device_placed[1]
+        """Placed again: only the meshes moved since; the others' placements are the same objects."""
+        placed = self._device_placed
+        if placed is not None and placed[0] == self._device_motion:
+            return placed[1]
         geometries, meshes = self._device_content_shown()
+        moving, self._device_moving = self._device_moving, set()
+        if placed is None or placed[2] is not meshes or moving is None:
+            rows, placements = range(len(meshes)), [None] * len(meshes)
+        else:
+            numbers = self._device_numbered(meshes)
+            rows = sorted({numbers[key] for key in moving if key in numbers})
+            if not rows:
+                self._device_placed = self._device_motion, placed[1], meshes
+                return placed[1]
+            placements = list(placed[1])
         drag = self._gizmo_drag or {}
         dragged = drag["matrices"] if drag.get("matrix") is not None else {}
-        placements = []
-        for geometry, mesh in zip(geometries or (), meshes, strict=True):
+        for row in rows:
+            geometry, mesh = geometries[row], meshes[row]
             skinned = self._skinning.influences(mesh.key) is not None
             positions, normals, bones = (self._skinning.posed(mesh.key) if skinned
                                          else (mesh.vertices, mesh.normals, None))
             of = meshes[geometry.vertices]
             shape = self._device_shapes.get(id(of))
             if shape is None:
-                positions = np.array(positions, np.float32).reshape(-1, 3)
-                normals = (np.array(normals, np.float32).reshape(-1, 3)
+                # A mesh's own arrays are replaced, never written, so its shape shares them; posed ones are copied.
+                held = np.array if skinned else np.asarray
+                positions = held(positions, np.float32).reshape(-1, 3)
+                normals = (held(normals, np.float32).reshape(-1, 3)
                            if normals is not None and np.size(normals) == positions.size else computed_normals(
                                positions, np.concatenate([batch.indices for batch in geometry.batches])))
                 shape = SceneShape(positions, normals, self._vertex_colours(mesh, len(positions)))
@@ -2067,9 +2097,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                 world = moved @ world
             if mesh.key in dragged:
                 world = drag["matrix"] @ world
-            placements.append(ScenePlacement(shape, np.array(world[:3], np.float64), bones,
-                                             self._mesh_poses.get(mesh.key)))
-        self._device_placed = self._device_motion, tuple(placements)
+            placements[row] = ScenePlacement(shape, np.array(world[:3], np.float64), bones,
+                                             self._mesh_poses.get(mesh.key))
+        self._device_placed = self._device_motion, tuple(placements), meshes
         return self._device_placed[1]
 
     def _device_draws(self) -> bool:
@@ -2123,16 +2153,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._gizmo_projection = None
         if self._controls != "mesh" and self._selection_center is not None:
             self._cache_gizmo_projection()
-        shown = self._device_window is not None and not self._device_window.isHidden()
-        if not shown:
-            self._device_pick = None
-        if self._pending_scene_pick is not None:
-            kind, pos = self._pending_scene_pick
-            self._pending_scene_pick = None
-            if shown:
-                self._device_pick = kind, self._device_texel(pos)
-            else:
-                self._finish_scene_pick(kind, "")
         told = self._device_draws()
         if not self._device_frames:
             self._record_frame()

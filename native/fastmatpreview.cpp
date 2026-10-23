@@ -9,16 +9,19 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <condition_variable>
 #include <cstring>
+#include <deque>
 #include <exception>
 #include <functional>
-#include <list>
 #include <map>
 #include <memory>
 #include <mutex>
+#include <numeric>
 #include <optional>
 #include <set>
 #include <string>
+#include <thread>
 #include <tuple>
 #include <vector>
 
@@ -30,11 +33,14 @@ constexpr UINT MAX_SIZE = 16384;
 constexpr UINT MAX_DESCRIPTORS = 1u << 20;
 // Descriptors in each shared view heap: the most every Direct3D 12 device supports.
 constexpr UINT MAX_VIEWS = 1000000;
-constexpr UINT64 STAGING = 1ull << 22;
+// Upload chunks: a run's first, the most a later one grows to, and the fills waiting at most before they are sent.
+constexpr UINT64 STAGING = 1ull << 22, CHUNK = 1ull << 26, FLUSH = 1ull << 28;
+// Packed buffers: the unit they are placed in, the largest packed, and the first and later shared buffers' sizes.
+constexpr UINT64 PACK_UNIT = 256, PACKED_MOST = 1ull << 16, PACK_FIRST = 1ull << 20, PACK_LATER = 1ull << 22;
 constexpr size_t FRAMES = 3;
 constexpr UINT NONE = UINT_MAX;
-// In bytes, per device.
-constexpr UINT64 KEPT_TEXELS = 1ull << 30;
+constexpr const char *TEXELS_MISMATCH = "texel data does not match its format, size and mips";
+constexpr const char *TEXELS_UNHELD = "a step reads the scene's textures, named by number";
 // Table kinds, as the Python side numbers them.
 enum Kind { SRV = 0, UAV = 1, CBV = 2, SAMPLER = 3 };
 
@@ -511,18 +517,6 @@ void add_part(std::string &key, const void *data, size_t size) {
     key.append(static_cast<const char *>(data), size);
 }
 
-struct KeptTexture {
-    D3D12_RESOURCE_DESC desc;
-    std::vector<uint8_t> texels;
-    ComPtr<ID3D12Resource> resource;
-
-    bool holds(const D3D12_RESOURCE_DESC &other, const uint8_t *data, size_t size) const {
-        return desc.Dimension == other.Dimension && desc.Format == other.Format && desc.Width == other.Width
-            && desc.Height == other.Height && desc.DepthOrArraySize == other.DepthOrArraySize
-            && desc.MipLevels == other.MipLevels && texels.size() == size && !std::memcmp(texels.data(), data, size);
-    }
-};
-
 struct Commands {
     ComPtr<ID3D12CommandQueue> queue;
     ComPtr<ID3D12CommandAllocator> allocator;
@@ -537,11 +531,10 @@ struct Kept {
     ComPtr<ID3D12Device> device;
     std::mutex lock;
     std::vector<Commands> idle;
+    // By their layout.
     std::map<std::string, ComPtr<ID3D12RootSignature>> roots;
     std::map<std::string, ComPtr<ID3D12PipelineState>> pipelines;
     std::map<std::string, ComPtr<ID3D12CommandSignature>> signatures;
-    std::list<KeptTexture> textures;
-    UINT64 texels = 0;
 
     Commands commands() {
         {
@@ -584,32 +577,6 @@ struct Kept {
         if (FAILED(done.allocator->Reset()) || FAILED(done.list->Reset(done.allocator.Get(), nullptr))) return;
         std::lock_guard<std::mutex> guard(lock);
         idle.push_back(std::move(done));
-    }
-
-    ComPtr<ID3D12Resource> texture(const D3D12_RESOURCE_DESC &desc, const uint8_t *data, size_t size) {
-        std::lock_guard<std::mutex> guard(lock);
-        for (auto item = textures.begin(); item != textures.end(); ++item) {
-            if (!item->holds(desc, data, size)) continue;
-            textures.splice(textures.end(), textures, item);
-            return item->resource;
-        }
-        return nullptr;
-    }
-
-    void keep(std::vector<KeptTexture> &made) {
-        std::lock_guard<std::mutex> guard(lock);
-        for (KeptTexture &texture : made) {
-            if (std::any_of(textures.begin(), textures.end(), [&](const KeptTexture &other) {
-                    return other.holds(texture.desc, texture.texels.data(), texture.texels.size());
-                })) continue;
-            texels += texture.texels.size();
-            textures.push_back(std::move(texture));
-        }
-        made.clear();
-        while (texels > KEPT_TEXELS) {
-            texels -= textures.front().texels.size();
-            textures.pop_front();
-        }
     }
 
     // ``make`` runs outside the lock, so two threads may each make one; the first kept is given to both.
@@ -661,52 +628,129 @@ D3D12_RESOURCE_DESC buffer_desc(UINT64 size, D3D12_RESOURCE_FLAGS flags = D3D12_
     return desc;
 }
 
-// Committed buffers each get their own heap, which is far slower, and scenes hold thousands of small buffers.
+ComPtr<ID3D12Heap> made_heap(ID3D12Device *device, UINT64 size, D3D12_HEAP_FLAGS flags) {
+    D3D12_HEAP_DESC desc{};
+    desc.SizeInBytes = size;
+    desc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+    desc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    // Every byte placed is written before it is read: buffers are filled whole, read-only textures copied whole.
+    desc.Flags = flags | D3D12_HEAP_FLAG_CREATE_NOT_ZEROED;
+    ComPtr<ID3D12Heap> heap;
+    check(device->CreateHeap(&desc, IID_PPV_ARGS(&heap)), "CreateHeap");
+    return heap;
+}
+
+// Shared heaps for buffers and read-only textures: docs/internals/mesh-preview.md, Native memory.
 struct Placements {
-    static constexpr UINT64 SLOT = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-    static constexpr UINT SLOTS = 256;
+    static constexpr UINT64 UNIT = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    // Texture heaps in bytes: the first, and the most a later one grows to.
+    static constexpr UINT64 TEXTURES_FIRST = 1ull << 22, TEXTURES_MOST = 1ull << 28;
     struct Heap {
         ComPtr<ID3D12Heap> heap;
-        std::vector<UINT> free;
+        UINT units = 0;
+        // First unit to count, of each free run.
+        std::map<UINT, UINT> free;
+    };
+    // Heaps in units: the first, and the most a later one grows to.
+    struct Pool {
+        UINT first, most;
+        std::vector<std::unique_ptr<Heap>> heaps;
     };
     struct Placement {
+        Pool *pool = nullptr;
         Heap *heap = nullptr;
-        UINT slot = 0;
+        UINT first = 0, units = 0;
     };
-    std::vector<std::unique_ptr<Heap>> heaps;
+    // Of buffers of one unit, and of larger ones.
+    Pool single{256, 256}, larger{64, 1024};
+    std::vector<ComPtr<ID3D12Heap>> textures;
+    // Of the last texture heap.
+    UINT64 textures_size = 0, textures_used = 0;
 
-    ComPtr<ID3D12Resource> place(ID3D12Device *device, const D3D12_RESOURCE_DESC &desc, D3D12_RESOURCE_STATES state,
-                                 Placement &placed) {
-        auto open = std::find_if(heaps.begin(), heaps.end(), [](const auto &heap) { return !heap->free.empty(); });
-        if (open == heaps.end()) {
-            auto made = std::make_unique<Heap>();
-            D3D12_HEAP_DESC heap{};
-            heap.SizeInBytes = SLOT * SLOTS;
-            heap.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
-            heap.Alignment = SLOT;
-            heap.Flags = D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS;
-            check(device->CreateHeap(&heap, IID_PPV_ARGS(&made->heap)), "CreateHeap");
-            for (UINT slot = SLOTS; slot-- > 0;) made->free.push_back(slot);
-            heaps.push_back(std::move(made));
-            open = heaps.end() - 1;
+    // Twice ``largest`` (``first`` when there is none), doubled while it holds less than ``needed``, up to ``most``.
+    static UINT64 grown(UINT64 largest, UINT64 needed, UINT64 first, UINT64 most) {
+        UINT64 size = largest ? std::min(most, 2 * largest) : first;
+        while (size < needed && size < most) size *= 2;
+        return std::min(size, most);
+    }
+
+    ComPtr<ID3D12Resource> buffer(ID3D12Device *device, const D3D12_RESOURCE_DESC &desc, Placement &placed) {
+        const UINT units = static_cast<UINT>((desc.Width + UNIT - 1) / UNIT);
+        Pool &pool = units == 1 ? single : larger;
+        Heap *heap = nullptr;
+        UINT largest = 0;
+        auto run = std::map<UINT, UINT>::iterator{};
+        for (const auto &held : pool.heaps) {
+            largest = std::max(largest, held->units);
+            run = std::find_if(held->free.begin(), held->free.end(),
+                               [&](const auto &item) { return item.second >= units; });
+            if (run != held->free.end()) {
+                heap = held.get();
+                break;
+            }
         }
-        Heap &heap = **open;
+        if (!heap) {
+            auto made = std::make_unique<Heap>();
+            made->units = units > pool.most ? units : static_cast<UINT>(grown(largest, units, pool.first, pool.most));
+            made->heap = made_heap(device, made->units * UNIT, D3D12_HEAP_FLAG_ALLOW_ONLY_BUFFERS);
+            run = made->free.emplace(0, made->units).first;
+            heap = made.get();
+            pool.heaps.push_back(std::move(made));
+        }
+        const UINT first = run->first, left = run->second - units;
         ComPtr<ID3D12Resource> result;
-        check(device->CreatePlacedResource(heap.heap.Get(), heap.free.back() * SLOT, &desc, state, nullptr,
+        check(device->CreatePlacedResource(heap->heap.Get(), first * UNIT, &desc, D3D12_RESOURCE_STATE_COMMON, nullptr,
                                            IID_PPV_ARGS(&result)), "CreatePlacedResource");
-        placed = {&heap, heap.free.back()};
-        heap.free.pop_back();
+        heap->free.erase(run);
+        if (left) heap->free.emplace(first + units, left);
+        placed = {&pool, heap, first, units};
         return result;
     }
 
     // No command may still use the buffer.
     void free(const Placement &placed) {
         if (!placed.heap) return;
-        placed.heap->free.push_back(placed.slot);
-        if (placed.heap->free.size() == SLOTS && heaps.size() > 1) {
-            heaps.erase(std::find_if(heaps.begin(), heaps.end(),
-                                     [&](const auto &heap) { return heap.get() == placed.heap; }));
+        Heap &heap = *placed.heap;
+        UINT first = placed.first, units = placed.units;
+        auto after = heap.free.lower_bound(first);
+        if (after != heap.free.end() && after->first == first + units) {
+            units += after->second;
+            after = heap.free.erase(after);
         }
+        if (after != heap.free.begin() && std::prev(after)->first + std::prev(after)->second == first) {
+            first = std::prev(after)->first;
+            units += std::prev(after)->second;
+            heap.free.erase(std::prev(after));
+        }
+        heap.free.emplace(first, units);
+        Pool &pool = *placed.pool;
+        if (units == heap.units && (pool.heaps.size() > 1 || heap.units != pool.first)) {
+            pool.heaps.erase(std::find_if(pool.heaps.begin(), pool.heaps.end(),
+                                          [&](const auto &held) { return held.get() == &heap; }));
+        }
+    }
+
+    ComPtr<ID3D12Resource> texture(ID3D12Device *device, const D3D12_RESOURCE_DESC &desc,
+                                   D3D12_RESOURCE_STATES state) {
+        const D3D12_RESOURCE_ALLOCATION_INFO info = device->GetResourceAllocationInfo(0, 1, &desc);
+        ComPtr<ID3D12Resource> result;
+        if (info.SizeInBytes > TEXTURES_MOST) {
+            D3D12_HEAP_PROPERTIES properties{};
+            properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+            check(device->CreateCommittedResource(&properties, D3D12_HEAP_FLAG_NONE, &desc, state, nullptr,
+                                                  IID_PPV_ARGS(&result)), "CreateCommittedResource");
+            return result;
+        }
+        UINT64 at = (textures_used + info.Alignment - 1) & ~(info.Alignment - 1);
+        if (textures.empty() || at + info.SizeInBytes > textures_size) {
+            textures_size = grown(textures_size, info.SizeInBytes, TEXTURES_FIRST, TEXTURES_MOST);
+            textures.push_back(made_heap(device, textures_size, D3D12_HEAP_FLAG_ALLOW_ONLY_NON_RT_DS_TEXTURES));
+            at = 0;
+        }
+        check(device->CreatePlacedResource(textures.back().Get(), at, &desc, state, nullptr, IID_PPV_ARGS(&result)),
+              "CreatePlacedResource");
+        textures_used = at + info.SizeInBytes;
+        return result;
     }
 };
 
@@ -718,6 +762,9 @@ struct Resource {
     bool buffer = false;
     // A buffer's size in bytes; its resource is rounded up to a multiple of 256, as constant buffer views need.
     UINT64 size = 0;
+    // A packed buffer's pack, and where in the pack's buffer it lies; ``resource`` is that buffer.
+    UINT pack = NONE;
+    UINT64 offset = 0;
     D3D12_RESOURCE_STATES state = D3D12_RESOURCE_STATE_COMMON;
     std::map<std::pair<UINT, bool>, ComPtr<ID3D12DescriptorHeap>> views;
     std::map<UINT, D3D12_RESOURCE_STATES> apart;
@@ -799,6 +846,8 @@ private:
 
 struct Step {
     std::vector<Use> uses;
+    // Packed buffers the step reads; its uses name their packs' buffers.
+    std::vector<UINT> packed;
     std::vector<Part> writes;
     struct Copied {
         Part from, to;
@@ -831,6 +880,144 @@ struct Staging {
     UINT64 size = 0, used = 0;
 };
 
+// The device may read ``staging`` until the fence reaches ``after``.
+struct Spare {
+    Staging staging;
+    UINT64 after = 0;
+};
+
+// A subresource's texels: ``count`` rows (of blocks, for block-compressed formats) of ``size`` bytes, ``pitch``
+// apart, depth slices one after another. With ``packed`` they lie from the start of the GDeflate stream of
+// ``packed_size`` bytes there once inflated to ``inflated`` bytes, and ``data`` is unused.
+struct Rows {
+    const uint8_t *data;
+    UINT64 pitch, size, count;
+    const uint8_t *packed = nullptr;
+    UINT64 packed_size = 0, inflated = 0;
+};
+
+// libGDeflate's, loaded by ``gdeflate``.
+struct GdeflatePage {
+    const void *data;
+    size_t size;
+};
+using GdeflateAlloc = void *(*)();
+using GdeflateInflate = int (*)(void *, GdeflatePage *, size_t, void *, size_t, size_t *);
+using GdeflateFree = void (*)(void *);
+GdeflateAlloc gdeflate_alloc = nullptr;
+GdeflateInflate gdeflate_inflate = nullptr;
+GdeflateFree gdeflate_free = nullptr;
+
+// A GDeflate tile stream as TEX files store mips: an 8-byte header (the id 4 and its complement, the tile count,
+// flags), each tile's offset (the first entry is the last tile's size instead), then the tiles one after another.
+std::vector<GdeflatePage> gdeflate_pages(const uint8_t *stream, UINT64 length) {
+    if (!gdeflate_inflate) throw Failure{"libGDeflate is not loaded"};
+    if (length < 8 || stream[0] != 4 || stream[1] != (0xFF ^ 4)) throw Failure{"a mip's GDeflate header is not one"};
+    const UINT tiles = stream[2] | stream[3] << 8;
+    const UINT64 start = 8 + UINT64(tiles) * 4;
+    if (!tiles || start > length) throw Failure{"a mip's GDeflate tile table is not one"};
+    auto offset = [&](UINT index) {
+        uint32_t value;
+        std::memcpy(&value, stream + 8 + UINT64(index) * 4, 4);
+        return INT64(value);
+    };
+    std::vector<GdeflatePage> pages(tiles);
+    UINT64 cursor = start;
+    for (UINT index = 0; index < tiles; ++index) {
+        const INT64 tile = index + 1 < tiles ? offset(index + 1) - (index ? offset(index) : 0) : offset(0);
+        if (tile < 0 || cursor + UINT64(tile) > length) throw Failure{"a mip's GDeflate tiles are truncated"};
+        pages[index] = {stream + cursor, static_cast<size_t>(tile)};
+        cursor += UINT64(tile);
+    }
+    return pages;
+}
+
+// ``pages`` as ``gdeflate_pages`` gives them.
+void inflate(std::vector<GdeflatePage> &pages, uint8_t *out, UINT64 size) {
+    void *decompressor = gdeflate_alloc();
+    if (!decompressor) throw Failure{"GDeflate could not allocate a decompressor"};
+    size_t written = 0;
+    const int result = gdeflate_inflate(decompressor, pages.data(), pages.size(), out, static_cast<size_t>(size),
+                                        &written);
+    gdeflate_free(decompressor);
+    if (result) throw Failure{"GDeflate could not inflate a mip"};
+}
+
+// ``rows``' rows from ``data``, their pitch apart, to ``to``, ``pitch`` apart.
+void copy_rows(uint8_t *to, UINT64 pitch, const uint8_t *data, const Rows &rows) {
+    for (UINT64 row = 0; row < rows.count; ++row) {
+        std::memcpy(to + row * pitch, data + row * rows.pitch, static_cast<size_t>(rows.size));
+    }
+}
+
+// Runs a scene's inflates on threads of its own while the scene goes on, as the game streams textures: a fill is
+// recorded only once ``wait`` saw every inflate queued before it done. See docs/internals/mesh-preview.md, Native
+// memory.
+class Inflater {
+    std::mutex lock;
+    std::condition_variable queued, done;
+    std::deque<std::function<void()>> jobs;
+    size_t running = 0;
+    std::string failure;
+    bool stopping = false;
+    std::vector<std::thread> threads;
+
+    void work() {
+        std::unique_lock<std::mutex> held(lock);
+        while (true) {
+            queued.wait(held, [&] { return stopping || !jobs.empty(); });
+            if (jobs.empty()) return;
+            std::function<void()> job = std::move(jobs.front());
+            jobs.pop_front();
+            ++running;
+            held.unlock();
+            std::string failed;
+            try {
+                job();
+            } catch (const Failure &error) {
+                failed = error.message;
+            } catch (const std::exception &error) {
+                failed = error.what();
+            }
+            held.lock();
+            --running;
+            if (!failed.empty() && failure.empty()) failure = failed;
+            if (jobs.empty() && !running) done.notify_all();
+        }
+    }
+
+public:
+    void add(std::function<void()> job) {
+        std::lock_guard<std::mutex> held(lock);
+        if (threads.empty()) {
+            const UINT count = std::max(1u, std::thread::hardware_concurrency() - 1);
+            for (UINT number = 0; number < count; ++number) threads.emplace_back(&Inflater::work, this);
+        }
+        jobs.push_back(std::move(job));
+        queued.notify_one();
+    }
+
+    // Until every job queued is done; throws the first failure since the last wait.
+    void wait() {
+        std::unique_lock<std::mutex> held(lock);
+        done.wait(held, [&] { return jobs.empty() && !running; });
+        if (!failure.empty()) {
+            std::string failed;
+            std::swap(failed, failure);
+            throw Failure{failed};
+        }
+    }
+
+    ~Inflater() {
+        {
+            std::lock_guard<std::mutex> held(lock);
+            stopping = true;
+        }
+        queued.notify_all();
+        for (std::thread &thread : threads) thread.join();
+    }
+};
+
 struct Frame {
     ComPtr<ID3D12CommandAllocator> allocator;
     std::vector<Staging> staging;
@@ -856,6 +1043,9 @@ DXGI_FORMAT shown_format(DXGI_FORMAT format) {
 }
 
 struct BufferView { DXGI_FORMAT format; UINT elements, stride; bool raw; };
+
+// Of a buffer view's elements; a raw view's are 4 bytes.
+UINT64 element_size(const Entry &entry) { return entry.stride ? entry.stride : 4; }
 
 BufferView buffer_view(const Entry &entry, UINT64 size) {
     UINT element = entry.stride ? entry.stride : entry.format ? 0 : 4;
@@ -923,18 +1113,34 @@ struct Scene {
         UINT64 after;
         ComPtr<ID3D12Resource> resource;
         Placements::Placement placed;
+        // A packed buffer's room in its pack, in units.
+        UINT pack = NONE;
+        UINT64 first = 0, units = 0;
     };
     std::vector<Dropped> dropped;
+    // Shared buffers holding the packed buffers: docs/internals/mesh-preview.md, Native memory.
+    struct Pack {
+        UINT resource;
+        // First unit to count, of each free run.
+        std::map<UINT64, UINT64> free;
+    };
+    std::vector<Pack> packs;
     // Never held together with the interpreter lock.
     std::mutex lock;
     std::vector<Resource> resources;
     std::vector<Step> steps;
     std::vector<Page> pages;
+    // Where each shader resource view of a texture lies, by resource and by slot: what ``refill`` describes again.
+    struct TextureView { UINT dimension, format, mip; };
+    std::map<UINT, std::map<SIZE_T, TextureView>> texture_views;
+    std::map<SIZE_T, UINT> viewed;
     std::map<std::string, size_t> layouts;
     std::vector<Fill> fills;
-    std::vector<KeptTexture> made;
-    std::vector<UINT> made_resources;
     std::vector<UINT> promoted;
+    // Upload chunks done with, to use again: docs/internals/mesh-preview.md, Native memory.
+    std::vector<Spare> spare;
+    // Since the last run, and of the fills not yet sent to the device.
+    UINT64 run_staged = 0, unflushed = 0;
     // Allows tearing so presenting never waits for the screen.
     struct Window {
         ComPtr<IDXGISwapChain3> chain;
@@ -971,17 +1177,19 @@ struct Scene {
         check(device->GetDeviceRemovedReason(), "Drawing");
     }
 
+    // The scene turns to the next frame only once its allocator is ready, so a failure leaves it as it was.
     Frame &current() {
+        check(device->GetDeviceRemovedReason(), "Drawing");
         if (!turned) return frames[frame];
-        turned = false;
-        frame = (frame + 1) % FRAMES;
-        Frame &next = frames[frame];
+        const size_t following = (frame + 1) % FRAMES;
+        Frame &next = frames[following];
         wait(next.done);
         const UINT64 completed = commands.fence->GetCompletedValue();
         dropped.erase(std::remove_if(dropped.begin(), dropped.end(), [&](Dropped &item) {
                           if (item.after > completed) return false;
                           item.resource.Reset();
                           placements.free(item.placed);
+                          if (item.pack != NONE) unpack(packs[item.pack], item.first, item.units);
                           return true;
                       }),
                       dropped.end());
@@ -991,17 +1199,16 @@ struct Scene {
             check(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&next.allocator)),
                   "CreateCommandAllocator");
         }
-        if (!next.staging.empty() && next.staging[0].size == STAGING) {
-            next.staging.resize(1);
-            next.staging[0].used = 0;
-        } else {
-            next.staging.clear();
-        }
+        for (Staging &held : next.staging) spare.push_back({std::move(held), next.done});
+        next.staging.clear();
+        frame = following;
+        turned = false;
         return next;
     }
 
     ID3D12GraphicsCommandList *record(Frame &now) {
         if (!recording) {
+            check(device->GetDeviceRemovedReason(), "Drawing");
             check(commands.list->Reset(now.allocator.Get(), nullptr), "Reset");
             recording = true;
         }
@@ -1043,17 +1250,84 @@ struct Scene {
         fills.erase(std::remove_if(fills.begin(), fills.end(),
                                    [&](const Fill &fill) { return gone.count(fill.resource) > 0; }),
                     fills.end());
-        for (size_t i = made.size(); i-- > 0;) {
-            if (gone.count(made_resources[i])) {
-                made.erase(made.begin() + i);
-                made_resources.erase(made_resources.begin() + i);
-            }
-        }
         for (UINT id : gone) {
             const Resource &resource = resources[id];
-            if (resource.resource) dropped.push_back({commands.signalled, resource.resource, resource.placed});
+            if (resource.resource) {
+                dropped.push_back({commands.signalled, resource.resource, resource.placed, resource.pack,
+                                   resource.offset / PACK_UNIT, packed_units(resource.size)});
+            }
             resources[id] = Resource{};
+            for (const auto &[slot, _view] : texture_views[id]) viewed.erase(slot);
+            texture_views.erase(id);
         }
+    }
+
+    static UINT64 packed_units(UINT64 size) { return (size + PACK_UNIT - 1) / PACK_UNIT; }
+
+    // A buffer no step writes, placed in a pack at a multiple of ``alignment`` bytes as well as of the unit.
+    UINT packed(const uint8_t *data, size_t size, UINT64 alignment) {
+        if (!size) throw Failure{"a buffer holds nothing"};
+        const UINT64 units = packed_units(size), step = std::lcm(PACK_UNIT, alignment) / PACK_UNIT;
+        UINT pack = NONE;
+        UINT64 first = 0;
+        for (size_t i = 0; i < packs.size() && pack == NONE; ++i) {
+            for (const auto &[start, count] : packs[i].free) {
+                first = (start + step - 1) / step * step;
+                if (first + units <= start + count) {
+                    pack = static_cast<UINT>(i);
+                    break;
+                }
+            }
+        }
+        if (pack == NONE) {
+            Resource made;
+            made.buffer = true;
+            made.size = std::max(packs.empty() ? PACK_FIRST : PACK_LATER, units * PACK_UNIT);
+            made.resource = placements.buffer(device.Get(), buffer_desc(made.size), made.placed);
+            resources.push_back(std::move(made));
+            packs.push_back({static_cast<UINT>(resources.size() - 1), {{0, resources.back().size / PACK_UNIT}}});
+            pack = static_cast<UINT>(packs.size() - 1);
+            first = 0;
+        }
+        std::map<UINT64, UINT64> &free = packs[pack].free;
+        auto run = std::prev(free.upper_bound(first));
+        const UINT64 start = run->first, end = run->first + run->second;
+        free.erase(run);
+        if (first > start) free.emplace(start, first - start);
+        if (first + units < end) free.emplace(first + units, end - first - units);
+        Resource made;
+        made.buffer = true;
+        made.size = size;
+        made.pack = pack;
+        made.offset = first * PACK_UNIT;
+        made.resource = resources[packs[pack].resource].resource;
+        resources.push_back(std::move(made));
+        UINT id = static_cast<UINT>(resources.size() - 1);
+        fill_buffer(id, data, size);
+        return id;
+    }
+
+    // No command may still read the room.
+    static void unpack(Pack &pack, UINT64 first, UINT64 units) {
+        auto after = pack.free.lower_bound(first);
+        if (after != pack.free.end() && after->first == first + units) {
+            units += after->second;
+            after = pack.free.erase(after);
+        }
+        if (after != pack.free.begin() && std::prev(after)->first + std::prev(after)->second == first) {
+            first = std::prev(after)->first;
+            units += std::prev(after)->second;
+            pack.free.erase(std::prev(after));
+        }
+        pack.free.emplace(first, units);
+    }
+
+    // The pack's buffer for a packed buffer, which steps only read; otherwise the buffer itself.
+    UINT holder(UINT id) const { return resources[id].pack == NONE ? id : packs[resources[id].pack].resource; }
+
+    // Of the bytes copies and views reach: a packed buffer's are its own, rounded up to the unit.
+    UINT64 width(const Resource &resource) const {
+        return resource.pack == NONE ? resource.resource->GetDesc().Width : packed_units(resource.size) * PACK_UNIT;
     }
 
     UINT64 size(const Data &data) const {
@@ -1099,112 +1373,227 @@ struct Scene {
     }
 
     std::pair<Staging *, UINT64> stage(UINT64 size) {
-        std::vector<Staging> &staging = current().staging;
+        current();
+        if (unflushed + size > FLUSH && !fills.empty()) flush();
+        std::vector<Staging> &staging = frames[frame].staging;
         UINT64 start = staging.empty() ? 0 : (staging.back().used + D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1)
             & ~static_cast<UINT64>(D3D12_TEXTURE_DATA_PLACEMENT_ALIGNMENT - 1);
         if (staging.empty() || start + size > staging.back().size) {
-            Staging made;
-            made.size = std::max(size, STAGING);
-            made.memory = memory(made.size, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
-            D3D12_RANGE none{0, 0};
-            check(made.memory->Map(0, &none, reinterpret_cast<void **>(&made.mapped)), "Map");
-            staging.push_back(std::move(made));
+            staging.push_back(chunk(size));
             start = 0;
         }
         staging.back().used = start + size;
+        run_staged += size;
+        unflushed += size;
         return {&staging.back(), start};
+    }
+
+    Staging chunk(UINT64 size) {
+        const bool first = run_staged + size <= STAGING;
+        const UINT64 completed = commands.fence->GetCompletedValue();
+        auto best = spare.end();
+        for (auto item = spare.begin(); item != spare.end(); ++item) {
+            const UINT64 held = item->staging.size;
+            if (item->after > completed || held < size || (first && held != STAGING)) continue;
+            if (best == spare.end() || held < best->staging.size) best = item;
+        }
+        if (best != spare.end()) {
+            Staging found = std::move(best->staging);
+            spare.erase(best);
+            found.used = 0;
+            return found;
+        }
+        Staging made;
+        made.size = first ? STAGING : std::max(size, std::clamp(run_staged, STAGING, CHUNK));
+        made.memory = memory(made.size, D3D12_HEAP_TYPE_UPLOAD, D3D12_RESOURCE_STATE_GENERIC_READ);
+        D3D12_RANGE none{0, 0};
+        check(made.memory->Map(0, &none, reinterpret_cast<void **>(&made.mapped)), "Map");
+        return made;
+    }
+
+    // Sends the fills so far, before any step a run records, so their chunks free up while the run is being made.
+    void flush() {
+        inflated();
+        Frame &now = frames[frame];
+        record_fills(record(now));
+        submit();
+        fills.clear();
+        unflushed = 0;
+        for (Staging &held : now.staging) spare.push_back({std::move(held), commands.signalled});
+        now.staging.clear();
+    }
+
+    void trim() {
+        UINT64 held = 0;
+        for (const Spare &item : spare) held += item.staging.size > STAGING ? item.staging.size : 0;
+        while (held > run_staged) {
+            auto largest = std::max_element(spare.begin(), spare.end(), [](const Spare &one, const Spare &other) {
+                return one.staging.size < other.staging.size;
+            });
+            held -= largest->staging.size;
+            dropped.push_back({largest->after, std::move(largest->staging.memory), {}});
+            spare.erase(largest);
+        }
+        run_staged = 0;
     }
 
     void fill_buffer(UINT id, const uint8_t *data, size_t size) {
         if (size != found(id, true).size) throw Failure{"the bytes are not the buffer's size"};
-        UINT64 width = resources[id].resource->GetDesc().Width;
+        UINT64 width = this->width(resources[id]);
         auto [staged, offset] = stage(width);
         std::memcpy(staged->mapped + offset, data, size);
         std::memset(staged->mapped + offset + size, 0, static_cast<size_t>(width - size));
         fills.push_back({id, staged->memory.Get(), offset, width, {}, D3D12_RESOURCE_STATE_COMMON});
     }
 
-    // ``data`` holds tightly packed subresources.
-    void fill_texture(UINT id, const uint8_t *data, size_t size, D3D12_RESOURCE_STATES after) {
-        D3D12_RESOURCE_DESC desc = found(id, false).resource->GetDesc();
-        UINT count = subresources(desc);
-        Fill fill{id, nullptr, 0, 0, std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>(count), after};
-        std::vector<UINT> rows(count);
-        std::vector<UINT64> row_sizes(count);
-        UINT64 total = 0, packed = 0;
-        device->GetCopyableFootprints(&desc, 0, count, 0, fill.layouts.data(), rows.data(), row_sizes.data(), &total);
-        for (UINT i = 0; i < count; ++i) packed += row_sizes[i] * rows[i] * fill.layouts[i].Footprint.Depth;
-        if (packed != size) throw Failure{"texel data does not match its format, size and mips"};
-        auto [staged, offset] = stage(total);
-        fill.memory = staged->memory.Get();
-        for (UINT i = 0; i < count; ++i) {
+    struct Footprints {
+        std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT> layouts;
+        std::vector<UINT> rows;
+        std::vector<UINT64> row_sizes;
+        UINT64 total = 0;
+    };
+
+    Footprints footprints(const D3D12_RESOURCE_DESC &desc) {
+        const UINT count = subresources(desc);
+        Footprints laid{std::vector<D3D12_PLACED_SUBRESOURCE_FOOTPRINT>(count), std::vector<UINT>(count),
+                        std::vector<UINT64>(count)};
+        device->GetCopyableFootprints(&desc, 0, count, 0, laid.layouts.data(), laid.rows.data(), laid.row_sizes.data(),
+                                      &laid.total);
+        return laid;
+    }
+
+    // ``rows`` must be each subresource's as Direct3D lays it out.
+    void fill_texture(UINT id, const std::vector<Rows> &rows, D3D12_RESOURCE_STATES after) {
+        Footprints laid = footprints(found(id, false).resource->GetDesc());
+        if (rows.size() != laid.layouts.size()) throw Failure{TEXELS_MISMATCH};
+        for (size_t i = 0; i < rows.size(); ++i) {
+            if (rows[i].size != laid.row_sizes[i]
+                || rows[i].count != static_cast<UINT64>(laid.rows[i]) * laid.layouts[i].Footprint.Depth)
+                throw Failure{TEXELS_MISMATCH};
+        }
+        // Every stream's header and tiles are checked before any is queued.
+        std::vector<std::vector<GdeflatePage>> pages(rows.size());
+        for (size_t i = 0; i < rows.size(); ++i) {
+            if (rows[i].packed) pages[i] = gdeflate_pages(rows[i].packed, rows[i].packed_size);
+        }
+        auto [staged, offset] = stage(laid.total);
+        Fill fill{id, staged->memory.Get(), 0, 0, std::move(laid.layouts), after};
+        for (size_t i = 0; i < rows.size(); ++i) {
             D3D12_PLACED_SUBRESOURCE_FOOTPRINT &layout = fill.layouts[i];
             layout.Offset += offset;
-            for (UINT slice = 0; slice < layout.Footprint.Depth; ++slice) {
-                for (UINT row = 0; row < rows[i]; ++row) {
-                    std::memcpy(staged->mapped + layout.Offset
-                                + (static_cast<UINT64>(slice) * rows[i] + row) * layout.Footprint.RowPitch,
-                                data, static_cast<size_t>(row_sizes[i]));
-                    data += row_sizes[i];
-                }
+            uint8_t *to = staged->mapped + layout.Offset;
+            const UINT64 pitch = layout.Footprint.RowPitch;
+            if (!rows[i].packed) {
+                copy_rows(to, pitch, rows[i].data, rows[i]);
+                continue;
             }
+            // Inflated on the inflater's threads, into the staging chunk it was given: the fill waits for them.
+            inflater.add([to, pitch, given = rows[i], tiles = std::move(pages[i])]() mutable {
+                std::unique_ptr<uint8_t[]> inflated(new uint8_t[static_cast<size_t>(given.inflated)]);
+                inflate(tiles, inflated.get(), given.inflated);
+                copy_rows(to, pitch, inflated.get(), given);
+            });
         }
         fills.push_back(std::move(fill));
     }
 
-    UINT buffer(const uint8_t *data, size_t size, D3D12_RESOURCE_FLAGS flags) {
+    // ``data`` holds tightly packed subresources.
+    void fill_texture(UINT id, const uint8_t *data, size_t size, D3D12_RESOURCE_STATES after) {
+        const Footprints laid = footprints(found(id, false).resource->GetDesc());
+        std::vector<UINT64> starts;
+        UINT64 packed = 0;
+        for (size_t i = 0; i < laid.layouts.size(); ++i) {
+            starts.push_back(packed);
+            packed += laid.row_sizes[i] * laid.rows[i] * laid.layouts[i].Footprint.Depth;
+        }
+        if (packed != size) throw Failure{TEXELS_MISMATCH};
+        std::vector<Rows> rows;
+        for (size_t i = 0; i < laid.layouts.size(); ++i) {
+            rows.push_back({data + starts[i], laid.row_sizes[i], laid.row_sizes[i],
+                            static_cast<UINT64>(laid.rows[i]) * laid.layouts[i].Footprint.Depth});
+        }
+        fill_texture(id, rows, after);
+    }
+
+    // ``packing`` (an alignment in bytes) packs a buffer no step writes; 0 places it on its own.
+    UINT buffer(const uint8_t *data, size_t size, D3D12_RESOURCE_FLAGS flags, UINT64 packing = 0) {
         if (!size) throw Failure{"a buffer holds nothing"};
+        if (packing && flags != D3D12_RESOURCE_FLAG_NONE) throw Invalid{"a packed buffer is only read"};
+        if (packing && size <= PACKED_MOST) return packed(data, size, packing);
         Resource made;
         made.buffer = true;
         made.size = size;
         const UINT64 width = (size + 255) & ~static_cast<UINT64>(255);
-        made.resource = width <= Placements::SLOT
-            ? placements.place(device.Get(), buffer_desc(width, flags), D3D12_RESOURCE_STATE_COMMON, made.placed)
-            : memory(width, D3D12_HEAP_TYPE_DEFAULT, D3D12_RESOURCE_STATE_COMMON, flags);
+        made.resource = placements.buffer(device.Get(), buffer_desc(width, flags), made.placed);
         resources.push_back(std::move(made));
         UINT id = static_cast<UINT>(resources.size() - 1);
         fill_buffer(id, data, size);
         return id;
     }
 
-    // ``data`` holds tightly packed subresources, or is null.
-    UINT texture(const D3D12_RESOURCE_DESC &desc, const uint8_t *data, size_t size,
-                 D3D12_RESOURCE_STATES after = D3D12_RESOURCE_STATE_COMMON) {
+    UINT add_texture(ComPtr<ID3D12Resource> &&resource) {
         Resource made;
         made.state = D3D12_RESOURCE_STATE_COPY_DEST;
-        made.resource = committed(D3D12_HEAP_TYPE_DEFAULT, desc, made.state);
+        made.resource = std::move(resource);
         resources.push_back(std::move(made));
-        UINT id = static_cast<UINT>(resources.size() - 1);
-        if (data) fill_texture(id, data, size, after);
+        return static_cast<UINT>(resources.size() - 1);
+    }
+
+    // ``data`` holds tightly packed subresources, or is null.
+    UINT texture(const D3D12_RESOURCE_DESC &desc, const uint8_t *data, size_t size) {
+        UINT id = add_texture(committed(D3D12_HEAP_TYPE_DEFAULT, desc, D3D12_RESOURCE_STATE_COPY_DEST));
+        if (data) fill_texture(id, data, size, D3D12_RESOURCE_STATE_COMMON);
         return id;
     }
 
-    UINT read_texture(const D3D12_RESOURCE_DESC &desc, const Bytes &data) {
-        for (size_t i = 0; i < made.size(); ++i) {
-            if (made[i].holds(desc, data.data(), data.size())) return made_resources[i];
-        }
-        ComPtr<ID3D12Resource> shared = kept->texture(desc, data.data(), data.size());
-        if (shared) {
-            Resource known;
-            known.resource = shared;
-            known.state = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
-            resources.push_back(std::move(known));
-            return static_cast<UINT>(resources.size() - 1);
-        }
-        UINT id = texture(desc, data.data(), data.size(), D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
-        made.push_back({desc, std::vector<uint8_t>(data.data(), data.data() + data.size()), resources[id].resource});
-        made_resources.push_back(id);
+    // Only read, so it is placed with the scene's other read-only textures and keeps its memory until the scene ends.
+    UINT texture(const D3D12_RESOURCE_DESC &desc, const std::vector<Rows> &rows) {
+        if (desc.Flags != D3D12_RESOURCE_FLAG_NONE) throw Invalid{"a texture of rows is only read"};
+        UINT id = add_texture(placements.texture(device.Get(), desc, D3D12_RESOURCE_STATE_COPY_DEST));
+        fill_texture(id, rows, D3D12_RESOURCE_STATE_COMMON);
         return id;
     }
 
-    UINT held(const Data &data, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE) {
+    // A read texture made anew of other subresources (more of its streamed mips), its views described again. The
+    // device is waited for, as earlier runs read the views; the texture no longer lies with the other read ones, so
+    // it lets go of its memory when made anew again or released.
+    void refill(UINT id, const D3D12_RESOURCE_DESC &desc, const std::vector<Rows> &rows) {
+        Resource &held = found(id, false);
+        if (recording) throw Failure{"a texture is filled anew while a run is recorded"};
+        if (desc.Flags != D3D12_RESOURCE_FLAG_NONE) throw Invalid{"a texture of rows is only read"};
+        wait(commands.signalled);
+        fills.erase(std::remove_if(fills.begin(), fills.end(), [&](const Fill &fill) { return fill.resource == id; }),
+                    fills.end());
+        dropped.push_back({commands.signalled, std::move(held.resource), held.placed});
+        held.resource = committed(D3D12_HEAP_TYPE_DEFAULT, desc, D3D12_RESOURCE_STATE_COPY_DEST);
+        held.placed = {};
+        held.state = D3D12_RESOURCE_STATE_COPY_DEST;
+        held.apart.clear();
+        held.views.clear();
+        fill_texture(id, rows, D3D12_RESOURCE_STATE_COMMON);
+        for (const auto &[slot, view] : texture_views[id]) {
+            const D3D12_SHADER_RESOURCE_VIEW_DESC made = texture_view(view.dimension, view.format, view.mip,
+                                                                      held.resource.Get());
+            device->CreateShaderResourceView(held.resource.Get(), &made, {slot});
+        }
+    }
+
+    // A buffer made of a step's bytes is only read by that step, unless made for unordered access, so it is packed.
+    UINT held(const Data &data, D3D12_RESOURCE_FLAGS flags = D3D12_RESOURCE_FLAG_NONE, UINT64 alignment = 1) {
         if (data.resource != NONE) return data.resource;
-        return buffer(data.bytes.data(), data.bytes.size(), flags);
+        return buffer(data.bytes.data(), data.bytes.size(), flags, flags == D3D12_RESOURCE_FLAG_NONE ? alignment : 0);
     }
 
+    // A packed buffer's use is its pack buffer's, in every read state at once, so its neighbours' uses agree.
     ID3D12Resource *use(Step &step, UINT id, bool buffer, D3D12_RESOURCE_STATES state,
                         UINT part = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES) {
         ID3D12Resource *resource = found(id, buffer).resource.Get();
+        if (resources[id].pack != NONE) {
+            if (state & WRITING) throw Failure{"a step writes a packed buffer"};
+            step.packed.push_back(id);
+            id = holder(id);
+            state = D3D12_RESOURCE_STATE_GENERIC_READ;
+        }
         for (Use &other : step.uses) {
             const bool whole = other.part == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
                 || part == D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -1230,35 +1619,12 @@ struct Scene {
         return mip;
     }
 
-    void srv(Step &step, UINT dimension, const Entry *entry, D3D12_CPU_DESCRIPTOR_HANDLE slot) {
+    static D3D12_SHADER_RESOURCE_VIEW_DESC shader_view(UINT dimension, DXGI_FORMAT format, UINT mips, UINT first,
+                                                        UINT layers, UINT plane) {
         D3D12_SHADER_RESOURCE_VIEW_DESC view{};
         view.ViewDimension = static_cast<D3D12_SRV_DIMENSION>(dimension);
         view.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        ID3D12Resource *resource = nullptr;
-        UINT mips = 1, first = 0, layers = 1, plane = 0;
-        if (entry && dimension == D3D12_SRV_DIMENSION_BUFFER) {
-            UINT id = held(entry->data);
-            resource = use(step, id, true, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
-            BufferView buffer = buffer_view(*entry, resources[id].size);
-            view.Format = buffer.format;
-            view.Buffer.NumElements = buffer.elements;
-            view.Buffer.StructureByteStride = buffer.stride;
-            view.Buffer.Flags = buffer.raw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
-        } else if (entry) {
-            UINT id = entry->data.resource != NONE ? entry->data.resource : read_texture(
-                texture_desc(SRV, dimension, *entry, D3D12_RESOURCE_FLAG_NONE), entry->data.bytes);
-            resource = use(step, id, false, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, part(id, entry->mip));
-            D3D12_RESOURCE_DESC desc = resource->GetDesc();
-            mips = entry->mip == NONE ? desc.MipLevels : 1;
-            first = entry->mip == NONE ? 0 : entry->mip;
-            layers = desc.DepthOrArraySize;
-            view.Format = static_cast<DXGI_FORMAT>(entry->format);
-            // A depth/stencil texture's stencil is its second plane.
-            plane = view.Format == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT
-                || view.Format == DXGI_FORMAT_X24_TYPELESS_G8_UINT;
-        } else {
-            view.Format = dimension == D3D12_SRV_DIMENSION_BUFFER ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R8G8B8A8_UNORM;
-        }
+        view.Format = format;
         switch (dimension) {
         case D3D12_SRV_DIMENSION_TEXTURE1D: view.Texture1D.MipLevels = mips; break;
         case D3D12_SRV_DIMENSION_TEXTURE1DARRAY:
@@ -1286,6 +1652,45 @@ struct Scene {
             break;
         case D3D12_SRV_DIMENSION_BUFFER: break;
         default: throw Failure{"unsupported shader resource dimension"};
+        }
+        return view;
+    }
+
+    // A texture's view, all its mips or one: a depth/stencil texture's stencil is its second plane.
+    static D3D12_SHADER_RESOURCE_VIEW_DESC texture_view(UINT dimension, UINT format, UINT mip,
+                                                         ID3D12Resource *resource) {
+        const D3D12_RESOURCE_DESC desc = resource->GetDesc();
+        const DXGI_FORMAT shown = static_cast<DXGI_FORMAT>(format);
+        const UINT plane = shown == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT || shown == DXGI_FORMAT_X24_TYPELESS_G8_UINT;
+        return shader_view(dimension, shown, mip == NONE ? desc.MipLevels : 1, mip == NONE ? 0 : mip,
+                           desc.DepthOrArraySize, plane);
+    }
+
+    void srv(Step &step, UINT dimension, const Entry *entry, D3D12_CPU_DESCRIPTOR_HANDLE slot) {
+        D3D12_SHADER_RESOURCE_VIEW_DESC view{};
+        ID3D12Resource *resource = nullptr;
+        if (entry && dimension == D3D12_SRV_DIMENSION_BUFFER) {
+            UINT id = held(entry->data, D3D12_RESOURCE_FLAG_NONE, element_size(*entry));
+            resource = use(step, id, true, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+            BufferView buffer = buffer_view(*entry, resources[id].size);
+            if (resources[id].offset % element_size(*entry))
+                throw Failure{"a packed buffer lies where its view's elements cannot start"};
+            view = shader_view(dimension, buffer.format, 1, 0, 1, 0);
+            view.Buffer.FirstElement = resources[id].offset / element_size(*entry);
+            view.Buffer.NumElements = buffer.elements;
+            view.Buffer.StructureByteStride = buffer.stride;
+            view.Buffer.Flags = buffer.raw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
+        } else if (entry) {
+            if (entry->data.resource == NONE) throw Invalid{TEXELS_UNHELD};
+            UINT id = entry->data.resource;
+            resource = use(step, id, false, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, part(id, entry->mip));
+            view = texture_view(dimension, entry->format, entry->mip, resource);
+            texture_views[id][slot.ptr] = {dimension, entry->format, entry->mip};
+            viewed[slot.ptr] = id;
+        } else {
+            view = shader_view(dimension, dimension == D3D12_SRV_DIMENSION_BUFFER ? DXGI_FORMAT_R32_UINT
+                                                                                    : DXGI_FORMAT_R8G8B8A8_UNORM,
+                               1, 0, 1, 0);
         }
         device->CreateShaderResourceView(resource, &view, slot);
     }
@@ -1335,9 +1740,9 @@ struct Scene {
         if (entry) {
             UINT id = held(entry->data);
             ID3D12Resource *resource = use(step, id, true, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            UINT64 size = resource->GetDesc().Width;
+            UINT64 size = width(resources[id]);
             if (size > 65536) throw Failure{"constant buffer size is invalid"};
-            view.BufferLocation = resource->GetGPUVirtualAddress();
+            view.BufferLocation = resource->GetGPUVirtualAddress() + resources[id].offset;
             view.SizeInBytes = static_cast<UINT>(size);
         }
         device->CreateConstantBufferView(&view, slot);
@@ -1346,10 +1751,9 @@ struct Scene {
     void keep(UINT kind, UINT dimension, Entry &entry) {
         if (kind == SAMPLER || entry.data.resource != NONE) return;
         if (kind == CBV || (kind == SRV && dimension == D3D12_SRV_DIMENSION_BUFFER)) {
-            entry.data.resource = held(entry.data);
+            entry.data.resource = held(entry.data, D3D12_RESOURCE_FLAG_NONE, kind == SRV ? element_size(entry) : 1);
         } else if (kind == SRV) {
-            entry.data.resource = read_texture(texture_desc(SRV, dimension, entry, D3D12_RESOURCE_FLAG_NONE),
-                                               entry.data.bytes);
+            throw Invalid{TEXELS_UNHELD};
         } else {
             entry.data.resource = dimension == D3D12_UAV_DIMENSION_BUFFER
                 ? held(entry.data, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
@@ -1359,6 +1763,11 @@ struct Scene {
     }
 
     void describe(Step &step, UINT kind, UINT dimension, const Entry *entry, D3D12_CPU_DESCRIPTOR_HANDLE slot) {
+        auto was = viewed.find(slot.ptr);
+        if (was != viewed.end()) {
+            texture_views[was->second].erase(slot.ptr);
+            viewed.erase(was);
+        }
         if (kind == SRV) srv(step, dimension, entry, slot);
         else if (kind == UAV) uav(step, dimension, entry, slot);
         else if (kind == CBV) cbv(step, entry, slot);
@@ -1502,14 +1911,20 @@ struct Scene {
         // A shader that indexes the heaps on a path it never takes still needs the flags to make a pipeline.
         root_desc.Desc_1_1.Flags = flags | D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED
             | D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
-        ComPtr<ID3DBlob> blob, errors;
-        HRESULT serialized = D3D12SerializeVersionedRootSignature(&root_desc, &blob, &errors);
-        if (FAILED(serialized) && errors) {
-            throw Failure{std::string("root signature: ") + static_cast<const char *>(errors->GetBufferPointer())};
+        // Every parameter is a table of one range, so the flags, ranges and visibilities are the whole layout.
+        std::string root_layout;
+        add_part(root_layout, &root_desc.Desc_1_1.Flags, sizeof root_desc.Desc_1_1.Flags);
+        for (size_t i = 0; i < tables.size(); ++i) {
+            add_part(root_layout, &ranges[i], sizeof ranges[i]);
+            add_part(root_layout, &parameters[i].ShaderVisibility, sizeof parameters[i].ShaderVisibility);
         }
-        check(serialized, "D3D12SerializeVersionedRootSignature");
-        std::string key(static_cast<const char *>(blob->GetBufferPointer()), blob->GetBufferSize());
-        binding.root = kept->one(kept->roots, key, [&] {
+        binding.root = kept->one(kept->roots, root_layout, [&] {
+            ComPtr<ID3DBlob> blob, errors;
+            HRESULT serialized = D3D12SerializeVersionedRootSignature(&root_desc, &blob, &errors);
+            if (FAILED(serialized) && errors) {
+                throw Failure{std::string("root signature: ") + static_cast<const char *>(errors->GetBufferPointer())};
+            }
+            check(serialized, "D3D12SerializeVersionedRootSignature");
             ComPtr<ID3D12RootSignature> root;
             check(device->CreateRootSignature(0, blob->GetBufferPointer(), blob->GetBufferSize(),
                                               IID_PPV_ARGS(&root)), "CreateRootSignature");
@@ -1520,6 +1935,11 @@ struct Scene {
 
     // A ``read_only`` depth target is only tested, so the step can also read it as a shader resource.
     D3D12_CPU_DESCRIPTOR_HANDLE target_view(Step &step, UINT format, UINT id, bool depth, bool read_only = false) {
+        // Direct3D removes the device rather than refuse such a view.
+        if (!(found(id, false).resource->GetDesc().Flags
+              & (depth ? D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL : D3D12_RESOURCE_FLAG_ALLOW_RENDER_TARGET)))
+            throw Failure{depth ? "a step's depth is a texture made as no depth/stencil target"
+                                : "a step draws onto a texture made as no render target"};
         ID3D12Resource *resource = use(step, id, false, !depth ? D3D12_RESOURCE_STATE_RENDER_TARGET
                                                        : read_only ? D3D12_RESOURCE_STATE_DEPTH_READ
                                                                    : D3D12_RESOURCE_STATE_DEPTH_WRITE);
@@ -1651,20 +2071,21 @@ struct Scene {
         for (const VertexBuffer &buffer : job.vertex_buffers) {
             UINT id = held(buffer.data);
             ID3D12Resource *resource = use(step, id, true, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-            vertices.push_back({resource->GetGPUVirtualAddress() + buffer.offset,
+            vertices.push_back({resource->GetGPUVirtualAddress() + resources[id].offset + buffer.offset,
                                 static_cast<UINT>(resources[id].size) - buffer.offset, buffer.stride});
         }
         std::optional<D3D12_INDEX_BUFFER_VIEW> indices;
         if (job.indexed) {
             UINT index_buffer = held(job.indices);
             indices = D3D12_INDEX_BUFFER_VIEW{
-                use(step, index_buffer, true, D3D12_RESOURCE_STATE_INDEX_BUFFER)->GetGPUVirtualAddress(),
+                use(step, index_buffer, true, D3D12_RESOURCE_STATE_INDEX_BUFFER)->GetGPUVirtualAddress()
+                    + resources[index_buffer].offset,
                 static_cast<UINT>(resources[index_buffer].size), static_cast<DXGI_FORMAT>(job.index_format)};
         }
         ID3D12Resource *arguments = indirect(step, job.indirect);
         ComPtr<ID3D12CommandSignature> signature = arguments ? kept->signature(job.indexed
             ? D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED : D3D12_INDIRECT_ARGUMENT_TYPE_DRAW) : nullptr;
-        const UINT64 offset = job.indirect.offset;
+        const UINT64 offset = indirect_offset(job.indirect);
         const D3D12_VIEWPORT viewport = job.viewport;
         const D3D12_RECT scissor = job.scissor;
         const UINT reference = job.stencil_reference, topology = job.topology, index_count = job.index_count,
@@ -1701,6 +2122,10 @@ struct Scene {
             : use(step, arguments.buffer, true, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
     }
 
+    UINT64 indirect_offset(const Indirect &arguments) const {
+        return arguments.offset + (arguments.buffer == NONE ? 0 : resources[arguments.buffer].offset);
+    }
+
     UINT dispatch(ComputeJob &job) {
         Step step;
         Binding binding = bind(step, job.tables, job.heap, D3D12_ROOT_SIGNATURE_FLAG_NONE);
@@ -1720,7 +2145,7 @@ struct Scene {
         ID3D12Resource *arguments = indirect(step, job.indirect);
         ComPtr<ID3D12CommandSignature> signature = arguments
             ? kept->signature(D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH) : nullptr;
-        const UINT64 offset = job.indirect.offset;
+        const UINT64 offset = indirect_offset(job.indirect);
         step.record = [=](ID3D12GraphicsCommandList *list, Recorded &was) {
             set_root(list, was, true, binding.root.Get(), binding.starts);
             if (differs(was.pipeline, pipeline.Get())) list->SetPipelineState(pipeline.Get());
@@ -1777,11 +2202,11 @@ struct Scene {
             };
             return add(std::move(step));
         }
-        const UINT64 size = buffer ? resources[from].size : 0;
+        const UINT64 size = buffer ? resources[from].size : 0, from_offset = buffer ? resources[from].offset : 0;
         if (buffer && size > held) throw Failure{"a buffer is copied onto one at least its size"};
-        if (buffer && size != held) {
+        if (buffer && (size != held || resources[from].pack != NONE)) {
             step.record = [=](ID3D12GraphicsCommandList *list, Recorded &) {
-                list->CopyBufferRegion(target, 0, source, 0, size);
+                list->CopyBufferRegion(target, 0, source, from_offset, size);
             };
             return add(std::move(step));
         }
@@ -1803,8 +2228,9 @@ struct Scene {
         step.copied = Step::Copied{{from, NONE}, {to, NONE}, from_offset, to_offset, size};
         if (!size || to_offset + size > resources[to].size || from_offset + size > resources[from].size)
             throw Failure{"the bytes copied lie outside a buffer"};
+        const UINT64 from_at = from_offset + resources[from].offset;
         step.record = [=](ID3D12GraphicsCommandList *list, Recorded &) {
-            list->CopyBufferRegion(target, to_offset, source, from_offset, size);
+            list->CopyBufferRegion(target, to_offset, source, from_at, size);
         };
         return add(std::move(step));
     }
@@ -1856,14 +2282,15 @@ struct Scene {
     Readback read_later(ID3D12GraphicsCommandList *list, UINT id) {
         const Resource &resource = resources[id];
         Readback result;
-        need(list, id, D3D12_RESOURCE_STATE_COPY_SOURCE);
+        need(list, holder(id), resource.pack == NONE ? D3D12_RESOURCE_STATE_COPY_SOURCE
+                                                     : D3D12_RESOURCE_STATE_GENERIC_READ);
         if (resource.buffer) {
             result.layouts.resize(1);
             result.layouts[0].Footprint.Depth = 1;
             result.rows = {1};
             result.row_sizes = {resource.size};
             result.memory = memory(resource.size, D3D12_HEAP_TYPE_READBACK, D3D12_RESOURCE_STATE_COPY_DEST);
-            list->CopyBufferRegion(result.memory.Get(), 0, resource.resource.Get(), 0, resource.size);
+            list->CopyBufferRegion(result.memory.Get(), 0, resource.resource.Get(), resource.offset, resource.size);
             return result;
         }
         D3D12_RESOURCE_DESC desc = resource.resource->GetDesc();
@@ -1980,10 +2407,14 @@ struct Scene {
             for (const Use &item : steps[id].uses) {
                 if (!resources[item.id].resource) throw Failure{"a step uses a released resource"};
             }
+            for (UINT item : steps[id].packed) {
+                if (!resources[item].resource) throw Failure{"a step uses a released resource"};
+            }
         }
         for (UINT id : reads) {
             if (id >= resources.size() || !resources[id].resource) throw Failure{"the scene has no such resource"};
         }
+        inflated();
         ID3D12GraphicsCommandList *list = record(current());
         try {
             record_run(list, order, reads);
@@ -1994,10 +2425,9 @@ struct Scene {
         submit();
         turned = true;
         fills.clear();
-        // Other jobs use kept textures from other queues, so they must be filled first.
-        if (!readbacks.empty() || !made.empty()) wait(commands.signalled);
-        kept->keep(made);
-        made_resources.clear();
+        unflushed = 0;
+        trim();
+        if (!readbacks.empty()) wait(commands.signalled);
         std::vector<std::vector<uint8_t>> contents;
         for (const Readback &readback : readbacks) contents.push_back(read(readback));
         readbacks.clear();
@@ -2006,12 +2436,13 @@ struct Scene {
 
     std::vector<Readback> readbacks;
 
-    void record_run(ID3D12GraphicsCommandList *list, const std::vector<UINT> &order, const std::vector<UINT> &reads) {
-        readbacks.clear();
+    void record_fills(ID3D12GraphicsCommandList *list) {
         for (const Fill &fill : fills) {
-            need(list, fill.resource, D3D12_RESOURCE_STATE_COPY_DEST);
+            need(list, holder(fill.resource), D3D12_RESOURCE_STATE_COPY_DEST);
             ID3D12Resource *resource = resources[fill.resource].resource.Get();
-            if (fill.layouts.empty()) list->CopyBufferRegion(resource, 0, fill.memory, fill.offset, fill.size);
+            if (fill.layouts.empty()) {
+                list->CopyBufferRegion(resource, resources[fill.resource].offset, fill.memory, fill.offset, fill.size);
+            }
             for (size_t i = 0; i < fill.layouts.size(); ++i) {
                 D3D12_TEXTURE_COPY_LOCATION to{resource, D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX, {}};
                 to.SubresourceIndex = static_cast<UINT>(i);
@@ -2021,6 +2452,11 @@ struct Scene {
             }
             if (fill.after) need(list, fill.resource, fill.after);
         }
+    }
+
+    void record_run(ID3D12GraphicsCommandList *list, const std::vector<UINT> &order, const std::vector<UINT> &reads) {
+        readbacks.clear();
+        record_fills(list);
         ID3D12DescriptorHeap *heaps[2] = {};
         Recorded recorded;
         Written written(resources.size());
@@ -2048,6 +2484,23 @@ struct Scene {
         }
         for (UINT id : reads) readbacks.push_back(read_later(list, id));
     }
+
+    // Until every inflate queued is in its staging; the bytes they read go to ``texels_done``.
+    void inflated() {
+        struct Done {
+            Scene &scene;
+            ~Done() {
+                for (Bytes &held : scene.texels_held) scene.texels_done.push_back(std::move(held));
+                scene.texels_held.clear();
+            }
+        } done{*this};
+        inflater.wait();
+    }
+
+    // The bytes queued inflates read; ``texels_done`` are let go once the interpreter lock is held again.
+    std::vector<Bytes> texels_held, texels_done;
+    // Last, so its threads end before the staging and the bytes they use go.
+    Inflater inflater;
 };
 
 const char *invalid_arguments(const Indirect &indirect, UINT64 size, const Scene &scene) {
@@ -2157,6 +2610,18 @@ std::vector<std::vector<uint8_t>> draw(Job &job, bool hardware) {
         if (target.clear) order.push_back(scene.clear(target.format, target.data.resource));
         reads.push_back(target.data.resource);
     }
+    auto held = [&](UINT kind, UINT dimension, Entry &entry) {
+        if (kind == SRV && !buffer_dimension(kind, dimension) && entry.data.resource == NONE) {
+            entry.data.resource = scene.texture(texture_desc(SRV, dimension, entry, D3D12_RESOURCE_FLAG_NONE),
+                                                entry.data.bytes.data(), entry.data.bytes.size());
+        }
+    };
+    for (Table &table : job.tables) {
+        for (Entry &entry : table.entries) held(table.kind, table.dimension, entry);
+    }
+    for (HeapEntry &item : job.heap) {
+        if (!item.null) held(item.kind, item.dimension, item.entry);
+    }
     order.push_back(scene.draw(job));
     return scene.run(order, reads);
 }
@@ -2176,11 +2641,12 @@ PyObject *byte_list(const std::vector<std::vector<uint8_t>> &items) {
     return result;
 }
 
+// ``release`` lets other threads run meanwhile; work too short for their turn to pay keeps the GIL.
 template <typename Work>
-bool unlocked(Work work) {
+bool unlocked(Work work, bool release = true) {
     std::string failure;
     bool invalid = false;
-    Py_BEGIN_ALLOW_THREADS
+    PyThreadState *state = release ? PyEval_SaveThread() : nullptr;
     try {
         work();
     } catch (const Invalid &error) {
@@ -2191,10 +2657,32 @@ bool unlocked(Work work) {
     } catch (const std::exception &error) {
         failure = error.what();
     }
-    Py_END_ALLOW_THREADS
+    if (state) PyEval_RestoreThread(state);
     if (failure.empty()) return true;
     PyErr_SetString(invalid ? PyExc_ValueError : PyExc_RuntimeError, failure.c_str());
     return false;
+}
+
+PyObject *gdeflate_call(PyObject *, PyObject *object) {
+    wchar_t *path = PyUnicode_AsWideCharString(object, nullptr);
+    if (!path) return nullptr;
+    HMODULE library = LoadLibraryExW(path, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    PyMem_Free(path);
+    if (!library) {
+        PyErr_SetString(PyExc_OSError, "libGDeflate could not be loaded");
+        return nullptr;
+    }
+    auto alloc = reinterpret_cast<GdeflateAlloc>(GetProcAddress(library, "libdeflate_alloc_gdeflate_decompressor"));
+    auto inflated = reinterpret_cast<GdeflateInflate>(GetProcAddress(library, "libdeflate_gdeflate_decompress"));
+    auto release = reinterpret_cast<GdeflateFree>(GetProcAddress(library, "libdeflate_free_gdeflate_decompressor"));
+    if (!alloc || !inflated || !release) {
+        PyErr_SetString(PyExc_OSError, "libGDeflate lacks its decompressor's functions");
+        return nullptr;
+    }
+    gdeflate_alloc = alloc;
+    gdeflate_inflate = inflated;
+    gdeflate_free = release;
+    Py_RETURN_NONE;
 }
 
 PyObject *draw_call(PyObject *, PyObject *object) {
@@ -2211,12 +2699,19 @@ struct SceneObject {
 };
 
 template <typename Work>
-bool on_scene(PyObject *self, Work work) {
+bool on_scene(PyObject *self, Work work, bool release = true) {
     Scene &scene = *reinterpret_cast<SceneObject *>(self)->scene;
-    return unlocked([&] {
+    std::vector<Bytes> done;
+    const bool worked = unlocked([&] {
         std::lock_guard<std::mutex> guard(scene.lock);
         work(scene);
-    });
+        done.swap(scene.texels_done);
+    }, release);
+    if (!worked) {
+        std::lock_guard<std::mutex> guard(scene.lock);
+        done.swap(scene.texels_done);
+    }
+    return worked;
 }
 
 PyObject *scene_new(PyTypeObject *type, PyObject *arguments, PyObject *) {
@@ -2241,29 +2736,114 @@ void scene_dealloc(PyObject *self) {
 // ``id`` by reference: it is read after the work that sets it, whatever order the arguments are evaluated in.
 PyObject *number(bool made, const UINT &id) { return made ? PyLong_FromUnsignedLong(id) : nullptr; }
 
+// A subresource's rows as Python gives them: (bytes, offset, pitch, row bytes, rows).
+bool parse_rows(PyObject *item, Bytes &held, Rows &rows) {
+    PyObject *buffer;
+    unsigned long long offset, pitch, size, count, packed = 0, inflated = 0;
+    if (!PyTuple_Check(item)) {
+        PyErr_SetString(PyExc_TypeError, "a subresource's rows are (bytes, offset, pitch, row bytes, rows) or (bytes, "
+                                         "offset, pitch, row bytes, rows, GDeflate bytes, inflated bytes)");
+        return false;
+    }
+    const bool stream = PyTuple_Size(item) == 7;
+    if (!PyArg_ParseTuple(item, stream ? "OKKKKKK" : "OKKKK", &buffer, &offset, &pitch, &size, &count, &packed,
+                          &inflated) || !held.hold(buffer)) return false;
+    const UINT64 length = held.size();
+    if (stream) {
+        if (offset > length || packed > length - offset) {
+            PyErr_SetString(PyExc_ValueError, "a GDeflate stream lies outside its bytes");
+            return false;
+        }
+        if (count && (size > inflated || (count > 1 && pitch > (inflated - size) / (count - 1)))) {
+            PyErr_SetString(PyExc_ValueError, "texel rows lie outside their inflated bytes");
+            return false;
+        }
+        rows = {nullptr, pitch, size, count, held.data() + offset, packed, inflated};
+        return true;
+    }
+    if (count && (offset > length || size > length - offset
+                  || (count > 1 && pitch > (length - offset - size) / (count - 1)))) {
+        PyErr_SetString(PyExc_ValueError, "texel rows lie outside their bytes");
+        return false;
+    }
+    rows = {held.data() + offset, pitch, size, count};
+    return true;
+}
+
 PyObject *scene_texture(PyObject *self, PyObject *arguments) {
     Entry shape;
     unsigned int dimension, flags;
     PyObject *texels;
-    Bytes data;
     if (!PyArg_ParseTuple(arguments, "IIIIIIIO", &shape.format, &shape.width, &shape.height, &shape.depth,
                           &shape.mips, &dimension, &flags, &texels)) return nullptr;
-    if (texels != Py_None && !data.hold(texels)) return nullptr;
     UINT id = 0;
+    auto desc = [&] { return texture_desc(SRV, dimension, shape, static_cast<D3D12_RESOURCE_FLAGS>(flags)); };
+    if (texels == Py_None || PyBytes_Check(texels)) {
+        Bytes data;
+        if (texels != Py_None && !data.hold(texels)) return nullptr;
+        return number(on_scene(self, [&](Scene &scene) {
+            id = scene.texture(desc(), texels == Py_None ? nullptr : data.data(), data.size());
+        }), id);
+    }
+    if (!PyTuple_Check(texels) && !PyList_Check(texels)) {
+        PyErr_SetString(PyExc_TypeError, "texels are None, bytes or each subresource's rows");
+        return nullptr;
+    }
+    std::vector<Bytes> held(static_cast<size_t>(PySequence_Size(texels)));
+    std::vector<Rows> rows(held.size());
+    if (!items(texels, static_cast<Py_ssize_t>(held.size()), "texel rows", [&](Py_ssize_t i, PyObject *item) {
+            return parse_rows(item, held[i], rows[i]);
+        })) return nullptr;
+    // Held once the inflates are queued, thrown or not: a flush the texture makes waits for those queued before it.
     return number(on_scene(self, [&](Scene &scene) {
-        id = scene.texture(texture_desc(SRV, dimension, shape, static_cast<D3D12_RESOURCE_FLAGS>(flags)),
-                           texels == Py_None ? nullptr : data.data(), data.size());
+        struct Held {
+            Scene &scene;
+            std::vector<Bytes> &held;
+            ~Held() {
+                for (Bytes &item : held) scene.texels_held.push_back(std::move(item));
+            }
+        } kept{scene, held};
+        id = scene.texture(desc(), rows);
     }), id);
+}
+
+PyObject *scene_refill(PyObject *self, PyObject *arguments) {
+    unsigned int id, dimension;
+    Entry shape;
+    PyObject *texels;
+    if (!PyArg_ParseTuple(arguments, "IIIIIIIO", &id, &shape.format, &shape.width, &shape.height, &shape.depth,
+                          &shape.mips, &dimension, &texels)) return nullptr;
+    if (!PyTuple_Check(texels) && !PyList_Check(texels)) {
+        PyErr_SetString(PyExc_TypeError, "texels are each subresource's rows");
+        return nullptr;
+    }
+    std::vector<Bytes> held(static_cast<size_t>(PySequence_Size(texels)));
+    std::vector<Rows> rows(held.size());
+    if (!items(texels, static_cast<Py_ssize_t>(held.size()), "texel rows", [&](Py_ssize_t i, PyObject *item) {
+            return parse_rows(item, held[i], rows[i]);
+        })) return nullptr;
+    if (!on_scene(self, [&](Scene &scene) {
+            struct Held {
+                Scene &scene;
+                std::vector<Bytes> &held;
+                ~Held() {
+                    for (Bytes &item : held) scene.texels_held.push_back(std::move(item));
+                }
+            } kept{scene, held};
+            scene.refill(id, texture_desc(SRV, dimension, shape, D3D12_RESOURCE_FLAG_NONE), rows);
+        })) return nullptr;
+    Py_RETURN_NONE;
 }
 
 PyObject *scene_buffer(PyObject *self, PyObject *arguments) {
     PyObject *object;
     unsigned int flags;
+    unsigned long long packing = 0;
     Bytes data;
-    if (!PyArg_ParseTuple(arguments, "OI", &object, &flags) || !data.hold(object)) return nullptr;
+    if (!PyArg_ParseTuple(arguments, "OI|K", &object, &flags, &packing) || !data.hold(object)) return nullptr;
     UINT id = 0;
     return number(on_scene(self, [&](Scene &scene) {
-        id = scene.buffer(data.data(), data.size(), static_cast<D3D12_RESOURCE_FLAGS>(flags));
+        id = scene.buffer(data.data(), data.size(), static_cast<D3D12_RESOURCE_FLAGS>(flags), packing);
     }), id);
 }
 
@@ -2278,7 +2858,7 @@ PyObject *scene_write(PyObject *self, PyObject *arguments) {
             } else {
                 scene.fill_buffer(id, data.data(), data.size());
             }
-        })) return nullptr;
+        }, data.size() > (1 << 16))) return nullptr;
     Py_RETURN_NONE;
 }
 
@@ -2409,12 +2989,23 @@ PyMethodDef scene_methods[] = {
     {"texture", scene_texture, METH_VARARGS,
      "texture(DXGI format, width, height, depth or layers, mips, shader resource view dimension, resource flags,\n"
      "texels) -> resource\n"
-     "A texture of these subresources, packed tightly in Direct3D's order, or, given None, of whatever a step first\n"
-     "leaves in it. The flags, in Direct3D 12's numbering, allow it as a render target, a depth/stencil target or\n"
-     "for unordered access; one read through views of several formats has a typeless format."},
+     "A texture of these subresources, packed tightly in Direct3D's order; or of these rows, a (bytes, offset, pitch,\n"
+     "row bytes, rows) per subresource in that order, its rows of texels (of blocks, for block-compressed formats)\n"
+     "``pitch`` apart from ``offset`` on, depth slices one after another, or a (bytes, offset, pitch, row bytes,\n"
+     "rows, GDeflate bytes, inflated bytes) whose rows lie from the start of the GDeflate stream at ``offset``\n"
+     "inflated (``gdeflate`` loads the library): a texture only read, which keeps its memory until the scene ends;\n"
+     "or, given None, of whatever a step first leaves in it. The flags, in Direct3D 12's numbering, allow it as a\n"
+     "render target, a depth/stencil target or for unordered access; one read through views of several formats has a\n"
+     "typeless format."},
+    {"refill", scene_refill, METH_VARARGS,
+     "refill(texture, DXGI format, width, height, depth or layers, mips, shader resource view dimension, texels)\n"
+     "A texture only read made anew of these rows (as ``texture`` takes them), say more of its streamed mips: the\n"
+     "views of it steps hold view it so from the next run on. The device is waited for."},
     {"buffer", scene_buffer, METH_VARARGS,
-     "buffer(data, resource flags) -> resource\n"
-     "A buffer of these bytes: vertices, indices, constants, or what a shader reads or writes as a buffer."},
+     "buffer(data, resource flags[, packing]) -> resource\n"
+     "A buffer of these bytes: vertices, indices, constants, or what a shader reads or writes as a buffer. Given a\n"
+     "packing (bytes its views' elements are apart; 1 for constants, vertices and indices), a buffer of at most 64 KiB\n"
+     "without flags shares Direct3D memory with others at a multiple of it and of 256 bytes; no step may write it."},
     {"write", scene_write, METH_VARARGS,
      "write(resource, data)\n"
      "The bytes a buffer, or the tightly packed subresources a texture, holds from the next run on."},
@@ -2422,9 +3013,10 @@ PyMethodDef scene_methods[] = {
      "draw(job) -> step\n"
      "The step of one indexed draw: ``fastmatpreview.draw``'s job, without ``hardware``, each target (DXGI format,\n"
      "texture) and the depth likewise. A resource's number stands wherever a job gives bytes for a buffer, and an\n"
-     "entry (index, DXGI format, texture) for a texture's view of that format. ``indices`` None draws without\n"
-     "indices, the counts and the first index being vertices'; ``indirect`` (buffer, byte offset) in place of\n"
-     "``draw`` takes the counts from the buffer when the step runs, as Direct3D lays draw arguments out."},
+     "entry (index, DXGI format, texture) of a texture's view of that format wherever it gives texels: a step reads\n"
+     "the scene's textures. ``indices`` None draws without indices, the counts and the first index being vertices';\n"
+     "``indirect`` (buffer, byte offset) in place of ``draw`` takes the counts from the buffer when the step runs, as\n"
+     "Direct3D lays draw arguments out."},
     {"dispatch", scene_dispatch, METH_O,
      "dispatch(job) -> step\n"
      "The step of one compute dispatch. ``job`` is a dict: compute_shader (bytes); groups (x, y, z); tables and\n"
@@ -2514,6 +3106,9 @@ PyMethodDef methods[] = {
      "descriptor; hardware (draw on the system's\n"
      "high-performance graphics adapter instead of the software rasterizer).\n"
      "Returns each target's texels after the draw, then the depth target's, packed tightly."},
+    {"gdeflate", gdeflate_call, METH_O,
+     "gdeflate(path)\n"
+     "Loads libGDeflate from ``path``: textures' rows may then be GDeflate streams, which their fill inflates."},
     {nullptr, nullptr, 0, nullptr},
 };
 

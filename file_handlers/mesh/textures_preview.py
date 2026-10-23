@@ -31,6 +31,7 @@ from .device_preview import DevicePreview
 from .lit_preview import UNKNOWN_SKINNING, DeviceDrawer, LitOverlays, LitView, bound_master
 from .material_resolver import MeshMaterialResolver
 from .material_shader_preview import preview_material
+lazy from .scene_pick import ScenePickable
 
 
 @dataclass(frozen=True, slots=True)
@@ -115,7 +116,7 @@ class TexturedFrame:
     view: TexturedView
     drawn: bool
     failures: Mapping[int, Exception]
-    picked: int | None = field(default=None, kw_only=True)
+    pickable: ScenePickable | None = field(default=None, kw_only=True)
 
 
 def bind_parts(parts, game: str, exact: bool, skinned: bool, files: Mapping[str, bytes],
@@ -176,6 +177,8 @@ class TexturesDrawer(DeviceDrawer):
         self._content: TexturedContent | None = None
         self._bound: dict[int, tuple[ShownDraw, tuple | None] | Exception] = {}
         self._held: TexturedShape | None = None
+        # The part of each batch of the view drawn.
+        self._batch_parts: list[int] = []
 
     @staticmethod
     def _overlay(drawn: tuple) -> Overlay:
@@ -195,14 +198,15 @@ class TexturesDrawer(DeviceDrawer):
         content, shape = scene.content, scene.shape
         if content is not self._content:
             self._hold(content)
-        key = view.visible, view.size, view.vertex_colours
+        # Every part is held; frames draw the batches of those shown.
+        key = view.vertex_colours
         if self._drawn is None or self._drawn[0] != key:
             self._leave()
-            shown = {part.index: (part, self._bound[part.index]) for part in content.parts
-                     if part.index in view.visible}
+            shown = {part.index: (part, self._bound[part.index]) for part in content.parts}
             failures = {index: item for index, (_part, item) in shown.items() if isinstance(item, Exception)}
             steps = ordered([(item[0], (part, item[1])) for part, item in shown.values()
                              if not isinstance(item, Exception)])
+            self._batch_parts = [part.index for _states, (part, _texture) in steps]
             drawn = None
             if steps:
                 device = Resident(self._hardware)
@@ -215,16 +219,21 @@ class TexturesDrawer(DeviceDrawer):
                 self._held = shape
             self._drawn = (key, drawn, failures)
         _key, drawn, failures = self._drawn
-        if drawn is None:
+        failures = {index: item for index, item in failures.items() if index in view.visible}
+        seen = [batch for batch, index in enumerate(self._batch_parts) if index in view.visible]
+        if drawn is None or not seen:
             return TexturedFrame(view, False, failures)
         textures, overlay = drawn
+        if textures.size != tuple(view.size):
+            textures.resize(view.size)
+            overlay.resize(view.size, textures.depth)
         if shape is not self._held:
             textures.write(0, positions=shape.positions, normals=shape.normals, colours=shape.colours)
             self._held = shape
         camera = view.camera()
         device = textures.device
         if overlays.filled:
-            device.pending += textures.frame(camera, view.light, overlays.background, pattern=view.pattern)
+            device.pending += textures.frame(camera, view.light, overlays.background, seen, pattern=view.pattern)
         device.pending += self._shape.steps(overlay, textures.shown, overlays, camera, view.visible)
         device.flush()
         return TexturedFrame(view, True, failures)

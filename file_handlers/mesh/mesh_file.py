@@ -82,8 +82,12 @@ _CANONICAL_CONTRACTS = {
 
 
 class MeshLoadMode(str, Enum):
+    """SCENE reads what FULL reads without capturing the sections or checking the runtime contract, which
+    ``MeshFile.scene_contract`` checks once: as a meshlet mesh is read, before its chunks let go of their planes, any
+    other on ``MeshHandler.whole_mesh``'s first use. LIGHT and SCENE reads keep no meshlet chunk planes."""
     LIGHT = "light"
     FULL = "full"
+    SCENE = "scene"
 
     @classmethod
     def coerce(cls, value: "MeshLoadMode | str") -> "MeshLoadMode":
@@ -282,6 +286,22 @@ class Header:
     @property
     def gpu_buffer_base_offset(self) -> int:
         return self.vertices_offset
+
+    @property
+    def lod_flags(self) -> int:
+        """Byte 0x19 of the header: DD2's meshlet LOD writer keeps the file's thresholds of a mesh whose bit 1 is set
+        (docs/internals/meshlets.md, LODs)."""
+        layout = None if self.profile is None else self.profile.header_layout
+        if layout is MeshHeaderLayout.LEGACY:
+            word = self.lods_offset
+        elif layout is MeshHeaderLayout.RE4:
+            word = self.buffer_headers_offset
+        elif layout is MeshHeaderLayout.DD2:
+            word = self.light_map_metadata_raw
+        else:
+            # Wilds: the content flags' word at 0x16.
+            return self.content_flags_storage_raw >> 24 & 0xFF
+        return word >> 8 & 0xFF
 
     def _read_light_map_metadata(self, h: BinaryHandler) -> None:
         self.light_map_metadata_raw = h.read_uint32()
@@ -592,7 +612,7 @@ class MeshBufferPayload:
     uv2: array = field(default_factory=lambda: array("d"))
     colors: array = field(default_factory=lambda: array("B"))
     faces: array = field(default_factory=lambda: array("H"))
-    integer_faces: Optional[array] = None
+    integer_faces: Optional[array] = field(default_factory=lambda: None)
     skin_weights: Optional[SkinWeightBuffer] = None
     extra_skin_weights: Optional[SkinWeightBuffer] = None
     skin_weight_continuation_bytes: bytes = b""
@@ -623,6 +643,33 @@ class MeshBufferPayload:
     @property
     def tangent_handedness(self) -> array:
         return _decode_snorm8_array(self.tangent_ws)
+
+    def __getattr__(self, name: str):
+        # Only for a field not set: one ``release_planes`` let go of, made again and not kept.
+        rebuild = self.__dict__.get("_rebuild")
+        if rebuild is None or name not in MPLY_PAYLOAD_PLANES:
+            raise AttributeError(name)
+        return rebuild(name)
+
+    def release_planes(self, rebuild: Callable[[str], array],
+                       bounds: Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]]) -> None:
+        """Lets go of the MPLY payload's planes and faces: each asked for after is ``rebuild(name)``. ``bounds``, its
+        positions' least and greatest (None for none), are kept for ``position_bounds``."""
+        self.__dict__["_bounds"] = (0, None, None) if bounds is None else (
+            self.vertex_count, np.array(bounds[0], np.float64), np.array(bounds[1], np.float64))
+        for name in MPLY_PAYLOAD_PLANES:
+            self.__dict__.pop(name, None)
+        self.__dict__["_rebuild"] = rebuild
+
+    def position_bounds(self) -> tuple[int, np.ndarray | None, np.ndarray | None]:
+        """The vertex count and the positions' least and greatest, in float64; None for none."""
+        held = self.__dict__.get("_bounds")
+        if held is not None:
+            return held
+        positions = np.asarray(self.positions, np.float64).reshape(-1, 3)
+        if not len(positions):
+            return 0, None, None
+        return len(positions), positions.min(axis=0), positions.max(axis=0)
 
 
 def _attribute_view(
@@ -1226,6 +1273,8 @@ class MeshBuffer:
         self.mply_cluster_headers: List["MPLYClusterHeader"] = []
         self.mply_chunk_flags: List["MPLYChunkFlags"] = []
         self.mply_chunks: List["MPLYChunk"] = []
+        # The payload's positions' least and greatest as read (``fastmesh.mply_chunks``'s join), or None.
+        self.mply_position_bounds: Optional[Tuple[Tuple[float, ...], Tuple[float, ...]]] = None
 
     @property
     def extended_prefix_reserved_dwords(self) -> Tuple[int, int, int]:
@@ -2378,10 +2427,18 @@ class MPLYClusterCullingAABB:
         return tuple(value + self.half_extent for value in self.center)
 
 
-# Meshlet chunk header: center, vertex/face counts, material and part IDs, relative AABB, flags.
-_MPLY_CHUNK_HEADER = struct.Struct("<3f4B6HI")
-
-_ARRAY_DTYPES = {"f": np.float32, "d": np.float64, "B": np.uint8, "H": np.uint16, "I": np.uint32}
+# ``fastmesh.mply_chunks``'s integers of a chunk, by column: the header's, then where its blocks lie and their rows.
+(_C_VERTS, _C_FACES, _C_MATERIAL, _C_PART, _C_FLAGS) = range(5)
+(_C_FACE_PAD, _C_FACE_PAD_SIZE, _C_POS_PAD, _C_POS_PAD_SIZE, _C_MASK, _C_MASK_SIZE, _C_SKIN, _C_SKIN_SIZE,
+ _C_SEMANTIC_END, _C_END, _C_NORMAL_ROWS, _C_TANGENT_ROWS, _C_TANGENT_W_ROWS, _C_UV0_ROWS, _C_UV1_ROWS, _C_UV2_ROWS,
+ _C_COLORS, _C_MASK_BITS, _C_FIELDS) = range(11, 30)
+# Each native plane's row count column and values a row.
+_NATIVE_PLANE_SIZES = {
+    "positions": (_C_VERTS, 3), "faces": (_C_FACES, 3), "normals": (_C_NORMAL_ROWS, 3),
+    "normal_ws": (_C_NORMAL_ROWS, 1), "tangents": (_C_TANGENT_ROWS, 3), "tangent_ws": (_C_TANGENT_W_ROWS, 1),
+    "uv0": (_C_UV0_ROWS, 2), "uv1": (_C_UV1_ROWS, 2), "uv2": (_C_UV2_ROWS, 2), "colors": (_C_COLORS, 1),
+    "tangent_mask_bits": (_C_MASK_BITS, 1)}
+_NATIVE_INTEGER_PLANES = frozenset({"faces", "normal_ws", "tangent_ws", "colors", "tangent_mask_bits"})
 
 MPLY_VECTOR_PLANES = {"positions": 3, "normals": 3, "tangents": 3, "uv0": 2, "uv1": 2, "uv2": 2}
 MPLY_INTEGER_PLANES = ("faces", "colors", "normal_ws", "tangent_ws", "tangent_mask_bits")
@@ -2443,6 +2500,25 @@ class MPLYChunk:
                     and (value.dtype == np.float64 if name in MPLY_VECTOR_PLANES else value.dtype == np.int64)):
                 value = mply_plane(name, value)
         object.__setattr__(self, name, value)
+
+    def __getattr__(self, name: str):
+        # Only for an attribute not set: planes dropped by ``drop_planes``, decoded again.
+        dropped = self.__dict__.get("_dropped")
+        if dropped is None or name not in _MPLY_PLANES:
+            raise AttributeError(name)
+        source, start, end = dropped
+        decoded = source.chunk(start, end)
+        for plane in _MPLY_PLANES:
+            object.__setattr__(self, plane, getattr(decoded, plane))
+        del self.__dict__["_dropped"]
+        return self.__dict__[name]
+
+    def drop_planes(self, source: "_ChunkPlanes", start: int, end: Optional[int]) -> None:
+        """Lets go of the decoded planes; the first asked for decodes them all again from ``source``, the chunk's
+        bytes from ``start`` to ``end``, as read."""
+        for plane in _MPLY_PLANES:
+            self.__dict__.pop(plane, None)
+        self.__dict__["_dropped"] = (source, start, end)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, MPLYChunk):
@@ -2700,216 +2776,19 @@ class MPLYMeshletPartsLayout:
 
 
 class MPLYParser:
-    def __init__(self, header: Header, data: bytes, streaming_data: Optional[bytes] = None):
+    def __init__(self, header: Header, data: bytes, streaming_data: Optional[bytes] = None, origin: int = 0):
+        """``origin``: where ``data`` starts in the mesh file, which chunk padding aligns in."""
         self.header = header
         self.profile = header.profile
         self.data = data
+        self.origin = origin
         self.streaming_data = streaming_data
         self.h = BinaryHandler(data)
+        # Each chunk's (start, end) as ``parse`` read it.
+        self.chunk_spans: List[Tuple[int, Optional[int]]] = []
         self.layout: Optional[MPLYMeshletLayout] = None
         self.bvh: Optional[MPLYMeshletBVH] = None
         self.group_pivots: Optional[GroupPivotData] = None
-
-    @staticmethod
-    def _position_size(flags: MPLYChunkFlags) -> int:
-        if flags.position_compress_level == 1:
-            return 4
-        if flags.position_compress_level >= 2:
-            return 3
-        return 6
-
-    @staticmethod
-    def _shared_count(is_compressed: bool, vert_count: int) -> int:
-        return 1 if is_compressed else vert_count
-
-    @staticmethod
-    def _aligned(pos: int, size: int = 4) -> int:
-        return pos + ((size - (pos % size)) % size)
-
-    @staticmethod
-    def _decode_normal_block(
-        data: bytes,
-        flags: MPLYChunkFlags,
-        vert_count: int,
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-        stride = 4 if flags.is_meshlet_no_tangent else 8
-        shared_count = 1 if flags.is_meshlet_compressed_normal else vert_count
-        expected_size = shared_count * stride
-        if len(data) != expected_size:
-            raise ValueError(
-                "MPLY normal/tangent block size does not match its flag-owned "
-                f"record count ({len(data)} != {expected_size})"
-            )
-        raw = np.frombuffer(data, np.int8).reshape(shared_count, stride)
-        normals = np.maximum(raw[:, :3].astype(np.float64) / 127.0, -1.0)
-        normal_ws = raw[:, 3].view(np.uint8).astype(np.int64)
-        if flags.is_meshlet_no_tangent:
-            tangents = np.ones((shared_count, 3))
-            tangent_ws = np.full(shared_count, 127, np.int64)
-        else:
-            tangents = np.maximum(raw[:, 4:7].astype(np.float64) / 127.0, -1.0)
-            tangent_ws = raw[:, 7].view(np.uint8).astype(np.int64)
-        if shared_count == 1 and vert_count > 1:
-            normals, normal_ws, tangents, tangent_ws = (
-                np.repeat(plane, vert_count, axis=0) for plane in (normals, normal_ws, tangents, tangent_ws)
-            )
-        return normals, normal_ws, tangents, tangent_ws
-
-    @staticmethod
-    def _decode_mhwilds_tangent_handedness(
-        flags: MPLYChunkFlags,
-        vert_count: int,
-        tangent_mask_bits: Sequence[int],
-    ) -> np.ndarray:
-        if flags.is_meshlet_compressed_texcoord1:
-            return np.zeros(vert_count, np.int64)
-        if flags.tangent_handedness_mode == 2:
-            if len(tangent_mask_bits) != vert_count:
-                raise ValueError(
-                    "Wilds MPLY tangent mask does not match its vertex count"
-                )
-            return np.where(np.asarray(tangent_mask_bits, dtype=bool), 0x81, 0x7F).astype(np.int64)
-        value = 0x7F if flags.tangent_handedness_mode == 0 else 0x81
-        return np.full(vert_count, value, np.int64)
-
-    @staticmethod
-    def _decode_color_block(data: bytes, is_compressed: bool, vert_count: int) -> np.ndarray:
-        count = 1 if is_compressed else vert_count
-        expected_size = count * 4
-        if len(data) != expected_size:
-            raise ValueError(
-                "MPLY color block size does not match its flag-owned record "
-                f"count ({len(data)} != {expected_size})"
-            )
-        colors = np.frombuffer(data, np.uint8).astype(np.int64)
-        if count == 1 and vert_count > 1:
-            colors = np.tile(colors, vert_count)
-        return colors
-
-    @staticmethod
-    def _decode_uv_block(data: bytes, is_compressed: bool, vert_count: int) -> np.ndarray:
-        count = 1 if is_compressed else vert_count
-        expected_size = count * 4
-        if len(data) != expected_size:
-            raise ValueError(
-                "MPLY UV block size does not match its flag-owned record "
-                f"count ({len(data)} != {expected_size})"
-            )
-        uvs = np.frombuffer(data, "<f2").astype(np.float64).reshape(-1, 2)
-        if count == 1 and vert_count > 1:
-            uvs = np.repeat(uvs, vert_count, axis=0)
-        return uvs
-
-    def _read_uv_block(self, is_compressed: bool, vert_count: int) -> np.ndarray:
-        count = self._shared_count(is_compressed, vert_count)
-        return self._decode_uv_block(self.h.read_bytes(count * 4), is_compressed, vert_count)
-
-    @staticmethod
-    def _decode_positions(
-        data: bytes,
-        vert_count: int,
-        flags: MPLYChunkFlags,
-        center: Tuple[float, float, float],
-        relative_aabb: Tuple[float, float, float, float, float, float],
-        profile: MeshGameProfile | MeshMainVersion | int,
-    ) -> np.ndarray:
-        """Same operation order as the shaders' decode."""
-        profile = coerce_mesh_profile(profile)
-        expected_size = vert_count * MPLYParser._position_size(flags)
-        if len(data) != expected_size:
-            raise ValueError(
-                "MPLY position block size does not match its serialized vertex "
-                f"count ({len(data)} != {expected_size})"
-            )
-        if profile.meshlet_uses_centered_exponent_position_decode:
-            # Wilds splits the exponent: bits 16-23 relative AABB, bits 24-31 vertex delta; both bias 143.
-            position_unit = math.ldexp(
-                1.0,
-                flags.position_scale_exponent - 143,
-            )
-            relative_aabb_unit = math.ldexp(
-                1.0,
-                flags.relative_aabb_scale_exponent - 143,
-            )
-            relative_base = (
-                center[0] + (relative_aabb[0] - 32768) * relative_aabb_unit,
-                center[1] + (relative_aabb[2] - 32768) * relative_aabb_unit,
-                center[2] + (relative_aabb[4] - 32768) * relative_aabb_unit,
-            )
-            if flags.position_compress_level == 0:
-                raw_positions = np.frombuffer(data, "<u2").reshape(vert_count, 3).astype(np.int64)
-                base = (
-                    relative_base
-                    if profile.meshlet_uses_dual_exponent_position_decode
-                    else center
-                )
-                return np.asarray(base, np.float64) + (raw_positions - 32768) * position_unit
-
-            if flags.position_compress_level == 1:
-                raw_positions = MPLYParser._unpack_10bit(data, vert_count)
-                midpoint = 512
-            else:
-                # Levels 2 and 3 share the same three-byte shader path.
-                raw_positions = np.frombuffer(data, np.uint8).reshape(vert_count, 3).astype(np.int64)
-                midpoint = 128
-            return np.asarray(relative_base, np.float64) + (raw_positions - midpoint) * position_unit
-
-        if flags.use_24bit_pos:
-            pos_array = np.frombuffer(data, np.uint8).reshape(vert_count, 3).astype(np.int64) / 255.0
-        elif flags.use_32bit_pos:
-            inv_10bit = 1.0 / 1023.0
-            pos_array = MPLYParser._unpack_10bit(data, vert_count) * inv_10bit
-        else:
-            pos_array = np.frombuffer(data, "<u2").reshape(vert_count, 3).astype(np.int64) / 65535.0
-
-        if not profile.meshlet_has_wilds_layout:
-            scale_byte = (flags.raw >> 16) & 0xFF
-            scale = math.ldexp(1.0, scale_byte - 127)
-            return (pos_array - 0.5) * scale + np.asarray(center, np.float64)
-
-        # Credit: shadowcookie for the compressed position decode.
-        div_byte = (flags.raw >> 24) & 0xFF
-        mult_byte = (flags.raw >> 16) & 0xFF
-        scale = math.ldexp(1.0, div_byte - 127)
-        offset = math.ldexp(1.0, mult_byte - div_byte)
-
-        offset_terms = (
-            ((relative_aabb[0] / 65535.0) - 0.5) * offset,
-            ((relative_aabb[2] / 65535.0) - 0.5) * offset,
-            ((relative_aabb[4] / 65535.0) - 0.5) * offset,
-        )
-
-        if flags.use_24bit_pos:
-            quant_scale = 1.0 / 256.0
-        elif flags.use_32bit_pos:
-            quant_scale = 1.0 / 64.0
-        else:
-            quant_scale = 1.0
-        
-        return (((pos_array - 0.5) * quant_scale) + np.asarray(offset_terms, np.float64)) * scale + np.asarray(
-            center, np.float64
-        )
-
-    @staticmethod
-    def _unpack_10bit(data: bytes, vert_count: int) -> np.ndarray:
-        packed = np.frombuffer(data, "<u4")[:vert_count].astype(np.int64)
-        return np.stack((packed & 0x3FF, (packed >> 10) & 0x3FF, (packed >> 20) & 0x3FF), axis=1)
-
-    @staticmethod
-    def _decode_cluster_aabb(
-        position_origin: Tuple[float, float, float],
-        encoded: Tuple[int, int, int, int, int, int],
-        flags: MPLYChunkFlags,
-    ) -> MPLYClusterAABB:
-        unit = math.ldexp(1.0, flags.relative_aabb_scale_exponent - 143)
-        quantized_center = (encoded[0], encoded[2], encoded[4])
-        quantized_extent = (encoded[1], encoded[3], encoded[5])
-        center = tuple(
-            origin + (value - 32768) * unit
-            for origin, value in zip(position_origin, quantized_center)
-        )
-        half_extent = tuple(value * unit for value in quantized_extent)
-        return MPLYClusterAABB(center=center, half_extent=half_extent)
 
     def _read_wilds_group_pivot_info(
         self,
@@ -3129,156 +3008,95 @@ class MPLYParser:
         )
         return blob_base, blob_size, lod_offsets[:lod_num]
 
+    def _native_options(self) -> tuple[int, ...]:
+        profile = self.profile
+        return tuple(int(bool(value)) for value in (
+            profile.meshlet_uses_centered_exponent_position_decode,
+            profile.meshlet_uses_dual_exponent_position_decode, profile.meshlet_has_wilds_layout,
+            profile.meshlet_uses_legacy_flag_bits, profile.meshlet_uses_pragmata_flag_bits,
+            profile.meshlet_uses_mhwilds_tangent_handedness,
+            profile.meshlet_position_alignment_padding_is_corpus_zero,
+            profile.meshlet_chunk_payload_is_fully_decoded, profile.meshlet_skin_before_texcoord3))
 
-    def _read_skin_stream(self, flags, vert_count: int):
-        skin_count = self._shared_count(flags.skin_stream_is_shared, vert_count)
-        skin_record_bytes = self.h.read_bytes(skin_count * 16)
-        skin_is_shared = skin_count == 1 and vert_count > 1
-        expanded_skin = skin_record_bytes * vert_count if skin_is_shared else skin_record_bytes
-        return (
-            skin_record_bytes,
-            skin_is_shared,
-            _decode_skin_weights(memoryview(expanded_skin), vert_count, self.profile),
-        )
+    def _decoded(self, spans: Sequence[Tuple[int, Optional[int]]], *, planes: bool, joined: bool) -> tuple:
+        return ensure_fastmesh().mply_chunks(
+            self.data, self.origin, [(start, -1 if end is None else end) for start, end in spans],
+            self._native_options(), self.profile.display_name, planes, joined)
 
-    def _parse_chunk(self, start: int, end: Optional[int] = None) -> MPLYChunk:
-        if not 0 <= start < len(self.data):
-            raise ValueError(f"Invalid MPLY chunk start {start}")
-        if end is not None and not start < end <= len(self.data):
-            raise ValueError(f"Invalid MPLY chunk range [{start}, {end})")
-        self.h.seek(start)
-        if len(self.data) - start >= _MPLY_CHUNK_HEADER.size:
-            header = _MPLY_CHUNK_HEADER.unpack(self.h.read_bytes(_MPLY_CHUNK_HEADER.size))
-            center, (vert_count, face_count, material_id, part_id) = header[:3], header[3:7]
-            relative_aabb, raw_flags = header[7:13], header[13]
-        else:  # truncated: the field-by-field reads report where the data ends
-            center = tuple(self.h.read_vec3())
-            vert_count = self.h.read_uint8()
-            face_count = self.h.read_uint8()
-            material_id = self.h.read_uint8()
-            part_id = self.h.read_uint8()
-            relative_aabb = tuple(self.h.read_uint16() for _ in range(6))
-            raw_flags = self.h.read_uint32()
-        flags = MPLYChunkFlags.read(raw_flags, self.profile)
-        cluster_aabb = self._decode_cluster_aabb(center, relative_aabb, flags)
+    def _parse_chunks(self, spans: Sequence[Tuple[int, Optional[int]]], *, joined: bool = False
+                      ) -> Tuple[List["MPLYChunk"], Optional[ValueError], Optional[dict]]:
+        """The chunks of ``spans`` as far as the first that fails to decode, that failure, and with ``joined`` the
+        payload's fields when all decode."""
+        count, failure, ints, floats, planes, fields = self._decoded(spans, planes=True, joined=joined)
+        rows = np.frombuffer(ints, np.int64).reshape(count, _C_FIELDS)
+        plane = {name: np.frombuffer(data, np.int64 if name in _NATIVE_INTEGER_PLANES else np.float64)
+                 for name, data in planes.items()}
+        # Each chunk's rows of each plane: vector planes by row, the others flat.
+        views = {}
+        for name, (column, width) in _NATIVE_PLANE_SIZES.items():
+            vector = name in MPLY_VECTOR_PLANES
+            held = plane[name].reshape(-1, width) if vector else plane[name]
+            ends = np.cumsum(rows[:, column] if vector else rows[:, column] * width).tolist()
+            views[name] = [held[start:end] for start, end in zip([0, *ends], ends)]
+        boxes = plane["boxes"].reshape(count, 6).tolist()
+        data = memoryview(self.data)
 
-        faces = np.frombuffer(self.h.read_bytes(face_count * 3), np.uint8).astype(np.int64)
-        face_padding_size = self._aligned(self.h.tell) - self.h.tell
-        face_alignment_padding = self.h.read_bytes(face_padding_size)
-        positions = self._decode_positions(
-            self.h.read_bytes(vert_count * self._position_size(flags)),
-            vert_count,
-            flags,
-            center,
-            relative_aabb,
-            self.profile,
-        )
-        position_padding_size = self._aligned(self.h.tell) - self.h.tell
-        position_alignment_padding = self.h.read_bytes(position_padding_size)
-        if (
-            self.profile.meshlet_position_alignment_padding_is_corpus_zero
-            and any(position_alignment_padding)
-        ):
-            raise ValueError(
-                f"{self.profile.display_name} MPLY position alignment padding "
-                "is nonzero"
-            )
+        def held(start: int, size: int) -> bytes:
+            return bytes(data[start:start + size]) if size else b""
+        made = []
+        for number, values in enumerate(rows.tolist()):
+            verts = values[_C_VERTS]
+            skin_record, skin_weights, shared = b"", None, False
+            if values[_C_SKIN] >= 0:
+                skin_record = bytes(data[values[_C_SKIN]:values[_C_SKIN] + values[_C_SKIN_SIZE]])
+                shared = values[_C_SKIN_SIZE] == 16 and verts > 1
+                skin_weights = _decode_skin_weights(memoryview(skin_record * verts if shared else skin_record),
+                                                    verts, self.profile)
+            box = boxes[number]
+            chunk = object.__new__(MPLYChunk)
+            chunk.__dict__.update(
+                vert_count=verts, positions=views["positions"][number], faces=views["faces"][number],
+                normals=views["normals"][number], uv0=views["uv0"][number], uv1=views["uv1"][number],
+                uv2=views["uv2"][number], colors=views["colors"][number], normal_ws=views["normal_ws"][number],
+                tangents=views["tangents"][number], tangent_ws=views["tangent_ws"][number],
+                material_id=values[_C_MATERIAL], part_id=values[_C_PART],
+                flags=MPLYChunkFlags.read(values[_C_FLAGS], self.profile), skin_record_bytes=skin_record,
+                skin_weights=skin_weights, skin_is_shared=shared,
+                cluster_aabb=MPLYClusterAABB(center=tuple(box[:3]), half_extent=tuple(box[3:])),
+                tangent_mask_bytes=b"" if values[_C_MASK] < 0 else held(values[_C_MASK], values[_C_MASK_SIZE]),
+                tangent_mask_bits=views["tangent_mask_bits"][number],
+                face_alignment_padding=held(values[_C_FACE_PAD], values[_C_FACE_PAD_SIZE]),
+                position_alignment_padding=held(values[_C_POS_PAD], values[_C_POS_PAD_SIZE]),
+                trailing_payload=held(values[_C_SEMANTIC_END], values[_C_END] - values[_C_SEMANTIC_END]), lod_index=0,
+                no_ray_tracing=False, alpha_test=False, transparent=False, meshlet_material_flag_extension=False)
+            made.append(chunk)
+        return made, None if failure is None else ValueError(failure), fields
 
-        normal_count = self._shared_count(flags.is_meshlet_compressed_normal, vert_count)
-        normal_stride = 4 if flags.is_meshlet_no_tangent else 8
-        normals, normal_ws, tangents, tangent_ws = self._decode_normal_block(
-            self.h.read_bytes(normal_count * normal_stride),
-            flags,
-            vert_count,
-        )
+    def _parse_chunk(self, start: int, end: Optional[int] = None) -> "MPLYChunk":
+        chunks, failure, _fields = self._parse_chunks([(start, end)])
+        if failure is not None:
+            raise failure
+        return chunks[0]
 
-        tangent_mask_bytes = b""
-        tangent_mask_bits = np.zeros(0, np.int64)
-        if flags.has_tangent_bits_block and (
-            not self.profile.meshlet_uses_pragmata_flag_bits
-            or flags.is_meshlet_no_tangent
-        ):
-            tangent_mask_bytes = self.h.read_bytes(((vert_count + 31) // 32) * 4)
-            tangent_mask_bits = np.unpackbits(
-                np.frombuffer(tangent_mask_bytes, np.uint8), bitorder="little"
-            )[:vert_count].astype(np.int64)
+    def joined_payload(self, spans: Sequence[Tuple[int, Optional[int]]]) -> dict:
+        """The payload's fields of the chunks of ``spans``, joined, without decoding them as chunks."""
+        _count, failure, _ints, _floats, _planes, fields = self._decoded(spans, planes=False, joined=True)
+        if failure is not None:
+            raise ValueError(failure)
+        return fields
 
-        if (
-            self.profile.meshlet_uses_mhwilds_tangent_handedness
-            and flags.is_meshlet_no_tangent
-        ):
-            tangents = np.zeros((0, 3))
-            tangent_ws = self._decode_mhwilds_tangent_handedness(
-                flags,
-                vert_count,
-                tangent_mask_bits,
-            )
-
-        uv0 = self._read_uv_block(flags.is_meshlet_compressed_texcoord1, vert_count)
-        uv1 = (
-            self._read_uv_block(flags.is_meshlet_compressed_texcoord2, vert_count)
-            if flags.is_meshlet_use_texcoord2 else np.zeros((0, 2))
-        )
-
-        # DD2's meshlet shader reads the 16-byte skin stream between texcoord2 and texcoord3.
-        skin_before_texcoord3 = self.profile.meshlet_skin_before_texcoord3
-        skin_record_bytes = b""
-        skin_weights: Optional[SkinWeightBuffer] = None
-        skin_is_shared = False
-        if skin_before_texcoord3 and flags.has_skin_stream:
-            skin_record_bytes, skin_is_shared, skin_weights = self._read_skin_stream(flags, vert_count)
-
-        uv2 = (
-            self._read_uv_block(flags.is_meshlet_compressed_texcoord3, vert_count)
-            if flags.is_meshlet_use_texcoord3 else np.zeros((0, 2))
-        )
-
-        colors = np.zeros(0, np.int64)
-        if flags.is_meshlet_use_vertex_color:
-            color_count = self._shared_count(flags.is_meshlet_compressed_vertex_color, vert_count)
-            colors = self._decode_color_block(self.h.read_bytes(color_count * 4), flags.is_meshlet_compressed_vertex_color, vert_count)
-
-        if not skin_before_texcoord3 and flags.has_skin_stream:
-            skin_record_bytes, skin_is_shared, skin_weights = self._read_skin_stream(flags, vert_count)
-
-        semantic_end = self.h.tell
-        if end is None:
-            end = semantic_end
-        if semantic_end > end:
-            raise ValueError(f"MPLY chunk data exceeds its boundary at {end}")
-        trailing_payload = bytes(memoryview(self.data)[semantic_end:end])
-        if self.profile.meshlet_chunk_payload_is_fully_decoded and trailing_payload:
-            raise ValueError(
-                f"{self.profile.display_name} MPLY chunk has "
-                f"{len(trailing_payload)} unparsed payload "
-                f"bytes before boundary {end}"
-            )
-        self.h.seek(end)
-        return MPLYChunk(
-            vert_count=vert_count,
-            positions=positions,
-            faces=faces,
-            normals=normals,
-            normal_ws=normal_ws,
-            tangents=tangents,
-            tangent_ws=tangent_ws,
-            uv0=uv0,
-            uv1=uv1,
-            uv2=uv2,
-            colors=colors,
-            material_id=material_id,
-            part_id=part_id,
-            flags=flags,
-            skin_record_bytes=skin_record_bytes,
-            skin_weights=skin_weights,
-            skin_is_shared=skin_is_shared,
-            cluster_aabb=cluster_aabb,
-            tangent_mask_bytes=tangent_mask_bytes,
-            tangent_mask_bits=tangent_mask_bits,
-            face_alignment_padding=face_alignment_padding,
-            position_alignment_padding=position_alignment_padding,
-            trailing_payload=trailing_payload,
-        )
+    def _chunk_span(self, blob_base: int, chunk_offsets: Sequence[int], chunk_index: int, region_end: Optional[int],
+                    boundaries: Sequence[int]) -> Tuple[int, Optional[int]]:
+        chunk_offset = chunk_offsets[chunk_index]
+        start = blob_base + chunk_offset
+        if chunk_index + 1 < len(chunk_offsets):
+            return start, blob_base + chunk_offsets[chunk_index + 1]
+        if region_end is not None:
+            # Wilds/RE9 serialize the final boundary explicitly.
+            return start, region_end
+        if self.profile.meshlet_chunk_payload_is_fully_decoded:
+            return start, None
+        return start, blob_base + boundaries[bisect_right(boundaries, chunk_offset)]
 
     def _read_cluster_headers(self) -> List[List[MPLYClusterHeader]]:
         if not self.header.meshlet_bvh_offset:
@@ -3454,15 +3272,8 @@ class MPLYParser:
         ]
         mesh_buffer.mply_chunk_flags = []
         lods: List[MeshLOD] = []
-        planes: Dict[str, List[np.ndarray]] = {
-            name: [] for name in ("positions", "normals", "normal_ws", "tangents", "tangent_ws",
-                                  "uv0", "uv1", "uv2", "colors", "faces")
-        }
-        tangents_seen = False
         face_total = 0
         all_skin_record_bytes = bytearray()
-        uv1_complete = True
-        uv2_complete = True
         skin_complete = True
         vertex_base = 0
 
@@ -3495,6 +3306,19 @@ class MPLYParser:
             | {off for off in lod_offsets if off}
             | {blob_size}
         )
+        spans: List[Tuple[int, Optional[int]]] = []
+        try:
+            for lod_index, chunk_offsets in enumerate(lod_chunk_offsets):
+                if chunk_offsets is None:
+                    continue
+                if len(cluster_headers[lod_index]) != len(chunk_offsets):
+                    break
+                for chunk_index in range(len(chunk_offsets)):
+                    spans.append(self._chunk_span(blob_base, chunk_offsets, chunk_index, lod_region_ends[lod_index],
+                                                  compatibility_boundaries))
+        except IndexError:
+            pass
+        decoded, decode_failure, fields = self._parse_chunks(spans, joined=True)
         for lod_index, chunk_offsets in enumerate(lod_chunk_offsets):
             if chunk_offsets is None:
                 continue
@@ -3510,19 +3334,13 @@ class MPLYParser:
             for chunk_index, (chunk_offset, cluster_header) in enumerate(
                 zip(chunk_offsets, lod_cluster_headers)
             ):
-                start = blob_base + chunk_offset
-                if chunk_index + 1 < len(chunk_offsets):
-                    end: Optional[int] = blob_base + chunk_offsets[chunk_index + 1]
-                elif lod_region_ends[lod_index] is not None:
-                    # Wilds/RE9 serialize the final boundary explicitly.
-                    end = lod_region_ends[lod_index]
-                elif self.profile.meshlet_chunk_payload_is_fully_decoded:
-                    end = None
-                else:
-                    end = blob_base + compatibility_boundaries[
-                        bisect_right(compatibility_boundaries, chunk_offset)
-                    ]
-                chunk = self._parse_chunk(start, end)
+                start, end = self._chunk_span(blob_base, chunk_offsets, chunk_index, lod_region_ends[lod_index],
+                                              compatibility_boundaries)
+                taken = len(self.chunk_spans)
+                if taken >= len(decoded):
+                    raise decode_failure
+                chunk = decoded[taken]
+                self.chunk_spans.append((start, end))
                 chunk.lod_index = lod_index
                 chunk.no_ray_tracing = cluster_header.no_ray_tracing
                 chunk.alpha_test = cluster_header.alpha_test
@@ -3558,36 +3376,12 @@ class MPLYParser:
                             f"MPLY LOD {lod_index} chunk {chunk_index}: "
                             "companion topology disagrees with raster/no-RT policy"
                         )
-                planes["positions"].append(chunk.positions)
-                planes["normals"].append(chunk.normals)
-                planes["normal_ws"].append(chunk.normal_ws)
-                if len(chunk.tangents):
-                    if not tangents_seen and vertex_base:
-                        planes["tangents"].append(np.zeros((vertex_base, 3)))
-                    tangents_seen = True
-                    planes["tangents"].append(chunk.tangents)
-                elif tangents_seen:
-                    planes["tangents"].append(np.zeros((chunk.vert_count, 3)))
-                planes["tangent_ws"].append(chunk.tangent_ws)
-                planes["uv0"].append(chunk.uv0)
-                if len(chunk.uv1):
-                    planes["uv1"].append(chunk.uv1)
-                else:
-                    uv1_complete = False
-                if len(chunk.uv2):
-                    planes["uv2"].append(chunk.uv2)
-                else:
-                    uv2_complete = False
-                planes["colors"].append(
-                    chunk.colors if len(chunk.colors) else np.full(4 * chunk.vert_count, 255, np.int64)
-                )
                 if chunk.skin_record_bytes:
                     all_skin_record_bytes.extend(
                         chunk.skin_record_bytes * (chunk.vert_count if chunk.skin_is_shared else 1))
                 else:
                     skin_complete = False
                 face_offset = face_total
-                planes["faces"].append(chunk.faces)
                 face_total += len(chunk.faces)
                 group = groups_by_part_id.get(cluster_header.part_id)
                 if group is None:
@@ -3622,28 +3416,13 @@ class MPLYParser:
                 self.profile,
             )
 
-        def joined(name: str, typecode: str) -> array:
-            values = array(typecode)
-            if planes[name]:
-                values.frombytes(np.concatenate([plane.ravel() for plane in planes[name]]).astype(
-                    _ARRAY_DTYPES[typecode]).tobytes())
-            return values
-
         mesh_buffer.has_32bit_indices = True
+        mesh_buffer.mply_position_bounds = fields["bounds"]
         mesh_buffer.buffer_payloads[0] = MeshBufferPayload(
             vertex_count=vertex_base,
-            positions=joined("positions", "f"),
-            normals=joined("normals", "f"),
-            normal_ws=joined("normal_ws", "B"),
-            tangents=joined("tangents", "f"),
-            tangent_ws=joined("tangent_ws", "B"),
-            uv0=joined("uv0", "d"),
-            uv1=joined("uv1", "d") if uv1_complete else array("d"),
-            uv2=joined("uv2", "d") if uv2_complete else array("d"),
-            colors=joined("colors", "B"),
             faces=array("H"),
-            integer_faces=joined("faces", "I"),
             skin_weights=mply_skin_weights,
+            **_payload_arrays(fields),
         )
         mesh_data = MeshData(mesh_buffer)
         mesh_data.lods = lods
@@ -3653,6 +3432,39 @@ class MPLYParser:
         }
         mesh_data.material_count = max(material_ids) + 1 if material_ids else 0
         return mesh_buffer, [mesh_data]
+
+
+MPLY_PAYLOAD_PLANES = {"positions": ("positions", "f"), "normals": ("normals", "f"), "normal_ws": ("normal_ws", "B"),
+                       "tangents": ("tangents", "f"), "tangent_ws": ("tangent_ws", "B"), "uv0": ("uv0", "d"),
+                       "uv1": ("uv1", "d"), "uv2": ("uv2", "d"), "colors": ("colors", "B"),
+                       "integer_faces": ("faces", "I")}
+
+
+def _payload_arrays(fields: dict) -> dict:
+    """``fastmesh.mply_chunks``'s joined fields as the payload's arrays."""
+    made = {}
+    for name, (_plane, typecode) in MPLY_PAYLOAD_PLANES.items():
+        made[name] = array(typecode)
+        made[name].frombytes(fields[name])
+    return made
+
+
+class _ChunkPlanes:
+    __slots__ = ("header", "layout")
+
+    def __init__(self, header: Header, layout: MPLYMeshletLayout):
+        self.header, self.layout = header, layout
+
+    def chunk(self, start: int, end: Optional[int]) -> MPLYChunk:
+        origin = self.layout.gpu_meshlet_offset
+        return MPLYParser(self.header, self.layout.gpu_data, origin=origin)._parse_chunk(
+            start - origin, None if end is None else end - origin)
+
+    def joined(self, spans: Sequence[Tuple[int, Optional[int]]]) -> dict:
+        """The payload's fields of the chunks at ``spans`` of the file, joined."""
+        origin = self.layout.gpu_meshlet_offset
+        return MPLYParser(self.header, self.layout.gpu_data, origin=origin).joined_payload(
+            [(start - origin, None if end is None else end - origin) for start, end in spans])
 
 
 def joint_name(mesh, joint):
@@ -3724,6 +3536,7 @@ class MeshFile:
         self.source_size = 0
         self.sections: Dict[str, MeshSectionRecord] = {}
         self.semantic_notes: List[MeshSemanticNote] = []
+        self._scene_contract: Optional[Tuple[bool, str]] = None
 
     @property
     def profile(self) -> Optional[MeshGameProfile]:
@@ -3731,7 +3544,7 @@ class MeshFile:
 
     @property
     def is_full(self) -> bool:
-        return self.load_mode is MeshLoadMode.FULL
+        return self.load_mode is not MeshLoadMode.LIGHT
 
     def _canonical_contract_check(self, kind: str):
         contract = getattr(self.profile, "canonical_import_contract", None)
@@ -3745,6 +3558,34 @@ class MeshFile:
         check = self._canonical_contract_check("runtime_contract")
         if check is not None:
             check(self)
+
+    def scene_contract(self) -> Tuple[bool, str]:
+        """A SCENE read's runtime contract, checked once: whether it holds, and the error's text if not."""
+        if self._scene_contract is None:
+            try:
+                self.assert_runtime_contract()
+                self._scene_contract = True, ""
+            except ValueError as exc:
+                self._scene_contract = False, str(exc)
+        return self._scene_contract
+
+    def release_payload_planes(self) -> None:
+        """For a reader done with the payload's planes (the scene, once it made its mesh of them): a SCENE or LIGHT
+        read of MPLY lets them go, and each asked for after is decoded again from the meshlet blob, not kept."""
+        if self.load_mode is MeshLoadMode.FULL or self.mesh_buffer is None or not self.mesh_buffer.mply_chunks:
+            return
+        source = _ChunkPlanes(self.header, self.mesh_buffer.meshlet_layout)
+        spans = tuple(chunk.__dict__["_dropped"][1:] for chunk in self.mesh_buffer.mply_chunks)
+
+        def rebuild(name: str) -> array:
+            return _payload_arrays(source.joined(spans))[name]
+        # Read, so the bounds the read joined: no reader changes a SCENE or LIGHT read's planes.
+        self.mesh_buffer.buffer_payloads[0].release_planes(rebuild, self.mesh_buffer.mply_position_bounds)
+
+    def _drop_meshlet_planes(self, spans: Sequence[Tuple[int, Optional[int]]]) -> None:
+        source = _ChunkPlanes(self.header, self.mesh_buffer.meshlet_layout)
+        for chunk, (start, end) in zip(self.mesh_buffer.mply_chunks, spans, strict=True):
+            chunk.drop_planes(source, start, end)
 
     def assert_import_safe(self) -> None:
         if self.profile is None or not any(
@@ -4918,6 +4759,7 @@ class MeshFile:
     ) -> bool:
         self._reset_state(MeshLoadMode.coerce(load_mode))
         self.source_size = len(data)
+        meshlet_spans: List[Tuple[int, Optional[int]]] = []
 
         h = BinaryHandler(data, file_version=file_version)
         if not self.header.read(
@@ -4926,7 +4768,7 @@ class MeshFile:
         ):
             raise ValueError("Not a mesh file")
         sorted_offsets = self._collect_section_offsets(len(data))
-        if self.is_full:
+        if self.load_mode is MeshLoadMode.FULL:
             self._capture_sections(data, sorted_offsets)
 
         if self.header.profile.header_layout is MeshHeaderLayout.LEGACY:
@@ -4998,11 +4840,9 @@ class MeshFile:
         if self.header.magic == MPLY_MAGIC and self.header.mesh_offset:
             if streaming_data is None and streaming_data_loader is not None:
                 streaming_data = streaming_data_loader()
-            self.mesh_buffer, self.meshes = MPLYParser(
-                self.header,
-                data,
-                streaming_data=streaming_data,
-            ).parse()
+            parser = MPLYParser(self.header, data, streaming_data=streaming_data)
+            self.mesh_buffer, self.meshes = parser.parse()
+            meshlet_spans = parser.chunk_spans
             self.streaming_data_loaded = bool(streaming_data) and self.streaming_buffer_count > 0
             self.group_pivots = self.mesh_buffer.mply_group_pivots
             parts_layout = self.mesh_buffer.meshlet_parts_layout
@@ -5016,7 +4856,7 @@ class MeshFile:
                         int(parts_layout.parts_indices_offset),
                     }
                 )
-                if self.is_full:
+                if self.load_mode is MeshLoadMode.FULL:
                     self._capture_sections(data, sorted_offsets)
         elif self.header.mesh_offset:
             h.seek(self.header.mesh_offset)
@@ -5276,10 +5116,14 @@ class MeshFile:
                     f"vertex_attribute_{raw_type}",
                     "Unknown vertex attribute bytes are preserved verbatim.",
                 )
-        if self.is_full:
+        if self.load_mode is MeshLoadMode.FULL:
             self.assert_runtime_contract()
         self._note_structural_semantics()
         self._release_lightweight_raw_buffers()
+        if meshlet_spans and self.load_mode is not MeshLoadMode.FULL:
+            if self.load_mode is MeshLoadMode.SCENE:
+                self.scene_contract()
+            self._drop_meshlet_planes(meshlet_spans)
         # The streaming companion is read only during this read; keeping the handler's reader would put the handler (a
         # Qt object) in a reference cycle.
         if self.mesh_buffer is not None:

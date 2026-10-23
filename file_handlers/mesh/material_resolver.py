@@ -118,6 +118,7 @@ def _drawn_document(data: bytes, profile: MmtrGameProfile, label: str):
 
 
 _MDF_PARSE_POOL: ProcessPoolExecutor | None = None
+_MDF_START_FAILURE: Exception | None = None
 _MDF_PARSES: dict[tuple[str, int, bytes], Future] = {}
 _MDF_PARSES_LIMIT = 1024
 _MDF_PARSES_LOCK = RLock()
@@ -128,6 +129,14 @@ _SKINNING_CONTRACTS_LIMIT = 256
 
 def _content_fingerprint(data: bytes) -> tuple[int, bytes]:
     return len(data), blake2b(data, digest_size=16).digest()
+
+
+def _start_mdf_worker() -> None:
+    configure_garbage_collector()
+
+
+def _new_mdf_parse_pool() -> ProcessPoolExecutor:
+    return ProcessPoolExecutor(max_workers=min(4, os.process_cpu_count() or 1), initializer=_start_mdf_worker)
 
 
 def _extract_surface_profiles(mdf_data: bytes, actual_path: str) -> dict[str, MdfSurfaceProfile]:
@@ -491,7 +500,7 @@ class MeshMaterialResolver:
             future = _MDF_PARSES.pop(key, None)
         if future is None:
             future = cls._mdf_parse_pool().submit(_extract_surface_profiles, data, actual_path)
-        return future.result(timeout=5.0)
+        return future.result()
 
     @classmethod
     def _mdf_key(cls, actual_path: str, data: bytes) -> tuple[str, int, bytes]:
@@ -520,11 +529,42 @@ class MeshMaterialResolver:
 
     @staticmethod
     def _mdf_parse_pool() -> ProcessPoolExecutor:
-        global _MDF_PARSE_POOL
+        global _MDF_PARSE_POOL, _MDF_START_FAILURE
+        if _MDF_START_FAILURE is not None:
+            failure, _MDF_START_FAILURE = _MDF_START_FAILURE, None
+            raise failure
         if _MDF_PARSE_POOL is None:
-            _MDF_PARSE_POOL = ProcessPoolExecutor(max_workers=min(4, os.process_cpu_count() or 1),
-                                                  initializer=configure_garbage_collector)
+            _MDF_PARSE_POOL = _new_mdf_parse_pool()
         return _MDF_PARSE_POOL
+
+    @staticmethod
+    def start_mdf_parses() -> None:
+        """Starts every MDF parse worker, which take about half a second to start, ahead of a scene's materials. A
+        failure to start them is held for the pool's next use to raise."""
+        global _MDF_PARSE_POOL, _MDF_START_FAILURE
+        if _MDF_START_FAILURE is not None or (_MDF_PARSE_POOL is not None
+                                              and _MDF_PARSE_POOL._executor_manager_thread is not None):
+            return
+        pool = _MDF_PARSE_POOL or _new_mdf_parse_pool()
+        try:
+            pool._launch_processes()
+            pool._start_executor_manager_thread()
+        except Exception as exc:
+            pool.terminate_workers()
+            _MDF_PARSE_POOL, _MDF_START_FAILURE = None, exc
+            return
+        _MDF_PARSE_POOL = pool
+
+    @staticmethod
+    def stop_mdf_parses() -> None:
+        """Ends the MDF parse workers, idle once a scene's materials are read, and the parses no one took: each
+        holds about 0.4 GB. The next parse starts them again."""
+        global _MDF_PARSE_POOL
+        with _MDF_PARSES_LOCK:
+            pool, _MDF_PARSE_POOL = _MDF_PARSE_POOL, None
+            _MDF_PARSES.clear()
+        if pool is not None:
+            pool.shutdown(wait=False, cancel_futures=True)
 
     @classmethod
     def resolve_texture_path(

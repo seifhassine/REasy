@@ -2,7 +2,6 @@ from dataclasses import dataclass, replace
 
 lazy from file_handlers.material_names import is_private_material_parameter, resolve_material_name
 from file_handlers.mdf.material_layout import MaterialDescriptorLayout
-lazy from file_handlers.sdf.models import program_tables
 
 from .models import MmtrMaterialInterface, MmtrMaterialParameter
 lazy from .material_variant import mmtr_resource_path_from_file
@@ -58,12 +57,6 @@ class MaterialInstanceContext:
                        user_buffer_sizes=(self.layout.parameter_size,), descriptor_layouts=(self.layout,), shader_lod=shader_lod)
 
 
-def native_material_buffer_sizes(document):
-    return tuple(sorted({int(buffer.byte_size) for target in document.sdf.targets
-                         for program in program_tables(target) for buffer in program.constant_buffers
-                         if buffer.name in document.profile.user_material_buffer_names}))
-
-
 def bind_material_instance(document, material):
     return bind_material_context(document, MaterialInstanceContext.from_material(material), material.header.mmtr_path)
 
@@ -82,7 +75,7 @@ def bind_material_context(document, context: MaterialInstanceContext, mmtr_path:
     if family is not None and len(layout.shader_lod_redirects) != len(family.material_paths):
         raise ValueError("MDF shader-LOD redirects do not match the MMTRS member count.")
     native = document.material_interface
-    named_sizes = native_material_buffer_sizes(document)
+    named_sizes = document.material_buffer_sizes
     profile = document.profile.shader_graph_profile
     instance_resources = {*profile.material_instance_resource_names, profile.instanced_material_buffer} - {""}
     if not named_sizes and not native.parameters and not any(r.name in instance_resources for r in native.resources):

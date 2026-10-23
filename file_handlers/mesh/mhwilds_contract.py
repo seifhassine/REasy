@@ -58,6 +58,8 @@ def _assert_group_topology(
         if mesh_buffer is not None
         else {}
     )
+    groups = list(groups)
+    drawn = _drawn_index_bounds(groups, payloads)
     for group_index, group in enumerate(groups):
         _require_zero(f"MeshGroup[{group_index}].reserve", group.reserve)
         _require_equal(
@@ -131,18 +133,44 @@ def _assert_group_topology(
                     "must fit its decoded index buffer",
                     (start, allocated_end, len(indices)),
                 )
-            draw = indices[start:draw_end]
-            if draw and (min(draw) < 0 or max(draw) >= int(submesh.vert_count)):
+            bounds = drawn.get(id(submesh))
+            if bounds is not None and (bounds[0] < 0 or bounds[1] >= int(submesh.vert_count)):
                 _fail(
                     f"{field}.indices",
                     "must be local to the submesh vertex range",
-                    (min(draw), max(draw), submesh.vert_count),
+                    (*bounds, submesh.vert_count),
                 )
             if canonical and allocated_end > draw_end:
                 _require_zero(
                     f"{field}.indexAlignmentPadding",
                     indices[draw_end:allocated_end],
                 )
+
+
+def _drawn_index_bounds(groups: list, payloads) -> dict[int, tuple[int, int]]:
+    """Each submesh's lowest and highest drawn index, by ``id``, where it draws any: one reduction a payload."""
+    spans: dict[int, tuple[object, list]] = {}
+    for group in groups:
+        for submesh in group.submeshes:
+            payload = payloads.get(int(submesh.buffer_index))
+            if payload is not None:
+                start = int(submesh.faces_index_offset)
+                spans.setdefault(id(payload), (payload, []))[1].append(
+                    (submesh, start, start + int(submesh.indices_count)))
+    bounds = {}
+    for payload, items in spans.values():
+        indices = np.asarray(payload.index_values)
+        drawn = [(submesh, start, min(end, len(indices))) for submesh, start, end in items
+                 if 0 <= start < min(end, len(indices))]
+        if not drawn:
+            continue
+        # A last element so a draw may end at the payload's end; odd results span between draws.
+        at = np.array([index for _submesh, start, end in drawn for index in (start, end)], np.intp)
+        padded = np.append(indices, indices[:1])
+        lows, highs = np.minimum.reduceat(padded, at)[::2], np.maximum.reduceat(padded, at)[::2]
+        bounds.update((id(submesh), (low, high)) for (submesh, _start, _end), low, high
+                      in zip(drawn, lows.tolist(), highs.tolist()))
+    return bounds
 
 
 def _assert_blend_shape_runtime_storage(mesh: object) -> None:

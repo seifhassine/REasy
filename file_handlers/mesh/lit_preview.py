@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP
@@ -32,7 +32,7 @@ from file_handlers.mmtr.pretransform import (
 from file_handlers.mmtr.profiles import mmtr_profile_for_game, mmtr_profile_for_resource
 from file_handlers.mmtr.shown_image import TargetImages
 lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
-from file_handlers.mmtr.pass_choice import PassChoiceError
+from file_handlers.mmtr.pass_choice import PassChoiceError, depth_prepass_program
 from file_handlers.mmtr.surface_meaning import GBUFFER_PURPOSE, surface_output_catalog_for
 lazy from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
 lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
@@ -126,7 +126,8 @@ class LitView:
 
 @dataclass(frozen=True, slots=True)
 class LitPart:
-    """``route`` and ``meshlet_programs`` are set only for SpeedTree parts, which name their own."""
+    """``route`` and ``meshlet_programs`` are set only for SpeedTree parts, which name their own; ``texel_density``
+    and ``level`` are ``MeshPart``'s."""
     index: int
     key: str
     mmtr_path: str
@@ -136,6 +137,8 @@ class LitPart:
     submesh: SubmeshRange
     route: str | None = None
     meshlet_programs: MeshletPrograms | None = None
+    texel_density: float | None = None
+    level: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -271,6 +274,8 @@ class ShapeOverlay:
             parts = tuple(sorted(index for index in visible if index in shape.indices))
             key = (overlay, id(shape.indices), parts)
             if self._held is None or self._held[0] != key:
+                if self._held is not None and self._held[0][0] is overlay:
+                    self._held[1].release()
                 geometry = OverlayGeometry(shape.positions, tuple(
                     OverlayPart(shape.indices[index], *self._culls(index)) for index in parts))
                 self._held = (key, OverlayScene(overlay.device, overlay.size, [geometry]), shape.positions)
@@ -305,6 +310,12 @@ def bind_part(game: str, masters: Mapping[str, tuple[str, bytes]], route: str, p
     except (ValueError, FileNotFoundError) as exc:
         return None, exc
     route = deformed_route(document, catalog.master_target, part.route or route, program, skinned)
+    if program is not None and route == ROUTE:
+        target = document.sdf.targets[catalog.master_target]
+        try:
+            target.programs[target.program_indices[program][0]]
+        except ValueError as exc:
+            return None, exc
     try:
         if gbuffer:
             _check_gbuffer(route, part, document, catalog, skinned)
@@ -315,6 +326,14 @@ def bind_part(game: str, masters: Mapping[str, tuple[str, bytes]], route: str, p
     return document, None
 
 
+def _read_prepass(route: str, part: LitPart, document, catalog) -> None:
+    if route == MESHLET_ROUTE:
+        return
+    prepass = depth_prepass_program(document, catalog.master_target, part.material.material_flags, route)
+    if prepass is not None:
+        document.sdf.targets[catalog.master_target].programs[prepass]
+
+
 def _check_gbuffer(route: str, part: LitPart, document, catalog, skinned: bool = False) -> None:
     main, _drawn = part_draws(document, part.material, catalog.master_target, route, (), part.meshlet_programs,
                               skinned)
@@ -322,6 +341,7 @@ def _check_gbuffer(route: str, part: LitPart, document, catalog, skinned: bool =
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The renderer draws this material after the G-buffer, so it writes no G-buffer "
                                "target."))
+    _read_prepass(route, part, document, catalog)
 
 
 def _check_drawn(route: str, part: LitPart, document, profile, catalog, skinned: bool = False) -> None:
@@ -342,6 +362,8 @@ def _check_drawn(route: str, part: LitPart, document, profile, catalog, skinned:
                                           for resource in contract(document, program, shader.role).resources])
         if name is not None:
             raise MaterialPreviewError(DERIVED_READ, {"name": name})
+    if main is not None:
+        _read_prepass(route, part, document, catalog)
 
 
 def _weights(scene: LitScene, morph: tuple[int, float] | None) -> np.ndarray | None:
@@ -413,7 +435,7 @@ class DeviceDrawer:
         self._drawn = None
         self._shape.forget()
         if drawn is not None:
-            drawn[0].device.close()
+            drawn[0].close()
 
     @staticmethod
     def _overlay(drawn: tuple) -> Overlay:
@@ -432,14 +454,21 @@ class LitDrawer(DeviceDrawer):
         self._mesh: MeshScene | None = None
         self._still = None
         self._averaged = 0
+        # The ``framed`` of the frame drawn, and the frame of the average its camera was jittered for.
+        self._framed = None
+        self._jittered = 0
+        # The drawn scene's refills the average has seen.
+        self._refills = 0
         self._temporal: TemporalImage | None = None
 
-    def _antialias(self, camera: Camera, still, antialiased: bool) -> Camera:
+    def _antialias(self, camera: Camera, still, antialiased: bool, framed=None) -> Camera:
+        """``framed`` as ``TemporalImage.steps`` takes it."""
         if not antialiased:
             self._still = None
             return camera
         if still != self._still:
             self._still, self._averaged = still, 0
+        self._framed, self._jittered = framed, self._averaged
         return jittered(camera, self._averaged)
 
     def _average(self, overlay: Overlay, shown: int, background,
@@ -449,13 +478,26 @@ class LitDrawer(DeviceDrawer):
         if self._temporal is None:
             # Released with the overlay's scene.
             self._temporal = TemporalImage(overlay.device, overlay.size)
-        steps = self._temporal.steps(shown, background, self._averaged, responsive)
+        if self._jittered != self._averaged:
+            # Begun again after the frame was jittered for another of the average's frames: the next one begins it.
+            return [], self._temporal.image
+        steps = self._temporal.steps(shown, background, self._averaged, responsive, self._framed)
         self._averaged += 1
         return steps, self._temporal.image
+
+    def _streamed_in(self, mesh: MeshScene) -> None:
+        """Finer mips came in: the average starts again."""
+        if mesh.refills != self._refills:
+            self._refills, self._averaged = mesh.refills, 0
 
     @property
     def _settling(self) -> bool:
         return self._still is not None and self._averaged < FRAMES
+
+    @property
+    def _settled(self) -> bool:
+        """Every frame of the average drawn: those after add nothing to it."""
+        return self._still is not None and self._averaged >= FRAMES
 
     @staticmethod
     def _overlay(drawn: tuple) -> Overlay:
@@ -495,10 +537,15 @@ class LitDrawer(DeviceDrawer):
         camera = view.camera()
         light = camera_light(camera, intensity)
         weights = _weights(scene, view.morph)
-        kept = self._drawn is not None and self._drawn[0] == (view.visible, gbuffer)
+        bound = self._bound[gbuffer]
+        # The scene holds the parts not shown too, which frames leave out; but for meshlet ones, an object's clusters
+        # of a material drawing together.
+        key = gbuffer, view.visible if scene.meshlets else None
+        kept = self._drawn is not None and self._drawn[0] == key
         if not kept:
             self._leave()
-        drawn_by = self._antialias(camera, (view, intensity), view.antialiased and not gbuffer)
+        framed = replace(view, visible=frozenset(), morph=None), intensity
+        drawn_by = self._antialias(camera, (view, intensity), view.antialiased and not gbuffer, framed)
         if kept:
             _key, drawn, failures = self._drawn
             if drawn is not None:
@@ -506,11 +553,19 @@ class LitDrawer(DeviceDrawer):
                 if mesh.size != tuple(view.size):
                     self._resize(drawn, view.size)
                 mesh.camera = drawn_by
-                if weights is not None and not np.array_equal(weights, mesh.objects[0].deformation.weights):
-                    mesh.morph(0, weights)
-                self._run(drawn, light, target, overlays, camera, view.visible)
-        else:
-            shown ={index: item for index, item in self._bound[gbuffer].items() if index in view.visible}
+                try:
+                    refused = self._shown(mesh, scene, view, weights)
+                    if refused:
+                        return LitFrame(view, False, refused, ())
+                    if self._drawing(view, failures):
+                        self._run(drawn, light, target, overlays, camera, view.visible)
+                except PartError:
+                    # Refused once deformed for other groups: made again, as a scene of these shown is.
+                    self._leave()
+                    kept = False
+                    drawn_by = self._antialias(camera, (view, intensity), view.antialiased and not gbuffer, framed)
+        if not kept:
+            shown = {index: item for index, item in bound.items() if not scene.meshlets or index in view.visible}
             parts = [item for item in shown.values() if isinstance(item, MeshPart)]
             failures = {index: item for index, item in shown.items() if not isinstance(item, MeshPart)}
             placement = Placement(np.eye(4)[:3],
@@ -539,9 +594,11 @@ class LitDrawer(DeviceDrawer):
                                      hardware=True,
                                      phases=() if gbuffer else {phase.key for phase in catalog.phases},
                                      pass_file=lambda path, data: pass_file(path, data).document,
-                                     captured=captured_constants(catalog))
+                                     captured=captured_constants(catalog), forget_file=scene.files.forget)
                     frame = TargetImages(mesh) if gbuffer else LightPasses(mesh, pass_file=pass_file)
                     overlay = Overlay(mesh.device, view.size, (DEPTH_VIEWS[mesh.depth_format][1], mesh.depth))
+                    mesh.hide_parts((0, part) for index, part in shown.items()
+                                    if index not in view.visible and isinstance(part, MeshPart))
                     # Kept once its frame has run: running may refuse a part too.
                     self._run((mesh, frame, overlay), light, target, overlays, camera, view.visible)
                     drawn = mesh, frame, overlay
@@ -549,16 +606,50 @@ class LitDrawer(DeviceDrawer):
                 except PartError as exc:
                     if mesh is not None:
                         self._leave()
-                        mesh.device.close()
+                        mesh.close()
                     for refused, reason in exc.refusals:
                         # A refused part outside ``parts`` only skins the others; without it none can be deformed.
                         for part in [refused] if refused in parts else list(parts):
                             parts.remove(part)
                             failures[next(index for index, item in shown.items() if item is part)] = reason
-            self._drawn = ((view.visible, gbuffer), drawn, failures)
-        if drawn is None:
-            return LitFrame(view, False, failures, ())
-        return LitFrame(view, True, failures, drawn[0].missing_textures, settling=self._settling)
+            # A scene made of none is made again for other parts shown.
+            self._drawn = (key if drawn is not None else (*key, view.visible), drawn, failures)
+            if drawn is not None:
+                drawn[0].release_texels()
+                scene.files.release()
+        shown_failures = {index: reason for index, reason in failures.items() if index in view.visible}
+        if drawn is None or not self._drawing(view, failures):
+            return LitFrame(view, False, shown_failures, ())
+        return LitFrame(view, True, shown_failures, drawn[0].missing_textures,
+                        settling=self._settling or drawn[0].streaming)
+
+    def _drawing(self, view: LitView, failures: Mapping[int, Exception]) -> bool:
+        """Whether a part shown draws."""
+        return any(index not in failures and isinstance(self._bound[self._gbuffer].get(index), MeshPart)
+                   for index in view.visible)
+
+    def _shown(self, mesh: MeshScene, scene: LitScene, view: LitView,
+               weights: np.ndarray | None) -> dict[int, Exception] | None:
+        """The scene drawn deformed for the groups of the parts shown, leaving the others out; why none can be drawn,
+        if so."""
+        bound = self._bound[self._gbuffer]
+        if scene.level is not None:
+            deformation = mesh.objects[0].deformation
+            if frozenset(scene.groups[index] for index in view.visible) != deformation.enabled:
+                try:
+                    deformation, skins = deformed(scene.game, scene.level, dict(enumerate(scene.groups)),
+                                                  view.visible, self._skins, weights)
+                except MaterialPreviewError as exc:
+                    return {index: exc for index, item in bound.items()
+                            if index in view.visible and isinstance(item, MeshPart)}
+                drawn = mesh.objects[0].parts
+                mesh.deform(0, deformation, (part for part in skins if part not in drawn))
+            elif weights is not None and not np.array_equal(weights, deformation.weights):
+                mesh.morph(0, weights)
+        if not scene.meshlets:
+            mesh.hide_parts((0, part) for index, part in bound.items()
+                            if index not in view.visible and isinstance(part, MeshPart))
+        return None
 
     def _resize(self, drawn: tuple, size: Sequence[int]) -> None:
         mesh, frame, overlay = drawn[:3]
@@ -584,6 +675,7 @@ class LitDrawer(DeviceDrawer):
         self._mesh = mesh
 
         def after(shown: int) -> list[int]:
+            self._streamed_in(mesh)
             averaged, shown = self._average(overlay, shown, overlays.background) if overlays.filled else ([], shown)
             return averaged + self._shape.steps(overlay, shown, overlays, camera, visible)
         if not overlays.filled:

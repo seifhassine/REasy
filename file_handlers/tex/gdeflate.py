@@ -34,6 +34,14 @@ def _candidate_paths() -> list[Path]:
     ]
 
 
+def library_path() -> Path:
+    """The libGDeflate binary, for native code to load."""
+    found = next((path for path in _candidate_paths() if path.is_file()), None)
+    if found is None:
+        raise RuntimeError("Unable to load libGDeflate: no binary found")
+    return found
+
+
 def _load_library():
     global _DLL, _DLL_DIR
     if _DLL is not None:

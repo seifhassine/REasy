@@ -6,7 +6,7 @@ from pathlib import Path
 lazy from utils.resource_file_utils import resource_version_from_path
 
 lazy from file_handlers.sdf import SdfFile
-lazy from file_handlers.sdf.models import RESOURCE_KINDS, LazyPrograms, SdfProgram, program_tables
+lazy from file_handlers.sdf.models import RESOURCE_KINDS, LazyPrograms, SdfProgram, SdfTableGroup, resource_groups
 lazy from file_handlers.sdf.sdf_file import parse_sdf_to_draw
 lazy from file_handlers.sdf.shader_graph import ShaderContract
 
@@ -119,132 +119,131 @@ def _program_semantics(
 
 
 def _material_interface(
-    sdf,
+    groups: tuple[SdfTableGroup, ...],
     profile: MmtrGameProfile,
 ) -> MmtrMaterialInterface:
     user_names = {name.casefold() for name in profile.user_material_buffer_names}
     user_buffer_sizes: set[int] = set()
     outer_user_buffers: set[str] = set()
     reflected_user_buffer_sizes: set[int] = set()
+    # Each parameter's groups: their programs declare or reflect it.
     parameters: dict[tuple[str, int, int], dict[str, set]] = {}
     resources: dict[tuple[str, str], dict[str, set]] = {}
     logical_names = {}
     generated_parameter_names = {}
     buffer_groups = {}
-    resource_groups = {}
+    resource_entries = {}
 
-    for target in sdf.targets:
-        for program in program_tables(target):
-            program_key = (target.index, program.program_index)
-            buffer_key = id(program.constant_buffers)
-            buffer_group = buffer_groups.get(buffer_key)
-            if buffer_group is None:
+    for group_index, group in enumerate(groups):
+        tables = group.tables
+        buffer_key = id(tables.constant_buffers)
+        buffer_group = buffer_groups.get(buffer_key)
+        if buffer_group is None:
+            entries = []
+            for buffer in tables.constant_buffers:
+                if buffer.name.casefold() not in user_names:
+                    continue
+                outer_user_buffers.add(buffer.name.casefold())
+                user_buffer_sizes.add(buffer.byte_size)
+                for variable in buffer.variables:
+                    key = (variable.name, variable.byte_offset, variable.byte_size)
+                    item = parameters.get(key)
+                    if item is None:
+                        item = parameters[key] = {"types": set(), "groups": set()}
+                    entries.append(item)
+            buffer_group = buffer_groups[buffer_key] = ([], tuple(entries))
+        if buffer_group[1]:
+            buffer_group[0].append(group_index)
+
+        metadata_groups = (
+            tables.constant_buffers,
+            tables.samplers,
+            tables.shader_resources,
+            tables.unordered_access_resources,
+            tables.optional_resources,
+        )
+        program_resource_groups = []
+        for kind_index, (metadata, bindings) in enumerate(
+            zip(metadata_groups, tables.bindings)
+        ):
+            if not metadata or not bindings:
+                continue
+            entries_key = (kind_index, id(metadata), id(bindings))
+            found = resource_entries.get(entries_key)
+            if found is None:
+                kind = RESOURCE_KINDS[kind_index]
                 entries = []
-                for buffer in program.constant_buffers:
-                    if buffer.name.casefold() not in user_names:
-                        continue
-                    outer_user_buffers.add(buffer.name.casefold())
-                    user_buffer_sizes.add(buffer.byte_size)
-                    for variable in buffer.variables:
-                        key = (variable.name, variable.byte_offset, variable.byte_size)
-                        item = parameters.get(key)
-                        if item is None:
-                            item = parameters[key] = {"types": set(), "programs": set()}
-                        entries.append(item)
-                buffer_group = buffer_groups[buffer_key] = (set(), tuple(entries))
-            if buffer_group[1]:
-                buffer_group[0].add(program_key)
+                for resource, binding in zip(metadata, bindings):
+                    key = (kind, resource.name)
+                    item = resources.get(key)
+                    if item is None:
+                        item = resources[key] = {"type_names": set()}
+                    item["type_names"].add(binding.type_name)
+                    entries.append((resource.name, item))
+                found = resource_entries[entries_key] = tuple(entries)
+            program_resource_groups.append(found)
 
-            metadata_groups = (
-                program.constant_buffers,
-                program.samplers,
-                program.shader_resources,
-                program.unordered_access_resources,
-                program.optional_resources,
-            )
-            program_resource_groups = []
-            for kind_index, (metadata, bindings) in enumerate(
-                zip(metadata_groups, program.bindings)
-            ):
-                if not metadata or not bindings:
+        program_resources = None
+        for shader in group.shaders:
+            dxbc = shader.reflection
+            reflection = dxbc.reflection if dxbc is not None else None
+            if reflection is None:
+                continue
+            for buffer in reflection.constant_buffers:
+                if buffer.name.casefold() not in user_names:
                     continue
-                group_key = (kind_index, id(metadata), id(bindings))
-                group = resource_groups.get(group_key)
-                if group is None:
-                    kind = RESOURCE_KINDS[kind_index]
-                    entries = []
-                    for resource, binding in zip(metadata, bindings):
-                        key = (kind, resource.name)
-                        item = resources.get(key)
-                        if item is None:
-                            item = resources[key] = {"type_names": set()}
-                        item["type_names"].add(binding.type_name)
-                        entries.append((resource.name, item))
-                    group = resource_groups[group_key] = tuple(entries)
-                program_resource_groups.append(group)
-
-            program_resources = None
-            for shader in program.shaders:
-                # ``parse_sdf_to_draw`` leaves the DXIL reflection unread.
-                dxbc = shader.reflection
-                reflection = dxbc.reflection if dxbc is not None else None
-                if reflection is None:
-                    continue
-                for buffer in reflection.constant_buffers:
-                    if buffer.name.casefold() not in user_names:
-                        continue
-                    reflected_user_buffer_sizes.add(buffer.byte_size)
-                    for variable in buffer.variables:
-                        key = (variable.name, variable.start_offset, variable.size)
+                reflected_user_buffer_sizes.add(buffer.byte_size)
+                for variable in buffer.variables:
+                    key = (variable.name, variable.start_offset, variable.size)
+                    item = parameters.get(key)
+                    logical_name = logical_names.get(variable.name)
+                    if logical_name is None:
+                        logical_name = logical_names[variable.name] = profile.material_parameter_name(variable.name)
+                    key = (logical_name, variable.start_offset, variable.size)
+                    if item is None:
                         item = parameters.get(key)
-                        logical_name = logical_names.get(variable.name)
-                        if logical_name is None:
-                            logical_name = logical_names[variable.name] = profile.material_parameter_name(variable.name)
-                        key = (logical_name, variable.start_offset, variable.size)
-                        if item is None:
-                            item = parameters.get(key)
-                        if item is None and variable.name.startswith("REasy_"):
-                            alias_key = id(shader), id(program.constant_buffers)
-                            aliases = generated_parameter_names.get(alias_key)
-                            if aliases is None:
-                                from file_handlers.sdf.contracts import material_buffer_contract
-                                try:
-                                    typed = material_buffer_contract(
-                                        ShaderContract.from_shader(dxbc), program,
-                                        buffer_names=profile.user_material_buffer_names,
-                                        logical_name=profile.material_parameter_name,
-                                        allow_unreflected_fields=True, _indexed_names=True,
-                                    )
-                                except ValueError:
-                                    aliases = {}
-                                else:
-                                    aliases = defaultdict(list)
-                                    for declaration in typed.constant_buffers:
-                                        for field in declaration.variables:
-                                            aliases[(declaration.name, field.byte_offset, field.byte_size)].append(field.name)
-                                generated_parameter_names[alias_key] = aliases
-                            names = aliases.get((buffer.name, variable.start_offset, variable.size), ())
-                            if len(names) == 1:
-                                item = parameters.get((names[0], variable.start_offset, variable.size))
-                        if item is None:
-                            continue
-                        item["types"].add(variable.variable_type.display_name)
-                        item["programs"].add(program_key)
+                    if item is None and variable.name.startswith("REasy_"):
+                        alias_key = id(shader), id(tables.constant_buffers)
+                        aliases = generated_parameter_names.get(alias_key)
+                        if aliases is None:
+                            from file_handlers.sdf.contracts import material_buffer_contract
+                            try:
+                                typed = material_buffer_contract(
+                                    ShaderContract.from_shader(dxbc), tables,
+                                    buffer_names=profile.user_material_buffer_names,
+                                    logical_name=profile.material_parameter_name,
+                                    allow_unreflected_fields=True, _indexed_names=True,
+                                )
+                            except ValueError:
+                                aliases = {}
+                            else:
+                                aliases = defaultdict(list)
+                                for declaration in typed.constant_buffers:
+                                    for field in declaration.variables:
+                                        aliases[(declaration.name, field.byte_offset, field.byte_size)].append(field.name)
+                            generated_parameter_names[alias_key] = aliases
+                        names = aliases.get((buffer.name, variable.start_offset, variable.size), ())
+                        if len(names) == 1:
+                            item = parameters.get((names[0], variable.start_offset, variable.size))
+                    if item is None:
+                        continue
+                    item["types"].add(variable.variable_type.display_name)
+                    item["groups"].add(group_index)
 
-                if program_resources is None:
-                    program_resources = defaultdict(list)
-                    for group in program_resource_groups:
-                        for name, item in group:
-                            program_resources[name].append(item)
-                for reflected in reflection.resources:
-                    for item in program_resources.get(reflected.name, ()):
-                        item["type_names"].add(
-                            f"{reflected.input_type} {reflected.dimension}"
-                        )
+            if program_resources is None:
+                program_resources = defaultdict(list)
+                for resource_items in program_resource_groups:
+                    for name, item in resource_items:
+                        program_resources[name].append(item)
+            for reflected in reflection.resources:
+                for item in program_resources.get(reflected.name, ()):
+                    item["type_names"].add(
+                        f"{reflected.input_type} {reflected.dimension}"
+                    )
 
-    for programs, entries in buffer_groups.values():
+    for group_indices, entries in buffer_groups.values():
         for item in entries:
-            item["programs"].update(programs)
+            item["groups"].update(group_indices)
 
     parameter_models = tuple(
         MmtrMaterialParameter(
@@ -252,7 +251,7 @@ def _material_interface(
             byte_offset=byte_offset,
             byte_size=byte_size,
             type_names=tuple(sorted(item["types"])),
-            program_count=len(item["programs"]),
+            program_count=sum(len(groups[index].programs) for index in item["groups"]),
         )
         for (name, byte_offset, byte_size), item in sorted(
             parameters.items(),
@@ -279,6 +278,13 @@ def _material_interface(
     )
 
 
+def _material_buffer_sizes(groups: tuple[SdfTableGroup, ...], profile: MmtrGameProfile) -> tuple[int, ...]:
+    names = profile.user_material_buffer_names
+    tables = {id(group.tables.constant_buffers): group.tables.constant_buffers for group in groups}
+    return tuple(sorted({int(buffer.byte_size) for buffers in tables.values() for buffer in buffers
+                         if buffer.name in names}))
+
+
 def _document_from_sdf(
     sdf_document,
     profile: MmtrGameProfile,
@@ -297,7 +303,8 @@ def _document_from_sdf(
         programs = tuple(semantics(*key) for key in keys)
         family = profile.document_classifier(tuple(program.descriptor for program in programs))
         notes = tuple(dict.fromkeys(note for program in programs for note in program.notes))
-    material_interface = _material_interface(sdf_document, profile)
+    groups = resource_groups(sdf_document)
+    material_interface = _material_interface(groups, profile)
     material_interface = profile.shader_graph_profile.supplement_material_interface(material_interface, str(label or ""))
     document = MmtrDocument(
         profile=profile,
@@ -307,6 +314,7 @@ def _document_from_sdf(
         material_interface=material_interface,
         source_label=str(label or ""),
         notes=notes,
+        material_buffer_sizes=_material_buffer_sizes(groups, profile),
     )
     return document
 
@@ -348,7 +356,8 @@ def _parse_preview_document(
 
 
 def parse_drawn_master(data: bytes, game: str, label: str) -> MmtrDocument:
-    """For drawing only: the interface lacks the reflected types and stages, and the master is not classified."""
+    """For drawing only: the interface lacks the reflected types and stages, the master is not classified, and a
+    program's shaders are read and checked when the program is."""
     return _parse_preview_document(data, mmtr_profile_for_game(game), label)
 
 

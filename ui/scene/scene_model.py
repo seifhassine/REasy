@@ -14,6 +14,8 @@ class SceneDrawBatch:
     transparent: bool = False
     # (LOD, number in ``mesh_lod_parts`` order) of the main geometry submesh; None for other batches.
     submesh: tuple[int, int] | None = None
+    # Submeshes from ``submesh`` the batch draws: a meshlet run (``meshlet_runs``) holds more than one.
+    submeshes: int = 1
 
 
 @dataclass(slots=True)

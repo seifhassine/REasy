@@ -9,12 +9,15 @@ import re
 import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
+from utils.native_build import ensure_fastmesh
+
 lazy from .material_preview import MaterialPreviewError
 
 _DECLARATION = re.compile(r"(?:row_major )?(float|uint|int)(\d)?(?:x(\d))?\b")
 _LOG2F = ctypes.CDLL("ucrtbase").log2f
 _LOG2F.restype, _LOG2F.argtypes = ctypes.c_float, (ctypes.c_float,)
 _SCALARS = {"float": np.float32, "uint": np.uint32, "int": np.int32}
+_fastmesh = ensure_fastmesh()
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,18 +97,29 @@ def camera_key(camera: Camera) -> tuple:
     return np.asarray(camera.view, np.float64).tobytes(), numbers.tobytes(), previous, camera.orthographic
 
 
-_LAST_SCENE_VALUES: tuple[tuple, dict[str, np.ndarray]] | None = None
+# The last few cameras' values: a frame asks for its camera's and a widened one's.
+_SCENE_VALUES: dict[tuple, dict[str, np.ndarray]] = {}
+# By a read-only value's and a field's ids: the value, the field and where and how it is laid out.
+_ENCODED: dict[tuple[int, int, bool], tuple] = {}
+# ``_scene_info``'s values by the ids of the camera's and the frame's: them and it.
+_SCENE_INFOS: dict[tuple[int, int], tuple] = {}
+# By the ids of unchanging values and a layout of the same fields as others: them, the layout and its bytes.
+_LAID: dict[tuple[int, int, bool], tuple] = {}
+# By a layout's id: it and the first layout seen of the same size and fields.
+_LAYOUTS: dict[int, tuple] = {}
+_FIRST_LAYOUTS: dict[tuple, object] = {}
 
 
 def scene_values(camera: Camera) -> dict[str, np.ndarray]:
-    global _LAST_SCENE_VALUES
-    key, last = camera_key(camera), _LAST_SCENE_VALUES
-    if last is not None and last[0] == key:
-        return last[1]
-    values = _scene_values(camera)
-    for value in values.values():
-        value.setflags(write=False)
-    _LAST_SCENE_VALUES = key, values
+    key = camera_key(camera)
+    values = _SCENE_VALUES.get(key)
+    if values is None:
+        values = _scene_values(camera)
+        for value in values.values():
+            value.setflags(write=False)
+        if len(_SCENE_VALUES) >= 4:
+            del _SCENE_VALUES[next(iter(_SCENE_VALUES))]
+        _SCENE_VALUES[key] = values
     return values
 
 
@@ -118,64 +132,10 @@ def _single_product(left: np.ndarray, right: np.ndarray) -> np.ndarray:
     return total.astype(np.float64)
 
 
-def _shuffle(a: np.ndarray, b: np.ndarray, order: int) -> np.ndarray:
-    """SSE ``shufps``."""
-    return np.array([a[order & 3], a[(order >> 2) & 3], b[(order >> 4) & 3], b[(order >> 6) & 3]], np.float32)
-
-
 def engine_inverse(matrix: np.ndarray) -> np.ndarray:
-    """Port of ``via::matrix::inverse``; see docs/internals/engine-buffers.md."""
-    f32 = np.float32
-    src = np.asarray(matrix, f32).reshape(16)
-    tmp = np.array([src[0], src[1], src[4], src[5]], f32)
-    row1 = np.array([src[8], src[9], src[12], src[13]], f32)
-    row0, row1 = _shuffle(tmp, row1, 0x88), _shuffle(row1, tmp, 0xDD)
-    tmp = np.array([src[2], src[3], src[6], src[7]], f32)
-    row3 = np.array([src[10], src[11], src[14], src[15]], f32)
-    row2, row3 = _shuffle(tmp, row3, 0x88), _shuffle(row3, tmp, 0xDD)
-
-    tmp = _shuffle(row2 * row3, row2 * row3, 0xB1)
-    minor0, minor1 = row1 * tmp, row0 * tmp
-    tmp = _shuffle(tmp, tmp, 0x4E)
-    minor0, minor1 = row1 * tmp - minor0, row0 * tmp - minor1
-    minor1 = _shuffle(minor1, minor1, 0x4E)
-
-    tmp = _shuffle(row1 * row2, row1 * row2, 0xB1)
-    minor0, minor3 = row3 * tmp + minor0, row0 * tmp
-    tmp = _shuffle(tmp, tmp, 0x4E)
-    minor0, minor3 = minor0 - row3 * tmp, row0 * tmp - minor3
-    minor3 = _shuffle(minor3, minor3, 0x4E)
-
-    tmp = _shuffle(row1, row1, 0x4E) * row3
-    tmp = _shuffle(tmp, tmp, 0xB1)
-    row2 = _shuffle(row2, row2, 0x4E)
-    minor0, minor2 = row2 * tmp + minor0, row0 * tmp
-    tmp = _shuffle(tmp, tmp, 0x4E)
-    minor0, minor2 = minor0 - row2 * tmp, row0 * tmp - minor2
-    minor2 = _shuffle(minor2, minor2, 0x4E)
-
-    tmp = _shuffle(row0 * row1, row0 * row1, 0xB1)
-    minor2, minor3 = row3 * tmp + minor2, row2 * tmp - minor3
-    tmp = _shuffle(tmp, tmp, 0x4E)
-    minor2, minor3 = row3 * tmp - minor2, minor3 - row2 * tmp
-
-    tmp = _shuffle(row0 * row3, row0 * row3, 0xB1)
-    minor1, minor2 = minor1 - row2 * tmp, row1 * tmp + minor2
-    tmp = _shuffle(tmp, tmp, 0x4E)
-    minor1, minor2 = row2 * tmp + minor1, minor2 - row1 * tmp
-
-    tmp = _shuffle(row0 * row2, row0 * row2, 0xB1)
-    minor1, minor3 = row3 * tmp + minor1, minor3 - row1 * tmp
-    tmp = _shuffle(tmp, tmp, 0x4E)
-    minor1, minor3 = minor1 - row3 * tmp, row1 * tmp + minor3
-
-    determinant = row0 * minor0
-    determinant = _shuffle(determinant, determinant, 0x4E) + determinant
-    determinant = _shuffle(determinant, determinant, 0xB1) + determinant
-    if determinant[0] == 0:
-        return np.eye(4, dtype=f32)
-    scale = f32(f32(1) / determinant[0])
-    return np.array([minor0 * scale, minor1 * scale, minor2 * scale, minor3 * scale], f32)
+    """Port of ``via::matrix::inverse``, native (``fastmesh.engine_inverse``); see docs/internals/engine-buffers.md."""
+    return np.frombuffer(_fastmesh.engine_inverse(np.ascontiguousarray(matrix, np.float32).tobytes()),
+                         np.float32).reshape(4, 4).copy()
 
 
 def _scene_values(camera: Camera) -> dict[str, np.ndarray]:
@@ -203,10 +163,28 @@ def _scene_values(camera: Camera) -> dict[str, np.ndarray]:
 
 
 def _scene_info(camera: Camera, frame: Mapping[str, Sequence[float]]) -> dict[str, np.ndarray]:
+    """Not to be changed: held for the camera and frame."""
     values = scene_values(camera)
+    held = _SCENE_INFOS.get((id(values), id(frame)))
+    if held is not None and held[0] is values and held[1] is frame:
+        return held[2]
     if values.keys() & frame.keys():
         raise ValueError(f"the frame's constants {sorted(values.keys() & frame.keys())} are the camera's fields")
-    return values | {name: np.asarray(items, np.float64) for name, items in frame.items()}
+    merged = values | {name: np.asarray(items, np.float64) for name, items in frame.items()}
+    if len(_SCENE_INFOS) >= 8:
+        del _SCENE_INFOS[next(iter(_SCENE_INFOS))]
+    _SCENE_INFOS[id(values), id(frame)] = values, frame, merged
+    return merged
+
+
+def _first_layout(layout):
+    held = _LAYOUTS.get(id(layout))
+    if held is None or held[0] is not layout:
+        # What ``_encoded`` reads of each field.
+        fields = tuple((item.name, item.byte_offset, item.byte_size, item.array_length, item.matrix,
+                        item.hlsl_declaration) for item in layout.variables)
+        held = _LAYOUTS[id(layout)] = layout, _FIRST_LAYOUTS.setdefault((layout.byte_size, fields), layout)
+    return held[1]
 
 
 def _bone_count(placement: Placement) -> int:
@@ -246,11 +224,36 @@ def _encoded(variable, values: np.ndarray, constant: bool) -> tuple[int, bytes]:
 
 
 def _laid_out(layout, values: dict[str, np.ndarray], constant: bool) -> bytearray:
+    if not any(values is held for held in _SCENE_VALUES.values()) and not any(
+            values is held[2] for held in _SCENE_INFOS.values()):
+        return _laid_out_anew(layout, values, constant)
+    layout = _first_layout(layout)
+    key = id(values), id(layout), constant
+    held = _LAID.get(key)
+    if held is None or held[0] is not values or held[1] is not layout:
+        if len(_LAID) >= 256:
+            _LAID.clear()
+        held = _LAID[key] = values, layout, bytes(_laid_out_anew(layout, values, constant))
+    return bytearray(held[2])
+
+
+def _laid_out_anew(layout, values: dict[str, np.ndarray], constant: bool) -> bytearray:
     data = bytearray(layout.byte_size)
     for variable in layout.variables:
-        if variable.name in values:
-            offset, encoded = _encoded(variable, values[variable.name], constant)
-            data[offset:offset + len(encoded)] = encoded
+        if variable.name not in values:
+            continue
+        value = values[variable.name]
+        if isinstance(value, np.ndarray) and not value.flags.writeable:
+            key = id(value), id(variable), constant
+            held = _ENCODED.get(key)
+            if held is None or held[0] is not value or held[1] is not variable:
+                if len(_ENCODED) >= 4096:
+                    _ENCODED.clear()
+                held = _ENCODED[key] = value, variable, *_encoded(variable, value, constant)
+            offset, encoded = held[2:]
+        else:
+            offset, encoded = _encoded(variable, value, constant)
+        data[offset:offset + len(encoded)] = encoded
     return data
 
 

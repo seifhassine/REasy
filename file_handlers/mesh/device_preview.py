@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QElapsedTimer, QObject, Qt, QTimer, Signal
 
 lazy from file_handlers.mmtr.material_preview import (
-    MaterialPreviewError, gpu_buffer_contents, resident_key, streamed_key,
+    GpuBufferLocation, MaterialPreviewError, resident_key, streamed_key,
 )
 lazy from file_handlers.mmtr.mmtrs_file import MmtrsFormatError, resolve_mmtr_resource
 lazy from file_handlers.mmtr.pretransform import ChainLevel
 lazy from file_handlers.strands.chain_scene import (ChainScene, gather as gather_strands, handler_files, shader_paths,
                                                with_files)
 from ui.scene.device_frames import LIMIT_MOST, RenderThread
-lazy from utils.resource_file_utils import ResourceLocation
+lazy from utils.resource_file_utils import ReadOnUse, ResourceLocation
 
 lazy from .material_resolver import MeshMaterialResolver
 
@@ -51,7 +51,10 @@ class DevicePreview(QObject):
     _finished = Signal(object, object, object)
 
     def __init__(self, handler, session, inspection: Callable[[], object], parent=None):
+        from file_handlers.mmtr.resident import warm_up
+
         super().__init__(parent)
+        warm_up()
         self._handler, self._session, self._inspection = handler, session, inspection
         self._drawer = None
         self._thread: RenderThread | None = None
@@ -64,6 +67,7 @@ class DevicePreview(QObject):
         self._frame = None
         self._reason = ""
         self._failures: dict[int, str] = {}
+        self._told_failures: list[tuple[Mapping | None, dict[int, str]]] = []
         self._error = ""
         self._finished.connect(self._on_finished)
         self._rate = LIMIT_MOST
@@ -140,23 +144,30 @@ class DevicePreview(QObject):
         if reason:
             return reason
         for texture in surface.textures:
-            found = MeshMaterialResolver.locate_texture_path(handler, texture.texture_path,
-                                                             prefer_streaming=streaming)
+            found = self._located(handler, texture.texture_path, streaming, cache)
             if found is not None:
                 files[texture.texture_path] = found
                 if "/streaming/" in f"/{found.path}".replace("\\", "/").lower():
                     files[streamed_key(texture.texture_path)] = b""
-                    resident = MeshMaterialResolver.locate_texture_path(handler, texture.texture_path)
+                    resident = self._located(handler, texture.texture_path, False, cache)
                     if resident is not None:
-                        files[resident_key(texture.texture_path)] = resident
+                        files[resident_key(texture.texture_path)] = ReadOnUse(resident)
         for buffer in surface.gpu_buffers:
-            hit = MeshMaterialResolver.resolve_texture_path(handler, buffer.path, resource_cache=cache)
-            if hit is not None:
+            found = self._located(handler, buffer.path, False, cache)
+            if found is not None:
                 try:
-                    files[buffer.path] = gpu_buffer_contents(*hit)
+                    files[buffer.path] = GpuBufferLocation.of(found)
                 except MaterialPreviewError as exc:
                     return str(exc)
         return ""
+
+    @staticmethod
+    def _located(handler, path: str, streaming: bool, cache: dict) -> ResourceLocation | None:
+        """Where a file is holds for one gather, whose ``cache`` this is."""
+        key = "located", path, streaming
+        if key not in cache:
+            cache[key] = MeshMaterialResolver.locate_texture_path(handler, path, prefer_streaming=streaming)
+        return cache[key]
 
     def set_active(self, active: bool) -> None:
         if active == self._active:
@@ -203,6 +214,7 @@ class DevicePreview(QObject):
         except MaterialPreviewError as exc:
             self._scene, self._error = None, str(exc)
             self._forget_frame()
+        self._told_failures = []
         self._ask()
         self.status_changed.emit()
 
@@ -229,12 +241,22 @@ class DevicePreview(QObject):
             lines += self._frame_lines(self._frame)
         return lines
 
-    def failures(self) -> dict[int, str]:
+    def failures(self) -> Mapping[int, str]:
+        """Not to be changed: made again only when the frame or the gather changes."""
         if not self._active:
             return {}
+        shown = None if self._frame is None else self._frame.failures
+        for held, failures in self._told_failures:
+            if held is shown or held == shown:
+                return failures
         failures = dict(self._failures)
-        if self._frame is not None:
-            failures.update((index, str(reason)) for index, reason in self._frame.failures.items())
+        texts: dict[int, str] = {}
+        for index, reason in (shown or {}).items():
+            text = texts.get(id(reason))
+            if text is None:
+                text = texts[id(reason)] = str(reason)
+            failures[index] = text
+        self._told_failures = [(shown, failures), *self._told_failures[:1]]
         return failures
 
     def failure_lines(self) -> list[str]:

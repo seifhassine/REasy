@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 3,
  "game": "DD2",
  "resource_version": 260511270,
  "raster": "GBufferMeshletListVS",
@@ -141,6 +141,19 @@
   "word": "dynamicInfo",
   "flag": 16777216
  },
+ "lods": {
+  "thresholds": "half_reciprocal",
+  "gate": "mesh_flag",
+  "lod_settings": {
+   "path": "config/tower.lod",
+   "version": 4
+  },
+  "bias": -3.0,
+  "speedtree_bias": -1.0,
+  "near": true,
+  "fraction": false,
+  "base_fov": false
+ },
  "source": {
   "captures": [
    {
@@ -157,6 +170,7 @@
   ],
   "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
   "deferred": "DD2_frame226100 13333-13362 (scratch stage107/pipeline_dd2.log against stage107/pipeline_mhws.log of MonsterHunterWilds_frame15118 11260-11289): DrawMaterialID, then test.sdf's DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared and written, the same group counts (1056, 1056, 1, 1056); the transformed triangles 60 bytes a texel (221184000 bytes at 2560x1440; MH Wilds' 48); env_default_flutter's MeshletGeometryTransform 13370 by the transform IDs' indirect dispatches, the shading (13404 on) reading the slots and the transformed triangles",
-  "skinning": "DD2_frame17303 (scratch stage100/rows_17303.txt, stage107/skinning_programs.py): an instance with a skinning index (dynamicInfo's low 24 bits, 44 of 11,469 records; 0xffffff for none) rastered by GBufferMeshletListVSSkinning (12207, 12494) and MeshletSkinningSoftwareRaster (12307), transformed by MeshletGeometryTransformSkinning (22840) and shaded by GBufferVisibilitySkinning (23032); the Skinning raster and transform read InstancesSkinning and SkinningMatrices, the shading the transformed triangles; the word's bit 24 (flag) says the index names an InstancesSkinning record (DD2_dump.exe setInstance 0x7ff7892cf850: slot | (slot != 0xffffff) << 24, upload 0x7ff789607b40; test.sdf updateInstance and 34 of the 39 Meshlet*Culling programs read it): all 28 skinned records of the frame are 0x01000000 | slot (scratch stage111 small_dd2_dyninfo_frame.py)"
+  "skinning": "DD2_frame17303 (scratch stage100/rows_17303.txt, stage107/skinning_programs.py): an instance with a skinning index (dynamicInfo's low 24 bits, 44 of 11,469 records; 0xffffff for none) rastered by GBufferMeshletListVSSkinning (12207, 12494) and MeshletSkinningSoftwareRaster (12307), transformed by MeshletGeometryTransformSkinning (22840) and shaded by GBufferVisibilitySkinning (23032); the Skinning raster and transform read InstancesSkinning and SkinningMatrices, the shading the transformed triangles; the word's bit 24 (flag) says the index names an InstancesSkinning record (DD2_dump.exe setInstance 0x7ff7892cf850: slot | (slot != 0xffffff) << 24, upload 0x7ff789607b40; test.sdf updateInstance and 34 of the 39 Meshlet*Culling programs read it): all 28 skinned records of the frame are 0x01000000 | slot (scratch stage111 small_dd2_dyninfo_frame.py)",
+  "lods": "lods: plain meshlet thresholds by the writer at RVA 0x527440 (its caller RVA 0x5248d0; scratch lod3b/xcheck/dd2_writer.txt): with the mesh header's lod_hash nonzero, a config/tower.lod.4 record of that key and header byte 0x19 bit 1 clear, a = 0.5/e0 and b = 0.5/e1, T = [0, b, (b-a)*w + a ..., a] as truncated halves; else the file's. Biases -3 and -1, flags word 0: DD2_frame15748 11371, 16041 (scratch lod3b/runtime-constants/cull_DD2_DD2_frame15748.log); app.RenderingManager.changeMPMRLODBias sets -1, -2 or -3 on PC from an option value, which option not established. MeshletRendererInstanceCulling (DD2_t2_007): the near rule, the word lod << 24"
  }
 }

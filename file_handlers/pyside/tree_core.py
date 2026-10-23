@@ -55,6 +55,10 @@ class TreeItem:
     def parent(self):
         return None if self._parent is None else self._parent()
 
+    @property
+    def built(self) -> bool:
+        return self._children_built
+
     def child_count(self) -> int:
         self._ensure_children_built()
         return len(self._raw_children)

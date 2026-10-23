@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 3,
  "game": "RE9",
  "resource_version": 251112994,
  "raster": "GBufferMeshletListVS",
@@ -135,6 +135,19 @@
   ]
  },
  "bind_pose_skinned": true,
+ "lods": {
+  "thresholds": "inverse_size",
+  "gate": null,
+  "lod_settings": {
+   "path": "config/rendering/meshlodsettings.lod",
+   "version": 4
+  },
+  "bias": -1.0,
+  "speedtree_bias": 0.0,
+  "near": true,
+  "fraction": false,
+  "base_fov": false
+ },
  "source": {
   "captures": [
    {
@@ -177,6 +190,7 @@
   ],
   "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
   "deferred": "re9_frame15176 3564-3617 (scratch stage124/pipeline_re9.log against stage107/pipeline_dd2.log of DD2_frame226100 13333-13370): DrawMaterialID, then DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared and the same buffer sizes bound (counter 128, buckets 16384, offsets 32768, arguments 131072, slots R32_UINT of the screen), the same group counts (1056, 1056, 1, 1056); the transformed triangles 60 bytes a texel (221184000 bytes at 2560x1440, DD2's); the transforms of env_default_clothwave, env_default_clothwave_rainwall, the tree's and env_default_leaf2 (3602, 3607, 3612, 3617) by the transform IDs' indirect dispatches (490, 141, 201, 1802 groups), the shading (3635 on) reading the slots and the transformed triangles",
-  "bind_pose_skinned": "re9_frame15176 (stage121/reasy_re9_pose.lua turning sm11_037_00's hinge every frame): the door's record (246, geometry 108) has skinningIndex 0xFFFFFF and visibleFlag 0x3100801F (bit 30, the decal-receive bit, clear, as for a skinned mesh), drawn by env_default's static hardware raster (2642; MeshletTOpacityMaskSkinningSoftwareRaster 2508 dispatched no group); REasy's bind pose at the record (stage107/mesh_at.py) equals the game on targets 0, 1, 4 (171,222 texels) and 3 (171,150), target 2 but its alpha (the harness's object unskinned); re9_frame6356's unposed door: the same words (record 252)"
+  "bind_pose_skinned": "re9_frame15176 (stage121/reasy_re9_pose.lua turning sm11_037_00's hinge every frame): the door's record (246, geometry 108) has skinningIndex 0xFFFFFF and visibleFlag 0x3100801F (bit 30, the decal-receive bit, clear, as for a skinned mesh), drawn by env_default's static hardware raster (2642; MeshletTOpacityMaskSkinningSoftwareRaster 2508 dispatched no group); REasy's bind pose at the record (stage107/mesh_at.py) equals the game on targets 0, 1, 4 (171,222 texels) and 3 (171,150), target 2 but its alpha (the harness's object unskinned); re9_frame6356's unposed door: the same words (record 252)",
+  "lods": "lods: plain meshlet thresholds by the writer 0x1574dabd0 (protected, PRAGMATA's code; reached by the jmp at 0x1453aa3a0 from 0x1453a6e7a): with the mesh header's lod_hash nonzero and a config/rendering/meshlodsettings.lod.4 record of that key, T = max(1/size - 1, 0) as PRAGMATA; else the file's (no surveyed RE9 MPLY mesh has a nonzero lod_hash). Biases -1 and 0, flags word 0: re9_frame15176 2370, 3816 (scratch lod3b/runtime-constants/cull_RE9_re9_frame15176.log); MPMR.LODBias comes from the MPMR_LodBias system property, which systempropertyconfiguration.user.3 does not set, so where the -1 comes from is not established. MeshletRendererInstanceCulling (RE9_t2_006): the near rule, the word lod << 24"
  }
 }

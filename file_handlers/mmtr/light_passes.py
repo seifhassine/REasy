@@ -366,6 +366,13 @@ def derived_read(phase: MeshPhase, names: Iterable[str]) -> str | None:
     return next((name for name in names if name in derived), None)
 
 
+def _same_depth(resource, size: tuple[int, int, int]) -> None:
+    if resource.dimension not in _DIMENSIONS[size[2] > 1]:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The light pass reads a texture {depth} texels deep as a {kind}."),
+            {"depth": size[2], "kind": resource.dimension})
+
+
 def light_pass_files(catalog: LightPassCatalog) -> tuple[str, ...]:
     return tuple(dict.fromkeys([item.file for item in catalog.passes] + [
         read.source.value for item in (*catalog.passes, *catalog.phases) for read in item.reads
@@ -473,6 +480,8 @@ class LightPasses:
         self._tested: int | None = None
         self._mips: dict[tuple, int] = {}
         self._before: dict[tuple[int, int], int] = {}
+        # By phase: what its parts read through and the copies those reads need (``_reads``).
+        self._phase_reads: dict[int, tuple] = {}
         self._shown: dict[tuple, tuple[int, int]] = {}
         self._zeros: dict[str, int] = {}
 
@@ -483,6 +492,10 @@ class LightPasses:
                *(texture for _step, texture in self._shown.values()), *self._zeros.values()]
         self._screen()
         self.device.release(old)
+
+    def added(self) -> None:
+        """Call after ``MeshScene.add``: the phases draw the objects added too, onto the textures they had."""
+        self._phase_steps = {}
 
     def texture_size(self, output: PassOutput) -> tuple[int, int, int]:
         if output.size is not None:
@@ -602,13 +615,12 @@ class LightPasses:
                 "MaterialPreview", "The light pass reads {name} as a {kind}."),
                 {"name": resource.name, "kind": resource.input_type})
         if source.kind == "file":
-            data = self.scene.load_file(source.value)
-            entry = _texture_entry(0, data, resource.dimension) if data else None
+            entry = _texture_entry(0, source.value, self.scene.load_file, resource.dimension, self.scene.read_textures)
             if entry is None:
                 raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                     "MaterialPreview", "The game's texture {path} was not found, or is not the shape the light pass "
                                        "reads."), {"path": source.value})
-            return entry
+            return self.device.read(VIEW_DIMENSIONS[resource.dimension], entry)
         if source.kind == "ocio":
             texture = self.lookups[file].get(source.value)
             if texture is None:
@@ -616,8 +628,10 @@ class LightPasses:
                     "MaterialPreview", "The OpenColorIO configuration {path} has no lookup texture {name}."),
                     {"path": file, "name": source.value})
             size = (texture.width, texture.height, texture.depth)
-            entry = (0, read.view_format, *size, 1, texture.texels)
-        elif source.kind == "depth":
+            _same_depth(resource, size)
+            return self.device.read(VIEW_DIMENSIONS[resource.dimension],
+                                    (0, read.view_format, *size, 1, texture.texels))
+        if source.kind == "depth":
             _resource, as_float, as_uint = DEPTH_VIEWS[self.scene.depth_format]
             form = {"float": as_float, "uint": as_uint}.get(resource.return_type)
             if form is None:
@@ -640,10 +654,7 @@ class LightPasses:
                 held = self._mips[key]
                 before += [self.device.copy(held, level, mip, 0) for mip, level in enumerate(found)]
             entry = (0, form, held)
-        if resource.dimension not in _DIMENSIONS[size[2] > 1]:
-            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                "MaterialPreview", "The light pass reads a texture {depth} texels deep as a {kind}."),
-                {"depth": size[2], "kind": resource.dimension})
+        _same_depth(resource, size)
         return entry
 
     def tables(self, index: int, item: LightPass, contracts: Mapping, before: list[int]) -> list:
@@ -761,41 +772,55 @@ class LightPasses:
             return self._phase_steps[number]
         phase = self.catalog.phases[number]
         at = (phase.after, number)
-        reads = {read.name: read for read in phase.reads}
         before: list[int] = []
         targets = []
         for output in phase.targets:
             if output.initial.kind == "copy":
-                own = self._own[f"{number}.{output.key}"] = self.device.texture(
-                    output.format, self.scene.size, RENDER_TARGET)
+                key = f"{number}.{output.key}"
+                if key not in self._own:
+                    self._own[key] = self.device.texture(output.format, self.scene.size, RENDER_TARGET)
+                own = self._own[key]
                 before.append(self.device.copy(own, self.contents(output.initial, at)))
                 targets.append((output.format, own))
             else:
                 targets.append((output.format, self.contents(output.initial, at)))
+        if number not in self._phase_reads:
+            self._phase_reads[number] = self._reads(number, phase, at, targets)
+        texture, constant_buffer, copies = self._phase_reads[number]
+        unblended, blended = self.scene.draw_phase(phase.key, targets, phase.depth, texture, constant_buffer,
+                                                   (*at, True) in self._added)
+        self._phase_steps[number] = before + copies + unblended, blended
+        return self._phase_steps[number]
+
+    def _reads(self, number: int, phase: MeshPhase, at: tuple[int, int], targets: list[tuple]) -> tuple:
+        """What phase ``number``'s parts read through, made once with its textures, so the jobs made of them are kept;
+        and the copies those reads need run first, gathered as the reads are taken and run by every making of the
+        phase's steps."""
+        reads = {read.name: read for read in phase.reads}
         onto = {texture for _form, texture in targets if texture is not None}
+        copies: list[int] = []
 
         def texture(name: str, resource, depth: int) -> tuple | None:
             read = reads.get(name)
             if read is not None and read.source.kind == "derived":
                 raise MaterialPreviewError(DERIVED_READ, {"name": name})
-            entry = None if read is None else self.entry(read, resource, None, at, depth, before)
-            if entry is None or len(entry) != 3 or entry[2] not in onto:
-                return entry
-            # Parts read a texture they draw onto as the phase found it.
-            if (number, entry[2]) not in self._before:
-                found = self._before[number, entry[2]] = self.device.texture(*self.shape(read.source), 0)
-                before.append(self.device.copy(found, entry[2]))
-            return (*entry[:2], self._before[number, entry[2]])
+            needed: list[int] = []
+            entry = None if read is None else self.entry(read, resource, None, at, depth, needed)
+            if entry is not None and len(entry) == 3 and entry[2] in onto:
+                # Parts read a texture they draw onto as the phase found it.
+                if (number, entry[2]) not in self._before:
+                    self._before[number, entry[2]] = self.device.texture(*self.shape(read.source), 0)
+                needed.append(self.device.copy(self._before[number, entry[2]], entry[2]))
+                entry = (*entry[:2], self._before[number, entry[2]])
+            copies.extend(step for step in dict.fromkeys(needed) if step not in copies)
+            return entry
 
         def constant_buffer(name: str, layout) -> bytes | None:
             if name not in _ENGINE_BUFFERS and name not in phase.constants:
                 return None
             return _constant_buffer(name, layout, self.scene.camera, self.light, phase.constants.get(name, {}),
                                     self.scene.size)
-        unblended, blended = self.scene.draw_phase(phase.key, targets, phase.depth, texture, constant_buffer,
-                                                   (*at, True) in self._added)
-        self._phase_steps[number] = before + unblended, blended
-        return self._phase_steps[number]
+        return texture, constant_buffer, copies
 
     def add_start(self, steps: Callable[[], list[int]]) -> None:
         self._starting.append(steps)
@@ -849,6 +874,16 @@ class LightPasses:
         if key not in self._shown:
             self._shown[key] = shown_step(self.scene, self._image(), self.catalog.passes[-1].outputs[0].format)
         return self._shown[key]
+
+    @property
+    def shown(self) -> int:
+        """The texture frames show, as the last frame drew it."""
+        return self._shown_image()[1]
+
+    @property
+    def carries(self) -> bool:
+        """Whether frames carry passes' outputs to the next: frames of the same inputs may differ."""
+        return bool(self._carried)
 
     def drawn(self, light: Light, after: Callable[[int], list[int]]) -> None:
         self.light = light

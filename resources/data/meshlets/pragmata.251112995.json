@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 3,
  "game": "PRAGMATA",
  "resource_version": 251112995,
  "raster": "GBufferMeshletListVS",
@@ -135,6 +135,19 @@
   ]
  },
  "bind_pose_skinned": true,
+ "lods": {
+  "thresholds": "inverse_size",
+  "gate": null,
+  "lod_settings": {
+   "path": "config/render/meshlod.lod",
+   "version": 4
+  },
+  "bias": 0.0,
+  "speedtree_bias": 0.0,
+  "near": true,
+  "fraction": false,
+  "base_fov": false
+ },
  "source": {
   "captures": [
    {
@@ -164,6 +177,7 @@
   ],
   "transform": "transform: read from the masters (scratch stage107/shade_reads_scan.py): a GBufferVisibility declaring the transformed triangles' buffers is drawn after the master's MeshletGeometryTransform, which writes them",
   "deferred": "PRAGMATA_frame15494 4233-4290 (scratch stage133/pipeline_pragmata.log against stage124/pipeline_re9.log and pipeline_re9_shade.log of re9_frame15176 3564-3665): DrawMaterialID, then DeferredIndexBufferKey, DeferredBuildBucket, DeferredGenerateDispatchIndirect and DeferredRadixsort1stPass, the same resources declared and the same buffer sizes bound; the transformed triangles 60 bytes a texel (221184000 bytes at 2560x1440); env_deadfilament's MeshletGeometryTransform (4271) by the transform IDs' indirect dispatch, the shading (4290 on, PS_VisibleGBuffer) reading the slots and the transformed triangles; apart, PRAGMATA's own SceneInfo (628 bytes), the material-ID draw without RE9's extra target, and the shading's own blocks (WhitePtSrv, RWSceneEvent), as its other meshlet shading draws",
-  "bind_pose_skinned": "PRAGMATA_frame15494 (stage123/reasy_pragmata_title.lua turning the joints of sm61_039_00 and sm43_047_01 every frame): their records (2, geometry 121; 1, geometry 119) have skinningIndex 0xFFFFFF, drawn by the static meshlet path; REasy's bind pose at the records (stage107/mesh_at.py, scratch stage133) equals the game on all four targets of their 65,161 and 9,074 texels but one texel of target 3"
+  "bind_pose_skinned": "PRAGMATA_frame15494 (stage123/reasy_pragmata_title.lua turning the joints of sm61_039_00 and sm43_047_01 every frame): their records (2, geometry 121; 1, geometry 119) have skinningIndex 0xFFFFFF, drawn by the static meshlet path; REasy's bind pose at the records (stage107/mesh_at.py, scratch stage133) equals the game on all four targets of their 65,161 and 9,074 texels but one texel of target 3",
+  "lods": "lods: plain meshlet thresholds by the writer 0x144b59740 (its one caller 0x144b52a7a, in the mesh loader 0x144b51db0): with the mesh header's lod_hash nonzero and a config/render/meshlod.lod.4 record of that key, sizes [1, e1, (e1-e0)*w + e0 ..., e0] and T = max(1/size - 1, 0) as truncated halves; else the file's. Bit-exact on all 40 multi-LOD threshold vectors of the saved PRAGMATA geometry buffers (scratch lod3b/pragmata-and-others/emulate.py). Biases 0 and 0, SpeedTreeSmallObjectCullingAndFlags bit 16 clear (no base-FOV scale): PRAGMATA_frame15494 3109, 3264 (scratch lod3b/runtime-constants/cull_PRAGMATA_PRAGMATA_frame15494.log), the MPMR constructor 0x1456fd9b0's defaults. MeshletRendererInstanceCulling (PRAGMATA_t2_006): a corner of clip w under 1 gives LOD 0, the word lod << 24"
  }
 }

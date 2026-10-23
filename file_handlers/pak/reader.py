@@ -8,8 +8,10 @@ import zlib
 import traceback
 from functools import cache, partial
 from pathlib import Path
+from collections.abc import Iterator, Mapping
 from typing import Container, Dict, Iterable, List, Optional, Sequence
 lazy from concurrent.futures import ThreadPoolExecutor, as_completed
+lazy import numpy as np
 
 from .utils import filepath_hash, guess_extension_from_header, normalize_pak_path
 lazy from utils.native_build import ensure_fast_pakresolve
@@ -54,6 +56,70 @@ def _native():
     return ensure_fast_pakresolve()
 
 
+class _Winners(Mapping):
+    """Each hash's winning entry, as (PakFile, PakEntry) made when asked. Entries keep their names in their PakFile,
+    so every reader holding them sees a name any of them gives."""
+    __slots__ = ("paks", "_hashes", "_pak", "_row", "_order", "_sorted")
+
+    def __init__(self, paks: Sequence[PakFile], hashes: Sequence[int], pak: Sequence[int], row: Sequence[int]):
+        self.paks = list(paks)
+        self._hashes = np.asarray(hashes, np.uint64)
+        self._pak = np.asarray(pak, np.uint32)
+        self._row = np.asarray(row, np.uint32)
+        self._order = np.argsort(self._hashes, kind="stable")
+        self._sorted = self._hashes[self._order]
+
+    def _at(self, value) -> int:
+        if not isinstance(value, int) or not 0 <= value < 1 << 64:
+            return -1
+        at = int(np.searchsorted(self._sorted, np.uint64(value)))
+        return int(self._order[at]) if at < len(self._sorted) and int(self._sorted[at]) == value else -1
+
+    def __getitem__(self, value) -> tuple[PakFile, PakEntry]:
+        at = self._at(value)
+        if at < 0:
+            raise KeyError(value)
+        pak = self.paks[self._pak[at]]
+        return pak, pak.entry(int(self._row[at]))
+
+    def __contains__(self, value) -> bool:
+        return self._at(value) >= 0
+
+    def __len__(self) -> int:
+        return len(self._hashes)
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(self._hashes.tolist())
+
+    def named(self) -> Iterator[tuple[int, Optional[str]]]:
+        """Each winner's hash and name, in the order they won."""
+        paks = self.paks
+        for value, pak, row in zip(self._hashes.tolist(), self._pak.tolist(), self._row.tolist()):
+            yield value, paks[pak].names[row]
+
+    def name(self, value: int) -> Optional[str]:
+        at = self._at(value)
+        return None if at < 0 else self.paks[self._pak[at]].names[self._row[at]]
+
+    def unname(self) -> None:
+        for pak, row in zip(self._pak.tolist(), self._row.tolist()):
+            self.paks[pak].names[row] = None
+
+    def give_names(self, paths: Sequence[str], hashes) -> int:
+        """Names each winner still unnamed after the first of ``paths`` with its hash; how many it named."""
+        if not len(self._sorted):
+            return 0
+        found = np.minimum(np.searchsorted(self._sorted, hashes), len(self._sorted) - 1)
+        named = 0
+        for index in np.flatnonzero(self._sorted[found] == hashes).tolist():
+            at = int(self._order[found[index]])
+            names, row = self.paks[self._pak[at]].names, int(self._row[at])
+            if names[row] is None:
+                names[row] = paths[index]
+                named += 1
+        return named
+
+
 class PakReader:
     def __init__(self, game: str | None = None) -> None:
         self.game = game
@@ -90,7 +156,7 @@ class CachedPakReader(PakReader):
         # Redirect stubs (0x70 attributes) send the game to a DLC copy; without it the game serves nothing.
         # ``include_stubs`` serves the stub's own data, below every real winner.
         self.include_stubs = include_stubs
-        self._cache: Optional[Dict[int, tuple[PakFile, PakEntry]]] = None
+        self._cache: Optional[_Winners] = None
         self._cache_complete: bool = True
         self.resolution_profile: PakResolutionProfile | None = None
         self.resolution_profile_source: str = ""
@@ -98,7 +164,8 @@ class CachedPakReader(PakReader):
         self.ordered_pak_paths: tuple[str, ...] = ()
         self.resolution_stats: dict[str, int] = {}
         self._index_revision = 0
-        # Snapshots share PakEntry objects, so later filename discovery must invalidate their path lookups too.
+        # Snapshots share the index and its names, so later filename discovery must invalidate their path lookups
+        # too.
         self._entry_names_revision = [0]
 
     @classmethod
@@ -160,7 +227,7 @@ class CachedPakReader(PakReader):
     def snapshot(self) -> "CachedPakReader":
         """Copy mutable lookup state for a worker without sharing dictionaries."""
         reader = self.fork()
-        reader._cache = dict(self._cache) if self._cache is not None else None
+        reader._cache = self._cache
         reader._cache_complete = self._cache_complete
         reader._searched_paths = dict(self._searched_paths)
         reader._registered_hashes = dict(self._registered_hashes)
@@ -229,8 +296,7 @@ class CachedPakReader(PakReader):
     def cached_path_for_hash(self, value: int) -> str | None:
         if self._cache is None:
             return None
-        hit = self._cache.get(value)
-        return hit[1].path if hit else None
+        return self._cache.name(value)
 
     def cached_known_paths(self) -> List[str]:
         """Return named winners, including registered names for a targeted index."""
@@ -246,11 +312,7 @@ class CachedPakReader(PakReader):
         """Return unknown names only when the current index is already complete."""
         if not self.cache_complete or self._cache is None:
             return []
-        return [
-            f"__Unknown/{value:016X}"
-            for value, (_pak, entry) in self._cache.items()
-            if entry.path is None
-        ]
+        return [f"__Unknown/{value:016X}" for value, name in self._cache.named() if name is None]
 
     def cache_entries(self, assign_paths: bool = False) -> None:
         if self._cache is not None and self._cache_complete:
@@ -284,21 +346,20 @@ class CachedPakReader(PakReader):
 
         if replace_existing:
             self._entry_names_revision[0] += 1
-            for _pak, entry in self._cache.values():
-                entry.path = None
+            self._cache.unname()
             if not norm_paths:
                 return 0
 
-        fast = _native()
+        hashes = np.frombuffer(_native().path_hashes(norm_paths), np.uint64)
         try:
-            _rem, updated = fast.resolve_paths_utf16le(self._cache, norm_paths)
-        except Exception:
-            # A native failure can still have named some entries.
+            updated = self._cache.give_names(norm_paths, hashes)
+        except BaseException:
+            # A failure can still have named some entries.
             self._entry_names_revision[0] += 1
             raise
         if updated:
             self._entry_names_revision[0] += 1
-        return int(updated)
+        return updated
 
 
     @staticmethod
@@ -347,64 +408,63 @@ class CachedPakReader(PakReader):
         self.ordered_pak_paths = tuple(info.path for info in ordered_infos)
         return ordered
 
-    def _build_cache(self, assign_paths: bool) -> Dict[int, tuple[PakFile, PakEntry]]:
+    def _build_cache(self, assign_paths: bool) -> _Winners:
         ordered = self._load_resolved_paks(assign_paths)
         profile = self.resolution_profile
+        paks = [pak for _info, pak in ordered]
         if profile is None:
-            return {}
+            return _Winners(paks, (), (), ())
 
         gated_hashes: set[int] = set()
-        for _info, pak in ordered:
-            for entry in pak.availability_entries:
-                if entry_is_gated(entry.attributes, profile.gate, pak.has_attr_bit20):
-                    gated_hashes.add(entry.combined_hash)
+        for pak in paks:
+            for row in pak.available_rows():
+                if entry_is_gated(int(pak.rows[row]["attributes"]), profile.gate, pak.has_attr_bit20):
+                    gated_hashes.add(int(pak.rows[row]["hash"]))
 
         authorized: set[int] = set()
         if gated_hashes:
+            wanted = np.fromiter(gated_hashes, np.uint64)
             for witness_type in profile.witness_types:
                 for info, pak in ordered:
                     if info.reader_type != witness_type:
                         continue
-                    for entry in pak.entries:
-                        entry_hash = entry.combined_hash
-                        if (
-                            entry_hash in gated_hashes
-                            and entry_hash not in authorized
-                            and not entry_is_gated(
-                                entry.attributes, profile.gate, pak.has_attr_bit20
-                            )
-                        ):
+                    for row in np.flatnonzero(np.isin(pak.rows["hash"], wanted)).tolist():
+                        entry_hash = int(pak.rows[row]["hash"])
+                        if entry_hash not in authorized and not entry_is_gated(
+                                int(pak.rows[row]["attributes"]), profile.gate, pak.has_attr_bit20):
                             authorized.add(entry_hash)
                     if len(authorized) == len(gated_hashes):
                         break
                 if len(authorized) == len(gated_hashes):
                     break
 
-        cache: Dict[int, tuple[PakFile, PakEntry]] = {}
-        stubs: Dict[int, tuple[PakFile, PakEntry]] = {}
+        # Each hash's winner as (pak, row), in the order they win.
+        cache: Dict[int, tuple[int, int]] = {}
+        stubs: Dict[int, tuple[int, int]] = {}
         rejected = 0
-        for _info, pak in ordered:
-            for entry in pak.entries:
-                entry_hash = entry.combined_hash
+        for number, pak in enumerate(paks):
+            names = pak.names
+            for row, (entry_hash, attributes) in enumerate(zip(pak.rows["hash"].tolist(),
+                                                               pak.rows["attributes"].tolist())):
                 if entry_hash in cache:
                     continue
-                if entry.path is None and self._searched_paths:
-                    entry.path = self._searched_paths.get(entry_hash)
+                if names[row] is None and self._searched_paths:
+                    names[row] = self._searched_paths.get(entry_hash)
                 if (
-                    (entry.attributes & 0x70) != 0
-                    and entry_is_gated(entry.attributes, profile.gate, pak.has_attr_bit20)
+                    (attributes & 0x70) != 0
+                    and entry_is_gated(attributes, profile.gate, pak.has_attr_bit20)
                     and entry_hash not in authorized
                 ):
                     rejected += 1
-                    stubs.setdefault(entry_hash, (pak, entry))
+                    stubs.setdefault(entry_hash, (number, row))
                     continue
-                cache[entry_hash] = (pak, entry)
+                cache[entry_hash] = (number, row)
             self._alias_remaps(cache, pak)
 
         unresolved = {value: holder for value, holder in stubs.items() if value not in cache}
         if self.include_stubs and unresolved:
             cache.update(unresolved)
-            for _info, pak in ordered:
+            for pak in paks:
                 self._alias_remaps(cache, pak, only=unresolved.keys())
 
         self.resolution_stats = {
@@ -415,11 +475,12 @@ class CachedPakReader(PakReader):
             "unresolved_stubs": len(unresolved),
             "winners": len(cache),
         }
-        return cache
+        holders = list(cache.values())
+        return _Winners(paks, list(cache), [pak for pak, _row in holders], [row for _pak, row in holders])
 
     @staticmethod
     def _alias_remaps(
-        cache: Dict[int, tuple[PakFile, PakEntry]],
+        cache: Dict[int, tuple[int, int]],
         pak: PakFile,
         only: Optional[Container[int]] = None,
     ) -> None:
@@ -460,9 +521,9 @@ class CachedPakReader(PakReader):
 
         named = []
         unknown = []
-        for h, (_pak, e) in self._cache.items():
-            if e.path:
-                named.append(e.path)
+        for h, path in self._cache.named():
+            if path:
+                named.append(path)
             elif include_unknown:
                 unknown.append(f"__Unknown/{h:016X}")
         if include_unknown:
@@ -484,10 +545,10 @@ class CachedPakReader(PakReader):
                 pak.filepath = pak_path
                 with open(pak_path, "rb") as f:
                     pak.read_contents(f, {manifest_hash: manifest_path})
-                    if not pak.entries:
+                    if not pak.names:
                         continue
                     stream = io.BytesIO()
-                    _read_entry_raw(pak.entries[0], f, stream, chunk_table=pak.chunk_table)
+                    _read_entry_raw(pak.entry(0), f, stream, chunk_table=pak.chunk_table)
                 content = stream.getvalue().decode("utf-8")
                 return [
                     line.replace("\\", "/")

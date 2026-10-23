@@ -1,9 +1,11 @@
 """See docs/internals/mesh-preview.md, Material bindings."""
 from __future__ import annotations
 
-from collections.abc import Callable, Collection, Hashable, Iterable, Mapping
+from collections.abc import Callable, Hashable, Iterator, Mapping, Sequence
+from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from functools import lru_cache
+import math
 import re
 import struct
 from typing import NamedTuple
@@ -14,7 +16,7 @@ lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
 lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from file_handlers.tex.qt_image_utils import parse_tex_bytes
 lazy from file_handlers.tex.texture_quality import mip_for_largest_side
-lazy from utils.resource_file_utils import resource_version_from_path
+from utils.resource_file_utils import ResourceLocation, resource_version_from_path
 
 lazy from .profiles.re_engine_bindless_material import HeapIndices
 lazy from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
@@ -98,11 +100,7 @@ def bound_record_size(document, material: PreviewMaterial) -> int:
             + material.layout.allocation_size(material.shader_lod))
 
 
-def _holder_bytes(record: bytes, shared: bytes | None, stride: int) -> bytes:
-    if shared is not None:
-        if any(shared[:len(record)]):
-            raise ValueError("the material record overlaps the engine's bytes of the buffer holding it")
-        record = record + shared[len(record):]
+def _holder_bytes(record: bytes, stride: int) -> bytes:
     return record.ljust(-(-len(record) // stride) * stride, b"\0")
 
 
@@ -113,6 +111,8 @@ def gbuffer_route(skinned: bool) -> str:
 
 # Smallest mip side of a streamed texture; pixel-sampled textures are streamed, others stay resident.
 STREAMED_SMALLEST = 32
+# Reading and decoding release the GIL, so frames go on meanwhile.
+_STREAMS = ThreadPoolExecutor(max_workers=2, thread_name_prefix="Texture streaming")
 
 
 def streamed_key(path: str) -> str:
@@ -123,21 +123,257 @@ def resident_key(path: str) -> str:
     return f"resident:{path}"
 
 
-def _texture_entry(index: int, data: bytes, dimension: str, read: dict | None = None,
-                   streamed: bool = False) -> tuple | None:
+# Bytes of a file its key's hash takes.
+_CONTENT_SAMPLES = 512
+
+
+class _FileContent:
+    """A file's bytes as a key: hashed by a bounded sample of them, equal by all of them. Once released it holds
+    them no more and equals only itself."""
+    __slots__ = ("data", "_hash")
+
+    def __init__(self, data: bytes):
+        self.data = data
+        self._hash = hash((len(data), data[::max(1, len(data) // _CONTENT_SAMPLES)]))
+
+    def __hash__(self) -> int:
+        return self._hash
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, _FileContent):
+            return NotImplemented
+        return self is other or self.data is not None and (self.data is other.data or self.data == other.data)
+
+    def release(self) -> None:
+        self.data = None
+
+    def __repr__(self) -> str:
+        return f"_FileContent({'released' if self.data is None else f'{len(self.data)} bytes'})"
+
+
+# Bytes of a texture's texels its key's hash takes.
+_TEXEL_SAMPLES = 64
+
+
+class TexelRows:
+    """A texture's subresources in Direct3D's order, each as ``TexFile.stored_mip_rows`` gives it, in place in its
+    file: its rows of texels, or a GDeflate stream the device inflates. Texels of streams are compared by the
+    streams' bytes."""
+    __slots__ = ("rows", "sample", "packed")
+
+    def __init__(self, rows: tuple[tuple, ...]):
+        self.rows = rows
+        self.packed = any(len(row) == 7 for row in rows)
+        sample = _sample([row[5] if len(row) == 7 else row[3] * row[4] for row in rows], self._byte)
+        self.sample = (*sample, "streams") if self.packed else sample
+
+    def _byte(self, subresource: int, at: int) -> int:
+        data, offset, pitch, size, _count, *stream = self.rows[subresource]
+        if stream:
+            return data[offset + at]
+        row, column = divmod(at, size)
+        return data[offset + row * pitch + column]
+
+    def release(self) -> None:
+        """Lets go of the texels once the device holds them; ``same_texels`` then finds them like no others."""
+        self.rows = ()
+
+    def pieces(self) -> Iterator[tuple[bytes, int, int]]:
+        """The texels packed tightly, or the streams, piece by piece: (bytes, offset, length)."""
+        for data, offset, pitch, size, count, *stream in self.rows:
+            if stream:
+                yield data, offset, stream[0]
+                continue
+            if pitch == size:
+                yield data, offset, size * count
+                continue
+            for row in range(count):
+                yield data, offset + row * pitch, size
+
+    def __repr__(self) -> str:
+        return f"TexelRows({len(self.rows)} subresources, {self.sample[0]} bytes)"
+
+
+def _sample(sizes: list[int], byte: Callable[[int, int], int]) -> tuple[int, bytes]:
+    """The length of texels packed tightly, and their bytes at evenly spaced places; ``byte(part, at)`` is the byte at
+    ``at`` of the part ``sizes`` gives the length of."""
+    total = sum(sizes)
+    count = min(_TEXEL_SAMPLES, total)
+    picked, part, start = bytearray(count), 0, 0
+    for number in range(count):
+        place = number * total // count
+        while place >= start + sizes[part]:
+            start += sizes[part]
+            part += 1
+        picked[number] = byte(part, place - start)
+    return total, bytes(picked)
+
+
+def texel_sample(texels: bytes | TexelRows) -> tuple[int, bytes]:
+    """What equal texels share, packed bytes or rows alike."""
+    if isinstance(texels, TexelRows):
+        return texels.sample
+    return _sample([len(texels)], lambda _part, at: texels[at])
+
+
+def same_texels(one: bytes | TexelRows, other: bytes | TexelRows) -> bool:
+    """Whether the texels packed tightly are the same bytes; their lengths must be equal."""
+    if any(isinstance(texels, TexelRows) and not texels.rows for texels in (one, other)):
+        return one is other
+    if any(isinstance(texels, TexelRows) and texels.packed for texels in (one, other)) and not (
+            isinstance(one, TexelRows) and isinstance(other, TexelRows) and one.packed and other.packed
+            and [row[2:] for row in one.rows] == [row[2:] for row in other.rows]):
+        return False
+    left, right = (texels.pieces() if isinstance(texels, TexelRows) else iter(((texels, 0, len(texels)),))
+                   for texels in (one, other))
+    held = given = (b"", 0, 0)
+    while True:
+        held = held if held[2] else next(left, None)
+        given = given if given[2] else next(right, None)
+        if held is None or given is None:
+            return held is given
+        (data, start, size), (other_data, other_start, other_size) = held, given
+        length = min(size, other_size)
+        # A memcmp in place: comparing memoryviews goes byte by byte.
+        if not data.startswith(memoryview(other_data)[other_start:other_start + length], start):
+            return False
+        held, given = (data, start + length, size - length), (other_data, other_start + length, other_size - length)
+
+
+class TextureReads:
+    """A scene's decoded textures, by the file a loader gives for a path and by the file's bytes, so files of the same
+    bytes are one texture. Once their bytes are released, a file asked for again is read no more: it is the texture
+    the device holds. Given ``upload`` (``Resident.read``), each goes to the device as it is first read, and its
+    texels and file are let go of then, the loader's too by ``forget(load, path)``. A streamed texture is read from
+    the last mip whose smaller side spans the texels ``side(path)`` gives (None: from the first); ``refine`` reads
+    it again from finer mips once ``side`` gives more, on streaming threads, ``refill(texture, dimension, texels)``
+    making its device texture anew."""
+    __slots__ = ("files", "contents", "upload", "forget", "side", "refill", "streamed", "refining")
+
+    def __init__(self, upload: Callable[[int, tuple], tuple] | None = None,
+                 forget: Callable[[Callable, str], None] | None = None,
+                 side: Callable[[str], int | None] | None = None,
+                 refill: Callable[[int, int, tuple], None] | None = None):
+        self.files: dict[tuple, tuple | None] = {}
+        self.contents: dict[tuple, tuple | None] = {}
+        self.upload, self.forget, self.side, self.refill = upload, forget, side, refill
+        # By ``files`` key, of each texture read from a later mip: the side it was read for, its device texture and
+        # its mips.
+        self.streamed: dict[tuple, tuple[float, int, int]] = {}
+        # By ``streamed`` key: the side being read for, and the read.
+        self.refining: dict[tuple, tuple[float, Future]] = {}
+
+    def texels(self, load: Callable[[str], bytes | None], path: str, dimension: str,
+               smallest: int | None, whole: bool = False) -> tuple | None:
+        key = (load, path, dimension, smallest, whole)
+        if key not in self.files:
+            data = load(path)
+            side = None if smallest is None or whole or self.side is None else self.side(path)
+            content, self.files[key] = self._decoded(data, dimension, smallest, side) if data else (None, None)
+            found = self.files[key]
+            texture = None if content is None or found is None or self.upload is None else self._uploaded(
+                found, dimension)
+            if texture is not None:
+                content.release()
+                if self.forget is not None:
+                    self.forget(load, path)
+                if side is not None and self.refill is not None:
+                    self.streamed[key] = (side, texture, found[4])
+        return self.files[key]
+
+    def refine(self, reads: int) -> bool:
+        """Makes anew the streamed textures read again, and reads again from finer mips, ``reads`` at a time, those
+        ``side`` now gives more texels than they were read for; whether some are being read."""
+        for key, (wanted, read) in list(self.refining.items()):
+            if not read.done():
+                continue
+            del self.refining[key]
+            _held, texture, mips = self.streamed[key]
+            found = read.result()
+            if found is not None and found[4] > mips:
+                self.refill(texture, VIEW_DIMENSIONS[key[2]], found)
+                found[-1].release()
+                mips = found[4]
+            self.streamed[key] = (wanted, texture, mips)
+        for key, (held, _texture, _mips) in self.streamed.items():
+            if len(self.refining) >= reads:
+                break
+            load, path, dimension, smallest, _whole = key
+            side = self.side(path)
+            wanted = math.inf if side is None else side
+            if wanted > held and key not in self.refining:
+                self.refining[key] = wanted, _STREAMS.submit(self._refined, load, path, dimension, smallest, side)
+        return bool(self.refining)
+
+    def _refined(self, load: Callable[[str], bytes | None], path: str, dimension: str, smallest: int | None,
+                 side: int | None) -> tuple | None:
+        data = load(path)
+        if data and self.forget is not None:
+            self.forget(load, path)
+        return _texture_texels(data, dimension, None, smallest, side) if data else None
+
+    def stop(self) -> None:
+        """Lets go of the reads under way."""
+        for _wanted, read in self.refining.values():
+            read.cancel()
+        self.refining.clear()
+
+    def _decoded(self, data: bytes, dimension: str, smallest: int | None,
+                 side: int | None) -> tuple[_FileContent | None, tuple | None]:
+        """The texels, and the key made of the file's bytes when no other file of them was read."""
+        content = _FileContent(data)
+        key = (content, dimension, smallest, side)
+        if key in self.contents:
+            return None, self.contents[key]
+        self.contents[key] = _texture_texels(data, dimension, None, smallest, side)
+        return content, self.contents[key]
+
+    def _uploaded(self, found: tuple, dimension: str) -> int | None:
+        """The device texture."""
+        try:
+            texture = self.upload(VIEW_DIMENSIONS[dimension], (0, *found))[2]
+        except (RuntimeError, ValueError):
+            # Met again when a step binds the texture, as without the upload here.
+            return None
+        found[-1].release()
+        return texture
+
+
+class BufferReads:
+    """A scene's GPU buffer files, by the file a loader gives for a path: each goes to the device (``upload``, its
+    buffer id kept) as it is first read, and the loader lets go of the file (``forget(load, path)``)."""
+    __slots__ = ("files", "upload", "forget")
+
+    def __init__(self, upload: Callable[[bytes], int], forget: Callable[[Callable, str], None] | None = None):
+        self.files: dict[tuple, int | None] = {}
+        self.upload, self.forget = upload, forget
+
+    def buffer(self, load: Callable[[str], bytes | None], path: str) -> int | None:
+        key = (load, path)
+        if key not in self.files:
+            data = load(path)
+            self.files[key] = None if data is None else self.upload(data)
+            if data is not None and self.forget is not None:
+                self.forget(load, path)
+        return self.files[key]
+
+
+def _texture_entry(index: int, path: str, load: Callable[[str], bytes | None], dimension: str,
+                   read: TextureReads | None = None, streamed: bool = False, whole: bool = False) -> tuple | None:
+    """``whole``: read from the first mip, as a read naming a mip or texel outright needs."""
     smallest = STREAMED_SMALLEST if streamed else None
     if read is None:
-        found = _texture_texels(data, dimension, None, smallest)
+        data = load(path)
+        found = _texture_texels(data, dimension, None, smallest) if data else None
     else:
-        key = (data, dimension, smallest)
-        if key not in read:
-            read[key] = _texture_texels(data, dimension, None, smallest)
-        found = read[key]
+        found = read.texels(load, path, dimension, smallest, whole)
     return None if found is None else (index, *found)
 
 
 def _texture_texels(data: bytes | None, dimension: str, largest_mip: int | None,
-                    smallest: int | None = None) -> tuple | None:
+                    smallest: int | None = None, side: int | None = None) -> tuple | None:
+    """From the mip whose largest side ``largest_mip`` bounds or, given ``side``, the last whose smaller side spans
+    it, but none past the last mip of a smaller side ``smallest`` or more."""
     tex = parse_tex_bytes(data) if data else None
     if tex is None:
         return None
@@ -154,18 +390,21 @@ def _texture_texels(data: bytes | None, dimension: str, largest_mip: int | None,
         return None
     else:
         images = layers = int(header.image_count) if dimension.endswith("-array") else 1
-    first = 0 if largest_mip is None else mip_for_largest_side(header, largest_mip)
-    last = int(header.mip_count) if smallest is None else max(first + 1, sum(
-        1 for level in range(int(header.mip_count)) if min(header.width >> level, header.height >> level) >= smallest))
-    levels = range(first, last)
+    sides = [min(header.width >> level, header.height >> level) for level in range(int(header.mip_count))]
+    kept = len(sides) if smallest is None else sum(1 for value in sides if value >= smallest)
+    if side is not None:
+        first = min(max(kept, 1) - 1, sum(1 for value in sides[1:] if value >= side))
+    else:
+        first = 0 if largest_mip is None else mip_for_largest_side(header, largest_mip)
+    levels = range(first, max(first + 1, kept))
     if dimension == "texture3d" and first:
         return None  # A volume's slices shrink with its mips.
     try:
-        payload = b"".join(tex.read_mip_level(level, image) for image in range(images) for level in levels)
+        rows = tuple(tex.stored_mip_rows(level, image) for image in range(images) for level in levels)
     except ValueError:
         return None
     return (int(header.format), max(1, header.width >> first), max(1, header.height >> first), layers,
-            len(levels), payload)
+            len(levels), TexelRows(rows))
 
 
 def _record_tags(lines, accesses, prefix: int) -> dict[int, int]:
@@ -256,41 +495,81 @@ def _heap_fields_kept(layout, data: bytes, bound: bytes) -> bytes:
     return bytes(data)
 
 
-def gpu_buffer_contents(path: str, data: bytes) -> bytes:
+def _gpu_buffer_header(path: str) -> int:
     header = _GPU_BUFFER_HEADERS.get(resource_version_from_path(path, "gpbf"))
     if header is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The GPU buffer file {path} is of a version the preview does not read."), {"path": path})
-    return bytes(data[header:])
+    return header
 
 
-def _gpu_buffer(name: str, path: str, load_file) -> bytes:
-    data = load_file(path) if path else None
+def gpu_buffer_contents(path: str, data: bytes) -> bytes:
+    return bytes(data[_gpu_buffer_header(path):])
+
+
+@dataclass(frozen=True, slots=True)
+class GpuBufferLocation(ResourceLocation):
+    """A ``.gpbf`` found, of a version the preview reads, read as the buffer it holds."""
+
+    @classmethod
+    def of(cls, found: ResourceLocation) -> GpuBufferLocation:
+        _gpu_buffer_header(found.path)
+        return cls(found.path, found.pak)
+
+    def read(self) -> tuple[str, bytes] | None:
+        found = ResourceLocation.read(self)
+        return None if found is None else (found[0], gpu_buffer_contents(*found))
+
+
+def _gpu_buffer(name: str, path: str, load_file, read: BufferReads | None) -> bytes | int:
+    data = None if not path else load_file(path) if read is None else read.buffer(load_file, path)
     if data is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP("MaterialPreview", "The material's GPU buffer {name} was not found."),
                                    {"name": name})
-    return bytes(data)
+    return data if read is not None else bytes(data)
 
 
-def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMaterial, load_file,
-                    engine_buffer: Callable | None = None, sampler: Callable[[str], tuple] | None = None, *,
-                    engine_texture: Callable | None = None, read_textures: dict | None = None,
-                    heap_start: int = _MATERIAL_HEAP_START, engine_heap: Callable | None = None,
-                    shared_holders: Mapping[str, bytes] | None = None,
-                    streamed: Callable[[str], bool] | None = None, resident_file: Callable | None = None,
-                    pixel_sampled: Collection[str] = (), made_texture: Callable[[str], tuple] | None = None):
-    """Layout rules: docs/internals/mesh-preview.md, Material bindings."""
+@dataclass(frozen=True, slots=True, eq=False)
+class MaterialRecord:
+    """``held`` (the prefix, then ``record``) is what shaders read at the material's handle."""
+    reads: tuple[tuple[str, _MaterialReads], ...]
+    record: bytearray
+    held: bytes
+    given: Callable[[Callable[[bytes], bytes], Hashable], bytes | Following]
+    heap: dict[int, tuple]
+    arrays: dict[tuple[str, str], dict[int, tuple]]
+    # Heap index of the constant buffer view of ``held``.
+    view: int | None
+    texture: Callable[[int, str, str], tuple | None]
+    missing: list[str]
+
+
+@dataclass(frozen=True, slots=True, eq=False)
+class SharedMaterials:
+    """Materials a draw's lanes find at their own handles: ``holder`` by element size, ``table`` the view table."""
+    holder: Callable[[int], bytes | Following]
+    table: bytes
+    heap: Mapping[int, tuple]
+
+
+def material_record(document, stages: Sequence[tuple[str, object, bytes]], material: PreviewMaterial, load_file, *,
+                    read_textures: TextureReads | None = None, read_buffers: BufferReads | None = None,
+                    heap_start: int = _MATERIAL_HEAP_START, streamed: Callable[[str], bool] | None = None,
+                    resident_file: Callable | None = None,
+                    made_texture: Callable[[str], tuple] | None = None) -> MaterialRecord:
+    """``stages`` are (stage, contract, shader) of every program reading the record."""
     if heap_start < _MATERIAL_HEAP_START:
         raise ValueError(f"the material's heap indices start at {heap_start}, before {_MATERIAL_HEAP_START}")
     profile = document.profile.shader_graph_profile
     record, prefix = material.record(), int(profile.material_record_prefix_size)
-    reads: dict[str, _MaterialReads] = {}
+    reads: list[tuple[str, _MaterialReads]] = []
     tags: dict[int, int] = {}
-    for stage, (contract, shader) in shaders.items():
+    for stage, contract, shader in stages:
         if int(contract.model_major) < 6:
             continue
-        reads[stage] = _material_reads(contract, shader, prefix)
-        for offset, value in reads[stage].tags.items():
+        found = _material_reads(contract, shader, prefix)
+        reads.append((stage, found))
+        for offset, value in found.tags.items():
             if tags.setdefault(offset, value) != value:
                 raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                     "MaterialPreview", "The shaders accept different material record kinds."))
@@ -298,8 +577,8 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
              material.layout.word_offsets(material.shader_lod).items()}
     slots = {offset: name for (kind, offset), name in words.items() if kind == "texture"}
     missing, loaded = [], {}
-    pixel_read = {slots.get(read.byte_offset) for read in (reads["pixel"].textures if "pixel" in reads else ())}
-    pixel_read |= set(pixel_sampled)
+    pixel_read = {slots.get(read.byte_offset) for stage, found in reads if stage == "pixel" for read in found.textures}
+    addressed = {slots.get(read.byte_offset) for _stage, found in reads for read in found.textures if read.addressed}
 
     def texture(index: int, name: str, dimension: str) -> tuple | None:
         if (index, name, dimension) not in loaded and made_texture is not None:
@@ -310,10 +589,11 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
         if (index, name, dimension) not in loaded:
             path = material.textures.get(name, "")
             pixel = name in pixel_read or resident_file is None
-            data = (load_file if pixel else resident_file)(path) if path else None
-            loaded[index, name, dimension] = (_texture_entry(index, data, dimension, read_textures,
-                                                             pixel and streamed is not None and streamed(path))
-                                              if data else None)
+            loaded[index, name, dimension] = (_texture_entry(index, path, load_file if pixel else resident_file,
+                                                             dimension, read_textures,
+                                                             pixel and streamed is not None and streamed(path),
+                                                             name in addressed)
+                                              if path else None)
         entry = loaded[index, name, dimension]
         if entry is None:
             missing.append(name)
@@ -325,7 +605,7 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
     arrays: dict[tuple[str, str], dict[int, tuple]] = {}
     heap: dict[int, tuple] = {}
     words_read: tuple[set[int], set[int]] = (set(), set())
-    for stage, read in ((stage, read) for stage, found in reads.items() for read in found.textures):
+    for stage, read in ((stage, read) for stage, found in reads for read in found.textures):
         name = slots.get(read.byte_offset)
         if name is None and read.resource is None:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP(
@@ -355,7 +635,7 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The pass reads one record word's texture from the descriptor heap and from an array."))
     buffers: dict[str, int] = {}
-    for offset in sorted({*found.buffers for found in reads.values()}):
+    for offset in sorted({*found.buffers for _stage, found in reads}):
         name = words.get(("gpu_buffer", offset))
         if name is None:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP(
@@ -363,7 +643,7 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
         if name not in buffers:
             index = buffers[name] = base + len(indices) + len(buffers) + 1
             heap[index] = (RANGE_SRV, VIEW_DIMENSIONS["buffer"], (index, 0, 0, _gpu_buffer(
-                name, material.buffers.get(name, ""), load_file)))
+                name, material.buffers.get(name, ""), load_file, read_buffers)))
         struct.pack_into("<I", record, offset - prefix, buffers[name])
     header = bytearray(prefix)
     for offset, value in tags.items():
@@ -384,11 +664,42 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
                 struct.pack_into(f"<{len(values)}f", now, offset, *values)
             return shape(bytes(header) + now.take_bytes())
         return Following((material.animated, place, held), make)
-    sizes = [*found.tables.values() for found in reads.values()]
+    sizes = [*found.tables.values() for _stage, found in reads]
+    view = None
     if sizes:
-        buffer_index, largest = base + len(indices) + len(buffers) + 1, max(sizes)
-        heap[buffer_index] = (RANGE_CBV, 0, (buffer_index, given(lambda data: data.ljust(largest, b"\0"),
-                                                            ("table", largest))))
+        view, largest = base + len(indices) + len(buffers) + 1, max(sizes)
+        heap[view] = (RANGE_CBV, 0, (view, given(lambda data: data.ljust(largest, b"\0"), ("table", largest))))
+    return MaterialRecord(tuple(reads), record, held, given, heap, arrays, view, texture, missing)
+
+
+_SHARED_UNBOUND = QT_TRANSLATE_NOOP(
+    "MaterialPreview", "The pass binds part of its material to the draw itself, which REasy's meshlet draws, reading "
+                       "every material at its own handle, do not lay out.")
+
+
+def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMaterial, load_file,
+                    engine_buffer: Callable | None = None, sampler: Callable[[str], tuple] | None = None, *,
+                    engine_texture: Callable | None = None, read_textures: TextureReads | None = None,
+                    read_buffers: BufferReads | None = None,
+                    heap_start: int = _MATERIAL_HEAP_START, engine_heap: Callable | None = None,
+                    shared: SharedMaterials | None = None,
+                    streamed: Callable[[str], bool] | None = None, resident_file: Callable | None = None,
+                    made_texture: Callable[[str], tuple] | None = None):
+    """Layout rules: docs/internals/mesh-preview.md, Material bindings; ``shared``: docs/internals/meshlets.md."""
+    stages = [(stage, contract, shader) for stage, (contract, shader) in shaders.items()]
+    prefix = int(document.profile.shader_graph_profile.material_record_prefix_size)
+    if shared is None:
+        owned = material_record(document, stages, material, load_file, read_textures=read_textures,
+                                read_buffers=read_buffers, heap_start=heap_start, streamed=streamed,
+                                resident_file=resident_file, made_texture=made_texture)
+        reads, heap, missing = dict(owned.reads), owned.heap, owned.missing
+    else:
+        owned, heap, missing = None, dict(shared.heap), []
+        reads = {stage: _material_reads(contract, shader, prefix) for stage, contract, shader in stages
+                 if int(contract.model_major) >= 6}
+        if any(read.resource is not None and not read.resource.bind_count
+               for found in reads.values() for read in found.textures):
+            raise MaterialPreviewError(_SHARED_UNBOUND)
     user_buffers = set(document.profile.user_material_buffer_names)
     tables, unbound, constants = [], set(), {}
     for stage, (contract, _shader) in shaders.items():
@@ -404,9 +715,11 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
             if kind == "b":
                 size = contract.buffer(resource.name).byte_size
                 if resource.name in user_buffers:
+                    if owned is None:
+                        raise MaterialPreviewError(_SHARED_UNBOUND)
                     # The record's first ``prefix`` bytes are heap index fields, not material values.
-                    constants[(stage, resource.name)] = bytes(record[:size]).ljust(size, b"\0")
-                    tables.append((RANGE_CBV, *place, 0, visibility, ((0, given(
+                    constants[(stage, resource.name)] = bytes(owned.record[:size]).ljust(size, b"\0")
+                    tables.append((RANGE_CBV, *place, 0, visibility, ((0, owned.given(
                         lambda data, size=size: data[prefix:prefix + size].ljust(size, b"\0"), ("user", size))),)))
                     continue
                 data = bytes(size) if engine_buffer is None else engine_buffer(contract, resource)
@@ -423,16 +736,17 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
             if dimension not in VIEW_DIMENSIONS:
                 raise MaterialPreviewError(QT_TRANSLATE_NOOP("MaterialPreview", "The pass reads a {kind} texture."),
                                            {"kind": dimension})
-            entries = list(arrays.get((stage, resource.name), {}).values())
+            entries = [] if owned is None else list(owned.arrays.get((stage, resource.name), {}).values())
             if found is not None and resource.name in found.holders:
                 stride = contract.structured_buffer(resource.name).byte_size
-                shared = None if shared_holders is None else shared_holders.get(resource.name)
-                entries = [(0, 0, stride, given(lambda data, stride=stride, shared=shared: _holder_bytes(
-                    data, shared, stride), ("holder", stride, shared)))]
+                entries = [(0, 0, stride, shared.holder(stride) if owned is None else owned.given(
+                    lambda data, stride=stride: _holder_bytes(data, stride), ("holder", stride)))]
             elif found is not None and resource.name in found.tables:
-                entries = [(0, 0, 4, struct.pack("<I", buffer_index))]
+                entries = [(0, 0, 4, shared.table if owned is None else struct.pack("<I", owned.view))]
             elif resource.bind_count == 1 and resource.name in material.textures and resource.input_type == "texture":
-                entries = [entry] if (entry := texture(0, resource.name, dimension)) else []
+                if owned is None:
+                    raise MaterialPreviewError(_SHARED_UNBOUND)
+                entries = [entry] if (entry := owned.texture(0, resource.name, dimension)) else []
             elif resource.bind_count == 1 and resource.input_type == "texture" and engine_texture is not None:
                 entries = [entry] if (entry := engine_texture(contract, resource)) else []
             elif dimension == "buffer" and engine_buffer is not None:
@@ -467,8 +781,8 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
         for handle in found.engine:
             given = None if engine_heap is None else engine_heap(contract, handle)
             if given is not None:
-                for kind, dimension, entry in given:
-                    if heap.setdefault(entry[0], (kind, dimension, entry)) != (kind, dimension, entry):
+                for item in given:
+                    if heap.setdefault(item[2][0], item) != item:
                         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                             "MaterialPreview", "The pass reads one engine heap index as several kinds."))
                 continue
@@ -494,16 +808,6 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
     return tables, tuple(heap.values()), tuple(dict.fromkeys(missing))
 
 
-def pixel_sampled_textures(document, material: PreviewMaterial, pixel_shaders: Iterable[tuple]) -> frozenset[str]:
-    """The renderer streams these for every program of the material."""
-    prefix = int(document.profile.shader_graph_profile.material_record_prefix_size)
-    slots = {offset + prefix: name for (kind, name), offset in material.layout.word_offsets(material.shader_lod).items()
-             if kind == "texture"}
-    found = {slots.get(read.byte_offset) for contract, shader in pixel_shaders if int(contract.model_major) >= 6
-             for read in _material_reads(contract, shader, prefix).textures}
-    found.discard(None)
-    return frozenset(found)
-
-
-__all__ = ["Following", "MaterialPreviewError", "PreviewMaterial", "bound_record_size", "gbuffer_route",
-           "gpu_buffer_contents", "pixel_sampled_textures", "shader_bindings"]
+__all__ = ["BufferReads", "Following", "GpuBufferLocation", "MaterialPreviewError", "MaterialRecord", "PreviewMaterial",
+           "SharedMaterials", "TexelRows", "TextureReads", "bound_record_size", "gbuffer_route", "gpu_buffer_contents",
+           "material_record", "same_texels", "shader_bindings", "texel_sample"]

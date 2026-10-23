@@ -10,16 +10,25 @@ lazy from file_handlers.mmtr.shown_image import target_lanes
 lazy from ui.editor_widgets import styled_label
 
 
-def preview_material(surface, parameters: Callable[[], Mapping[str, float]] | None = None) -> PreviewMaterial:
-    context = surface.instance_context
-    offsets = {parameter.name: parameter.byte_offset for parameter in context.parameters}
-    values = tuple((offsets[parameter.name], tuple(float(value) for value in parameter.values))
-                   for parameter in surface.parameters if parameter.name in offsets)
+def preview_material(surface, parameters: Callable[[], Mapping[str, float]] | None = None,
+                     made: dict | None = None) -> PreviewMaterial:
+    """``made``: a gather's cache, which keeps what is made of each surface (and the surface) for its other parts."""
+    key = "preview material", id(surface)
+    held = None if made is None else made.get(key)
+    if held is None:
+        context = surface.instance_context
+        offsets = {parameter.name: parameter.byte_offset for parameter in context.parameters}
+        values = tuple((offsets[parameter.name], parameter.values)
+                       for parameter in surface.parameters if parameter.name in offsets)
+        held = (surface, offsets, values, {texture.texture_type: texture.texture_path for texture in surface.textures},
+                {buffer.name: buffer.path for buffer in surface.gpu_buffers})
+        if made is not None:
+            made[key] = held
+    _surface, offsets, values, textures, buffers = held
+    layout = surface.instance_context.layout
     animated = None if parameters is None else _animated(surface, offsets, parameters)
-    return PreviewMaterial(context.layout, values, {texture.texture_type: texture.texture_path
-                                                    for texture in surface.textures},
-                           surface.material_flags, 0 if context.layout.shader_lod_redirects else None,
-                           buffers={buffer.name: buffer.path for buffer in surface.gpu_buffers}, animated=animated)
+    return PreviewMaterial(layout, values, textures, surface.material_flags,
+                           0 if layout.shader_lod_redirects else None, buffers=buffers, animated=animated)
 
 
 def _animated(surface, offsets: Mapping[str, int], parameters: Callable[[], Mapping[str, float]]
