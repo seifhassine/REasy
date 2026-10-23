@@ -224,13 +224,13 @@ class _CachePruneTask(QRunnable):
 class _ThumbnailTask(QRunnable):
 	def __init__(
 		self, path, reader, cache_path, generation, texture_quality,
-		resource_context, resource_cache, signals,
+		resource_context, resource_cache, passes, signals,
 	):
 		super().__init__()
 		self.path, self.reader, self.cache_path = path, reader, cache_path
 		self.generation, self.texture_quality, self.signals = generation, texture_quality, signals
 		self.resource_context = resource_context
-		self.resource_cache = resource_cache
+		self.resource_cache, self.passes = resource_cache, passes
 
 	def run(self):
 		result = QImage()
@@ -246,7 +246,7 @@ class _ThumbnailTask(QRunnable):
 			elif ext == "mesh":
 				result = _mesh_thumbnail(
 					data, self.path, self.texture_quality,
-					self.resource_context, self.resource_cache,
+					self.resource_context, self.resource_cache, self.passes,
 				)
 			if not result.isNull():
 				result = result.scaled(
@@ -276,6 +276,8 @@ class PakThumbnailProvider(QObject):
 		self._pending: set[str] = set()
 		self._failed: set[str] = set()
 		self._resource_cache = OrderedDict()
+		# The game's light pass files the thumbnails read, by what they draw.
+		self._passes: dict = {}
 		self._signals = _ThumbnailSignals()
 		self._signals.ready.connect(self._on_ready)
 		self._pool = QThreadPool(self)
@@ -312,7 +314,8 @@ class PakThumbnailProvider(QObject):
 		signature = digest.hexdigest()
 		if reader is self._source_reader and signature == self._signature:
 			return
-		thumbnail_reader = reader.fork() if reader is not None else None
+		# A ready index is shared rather than built again; its names are only ever added to.
+		thumbnail_reader = None if reader is None else reader.snapshot() if reader.cache_ready else reader.fork()
 		if thumbnail_reader is not None:
 			thumbnail_reader.add_files(*known_paths)
 		resource_context = resource_context or ResourceResolutionContext()
@@ -324,6 +327,7 @@ class PakThumbnailProvider(QObject):
 		self._pending.clear()
 		self._failed.clear()
 		self._resource_cache = OrderedDict()
+		self._passes = {}
 
 	def icon(self, path: str, is_dir: bool) -> QIcon:
 		if is_dir:
@@ -356,7 +360,7 @@ class PakThumbnailProvider(QObject):
 			_ThumbnailTask(
 				path, self._reader, cache_path, self._generation,
 				self._settings.get("renderer_texture_quality", "balanced"), self._resource_context,
-				self._resource_cache, self._signals,
+				self._resource_cache, self._passes, self._signals,
 			)
 		)
 
@@ -382,7 +386,7 @@ class PakThumbnailProvider(QObject):
 
 def _mesh_thumbnail(
 	data: bytes, path: str, quality: str,
-	resource_context: ResourceResolutionContext, resource_cache,
+	resource_context: ResourceResolutionContext, resource_cache, passes: dict,
 ) -> QImage:
 	handler = MeshHandler.from_bytes(
 		path,
@@ -399,7 +403,7 @@ def _mesh_thumbnail(
 	materials.reload()
 	while len(resource_cache) > 32:
 		resource_cache.popitem(last=False)
-	pixels = thumbnail(handler, materials, THUMBNAIL_SIZE, MESH_BACKGROUND)
+	pixels = thumbnail(handler, materials, THUMBNAIL_SIZE, MESH_BACKGROUND, passes)
 	if pixels is None:
 		return QImage()
 	return QImage(

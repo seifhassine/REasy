@@ -724,6 +724,8 @@ class LitPreview(GameLighting, DevicePreview):
         super().__init__(handler, session, inspection, parent)
         self._intensity = DEFAULT_INTENSITY
         self._target: tuple[int, str] | None = None
+        # The light pass files by where the mesh's files are found and what it draws.
+        self._passes: dict[tuple, dict[str, bytes]] = {}
 
     @property
     def intensity(self) -> float:
@@ -781,8 +783,12 @@ class LitPreview(GameLighting, DevicePreview):
         groups = () if level is None else tuple(submesh_groups(level, inspection.submeshes))
         meshlets = layer == "main" and MeshletBuffer.from_mesh(mesh)
         stmesh_meshlets = isinstance(handler, StmeshHandler) and handler.stmesh.meshlets is not None
-        files = pass_files(profile, catalog, chains if level is not None else None, resolve,
-                           meshlet_catalog_for(profile) if meshlets or stmesh_meshlets else None)
+        drawn = (MeshMaterialResolver.resource_scope(handler), game, level is not None,
+                 bool(meshlets or stmesh_meshlets))
+        if drawn not in self._passes:
+            self._passes[drawn] = pass_files(profile, catalog, chains if drawn[2] else None, resolve,
+                                             meshlet_catalog_for(profile) if drawn[3] else None)
+        files = dict(self._passes[drawn])
         streaming = texture_quality_profile(session.texture_quality).prefer_streaming
         cache: dict = {}
         masters: dict[str, tuple[str, bytes]] = {}
@@ -859,14 +865,19 @@ def pass_files(profile, catalog, chains, resolve: Callable[[str], tuple[str, byt
     return files
 
 
-def thumbnail(handler, session, size: int, background: tuple[int, int, int]) -> np.ndarray | None:
+def thumbnail(handler, session, size: int, background: tuple[int, int, int],
+              passes: dict | None = None) -> np.ndarray | None:
+    """``passes`` holds the light pass files for thumbnails after this one."""
     preview = MeshPreviewScene(handler.mesh)
     points = mesh_bounds_points(preview.scene)
     if not len(points):
         return None
     inspection = MeshInspection(handler.mesh, preview)
+    lit = LitPreview(handler, session, lambda: inspection)
+    if passes is not None:
+        lit._passes = passes
     try:
-        scene = LitPreview(handler, session, lambda: inspection)._gather()
+        scene = lit._gather()
     except MaterialPreviewError:
         return None
     minimum, maximum = points.min(axis=0), points.max(axis=0)

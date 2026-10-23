@@ -33,7 +33,7 @@ lazy from ui.project_manager.pak_file_lists import (
 	game_for_pak_list_path, read_pak_list_file,
 )
 lazy from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvider, thumbnail_cache_directory
-lazy from utils.resource_file_utils import resource_context_for_app
+lazy from utils.resource_file_utils import ResourceResolutionContext, get_path_prefix_for_game, resource_context_for_app
 lazy from file_handlers.pak.utils import any_pak_modded
 lazy from ui.extraction_progress_dialog import ExtractionProgressDialog
 lazy from threading import Thread
@@ -655,11 +655,7 @@ class PakBrowserDialog(QDialog):
 		else:
 			entries = self._directory_icon_entries(paths)
 		self._thumbnail_provider.set_source(
-			self._current_reader(),
-			self._selected_paks(),
-			self._base_paths,
-			resource_context_for_app(self.parent()),
-		)
+			self._current_reader(), self._selected_paks(), self._base_paths, self._resource_context(project=False))
 		self._thumbnail_provider.cancel_pending()
 		self._icon_model.set_entries(entries)
 		self._schedule_visible_thumbnails()
@@ -691,9 +687,7 @@ class PakBrowserDialog(QDialog):
 			reader = self._current_reader()
 			if reader is None:
 				return False
-			context = resource_context_for_app(self.parent())
-			if context is not None:
-				context = context.with_pak_reader(reader)
+			context = self._resource_context().with_pak_reader(reader)
 			entry = (
 				int(path.split("/", 1)[1], 16)
 				if path.startswith(UNKNOWN_PATH_PREFIX)
@@ -711,6 +705,14 @@ class PakBrowserDialog(QDialog):
 		except Exception as e:
 			QMessageBox.critical(self, self.tr("Open failed"), str(e))
 			return False
+
+	def _resource_context(self, project: bool = True) -> ResourceResolutionContext:
+		"""Of the browser's game: the project's when ``project`` and the project is of that game."""
+		game = self.game_combo.currentText().strip()
+		context = resource_context_for_app(self.parent()) if project else None
+		if context is None or context.game != game:
+			context = ResourceResolutionContext(path_prefix=get_path_prefix_for_game(game), game=game)
+		return context
 
 	def _selected_paks(self) -> List[str]:
 		return [self.pak_list.item(i).text() for i in range(self.pak_list.count())]

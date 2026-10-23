@@ -18,6 +18,8 @@ class _Entry:
     value: object
     cost: int
     holders: int
+    # The bytes parsed: a lease given this object again finds the entry without hashing them.
+    data: bytes
 
 
 class _ParsedFiles:
@@ -26,13 +28,23 @@ class _ParsedFiles:
         self._budget = budget
         self._entries: OrderedDict[tuple, _Entry] = OrderedDict()
         self._parsing: dict[tuple, threading.Event] = {}
+        # By the id of an entry's bytes and the rest of its key: its key.
+        self._known: dict[tuple, tuple] = {}
 
     def set_budget(self, budget: int) -> None:
         with self._lock:
             self._budget = budget
             self._trim()
 
-    def take[T](self, key: tuple, cost: int, parse: Callable[[], T]) -> T:
+    def key(self, data: bytes, parse: tuple) -> tuple:
+        with self._lock:
+            key = self._known.get((id(data), parse))
+            entry = None if key is None else self._entries.get(key)
+            if entry is not None and entry.data is data:
+                return key
+        return hashlib.sha256(data).digest(), *parse
+
+    def take[T](self, key: tuple, cost: int, parse: Callable[[], T], data: bytes) -> T:
         """Each call must be matched by a ``give_back`` of the key."""
         while True:
             with self._lock:
@@ -54,7 +66,8 @@ class _ParsedFiles:
                 parsed.set()
             raise
         with self._lock:
-            self._entries[key] = _Entry(value, cost, 1)
+            self._entries[key] = _Entry(value, cost, 1, data)
+            self._known[id(data), key[1:]] = key
             del self._parsing[key]
             parsed.set()
         return value
@@ -72,6 +85,7 @@ class _ParsedFiles:
             if kept <= self._budget:
                 break
             del self._entries[key]
+            del self._known[id(entry.data), key[1:]]
             kept -= entry.cost
 
 
@@ -93,8 +107,8 @@ class Lease:
     def parsed[T](self, path: str, data: bytes, parse: Callable[..., T], *arguments: Hashable) -> T:
         name = (path, parse.__module__, parse.__qualname__, arguments)
         if name not in self._found:
-            key = (hashlib.sha256(data).digest(), *name[1:])
-            self._found[name] = _files.take(key, COST_PER_BYTE * len(data), lambda: parse(data, *arguments))
+            key = _files.key(data, name[1:])
+            self._found[name] = _files.take(key, COST_PER_BYTE * len(data), lambda: parse(data, *arguments), data)
             self._keys.append(key)
         return self._found[name]
 
