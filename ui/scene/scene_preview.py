@@ -98,6 +98,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     # (SceneView, overlays), or (refusal string, None).
     device_view_changed = Signal(object, object)
     device_window_changed = Signal(int)
+    device_image_wanted = Signal()
     fps_limit_changed = Signal(int)
     strands_stepped = Signal(object)
 
@@ -1802,6 +1803,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             # Made before frames are on: creating it repaints the viewport.
             window = FrameWindow(self)
             window.window_changed.connect(self.device_window_changed)
+            window.image_wanted.connect(self.device_image_wanted)
             window.setGeometry(self.rect())
             window.winId()
             window.lower()
@@ -1811,6 +1813,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._sync_device_window()
         self.update()
         self._next_pass()
+
+    def show_device_image(self, image) -> None:
+        if self._device_window is not None:
+            self._device_window.last_frame = image
 
     def set_device_frame(self, frame) -> None:
         self._device_frame = frame

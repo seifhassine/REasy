@@ -40,6 +40,7 @@ from PySide6.QtWidgets import (
 lazy from ui.editor_groups import EditorGroupHost
 lazy from ui.qt_timers import call_later
 lazy from ui.styles import current_colors
+lazy from ui.tab_preview import TabPreview
 
 _WM_MOVING, _WM_EXITSIZEMOVE = 0x0216, 0x0232
 
@@ -246,6 +247,7 @@ class DetachTabBar(QTabBar):
         self.setToolTip(
             self.tr("Drag to reorder or move between editor groups. Drag away to detach.")
         )
+        TabPreview(self)
         # EditorGroupHost sets inactiveGroup on the tab bars of groups that are not active.
         colors = current_colors()
         self.setStyleSheet(

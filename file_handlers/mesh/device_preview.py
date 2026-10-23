@@ -17,7 +17,7 @@ lazy from file_handlers.strands.chain_scene import (ChainScene, gather as gather
                                                with_files)
 lazy from tools.github_downloader import show_download_failure
 lazy from tools.shader_tools import ShaderToolDownloadCancelled, prompt_shader_tool_download
-from ui.scene.device_frames import LIMIT_MOST, RenderThread
+from ui.scene.device_frames import LIMIT_MOST, RenderThread, preview_image
 lazy from utils.resource_file_utils import ReadOnUse, ResourceLocation
 
 lazy from .material_resolver import MeshMaterialResolver
@@ -77,7 +77,9 @@ class DevicePreview(QObject):
     active_changed = Signal(bool)
     frame_changed = Signal(object)
     status_changed = Signal()
+    image_read = Signal(object)
     _finished = Signal(object, object, object)
+    _read = Signal(object, object)
 
     def __init__(self, handler, session, inspection: Callable[[], object], parent=None):
         from file_handlers.mmtr.resident import warm_up
@@ -99,6 +101,8 @@ class DevicePreview(QObject):
         self._told_failures: list[tuple[Mapping | None, dict[int, str]]] = []
         self._error = ""
         self._finished.connect(self._on_finished)
+        self._read.connect(self._on_read)
+        self._image_of = None
         self._rate = LIMIT_MOST
         self._clock = QElapsedTimer()
         self._clock.start()
@@ -228,6 +232,14 @@ class DevicePreview(QObject):
 
     def _placed(self) -> int | None:
         return self._window if self._frames_shown else None
+
+    def read_image(self) -> None:
+        frame = self._frame
+        if self._thread is None or self._placed() is None or frame is None or not frame.drawn \
+                or frame is self._image_of:
+            return
+        self._image_of = frame
+        self._thread.read_back()
 
     def geometry_changed(self, _preview=None) -> None:
         inspection = self._inspection()
@@ -362,7 +374,8 @@ class DevicePreview(QObject):
         if self._thread is None:
             self._drawer = self._make_drawer()
             self._drawer.place(self._placed())
-            thread = RenderThread(self._drawer, lambda request, result: self._finished.emit(thread, request, result))
+            thread = RenderThread(self._drawer, lambda request, result: self._finished.emit(thread, request, result),
+                                  lambda image: self._read.emit(thread, preview_image(image)))
             self._thread = thread
             thread.start()
         self._thread.ask(self._request())
@@ -385,6 +398,10 @@ class DevicePreview(QObject):
     def _drawable(self) -> bool:
         view, scene = self._view, self._scene
         return view is not None and scene is not None and view.geometry == scene.geometry
+
+    def _on_read(self, thread: RenderThread, image) -> None:
+        if thread is self._thread:
+            self.image_read.emit(image)
 
     def _on_finished(self, thread: RenderThread, _request: tuple, result) -> None:
         if thread is not self._thread or self._offering:

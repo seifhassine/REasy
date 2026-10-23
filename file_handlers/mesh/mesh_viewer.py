@@ -200,6 +200,8 @@ class MeshViewer(QWidget):
                 self.viewport.device_view_changed.connect(preview.view_changed, Qt.QueuedConnection)
                 # Sent before the window is destroyed, so handled at once.
                 self.viewport.device_window_changed.connect(preview.set_window)
+                self.viewport.device_image_wanted.connect(preview.read_image)
+                preview.image_read.connect(self.viewport.show_device_image)
                 self.viewport.shown_shading_changed.connect(
                     lambda shown, preview=preview, shading=shading: preview.set_shown(shown in (None, shading)))
                 preview.active_changed.connect(partial(self.viewport.set_device_shading, shading))

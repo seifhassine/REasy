@@ -383,6 +383,8 @@ class SceneTexturesPreview(DevicePreview):
         viewport.device_view_changed.connect(self.view_changed, Qt.ConnectionType.QueuedConnection)
         # Sent before the window is destroyed, so handled at once.
         viewport.device_window_changed.connect(self.set_window)
+        viewport.device_image_wanted.connect(self.read_image)
+        self.image_read.connect(viewport.show_device_image)
         self.active_changed.connect(viewport.set_device_frames)
         self.frame_changed.connect(viewport.set_device_frame)
 

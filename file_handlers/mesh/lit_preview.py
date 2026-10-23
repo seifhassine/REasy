@@ -429,6 +429,15 @@ class DeviceDrawer:
         self._leave()
         self._lease.close()
 
+    def image(self) -> np.ndarray | None:
+        drawn = None if self._drawn is None else self._drawn[1]
+        if drawn is None:
+            return None
+        overlay = self._overlay(drawn)
+        width, height = overlay.size
+        shown, = overlay.device.flush([overlay.image])
+        return np.frombuffer(shown, np.uint8).reshape(height, width, 4)
+
     def _leave(self) -> None:
         self._presenter.hide()
         drawn = None if self._drawn is None else self._drawn[1]
@@ -671,15 +680,6 @@ class LitDrawer(DeviceDrawer):
         if self._temporal is not None:
             self._temporal.release()
             self._temporal = None
-
-    def image(self) -> np.ndarray | None:
-        drawn = None if self._drawn is None else self._drawn[1]
-        if drawn is None:
-            return None
-        mesh, _frame, overlay = drawn[:3]
-        width, height = overlay.size
-        shown, = mesh.device.flush([overlay.image])
-        return np.frombuffer(shown, np.uint8).reshape(height, width, 4)
 
     def _run(self, drawn: tuple, light: Light, target: tuple[int, str] | None, overlays: LitOverlays, camera: Camera,
              visible: Iterable[int]) -> None:

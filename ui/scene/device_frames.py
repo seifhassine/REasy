@@ -4,17 +4,31 @@ import threading
 from collections.abc import Callable
 lazy from ctypes import wintypes
 
+lazy import numpy as np
 from PySide6.QtCore import QEvent, Qt, Signal
+from PySide6.QtGui import QImage, QPainter
 from PySide6.QtWidgets import QWidget
 
 # Also the strand step rate when uncapped: each step is an image, so steps need a rate to pace them.
 LIMIT_MOST = 240
 
 _WM_NCHITTEST, _WM_DESTROY, _HTTRANSPARENT = 0x0084, 0x0002, -1
+_PREVIEW_MOST = 640
+
+
+def preview_image(pixels) -> QImage | None:
+    if not isinstance(pixels, np.ndarray):
+        return None
+    height, width = pixels.shape[:2]
+    image = QImage(pixels, width, height, width * 4, QImage.Format.Format_RGBX8888)
+    if max(width, height) <= _PREVIEW_MOST:
+        return image.copy()
+    return image.scaled(_PREVIEW_MOST, _PREVIEW_MOST, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
 
 class FrameWindow(QWidget):
     window_changed = Signal(int)
+    image_wanted = Signal()
 
     def __init__(self, parent: QWidget):
         super().__init__(parent)
@@ -22,9 +36,16 @@ class FrameWindow(QWidget):
                           Qt.WA_TransparentForMouseEvents, Qt.WA_DontCreateNativeAncestors):
             self.setAttribute(attribute)
         self.setFocusPolicy(Qt.NoFocus)
+        self.last_frame: QImage | None = None
 
     def paintEngine(self):
         return None
+
+    def paintEvent(self, _event):
+        if self.last_frame is not None and not self.isVisible():
+            painter = QPainter(self)
+            painter.setRenderHint(QPainter.SmoothPixmapTransform)
+            painter.drawImage(self.rect(), self.last_frame)
 
     def pixels(self) -> tuple[int, int]:
         size = self.size() * self.devicePixelRatioF()
@@ -80,16 +101,22 @@ class Presenter:
 
 
 class RenderThread(threading.Thread):
-    def __init__(self, drawer, finished: Callable[[tuple, object], None]):
+    def __init__(self, drawer, finished: Callable[[tuple, object], None], read: Callable[[object], None]):
         super().__init__(name="Viewport frames", daemon=True)
-        self._drawer, self._finished = drawer, finished
+        self._drawer, self._finished, self._read = drawer, finished, read
         self._condition = threading.Condition()
         self._wanted: tuple | None = None
+        self._reading = False
         self._stopping = False
 
     def ask(self, request: tuple) -> None:
         with self._condition:
             self._wanted = request
+            self._condition.notify()
+
+    def read_back(self) -> None:
+        with self._condition:
+            self._reading = True
             self._condition.notify()
 
     def stop(self) -> None:
@@ -100,22 +127,32 @@ class RenderThread(threading.Thread):
     def run(self) -> None:
         while True:
             with self._condition:
-                while self._wanted is None and not self._stopping:
+                while self._wanted is None and not self._reading and not self._stopping:
                     self._condition.wait()
                 if self._stopping:
                     break
                 request, self._wanted = self._wanted, None
-            try:
-                result = self._drawer.draw(*request)
-                self._drawer.show()
-            except Exception as exc:  # noqa: BLE001 - the viewer tells why nothing is drawn
-                result = exc
+                reading, self._reading = self._reading, False
+            if request is not None:
+                try:
+                    result = self._drawer.draw(*request)
+                    self._drawer.show()
+                except Exception as exc:  # noqa: BLE001
+                    result = exc
+            if reading:
+                try:
+                    image = self._drawer.image()
+                except Exception as exc:  # noqa: BLE001
+                    image = exc
             # Once stopped, the receiver may be gone.
             with self._condition:
                 if self._stopping:
                     break
-                self._finished(request, result)
+                if request is not None:
+                    self._finished(request, result)
+                if reading:
+                    self._read(image)
         self._drawer.close()
 
 
-__all__ = ["LIMIT_MOST", "FrameWindow", "Presenter", "RenderThread"]
+__all__ = ["LIMIT_MOST", "FrameWindow", "Presenter", "RenderThread", "preview_image"]
