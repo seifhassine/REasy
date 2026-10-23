@@ -34,7 +34,6 @@ from file_handlers.mmtr.pretransform import (
 from file_handlers.mmtr.pretransform_passes import SystemPrograms
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
 lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
-from file_handlers.mmtr.temporal import FRAMES
 from file_handlers.mmtr.wrinkle import WrinkleObject, mesh_joints, wrinkle_catalog_for, wrinkle_object, wrinkle_proxy
 lazy from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
 lazy from file_handlers.stmesh.stmesh_file import FLAG_BILLBOARD_LOD
@@ -546,9 +545,6 @@ class SceneLitDrawer(LitDrawer):
         self._looked: tuple | None = None
         self._filled: tuple | None = None
         self._fills = 32
-        # What the scene's image the last frame drew is of: view, placements and objects; frames running drawn so.
-        self._shown_for: tuple | None = None
-        self._shown_times = 0
         # World space.
         self._wind = np.zeros(3)
         self._eye: np.ndarray | None = None
@@ -705,8 +701,7 @@ class SceneLitDrawer(LitDrawer):
             return False
         if self._still is not None:
             return self._settled
-        return self._shown_for == (view, placements, len(self._held.owners)) and (
-            not passes.carries or self._shown_times >= FRAMES)
+        return self._shown_for == (view, placements, len(self._held.owners)) and not self._carrying(passes)
 
     def _overlaid(self, drawn: tuple, content: SceneLitContent, view: SceneView,
                   placements: tuple[ScenePlacement, ...], overlays: LitOverlays, camera: Camera) -> None:
@@ -723,9 +718,7 @@ class SceneLitDrawer(LitDrawer):
         mesh, passes, overlay, strands = drawn
         self._show_parts(mesh, content, view)
         meshes = self._drawn_meshes(content)
-        shown_for = view, placements, len(self._held.owners)
-        self._shown_times = self._shown_times + 1 if shown_for == self._shown_for else 1
-        self._shown_for = shown_for
+        self._count_shown((view, placements, len(self._held.owners)))
 
         def after(shown: int | None, averaged: bool = True) -> list[int]:
             self._streamed_in(mesh)

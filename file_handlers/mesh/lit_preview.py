@@ -460,6 +460,9 @@ class LitDrawer(DeviceDrawer):
         # The drawn scene's refills the average has seen.
         self._refills = 0
         self._temporal: TemporalImage | None = None
+        # What the image the last frame drew is of, and frames running drawn so.
+        self._shown_for: tuple | None = None
+        self._shown_times = 0
 
     def _antialias(self, camera: Camera, still, antialiased: bool, framed=None) -> Camera:
         """``framed`` as ``TemporalImage.steps`` takes it."""
@@ -499,13 +502,21 @@ class LitDrawer(DeviceDrawer):
         """Every frame of the average drawn: those after add nothing to it."""
         return self._still is not None and self._averaged >= FRAMES
 
+    def _count_shown(self, shown_for: tuple) -> None:
+        self._shown_times = self._shown_times + 1 if shown_for == self._shown_for else 1
+        self._shown_for = shown_for
+
+    def _carrying(self, passes: LightPasses) -> bool:
+        """Whether passes carry outputs on to the next frame of the same image, from zeros in the first."""
+        return passes.carries and self._shown_times < FRAMES
+
     @staticmethod
     def _overlay(drawn: tuple) -> Overlay:
         return drawn[2]
 
     def _leave(self) -> None:
         super()._leave()
-        self._mesh = self._temporal = self._still = None
+        self._mesh = self._temporal = self._still = self._shown_for = None
 
     def draw(self, scene: LitScene, view: LitView, intensity: float, overlays: LitOverlays,
              target: tuple[int, str] | None = None) -> LitFrame:
@@ -620,8 +631,9 @@ class LitDrawer(DeviceDrawer):
         shown_failures = {index: reason for index, reason in failures.items() if index in view.visible}
         if drawn is None or not self._drawing(view, failures):
             return LitFrame(view, False, shown_failures, ())
+        self._count_shown((view, intensity, target, drawn[0].refills))
         return LitFrame(view, True, shown_failures, drawn[0].missing_textures,
-                        settling=self._settling or drawn[0].streaming)
+                        settling=self._settling or drawn[0].streaming or not self._gbuffer and self._carrying(drawn[1]))
 
     def _drawing(self, view: LitView, failures: Mapping[int, Exception]) -> bool:
         """Whether a part shown draws."""
@@ -884,9 +896,11 @@ def thumbnail(handler, session, size: int, background: tuple[int, int, int],
     view = LitView(0.0, -25.0, 1.55, tuple(map(float, (minimum + maximum) * 0.5)),
                    1.0 / max(float(np.max(maximum - minimum)), 1e-6), (size, size), inspection.geometry,
                    inspection.all_parts)
-    drawer = LitDrawer()
+    drawer, overlays = LitDrawer(), LitOverlays(background)
     try:
-        drawer.draw(scene, view, DEFAULT_INTENSITY, LitOverlays(background))
+        # Drawn again while it settles, as the viewer draws it.
+        while drawer.draw(scene, view, DEFAULT_INTENSITY, overlays).settling:
+            pass
         return drawer.image()
     finally:
         drawer.close()
