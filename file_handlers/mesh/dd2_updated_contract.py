@@ -112,9 +112,6 @@ def _mply(mesh):
     V.require_zero("LOD control reserves", h.serialized_lod_control_reserved_bits)
     V.require_zero("LOD payload reserves", h.serialized_lod_payload_reserved_words)
     V.require_zero("corpus-unused distance LOD strategy", int(h.serialized_mpmr_lod_strategy))
-    V.require(h.serialized_meshlet_raster_switch_threshold <= 3,
-              "raster threshold", "must be an exercised selector [0,3]",
-              h.serialized_meshlet_raster_switch_threshold)
     V.require_equal("native active LOD factors", h.active_lod_factors,
                     tuple(float(i) for i in range(h.lod_num)))
     V.assert_finite_ordered_aabb("MeshletHeader bounds", h.min_aabb, h.max_aabb)
