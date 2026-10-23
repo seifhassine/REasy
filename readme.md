@@ -107,7 +107,7 @@ If you'd like to support development, you can do so [here](https://linktr.ee/sei
 
 ## License and use
 
-REasy is released under the [MIT License](LICENSE.txt). It uses [PySide6](https://pypi.org/project/PySide6/) (Qt for Python) under the [LGPL v3](https://www.gnu.org/licenses/lgpl-3.0.html); see [Qt licensing](https://www.qt.io/licensing/).
+REasy is released under the [MIT License](LICENSE.txt). It uses [PySide6](https://pypi.org/project/PySide6/) (Qt for Python) under the [LGPL v3](https://www.gnu.org/licenses/lgpl-3.0.html); see [Qt licensing](https://www.qt.io/licensing/). Release builds ship the license texts of every bundled component in `resources\licenses`, indexed by `THIRD-PARTY-NOTICES.txt`.
 
 The REasy name and logo are covered by [TRADEMARKS.md](TRADEMARKS.md). They may not be used to credit REasy for sexually explicit or NSFW content, or for anything that breaks Capcom's terms.
 

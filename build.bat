@@ -3,7 +3,6 @@ setlocal
 cd /d "%~dp0"
 
 set "PY=.venv\Scripts\python.exe"
-set "GDEFLATE_DLL=.cache\gdeflate\libGDeflate.dll"
 set "PYTHONNOUSERSITE=1"
 
 if exist build rmdir /S /Q build || exit /b 1
@@ -17,30 +16,20 @@ if /I "%GITHUB_ACTIONS%"=="true" (
   call "%~dp0prepare_env.bat" || exit /b 1
 )
 
-"%PY%" -c "import runpy, sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); runpy.run_module('PyInstaller', run_name='__main__')" --onefile --windowed --icon=resources/icons/reasy_editor_logo.ico --version-file=version.txt ^
-  --collect-submodules file_handlers ^
-  --hidden-import fast_pakresolve ^
-  --hidden-import fast_path_search ^
-  --hidden-import fast_string_scan ^
-  --hidden-import fastmesh ^
-  --hidden-import fastmotion ^
-  --hidden-import fastsdftex ^
-  --hidden-import fastmatpreview ^
-  --hidden-import fastdxil ^
-  --hidden-import texture2ddecoder --collect-all texture2ddecoder ^
-  --add-binary "%GDEFLATE_DLL%;tools\runtimes\win-x64\native" ^
-  --add-data "file_handlers\mesh\blender\reasy_blender.py;file_handlers\mesh\blender" ^
-  REasy.py || exit /b 1
+rem PyInstaller bundles DLLs it finds on PATH, so build on a fixed one.
+for /f "delims=" %%i in ('%PY% -c "import sys; print(sys.executable)"') do set "PY=%%i"
+set "PATH=%SystemRoot%\System32;%SystemRoot%"
+
+"%PY%" -c "import runpy, sys, sysconfig; sys.path.insert(0, sysconfig.get_path('stdlib')); runpy.run_module('PyInstaller', run_name='__main__')" REasy.spec || exit /b 1
 
 xcopy /E /I /Y resources dist\resources || exit /b 1
 if exist dist\resources\data\dumps rmdir /S /Q dist\resources\data\dumps
-if exist dist\resources\patches rmdir /S /Q dist\resources\patches
-if not exist dist\resources\i18n mkdir dist\resources\i18n
-xcopy /Y /I resources\i18n\ dist\resources\i18n\ || exit /b 1
-copy "resources\images\reasy_guy.png" "dist\resources\images\reasy_guy.png" || exit /b 1
 if not exist dist\resources\scripts mkdir dist\resources\scripts
 copy "scripts\auto_update.ps1" "dist\resources\scripts\auto_update.ps1" || exit /b 1
 copy "resources\data\dumps\*.json" dist\ || exit /b 1
+copy LICENSE.txt dist\ || exit /b 1
+copy TRADEMARKS.md dist\ || exit /b 1
+"%PY%" scripts\collect_licenses.py dist\REasy.exe dist\resources\licenses || exit /b 1
 
 if not exist dist\REasy.exe exit /b 1
 echo Built dist\REasy.exe

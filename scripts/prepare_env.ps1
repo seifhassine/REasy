@@ -13,6 +13,7 @@ $gdeflateDll = Join-Path $gdeflateRoot "libGDeflate.dll"
 $gdeflateStamp = Join-Path $gdeflateRoot ".reasy-gdeflate.stamp"
 $gdeflateCoreUrl = "https://github.com/yretenai/GDeflateCore.git"
 $gdeflateCoreCommit = "92e065dd0d616a3330cd37d197fc55d3b99a1a2f"
+$msvcRuntime = Join-Path ".cache" "msvc\msvcp140.dll"
 $env:PYTHONNOUSERSITE = "1"
 if (-not $UseCurrentPython) { $env:PATH = "$(Join-Path (Get-Location) "$venv\Scripts");$env:PATH" }
 
@@ -63,6 +64,17 @@ function Find-VsDevCmd {
         if ($candidate) { return $candidate.FullName }
     }
     return $null
+}
+function Copy-MsvcRuntime {
+    $vsDevCmd = Find-VsDevCmd
+    if (-not $vsDevCmd) { Write-Error "Visual Studio C++ Build Tools are required to bundle msvcp140.dll."; return $false }
+    $install = Split-Path (Split-Path (Split-Path $vsDevCmd))
+    $version = Get-Content (Join-Path $install "VC\Auxiliary\Build\Microsoft.VCRedistVersion.default.txt") -ErrorAction SilentlyContinue | Select-Object -First 1
+    $dll = if ($version) { Get-ChildItem (Join-Path $install "VC\Redist\MSVC\$($version.Trim())\x64\Microsoft.VC*.CRT\msvcp140.dll") -ErrorAction SilentlyContinue | Select-Object -First 1 }
+    if (-not $dll) { Write-Error "msvcp140.dll was not found in the Visual Studio redistributable folder."; return $false }
+    New-Item -ItemType Directory -Force (Split-Path $msvcRuntime) | Out-Null
+    Copy-Item -LiteralPath $dll.FullName -Destination $msvcRuntime -Force
+    return $true
 }
 function Git-InRepo($repo, [string[]] $argv) {
     $repoPath = [IO.Path]::GetFullPath($repo).Replace("\", "/")
@@ -132,3 +144,4 @@ if (-not $ready) { Write-Error "Python 3.15 is required: install it so that 'py 
 
 if (-not (Restore-GDeflateNet)) { Write-Error "Failed to initialize or repair the GDeflateNet submodule."; exit 1 }
 if (-not (Build-GDeflate)) { Write-Error "Failed to build libGDeflate.dll from source."; exit 1 }
+if (-not (Copy-MsvcRuntime)) { exit 1 }

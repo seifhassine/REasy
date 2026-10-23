@@ -1,0 +1,12 @@
+Qt and Qt for Python
+
+REasy.exe bundles the Qt 6 libraries and Qt for Python (PySide6, shiboken6), unmodified, under the
+GNU Lesser General Public License version 3 (LGPL-3.0.txt, which builds on GPL-3.0.txt).
+Qt is a registered trademark of The Qt Company Ltd.
+
+Qt source: https://download.qt.io/official_releases/qt/
+Qt for Python source: https://download.qt.io/official_releases/QtForPython/
+Licenses of third-party code inside Qt: https://doc.qt.io/qt-6/licenses-used-in-qt.html
+
+REasy's source and its build script (build.bat) are at https://github.com/seifhassine/REasy,
+so REasy.exe can be rebuilt with a modified Qt.

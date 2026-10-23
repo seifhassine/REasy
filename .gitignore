@@ -11,6 +11,7 @@ build/
 dist/
 *.egg-info/
 *.spec
+!REasy.spec
 **/node_modules/
 tools/reasy_tex_gdeflate_helper/bin/
 tools/reasy_tex_gdeflate_helper/obj/
