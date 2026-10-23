@@ -5,11 +5,24 @@ from __future__ import annotations
 import wave
 
 lazy import numpy as np
-from PySide6.QtCore import QPoint, Qt, Signal
+from PySide6.QtCore import QCoreApplication, QPoint, Qt, Signal
 lazy from PySide6.QtGui import QColor, QPainter, QPen
+lazy from PySide6.QtMultimedia import QMediaDevices
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 lazy from ui.styles import current_colors
+
+
+def playback_unavailable(player) -> str:
+    if not player.isAvailable():
+        return QCoreApplication.translate(
+            "SoundPlayback",
+            "Windows Media Foundation is missing, so audio cannot play. "
+            "Windows N editions need the Media Feature Pack.",
+        )
+    if not QMediaDevices.audioOutputs():
+        return QCoreApplication.translate("SoundPlayback", "Windows has no audio output device to play to.")
+    return ""
 
 def analyze_wave_activity(wav_path, width, sensitivity=0.52):
     """Return normalized peaks and merged activity ranges for PCM16 WAV audio."""

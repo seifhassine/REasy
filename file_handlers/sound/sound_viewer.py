@@ -124,6 +124,7 @@ lazy from .sound_resources import (
 lazy from .sound_waveform import (
     WaveformWidget,
     analyze_wave_activity,
+    playback_unavailable,
     write_wave_preview,
     write_wave_edit,
 )
@@ -1349,6 +1350,12 @@ class SoundViewer(QWidget):
         self.player.durationChanged.connect(self._on_duration)
         self.player.positionChanged.connect(self._on_position)
         self.player.playbackStateChanged.connect(self._on_state)
+        self.player.errorOccurred.connect(self._on_player_error)
+
+    def _on_player_error(self, _error, message):
+        if self._cleanup_done:
+            return
+        QMessageBox.warning(self, self.tr("Playback Error"), message or self.tr("Qt could not play the decoded audio."))
 
     def _on_duration(self, milliseconds):
         if self._cleanup_done:
@@ -1613,6 +1620,10 @@ class SoundViewer(QWidget):
 
     def _start_preview(self, wav_path, *, start_ms=0):
         self._preview_audio_path = wav_path
+        if reason := playback_unavailable(self.player):
+            self._queue_waveform(wav_path)
+            QMessageBox.warning(self, self.tr("Playback"), reason)
+            return
         self.player.setSource(QUrl.fromLocalFile(wav_path))
         self.player.setPosition(start_ms)
         self.player.play()

@@ -26,6 +26,7 @@ from file_handlers.sound.sound_metadata import MessageSoundReference, SoundMetad
 from file_handlers.sound.sound_resources import read_sound_resource, resource_key
 from file_handlers.sound.sound_waveform import (
     analyze_wave_activity,
+    playback_unavailable,
     write_wave_segment,
 )
 lazy from file_handlers.sound.runtime_sound_index import (
@@ -639,6 +640,10 @@ class MsgSoundPreviewSession(QObject):
             self.playback_failed.emit(error)
             return
         candidate, wav_path, waveform = result
+        if reason := playback_unavailable(self._player):
+            self._active_message_id = ""
+            self.playback_failed.emit(reason)
+            return
         self._player.setSource(QUrl.fromLocalFile(wav_path))
         self._player.play()
         self.waveform_ready.emit(waveform)
