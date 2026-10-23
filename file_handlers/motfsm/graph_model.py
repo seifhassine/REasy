@@ -1,5 +1,6 @@
 """A read-only projection of native BHVT identities and relationships."""
 from dataclasses import dataclass
+from .selectors import required_selector_error
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,9 @@ class MotfsmGraph:
         self.edges = []
         self._paths = {}
         for index, node in enumerate(self.nodes):
+            error = required_selector_error(node)
+            if error:
+                self.issues[index].append(error)
             # Parent 0 is the real root identity; only UINT32_MAX is absent.
             try:
                 self.parents[index] = document.references.parent_index(node)

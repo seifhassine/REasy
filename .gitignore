@@ -39,12 +39,19 @@ Thumbs.db
 
 # Local Tests
 /tests/**
+!/tests/fixtures/
+!/tests/fixtures/*.py
+!/tests/fixtures/*.lua
+!/tests/test_userdata_dependencies.py
+!/tests/test_motfsm_map_ownership.py
 !/tests/test_scn_parser.py
 !/tests/test_motbank_roundtrip.py
 !/tests/test_mhr_motlist.py
 !/tests/test_wilds_motion.py
 !/tests/test_wilds_import.py
 !/tests/test_lmt_motion.py
+!/tests/test_mhw_lmt.py
+!/tests/test_mhw_mesh.py
 !/tests/test_lmt_bake.py
 !/tests/test_mhr_preview_workflow.py
 !/tests/test_motfsm_integration.py
@@ -54,8 +61,11 @@ Thumbs.db
 !/tests/test_editor_shell.py
 !/tests/test_motfsm_corpus.py
 !/tests/test_motfsm_rebuild.py
+!/tests/test_motfsm_root_uvar.py
 !/tests/test_fsm_cli.py
 !/tests/test_resource_cli.py
+!/tests/test_efx*.py
+!/tests/test_mhw_efx.py
 !/tests/test_move_cli.py
 !/tests/test_clip_cli.py
 !/tests/test_clip_graph_v43.py

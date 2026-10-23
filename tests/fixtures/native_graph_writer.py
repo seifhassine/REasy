@@ -1,6 +1,6 @@
 """Offline corpus proof for the public native FSM writer.
 
-Usage: python tools/motfsm_validation/native_graph_writer.py OUTPUT SOURCE...
+Usage: python tests/fixtures/native_graph_writer.py OUTPUT SOURCE...
 Only OUTPUT receives files. Input resources are never replaced or deployed.
 """
 import argparse

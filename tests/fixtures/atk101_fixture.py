@@ -1,6 +1,6 @@
 """Reproduce the MHRise atk_101 collision fixture verified in a live game.
 
-Usage: python tools/rcol_validation/atk101_fixture.py RCOL_SOURCE FSM_SOURCE OUTPUT_DIRECTORY
+Usage: python tests/fixtures/atk101_fixture.py RCOL_SOURCE FSM_SOURCE OUTPUT_DIRECTORY
 The source checksums identify the original LongSword RCOL and the previously
 validated Node/Condition FSM fixture. Neither source is modified.
 The output adds request 72 with copied attack userdata and a separate 10x-length

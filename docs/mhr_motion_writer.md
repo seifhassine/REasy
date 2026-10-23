@@ -6,7 +6,7 @@ it does not deploy them or perform World-to-Rise retargeting.
 
 ```powershell
 $env:REASY_MHR_NATIVE_CORPUS='absolute/path/to/extracted/em100/00/mot'
-& ./.venv/Scripts/python.exe -m unittest tests.test_mhr_native_writer -v
+& ./.venv/Scripts/python.exe -m unittest discover -s tests -p test_mhr_native_writer.py -v
 & ./.venv/Scripts/python.exe tools/mhr_motion_writer.py batch_plan.json --report report.json
 ```
 
@@ -45,11 +45,20 @@ $env:REASY_MHR_NATIVE_CORPUS='absolute/path/to/extracted/em100/00/mot'
 
 ## Batch input, schema 1
 
-The executable example `ai_rise/motion_writer_validation/batch_plan.json` in the
-research workspace supplies all seven native lists and an eighth offline tree
-list. It adds one independently generated two-joint motion, an explicit tree
-branch, sound and hit-event templates and a MOTBANK entry. Its IDs and event
-values are test fixtures, not game-ready bindings.
+`tests/fixtures/mhr_motion_writer.py` generates `batch_plan.json` and verified
+candidates from an explicit em100 corpus and SHA-256 source manifest. It supplies
+all seven native lists and an eighth offline tree list, adds an independently
+generated two-joint motion, a tree branch, sound/hit-event templates and a MOTBANK
+entry. Its IDs and event values are test fixtures, not game-ready bindings.
+
+```powershell
+& ./.venv/Scripts/python.exe tests/fixtures/mhr_motion_writer.py --source 'PATH/to/source' --manifest 'PATH/to/source_manifest.json' --output 'PATH/to/new-fixture-output'
+```
+
+The source root contains `natives/stm/enemy/em100/00/mot` and the sibling
+`user_variables` directory. Manifest `resources` contain relative `path` and
+`sha256` pairs, plus top-level `archives` and `precedence` provenance. The output
+directory must be new. Existing corpus files, reports and logs are not overwritten.
 
 Top-level fields:
 

@@ -15,8 +15,11 @@ def variable_snapshot(document):
     for root in roots:
         reader = FileHandler(source, offset=base)
         reader.seek(root)
-        uvar = UVarFile()
-        uvar.do_read(reader)
+        if root == document.bhvt.offsets.get('variables') and document._root_variables is not None:
+            uvar = document._root_variables
+        else:
+            uvar = UVarFile()
+            uvar.do_read(reader)
         variables = []
         for variable in uvar.variables:
             expression = variable.expression

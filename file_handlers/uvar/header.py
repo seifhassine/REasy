@@ -56,10 +56,8 @@ class HeaderStruct(BaseModel):
         if self.version < 3:
             handler.write('<Q', self.ukn)
             
-        if self.name:
+        if self.name is not None:
             self.uvar_hash = murmur3_hash(self.name.encode('utf-16le'))
-        else:
-            self.uvar_hash = murmur3_hash(b'')
         handler.write('<I', self.uvar_hash)
         handler.write('<h', self.variable_count)
         handler.write('<h', self.embed_count)

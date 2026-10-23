@@ -6,6 +6,7 @@ import tempfile
 import unittest
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
+from file_handlers.motfsm.graph_model import MotfsmGraph
 from file_handlers.motfsm.selectors import clone_selector, resolve_selector, validate_selectors
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from tools.fsm.cli import build_parser
@@ -38,6 +39,30 @@ class SelectorValidationTests(unittest.TestCase):
             self.assertEqual(clone_selector(doc, raw), -1)
         self.assertEqual(doc.rebuild(), doc.source)
 
+    def test_missing_selector_is_allowed_on_junctions_and_leaves(self):
+        doc = MotfsmFile()
+        doc.read(make_fixture())
+        node = doc.bhvt.nodes[0]
+        self.assertTrue(node.is_fsm)
+        self.assertTrue(node.is_branch)
+        self.assertTrue(node.children)
+        validate_selectors(doc)
+        node.is_branch = 0
+        node.children = []
+        validate_selectors(doc)
+
+    def test_missing_fsm_group_selector_rejects_save(self):
+        doc = MotfsmFile()
+        doc.read(make_fixture())
+        self.assertEqual(doc.rebuild(), doc.source)
+        node = doc.bhvt.nodes[0]
+        node.is_branch = 0
+        for raw in (-1, 0xFFFFFFFF):
+            with self.subTest(raw=raw):
+                node.selector_id = raw
+                with self.assertRaisesRegex(ValueError, 'Node 0 Fixture.*no selector'):
+                    doc.rebuild()
+
     def test_editor_rejects_invalid_selector_before_adding_undo_command(self):
         from PySide6.QtWidgets import QApplication
         from file_handlers.motfsm.motfsm_handler import MotfsmHandler
@@ -59,6 +84,26 @@ class NativeSelectorCopyTests(unittest.TestCase):
         doc = MotfsmFile()
         doc.read(next(unique_files()).read_bytes())
         return doc
+
+    def test_missing_group_selector_is_a_health_error_and_blocks_build(self):
+        doc = self.read_source()
+        index = next(i for i, node in enumerate(doc.bhvt.nodes)
+                     if node.is_fsm and node.children and not node.is_branch and node.selector_id >= 0)
+        self.assertFalse(any(MotfsmGraph(doc).issues.values()))
+        self.assertEqual(doc.rebuild(), doc.source)
+        node = doc.bhvt.nodes[index]
+        original_selector = node.selector_id
+        for raw in (-1, 0xFFFFFFFF):
+            with self.subTest(raw=raw):
+                node.selector_id = raw
+                self.assertEqual(MotfsmGraph(doc).issues[index],
+                    ['FSM execution group has children but no selector (SelectorFSM)'])
+                for build in (doc.rebuild, doc.build_validated):
+                    with self.assertRaisesRegex(ValueError, f'Node {index} .*no selector'):
+                        build()
+        node.selector_id = original_selector
+        self.assertFalse(any(MotfsmGraph(doc).issues.values()))
+        self.assertEqual(doc.build_validated(), doc.source)
 
     def test_copy_resolves_object_table_and_preserves_independent_fields_after_reopen(self):
         doc = self.read_source()

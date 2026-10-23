@@ -2,6 +2,14 @@
 import copy
 
 
+def required_selector_error(node):
+    """FSM execution groups need a selector to start and update their children."""
+    if (node.is_fsm and node.children and not node.is_branch
+            and node.selector_id & 0xFFFFFFFF == 0xFFFFFFFF):
+        return 'FSM execution group has children but no selector (SelectorFSM)'
+    return ''
+
+
 def resolve_selector(document, raw):
     if raw & 0xFFFFFFFF == 0xFFFFFFFF:
         return None
@@ -18,6 +26,9 @@ def resolve_selector(document, raw):
 def validate_selectors(document):
     for index, node in enumerate(document.bhvt.nodes):
         try:
+            error = required_selector_error(node)
+            if error:
+                raise ValueError(error)
             resolve_selector(document, node.selector_id)
         except (IndexError, ValueError) as exc:
             raise ValueError(f'Node {index} {node.name}: {exc}') from exc

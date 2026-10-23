@@ -1,6 +1,6 @@
 """Generate the MHRise LongSword Action fixture verified in a live game.
 
-Usage: python tools/motfsm_validation/new_action_fixture.py SOURCE OUTPUT_DIRECTORY
+Usage: python tests/fixtures/new_action_fixture.py SOURCE OUTPUT_DIRECTORY
 SOURCE is the original LongSword sample identified by the SHA-256 below.
 The output directory receives the candidate and its manifest; SOURCE is unchanged.
 Load reasy_longsword_action_check.lua after installing/reloading the candidate.
@@ -17,12 +17,11 @@ import zlib
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / 'tests'))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
 from file_handlers.motfsm.rebuild import BhvtPointers
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
-from test_motfsm_rebuild import variable_snapshot
+from file_handlers.motfsm.validation import variable_snapshot
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('source', type=Path)

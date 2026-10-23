@@ -165,6 +165,7 @@ class MotfsmFile:
         self._type_registry = None
         self._registry_detected = False
         self.layout = None
+        self._root_variables = None
         self.references = References(self)
 
     @staticmethod
@@ -187,6 +188,7 @@ class MotfsmFile:
         if not self.can_handle(data):
             raise ValueError("Invalid MOTFSM header")
         self.source = bytes(data)
+        self._root_variables = None
         self.bindings = FieldBindings(self.source)
         self._type_registry = None
         self._registry_detected = False
@@ -350,6 +352,26 @@ class MotfsmFile:
         validate_selectors(self)
         from .serialization import rebuild_graph
         return rebuild_graph(self)
+
+    def read_root_variables(self):
+        from file_handlers.uvar.uvar_file import UVarFile
+        from file_handlers.uvar.base_model import FileHandler
+        offset = self.bhvt.offsets.get('variables')
+        if offset is None:
+            raise ValueError('This BHVT has no root UVAR section')
+        reader = FileHandler(self.source, offset=self.tree_data_offset)
+        reader.seek(offset)
+        return UVarFile(reader)
+
+    def set_root_variables(self, variables):
+        from file_handlers.uvar.uvar_file import UVarFile
+        if not isinstance(variables, UVarFile):
+            raise TypeError('Expected a UVarFile model')
+        if 'variables' not in self.bhvt.offsets:
+            raise ValueError('This BHVT has no root UVAR section')
+        if variables.embedded_uvars:
+            raise ValueError('Nested UVAR relocation is not supported')
+        self._root_variables = variables
 
     def build_validated(self):
         """Write, reopen and verify the complete native graph and preserved tail."""

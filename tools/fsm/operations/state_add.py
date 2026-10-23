@@ -3,7 +3,7 @@
 The template state is copied from `--node` by default; `--template-from OTHER --template-target NAME`
 copies the state that already derives to NAME from another node (e.g. atk_152's sheathed roll).
 
-Same machinery as REasy's own game-verified fixtures (`tools/motfsm_validation/`): the byte-exact
+Same machinery as REasy's own game-verified fixtures (`tests/fixtures/`): the byte-exact
 `serialize_nodes()` (asserted against the source before the edit), the RSZ block splices, the
 `BhvtPointers` relocation pass and `verified.rebuild() == output`.
 

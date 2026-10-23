@@ -1,6 +1,6 @@
 """Generate the MHRise LongSword Node/Condition fixture verified in a live game.
 
-Usage: python tools/motfsm_validation/node_condition_fixture.py SOURCE OUTPUT_DIRECTORY
+Usage: python tests/fixtures/node_condition_fixture.py SOURCE OUTPUT_DIRECTORY
 SOURCE is the output of new_action_fixture.py. SOURCE is never modified.
 Load reasy_fsm_structure_check.lua after installing/reloading the new candidate.
 The 11 checks cover instances, links, reference removal, and bool/float values;
@@ -17,12 +17,12 @@ import sys
 import zlib
 
 ROOT = Path(__file__).resolve().parents[2]
-sys.path[:0] = [str(ROOT), str(ROOT / 'tests')]
+sys.path.insert(0, str(ROOT))
 os.environ.setdefault('QT_QPA_PLATFORM', 'offscreen')
 from file_handlers.motfsm.motfsm_file import MotfsmFile, BHVTNode, ChildNode, Action
 from file_handlers.motfsm.rebuild import BhvtPointers
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
-from test_motfsm_rebuild import variable_snapshot
+from file_handlers.motfsm.validation import variable_snapshot
 from utils.hash_util import murmur3_hash
 
 parser = argparse.ArgumentParser(description=__doc__)

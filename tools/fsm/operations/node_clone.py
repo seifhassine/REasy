@@ -8,7 +8,7 @@
   * `--calc-lv` adds a `PlayerFsm2ActionLongSwordCalcLv` cloned from `--calc-lv-from`, placed in
     the slot of the dropped action named by `--calc-lv-after` (default: the dropped AddLv).
 
-Same machinery as REasy's own game-verified fixtures (`tools/motfsm_validation/`):
+Same machinery as REasy's own game-verified fixtures (`tests/fixtures/`):
 `serialize_nodes()` (byte-exact, asserted against the source), the RSZ block splices, the
 `BhvtPointers` relocation pass and `verified.rebuild() == output` (REasy's own writer is stable on
 the candidate). Each copied state owns a fresh transition map ID, referencing the

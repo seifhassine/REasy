@@ -258,9 +258,10 @@ class UVarFile(BaseModel):
             variable.write_expression(handler)
 
     def _write_strings(self, handler: FileHandler):
-        handler.write_at(self.header.start_offset + 8, '<Q', handler.tell)
-        self.header.strings_offset = handler.tell
-        handler.write_wstring(self.header.name or "")
+        self.header.strings_offset = 0 if self.header.name is None else handler.tell
+        handler.write_at(self.header.start_offset + 8, '<Q', self.header.strings_offset)
+        if self.header.name is not None:
+            handler.write_wstring(self.header.name)
 
         for variable in self.variables:
             handler.write_at(variable.start_offset + 16, '<Q', handler.tell)

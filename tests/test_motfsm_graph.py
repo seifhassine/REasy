@@ -91,6 +91,21 @@ class GraphModelTests(unittest.TestCase):
         self.assertEqual(state.mStatesEx, 999)
         self.assertEqual(doc.references.state_target(state.mTransitions, state.mTransitionAttributes), 2)
 
+    def test_fsm_group_without_selector_is_an_error_but_junctions_and_leaves_are_valid(self):
+        doc = graph_document()
+        node = doc.bhvt.nodes[1]
+        node.node_attribute = 0x20
+        for raw in (-1, 0xFFFFFFFF):
+            with self.subTest(raw=raw):
+                node.selector_id = raw
+                self.assertEqual(MotfsmGraph(doc).issues[1],
+                    ['FSM execution group has children but no selector (SelectorFSM)'])
+        node.is_branch = 1
+        self.assertFalse(any(MotfsmGraph(doc).issues.values()))
+        node.is_branch = 0
+        node.children = []
+        self.assertFalse(any(MotfsmGraph(doc).issues.values()))
+
 
 class GraphInteractionTests(unittest.TestCase):
     @classmethod

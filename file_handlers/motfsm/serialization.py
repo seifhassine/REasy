@@ -55,7 +55,7 @@ def serialize_nodes(document):
             + array(document.bhvt.action_ex_ids) + array(document.bhvt.static_action_ex_ids))
 
 
-def splice_document(document, splices, source=None):
+def splice_document(document, splices, source=None, *, pointer_exclusions=()):
     """Apply disjoint section replacements and relocate the native pointer tables."""
     splices = sorted(splices)
     source = document.source if source is None else source
@@ -84,6 +84,8 @@ def splice_document(document, splices, source=None):
 
     base = document.tree_data_offset
     for slot in BhvtPointers(document).collect():
+        if any(start <= slot < end for start, end in pointer_exclusions):
+            continue
         value = struct.unpack_from('<Q', source, slot)[0]
         struct.pack_into('<Q', output, relocate(slot), relocate(base + value) - relocate(base) if value else 0)
     for slot in (16, 24, 32, 40):
@@ -175,6 +177,19 @@ def rebuild_graph(document):
         if len(extensions) != count:
             raise ValueError(f'{name}: extension table count does not match RSZ object table')
     patched = document.bindings.rebuild(exclude_ranges=exclusions)
+    pointer_exclusions = []
+    if document._root_variables is not None:
+        from file_handlers.uvar.base_model import FileHandler
+        start = document.bhvt.offsets['variables']
+        end = document._section_ends[start]
+        delta = sum(len(data) - (b - a) for a, b, data in splices if b <= start)
+        relative = start + delta - document.tree_data_offset
+        writer = FileHandler(bytearray(relative))
+        writer.seek(relative)
+        document._root_variables.do_write(writer)
+        payload = writer.get_bytes()[relative:]
+        splices.append((start, end, payload + bytes((-len(payload) + end - start) % 16)))
+        pointer_exclusions.append((start, end))
     if not splices:
         return patched
-    return bytes(splice_document(document, splices, source=patched))
+    return bytes(splice_document(document, splices, source=patched, pointer_exclusions=pointer_exclusions))
