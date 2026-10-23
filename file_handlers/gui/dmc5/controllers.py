@@ -7,7 +7,8 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
-lazy from utils.app_paths import resource_path
+lazy from ui.project_manager.rsz_jsons import find_default_rsz_json_path
+lazy from utils.app_paths import application_root, resource_path
 lazy from utils.resource_file_utils import ResourceDataLoader
 lazy from utils.type_registry import TypeRegistry
 
@@ -491,8 +492,8 @@ def build_dmc5_preview_scenarios(
 
 @lru_cache(maxsize=1)
 def _dmc5_registry() -> TypeRegistry | None:
-    path = resource_path("resources/data/dumps/rszdmc5.json")
-    return TypeRegistry(str(path)) if path.is_file() else None
+    path = find_default_rsz_json_path("DMC5", application_root())
+    return TypeRegistry(str(path)) if path else None
 
 
 def _value(value: object) -> object:
