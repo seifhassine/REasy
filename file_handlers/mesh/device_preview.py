@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import math
-from collections.abc import Callable, Mapping
+import weakref
+from collections.abc import Callable, Iterable, Mapping
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QElapsedTimer, QObject, Qt, QTimer, Signal
+lazy from PySide6.QtWidgets import QApplication
 
 lazy from file_handlers.mmtr.material_preview import (
     GpuBufferLocation, MaterialPreviewError, resident_key, streamed_key,
 )
 lazy from file_handlers.mmtr.mmtrs_file import MmtrsFormatError, resolve_mmtr_resource
 lazy from file_handlers.mmtr.pretransform import ChainLevel
+lazy from file_handlers.sdf.dxc import DxcNotFound, find_dxcompiler
 lazy from file_handlers.strands.chain_scene import (ChainScene, gather as gather_strands, handler_files, shader_paths,
                                                with_files)
+lazy from tools.github_downloader import show_download_failure
+lazy from tools.shader_tools import ShaderToolDownloadCancelled, prompt_shader_tool_download
 from ui.scene.device_frames import LIMIT_MOST, RenderThread
 lazy from utils.resource_file_utils import ReadOnUse, ResourceLocation
 
@@ -19,6 +24,30 @@ lazy from .material_resolver import MeshMaterialResolver
 
 
 _MASTER_NOT_FOUND = QT_TRANSLATE_NOOP("MaterialPreview", "Master material {path} was not found.")
+
+_COMPILER_OFFERED = weakref.WeakSet()
+
+
+def _compiler_found() -> bool:
+    try:
+        find_dxcompiler()
+    except DxcNotFound:
+        return False
+    return True
+
+
+def offer_compiler(handler, reasons: Iterable) -> bool:
+    if (handler is None or handler in _COMPILER_OFFERED
+            or not any(isinstance(reason, DxcNotFound) for reason in reasons) or _compiler_found()):
+        return False
+    _COMPILER_OFFERED.add(handler)
+    try:
+        return prompt_shader_tool_download("dxc")
+    except ShaderToolDownloadCancelled:
+        return False
+    except RuntimeError as exc:
+        show_download_failure(QApplication.activeWindow(), exc)
+        return False
 
 
 def gather_master(mmtr_path: str, resolve: Callable[[str], tuple[str, bytes] | None],
@@ -78,6 +107,7 @@ class DevicePreview(QObject):
         self.step_rate: float = self._rate
         self._stepped = 0.0
         self._drawing = False
+        self._offering = False
         self._ticker = QTimer(self)
         self._ticker.setSingleShot(True)
         self._ticker.setTimerType(Qt.TimerType.PreciseTimer)
@@ -241,6 +271,16 @@ class DevicePreview(QObject):
             lines += self._frame_lines(self._frame)
         return lines
 
+    def nothing_drawn(self) -> list[str]:
+        """Why the preview, on, shows no image: the reasons of the parts shown; none while its first is drawn."""
+        if not self._active or self._frame is not None and self._frame.drawn:
+            return []
+        told = [text for text in (self._error, self._reason) if text]
+        if told or self._frame is None:
+            return told
+        shown = self._frame.view.visible
+        return list(dict.fromkeys(text for index, text in self.failures().items() if index in shown))
+
     def failures(self) -> Mapping[int, str]:
         """Not to be changed: made again only when the frame or the gather changes."""
         if not self._active:
@@ -347,7 +387,17 @@ class DevicePreview(QObject):
         return view is not None and scene is not None and view.geometry == scene.geometry
 
     def _on_finished(self, thread: RenderThread, _request: tuple, result) -> None:
-        if thread is not self._thread:
+        if thread is not self._thread or self._offering:
+            return
+        self._offering = True
+        try:
+            downloaded = offer_compiler(self._handler, (result,) if isinstance(result, Exception)
+                                        else result.failures.values())
+        finally:
+            self._offering = False
+        if downloaded:
+            self._stop()
+            self.scene_changed()
             return
         stepped, self._drawing = self._drawing, False
         if isinstance(result, Exception):

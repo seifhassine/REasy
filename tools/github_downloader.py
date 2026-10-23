@@ -12,11 +12,14 @@ from typing import Callable, Optional, Tuple
 
 import requests
 
-from utils.app_paths import application_root
+from utils.app_paths import downloads_directory
 lazy import tarfile
+lazy from PySide6.QtCore import QCoreApplication
+lazy from PySide6.QtWidgets import QMessageBox
 
-# Kept as a compatibility alias for tools.pak_exporter and third-party callers.
-_get_base_dir = application_root
+
+def show_download_failure(parent, error: Exception) -> None:
+    QMessageBox.warning(parent, QCoreApplication.translate("ToolDownloads", "Download Failed"), str(error))
 
 
 def _http_json(url: str, timeout: int = 20) -> dict:
@@ -25,10 +28,11 @@ def _http_json(url: str, timeout: int = 20) -> dict:
 
 
 def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name: str,
-                                  *, parent_window=None, files=(), sha256=None):
+                                  *, page: str, parent_window=None, files=(), sha256=None):
+    """A failure raises RuntimeError naming ``page``, where the user can get the tool, and ``cache_dir``."""
     from ui.project_manager.pak_status_dialog import run_with_progress
 
-    if cache_dir.resolve().parent != (application_root() / "downloads").resolve():
+    if cache_dir.resolve() != downloads_directory(cache_dir.name).resolve():
         raise ValueError("Tool cache must be a direct child of downloads/")
 
     def _do_download(bridge):
@@ -66,7 +70,13 @@ def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name:
                     with zipfile.ZipFile(archive) as source:
                         source.extractall(cache_dir)
 
-    run_with_progress(parent_window, f"Download {display_name}", _do_download)
+    try:
+        run_with_progress(parent_window, f"Download {display_name}", _do_download)
+    except Exception as exc:
+        raise RuntimeError(QCoreApplication.translate(
+            "ToolDownloads",
+            "{title} could not be downloaded: {error}\n\nDownload it from {page} and extract it into:\n{folder}",
+        ).format(title=display_name, error=exc, page=page, folder=cache_dir)) from exc
 
 
 class GitHubToolDownloader:
@@ -76,7 +86,7 @@ class GitHubToolDownloader:
         self.owner_repo = owner_repo
         self.display_name = display_name or exe_name
         self._api_latest = f"https://api.github.com/repos/{owner_repo}/releases/latest"
-        self.cache_dir = application_root() / "downloads" / cache_subdir
+        self.cache_dir = downloads_directory(cache_subdir)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.exe_path = self.cache_dir / exe_name
         self._version_file = self.cache_dir / "VERSION"
@@ -121,6 +131,7 @@ class GitHubToolDownloader:
             asset_url,
             self.cache_dir,
             f"{self.display_name} {tag or 'latest'}",
+            page=f"https://github.com/{self.owner_repo}/releases",
             parent_window=parent_window,
         )
         if self.exe_path.exists() and os.name != "nt":

@@ -44,3 +44,7 @@ def backups_directory() -> Path:
 
 def cache_directory() -> Path:
     return application_root() / ".cache"
+
+
+def downloads_directory(name: str) -> Path:
+    return application_root() / "downloads" / name

@@ -9,7 +9,8 @@ import struct
 
 from .spirv import SPIRV_MAGIC, SpirvError, _spirv_module
 lazy from .storage_codec import pack_ir_storage, unpack_ir_storage
-from tools.shader_tools import prompt_shader_tool_download, shader_tool_directory
+from tools.shader_tools import PAGES, prompt_shader_tool_download
+from utils.app_paths import downloads_directory
 
 
 MAX_STORAGE = 32 * 1024 * 1024
@@ -17,12 +18,12 @@ MAX_STORAGE = 32 * 1024 * 1024
 
 @lru_cache(maxsize=1)
 def grammar():
-    root = shader_tool_directory("spirv_tools")
+    root = downloads_directory("spirv_tools")
     files = [root / name for name in ("spirv.core.grammar.json", "extinst.glsl.std.450.grammar.json")]
     if not all(path.is_file() for path in files) and not prompt_shader_tool_download("spirv_tools"):
-        raise SpirvError(f"SPIR-V grammars are required in {root}. "
-                         "Open the file in REasy to download them, or install the pinned "
-                         "SPIRV-Headers grammars described in tools/shader_tools.md.")
+        raise SpirvError("SPIR-V grammars are required for native Vulkan material authoring. REasy will offer to "
+                         f"download them when needed, or get them from {PAGES['spirv_tools']} and put the files in "
+                         f"{root}.")
     core, extension = (json.loads(path.read_text(encoding="utf-8")) for path in files)
     return (
         {row["opcode"]: row for row in core["instructions"]},

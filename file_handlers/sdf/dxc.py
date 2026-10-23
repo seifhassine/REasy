@@ -14,7 +14,8 @@ import uuid
 
 lazy import fastdxil
 from file_handlers.bounded_cache import BoundedCache
-from tools.shader_tools import prompt_shader_tool_download, shader_tool_directory
+from tools.shader_tools import PAGES, prompt_shader_tool_download
+from utils.app_paths import downloads_directory
 
 if sys.platform == "win32":
     import winreg
@@ -43,6 +44,10 @@ lazy from .hlsl import thread_group
 
 
 class DxcError(ValueError):
+    pass
+
+
+class DxcNotFound(DxcError):
     pass
 
 
@@ -164,7 +169,7 @@ def _renderdoc_dxcompiler() -> Path | None:
 @lru_cache(maxsize=2)
 def find_dxcompiler(spirv: bool = False) -> Path:
     if sys.platform != "win32":
-        raise DxcError("DirectX Shader Compiler is available only on Windows")
+        raise DxcNotFound("DirectX Shader Compiler is available only on Windows")
     candidates: list[Path] = []
     configured = os.environ.get(
         "REASY_SPIRV_DXCOMPILER_PATH" if spirv else "REASY_DXCOMPILER_PATH",
@@ -172,7 +177,9 @@ def find_dxcompiler(spirv: bool = False) -> Path:
     ).strip()
     if configured:
         candidates.append(Path(configured))
-    downloaded = shader_tool_directory("dxc")
+    if getattr(sys, "frozen", False):
+        candidates.append(Path(sys._MEIPASS) / "dxcompiler.dll")
+    downloaded = downloads_directory("dxc")
     if (downloaded / "dxil.dll").is_file():
         candidates.append(downloaded / "dxcompiler.dll")
     if spirv and (renderdoc := _renderdoc_dxcompiler()) is not None:
@@ -194,9 +201,9 @@ def find_dxcompiler(spirv: bool = False) -> Path:
     for candidate in candidates:
         if candidate.is_file():
             return candidate.resolve()
-    raise DxcError(
-        "Microsoft DirectX Shader Compiler was not found. Open the file in REasy "
-        "to download it, or set REASY_DXCOMPILER_PATH to an installed dxcompiler.dll."
+    raise DxcNotFound(
+        "Microsoft DirectX Shader Compiler was not found. Open the file in REasy to download it, or get it from "
+        f"{PAGES['dxc']} and put both DLLs in {downloaded}."
     )
 
 
@@ -797,6 +804,7 @@ def enrich_dxil_shader(shader: DxbcShader, container: bytes) -> DxbcShader:
 __all__ = [
     "DxcCompileResult",
     "DxcError",
+    "DxcNotFound",
     "assemble_dxil",
     "compile_hlsl_dxc",
     "disassemble_dxil",

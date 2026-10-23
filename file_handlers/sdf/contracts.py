@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 lazy from file_handlers.material_names import is_private_material_parameter
 
-from .dxc import DxcError, enrich_dxil_shader
+from .dxc import DxcError, DxcNotFound, enrich_dxil_shader
 lazy from . import hlsl
 lazy from .models import RESOURCE_KINDS, STAGE_KEYS, SdfProgram
 lazy from .profiles import SdfGameProfile
@@ -201,6 +201,8 @@ def shader_contract_for_program(
     if reflected.reflection is None:
         try:
             reflected = enrich_dxil_shader(reflected, reference.raytracing_library.bytecode if is_library else reference.payload)
+        except DxcNotFound:
+            raise
         except DxcError as exc:
             raise SdfContractError(
                 f"could not reflect {program.name} {key}: {exc}"

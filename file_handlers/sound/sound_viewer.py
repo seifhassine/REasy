@@ -13,7 +13,6 @@ from contextlib import suppress
 from dataclasses import replace
 from functools import partial
 from pathlib import Path
-import platform
 
 from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QUrl, Signal
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeySequence, QPainter, QShortcut
@@ -142,7 +141,7 @@ lazy from .wwise_media import (
     validate_crankcase_rev_model,
     wwise_to_midi,
 )
-lazy from tools.github_downloader import GitHubToolDownloader
+lazy from .vgmstream import ensure_vgmstream
 
 
 _COLUMNS = [
@@ -157,7 +156,6 @@ _AUDIO_FILTER = "Sound Replacement (*.wem *.wav);;WEM Files (*.wem);;WAV Files (
 _MIDI_FILTER = "MIDI Replacement (*.mid *.wmid);;MIDI Files (*.mid);;Wwise MIDI (*.wmid)"
 _IR_FILTER = "Impulse Response (*.wav *.wir);;WAV Files (*.wav);;Compiled IR (*.wir)"
 _REV_FILTER = "Crankcase REV Model (*.model *.adm);;REV Model Files (*.model *.adm)"
-_vgmstream_downloader = None
 
 
 def _sound_surface(widget: QWidget) -> QWidget:
@@ -273,36 +271,6 @@ class _TwoLineDelegate(QStyledItemDelegate):
             )
             top += metrics.height()
         painter.restore()
-
-
-def _asset_preferences(system: str, machine: str) -> list[str]:
-    if system == "windows" or os.name == "nt":
-        return ["win64" if "64" in machine else "win32"]
-    return {"darwin": ["macos", "mac"], "linux": ["linux"]}.get(system, ["win64"])
-
-
-def _vgmstream_asset_url(tag, assets):
-    for preference in _asset_preferences(platform.system().lower(), platform.machine().lower()):
-        for asset in assets:
-            name = asset.get("name", "").lower()
-            if preference in name and name.endswith((".zip", ".tar.gz")):
-                return asset.get("browser_download_url", "")
-    archive = "vgmstream-win64.zip" if os.name == "nt" else "vgmstream-linux-cli.tar.gz"
-    base = "https://github.com/vgmstream/vgmstream/releases"
-    return f"{base}/download/{tag}/{archive}" if tag else f"{base}/latest/download/{archive}"
-
-
-def _get_vgmstream_downloader():
-    global _vgmstream_downloader
-    if _vgmstream_downloader is None:
-        _vgmstream_downloader = GitHubToolDownloader(
-            owner_repo="vgmstream/vgmstream",
-            cache_subdir="vgmstream_cli",
-            exe_name="vgmstream-cli.exe" if os.name == "nt" else "vgmstream-cli",
-            asset_url_fn=_vgmstream_asset_url,
-            display_name="vgmstream-cli",
-        )
-    return _vgmstream_downloader
 
 
 class FlowLayout(QLayout):
@@ -1449,38 +1417,6 @@ class SoundViewer(QWidget):
         if self.play_btn.isEnabled():
             self._on_play()
 
-    def _vgmstream(self):
-        settings = getattr(self.handler.app, "settings", {}) if self.handler.app else {}
-        configured = str(settings.get("vgmstream_cli_path", "")).strip()
-        return shutil.which(configured) or shutil.which("vgmstream-cli") or shutil.which("vgmstream-cli.exe")
-
-    def _prompt_vgmstream_download(self):
-        downloader = _get_vgmstream_downloader()
-        needs_download, latest = downloader.status()
-        if not needs_download:
-            return str(downloader.exe_path) if downloader.exe_path.exists() else None
-        if QMessageBox.question(
-            self,
-            self.tr("Download VGMStream CLI?"),
-            self.tr("VGMStream is required for preview and WAV export. Download {version} now?").format(version=latest or self.tr("the latest release")),
-            QMessageBox.Yes | QMessageBox.No,
-        ) != QMessageBox.Yes:
-            return None
-        try:
-            executable = downloader.ensure(auto_download=True, parent_window=self)
-        except Exception as exc:
-            QMessageBox.critical(self, self.tr("Download Failed"), str(exc))
-            return None
-        if self.handler.app and isinstance(getattr(self.handler.app, "settings", None), dict):
-            self.handler.app.settings["vgmstream_cli_path"] = str(executable)
-            try:
-                from settings import save_settings
-
-                save_settings(self.handler.app.settings)
-            except Exception:
-                pass
-        return str(executable)
-
     @staticmethod
     def _remove_file(path):
         try:
@@ -1581,7 +1517,7 @@ class SoundViewer(QWidget):
         return self._decode_wem(media)
 
     def _decode_wem(self, wem_data):
-        executable = self._vgmstream() or self._prompt_vgmstream_download()
+        executable = ensure_vgmstream(self, self.handler.app)
         if not wem_data or not executable:
             return None, None
         wem_fd, wem_path = tempfile.mkstemp(dir=self._temp_dir, suffix=".wem")

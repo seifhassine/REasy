@@ -1,14 +1,11 @@
 import platform
+import shutil
 import sys
 from pathlib import Path
 
-from utils.app_paths import application_root
+from utils.app_paths import downloads_directory
 lazy from PySide6.QtCore import QCoreApplication, QThread
 lazy from PySide6.QtWidgets import QApplication, QMessageBox
-
-
-def shader_tool_directory(name):
-    return application_root() / "downloads" / name
 
 
 class ShaderToolDownloadCancelled(Exception):
@@ -38,6 +35,23 @@ PACKAGES = {
               "include/spirv/unified1/extinst.glsl.std.450.grammar.json", "LICENSE")))),
     ),
 }
+PAGES = {
+    "dxc": "https://github.com/microsoft/DirectXShaderCompiler/releases/tag/v1.9.2607 (bin/x64/dxcompiler.dll and "
+           "dxil.dll)",
+    "spirv_tools": "https://github.com/KhronosGroup/SPIRV-Tools/blob/main/docs/downloads.md (bin/spirv-val.exe, "
+                   "spirv-opt.exe and SPIRV-Tools-shared.dll) and https://github.com/KhronosGroup/SPIRV-Headers "
+                   "(include/spirv/unified1/spirv.core.grammar.json and extinst.glsl.std.450.grammar.json)",
+}
+
+
+def place_msvc_runtime(directory):
+    """Copies the exe's Visual C++ runtime beside downloaded tools that link it: a clean Windows has none."""
+    if not getattr(sys, "frozen", False):
+        return
+    for name in ("msvcp140.dll", "vcruntime140.dll", "vcruntime140_1.dll"):
+        target = Path(directory) / name
+        if not target.is_file():
+            shutil.copy2(Path(sys._MEIPASS) / name, target)
 
 
 def prompt_shader_tool_download(name):
@@ -49,7 +63,7 @@ def prompt_shader_tool_download(name):
     if not isinstance(app, QApplication) or QThread.currentThread() != app.thread():
         return False
     title, archives = PACKAGES[name]
-    directory = shader_tool_directory(name)
+    directory = downloads_directory(name)
     parent = app.activeWindow()
     message = QCoreApplication.translate(
         "ShaderTools", "{tool} is required for this operation. Download it to REasy's downloads folder now?"
@@ -59,6 +73,6 @@ def prompt_shader_tool_download(name):
         raise ShaderToolDownloadCancelled("Shader tool download cancelled.")
     for url, checksum, files in archives:
         if not all((directory / Path(file).name).is_file() for file in files):
-            _download_and_extract_archive(url, directory, title,
+            _download_and_extract_archive(url, directory, title, page=PAGES[name],
                                           parent_window=parent, files=files, sha256=checksum)
     return True

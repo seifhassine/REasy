@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 
+lazy from file_handlers.sdf.dxc import DxcNotFound
 from file_handlers.sdf.shader_graph import (
     ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension,
 )
@@ -91,6 +92,8 @@ def structural_class(document, profile, target_index: int, program_index: int) -
     if "pixel" in roles:
         try:
             outputs = profile.shader_contract(document, program, "pixel").outputs
+        except DxcNotFound:
+            raise
         except ValueError:
             outputs = ()
         targets = any(field.semantic_name.casefold() == "sv_target" for field in outputs)

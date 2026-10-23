@@ -86,17 +86,6 @@ class _ResourceOwner:
         self.resource_context = context
 
 
-def configured_vgmstream(handler) -> str | None:
-    app = getattr(handler, "app", None)
-    settings = getattr(app, "settings", {}) if app is not None else {}
-    configured = str(settings.get("vgmstream_cli_path", "")).strip()
-    return (
-        shutil.which(configured)
-        or shutil.which("vgmstream-cli")
-        or shutil.which("vgmstream-cli.exe")
-    )
-
-
 class MsgSoundPreviewSession(QObject):
     """Resolve, cache, decode, and play MSG audio without touching Qt off-thread."""
 
@@ -674,5 +663,4 @@ __all__ = [
     "MsgSoundPreviewSession",
     "SoundPreviewCandidate",
     "SoundScanResult",
-    "configured_vgmstream",
 ]

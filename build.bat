@@ -15,6 +15,7 @@ if /I "%GITHUB_ACTIONS%"=="true" (
   set "PATH=%CD%\.venv\Scripts;%PATH%"
   call "%~dp0prepare_env.bat" || exit /b 1
 )
+"%PY%" scripts\fetch_dxc.py || exit /b 1
 
 rem PyInstaller bundles DLLs it finds on PATH, so build on a fixed one.
 for /f "delims=" %%i in ('%PY% -c "import sys; print(sys.executable)"') do set "PY=%%i"

@@ -86,10 +86,6 @@ def _tool_bar(parent: QWidget, name: str, surface: str) -> tuple[QWidget, QHBoxL
     return bar, layout
 
 
-def _shown_shading(shadings) -> str | None:
-    return next((shading for shading in _DEVICE_SHADINGS if shading in shadings), None)
-
-
 def _visible_parts(viewport) -> frozenset[int]:
     return viewport.inspection.all_parts.difference(viewport._hidden_parts.get("mesh", ()))
 
@@ -188,14 +184,17 @@ class MeshViewer(QWidget):
                                                 self._shown_scene, self)
         self.attributes_preview = AttributesPreview(self.handler, self._material_session, self._shown_inspection,
                                                     self._shown_scene, self._shown_attribute, self)
+        self._device_previews = {"attributes": self.attributes_preview, "lit": self.lit_preview,
+                                 "textures": self.textures_preview}
         if self.viewport is not None:
             self.attributes_preview.status_changed.connect(self._show_attribute_status)
             # Connected first: the attributes preview is toggled before it learns the geometry shown.
             self.viewport.geometry_changed.connect(self._sync_attributes_preview)
             self.attribute_controls.changed.connect(self.attributes_preview.colours_changed)
+            self.viewport.shown_shading_changed.connect(self._show_preview_status)
             # Connected before the shading controls turn a preview on.
-            for shading, preview in (("attributes", self.attributes_preview), ("lit", self.lit_preview),
-                                     ("textures", self.textures_preview)):
+            for shading, preview in self._device_previews.items():
+                preview.status_changed.connect(self._show_preview_status)
                 self.viewport.geometry_changed.connect(preview.geometry_changed)
                 # Sent while the viewport paints, so handled after.
                 self.viewport.device_view_changed.connect(preview.view_changed, Qt.QueuedConnection)
@@ -242,6 +241,19 @@ class MeshViewer(QWidget):
 
     def _show_attribute_status(self) -> None:
         self.attribute_controls.set_status(self.attributes_preview.status())
+
+    def _show_preview_status(self, *_told) -> None:
+        text = self._geometry_error
+        shading = self.viewport.shown_shading()
+        reasons = [] if text or shading is None else self._device_previews[shading].nothing_drawn()
+        if reasons:
+            lines = [self.tr("Nothing is drawn."), *reasons[:3]]
+            if len(reasons) > 3:
+                lines.append(self.tr("And {count} more reasons: the Textures panel lists each part's.").format(
+                    count=len(reasons) - 3))
+            text = "\n".join(lines)
+        self.preview_status.setText(text)
+        self.preview_status.setVisible(bool(text))
 
     def _open_conversion(self):
         from .conversion_dialog import MeshConversionDialog
@@ -731,14 +743,15 @@ class MeshViewer(QWidget):
             )
         except (ValueError, IndexError, KeyError) as error:
             self.morph_controls.stop()
-            self.preview_status.setText(self.tr("Cannot preview {geometry}: {error}").format(
-                geometry=self.geometry_combo.currentText(), error=error))
-            self.preview_status.show()
+            self._geometry_error = self.tr("Cannot preview {geometry}: {error}").format(
+                geometry=self.geometry_combo.currentText(), error=error)
+            self._show_preview_status()
             self.inspector.setEnabled(False)
             self.attribute_controls.setEnabled(False)
             self.viewport.hide()
         else:
-            self.preview_status.hide()
+            self._geometry_error = ""
+            self._show_preview_status()
             self.attribute_controls.setEnabled(True)
             self.inspector.set_inspection(self.viewport.inspection)
             self.attribute_controls.set_view(
@@ -2589,23 +2602,27 @@ class _MeshViewport(ScenePreviewWidget):
         if preview is not None and preview.attribute is not None and not preview.attribute.is_uv:
             preview.refresh_attribute_colors()
 
+    def shown_shading(self) -> str | None:
+        return next((shading for shading in _DEVICE_SHADINGS if shading in self._device_shadings), None)
+
     def set_device_shading(self, shading: str, active: bool) -> None:
-        shown = _shown_shading(self._device_shadings)
+        before = self.shown_shading()
         if active:
             self._device_shadings.add(shading)
         else:
             self._device_shadings.discard(shading)
-        if _shown_shading(self._device_shadings) != shown:
+        shown = self.shown_shading()
+        if shown != before:
             # Hidden previews release the window before the shown one draws.
-            self.shown_shading_changed.emit(_shown_shading(self._device_shadings))
-            self.set_device_frames(_shown_shading(self._device_shadings) is not None)
+            self.shown_shading_changed.emit(shown)
+            self.set_device_frames(shown is not None)
 
     def show_device_frame(self, shading: str, frame) -> None:
-        if shading == _shown_shading(self._device_shadings):
+        if shading == self.shown_shading():
             self.set_device_frame(frame)
 
     def _device_view(self):
-        shading = _shown_shading(self._device_shadings)
+        shading = self.shown_shading()
         view = (self._attribute_view() if shading == "attributes" else self._lit_view() if shading == "lit"
                 else self._textured_view())
         return view, self._lit_overlays_shown() if isinstance(view, LitView) else None

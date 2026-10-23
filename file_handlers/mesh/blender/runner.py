@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import os
-import shutil
 lazy import subprocess
 import tempfile
 from pathlib import Path
 
+from utils.app_paths import downloads_directory
+
 SCRIPT = Path(__file__).with_name("reasy_blender.py")
 MINIMUM_VERSION = (5, 0)
+DOWNLOAD_VERSION = "5.2.2"
+DOWNLOAD_URL = "https://download.blender.org/release/Blender5.2/blender-5.2.2-windows-x64.zip"
+DOWNLOAD_SHA256 = "3849d17a682cba006075aaa3f3597ecb5c9c30ec31035b2e092c53e40679b535"
+DOWNLOAD_PAGE = "https://www.blender.org/download/"
 
 
 class BlenderError(RuntimeError):
@@ -15,9 +20,7 @@ class BlenderError(RuntimeError):
 
 
 def _candidates():
-    found = shutil.which("blender")
-    if found:
-        yield Path(found)
+    yield from sorted(downloads_directory("blender").glob("*/blender.exe"), reverse=True)
     for variable in ("ProgramFiles", "ProgramW6432", "ProgramFiles(x86)"):
         base = os.environ.get(variable)
         if base:

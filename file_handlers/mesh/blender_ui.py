@@ -18,7 +18,11 @@ lazy from .blender import (
     resource_version, source_bones, suggest,
 )
 lazy from .blender.export import joint_names
-lazy from .blender.runner import MINIMUM_VERSION, BlenderError
+lazy from .blender.runner import (
+    DOWNLOAD_PAGE, DOWNLOAD_SHA256, DOWNLOAD_URL, DOWNLOAD_VERSION, MINIMUM_VERSION, BlenderError,
+)
+lazy from tools.github_downloader import _download_and_extract_archive, show_download_failure
+lazy from utils.app_paths import downloads_directory
 lazy from .mesh_handler import MeshHandler
 lazy from .blender_reference_dialog import ReferencePicker, ReferenceChoice
 lazy from .bone_mapping_dialog import BoneMappingDialog
@@ -31,17 +35,35 @@ REMEMBERED_MAPPINGS = 20
 translate = QCoreApplication.translate
 
 
+def _offer_blender(parent):
+    box = QMessageBox(QMessageBox.Icon.Information, translate("BlenderRoundTrip", "Locate Blender"), translate(
+        "BlenderRoundTrip",
+        "Blender {version} or newer is needed for .blend export and import. REasy can download Blender {download} "
+        "(about 400 MB) into its downloads folder, or you can choose an installed blender.exe; you can change it "
+        "later in Settings.").format(version=".".join(map(str, MINIMUM_VERSION)), download=DOWNLOAD_VERSION), parent=parent)
+    download = box.addButton(translate("BlenderRoundTrip", "Download"), QMessageBox.ButtonRole.AcceptRole)
+    choose = box.addButton(translate("BlenderRoundTrip", "Choose blender.exe…"), QMessageBox.ButtonRole.ActionRole)
+    box.addButton(QMessageBox.StandardButton.Cancel)
+    box.exec()
+    if box.clickedButton() is download:
+        try:
+            _download_and_extract_archive(DOWNLOAD_URL, downloads_directory("blender"), f"Blender {DOWNLOAD_VERSION}",
+                                          page=DOWNLOAD_PAGE, parent_window=parent, sha256=DOWNLOAD_SHA256)
+        except RuntimeError as exc:
+            show_download_failure(parent, exc)
+            return None
+        return find_blender()
+    if box.clickedButton() is choose:
+        chosen, _filter = QFileDialog.getOpenFileName(parent, translate("BlenderRoundTrip", "Choose blender.exe"), "",
+                                                      "Blender (blender.exe blender);;All files (*)")
+        return find_blender(chosen) if chosen else None
+    return None
+
+
 def require_blender(parent, app):
     path = find_blender(str((app_settings(app) or {}).get(SETTINGS_KEY, "")).strip())
     if path is None:
-        QMessageBox.information(parent, translate("BlenderRoundTrip", "Locate Blender"), translate("BlenderRoundTrip",
-            "Blender {version} or newer is needed for .blend export and import. Choose blender.exe; you can "
-            "change it later in Settings.").format(version=".".join(map(str, MINIMUM_VERSION))))
-        chosen, _filter = QFileDialog.getOpenFileName(parent, translate("BlenderRoundTrip", "Choose blender.exe"), "",
-                                                      "Blender (blender.exe blender);;All files (*)")
-        if not chosen:
-            return None
-        path = find_blender(chosen)
+        path = _offer_blender(parent)
         if path is None:
             return None
     try:

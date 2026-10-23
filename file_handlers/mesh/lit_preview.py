@@ -759,9 +759,11 @@ class LitPreview(GameLighting, DevicePreview):
                 self._ask()
 
     def unavailable(self) -> str:
+        if not self._active:
+            return ""
         scene, frame = self._scene, self._frame
-        if not self._active or scene is None:
-            return self._error if self._active else ""
+        if scene is None or self._error:
+            return self._error
         refused = (not scene.parts and self._failures) or (frame is not None and not frame.drawn and frame.failures)
         return self.tr("None of the mesh's parts can be drawn.") if refused else ""
 

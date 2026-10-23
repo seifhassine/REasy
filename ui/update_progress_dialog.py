@@ -4,6 +4,10 @@ from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QTextEdit, QPro
 from PySide6.QtWidgets import QApplication
 import os
 
+_SYSTEM32 = os.path.join(os.environ["SystemRoot"], "System32")
+POWERSHELL = os.path.join(_SYSTEM32, "WindowsPowerShell", "v1.0", "powershell.exe")
+CMD = os.path.join(_SYSTEM32, "cmd.exe")
+
 lazy from ui.editor_widgets import styled_label
 lazy from ui.styles import set_style_role
 
@@ -64,7 +68,7 @@ class UpdateProgressDialog(QDialog):
         self._script_path = script_path
         self._target_dir = target_dir
         self._exe_name = exe_name or 'REasy.exe'
-        program = "powershell"
+        program = POWERSHELL
         args = [
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
@@ -137,7 +141,7 @@ class UpdateProgressDialog(QDialog):
             "/c",
             "start",
             "REasy Updater",
-            "powershell.exe",
+            POWERSHELL,
             "-NoProfile",
             "-ExecutionPolicy", "Bypass",
             "-NoExit",
@@ -149,7 +153,7 @@ class UpdateProgressDialog(QDialog):
             "-ExeName", self._exe_name,
             "-Relaunch"
         ]
-        QProcess.startDetached("cmd.exe", args, self._target_dir)
+        QProcess.startDetached(CMD, args, self._target_dir)
         app = QApplication.instance()
         if app:
             app.quit()

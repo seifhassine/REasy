@@ -8,11 +8,14 @@ from pathlib import Path
 
 from PyInstaller.archive.readers import CArchiveReader
 
+from fetch_dxc import FILES as DXC_FILES, OUT as DXC, VERSION as DXC_VERSION
+
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GDEFLATE = PROJECT_ROOT / ".cache" / "gdeflate" / "GDeflateCore"
 UNRECORDED = {
     "Python": (sys.version.split()[0], [Path(sys.base_prefix) / "LICENSE.txt"]),
     "GDeflate": ("", [GDEFLATE / "LICENSE", GDEFLATE / "subprojects" / "GDeflate" / "COPYING"]),
+    "DirectXShaderCompiler": (DXC_VERSION, [DXC / name for name in DXC_FILES.values() if name.endswith(".txt")]),
 }
 QT_DISTRIBUTIONS = ("pyside6", "shiboken6")
 NOTICES = (

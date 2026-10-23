@@ -1,10 +1,10 @@
 import os
 from pathlib import Path
-import shutil
 import subprocess
 
 from .spirv import SpirvError
-from tools.shader_tools import prompt_shader_tool_download, shader_tool_directory
+from tools.shader_tools import PAGES, place_msvc_runtime, prompt_shader_tool_download
+from utils.app_paths import downloads_directory
 
 
 def find_spirv_tool(name):
@@ -13,18 +13,15 @@ def find_spirv_tool(name):
     executable = name + (".exe" if os.name == "nt" else "")
     candidates = [Path(value) / executable for value in (
         os.environ.get("REASY_SPIRV_TOOLS_DIR"),
-        str(shader_tool_directory("spirv_tools")),
+        str(downloads_directory("spirv_tools")),
         str(Path(os.environ["VULKAN_SDK"]) / "Bin") if os.environ.get("VULKAN_SDK") else None,
     ) if value]
     for path in candidates:
         if path.is_file():
             return path
-    found = shutil.which(executable)
-    if found and Path(found).is_file():
-        return Path(found)
     raise SpirvError(f"{name} is required for native Vulkan material authoring. "
-                     "REasy will offer to download it when needed, "
-                     "or set REASY_SPIRV_TOOLS_DIR to an installed toolchain.")
+                     "REasy will offer to download it when needed, or get it from "
+                     f"{PAGES['spirv_tools']} and put the files in {downloads_directory('spirv_tools')}.")
 
 
 def run_spirv_tool(name, module, *arguments):
@@ -34,6 +31,8 @@ def run_spirv_tool(name, module, *arguments):
         if not prompt_shader_tool_download("spirv_tools"):
             raise
         executable = find_spirv_tool(name)
+    if executable.parent == downloads_directory("spirv_tools"):
+        place_msvc_runtime(executable.parent)
     result = subprocess.run([str(executable), *arguments, "-"], input=module,
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60,
                             creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
