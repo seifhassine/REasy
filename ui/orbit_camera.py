@@ -7,6 +7,8 @@ lazy import numpy as np
 
 lazy from PySide6.QtCore import QCoreApplication, Qt
 
+lazy from file_handlers.mmtr.resident import software_reason
+
 
 class OrbitCameraMixin:
     def _init_orbit_camera(self, *, rot_x: float, rot_y: float, distance: float) -> None:
@@ -28,11 +30,16 @@ class OrbitCameraMixin:
 
     def _show_fps(self, fps: float) -> None:
         self.fps = fps
-        self.fps_label.setText(
-            QCoreApplication.translate("OrbitCameraMixin", "{fps:.1f} FPS").format(
-                fps=self.fps
+        if software_reason():
+            text = QCoreApplication.translate("OrbitCameraMixin", "{fps:.1f} FPS · software renderer")
+            tip = QCoreApplication.translate(
+                "OrbitCameraMixin",
+                "No graphics adapter here supports Direct3D 12, so Windows' slow software renderer (WARP) draws.",
             )
-        )
+        else:
+            text, tip = QCoreApplication.translate("OrbitCameraMixin", "{fps:.1f} FPS"), ""
+        self.fps_label.setText(text.format(fps=self.fps))
+        self.fps_label.setToolTip(tip)
 
     def _update_after_camera_change(self) -> None:
         self.update()

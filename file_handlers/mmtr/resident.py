@@ -16,6 +16,7 @@ BUFFER, TEXTURE_2D, TEXTURE_3D = (VIEW_DIMENSIONS[name] for name in ("buffer", "
 _warming = Lock()
 _warm_up: Thread | None = None
 _warm_up_failure: Exception | None = None
+_software_reason = ""
 _inflating = Lock()
 _inflates = False
 
@@ -61,6 +62,27 @@ def _joined_warm_up() -> None:
         raise failure
 
 
+def software_reason() -> str:
+    """Why hardware-requested drawing runs on WARP instead: no adapter made a Direct3D 12 device. Empty otherwise."""
+    return _software_reason
+
+
+def _scene(hardware: bool):
+    global _software_reason
+    if hardware and not _software_reason:
+        try:
+            _joined_warm_up()
+            return fastmatpreview.Scene(True)
+        except RuntimeError as exc:
+            # Virtual machines and old GPUs have no Direct3D 12 adapter; every Windows 10+ has WARP.
+            if not str(exc).startswith(("EnumAdapterByGpuPreference", "D3D12CreateDevice")):
+                raise
+            _software_reason = str(exc)
+            print(f"No graphics adapter makes a Direct3D 12 device ({exc}); "
+                  "viewports draw with Windows' software renderer (WARP).")
+    return fastmatpreview.Scene(False)
+
+
 class _Texels:
     """Texels, packed bytes or rows, as a key: hashed by a sample of their bytes packed tightly, equal by all those."""
     __slots__ = ("texels", "sample")
@@ -81,9 +103,7 @@ class Resident:
     """``hardware`` False runs on Microsoft's software device (WARP)."""
 
     def __init__(self, hardware: bool):
-        if hardware:
-            _joined_warm_up()
-        self.scene = fastmatpreview.Scene(hardware)
+        self.scene = _scene(hardware)
         self.pending: list[int] = []
         self._buffers: dict[bytes, int] = {}
         self._read: dict[tuple, int] = {}
