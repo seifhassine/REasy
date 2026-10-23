@@ -39,7 +39,7 @@
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="115"/>
         <source>Actions run from top to bottom. Add existing Actions, then reorder them.</source>
-        <translation>Las acciones se ejecutan de arriba a abajo. Agregue las acciones existentes y, a continuación, reordenelas.</translation>
+        <translation>Las acciones se ejecutan de arriba a abajo. Agregue las acciones existentes y, a continuación, reordénelas.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="123"/>
@@ -64,7 +64,7 @@
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="147"/>
         <source>Used by event</source>
-        <translation>Utilizado por evento</translation>
+        <translation>Usadas por el evento</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="153"/>
@@ -102,7 +102,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="451"/>
         <source>Export Data Block</source>
-        <translation>Bloque de datos de exportación</translation>
+        <translation>Exportar bloque de datos</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="452"/>
@@ -175,7 +175,7 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="526"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="803"/>
         <source>Paste GameObject as Child</source>
-        <translation>Pegar GameObject como niño</translation>
+        <translation>Pegar GameObject como hijo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="528"/>
@@ -262,7 +262,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="592"/>
         <source>Paste Group ({} elements)</source>
-        <translation>Grupo de pasta ({} elementos)</translation>
+        <translation>Pegar grupo ({} elementos)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="598"/>
@@ -404,7 +404,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="888"/>
         <source>Parent widget not available</source>
-        <translation>El widget para padres no está disponible</translation>
+        <translation>El widget padre no está disponible</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1150"/>
@@ -445,7 +445,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1281"/>
         <source>Component deleted successfully, but failed to refresh UI. Please save and reload</source>
-        <translation>Componente eliminado correctamente, pero no pudo actualizar la interfaz de usuario. Por favor, guarde y vuelva a cargar</translation>
+        <translation>Componente eliminado correctamente, pero no se pudo actualizar la interfaz de usuario. Por favor, guarde y vuelva a cargar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1286"/>
@@ -492,7 +492,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1370"/>
         <source>New Child GameObject</source>
-        <translation>Nuevo Niño GameObject</translation>
+        <translation>Nuevo GameObject hijo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1388"/>
@@ -522,7 +522,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1493"/>
         <source>New Root GameObject</source>
-        <translation>Nuevo Root GameObject</translation>
+        <translation>Nuevo GameObject raíz</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1530"/>
@@ -555,7 +555,7 @@ Se eliminarán el GameObject, {count} componente(s) y todos sus GameObjects hijo
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1622"/>
         <source>GameObject deleted successfully, but failed to refresh UI. Please save and reload</source>
-        <translation>GameObject se eliminó correctamente, pero no pudo actualizar la interfaz de usuario. Por favor, guarde y vuelva a cargar</translation>
+        <translation>El GameObject se eliminó correctamente, pero no se pudo actualizar la interfaz de usuario. Por favor, guarde y vuelva a cargar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1627"/>
@@ -758,7 +758,7 @@ Es opcional: los recursos se reconstruyen automáticamente al guardar.</translat
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2482"/>
         <source>Failed to start translation</source>
-        <translation>Fracaso en el inicio de la traducción</translation>
+        <translation>No se pudo iniciar la traducción</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2521"/>
@@ -773,12 +773,12 @@ Es opcional: los recursos se reconstruyen automáticamente al guardar.</translat
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2534"/>
         <source>Invalid item</source>
-        <translation>Artículo no válido</translation>
+        <translation>Elemento no válido</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2570"/>
         <source>Could not locate the Game Objects node.</source>
-        <translation>No se pudo localizar el nodo Objetos de juego.</translation>
+        <translation>No se pudo localizar el nodo Game Objects.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2585"/>
@@ -790,7 +790,7 @@ Es opcional: los recursos se reconstruyen automáticamente al guardar.</translat
         <source>
 Skipped {count} entries due to missing, invalid or oversized names.</source>
         <translation>
-Omitir {count} entradas debido a nombres faltantes, inválidos o de gran tamaño.</translation>
+Se omitieron {count} entradas por nombres ausentes, no válidos o demasiado largos.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2602"/>
@@ -805,7 +805,7 @@ Omitir {count} entradas debido a nombres faltantes, inválidos o de gran tamaño
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2614"/>
         <source>Skipped: {count} (missing, invalid or oversized names)</source>
-        <translation>Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
+        <translation>Omitidos: {count} (nombres ausentes, no válidos o demasiado largos)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2619"/>
@@ -815,14 +815,14 @@ Omitir {count} entradas debido a nombres faltantes, inválidos o de gran tamaño
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2640"/>
         <source>Unable to start translation.</source>
-        <translation>Incapaz de iniciar la traducción.</translation>
+        <translation>No se pudo iniciar la traducción.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2643"/>
         <source>
 Skipped: {count} (missing, invalid or oversized names)</source>
         <translation>
-Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
+Omitidos: {count} (nombres ausentes, no válidos o demasiado largos)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2707"/>
@@ -862,7 +862,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2926"/>
         <source>Error pasting component: {}</source>
-        <translation>Componente de pegado de error: {}</translation>
+        <translation>Error al pegar el componente: {}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="2967"/>
@@ -908,7 +908,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3086"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3097"/>
         <source>Failed to access array element</source>
-        <translation>No se pudo acceder al elemento array</translation>
+        <translation>No se pudo acceder al elemento de la matriz</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3115"/>
@@ -923,7 +923,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3125"/>
         <source>Error copying element: {}</source>
-        <translation>Elemento de copia de error: {}</translation>
+        <translation>Error al copiar el elemento: {}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3174"/>
@@ -973,7 +973,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3234"/>
         <source>No items were imported or import was cancelled.</source>
-        <translation>No se han importado artículos ni se ha cancelado la importación.</translation>
+        <translation>No se importó ningún elemento o se canceló la importación.</translation>
     </message>
 </context>
 <context>
@@ -1014,57 +1014,57 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="834"/>
         <source>The AI server returned a non-object response.</source>
-        <translation>El servidor AI devolvió una respuesta no objeto.</translation>
+        <translation>El servidor de IA devolvió una respuesta que no es un objeto.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="838"/>
         <source>The AI server returned no response choices.</source>
-        <translation>El servidor AI no devolvió ninguna opción de respuesta.</translation>
+        <translation>El servidor de IA no devolvió ninguna opción de respuesta.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="842"/>
         <source>The AI server returned an invalid assistant message.</source>
-        <translation>El servidor AI devolvió un mensaje de asistente no válido.</translation>
+        <translation>El servidor de IA devolvió un mensaje de asistente no válido.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="846"/>
         <source>The AI server returned invalid tool calls.</source>
-        <translation>El servidor AI devolvió llamadas de herramienta no válidas.</translation>
+        <translation>El servidor de IA devolvió llamadas de herramienta no válidas.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="850"/>
         <source>The AI server returned an empty assistant message.</source>
-        <translation>El servidor AI devolvió un mensaje de asistente vacío.</translation>
+        <translation>El servidor de IA devolvió un mensaje de asistente vacío.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="854"/>
         <source>The AI server returned an invalid tool call.</source>
-        <translation>El servidor AI devolvió una llamada de herramienta no válida.</translation>
+        <translation>El servidor de IA devolvió una llamada de herramienta no válida.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="858"/>
         <source>The AI server returned a tool call without a function.</source>
-        <translation>El servidor AI devolvió una llamada a la herramienta sin una función.</translation>
+        <translation>El servidor de IA devolvió una llamada de herramienta sin función.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="862"/>
         <source>The AI server returned a tool call without an id.</source>
-        <translation>El servidor AI devolvió una llamada a la herramienta sin un id.</translation>
+        <translation>El servidor de IA devolvió una llamada de herramienta sin id.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="866"/>
         <source>The AI server returned a tool call without a name.</source>
-        <translation>El servidor AI devolvió una llamada a la herramienta sin un nombre.</translation>
+        <translation>El servidor de IA devolvió una llamada de herramienta sin nombre.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="870"/>
         <source>The AI server returned non-text tool arguments.</source>
-        <translation>El servidor de AI devolvió argumentos de herramienta no textuales.</translation>
+        <translation>El servidor de IA devolvió argumentos de herramienta no textuales.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="985"/>
         <source>Reading the current REasy workspace</source>
-        <translation>Leer el espacio de trabajo actual de REasy</translation>
+        <translation>Leyendo el espacio de trabajo actual de REasy</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="986"/>
@@ -1074,27 +1074,27 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1041"/>
         <source>Reading the file update report</source>
-        <translation>Leer el informe de actualización de archivos</translation>
+        <translation>Leyendo el informe de actualización de archivos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1042"/>
         <source>Read the file update report</source>
-        <translation>Leer el informe de actualización de archivos</translation>
+        <translation>Informe de actualización de archivos leído</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1057"/>
         <source>Loading the requested editor tools</source>
-        <translation>Cargar las herramientas de edición solicitadas</translation>
+        <translation>Cargando las herramientas de edición solicitadas</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1058"/>
         <source>Loaded the requested editor tools</source>
-        <translation>Cargado las herramientas de edición solicitadas</translation>
+        <translation>Herramientas de edición solicitadas cargadas</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1072"/>
         <source>Switching to the open tab</source>
-        <translation>Cambiar a la pestaña abierta</translation>
+        <translation>Cambiando a la pestaña abierta</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1073"/>
@@ -1104,7 +1104,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1131"/>
         <source>Searching files in game PAKs</source>
-        <translation>Búsqueda de archivos en PAKs de juego</translation>
+        <translation>Buscando archivos en los PAKs del juego</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1132"/>
@@ -1114,17 +1114,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1142"/>
         <source>Opening a file from the game PAKs</source>
-        <translation>Abrir un archivo de los PAKs del juego</translation>
+        <translation>Abriendo un archivo de los PAKs del juego</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1143"/>
         <source>Opened the PAK file</source>
-        <translation>Abrió el archivo PAK</translation>
+        <translation>Archivo PAK abierto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1153"/>
         <source>Adding a PAK file to the project</source>
-        <translation>Agregar un archivo PAK al proyecto</translation>
+        <translation>Añadiendo un archivo PAK al proyecto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1154"/>
@@ -1134,22 +1134,22 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1165"/>
         <source>Opening the requested file</source>
-        <translation>Abrir el archivo solicitado</translation>
+        <translation>Abriendo el archivo solicitado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1166"/>
         <source>Opened the requested file</source>
-        <translation>Abrió el archivo solicitado</translation>
+        <translation>Archivo solicitado abierto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1173"/>
         <source>Opening the project library</source>
-        <translation>Abrir la biblioteca del proyecto</translation>
+        <translation>Abriendo la biblioteca del proyecto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1174"/>
         <source>Opened the project library</source>
-        <translation>Abrir la biblioteca del proyecto</translation>
+        <translation>Biblioteca del proyecto abierta</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1191"/>
@@ -1159,17 +1159,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1192"/>
         <source>Checked your project library</source>
-        <translation>Chequeó la biblioteca de su proyecto</translation>
+        <translation>Biblioteca de su proyecto revisada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1210"/>
         <source>Opening the requested project</source>
-        <translation>Apertura del proyecto solicitado</translation>
+        <translation>Abriendo el proyecto solicitado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1211"/>
         <source>Opened the requested project</source>
-        <translation>Abrir el proyecto solicitado</translation>
+        <translation>Proyecto solicitado abierto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1096"/>
@@ -1179,22 +1179,22 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1097"/>
         <source>Checked the active project&apos;s files</source>
-        <translation>Comprobación de los archivos del proyecto activo</translation>
+        <translation>Archivos del proyecto activo revisados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1111"/>
         <source>Opening the requested project file</source>
-        <translation>Abrir el archivo de proyecto solicitado</translation>
+        <translation>Abriendo el archivo de proyecto solicitado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1112"/>
         <source>Opened the requested project file</source>
-        <translation>Abrir el archivo de proyecto solicitado</translation>
+        <translation>Archivo de proyecto solicitado abierto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1218"/>
         <source>Closing the active project</source>
-        <translation>Cerrar el proyecto activo</translation>
+        <translation>Cerrando el proyecto activo</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1219"/>
@@ -1204,17 +1204,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1226"/>
         <source>Opening project creation</source>
-        <translation>Apertura de la creación del proyecto</translation>
+        <translation>Abriendo la creación de proyectos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1227"/>
         <source>Opened project creation</source>
-        <translation>Creación de proyectos abiertos</translation>
+        <translation>Creación de proyectos abierta</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1234"/>
         <source>Opening project settings</source>
-        <translation>Apertura de la configuración del proyecto</translation>
+        <translation>Abriendo la configuración del proyecto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1235"/>
@@ -1229,12 +1229,12 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1245"/>
         <source>Started the mod export</source>
-        <translation>Inicio de la exportación de mod</translation>
+        <translation>Exportación del mod iniciada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1253"/>
         <source>Saving the active file</source>
-        <translation>Guardar el archivo activo</translation>
+        <translation>Guardando el archivo activo</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1254"/>
@@ -1244,17 +1244,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1262"/>
         <source>Saving all modified files</source>
-        <translation>Guardar todos los archivos modificados</translation>
+        <translation>Guardando todos los archivos modificados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1263"/>
         <source>Saved all modified files</source>
-        <translation>Guardado todos los archivos modificados</translation>
+        <translation>Guardados todos los archivos modificados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1298"/>
         <source>Inspecting open MDF data</source>
-        <translation>Inspeccionar datos MDF abiertos</translation>
+        <translation>Inspeccionando los datos MDF abiertos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1299"/>
@@ -1264,27 +1264,27 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1329"/>
         <source>Comparing open MDF files</source>
-        <translation>Comparación de archivos MDF abiertos</translation>
+        <translation>Comparando los archivos MDF abiertos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1330"/>
         <source>Compared open MDF files</source>
-        <translation>Comparación de archivos MDF abiertos</translation>
+        <translation>Archivos MDF abiertos comparados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1379"/>
         <source>Copying MDF values</source>
-        <translation>Copiar valores MDF</translation>
+        <translation>Copiando valores MDF</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1380"/>
         <source>Copied MDF values</source>
-        <translation>Copiado de valores MDF</translation>
+        <translation>Valores MDF copiados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1430"/>
         <source>Migrating MDF files</source>
-        <translation>Migración de archivos MDF</translation>
+        <translation>Migrando archivos MDF</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1431"/>
@@ -1294,17 +1294,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1462"/>
         <source>Building the updated mod folder</source>
-        <translation>Creación de la carpeta mod actualizada</translation>
+        <translation>Creando la carpeta actualizada del mod</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1463"/>
         <source>Built the updated mod folder</source>
-        <translation>Construida la carpeta mod actualizada</translation>
+        <translation>Carpeta actualizada del mod creada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1476"/>
         <source>Editing files</source>
-        <translation>Editar archivos</translation>
+        <translation>Editando archivos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1477"/>
@@ -1314,17 +1314,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1501"/>
         <source>Selecting the requested material</source>
-        <translation>Seleccionar el material solicitado</translation>
+        <translation>Seleccionando el material solicitado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1502"/>
         <source>Selected the requested material</source>
-        <translation>Selecciona el material solicitado</translation>
+        <translation>Material solicitado seleccionado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1522"/>
         <source>Updating the MDF header</source>
-        <translation>Actualización del encabezado MDF</translation>
+        <translation>Actualizando el encabezado MDF</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1523"/>
@@ -1334,7 +1334,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1534"/>
         <source>Adding a material</source>
-        <translation>Añadir un material</translation>
+        <translation>Añadiendo un material</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1535"/>
@@ -1344,7 +1344,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1546"/>
         <source>Deleting a material</source>
-        <translation>Eliminación de un material</translation>
+        <translation>Eliminando un material</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1547"/>
@@ -1354,7 +1354,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1577"/>
         <source>Updating material details</source>
-        <translation>Actualización de los detalles del material</translation>
+        <translation>Actualizando los detalles del material</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1578"/>
@@ -1364,37 +1364,37 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1601"/>
         <source>Updating material flags</source>
-        <translation>Actualización de banderas de material</translation>
+        <translation>Actualizando los indicadores del material</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1602"/>
         <source>Updated material flags</source>
-        <translation>Banderas de material actualizadas</translation>
+        <translation>Indicadores del material actualizados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1619"/>
         <source>Updating a texture</source>
-        <translation>Actualización de una textura</translation>
+        <translation>Actualizando una textura</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1620"/>
         <source>Updated a texture</source>
-        <translation>Actualizar una textura</translation>
+        <translation>Actualizada una textura</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1631"/>
         <source>Removing a texture</source>
-        <translation>Eliminar una textura</translation>
+        <translation>Eliminando una textura</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1632"/>
         <source>Removed a texture</source>
-        <translation>Elimina una textura</translation>
+        <translation>Eliminada una textura</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1654"/>
         <source>Updating a parameter</source>
-        <translation>Actualización de un parámetro</translation>
+        <translation>Actualizando un parámetro</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1655"/>
@@ -1404,7 +1404,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1666"/>
         <source>Removing a parameter</source>
-        <translation>Eliminar un parámetro</translation>
+        <translation>Eliminando un parámetro</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1667"/>
@@ -1414,17 +1414,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1683"/>
         <source>Updating a GPU buffer</source>
-        <translation>Actualización de un búfer de GPU</translation>
+        <translation>Actualizando un búfer de GPU</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1684"/>
         <source>Updated a GPU buffer</source>
-        <translation>Actualización de un búfer de GPU</translation>
+        <translation>Actualizado un búfer de GPU</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1695"/>
         <source>Removing a GPU buffer</source>
-        <translation>Eliminar un búfer de GPU</translation>
+        <translation>Eliminando un búfer de GPU</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1696"/>
@@ -1434,22 +1434,22 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1712"/>
         <source>Updating a shader LOD</source>
-        <translation>Actualización de un LOD shader</translation>
+        <translation>Actualizando un LOD de shader</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1713"/>
         <source>Updated a shader LOD</source>
-        <translation>Actualizado un shader LOD</translation>
+        <translation>Actualizado un LOD de shader</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1724"/>
         <source>Removing a shader LOD</source>
-        <translation>Eliminar un LOD de shader</translation>
+        <translation>Eliminando un LOD de shader</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1725"/>
         <source>Removed a shader LOD</source>
-        <translation>Eliminado un shader LOD</translation>
+        <translation>Eliminado un LOD de shader</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="877"/>
@@ -1497,7 +1497,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1117"/>
         <source>1. &lt;a href=&quot;https://platform.deepseek.com/&quot;&gt;Create or sign in to a DeepSeek account&lt;/a&gt;.&lt;br&gt;2. &lt;a href=&quot;https://platform.deepseek.com/account/balance&quot;&gt;Top up your balance for API usage&lt;/a&gt;.&lt;br&gt;3. &lt;a href=&quot;https://platform.deepseek.com/api_keys&quot;&gt;Create an API key&lt;/a&gt; and paste it above.</source>
-        <translation>1. &lt;a href=&quot;https://platform.deepseek.com/&quot;&gt;Crear o iniciar sesión en una cuenta de DeepSeek&lt;/a&gt;.&lt;br&gt;2. &lt;a href=&quot;https://platform.deepseek.com/account/balance&quot;&gt;Recarga tu saldo para el uso de la API&lt;/a&gt;.&lt;br&gt;3. &lt;a href=&quot;https://platform.deepseek.com/api_keys&quot;&gt;Crear una clave de API&lt;/a&gt; y pegarlo por encima.</translation>
+        <translation>1. &lt;a href=&quot;https://platform.deepseek.com/&quot;&gt;Crea una cuenta de DeepSeek o inicia sesión&lt;/a&gt;.&lt;br&gt;2. &lt;a href=&quot;https://platform.deepseek.com/account/balance&quot;&gt;Recarga tu saldo para usar la API&lt;/a&gt;.&lt;br&gt;3. &lt;a href=&quot;https://platform.deepseek.com/api_keys&quot;&gt;Crea una clave de API&lt;/a&gt; y pégala arriba.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2418"/>
@@ -1507,17 +1507,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2426"/>
         <source>AI request failed: {}</source>
-        <translation>Solicitud de AI fallida: {}</translation>
+        <translation>Error en la solicitud de IA: {}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2433"/>
         <source>The AI server returned invalid JSON.</source>
-        <translation>El servidor AI devolvió JSON no válido.</translation>
+        <translation>El servidor de IA devolvió un JSON no válido.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="991"/>
         <source>New Chat</source>
-        <translation>Nuevo Chat</translation>
+        <translation>Nuevo chat</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="993"/>
@@ -1543,7 +1543,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1090"/>
         <source>Store the key in the operating system keyring. Windows uses Credential Locker; Linux uses Secret Service when available.</source>
-        <translation>Almacena la clave en el anillo de claves del sistema operativo. Windows usa Credential Locker; Linux usa el Servicio Secreto cuando está disponible.</translation>
+        <translation>Almacena la clave en el llavero del sistema operativo. Windows usa Credential Locker; Linux usa Secret Service cuando está disponible.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1162"/>
@@ -1559,7 +1559,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1175"/>
         <source>Enabled reasons before answering; Disabled responds directly.</source>
-        <translation>Habilitado razones antes de responder; Discapacitado responde directamente.</translation>
+        <translation>Habilitado razona antes de responder; Deshabilitado responde directamente.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1818"/>
@@ -1585,7 +1585,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1204"/>
         <source>High uses DeepSeek&apos;s standard reasoning depth; Max uses its deepest reasoning.</source>
-        <translation>High utiliza la profundidad de razonamiento estándar de DeepSeek; Max utiliza su razonamiento más profundo.</translation>
+        <translation>Alto usa la profundidad de razonamiento estándar de DeepSeek; Máx. usa su razonamiento más profundo.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1842"/>
@@ -1617,7 +1617,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1410"/>
         <source>Message AI…</source>
-        <translation>Mensaje AI…</translation>
+        <translation>Mensaje para la IA…</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1421"/>
@@ -1642,12 +1642,12 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1737"/>
         <source>Compact {}</source>
-        <translation>Compacto {}</translation>
+        <translation>Compactación: {}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1743"/>
         <source>Conversation compacts at {} tokens, or 70% of this context window.</source>
-        <translation>Conversación compacta en {} tokens, o el 70% de esta ventana de contexto.</translation>
+        <translation>La conversación se compacta a los {} tokens, o al 70% de esta ventana de contexto.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1615"/>
@@ -1659,7 +1659,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1068"/>
         <source>Local chat-completions endpoint</source>
-        <translation>Endpoint de chat-completaciones locales</translation>
+        <translation>Endpoint local de chat completions</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1070"/>
@@ -1669,12 +1669,12 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1073"/>
         <source>OpenAI-compatible loopback /v1/chat/completions endpoint.</source>
-        <translation>Loopback compatible con OpenAI /v1/chat/completions endpoint.</translation>
+        <translation>Endpoint /v1/chat/completions de loopback compatible con OpenAI.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1230"/>
         <source>Auto uses REasy&apos;s model capability metadata. Choose the context actually configured by your AI server, or a lower override when you want earlier compaction.</source>
-        <translation>Auto utiliza los metadatos de capacidad de modelo de REasy. Elija el contexto configurado realmente por su servidor de IA o una anulación inferior cuando desee una compactación anterior.</translation>
+        <translation>Auto utiliza los metadatos de capacidad de modelo de REasy. Elija el contexto configurado realmente en su servidor de IA, o un valor menor si desea que la compactación ocurra antes.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1429"/>
@@ -1689,7 +1689,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1564"/>
         <source>Requested REasy context is sent to the configured local AI server.</source>
-        <translation>El contexto REasy solicitado se envía al servidor AI local configurado.</translation>
+        <translation>El contexto REasy solicitado se envía al servidor de IA local configurado.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1568"/>
@@ -1699,17 +1699,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1673"/>
         <source>Enter a local AI model name.</source>
-        <translation>Introduzca un nombre de modelo de AI local.</translation>
+        <translation>Introduzca un nombre de modelo de IA local.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1678"/>
         <source>Local AI endpoint must use localhost, 127.0.0.0/8, or [::1] over http:// or https://.</source>
-        <translation>El punto final de IA local debe usar localhost, 127.0.0.0/8, o [::1] sobre http:// o https://.</translation>
+        <translation>El punto de conexión de IA local debe usar localhost, 127.0.0.0/8 o [::1] mediante http:// o https://.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2010"/>
         <source>Enter an API key before enabling Remember key.</source>
-        <translation>Introduzca una clave API antes de habilitar la clave Recordar.</translation>
+        <translation>Introduzca una clave API antes de activar Recordar clave.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2068"/>
@@ -1729,17 +1729,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2211"/>
         <source>Optimizing conversation context</source>
-        <translation>Optimización del contexto de conversación</translation>
+        <translation>Optimizando el contexto de la conversación</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2276"/>
         <source>Stopping safely…</source>
-        <translation>Detenerse de forma segura…</translation>
+        <translation>Deteniendo de forma segura…</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2277"/>
         <source>Stopping the current request</source>
-        <translation>Detener la solicitud actual</translation>
+        <translation>Deteniendo la solicitud actual</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2281"/>
@@ -1765,7 +1765,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2444"/>
         <source>Context optimization finished without a compaction plan.</source>
-        <translation>Optimización del contexto terminado sin un plan de compactación.</translation>
+        <translation>La optimización del contexto terminó sin un plan de compactación.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2451"/>
@@ -1790,17 +1790,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2479"/>
         <source>Resuming your request</source>
-        <translation>Reanudar su solicitud</translation>
+        <translation>Reanudando su solicitud</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2539"/>
         <source>Reviewing the changes</source>
-        <translation>Revisar los cambios</translation>
+        <translation>Revisando los cambios</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2576"/>
         <source>Tool &apos;{}&apos; is not available for this request.</source>
-        <translation>Herramienta &apos;{}&apos; no está disponible para esta solicitud.</translation>
+        <translation>La herramienta &apos;{}&apos; no está disponible para esta solicitud.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2684"/>
@@ -1811,7 +1811,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
         <location filename="../../ui/ai/chat_dock.py" line="2315"/>
         <location filename="../../ui/ai/chat_dock.py" line="2708"/>
         <source>Cancelled the requested action</source>
-        <translation>Cancelado la acción solicitada</translation>
+        <translation>Acción solicitada cancelada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2716"/>
@@ -1897,23 +1897,23 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2337"/>
         <source>Stopped after {completed} of {total}; completed edits remain unsaved.</source>
-        <translation>Detenido después {completed} de {total}; las ediciones completadas permanecen sin guardar.</translation>
+        <translation>Detenido después de {completed} de {total}; las ediciones completadas permanecen sin guardar.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2324"/>
         <location filename="../../ui/ai/chat_dock.py" line="2329"/>
         <source>Stopped after {completed} of {total}; no output was published.</source>
-        <translation>Detenido después {completed} de {total}; no se publicó ningún resultado.</translation>
+        <translation>Detenido después de {completed} de {total}; no se publicó ningún resultado.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2334"/>
         <source>Stopped after writing {completed} of {total} outputs.</source>
-        <translation>Detenido después de escribir {completed} de {total} productos.</translation>
+        <translation>Detenido después de escribir {completed} de {total} resultados.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="361"/>
         <source>Inspecting open MSG data</source>
-        <translation>Inspeccionar datos MSG abiertos</translation>
+        <translation>Inspeccionando los datos MSG abiertos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="362"/>
@@ -1923,27 +1923,27 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="396"/>
         <source>Comparing open MSG files</source>
-        <translation>Comparación de archivos MSG abiertos</translation>
+        <translation>Comparando los archivos MSG abiertos</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="397"/>
         <source>Compared open MSG files</source>
-        <translation>Comparación de archivos MSG abiertos</translation>
+        <translation>Archivos MSG abiertos comparados</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="410"/>
         <source>Selecting the MSG entry</source>
-        <translation>Selección de la entrada MSG</translation>
+        <translation>Seleccionando la entrada MSG</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="411"/>
         <source>Selected the MSG entry</source>
-        <translation>Seleccionado la entrada MSG</translation>
+        <translation>Entrada MSG seleccionada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="432"/>
         <source>Editing MSG data</source>
-        <translation>Edición de datos MSG</translation>
+        <translation>Editando datos MSG</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="433"/>
@@ -1953,7 +1953,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="482"/>
         <source>Copying MSG values</source>
-        <translation>Copiar valores MSG</translation>
+        <translation>Copiando valores MSG</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="483"/>
@@ -1963,7 +1963,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="521"/>
         <source>Migrating MSG files</source>
-        <translation>Migración de archivos MSG</translation>
+        <translation>Migrando archivos MSG</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="522"/>
@@ -1973,17 +1973,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="562"/>
         <source>Updating the MSG mod folder</source>
-        <translation>Actualización de la carpeta MSG mod</translation>
+        <translation>Actualizando la carpeta del mod MSG</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="563"/>
         <source>Updated the MSG mod folder</source>
-        <translation>Actualizada la carpeta MSG mod</translation>
+        <translation>Carpeta del mod MSG actualizada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="397"/>
         <source>Migrating RSZ files</source>
-        <translation>Migración de archivos RSZ</translation>
+        <translation>Migrando archivos RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="398"/>
@@ -1993,27 +1993,27 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="550"/>
         <source>Updating the RSZ mod folder</source>
-        <translation>Actualización de la carpeta RSZ mod</translation>
+        <translation>Actualizando la carpeta del mod RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="551"/>
         <source>Updated the RSZ mod folder</source>
-        <translation>Actualizado la carpeta RSZ mod</translation>
+        <translation>Carpeta del mod RSZ actualizada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="443"/>
         <source>Analyzing the RSZ mod update</source>
-        <translation>Análisis de la actualización RSZ mod</translation>
+        <translation>Analizando la actualización del mod RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="444"/>
         <source>Analyzed the RSZ mod update</source>
-        <translation>Analizado la actualización RSZ mod</translation>
+        <translation>Actualización del mod RSZ analizada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="477"/>
         <source>Inspecting RSZ update analysis</source>
-        <translation>Inspeccionar el análisis de actualización RSZ</translation>
+        <translation>Inspeccionando el análisis de actualización RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="478"/>
@@ -2023,7 +2023,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="580"/>
         <source>Importing MSG JSON</source>
-        <translation>Importación de MSG JSON</translation>
+        <translation>Importando MSG JSON</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="581"/>
@@ -2033,7 +2033,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="598"/>
         <source>Exporting MSG JSON</source>
-        <translation>Exportación de MSG JSON</translation>
+        <translation>Exportando MSG JSON</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="599"/>
@@ -2048,7 +2048,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1265"/>
         <source>Confirmation policy for scoped local file operations</source>
-        <translation>Política de confirmación para operaciones de archivos locales con alcance</translation>
+        <translation>Política de confirmación para operaciones acotadas con archivos locales</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1272"/>
@@ -2068,32 +2068,32 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1283"/>
         <source>Scoped autopilot</source>
-        <translation>Piloto automático</translation>
+        <translation>Piloto automático acotado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1297"/>
         <source>Scoped autopilot skips prompts only for copy, move, and rename inside the exact folder supplied in the current request. Ask once remembers each approved folder until that request ends.</source>
-        <translation>El piloto automático seleccionado omite las solicitudes de copia, movimiento y cambio de nombre solo dentro de la carpeta exacta suministrada en la solicitud actual. Preguntar una vez recuerda cada carpeta aprobada hasta que finalice esa solicitud.</translation>
+        <translation>El piloto automático acotado solo omite las confirmaciones al copiar, mover y renombrar dentro de la carpeta exacta indicada en la solicitud actual. Preguntar una vez recuerda cada carpeta aprobada hasta que finalice esa solicitud.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1310"/>
         <source>Allow Recycle Bin operations in scoped autopilot</source>
-        <translation>Permitir operaciones de papelera de reciclaje en piloto automático de alcance</translation>
+        <translation>Permitir operaciones con la papelera de reciclaje en el piloto automático acotado</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1326"/>
         <source>Advanced: skip the final confirmation for files sent to the operating system Recycle Bin. Permanent deletion remains unavailable.</source>
-        <translation>Avanzado: omita la confirmación final de los archivos enviados a la papelera de reciclaje del sistema operativo.</translation>
+        <translation>Avanzado: omita la confirmación final de los archivos enviados a la papelera de reciclaje del sistema operativo. La eliminación permanente sigue sin estar disponible.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1571"/>
         <source>Editor changes stay unsaved until you request a save. Scoped file operations follow the File actions policy above. {}</source>
-        <translation>Los cambios del editor permanecen sin guardar hasta que solicites un guardado. Las operaciones de archivo seleccionadas siguen la política de acciones de archivo anterior. {}</translation>
+        <translation>Los cambios del editor permanecen sin guardar hasta que solicites un guardado. Las operaciones de archivo acotadas siguen la política de Acciones de archivo anterior. {}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="244"/>
         <source>Inspecting RSZ data</source>
-        <translation>Inspección de datos RSZ</translation>
+        <translation>Inspeccionando datos RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="245"/>
@@ -2103,17 +2103,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="266"/>
         <source>Reading RSZ type definitions</source>
-        <translation>Lectura de definiciones de tipo RSZ</translation>
+        <translation>Leyendo definiciones de tipos RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="267"/>
         <source>Read RSZ type definitions</source>
-        <translation>Leer definiciones de tipo RSZ</translation>
+        <translation>Definiciones de tipos RSZ leídas</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="296"/>
         <source>Searching RSZ data</source>
-        <translation>Búsqueda de datos RSZ</translation>
+        <translation>Buscando datos RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="297"/>
@@ -2123,17 +2123,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="319"/>
         <source>Tracing RSZ references</source>
-        <translation>Rastreo de referencias RSZ</translation>
+        <translation>Rastreando referencias RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="320"/>
         <source>Traced RSZ references</source>
-        <translation>Referencias RSZ trazadas</translation>
+        <translation>Referencias RSZ rastreadas</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="340"/>
         <source>Editing RSZ data</source>
-        <translation>Edición de datos RSZ</translation>
+        <translation>Editando datos RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="341"/>
@@ -2143,17 +2143,17 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/file_tools.py" line="125"/>
         <source>Inspecting the requested folder</source>
-        <translation>Inspeccionar la carpeta solicitada</translation>
+        <translation>Inspeccionando la carpeta solicitada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/file_tools.py" line="126"/>
         <source>Inspected the requested folder</source>
-        <translation>Inspeccionó la carpeta solicitada</translation>
+        <translation>Carpeta solicitada inspeccionada</translation>
     </message>
     <message>
         <location filename="../../ui/ai/file_tools.py" line="147"/>
         <source>Planning file operations</source>
-        <translation>Planificación de operaciones de archivos</translation>
+        <translation>Planificando operaciones de archivo</translation>
     </message>
     <message>
         <location filename="../../ui/ai/file_tools.py" line="148"/>
@@ -2163,7 +2163,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/file_tools.py" line="163"/>
         <source>Applying file operations</source>
-        <translation>Aplicación de operaciones de archivo</translation>
+        <translation>Aplicando operaciones de archivo</translation>
     </message>
     <message>
         <location filename="../../ui/ai/file_tools.py" line="164"/>
@@ -2196,22 +2196,22 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="826"/>
         <source>Column: Top → Bottom, Left → Right</source>
-        <translation>Columna: Parte superior → Abajo, izquierda → Correcto.</translation>
+        <translation>Columna: Arriba → Abajo, Izquierda → Derecha</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="827"/>
         <source>Column: Bottom → Top, Left → Right</source>
-        <translation>Columna: Parte inferior → Arriba, izquierda → Correcto.</translation>
+        <translation>Columna: Abajo → Arriba, Izquierda → Derecha</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="828"/>
         <source>Column: Top → Bottom, Right → Left</source>
-        <translation>Columna: Parte superior → Abajo, Derecha → Izquierda</translation>
+        <translation>Columna: Arriba → Abajo, Derecha → Izquierda</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="829"/>
         <source>Column: Bottom → Top, Right → Left</source>
-        <translation>Columna: Parte inferior → Arriba, Derecha → Izquierda</translation>
+        <translation>Columna: Abajo → Arriba, Derecha → Izquierda</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="834"/>
@@ -2227,7 +2227,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="873"/>
         <source>Auto-generate cutout UVs</source>
-        <translation>UV de recorte autogenerado</translation>
+        <translation>Generar automáticamente UV de recorte</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="881"/>
@@ -2302,7 +2302,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="903"/>
         <source>Pattern Flags</source>
-        <translation>Banderas de patrón</translation>
+        <translation>Indicadores de patrón</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="907"/>
@@ -2611,7 +2611,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1811"/>
         <source>Min</source>
-        <translation>Min.</translation>
+        <translation>Mín.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1811"/>
@@ -2704,7 +2704,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/better_find_dialog.py" line="509"/>
         <source>Found {count} matches</source>
-        <translation>Encontrado {count} coincidencias</translation>
+        <translation>Se encontraron {count} coincidencias</translation>
     </message>
     <message>
         <location filename="../../ui/better_find_dialog.py" line="513"/>
@@ -2754,7 +2754,7 @@ Valor: {value}</translation>
     <message>
         <location filename="../../ui/better_find_dialog.py" line="583"/>
         <source>Tree reloaded - search reset</source>
-        <translation>Árbol recargado - reseteo de búsqueda</translation>
+        <translation>Árbol recargado - búsqueda restablecida</translation>
     </message>
 </context>
 <context>
@@ -3170,7 +3170,7 @@ Valor: {value}</translation>
     <message>
         <location filename="../../ui/project_manager/bookmark_dialog.py" line="76"/>
         <source>Toggle tag</source>
-        <translation>Etiqueta de alternancia</translation>
+        <translation>Alternar etiqueta</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/bookmark_dialog.py" line="93"/>
@@ -3482,13 +3482,13 @@ Valor: {value}</translation>
 
 When status ≠ 0, the engine performs extra runtime processing to set
 material information on collision shapes for backward compatibility.</source>
-        <translation>Bandera de compatibilidad de formato:
+        <translation>Indicador de compatibilidad de formato:
 
 • 0 = Formato CFIL moderno (sin procesamiento heredado)
 • 1+ = Formato heredado (requiere manejo adicional de atributos de material)
 
-Cuando el status ≠ 0, el motor realiza un procesamiento de tiempo de ejecución adicional para establecer
-información material sobre las formas de colisión para la compatibilidad con versiones anteriores.</translation>
+Cuando el status ≠ 0, el motor realiza un procesamiento adicional en tiempo de ejecución para establecer
+información de material en las formas de colisión por compatibilidad con versiones anteriores.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="202"/>
@@ -3508,7 +3508,7 @@ información material sobre las formas de colisión para la compatibilidad con v
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="137"/>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="164"/>
         <source>Item</source>
-        <translation>Tema</translation>
+        <translation>Elemento</translation>
     </message>
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="137"/>
@@ -3594,7 +3594,7 @@ información material sobre las formas de colisión para la compatibilidad con v
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="465"/>
         <source>Import Mask GUIDs</source>
-        <translation>Máscara de importación GUIDs</translation>
+        <translation>Importar GUIDs de máscara</translation>
     </message>
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="486"/>
@@ -3605,17 +3605,17 @@ información material sobre las formas de colisión para la compatibilidad con v
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="503"/>
         <source>Export Mask GUIDs</source>
-        <translation>Máscara de exportación GUIDs</translation>
+        <translation>Exportar GUIDs de máscara</translation>
     </message>
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="613"/>
         <source>Import Material Attribute GUIDs</source>
-        <translation>Atributo de material de importación GUIDs</translation>
+        <translation>Importar GUIDs de atributos de material</translation>
     </message>
     <message>
         <location filename="../../file_handlers/cfil/cfil_viewer.py" line="621"/>
         <source>Export Material Attribute GUIDs</source>
-        <translation>Exportar atributos de material GUIDs</translation>
+        <translation>Exportar GUIDs de atributos de material</translation>
     </message>
 </context>
 <context>
@@ -3783,7 +3783,7 @@ información material sobre las formas de colisión para la compatibilidad con v
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="254"/>
-        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update,the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
+        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update, the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
         <translation>Se han actualizado las listas de archivos, los volcados RSZ y los enums para la última actualización de Dragon&apos;s Dogma 2, el lanzamiento completo de Onimusha: Way of the Sword, SF6 y Pragmata, y se han mejorado las listas de archivos de muchos otros juegos.</translation>
     </message>
     <message>
@@ -3990,7 +3990,7 @@ información material sobre las formas de colisión para la compatibilidad con v
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="86"/>
         <source>Root Nodes</source>
-        <translation>Nodos de raíz</translation>
+        <translation>Nodos raíz</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="89"/>
@@ -4012,7 +4012,7 @@ información material sobre las formas de colisión para la compatibilidad con v
         <location filename="../../file_handlers/clip/clip_viewer.py" line="372"/>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1280"/>
         <source>OFF</source>
-        <translation>DESCUENTO</translation>
+        <translation>DESACTIVADO</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="387"/>
@@ -4051,7 +4051,7 @@ información material sobre las formas de colisión para la compatibilidad con v
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="451"/>
         <source>Root Node</source>
-        <translation>Nodo de raíz</translation>
+        <translation>Nodo raíz</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="455"/>
@@ -4102,7 +4102,7 @@ información material sobre las formas de colisión para la compatibilidad con v
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="626"/>
         <source>Timeline</source>
-        <translation>Cronología</translation>
+        <translation>Línea de tiempo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="969"/>
@@ -4174,7 +4174,7 @@ Fotogramas: {frames}</translation>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1550"/>
         <source>Focused</source>
-        <translation>Centrados</translation>
+        <translation>Enfocado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1550"/>
@@ -4184,7 +4184,7 @@ Fotogramas: {frames}</translation>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1551"/>
         <source>Overview</source>
-        <translation>Sinopsis</translation>
+        <translation>Resumen</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1551"/>
@@ -4319,7 +4319,7 @@ Fotogramas: {frames}</translation>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1671"/>
         <source>Keys / Speed Points</source>
-        <translation>Llaves / Puntos de velocidad</translation>
+        <translation>Claves / Puntos de velocidad</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1722"/>
@@ -4344,7 +4344,7 @@ Fotogramas: {frames}</translation>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="95"/>
         <source>Root Nodes</source>
-        <translation>Nodos de raíz</translation>
+        <translation>Nodos raíz</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1938"/>
@@ -4354,7 +4354,7 @@ Fotogramas: {frames}</translation>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1940"/>
         <source>Property has no graph owner</source>
-        <translation>La propiedad no tiene propietario gráfico</translation>
+        <translation>La propiedad no tiene propietario en el grafo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/clip/clip_viewer.py" line="1944"/>
@@ -4441,7 +4441,7 @@ Fotogramas: {frames}</translation>
         <location filename="../../ui/community_templates_dialog.py" line="258"/>
         <location filename="../../ui/community_templates_dialog.py" line="266"/>
         <source>Login</source>
-        <translation>Inicio de sesión</translation>
+        <translation>Iniciar sesión</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="276"/>
@@ -4467,12 +4467,12 @@ Fotogramas: {frames}</translation>
         <location filename="../../ui/community_templates_dialog.py" line="289"/>
         <location filename="../../ui/community_templates_dialog.py" line="297"/>
         <source>Register</source>
-        <translation>Registro</translation>
+        <translation>Registrarse</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="470"/>
         <source>Logout</source>
-        <translation>Cierre de sesión</translation>
+        <translation>Cerrar sesión</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="326"/>
@@ -4590,7 +4590,7 @@ Fotogramas: {frames}</translation>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="521"/>
         <source>Logging in...</source>
-        <translation>Me gusta Cargando...</translation>
+        <translation>Iniciando sesión...</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="556"/>
@@ -4712,7 +4712,7 @@ Descargas: {downloads}</translation>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="22"/>
         <source>Login Required</source>
-        <translation>Login Requerido</translation>
+        <translation>Inicio de sesión requerido</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="853"/>
@@ -4772,7 +4772,7 @@ Descargas: {downloads}</translation>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="920"/>
         <source>Uploading template, please wait…</source>
-        <translation>Plantilla de carga, por favor espere…</translation>
+        <translation>Subiendo plantilla, por favor espere…</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="926"/>
@@ -4875,17 +4875,17 @@ Descargas: {downloads}</translation>
     <message>
         <location filename="../../file_handlers/pyside/component_selector.py" line="89"/>
         <source>Found {count} component types</source>
-        <translation>Encontrado {count} tipos de componentes</translation>
+        <translation>Se encontraron {count} tipos de componentes</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/component_selector.py" line="121"/>
         <source>Showing {matches} matches out of {total} components</source>
-        <translation>Mostrando {matches} Partidos fuera de {total} componentes</translation>
+        <translation>Mostrando {matches} coincidencias de {total} componentes</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/component_selector.py" line="128"/>
         <source>Showing first {matches} matches out of {total} components</source>
-        <translation>Mostrando primero {matches} Partidos fuera de {total} componentes</translation>
+        <translation>Mostrando las primeras {matches} coincidencias de {total} componentes</translation>
     </message>
 </context>
 <context>
@@ -5009,7 +5009,7 @@ Descargas: {downloads}</translation>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="446"/>
         <source>Reveal in Project Browser</source>
-        <translation>Mostrar en el Explorador de proyectos</translation>
+        <translation>Mostrar en el Navegador de proyectos</translation>
     </message>
 </context>
 <context>
@@ -5087,7 +5087,7 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="65"/>
         <source>Enter maximum file size in MB (0 for no limit):</source>
-        <translation>Introduzca el tamaño máximo de archivo en MB (0 para ningún límite):</translation>
+        <translation>Introduzca el tamaño máximo de archivo en MB (0 = sin límite):</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="80"/>
@@ -5107,7 +5107,7 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="119"/>
         <source>Integer Search</source>
-        <translation>Búsqueda entera</translation>
+        <translation>Búsqueda de enteros</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="132"/>
@@ -5117,22 +5117,22 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="137"/>
         <source>int32 (signed 32-bit)</source>
-        <translation>int32 (firmado de 32 bits)</translation>
+        <translation>int32 (32 bits con signo)</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="138"/>
         <source>uint32 (unsigned 32-bit)</source>
-        <translation>uint32 (sin firmar de 32 bits)</translation>
+        <translation>uint32 (32 bits sin signo)</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="139"/>
         <source>int64 (signed 64-bit)</source>
-        <translation>int64 (firmado 64 bits)</translation>
+        <translation>int64 (64 bits con signo)</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="140"/>
         <source>uint64 (unsigned 64-bit)</source>
-        <translation>uint64 (sin firmar 64 bits)</translation>
+        <translation>uint64 (64 bits sin signo)</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="155"/>
@@ -5264,17 +5264,17 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="510"/>
         <source>Load Path List</source>
-        <translation>Lista de rutas de carga</translation>
+        <translation>Cargar lista de rutas</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="528"/>
         <source>Loaded list and resolved {count} cached entries.</source>
-        <translation>Lista cargada y resuelta {count} entradas en caché.</translation>
+        <translation>Lista cargada; se resolvieron {count} entradas en caché.</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="548"/>
         <source>Load List</source>
-        <translation>Lista de carga</translation>
+        <translation>Cargar lista</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="562"/>
@@ -5284,12 +5284,12 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="589"/>
         <source>reversed byte order</source>
-        <translation>orden de bytes invertidos</translation>
+        <translation>orden de bytes invertido</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="591"/>
         <source>normal byte order</source>
-        <translation>Orden de bytes normal</translation>
+        <translation>orden de bytes normal</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="593"/>
@@ -5299,7 +5299,7 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="601"/>
         <source>Files containing {type} value {value}:</source>
-        <translation>Archivos que contienen {type} valor {value}:</translation>
+        <translation>Archivos que contienen el valor {type} {value}:</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="608"/>
@@ -5453,7 +5453,7 @@ Vóxel: {:.7g} · Rango decodificado: {:.7g} a {:.7g} · Centro de la cuadrícul
     <message>
         <location filename="../../ui/project_manager/pak_status_dialog.py" line="27"/>
         <source>Starting…</source>
-        <translation>Inicio…</translation>
+        <translation>Iniciando…</translation>
     </message>
 </context>
 <context>
@@ -5541,7 +5541,7 @@ Vóxel: {:.7g} · Rango decodificado: {:.7g} a {:.7g} · Centro de la cuadrícul
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="97"/>
         <source>Browse...</source>
-        <translation>Navegar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="148"/>
@@ -5591,7 +5591,7 @@ Vóxel: {:.7g} · Rango decodificado: {:.7g} a {:.7g} · Centro de la cuadrícul
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="226"/>
         <source>Source</source>
-        <translation>Fuente</translation>
+        <translation>Origen</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="304"/>
@@ -5611,7 +5611,7 @@ Vóxel: {:.7g} · Rango decodificado: {:.7g} a {:.7g} · Centro de la cuadrícul
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="365"/>
         <source>Invalid Executable</source>
-        <translation>Inválido Ejecutable</translation>
+        <translation>Ejecutable no válido</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="375"/>
@@ -5677,7 +5677,7 @@ Validate them against the PAK files so only existing paths are exported? This ma
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="963"/>
         <source>Please select a game executable first.</source>
-        <translation>Por favor, seleccione un juego ejecutable primero.</translation>
+        <translation>Por favor, seleccione primero un ejecutable del juego.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="563"/>
@@ -5692,14 +5692,14 @@ Validate them against the PAK files so only existing paths are exported? This ma
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="568"/>
         <source>Extension Dumper Error</source>
-        <translation>Error de Dumper de extensión</translation>
+        <translation>Error del extractor de extensiones</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="569"/>
         <source>Failed to run extension dumper:
 
 {error}</source>
-        <translation>No se pudo ejecutar el dumper de extensión:
+        <translation>No se pudo ejecutar el extractor de extensiones:
 
 {error}</translation>
     </message>
@@ -5727,7 +5727,7 @@ Continuing with dumper results only.</source>
         <translation>No se pudo analizar el archivo de lista:
 {error}
 
-Continuando con los resultados de dumper solamente.</translation>
+Se continuará solo con los resultados del extractor.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="597"/>
@@ -5769,7 +5769,7 @@ Continuando con los resultados de dumper solamente.</translation>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="530"/>
         <source>Game executable path is not available.</source>
-        <translation>La ruta ejecutable del juego no está disponible.</translation>
+        <translation>La ruta del ejecutable del juego no está disponible.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="681"/>
@@ -5788,7 +5788,7 @@ Continuando con los resultados de dumper solamente.</translation>
 Processing {current} of {total}...</source>
         <translation>{message}
 
-Procesamiento {current} de {total}...</translation>
+Procesando {current} de {total}...</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="50"/>
@@ -6107,7 +6107,7 @@ Transcurrido: {minutes}:{seconds:02d}</translation>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="599"/>
         <source>Dumper + List</source>
-        <translation>Volcador + lista</translation>
+        <translation>Extractor + lista</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="600"/>
@@ -6138,7 +6138,7 @@ Transcurrido: {minutes}:{seconds:02d}</translation>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="691"/>
         <source>Collection was stopped. No paths were collected.</source>
-        <translation>Se detuvo la recogida, no se recogieron caminos.</translation>
+        <translation>Se detuvo la recopilación. No se recopiló ninguna ruta.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="698"/>
@@ -6147,11 +6147,11 @@ Transcurrido: {minutes}:{seconds:02d}</translation>
 Paths collected so far: {count}
 
 Continuing with partial results...</source>
-        <translation>La recolección se detuvo temprano.
+        <translation>La recopilación se detuvo antes de tiempo.
 
-Caminos recogidos hasta el momento: {count}
+Rutas recopiladas hasta el momento: {count}
 
-Continuando con resultados parciales...</translation>
+Se continuará con resultados parciales...</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="705"/>
@@ -6181,7 +6181,7 @@ Continuing with PAK paths only.</source>
         <translation>No se pudo agregar rutas desde el archivo de lista:
 {error}
 
-Continuando con los caminos PAK solamente.</translation>
+Se continuará solo con las rutas de los PAK.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="722"/>
@@ -6191,12 +6191,12 @@ Continuando con los caminos PAK solamente.</translation>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="734"/>
         <source>Validating paths...</source>
-        <translation>Validación de rutas...</translation>
+        <translation>Validando rutas...</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="734"/>
         <source>Validating Paths Against PAK Files</source>
-        <translation>Validación de rutas contra archivos PAK</translation>
+        <translation>Validando rutas con los archivos PAK</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="740"/>
@@ -6214,7 +6214,7 @@ Continuing with unvalidated paths.</source>
 
 {error}
 
-Continuar con rutas no validadas.</translation>
+Se continuará con rutas no validadas.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="750"/>
@@ -6229,7 +6229,7 @@ Valid paths: {valid_count}
 Invalid paths: {invalid_count}
 
 Only valid paths will be exported.</source>
-        <translation>Validación completa!
+        <translation>¡Validación completada!
 
 Rutas válidas: {valid_count}
 Rutas no válidas: {invalid_count}
@@ -6244,12 +6244,12 @@ Solo se exportarán rutas válidas.</translation>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="766"/>
         <source>validated</source>
-        <translation>validado</translation>
+        <translation>validadas</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="766"/>
         <source>collected</source>
-        <translation>recogidos</translation>
+        <translation>recopiladas</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="768"/>
@@ -6294,7 +6294,7 @@ Guardado en: {path}</translation>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="808"/>
         <source>Please select a source list file first.</source>
-        <translation>Seleccione primero un archivo de lista de fuentes.</translation>
+        <translation>Seleccione primero un archivo de lista de origen.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="843"/>
@@ -6380,17 +6380,17 @@ Coincidencias falsas esperadas: {chance} ({unfound} entradas del PAK que la list
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="908"/>
         <source>Source list paths kept: {count}</source>
-        <translation>Las rutas de la lista de fuentes se mantienen: {count}</translation>
+        <translation>Rutas conservadas de la lista de origen: {count}</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="911"/>
         <source>Existing list paths kept: {count}</source>
-        <translation>Se conservan las rutas de lista existentes: {count}</translation>
+        <translation>Rutas conservadas de la lista existente: {count}</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="911"/>
         <source>Base list paths kept: {count}</source>
-        <translation>Rutas de lista base guardadas: {count}</translation>
+        <translation>Rutas conservadas de la lista base: {count}</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="914"/>
@@ -6400,7 +6400,7 @@ Coincidencias falsas esperadas: {chance} ({unfound} entradas del PAK que la list
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="920"/>
         <source>List Improver Complete</source>
-        <translation>Lista de Mejorador Completa</translation>
+        <translation>Mejora de la lista completada</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="922"/>
@@ -6420,7 +6420,7 @@ Rutas validadas: {validated_paths}
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="936"/>
         <source>Select Source List from Another Game</source>
-        <translation>Selecciona la lista de fuentes de otro juego</translation>
+        <translation>Seleccionar la lista de origen de otro juego</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="945"/>
@@ -6435,7 +6435,7 @@ Rutas validadas: {validated_paths}
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="952"/>
         <source>Cross-Game List Improver</source>
-        <translation>Mejora de la lista de juegos cruzados</translation>
+        <translation>Mejora de listas entre juegos</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="969"/>
@@ -6456,7 +6456,7 @@ Rutas validadas: {validated_paths}
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="992"/>
         <source>Extracting paths from {source}...</source>
-        <translation>Extraer caminos de {source}...</translation>
+        <translation>Extrayendo rutas de {source}...</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="992"/>
@@ -6476,7 +6476,7 @@ Rutas validadas: {validated_paths}
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="1002"/>
         <source>Extraction Failed</source>
-        <translation>Fracasó la extracción</translation>
+        <translation>Error de extracción</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="1015"/>
@@ -6616,7 +6616,7 @@ Cierra tú mismo esas pestañas y vuelve a intentarlo, o guarda ahora y vuelve a
     <message>
         <location filename="../../ui/file_tab.py" line="535"/>
         <source>Save Error</source>
-        <translation>Guardar error</translation>
+        <translation>Error al guardar</translation>
     </message>
     <message>
         <location filename="../../ui/file_tab.py" line="554"/>
@@ -6637,7 +6637,7 @@ Cierra tú mismo esas pestañas y vuelve a intentarlo, o guarda ahora y vuelve a
         <location filename="../../ui/file_tab.py" line="598"/>
         <source>File {} has unsaved changes.
 Save before reloading?</source>
-        <translation>Archivo {} tiene cambios no guardados.
+        <translation>El archivo {} tiene cambios sin guardar.
 ¿Guardar antes de recargar?</translation>
     </message>
     <message>
@@ -6701,7 +6701,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="129"/>
         <source>Reattach</source>
-        <translation>Volver a conectar</translation>
+        <translation>Volver a acoplar</translation>
     </message>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="135"/>
@@ -6724,7 +6724,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="627"/>
         <source>Filter plug-in settings</source>
-        <translation>Ajustes del plug-in del filtro</translation>
+        <translation>Filtrar ajustes del plug-in</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="630"/>
@@ -6770,17 +6770,17 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/guid_converter.py" line="45"/>
         <source>GUID Standard (hyphenated)</source>
-        <translation>GUID Standard (con guion)</translation>
+        <translation>GUID estándar (con guiones)</translation>
     </message>
     <message>
         <location filename="../../ui/guid_converter.py" line="35"/>
         <source>Memory -&gt; Standard</source>
-        <translation>Memoria - Estándar</translation>
+        <translation>Memoria -&gt; Estándar</translation>
     </message>
     <message>
         <location filename="../../ui/guid_converter.py" line="38"/>
         <source>Standard -&gt; Memory</source>
-        <translation>Estándar - Memoria</translation>
+        <translation>Estándar -&gt; Memoria</translation>
     </message>
     <message>
         <location filename="../../ui/guid_converter.py" line="81"/>
@@ -6909,7 +6909,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="59"/>
         <source>Select Color</source>
-        <translation>Selecciona Color</translation>
+        <translation>Seleccionar color</translation>
     </message>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="64"/>
@@ -6954,7 +6954,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="130"/>
         <source>Choose Highlight Color</source>
-        <translation>Elige un color resaltado</translation>
+        <translation>Elegir color de resaltado</translation>
     </message>
 </context>
 <context>
@@ -6967,7 +6967,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="911"/>
         <source>Only the fields shown below are rebuilt; every other byte in this HIRC object is preserved.</source>
-        <translation>Solo se reconstruyen los campos que se muestran a continuación; se conserva cada otro byte en este objeto HIRC.</translation>
+        <translation>Solo se reconstruyen los campos que se muestran a continuación; se conservan todos los demás bytes de este objeto HIRC.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="929"/>
@@ -7045,7 +7045,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1057"/>
         <source>Switch</source>
-        <translation>Cambiar</translation>
+        <translation>Interruptor</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1061"/>
@@ -7120,17 +7120,17 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1086"/>
         <source>Required bank ShortID</source>
-        <translation>Banco requerido ShortID</translation>
+        <translation>ShortID del banco requerido</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1091"/>
         <source>Include pending Resume actions</source>
-        <translation>Incluir acciones de CV pendientes</translation>
+        <translation>Incluir acciones de reanudación pendientes</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1092"/>
         <source>Master resume</source>
-        <translation>Currículum master</translation>
+        <translation>Reanudación maestra</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1097"/>
@@ -7187,7 +7187,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1127"/>
         <source>Bypass selected effect slots</source>
-        <translation>Derivación de ranuras de efecto seleccionadas</translation>
+        <translation>Omitir las ranuras de efecto seleccionadas</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1131"/>
@@ -7207,17 +7207,17 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1141"/>
         <source>Seek value</source>
-        <translation>Buscar valor</translation>
+        <translation>Valor de búsqueda</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1147"/>
         <source>Except object ShortID</source>
-        <translation>Excepto el objeto ShortID</translation>
+        <translation>ShortID del objeto excluido</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1147"/>
         <source>Is Bus (0/1)</source>
-        <translation>Es autobús (0/1)</translation>
+        <translation>Es bus (0/1)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1151"/>
@@ -7244,12 +7244,12 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1217"/>
         <source>Prefetch in BNK + full audio in PCK</source>
-        <translation>Prefectura en BNK + audio completo en PCK</translation>
+        <translation>Precarga en BNK + audio completo en PCK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1218"/>
         <source>Streamed from PCK</source>
-        <translation>Transmisión desde PCK</translation>
+        <translation>Streaming desde PCK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1223"/>
@@ -7277,7 +7277,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1232"/>
         <source>Source flags</source>
-        <translation>Banderas de fuente</translation>
+        <translation>Indicadores de fuente</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1234"/>
@@ -7308,7 +7308,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1248"/>
         <source>Sample accurate</source>
-        <translation>Muestra exacta</translation>
+        <translation>Precisión de muestra</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1248"/>
@@ -7364,7 +7364,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1303"/>
         <source>Group ShortID</source>
-        <translation>Grupo ShortID</translation>
+        <translation>ShortID del grupo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1304"/>
@@ -7390,7 +7390,7 @@ Save before reloading?</source>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1316"/>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1337"/>
         <source>Flags</source>
-        <translation>Banderas</translation>
+        <translation>Indicadores</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1316"/>
@@ -7400,12 +7400,12 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1316"/>
         <source>Fade out ms</source>
-        <translation>Se desvaneció ms</translation>
+        <translation>Fundido de salida (ms)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1316"/>
         <source>Fade in ms</source>
-        <translation>Desvanecimiento en ms</translation>
+        <translation>Fundido de entrada (ms)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1320"/>
@@ -7460,7 +7460,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1343"/>
         <source>Play at ms</source>
-        <translation>Jugar en ms</translation>
+        <translation>Reproducir en (ms)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1343"/>
@@ -7511,7 +7511,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1371"/>
         <source>Base silence duration</source>
-        <translation>Duración del silencio base</translation>
+        <translation>Duración base del silencio</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1372"/>
@@ -7574,7 +7574,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/homepage.py" line="96"/>
         <source>Open files. Change things. Try not to anger the engine.</source>
-        <translation>Abre los archivos. Cambia las cosas. Trata de no enojar el motor.</translation>
+        <translation>Abre los archivos. Cambia las cosas. Trata de no enojar al motor.</translation>
     </message>
     <message>
         <location filename="../../ui/homepage.py" line="105"/>
@@ -7702,12 +7702,12 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="58"/>
         <source>Search for GUID</source>
-        <translation>Búsqueda de GUID</translation>
+        <translation>Buscar GUID</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="59"/>
         <source>Search for Text</source>
-        <translation>Búsqueda de texto</translation>
+        <translation>Buscar texto</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="60"/>
@@ -7762,7 +7762,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="175"/>
         <source>Press the key combination for &apos;{name}&apos;:</source>
-        <translation>Pulsa la combinación de teclas &apos;{name}&apos;:</translation>
+        <translation>Pulsa la combinación de teclas para &apos;{name}&apos;:</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="193"/>
@@ -9576,7 +9576,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../file_handlers/mcambank/mcambank_viewer.py" line="155"/>
         <source>Missing Include Asset</source>
-        <translation>Falta incluir activos</translation>
+        <translation>Falta el activo Include</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mcambank/mcambank_viewer.py" line="185"/>
@@ -9763,7 +9763,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../ui/mdf_template_export_dialog.py" line="25"/>
         <source>Export MDF Template</source>
-        <translation>Plantilla MDF de exportación</translation>
+        <translation>Exportar plantilla MDF</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_export_dialog.py" line="34"/>
@@ -9803,7 +9803,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../ui/mdf_template_export_dialog.py" line="76"/>
         <source>Export Template</source>
-        <translation>Plantilla de exportación</translation>
+        <translation>Exportar plantilla</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_export_dialog.py" line="76"/>
@@ -9875,7 +9875,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
         <location filename="../../ui/mdf_template_manager_dialog.py" line="134"/>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="308"/>
         <source>Source Version: -</source>
-        <translation>Versión de la fuente: -</translation>
+        <translation>Versión de origen: -</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="135"/>
@@ -9892,7 +9892,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="29"/>
         <source>Import Template</source>
-        <translation>Plantilla de importación</translation>
+        <translation>Importar plantilla</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="32"/>
@@ -9927,7 +9927,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="211"/>
         <source>Source: {source}</source>
-        <translation>Fuente: {source}</translation>
+        <translation>Origen: {source}</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="215"/>
@@ -9942,7 +9942,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="296"/>
         <source>Source Version: {version}</source>
-        <translation>Versión de la fuente: {version}</translation>
+        <translation>Versión de origen: {version}</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="301"/>
@@ -10022,12 +10022,12 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="463"/>
         <source>GPU Buffers: {count}</source>
-        <translation>Buffers de GPU: {count}</translation>
+        <translation>Búferes de GPU: {count}</translation>
     </message>
     <message>
         <location filename="../../ui/mdf_template_manager_dialog.py" line="465"/>
         <source>Shader LOD Redirects: {count}</source>
-        <translation>Redirecciones de Shader LOD: {count}</translation>
+        <translation>Redirecciones de LOD de shader: {count}</translation>
     </message>
 </context>
 <context>
@@ -10035,7 +10035,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="126"/>
         <source>Filter materials...</source>
-        <translation>Materiales de filtro...</translation>
+        <translation>Filtrar materiales...</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="128"/>
@@ -10066,7 +10066,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="132"/>
         <source>Copy selected material(s) to clipboard</source>
-        <translation>Copiar el material seleccionado (s) al portapapeles</translation>
+        <translation>Copiar material(es) seleccionado(s) al portapapeles</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="133"/>
@@ -10096,7 +10096,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="138"/>
         <source>Open the MDF template manager</source>
-        <translation>Abra el gestor de plantillas MDF</translation>
+        <translation>Abra el administrador de plantillas MDF</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="139"/>
@@ -10126,7 +10126,7 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="276"/>
         <source>Overview</source>
-        <translation>Sinopsis</translation>
+        <translation>Resumen</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="284"/>
@@ -10167,18 +10167,18 @@ Iluminación del juego: lo mismo, iluminado por las pasadas de luz del juego des
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="341"/>
         <source>GPU Buffers</source>
-        <translation>Buffers de GPU</translation>
+        <translation>Búferes de GPU</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="360"/>
         <source>Shader LOD Redirects</source>
-        <translation>Redireccionamientos de Shader LOD</translation>
+        <translation>Redirecciones de LOD de shader</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="619"/>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="1384"/>
         <source>Duplicate Material Name</source>
-        <translation>Nombre del material duplicado</translation>
+        <translation>Nombre de material duplicado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="621"/>
@@ -10192,7 +10192,7 @@ Por favor, use un nombre único para cada material.</translation>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="715"/>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="730"/>
         <source>Import Template</source>
-        <translation>Plantilla de importación</translation>
+        <translation>Importar plantilla</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="717"/>
@@ -10254,12 +10254,12 @@ Por favor, cambie el nombre del material existente primero o use una plantilla d
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="1467"/>
         <source>Copied {count} material(s) to clipboard.</source>
-        <translation>Copiado {count} material(es) al portapapeles.</translation>
+        <translation>Se copiaron {count} material(es) al portapapeles.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="35"/>
         <source>Export Template</source>
-        <translation>Plantilla de exportación</translation>
+        <translation>Exportar plantilla</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="284"/>
@@ -10378,12 +10378,12 @@ Todos los objetos: al guardar se cambia el propio maestro.</translation>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="1537"/>
         <source>unknown</source>
-        <translation>Desconocido</translation>
+        <translation>desconocida</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="1540"/>
         <source>Pasted {count} material(s) from {source} (version {version}).</source>
-        <translation>Pegado {count} material(es) de {source} (versión {version}).</translation>
+        <translation>Se pegaron {count} material(es) de {source} (versión {version}).</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="1544"/>
@@ -10403,7 +10403,7 @@ Todos los objetos: al guardar se cambia el propio maestro.</translation>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="104"/>
         <source>Meshlet Material</source>
-        <translation>Material de malla</translation>
+        <translation>Material de meshlets</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="106"/>
@@ -10706,7 +10706,7 @@ Todos los objetos: al guardar se cambia el propio maestro.</translation>
     <message>
         <location filename="../../file_handlers/mesh/conversion_dialog.py" line="401"/>
         <source>Build and validate the comparison (Ctrl+Enter).</source>
-        <translation>Compilar y validar la comparación (Ctrl+Enter).</translation>
+        <translation>Generar y validar la comparación (Ctrl+Intro).</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/conversion_dialog.py" line="404"/>
@@ -11609,7 +11609,7 @@ Dimensiones base (X × Y × Z): {size} unidades de malla</translation>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="167"/>
         <source>No mesh buffer data available to display</source>
-        <translation>No hay datos de memoria intermedia de malla disponibles para mostrar</translation>
+        <translation>No hay datos de búfer de malla disponibles para mostrar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="288"/>
@@ -11861,7 +11861,7 @@ Dimensiones base (X × Y × Z): {size} unidades de malla</translation>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1157"/>
         <source>Overview</source>
-        <translation>Sinopsis</translation>
+        <translation>Resumen</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1172"/>
@@ -11972,7 +11972,7 @@ Dimensiones base (X × Y × Z): {size} unidades de malla</translation>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="459"/>
         <source>Resolved material textures</source>
-        <translation>Texturas de materiales resueltos</translation>
+        <translation>Texturas de material resueltas</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="412"/>
@@ -12048,7 +12048,7 @@ Dimensiones base (X × Y × Z): {size} unidades de malla</translation>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2481"/>
         <source>No material mappings found.</source>
-        <translation>No se han encontrado mapas de material.</translation>
+        <translation>No se han encontrado asignaciones de material.</translation>
     </message>
 </context>
 <context>
@@ -12410,7 +12410,7 @@ Cambia la ruta de la textura en el MDF.</translation>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="877"/>
         <source>No pass of this material hands its pixel shader the position and normal this needs.</source>
-        <translation>Ninguna pasada de este material entrega a su sombreador de píxeles la posición y la normal que esto necesita.</translation>
+        <translation>Ninguna pasada de este material entrega a su shader de píxeles la posición y la normal que esto necesita.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="893"/>
@@ -12430,7 +12430,7 @@ Cambia la ruta de la textura en el MDF.</translation>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="944"/>
         <source>Values each pass hands its pixel shader, such as UV sets, the normal and the position, named after what the vertex shader computes them from.</source>
-        <translation>Valores que cada pasada entrega a su sombreador de píxeles, como conjuntos de UV, la normal y la posición, nombrados según aquello a partir de lo que los calcula el sombreador de vértices.</translation>
+        <translation>Valores que cada pasada entrega a su shader de píxeles, como conjuntos de UV, la normal y la posición, nombrados según aquello a partir de lo que los calcula el shader de vértices.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="950"/>
@@ -12449,7 +12449,7 @@ Read where the pass hands it to the pixel shader:
 {works}
 Use Where Available or Drawing For for the others.</source>
         <translation>{label} ({type})
-Se lee donde la pasada lo entrega al sombreador de píxeles:
+Se lee donde la pasada lo entrega al shader de píxeles:
 {works}
 Use Donde esté disponible o Dibujando para en las demás.</translation>
     </message>
@@ -12511,7 +12511,7 @@ Se puede leer donde su shader enlaza {buffer} o el juego enlaza {buffer} en la p
         <location filename="../../file_handlers/mmtr/material_editor.py" line="1752"/>
         <source>Read where the pass hands it to the pixel shader:
 {works}</source>
-        <translation>Se lee donde la pasada lo entrega al sombreador de píxeles:
+        <translation>Se lee donde la pasada lo entrega al shader de píxeles:
 {works}</translation>
     </message>
     <message>
@@ -12989,7 +12989,7 @@ Use Donde esté disponible o Dibujando para en las demás.</translation>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="1883"/>
         <source>No pass of this material hands its pixel shader the data this needs.</source>
-        <translation>Ninguna pasada de este material entrega a su sombreador de píxeles los datos que esto necesita.</translation>
+        <translation>Ninguna pasada de este material entrega a su shader de píxeles los datos que esto necesita.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="1902"/>
@@ -13505,12 +13505,12 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="141"/>
         <source>Preview rig</source>
-        <translation>Vista previa rig</translation>
+        <translation>Rig de vista previa</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="144"/>
         <source>MOTION SOURCE</source>
-        <translation>FUENTE DE MOVIMIENTO</translation>
+        <translation>ORIGEN DEL MOVIMIENTO</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="153"/>
@@ -13520,7 +13520,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="156"/>
         <source>MOT source skeleton</source>
-        <translation>Esqueleto de fuente MOT</translation>
+        <translation>Esqueleto de origen MOT</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="162"/>
@@ -13555,7 +13555,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="222"/>
         <source>{total} playable · {embedded} embedded · {inherited} inherited</source>
-        <translation>{total} jugable · {embedded} incrustado · {inherited} Heredado</translation>
+        <translation>{total} reproducibles · {embedded} incrustadas · {inherited} heredadas</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="233"/>
@@ -13570,7 +13570,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="285"/>
         <source>No motion is selected.</source>
-        <translation>No se selecciona ninguna moción.</translation>
+        <translation>No hay ningún movimiento seleccionado.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="295"/>
@@ -13646,7 +13646,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/animation_browser.py" line="266"/>
         <source>{name} · Motion #{component}</source>
-        <translation>{name} · Moción #{component}</translation>
+        <translation>{name} · Movimiento #{component}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/animation_browser.py" line="273"/>
@@ -13709,7 +13709,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/channel_controls.py" line="161"/>
         <source>No semantic channels bind to this Motion target.</source>
-        <translation>Ningún canal semántico se une a este objetivo de movimiento.</translation>
+        <translation>Ningún canal semántico se vincula a este objetivo de movimiento.</translation>
     </message>
 </context>
 <context>
@@ -13757,7 +13757,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/animation_browser.py" line="137"/>
         <source>Double-click or press Enter to play.</source>
-        <translation>Haz doble clic o presiona Intro para jugar.</translation>
+        <translation>Haz doble clic o presiona Intro para reproducir.</translation>
     </message>
 </context>
 <context>
@@ -13797,7 +13797,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/motion/preview/controls.py" line="167"/>
         <source>Lock translation</source>
-        <translation>Bloquear traducción</translation>
+        <translation>Bloquear traslación</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/controls.py" line="321"/>
@@ -13850,7 +13850,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="87"/>
         <source>Duplicate Entry</source>
-        <translation>Entrada duplicada</translation>
+        <translation>Duplicar entrada</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="95"/>
@@ -13913,7 +13913,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="394"/>
         <source>Found {matches} of {total} entries</source>
-        <translation>Encontrado {matches} de {total} entradas</translation>
+        <translation>Se encontraron {matches} de {total} entradas</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="406"/>
@@ -14016,7 +14016,7 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="443"/>
         <source>Import JSON Failed</source>
-        <translation>Importar JSON fallido</translation>
+        <translation>Error al importar JSON</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="552"/>
@@ -14143,12 +14143,12 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="25"/>
         <source>Resolved through Wwise trigger and event metadata during sound scans</source>
-        <translation>Se resuelve a través de Wwise trigger y metadatos de eventos durante los escaneos de sonido</translation>
+        <translation>Se resuelve mediante los triggers de Wwise y los metadatos de eventos durante los escaneos de sonido</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="968"/>
         <source>Find exact message, timeline, and Wwise references and inspect only their BNK/PCK files</source>
-        <translation>Encuentre el mensaje exacto, la línea de tiempo y las referencias Wwise e inspeccione solo sus archivos BNK / PCK</translation>
+        <translation>Busque referencias exactas de mensajes, líneas de tiempo y Wwise, e inspeccione solo sus archivos BNK / PCK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="106"/>
@@ -14174,12 +14174,12 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1033"/>
         <source>Play {available} available preview(s) from {referenced} referenced source(s); the selected container stays cached until this MSG closes</source>
-        <translation>Reproducir {available} vista previa(s) disponible(s) de {referenced} fuentes referenciadas; el contenedor seleccionado permanece en caché hasta que se cierra este MSG</translation>
+        <translation>Reproducir {available} vista previa(s) disponible(s) de {referenced} fuentes referenciadas; el contenedor seleccionado permanece en caché hasta que se cierre este MSG</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1042"/>
         <source>This message references {count} sound(s), but their media is unavailable</source>
-        <translation>Este mensaje hace referencia {count} sonido(s), pero sus medios no están disponibles</translation>
+        <translation>Este mensaje hace referencia a {count} sonido(s), pero sus medios no están disponibles</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1046"/>
@@ -14194,17 +14194,17 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1060"/>
         <source>Scanning exact sound references…</source>
-        <translation>Escaneo de referencias de sonido exactas…</translation>
+        <translation>Escaneando referencias de sonido exactas…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1079"/>
         <source>Sounds: {playable}/{referenced} referenced messages, {files} container(s) checked</source>
-        <translation>Suena: {playable}/{referenced} Mensajes referenciados, {files} contenedor(es) verificado(s)</translation>
+        <translation>Sonidos: {playable}/{referenced} mensajes referenciados, {files} contenedor(es) comprobado(s)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1090"/>
         <source>No exact UUID, timeline, or SoundID-to-trigger references were found for this MSG. SoundID is never guessed to be a Wwise media ID.</source>
-        <translation>No se encontraron referencias exactas de UUID, línea de tiempo o SoundID para activar para este MSG. SoundID nunca se supone que sea un Wwise media ID.</translation>
+        <translation>No se encontraron referencias exactas de UUID, de línea de tiempo ni de SoundID a trigger para este MSG. Nunca se supone que SoundID sea un ID de medio de Wwise.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="1096"/>
@@ -14253,7 +14253,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="400"/>
         <source>name or numeric ID</source>
-        <translation>nombre o ID numérica</translation>
+        <translation>nombre o ID numérico</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="416"/>
@@ -14370,7 +14370,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="33"/>
         <source>&lt;b&gt;Note:&lt;/b&gt; This tool detects files that are incompatible with your selected RSZ template (.json file). Make sure to use the latest .json if you want to check for outdated mods.</source>
-        <translation>&lt;b&gt;Nota:&lt;/b&gt; Esta herramienta detecta los archivos que no son compatibles con la plantilla RSZ seleccionada (.json archivo). Asegúrese de utilizar la última .json si quieres comprobar si hay mods obsoletos.</translation>
+        <translation>&lt;b&gt;Nota:&lt;/b&gt; Esta herramienta detecta los archivos que no son compatibles con la plantilla RSZ seleccionada (archivo .json). Asegúrese de utilizar el .json más reciente si quiere comprobar si hay mods obsoletos.</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="39"/>
@@ -14380,13 +14380,13 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="44"/>
         <source>RSZ JSON Path: Not set</source>
-        <translation>RSZ JSON Ruta: No establecida</translation>
+        <translation>Ruta del JSON de RSZ: no establecida</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="47"/>
         <location filename="../../ui/outdated_files_dialog.py" line="58"/>
         <source>Browse...</source>
-        <translation>Navegar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="55"/>
@@ -14411,7 +14411,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="83"/>
         <source>Mismatching Types Count</source>
-        <translation>Los tipos desemparejados cuentan</translation>
+        <translation>Número de tipos no coincidentes</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="90"/>
@@ -14426,7 +14426,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="99"/>
         <source>Deselect All</source>
-        <translation>Anule la selección de todo</translation>
+        <translation>Anular la selección</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="102"/>
@@ -14452,7 +14452,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="137"/>
         <source>Select Type Registry JSON</source>
-        <translation>Seleccionar tipo Registro JSON</translation>
+        <translation>Seleccionar el JSON del registro de tipos</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="147"/>
@@ -14514,7 +14514,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="210"/>
         <source>Scanning for outdated files...</source>
-        <translation>Escanear archivos obsoletos...</translation>
+        <translation>Buscando archivos obsoletos...</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="212"/>
@@ -14525,7 +14525,7 @@ Esto lo eliminará de todas las entradas.</translation>
         <location filename="../../ui/outdated_files_dialog.py" line="224"/>
         <source>Scanning file {current} of {total}:
 {file_name}</source>
-        <translation>Archivo de escaneo {current} de {total}:
+        <translation>Escaneando el archivo {current} de {total}:
 {file_name}</translation>
     </message>
     <message>
@@ -14536,7 +14536,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="251"/>
         <source>Found {count} outdated files with mismatching type CRCs.</source>
-        <translation>Encontrado {count} archivos obsoletos con CRCs de tipo no coincidente.</translation>
+        <translation>Se encontraron {count} archivos obsoletos con CRC de tipo no coincidentes.</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="269"/>
@@ -14546,17 +14546,17 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="278"/>
         <source>File CRC: 0x{file_crc:08X}, Registry CRC: 0x{registry_crc:08X}</source>
-        <translation>Archivo CRC: 0x{file_crc:08X}, CRC Registro: 0x{registry_crc:08X}</translation>
+        <translation>CRC del archivo: 0x{file_crc:08X}, CRC del registro: 0x{registry_crc:08X}</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="274"/>
         <source>File CRC: 0x{file_crc:08X}, Not found in registry</source>
-        <translation>Archivo CRC: 0x{file_crc:08X}, No se encuentra en el registro</translation>
+        <translation>CRC del archivo: 0x{file_crc:08X}, no se encuentra en el registro</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="300"/>
         <source>Populating results...</source>
-        <translation>Resultados de poblacion...</translation>
+        <translation>Rellenando resultados...</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="302"/>
@@ -14566,7 +14566,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="285"/>
         <source>... and {count} more mismatches (double-click to load)</source>
-        <translation>... y {count} más desajustes (doble clic para cargar)</translation>
+        <translation>... y {count} discrepancias más (doble clic para cargar)</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="367"/>
@@ -14593,7 +14593,7 @@ Esto lo eliminará de todas las entradas.</translation>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="412"/>
         <source>Move Errors</source>
-        <translation>Mover errores</translation>
+        <translation>Errores al mover</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="414"/>
@@ -14609,7 +14609,7 @@ No se pudieron mover {error_count} archivos:
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="423"/>
         <source>Move Complete</source>
-        <translation>Mover completo</translation>
+        <translation>Movimiento completado</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="424"/>
@@ -14624,7 +14624,7 @@ No se pudieron mover {error_count} archivos:
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="437"/>
         <source>Are you sure you want to delete {count} files?</source>
-        <translation>¿Seguro que quieres borrar {count} ¿Archivos?</translation>
+        <translation>¿Seguro que quieres borrar {count} archivos?</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="456"/>
@@ -14637,9 +14637,9 @@ No se pudieron mover {error_count} archivos:
 
 Failed to delete {error_count} files:
 {errors}</source>
-        <translation>Suprimido {success_count} archivos con éxito.
+        <translation>Se eliminaron correctamente {success_count} archivos.
 
-No se pudo eliminar {error_count} archivos:
+No se pudieron eliminar {error_count} archivos:
 {errors}</translation>
     </message>
     <message>
@@ -14650,7 +14650,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="467"/>
         <source>Successfully deleted {count} files.</source>
-        <translation>Eliminado con éxito {count} archivos.</translation>
+        <translation>Se eliminaron correctamente {count} archivos.</translation>
     </message>
 </context>
 <context>
@@ -14692,12 +14692,12 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="65"/>
         <source>Game directory (optional, for scan)</source>
-        <translation>Directorio de juegos (opcional, para escaneo)</translation>
+        <translation>Directorio del juego (opcional, para escanear)</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="67"/>
         <source>Browse…</source>
-        <translation>Navegar…</translation>
+        <translation>Examinar…</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="68"/>
@@ -14759,7 +14759,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="266"/>
         <source>Extract Selected</source>
-        <translation>Extracto seleccionado</translation>
+        <translation>Extraer selección</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="265"/>
@@ -14779,7 +14779,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="317"/>
         <source>Select Game Directory</source>
-        <translation>Seleccionar directorio de juegos</translation>
+        <translation>Seleccionar directorio del juego</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="326"/>
@@ -14841,7 +14841,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="982"/>
         <source>List files (*.list *.txt);;All files (*)</source>
-        <translation>Lista de archivos (*.list *.txt);;Todos los archivos (*)</translation>
+        <translation>Archivos de lista (*.list *.txt);;Todos los archivos (*)</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="828"/>
@@ -14910,7 +14910,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="991"/>
         <source>Write failed</source>
-        <translation>Escribir fallida</translation>
+        <translation>Error de escritura</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="1032"/>
@@ -14934,7 +14934,7 @@ No se pudo eliminar {error_count} archivos:
         <location filename="../../ui/pak_browser_dialog.py" line="1043"/>
         <location filename="../../ui/pak_browser_dialog.py" line="1047"/>
         <source>Extract</source>
-        <translation>Extracto</translation>
+        <translation>Extraer</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="1039"/>
@@ -14964,7 +14964,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="1019"/>
         <source>Extract failed</source>
-        <translation>Fracaso del extracto</translation>
+        <translation>Error de extracción</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="1023"/>
@@ -14981,7 +14981,7 @@ No se pudo eliminar {error_count} archivos:
         <location filename="../../ui/pak_browser_dialog.py" line="1094"/>
         <source>Extracted {count} file(s) to:
 {dest}</source>
-        <translation>Extraído {count} archivo(s) a:
+        <translation>Se extrajeron {count} archivo(s) a:
 {dest}</translation>
     </message>
     <message>
@@ -15035,7 +15035,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/project_manager/pak_file_lists.py" line="80"/>
         <source>List files (*.list *.txt);;All files (*)</source>
-        <translation>Lista de archivos (*.list *.txt);;Todos los archivos (*)</translation>
+        <translation>Archivos de lista (*.list *.txt);;Todos los archivos (*)</translation>
     </message>
 </context>
 <context>
@@ -15229,7 +15229,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="184"/>
         <source>Alternative same-joints objects with equivalent motion-joint bindings.</source>
-        <translation>Objetos alternativos de las mismas articulaciones con uniones de unión por movimiento equivalentes.</translation>
+        <translation>Objetos alternativos con las mismas articulaciones y vinculaciones de articulaciones de movimiento equivalentes.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="193"/>
@@ -15239,7 +15239,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="197"/>
         <source>Advanced: combine the PFB&apos;s optional runtime layers with the selected animation. Leave off to preview the MOT alone.</source>
-        <translation>Opcional: combine las capas de ejecución del PFB con la animación seleccionada. Desactívelo para previsualizar únicamente el MOT.</translation>
+        <translation>Avanzado: combine las capas opcionales de tiempo de ejecución del PFB con la animación seleccionada. Desactívelo para previsualizar únicamente el MOT.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="206"/>
@@ -15279,7 +15279,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="396"/>
         <source>Waiting for a skinnable mesh from this PFB.</source>
-        <translation>Esperando una malla despellejable de este PFB.</translation>
+        <translation>Esperando una malla con skinning de este PFB.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="439"/>
@@ -15304,22 +15304,22 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="593"/>
         <source>Select an animation and a skinnable target mesh.</source>
-        <translation>Seleccione una animación y una malla de destino despellejable.</translation>
+        <translation>Seleccione una animación y una malla de destino con skinning.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="676"/>
         <source>Static skeletal pose</source>
-        <translation>Postura esquelética estática</translation>
+        <translation>Pose esquelética estática</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="679"/>
         <source>Shared pose: {count} meshes</source>
-        <translation>Pose compartida: {count} Mallas</translation>
+        <translation>Pose compartida: {count} mallas</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="689"/>
         <source>Material animation: {active}/{total} active</source>
-        <translation>Animación de material: {active}/{total} activo</translation>
+        <translation>Animación de material: {active}/{total} activas</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="696"/>
@@ -15329,7 +15329,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="708"/>
         <source>{count} additional diagnostics are in Details.</source>
-        <translation>{count} Diagnósticos adicionales están en detalles.</translation>
+        <translation>Hay {count} diagnósticos adicionales en Detalles.</translation>
     </message>
 </context>
 <context>
@@ -15472,7 +15472,7 @@ No se pudo eliminar {error_count} archivos:
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1196"/>
         <source>Select a game directory first.</source>
-        <translation>Selecciona un directorio de juegos primero.</translation>
+        <translation>Selecciona primero el directorio del juego.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1202"/>
@@ -15542,7 +15542,7 @@ Are you sure you want to overwrite it?</source>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="317"/>
         <source>This file was opened from PAK files while in project mode, so it can&apos;t be reopened right now. Open a project first.</source>
-        <translation>Este archivo se abrió desde archivos PAK mientras estaba en modo de proyecto, por lo que no se puede volver a abrir ahora mismo.</translation>
+        <translation>Este archivo se abrió desde archivos PAK mientras estaba en modo de proyecto, por lo que no se puede volver a abrir ahora mismo. Abra primero un proyecto.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="370"/>
@@ -15612,7 +15612,7 @@ Actual:
         <location filename="../../ui/project_manager/manager.py" line="802"/>
         <location filename="../../ui/project_manager/manager.py" line="887"/>
         <source>Expected sub‑folder &quot;{}&quot;.</source>
-        <translation>Subcarpeta prevista &quot;{}&quot;.</translation>
+        <translation>Se esperaba la subcarpeta &quot;{}&quot;.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1205"/>
@@ -15638,7 +15638,7 @@ Actual:
         <location filename="../../ui/project_manager/manager.py" line="1429"/>
         <location filename="../../ui/project_manager/manager.py" line="1611"/>
         <source>Confirm Add</source>
-        <translation>Confirmar añadir</translation>
+        <translation>Confirmar adición</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1512"/>
@@ -15660,14 +15660,14 @@ Fue copiado con éxito.</translation>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1915"/>
         <source>‑‑ any ‑‑</source>
-        <translation>Cualquier</translation>
+        <translation>‑‑ cualquiera ‑‑</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2097"/>
         <source>Fluffy mod ZIP created.
 Saved to:
 {}</source>
-        <translation>Fluffy mod ZIP creado.
+        <translation>ZIP de mod de Fluffy creado.
 Guardado en:
 {}</translation>
     </message>
@@ -15680,14 +15680,14 @@ Guardado en:
         <location filename="../../ui/project_manager/manager.py" line="2121"/>
         <source>The REE.PAK packer ({}) is not downloaded yet
 </source>
-        <translation>El REE.PAK empaquetador ({}) aún no se ha descargado
+        <translation>El empaquetador REE.PAK ({}) aún no se ha descargado
 </translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2123"/>
         <source>A newer packer release ({}) is available
 </source>
-        <translation>Una versión más nueva de packer ({}) está disponible
+        <translation>Hay disponible una versión más reciente del empaquetador ({})
 </translation>
     </message>
     <message>
@@ -15940,7 +15940,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2186"/>
         <source>PAK packer returned an error.</source>
-        <translation>PAK packer ha devuelto un error.</translation>
+        <translation>El empaquetador de PAK ha devuelto un error.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="757"/>
@@ -15974,7 +15974,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1848"/>
         <source>this game</source>
-        <translation>Este juego</translation>
+        <translation>este juego</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1880"/>
@@ -16025,7 +16025,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="758"/>
         <source>Browse for game directory</source>
-        <translation>Buscar por directorio de juegos</translation>
+        <translation>Buscar el directorio del juego</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="410"/>
@@ -16068,7 +16068,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/project_picker_dialog.py" line="164"/>
         <source>Source</source>
-        <translation>Fuente</translation>
+        <translation>Origen</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/project_picker_dialog.py" line="165"/>
@@ -16178,7 +16178,7 @@ Se eliminará permanentemente:
     <message>
         <location filename="../../ui/project_manager/project_settings_dialog.py" line="33"/>
         <source>Mod Name:</source>
-        <translation>Nombre del Mod:</translation>
+        <translation>Nombre del mod:</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/project_settings_dialog.py" line="34"/>
@@ -16203,7 +16203,7 @@ Se eliminará permanentemente:
     <message>
         <location filename="../../ui/project_manager/project_settings_dialog.py" line="44"/>
         <source>Build PAK instead of loose folders in Fluffy ZIP</source>
-        <translation>Construya PAK en lugar de carpetas sueltas en Fluffy ZIP</translation>
+        <translation>Crear un PAK en lugar de carpetas sueltas en el ZIP de Fluffy</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/project_settings_dialog.py" line="57"/>
@@ -16224,7 +16224,7 @@ Se eliminará permanentemente:
     <message>
         <location filename="../../ui/project_manager/project_settings_dialog.py" line="120"/>
         <source>Save failed</source>
-        <translation>Guardar falló</translation>
+        <translation>Error al guardar</translation>
     </message>
 </context>
 <context>
@@ -16430,7 +16430,7 @@ Se eliminará permanentemente:
     <message>
         <location filename="../../ui/main_window.py" line="445"/>
         <source>Close Project</source>
-        <translation>Cerrar Proyecto</translation>
+        <translation>Cerrar proyecto</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="455"/>
@@ -16681,7 +16681,7 @@ Por favor, seleccione el directorio de juego desempaquetado correcto.</translati
         <source>RSZ type registry JSON path is not set.
 Would you like to set it now?</source>
         <translation>La ruta JSON del registro de tipo RSZ no está establecida.
-¿Te gustaría configurarlo ahora?</translation>
+¿Te gustaría configurarla ahora?</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="1370"/>
@@ -17121,7 +17121,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="182"/>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1782"/>
         <source>Ignore Tags</source>
-        <translation>Ignorar etiquetas</translation>
+        <translation>Etiquetas a ignorar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="184"/>
@@ -17142,13 +17142,13 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="236"/>
         <source>Load Mesh…</source>
-        <translation>Malla de carga…</translation>
+        <translation>Cargar malla…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="240"/>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="664"/>
         <source>Load Mesh from PAK</source>
-        <translation>Malla de carga de PAK</translation>
+        <translation>Cargar malla desde PAK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="296"/>
@@ -17208,7 +17208,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="382"/>
         <source>Mirror Shapes ({count})</source>
-        <translation>Formas del espejo ({count})</translation>
+        <translation>Formas de espejo ({count})</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="398"/>
@@ -17218,7 +17218,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="411"/>
         <source>Ignore Tags ({count})</source>
-        <translation>Ignorar etiquetas ({count})</translation>
+        <translation>Etiquetas a ignorar ({count})</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="422"/>
@@ -17233,7 +17233,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="520"/>
         <source>(no key)</source>
-        <translation>(sin llave)</translation>
+        <translation>(sin clave)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="521"/>
@@ -17253,7 +17253,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="614"/>
         <source>Shape selected: highlighted across {count} request-set occurrence(s).</source>
-        <translation>Forma seleccionada: resaltada en {count} request-set ocurrencia(s).</translation>
+        <translation>Forma seleccionada: resaltada en {count} aparición(es) en conjuntos de solicitudes.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="619"/>
@@ -17281,7 +17281,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="655"/>
         <source>You are not in project mode. Please open a project (&quot;File&quot; &gt; &quot;New Mod/Open Project&quot;).</source>
-        <translation>Usted no está en modo de proyecto. Por favor, abra un proyecto (&quot;Archivo&quot;  &quot;Nuevo Mod/Proyecto Abierto&quot;).</translation>
+        <translation>No está en modo de proyecto. Por favor, abra un proyecto (&quot;Archivo&quot; &gt; &quot;Nuevo mod/Abrir proyecto&quot;).</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="665"/>
@@ -17298,7 +17298,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="782"/>
         <source>Mesh handler did not produce a parsed mesh.</source>
-        <translation>El manipulador de mallas no produjo una malla analizada.</translation>
+        <translation>El controlador de mallas no produjo una malla analizada.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="917"/>
@@ -17319,7 +17319,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1059"/>
         <source>No type registry is loaded. Cannot add request-set userdata.</source>
-        <translation>No se carga ningún tipo de registro. No se puede añadir userdata.</translation>
+        <translation>No hay ningún registro de tipos cargado. No se pueden añadir datos de usuario del conjunto de solicitudes.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1070"/>
@@ -17334,7 +17334,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1082"/>
         <source>No type registry is loaded. Cannot add shape userdata.</source>
-        <translation>No se carga ningún registro de tipo. No se pueden agregar datos de usuario de forma.</translation>
+        <translation>No hay ningún registro de tipos cargado. No se pueden añadir datos de usuario de la forma.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1091"/>
@@ -17360,17 +17360,17 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1115"/>
         <source>Assign this request set to group:</source>
-        <translation>Asignar esta solicitud al grupo:</translation>
+        <translation>Asignar este conjunto de solicitudes al grupo:</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1127"/>
         <source>This RCOL does not contain a headless RSZ block.</source>
-        <translation>Este RCOL no contiene un bloque RSZ sin cabeza.</translation>
+        <translation>Este RCOL no contiene un bloque RSZ sin cabecera.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1131"/>
         <source>Headless RSZ viewer is unavailable.</source>
-        <translation>El visor RSZ sin cabeza no está disponible.</translation>
+        <translation>El visor RSZ sin cabecera no está disponible.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1530"/>
@@ -17410,17 +17410,17 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1656"/>
         <source>{kind} Shapes</source>
-        <translation>{kind} Formas</translation>
+        <translation>Formas ({kind})</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1666"/>
         <source>Add {kind} Shape</source>
-        <translation>Añadir forma {kind}</translation>
+        <translation>Añadir forma ({kind})</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1674"/>
         <source>Mirror Shape [{index}]</source>
-        <translation>Forma del espejo [{index}]</translation>
+        <translation>Forma de espejo [{index}]</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1676"/>
@@ -17450,12 +17450,12 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1788"/>
         <source>Ignore Tag [{index}]</source>
-        <translation>Ignorar etiqueta [{index}]</translation>
+        <translation>Etiqueta a ignorar [{index}]</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1791"/>
         <source>Tag hash is auto-managed on save.</source>
-        <translation>Tag hash se administra automáticamente en guardar.</translation>
+        <translation>El hash de la etiqueta se gestiona automáticamente al guardar.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1794"/>
@@ -17465,12 +17465,12 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1799"/>
         <source>Auto Joint [{index}]</source>
-        <translation>Junta automática [{index}]</translation>
+        <translation>Articulación automática [{index}]</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1813"/>
         <source>Present: {present} · Byte Length: {length}</source>
-        <translation>Presente: {present} · Longitud del byte: {length}</translation>
+        <translation>Presente: {present} · Longitud en bytes: {length}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1814"/>
@@ -17485,17 +17485,17 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1830"/>
         <source>No headless RSZ block was found in this RCOL.</source>
-        <translation>No se encontró ningún bloque RSZ sin cabeza en este RCOL.</translation>
+        <translation>No se encontró ningún bloque RSZ sin cabecera en este RCOL.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1847"/>
         <source>Failed to build headless RSZ region: {}</source>
-        <translation>No se pudo construir la región RSZ sin cabeza: {}</translation>
+        <translation>No se pudo construir la región RSZ sin cabecera: {}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1853"/>
         <source>Failed to create the embedded headless RSZ viewer.</source>
-        <translation>No se pudo crear el visor RSZ sin cabeza integrado.</translation>
+        <translation>No se pudo crear el visor RSZ sin cabecera integrado.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="94"/>
@@ -17521,22 +17521,22 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1903"/>
         <source>Remove Ignore Tag</source>
-        <translation>Eliminar Ignorar etiqueta</translation>
+        <translation>Eliminar etiqueta a ignorar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1904"/>
         <source>Select an ignore tag entry first.</source>
-        <translation>Seleccione una entrada de etiqueta de ignorar primero.</translation>
+        <translation>Seleccione primero una etiqueta a ignorar.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1925"/>
         <source>Remove Auto Joint</source>
-        <translation>Quitar Auto Junta</translation>
+        <translation>Eliminar articulación automática</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1926"/>
         <source>Select an auto joint entry first.</source>
-        <translation>Seleccione primero una entrada automática conjunta.</translation>
+        <translation>Seleccione primero una articulación automática.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1934"/>
@@ -17552,7 +17552,7 @@ Supr elimina los nodos / enlaces seleccionados.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1947"/>
         <source>Group [{group}] has {count} request set(s) assigned. Remove or reassign those request sets before deleting the group.</source>
-        <translation>Grupo [{group}] tiene {count} conjunto(s) de solicitudes asignados. Quite o reasignar esos conjuntos de solicitudes antes de eliminar el grupo.</translation>
+        <translation>El grupo [{group}] tiene {count} conjunto(s) de solicitudes asignado(s). Quite o reasigne esos conjuntos de solicitudes antes de eliminar el grupo.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1982"/>
@@ -17598,7 +17598,7 @@ Continue?</source>
 
 {source_kind} {source_id} → {destination_kind} {destination_id}
 
-Fuente — leer los valores de:
+Origen — se leen los valores de:
 {source_path}
 
 Destino — se modificará en la memoria:
@@ -17727,17 +17727,17 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="549"/>
         <source>AI capability &apos;{capability}&apos; is unavailable because the user requested a project file.</source>
-        <translation>Capacidad de IA &apos;{capability}&apos; no está disponible porque el usuario solicitó un archivo de proyecto.</translation>
+        <translation>La capacidad de IA &apos;{capability}&apos; no está disponible porque el usuario solicitó un archivo de proyecto.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="554"/>
         <source>AI capability &apos;{capability}&apos; is unavailable because this request did not explicitly ask for three-way migration.</source>
-        <translation>Capacidad de IA &apos;{capability}&apos; no está disponible porque esta solicitud no pedía explícitamente la migración tripartita.</translation>
+        <translation>La capacidad de IA &apos;{capability}&apos; no está disponible porque esta solicitud no pedía explícitamente la migración tripartita.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="559"/>
         <source>AI capability &apos;{capability}&apos; is unavailable because this request did not explicitly ask for an external-folder update.</source>
-        <translation>Capacidad de IA &apos;{capability}&apos; no está disponible porque esta solicitud no solicitó explícitamente una actualización de la carpeta externa.</translation>
+        <translation>La capacidad de IA &apos;{capability}&apos; no está disponible porque esta solicitud no solicitó explícitamente una actualización de la carpeta externa.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="235"/>
@@ -17822,12 +17822,12 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="857"/>
         <source>MSG language not found: {language}</source>
-        <translation>No se encontró el lenguaje MSG: {language}</translation>
+        <translation>No se encontró el idioma MSG: {language}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="867"/>
         <source>MSG language is ambiguous: {language}</source>
-        <translation>El lenguaje MSG es ambiguo: {language}</translation>
+        <translation>El idioma MSG es ambiguo: {language}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="884"/>
@@ -17899,12 +17899,12 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1673"/>
         <source>edit_msg requires at least one action.</source>
-        <translation>edit_msg Requiere al menos una acción.</translation>
+        <translation>edit_msg requiere al menos una acción.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1682"/>
         <source>edit_msg accepts at most 256 actions.</source>
-        <translation>edit_msg Acepta un máximo de 256 acciones.</translation>
+        <translation>edit_msg acepta un máximo de 256 acciones.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1704"/>
@@ -17931,7 +17931,7 @@ Carpeta de salida: {output_folder}</translation>
         <location filename="../../ui/ai/msg_tools.py" line="1781"/>
         <location filename="../../ui/ai/msg_tools.py" line="1955"/>
         <source>MSG entry UUID already exists: {uuid}</source>
-        <translation>La entrada UUID de MSG ya existe: {uuid}</translation>
+        <translation>El UUID de entrada de MSG ya existe: {uuid}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1807"/>
@@ -17951,7 +17951,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1847"/>
         <source>MSG language was updated more than once in one entry action.</source>
-        <translation>El lenguaje MSG se actualizó más de una vez en una acción de entrada.</translation>
+        <translation>El idioma MSG se actualizó más de una vez en una acción de entrada.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1864"/>
@@ -17971,7 +17971,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1922"/>
         <source>duplicate_entry requires entry.</source>
-        <translation>duplicate_entry Requiere entrada.</translation>
+        <translation>duplicate_entry requiere entry.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="1987"/>
@@ -17997,7 +17997,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="2064"/>
         <source>default is only valid when adding an MSG attribute.</source>
-        <translation>El valor predeterminado solo es válido cuando se agrega un atributo MSG.</translation>
+        <translation>default solo es válido cuando se agrega un atributo MSG.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="2081"/>
@@ -18012,13 +18012,13 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="2163"/>
         <source>A new MSG language requires language_code.</source>
-        <translation>Un nuevo lenguaje MSG requiere language_code.</translation>
+        <translation>Un nuevo idioma MSG requiere language_code.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="2181"/>
         <location filename="../../ui/ai/msg_tools.py" line="2228"/>
         <source>MSG language code already exists: {code}</source>
-        <translation>El código del lenguaje MSG ya existe: {code}</translation>
+        <translation>El código del idioma MSG ya existe: {code}</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="2202"/>
@@ -18292,7 +18292,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="21"/>
         <source>Edit WEM Loop and Markers</source>
-        <translation>Editar WEM Loop y marcadores</translation>
+        <translation>Editar bucle y marcadores del WEM</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="27"/>
@@ -18327,7 +18327,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="38"/>
         <source>Loop end is inclusive. Changing metadata decodes and lossy re-encodes the existing WEM through {authoring}.</source>
-        <translation>El final del bucle es inclusivo. El cambio de decodificaciones de metadatos y lossy vuelve a codificar el WEM existente a través de {authoring}.</translation>
+        <translation>El final del bucle es inclusivo. Cambiar los metadatos decodifica el WEM existente y lo vuelve a codificar con pérdida mediante {authoring}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="46"/>
@@ -18337,7 +18337,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="48"/>
         <source>Start sample</source>
-        <translation>Iniciar muestra</translation>
+        <translation>Muestra inicial</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="48"/>
@@ -18347,7 +18347,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="48"/>
         <source>Play count (0 = infinite)</source>
-        <translation>Cuenta de juego (0 = infinito)</translation>
+        <translation>Número de reproducciones (0 = infinito)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="48"/>
@@ -18358,7 +18358,7 @@ Carpeta de salida: {output_folder}</translation>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="48"/>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="56"/>
         <source>Cue ID</source>
-        <translation>Identificación de la señal</translation>
+        <translation>ID de la señal</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="54"/>
@@ -18393,7 +18393,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="94"/>
         <source>Invalid Loop or Marker</source>
-        <translation>Lazo o marcador no válido</translation>
+        <translation>Bucle o marcador no válido</translation>
     </message>
 </context>
 <context>
@@ -18429,7 +18429,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="193"/>
         <source>Type Data Source</source>
-        <translation>Tipo de fuente de datos</translation>
+        <translation>Origen de los datos de tipos</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="194"/>
@@ -18440,12 +18440,12 @@ Carpeta de salida: {output_folder}</translation>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="196"/>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="206"/>
         <source>Browse...</source>
-        <translation>Navegar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="203"/>
         <source>Search Root</source>
-        <translation>Buscar raíz</translation>
+        <translation>Raíz de búsqueda</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="204"/>
@@ -18460,12 +18460,12 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="226"/>
         <source>Match Rules &amp; Field Constraints</source>
-        <translation>Reglas de partido y restricciones de campo</translation>
+        <translation>Reglas de coincidencia y restricciones de campo</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="234"/>
         <source>A Field:</source>
-        <translation>Un campo:</translation>
+        <translation>Campo A:</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="245"/>
@@ -18491,7 +18491,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="279"/>
         <source>Preview Matches</source>
-        <translation>Pre-escucha Matches</translation>
+        <translation>Previsualizar coincidencias</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="281"/>
@@ -18552,22 +18552,22 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="351"/>
         <source>Is empty (strings)</source>
-        <translation>Está vacío (cuerdas)</translation>
+        <translation>Está vacío (cadenas)</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="41"/>
         <source>Greater than</source>
-        <translation>Más grande que</translation>
+        <translation>Mayor que</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="42"/>
         <source>Less than</source>
-        <translation>Menos de</translation>
+        <translation>Menor que</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="43"/>
         <source>Equal to</source>
-        <translation>Iguales a</translation>
+        <translation>Igual a</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="44"/>
@@ -18603,7 +18603,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="395"/>
         <source>Fields to Output (from {label})</source>
-        <translation>Campos a la salida (de {label})</translation>
+        <translation>Campos de salida (de {label})</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="405"/>
@@ -18618,7 +18618,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="434"/>
         <source>Select JSON Type Data</source>
-        <translation>Seleccionar tipo JSON Datos</translation>
+        <translation>Seleccionar datos de tipos JSON</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="444"/>
@@ -18695,12 +18695,12 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="705"/>
         <source>A side &apos;{constraint}&apos; requires a value.</source>
-        <translation>Un lado &apos;{constraint}&apos; requiere un valor.</translation>
+        <translation>El lado A &apos;{constraint}&apos; requiere un valor.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="714"/>
         <source>B side &apos;{constraint}&apos; requires a value.</source>
-        <translation>Lado B&apos;{constraint}&apos; requiere un valor.</translation>
+        <translation>El lado B &apos;{constraint}&apos; requiere un valor.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="725"/>
@@ -18715,7 +18715,7 @@ Carpeta de salida: {output_folder}</translation>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="742"/>
         <source>any</source>
-        <translation>cualquier</translation>
+        <translation>cualquiera</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="744"/>
@@ -18798,7 +18798,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="953"/>
         <source>Ready. {count} matching key(s).</source>
-        <translation>Listo. {count} llave(s) coincidente(s).</translation>
+        <translation>Listo. {count} clave(s) coincidente(s).</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="1016"/>
@@ -18836,7 +18836,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="158"/>
         <source>Drop to load file</source>
-        <translation>Suelte al archivo de carga</translation>
+        <translation>Suelte para cargar el archivo</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="180"/>
@@ -18846,12 +18846,12 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="181"/>
         <source>Loaded first 2 files out of {count} dropped files.</source>
-        <translation>Cargado los primeros 2 archivos de {count} archivos perdidos.</translation>
+        <translation>Se cargaron los 2 primeros de los {count} archivos soltados.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="189"/>
         <source>RSZ File Diff</source>
-        <translation>Diff archivo RSZ</translation>
+        <translation>Diferencias de archivos RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="19"/>
@@ -18899,7 +18899,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
         <location filename="../../ui/rsz_differ_dialog.py" line="281"/>
         <location filename="../../ui/rsz_differ_dialog.py" line="301"/>
         <source>Browse...</source>
-        <translation>Navegar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="271"/>
@@ -18914,7 +18914,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="272"/>
         <source>File 1 JSON Override:</source>
-        <translation>Archivo 1 Anulación de JSON:</translation>
+        <translation>JSON alternativo para el archivo 1:</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="273"/>
@@ -18929,7 +18929,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="272"/>
         <source>File 2 JSON Override:</source>
-        <translation>Archivo 2 Anulación de JSON:</translation>
+        <translation>JSON alternativo para el archivo 2:</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="273"/>
@@ -18959,7 +18959,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="364"/>
         <source>Select two RSZ files (SCN, PFB, or USER) and click &quot;Compare Files&quot; to begin.</source>
-        <translation>Seleccione dos archivos RSZ (SCN, PFB o USUARIO) y haga clic en &quot;Comparar archivos&quot; para comenzar.</translation>
+        <translation>Seleccione dos archivos RSZ (SCN, PFB o USER) y haga clic en &quot;Comparar archivos&quot; para comenzar.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="366"/>
@@ -18979,7 +18979,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="369"/>
         <source>• USER files (User data)</source>
-        <translation>• Archivos de usuario (datos de usuario)</translation>
+        <translation>• Archivos USER (datos de usuario)</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="383"/>
@@ -18994,7 +18994,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="415"/>
         <source>Select JSON Override for File {file_number}</source>
-        <translation>Seleccione Anulación de JSON para el archivo {file_number}</translation>
+        <translation>Seleccionar JSON alternativo para el archivo {file_number}</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="429"/>
@@ -19011,7 +19011,7 @@ Las reglas que solo contienen restricciones pueden filtrar, pero no buscar coinc
         <source>The file does not appear to be a valid RSZ file.
 Expected SCN, PFB, or USR header.</source>
         <translation>El archivo no parece ser un archivo RSZ válido.
-Se espera SCN, PFB, o USR encabezado.</translation>
+Se esperaba un encabezado SCN, PFB o USR.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_differ_dialog.py" line="472"/>
@@ -19205,7 +19205,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="134"/>
         <source>Type Registry:</source>
-        <translation>Tipo de Registro:</translation>
+        <translation>Registro de tipos:</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="140"/>
@@ -19240,7 +19240,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="203"/>
         <source>Replace:</source>
-        <translation>Sustitúyase por:</translation>
+        <translation>Reemplazar por:</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="209"/>
@@ -19287,7 +19287,7 @@ Switch enums to {expected}?</source>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="484"/>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="493"/>
         <source>Replace</source>
-        <translation>Sustituir</translation>
+        <translation>Reemplazar</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="484"/>
@@ -19312,12 +19312,12 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="510"/>
         <source>Replacing values...</source>
-        <translation>Sustitución de valores...</translation>
+        <translation>Reemplazando valores...</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="532"/>
         <source>Replaced {count} values. Backups were created.</source>
-        <translation>Sustituído {count} Se crearon copias de seguridad.</translation>
+        <translation>Se reemplazaron {count} valores. Se crearon copias de seguridad.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="534"/>
@@ -19327,7 +19327,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="538"/>
         <source>Replace Complete</source>
-        <translation>Reemplazar completo</translation>
+        <translation>Reemplazo completado</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="523"/>
@@ -19342,7 +19342,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="647"/>
         <source>Please load the selected type registry</source>
-        <translation>Por favor, cargue el tipo de registro seleccionado</translation>
+        <translation>Por favor, cargue el registro de tipos seleccionado</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="802"/>
@@ -19357,7 +19357,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="833"/>
         <source>None of the {count} files could be parsed. Check that the selected type registry matches these files.</source>
-        <translation>El origen de la {count} Comprueba que el registro de tipo seleccionado coincida con estos archivos.</translation>
+        <translation>No se pudo analizar ninguno de los {count} archivos. Comprueba que el registro de tipos seleccionado coincida con estos archivos.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="837"/>
@@ -19367,7 +19367,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="840"/>
         <source> {count} files could not be parsed.</source>
-        <translation> {count} Los archivos no pueden ser analizados.</translation>
+        <translation> No se pudieron analizar {count} archivos.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="112"/>
@@ -19378,7 +19378,7 @@ Switch enums to {expected}?</source>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="137"/>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="147"/>
         <source>Browse...</source>
-        <translation>Navegar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="149"/>
@@ -19429,7 +19429,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="271"/>
         <source>Select JSON Type Data File</source>
-        <translation>Seleccionar tipo JSON Archivo de datos</translation>
+        <translation>Seleccionar archivo de datos de tipos JSON</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="283"/>
@@ -19460,7 +19460,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="320"/>
         <source>Path does not exist: {path}</source>
-        <translation>El camino no existe: {path}</translation>
+        <translation>La ruta no existe: {path}</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="334"/>
@@ -19475,7 +19475,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="373"/>
         <source>Loaded {count} types</source>
-        <translation>Cargado {count} tipos</translation>
+        <translation>Se cargaron {count} tipos</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="386"/>
@@ -19532,7 +19532,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="702"/>
         <source>Searching files... ({current}/{total})</source>
-        <translation>Buscar archivos... ({current}/{total})</translation>
+        <translation>Buscando archivos... ({current}/{total})</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="741"/>
@@ -19542,12 +19542,12 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="818"/>
         <source>Search complete (filtered): {instances} instances in {files} files</source>
-        <translation>Búsqueda completa (filtrada): {instances} instancias en {files} archivos</translation>
+        <translation>Búsqueda completada (filtrada): {instances} instancias en {files} archivos</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="823"/>
         <source>Search complete: {instances} instances in {files} files</source>
-        <translation>Búsqueda completa: {instances} instancias en {files} archivos</translation>
+        <translation>Búsqueda completada: {instances} instancias en {files} archivos</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="828"/>
@@ -19557,7 +19557,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="843"/>
         <source>Search Complete</source>
-        <translation>Búsqueda completa</translation>
+        <translation>Búsqueda completada</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="849"/>
@@ -19575,7 +19575,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../file_handlers/rsz/rsz_handler.py" line="139"/>
         <source>... and {count} more issue(s).</source>
-        <translation>... y {count} más problema(s).</translation>
+        <translation>... y {count} problema(s) más.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/rsz_handler.py" line="143"/>
@@ -19607,8 +19607,8 @@ Archivo: {file_name}
 Registro: {registry_name}
 
 Posibles razones:
-- Archivo obsoleto (no utilizado o no última versión)
-- Desactualizado volcado RSZ
+- Archivo obsoleto (sin usar o no es la última versión)
+- Volcado RSZ desactualizado
 - Juego incorrecto para el volcado RSZ seleccionado
 
 Detalles:
@@ -19755,7 +19755,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="277"/>
         <source>Fold panel</source>
-        <translation>Panel de plegado</translation>
+        <translation>Plegar panel</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="279"/>
@@ -19771,7 +19771,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="435"/>
         <source>Look</source>
-        <translation>Miren.</translation>
+        <translation>Mirar</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="439"/>
@@ -19993,7 +19993,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="553"/>
         <source>Resident TEX up to 512 px; up to 4x sampling</source>
-        <translation>TEX residente hasta 512 px; hasta 4x muestreo</translation>
+        <translation>TEX residente hasta 512 px; muestreo de hasta 4x</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="555"/>
@@ -20038,12 +20038,12 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="692"/>
         <source>Missing</source>
-        <translation>Desaparecidos</translation>
+        <translation>Ausente</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="694"/>
         <source>Stream {status}</source>
-        <translation>Transmitir {status}</translation>
+        <translation>Streaming {status}</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="797"/>
@@ -20103,7 +20103,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="861"/>
         <source>LightProbes: {loaded}/{total} loaded</source>
-        <translation>LightProbes: {loaded}/{total} cargado</translation>
+        <translation>LightProbes: {loaded}/{total} cargados</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="897"/>
@@ -20174,7 +20174,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../ui/scene/scn_visibility_panel.py" line="347"/>
         <source>Animation focus hides {count} otherwise visible objects.</source>
-        <translation>El foco de animación se esconde {count} objetos visibles de otro modo.</translation>
+        <translation>El enfoque de animación oculta {count} objetos que de otro modo serían visibles.</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_visibility_panel.py" line="350"/>
@@ -20203,7 +20203,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../ui/scene/scn_raw_inspector.py" line="76"/>
         <source>Raw SCN document is not loaded in the scene document store.</source>
-        <translation>El documento SCN sin procesar no se carga en el almacén de documentos de escena.</translation>
+        <translation>El documento SCN sin procesar no está cargado en el almacén de documentos de escena.</translation>
     </message>
 </context>
 <context>
@@ -20221,18 +20221,18 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="167"/>
         <source>Scene preview is stale. Reload the scene to rebuild from the edited SCN.</source>
-        <translation>La vista previa de la escena es obsoleta. Vuelva a cargar la escena para reconstruirla desde el SCN editado.</translation>
+        <translation>La vista previa de la escena está obsoleta. Vuelva a cargar la escena para reconstruirla desde el SCN editado.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="485"/>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="516"/>
         <source>No SCN is loaded.</source>
-        <translation>No se carga ningún SCN.</translation>
+        <translation>No hay ningún SCN cargado.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="512"/>
         <source>Building source-aware SCN scene graph...</source>
-        <translation>Construyendo un gráfico de escena SCN...</translation>
+        <translation>Construyendo el grafo de escena SCN con sus orígenes...</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="944"/>
@@ -20247,7 +20247,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="951"/>
         <source>Sources: {count}</source>
-        <translation>Fuentes: {count}</translation>
+        <translation>Orígenes: {count}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="952"/>
@@ -20282,7 +20282,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="965"/>
         <source>Missing: {count}</source>
-        <translation>Desaparecidos: {count}</translation>
+        <translation>Ausentes: {count}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="966"/>
@@ -20311,7 +20311,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
         <location filename="../../ui/scene/scn_scene_workspace.py" line="182"/>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="275"/>
         <source>Fold panel</source>
-        <translation>Panel de plegado</translation>
+        <translation>Plegar panel</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="186"/>
@@ -20371,7 +20371,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="596"/>
         <source>Scene save failed: {error}</source>
-        <translation>Fracasó el guardado de escenas: {error}</translation>
+        <translation>Error al guardar la escena: {error}</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="675"/>
@@ -20435,7 +20435,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="44"/>
         <source>{source} is already open in {scene}.</source>
-        <translation>{source} Ya está abierto en {scene}.</translation>
+        <translation>{source} ya está abierto en {scene}.</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="187"/>
@@ -20511,17 +20511,17 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="1114"/>
         <source>Add to New Scene</source>
-        <translation>Añadir a la nueva escena</translation>
+        <translation>Añadir a una escena nueva</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="1200"/>
         <source>Failed to inspect {source}: {error}</source>
-        <translation>Falló la inspección {source}: {error}</translation>
+        <translation>No se pudo inspeccionar {source}: {error}</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="1313"/>
         <source>New Scene</source>
-        <translation>Nueva Escena</translation>
+        <translation>Nueva escena</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_scene_workspace.py" line="1317"/>
@@ -21299,7 +21299,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sdf/program_overview.py" line="576"/>
         <source> · {count} blended targets</source>
-        <translation> · {count} objetivos mezclados</translation>
+        <translation> · {count} destinos con fusión</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/program_overview.py" line="581"/>
@@ -22363,7 +22363,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="309"/>
         <source>Pass</source>
-        <translation>Pasada</translation>
+        <translation>Superada</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="310"/>
@@ -22652,12 +22652,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../ui/project_manager/source_dialog.py" line="9"/>
         <source>Project Source</source>
-        <translation>Fuente del proyecto</translation>
+        <translation>Origen del proyecto</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/source_dialog.py" line="10"/>
         <source>Unpacked game directory (natives/*)</source>
-        <translation>Directorio de juegos sin empaquetar (nativos/*)</translation>
+        <translation>Directorio del juego desempaquetado (natives/*)</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/source_dialog.py" line="11"/>
@@ -22667,7 +22667,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../ui/project_manager/source_dialog.py" line="18"/>
         <source>Choose project source for {game}:</source>
-        <translation>Elija la fuente del proyecto para {game}:</translation>
+        <translation>Elija el origen del proyecto para {game}:</translation>
     </message>
 </context>
 <context>
@@ -22770,7 +22770,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../ui/settings_dialog.py" line="286"/>
         <source>Browse...</source>
-        <translation>Navegar...</translation>
+        <translation>Examinar...</translation>
     </message>
     <message>
         <location filename="../../ui/settings_dialog.py" line="123"/>
@@ -22790,7 +22790,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../ui/settings_dialog.py" line="106"/>
         <source>Game Version (Reload Required):</source>
-        <translation>Versión del juego (Recarga requerida):</translation>
+        <translation>Versión del juego (requiere recargar):</translation>
     </message>
     <message>
         <location filename="../../ui/settings_dialog.py" line="172"/>
@@ -22830,7 +22830,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../ui/settings_dialog.py" line="206"/>
         <source>Verify RSZ CRCs against registry when opening files</source>
-        <translation>Verificar RSZ CRCs contra el registro al abrir archivos</translation>
+        <translation>Verificar los CRC de RSZ con el registro al abrir archivos</translation>
     </message>
     <message>
         <location filename="../../ui/settings_dialog.py" line="218"/>
@@ -22894,7 +22894,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../ui/settings_dialog.py" line="437"/>
         <source>Invalid RSZ type registry JSON file.</source>
-        <translation>Archivo JSON de tipo RSZ no válido.</translation>
+        <translation>Archivo JSON de registro de tipos RSZ no válido.</translation>
     </message>
     <message>
         <location filename="../../ui/settings_dialog.py" line="442"/>
@@ -23268,7 +23268,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="303"/>
         <source>Add</source>
-        <translation>Añadir</translation>
+        <translation>Sumar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="303"/>
@@ -23608,7 +23608,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/mmtr/surface_data.py" line="44"/>
         <source>A value the pass hands its pixel shader, such as a UV set, the normal or the position, read in every pass that has it.</source>
-        <translation>Un valor que la pasada entrega a su sombreador de píxeles, como un conjunto de UV, la normal o la posición, leído en cada pasada que lo tiene.</translation>
+        <translation>Un valor que la pasada entrega a su shader de píxeles, como un conjunto de UV, la normal o la posición, leído en cada pasada que lo tiene.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_code.py" line="112"/>
@@ -23720,7 +23720,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2474"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2573"/>
         <source>Replace Error</source>
-        <translation>Reemplazar error</translation>
+        <translation>Error de reemplazo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2659"/>
@@ -23782,7 +23782,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1795"/>
         <source>Failed to export {label}:
 {error}</source>
-        <translation>Fracasó en la exportación {label}:
+        <translation>No se pudo exportar {label}:
 {error}</translation>
     </message>
     <message>
@@ -23827,7 +23827,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2814"/>
         <source>Analyze Error</source>
-        <translation>Analizar error</translation>
+        <translation>Error de análisis</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="148"/>
@@ -23863,7 +23863,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="451"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="859"/>
         <source>Match original WEM (Recommended)</source>
-        <translation>Partido original WEM (Recomendado)</translation>
+        <translation>Igual que el WEM original (recomendado)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="469"/>
@@ -23875,7 +23875,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="470"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="884"/>
         <source>Medium</source>
-        <translation>Mediano</translation>
+        <translation>Medio</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="471"/>
@@ -23940,7 +23940,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="655"/>
         <source>Reading the sound container…</source>
-        <translation>Leer el contenedor de sonido…</translation>
+        <translation>Leyendo el contenedor de sonido…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="669"/>
@@ -23977,7 +23977,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="710"/>
         <source>Open Companion…</source>
-        <translation>Compañero abierto…</translation>
+        <translation>Abrir archivo complementario…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="728"/>
@@ -23992,7 +23992,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="743"/>
         <source>New Event…</source>
-        <translation>Nuevo Evento…</translation>
+        <translation>Nuevo evento…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="744"/>
@@ -24013,17 +24013,17 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="779"/>
         <source>Event playback graph</source>
-        <translation>Gráfico de reproducción de eventos</translation>
+        <translation>Grafo de reproducción de eventos</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="791"/>
         <source>Hover a node to trace its links. Double-click to edit; scroll to zoom; drag to move the graph.</source>
-        <translation>Haga doble clic para editar; desplácese para hacer zoom; arrastre para mover el gráfico.</translation>
+        <translation>Pase el ratón sobre un nodo para rastrear sus enlaces. Haga doble clic para editar; desplácese para hacer zoom; arrastre para mover el grafo.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="786"/>
         <source>Fit</source>
-        <translation>Ajuste</translation>
+        <translation>Ajustar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="800"/>
@@ -24077,7 +24077,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="866"/>
         <source>Matching the original keeps the game&apos;s storage and runtime profile. A codec-required rate, such as RE4 WEM Opus at 48 kHz, always wins.</source>
-        <translation>Una velocidad requerida por el códec, como RE4 WEM Opus a 48 kHz, siempre gana.</translation>
+        <translation>Coincidir con el original conserva el perfil de almacenamiento y de ejecución del juego. Una frecuencia requerida por el códec, como RE4 WEM Opus a 48 kHz, siempre prevalece.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="876"/>
@@ -24092,7 +24092,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="889"/>
         <source>Quality is codec-aware: Vorbis uses quality factors 0, 2, 4, and 10; WEM Opus uses 32, 64, 128, and 256. PCM and ADPCM have no adjustable compression quality.</source>
-        <translation>La calidad es consciente de los códecs: Vorbis utiliza los factores de calidad 0, 2, 4 y 10; WEM Opus utiliza 32, 64, 128 y 256. PCM y ADPCM no tienen calidad de compresión ajustable.</translation>
+        <translation>La calidad depende del códec: Vorbis utiliza los factores de calidad 0, 2, 4 y 10; WEM Opus utiliza 32, 64, 128 y 256. PCM y ADPCM no tienen calidad de compresión ajustable.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="898"/>
@@ -24102,7 +24102,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="902"/>
         <source>Override the simple quality preset with exact codec parameters. An explicit WAV import codec must be selected.</source>
-        <translation>Anule el ajuste preestablecido de calidad simple con parámetros de códec exactos. Se debe seleccionar un códec de importación WAV explícito.</translation>
+        <translation>Sustituya el preajuste de calidad simple por parámetros de códec exactos. Se debe seleccionar un códec de importación WAV explícito.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="910"/>
@@ -24143,7 +24143,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="953"/>
         <source>Mono and Stereo may reduce package size but intentionally change the authored channel layout. Mono input is not upmixed to stereo.</source>
-        <translation>Mono y estéreo pueden reducir el tamaño del paquete, pero cambiar intencionalmente el diseño del canal de autor.</translation>
+        <translation>Mono y Estéreo pueden reducir el tamaño del paquete, pero cambian intencionadamente la disposición de canales original. Una entrada mono no se convierte a estéreo.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="976"/>
@@ -24217,7 +24217,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1068"/>
         <source>Retarget Link…</source>
-        <translation>Enlace de retargeting…</translation>
+        <translation>Redirigir enlace…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1080"/>
@@ -24227,7 +24227,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1093"/>
         <source>Direct parents  →  &lt;b&gt;Selected object&lt;/b&gt;  →  Direct children &amp;nbsp; · &amp;nbsp; Hover a node to trace its links</source>
-        <translation>Padres directos  →  &lt;b&gt;Objeto seleccionado&lt;/b&gt;  →  Niños directos &amp;nbsp; · &amp;nbsp; Pase el ratón sobre un nodo para rastrear sus enlaces</translation>
+        <translation>Padres directos  →  &lt;b&gt;Objeto seleccionado&lt;/b&gt;  →  Hijos directos &amp;nbsp; · &amp;nbsp; Pase el ratón sobre un nodo para rastrear sus enlaces</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1102"/>
@@ -24259,12 +24259,12 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1212"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1448"/>
         <source>Mix</source>
-        <translation>Mezclar</translation>
+        <translation>Mezcla</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1215"/>
         <source>Preview the complete mix or solo one channel; audio data is not modified.</source>
-        <translation>Vista previa de la mezcla completa o solo un canal; los datos de audio no se modifican.</translation>
+        <translation>Previsualiza la mezcla completa o un solo canal; los datos de audio no se modifican.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1368"/>
@@ -24299,7 +24299,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1547"/>
         <source>Mix ({count} channels)</source>
-        <translation>Mezclar ({count} canales)</translation>
+        <translation>Mezcla ({count} canales)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1552"/>
@@ -24309,7 +24309,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1568"/>
         <source>Playing source {id} — {channels}; analyzing activity…</source>
-        <translation>Jugando fuente {id} — {channels}; análisis de la actividad…</translation>
+        <translation>Reproduciendo la fuente {id} — {channels}; analizando la actividad…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1626"/>
@@ -24324,7 +24324,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="869"/>
         <source>Rate</source>
-        <translation>Velocidad</translation>
+        <translation>Frecuencia</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="893"/>
@@ -24484,22 +24484,22 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1666"/>
         <source>Playing audio; waveform analysis is unavailable.</source>
-        <translation>Reproducción de audio; el análisis de forma de onda no está disponible.</translation>
+        <translation>Reproduciendo audio; el análisis de forma de onda no está disponible.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1674"/>
         <source>no silence detected</source>
-        <translation>Sin silencio detectado</translation>
+        <translation>no se detectó silencio</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1676"/>
         <source>no activity detected</source>
-        <translation>Ninguna actividad detectada</translation>
+        <translation>no se detectó actividad</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1678"/>
         <source>{count} activity segment(s) detected</source>
-        <translation>{count} Segmento(s) de actividad detectado(s)</translation>
+        <translation>{count} segmento(s) de actividad detectado(s)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1682"/>
@@ -24531,13 +24531,13 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1809"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1810"/>
         <source>Export Compiled IR</source>
-        <translation>Exportación Compilado IR</translation>
+        <translation>Exportar IR compilado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1809"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1810"/>
         <source>compiled IR</source>
-        <translation>Compilado IR</translation>
+        <translation>IR compilado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1811"/>
@@ -24552,12 +24552,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1812"/>
         <source>Export Raw Media</source>
-        <translation>Exportación de medios crudos</translation>
+        <translation>Exportar medios sin procesar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1812"/>
         <source>raw media</source>
-        <translation>medios crudos</translation>
+        <translation>medios sin procesar</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1835"/>
@@ -24573,7 +24573,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1846"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1861"/>
         <source>Export Processed IR WAV</source>
-        <translation>Exportación procesada IR WAV</translation>
+        <translation>Exportar WAV de IR procesado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1854"/>
@@ -24583,7 +24583,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1868"/>
         <source>processed convolution IR WAV</source>
-        <translation>convolución procesada IR WAV</translation>
+        <translation>WAV de IR de convolución procesado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1876"/>
@@ -24603,7 +24603,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1905"/>
         <source>Modding requires an active REasy project and a configured PAK directory. Open the Project Browser, create/open a project and set the game folder (PAKs).</source>
-        <translation>El modding requiere un proyecto de REasy activo y un directorio de PAK configurado. Abre el Explorador de proyectos, crea o abre un proyecto y configura la carpeta del juego (PAK).</translation>
+        <translation>El modding requiere un proyecto de REasy activo y un directorio de PAK configurado. Abre el Navegador de proyectos, crea o abre un proyecto y configura la carpeta del juego (PAK).</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1914"/>
@@ -24633,7 +24633,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1968"/>
         <source>Updated {loops} loop(s) and {markers} marker(s) in source {id} across {count} verified file(s).</source>
-        <translation>Actualizado {loops} bucle(s) y {markers} Marcador(es) en la fuente {id} a través {count} archivo(s) verificado(s).</translation>
+        <translation>Se actualizaron {loops} bucle(s) y {markers} marcador(es) en la fuente {id} en {count} archivo(s) verificado(s).</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1985"/>
@@ -24663,12 +24663,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1996"/>
         <source>Exporting media…</source>
-        <translation>Exportación de medios…</translation>
+        <translation>Exportando medios…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2002"/>
         <source>Exporting source {id}</source>
-        <translation>Fuente de exportación {id}</translation>
+        <translation>Exportando la fuente {id}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2056"/>
@@ -24714,12 +24714,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2150"/>
         <source> (matched original WEM)</source>
-        <translation> (WEM original emparejado)</translation>
+        <translation> (igual que el WEM original)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2152"/>
         <source> (kept imported WAV)</source>
-        <translation> (mantenido importado WAV)</translation>
+        <translation> (se mantiene el WAV importado)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2160"/>
@@ -24729,17 +24729,17 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2162"/>
         <source>Wwise authoring is unavailable because this game has no registered sound profile.</source>
-        <translation>Wwise authoring no está disponible porque este juego no tiene ningún perfil de sonido registrado.</translation>
+        <translation>La creación con Wwise no está disponible porque este juego no tiene ningún perfil de sonido registrado.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2178"/>
         <source>Wwise Installation Required — {game}</source>
-        <translation>A través de la instalación requerida — {game}</translation>
+        <translation>Se requiere instalación de Wwise — {game}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2179"/>
         <source>Select the version folder containing Authoring.</source>
-        <translation>Seleccione la carpeta de versión que contiene la creación.</translation>
+        <translation>Seleccione la carpeta de la versión que contiene Authoring.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2185"/>
@@ -24774,7 +24774,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2290"/>
         <source>The compiled IR uses different decay tuning. Import its WAV instead so Wwise can author it with this effect&apos;s existing tuning.</source>
-        <translation>El IR compilado utiliza diferentes ajustes de decaimiento. Importa su WAV para que Wwise pueda crearlo con la afinación existente de este efecto.</translation>
+        <translation>El IR compilado utiliza un ajuste de decaimiento diferente. Importa su WAV para que Wwise pueda crearlo con el ajuste existente de este efecto.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2295"/>
@@ -24829,7 +24829,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2415"/>
         <source>Some selected BNK entries are prefetch fragments. Replace the same source IDs in the matching PCK.</source>
-        <translation>Algunas entradas de BNK seleccionadas son fragmentos de prebúsqueda. Reemplace los mismos ID de origen en el PCK correspondiente.</translation>
+        <translation>Algunas entradas de BNK seleccionadas son fragmentos de precarga. Reemplace los mismos ID de origen en el PCK correspondiente.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2417"/>
@@ -24876,7 +24876,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2494"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2622"/>
         <source>Authoring {file}: {rates}…</source>
-        <translation>Autoría {file}: {rates}…</translation>
+        <translation>Creando {file}: {rates}…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2510"/>
@@ -24891,17 +24891,17 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2534"/>
         <source>Hybrid Reverb IR</source>
-        <translation>Reverb híbrido IR</translation>
+        <translation>IR de Hybrid Reverb</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2535"/>
         <source>Convolution Reverb IR</source>
-        <translation>Reverberación de convolución IR</translation>
+        <translation>IR de Convolution Reverb</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2536"/>
         <source>Crankcase Audio REV model</source>
-        <translation>Modelo de cárter Audio REV</translation>
+        <translation>Modelo REV de Crankcase Audio</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2537"/>
@@ -24916,7 +24916,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2546"/>
         <source> (matched original)</source>
-        <translation> (original emparejado)</translation>
+        <translation> (igual que el original)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2548"/>
@@ -24926,12 +24926,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2558"/>
         <source> · {quality} quality</source>
-        <translation> · {quality} calidad</translation>
+        <translation> · calidad {quality}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2562"/>
         <source>Replaced source {id} in {count} verified file(s) with {file} ({encoding}){rates}.</source>
-        <translation>Fuente sustituida {id} en {count} archivo(s) verificado(s) con {file} ({encoding}){rates}.</translation>
+        <translation>Se sustituyó la fuente {id} en {count} archivo(s) verificado(s) por {file} ({encoding}){rates}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2576"/>
@@ -24956,17 +24956,17 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2604"/>
         <source>Source ID {id} already exists.</source>
-        <translation>ID de fuente {id} ya existe.</translation>
+        <translation>El ID de fuente {id} ya existe.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2610"/>
         <source>Select Audio for Source {id}</source>
-        <translation>Seleccione Audio para la fuente {id}</translation>
+        <translation>Seleccionar audio para la fuente {id}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2638"/>
         <source>streamed PCK</source>
-        <translation>PCK transmitido</translation>
+        <translation>PCK de streaming</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2639"/>
@@ -24991,32 +24991,32 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2703"/>
         <source>Replacing media…</source>
-        <translation>Sustitución de medios…</translation>
+        <translation>Sustituyendo medios…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2723"/>
         <source>Authoring {count} WAV file(s) in one Wwise batch…</source>
-        <translation>Autoría {count} Archivo(s) WAV de un solo lote Wwise…</translation>
+        <translation>Creando {count} archivo(s) WAV en un solo lote de Wwise…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2764"/>
         <source>Replacing source {id}</source>
-        <translation>Reemplazo de fuente {id}</translation>
+        <translation>Reemplazando la fuente {id}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2778"/>
         <source>Replacing source {id} · {rates}</source>
-        <translation>Reemplazo de fuente {id} · {rates}</translation>
+        <translation>Reemplazando la fuente {id} · {rates}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2791"/>
         <source>No authored media was produced.</source>
-        <translation>No se produjeron medios de comunicación de autor.</translation>
+        <translation>No se generó ningún medio.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2804"/>
         <source>Bulk replace: {done}/{total} succeeded.</source>
-        <translation>Reemplazo a granel: {done}/{total} tenido éxito.</translation>
+        <translation>Reemplazo masivo: {done}/{total} correctos.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2818"/>
@@ -25026,7 +25026,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2853"/>
         <source>Events &amp; Audio</source>
-        <translation>Eventos &amp; Audio</translation>
+        <translation>Eventos y audio</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2854"/>
@@ -25051,7 +25051,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2870"/>
         <source>Embed a new Source ID in this BNK&apos;s DIDX/DATA media table. This adds media without inventing Event or Action graph links.</source>
-        <translation>Incruste un nuevo ID de origen en la tabla de medios DIDX/DATA de esta BNK. Esto agrega medios sin inventar enlaces gráficos de eventos o acciones.</translation>
+        <translation>Incruste un nuevo ID de origen en la tabla de medios DIDX/DATA de esta BNK. Esto agrega medios sin inventar enlaces del grafo de eventos o acciones.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2907"/>
@@ -25076,12 +25076,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2945"/>
         <source>Bank Settings Error</source>
-        <translation>Error de configuración bancaria</translation>
+        <translation>Error de ajustes del banco</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3008"/>
         <source>Type + ID collision · read-only</source>
-        <translation>Tipo + colisión de ID · solo lectura</translation>
+        <translation>Colisión de tipo + ID · solo lectura</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3010"/>
@@ -25156,7 +25156,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3319"/>
         <source>Cross-bank Wwise object</source>
-        <translation>Objeto Wwise de banco cruzado</translation>
+        <translation>Objeto Wwise de otro banco</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3320"/>
@@ -25187,7 +25187,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3410"/>
         <source>{level} (type-qualified; ShortID is shared)</source>
-        <translation>{level} (tipo-calificado; ShortID es compartido)</translation>
+        <translation>{level} (calificado por tipo; el ShortID es compartido)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3412"/>
@@ -25207,12 +25207,12 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3470"/>
         <source>Name or numeric ShortID:</source>
-        <translation>Nombre o número ShortID:</translation>
+        <translation>Nombre o ShortID numérico:</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3477"/>
         <source>Invalid name or ShortID.</source>
-        <translation>Nombre no válido o ShortID.</translation>
+        <translation>Nombre o ShortID no válido.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3485"/>
@@ -25225,7 +25225,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3512"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4129"/>
         <source>ShortID {id} already exists.</source>
-        <translation>ShortID {id} ya existe.</translation>
+        <translation>El ShortID {id} ya existe.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3499"/>
@@ -25256,7 +25256,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3543"/>
         <source>Deleted {type} {id}.</source>
-        <translation>Suprimido {type} {id}.</translation>
+        <translation>Se eliminó {type} {id}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3551"/>
@@ -25278,7 +25278,7 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3582"/>
         <source>No compatible unconnected child is available.</source>
-        <translation>Ningún niño compatible no conectado está disponible.</translation>
+        <translation>No hay ningún objeto hijo compatible sin conectar.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3585"/>
@@ -25290,7 +25290,7 @@ Primitiva: {topology}.</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3594"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3604"/>
         <source>Reparent Child</source>
-        <translation>Repadre Niño</translation>
+        <translation>Cambiar el padre del objeto hijo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3595"/>
@@ -25320,13 +25320,13 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3669"/>
         <source>offset {offset} · {role} → {type} {id}</source>
-        <translation>compensación {offset} · {role} → {type} {id}</translation>
+        <translation>desplazamiento {offset} · {role} → {type} {id}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3680"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3691"/>
         <source>Retarget Exact Link</source>
-        <translation>Retargetar enlace exacto</translation>
+        <translation>Redirigir enlace exacto</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3680"/>
@@ -25341,14 +25341,14 @@ Primitiva: {topology}.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3698"/>
         <source>Retargeted {role} in {id} to {target}.</source>
-        <translation>Reorientado {role} en {id} a {target}.</translation>
+        <translation>Se redirigió {role} en {id} a {target}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3718"/>
         <source>All Sources
 {count} media source(s)</source>
         <translation>Todas las fuentes
-{count} fuente(es) de medios</translation>
+{count} fuente(s) de medios</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3724"/>
@@ -25375,7 +25375,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3785"/>
         <source>unknown resource</source>
-        <translation>recursos desconocidos</translation>
+        <translation>recurso desconocido</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3789"/>
@@ -25406,7 +25406,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3822"/>
         <source>ShortID {id} · {count} Actions</source>
-        <translation>ShortID {id} · {count} Medidas</translation>
+        <translation>ShortID {id} · {count} acciones</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3834"/>
@@ -25452,7 +25452,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3893"/>
         <source>Switch</source>
-        <translation>Cambiar</translation>
+        <translation>Interruptor</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3897"/>
@@ -25477,7 +25477,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3918"/>
         <source>Action {id} · {target}</source>
-        <translation>Medidas adoptadas {id} · {target}</translation>
+        <translation>Acción {id} · {target}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3944"/>
@@ -25487,12 +25487,12 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3996"/>
         <source>Audio source {id} · use the media controls below.</source>
-        <translation>Fuente de audio {id} · Utilice los controles de medios a continuación.</translation>
+        <translation>Fuente de audio {id} · utilice los controles de medios a continuación.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4003"/>
         <source>Wwise control value {id}; edit it through its parent Action.</source>
-        <translation>Wwise valor de control {id}; editarlo a través de su acción principal.</translation>
+        <translation>Valor de control de Wwise {id}; edítelo a través de su acción padre.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4008"/>
@@ -25527,7 +25527,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4112"/>
         <source>New Play Action</source>
-        <translation>Nueva acción de juego</translation>
+        <translation>Nueva acción Reproducir</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4112"/>
@@ -25566,12 +25566,12 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4191"/>
         <source>Added Action {action} to Event {event}.</source>
-        <translation>Añadida acción {action} al evento {event}.</translation>
+        <translation>Se añadió la acción {action} al evento {event}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4193"/>
         <source>Added unattached Action {id}; connect it from an Event when needed.</source>
-        <translation>Añadida la acción desapegada {id}; conectarlo desde un Evento cuando sea necesario.</translation>
+        <translation>Se añadió la acción no vinculada {id}; conéctela desde un evento cuando sea necesario.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4209"/>
@@ -25594,32 +25594,32 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4218"/>
         <source>Object ID {id} already exists.</source>
-        <translation>ID de objeto {id} ya existe.</translation>
+        <translation>El ID de objeto {id} ya existe.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4225"/>
         <source> from &apos;{name}&apos;</source>
-        <translation> Desde &apos;{name}&apos;</translation>
+        <translation> desde &apos;{name}&apos;</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4226"/>
         <source>Added Event {id}{note}.</source>
-        <translation>Evento añadido {id}{note}.</translation>
+        <translation>Se añadió el evento {id}{note}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4236"/>
         <source>Updated Event {id}.</source>
-        <translation>Evento actualizado {id}.</translation>
+        <translation>Se actualizó el evento {id}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4245"/>
         <source>Delete Event {id}? Actions remain in the bank.</source>
-        <translation>Borrar evento {id}Las acciones permanecen en el banco.</translation>
+        <translation>¿Borrar el evento {id}? Las acciones permanecen en el banco.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4253"/>
         <source>Deleted Event {id}.</source>
-        <translation>Evento eliminado {id}.</translation>
+        <translation>Se eliminó el evento {id}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4279"/>
@@ -25709,7 +25709,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4347"/>
         <source>{count} Events</source>
-        <translation>{count} Eventos</translation>
+        <translation>{count} eventos</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4356"/>
@@ -25720,7 +25720,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4363"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4385"/>
         <source>Streaming PCK Mismatch</source>
-        <translation>Transmisión de PCK Mismatch</translation>
+        <translation>Discrepancia del PCK de streaming</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4367"/>
@@ -25740,7 +25740,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4429"/>
         <source>Open Verified Companion</source>
-        <translation>Compañero Verificado Abierto</translation>
+        <translation>Abrir archivo complementario verificado</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4430"/>
@@ -25775,27 +25775,27 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4458"/>
         <source>Wwise MIDI sequence</source>
-        <translation>Secuencia MIDI wwise</translation>
+        <translation>Secuencia MIDI de Wwise</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4459"/>
         <source>Hybrid Reverb impulse media</source>
-        <translation>Medios de impulso de reverberación híbrida</translation>
+        <translation>Medios de impulso de Hybrid Reverb</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4460"/>
         <source>Convolution Reverb impulse media</source>
-        <translation>Medios de impulso de convolución</translation>
+        <translation>Medios de impulso de Convolution Reverb</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4461"/>
         <source>Crankcase Audio REV vehicle model</source>
-        <translation>Modelo del vehículo del cárter Audio REV</translation>
+        <translation>Modelo de vehículo REV de Crankcase Audio</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4462"/>
         <source>unknown media</source>
-        <translation>Medios Desconocidos</translation>
+        <translation>medios desconocidos</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4466"/>
@@ -25805,7 +25805,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4467"/>
         <source>The {kind} is complete, but replacement requires a profile for this game.</source>
-        <translation>Los {kind} está completo, pero el reemplazo requiere un perfil para este juego.</translation>
+        <translation>El contenido ({kind}) está completo, pero el reemplazo requiere un perfil para este juego.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4469"/>
@@ -25825,7 +25825,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4474"/>
         <source>This SBNK contains only the prefetch prefix. Preview, export, and replacement resolve the full Source-ID-matched PCK automatically.</source>
-        <translation>Este SBNK contiene solo el prefijo de búsqueda previa. Vista previa, exportación y reemplazo resuelve automáticamente el PCK completo coincidente con el ID de origen.</translation>
+        <translation>Este SBNK contiene solo el prefijo de precarga. La vista previa, la exportación y el reemplazo resuelven automáticamente el PCK completo coincidente con el ID de origen.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4478"/>
@@ -25845,17 +25845,17 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4481"/>
         <source>It can be inspected, replaced from MID, or exported here.</source>
-        <translation>Puede ser inspeccionado, reemplazado desde MID, o exportado aquí.</translation>
+        <translation>Se puede inspeccionar, reemplazar desde MID o exportar aquí.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4482"/>
         <source>Its processed early reflections can be previewed/exported; WAV replacement is authored by Wwise.</source>
-        <translation>Sus reflexiones tempranas procesadas se pueden previsualizar / exportar; El reemplazo de WAV es de Wwise.</translation>
+        <translation>Sus reflexiones tempranas procesadas se pueden previsualizar/exportar; el reemplazo de WAV lo crea Wwise.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4483"/>
         <source>Its processed impulse can be previewed/exported; WAV replacement is authored by Wwise.</source>
-        <translation>Su impulso procesado se puede previsualizar/exportar; el reemplazo de WAV es de Wwise.</translation>
+        <translation>Su impulso procesado se puede previsualizar/exportar; el reemplazo de WAV lo crea Wwise.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4484"/>
@@ -25870,7 +25870,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4486"/>
         <source>This file contains the complete {kind}. </source>
-        <translation>Este archivo contiene el {kind}. </translation>
+        <translation>Este archivo contiene el contenido completo ({kind}). </translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4488"/>
@@ -25890,7 +25890,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4493"/>
         <source>This is a BNK prefetch fragment. REasy will update it and all verified PCK counterparts together.</source>
-        <translation>Este es un fragmento de prebúsqueda de BNK. REasy lo actualizará junto con todas las contrapartes verificadas de PCK.</translation>
+        <translation>Este es un fragmento de precarga de BNK. REasy lo actualizará junto con todas las contrapartes verificadas de PCK.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4495"/>
@@ -25937,13 +25937,13 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4508"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4512"/>
         <source>Export Compiled IR…</source>
-        <translation>Exportación Compilado IR…</translation>
+        <translation>Exportar IR compilado…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4509"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4513"/>
         <source>Export Processed IR WAV…</source>
-        <translation>Exportación procesada IR WAV…</translation>
+        <translation>Exportar WAV de IR procesado…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4516"/>
@@ -25968,7 +25968,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4520"/>
         <source>Export Raw Media…</source>
-        <translation>Exportación de medios crudos…</translation>
+        <translation>Exportar medios sin procesar…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4521"/>
@@ -25983,17 +25983,17 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4533"/>
         <source>Import a mono/stereo PCM16 or PCM24 WAV through the matching, licensed iZotope Hybrid Reverb plug-in. Existing decay tuning is retained.</source>
-        <translation>Importa un PCM16 o PCM24 WAV mono/estéreo a través del plug-in iZotope Hybrid Reverb con licencia correspondiente. Se mantiene la sintonización de decaimiento existente.</translation>
+        <translation>Importa un WAV PCM16 o PCM24 mono/estéreo mediante el plug-in iZotope Hybrid Reverb correspondiente y con licencia. Se conserva el ajuste de decaimiento existente.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4538"/>
         <source>Import a PCM16 or PCM24 WAV through the game&apos;s matching Wwise Convolution Reverb plug-in, or import an already compiled WIR.</source>
-        <translation>Importar un PCM16 o PCM24 WAV a través de la coincidencia del juego Wwise Convolution Reverb plug-in, o importar un WIR ya compilado.</translation>
+        <translation>Importa un WAV PCM16 o PCM24 mediante el plug-in Wwise Convolution Reverb correspondiente del juego, o importa un WIR ya compilado.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4549"/>
         <source>Import an already compiled Crankcase Audio REV ADM3 model. REV models are interactive vehicle-engine data, not WAV audio.</source>
-        <translation>Importe un modelo REV ADM3 de Crankase Audio ya compilado. Los modelos REV son datos interactivos del motor del vehículo, no audio WAV.</translation>
+        <translation>Importe un modelo REV ADM3 de Crankcase Audio ya compilado. Los modelos REV son datos interactivos del motor del vehículo, no audio WAV.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4554"/>
@@ -26013,7 +26013,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4572"/>
         <source> Used by Event(s): {events}.</source>
-        <translation> Utilizado por Evento(s): {events}.</translation>
+        <translation> Utilizado por evento(s): {events}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4677"/>
@@ -26038,7 +26038,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4682"/>
         <source>Prefetch fragment</source>
-        <translation>Fragmento de prebúsqueda</translation>
+        <translation>Fragmento de precarga</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4685"/>
@@ -26053,12 +26053,12 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4726"/>
         <source>{name}Event {id} — {count} media source(s)</source>
-        <translation>{name}Evento {id} — {count} fuente(es) de medios</translation>
+        <translation>{name}Evento {id} — {count} fuente(s) de medios</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4734"/>
         <source>All media sources — {count} shown</source>
-        <translation>Todas las fuentes de medios — {count} mostrado</translation>
+        <translation>Todas las fuentes de medios — {count} mostradas</translation>
     </message>
 </context>
 <context>
@@ -27689,7 +27689,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
         <location filename="../../file_handlers/strands/controls.py" line="177"/>
         <location filename="../../file_handlers/strands/controls.py" line="233"/>
         <source>Browse…</source>
-        <translation>Navegar…</translation>
+        <translation>Examinar…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/strands/controls.py" line="152"/>
@@ -27815,7 +27815,7 @@ ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1432"/>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1459"/>
         <source>You are not in project mode. Please open a project (&quot;File&quot; &gt; &quot;New Mod/Open Project&quot;)</source>
-        <translation>Usted no está en modo de proyecto. Por favor, abra un proyecto (&quot;Archivo&quot;  &quot;Nuevo Mod/Proyecto Abierto&quot;)</translation>
+        <translation>No está en modo de proyecto. Por favor, abra un proyecto (&quot;Archivo&quot; &gt; &quot;Nuevo mod/Abrir proyecto&quot;)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1540"/>
@@ -27834,9 +27834,9 @@ Resource: {}
 Searched in both PAK files and system files.</source>
         <translation>Error: No se encontró el archivo de recurso.
 
-Recursos: {}
+Recurso: {}
 
-Se busca tanto en archivos PAK como en archivos del sistema.</translation>
+Se buscó tanto en archivos PAK como en archivos del sistema.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="1482"/>
@@ -28002,7 +28002,7 @@ Se busca tanto en archivos PAK como en archivos del sistema.</translation>
     <message>
         <location filename="../../ui/template_manager_dialog.py" line="138"/>
         <source>Parent:</source>
-        <translation>Padres:</translation>
+        <translation>Padre:</translation>
     </message>
     <message>
         <location filename="../../ui/template_manager_dialog.py" line="142"/>
@@ -28013,7 +28013,7 @@ Se busca tanto en archivos PAK como en archivos del sistema.</translation>
         <location filename="../../ui/template_manager_dialog.py" line="146"/>
         <location filename="../../ui/template_manager_dialog.py" line="461"/>
         <source>Import Template</source>
-        <translation>Plantilla de importación</translation>
+        <translation>Importar plantilla</translation>
     </message>
     <message>
         <location filename="../../ui/template_manager_dialog.py" line="201"/>
@@ -28163,7 +28163,7 @@ Se busca tanto en archivos PAK como en archivos del sistema.</translation>
     <message>
         <location filename="../../file_handlers/tex/tex_viewer.py" line="194"/>
         <source>Fit to Window</source>
-        <translation>Ajuste a la ventana</translation>
+        <translation>Ajustar a la ventana</translation>
     </message>
     <message>
         <location filename="../../file_handlers/tex/tex_viewer.py" line="211"/>
@@ -28409,7 +28409,7 @@ Descárgalo desde {page} y extráelo en:
         <source>{version} is available.
 Do you want to auto-download and update now?</source>
         <translation>{version} está disponible.
-¿Quieres auto-descargar y actualizar ahora?</translation>
+¿Quieres descargar y actualizar automáticamente ahora?</translation>
     </message>
     <message>
         <location filename="../../ui/update_notification.py" line="137"/>
@@ -28424,7 +28424,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../ui/update_notification.py" line="168"/>
         <source>Auto-update script not found. Opening releases page instead.</source>
-        <translation>No se encontró el script de actualización automática. Abrir página de lanzamientos en su lugar.</translation>
+        <translation>No se encontró el script de actualización automática. Se abrirá la página de versiones en su lugar.</translation>
     </message>
 </context>
 <context>
@@ -28448,12 +28448,12 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../ui/update_progress_dialog.py" line="122"/>
         <source>Staging completed.</source>
-        <translation>Estadificación completada.</translation>
+        <translation>Preparación completada.</translation>
     </message>
     <message>
         <location filename="../../ui/update_progress_dialog.py" line="125"/>
         <source>Update failed with code {exit_code}. See log above for details.</source>
-        <translation>Actualización fallida con código {exit_code}. Ver registro arriba para más detalles.</translation>
+        <translation>La actualización falló con el código {exit_code}. Consulte el registro de arriba para más detalles.</translation>
     </message>
 </context>
 <context>
@@ -28621,7 +28621,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="620"/>
         <source>Change Name Hash</source>
-        <translation>Cambiar nombre Hash</translation>
+        <translation>Cambiar hash del nombre</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="622"/>
@@ -28683,7 +28683,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="72"/>
         <source>Variable Type</source>
-        <translation>Tipo variable</translation>
+        <translation>Tipo de variable</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="36"/>
@@ -28781,12 +28781,12 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="763"/>
         <source>Base Name (Optional)</source>
-        <translation>Nombre de la base (opcional)</translation>
+        <translation>Nombre base (opcional)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="764"/>
         <source>Enter base name (leave empty for auto: {name}):</source>
-        <translation>Introduzca el nombre de la base (déjela vacía para auto: {name}):</translation>
+        <translation>Introduzca el nombre base (déjelo vacío para usar el automático: {name}):</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="821"/>
@@ -28853,7 +28853,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1336"/>
         <source>Parameter Name Hash</source>
-        <translation>Parámetro Nombre Hash</translation>
+        <translation>Hash del nombre del parámetro</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1337"/>
@@ -28889,7 +28889,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1473"/>
         <source>Change Parameter Name Hash</source>
-        <translation>Cambiar parámetro Nombre Hash</translation>
+        <translation>Cambiar el hash del nombre del parámetro</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1494"/>
@@ -28930,7 +28930,7 @@ Do you want to auto-download and update now?</source>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1535"/>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1595"/>
         <source>Self-connections are not allowed.</source>
-        <translation>No se permiten conexiones automáticas.</translation>
+        <translation>No se permiten conexiones de un nodo consigo mismo.</translation>
     </message>
 </context>
 <context>
@@ -29107,7 +29107,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="533"/>
         <source>Source</source>
-        <translation>Fuente</translation>
+        <translation>Origen</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="535"/>
@@ -29195,7 +29195,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="2350"/>
         <source>Select Color</source>
-        <translation>Selecciona Color</translation>
+        <translation>Seleccionar color</translation>
     </message>
 </context>
 <context>
@@ -29228,7 +29228,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/pyside/value_widgets.py" line="254"/>
         <source>Paste Error</source>
-        <translation>Pegar error</translation>
+        <translation>Error al pegar</translation>
     </message>
 </context>
 <context>
@@ -29250,7 +29250,7 @@ Activos de juego extraídos, utilizados como referencia de solo lectura.</transl
     <message>
         <location filename="../../ui/project_manager/view_rail.py" line="32"/>
         <source>My Mod</source>
-        <translation>Mi Mod</translation>
+        <translation>Mi mod</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/view_rail.py" line="43"/>
@@ -29262,9 +29262,9 @@ Activos de juego extraídos, utilizados como referencia de solo lectura.</transl
         <source>My Mod
 
 The mod&apos;s own files. Edits here are what gets exported.</source>
-        <translation>Mi Mod
+        <translation>Mi mod
 
-Los propios archivos del mod. Ediciones aquí son lo que se exporta.</translation>
+Los archivos propios del mod. Lo que se edita aquí es lo que se exporta.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/view_rail.py" line="34"/>
@@ -29278,7 +29278,7 @@ Los propios archivos del mod. Ediciones aquí son lo que se exporta.</translatio
 Paths inside the game&apos;s .pak archives.</source>
         <translation>Archivos PAK
 
-Caminos dentro del juego .pak Archivos.</translation>
+Rutas dentro de los archivos .pak del juego.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/view_rail.py" line="36"/>
@@ -29308,7 +29308,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_waveform.py" line="186"/>
         <source>Blue: waveform · Green: activity · Dark: silence · Yellow: play position</source>
-        <translation>Azul: forma de onda · Verde: actividad · Oscuro: silencio · Amarillo: posición de juego</translation>
+        <translation>Azul: forma de onda · Verde: actividad · Oscuro: silencio · Amarillo: posición de reproducción</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_waveform.py" line="188"/>
@@ -29318,7 +29318,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_waveform.py" line="245"/>
         <source>Waveform appears after preview</source>
-        <translation>Waveform aparece después de la vista previa</translation>
+        <translation>La forma de onda aparece después de la vista previa</translation>
     </message>
 </context>
 <context>
@@ -29369,7 +29369,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="139"/>
         <source>Flags</source>
-        <translation>Banderas</translation>
+        <translation>Indicadores</translation>
     </message>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="161"/>
@@ -29379,12 +29379,12 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="175"/>
         <source>Newest</source>
-        <translation>Lo más reciente</translation>
+        <translation>Más reciente</translation>
     </message>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="175"/>
         <source>Oldest</source>
-        <translation>Los más antiguos</translation>
+        <translation>Más antiguo</translation>
     </message>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="238"/>
@@ -29394,7 +29394,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="320"/>
         <source>Editing event {index}</source>
-        <translation>Edición de evento {index}</translation>
+        <translation>Editando el evento {index}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="126"/>
@@ -29411,7 +29411,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="132"/>
         <source>Recovered {game} name</source>
-        <translation>Recuperado {game} nombre</translation>
+        <translation>Nombre recuperado de {game}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="191"/>
@@ -29421,7 +29421,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="194"/>
         <source>These are 16 packed game-side slots (0–7: 4-bit, 8–11: 8-bit, 12–15: signed 16-bit). Their exact meanings are not proven, so REasy preserves every value.</source>
-        <translation>Se trata de 16 ranuras del lado del juego lleno (0–7: 4-bit, 8–11: 8-bit, 12–15: firmado 16 bits). Sus significados exactos no están probados, por lo que REasy conserva todos los valores.</translation>
+        <translation>Se trata de 16 ranuras empaquetadas del lado del juego (0–7: 4 bits, 8–11: 8 bits, 12–15: 16 bits con signo). Sus significados exactos no están probados, por lo que REasy conserva todos los valores.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/wel/wel_viewer.py" line="211"/>
@@ -29456,7 +29456,7 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
         <source>
 Reference targets are changed through a type-safe picker.</source>
         <translation>
-Los objetivos de referencia se cambian a través de un selector de tipo seguro.</translation>
+Los objetivos de referencia se cambian a través de un selector con seguridad de tipos.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="854"/>
@@ -29505,7 +29505,7 @@ Los objetivos de referencia se cambian a través de un selector de tipo seguro.<
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="233"/>
         <source>Context usage: {used} of {window} tokens ({percent:.1f}%). Conversation compacts at {threshold}.</source>
-        <translation>Uso del contexto: {used} de {window} tokens ({percent:.1f}%). Conversaciones compactas en {threshold}.</translation>
+        <translation>Uso del contexto: {used} de {window} tokens ({percent:.1f}%). La conversación se compacta a los {threshold}.</translation>
     </message>
 </context>
 <context>
@@ -29806,12 +29806,12 @@ Coordenadas de textura siguen el desplegado UV de la malla, adecuado para textur
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="684"/>
         <source>Failed</source>
-        <translation>Fracasó</translation>
+        <translation>Fallido</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="689"/>
         <source>Source</source>
-        <translation>Fuente</translation>
+        <translation>Origen</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="690"/>
@@ -29841,7 +29841,7 @@ Coordenadas de textura siguen el desplegado UV de la malla, adecuado para textur
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="699"/>
         <source>Jobs</source>
-        <translation>Empleos</translation>
+        <translation>Tareas</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="700"/>
@@ -29856,7 +29856,7 @@ Coordenadas de textura siguen el desplegado UV de la malla, adecuado para textur
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="702"/>
         <source>Failures</source>
-        <translation>Fracasos</translation>
+        <translation>Errores</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="703"/>

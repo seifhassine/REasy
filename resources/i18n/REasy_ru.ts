@@ -445,7 +445,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1281"/>
         <source>Component deleted successfully, but failed to refresh UI. Please save and reload</source>
-        <translation>Компонент успешно удалён, но не удалось обновить интерфейс. Сохранитесь и перезапустите</translation>
+        <translation>Компонент успешно удалён, но не удалось обновить интерфейс. Сохраните файл и откройте его заново</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1286"/>
@@ -533,7 +533,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1550"/>
         <source>Added {type} to GameObject, but failed to refresh UI. Please save and reload</source>
-        <translation>{type} добавлен в GameObject, но не удалось обновить интерфейс. Сохранитесь и перезапустите</translation>
+        <translation>{type} добавлен в GameObject, но не удалось обновить интерфейс. Сохраните файл и откройте его заново</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1557"/>
@@ -555,7 +555,7 @@ This will delete the GameObject, {count} component(s) and all child GameObjects<
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1622"/>
         <source>GameObject deleted successfully, but failed to refresh UI. Please save and reload</source>
-        <translation>GameObject успешно удалён, но не удалось обновить интерфейс. Сохранитесь и перезапустите</translation>
+        <translation>GameObject успешно удалён, но не удалось обновить интерфейс. Сохраните файл и откройте его заново</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1627"/>
@@ -652,7 +652,7 @@ This is optional: resources are rebuilt automatically on save.</source>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1833"/>
         <source>Added resource &apos;{path}&apos;, but failed to refresh UI. Please save and reload</source>
-        <translation>Ресурс «{path}» добавлен, но не удалось обновить интерфейс. Сохранитесь и перезапустите</translation>
+        <translation>Ресурс «{path}» добавлен, но не удалось обновить интерфейс. Сохраните файл и откройте его заново</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1837"/>
@@ -1059,7 +1059,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="870"/>
         <source>The AI server returned non-text tool arguments.</source>
-        <translation>ИИ-сервер вернул не текстовые аргументы инструмента.</translation>
+        <translation>ИИ-сервер вернул нетекстовые аргументы инструмента.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="985"/>
@@ -1079,7 +1079,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/tools.py" line="1042"/>
         <source>Read the file update report</source>
-        <translation>Прочитать отчёт об обновлении файла</translation>
+        <translation>Отчёт об обновлении файла прочитан</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1057"/>
@@ -1144,22 +1144,22 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/tools.py" line="1173"/>
         <source>Opening the project library</source>
-        <translation>Открытие библиотеки проекта</translation>
+        <translation>Открытие библиотеки проектов</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1174"/>
         <source>Opened the project library</source>
-        <translation>Библиотека проекта открыта</translation>
+        <translation>Библиотека проектов открыта</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1191"/>
         <source>Looking through your project library</source>
-        <translation>Поиск в библиотеке вашего проекта</translation>
+        <translation>Поиск в вашей библиотеке проектов</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1192"/>
         <source>Checked your project library</source>
-        <translation>Проверена библиотека вашего проекта</translation>
+        <translation>Проверена ваша библиотека проектов</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1210"/>
@@ -1204,12 +1204,12 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/tools.py" line="1226"/>
         <source>Opening project creation</source>
-        <translation>Открытие создания проекта</translation>
+        <translation>Открытие окна создания проекта</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1227"/>
         <source>Opened project creation</source>
-        <translation>Создание проекта открыто</translation>
+        <translation>Окно создания проекта открыто</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1234"/>
@@ -1548,7 +1548,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1162"/>
         <source>Thinking</source>
-        <translation>Думает</translation>
+        <translation>Мышление</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1164"/>
@@ -1585,7 +1585,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1204"/>
         <source>High uses DeepSeek&apos;s standard reasoning depth; Max uses its deepest reasoning.</source>
-        <translation>High использует стандартную глубину рассуждений DeepSeek; Max — максимальную глубину.</translation>
+        <translation>«Высокое» использует стандартную глубину рассуждений DeepSeek; «Макс» — максимальную.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1842"/>
@@ -1664,7 +1664,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1070"/>
         <source>Local AI endpoint</source>
-        <translation>Локальная ИИ-конечная точка</translation>
+        <translation>Локальная конечная точка ИИ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1073"/>
@@ -1704,7 +1704,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1678"/>
         <source>Local AI endpoint must use localhost, 127.0.0.0/8, or [::1] over http:// or https://.</source>
-        <translation>Локальная ИИ-конечная точка должна использовать localhost, 127.0.0.0/8 или [::1] по http:// или https://.</translation>
+        <translation>Локальная конечная точка ИИ должна использовать localhost, 127.0.0.0/8 или [::1] по http:// или https://.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2010"/>
@@ -2013,12 +2013,12 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="477"/>
         <source>Inspecting RSZ update analysis</source>
-        <translation>Анализ обновления RSZ</translation>
+        <translation>Просмотр анализа обновления RSZ</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="478"/>
         <source>Inspected RSZ update analysis</source>
-        <translation>Выполнен анализ обновления RSZ</translation>
+        <translation>Анализ обновления RSZ просмотрен</translation>
     </message>
     <message>
         <location filename="../../ui/ai/msg_tools.py" line="580"/>
@@ -2053,7 +2053,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1272"/>
         <source>Assistant file action mode</source>
-        <translation>Режим файловых операций помощника</translation>
+        <translation>Режим файловых операций ассистента</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1275"/>
@@ -2083,7 +2083,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1326"/>
         <source>Advanced: skip the final confirmation for files sent to the operating system Recycle Bin. Permanent deletion remains unavailable.</source>
-        <translation>Расширенно: пропускать последнее подтверждение для файлов, отправляемых в корзину. Безвозвратное удаление по-прежнему недоступно.</translation>
+        <translation>Дополнительно: пропускать последнее подтверждение для файлов, отправляемых в корзину. Безвозвратное удаление по-прежнему недоступно.</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1571"/>
@@ -2118,7 +2118,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="297"/>
         <source>Searched RSZ data</source>
-        <translation>Данные RSZ найдены</translation>
+        <translation>Поиск данных RSZ выполнен</translation>
     </message>
     <message>
         <location filename="../../ui/ai/rsz_tools.py" line="319"/>
@@ -2216,7 +2216,7 @@ Skipped: {count} (missing, invalid or oversized names)</source>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="834"/>
         <source>UVS Animation Creator</source>
-        <translation>Создатель UVS-анимаций</translation>
+        <translation>Конструктор UVS-анимаций</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="854"/>
@@ -3749,7 +3749,7 @@ material information on collision shapes for backward compatibility.</source>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="226"/>
         <source>Projects open without freezing the window, and Project Browser trees now start directly inside the natives folder.</source>
-        <translation>Проекты открываются без зависания окна, а деревья на панели «Просмотр проектов» теперь начинаются сразу внутри папки natives.</translation>
+        <translation>Проекты открываются без зависания окна, а деревья на панели «Обозреватель проектов» теперь начинаются сразу внутри папки natives.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="230"/>
@@ -3764,7 +3764,7 @@ material information on collision shapes for backward compatibility.</source>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="239"/>
         <source>The Project Browser and PAK Browser now always skip mod PAKs and warn when the game folder contains modded PAKs.</source>
-        <translation>«Просмотр проектов» и PAK-браузер теперь всегда пропускают мод-паки и предупреждают, если в папке игры есть изменённые PAK.</translation>
+        <translation>«Обозреватель проектов» и PAK-браузер теперь всегда пропускают мод-паки и предупреждают, если в папке игры есть изменённые PAK.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="243"/>
@@ -3783,7 +3783,7 @@ material information on collision shapes for backward compatibility.</source>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="254"/>
-        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update,the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
+        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update, the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
         <translation>Обновлены списки файлов, дампы RSZ и перечисления для последнего обновления Dragon&apos;s Dogma 2, полной версии Onimusha: Way of the Sword, SF6 и Pragmata, а также улучшены списки файлов для многих других игр.</translation>
     </message>
     <message>
@@ -3879,7 +3879,7 @@ material information on collision shapes for backward compatibility.</source>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="337"/>
         <source>New</source>
-        <translation>Новый</translation>
+        <translation>Новое</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="338"/>
@@ -4554,7 +4554,7 @@ Frames {frames}</source>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="445"/>
         <source>Uploaded by:</source>
-        <translation>Загружено:</translation>
+        <translation>Автор:</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="446"/>
@@ -4797,22 +4797,22 @@ Downloads: {downloads}</source>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="961"/>
         <source>Downloading</source>
-        <translation>Загрузка...</translation>
+        <translation>Скачивание...</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="961"/>
         <source>Downloading template from community...</source>
-        <translation>Загрузка шаблона из сообщества...</translation>
+        <translation>Скачивание шаблона из сообщества...</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="968"/>
         <source>Download Complete</source>
-        <translation>Загрузка завершена</translation>
+        <translation>Скачивание завершено</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="971"/>
         <source>Download Failed</source>
-        <translation>Загрузка не удалась</translation>
+        <translation>Не удалось скачать</translation>
     </message>
     <message>
         <location filename="../../ui/community_templates_dialog.py" line="984"/>
@@ -4865,7 +4865,7 @@ Downloads: {downloads}</source>
     <message>
         <location filename="../../file_handlers/pyside/component_selector.py" line="28"/>
         <source>Type component name (e.g. &apos;chainsaw.GmOptionSleep&apos;)</source>
-        <translation>Введите имя компонента типа (например, «chainsaw.GmOptionSleep»)</translation>
+        <translation>Введите имя типа компонента (например, «chainsaw.GmOptionSleep»)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/component_selector.py" line="35"/>
@@ -5327,7 +5327,7 @@ Traceback:
     <message>
         <location filename="../../file_handlers/sdftex/sdftex_handler.py" line="34"/>
         <source>Standalone grid is shown centered at zero. Open its MESH to see native placement or bake geometry.</source>
-        <translation>Отдельная сетка показана с центром в нуле. Откройте её MESH, чтобы увидеть нативное размещение или запечь геометрию.</translation>
+        <translation>Отдельная воксельная сетка показана с центром в нуле. Откройте её MESH, чтобы увидеть нативное размещение или запечь геометрию.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="85"/>
@@ -5389,7 +5389,7 @@ Traceback:
         <source>Mesh XYZ: {} · Texture XYZ: {} · {} · Rotation {}
 Voxel: {:.7g} · Decoded range: {:.7g} to {:.7g} · Grid center: {}</source>
         <translation>XYZ сетки: {} · XYZ текстуры: {} · {} · Поворот {}
-Воксель: {:.7g} · Декодированный диапазон: от {:.7g} до {:.7g} · Центр сетки: {}</translation>
+Воксель: {:.7g} · Декодированный диапазон: от {:.7g} до {:.7g} · Центр воксельной сетки: {}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="183"/>
@@ -5956,7 +5956,7 @@ Processing {current} of {total}...</source>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="279"/>
         <source>Texture / material / mesh siblings</source>
-        <translation>Связанные текстуры / материалы / меши</translation>
+        <translation>Связанные текстуры / материалы / сетки</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="279"/>
@@ -6244,12 +6244,12 @@ Only valid paths will be exported.</source>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="766"/>
         <source>validated</source>
-        <translation>проверено</translation>
+        <translation>проверенных</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="766"/>
         <source>collected</source>
-        <translation>собрано</translation>
+        <translation>собранных</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="768"/>
@@ -6262,7 +6262,7 @@ Only valid paths will be exported.</source>
 
 Output: lowercase, sorted
 Saved to: {path}</source>
-        <translation>Успешно экспортировано {count} путей: {status}!
+        <translation>Успешно экспортировано {status} путей: {count}!
 
 Вывод: нижний регистр, сортировка
 Сохранено в: {path}</translation>
@@ -6440,7 +6440,7 @@ Validated paths: {validated_paths}
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="969"/>
         <source>executable</source>
-        <translation>исполняемый файл</translation>
+        <translation>исполняемого файла</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="971"/>
@@ -6471,7 +6471,7 @@ Validated paths: {validated_paths}
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="999"/>
         <source>No file paths were found in the {source}.</source>
-        <translation>В {source} пути файлов не найдены.</translation>
+        <translation>В содержимом {source} пути файлов не найдены.</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="1002"/>
@@ -6508,7 +6508,7 @@ Saved to: {path}</source>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="1045"/>
         <source>memory dump</source>
-        <translation>дамп памяти</translation>
+        <translation>дампа памяти</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="1047"/>
@@ -6878,7 +6878,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../tools/hash_calculator.py" line="106"/>
         <source>Failed to calculate hash: {error}</source>
-        <translation>Не удалось вычислить хэш: {error}</translation>
+        <translation>Не удалось вычислить хеш: {error}</translation>
     </message>
 </context>
 <context>
@@ -6894,17 +6894,17 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="41"/>
         <source>Highlight</source>
-        <translation>Выделение</translation>
+        <translation>Подсветка</translation>
     </message>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="45"/>
         <source>Enable Highlight Mode</source>
-        <translation>Включить режим выделения</translation>
+        <translation>Включить режим подсветки</translation>
     </message>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="49"/>
         <source>Toggle tree node text highlighting (click nodes to highlight)</source>
-        <translation>Переключить подсветку текста узлов дерева (щелчок по узлу выделяет его)</translation>
+        <translation>Переключить подсветку текста узлов дерева (щелчок по узлу подсвечивает его)</translation>
     </message>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="59"/>
@@ -6954,7 +6954,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/highlight_menu_controller.py" line="130"/>
         <source>Choose Highlight Color</source>
-        <translation>Выберите цвет выделения</translation>
+        <translation>Выберите цвет подсветки</translation>
     </message>
 </context>
 <context>
@@ -6992,7 +6992,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1011"/>
         <source>Variant code (advanced)</source>
-        <translation>Код варианта (расширенно)</translation>
+        <translation>Код варианта (дополнительно)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1026"/>
@@ -7165,7 +7165,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1122"/>
         <source>Value meaning</source>
-        <translation>Значение</translation>
+        <translation>Тип значения</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1123"/>
@@ -7207,7 +7207,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1141"/>
         <source>Seek value</source>
-        <translation>Значение поиска</translation>
+        <translation>Значение перемотки</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1147"/>
@@ -7420,7 +7420,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1327"/>
         <source>Cue ShortID</source>
-        <translation>ShortID cue</translation>
+        <translation>ShortID метки</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1327"/>
@@ -7440,7 +7440,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1332"/>
         <source>Music cues</source>
-        <translation>Музыкальные cues</translation>
+        <translation>Музыкальные метки</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1337"/>
@@ -7460,7 +7460,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1343"/>
         <source>Play at ms</source>
-        <translation>Воспроизвести на мс</translation>
+        <translation>Начало воспроизведения, мс</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1343"/>
@@ -7485,7 +7485,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1348"/>
         <source>Subtrack count</source>
-        <translation>Число поддорожек</translation>
+        <translation>Число подтреков</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1349"/>
@@ -7541,7 +7541,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1406"/>
         <source>This object layout is not decoded. Its payload will be preserved unchanged.</source>
-        <translation>Макет этого объекта не декодирован. Его данные будут сохранены без изменений.</translation>
+        <translation>Структура этого объекта не декодирована. Его данные будут сохранены без изменений.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1409"/>
@@ -7599,7 +7599,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/homepage.py" line="114"/>
         <source>Project Library</source>
-        <translation>Библиотека проекта</translation>
+        <translation>Библиотека проектов</translation>
     </message>
     <message>
         <location filename="../../ui/homepage.py" line="114"/>
@@ -10403,7 +10403,7 @@ Every object: saving changes the master itself.</source>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="104"/>
         <source>Meshlet Material</source>
-        <translation>Материал Meshlet</translation>
+        <translation>Материал мешлетов</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="106"/>
@@ -11210,12 +11210,12 @@ Every object: saving changes the master itself.</source>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="316"/>
         <source>Rebake all existing quality grids</source>
-        <translation>Перезапечь все существующие сетки качества</translation>
+        <translation>Перезапечь все существующие воксельные сетки уровней качества</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="319"/>
         <source>Off: replace the resource with one new grid at the requested resolution.</source>
-        <translation>Выкл.: заменить ресурс одной новой сеткой с заданным разрешением.</translation>
+        <translation>Выкл.: заменить ресурс одной новой воксельной сеткой с заданным разрешением.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="324"/>
@@ -11280,7 +11280,7 @@ Every object: saving changes the master itself.</source>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="423"/>
         <source> Warning: interior samples reach the grid edge; use a larger grid.</source>
-        <translation> Предупреждение: внутренние выборки достигают края сетки; используйте сетку большего размера.</translation>
+        <translation> Предупреждение: внутренние выборки достигают края воксельной сетки; используйте воксельную сетку большего размера.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdftex/viewer.py" line="426"/>
@@ -11609,7 +11609,7 @@ Base dimensions (X × Y × Z): {size} mesh units</source>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="167"/>
         <source>No mesh buffer data available to display</source>
-        <translation>Нет данных буфера меша для отображения</translation>
+        <translation>Нет данных буфера сетки для отображения</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="288"/>
@@ -11761,7 +11761,7 @@ Base dimensions (X × Y × Z): {size} mesh units</source>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="404"/>
         <source>Open this mesh&apos;s MDF. Its materials&apos; Edit Shader… changes the shader of this object or of every object using the same master material.</source>
-        <translation>Открыть MDF этого меша. «Изменить шейдер…» в его материалах меняет шейдер этого объекта или всех объектов с тем же мастер-материалом.</translation>
+        <translation>Открыть MDF этой сетки. «Изменить шейдер…» в её материалах меняет шейдер этого объекта или всех объектов с тем же мастер-материалом.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="560"/>
@@ -11967,17 +11967,17 @@ Base dimensions (X × Y × Z): {size} mesh units</source>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="333"/>
         <source>Multiply textured preview by mesh vertex colors</source>
-        <translation>Умножать текстурированный предпросмотр на цвета вершин меша</translation>
+        <translation>Умножать текстурированный предпросмотр на цвета вершин сетки</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="459"/>
         <source>Resolved material textures</source>
-        <translation>Текстуры материалов разрешены</translation>
+        <translation>Разрешённые текстуры материалов</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="412"/>
         <source>Mesh</source>
-        <translation>Меш</translation>
+        <translation>Сетка</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/mesh_viewer.py" line="414"/>
@@ -12375,7 +12375,7 @@ Change the texture path in the MDF.</source>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="861"/>
         <source>Coordinates that do not depend on the mesh&apos;s UVs, inserted as ordinary nodes you can change.</source>
-        <translation>Координаты, не зависящие от UV меша, вставляются обычными узлами, которые можно изменить.</translation>
+        <translation>Координаты, не зависящие от UV сетки, вставляются обычными узлами, которые можно изменить.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="864"/>
@@ -13425,7 +13425,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/mesh/preview_controls.py" line="107"/>
         <source>Preview blendshape</source>
-        <translation>Предпросмотр блендшейпа</translation>
+        <translation>Предпросмотр формы смешивания</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mesh/preview_controls.py" line="108"/>
@@ -13525,7 +13525,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="162"/>
         <source>Load Mesh Resource…</source>
-        <translation>Загрузить ресурс меша…</translation>
+        <translation>Загрузить ресурс сетки…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="165"/>
@@ -13540,7 +13540,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="172"/>
         <source>Use Loaded Mesh</source>
-        <translation>Использовать загруженный меш</translation>
+        <translation>Использовать загруженную сетку</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="176"/>
@@ -13550,7 +13550,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="181"/>
         <source>Enable MOT-driven mesh blend shapes</source>
-        <translation>Включить формы смешивания меша, управляемые MOT</translation>
+        <translation>Включить формы смешивания сетки, управляемые MOT</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="222"/>
@@ -13580,22 +13580,22 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="373"/>
         <source>Load Target Mesh from Project or PAK</source>
-        <translation>Загрузить целевой меш из проекта или PAK</translation>
+        <translation>Загрузить целевую сетку из проекта или PAK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="374"/>
         <source>Mesh resource path (including numeric version suffix):</source>
-        <translation>Путь к ресурсу меша (включая числовой суффикс версии):</translation>
+        <translation>Путь к ресурсу сетки (включая числовой суффикс версии):</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="384"/>
         <source>The target mesh was not found in the project, PAKs, or unpacked files.</source>
-        <translation>Целевой меш не найден в проекте, PAK или распакованных файлах.</translation>
+        <translation>Целевая сетка не найдена в проекте, PAK или распакованных файлах.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="390"/>
         <source>Could not load target mesh: {error}</source>
-        <translation>Не удалось загрузить целевой меш: {error}</translation>
+        <translation>Не удалось загрузить целевую сетку: {error}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/widget.py" line="426"/>
@@ -13674,7 +13674,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/motion/preview/channel_controls.py" line="56"/>
         <source>Manually request SyncBaseLayerNormalizeTime using each layer&apos;s authored source. The PFB does not store whether gameplay requested this mode.</source>
-        <translation>Вручную запросить SyncBaseLayerNormalizeTime, используя исходный материал каждого слоя. PFB не хранит сведения о том, запрашивался ли этот режим игровым процессом.</translation>
+        <translation>Вручную запросить SyncBaseLayerNormalizeTime, используя исходные данные каждого слоя. PFB не хранит сведения о том, запрашивался ли этот режим игровым процессом.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/channel_controls.py" line="93"/>
@@ -13782,7 +13782,7 @@ All parameters and texture slots were synchronized and validated after save/relo
         <location filename="../../file_handlers/motion/preview/controls.py" line="155"/>
         <location filename="../../file_handlers/motion/preview/controls.py" line="165"/>
         <source>Authored</source>
-        <translation>Авторское</translation>
+        <translation>Как задано</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/controls.py" line="157"/>
@@ -13989,7 +13989,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="205"/>
         <source>Index/Hash:</source>
-        <translation>Индекс/хэш:</translation>
+        <translation>Индекс/хеш:</translation>
     </message>
     <message>
         <location filename="../../file_handlers/msg/msg_viewer.py" line="215"/>
@@ -14396,7 +14396,7 @@ This will remove it from all entries.</source>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="67"/>
         <source>Scan for Outdated Files</source>
-        <translation>Сканирование на устаревшие файлы</translation>
+        <translation>Найти устаревшие файлы</translation>
     </message>
     <message>
         <location filename="../../ui/outdated_files_dialog.py" line="77"/>
@@ -15239,7 +15239,7 @@ Failed to delete {error_count} files:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="197"/>
         <source>Advanced: combine the PFB&apos;s optional runtime layers with the selected animation. Leave off to preview the MOT alone.</source>
-        <translation>Расширенно: объединить необязательные слои выполнения PFB с выбранной анимацией. Отключите, чтобы просматривать только MOT.</translation>
+        <translation>Дополнительно: объединить необязательные слои выполнения PFB с выбранной анимацией. Отключите, чтобы просматривать только MOT.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="206"/>
@@ -15279,7 +15279,7 @@ Failed to delete {error_count} files:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="396"/>
         <source>Waiting for a skinnable mesh from this PFB.</source>
-        <translation>Ожидание меша с поддержкой скелетной деформации из этого PFB.</translation>
+        <translation>Ожидание сетки с поддержкой скелетной деформации из этого PFB.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="439"/>
@@ -15304,7 +15304,7 @@ Failed to delete {error_count} files:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="593"/>
         <source>Select an animation and a skinnable target mesh.</source>
-        <translation>Выберите анимацию и целевой меш с поддержкой скелетной деформации.</translation>
+        <translation>Выберите анимацию и целевую сетку с поддержкой скелетной деформации.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="676"/>
@@ -15314,7 +15314,7 @@ Failed to delete {error_count} files:
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="679"/>
         <source>Shared pose: {count} meshes</source>
-        <translation>Общая поза: мешей — {count}</translation>
+        <translation>Общая поза: сеток — {count}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/motion/preview/entity_widget.py" line="689"/>
@@ -15482,7 +15482,7 @@ Failed to delete {error_count} files:
     <message>
         <location filename="../../ui/project_manager/manager.py" line="332"/>
         <source>Project Browser</source>
-        <translation>Просмотр проектов</translation>
+        <translation>Обозреватель проектов</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="249"/>
@@ -15531,7 +15531,7 @@ Are you sure you want to overwrite it?</source>
         <location filename="../../ui/project_manager/manager.py" line="308"/>
         <source>A copy already exists in project files and may override this fresh source:
 {}</source>
-        <translation>Копия уже существует в файлах проекта и может перезаписать этот новый исходник:
+        <translation>Копия уже существует в файлах проекта и может иметь приоритет над этим новым исходником:
 {}</translation>
     </message>
     <message>
@@ -15757,14 +15757,14 @@ Saved to:
         <location filename="../../ui/project_manager/manager.py" line="2121"/>
         <source>The REE.PAK packer ({}) is not downloaded yet
 </source>
-        <translation>Packer REE.PAK ({}) ещё не загружен
+        <translation>Упаковщик REE.PAK ({}) ещё не скачан
 </translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2123"/>
         <source>A newer packer release ({}) is available
 </source>
-        <translation>Доступна более новая версия packer ({})
+        <translation>Доступна более новая версия упаковщика ({})
 </translation>
     </message>
     <message>
@@ -15910,7 +15910,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2125"/>
         <source>Download packer?</source>
-        <translation>Скачать packer?</translation>
+        <translation>Скачать упаковщик?</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2131"/>
@@ -15930,7 +15930,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="2186"/>
         <source>PAK packer returned an error.</source>
-        <translation>PAK packer вернул ошибку.</translation>
+        <translation>Упаковщик PAK вернул ошибку.</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="361"/>
@@ -16043,7 +16043,7 @@ Open the settings dialog now?</source>
     <message>
         <location filename="../../ui/project_manager/project_picker_dialog.py" line="111"/>
         <source>Project Library</source>
-        <translation>Библиотека проекта</translation>
+        <translation>Библиотека проектов</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/project_picker_dialog.py" line="136"/>
@@ -16541,7 +16541,7 @@ This will permanently remove:
     <message>
         <location filename="../../ui/main_window.py" line="555"/>
         <source>Hash Calculator</source>
-        <translation>Калькулятор хэша</translation>
+        <translation>Калькулятор хешей</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="561"/>
@@ -16858,7 +16858,7 @@ Save before reopening?</source>
     <message>
         <location filename="../../ui/main_window.py" line="444"/>
         <source>Project Library...</source>
-        <translation>Библиотека проекта...</translation>
+        <translation>Библиотека проектов...</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="575"/>
@@ -17098,7 +17098,7 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="66"/>
         <source>Mesh Load Failed</source>
-        <translation>Не удалось загрузить меш</translation>
+        <translation>Не удалось загрузить сетку</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="67"/>
@@ -17142,13 +17142,13 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="236"/>
         <source>Load Mesh…</source>
-        <translation>Загрузить меш…</translation>
+        <translation>Загрузить сетку…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="240"/>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="664"/>
         <source>Load Mesh from PAK</source>
-        <translation>Загрузить меш из PAK</translation>
+        <translation>Загрузить сетку из PAK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="296"/>
@@ -17263,14 +17263,14 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="629"/>
         <source>Select Mesh</source>
-        <translation>Выбрать меш</translation>
+        <translation>Выбрать сетку</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="644"/>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="691"/>
         <source>Unable to load mesh:
 {}</source>
-        <translation>Не удалось загрузить меш:
+        <translation>Не удалось загрузить сетку:
 {}</translation>
     </message>
     <message>
@@ -17286,19 +17286,19 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="665"/>
         <source>Please enter a mesh path first.</source>
-        <translation>Сначала введите путь меша.</translation>
+        <translation>Сначала введите путь к сетке.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="678"/>
         <source>Unable to resolve mesh path:
 {}</source>
-        <translation>Не удалось разрешить путь меша:
+        <translation>Не удалось разрешить путь к сетке:
 {}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="782"/>
         <source>Mesh handler did not produce a parsed mesh.</source>
-        <translation>Обработчик меша не создал разобранный меш.</translation>
+        <translation>Обработчик сеток не создал разобранную сетку.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="917"/>
@@ -17400,7 +17400,7 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1654"/>
         <source>Mirror</source>
-        <translation>Зеркало</translation>
+        <translation>Зеркальные</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1654"/>
@@ -17410,12 +17410,12 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1656"/>
         <source>{kind} Shapes</source>
-        <translation>Формы {kind}</translation>
+        <translation>{kind} формы</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1666"/>
         <source>Add {kind} Shape</source>
-        <translation>Добавить форму {kind}</translation>
+        <translation>Добавить в «{kind} формы»</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1674"/>
@@ -17435,7 +17435,7 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1708"/>
         <source>Unsupported or missing payload.</source>
-        <translation>Неподдерживаемый или отсутствующий payload.</translation>
+        <translation>Неподдерживаемая или отсутствующая полезная нагрузка.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1760"/>
@@ -17455,7 +17455,7 @@ Delete удаляет выбранные узлы / связи.</translation>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1791"/>
         <source>Tag hash is auto-managed on save.</source>
-        <translation>Хэш тега управляется автоматически при сохранении.</translation>
+        <translation>Хеш тега управляется автоматически при сохранении.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rcol/rcol_viewer.py" line="1794"/>
@@ -18327,7 +18327,7 @@ Output folder: {output_folder}</source>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="38"/>
         <source>Loop end is inclusive. Changing metadata decodes and lossy re-encodes the existing WEM through {authoring}.</source>
-        <translation>Конец цикла включителен. Изменение метаданных декодирует и с потерями перекодирует существующий WEM через {authoring}.</translation>
+        <translation>Конечный отсчёт цикла включается. Изменение метаданных декодирует и с потерями перекодирует существующий WEM через {authoring}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_riff_editor.py" line="46"/>
@@ -18793,7 +18793,7 @@ Constraint-only rules can only filter, not match.</source>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="936"/>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="964"/>
         <source>A: {a_count} instances, B: {b_count} instances, Common keys: {common}</source>
-        <translation>A: {a_count} экземпляров, B: {b_count} экземпляров, Общих ключей: {common}</translation>
+        <translation>Экземпляров A: {a_count}, экземпляров B: {b_count}, общих ключей: {common}</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_csv_extractor_dialog.py" line="953"/>
@@ -19292,7 +19292,7 @@ Switch enums to {expected}?</source>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="484"/>
         <source>No scalar values match.</source>
-        <translation>Скалярные значения не совпадают.</translation>
+        <translation>Нет совпадающих скалярных значений.</translation>
     </message>
     <message>
         <location filename="../../ui/rsz_field_value_finder_dialog.py" line="494"/>
@@ -19771,7 +19771,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="435"/>
         <source>Look</source>
-        <translation>Вид</translation>
+        <translation>Обзор</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="439"/>
@@ -19808,7 +19808,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="504"/>
         <source>Probes</source>
-        <translation>Проверки</translation>
+        <translation>Пробы</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="453"/>
@@ -19827,12 +19827,12 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="450"/>
         <source>Probe Exp</source>
-        <translation>Проверка эксп</translation>
+        <translation>Эксп. проб</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="454"/>
         <source>Volumes</source>
-        <translation>Громкости</translation>
+        <translation>Объёмы</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="455"/>
@@ -19978,7 +19978,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="548"/>
         <source>Balanced</source>
-        <translation>Сбалансировано</translation>
+        <translation>Сбалансированное</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="549"/>
@@ -20043,7 +20043,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="694"/>
         <source>Stream {status}</source>
-        <translation>Поток {status}</translation>
+        <translation>Стриминг: {status}</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="797"/>
@@ -20068,7 +20068,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="685"/>
         <source>Diff</source>
-        <translation>Различия</translation>
+        <translation>Рассеянный свет</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="696"/>
@@ -20078,17 +20078,17 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="884"/>
         <source>Probe: none</source>
-        <translation>Проверка: нет</translation>
+        <translation>Пробы: нет</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="886"/>
         <source>Probe: {status}</source>
-        <translation>Проверка: {status}</translation>
+        <translation>Пробы: {status}</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="891"/>
         <source>active</source>
-        <translation>активный</translation>
+        <translation>активны</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="893"/>
@@ -20103,12 +20103,12 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="861"/>
         <source>LightProbes: {loaded}/{total} loaded</source>
-        <translation>Световые пробники: загружено {loaded}/{total}</translation>
+        <translation>Световые пробы: загружено {loaded}/{total}</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="897"/>
         <source>Probe: {mode} | sets {sets} | OBB {boxes} | probes {probes}</source>
-        <translation>Пробник: {mode} | наборы {sets} | OBB {boxes} | пробники {probes}</translation>
+        <translation>Пробы: {mode} | наборы {sets} | OBB {boxes} | пробы {probes}</translation>
     </message>
 </context>
 <context>
@@ -20198,7 +20198,7 @@ Initial visibility comes from the PFB&apos;s authored settings.</source>
     <message>
         <location filename="../../ui/scene/scn_raw_inspector.py" line="60"/>
         <source>Select a mesh, foliage, or light probe object to edit its raw SCN node here.</source>
-        <translation>Выберите меш, растительность или объект световых проб для редактирования его сырого узла SCN здесь.</translation>
+        <translation>Выберите сетку, растительность или объект световых проб для редактирования его сырого узла SCN здесь.</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_raw_inspector.py" line="76"/>
@@ -20277,7 +20277,7 @@ Initial visibility comes from the PFB&apos;s authored settings.</source>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="964"/>
         <source>Meshes loaded: {count}</source>
-        <translation>Загружено мешей: {count}</translation>
+        <translation>Загружено сеток: {count}</translation>
     </message>
     <message>
         <location filename="../../file_handlers/rsz/scn_scene_preview.py" line="965"/>
@@ -20883,7 +20883,7 @@ Initial visibility comes from the PFB&apos;s authored settings.</source>
     <message>
         <location filename="../../file_handlers/sdf/program_editor.py" line="306"/>
         <source>Register</source>
-        <translation>Регистрация</translation>
+        <translation>Регистр</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/program_editor.py" line="306"/>
@@ -20908,7 +20908,7 @@ Initial visibility comes from the PFB&apos;s authored settings.</source>
     <message>
         <location filename="../../file_handlers/sdf/program_editor.py" line="322"/>
         <source>Not applicable</source>
-        <translation>Не применимо</translation>
+        <translation>Неприменимо</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/program_editor.py" line="379"/>
@@ -21759,7 +21759,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_editor.py" line="1574"/>
         <source>Constant</source>
-        <translation>Постоянная</translation>
+        <translation>Константа</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_editor.py" line="1586"/>
@@ -21958,7 +21958,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_editor.py" line="1879"/>
         <source>Register</source>
-        <translation>Регистрация</translation>
+        <translation>Регистр</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_editor.py" line="1882"/>
@@ -22258,7 +22258,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="241"/>
         <source>Primitive binning (BinnerControl)</source>
-        <translation>Бинниг примитивов (BinnerControl)</translation>
+        <translation>Биннинг примитивов (BinnerControl)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="247"/>
@@ -22353,17 +22353,17 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="307"/>
         <source>Stencil fail</source>
-        <translation>Сбой трафарета</translation>
+        <translation>Трафарет не пройден</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="308"/>
         <source>Depth fail</source>
-        <translation>Сбой теста глубины</translation>
+        <translation>Глубина не пройдена</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="309"/>
         <source>Pass</source>
-        <translation>Проход</translation>
+        <translation>Тест пройден</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="310"/>
@@ -22589,7 +22589,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/sdf_viewer.py" line="525"/>
         <source>Meaning</source>
-        <translation>Значение</translation>
+        <translation>Пояснение</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/sdf_viewer.py" line="527"/>
@@ -23268,7 +23268,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="303"/>
         <source>Add</source>
-        <translation>Добавить</translation>
+        <translation>Сложение</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="303"/>
@@ -24324,7 +24324,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="869"/>
         <source>Rate</source>
-        <translation>Скорость</translation>
+        <translation>Частота</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="893"/>
@@ -24976,7 +24976,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2642"/>
         <source>Added {location} source {id} from {file}.</source>
-        <translation>Добавлен источник {location} {id} из {file}.</translation>
+        <translation>Добавлен источник {id} ({location}) из {file}.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2661"/>
@@ -25011,7 +25011,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2791"/>
         <source>No authored media was produced.</source>
-        <translation>Авторское медиа не создано.</translation>
+        <translation>Медиа не было создано.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="2804"/>
@@ -25805,7 +25805,7 @@ ID {id} · источников: {sources} · действий: {actions}</trans
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4467"/>
         <source>The {kind} is complete, but replacement requires a profile for this game.</source>
-        <translation>{kind} полностью доступен, но для замены нужен профиль этой игры.</translation>
+        <translation>Полные данные ({kind}) доступны, но для замены нужен профиль этой игры.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4469"/>
@@ -25820,7 +25820,7 @@ ID {id} · источников: {sources} · действий: {actions}</trans
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4473"/>
         <source>Split SBNK prefetch</source>
-        <translation>Разделить предвыборку SBNK</translation>
+        <translation>Разделённая предвыборка SBNK</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4474"/>
@@ -25870,7 +25870,7 @@ ID {id} · источников: {sources} · действий: {actions}</trans
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4486"/>
         <source>This file contains the complete {kind}. </source>
-        <translation>Этот файл содержит полный {kind}. </translation>
+        <translation>Этот файл содержит полные данные ({kind}). </translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4488"/>
@@ -27400,7 +27400,7 @@ ID {id} · источников: {sources} · действий: {actions}</trans
     <message>
         <location filename="../../file_handlers/strands/forms.py" line="84"/>
         <source>Hermite</source>
-        <translation>Эрмит</translation>
+        <translation>Эрмитова</translation>
     </message>
     <message>
         <location filename="../../file_handlers/strands/forms.py" line="84"/>
@@ -27415,12 +27415,12 @@ ID {id} · источников: {sources} · действий: {actions}</trans
     <message>
         <location filename="../../file_handlers/strands/forms.py" line="85"/>
         <source>Hermite (3)</source>
-        <translation>Эрмит (3)</translation>
+        <translation>Эрмитова (3)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/strands/forms.py" line="86"/>
         <source>Hermite (4)</source>
-        <translation>Эрмит (4)</translation>
+        <translation>Эрмитова (4)</translation>
     </message>
     <message>
         <location filename="../../file_handlers/strands/forms.py" line="86"/>
@@ -28382,7 +28382,7 @@ Download it from {page} and extract it into:
     <message>
         <location filename="../../ui/update_notification.py" line="92"/>
         <source>Auto-Download and Update</source>
-        <translation>Автозагрузка и обновление</translation>
+        <translation>Скачать и обновить автоматически</translation>
     </message>
     <message>
         <location filename="../../ui/update_notification.py" line="117"/>
@@ -28621,7 +28621,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="620"/>
         <source>Change Name Hash</source>
-        <translation>Изменить хэш имени</translation>
+        <translation>Изменить хеш имени</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="622"/>
@@ -28663,7 +28663,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="646"/>
         <source>Copy Name Hash</source>
-        <translation>Копировать хэш имени</translation>
+        <translation>Копировать хеш имени</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="649"/>
@@ -28771,7 +28771,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="488"/>
         <source>Name Hash</source>
-        <translation>Хэш имени</translation>
+        <translation>Хеш имени</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="726"/>
@@ -28853,7 +28853,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1336"/>
         <source>Parameter Name Hash</source>
-        <translation>Хэш имени параметра</translation>
+        <translation>Хеш имени параметра</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1337"/>
@@ -28889,7 +28889,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1473"/>
         <source>Change Parameter Name Hash</source>
-        <translation>Изменить хэш имени параметра</translation>
+        <translation>Изменить хеш имени параметра</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvar/uvar_handler.py" line="1494"/>
@@ -29062,7 +29062,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="475"/>
         <source>Animation Creator…</source>
-        <translation>Создатель анимаций…</translation>
+        <translation>Конструктор анимаций…</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="491"/>
@@ -29162,7 +29162,7 @@ Do you want to auto-download and update now?</source>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="983"/>
         <source>Animation creator</source>
-        <translation>Создатель анимаций</translation>
+        <translation>Конструктор анимаций</translation>
     </message>
     <message>
         <location filename="../../file_handlers/uvs/uvs_viewer.py" line="1380"/>
@@ -29444,7 +29444,7 @@ Saved paths and folders you visit often.</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="798"/>
         <source>Meaning</source>
-        <translation>Значение</translation>
+        <translation>Пояснение</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="845"/>
@@ -29526,7 +29526,7 @@ Reference targets are changed through a type-safe picker.</source>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="733"/>
         <source>Ready when you are</source>
-        <translation>Готов, когда вы готовы</translation>
+        <translation>Готов к работе</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="742"/>
@@ -29670,12 +29670,12 @@ Reference targets are changed through a type-safe picker.</source>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="194"/>
         <source>Color / Vector 3</source>
-        <translation>Цвет / Vector 3</translation>
+        <translation>Цвет / Вектор 3</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="195"/>
         <source>Color / Vector 4</source>
-        <translation>Цвет / Vector 4</translation>
+        <translation>Цвет / Вектор 4</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="196"/>
@@ -29881,7 +29881,7 @@ Texture Coordinates follow the mesh&apos;s UV unwrap, which suits textures paint
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="713"/>
         <source>Unsaved</source>
-        <translation>Несохранено</translation>
+        <translation>Не сохранено</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="635"/>

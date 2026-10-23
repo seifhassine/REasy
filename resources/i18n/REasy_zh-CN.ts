@@ -112,7 +112,7 @@
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="454"/>
         <source>Translate All GameObject Names</source>
-        <translation>翻译所有游戏对象名称</translation>
+        <translation>翻译所有 GameObject 名称</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="486"/>
@@ -163,13 +163,13 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="522"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="801"/>
         <source>Create Child GameObject</source>
-        <translation>创建子游戏对象</translation>
+        <translation>创建子 GameObject</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="524"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="802"/>
         <source>Copy GameObject</source>
-        <translation>复制游戏对象</translation>
+        <translation>复制 GameObject</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="526"/>
@@ -217,7 +217,7 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="540"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="807"/>
         <source>Delete GameObject</source>
-        <translation>删除游戏对象</translation>
+        <translation>删除 GameObject</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="546"/>
@@ -225,7 +225,7 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="817"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="829"/>
         <source>Create GameObject</source>
-        <translation>创建游戏对象</translation>
+        <translation>创建 GameObject</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="548"/>
@@ -234,25 +234,25 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="831"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="3047"/>
         <source>Paste GameObject</source>
-        <translation>粘贴游戏对象</translation>
+        <translation>粘贴 GameObject</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="569"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="820"/>
         <source>Delete Folder</source>
-        <translation>删除目录</translation>
+        <translation>删除文件夹</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="556"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="830"/>
         <source>Create Folder</source>
-        <translation>创建目录</translation>
+        <translation>创建文件夹</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="563"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="818"/>
         <source>Create Sub-Folder</source>
-        <translation>创建子目录</translation>
+        <translation>创建子文件夹</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="579"/>
@@ -3783,7 +3783,7 @@ material information on collision shapes for backward compatibility.</source>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="254"/>
-        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update,the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
+        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update, the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
         <translation>更新了 Dragon&apos;s Dogma 2 最新更新、Onimusha: Way of the Sword 正式版、SF6 和 Pragmata 的文件列表、RSZ 转储和枚举，并改进了许多其他游戏的文件列表。</translation>
     </message>
     <message>
@@ -3932,7 +3932,7 @@ material information on collision shapes for backward compatibility.</source>
     <message>
         <location filename="../../file_handlers/mmtr/material_channels.py" line="105"/>
         <source>Restore Original</source>
-        <translation>恢复原始</translation>
+        <translation>恢复原样</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_channels.py" line="107"/>
@@ -4989,17 +4989,17 @@ Downloads: {downloads}</source>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="440"/>
         <source>Close Other Tabs</source>
-        <translation>关闭其他选项卡</translation>
+        <translation>关闭其他标签页</translation>
     </message>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="441"/>
         <source>Close Tabs to the Right</source>
-        <translation>关闭右侧的选项卡</translation>
+        <translation>关闭右侧的标签页</translation>
     </message>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="443"/>
         <source>Close Saved Tabs</source>
-        <translation>关闭已保存的选项卡</translation>
+        <translation>关闭已保存的标签页</translation>
     </message>
     <message>
         <location filename="../../ui/detachable_tabs.py" line="445"/>
@@ -6591,7 +6591,7 @@ Close those tabs yourself and try again, or save now and reload them.</source>
 
 {files}
 
-请自行关闭这些选项卡后重试，或立即保存并重新加载它们。</translation>
+请自行关闭这些标签页后重试，或立即保存并重新加载它们。</translation>
     </message>
     <message>
         <location filename="../../ui/file_tab.py" line="434"/>
@@ -7207,7 +7207,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1141"/>
         <source>Seek value</source>
-        <translation>查找值</translation>
+        <translation>定位值</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1147"/>
@@ -7283,7 +7283,7 @@ Save before reloading?</source>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1234"/>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1337"/>
         <source>Codec</source>
-        <translation>编码</translation>
+        <translation>编解码器</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1246"/>
@@ -7460,7 +7460,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1343"/>
         <source>Play at ms</source>
-        <translation>在毫秒时播放</translation>
+        <translation>播放位置毫秒</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="1343"/>
@@ -10403,7 +10403,7 @@ Every object: saving changes the master itself.</source>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="104"/>
         <source>Meshlet Material</source>
-        <translation>Meshlet 材质</translation>
+        <translation>网格簇材质</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mdf/mdf_viewer.py" line="106"/>
@@ -13831,7 +13831,7 @@ All parameters and texture slots were synchronized and validated after save/relo
     <message>
         <location filename="../../file_handlers/strands/motion.py" line="11"/>
         <source>Strands · motion preview</source>
-        <translation>发丝 · 运动预览</translation>
+        <translation>发丝 · 动作预览</translation>
     </message>
 </context>
 <context>
@@ -14749,7 +14749,7 @@ Failed to delete {error_count} files:
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="251"/>
         <source>Output directory:</source>
-        <translation>输出目录:</translation>
+        <translation>输出目录：</translation>
     </message>
     <message>
         <location filename="../../ui/pak_browser_dialog.py" line="254"/>
@@ -15612,7 +15612,7 @@ Use the project&apos;s RSZ JSON now?</source>
         <location filename="../../ui/project_manager/manager.py" line="802"/>
         <location filename="../../ui/project_manager/manager.py" line="887"/>
         <source>Expected sub‑folder &quot;{}&quot;.</source>
-        <translation>预期子文件夹 &quot;{}&quot;。</translation>
+        <translation>预期子文件夹“{}”。</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1205"/>
@@ -15668,7 +15668,7 @@ was copied successfully.</source>
 Saved to:
 {}</source>
         <translation>Fluffy 模组 ZIP 创建成功。
-已保存到:
+已保存到：
 {}</translation>
     </message>
     <message>
@@ -15711,7 +15711,7 @@ Saved to:
 PAK file saved to:
 {}</source>
         <translation>导出完成。
-PAK 文件已保存到:
+PAK 文件已保存到：
 {}</translation>
     </message>
     <message>
@@ -15843,7 +15843,7 @@ PAK 文件已保存到:
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1563"/>
         <source>Missing paths (not found in PAKs):</source>
-        <translation>缺失路径(在 PAK 中未找到):</translation>
+        <translation>缺失路径（在 PAK 中未找到）：</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1564"/>
@@ -15888,7 +15888,7 @@ PAK 文件已保存到:
         <source>Add entire folder
 &quot;{}&quot; and all its contents?</source>
         <translation>添加整个文件夹
-&quot;{}&quot;及其所有内容？</translation>
+“{}”及其所有内容？</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/manager.py" line="1913"/>
@@ -16359,7 +16359,7 @@ This will permanently remove:
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="453"/>
         <source>Maximum</source>
-        <translation>最大</translation>
+        <translation>最大值</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_hirc_editor.py" line="453"/>
@@ -16425,7 +16425,7 @@ This will permanently remove:
     <message>
         <location filename="../../ui/main_window.py" line="443"/>
         <source>New Project (Create Mod)...</source>
-        <translation>新建项目(创建模组)...</translation>
+        <translation>新建项目（创建模组）...</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="445"/>
@@ -16571,7 +16571,7 @@ This will permanently remove:
     <message>
         <location filename="../../ui/main_window.py" line="604"/>
         <source>Project name:</source>
-        <translation>项目名称:</translation>
+        <translation>项目名称：</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="622"/>
@@ -16654,7 +16654,7 @@ Please select the correct unpacked game directory.</source>
     <message>
         <location filename="../../ui/main_window.py" line="1058"/>
         <source>Restore Tab</source>
-        <translation>恢复选项卡</translation>
+        <translation>恢复标签页</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="1059"/>
@@ -16669,7 +16669,7 @@ Please select the correct unpacked game directory.</source>
     <message>
         <location filename="../../ui/main_window.py" line="1255"/>
         <source>Search in MSG</source>
-        <translation>在MSG中搜索</translation>
+        <translation>在 MSG 中搜索</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="1328"/>
@@ -16728,7 +16728,7 @@ Would you like to set it now?</source>
     <message>
         <location filename="../../ui/main_window.py" line="1664"/>
         <source>Support REasy Editor</source>
-        <translation>支持REasy编辑器</translation>
+        <translation>支持 REasy 编辑器</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="1667"/>
@@ -16765,7 +16765,7 @@ Your contributions help keep this project going.</source>
     <message>
         <location filename="../../ui/main_window.py" line="1714"/>
         <source>Select a backup to restore:</source>
-        <translation>选择要恢复的备份:</translation>
+        <translation>选择要恢复的备份：</translation>
     </message>
     <message>
         <location filename="../../ui/main_window.py" line="1726"/>
@@ -20883,7 +20883,7 @@ Initial visibility comes from the PFB&apos;s authored settings.</source>
     <message>
         <location filename="../../file_handlers/sdf/program_editor.py" line="306"/>
         <source>Register</source>
-        <translation>注册</translation>
+        <translation>寄存器</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/program_editor.py" line="306"/>
@@ -21958,7 +21958,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_editor.py" line="1879"/>
         <source>Register</source>
-        <translation>注册</translation>
+        <translation>寄存器</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_editor.py" line="1882"/>
@@ -22303,7 +22303,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="270"/>
         <source>Target</source>
-        <translation>操作对象</translation>
+        <translation>目标</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="271"/>
@@ -22363,7 +22363,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="309"/>
         <source>Pass</source>
-        <translation>通道</translation>
+        <translation>通过</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/state_editor.py" line="310"/>
@@ -23168,7 +23168,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="57"/>
         <source>Step (Edge, X)</source>
-        <translation>阶跃（边界, X）</translation>
+        <translation>阶跃（边界，X）</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="58"/>
@@ -23268,7 +23268,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="303"/>
         <source>Add</source>
-        <translation>添加</translation>
+        <translation>加法</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="303"/>
@@ -23303,7 +23303,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="304"/>
         <source>Maximum</source>
-        <translation>最大</translation>
+        <translation>最大值</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/shader_graph_math.py" line="305"/>
@@ -23641,7 +23641,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sdf/models.py" line="23"/>
         <source>Geometry</source>
-        <translation>几何体</translation>
+        <translation>几何</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sdf/models.py" line="24"/>
@@ -23690,12 +23690,12 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="879"/>
         <source>Codec</source>
-        <translation>编码</translation>
+        <translation>编解码器</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="944"/>
         <source>Channels</source>
-        <translation>通道数</translation>
+        <translation>声道</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="1991"/>
@@ -23887,7 +23887,7 @@ Primitive: {topology}.</source>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="472"/>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="885"/>
         <source>Maximum</source>
-        <translation>最大</translation>
+        <translation>最高</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="504"/>
@@ -24324,7 +24324,7 @@ Primitive: {topology}.</source>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="869"/>
         <source>Rate</source>
-        <translation>速率</translation>
+        <translation>采样率</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="893"/>
@@ -25978,7 +25978,7 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4528"/>
         <source>Import an editable Standard MIDI File or an already compiled WMID. Wwise MIDI stores one global tempo, so tempo-changing MID files are rejected.</source>
-        <translation>导入可编辑标准 MIDI 文件或已编译 WMID。Wwise MIDI 使用一个全局节拍，因此会拒绝更改速度的 MID 文件。</translation>
+        <translation>导入可编辑标准 MIDI 文件或已编译 WMID。Wwise MIDI 只存储一个全局速度，因此会拒绝包含速度变化的 MID 文件。</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4533"/>
@@ -26013,7 +26013,7 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4572"/>
         <source> Used by Event(s): {events}.</source>
-        <translation> 使用的事件：{events}。</translation>
+        <translation> 使用此源的事件：{events}。</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4677"/>
@@ -26023,7 +26023,7 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="4666"/>
         <source>Partial</source>
-        <translation>部分完成</translation>
+        <translation>部分</translation>
     </message>
     <message>
         <location filename="../../file_handlers/sound/sound_viewer.py" line="3534"/>
@@ -26097,7 +26097,7 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
     <message>
         <location filename="../../file_handlers/strands/edit_panel.py" line="123"/>
         <source>Paint the strands under the brush chosen; Ctrl takes them away.</source>
-        <translation>选择所选画笔下的发丝；按住 Ctrl 则移除。</translation>
+        <translation>用画笔选中其下的发丝；按住 Ctrl 则移除。</translation>
     </message>
     <message>
         <location filename="../../file_handlers/strands/edit_panel.py" line="124"/>
@@ -27704,7 +27704,7 @@ ID {id} · {sources} 个源 · {actions} 个动作</translation>
     <message>
         <location filename="../../file_handlers/strands/controls.py" line="157"/>
         <source>Strands are drawn by the game&apos;s chain in Game lighting, over the mesh their set is bound to.</source>
-        <translation>在游戏光照模式下，发丝由游戏的链路绘制在其发丝集所绑定的网格之上。</translation>
+        <translation>在游戏光照模式下，发丝由游戏的发丝链绘制在其发丝集所绑定的网格之上。</translation>
     </message>
     <message>
         <location filename="../../file_handlers/strands/controls.py" line="172"/>
@@ -29670,12 +29670,12 @@ Reference targets are changed through a type-safe picker.</source>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="194"/>
         <source>Color / Vector 3</source>
-        <translation>颜色 / Vector 3</translation>
+        <translation>颜色 / 三维向量</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="195"/>
         <source>Color / Vector 4</source>
-        <translation>颜色 / Vector 4</translation>
+        <translation>颜色 / 四维向量</translation>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_editor.py" line="196"/>
