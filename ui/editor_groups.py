@@ -124,6 +124,8 @@ class EditorGroupHost(QWidget):
         self._splitter.addWidget(primary)
         if root is None:
             self._guides, self._ghost = _DropOverlay(self), _DropOverlay(self)
+            self._parked = QWidget(self)
+            self._parked.hide()
         else:
             self.layoutChanged.connect(root.layoutChanged)
         if app := QApplication.instance():
@@ -258,6 +260,11 @@ class EditorGroupHost(QWidget):
         notebook.removeTab(notebook.indexOf(page))
         self.root.prune_empty_groups()
         return True
+
+    def park_page(self, page) -> None:
+        if file_tab := getattr(page, "parent_tab", None):
+            file_tab.parent_notebook = None
+        page.setParent(self.root._parked)
 
     def ensure_group(self, index: int, orientation=Qt.Horizontal) -> CustomNotebook:
         while len(self._notebooks) <= index:

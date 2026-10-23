@@ -117,8 +117,7 @@ class ProjectSessionManager:
             notebook = self.notebook_for(widget)
             if notebook in docked:
                 tab._editor_group_index = docked.index(notebook)
-                notebook.removeTab(notebook.indexOf(widget))
-                widget.hide()
+                self._take_page(notebook, widget)
 
         self._show_windows(session, False)
 
@@ -172,8 +171,7 @@ class ProjectSessionManager:
         notebook = self.notebook_for(widget)
         if notebook is not None:
             tab._editor_group_index = self.group_index_for(widget)
-            notebook.removeTab(notebook.indexOf(widget))
-            widget.hide()
+            self._take_page(notebook, widget)
             if self.group_host is not None:
                 self.group_host.prune_empty_groups()
         if (session := self.session_for_tab(tab)) and session.current_widget is widget:
@@ -183,6 +181,12 @@ class ProjectSessionManager:
         if self.session_for_tab(tab) is self.get(self.active_key) and self.notebook_for(tab.notebook_widget) is None:
             self._restore_notebook_for(tab).addTab(tab.notebook_widget, "")
             tab.update_tab_title()
+
+    def _take_page(self, notebook, widget) -> None:
+        notebook.removeTab(notebook.indexOf(widget))
+        if self.group_host is not None:
+            self.group_host.park_page(widget)
+        widget.hide()
 
     def _show_windows(self, session: ProjectSession, visible: bool) -> None:
         for window in self.windows_for(session.tabs):

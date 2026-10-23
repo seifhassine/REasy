@@ -135,6 +135,8 @@ class FileTab:
                 pass
 
     def update_tab_title(self):
+        if self.parent_notebook is None:
+            return
         title_provider = getattr(self.app, "document_title_for_tab", None)
         if callable(title_provider):
             title = title_provider(self)
