@@ -204,14 +204,14 @@
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="808"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1717"/>
         <source>Modify Prefab Path</source>
-        <translation>Modificar ruta prefabricada</translation>
+        <translation>Modificar ruta del prefab</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="536"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="809"/>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1721"/>
         <source>Associate with Prefab</source>
-        <translation>Asociado con Prefab</translation>
+        <translation>Asociar con prefab</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="540"/>
@@ -582,12 +582,12 @@ Se eliminarán la carpeta, todas sus subcarpetas y todos los GameObjects que con
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1718"/>
         <source>Enter new prefab path:</source>
-        <translation>Introduce una nueva ruta prefabricada:</translation>
+        <translation>Introduce la nueva ruta del prefab:</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1722"/>
         <source>Enter prefab path:</source>
-        <translation>Ingrese la ruta prefabricada:</translation>
+        <translation>Introduce la ruta del prefab:</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1769"/>
@@ -598,7 +598,7 @@ Se eliminarán la carpeta, todas sus subcarpetas y todos los GameObjects que con
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1771"/>
         <source>Prefab path cannot be empty. Please enter a valid path.</source>
-        <translation>La ruta prefabricada no puede estar vacía. Por favor, introduzca una ruta válida.</translation>
+        <translation>La ruta del prefab no puede estar vacía. Introduce una ruta válida.</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1735"/>
@@ -613,7 +613,7 @@ Se eliminarán la carpeta, todas sus subcarpetas y todos los GameObjects que con
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1736"/>
         <source>Prefab paths typically end with .pfb. Do you want to add the .pfb extension?</source>
-        <translation>Los caminos prefabricados típicamente terminan con .pfb. ¿Quieres añadir el .pfb ¿Extensión?</translation>
+        <translation>Las rutas de prefab suelen terminar en .pfb. ¿Quieres añadir la extensión .pfb?</translation>
     </message>
     <message>
         <location filename="../../file_handlers/pyside/tree_widgets.py" line="1746"/>
@@ -1154,7 +1154,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1191"/>
         <source>Looking through your project library</source>
-        <translation>Mirando a través de la biblioteca de su proyecto</translation>
+        <translation>Revisando la biblioteca de su proyecto</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1192"/>
@@ -1174,7 +1174,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/tools.py" line="1096"/>
         <source>Looking through the active project</source>
-        <translation>Mirando a través del proyecto activo</translation>
+        <translation>Revisando el proyecto activo</translation>
     </message>
     <message>
         <location filename="../../ui/ai/tools.py" line="1097"/>
@@ -1580,7 +1580,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
         <location filename="../../ui/ai/chat_dock.py" line="1189"/>
         <location filename="../../ui/ai/chat_dock.py" line="1200"/>
         <source>Reasoning effort</source>
-        <translation>Razonamiento de esfuerzo</translation>
+        <translation>Esfuerzo de razonamiento</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="1204"/>
@@ -1857,7 +1857,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2844"/>
         <source>Working — please wait</source>
-        <translation>Trabajo — por favor espere</translation>
+        <translation>Trabajando — espere, por favor</translation>
     </message>
     <message>
         <location filename="../../ui/ai/chat_dock.py" line="2779"/>
@@ -2323,7 +2323,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
 <context>
     <name>Application</name>
     <message>
-        <location filename="../../application.py" line="72"/>
+        <location filename="../../application.py" line="74"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
@@ -2654,7 +2654,7 @@ Omitió: {count} (nombres faltantes, inválidos o de gran tamaño)</translation>
     <message>
         <location filename="../../ui/better_find_dialog.py" line="226"/>
         <source>Include Advanced Information</source>
-        <translation>Incluye información avanzada</translation>
+        <translation>Incluir información avanzada</translation>
     </message>
     <message>
         <location filename="../../ui/better_find_dialog.py" line="243"/>
@@ -2760,82 +2760,82 @@ Valor: {value}</translation>
 <context>
     <name>BlendImportReview</name>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="76"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="98"/>
         <source>Import from Blender</source>
         <translation>Importar desde Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="82"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="104"/>
         <source>Apply Blender modifiers (armatures excepted)</source>
         <translation>Aplicar modificadores de Blender (excepto armaduras)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="84"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="106"/>
         <source>Imports what the viewport shows in rest pose. Shape keys are evaluated through the same modifiers.</source>
         <translation>Importa lo que muestra el viewport en pose de reposo. Las shape keys se evalúan con los mismos modificadores.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="86"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="108"/>
         <source>Recompute normals of moved vertices from geometry</source>
         <translation>Recalcular las normales de los vértices movidos a partir de la geometría</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="88"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="110"/>
         <source>Blender keeps custom normals fixed when vertices move, and modifiers such as Mirror copy them unchanged. This recomputes smooth normals for moved vertices and keeps hard edges.</source>
         <translation>Blender mantiene fijas las normales personalizadas cuando se mueven los vértices, y modificadores como Mirror las copian sin cambios. Esto recalcula normales suaves para los vértices movidos y conserva los bordes duros.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="90"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="112"/>
         <source>Unweighted objects bend with the surface they sit on (unrigged clothing)</source>
         <translation>Los objetos sin pesos se doblan con la superficie sobre la que están (ropa sin rig)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="92"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="114"/>
         <source>Off: an object without weights moves rigidly with the joint nearest its centre, as accessories should. On: each of its vertices copies the weights of the nearest vertex of the mesh.</source>
         <translation>Desactivado: un objeto sin pesos se mueve rígidamente con la articulación más cercana a su centro, como deben hacerlo los accesorios. Activado: cada uno de sus vértices copia los pesos del vértice más cercano de la malla.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="100"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="122"/>
         <source>Allow the reported data loss</source>
         <translation>Permitir la pérdida de datos indicada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="104"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="126"/>
         <source>Import</source>
         <translation>Importar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="114"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="136"/>
         <source>Reading the Blender scene…</source>
         <translation>Leyendo la escena de Blender…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="119"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="141"/>
         <source>Building the mesh…</source>
         <translation>Construyendo la malla…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="126"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="148"/>
         <source>No edits found. The mesh is identical to the exported one.</source>
         <translation>No se encontraron ediciones. La malla es idéntica a la exportada.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="128"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="150"/>
         <source>Changes:</source>
         <translation>Cambios:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="128"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="150"/>
         <source>none</source>
         <translation>ninguno</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="130"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="152"/>
         <source>Needs your approval:</source>
         <translation>Necesita tu aprobación:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="150"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="172"/>
         <source>The scene cannot be imported:</source>
         <translation>La escena no se puede importar:</translation>
     </message>
@@ -2843,115 +2843,125 @@ Valor: {value}</translation>
 <context>
     <name>BlenderRoundTrip</name>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="37"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="39"/>
         <source>Locate Blender</source>
         <translation>Localizar Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="37"/>
-        <source>Blender {version} or newer is needed for .blend export and import. Choose blender.exe; you can change it later in Settings.</source>
-        <translation>Se necesita Blender {version} o posterior para exportar e importar .blend. Elige blender.exe; puedes cambiarlo más tarde en Ajustes.</translation>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="39"/>
+        <source>Blender {version} or newer is needed for .blend export and import. REasy can download Blender {download} (about 400 MB) into its downloads folder, or you can choose an installed blender.exe; you can change it later in Settings.</source>
+        <translation>Se necesita Blender {version} o posterior para exportar e importar archivos .blend. REasy puede descargar Blender {download} (unos 400 MB) en su carpeta de descargas, o puedes elegir un blender.exe instalado; podrás cambiarlo más adelante en Configuración.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="40"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="44"/>
+        <source>Download</source>
+        <translation>Descargar</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="45"/>
+        <source>Choose blender.exe…</source>
+        <translation>Elegir blender.exe…</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="57"/>
         <source>Choose blender.exe</source>
         <translation>Elegir blender.exe</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="50"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="72"/>
         <source>Blender unavailable</source>
         <translation>Blender no disponible</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="53"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="75"/>
         <source>Blender too old</source>
         <translation>Blender demasiado antiguo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="53"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="75"/>
         <source>Blender {found} cannot store exact custom normals. Install Blender {needed} or newer.</source>
         <translation>Blender {found} no puede guardar normales personalizadas exactas. Instala Blender {needed} o posterior.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="64"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="86"/>
         <source>Blender</source>
         <translation>Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="172"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="194"/>
         <source>The mesh&apos;s editor tab was not found</source>
         <translation>No se encontró la pestaña del editor de la malla</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="176"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="198"/>
         <source>The imported mesh could not be opened</source>
         <translation>No se pudo abrir la malla importada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="185"/>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="193"/>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="204"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="207"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="215"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="226"/>
         <source>Save the new mesh</source>
         <translation>Guardar la nueva malla</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="186"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="208"/>
         <source>Meshes (*{suffix})</source>
         <translation>Mallas (*{suffix})</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="193"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="215"/>
         <source>This mesh keeps part of its geometry in a streaming file, which belongs under natives/&lt;platform&gt;/streaming/. Save the mesh below a natives/&lt;platform&gt;/ folder.</source>
         <translation>Esta malla guarda parte de su geometría en un archivo de streaming, que va en natives/&lt;platform&gt;/streaming/. Guarda la malla dentro de una carpeta natives/&lt;platform&gt;/.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="252"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="274"/>
         <source>Bone mapping</source>
         <translation>Asignación de huesos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="252"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="274"/>
         <source>The bone mapping remembered for this skeleton could not be read; the suggested mapping is shown.</source>
         <translation>No se pudo leer la asignación de huesos recordada para este esqueleto; se muestra la asignación sugerida.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="274"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="296"/>
         <source>Import from Blender</source>
         <translation>Importar desde Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="275"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="297"/>
         <source>Blender scenes (*.blend)</source>
         <translation>Escenas de Blender (*.blend)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="279"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="301"/>
         <source>Reading the Blender scene…</source>
         <translation>Leyendo la escena de Blender…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="282"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="304"/>
         <source>The scene has no visible mesh objects.</source>
         <translation>La escena no tiene objetos de malla visibles.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="284"/>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="329"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="306"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="351"/>
         <source>Blender import failed</source>
         <translation>Falló la importación desde Blender</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="291"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="313"/>
         <source>The open mesh</source>
         <translation>La malla abierta</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="311"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="333"/>
         <source>This .blend was exported from a different mesh version (.{version}). Import it anyway?</source>
         <translation>Este .blend se exportó desde una versión de malla diferente (.{version}). ¿Importarlo de todos modos?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/blender_ui.py" line="314"/>
+        <location filename="../../file_handlers/mesh/blender_ui.py" line="336"/>
         <source>Different mesh</source>
         <translation>Malla diferente</translation>
     </message>
@@ -3612,152 +3622,282 @@ información material sobre las formas de colisión para la compatibilidad con v
     <name>ChangelogDialog</name>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="95"/>
-        <location filename="../../ui/changelog_dialog.py" line="122"/>
+        <location filename="../../ui/changelog_dialog.py" line="121"/>
         <source>What’s new in REasy v{version}</source>
         <translation>Novedades de REasy v{version}</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="123"/>
+        <location filename="../../ui/changelog_dialog.py" line="122"/>
         <source>Thanks for updating! Here are the highlights:</source>
         <translation>¡Gracias por la actualización! Aquí están los aspectos más destacados:</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="143"/>
-        <source>Added full sound modding support for RE2 RT, RE3 RT, and RE7 RT.</source>
-        <translation>Se ha añadido compatibilidad completa con mods de sonido para RE2 RT, RE3 RT y RE7 RT.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="145"/>
-        <source>MSG files now include a Sound Scan button. Sound preview is now available wherever applicable.</source>
-        <translation>Los archivos MSG ahora incluyen un botón Escanear sonidos. La vista previa de sonido está disponible donde corresponda.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="146"/>
-        <source>New sound sources can now be added to BNK and PCK files.</source>
-        <translation>Ahora se pueden añadir nuevas fuentes de sonido a archivos BNK y PCK.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="142"/>
+        <source>&lt;b&gt;Master material (MMTR) editing:&lt;/b&gt; edit a material&apos;s shaders as a node graph from the MDF editor&apos;s Edit Shader… button, then save the result as a variant for just the materials you choose.</source>
+        <translation>&lt;b&gt;Edición de materiales maestros (MMTR):&lt;/b&gt; edita los shaders de un material como un grafo de nodos desde el botón Editar shader… del editor de MDF y guarda el resultado como una variante solo para los materiales que elijas.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="147"/>
-        <source>Sound banks can now be searched by source ID.</source>
-        <translation>Ahora se pueden buscar bancos de sonido por ID de origen.</translation>
+        <source>Added SDF (shader definition) viewing and editing: inspect each pass&apos;s pipeline, edit its render state, and replace or export its compiled shaders.</source>
+        <translation>Se han añadido la visualización y la edición de SDF (definición de shaders): inspecciona el pipeline de cada pasada, edita su estado de renderizado y sustituye o exporta sus shaders compilados.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="149"/>
-        <source>Added quality, codec, and compression settings for sound replacements and additions.</source>
-        <translation>Se han añadido ajustes de calidad, códec y compresión para sustituciones y adiciones de sonido.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="151"/>
+        <source>MDF files have a new Material Graph tab, and now warn when their parameters or textures don&apos;t match their master material.</source>
+        <translation>Los archivos MDF tienen una nueva pestaña Grafo de material y ahora avisan cuando sus parámetros o texturas no coinciden con su material maestro.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="153"/>
-        <source>Users are now warned when saving a sound file while other affected files are open.</source>
-        <translation>Ahora se avisa a los usuarios al guardar un archivo de sonido mientras hay otros archivos afectados abiertos.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="156"/>
-        <source>Added support for WCP, WCST, WGS, and WSS files.</source>
-        <translation>Se ha añadido compatibilidad con archivos WCP, WCST, WGS y WSS.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="157"/>
-        <source>Added Spanish and Russian translations.</source>
-        <translation>Se han añadido traducciones al español y al ruso.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="155"/>
+        <source>&lt;b&gt;Game lighting:&lt;/b&gt; meshes and scenes can be drawn with the game&apos;s own shaders and lighting in RE2 and RE3 (RT and non-RT), RE4, RE7 RT, RE8, RE9, DMC5, SF6, MH Wilds, Dragon&apos;s Dogma 2, Onimusha: Way of the Sword and Pragmata.</source>
+        <translation>&lt;b&gt;Iluminación del juego:&lt;/b&gt; las mallas y escenas se pueden dibujar con los shaders y la iluminación propios del juego en RE2 y RE3 (RT y no RT), RE4, RE7 RT, RE8, RE9, DMC5, SF6, MH Wilds, Dragon&apos;s Dogma 2, Onimusha: Way of the Sword y Pragmata.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="160"/>
-        <source>Improved performance during sound editing.</source>
-        <translation>Se ha mejorado el rendimiento durante la edición de sonido.</translation>
+        <source>&lt;b&gt;Hair strands:&lt;/b&gt; hair prefabs now have a 3D tab that draws their strands with the game&apos;s hair rendering and physics in RE4, RE9 and Pragmata.</source>
+        <translation>&lt;b&gt;Mechones de cabello:&lt;/b&gt; los prefabs de cabello ahora tienen una pestaña 3D que dibuja sus mechones con el renderizado y la física de cabello del juego en RE4, RE9 y Pragmata.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="162"/>
-        <source>New sounds now automatically adjust their duration and fade curves.</source>
-        <translation>Los sonidos nuevos ahora ajustan automáticamente su duración y sus curvas de fundido.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="164"/>
+        <source>Added a hair strand editor for RE9 and Pragmata: comb, paint, smooth, grow or trim strands, edit colliders, physics presets and LOD settings, and save the result to your project.</source>
+        <translation>Se ha añadido un editor de mechones de cabello para RE9 y Pragmata: peina, pinta, suaviza, haz crecer o recorta mechones; edita colisionadores, presets de física y ajustes de LOD, y guarda el resultado en tu proyecto.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="167"/>
-        <source>&lt;b&gt;General UI overhaul:&lt;/b&gt; refined the workbench to feel more fluid and VS Code-like.</source>
-        <translation>&lt;b&gt;Renovación general de la interfaz:&lt;/b&gt; se ha refinado el entorno de trabajo para que resulte más fluido y parecido a VS Code.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="169"/>
+        <source>&lt;b&gt;Mesh conversion:&lt;/b&gt; convert meshes to another game&apos;s format, with a before and after preview and a report of any data loss. MDF/Textures are not included for now.</source>
+        <translation>&lt;b&gt;Conversión de mallas:&lt;/b&gt; convierte mallas al formato de otro juego, con una vista previa de antes y después y un informe de cualquier pérdida de datos. Por ahora no se incluyen MDF/texturas.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="170"/>
-        <source>Added a search bar to the Project Files tab.</source>
-        <translation>Se ha añadido una barra de búsqueda a la pestaña Archivos del proyecto.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="171"/>
-        <source>Added a bookmarks system.</source>
-        <translation>Se ha añadido un sistema de marcadores.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="172"/>
-        <source>Project folders can now be changed.</source>
-        <translation>Ahora se pueden cambiar las carpetas del proyecto.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="174"/>
-        <source>MOV files can now be opened through the operating system.</source>
-        <translation>Los archivos MOV ahora se pueden abrir con el sistema operativo.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="173"/>
+        <source>&lt;b&gt;Blender round trip:&lt;/b&gt; export meshes to .blend and import your edits back (Blender 5.0 or newer), or import models from other sources onto a game&apos;s reference mesh with automatic bone mapping. MDF/Textures are not included for now.</source>
+        <translation>&lt;b&gt;Ida y vuelta con Blender:&lt;/b&gt; exporta mallas a .blend e importa de vuelta tus ediciones (Blender 5.0 o posterior), o importa modelos de otras fuentes sobre una malla de referencia del juego con asignación automática de huesos. Por ahora no se incluyen MDF/texturas.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="178"/>
-        <source>Fixed sound replacement issues.</source>
-        <translation>Se han corregido problemas al sustituir sonidos.</translation>
-    </message>
-    <message>
-        <location filename="../../ui/changelog_dialog.py" line="180"/>
-        <source>8-bit WAV files are now rejected instead of becoming silent tracks.</source>
-        <translation>Los archivos WAV de 8 bits ahora se rechazan en lugar de convertirse en pistas silenciosas.</translation>
+        <source>TEX files can now be edited: create them from DDS images, replace their image, change their settings, or convert them to another game&apos;s version.</source>
+        <translation>Ahora se pueden editar archivos TEX: créalos a partir de imágenes DDS, sustituye su imagen, cambia su configuración o conviértelos a la versión de otro juego.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="182"/>
-        <source>Fixed RE9 RSZ dump issues.</source>
-        <translation>Se han corregido problemas del volcado RSZ de RE9.</translation>
+        <source>SpeedTree meshes (.stmesh) can now be viewed, and trees and foliage now appear in scenes, for RE4, SF6, MH Wilds, Dragon&apos;s Dogma 2, Onimusha: Way of the Sword and Pragmata.</source>
+        <translation>Ahora se pueden ver mallas SpeedTree (.stmesh), y los árboles y el follaje aparecen en las escenas, en RE4, SF6, MH Wilds, Dragon&apos;s Dogma 2, Onimusha: Way of the Sword y Pragmata.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="183"/>
-        <source>Fixed AI Assistant failures while editing RSZ files.</source>
-        <translation>Se han corregido errores del asistente de IA al editar archivos RSZ.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="187"/>
+        <source>Mesh distance fields (.sdftex) can now be viewed, or baked from a mesh, for RE4, RE9, MH Wilds, Dragon&apos;s Dogma 2, Onimusha: Way of the Sword and Pragmata.</source>
+        <translation>Ahora se pueden ver campos de distancia de malla (.sdftex) u hornearlos a partir de una malla, en RE4, RE9, MH Wilds, Dragon&apos;s Dogma 2, Onimusha: Way of the Sword y Pragmata.</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="185"/>
-        <source>Fixed resource links failing to resolve files stored in PAKs.</source>
-        <translation>Se ha corregido que los enlaces de recursos no resolvieran archivos almacenados en PAK.</translation>
+        <location filename="../../ui/changelog_dialog.py" line="191"/>
+        <source>The mesh viewer can now show each LOD, shadow and occluder meshes, shape keys and vertex attributes, and has a new Inspect panel for isolating and hiding submeshes.</source>
+        <translation>El visor de mallas ahora puede mostrar cada LOD, las mallas de sombra y de oclusión, las shape keys y los atributos de vértice, y tiene un nuevo panel Inspeccionar para aislar y ocultar submallas.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="195"/>
+        <source>PFB files can now be opened in the 3D scene viewer and added to scenes.</source>
+        <translation>Ahora los archivos PFB se pueden abrir en el visor de escenas 3D y añadirse a escenas.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="197"/>
+        <source>Added Dead Rising Deluxe Remaster support, including SCN, PFB and USER editing and PAK browsing.</source>
+        <translation>Se ha añadido compatibilidad con Dead Rising Deluxe Remaster, incluida la edición de SCN, PFB y USER y la exploración de PAK.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="200"/>
+        <source>Added full sound modding support for Onimusha: Way of the Sword.</source>
+        <translation>Se ha añadido compatibilidad completa con mods de sonido para Onimusha: Way of the Sword.</translation>
     </message>
     <message>
         <location filename="../../ui/changelog_dialog.py" line="202"/>
+        <source>Sound preview now has a basic editor for silencing, trimming and cropping a sound before using it as a replacement.</source>
+        <translation>La vista previa de sonido ahora tiene un editor básico para silenciar, cortar y recortar un sonido antes de usarlo como sustitución.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="206"/>
+        <source>Sound preview has a Normalize option, and sounds can be played and paused with Space or Enter.</source>
+        <translation>La vista previa de sonido tiene una opción Normalizar, y los sonidos se pueden reproducir y pausar con Espacio o Intro.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="209"/>
+        <source>Onimusha: Way of the Sword MDF files can now be opened, edited and saved.</source>
+        <translation>Ahora se pueden abrir, editar y guardar archivos MDF de Onimusha: Way of the Sword.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="210"/>
+        <source>Added support for WCSW, WCSS, WCSA and WCSF sound files.</source>
+        <translation>Se ha añadido compatibilidad con archivos de sonido WCSW, WCSS, WCSA y WCSF.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="211"/>
+        <source>Added a file list for RE Resistance.</source>
+        <translation>Se ha añadido una lista de archivos para RE Resistance.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="215"/>
+        <source>&lt;b&gt;Fully dockable tabs:&lt;/b&gt; drag a tab to split the editor on any side, or float it in its own window.</source>
+        <translation>&lt;b&gt;Pestañas totalmente acoplables:&lt;/b&gt; arrastra una pestaña para dividir el editor por cualquier lado, o desacóplala en su propia ventana.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="219"/>
+        <source>Large scenes are much more responsive: hovering and selecting objects respond immediately, and objects outside the view are no longer drawn.</source>
+        <translation>Las escenas grandes responden mucho mejor: pasar el cursor por encima de los objetos y seleccionarlos responde al instante, y los objetos fuera de la vista ya no se dibujan.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="223"/>
+        <source>REasy starts up faster, and opening game PAKs is faster and uses less memory.</source>
+        <translation>REasy se inicia más rápido, y abrir los PAK del juego es más rápido y consume menos memoria.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="226"/>
+        <source>Projects open without freezing the window, and Project Browser trees now start directly inside the natives folder.</source>
+        <translation>Los proyectos se abren sin congelar la ventana, y los árboles del Navegador de proyectos ahora empiezan directamente dentro de la carpeta natives.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="230"/>
+        <source>Redesigned the sound preview: Play now pauses and resumes, the source list can be sorted and filtered by Used by, and replacement options moved to a Replacement Settings dialog.</source>
+        <translation>Se ha rediseñado la vista previa de sonido: Reproducir ahora pausa y reanuda, la lista de fuentes se puede ordenar y filtrar por Utilizado por, y las opciones de sustitución se han trasladado a un cuadro de diálogo Ajustes de sustitución.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="235"/>
+        <source>Sound banks now identify many more sounds, and MSG Sound Scan finds cutscene and event dialogue in Dragon&apos;s Dogma 2, MH Rise, MH Wilds, Pragmata and SF6.</source>
+        <translation>Los bancos de sonido ahora identifican muchos más sonidos, y Escanear sonidos de MSG encuentra diálogos de cinemáticas y de eventos en Dragon&apos;s Dogma 2, MH Rise, MH Wilds, Pragmata y SF6.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="239"/>
+        <source>The Project Browser and PAK Browser now always skip mod PAKs and warn when the game folder contains modded PAKs.</source>
+        <translation>El Navegador de proyectos y el Navegador PAK ahora siempre omiten los PAK de mods y avisan cuando la carpeta del juego contiene PAK modificados.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="243"/>
+        <source>Redesigned the File List Generator with new search modes, time estimates, much faster searches and optional GPU acceleration.</source>
+        <translation>Se ha rediseñado el Generador de lista de archivos con nuevos modos de búsqueda, estimaciones de tiempo, búsquedas mucho más rápidas y aceleración por GPU opcional.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="246"/>
+        <source>GCF and IFT font files can now be viewed in every supported game.</source>
+        <translation>Ahora se pueden ver los archivos de fuentes GCF e IFT en todos los juegos compatibles.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="250"/>
+        <source>&lt;b&gt;UI refresh:&lt;/b&gt; restyled dark theme, line icons and more compact layouts across viewers, dialogs and tools.</source>
+        <translation>&lt;b&gt;Interfaz renovada:&lt;/b&gt; tema oscuro rediseñado, iconos lineales y diseños más compactos en visores, cuadros de diálogo y herramientas.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="254"/>
+        <source>Updated file lists, RSZ dumps and enums for Dragon&apos;s Dogma 2&apos;s latest update,the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved file lists for many other games.</source>
+        <translation>Se han actualizado las listas de archivos, los volcados RSZ y los enums para la última actualización de Dragon&apos;s Dogma 2, el lanzamiento completo de Onimusha: Way of the Sword, SF6 y Pragmata, y se han mejorado las listas de archivos de muchos otros juegos.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="259"/>
+        <source>Updated Dragon&apos;s Dogma 2 sound support for the game&apos;s latest update, and sound data for all supported games.</source>
+        <translation>Se ha actualizado la compatibilidad de sonido de Dragon&apos;s Dogma 2 para la última actualización del juego, así como los datos de sonido de todos los juegos compatibles.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="263"/>
+        <source>Replacing or adding sounds now requires an open project with its game folder set.</source>
+        <translation>Ahora, para sustituir o añadir sonidos se necesita un proyecto abierto con su carpeta del juego configurada.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="265"/>
+        <source>3D views now render with Direct3D 12 instead of OpenGL.</source>
+        <translation>Las vistas 3D ahora se renderizan con Direct3D 12 en lugar de OpenGL.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="267"/>
+        <source>Added a setting to choose whether REasy restores your workspace on startup.</source>
+        <translation>Se ha añadido un ajuste para elegir si REasy restaura tu espacio de trabajo al iniciarse.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="270"/>
+        <source>The AI Assistant and Output console now start hidden for new users and can be turned on from the View menu.</source>
+        <translation>El Asistente de IA y la consola Salida ahora empiezan ocultos para los usuarios nuevos y se pueden activar desde el menú Ver.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="276"/>
+        <source>Fixed PAK browsing and extraction sometimes using an outdated copy of a file.</source>
+        <translation>Se ha corregido que la exploración y la extracción de PAK a veces usaran una copia obsoleta de un archivo.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="279"/>
+        <source>Fixed Dragon&apos;s Dogma 2 PAKs failing to open after the game&apos;s latest update, and corrupted files extracted from Onimusha: Way of the Sword&apos;s main PAK.</source>
+        <translation>Se ha corregido que los PAK de Dragon&apos;s Dogma 2 no se abrieran tras la última actualización del juego, así como los archivos dañados extraídos del PAK principal de Onimusha: Way of the Sword.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="283"/>
+        <source>Fixed memory build-up, freezes and occasional crashes after closing SCN, PFB and USER tabs.</source>
+        <translation>Se han corregido la acumulación de memoria, los bloqueos y los cierres inesperados ocasionales tras cerrar pestañas SCN, PFB y USER.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="286"/>
+        <source>Fixed RE4 sound replacements sometimes not updating every linked sound bank.</source>
+        <translation>Se ha corregido que las sustituciones de sonido de RE4 a veces no actualizaran todos los bancos de sonido vinculados.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="287"/>
+        <source>Fixed some sound banks with large music containers loading very slowly.</source>
+        <translation>Se ha corregido la carga muy lenta de algunos bancos de sonido con contenedores de música grandes.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="288"/>
+        <source>Fixed some MH Wilds CLIP files failing to open.</source>
+        <translation>Se ha corregido que algunos archivos CLIP de MH Wilds no se abrieran.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="289"/>
+        <source>Fixed MDF parameters with two or three values saving only their first value.</source>
+        <translation>Se ha corregido que los parámetros MDF con dos o tres valores guardaran solo su primer valor.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="291"/>
+        <source>Fixed new GameObjects, folders and Transforms being created with drawing turned off and zero scale.</source>
+        <translation>Se ha corregido que los nuevos GameObjects, carpetas y Transforms se crearan con el dibujado desactivado y escala cero.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="294"/>
+        <source>Fixed a crash when switching back to a project after opening a scene.</source>
+        <translation>Se ha corregido un cierre inesperado al volver a un proyecto después de abrir una escena.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="295"/>
+        <source>Fixed DDS export of cubemaps and texture arrays producing broken files.</source>
+        <translation>Se ha corregido que la exportación DDS de cubemaps y arrays de texturas generara archivos dañados.</translation>
+    </message>
+    <message>
+        <location filename="../../ui/changelog_dialog.py" line="311"/>
         <source>Star on GitHub</source>
         <translation>Marcar con una estrella en GitHub</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="208"/>
+        <location filename="../../ui/changelog_dialog.py" line="317"/>
         <source>View release notes…</source>
         <translation>Ver notas de la versión…</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="210"/>
+        <location filename="../../ui/changelog_dialog.py" line="319"/>
         <source>Let’s go!</source>
         <translation>¡Vamos!</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="228"/>
+        <location filename="../../ui/changelog_dialog.py" line="337"/>
         <source>New</source>
         <translation>Nuevo</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="229"/>
+        <location filename="../../ui/changelog_dialog.py" line="338"/>
         <source>Updated</source>
         <translation>Actualizado</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="230"/>
+        <location filename="../../ui/changelog_dialog.py" line="339"/>
         <source>Improved</source>
         <translation>Mejorado</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="231"/>
+        <location filename="../../ui/changelog_dialog.py" line="340"/>
         <source>Fixed</source>
-        <translation>Fijo</translation>
+        <translation>Corregido</translation>
     </message>
     <message>
-        <location filename="../../ui/changelog_dialog.py" line="232"/>
+        <location filename="../../ui/changelog_dialog.py" line="341"/>
         <source>Planned</source>
         <translation>Planeado</translation>
     </message>
@@ -4883,22 +5023,22 @@ Descargas: {downloads}</translation>
 <context>
     <name>DevicePreview</name>
     <message>
-        <location filename="../../file_handlers/mesh/device_preview.py" line="126"/>
+        <location filename="../../file_handlers/mesh/device_preview.py" line="156"/>
         <source>Texture {path} was not found.</source>
         <translation>No se encontró la textura {path}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/device_preview.py" line="239"/>
+        <location filename="../../file_handlers/mesh/device_preview.py" line="269"/>
         <source>Drawing…</source>
         <translation>Dibujando…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/device_preview.py" line="270"/>
+        <location filename="../../file_handlers/mesh/device_preview.py" line="310"/>
         <source>{part}: not drawn. {reason}</source>
         <translation>{part}: no dibujado. {reason}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/device_preview.py" line="271"/>
+        <location filename="../../file_handlers/mesh/device_preview.py" line="311"/>
         <source>Part {index}</source>
         <translation>Parte {index}</translation>
     </message>
@@ -5052,7 +5192,7 @@ Traza de pila:
     <message>
         <location filename="../../ui/directory_search.py" line="226"/>
         <source>Include mod PAKs</source>
-        <translation>Incluye PAKs mod</translation>
+        <translation>Incluir PAKs de mods</translation>
     </message>
     <message>
         <location filename="../../ui/directory_search.py" line="227"/>
@@ -5300,7 +5440,7 @@ Vóxel: {:.7g} · Rango decodificado: {:.7g} a {:.7g} · Centro de la cuadrícul
     <message>
         <location filename="../../ui/project_manager/dock_chrome.py" line="37"/>
         <source>Dock back into the main window</source>
-        <translation>Muelle de nuevo en la ventana principal</translation>
+        <translation>Acoplar de nuevo a la ventana principal</translation>
     </message>
     <message>
         <location filename="../../ui/project_manager/dock_chrome.py" line="39"/>
@@ -5431,7 +5571,7 @@ Vóxel: {:.7g} · Rango decodificado: {:.7g} a {:.7g} · Centro de la cuadrícul
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="174"/>
         <source>Add streaming/ variants when collecting or extracting paths</source>
-        <translation>Agregue variantes de transmisión al recopilar o extraer rutas</translation>
+        <translation>Añade variantes streaming/ al recopilar o extraer rutas</translation>
     </message>
     <message>
         <location filename="../../ui/file_list_generator_dialog.py" line="193"/>
@@ -6399,49 +6539,49 @@ Guardado en: {path}</translation>
         <translation>Cambios no guardados</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="261"/>
+        <location filename="../../ui/file_tab.py" line="263"/>
         <source>Loaded: {filename}</source>
         <translation>Cargado: {filename}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="279"/>
-        <location filename="../../ui/file_tab.py" line="378"/>
-        <location filename="../../ui/file_tab.py" line="405"/>
-        <location filename="../../ui/file_tab.py" line="560"/>
-        <location filename="../../ui/file_tab.py" line="573"/>
-        <location filename="../../ui/file_tab.py" line="589"/>
-        <location filename="../../ui/file_tab.py" line="621"/>
-        <location filename="../../ui/file_tab.py" line="692"/>
+        <location filename="../../ui/file_tab.py" line="281"/>
+        <location filename="../../ui/file_tab.py" line="380"/>
+        <location filename="../../ui/file_tab.py" line="407"/>
+        <location filename="../../ui/file_tab.py" line="562"/>
+        <location filename="../../ui/file_tab.py" line="575"/>
+        <location filename="../../ui/file_tab.py" line="591"/>
+        <location filename="../../ui/file_tab.py" line="623"/>
+        <location filename="../../ui/file_tab.py" line="694"/>
         <source>Error</source>
         <translation>Error</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="280"/>
+        <location filename="../../ui/file_tab.py" line="282"/>
         <source>Failed to load file: {error}</source>
         <translation>No se pudo cargar el archivo: {error}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="366"/>
+        <location filename="../../ui/file_tab.py" line="368"/>
         <source>Edit Value</source>
         <translation>Editar valor</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="366"/>
+        <location filename="../../ui/file_tab.py" line="368"/>
         <source>Value:</source>
         <translation>Valor:</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="379"/>
+        <location filename="../../ui/file_tab.py" line="381"/>
         <source>Failed to update value: {error}</source>
         <translation>No se pudo actualizar el valor: {error}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="406"/>
+        <location filename="../../ui/file_tab.py" line="408"/>
         <source>Invalid value: {error}</source>
         <translation>Valor no válido: {error}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="422"/>
+        <location filename="../../ui/file_tab.py" line="424"/>
         <source>This save will overwrite open related files:
 
 {files}
@@ -6454,99 +6594,99 @@ Close those tabs yourself and try again, or save now and reload them.</source>
 Cierra tú mismo esas pestañas y vuelve a intentarlo, o guarda ahora y vuelve a cargarlas.</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="432"/>
+        <location filename="../../ui/file_tab.py" line="434"/>
         <source>Related Files Are Open</source>
         <translation>Hay archivos relacionados abiertos</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="480"/>
+        <location filename="../../ui/file_tab.py" line="482"/>
         <source>No rebuild method available</source>
         <translation>No hay método de reconstrucción disponible</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="517"/>
+        <location filename="../../ui/file_tab.py" line="519"/>
         <source>Saved {count} file(s). </source>
         <translation>Se han guardado {count} archivo(s). </translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="519"/>
+        <location filename="../../ui/file_tab.py" line="521"/>
         <source>Saved: {path}</source>
         <translation>Guardado: {path}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="533"/>
+        <location filename="../../ui/file_tab.py" line="535"/>
         <source>Save Error</source>
         <translation>Guardar error</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="552"/>
+        <location filename="../../ui/file_tab.py" line="554"/>
         <source>Backup created: {path}</source>
         <translation>Copia de seguridad creada: {path}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="578"/>
+        <location filename="../../ui/file_tab.py" line="580"/>
         <source>Save File As</source>
         <translation>Guardar archivo como</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="589"/>
+        <location filename="../../ui/file_tab.py" line="591"/>
         <source>No file currently loaded.</source>
         <translation>Ningún archivo cargado actualmente.</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="596"/>
+        <location filename="../../ui/file_tab.py" line="598"/>
         <source>File {} has unsaved changes.
 Save before reloading?</source>
         <translation>Archivo {} tiene cambios no guardados.
 ¿Guardar antes de recargar?</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="610"/>
+        <location filename="../../ui/file_tab.py" line="612"/>
         <source>Unable to read source data for: {path}</source>
         <translation>No se pueden leer los datos de origen para: {path}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="616"/>
+        <location filename="../../ui/file_tab.py" line="618"/>
         <source>Reloaded: {path}</source>
         <translation>Recargado: {path}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="621"/>
+        <location filename="../../ui/file_tab.py" line="623"/>
         <source>Failed to reload file: {}</source>
         <translation>No se pudo volver a cargar el archivo: {}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="647"/>
+        <location filename="../../ui/file_tab.py" line="649"/>
         <source>Search in MSG</source>
         <translation>Buscar en MSG</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="647"/>
+        <location filename="../../ui/file_tab.py" line="649"/>
         <source>MSG files have their own search bar at the top of the editor.</source>
         <translation>Los archivos MSG tienen su propia barra de búsqueda en la parte superior del editor.</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="684"/>
+        <location filename="../../ui/file_tab.py" line="686"/>
         <source>Backup restored successfully</source>
         <translation>Copia de seguridad restaurada con éxito</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="693"/>
+        <location filename="../../ui/file_tab.py" line="695"/>
         <source>Failed to restore backup: {}</source>
         <translation>No se pudo restaurar la copia de seguridad: {}</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="427"/>
+        <location filename="../../ui/file_tab.py" line="429"/>
         <source>One or more tabs have unsaved changes; reloading will discard them.</source>
         <translation>Una o más pestañas tienen cambios no guardados; la recarga los descartará.</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="437"/>
+        <location filename="../../ui/file_tab.py" line="439"/>
         <source>Save and Reload Tabs</source>
         <translation>Guardar y volver a cargar pestañas</translation>
     </message>
     <message>
-        <location filename="../../ui/file_tab.py" line="518"/>
+        <location filename="../../ui/file_tab.py" line="520"/>
         <source>Primary: {path}</source>
         <translation>Principal: {path}</translation>
     </message>
@@ -6610,7 +6750,7 @@ Save before reloading?</source>
 <context>
     <name>GameLighting</name>
     <message>
-        <location filename="../../file_handlers/mesh/lit_preview.py" line="716"/>
+        <location filename="../../file_handlers/mesh/lit_preview.py" line="728"/>
         <source>Textures not used (not found, or not the shape the shader reads): {names}.</source>
         <translation>Texturas no usadas (no encontradas, o sin la forma que lee el shader): {names}.</translation>
     </message>
@@ -7497,7 +7637,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="20"/>
         <source>Configure keyboard shortcuts for common actions:</source>
-        <translation>Configurar métodos abreviados de teclado para acciones comunes:</translation>
+        <translation>Configurar atajos de teclado para acciones comunes:</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="26"/>
@@ -7512,12 +7652,12 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="33"/>
         <source>Shortcut</source>
-        <translation>Acceso directo</translation>
+        <translation>Atajo</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="43"/>
         <source>Double-click an action to change its shortcut.</source>
-        <translation>Haga doble clic en una acción para cambiar su acceso directo.</translation>
+        <translation>Haga doble clic en una acción para cambiar su atajo.</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="48"/>
@@ -7597,7 +7737,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="77"/>
         <source>Edit Selected Shortcut</source>
-        <translation>Editar acceso directo seleccionado</translation>
+        <translation>Editar atajo seleccionado</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="81"/>
@@ -7612,12 +7752,12 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="154"/>
         <source>Please select a shortcut to edit.</source>
-        <translation>Por favor, seleccione un acceso directo para editar.</translation>
+        <translation>Por favor, seleccione un atajo para editar.</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="166"/>
         <source>Edit Shortcut: {name}</source>
-        <translation>Editar acceso directo: {name}</translation>
+        <translation>Editar atajo: {name}</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="175"/>
@@ -7632,7 +7772,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="128"/>
         <source>Shortcut Conflict</source>
-        <translation>Conflicto de acceso directo</translation>
+        <translation>Conflicto de atajos</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="65"/>
@@ -7672,23 +7812,23 @@ Save before reloading?</source>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="270"/>
         <source>Please select a shortcut to reset.</source>
-        <translation>Por favor, seleccione un acceso directo para restablecer.</translation>
+        <translation>Por favor, seleccione un atajo para restablecer.</translation>
     </message>
     <message>
         <location filename="../../ui/keyboard_shortcuts.py" line="287"/>
         <source>The default shortcut &apos;{shortcut}&apos; is already assigned to &apos;{name}&apos;.</source>
-        <translation>El acceso directo predeterminado &apos;{shortcut}&apos; ya está asignado a &apos;{name}&apos;.</translation>
+        <translation>El atajo predeterminado &apos;{shortcut}&apos; ya está asignado a &apos;{name}&apos;.</translation>
     </message>
 </context>
 <context>
     <name>LitPreview</name>
     <message>
-        <location filename="../../file_handlers/mesh/lit_preview.py" line="752"/>
+        <location filename="../../file_handlers/mesh/lit_preview.py" line="768"/>
         <source>None of the mesh&apos;s parts can be drawn.</source>
         <translation>Ninguna de las partes de la malla se puede dibujar.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/lit_preview.py" line="800"/>
+        <location filename="../../file_handlers/mesh/lit_preview.py" line="820"/>
         <source>No MDF material.</source>
         <translation>Sin material MDF.</translation>
     </message>
@@ -8254,7 +8394,7 @@ Save before reloading?</source>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/material_preview.py" line="619"/>
-        <location filename="../../file_handlers/mmtr/material_preview.py" line="738"/>
+        <location filename="../../file_handlers/mmtr/material_preview.py" line="737"/>
         <source>The pass reads a {kind} texture.</source>
         <translation>La pasada lee una textura {kind}.</translation>
     </message>
@@ -8279,152 +8419,152 @@ Save before reloading?</source>
         <translation>La pasada vincula parte de su material a la propia llamada de dibujo, algo que las llamadas de dibujo de meshlets de REasy, que leen cada material en su propio handle, no organizan.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/material_preview.py" line="764"/>
-        <location filename="../../file_handlers/mmtr/material_preview.py" line="787"/>
+        <location filename="../../file_handlers/mmtr/material_preview.py" line="763"/>
+        <location filename="../../file_handlers/mmtr/material_preview.py" line="786"/>
         <source>The pass reads one engine heap index as several kinds.</source>
         <translation>La pasada lee un mismo índice del heap del motor como varios tipos.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/material_preview.py" line="798"/>
+        <location filename="../../file_handlers/mmtr/material_preview.py" line="797"/>
         <source>The pass reads the engine&apos;s resources at descriptor heap indices it takes from {buffers}, which the engine fills from the scene and the preview leaves at zero.</source>
         <translation>La pasada lee los recursos del motor en índices del heap de descriptores que toma de {buffers}, que el motor rellena desde la escena y la vista previa deja a cero.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/material_preview.py" line="804"/>
+        <location filename="../../file_handlers/mmtr/material_preview.py" line="803"/>
         <source>The pass reads the engine&apos;s resources straight from the descriptor heap, which the preview does not lay out.</source>
         <translation>La pasada lee los recursos del motor directamente del heap de descriptores, que la vista previa no organiza.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="407"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="396"/>
         <source>REasy&apos;s catalog of this game build does not record the targets the renderer binds for the pass.</source>
         <translation>El catálogo de REasy de esta versión del juego no registra los destinos que el renderizador vincula para la pasada.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="438"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="427"/>
         <source>The program {name} is not a Direct3D vertex and pixel shader, with or without hull and domain shaders.</source>
         <translation>El programa {name} no es un shader de vértices y píxeles de Direct3D, con o sin shaders de casco y dominio.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="442"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="431"/>
         <source>The program {name} tessellates, and REasy has no catalog of the engine&apos;s state its hull shader reads for this game build.</source>
         <translation>El programa {name} usa teselación, y REasy no tiene un catálogo del estado del motor que lee su shader de casco para esta versión del juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="482"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="554"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="471"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="543"/>
         <source>REasy has no catalog of what the renderer binds for this game build.</source>
         <translation>REasy no tiene un catálogo de lo que vincula el renderizador para esta versión del juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="495"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="484"/>
         <source>REasy has no catalog of how the renderer draws meshlet meshes for this game build.</source>
         <translation>REasy no tiene un catálogo de cómo dibuja el renderizador las mallas de meshlets para esta versión del juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="500"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="489"/>
         <source>No capture of this game build shows how the renderer transforms the triangles of meshlet materials before shading them.</source>
         <translation>Ninguna captura de esta versión del juego muestra cómo transforma el renderizador los triángulos de los materiales de meshlets antes de sombrearlos.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="510"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="499"/>
         <source>The program {name} is not a Direct3D compute program.</source>
         <translation>El programa {name} no es un programa de cómputo de Direct3D.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="529"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="518"/>
         <source>The master draws the material only in passes of its own, which REasy&apos;s light pass catalog of this game build does not record.</source>
         <translation>El maestro dibuja el material solo en pasadas propias, que el catálogo de pasadas de luz de REasy de esta versión del juego no registra.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="548"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="537"/>
         <source>The mesh has no submesh to draw.</source>
         <translation>La malla no tiene submallas que dibujar.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="558"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="547"/>
         <source>REasy&apos;s catalog of this game build does not record the G-buffer&apos;s depth format.</source>
         <translation>El catálogo de REasy de esta versión del juego no registra el formato de profundidad del G-buffer.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="944"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="932"/>
         <source>The master has no Direct3D compute program {name}, which the renderer deforms the mesh with.</source>
         <translation>El maestro no tiene el programa de cómputo de Direct3D {name}, con el que el renderizador deforma la malla.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1034"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1022"/>
         <source>The preview draws meshlet meshes only undeformed, and skinned ones only in their bind pose.</source>
         <translation>La vista previa dibuja las mallas de meshlets solo sin deformar, y las que tienen skinning solo en su pose de enlace.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1047"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1035"/>
         <source>Parts of the meshlet mesh draw one material with different programs, and the renderer draws an object&apos;s clusters of one material with one set of programs.</source>
         <translation>Partes de la malla de meshlets dibujan un mismo material con programas distintos, y el renderizador dibuja los clústeres de un objeto que comparten material con un único conjunto de programas.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1053"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1041"/>
         <source>A coarser LOD of the meshlet mesh draws a material its first LOD does not, and the preview draws a coarser LOD only with its first LOD&apos;s materials.</source>
         <translation>Un LOD más simple de la malla de meshlets dibuja un material que su primer LOD no dibuja, y la vista previa dibuja un LOD más simple solo con los materiales de su primer LOD.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1069"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1057"/>
         <source>The renderer draws the material among the blending G-buffer passes, which REasy&apos;s light pass catalog of this game build does not record.</source>
         <translation>El renderizador dibuja el material entre las pasadas de G-buffer con mezcla, que el catálogo de pasadas de luz de REasy de esta versión del juego no registra.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1073"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1616"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1061"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1601"/>
         <source>The master has no G-buffer program for the material: the renderer draws it forward, after the light passes.</source>
         <translation>El maestro no tiene un programa de G-buffer para el material: el renderizador lo dibuja en forward, después de las pasadas de luz.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1099"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1087"/>
         <source>The game&apos;s shader file {path} has no program {name} of a vertex and a pixel shader.</source>
         <translation>El archivo de shaders del juego {path} no tiene ningún programa {name} de un vertex shader y un pixel shader.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="325"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="324"/>
         <source>The scene draws more meshlet materials transforming their triangles than the renderer dispatches transforms for.</source>
         <translation>La escena dibuja más materiales de meshlets que transforman sus triángulos de los que el renderizador lanza transformaciones.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1591"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1576"/>
         <source>The compute program {program} writes {name}, which no capture shows the renderer binding.</source>
         <translation>El programa de cómputo {program} escribe {name}, que ninguna captura muestra que el renderizador vincule.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1621"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2170"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2189"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1606"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2155"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2174"/>
         <source>The pass writes a render target the renderer does not bind for it.</source>
         <translation>La pasada escribe un render target que el renderizador no vincula para ella.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1687"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1672"/>
         <source>REasy&apos;s catalog of this game build does not record the sampler {name}.</source>
         <translation>El catálogo de REasy de esta versión del juego no registra el sampler {name}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1702"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="1687"/>
         <source>The game&apos;s texture {path} was not found, or is not the shape the pass reads.</source>
         <translation>No se encontró la textura del juego {path}, o no tiene la forma que lee la pasada.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2102"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2087"/>
         <source>The renderer fills target {target} for blending passes from the others&apos; in between, which the preview does not do.</source>
         <translation>El renderizador rellena el destino {target} para las pasadas de mezcla a partir del de las demás entre medias, cosa que la vista previa no hace.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2106"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2091"/>
         <source>REasy&apos;s catalog of this game build gives blending passes target {target} in another format.</source>
         <translation>El catálogo de REasy de esta versión del juego da a las pasadas de mezcla el destino {target} en otro formato.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2135"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2120"/>
         <source>REasy&apos;s catalogs of this game build give blending passes other targets.</source>
         <translation>Los catálogos de REasy de esta versión del juego dan a las pasadas de mezcla otros destinos.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2274"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="2258"/>
         <source>Direct3D could not draw the pass: {reason}</source>
         <translation>Direct3D no pudo dibujar la pasada: {reason}</translation>
     </message>
@@ -8439,12 +8579,12 @@ Save before reloading?</source>
         <translation>La malla no tiene {name}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/device_preview.py" line="21"/>
+        <location filename="../../file_handlers/mesh/device_preview.py" line="26"/>
         <source>Master material {path} was not found.</source>
         <translation>No se encontró el material maestro {path}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/device_preview.py" line="111"/>
+        <location filename="../../file_handlers/mesh/device_preview.py" line="141"/>
         <location filename="../../file_handlers/mmtr/light_passes.py" line="444"/>
         <location filename="../../file_handlers/mmtr/pretransform_passes.py" line="75"/>
         <source>The game&apos;s shader file {path} was not found.</source>
@@ -8487,40 +8627,40 @@ Save before reloading?</source>
         <translation>La iluminación del juego dibuja esta malla sin morphs; pon el peso de morph a 0.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/lit_preview.py" line="772"/>
+        <location filename="../../file_handlers/mesh/lit_preview.py" line="788"/>
         <location filename="../../file_handlers/mesh/textures_preview.py" line="279"/>
         <source>The mesh has no geometry shown.</source>
         <translation>La malla no tiene geometría mostrada.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="63"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="62"/>
         <source>The mesh is morphed, and REasy has no catalog of this build&apos;s mesh deformation passes.</source>
         <translation>La malla tiene morphs aplicados, y REasy no tiene un catálogo de las pasadas de deformación de malla de esta versión.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1454"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="899"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1449"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="887"/>
         <source>REasy has no catalog of the wrinkle passes of this game build.</source>
         <translation>REasy no tiene un catálogo de las pasadas de arrugas de esta versión del juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1457"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1452"/>
         <source>The wrinkle passes skin their proxy by the bones of a skinned mesh.</source>
         <translation>Las pasadas de arrugas aplican skinning a su proxy con los huesos de una malla con skinning.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1463"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="904"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1458"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="892"/>
         <source>The render texture file {path} was not found.</source>
         <translation>No se encontró el archivo de textura de render {path}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1478"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1473"/>
         <source>The wrinkle proxy mesh {path} was not found.</source>
         <translation>No se encontró la malla proxy de arrugas {path}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1484"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1479"/>
         <source>The wrinkle proxy mesh {path} could not be read: {reason}</source>
         <translation>No se pudo leer la malla proxy de arrugas {path}: {reason}</translation>
     </message>
@@ -8547,7 +8687,7 @@ Save before reloading?</source>
     <message>
         <location filename="../../file_handlers/mmtr/engine_buffers.py" line="204"/>
         <location filename="../../file_handlers/mmtr/material_preview.py" line="480"/>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="647"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="646"/>
         <source>The engine field {name} is declared {declaration}, which the preview does not lay out.</source>
         <translation>El campo del motor {name} está declarado como {declaration}, que la vista previa no organiza.</translation>
     </message>
@@ -8668,7 +8808,7 @@ Save before reloading?</source>
     </message>
     <message>
         <location filename="../../file_handlers/mmtr/mesh_draw.py" line="117"/>
-        <location filename="../../file_handlers/mmtr/mesh_render.py" line="415"/>
+        <location filename="../../file_handlers/mmtr/mesh_render.py" line="404"/>
         <source>The program has no fixed-function states.</source>
         <translation>El programa no tiene estados de función fija.</translation>
     </message>
@@ -8985,48 +9125,48 @@ Save before reloading?</source>
         <translation>El componente de skinning del objeto {name} no nombra ninguna malla proxy.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="231"/>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="279"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="230"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="278"/>
         <source>The master has {count} programs named {name}, which the renderer draws meshlet meshes with.</source>
         <translation>El maestro tiene {count} programas llamados {name}, con los que el renderizador dibuja las mallas de meshlets.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="243"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="242"/>
         <source>No capture of this game build shows how the renderer draws a skinned meshlet mesh whose material blends.</source>
         <translation>Ninguna captura de esta versión del juego muestra cómo dibuja el renderizador una malla de meshlets con skinning cuyo material usa mezcla.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="254"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="253"/>
         <source>No capture of this game build shows how the renderer runs the geometry transform program whose output the master&apos;s shading reads.</source>
         <translation>Ninguna captura de esta versión del juego muestra cómo ejecuta el renderizador el programa de transformación de geometría cuya salida lee el sombreado del maestro.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="259"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="258"/>
         <source>The master has no program {name} for the material, and no capture of this game build shows how the renderer draws such a meshlet mesh.</source>
         <translation>El maestro no tiene ningún programa {name} para el material, y ninguna captura de esta versión del juego muestra cómo dibuja el renderizador una malla de meshlets así.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="311"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="310"/>
         <source>A cluster of the meshlet mesh has more triangles than the renderer draws of one.</source>
         <translation>Un clúster de la malla de meshlets tiene más triángulos de los que el renderizador dibuja de uno.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="318"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="317"/>
         <source>The scene draws more materials of meshlet meshes than the renderer tells apart.</source>
         <translation>La escena dibuja más materiales de mallas de meshlets de los que el renderizador distingue.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="333"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="332"/>
         <source>The scene holds more meshlet clusters or instances than the renderer&apos;s visibility buffer tells apart.</source>
         <translation>La escena contiene más clústeres o instancias de meshlets de los que el búfer de visibilidad del renderizador puede distinguir.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="456"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="455"/>
         <source>The meshlet mesh&apos;s header gives no LOD count the renderer picks LODs of.</source>
         <translation>La cabecera de la malla de meshlets no indica un número de LOD a partir del cual el renderizador elija LOD.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/meshlets.py" line="605"/>
+        <location filename="../../file_handlers/mmtr/meshlets.py" line="604"/>
         <source>REasy&apos;s meshlet catalog of this game build names no instance word for the block the mesh&apos;s programs read.</source>
         <translation>El catálogo de meshlets de REasy de esta versión del juego no nombra ninguna palabra de instancia para el bloque que leen los programas de la malla.</translation>
     </message>
@@ -11462,441 +11602,451 @@ Dimensiones base (X × Y × Z): {size} unidades de malla</translation>
 <context>
     <name>MeshViewer</name>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="167"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="163"/>
         <source>Failed to create viewer: {}</source>
         <translation>No se pudo crear el visor: {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="171"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="167"/>
         <source>No mesh buffer data available to display</source>
         <translation>No hay datos de memoria intermedia de malla disponibles para mostrar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="276"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="288"/>
         <source>Inspect</source>
         <translation>Inspeccionar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="277"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="289"/>
         <source>Materials, submeshes, selection, and camera views. Ctrl+F searches the list.</source>
         <translation>Materiales, submallas, selección y vistas de cámara. Ctrl+F busca en la lista.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="278"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="290"/>
         <source>Textures</source>
         <translation>Texturas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="280"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="292"/>
         <source>Mesh data</source>
         <translation>Datos de la malla</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="281"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="293"/>
         <source>Resource paths and parsed mesh structure.</source>
         <translation>Rutas de recursos y estructura de malla analizada.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="279"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="291"/>
         <source>Resolved material textures.</source>
         <translation>Texturas de material resueltas.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="262"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="250"/>
+        <source>Nothing is drawn.</source>
+        <translation>No se dibuja nada.</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="252"/>
+        <source>And {count} more reasons: the Textures panel lists each part&apos;s.</source>
+        <translation>Y {count} motivos más: el panel Texturas muestra el de cada parte.</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="274"/>
         <source>Distance field…</source>
         <translation>Campo de distancia…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="265"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="277"/>
         <source>Convert mesh…</source>
         <translation>Convertir malla…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="269"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="281"/>
         <source>Import .blend…</source>
         <translation>Importar .blend…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="271"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="283"/>
         <source>Apply edits from a .blend exported by Convert mesh… › Blender. Untouched data stays bit-exact.</source>
         <translation>Aplica las ediciones de un .blend exportado con Convertir malla… › Blender. Los datos sin tocar se mantienen idénticos bit a bit.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="288"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1287"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="300"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1300"/>
         <source>Geometry</source>
         <translation>Geometría</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="290"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="302"/>
         <source>Geometry and LOD</source>
         <translation>Geometría y LOD</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="294"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="306"/>
         <source>View</source>
         <translation>Ver</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="296"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="308"/>
         <source>Displayed mesh attribute</source>
         <translation>Atributo de malla mostrado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="300"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="312"/>
         <source>Inspect decoded attributes with influence heatmaps, UV checkers, and individual color channels. Each view includes its own controls and legend.</source>
         <translation>Inspecciona los atributos decodificados con mapas de calor de influencias, dameros UV y canales de color individuales. Cada vista incluye sus propios controles y leyenda.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="306"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="318"/>
         <source>Compare surface and attribute</source>
         <translation>Comparar superficie y atributo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="307"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="319"/>
         <source>Switch between the surface and the last attribute view. Shortcut: V in the viewport.</source>
         <translation>Alterna entre la superficie y la última vista de atributo. Atajo: V en la vista.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="313"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="325"/>
         <source>Display</source>
         <translation>Visualización</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="316"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="328"/>
         <source>Vertex colors, bounds, and pivot overlays.</source>
         <translation>Colores de vértice, límites y superposiciones de pivotes.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="322"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="334"/>
         <source>Bounds</source>
         <translation>Límites</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="323"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="335"/>
         <source>Pivots</source>
         <translation>Pivotes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="333"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="345"/>
         <source>Fit visible</source>
         <translation>Ajustar lo visible</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="334"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="346"/>
         <source>Frame visible submeshes. F frames the selection, or visible geometry when nothing is selected.</source>
         <translation>Encuadra las submallas visibles. F encuadra la selección, o la geometría visible si no hay nada seleccionado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="338"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="350"/>
         <source>Navigate</source>
         <translation>Navegar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="342"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="354"/>
         <source>Camera views, selection commands, and viewport shortcuts.</source>
         <translation>Vistas de cámara, comandos de selección y atajos de la vista.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="385"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="397"/>
         <source>MDF: unresolved</source>
         <translation>MDF: sin resolver</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="390"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="547"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="402"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="559"/>
         <source>Open MDF</source>
         <translation>Abrir MDF</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="392"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="404"/>
         <source>Open this mesh&apos;s MDF. Its materials&apos; Edit Shader… changes the shader of this object or of every object using the same master material.</source>
         <translation>Abre el MDF de esta malla. Editar shader… en sus materiales cambia el shader de este objeto o de todos los objetos que usan el mismo material maestro.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="548"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="560"/>
         <source>{path} is in the game PAKs; open the game&apos;s PAKs in the project panel to open it.</source>
         <translation>{path} está en los PAK del juego; abra los PAK del juego en el panel del proyecto para abrirlo.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="586"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="598"/>
         <source>Main LOD {}</source>
         <translation>LOD principal {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="586"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="598"/>
         <source>Shadow LOD {}</source>
         <translation>LOD de sombra {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="587"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="599"/>
         <source>Occluder LOD {}</source>
         <translation>LOD de oclusor {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="608"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="620"/>
         <source>Base</source>
         <translation>Base</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="614"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="626"/>
         <source>Channel {}</source>
         <translation>Canal {}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="628"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="640"/>
         <source>Surface</source>
         <translation>Superficie</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="685"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="697"/>
         <source>Normals</source>
         <translation>Normales</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="686"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="698"/>
         <source>Tangents</source>
         <translation>Tangentes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="687"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="699"/>
         <source>Normal W (signed)</source>
         <translation>Normal W (con signo)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="688"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="700"/>
         <source>Pivot assignment</source>
         <translation>Asignación de pivotes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="689"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="701"/>
         <source>Tangent handedness</source>
         <translation>Lateralidad de las tangentes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="694"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="706"/>
         <source>Primary weights</source>
         <translation>Pesos primarios</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="695"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="707"/>
         <source>Extra weights</source>
         <translation>Pesos adicionales</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="696"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="708"/>
         <source>Additional vertex weights</source>
         <translation>Pesos de vértice adicionales</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="697"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="709"/>
         <source>Bone-modifier effectors</source>
         <translation>Efectores de modificadores de huesos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="698"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="710"/>
         <source>Shape-key / secondary weights</source>
         <translation>Pesos de shape key / secundarios</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="734"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="746"/>
         <source>Cannot preview {geometry}: {error}</source>
         <translation>No se puede previsualizar {geometry}: {error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="900"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="913"/>
         <source>MPLY meshlet data</source>
         <translation>Datos de meshlets MPLY</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1144"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1157"/>
         <source>Overview</source>
         <translation>Sinopsis</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1159"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1172"/>
         <source>Version profile</source>
         <translation>Perfil de versión</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1179"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1192"/>
         <source>Accepted version pairs</source>
         <translation>Pares de versiones aceptados</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1189"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1202"/>
         <source>Header metadata</source>
         <translation>Metadatos de cabecera</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1253"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1266"/>
         <source>Light map</source>
         <translation>Mapa de luz</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1256"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1269"/>
         <source>Used</source>
         <translation>Usado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1259"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1272"/>
         <source>Reserved allocation</source>
         <translation>Asignación reservada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1263"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1276"/>
         <source>Header offsets</source>
         <translation>Desplazamientos de cabecera</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1279"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1292"/>
         <source>Enabled mesh features</source>
         <translation>Funciones de malla activadas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1418"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1431"/>
         <source>Vertex/index buffers</source>
         <translation>Búferes de vértices/índices</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1679"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1692"/>
         <source>Shadow mesh</source>
         <translation>Malla de sombra</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1680"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1693"/>
         <source>Occluder mesh</source>
         <translation>Malla de oclusión</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1755"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1768"/>
         <source>Skeleton</source>
         <translation>Esqueleto</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1818"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="1831"/>
         <source>Blend shapes</source>
         <translation>Formas de mezcla</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2151"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2164"/>
         <source>Normal recalculation</source>
         <translation>Recálculo de normales</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2364"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2377"/>
         <source>Bounding boxes</source>
         <translation>Cajas delimitadoras</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2387"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2400"/>
         <source>Group pivots</source>
         <translation>Pivotes de grupo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2407"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2420"/>
         <source>Name tables</source>
         <translation>Tablas de nombres</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2424"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2437"/>
         <source>File sections</source>
         <translation>Secciones del archivo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2436"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2449"/>
         <source>Semantic notes</source>
         <translation>Notas semánticas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="320"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="693"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="332"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="705"/>
         <source>Vertex colors</source>
         <translation>Colores de vértice</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="321"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="333"/>
         <source>Multiply textured preview by mesh vertex colors</source>
         <translation>Multiplicar vista previa texturizada por colores de vértice de malla</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="447"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="459"/>
         <source>Resolved material textures</source>
         <translation>Texturas de materiales resueltos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="400"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="412"/>
         <source>Mesh</source>
         <translation>Malla</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="402"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="414"/>
         <source>Type</source>
         <translation>Tipo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="403"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="415"/>
         <source>Texture</source>
         <translation>Textura</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="404"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="416"/>
         <source>Status</source>
         <translation>Estado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="419"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2478"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="431"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2491"/>
         <source>Select a material to preview its texture.</source>
         <translation>Seleccione un material para previsualizar su textura.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="448"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="460"/>
         <source>Parsed mesh structure</source>
         <translation>Estructura de malla analizada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="438"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="450"/>
         <source>Field</source>
         <translation>Campo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="438"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="450"/>
         <source>Value</source>
         <translation>Valor</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="455"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="467"/>
         <source>None</source>
         <translation>Ninguno</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="459"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="471"/>
         <source>Inspect the referenced distance volume or bake a replacement.</source>
         <translation>Inspecciona el volumen de distancia referenciado u hornea uno de sustitución.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="460"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="472"/>
         <source>No verified SDFTEX resource profile for this mesh build.</source>
         <translation>No hay un perfil de recurso SDFTEX verificado para esta compilación de malla.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="470"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="482"/>
         <source>Distance field</source>
         <translation>Campo de distancia</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="559"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="571"/>
         <source>MDF: {path}</source>
         <translation>MDF: {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="562"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="574"/>
         <source>MDF: not found</source>
         <translation>MDF: no se encuentra</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2468"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2481"/>
         <source>No material mappings found.</source>
         <translation>No se han encontrado mapas de material.</translation>
     </message>
@@ -13687,231 +13837,231 @@ Todos los parámetros y ranuras de textura se sincronizaron y validaron tras gua
 <context>
     <name>MsgViewer</name>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="83"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="84"/>
         <source>Add Entry</source>
         <translation>Añadir entrada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="84"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="828"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="85"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="829"/>
         <source>Delete Entry</source>
         <translation>Eliminar entrada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="86"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="87"/>
         <source>Duplicate Entry</source>
         <translation>Entrada duplicada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="94"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="95"/>
         <source>Import entries from JSON</source>
         <translation>Importar entradas desde JSON</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="98"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="99"/>
         <source>Export entries to JSON</source>
         <translation>Exportar entradas a JSON</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="112"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="113"/>
         <source>Entry count</source>
         <translation>Número de entradas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="116"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="117"/>
         <source>Language count</source>
         <translation>Número de idiomas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="145"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="146"/>
         <source>Search entries by name, content, or UUID...</source>
         <translation>Buscar entradas por nombre, contenido o UUID...</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="149"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="150"/>
         <source>Case sensitive</source>
         <translation>Distinguir mayúsculas y minúsculas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="219"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="220"/>
         <source>Message text:</source>
         <translation>Texto del mensaje:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="23"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="24"/>
         <source>{count} chars</source>
         <translation>{count} caracteres</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="338"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="363"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="339"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="364"/>
         <source>Name</source>
         <translation>Nombre</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="338"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="363"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="339"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="364"/>
         <source>Preview</source>
         <translation>Vista previa</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="294"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="730"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="295"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="731"/>
         <source>(Unnamed)</source>
         <translation>(Sin nombre)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="393"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="394"/>
         <source>Found {matches} of {total} entries</source>
         <translation>Encontrado {matches} de {total} entradas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="405"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="406"/>
         <source>Export MSG to JSON</source>
         <translation>Exportar MSG a JSON</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="98"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="417"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="99"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="418"/>
         <source>Export JSON</source>
         <translation>Exportar JSON</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="418"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="419"/>
         <source>Exported to:
 {path}</source>
         <translation>Exportado a:
 {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="421"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="422"/>
         <source>Export JSON Failed</source>
         <translation>Error en la exportación de JSON</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="426"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="427"/>
         <source>Import JSON to MSG</source>
         <translation>Importar JSON a MSG</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="94"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="438"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="95"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="439"/>
         <source>Import JSON</source>
         <translation>Importar JSON</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="68"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="72"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="69"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="73"/>
         <source>Language</source>
         <translation>Idioma</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="122"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1287"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="123"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1281"/>
         <source>Ready</source>
         <translation>Listo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="135"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="136"/>
         <source>Message Entries</source>
         <translation>Entradas de mensajes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="169"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="170"/>
         <source>Entry Details</source>
         <translation>Detalles de entrada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="177"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="178"/>
         <source>Entry Information</source>
         <translation>Información de la entrada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="190"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="191"/>
         <source>UUID:</source>
         <translation>UUID:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="201"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="202"/>
         <source>SoundID:</source>
         <translation>SoundID:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="204"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="205"/>
         <source>Index/Hash:</source>
         <translation>Índice/Hash:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="214"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="215"/>
         <source>Content</source>
         <translation>Contenido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="233"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="234"/>
         <source>Attributes</source>
         <translation>Atributos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="239"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="240"/>
         <source>Add Attribute</source>
         <translation>Añadir atributo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="439"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="440"/>
         <source>Imported from:
 {path}</source>
         <translation>Importado de:
 {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="442"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="443"/>
         <source>Import JSON Failed</source>
         <translation>Importar JSON fallido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="551"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="552"/>
         <source>No attributes defined</source>
         <translation>No hay atributos definidos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="591"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="592"/>
         <source>Delete attribute &apos;{name}&apos;</source>
         <translation>Eliminar atributo &apos;{name}&apos;</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="652"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="653"/>
         <source>Entries: {count}</source>
         <translation>Entradas: {count}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="655"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="656"/>
         <source>Languages: {count}</source>
         <translation>Idiomas: {count}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1058"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1059"/>
         <source>Scanning Sounds…</source>
         <translation>Escaneando sonidos…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1287"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1281"/>
         <source>Modified</source>
         <translation>Modificado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="697"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="698"/>
         <source>Please enter a valid GUID format:
 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</source>
         <translation>Por favor ingrese un formato GUID válido:
 xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="824"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="825"/>
         <source>Entry {index}</source>
         <translation>Entrada {index}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="829"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="830"/>
         <source>Are you sure you want to delete:
 
 &apos;{name}&apos;?
@@ -13924,50 +14074,50 @@ This action cannot be undone.</source>
 Esta acción no se puede deshacer.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="878"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="879"/>
         <source>Please enter a valid integer value.</source>
         <translation>Introduzca un valor entero válido.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="890"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="891"/>
         <source>Add New Attribute</source>
         <translation>Añadir nuevo atributo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="195"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="897"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="196"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="898"/>
         <source>Name:</source>
         <translation>Nombre:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="900"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="901"/>
         <source>String</source>
         <translation>Cadena</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="901"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="902"/>
         <source>Integer</source>
         <translation>Entero</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="902"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="903"/>
         <source>Float</source>
         <translation>Flotante</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="903"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="904"/>
         <source>Type:</source>
         <translation>Tipo:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="244"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="924"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="948"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="245"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="925"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="949"/>
         <source>Remove Attribute</source>
         <translation>Eliminar atributo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="925"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="926"/>
         <source>Are you sure you want to remove attribute &apos;{name}&apos;?
 
 This will remove it from all entries.</source>
@@ -13976,134 +14126,124 @@ This will remove it from all entries.</source>
 Esto lo eliminará de todas las entradas.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="941"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="942"/>
         <source>No Attributes</source>
         <translation>Sin atributos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="942"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="943"/>
         <source>There are no attributes to remove.</source>
         <translation>No hay atributos que eliminar.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="949"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="950"/>
         <source>Select attribute to remove:</source>
         <translation>Seleccione un atributo para eliminar:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="24"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="25"/>
         <source>Resolved through Wwise trigger and event metadata during sound scans</source>
         <translation>Se resuelve a través de Wwise trigger y metadatos de eventos durante los escaneos de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="967"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="968"/>
         <source>Find exact message, timeline, and Wwise references and inspect only their BNK/PCK files</source>
         <translation>Encuentre el mensaje exacto, la línea de tiempo y las referencias Wwise e inspeccione solo sus archivos BNK / PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="105"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="979"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="986"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1071"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1087"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1101"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1116"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="106"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="980"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="987"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1072"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1088"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1102"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1117"/>
         <source>Scan Sounds</source>
         <translation>Escanear sonidos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="980"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="981"/>
         <source>No sound profile matches the current project game.</source>
         <translation>Ningún perfil de sonido coincide con el juego actual del proyecto.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1028"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1029"/>
         <source>Stop playback</source>
         <translation>Detener la reproducción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1032"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1033"/>
         <source>Play {available} available preview(s) from {referenced} referenced source(s); the selected container stays cached until this MSG closes</source>
         <translation>Reproducir {available} vista previa(s) disponible(s) de {referenced} fuentes referenciadas; el contenedor seleccionado permanece en caché hasta que se cierra este MSG</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1041"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1042"/>
         <source>This message references {count} sound(s), but their media is unavailable</source>
         <translation>Este mensaje hace referencia {count} sonido(s), pero sus medios no están disponibles</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1045"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1046"/>
         <source>This message has no exact sound reference</source>
         <translation>Este mensaje no tiene ninguna referencia de sonido exacta</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1048"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1049"/>
         <source>Scan sounds to check exact message references</source>
         <translation>Escanear sonidos para comprobar las referencias exactas del mensaje</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1059"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1060"/>
         <source>Scanning exact sound references…</source>
         <translation>Escaneo de referencias de sonido exactas…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1078"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1079"/>
         <source>Sounds: {playable}/{referenced} referenced messages, {files} container(s) checked</source>
         <translation>Suena: {playable}/{referenced} Mensajes referenciados, {files} contenedor(es) verificado(s)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1089"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1090"/>
         <source>No exact UUID, timeline, or SoundID-to-trigger references were found for this MSG. SoundID is never guessed to be a Wwise media ID.</source>
         <translation>No se encontraron referencias exactas de UUID, línea de tiempo o SoundID para activar para este MSG. SoundID nunca se supone que sea un Wwise media ID.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1095"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1096"/>
         <source>{count} referenced source(s) were not available in this installation</source>
         <translation>{count} fuente(s) referenciada(s) no estaban disponibles en esta instalación</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1104"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1105"/>
         <source>Sound Scan Error</source>
         <translation>Error de escaneo de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1210"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1211"/>
         <source> · {start:.2f}–{end:.2f} s</source>
         <translation> · {start:.2f}–{end:.2f} s</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1217"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1218"/>
         <source> (+{count} identical copies)</source>
         <translation> (+{count} copias idénticas)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1235"/>
-        <source>VGMStream Required</source>
-        <translation>Se requiere VGMStream</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1237"/>
-        <source>Configure the VGMStream CLI path in Settings before previewing sounds.</source>
-        <translation>Configure la ruta de la CLI de VGMStream en Ajustes antes de previsualizar los sonidos.</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1249"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1243"/>
         <source>Loading source {id} from {file}…</source>
         <translation>Cargando la fuente {id} desde {file}…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1258"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1252"/>
         <source>Playing source {id} from {file}</source>
         <translation>Reproduciendo la fuente {id} desde {file}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="1280"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="1274"/>
         <source>Sound Decode Error</source>
         <translation>Error de decodificación de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="338"/>
-        <location filename="../../file_handlers/msg/msg_viewer.py" line="363"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="339"/>
+        <location filename="../../file_handlers/msg/msg_viewer.py" line="364"/>
         <source>Sound</source>
         <translation>Sonido</translation>
     </message>
@@ -14205,7 +14345,17 @@ Esto lo eliminará de todas las entradas.</translation>
 <context>
     <name>OrbitCameraMixin</name>
     <message>
-        <location filename="../../ui/orbit_camera.py" line="32"/>
+        <location filename="../../ui/orbit_camera.py" line="34"/>
+        <source>{fps:.1f} FPS · software renderer</source>
+        <translation>{fps:.1f} FPS · renderizador por software</translation>
+    </message>
+    <message>
+        <location filename="../../ui/orbit_camera.py" line="35"/>
+        <source>No graphics adapter here supports Direct3D 12, so Windows&apos; slow software renderer (WARP) draws.</source>
+        <translation>Ningún adaptador gráfico de este equipo admite Direct3D 12, así que dibuja el lento renderizador por software de Windows (WARP).</translation>
+    </message>
+    <message>
+        <location filename="../../ui/orbit_camera.py" line="40"/>
         <source>{fps:.1f} FPS</source>
         <translation>{fps:.1f} FPS</translation>
     </message>
@@ -14689,12 +14839,12 @@ No se pudo eliminar {error_count} archivos:
         <translation>Carpeta raíz</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="980"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="982"/>
         <source>List files (*.list *.txt);;All files (*)</source>
         <translation>Lista de archivos (*.list *.txt);;Todos los archivos (*)</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="826"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="828"/>
         <source>Loading list file...</source>
         <translation>Cargando el archivo de lista...</translation>
     </message>
@@ -14709,95 +14859,95 @@ No se pudo eliminar {error_count} archivos:
         <translation>Archivos PAK:</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="830"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="832"/>
         <source>Read failed</source>
         <translation>Fallo de lectura</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="841"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="843"/>
         <source>Resolving list entries...</source>
         <translation>Resolviendo las entradas de la lista...</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="856"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="858"/>
         <source>Suggested List File</source>
         <translation>Archivo de lista sugerido</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="857"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="859"/>
         <source>Detected game folder name. Choose a list file to load:</source>
         <translation>Detectado el nombre de la carpeta del juego. Elija un archivo de lista para cargar:</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="934"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="957"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="936"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="959"/>
         <source>Extract Folder</source>
         <translation>Extraer carpeta</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="974"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="978"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="976"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="980"/>
         <source>No valid paths to dump.</source>
         <translation>No hay rutas válidas para volcar.</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="980"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="982"/>
         <source>Save valid paths list</source>
         <translation>Guardar lista de rutas válidas</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="987"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="989"/>
         <source>Success</source>
         <translation>Éxito</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="987"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="989"/>
         <source>Dumped {count} valid path(s) to:
 {path}</source>
         <translation>Se exportaron {count} ruta(s) válida(s) a:
 {path}</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="989"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="991"/>
         <source>Write failed</source>
         <translation>Escribir fallida</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1030"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1032"/>
         <source>and {count} more</source>
         <translation>y {count} más</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1057"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="1079"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1059"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1081"/>
         <source>Could not build PAK index.</source>
         <translation>No se pudo crear el índice PAK.</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1070"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="1095"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1072"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1097"/>
         <source>Done</source>
         <translation>Hecho</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1037"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="1041"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="1045"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1039"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1043"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1047"/>
         <source>Extract</source>
         <translation>Extracto</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1037"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1039"/>
         <source>No files selected.</source>
         <translation>No hay archivos seleccionados.</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1041"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1043"/>
         <source>Add one or more PAK files first.</source>
         <translation>Agregue uno o más archivos PAK primero.</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1045"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1047"/>
         <source>Choose an output directory.</source>
         <translation>Elija un directorio de salida.</translation>
     </message>
@@ -14812,23 +14962,23 @@ No se pudo eliminar {error_count} archivos:
         <translation>Volcar rutas válidas</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1017"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1019"/>
         <source>Extract failed</source>
         <translation>Fracaso del extracto</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1021"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1023"/>
         <source>Cancelled</source>
         <translation>Cancelado</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1021"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1023"/>
         <source>Extraction was cancelled</source>
         <translation>La extracción fue cancelada</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="1069"/>
-        <location filename="../../ui/pak_browser_dialog.py" line="1092"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1071"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="1094"/>
         <source>Extracted {count} file(s) to:
 {dest}</source>
         <translation>Extraído {count} archivo(s) a:
@@ -14860,17 +15010,17 @@ No se pudo eliminar {error_count} archivos:
         <translation>Cambiar a la vista de iconos</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="712"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="706"/>
         <source>Open failed</source>
         <translation>Error al abrir</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="947"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="949"/>
         <source>Up</source>
         <translation>Arriba</translation>
     </message>
     <message>
-        <location filename="../../ui/pak_browser_dialog.py" line="956"/>
+        <location filename="../../ui/pak_browser_dialog.py" line="958"/>
         <source>Open Folder</source>
         <translation>Abrir carpeta</translation>
     </message>
@@ -14899,7 +15049,7 @@ No se pudo eliminar {error_count} archivos:
 <context>
     <name>PakThumbnailProvider</name>
     <message>
-        <location filename="../../ui/pak_icon_view.py" line="287"/>
+        <location filename="../../ui/pak_icon_view.py" line="289"/>
         <source>Streaming</source>
         <translation>Streaming</translation>
     </message>
@@ -15008,57 +15158,57 @@ No se pudo eliminar {error_count} archivos:
 <context>
     <name>PassPurpose</name>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="66"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="67"/>
         <source>Visible colour (G-buffer)</source>
         <translation>Color visible (G-buffer)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="67"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="68"/>
         <source>Visible colour (forward)</source>
         <translation>Color visible (forward)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="68"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="69"/>
         <source>Shadows</source>
         <translation>Sombras</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="69"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="70"/>
         <source>Depth pre-pass</source>
         <translation>Prepasada de profundidad</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="70"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="71"/>
         <source>Motion vectors</source>
         <translation>Vectores de movimiento</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="71"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="72"/>
         <source>Selection (pick)</source>
         <translation>Selección (pick)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="72"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="73"/>
         <source>Other colour pass</source>
         <translation>Otra pasada de color</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="73"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="74"/>
         <source>Depth only</source>
         <translation>Solo profundidad</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="74"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="75"/>
         <source>Stencil only</source>
         <translation>Solo stencil</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="75"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="76"/>
         <source>Compute</source>
         <translation>Cómputo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="76"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="77"/>
         <source>Other</source>
         <translation>Otro</translation>
     </message>
@@ -19511,7 +19661,7 @@ Do you want to continue parsing this file?</source>
 <context>
     <name>SceneDevicePreview</name>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1869"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1865"/>
         <source>{reason} The meshes are drawn with their textures.</source>
         <translation>{reason} Las mallas se dibujan con sus texturas.</translation>
     </message>
@@ -19519,78 +19669,78 @@ Do you want to continue parsing this file?</source>
 <context>
     <name>SceneLitPreview</name>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1301"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1296"/>
         <source>Strands not drawn: {reason}</source>
         <translation>Mechones no dibujados: {reason}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1302"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1297"/>
         <source>Wrinkles not drawn: {reason}</source>
         <translation>Arrugas no dibujadas: {reason}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1303"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1298"/>
         <source>LODs not drawn: {reason}</source>
         <translation>LOD no dibujados: {reason}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1349"/>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1596"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1344"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1591"/>
         <source>No MDF material.</source>
         <translation>Sin material MDF.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1360"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1355"/>
         <source>Game lighting draws the meshes of one game build at a time.</source>
         <translation>La iluminación del juego dibuja las mallas de una sola versión del juego a la vez.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1362"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1357"/>
         <source>Game lighting draws only the meshes&apos; main geometry.</source>
         <translation>La iluminación del juego solo dibuja la geometría principal de las mallas.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1420"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1415"/>
         <source>The mesh they are over is not drawn.</source>
         <translation>La malla sobre la que están no se dibuja.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1562"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1557"/>
         <source>The mesh file {path} could not be read whole.</source>
         <translation>No se pudo leer por completo el archivo de malla {path}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1577"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1572"/>
         <source>The mesh file read again is not the one shown.</source>
         <translation>El archivo de malla leído de nuevo no es el que se muestra.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1699"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1694"/>
         <source>The meshlet mesh&apos;s header gives {count} LODs, and its file holds {held}.</source>
         <translation>La cabecera de la malla de meshlets indica {count} LOD y su archivo contiene {held}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1784"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1780"/>
         <source>A coarser LOD of the meshlet mesh draws a material its first LOD does not, and the preview draws a coarser LOD only with its first LOD&apos;s materials.</source>
         <translation>Un LOD más simple de la malla de meshlets dibuja un material que su primer LOD no dibuja, y la vista previa dibuja un LOD más simple solo con los materiales de su primer LOD.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1791"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1787"/>
         <source>The meshlet mesh&apos;s header gives {count} LODs, and its file holds no triangles of LOD {lod}.</source>
         <translation>La cabecera de la malla de meshlets indica {count} LOD y su archivo no contiene triángulos del LOD {lod}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1803"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1799"/>
         <source>The LOD settings file {path} was not found.</source>
         <translation>No se encontró el archivo de ajustes de LOD {path}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1811"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1807"/>
         <source>The LOD settings file {path} could not be read: {reason}</source>
         <translation>No se pudo leer el archivo de ajustes de LOD {path}: {reason}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/scene_lit.py" line="1825"/>
+        <location filename="../../file_handlers/mesh/scene_lit.py" line="1821"/>
         <source>Another mesh of the scene reads another file by the path {path}.</source>
         <translation>Otra malla de la escena lee otro archivo con la ruta {path}.</translation>
     </message>
@@ -19732,7 +19882,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="285"/>
         <source>Main REasy shortcuts are disabled in Scene tabs.</source>
-        <translation>Los accesos directos principales de REasy están deshabilitados en las pestañas de escena.</translation>
+        <translation>Los atajos principales de REasy están deshabilitados en las pestañas de escena.</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="325"/>
@@ -19848,7 +19998,7 @@ Do you want to continue parsing this file?</source>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="555"/>
         <source>Full resolution, prefers streaming TEX; up to 16x sampling</source>
-        <translation>Resolución completa, prefiere la transmisión de TEX; hasta 16x muestreo</translation>
+        <translation>Resolución completa, prefiere los TEX de streaming; muestreo de hasta 16x</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scene_preview.py" line="569"/>
@@ -19964,7 +20114,7 @@ Do you want to continue parsing this file?</source>
 <context>
     <name>SceneTexturesPreview</name>
     <message>
-        <location filename="../../file_handlers/mesh/scene_textures.py" line="449"/>
+        <location filename="../../file_handlers/mesh/scene_textures.py" line="446"/>
         <source>{part}: not drawn. {reason}</source>
         <translation>{part}: no dibujado. {reason}</translation>
     </message>
@@ -20048,7 +20198,7 @@ La visibilidad inicial proviene de la configuración de autoría del PFB.</trans
     <message>
         <location filename="../../ui/scene/scn_raw_inspector.py" line="60"/>
         <source>Select a mesh, foliage, or light probe object to edit its raw SCN node here.</source>
-        <translation>Seleccione un objeto de malla, follaje u sonda de luz para editar su nodo SCN sin procesar aquí.</translation>
+        <translation>Seleccione un objeto de malla, follaje o sonda de luz para editar aquí su nodo SCN sin procesar.</translation>
     </message>
     <message>
         <location filename="../../ui/scene/scn_raw_inspector.py" line="76"/>
@@ -23451,7 +23601,7 @@ Primitiva: {topology}.</translation>
         <translation>No se asigna ningún valor en esta ruta. Sustituye este nodo por un valor definido para especificar su resultado; no significa cero.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="39"/>
+        <location filename="../../file_handlers/mmtr/pass_purpose.py" line="40"/>
         <source>True in the passes drawing for the chosen purposes, false in the rest; each pass sees a constant.</source>
         <translation>Verdadero en las pasadas que dibujan para los propósitos elegidos, falso en el resto; cada pasada ve una constante.</translation>
     </message>
@@ -23507,14 +23657,27 @@ Primitiva: {topology}.</translation>
 <context>
     <name>ShaderTools</name>
     <message>
-        <location filename="../../tools/shader_tools.py" line="54"/>
+        <location filename="../../tools/shader_tools.py" line="68"/>
         <source>{tool} is required for this operation. Download it to REasy&apos;s downloads folder now?</source>
         <translation>Esta operación necesita {tool}. ¿Descargarlo ahora en la carpeta de descargas de REasy?</translation>
     </message>
     <message>
-        <location filename="../../tools/shader_tools.py" line="57"/>
+        <location filename="../../tools/shader_tools.py" line="71"/>
         <source>Download required shader tool?</source>
         <translation>¿Descargar la herramienta de shaders necesaria?</translation>
+    </message>
+</context>
+<context>
+    <name>SoundPlayback</name>
+    <message>
+        <location filename="../../file_handlers/sound/sound_waveform.py" line="18"/>
+        <source>Windows Media Foundation is missing, so audio cannot play. Windows N editions need the Media Feature Pack.</source>
+        <translation>Falta Windows Media Foundation, por lo que no se puede reproducir audio. Las ediciones N de Windows necesitan el Media Feature Pack.</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/sound/sound_waveform.py" line="24"/>
+        <source>Windows has no audio output device to play to.</source>
+        <translation>Windows no tiene ningún dispositivo de salida de audio en el que reproducir.</translation>
     </message>
 </context>
 <context>
@@ -23525,148 +23688,144 @@ Primitiva: {topology}.</translation>
         <translation>Duración</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="910"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="879"/>
         <source>Codec</source>
         <translation>Códec</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="975"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="944"/>
         <source>Channels</source>
         <translation>Canales</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2044"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1991"/>
         <source>Export All Tracks</source>
         <translation>Exportar todas las pistas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1848"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1873"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1883"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1895"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1910"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1924"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1928"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1942"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1795"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1820"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1830"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1842"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1857"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1871"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1875"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1889"/>
         <source>Export Error</source>
         <translation>Error de exportación</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1821"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2521"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2527"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2626"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1768"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2468"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2474"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2573"/>
         <source>Replace Error</source>
         <translation>Reemplazar error</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2712"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2728"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2737"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2859"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2659"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2675"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2684"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2806"/>
         <source>Bulk Replace</source>
         <translation>Reemplazo masivo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1665"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1561"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1612"/>
         <source>Playback</source>
         <translation>Reproducción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1001"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1411"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="970"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1386"/>
         <source>Play</source>
         <translation>Reproducir</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1002"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="971"/>
         <source>Stop</source>
         <translation>Detener</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1233"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1202"/>
         <source>Skip Silence</source>
         <translation>Saltar silencio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1932"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1879"/>
         <source>Export WAV</source>
         <translation>Exportar WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1860"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1807"/>
         <source>Export WEM</source>
         <translation>Exportar WEM</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1430"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1433"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1405"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1408"/>
         <source>{action} Error</source>
         <translation>Error de {action}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1457"/>
+        <location filename="../../file_handlers/sound/vgmstream.py" line="64"/>
         <source>Download VGMStream CLI?</source>
         <translation>¿Descargar la CLI de VGMStream?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1465"/>
-        <source>Download Failed</source>
-        <translation>Error de descarga</translation>
-    </message>
-    <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1591"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1534"/>
         <source>Decode Error</source>
         <translation>Error de decodificación</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1848"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1795"/>
         <source>Failed to export {label}:
 {error}</source>
         <translation>Fracasó en la exportación {label}:
 {error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1854"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1876"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1801"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1823"/>
         <source>Export</source>
         <translation>Exportar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2038"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2111"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1985"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2058"/>
         <source>Export All</source>
         <translation>Exportar todo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2042"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1989"/>
         <source>Export format:</source>
         <translation>Formato de exportación:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2049"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2756"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1996"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2703"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2512"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2514"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2459"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2461"/>
         <source>Replace</source>
         <translation>Sustituir</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2492"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2439"/>
         <source>Select Replacement Audio</source>
         <translation>Seleccione el audio de reemplazo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1682"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1629"/>
         <source>Decode failed.</source>
         <translation>Error de decodificación.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2867"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2814"/>
         <source>Analyze Error</source>
         <translation>Analizar error</translation>
     </message>
@@ -23696,960 +23855,970 @@ Primitiva: {topology}.</translation>
         <translation>Utilizado por</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="469"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="438"/>
         <source>No sound profile matches this game. IDs are shown numerically, and linked-file replacement is unavailable.</source>
         <translation>Ningún perfil de sonido coincide con este juego. Los ID se muestran numéricamente y el reemplazo de archivos vinculados no está disponible.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="482"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="890"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="451"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="859"/>
         <source>Match original WEM (Recommended)</source>
         <translation>Partido original WEM (Recomendado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="500"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="915"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="469"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="884"/>
         <source>Low</source>
         <translation>Bajo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="501"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="915"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="470"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="884"/>
         <source>Medium</source>
         <translation>Mediano</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="502"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="916"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="471"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="885"/>
         <source>High</source>
         <translation>Alto</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="503"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="916"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="472"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="885"/>
         <source>Maximum</source>
         <translation>Máximo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="535"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4507"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="504"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4454"/>
         <source>Unavailable</source>
         <translation>No disponible</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="537"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="564"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="506"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="533"/>
         <source>Exact quality</source>
         <translation>Calidad exacta</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="540"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="509"/>
         <source>Target bitrate</source>
         <translation>Tasa de bits objetivo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="559"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="528"/>
         <source>Average bitrate</source>
         <translation>Tasa de bits media</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="560"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="960"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="529"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="929"/>
         <source> kbps/ch</source>
         <translation> kbps/canal</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="589"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="558"/>
         <source>Available after explicitly selecting Wwise Vorbis or WEM Opus.</source>
         <translation>Disponible después de seleccionar explícitamente Wwise Vorbis o WEM Opus.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="593"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="562"/>
         <source>Vorbis bitrate values are per channel. Optional bounds constrain the encoder around the average target.</source>
         <translation>Los valores de velocidad de bits de Vorbis son por canal. Los límites opcionales limitan el codificador alrededor del objetivo promedio.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="598"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="567"/>
         <source>The exact value replaces the simple quality preset above.</source>
         <translation>El valor exacto reemplaza el preajuste de calidad simple anterior.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="685"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="654"/>
         <source>Sound Modding</source>
         <translation>Modding de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="686"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="655"/>
         <source>Reading the sound container…</source>
         <translation>Leer el contenedor de sonido…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="700"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2907"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="669"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2854"/>
         <source>Audio</source>
         <translation>Audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="701"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="813"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="670"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="782"/>
         <source>All Objects</source>
         <translation>Todos los objetos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="702"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="671"/>
         <source>Bank Settings</source>
         <translation>Ajustes del banco</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="720"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="689"/>
         <source>Sound container</source>
         <translation>Contenedor de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="731"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="700"/>
         <source>Open Full Streaming PCK…</source>
-        <translation>Abrir PCK de transmisión completa…</translation>
+        <translation>Abrir PCK de streaming completo…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="736"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="705"/>
         <source>Open the full package containing this indexed audio.</source>
         <translation>Abra el paquete completo que contiene este audio indexado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="741"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="710"/>
         <source>Open Companion…</source>
         <translation>Compañero abierto…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="759"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="728"/>
         <source>1. Choose an event</source>
         <translation>1. Elige un evento</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="763"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="732"/>
         <source>Find event name, ShortID, or source ID</source>
         <translation>Buscar nombre del evento, ShortID o ID de origen</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="774"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="743"/>
         <source>New Event…</source>
         <translation>Nuevo Evento…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="775"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4084"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="744"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4031"/>
         <source>Edit Actions…</source>
         <translation>Editar acciones…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="787"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="756"/>
         <source>2. Edit playback flow and audio</source>
         <translation>2. Editar el flujo de reproducción y el audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="789"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="758"/>
         <source>All media sources</source>
         <translation>Todas las fuentes de medios</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="810"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="779"/>
         <source>Event playback graph</source>
         <translation>Gráfico de reproducción de eventos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="822"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="791"/>
         <source>Hover a node to trace its links. Double-click to edit; scroll to zoom; drag to move the graph.</source>
         <translation>Haga doble clic para editar; desplácese para hacer zoom; arrastre para mover el gráfico.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="817"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="786"/>
         <source>Fit</source>
         <translation>Ajuste</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="831"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="800"/>
         <source>Select a node for details; double-click to edit or preview.</source>
         <translation>Seleccione un nodo para obtener más detalles; haga doble clic para editar o obtener una vista previa.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="836"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="805"/>
         <source>Edit…</source>
         <translation>Editar…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="837"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="806"/>
         <source>Add Action…</source>
         <translation>Añadir acción…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="838"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="807"/>
         <source>Detach Action</source>
         <translation>Desvincular acción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="839"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1097"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="808"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1066"/>
         <source>Connect Child…</source>
         <translation>Conectar objeto hijo…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="840"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1098"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="809"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1067"/>
         <source>Disconnect Child…</source>
         <translation>Desconectar objeto hijo…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="842"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4297"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="811"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4244"/>
         <source>Delete Event</source>
         <translation>Borrar evento</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="865"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4613"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="834"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4560"/>
         <source>Select a media source</source>
         <translation>Seleccione una fuente de medios</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="894"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="863"/>
         <source>Keep imported WAV rate</source>
         <translation>Mantener la tasa de WAV importado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="897"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="866"/>
         <source>Matching the original keeps the game&apos;s storage and runtime profile. A codec-required rate, such as RE4 WEM Opus at 48 kHz, always wins.</source>
         <translation>Una velocidad requerida por el códec, como RE4 WEM Opus a 48 kHz, siempre gana.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="907"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="876"/>
         <source>Match the original WEM for safest replacement, or explicitly choose another codec supported by this game&apos;s Wwise version.</source>
         <translation>Coincide con el WEM original para un reemplazo más seguro, o elige explícitamente otro códec compatible con la versión Wwise de este juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="914"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="883"/>
         <source>Current default (Recommended)</source>
         <translation>Valor predeterminado actual (recomendado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="920"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="889"/>
         <source>Quality is codec-aware: Vorbis uses quality factors 0, 2, 4, and 10; WEM Opus uses 32, 64, 128, and 256. PCM and ADPCM have no adjustable compression quality.</source>
         <translation>La calidad es consciente de los códecs: Vorbis utiliza los factores de calidad 0, 2, 4 y 10; WEM Opus utiliza 32, 64, 128 y 256. PCM y ADPCM no tienen calidad de compresión ajustable.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="929"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="898"/>
         <source>Advanced compression</source>
         <translation>Compresión avanzada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="933"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="902"/>
         <source>Override the simple quality preset with exact codec parameters. An explicit WAV import codec must be selected.</source>
         <translation>Anule el ajuste preestablecido de calidad simple con parámetros de códec exactos. Se debe seleccionar un códec de importación WAV explícito.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="941"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="910"/>
         <source>Mode</source>
         <translation>Modo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="948"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="917"/>
         <source>Value</source>
         <translation>Valor</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="969"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="938"/>
         <source>Minimum bitrate</source>
         <translation>Tasa de bits mínima</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="972"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="941"/>
         <source>Maximum bitrate</source>
         <translation>Tasa de bits máxima</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="978"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="947"/>
         <source>As input (Recommended)</source>
         <translation>Como entrada (recomendado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="979"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1604"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="948"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1547"/>
         <source>Mono</source>
         <translation>Mono</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="980"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="949"/>
         <source>Stereo</source>
         <translation>Estéreo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="984"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="953"/>
         <source>Mono and Stereo may reduce package size but intentionally change the authored channel layout. Mono input is not upmixed to stereo.</source>
         <translation>Mono y estéreo pueden reducir el tamaño del paquete, pero cambiar intencionalmente el diseño del canal de autor.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1007"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4555"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="976"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4502"/>
         <source>Replace Audio…</source>
         <translation>Reemplazar audio…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1009"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="978"/>
         <source>WAV import uses the codec, quality and sample rate from Replacement Settings; the defaults match the original WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV has none.</source>
         <translation>La importación de WAV usa el códec, la calidad y la frecuencia de muestreo de Ajustes de sustitución; los valores predeterminados coinciden con el WEM original. Los bucles, puntos de señal y marcadores proceden del WAV, o del WEM original cuando el WAV no tiene ninguno.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1013"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="982"/>
         <source>Loop / Markers…</source>
         <translation>Bucle / Marcadores…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1014"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4555"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="983"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4502"/>
         <source>Export WEM…</source>
         <translation>Exportar WEM…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1015"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4555"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="984"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4502"/>
         <source>Export WAV…</source>
         <translation>Exportar WAV…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1016"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="985"/>
         <source>Bulk Replace…</source>
         <translation>Reemplazo masivo…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1018"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="987"/>
         <source>Add Audio Source…</source>
         <translation>Añadir fuente de audio…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1022"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="991"/>
         <source>Export All…</source>
         <translation>Exportar todo…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1076"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1045"/>
         <source>Find type, ShortID, source ID, or capability</source>
         <translation>Buscar tipo, ShortID, ID de origen o capacidad</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1090"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1059"/>
         <source>Duplicate…</source>
         <translation>Duplicar…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1091"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1060"/>
         <source>Rename ID…</source>
         <translation>Renombrar ID…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1093"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1062"/>
         <source>Delete</source>
         <translation>Borrar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1096"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4087"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1065"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4034"/>
         <source>Properties…</source>
         <translation>Propiedades…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1099"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1068"/>
         <source>Retarget Link…</source>
         <translation>Enlace de retargeting…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1111"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1080"/>
         <source>Advanced / destructive</source>
         <translation>Avanzado / destructivo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1124"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1093"/>
         <source>Direct parents  →  &lt;b&gt;Selected object&lt;/b&gt;  →  Direct children &amp;nbsp; · &amp;nbsp; Hover a node to trace its links</source>
         <translation>Padres directos  →  &lt;b&gt;Objeto seleccionado&lt;/b&gt;  →  Niños directos &amp;nbsp; · &amp;nbsp; Pase el ratón sobre un nodo para rastrear sus enlaces</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1133"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3447"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1102"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3394"/>
         <source>Select a HIRC object.</source>
         <translation>Seleccione un objeto HIRC.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1166"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1135"/>
         <source>Double-click an editable value to change a global SoundBank setting.</source>
         <translation>Haga doble clic en un valor editable para cambiar una configuración global de SoundBank.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1150"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1119"/>
         <source>Chunk</source>
         <translation>Bloque</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1157"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1126"/>
         <source>Apply Settings</source>
         <translation>Aplicar configuración</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1224"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1193"/>
         <source>Preview controls</source>
         <translation>Controles de vista previa</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1243"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1505"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1212"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1448"/>
         <source>Mix</source>
         <translation>Mezclar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1246"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1215"/>
         <source>Preview the complete mix or solo one channel; audio data is not modified.</source>
         <translation>Vista previa de la mezcla completa o solo un canal; los datos de audio no se modifican.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1393"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1368"/>
         <source>No later activity segment was found.</source>
         <translation>No se encontró ningún segmento de actividad posterior.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1397"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1372"/>
         <source>Skipped silence to {time}.</source>
-        <translation>Omitir el silencio para {time}.</translation>
+        <translation>Se ha saltado el silencio hasta {time}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1430"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1405"/>
         <source>Select a media source first.</source>
         <translation>Seleccione una fuente de medios primero.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1458"/>
+        <location filename="../../file_handlers/sound/vgmstream.py" line="65"/>
         <source>VGMStream is required for preview and WAV export. Download {version} now?</source>
         <translation>VGMStream es necesario para la vista previa y la exportación WAV. ¿Descargar {version} ahora?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1458"/>
+        <location filename="../../file_handlers/sound/vgmstream.py" line="66"/>
         <source>the latest release</source>
-        <translation>La última versión</translation>
+        <translation>la última versión</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1591"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1534"/>
         <source>VGMStream could not decode this WEM.</source>
         <translation>VGMStream no pudo decodificar este WEM.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1604"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1547"/>
         <source>Mix ({count} channels)</source>
         <translation>Mezclar ({count} canales)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1609"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1552"/>
         <source>Channel {number}</source>
         <translation>Canal {number}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1621"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1568"/>
         <source>Playing source {id} — {channels}; analyzing activity…</source>
         <translation>Jugando fuente {id} — {channels}; análisis de la actividad…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1679"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1626"/>
         <source>Decoding source {id}…</source>
         <translation>Decodificando la fuente {id}…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1660"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1607"/>
         <source>Preview Error</source>
         <translation>Error de vista previa</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="900"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="869"/>
         <source>Rate</source>
         <translation>Velocidad</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="924"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="893"/>
         <source>Quality</source>
         <translation>Calidad</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1004"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="973"/>
         <source>Replacement Settings…</source>
         <translation>Ajustes de sustitución…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1184"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1153"/>
         <source>Replacement Settings</source>
         <translation>Ajustes de sustitución</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1239"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1208"/>
         <source>Jump to the next activity segment.</source>
         <translation>Salta al siguiente segmento de actividad.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1261"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1263"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1230"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1232"/>
         <source>Playback speed (50%–200%).</source>
         <translation>Velocidad de reproducción (50%–200%).</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1216"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1221"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1185"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1190"/>
         <source>Volume.</source>
         <translation>Volumen.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="791"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="760"/>
         <source>Filter source ID or used by</source>
         <translation>Filtrar por ID de fuente o por Utilizado por</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1029"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="998"/>
         <source>Selected source</source>
         <translation>Fuente seleccionada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1030"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="999"/>
         <source>Container</source>
         <translation>Contenedor</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1080"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1049"/>
         <source>No objects match the current filter.</source>
         <translation>Ningún objeto coincide con el filtro actual.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1249"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1502"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1648"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1218"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1445"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1595"/>
         <source>Normalize</source>
         <translation>Normalizar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1251"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1220"/>
         <source>Boost the preview to full scale; audio data is not modified.</source>
         <translation>Amplifica la vista previa a escala completa; los datos de audio no se modifican.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1281"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1250"/>
         <source>Silence</source>
         <translation>Silenciar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1282"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1251"/>
         <source>Silence the selected range.</source>
         <translation>Silenciar el rango seleccionado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1283"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1252"/>
         <source>Trim</source>
         <translation>Cortar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1284"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1253"/>
         <source>Remove the selected range.</source>
         <translation>Quitar el rango seleccionado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1285"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1254"/>
         <source>Crop</source>
         <translation>Recortar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1286"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1255"/>
         <source>Keep only the selected range.</source>
         <translation>Conservar solo el rango seleccionado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1290"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1259"/>
         <source>Undo</source>
         <translation>Deshacer</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1291"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1260"/>
         <source>Undo the last edit.</source>
         <translation>Deshacer la última edición.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1292"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1261"/>
         <source>Discard</source>
         <translation>Descartar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1293"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1262"/>
         <source>Discard all edits.</source>
         <translation>Descartar todas las ediciones.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1296"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1808"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1265"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1755"/>
         <source>Apply Edits</source>
         <translation>Aplicar ediciones</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1298"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1267"/>
         <source>Encode the edited audio with Wwise at maximum quality and replace this source. After Trim or Crop the original loop points and markers no longer line up, so they are not kept.</source>
         <translation>Codifica el audio editado con Wwise a la máxima calidad y sustituye esta fuente. Tras Cortar o Recortar, los puntos de bucle y los marcadores originales dejan de coincidir, por lo que no se conservan.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1307"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1276"/>
         <source>No media sources to show.</source>
         <translation>No hay fuentes multimedia para mostrar.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1411"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1326"/>
+        <source>Playback Error</source>
+        <translation>Error de reproducción</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1326"/>
+        <source>Qt could not play the decoded audio.</source>
+        <translation>Qt no pudo reproducir el audio decodificado.</translation>
+    </message>
+    <message>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1386"/>
         <source>Pause</source>
         <translation>Pausa</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1643"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1590"/>
         <source>Preview</source>
         <translation>Vista previa</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1647"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1594"/>
         <source>Normalize ({gain:+.1f} dB)</source>
         <translation>Normalizar ({gain:+.1f} dB)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1719"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1666"/>
         <source>Playing audio; waveform analysis is unavailable.</source>
         <translation>Reproducción de audio; el análisis de forma de onda no está disponible.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1727"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1674"/>
         <source>no silence detected</source>
         <translation>Sin silencio detectado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1729"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1676"/>
         <source>no activity detected</source>
         <translation>Ninguna actividad detectada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1731"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1678"/>
         <source>{count} activity segment(s) detected</source>
         <translation>{count} Segmento(s) de actividad detectado(s)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1735"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1682"/>
         <source>Source {id} — {channels}: {result}.</source>
         <translation>Fuente {id} — {channels}: {result}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1784"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1731"/>
         <source>Edit Audio</source>
         <translation>Editar audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1850"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1797"/>
         <source>{label} exported to {path}</source>
         <translation>{label} exportado a {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1861"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1808"/>
         <source>Export Wwise MIDI</source>
         <translation>Exportar Wwise MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1861"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2586"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1808"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2533"/>
         <source>Wwise MIDI</source>
         <translation>Wwise MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1862"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1863"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1809"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1810"/>
         <source>Export Compiled IR</source>
         <translation>Exportación Compilado IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1862"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1863"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1809"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1810"/>
         <source>compiled IR</source>
         <translation>Compilado IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1864"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1811"/>
         <source>Export REV Model</source>
         <translation>Exportar modelo REV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1864"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1811"/>
         <source>REV model</source>
         <translation>Modelo REV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1865"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1812"/>
         <source>Export Raw Media</source>
         <translation>Exportación de medios crudos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1865"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1812"/>
         <source>raw media</source>
         <translation>medios crudos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1888"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1835"/>
         <source>Export MIDI</source>
         <translation>Exportar MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1893"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1840"/>
         <source>MIDI</source>
         <translation>MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1899"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1914"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1846"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1861"/>
         <source>Export Processed IR WAV</source>
         <translation>Exportación procesada IR WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1907"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1854"/>
         <source>processed early-reflection WAV</source>
         <translation>WAV de reflexión temprana procesada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1921"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1868"/>
         <source>processed convolution IR WAV</source>
         <translation>convolución procesada IR WAV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1929"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1876"/>
         <source>This unknown payload has no safe editable export format.</source>
         <translation>Esta carga útil desconocida no tiene un formato de exportación editable seguro.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1940"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1887"/>
         <source>WAV exported to {path}</source>
         <translation>WAV exportado a {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1956"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1903"/>
         <source>{action} blocked</source>
         <translation>{action} bloqueado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1958"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1905"/>
         <source>Modding requires an active REasy project and a configured PAK directory. Open the Project Browser, create/open a project and set the game folder (PAKs).</source>
         <translation>El modding requiere un proyecto de REasy activo y un directorio de PAK configurado. Abre el Explorador de proyectos, crea o abre un proyecto y configura la carpeta del juego (PAK).</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1967"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1969"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1976"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1980"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1987"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2030"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1914"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1916"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1923"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1927"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1934"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1977"/>
         <source>Loop / Markers</source>
         <translation>Bucle / Marcadores</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1981"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1928"/>
         <source>Loop, cue, and marker chunks apply only to RIFF WEM audio.</source>
         <translation>Los fragmentos de bucle, señal y marcador se aplican solo al audio de RIFF WEM.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="1994"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1941"/>
         <source>Loop and marker metadata was unchanged.</source>
         <translation>Los metadatos del bucle y del marcador no cambiaron.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2017"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1964"/>
         <source>Wwise did not preserve the requested loop/cue metadata.</source>
         <translation>Wwise no conservó los metadatos de bucle/cue solicitados.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2021"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1968"/>
         <source>Updated {loops} loop(s) and {markers} marker(s) in source {id} across {count} verified file(s).</source>
         <translation>Actualizado {loops} bucle(s) y {markers} Marcador(es) en la fuente {id} a través {count} archivo(s) verificado(s).</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2038"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1985"/>
         <source>No complete media sources are available.</source>
         <translation>No hay fuentes de medios completas disponibles.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2040"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1987"/>
         <source>Compiled media</source>
         <translation>Medios compilados</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2040"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1987"/>
         <source>Editable media</source>
         <translation>Medios editables</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2040"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1987"/>
         <source>Both</source>
         <translation>Ambos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2042"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1989"/>
         <source>Export All Sources</source>
         <translation>Exportar todas las fuentes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2049"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="1996"/>
         <source>Exporting media…</source>
         <translation>Exportación de medios…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2055"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2002"/>
         <source>Exporting source {id}</source>
         <translation>Fuente de exportación {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2109"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2056"/>
         <source>Export finished: {count} source(s), {failed} failure(s).</source>
         <translation>Exportación finalizada: {count} fuente(s), {failed} fallo(s).</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2111"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2859"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2058"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2806"/>
         <source>Failed: {files}</source>
         <translation>Falló: {files}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2160"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2107"/>
         <source>exact quality {value}</source>
         <translation>calidad exacta {value}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2164"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2111"/>
         <source>{value} kbps/channel</source>
         <translation>{value} kbps/canal</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2168"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2115"/>
         <source>minimum</source>
         <translation>mínimo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2169"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2116"/>
         <source>maximum</source>
         <translation>máximo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2196"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2143"/>
         <source>{source} → {target}</source>
         <translation>{source} → {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2201"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2148"/>
         <source> (required by codec)</source>
         <translation> (requerido por el códec)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2203"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2150"/>
         <source> (matched original WEM)</source>
         <translation> (WEM original emparejado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2205"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2152"/>
         <source> (kept imported WAV)</source>
         <translation> (mantenido importado WAV)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2213"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2160"/>
         <source>Wwise Not Configured</source>
         <translation>Wwise no está configurado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2215"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2162"/>
         <source>Wwise authoring is unavailable because this game has no registered sound profile.</source>
         <translation>Wwise authoring no está disponible porque este juego no tiene ningún perfil de sonido registrado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2231"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2178"/>
         <source>Wwise Installation Required — {game}</source>
         <translation>A través de la instalación requerida — {game}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2232"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2179"/>
         <source>Select the version folder containing Authoring.</source>
         <translation>Seleccione la carpeta de versión que contiene la creación.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2238"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2185"/>
         <source>Select Wwise {version} for {game}</source>
         <translation>Seleccionar Wwise {version} para {game}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2247"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2194"/>
         <source>Incompatible Wwise Installation</source>
         <translation>Instalación Wwise incompatible</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2276"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2223"/>
         <source>The selected WEM is not RIFF/WAVE audio.</source>
         <translation>El WEM seleccionado no es audio RIFF/WAVE.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2279"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2226"/>
         <source>Only WEM and WAV replacement files are supported.</source>
         <translation>Solo se admiten archivos de reemplazo WEM y WAV.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2283"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2230"/>
         <source>Wwise WAV authoring is not configured for this game.</source>
         <translation>La creación de Wwise WAV no está configurada para este juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2334"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2281"/>
         <source>Wwise MIDI accepts MID or WMID replacement files.</source>
         <translation>Wwise MIDI acepta archivos de reemplazo MID o WMID.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2343"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2290"/>
         <source>The compiled IR uses different decay tuning. Import its WAV instead so Wwise can author it with this effect&apos;s existing tuning.</source>
         <translation>El IR compilado utiliza diferentes ajustes de decaimiento. Importa su WAV para que Wwise pueda crearlo con la afinación existente de este efecto.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2348"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2295"/>
         <source>Hybrid Reverb accepts WAV or compiled WIR files.</source>
         <translation>Hybrid Reverb acepta archivos WAV o WIR compilados.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2365"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2312"/>
         <source>Wwise Convolution Reverb accepts WAV or compiled WIR files.</source>
         <translation>Wwise Convolution Reverb acepta archivos WAV o WIR compilados.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2378"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2325"/>
         <source>Crankcase REV accepts a compiled MODEL or ADM file. Creating a model from recordings requires the licensed REV authoring tool.</source>
         <translation>Crankcase REV acepta un archivo compilado MODEL o ADM. Crear un modelo a partir de grabaciones requiere la herramienta de creación de REV con licencia.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2386"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2333"/>
         <source>REasy cannot identify this payload. It can be exported raw, but replacement is disabled to avoid corrupting non-audio media.</source>
         <translation>REasy no puede identificar esta carga útil. Se puede exportar sin procesar, pero el reemplazo está deshabilitado para evitar corromper los medios que no son de audio.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2411"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2358"/>
         <source>Analyze the sound file before replacing audio.</source>
         <translation>Analice el archivo de sonido antes de reemplazar el audio.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2414"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4410"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2361"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4357"/>
         <source>No sound profile is registered for this game.</source>
         <translation>No se ha registrado ningún perfil de sonido para este juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2426"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2373"/>
         <source>Automatic multi-file replacement requires an active REasy project.</source>
         <translation>La sustitución automática de varios archivos requiere un proyecto REasy activo.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2439"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2386"/>
         <source>Confirm Related Sound Files</source>
         <translation>Confirmar archivos de sonido relacionados</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2441"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2388"/>
         <source>REasy verified the Source ID relationships and will save these files together:
 
 </source>
@@ -24658,1236 +24827,1236 @@ Primitiva: {topology}.</translation>
 </translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2468"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2415"/>
         <source>Some selected BNK entries are prefetch fragments. Replace the same source IDs in the matching PCK.</source>
         <translation>Algunas entradas de BNK seleccionadas son fragmentos de prebúsqueda. Reemplace los mismos ID de origen en el PCK correspondiente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2470"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2417"/>
         <source>This is a partial PCK; unrelated missing media cannot be preserved by this file.</source>
         <translation>Este es un PCK parcial; este archivo no puede conservar los medios perdidos no relacionados.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2473"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2420"/>
         <source>Confirm Sound Replacement</source>
         <translation>Confirmar el reemplazo de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2474"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2421"/>
         <source>Continue?</source>
         <translation>¿Continuar?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2483"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2430"/>
         <source>Sound Edit Error</source>
         <translation>Error de edición de sonido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2495"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2442"/>
         <source>Select Replacement MIDI</source>
         <translation>Seleccionar reemplazo MIDI</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2498"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2502"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2445"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2449"/>
         <source>Select Replacement Impulse Response</source>
         <translation>Seleccionar respuesta de impulso de reemplazo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2506"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2453"/>
         <source>Select Replacement REV Model</source>
         <translation>Seleccione el modelo REV de reemplazo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2528"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2475"/>
         <source>This payload is unknown and cannot be replaced safely.</source>
         <translation>Esta carga útil es desconocida y no se puede reemplazar de forma segura.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2547"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2675"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2494"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2622"/>
         <source>Authoring {file}: {rates}…</source>
         <translation>Autoría {file}: {rates}…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2563"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2510"/>
         <source>Loop / Marker Metadata Does Not Fit</source>
         <translation>Los metadatos de bucle/marcador no se ajustan</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2565"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2512"/>
         <source>Replace the audio without inheriting the original loops and markers?</source>
         <translation>¿Reemplazar el audio sin heredar los bucles y marcadores originales?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2587"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2534"/>
         <source>Hybrid Reverb IR</source>
         <translation>Reverb híbrido IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2588"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2535"/>
         <source>Convolution Reverb IR</source>
         <translation>Reverberación de convolución IR</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2589"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2536"/>
         <source>Crankcase Audio REV model</source>
         <translation>Modelo de cárter Audio REV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2590"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2537"/>
         <source>WEM</source>
         <translation>WEM</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2597"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2544"/>
         <source> (selected codec)</source>
         <translation> (códec seleccionado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2599"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2546"/>
         <source> (matched original)</source>
         <translation> (original emparejado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2601"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2548"/>
         <source> (profile default)</source>
         <translation> (perfil predeterminado)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2611"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2558"/>
         <source> · {quality} quality</source>
         <translation> · {quality} calidad</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2615"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2562"/>
         <source>Replaced source {id} in {count} verified file(s) with {file} ({encoding}){rates}.</source>
         <translation>Fuente sustituida {id} en {count} archivo(s) verificado(s) con {file} ({encoding}){rates}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2629"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2576"/>
         <source>Add Audio Source</source>
         <translation>Añadir fuente de audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2636"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2583"/>
         <source>Add PCK Audio Source</source>
         <translation>Añadir fuente de audio PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2637"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2584"/>
         <source>Add Embedded BNK Audio Source</source>
         <translation>Añadir fuente de audio BNK integrada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2644"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2591"/>
         <source>This is the index-only PCK. Open the full streaming PCK before adding a source; REasy will keep its index in sync.</source>
-        <translation>Este es el PCK de solo índice. Abra el PCK de transmisión completo antes de agregar una fuente; REasy mantendrá su índice sincronizado.</translation>
+        <translation>Este es el PCK de solo índice. Abra el PCK de streaming completo antes de agregar una fuente; REasy mantendrá su índice sincronizado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2657"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2604"/>
         <source>Source ID {id} already exists.</source>
         <translation>ID de fuente {id} ya existe.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2663"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2610"/>
         <source>Select Audio for Source {id}</source>
         <translation>Seleccione Audio para la fuente {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2691"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2638"/>
         <source>streamed PCK</source>
         <translation>PCK transmitido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2692"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2639"/>
         <source>embedded BNK</source>
         <translation>BNK incrustado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2695"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2642"/>
         <source>Added {location} source {id} from {file}.</source>
         <translation>Se añadió la fuente {id} de {location} desde {file}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2714"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2661"/>
         <source>Select Replacement Folder</source>
         <translation>Seleccionar carpeta de reemplazo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2728"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2675"/>
         <source>No file names match a replaceable source ID.</source>
         <translation>Ningún nombre de archivo coincide con un ID de origen reemplazable.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2756"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2703"/>
         <source>Replacing media…</source>
         <translation>Sustitución de medios…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2776"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2723"/>
         <source>Authoring {count} WAV file(s) in one Wwise batch…</source>
         <translation>Autoría {count} Archivo(s) WAV de un solo lote Wwise…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2817"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2764"/>
         <source>Replacing source {id}</source>
         <translation>Reemplazo de fuente {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2831"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2778"/>
         <source>Replacing source {id} · {rates}</source>
         <translation>Reemplazo de fuente {id} · {rates}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2844"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2791"/>
         <source>No authored media was produced.</source>
         <translation>No se produjeron medios de comunicación de autor.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2857"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2804"/>
         <source>Bulk replace: {done}/{total} succeeded.</source>
         <translation>Reemplazo a granel: {done}/{total} tenido éxito.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2871"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2818"/>
         <source>{type}: {sources} source(s), {events} event(s).</source>
         <translation>{type}: {sources} fuente(s), {events} evento(s).</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2906"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2853"/>
         <source>Events &amp; Audio</source>
         <translation>Eventos &amp; Audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2907"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2854"/>
         <source>Events</source>
         <translation>Eventos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2917"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2864"/>
         <source>Add PCK Source…</source>
         <translation>Añadir fuente PCK…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2918"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2865"/>
         <source>Add Embedded BNK Source…</source>
         <translation>Añadir fuente BNK incrustada…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2921"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2868"/>
         <source>Add a new media entry to this PCK and keep its index in sync.</source>
         <translation>Agregue una nueva entrada multimedia a este PCK y mantenga su índice sincronizado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2923"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2870"/>
         <source>Embed a new Source ID in this BNK&apos;s DIDX/DATA media table. This adds media without inventing Event or Action graph links.</source>
         <translation>Incruste un nuevo ID de origen en la tabla de medios DIDX/DATA de esta BNK. Esto agrega medios sin inventar enlaces gráficos de eventos o acciones.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2960"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2907"/>
         <source>Layout error: {error}</source>
         <translation>Error de diseño: {error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2966"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2913"/>
         <source>{count} editable setting(s)</source>
         <translation>{count} configuración(es) editable(s)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2986"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2933"/>
         <source>No bank-setting values changed.</source>
         <translation>No se han cambiado los valores de ajuste del banco.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2993"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2940"/>
         <source>Updated {title} ({chunk}).</source>
         <translation>Actualizado {title} ({chunk}).</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="2998"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="2945"/>
         <source>Bank Settings Error</source>
         <translation>Error de configuración bancaria</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3061"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3008"/>
         <source>Type + ID collision · read-only</source>
         <translation>Tipo + colisión de ID · solo lectura</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3063"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3010"/>
         <source>Shared ShortID · {level}</source>
         <translation>ShortID compartido · {level}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3090"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3037"/>
         <source>{type}
 {id} · {editing}</source>
         <translation>{type}
 {id} · {editing}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3097"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3044"/>
         <source>HIRC type {type} · {bytes} payload bytes
 {detail}</source>
         <translation>Tipo HIRC {type} · {bytes} bytes de carga útil
 {detail}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3113"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3060"/>
         <source>All object types</source>
         <translation>Todos los tipos de objetos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3114"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3061"/>
         <source>Structured editing</source>
         <translation>Edición estructurada</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3115"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3062"/>
         <source>Read-only</source>
         <translation>Solo lectura</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3159"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3106"/>
         <source>Editable objects: {structured}/{total} · Read-only: {read_only} · Conflicting IDs: {collisions} · Shared IDs: {shared}{detail}</source>
         <translation>Objetos editables: {structured}/{total} · Solo lectura: {read_only} · IDs en conflicto: {collisions} · ID compartidas: {shared}{detail}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3225"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3172"/>
         <source>The exact Wwise layout could not be completed: {error}</source>
         <translation>No se pudo completar el diseño exacto de Wwise: {error}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3254"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3201"/>
         <source>All objects except {count}</source>
         <translation>Todos los objetos excepto {count}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3255"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3953"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3202"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3900"/>
         <source>All objects</source>
         <translation>Todos los objetos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3262"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3209"/>
         <source>Target object {id}</source>
         <translation>Objeto de destino {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3340"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3287"/>
         <source>Selected · ShortID {id}</source>
         <translation>Seleccionado · ShortID {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3365"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3312"/>
         <source>Any</source>
         <translation>Cualquiera</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3372"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3319"/>
         <source>Cross-bank Wwise object</source>
         <translation>Objeto Wwise de banco cruzado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3373"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3320"/>
         <source>Unavailable compiled Wwise object</source>
         <translation>Objeto Wwise compilado no disponible</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3398"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3932"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3345"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3879"/>
         <source>Audio source</source>
         <translation>Fuente de audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3399"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3346"/>
         <source>ID {id}</source>
         <translation>ID {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3448"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3395"/>
         <source>No object selected.</source>
         <translation>No hay ningún objeto seleccionado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3460"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3407"/>
         <source>read-only because type {type_id} + ShortID identifies {count} objects</source>
         <translation>solo lectura porque el tipo {type_id} + ShortID identifica {count} objetos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3463"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3410"/>
         <source>{level} (type-qualified; ShortID is shared)</source>
         <translation>{level} (tipo-calificado; ShortID es compartido)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3465"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3412"/>
         <source>{type} {id} · HIRC type {type_id} · {size} bytes · {incoming} incoming / {outgoing} outgoing · Editing: {decoded}</source>
         <translation>{type} {id} · Tipo HIRC {type_id} · {size} bytes · {incoming} entrante(s) / {outgoing} saliente(s) · Edición: {decoded}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3492"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3439"/>
         <source>Audio source {id}; edit its media on Sound Graph.</source>
         <translation>Fuente de audio {id}; edite su contenido multimedia en el grafo de sonido.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3495"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3442"/>
         <source>Any — matches any music object in a transition rule.</source>
         <translation>Cualquiera — coincide con cualquier objeto de música en una regla de transición.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3523"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3470"/>
         <source>Name or numeric ShortID:</source>
         <translation>Nombre o número ShortID:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3530"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3477"/>
         <source>Invalid name or ShortID.</source>
         <translation>Nombre no válido o ShortID.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3538"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3542"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3485"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3489"/>
         <source>Duplicate HIRC Object</source>
         <translation>Duplicar objeto HIRC</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3542"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3565"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4182"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3489"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3512"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4129"/>
         <source>ShortID {id} already exists.</source>
         <translation>ShortID {id} ya existe.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3552"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3499"/>
         <source>Duplicated {type} {old} as {new}; connect it where needed.</source>
         <translation>Se duplicó {type} {old} como {new}; conéctelo donde corresponda.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3561"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3565"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3508"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3512"/>
         <source>Rename HIRC ShortID</source>
         <translation>Renombrar HIRC ShortID</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3570"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3517"/>
         <source>Renamed HIRC ShortID {old} to {new} and updated resolved links.</source>
         <translation>Se cambió el ShortID de HIRC de {old} a {new} y se actualizaron los enlaces resueltos.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3584"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3531"/>
         <source>Delete {type} {id}?</source>
         <translation>¿Eliminar {type} {id}?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3591"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3538"/>
         <source>Delete HIRC Object</source>
         <translation>Eliminar objeto HIRC</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3596"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3543"/>
         <source>Deleted {type} {id}.</source>
         <translation>Suprimido {type} {id}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3604"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4285"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3551"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4232"/>
         <source>Edit Event Actions</source>
         <translation>Editar acciones de eventos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3614"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3561"/>
         <source>Updated {type} {id}.</source>
         <translation>Actualizado {type} {id}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3635"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3638"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3582"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3585"/>
         <source>Connect Child</source>
         <translation>Conectar objeto hijo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3635"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3582"/>
         <source>No compatible unconnected child is available.</source>
         <translation>Ningún niño compatible no conectado está disponible.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3638"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3681"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3585"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3628"/>
         <source>Child object:</source>
         <translation>Objeto hijo:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3647"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3657"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3594"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3604"/>
         <source>Reparent Child</source>
         <translation>Repadre Niño</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3648"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3595"/>
         <source>{child} currently belongs to {parent}. Move it to {new_parent}?</source>
         <translation>{child} pertenece actualmente a {parent}. ¿Moverlo a {new_parent}?</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3658"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3605"/>
         <source>The old parent&apos;s companion layout is not safely editable.</source>
         <translation>El diseño complementario del padre antiguo no es editable de forma segura.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3667"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3614"/>
         <source>Connected child {child} to {parent}.</source>
         <translation>Se conectó el objeto hijo {child} a {parent}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3681"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3628"/>
         <source>Disconnect Child</source>
         <translation>Desconectar objeto hijo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3693"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3640"/>
         <source>Disconnected child {child} from {parent}.</source>
         <translation>Se desconectó el objeto hijo {child} de {parent}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3722"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3669"/>
         <source>offset {offset} · {role} → {type} {id}</source>
         <translation>compensación {offset} · {role} → {type} {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3733"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3744"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3680"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3691"/>
         <source>Retarget Exact Link</source>
         <translation>Retargetar enlace exacto</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3733"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3680"/>
         <source>Link field:</source>
         <translation>Campo de enlace:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3744"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3691"/>
         <source>New target:</source>
         <translation>Nuevo objetivo:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3751"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3698"/>
         <source>Retargeted {role} in {id} to {target}.</source>
         <translation>Reorientado {role} en {id} a {target}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3771"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3718"/>
         <source>All Sources
 {count} media source(s)</source>
         <translation>Todas las fuentes
 {count} fuente(es) de medios</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3777"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3724"/>
         <source>Event {id}</source>
         <translation>Evento {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3780"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3727"/>
         <source>{title}
 ID {id} · {sources} source(s) · {actions} action(s)</source>
         <translation>{title}
 ID {id} · {sources} fuente(s) · {actions} acción(es)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3793"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3740"/>
         <source>WEL: {path}</source>
         <translation>WEL: {path}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3797"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3744"/>
         <source>Sources: {ids}</source>
         <translation>Fuentes: {ids}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3838"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3785"/>
         <source>unknown resource</source>
         <translation>recursos desconocidos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3842"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3789"/>
         <source> · GameObject {name}</source>
         <translation> · GameObject {name}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3844"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3791"/>
         <source> · Joint {name}</source>
         <translation> · Articulación {name}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3847"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3794"/>
         <source>Used by: {contexts}</source>
         <translation>Utilizado por: {contexts}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3848"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3795"/>
         <source>No shipped scene, prefab, or USER binding was recovered for this Event.</source>
-        <translation>No se recuperó ninguna escena enviada, prefabricada o enlace de USUARIO para este Evento.</translation>
+        <translation>No se ha recuperado ningún vínculo de escena, prefab o USER del juego para este evento.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3874"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3910"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3821"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3857"/>
         <source>Event</source>
         <translation>Evento</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3875"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3822"/>
         <source>ShortID {id} · {count} Actions</source>
         <translation>ShortID {id} · {count} Medidas</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3887"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3834"/>
         <source>External Wwise object</source>
         <translation>Objeto Wwise externo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3892"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3839"/>
         <source>Cross-bank {type}</source>
         <translation>Entre bancos: {type}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3893"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3840"/>
         <source>Unavailable compiled target</source>
         <translation>Objetivo compilado no disponible</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3902"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3849"/>
         <source>External Wwise target</source>
         <translation>Objetivo Wwise externo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3903"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3850"/>
         <source>Object {id}</source>
         <translation>Objeto {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3926"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4749"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3873"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4696"/>
         <source>Not resolved</source>
         <translation>No resuelto</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3933"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3880"/>
         <source>ID {id} · {location}</source>
         <translation>ID {id} · {location}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3946"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3893"/>
         <source>State</source>
         <translation>Estado</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3946"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3893"/>
         <source>Switch</source>
         <translation>Cambiar</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3950"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3897"/>
         <source>Game Parameter</source>
         <translation>Parámetro del juego</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3956"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3903"/>
         <source>Trigger</source>
         <translation>Desencadenante</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3965"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3912"/>
         <source>Missing Action</source>
         <translation>Falta acción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3970"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3917"/>
         <source>{name} Action</source>
         <translation>Acción {name}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3971"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3918"/>
         <source>Action {id} · {target}</source>
         <translation>Medidas adoptadas {id} · {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3997"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3944"/>
         <source>{name}Event {id} · {actions} Actions · {sources} media sources</source>
         <translation>{name}Evento {id} · {actions} acciones · {sources} fuentes multimedia</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4049"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3996"/>
         <source>Audio source {id} · use the media controls below.</source>
         <translation>Fuente de audio {id} · Utilice los controles de medios a continuación.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4056"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4003"/>
         <source>Wwise control value {id}; edit it through its parent Action.</source>
         <translation>Wwise valor de control {id}; editarlo a través de su acción principal.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4061"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4008"/>
         <source>{type} {id} · {links} outgoing link(s) · {properties} playback property entries</source>
         <translation>{type} {id} · {links} enlace(s) saliente(s) · {properties} entradas de propiedad de reproducción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4065"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4012"/>
         <source>Unresolved object {id}</source>
         <translation>Objeto no resuelto {id}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4065"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4012"/>
         <source>Select a node to edit it.</source>
         <translation>Seleccione un nodo para editarlo.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4085"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4032"/>
         <source>Edit Action…</source>
         <translation>Editar acción…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4086"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4033"/>
         <source>Open in All Objects</source>
         <translation>Abrir en todos los objetos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4128"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4075"/>
         <source>Detached Action {action} from Event {event}; the Action remains in the bank.</source>
         <translation>Se desvinculó la acción {action} del evento {event}; la acción permanece en el banco.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4165"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4112"/>
         <source>New Play Action</source>
         <translation>Nueva acción de juego</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4165"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4112"/>
         <source>New Stop Action</source>
         <translation>Nueva acción Detener</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4167"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4114"/>
         <source>Clone {name} Action {id} — {target}</source>
         <translation>Clonar la acción {name} {id} — {target}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4174"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4178"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4182"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4213"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4219"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4121"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4125"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4129"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4160"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4166"/>
         <source>Add Action</source>
         <translation>Añadir acción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4174"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4121"/>
         <source>Action template:</source>
         <translation>Plantilla de acción:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4213"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4160"/>
         <source>Initial target:</source>
         <translation>Objetivo inicial:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4219"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4166"/>
         <source>This bank has no compatible target.</source>
         <translation>Este banco no tiene un objetivo compatible.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4244"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4191"/>
         <source>Added Action {action} to Event {event}.</source>
         <translation>Añadida acción {action} al evento {event}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4246"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4193"/>
         <source>Added unattached Action {id}; connect it from an Event when needed.</source>
         <translation>Añadida la acción desapegada {id}; conectarlo desde un Evento cuando sea necesario.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4262"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4268"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4271"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4273"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4209"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4215"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4218"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4220"/>
         <source>Add Event</source>
         <translation>Añadir evento</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4262"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4209"/>
         <source>Event name or numeric ShortID:</source>
         <translation>Nombre del evento o ShortID numérico:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4268"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4215"/>
         <source>Invalid Event name or ID.</source>
         <translation>Nombre o ID de evento no válido.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4271"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4218"/>
         <source>Object ID {id} already exists.</source>
         <translation>ID de objeto {id} ya existe.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4278"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4225"/>
         <source> from &apos;{name}&apos;</source>
         <translation> Desde &apos;{name}&apos;</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4279"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4226"/>
         <source>Added Event {id}{note}.</source>
         <translation>Evento añadido {id}{note}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4289"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4236"/>
         <source>Updated Event {id}.</source>
         <translation>Evento actualizado {id}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4298"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4245"/>
         <source>Delete Event {id}? Actions remain in the bank.</source>
         <translation>Borrar evento {id}Las acciones permanecen en el banco.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4306"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4253"/>
         <source>Deleted Event {id}.</source>
         <translation>Evento eliminado {id}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4332"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4279"/>
         <source>PCK: media (partial package)</source>
         <translation>PCK: contenido multimedia (paquete parcial)</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4332"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4279"/>
         <source>PCK: complete media</source>
         <translation>PCK: medios completos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4334"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4281"/>
         <source>Replace audio here. Event routing is stored in the matching BNK.</source>
         <translation>Reemplaza el audio aquí. El enrutamiento de eventos se almacena en el BNK correspondiente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4337"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4284"/>
         <source>This file only indexes the audio. Open the full streaming PCK to preview or replace it; Event routing is stored in the matching BNK.</source>
-        <translation>Este archivo solo indexa el audio. Abra el PCK de transmisión completo para obtener una vista previa o reemplazarlo; El enrutamiento de eventos se almacena en el BNK correspondiente.</translation>
+        <translation>Este archivo solo indexa el audio. Abra el PCK de streaming completo para previsualizarlo o reemplazarlo; el enrutamiento de eventos se almacena en el BNK correspondiente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4342"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4289"/>
         <source>Open Matching BNK…</source>
         <translation>Abrir BNK correspondiente…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4345"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4292"/>
         <source>SBNK: split audio</source>
         <translation>SBNK: audio dividido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4346"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4293"/>
         <source>SBNK: complete media</source>
         <translation>SBNK: medios completos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4349"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4296"/>
         <source>This bank stores the beginning of each sound. REasy finds the full audio and its Event bank for preview and replacement.</source>
         <translation>Este banco almacena el comienzo de cada sonido. REasy encuentra el audio completo y su banco de eventos para la vista previa y el reemplazo.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4352"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4299"/>
         <source>Replace audio here. REasy finds the Event bank that uses it.</source>
         <translation>Reemplace el audio aquí. REasy buscará el banco de eventos que lo utiliza.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4354"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4301"/>
         <source>Open Matching Event SBNK…</source>
         <translation>Abrir SBNK de evento correspondiente…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4356"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4303"/>
         <source>BNK: events and playback routing</source>
         <translation>BNK: eventos y enrutamiento de reproducción</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4358"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4305"/>
         <source>Choose an Event, edit its playback flow, or replace its audio. Matching media files are updated automatically.</source>
         <translation>Elija un evento, edite su flujo de reproducción o reemplace su audio. Los archivos multimedia coincidentes se actualizan automáticamente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4361"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4308"/>
         <source>Open Matching Media…</source>
         <translation>Abrir medio correspondiente…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4384"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4331"/>
         <source>Open Matching Media SBNK…</source>
         <translation>Abrir SBNK multimedia correspondiente…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4385"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4332"/>
         <source>Open Matching PCK…</source>
         <translation>Abrir PCK correspondiente…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4396"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4343"/>
         <source>{count} sources</source>
         <translation>{count} fuentes</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4398"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4345"/>
         <source>Wwise v{version}</source>
         <translation>Wwise v{version}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4400"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4347"/>
         <source>{count} Events</source>
         <translation>{count} Eventos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4409"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4356"/>
         <source>Streaming PCK</source>
-        <translation>PCK de transmisión</translation>
+        <translation>PCK de streaming</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4416"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4438"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4363"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4385"/>
         <source>Streaming PCK Mismatch</source>
         <translation>Transmisión de PCK Mismatch</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4420"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4367"/>
         <source>Opened the full streaming PCK after an exact AKPK index match.</source>
-        <translation>Se ha abierto el PCK de transmisión completa después de una coincidencia exacta del índice AKPK.</translation>
+        <translation>Se ha abierto el PCK de streaming completo tras una coincidencia exacta del índice AKPK.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4427"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4374"/>
         <source>Locate Full Streaming PCK</source>
-        <translation>Localizar PCK de transmisión completa</translation>
+        <translation>Localizar PCK de streaming completo</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4442"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4389"/>
         <source>Opened the selected full PCK after an exact AKPK index match.</source>
         <translation>Se ha abierto el PCK completo seleccionado después de una coincidencia exacta del índice AKPK.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4482"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4429"/>
         <source>Open Verified Companion</source>
         <translation>Compañero Verificado Abierto</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4483"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4430"/>
         <source>Select the Source-ID-matched file:</source>
         <translation>Seleccione el archivo coincidente con ID de origen:</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4492"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4439"/>
         <source>Open Matching BNK</source>
         <translation>Abrir BNK correspondiente</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4493"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4440"/>
         <source>Open Matching Event SBNK</source>
         <translation>Abrir SBNK de evento correspondiente</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4494"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4441"/>
         <source>Open Matching Media</source>
         <translation>Abrir medio correspondiente</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4507"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4454"/>
         <source>No matching media entry was parsed.</source>
         <translation>No se analizó ninguna entrada de medios coincidente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4510"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4457"/>
         <source>audio</source>
         <translation>audio</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4511"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4458"/>
         <source>Wwise MIDI sequence</source>
         <translation>Secuencia MIDI wwise</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4512"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4459"/>
         <source>Hybrid Reverb impulse media</source>
         <translation>Medios de impulso de reverberación híbrida</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4513"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4460"/>
         <source>Convolution Reverb impulse media</source>
         <translation>Medios de impulso de convolución</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4514"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4461"/>
         <source>Crankcase Audio REV vehicle model</source>
         <translation>Modelo del vehículo del cárter Audio REV</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4515"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4462"/>
         <source>unknown media</source>
         <translation>Medios Desconocidos</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4519"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4466"/>
         <source>Export only</source>
         <translation>Solo exportación</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4520"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4467"/>
         <source>The {kind} is complete, but replacement requires a profile for this game.</source>
         <translation>Los {kind} está completo, pero el reemplazo requiere un perfil para este juego.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4522"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4469"/>
         <source>Game profile required</source>
         <translation>Perfil de juego requerido</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4523"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4470"/>
         <source>Add a sound profile to resolve this media&apos;s external containers safely.</source>
         <translation>Agregue un perfil de sonido para resolver los contenedores externos de este medio de forma segura.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4526"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4473"/>
         <source>Split SBNK prefetch</source>
         <translation>Precarga de SBNK dividida</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4527"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4474"/>
         <source>This SBNK contains only the prefetch prefix. Preview, export, and replacement resolve the full Source-ID-matched PCK automatically.</source>
         <translation>Este SBNK contiene solo el prefijo de búsqueda previa. Vista previa, exportación y reemplazo resuelve automáticamente el PCK completo coincidente con el ID de origen.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4531"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4478"/>
         <source>Ready in this PCK</source>
         <translation>Listo en este PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4531"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4478"/>
         <source>Ready in this BNK</source>
         <translation>Listo en este BNK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4533"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4480"/>
         <source>It can be previewed, replaced, or exported here.</source>
         <translation>Se puede previsualizar, reemplazar o exportar aquí.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4534"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4481"/>
         <source>It can be inspected, replaced from MID, or exported here.</source>
         <translation>Puede ser inspeccionado, reemplazado desde MID, o exportado aquí.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4535"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4482"/>
         <source>Its processed early reflections can be previewed/exported; WAV replacement is authored by Wwise.</source>
         <translation>Sus reflexiones tempranas procesadas se pueden previsualizar / exportar; El reemplazo de WAV es de Wwise.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4536"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4483"/>
         <source>Its processed impulse can be previewed/exported; WAV replacement is authored by Wwise.</source>
         <translation>Su impulso procesado se puede previsualizar/exportar; el reemplazo de WAV es de Wwise.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4537"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4484"/>
         <source>It can be replaced or exported as a validated compiled REV model; creating one from recordings requires the licensed REV authoring tool.</source>
         <translation>Se puede reemplazar o exportar como un modelo REV compilado validado; crear uno a partir de grabaciones requiere la herramienta de creación REV con licencia.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4538"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4485"/>
         <source>It can only be exported raw because its format is unknown.</source>
         <translation>Solo se puede exportar sin procesar porque su formato es desconocido.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4539"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4486"/>
         <source>This file contains the complete {kind}. </source>
         <translation>Este archivo contiene el {kind}. </translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4541"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4488"/>
         <source>Indexed streaming media</source>
         <translation>Medios de streaming indexados</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4542"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4489"/>
         <source>Use Open Full Streaming PCK to inspect the actual media data. REasy verifies the complete AKPK index before opening it.</source>
         <translation>Use Abrir PCK de streaming completo para inspeccionar los datos multimedia reales. REasy verifica el índice AKPK completo antes de abrirlo.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4546"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4493"/>
         <source>Automatic BNK + PCK update</source>
         <translation>Actualización automática de BNK + PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4546"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4493"/>
         <source>This is a BNK prefetch fragment. REasy will update it and all verified PCK counterparts together.</source>
         <translation>Este es un fragmento de prebúsqueda de BNK. REasy lo actualizará junto con todas las contrapartes verificadas de PCK.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4548"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4495"/>
         <source>Automatic SBNK media update</source>
         <translation>Actualización automática de medios SBNK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4548"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4495"/>
         <source>REasy resolves a complete sibling media bank by exact Source ID and updates it; if none exists, Replace can embed the expected media here.</source>
         <translation>REasy localiza un banco multimedia relacionado completo mediante el ID de origen exacto y lo actualiza; si no existe, Reemplazar puede incrustar aquí el contenido multimedia esperado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4549"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4496"/>
         <source>Automatic PCK update</source>
         <translation>Actualización automática de PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4549"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4496"/>
         <source>REasy will resolve the complete PCK by Source ID and update its index automatically.</source>
         <translation>REasy resolverá el PCK completo por ID de origen y actualizará su índice automáticamente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4558"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4505"/>
         <source>Replace MIDI…</source>
         <translation>Reemplazar MIDI…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4558"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4505"/>
         <source>Export Wwise MIDI…</source>
         <translation>Exportar Wwise MIDI…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4558"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4505"/>
         <source>Export MIDI…</source>
         <translation>Exportar MIDI…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4561"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4565"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4508"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4512"/>
         <source>Replace Impulse…</source>
         <translation>Reemplazar impulso…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4561"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4565"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4508"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4512"/>
         <source>Export Compiled IR…</source>
         <translation>Exportación Compilado IR…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4562"/>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4566"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4509"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4513"/>
         <source>Export Processed IR WAV…</source>
         <translation>Exportación procesada IR WAV…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4569"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4516"/>
         <source>Replace REV Model…</source>
         <translation>Reemplazar modelo REV…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4569"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4516"/>
         <source>Export REV Model…</source>
         <translation>Exportar modelo REV…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4570"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4517"/>
         <source>No Waveform Export</source>
         <translation>Sin exportación de forma de onda</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4520"/>
         <source>Replace Media…</source>
         <translation>Reemplazar medios…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4573"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4520"/>
         <source>Export Raw Media…</source>
         <translation>Exportación de medios crudos…</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4574"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4521"/>
         <source>No Editable Export</source>
         <translation>Sin exportación editable</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4581"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4528"/>
         <source>Import an editable Standard MIDI File or an already compiled WMID. Wwise MIDI stores one global tempo, so tempo-changing MID files are rejected.</source>
         <translation>Importe un archivo MIDI estándar editable o un WMID ya compilado. Wwise MIDI almacena un tempo global, por lo que se rechazan los archivos MID que cambian el tempo.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4586"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4533"/>
         <source>Import a mono/stereo PCM16 or PCM24 WAV through the matching, licensed iZotope Hybrid Reverb plug-in. Existing decay tuning is retained.</source>
         <translation>Importa un PCM16 o PCM24 WAV mono/estéreo a través del plug-in iZotope Hybrid Reverb con licencia correspondiente. Se mantiene la sintonización de decaimiento existente.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4591"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4538"/>
         <source>Import a PCM16 or PCM24 WAV through the game&apos;s matching Wwise Convolution Reverb plug-in, or import an already compiled WIR.</source>
         <translation>Importar un PCM16 o PCM24 WAV a través de la coincidencia del juego Wwise Convolution Reverb plug-in, o importar un WIR ya compilado.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4602"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4549"/>
         <source>Import an already compiled Crankcase Audio REV ADM3 model. REV models are interactive vehicle-engine data, not WAV audio.</source>
         <translation>Importe un modelo REV ADM3 de Crankase Audio ya compilado. Los modelos REV son datos interactivos del motor del vehículo, no audio WAV.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4607"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4554"/>
         <source>Unknown payloads cannot be replaced until their format is proven.</source>
         <translation>Las cargas útiles desconocidas no se pueden reemplazar hasta que se demuestre su formato.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4614"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4561"/>
         <source>Select a row to see where its media is stored.</source>
         <translation>Seleccione una fila para ver dónde está almacenado su medio.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4623"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4570"/>
         <source>Source {id} — {location}</source>
         <translation>Fuente {id} — {location}</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4625"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4572"/>
         <source> Used by Event(s): {events}.</source>
         <translation> Utilizado por Evento(s): {events}.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4730"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4677"/>
         <source>Full media in PCK</source>
         <translation>Medios completos en PCK</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4719"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4666"/>
         <source>Partial</source>
         <translation>Parcial</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="3587"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="3534"/>
         <source>{count} object(s) still link to it. Deleting leaves those links unresolved; retarget or disconnect them first.</source>
         <translation>{count} objeto(s) siguen enlazados a él. Eliminarlo deja esos enlaces sin resolver; redirígelos o desconéctalos antes.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4596"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4543"/>
         <source>WAV import uses the codec, quality and sample rate shown below; the defaults match the original WEM. Loops, cue points and markers come from the WAV, or from the original WEM when the WAV has none.</source>
         <translation>La importación de WAV usa el códec, la calidad y la frecuencia de muestreo que se muestran abajo; los valores predeterminados coinciden con el WEM original. Los bucles, puntos de señal y marcadores proceden del WAV, o del WEM original cuando el WAV no tiene ninguno.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4735"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4682"/>
         <source>Prefetch fragment</source>
         <translation>Fragmento de prebúsqueda</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4738"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4685"/>
         <source>{count} ch</source>
         <translation>{count} canales</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4745"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4692"/>
         <source> · +{count} more</source>
         <translation> · +{count} más</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4779"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4726"/>
         <source>{name}Event {id} — {count} media source(s)</source>
         <translation>{name}Evento {id} — {count} fuente(es) de medios</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_viewer.py" line="4787"/>
+        <location filename="../../file_handlers/sound/sound_viewer.py" line="4734"/>
         <source>All media sources — {count} shown</source>
         <translation>Todas las fuentes de medios — {count} mostrado</translation>
     </message>
@@ -28171,6 +28340,25 @@ Se busca tanto en archivos PAK como en archivos del sistema.</translation>
     </message>
 </context>
 <context>
+    <name>ToolDownloads</name>
+    <message>
+        <location filename="../../tools/github_downloader.py" line="22"/>
+        <source>Download Failed</source>
+        <translation>Error de descarga</translation>
+    </message>
+    <message>
+        <location filename="../../tools/github_downloader.py" line="76"/>
+        <source>{title} could not be downloaded: {error}
+
+Download it from {page} and extract it into:
+{folder}</source>
+        <translation>No se pudo descargar {title}: {error}
+
+Descárgalo desde {page} y extráelo en:
+{folder}</translation>
+    </message>
+</context>
+<context>
     <name>TreeWidgetFactory</name>
     <message>
         <location filename="../../file_handlers/pyside/tree_widget_factory.py" line="111"/>
@@ -28187,54 +28375,54 @@ Se busca tanto en archivos PAK como en archivos del sistema.</translation>
 <context>
     <name>UpdateNotificationManager</name>
     <message>
-        <location filename="../../ui/update_notification.py" line="82"/>
+        <location filename="../../ui/update_notification.py" line="84"/>
         <source>View on Github</source>
         <translation>Ver en Github</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="90"/>
+        <location filename="../../ui/update_notification.py" line="92"/>
         <source>Auto-Download and Update</source>
         <translation>Descarga y actualización automáticas</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="115"/>
+        <location filename="../../ui/update_notification.py" line="117"/>
         <source>a new version</source>
         <translation>Una nueva versión</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="12"/>
+        <location filename="../../ui/update_notification.py" line="13"/>
         <source>Auto Update</source>
         <translation>Actualización automática</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="96"/>
+        <location filename="../../ui/update_notification.py" line="98"/>
         <source>Update Available</source>
         <translation>Actualización disponible</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="97"/>
+        <location filename="../../ui/update_notification.py" line="99"/>
         <source>REasy {version} is available</source>
         <translation>REasy {version} está disponible</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="121"/>
+        <location filename="../../ui/update_notification.py" line="123"/>
         <source>{version} is available.
 Do you want to auto-download and update now?</source>
         <translation>{version} está disponible.
 ¿Quieres auto-descargar y actualizar ahora?</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="135"/>
+        <location filename="../../ui/update_notification.py" line="137"/>
         <source>the latest version</source>
-        <translation>La última versión</translation>
+        <translation>la última versión</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="141"/>
+        <location filename="../../ui/update_notification.py" line="143"/>
         <source>Do you want to auto-download and update to {version}?</source>
         <translation>¿Quieres descargar automáticamente y actualizar a {version}?</translation>
     </message>
     <message>
-        <location filename="../../ui/update_notification.py" line="166"/>
+        <location filename="../../ui/update_notification.py" line="168"/>
         <source>Auto-update script not found. Opening releases page instead.</source>
         <translation>No se encontró el script de actualización automática. Abrir página de lanzamientos en su lugar.</translation>
     </message>
@@ -28242,28 +28430,28 @@ Do you want to auto-download and update now?</source>
 <context>
     <name>UpdateProgressDialog</name>
     <message>
-        <location filename="../../ui/update_progress_dialog.py" line="14"/>
-        <location filename="../../ui/update_progress_dialog.py" line="32"/>
+        <location filename="../../ui/update_progress_dialog.py" line="18"/>
+        <location filename="../../ui/update_progress_dialog.py" line="36"/>
         <source>Updating REasy…</source>
         <translation>Actualizando REasy…</translation>
     </message>
     <message>
-        <location filename="../../ui/update_progress_dialog.py" line="38"/>
+        <location filename="../../ui/update_progress_dialog.py" line="42"/>
         <source>Cancel</source>
         <translation>Cancelar</translation>
     </message>
     <message>
-        <location filename="../../ui/update_progress_dialog.py" line="41"/>
+        <location filename="../../ui/update_progress_dialog.py" line="45"/>
         <source>Close</source>
         <translation>Cerrar</translation>
     </message>
     <message>
-        <location filename="../../ui/update_progress_dialog.py" line="118"/>
+        <location filename="../../ui/update_progress_dialog.py" line="122"/>
         <source>Staging completed.</source>
         <translation>Estadificación completada.</translation>
     </message>
     <message>
-        <location filename="../../ui/update_progress_dialog.py" line="121"/>
+        <location filename="../../ui/update_progress_dialog.py" line="125"/>
         <source>Update failed with code {exit_code}. See log above for details.</source>
         <translation>Actualización fallida con código {exit_code}. Ver registro arriba para más detalles.</translation>
     </message>
@@ -29118,17 +29306,17 @@ Rutas y carpetas guardadas que visita con frecuencia.</translation>
 <context>
     <name>WaveformWidget</name>
     <message>
-        <location filename="../../file_handlers/sound/sound_waveform.py" line="173"/>
+        <location filename="../../file_handlers/sound/sound_waveform.py" line="186"/>
         <source>Blue: waveform · Green: activity · Dark: silence · Yellow: play position</source>
         <translation>Azul: forma de onda · Verde: actividad · Oscuro: silencio · Amarillo: posición de juego</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_waveform.py" line="175"/>
+        <location filename="../../file_handlers/sound/sound_waveform.py" line="188"/>
         <source>Click to seek · Drag to select a range</source>
         <translation>Clic para ir a una posición · Arrastrar para seleccionar un rango</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/sound/sound_waveform.py" line="232"/>
+        <location filename="../../file_handlers/sound/sound_waveform.py" line="245"/>
         <source>Waveform appears after preview</source>
         <translation>Waveform aparece después de la vista previa</translation>
     </message>
@@ -29428,13 +29616,13 @@ Los objetivos de referencia se cambian a través de un selector de tipo seguro.<
 <context>
     <name>_MeshViewport</name>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2568"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2581"/>
         <source>Attribute colors are shown without lighting.</source>
         <translation>Los colores de atributo se muestran sin iluminación.</translation>
     </message>
     <message>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2637"/>
-        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2644"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2654"/>
+        <location filename="../../file_handlers/mesh/mesh_viewer.py" line="2661"/>
         <source>Game lighting draws the main geometry only.</source>
         <translation>La iluminación del juego solo dibuja la geometría principal.</translation>
     </message>
