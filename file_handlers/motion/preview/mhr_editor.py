@@ -220,7 +220,12 @@ class MhrMotListEditor(QWidget):
             self.timeline_inspector.hide()
             preview_page.setSizes([280, 150])
         handler.document_changed.connect(self._external_document_changed)
-        QTimer.singleShot(0, self._load_default_target)
+        if self.document.name.casefold().startswith(('pl', 'wpg_')):
+            QTimer.singleShot(0, self._load_default_target)
+        else:
+            self.weapon_combo.hide()
+            self.default_rig_button.hide()
+            self.resource_directory_button.hide()
 
     def _external_document_changed(self):
         if self._emitting_edit or self._cleaned:

@@ -90,46 +90,78 @@ def decode_track(c, offset, end_frame):
     c.require(offset, 36, 'LMT track')
     codec, kind, bone_type, bone, weight, size, pointer, *tail = struct.unpack_from('<4BfII4fI', c.data, offset)
     reference, extremes = tuple(tail[:4]), tail[4]
-    strides = {1: 12, 2: 12, 4: 8, 5: 4, 6: 8, 7: 4, 11: 4, 12: 4}
-    if codec not in strides or kind not in (0, 1, 2, 4) or bone_type != 0:
+    return bone, kind, weight, decode_lmt_keys(
+        c, codec, kind, weight, size, pointer, reference, extremes, end_frame,
+        bone_type=bone_type, allowed_kinds=(0, 1, 2, 4),
+        allowed_codecs=(1, 2, 4, 5, 6, 7, 11, 12))
+
+
+def decode_lmt_keys(c, codec, kind, weight, size, pointer, reference, extremes,
+                    end_frame, *, bone_type=0, allowed_kinds=(0, 1, 2, 3, 4),
+                    allowed_codecs=(1, 2, 3, 4, 5, 6, 7, 11, 12, 13, 14, 15),
+                    first_buffer_frame=1, quantization_padding=0):
+    """Shared MT Framework v2 codewords; callers supply their wire layout."""
+    strides = {1: 12, 2: 12, 3: 16, 4: 8, 5: 4, 6: 8, 7: 4,
+               11: 4, 12: 4, 13: 4, 14: 6, 15: 5}
+    if codec not in allowed_codecs or kind not in allowed_kinds or bone_type != 0:
         raise MotionParseError(f'{c.label}: unsupported LMT track {codec=}, {kind=}, {bone_type=}')
     stride = strides[codec]
     if not math.isfinite(weight) or not 0 <= weight <= 1 or size % stride or (size and not pointer):
         raise MotionParseError(f'{c.label}: invalid LMT track buffer/weight')
     c.require(pointer, size, 'LMT keys')
     bounds = None
-    if codec in (4, 5, 7, 11, 12) and size:
+    if codec in (4, 5, 7, 11, 12, 13, 14, 15) and size:
         if not extremes:
             raise MotionParseError(f'{c.label}: missing LMT quantization bounds')
         c.require(extremes, 32, 'LMT quantization bounds')
         bounds = struct.unpack_from('<8f', c.data, extremes)
-    family = TrackFamily.QUATERNION if kind == 0 else TrackFamily.VECTOR3
+    family = TrackFamily.QUATERNION if kind in (0, 3) else TrackFamily.VECTOR3
     def value(v):
         v = tuple(v if family == TrackFamily.QUATERNION else v[:3])
         if not all(math.isfinite(x) for x in v) or (family == TrackFamily.QUATERNION and sum(x*x for x in v) < 1e-12):
             raise MotionParseError(f'{c.label}: invalid LMT key value')
         return v
-    frames, values, frame = [0], [value(reference)], 1
+    frames, values, frame = [0], [value(reference)], first_buffer_frame
+    def quantized(code, mask):
+        denominator = mask-2*quantization_padding+1 if quantization_padding else mask
+        return (code-quantization_padding)/denominator
     for pos in range(pointer, pointer+size, stride):
         raw = int.from_bytes(c.data[pos:pos+stride], 'little')
         if codec in (1, 2):
             xyz = struct.unpack_from('<3f', c.data, pos)
             v = (*xyz, math.sqrt(max(0, 1-sum(x*x for x in xyz))) if codec == 2 else 1)
             delta = 1
+        elif codec == 3:
+            v = (*struct.unpack_from('<3f', c.data, pos), 1)
+            delta = c.u32(pos+12)
         elif codec in (4, 5):
             x, y, z, delta = struct.unpack_from('<4H' if codec == 4 else '<4B', c.data, pos)
             denominator = 65535 if codec == 4 else 255
-            v = (x/denominator, y/denominator, z/denominator, 0)
+            v = (quantized(x, denominator), quantized(y, denominator), quantized(z, denominator), 0)
         elif codec == 6:
             codes = [(raw >> shift) & 16383 for shift in (42, 28, 14, 0)]
             v = tuple((x if x < 8192 else x-16383)*4/16383 for x in codes)
             delta = raw >> 56
         elif codec == 7:
-            v = tuple(((raw >> shift) & 127)/127 for shift in (21, 14, 7, 0))
+            v = tuple(quantized((raw >> shift) & 127, 127) for shift in (21, 14, 7, 0))
             delta = raw >> 28
+        elif codec == 14:
+            # 11-bit Y/Z fields rotate across 16-bit storage words.
+            codes = (raw, ((raw >> 11) << 6) | ((raw >> 16) & 63),
+                     ((raw >> 22) << 1) | ((raw >> 32) & 1), raw >> 33)
+            v = tuple(quantized(x & 2047, 2047) for x in codes)
+            delta = raw >> 44
+        elif codec == 15:
+            # 9-bit fields rotate across bytes (RevilLib Buf_*_9bit).
+            codes = ((raw << 1) | ((raw >> 8) & 1),
+                     ((raw >> 9) << 2) | ((raw >> 16) & 3),
+                     ((raw >> 18) << 3) | ((raw >> 24) & 7),
+                     ((raw >> 27) << 4) | ((raw >> 32) & 15))
+            v = tuple(quantized(x & 511, 511) for x in codes)
+            delta = raw >> 36
         else:
-            v = [0., 0., 0., ((raw >> 14) & 16383)/16383]
-            v[0 if codec == 11 else 1] = (raw & 16383)/16383
+            v = [0., 0., 0., quantized((raw >> 14) & 16383, 16383)]
+            v[codec-11] = quantized(raw & 16383, 16383)
             delta = raw >> 28
         if bounds is not None:
             v = tuple(bounds[i+4]+bounds[i]*v[i] for i in range(4))
@@ -138,7 +170,7 @@ def decode_track(c, offset, end_frame):
         frames.append(frame)
         values.append(value(v))
         frame += delta
-    return bone, kind, weight, KeyTrack(family, frames, values)
+    return KeyTrack(family, frames, values)
 
 
 class LmtMotionFormatCodec:

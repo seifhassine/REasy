@@ -47,6 +47,8 @@ class Joint:
     translation: tuple[float, float, float] = (0.0, 0.0, 0.0)
     rotation: tuple[float, float, float, float] = (0.0, 0.0, 0.0, 1.0)
     joint_map_extra_type: JointMapExtraType = JointMapExtraType.DEFAULT
+    # External source formats may author a default scale; native MOT omits it.
+    rest_scale: tuple[float, float, float] | None = None
 
 
 @dataclass(slots=True, eq=False)

@@ -9,8 +9,8 @@ from .model import Rig, RigJoint, Transform, Vector3
 def rig_from_motion_skeleton(motion: Motion, *, scale: Vector3, joint_binding=None) -> Rig:
     """Create an explicit standalone preview rig from MOT joint defaults.
 
-    MOT v65 has no joint default scale, so callers must choose a scale rather
-    than receiving an implicit fallback. Non-finite defaults remain
+    Native MOT has no joint default scale, so callers must choose a scale.
+    External formats with authored rest scales retain those values. Non-finite defaults remain
     unevaluable without an external target rig and fail clearly.
     """
     if motion.skeleton is None or not motion.skeleton.joints:
@@ -37,10 +37,13 @@ def rig_from_motion_skeleton(motion: Motion, *, scale: Vector3, joint_binding=No
             parent_index = indices.get(id(joint.parent))
             if parent_index is None:
                 raise ValueError(f"motion joint {joint.name!r} has a parent outside its skeleton")
+        rest_scale = joint.rest_scale if joint.rest_scale is not None else scale
+        if len(rest_scale) != 3 or any(not math.isfinite(v) or not v for v in rest_scale):
+            raise ValueError(f'motion joint {joint.name!r} has an invalid default scale')
         result.append(RigJoint(
             name=joint.name,
             parent_index=parent_index,
-            rest=Transform(joint.translation, joint.rotation, scale),
+            rest=Transform(joint.translation, joint.rotation, rest_scale),
             binding_key=joint_binding.motion_key(joint) if joint_binding is not None else None,
         ))
     return Rig(result)

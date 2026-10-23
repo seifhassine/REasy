@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from collections import Counter
+from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
+    QFileDialog,
     QInputDialog,
     QLabel,
     QPushButton,
@@ -161,6 +163,9 @@ class MotListPreviewWidget(QWidget):
         self.load_resource_button = QPushButton(self.tr("Load Mesh Resource…"))
         self.load_resource_button.clicked.connect(self._load_mesh_resource)
         self.rig_pane.add_widget(self.load_resource_button)
+        self.load_file_button = QPushButton(self.tr("Load Mesh File…"))
+        self.load_file_button.clicked.connect(self._load_mesh_file)
+        self.rig_pane.add_widget(self.load_file_button)
         self.source_rig_button = QPushButton(self.tr("Use MOT Skeleton"))
         self.source_rig_button.clicked.connect(self.use_source_rig)
         self.rig_pane.add_widget(self.source_rig_button)
@@ -213,6 +218,7 @@ class MotListPreviewWidget(QWidget):
         enabled = bool(self._motions)
         self.source_rig_button.setEnabled(enabled)
         self.load_resource_button.setEnabled(enabled)
+        self.load_file_button.setEnabled(enabled)
         origins = Counter(entry.origin for entry in self._motions)
         summary = self.tr(
             "{total} playable · {embedded} embedded · {inherited} inherited"
@@ -387,6 +393,19 @@ class MotListPreviewWidget(QWidget):
             filepath, data = hit
             self.load_target_mesh(filepath, data)
         except ValueError as exc:
+            self._show_error(self.tr("Could not load target mesh: {error}").format(error=exc))
+
+    def _load_mesh_file(self) -> None:
+        filepath, _ = QFileDialog.getOpenFileName(
+            self, self.tr("Load Target Mesh"),
+            str(Path(self.handler.filepath).parent) if self.handler.filepath else "",
+            self.tr("RE Engine mesh (*.mesh.*);;All files (*)"),
+        )
+        if not filepath:
+            return
+        try:
+            self.load_target_mesh(filepath, Path(filepath).read_bytes())
+        except (OSError, ValueError) as exc:
             self._show_error(self.tr("Could not load target mesh: {error}").format(error=exc))
 
     def _render(self, reset_camera: bool = False) -> None:
