@@ -62,6 +62,10 @@ def game_enum_definitions(game, *, namespace=""):
     return _read_enum_namespace(enum_file_path(game), namespace)
 
 
+def enum_games():
+    return tuple(_ENUM_PATHS)
+
+
 class EnumManager:
     _instance = None
     

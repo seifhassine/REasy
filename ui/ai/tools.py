@@ -1560,7 +1560,7 @@ class ReasyAssistantTools(
                             "name": {"type": "string"},
                             "mmtr_path": {"type": "string"},
                             "shader_type": {
-                                "description": "Shader name shown in REasy or its zero-based numeric index.",
+                                "description": "Shading type name REasy shows for the file's game, or its stored number.",
                                 "anyOf": [{"type": "string"}, {"type": "integer"}],
                             },
                             "bake_texture_array_size": {"type": "integer", "minimum": 0},
@@ -3287,11 +3287,7 @@ class ReasyAssistantTools(
             "mmtr_path": header.mmtr_path,
             "shader_type": {
                 "index": int(header.shader_type),
-                "name": (
-                    viewer._shader_names[int(header.shader_type)]
-                    if 0 <= int(header.shader_type) < len(viewer._shader_names)
-                    else None
-                ),
+                "name": viewer._shading_types.get(int(header.shader_type)),
             },
             "bake_texture_array_size": int(header.BakeTextureArraySize),
             "unknown_64": unknown_64,
@@ -4143,7 +4139,7 @@ class ReasyAssistantTools(
             return (
                 isinstance(value, int)
                 and not isinstance(value, bool)
-                and 0 <= value < viewer.shader_combo.count()
+                and value in viewer._shading_types
             )
         if (
             len(path) != 2
@@ -4168,7 +4164,7 @@ class ReasyAssistantTools(
         if (
             not isinstance(shader_type, int)
             or isinstance(shader_type, bool)
-            or not 0 <= shader_type < viewer.shader_combo.count()
+            or shader_type not in viewer._shading_types
         ):
             return False
         if version < 19 and material.get("gpu_buffers"):
@@ -6332,28 +6328,23 @@ class ReasyAssistantTools(
                 )
 
         mmtr_path = str(changes["mmtr_path"]) if "mmtr_path" in changes else None
-        shader_index = None
+        shader_value = None
         if "shader_type" in changes:
             shader = changes["shader_type"]
             if isinstance(shader, str) and not shader.strip().lstrip("-").isdigit():
-                matches = [
-                    index
-                    for index, name in enumerate(viewer._shader_names)
-                    if name.casefold() == shader.strip().casefold()
-                ]
-                if not matches:
-                    raise AssistantToolError(
-                        _tr("Unknown shader type: {shader}", shader=shader)
-                    )
-                shader_index = matches[0]
+                shader_value = next(
+                    (
+                        value
+                        for value, name in viewer._shading_types.items()
+                        if name.casefold() == shader.strip().casefold()
+                    ),
+                    None,
+                )
             else:
-                shader_index = int(shader)
-            if not 0 <= shader_index < viewer.shader_combo.count():
+                shader_value = int(shader)
+            if shader_value not in viewer._shading_types:
                 raise AssistantToolError(
-                    _tr(
-                        "Shader index out of range: {index}",
-                        index=shader_index,
-                    )
+                    _tr("Unknown shader type: {shader}", shader=shader)
                 )
 
         version = viewer._current_file_version()
@@ -6390,8 +6381,8 @@ class ReasyAssistantTools(
         if mmtr_path is not None:
             viewer.mmtr_edit.setText(mmtr_path)
             self._action_feedback.pulse_widget(viewer.mmtr_edit)
-        if shader_index is not None:
-            viewer.shader_combo.setCurrentIndex(shader_index)
+        if shader_value is not None:
+            viewer.shader_combo.setCurrentIndex(viewer.shader_combo.findData(shader_value))
             self._action_feedback.pulse_widget(viewer.shader_combo)
         if bake_texture_array_size is not None:
             viewer.bake_texture_spin.setValue(bake_texture_array_size)

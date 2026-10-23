@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 lazy from file_handlers.mdf.mdf_clipboard import MdfClipboard
+lazy from file_handlers.mdf.mdf_file import ShadingTypeError
 
 
 class MdfTemplateManager:
@@ -60,6 +61,7 @@ class MdfTemplateManager:
         description: str = "",
         tags: Optional[List[str]] = None,
         source_file_name: str = "",
+        source_game: str = "",
     ) -> Dict[str, Any]:
         if material is None:
             return {"success": False, "message": "No material selected for export."}
@@ -82,6 +84,7 @@ class MdfTemplateManager:
                 "version": cls.TEMPLATE_VERSION,
                 "source_file_version": int(file_version),
                 "source_file_name": source_file_name or "",
+                "source_game": source_game or "",
                 "material": MdfClipboard._serialize_material(material, int(file_version)),
             }
             with open(template_path, "w", encoding="utf-8") as fh:
@@ -101,6 +104,7 @@ class MdfTemplateManager:
             "modified": timestamp,
             "source_version": int(file_version),
             "source_file_name": source_file_name or "",
+            "source_game": source_game or "",
         }
         cls.save_metadata(metadata)
         return {
@@ -131,7 +135,7 @@ class MdfTemplateManager:
         return sorted(tags)
 
     @classmethod
-    def import_template(cls, template_id: str, target_version: int) -> Dict[str, Any]:
+    def import_template(cls, template_id: str, target_version: int, target_game: str) -> Dict[str, Any]:
         metadata, templates = cls._load_templates()
         info = templates.get(template_id)
         if not info:
@@ -149,7 +153,13 @@ class MdfTemplateManager:
             return {"success": False, "message": "Template is missing material data."}
 
         mat = MdfClipboard._deserialize_material(material_payload, int(target_version))
+        source_game = str(payload.get("source_game", "") or "")
+        try:
+            converted = MdfClipboard.convert_shading_types([mat], source_game, target_game)
+        except ShadingTypeError as exc:
+            return {"success": False, "message": f"The template was not imported.\n{exc}"}
         info = dict(info)
+        info["source_game"] = source_game
         try:
             info["source_version"] = int(payload.get("source_file_version", info.get("source_version", 0)) or 0)
         except Exception:
@@ -164,6 +174,7 @@ class MdfTemplateManager:
             "material": mat,
             "metadata": info,
             "template_id": template_id,
+            "converted_shading_types": converted,
         }
 
     @classmethod

@@ -15,12 +15,13 @@ lazy from file_handlers.mmtr.material_family import bind_drawn_master, parsed_ma
 lazy from file_handlers.mmtr.mmtr_viewer import ObjectScope, open_master_for_object
 lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
 lazy from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY, choose_texture_mip
+lazy from utils.enum_manager import EnumDefinitionError
 lazy from utils.hash_util import murmur3_hash_utf16le
 lazy from utils.number_format import format_display_value
 lazy from utils.resource_file_utils import resource_context_for_handler, resource_path_key, resource_version_from_path
 lazy from .mdf_clipboard import MdfClipboard
-lazy from .mdf_file import (MATERIAL_FLAG_NAMES, GpbfHeader, MatData, ParamHeader, TexHeader,
-    transparent_priority_bias)
+lazy from .mdf_file import (MATERIAL_FLAG_NAMES, SHADING_TYPE_ENUM, GpbfHeader, MatData, ParamHeader, ShadingTypeError,
+    TexHeader, material_shading_types, transparent_priority_bias)
 lazy from .mdf_template_manager import MdfTemplateManager
 lazy from ui.mdf_template_export_dialog import MdfTemplateExportDialog
 lazy from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
@@ -200,13 +201,7 @@ class MdfViewer(QWidget):
 		ov.addWidget(self.edit_shader_button, 1, 3)
 		ov.addWidget(styled_label("ShaderType", tone="muted"), 2, 0)
 		self.shader_combo = QComboBox()
-		self._shader_names = [
-			"Standard","Decal","DecalWithMetallic","DecalNRMR","Transparent","Distortion",
-			"PrimitiveMesh","PrimitiveSolidMesh","Water","SpeedTree","GUI","GUIMesh",
-			"GUIMeshTransparent","ExpensiveTransparent","Forward","RenderTarget","PostProcess",
-			"PrimitiveMaterial","PrimitiveSolidMaterial","SpineMaterial","ReflectiveTransparent"
-		]
-		self.shader_combo.addItems(self._shader_names)
+		self._shading_types = self._read_shading_types()
 		self.shader_combo.currentIndexChanged.connect(self._on_shader_changed)
 		ov.addWidget(self.shader_combo, 2, 1)
 		self.bake_texture_label = styled_label("BakeTextureArraySize", tone="muted")
@@ -460,13 +455,41 @@ class MdfViewer(QWidget):
 		self.materials_table.setItem(r, 0, QTableWidgetItem(name))
 		self.materials_table.blockSignals(False)
 
+	def _game(self) -> str:
+		context = resource_context_for_handler(self.handler)
+		return str(getattr(context, "game", "") or getattr(self.handler, "game_version", "") or "")
+
+	def _read_shading_types(self):
+		game = self._game()
+		try:
+			names = material_shading_types(game)
+		except EnumDefinitionError:
+			self.shader_combo.setToolTip(self.tr(
+				"REasy has no {enum} names for this file's game ({game}), so the stored number is shown and cannot be "
+				"changed here.").format(enum=SHADING_TYPE_ENUM, game=game or self.tr("unknown")))
+			return frozendict()
+		self.shader_combo.setToolTip(self.tr("Names from {game}'s {enum}.").format(game=game, enum=SHADING_TYPE_ENUM))
+		return names
+
+	def _show_shading_type(self, value: int):
+		combo = self.shader_combo
+		combo.blockSignals(True)
+		combo.clear()
+		for known, name in self._shading_types.items():
+			combo.addItem(name, known)
+		if value not in self._shading_types:
+			combo.addItem(self.tr("{value} (unnamed)").format(value=value), value)
+		combo.setCurrentIndex(combo.findData(value))
+		combo.setEnabled(bool(self._shading_types))
+		combo.blockSignals(False)
+
 	def _on_shader_changed(self, idx: int):
 		rows = self.materials_table.selectionModel().selectedRows()
 		m = self.handler.mdf
-		if not m or not rows:
+		if not m or not rows or idx < 0:
 			return
 		i = rows[0].row()
-		m.materials[i].header.shader_type = idx
+		m.materials[i].header.shader_type = int(self.shader_combo.itemData(idx))
 		self.modified = True
 
 	def _on_bake_texture_changed(self, value: int):
@@ -699,6 +722,16 @@ class MdfViewer(QWidget):
 	def get_target_version(self) -> int:
 		return self._current_file_version()
 
+	def get_target_game(self) -> str:
+		return self._game()
+
+	def _renumbered_note(self, metadata) -> str:
+		count = metadata.get("converted_shading_types", 0)
+		if not count:
+			return ""
+		return "\n\n" + self.tr("{count} shading type(s) were renumbered from {source} to {target} by name.").format(
+			count=count, source=metadata.get("source_game"), target=self._game())
+
 	def _open_template_manager(self):
 		dlg = MdfTemplateManagerDialog(self, viewer=self)
 		dlg.template_imported.connect(self._on_template_imported)
@@ -728,7 +761,7 @@ class MdfViewer(QWidget):
 			QMessageBox.information(
 				self,
 				self.tr("Import Template"),
-				self.tr("Imported template '{name}'.").format(name=name),
+				self.tr("Imported template '{name}'.").format(name=name) + self._renumbered_note(metadata),
 			)
 
 	def _clear_params_cache(self):
@@ -799,11 +832,7 @@ class MdfViewer(QWidget):
 		self.matname_edit.blockSignals(False)
 		self.matname_hash_label.setText(f"0x{murmur3_hash_utf16le(md.header.mat_name):08x}")
 
-		self.shader_combo.blockSignals(True)
-		sh = int(md.header.shader_type)
-		if 0 <= sh < self.shader_combo.count():
-			self.shader_combo.setCurrentIndex(sh)
-		self.shader_combo.blockSignals(False)
+		self._show_shading_type(int(md.header.shader_type))
 
 		self.bake_texture_spin.blockSignals(True)
 		if version >= 31:
@@ -1072,9 +1101,7 @@ class MdfViewer(QWidget):
 
 		def master(path, data):
 			if path not in parsed:
-				context = resource_context_for_handler(self.handler)
-				game = str(getattr(context, "game", "") or getattr(self.handler, "game_version", "") or "")
-				parsed[path] = parsed_master(data, game, resource_version_from_path(path, "mmtr"), path)
+				parsed[path] = parsed_master(data, self._game(), resource_version_from_path(path, "mmtr"), path)
 			return parsed[path]
 
 		try:
@@ -1460,6 +1487,7 @@ class MdfViewer(QWidget):
 			materials,
 			self._current_file_version(),
 			self._current_file_name(),
+			self._game(),
 		)
 		QMessageBox.information(
 			self,
@@ -1487,6 +1515,7 @@ class MdfViewer(QWidget):
 			data["description"],
 			data["tags"],
 			source_name,
+			self._game(),
 		)
 		if not result.get("success"):
 			QMessageBox.warning(
@@ -1506,7 +1535,16 @@ class MdfViewer(QWidget):
 		if not m:
 			return
 		target_version = self._current_file_version()
-		materials, metadata = MdfClipboard.load_materials(target_version)
+		try:
+			materials, metadata = MdfClipboard.load_materials(target_version, self._game())
+		except ShadingTypeError as exc:
+			QMessageBox.warning(
+				self,
+				self.tr("Paste Materials"),
+				self.tr("Nothing was pasted. These shading types cannot be converted to this file's game:\n\n{reasons}")
+				.format(reasons=exc),
+			)
+			return
 		if not materials:
 			QMessageBox.warning(
 				self,
@@ -1543,5 +1581,6 @@ class MdfViewer(QWidget):
 			msg += "\n\n" + self.tr(
 				"{count} material(s) were renamed to avoid duplicate names."
 			).format(count=renamed_count)
+		msg += self._renumbered_note(metadata)
 		
 		QMessageBox.information(self, self.tr("Paste Materials"), msg)

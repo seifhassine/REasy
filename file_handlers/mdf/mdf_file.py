@@ -1,9 +1,11 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from functools import lru_cache
 import struct
 from typing import List, Tuple
 
 from utils.binary_handler import BinaryHandler
+lazy from utils.enum_manager import EnumDefinitionError, enum_games, game_enum_definitions
 lazy from utils.hash_util import murmur3_hash_utf16le, murmur3_hash_ascii
 lazy from utils.resource_file_utils import resource_version_from_path
 
@@ -22,6 +24,63 @@ def transparent_priority_bias(flags: int) -> int:
     """Version 31 and later only."""
     value = (int(flags) >> 40) & 0xFF
     return value - 0x100 if value & 0x80 else value
+
+
+SHADING_TYPE_ENUM = "via.render.MaterialShadingType"
+
+
+@lru_cache(maxsize=None)
+def material_shading_types(game: str) -> frozendict[int, str]:
+    """``MatHeader.shader_type`` names by value, numbered per game; ``Max`` counts them and is not one."""
+    members = game_enum_definitions(game, namespace="via.render.").get(SHADING_TYPE_ENUM)
+    if not isinstance(members, list) or not members:
+        raise EnumDefinitionError(f"{game} enum JSON: {SHADING_TYPE_ENUM} is missing or empty")
+    names: dict[int, str] = {}
+    for member in members:
+        value, name = (member.get("value"), member.get("name")) if isinstance(member, dict) else (None, None)
+        if type(value) is not int or not isinstance(name, str) or value in names:
+            raise EnumDefinitionError(f"{game} enum JSON: {SHADING_TYPE_ENUM} has an invalid member {member!r}")
+        if name != "Max":
+            names[value] = name
+    return frozendict(names)
+
+
+class ShadingTypeError(ValueError):
+    pass
+
+
+def _shading_types_or_none(game: str) -> frozendict[int, str] | None:
+    try:
+        return material_shading_types(game)
+    except EnumDefinitionError:
+        return None
+
+
+@lru_cache(maxsize=1)
+def _shading_types_alike_everywhere() -> frozenset[int]:
+    first, *rest = (material_shading_types(game) for game in enum_games())
+    return frozenset(value for value, name in first.items() if all(table.get(value) == name for table in rest))
+
+
+def converted_shading_type(value: int, source_game: str, target_game: str) -> int:
+    """Renumbers ``value`` by its name; with either game unknown, only values every game names alike pass."""
+    source, target = _shading_types_or_none(source_game), _shading_types_or_none(target_game)
+    if source is not None and source == target:
+        return value
+    if source is None or target is None:
+        if value in _shading_types_alike_everywhere():
+            return value
+        game = source_game if source is None else target_game
+        reason = (f"REasy has no shading type names for {game}" if game else
+                  "the material's game was not recorded" if source is None else "REasy doesn't know this MDF's game")
+        raise ShadingTypeError(f"{reason}, and type {value} is not the same type in every game")
+    name = source.get(value)
+    if name is None:
+        raise ShadingTypeError(f"type {value} has no name in {source_game}")
+    found = next((number for number, other in target.items() if other == name), None)
+    if found is None:
+        raise ShadingTypeError(f"{target_game} has no shading type {name}")
+    return found
 
 
 class _MdfReader(BinaryHandler):

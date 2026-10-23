@@ -8,8 +8,11 @@ lazy from file_handlers.mdf.mdf_file import (
     ParamHeader,
     TexHeader,
     GpbfHeader,
+    ShadingTypeError,
+    converted_shading_type,
 )
 lazy from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
+lazy from utils.enum_manager import EnumDefinitionError
 
 
 class MdfClipboard:
@@ -28,12 +31,14 @@ class MdfClipboard:
         materials: List[MatData],
         file_version: int,
         source_file_name: Optional[str] = None,
+        source_game: str = "",
     ) -> str:
         payload = {
             "format": "mdf_materials",
             "version": cls.FORMAT_VERSION,
             "source_file_version": int(file_version),
             "source_file_name": source_file_name or "",
+            "source_game": source_game or "",
             "materials": [cls._serialize_material(mat, file_version) for mat in materials],
         }
         clipboard_file = cls._get_clipboard_file()
@@ -42,7 +47,7 @@ class MdfClipboard:
         return clipboard_file
 
     @classmethod
-    def load_materials(cls, target_version: int) -> Tuple[List[MatData], Dict[str, Any]]:
+    def load_materials(cls, target_version: int, target_game: str) -> Tuple[List[MatData], Dict[str, Any]]:
         clipboard_file = cls._get_clipboard_file()
         if not os.path.exists(clipboard_file):
             return [], {}
@@ -64,9 +69,27 @@ class MdfClipboard:
         metadata = {
             "source_file_version": int(data.get("source_file_version", 0) or 0),
             "source_file_name": str(data.get("source_file_name", "") or ""),
+            "source_game": str(data.get("source_game", "") or ""),
             "format_version": int(data.get("version", 0) or 0),
         }
+        metadata["converted_shading_types"] = cls.convert_shading_types(mats, metadata["source_game"], target_game)
         return mats, metadata
+
+    @staticmethod
+    def convert_shading_types(materials: List[MatData], source_game: str, target_game: str) -> int:
+        """Renumbers every material's shading type for ``target_game``, or none; returns how many changed."""
+        values, refused = [], []
+        for mat in materials:
+            try:
+                values.append(converted_shading_type(int(mat.header.shader_type), source_game, target_game))
+            except (ShadingTypeError, EnumDefinitionError) as exc:
+                refused.append(f"{mat.header.mat_name}: {exc}")
+        if refused:
+            raise ShadingTypeError("\n".join(refused))
+        changed = sum(value != mat.header.shader_type for mat, value in zip(materials, values))
+        for mat, value in zip(materials, values):
+            mat.header.shader_type = value
+        return changed
 
     @classmethod
     def _serialize_material(cls, mat: MatData, file_version: int) -> Dict[str, Any]:

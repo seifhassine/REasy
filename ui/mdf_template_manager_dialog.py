@@ -134,8 +134,9 @@ class MdfTemplateManagerDialog(QDialog):
         self.version_label = QLabel(self.tr("Source Version: -"))
         self.created_label = QLabel(self.tr("Created: -"))
         self.modified_label = QLabel(self.tr("Modified: -"))
+        self.game_label = QLabel(self.tr("Source Game: -"))
         for index, label in enumerate(
-            (self.source_label, self.version_label, self.created_label, self.modified_label)
+            (self.source_label, self.version_label, self.created_label, self.modified_label, self.game_label)
         ):
             label.setProperty("tone", "muted")
             meta.addWidget(label, index // 2, index % 2)
@@ -215,6 +216,8 @@ class MdfTemplateManagerDialog(QDialog):
             tooltip_lines.append(self.tr("Version: {version}").format(
                 version=tpl["source_version"]
             ))
+        if tpl.get("source_game"):
+            tooltip_lines.append(self.tr("Game: {game}").format(game=tpl["source_game"]))
         if tooltip_lines:
             item.setToolTip("\n".join(tooltip_lines))
         return item
@@ -296,6 +299,7 @@ class MdfTemplateManagerDialog(QDialog):
             self.version_label.setText(self.tr("Source Version: {version}").format(
                 version=version_str
             ))
+            self.game_label.setText(self.tr("Source Game: {game}").format(game=info.get("source_game") or "-"))
             created = info.get("created") or "-"
             modified = info.get("modified") or "-"
             self.created_label.setText(self.tr("Created: {date}").format(date=created))
@@ -306,6 +310,7 @@ class MdfTemplateManagerDialog(QDialog):
             self.description_edit.clear()
             self.source_label.setText(self.tr("Source File: -"))
             self.version_label.setText(self.tr("Source Version: -"))
+            self.game_label.setText(self.tr("Source Game: -"))
             self.created_label.setText(self.tr("Created: -"))
             self.modified_label.setText(self.tr("Modified: -"))
             self._prefill_from_selection()
@@ -341,8 +346,8 @@ class MdfTemplateManagerDialog(QDialog):
                 self, self.tr(IMPORT_TEMPLATE_TITLE), self.tr("Select a template to import.")
             )
             return
-        target_version = self.viewer.get_target_version()
-        result = MdfTemplateManager.import_template(template_id, target_version)
+        result = MdfTemplateManager.import_template(
+            template_id, self.viewer.get_target_version(), self.viewer.get_target_game())
         if not result.get("success"):
             QMessageBox.warning(
                 self, self.tr(IMPORT_TEMPLATE_TITLE),
@@ -350,7 +355,8 @@ class MdfTemplateManagerDialog(QDialog):
             )
             return
 
-        self.template_imported.emit(result.get("material"), result.get("metadata", {}))
+        self.template_imported.emit(result.get("material"), {
+            **result.get("metadata", {}), "converted_shading_types": result.get("converted_shading_types", 0)})
 
     def _delete_selected_template(self) -> None:
         template_id = self._current_template_id()
