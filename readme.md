@@ -71,7 +71,7 @@ The list follows the source code; the latest release may be behind.
 
 Grab the latest build from [Releases](https://github.com/seifhassine/REasy/releases/latest) and run `REasy.exe`.
 
-REasy downloads the tools some features need into its `downloads` folder the first time you use them, after asking: the DirectX Shader Compiler and SPIR-V Tools (shader editing), vgmstream (sound preview), REE.Packer (PAK export) and Blender (.blend export and import). If a download fails, REasy names the page to get the tool from and the folder to put it in. Replacing game audio needs the Wwise version REasy names for that game, installed from [Audiokinetic](https://www.audiokinetic.com/en/download/).
+REasy downloads the tools some features need into its `downloads` folder the first time you use them, after asking: SPIR-V Tools (Vulkan shader editing), vgmstream (sound preview), REE.Packer (PAK export) and Blender (.blend export and import). If a download fails, REasy names the page to get the tool from and the folder to put it in. Replacing game audio needs the Wwise version REasy names for that game, installed from [Audiokinetic](https://www.audiokinetic.com/en/download/).
 
 To run from source on Windows you need Python 3.15 (`py -3.15 --version` should work), Git, and the [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) with the "Desktop development with C++" workload, which includes the Windows SDK (10.0.20348 or newer; the current Windows 11 SDK works). The SDK is the C++ one with the Direct3D 12 headers, not .NET. Running a release `REasy.exe` needs neither.
 
