@@ -21,7 +21,9 @@ a = Analysis(
 )
 # Audio plays through Qt's Windows Media Foundation backend, so leave out the FFmpeg one.
 FFMPEG = re.compile(r'(?i)(ffmpegmediaplugin|avcodec-\d+|avformat-\d+|avutil-\d+|swresample-\d+|swscale-\d+)\.dll$')
-a.binaries = [entry for entry in a.binaries if not FFMPEG.search(entry[0])]
+# Windows ships the UCRT; a bundled copy captures ctypes.CDLL("ucrtbase") and fails to load.
+UCRT = re.compile(r'(?i)^(ucrtbase(\.dll)?|api-ms-win-.+\.dll)$')
+a.binaries = [entry for entry in a.binaries if not (FFMPEG.search(entry[0]) or UCRT.match(entry[0]))]
 pyz = PYZ(a.pure)
 
 exe = EXE(
