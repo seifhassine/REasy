@@ -12,6 +12,8 @@ def _handler_classes():
     yield MotfsmHandler
     from file_handlers.rsz.rsz_handler import RszHandler
     yield RszHandler
+    from file_handlers.efx.efx_handler import EfxHandler
+    yield EfxHandler
     from file_handlers.msg.msg_handler import MsgHandler
     yield MsgHandler
     from file_handlers.cfil.cfil_handler import CfilHandler

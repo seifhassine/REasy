@@ -121,10 +121,11 @@ def build_parser():
             sub.set_defaults(inspect=query.run)
         else:
             from .formats import efx
-            sub = read_parser(commands, 'query', 'Inspect EFX header and strings with offsets')
+            sub = read_parser(commands, 'query', 'Inspect versioned EFX entries, attributes and bone bindings')
             sub.add_argument('--game-dir', help='resolve the input as a virtual path in game resources')
             sub.set_defaults(inspect=efx.query)
-        if domain in ('motion', 'clip', 'pfb', 'rcol', 'rsz'):
+            efx.register_edits(commands)
+        if domain in ('motion', 'clip', 'pfb', 'rcol', 'rsz', 'efx'):
             add_batch(commands, prefix=(domain,))
     add_batch(domains, depth=2)
     return parser

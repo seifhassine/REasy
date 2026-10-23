@@ -1,0 +1,10 @@
+{
+  "project": "MHW-EFX-Editor",
+  "url": "https://github.com/Dimcirui/MHW-EFX-Editor",
+  "tag": "v0.7.7",
+  "revision": "35838956f390730e64302173d6fb80e07fe2ca2b",
+  "license": "GPL-3.0-or-later",
+  "included": "efx_format Python package, excluding the particle simulation package",
+  "local_changes": "Whitespace-only normalization in efxfile.py, schema/custom_codecs.py and schema/enums.py",
+  "supported_efx_versions": [711800]
+}

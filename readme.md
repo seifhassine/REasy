@@ -18,6 +18,38 @@ For Rise MOTLIST 528, it supports structural CLIP sequence, node, property, and 
 
 The FSM editor resolves node, condition, and transition-event references inline. All parsed array types use the same expandable property tree, including object references, structs, and nested arrays. Typed element edits and array add/duplicate/remove operations support undo/redo and verified native RSZ serialization.
 
+## Scripts and reusable APIs
+
+| Location | Responsibility |
+| --- | --- |
+| [Resource CLI](tools/cli/README.md), [FSM commands](tools/fsm/README.md) | Parameterized inspection and edits; use these instead of per-resource probe scripts |
+| `file_handlers/` | Format models, serialization and reusable edits; independent of a mod's paths, IDs and deployment |
+| [Native motion batch writer](docs/mhr_motion_writer.md) | `tools/mhr_motion_writer.py`: explicit MOTLIST/MTRE/CLIP/MOTBANK plans |
+| `tools/wem_converter.py`, `wwise_toolchain.py`, `wwise_graph_importer.py`, `wwise_ir_converter.py`, `wwise_graph_validation.py` | Shared audio conversion, toolchain and graph validation APIs |
+| `tools/audit_efx.py`, `generate_efx_schema.py` | Parameterized corpus verification and schema maintenance |
+| `tools/preview_mhw_pair.py` | World/Rise motion comparison with caller-supplied LMT, MOTLIST and mesh; `--help` lists capture options |
+| `scripts/` | Repository environment, translations and dump maintenance |
+| `tests/test_*.py` | Automated regressions; native corpus files remain local |
+| `tests/fixtures/` | Explicit offline candidate generators and manual Lua checks; fixed sample identities are test data |
+
+External USER/PFB/SCN dependency maintenance lives in
+`file_handlers.rsz.userdata_dependencies`: `dependencies(file)`, `synchronize(file)`
+and `verify(file)`. Synchronization is explicit after external-reference edits;
+it replaces the header list from RSZ references and preserves surviving row metadata.
+It is not an automatic normalization pass for arbitrary files or embedded userdata.
+
+`file_handlers.motfsm.map_ownership.detach_state_maps(raw, locations, registry=None)`
+assigns fresh map IDs to `(node_index, state_index)` pairs, preserving transition
+data records and validating the reopened result. `fsm state-own-map` uses this same
+implementation and resolves the target's hash and extension together.
+
+The LongSword validation chain is now `tests/fixtures/new_action_fixture.py` →
+`node_condition_fixture.py` → `atk101_fixture.py`; retain its exact source hashes.
+The accompanying `reasy_*_check.lua` files are manual runtime checks, not autorun
+scripts. `tests/fixtures/native_graph_writer.py OUTPUT SOURCE...` exercises the
+native graph writer on an explicit corpus. Monster-specific policies, rig mappings,
+resource selection, build history and deployment belong in the consuming project.
+
 
 <br>
 <br>
@@ -57,7 +89,7 @@ The FSM editor resolves node, condition, and transition-event references inline.
 | MOTLIST       | DMC5 Previewing Only       |    DMC5  |
 | GUI       | ✅      |    DMC5  |
 | CDEF       | Coming Soon       |       |
-| EFX       | Coming Soon       |       |
+| EFX       | ✅ <sub><sup>[World inspection; Rise attribute editing; partial format coverage]</sup></sub>       | 711800 (World/Iceborne); 2818730 (Sunbreak); 2621987 (Rise, experimental) |
   
 </div>
 <br>
@@ -172,6 +204,12 @@ This project uses **[PySide6](https://pypi.org/project/PySide6/)** (Qt for Pytho
 For more information, see:  
 - [Qt Licensing Information](https://www.qt.io/licensing/)  
 - [LGPL v3 License Text](https://www.gnu.org/licenses/lgpl-3.0.html)
+
+The versioned EFX schemas include REE-Lib's [MIT notice](resources/data/efx/LICENSE).
+The separate World EFX inspection program bundles MHW-EFX-Editor v0.7.7 code under
+[GPL-3.0-or-later](resources/scripts/mhw_efx/LICENSE); its exact revision and scope
+are recorded in [UPSTREAM.json](resources/scripts/mhw_efx/UPSTREAM.json).
+Those components retain their own license notices.
 
 ## Explicit Content Attribution
 

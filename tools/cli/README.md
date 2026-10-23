@@ -18,7 +18,7 @@ Run from the repository root with its Python environment:
 | `pfb` | `query`, `elements`, `element-add`, `element-edit` |
 | `rcol` | `query`, `request-add`, `request-edit` |
 | `rsz` | `query`, `scan`, `references`, `field-edit` for PFB/SCN/USER containers |
-| `efx` | `query` for local EFX files or virtual paths with `--game-dir` |
+| `efx` | `query`, `references`, `new`, `set`, `insert`, `copy`, `delete`, `move`, `replace`, `import`, `preset-export/import`, `parameter-value`, `material-value`, `curve-set/delete`, `expression-set/delete`, `sequence`, `uvs-edit`, `apply`, `batch`; RE Engine editing, World 711800 inspection |
 | `batch` | Chain editing commands against one candidate file |
 | `move` | `check`, `retime`: validate or retime an explicit MOTLIST/FSM/RCOL bundle |
 
@@ -26,7 +26,8 @@ Motion/CLIP and effect/attack recipes target MHR MOTLIST 528, MOT 495, CLIP 43,
 PFB 17, and RCOL 20. Wilds import reads MOTLIST 992 and writes a Rise target.
 RSZ commands accept `--registry PATH`; the default is the bundled MHRise registry.
 They use the existing format handlers and reject registry mismatches.
-The existing GUI support libraries and format-validation fixtures remain under `tools`.
+GUI support and parameterized tool libraries remain under `tools`; offline
+format-validation generators and manual Lua checks live under `tests/fixtures`.
 
 ## Agent contract
 
@@ -40,6 +41,148 @@ The existing GUI support libraries and format-validation fixtures remain under `
 - Run without Python `-O`: structural verification uses assertions.
 
 No command deploys a candidate to a game automatically. Read-back verification and game behavior are separate checks.
+
+### EFX structural editing
+
+EFX paths use **zero-based list positions**, not native entry IDs. Attribute fields
+are addressed as `entries/0/attributes/1/fields/LocalPosition`; append `/1` for one
+vector component. Actions, bones, groups and embedded `PlayEmitter` files use the
+same path vocabulary. Numeric file versions are taken from the source filename.
+
+```powershell
+.\.venv\Scripts\python.exe -m tools efx copy effect.efx.2818730 --from entries/1 --path entries --name FlameCopy -o candidate.efx.2818730 --dry-run --json
+.\.venv\Scripts\python.exe -m tools efx set effect.efx.2818730 --path entries/1/attributes/2/fields/LocalPosition --value '[0, 1, 2]' -o candidate.efx.2818730 --json
+.\.venv\Scripts\python.exe -m tools efx apply effect.efx.2818730 --plan edits.json -o candidate.efx.2818730 --json
+```
+
+`apply` accepts an array of operation objects and publishes only after every edit
+succeeds. `insert` targets a collection; `delete` and `move` target an element.
+Attribute insertion takes `{"type": "Transform3D", "fields": {...}}` with explicit
+field values. Missing game defaults are not guessed. `new SOURCE -o OUTPUT` creates
+an empty EFX using SOURCE's version, optionally with `--dimension 0` for 2D.
+
+```json
+[
+  {"op": "copy", "source": "entries/1", "path": "entries", "name": "FlameCopy"},
+  {"op": "insert", "path": "groups", "value": {"name": "Flames", "indices": [1]}},
+  {"op": "move", "path": "entries/1", "index": 0}
+]
+```
+
+Entry moves update group membership; action moves update particle action
+references. Referenced actions and bones must be retargeted before deletion.
+Attribute IDs are allocated on copy, and attribute insertion retains type order.
+Variable-length arrays keep their per-element binary metadata during edits.
+The GUI exposes these operations plus undo/redo through the EFX toolbar and
+context menu. `Copy to…` copies an attribute to another entry in the same scope.
+
+`import --donor FILE --from PATH --path COLLECTION` copies across files/scopes with
+reachable actions, bones, expression/field parameters and group membership.
+Conflicting parameter names are renamed and hashes updated; `--conflicts error`
+rejects collisions instead. Incompatible UVAR bindings are rejected. Donor files
+are input protected. `preset-export --from PATH` writes a portable native snapshot;
+`preset-import --donor PRESET --path COLLECTION` restores its selected node and
+dependencies. The GUI exposes the same format through Import, Copy/Paste and Save preset.
+
+`replace --path RECORD --value JSON` rebuilds a structure, including behavior
+variants and embedded EFX. `parameter-value` edits logical expression parameters
+(Float, packed RGBA Color, three-component Range, Float2). `material-value` edits
+an MDF property's four floats or texture slot. Texture table moves remap slots;
+path edits update native UTF-16 lengths. Referenced slots cannot be deleted.
+`dimension`, `header_flags` (raw header word 11), entry `index` and attribute
+`unique_id` are also addressable. Derived counts/hashes are managed by the writer.
+
+`curve-set` / `curve-delete` take an attribute `--path` and zero-based `--channel`.
+A set value contains `value_type` (Float=5, raw Int=3) and ordered `keys` with
+`time`, `value`, and the native `interpolation` code. Code 5 also requires
+`tangents: {out_x,out_y,in_x,in_y}`. Channel edits update bit sets, packed frame
+tables, tangent tables, durations and byte sizes together. Interpolation codes
+whose behavior is unresolved retain their native numeric names. The key graph
+connects control points; it does not claim to reproduce native interpolation.
+
+`expression-set` compiles a `formula` into native postfix tokens or accepts explicit
+`parameters` / `components`. Formulas support `+ - * / % **`, unary signs and the
+native functions (`sin`, `cos`, `lerp`, `clamp`, `smoothstep`, `remap`, etc.). A bare
+name or `p("name")` resolves a global parameter; `ext("TIMER")` declares an external
+parameter; `const("name", 1.0)` declares a constant. Explicit unsigned hashes are
+also accepted. `a | b` preserves the native two-root representation, whose runtime
+selection semantics are unresolved. Expressions are parsed, never evaluated as Python.
+
+Example `apply` plan (replace the attribute positions with those from `query`):
+
+```json
+[
+  {"op":"curve-set","path":"entries/1/attributes/3","channel":0,
+   "value":{"value_type":5,"keys":[
+     {"time":0,"value":0,"interpolation":2},
+     {"time":30,"value":1,"interpolation":2}]}},
+  {"op":"expression-set","path":"entries/1/attributes/4","channel":0,
+   "value":{"formula":"sin(ext(\"TIMER\")) * 0.5 + 0.5"}}
+]
+```
+
+Material curves use slot positions and a `material` metadata object. Material
+expressions use `--material` and explicit `unkn1`, `unkn2`, `mdfPropertyHash`, and
+`propertyComponentIndex` in their value. Adding/deleting material channels requires
+the complete `--indices` JSON table; this table's shader-specific meaning is not guessed.
+Material curve flag words can be supplied with `--bits`.
+Attributes with a separate `materialExpressionCount` / `materialPropertyCount`
+also require explicit `--headers` values when adding/deleting material expressions.
+
+The GUI's **Parameters** opens typed attribute forms; **Curves** and **Expressions**
+edit channels and stage one undoable transaction. **Preview** supports local/loaded-PAK
+UVS textures, sequence playback, a fixed random seed, timeline seeking and basic
+point/box/sphere/cylinder particle approximation. Native shaders, mesh/trail rendering,
+collision, sub-effect simulation, curves, expressions and bone attachment are outside
+this preview renderer. Existing data for those features remains editable. A stable
+serialization or editor preview does not certify an arbitrary effect's game behavior.
+
+### EFX sequence asset bundles (Rise/Sunbreak)
+
+`sequence` generates TEX 28, UVS 7 and EFX 2818730 from an existing donor emitter
+that has `UVSequence`. It retains the donor document and its shader/behavior setup,
+and changes the selected emitter's UVS reference and playback range/speed.
+
+```powershell
+.\.venv\Scripts\python.exe -m tools efx sequence donor.efx.2818730 --entry entries/1 --frames frame_00.png frame_01.png frame_02.png --resource vfx/custom/fire --fps 30 --padding 4 --compression bc7 -o output/fire_bundle --dry-run --json
+.\.venv\Scripts\python.exe -m tools efx sequence donor.efx.2818730 --entry entries/1 --atlas atlas.png --rectangles '[[0,0,128,128],[128,0,128,128]]' --resource vfx/custom/fire -o output/fire_bundle --json
+```
+
+PNG arguments and rectangle lists preserve their supplied order. GUI **Sequence**
+natural-sorts selected PNG names and supports explicit reordering, removal and atlas
+grid slicing. Frames share a centered canvas. Power-of-two atlas cells retain transparent
+padding; alpha-weighted mipmaps are filtered in linear light for sRGB inputs and stop
+before crossing cell boundaries. BC7 uses `ispc_texcomp`; `--compression rgba8` is
+lossless. `--linear` declares linear input; `--no-mipmaps` disables mip generation.
+Playback uses the Rise authoring convention `PlaySpeed = fps / 60` and selects the
+single generated sequence; runtime playback remains subject to the donor's flags.
+
+Output must be a **new directory**. All native outputs are verified before publication.
+`manifest.json` records generated resources and external references.
+`--dependency-root UNPACKED_ROOT` copies resolvable dependencies, recursively following
+EFX and UVS references. The GUI can resolve these from its current resource context.
+Missing resources are recorded as `unresolved_dependencies`; opaque shader/material
+containers are copied unchanged and their internal dependencies are not crawled.
+
+**Linked UVS** edits an existing UVS with EFX references loaded. CLI equivalent:
+
+```powershell
+.\.venv\Scripts\python.exe -m tools efx uvs-edit donor.efx.2818730 --uvs original.uvs.7 --resource vfx/original.uvs --effect-resource vfx/custom/effect --plan uvs_edits.json -o output/linked_bundle --json
+```
+
+Plans use `sequence-`, `frame-`, or `texture-` plus `insert/set/copy/delete/move`.
+`index` is the selected position, `to` is a copy/move destination, and frame operations
+also specify `sequence`. Insert/set take `value` objects (UV rectangles, texture paths,
+or `patterns` for a sequence). An `efx` operation wraps a normal EFX operation under
+`operation` for explicit retargeting. Sequence/frame selections are remapped as
+half-open ranges (equal endpoints retain a fixed selection). Deleting referenced slots
+or splitting a random range into non-contiguous positions is rejected. Linked edits
+save EFX and UVS together, with optional dependency copying.
+
+For corpus verification, `tools/audit_efx.py --exercise-edits` clones/removes an emitter
+and undoes back to the original bytes. `--exercise-construction` reconstructs an example
+of every encountered attribute type and validates curve/expression structures;
+`--exercise-imports` imports representative native entries with their dependencies.
 
 ### RSZ field metadata
 

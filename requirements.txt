@@ -9,6 +9,7 @@ firebase-admin
 zstandard
 mmh3
 texture2ddecoder
+ispc_texcomp==1.0.1
 PyOpenGL
 PyOpenGL_accelerate
 numpy

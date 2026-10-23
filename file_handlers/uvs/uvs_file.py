@@ -187,7 +187,7 @@ class UvsFile:
                 return -1
             offset = char_len
             strings.append(p)
-            char_len += len(p) + 1
+            char_len += len(p.encode('utf-16le')) // 2 + 1
             return offset
 
         for tex in self.textures:

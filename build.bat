@@ -23,8 +23,14 @@ if /I "%GITHUB_ACTIONS%"=="true" (
   --hidden-import fast_string_scan --collect-binaries fast_string_scan ^
   --hidden-import fastmesh --collect-binaries fastmesh ^
   --hidden-import texture2ddecoder --collect-all texture2ddecoder ^
+  --collect-all ispc_texcomp ^
   --add-binary "%GDEFLATE_DLL%;tools\runtimes\win-x64\native" ^
   REasy.py || exit /b 1
+
+"%PY%" -m PyInstaller --onefile --console --name mhw_efx_backend ^
+  --paths resources/scripts/mhw_efx --collect-submodules efx_format ^
+  --distpath dist/resources/scripts/mhw_efx --workpath build/mhw_efx_backend ^
+  --specpath build/mhw_efx_backend resources/scripts/mhw_efx/backend.py || exit /b 1
 
 xcopy /E /I /Y resources dist\resources || exit /b 1
 if exist dist\resources\data\dumps rmdir /S /Q dist\resources\data\dumps
