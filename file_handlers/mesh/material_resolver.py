@@ -10,7 +10,7 @@ from threading import RLock
 from typing import Iterable
 
 from file_handlers.bounded_cache import BoundedCache
-from file_handlers.mdf.mdf_file import BASE_TWO_SIDE_ENABLE, FORCED_TWO_SIDE_ENABLE, MatData, MdfFile, TexHeader
+from file_handlers.mdf.mdf_file import MatData, MdfFile, TexHeader, two_sided
 lazy from file_handlers.mmtr.mmtr_file import (
     _parse_preview_document, _supports_preview_without_native_reflection, parse_drawn_master,
 )
@@ -74,10 +74,7 @@ class MdfSurfaceProfile:
     parameters: tuple[MdfParameterProfile, ...] = ()
     gpu_buffers: tuple[MdfGpuBufferProfile, ...] = ()
     instance_context: MaterialInstanceContext | None = None
-
-    @property
-    def two_sided(self) -> bool:
-        return bool(self.material_flags & _TWO_SIDED_FLAGS)
+    two_sided: bool = False
 
 
 @dataclass(slots=True)
@@ -122,7 +119,6 @@ _MDF_START_FAILURE: Exception | None = None
 _MDF_PARSES: dict[tuple[str, int, bytes], Future] = {}
 _MDF_PARSES_LIMIT = 1024
 _MDF_PARSES_LOCK = RLock()
-_TWO_SIDED_FLAGS = BASE_TWO_SIDE_ENABLE | FORCED_TWO_SIDE_ENABLE
 _SKINNING_CONTRACTS = BoundedCache()
 _SKINNING_CONTRACTS_LIMIT = 256
 
@@ -175,6 +171,7 @@ def _extract_surface_profiles(mdf_data: bytes, actual_path: str) -> dict[str, Md
                 for name, data in material.gpu_buffers
             ),
             instance_context=MaterialInstanceContext.from_material(material),
+            two_sided=two_sided(material.header.material_flags, mdf.file_version),
         )
     return resolved
 

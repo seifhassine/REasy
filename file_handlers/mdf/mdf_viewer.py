@@ -1,5 +1,6 @@
 import os
 from pathlib import Path
+import weakref
 
 from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
@@ -20,8 +21,8 @@ lazy from utils.hash_util import murmur3_hash_utf16le
 lazy from utils.number_format import format_display_value
 lazy from utils.resource_file_utils import resource_context_for_handler, resource_path_key, resource_version_from_path
 lazy from .mdf_clipboard import MdfClipboard
-lazy from .mdf_file import (MATERIAL_FLAG_NAMES, SHADING_TYPE_ENUM, GpbfHeader, MatData, ParamHeader, ShadingTypeError,
-    TexHeader, material_shading_types, transparent_priority_bias)
+lazy from .mdf_file import (SHADING_TYPE_ENUM, GpbfHeader, MatData, MaterialFlagError, ParamHeader, ShadingTypeError,
+    TexHeader, material_flag_layout, material_shading_types)
 lazy from .mdf_template_manager import MdfTemplateManager
 lazy from ui.mdf_template_export_dialog import MdfTemplateExportDialog
 lazy from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
@@ -217,55 +218,20 @@ class MdfViewer(QWidget):
 		self.ukn_edit.textChanged.connect(self._on_ukn_changed)
 		ov.addWidget(self.ukn_edit, 3, 3)
 		self.flags_group = QGroupBox("Material Flags")
-		fg = QGridLayout(self.flags_group)
-		fg.setHorizontalSpacing(12)
-		fg.setVerticalSpacing(6)
-		self._flags1_names = list(MATERIAL_FLAG_NAMES)
-		self.flags1_checks = [QCheckBox(n) for n in self._flags1_names]
-		for i, cb in enumerate(self.flags1_checks):
-			cb.stateChanged.connect(self._on_flags_changed)
-			fg.addWidget(cb, 0 + (i // 5), i % 5)
-		self.transparent_zpostpass_check = QCheckBox("TransparentZPostPassEnable")
-		self.transparent_zpostpass_check.stateChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.transparent_zpostpass_check, 2, 0, 1, 2)
-		fg.addWidget(styled_label("Tessellation", tone="muted"), 3, 0)
-		self.tess_spin = QSpinBox()
-		self.tess_spin.setRange(0, 63)
-		self.tess_spin.valueChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.tess_spin, 3, 1)
-		fg.addWidget(styled_label("Phong", tone="muted"), 3, 2)
-		self.phong_spin = QSpinBox()
-		self.phong_spin.setRange(0, 255)
-		self.phong_spin.valueChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.phong_spin, 3, 3)
-		self._flags2_names = [
-			"RoughTransparentEnable","ForcedAlphaTestEnable","AlphaTestEnable","SSSProfileUsed",
-			"EnableStencilPriority","RequireDualQuaternion","PixelDepthOffsetUsed","NoRayTracing"
-		]
-		self.flags2_checks = [QCheckBox(n) for n in self._flags2_names]
-		for i, cb in enumerate(self.flags2_checks):
-			cb.stateChanged.connect(self._on_flags_changed)
-			fg.addWidget(cb, 5 + (i // 4), i % 4)
-		fg.addWidget(self._separator(), 4, 0, 1, 5)
-		self._flags3_separator = self._separator()
-		fg.addWidget(self._flags3_separator, 7, 0, 1, 5)
-		
-		self._flags3_names = [
-			"TransparentDistortionEnable","AlphaUsed","BakeTextureUseSecondaryUV","ForwardPrepassEnabled",
-			"ForcedAlphaTestEnableShadow","TessellationZPrepassDisable","DitheredLodTransitionEnable","reserved0"
-		]
-		self.flags3_checks = [QCheckBox(n) for n in self._flags3_names]
-		for i, cb in enumerate(self.flags3_checks):
-			cb.stateChanged.connect(self._on_flags_changed)
-			fg.addWidget(cb, 8 + (i // 4), i % 4)
-		
-		self.transparent_priority_bias_label = styled_label("TransparentPriorityBias", tone="muted")
-		fg.addWidget(self.transparent_priority_bias_label, 10, 0)
-		self.transparent_priority_bias_spin = QSpinBox()
-		self.transparent_priority_bias_spin.setRange(-128, 127)
-		self.transparent_priority_bias_spin.valueChanged.connect(self._on_flags_changed)
-		fg.addWidget(self.transparent_priority_bias_spin, 10, 1)
-		
+		self._flags_box = QVBoxLayout(self.flags_group)
+		self._flags_body = None
+		self._flag_fields = None
+		self._phong_label = None
+		self.flag_editors: dict[str, QCheckBox | QSpinBox] = {}
+		value_row = QHBoxLayout()
+		value_row.addWidget(styled_label("Raw Value", tone="muted"))
+		self.flags_value_edit = QLineEdit()
+		set_style_role(self.flags_value_edit, mono=True)
+		self.flags_value_edit.setToolTip(self.tr(
+			"Every bit, including those without a name above; editing a named field keeps them."))
+		self.flags_value_edit.textEdited.connect(self._on_flags_value_edited)
+		value_row.addWidget(self.flags_value_edit, 1)
+		self._flags_box.addLayout(value_row)
 		ov.addWidget(self.flags_group, 4, 0, 1, 4)
 		ov.setRowStretch(5, 1)
 		self.overview_tab_idx = self.tabs.addTab(overview, self.tr("Overview"))
@@ -445,6 +411,7 @@ class MdfViewer(QWidget):
 		if m.header.meshlet_material != enabled:
 			m.header.meshlet_material = enabled
 			self.modified = True
+		self._label_byte_2()
 
 	def _refresh_material_row(self, r: int):
 		m = self.handler.mdf
@@ -525,102 +492,124 @@ class MdfViewer(QWidget):
 				header.ukn = value
 			self.modified = True
 
-	def _on_flags_changed(self, *_):
+	def _selected_header(self):
 		rows = self.materials_table.selectionModel().selectedRows()
 		m = self.handler.mdf
-		if not m or not rows:
-			return
-		i = rows[0].row()
-		h = m.materials[i].header
-		version = self._current_file_version()
-		
-		alpha = self._checked_flag_bits(self.flags1_checks)
-		
-		if version >= 31:
-			if self.transparent_zpostpass_check.isChecked():
-				alpha |= (1 << 10)
-			alpha |= (self.tess_spin.value() & 0x1F) << 11
-		else:
-			alpha |= (self.tess_spin.value() & 0x3F) << 10
-		
-		alpha |= (self.phong_spin.value() & 0xFF) << 16
-		alpha |= self._checked_flag_bits(self.flags2_checks, start_bit=24)
-		
-		if version >= 31:
-			alpha |= self._checked_flag_bits(self.flags3_checks, start_bit=32)
-			bias = self.transparent_priority_bias_spin.value()
-			if bias < 0:
-				bias = (1 << 8) + bias
-			alpha |= (bias & 0xFF) << 40
-		
-		h.material_flags = alpha
-		self.modified = True
+		return m.materials[rows[0].row()].header if m and rows else None
 
-	@staticmethod
-	def _checked_flag_bits(checks, start_bit: int = 0) -> int:
-		return sum(
-			1 << (start_bit + bit)
-			for bit, checkbox in enumerate(checks)
-			if checkbox.isChecked()
-		)
+	def _on_flags_changed(self, *_):
+		h = self._selected_header()
+		if h is None:
+			return
+		value = int(h.material_flags)
+		for field in self._flag_fields:
+			editor = self.flag_editors[field.name]
+			value = field.set(value, editor.isChecked() if field.width == 1 else editor.value())
+		self._store_flags(h, value)
+		self._show_flags_value(value)
+
+	def _on_flags_value_edited(self, text: str):
+		h = self._selected_header()
+		if h is None:
+			return
+		try:
+			value = int(text.strip() or "0", 0)
+		except ValueError:
+			return
+		if 0 <= value < 1 << self._flags_bits():
+			self._store_flags(h, value)
+			self._show_flag_fields(value)
+
+	def _store_flags(self, h, value: int):
+		if value != h.material_flags:
+			h.material_flags = value
+			self.modified = True
+
+	def _flags_bits(self) -> int:
+		return 64 if self._current_file_version() >= 31 else 32
+
+	def _show_flags_value(self, value: int):
+		self.flags_value_edit.setText(f"0x{value:0{self._flags_bits() // 4}x}")
+
+	def _build_flag_editors(self, fields):
+		if self._flags_body is not None:
+			self._flags_box.removeWidget(self._flags_body)
+			self._flags_body.setParent(None)
+		self._flags_body = body = QWidget()
+		grid = QGridLayout(body)
+		grid.setContentsMargins(0, 0, 0, 0)
+		grid.setHorizontalSpacing(12)
+		grid.setVerticalSpacing(6)
+		self._flag_fields = fields
+		self._phong_label = None
+		self.flag_editors = {}
+		recomputed = self._recomputed_flag_tips()
+		row = 0
+		for start, end in ((0, 24), (24, 32), (32, 64)):
+			section = [field for field in fields if start <= field.bit < end]
+			if not section:
+				continue
+			if row:
+				grid.addWidget(self._separator(), row, 0, 1, 4)
+				row += 1
+			checks = [field for field in section if field.width == 1]
+			for n, field in enumerate(checks):
+				editor = self.flag_editors[field.name] = QCheckBox(field.name)
+				editor.setToolTip(recomputed.get(field.name, ""))
+				editor.toggled.connect(self._on_flags_changed)
+				grid.addWidget(editor, row + n // 4, n % 4)
+			row += (len(checks) + 3) // 4
+			numbers = [field for field in section if field.width > 1]
+			for n, field in enumerate(numbers):
+				editor = self.flag_editors[field.name] = QSpinBox()
+				editor.setRange(field.minimum, field.maximum)
+				editor.valueChanged.connect(self._on_flags_changed)
+				label = styled_label(field.name, tone="muted")
+				if field.name == "PhongFactor":
+					self._phong_label = label
+				grid.addWidget(label, row + n // 2, n % 2 * 2)
+				grid.addWidget(editor, row + n // 2, n % 2 * 2 + 1)
+			row += (len(numbers) + 1) // 2
+		self._flags_box.insertWidget(0, body)
+
+	def _recomputed_flag_tips(self) -> dict[str, str]:
+		return {
+			"TwoSideEnable": self.tr(
+				"Recomputed by the engine when it loads the material: BaseTwoSideEnable or ForcedTwoSideEnable. "
+				"The stored bit is ignored."),
+			"AlphaTestEnable": self.tr(
+				"Recomputed by the engine when it loads the material: BaseAlphaTestEnable, or ForcedAlphaTestEnable "
+				"with AlphaMaskUsed. The stored bit is ignored."),
+		}
+
+	def _label_byte_2(self):
+		if self._phong_label is None:
+			return
+		meshlet = bool(self.handler.mdf.header.meshlet_material)
+		tip = self.tr("Byte 2 of a meshlet material's flags, which the engine reads as MeshletMaterialFlagExtension "
+			"(PhongFactor in classic materials).") if meshlet else ""
+		self._phong_label.setText("MeshletMaterialFlagExtension" if meshlet else "PhongFactor")
+		self._phong_label.setToolTip(tip)
+		self.flag_editors["PhongFactor"].setToolTip(tip)
+
+	def _show_flag_fields(self, value: int):
+		for field in self._flag_fields:
+			editor = self.flag_editors[field.name]
+			editor.blockSignals(True)
+			if field.width == 1:
+				editor.setChecked(bool(field.get(value)))
+			else:
+				editor.setValue(field.get(value))
+			editor.blockSignals(False)
 
 	def _update_flags_ui(self, h):
-		alpha = int(h.material_flags)
-		version = self._current_file_version()
-		
-		for bit, cb in enumerate(self.flags1_checks):
-			cb.blockSignals(True)
-			cb.setChecked(bool((alpha >> bit) & 1))
-			cb.blockSignals(False)
-		
-		self.transparent_zpostpass_check.blockSignals(True)
-		if version >= 31:
-			self.transparent_zpostpass_check.setChecked(bool((alpha >> 10) & 1))
-			self.transparent_zpostpass_check.setVisible(True)
-		else:
-			self.transparent_zpostpass_check.setChecked(False)
-			self.transparent_zpostpass_check.setVisible(False)
-		self.transparent_zpostpass_check.blockSignals(False)
-		
-		self.tess_spin.blockSignals(True)
-		if version >= 31:
-			self.tess_spin.setRange(0, 31)
-			self.tess_spin.setValue((alpha >> 11) & 0x1F)
-		else:
-			self.tess_spin.setRange(0, 63)
-			self.tess_spin.setValue((alpha >> 10) & 0x3F)
-		self.tess_spin.blockSignals(False)
-		
-		self.phong_spin.blockSignals(True)
-		self.phong_spin.setValue((alpha >> 16) & 0xFF)
-		self.phong_spin.blockSignals(False)
-		
-		for bit, cb in enumerate(self.flags2_checks):
-			cb.blockSignals(True)
-			cb.setChecked(bool((alpha >> (24 + bit)) & 1))
-			cb.blockSignals(False)
-		
-		self._flags3_separator.setVisible(version >= 31)
-		for bit, cb in enumerate(self.flags3_checks):
-			cb.blockSignals(True)
-			if version >= 31:
-				cb.setChecked(bool((alpha >> (32 + bit)) & 1))
-				cb.setVisible(True)
-			else:
-				cb.setChecked(False)
-				cb.setVisible(False)
-			cb.blockSignals(False)
-		
-		self.transparent_priority_bias_spin.blockSignals(True)
-		if version >= 31:
-			self.transparent_priority_bias_spin.setValue(transparent_priority_bias(alpha))
-			self.transparent_priority_bias_label.setVisible(True)
-			self.transparent_priority_bias_spin.setVisible(True)
-		else:
-			self.transparent_priority_bias_spin.setValue(0)
-			self.transparent_priority_bias_label.setVisible(False)
-			self.transparent_priority_bias_spin.setVisible(False)
-		self.transparent_priority_bias_spin.blockSignals(False)
+		fields = material_flag_layout(self._current_file_version())
+		if fields is not self._flag_fields:
+			self._build_flag_editors(fields)
+		self._label_byte_2()
+		value = int(h.material_flags)
+		self._show_flag_fields(value)
+		self._show_flags_value(value)
 
 	def _on_mmtr_changed(self, text: str):
 		m = self.handler.mdf
@@ -725,12 +714,17 @@ class MdfViewer(QWidget):
 	def get_target_game(self) -> str:
 		return self._game()
 
-	def _renumbered_note(self, metadata) -> str:
-		count = metadata.get("converted_shading_types", 0)
-		if not count:
-			return ""
-		return "\n\n" + self.tr("{count} shading type(s) were renumbered from {source} to {target} by name.").format(
-			count=count, source=metadata.get("source_game"), target=self._game())
+	def _conversion_note(self, metadata) -> str:
+		notes = []
+		if count := metadata.get("converted_shading_types", 0):
+			notes.append(self.tr("{count} shading type(s) were renumbered from {source} to {target} by name.").format(
+				count=count, source=metadata.get("source_game"), target=self._game()))
+		if count := metadata.get("converted_flags", 0):
+			notes.append(self.tr(
+				"The flags of {count} material(s) were laid out from MDF version {source} to {target} by name.").format(
+				count=count, source=metadata.get("source_file_version", metadata.get("source_version")),
+				target=self._current_file_version()))
+		return "".join("\n\n" + note for note in notes)
 
 	def _open_template_manager(self):
 		dlg = MdfTemplateManagerDialog(self, viewer=self)
@@ -761,7 +755,7 @@ class MdfViewer(QWidget):
 			QMessageBox.information(
 				self,
 				self.tr("Import Template"),
-				self.tr("Imported template '{name}'.").format(name=name) + self._renumbered_note(metadata),
+				self.tr("Imported template '{name}'.").format(name=name) + self._conversion_note(metadata),
 			)
 
 	def _clear_params_cache(self):
@@ -1150,8 +1144,10 @@ class MdfViewer(QWidget):
 		self.modified = True
 
 	def _show_material_graph(self, material):
+		viewer = weakref.ref(self)
 		self.material_graph.set_material(material, self._resolve_mmtr_document(material),
-				texture_preview_provider=self._resolve_texture_preview)
+				flag_fields=material_flag_layout(self._current_file_version()),
+				texture_preview_provider=lambda texture: viewer()._resolve_texture_preview(texture))
 		error = self._mmtr_document_errors.get(resource_path_key(material.header.mmtr_path), "")
 		if error:
 			self.material_graph.status.setToolTip(error)
@@ -1545,6 +1541,14 @@ class MdfViewer(QWidget):
 				.format(reasons=exc),
 			)
 			return
+		except MaterialFlagError as exc:
+			QMessageBox.warning(
+				self,
+				self.tr("Paste Materials"),
+				self.tr("Nothing was pasted. These flags cannot be laid out for this file's MDF version:\n\n{reasons}")
+				.format(reasons=exc),
+			)
+			return
 		if not materials:
 			QMessageBox.warning(
 				self,
@@ -1581,6 +1585,6 @@ class MdfViewer(QWidget):
 			msg += "\n\n" + self.tr(
 				"{count} material(s) were renamed to avoid duplicate names."
 			).format(count=renamed_count)
-		msg += self._renumbered_note(metadata)
+		msg += self._conversion_note(metadata)
 		
 		QMessageBox.information(self, self.tr("Paste Materials"), msg)

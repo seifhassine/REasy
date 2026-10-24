@@ -29,7 +29,6 @@ lazy from file_handlers.sdf.shader_graph_editor import _ShaderGraphView, connect
 lazy from ui.editor_widgets import editor_strip, strip_button, styled_label
 lazy from ui.styles import current_colors, set_style_role
 lazy from .material_layout import MaterialDescriptorLayout
-lazy from .mdf_file import MATERIAL_FLAG_NAMES
 
 _READABLE_SCALE = 0.75
 _BEHAVIOR_FLAGS = (
@@ -41,7 +40,6 @@ _BEHAVIOR_FLAGS = (
     (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Base two-sided route"), False, "BaseTwoSideEnable"),
     (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Base alpha-test route"), False, "BaseAlphaTestEnable"),
     (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Force two-sided"), False, "ForcedTwoSideEnable"),
-    (QT_TRANSLATE_NOOP("MdfMaterialGraph", "Two-sided output"), False, "TwoSideEnable"),
 )
 
 _FRIENDLY_NAMES = {
@@ -380,6 +378,7 @@ class MdfMaterialGraph(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._material = None
+        self._flag_fields = {}
         self._texture_preview_provider = None
         self._match = MaterialContractMatch()
         self._input_usage = MaterialInputUsage()
@@ -427,9 +426,11 @@ class MdfMaterialGraph(QWidget):
         material,
         document=None,
         *,
+        flag_fields=(),
         texture_preview_provider=None,
     ) -> None:
         self._material = material
+        self._flag_fields = {field.name: field for field in flag_fields}
         self._texture_preview_provider = texture_preview_provider
         self._match = match_material_contract(material, document) if material is not None else MaterialContractMatch()
         try:
@@ -485,14 +486,10 @@ class MdfMaterialGraph(QWidget):
         control_nodes = []
         control_y = 20.0
         behavior = self._behavior_node(material)
-        behavior_proxy = self._add_node(
-            behavior,
-            390.0,
-            control_y,
-            ("behavior", "material_flags"),
-        )
-        control_nodes.append(behavior_proxy)
-        control_y += behavior_proxy.boundingRect().height() + 22.0
+        if behavior is not None:
+            behavior_proxy = self._add_node(behavior, 390.0, control_y, ("behavior", "material_flags"))
+            control_nodes.append(behavior_proxy)
+            control_y += behavior_proxy.boundingRect().height() + 22.0
         for group in group_order:
             members = parameter_groups.get(group)
             if not members:
@@ -619,7 +616,11 @@ class MdfMaterialGraph(QWidget):
             node.add_control(friendly_material_name(parameter.name), host, source)
         return node
 
-    def _behavior_node(self, material) -> MaterialGraphNodeFrame:
+    def _behavior_node(self, material) -> MaterialGraphNodeFrame | None:
+        shown = [(label, inverted, self._flag_fields[name]) for label, inverted, name in _BEHAVIOR_FLAGS
+                 if name in self._flag_fields]
+        if not shown:
+            return None
         node = MaterialGraphNodeFrame(
             self.tr("Rendering behavior"),
             "",
@@ -632,35 +633,21 @@ class MdfMaterialGraph(QWidget):
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(5)
-        for flag_index, (label, inverted, source_name) in enumerate(_BEHAVIOR_FLAGS):
-            bit = MATERIAL_FLAG_NAMES.index(source_name)
-            checked = bool(flags & (1 << bit))
-            if inverted:
-                checked = not checked
+        for flag_index, (label, inverted, field) in enumerate(shown):
             checkbox = QCheckBox(self.tr(label))
-            checkbox.setChecked(checked)
+            checkbox.setChecked(bool(field.get(flags)) != inverted)
             checkbox.toggled.connect(
-                lambda enabled, b=bit, inv=inverted: self._set_behavior_flag(
-                    b,
-                    enabled,
-                    inverted=inv,
-                )
-            )
+                lambda enabled, f=field, inv=inverted: self._set_behavior_flag(f, enabled, inverted=inv))
             grid.addWidget(checkbox, flag_index // 2, flag_index % 2)
-            self.behavior_editors[source_name] = checkbox
+            self.behavior_editors[field.name] = checkbox
         node.content.addWidget(host)
         return node
 
-    def _set_behavior_flag(self, bit: int, enabled: bool, *, inverted: bool) -> None:
+    def _set_behavior_flag(self, field, enabled: bool, *, inverted: bool) -> None:
         if self._material is None:
             return
-        stored = not bool(enabled) if inverted else bool(enabled)
-        mask = 1 << int(bit)
-        flags = int(self._material.header.material_flags)
-        self._material.header.material_flags = (
-            flags | mask if stored else flags & ~mask
-        )
-        self.material_changed.emit("header", int(bit))
+        self._material.header.material_flags = field.set(self._material.header.material_flags, bool(enabled) != inverted)
+        self.material_changed.emit("header", field.bit)
 
     def _parameter_control(self, index: int, parameter):
         count = max(1, min(4, int(parameter.component_count)))

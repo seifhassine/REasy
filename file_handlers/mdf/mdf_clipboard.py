@@ -5,10 +5,12 @@ from typing import Any, Dict, List, Optional, Tuple
 lazy from file_handlers.mdf.mdf_file import (
     MatData,
     MatHeader,
+    MaterialFlagError,
     ParamHeader,
     TexHeader,
     GpbfHeader,
     ShadingTypeError,
+    converted_material_flags,
     converted_shading_type,
 )
 lazy from file_handlers.rsz.utils.rsz_clipboard_utils import RszClipboardUtils
@@ -73,22 +75,36 @@ class MdfClipboard:
             "format_version": int(data.get("version", 0) or 0),
         }
         metadata["converted_shading_types"] = cls.convert_shading_types(mats, metadata["source_game"], target_game)
+        metadata["converted_flags"] = cls.convert_material_flags(mats, metadata["source_file_version"], target_version)
         return mats, metadata
 
-    @staticmethod
-    def convert_shading_types(materials: List[MatData], source_game: str, target_game: str) -> int:
+    @classmethod
+    def convert_shading_types(cls, materials: List[MatData], source_game: str, target_game: str) -> int:
         """Renumbers every material's shading type for ``target_game``, or none; returns how many changed."""
+        return cls._convert_headers(materials, "shader_type",
+                                    lambda value: converted_shading_type(value, source_game, target_game),
+                                    ShadingTypeError, EnumDefinitionError)
+
+    @classmethod
+    def convert_material_flags(cls, materials: List[MatData], source_version: int, target_version: int) -> int:
+        """Lays every material's flags out for ``target_version``, or none; returns how many changed."""
+        return cls._convert_headers(materials, "material_flags",
+                                    lambda value: converted_material_flags(value, source_version, target_version),
+                                    MaterialFlagError)
+
+    @staticmethod
+    def _convert_headers(materials: List[MatData], attribute: str, convert, *errors) -> int:
         values, refused = [], []
         for mat in materials:
             try:
-                values.append(converted_shading_type(int(mat.header.shader_type), source_game, target_game))
-            except (ShadingTypeError, EnumDefinitionError) as exc:
+                values.append(convert(int(getattr(mat.header, attribute))))
+            except errors as exc:
                 refused.append(f"{mat.header.mat_name}: {exc}")
         if refused:
-            raise ShadingTypeError("\n".join(refused))
-        changed = sum(value != mat.header.shader_type for mat, value in zip(materials, values))
+            raise errors[0]("\n".join(refused))
+        changed = sum(value != getattr(mat.header, attribute) for mat, value in zip(materials, values))
         for mat, value in zip(materials, values):
-            mat.header.shader_type = value
+            setattr(mat.header, attribute, value)
         return changed
 
     @classmethod

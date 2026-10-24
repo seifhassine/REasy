@@ -356,7 +356,8 @@ class MdfTemplateManagerDialog(QDialog):
             return
 
         self.template_imported.emit(result.get("material"), {
-            **result.get("metadata", {}), "converted_shading_types": result.get("converted_shading_types", 0)})
+            **result.get("metadata", {}), "converted_shading_types": result.get("converted_shading_types", 0),
+            "converted_flags": result.get("converted_flags", 0)})
 
     def _delete_selected_template(self) -> None:
         template_id = self._current_template_id()

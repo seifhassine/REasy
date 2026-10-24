@@ -11,19 +11,113 @@ lazy from utils.resource_file_utils import resource_version_from_path
 
 
 MDF_MAGIC = 0x0046444D
-# The engine's names of bits 0-9 of ``MatHeader.material_flags``, by bit index.
-MATERIAL_FLAG_NAMES = (
-    "BaseTwoSideEnable", "BaseAlphaTestEnable", "ShadowCastDisable", "VertexShaderUsed", "EmissiveUsed",
-    "TessellationEnable", "EnableIgnoreDepth", "AlphaMaskUsed", "ForcedTwoSideEnable", "TwoSideEnable",
+
+
+@dataclass(frozen=True, slots=True)
+class MaterialFlagField:
+    """``width`` bits of ``MatHeader.material_flags`` from ``bit``, by the engine's name."""
+    name: str
+    bit: int
+    width: int = 1
+    signed: bool = False
+
+    @property
+    def mask(self) -> int:
+        return ((1 << self.width) - 1) << self.bit
+
+    @property
+    def minimum(self) -> int:
+        return -(1 << self.width - 1) if self.signed else 0
+
+    @property
+    def maximum(self) -> int:
+        return (1 << self.width - self.signed) - 1
+
+    def get(self, flags: int) -> int:
+        value = (int(flags) & self.mask) >> self.bit
+        return value - (1 << self.width) if value > self.maximum else value
+
+    def set(self, flags: int, value: int) -> int:
+        return int(flags) & ~self.mask | int(value) << self.bit & self.mask
+
+
+def _flags(*names: str, first: int = 0) -> tuple[MaterialFlagField, ...]:
+    return tuple(MaterialFlagField(name, first + offset) for offset, name in enumerate(names))
+
+
+_BASE_FLAGS = _flags("BaseTwoSideEnable", "BaseAlphaTestEnable", "ShadowCastDisable", "VertexShaderUsed",
+                     "EmissiveUsed", "TessellationEnable", "EnableIgnoreDepth", "AlphaMaskUsed")
+_PHONG_FACTOR = MaterialFlagField("PhongFactor", 16, 8)
+_PRIORITY_BIAS = MaterialFlagField("TransparentPriorityBias", 40, 8, signed=True)
+_TWO_SIDE = _flags("ForcedTwoSideEnable", "TwoSideEnable", first=8)
+_V19_UPPER = _flags("RoughTransparentEnable", "ForcedAlphaTestEnable", "AlphaTestEnable", "SSSProfileUsed",
+                    "EnableStencilPriority", "RequireDualQuaternion", "PixelDepthOffsetUsed", "NoRayTracing", first=24)
+_V21 = (*_BASE_FLAGS, *_TWO_SIDE, MaterialFlagField("TransparentZPostPassEnable", 10),
+        MaterialFlagField("TessFactor", 11, 5), _PHONG_FACTOR, *_V19_UPPER)
+# First MDF version of each layout, newest first; evidence per game in docs/internals/mdf-material-flags.md.
+_FLAG_LAYOUTS = (
+    (31, (*_V21, *_flags("TransparentDistortionEnable", "AlphaUsed", "BakeTextureUseSecondaryUV",
+                         "ForwardPrepassEnabled", "ForcedAlphaTestEnableShadow", "TessellationZPrepassDisable",
+                         "DitheredLodTransitionEnable", first=32), _PRIORITY_BIAS)),
+    (21, _V21),
+    (19, (*_BASE_FLAGS, *_TWO_SIDE, MaterialFlagField("TessFactor", 10, 6), _PHONG_FACTOR, *_V19_UPPER)),
+    (13, (*_BASE_FLAGS, MaterialFlagField("TessFactor", 8, 8), _PHONG_FACTOR,
+          *_flags("RoughTransparentEnable", "ForcedAlphaTestEnable", "AlphaTestEnable", first=24))),
+    (10, (*_BASE_FLAGS, MaterialFlagField("TessFactor", 8, 8), _PHONG_FACTOR,
+          *_flags("ForcedAlphaTestEnable", "AlphaTestEnable", first=24))),
+    (6, (MaterialFlagField("ShadowCastDisable", 0), MaterialFlagField("VertexShaderUsed", 8),
+         MaterialFlagField("EmissiveUsed", 16))),
 )
-BASE_TWO_SIDE_ENABLE, BASE_ALPHA_TEST_ENABLE, FORCED_TWO_SIDE_ENABLE = (
-    1 << MATERIAL_FLAG_NAMES.index(name) for name in ("BaseTwoSideEnable", "BaseAlphaTestEnable", "ForcedTwoSideEnable"))
+BASE_TWO_SIDE_ENABLE, BASE_ALPHA_TEST_ENABLE = (field.mask for field in _BASE_FLAGS[:2])
+
+
+def material_flag_layout(version: int) -> tuple[MaterialFlagField, ...]:
+    """The named fields of an MDF version's ``material_flags``, by bit; the other bits have no known name."""
+    return next((fields for first, fields in _FLAG_LAYOUTS if version >= first), ())
+
+
+def two_sided(flags: int, version: int) -> bool:
+    """TwoSideEnable as the engine derives it at load: BaseTwoSideEnable or ForcedTwoSideEnable."""
+    return any(field.get(flags) for field in material_flag_layout(version)
+               if field.name in ("BaseTwoSideEnable", "ForcedTwoSideEnable"))
+
+
+class MaterialFlagError(ValueError):
+    pass
+
+
+def converted_material_flags(flags: int, source_version: int, target_version: int) -> int:
+    """``flags`` in ``target_version``'s layout, moved by name; a resized field keeps its high bits. Set fields the
+    target lacks and set bits without a name are refused."""
+    source, target = material_flag_layout(source_version), material_flag_layout(target_version)
+    flags = int(flags)
+    if source is target:
+        return flags
+    fields = {field.name: field for field in target}
+    value, named, missing = 0, 0, []
+    for field in source:
+        named |= field.mask
+        stored = field.get(flags)
+        if not stored:
+            continue
+        into = fields.get(field.name)
+        if into is None:
+            missing.append(field.name)
+            continue
+        shift = into.width - field.width
+        value = into.set(value, stored << shift if shift >= 0 else stored >> -shift)
+    reasons = [f"MDF version {target_version} has no {', '.join(missing)}"] if missing else []
+    unnamed = [str(bit) for bit in range(flags.bit_length()) if (flags & ~named) >> bit & 1]
+    if unnamed:
+        reasons.append(f"bit(s) {', '.join(unnamed)} have no name in MDF version {source_version}")
+    if reasons:
+        raise MaterialFlagError("; ".join(reasons))
+    return value
 
 
 def transparent_priority_bias(flags: int) -> int:
     """Version 31 and later only."""
-    value = (int(flags) >> 40) & 0xFF
-    return value - 0x100 if value & 0x80 else value
+    return _PRIORITY_BIAS.get(flags)
 
 
 SHADING_TYPE_ENUM = "via.render.MaterialShadingType"

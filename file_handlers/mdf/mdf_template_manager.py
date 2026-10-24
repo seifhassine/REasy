@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
 lazy from file_handlers.mdf.mdf_clipboard import MdfClipboard
-lazy from file_handlers.mdf.mdf_file import ShadingTypeError
+lazy from file_handlers.mdf.mdf_file import MaterialFlagError, ShadingTypeError
 
 
 class MdfTemplateManager:
@@ -155,15 +155,17 @@ class MdfTemplateManager:
         mat = MdfClipboard._deserialize_material(material_payload, int(target_version))
         source_game = str(payload.get("source_game", "") or "")
         try:
+            source_version = int(payload.get("source_file_version", info.get("source_version", 0)) or 0)
+        except (TypeError, ValueError):
+            source_version = 0
+        try:
             converted = MdfClipboard.convert_shading_types([mat], source_game, target_game)
-        except ShadingTypeError as exc:
+            converted_flags = MdfClipboard.convert_material_flags([mat], source_version, int(target_version))
+        except (ShadingTypeError, MaterialFlagError) as exc:
             return {"success": False, "message": f"The template was not imported.\n{exc}"}
         info = dict(info)
         info["source_game"] = source_game
-        try:
-            info["source_version"] = int(payload.get("source_file_version", info.get("source_version", 0)) or 0)
-        except Exception:
-            pass
+        info["source_version"] = source_version
         if payload.get("source_file_name"):
             info["source_file_name"] = payload.get("source_file_name")
         info["last_used"] = datetime.now().isoformat()
@@ -175,6 +177,7 @@ class MdfTemplateManager:
             "metadata": info,
             "template_id": template_id,
             "converted_shading_types": converted,
+            "converted_flags": converted_flags,
         }
 
     @classmethod

@@ -63,7 +63,7 @@ lazy from ui.project_manager.constants import PROJECTS_ROOT
 lazy from ui.project_manager.project_picker_dialog import discover_projects
 
 lazy from file_handlers.mdf.mdf_viewer import MdfViewer
-lazy from file_handlers.mdf.mdf_file import MatData, transparent_priority_bias
+lazy from file_handlers.mdf.mdf_file import MatData, material_flag_layout
 
 
 AI_ASSISTANT_BASE_PROMPT = """\
@@ -1582,18 +1582,13 @@ class ReasyAssistantTools(
             ),
             _tool(
                 "edit_mdf_flags",
-                "Edit named material flags and numeric flag fields through visible controls. Include only fields that should change.",
+                "Edit material flag fields through visible controls. Include only fields that should change.",
                 {
                     "material": _MATERIAL,
                     "changes": {
                         "type": "object",
-                        "description": "Use exact boolean flag names returned by inspect_mdf. Numeric fields are defined below.",
-                        "properties": {
-                            "tessellation": {"type": "integer"},
-                            "phong": {"type": "integer", "minimum": 0, "maximum": 255},
-                            "transparent_priority_bias": {"type": "integer", "minimum": -128, "maximum": 127},
-                        },
-                        "additionalProperties": {"type": "boolean"},
+                        "description": "Use the exact flag names inspect_mdf returns for this material, which depend on the MDF version: true or false for one-bit flags, integers for TessFactor, PhongFactor and TransparentPriorityBias.",
+                        "additionalProperties": {"anyOf": [{"type": "boolean"}, {"type": "integer"}]},
                     },
                 },
                 ["material", "changes"],
@@ -3239,25 +3234,9 @@ class ReasyAssistantTools(
 
     @staticmethod
     def _flags_for(viewer: MdfViewer, index: int) -> dict[str, Any]:
-        header = viewer.handler.mdf.materials[index].header
-        raw = int(header.material_flags)
-        version = viewer._current_file_version()
-        flags: dict[str, Any] = {}
-        for bit, name in enumerate(viewer._flags1_names):
-            flags[name] = bool((raw >> bit) & 1)
-        if version >= 31:
-            flags["TransparentZPostPassEnable"] = bool((raw >> 10) & 1)
-            flags["tessellation"] = (raw >> 11) & 0x1F
-        else:
-            flags["tessellation"] = (raw >> 10) & 0x3F
-        flags["phong"] = (raw >> 16) & 0xFF
-        for bit, name in enumerate(viewer._flags2_names):
-            flags[name] = bool((raw >> (24 + bit)) & 1)
-        if version >= 31:
-            for bit, name in enumerate(viewer._flags3_names):
-                flags[name] = bool((raw >> (32 + bit)) & 1)
-            flags["transparent_priority_bias"] = transparent_priority_bias(raw)
-        return flags
+        raw = int(viewer.handler.mdf.materials[index].header.material_flags)
+        return {field.name: bool(field.get(raw)) if field.width == 1 else field.get(raw)
+                for field in material_flag_layout(viewer._current_file_version())}
 
     @staticmethod
     def _material_summary(item, index: int) -> dict[str, Any]:
@@ -4172,20 +4151,7 @@ class ReasyAssistantTools(
         if version < 31 and material.get("shader_lods"):
             return False
 
-        supported_flags = {
-            *viewer._flags1_names,
-            *viewer._flags2_names,
-            "tessellation",
-            "phong",
-        }
-        if version >= 31:
-            supported_flags.update(
-                {
-                    "TransparentZPostPassEnable",
-                    *viewer._flags3_names,
-                    "transparent_priority_bias",
-                }
-            )
+        supported_flags = {field.name for field in material_flag_layout(version)}
         return set(material.get("flags", {})).issubset(supported_flags)
 
     def _replace_mdf_table(
@@ -6397,77 +6363,29 @@ class ReasyAssistantTools(
         index = self._resolve_material(viewer, material)
         if not isinstance(changes, dict) or not changes:
             raise AssistantToolError(_tr("No flag changes were supplied."))
-        checkboxes = {
-            name.casefold(): (name, checkbox)
-            for name, checkbox in [
-                *zip(viewer._flags1_names, viewer.flags1_checks),
-                ("TransparentZPostPassEnable", viewer.transparent_zpostpass_check),
-                *zip(viewer._flags2_names, viewer.flags2_checks),
-                *zip(viewer._flags3_names, viewer.flags3_checks),
-            ]
-        }
-        numeric = {"tessellation", "phong", "transparent_priority_bias"}
-        unknown = [
-            name for name in changes if name.casefold() not in checkboxes and name.casefold() not in numeric
-        ]
+        fields = {field.name.casefold(): field for field in material_flag_layout(viewer._current_file_version())}
+        unknown = [name for name in changes if name.casefold() not in fields]
         if unknown:
             raise AssistantToolError(
                 _tr("Unknown material flags: {flags}", flags=unknown)
             )
-        version = viewer._current_file_version()
-        version31_names = {
-            "transparentzpostpassenable",
-            *(name.casefold() for name in viewer._flags3_names),
-        }
         validated: dict[str, Any] = {}
         for name, value in changes.items():
-            folded = name.casefold()
-            if folded in checkboxes:
-                canonical, _checkbox = checkboxes[folded]
-                if version < 31 and folded in version31_names:
-                    raise AssistantToolError(
-                        _tr(
-                            "{field} requires MDF version 31 or newer.",
-                            field=canonical,
-                        )
-                    )
-                validated[folded] = self._boolean(value, canonical)
-            elif folded == "tessellation":
-                validated[folded] = self._integer(
-                    value, "tessellation", 0, 31 if version >= 31 else 63
-                )
-            elif folded == "phong":
-                validated[folded] = self._integer(value, "phong", 0, 255)
-            elif folded == "transparent_priority_bias":
-                if version < 31:
-                    raise AssistantToolError(
-                        _tr(
-                            "TransparentPriorityBias requires MDF version 31 "
-                            "or newer."
-                        )
-                    )
-                validated[folded] = self._integer(
-                    value, "transparent_priority_bias", -128, 127
-                )
+            field = fields[name.casefold()]
+            validated[field.name] = (
+                self._boolean(value, field.name)
+                if field.width == 1
+                else self._integer(value, field.name, field.minimum, field.maximum)
+            )
 
         self._select_material(viewer, index, "overview")
-        for name in changes:
-            folded = name.casefold()
-            if folded in checkboxes:
-                _canonical, checkbox = checkboxes[folded]
-                checkbox.setChecked(validated[folded])
-                self._action_feedback.pulse_widget(checkbox)
-            elif folded == "tessellation":
-                viewer.tess_spin.setValue(validated[folded])
-                self._action_feedback.pulse_widget(viewer.tess_spin)
-            elif folded == "phong":
-                viewer.phong_spin.setValue(validated[folded])
-                self._action_feedback.pulse_widget(viewer.phong_spin)
-            elif folded == "transparent_priority_bias":
-                viewer.transparent_priority_bias_spin.setValue(validated[folded])
-                self._action_feedback.pulse_widget(
-                    viewer.transparent_priority_bias_spin
-                )
+        for name, value in validated.items():
+            editor = viewer.flag_editors[name]
+            if isinstance(value, bool):
+                editor.setChecked(value)
+            else:
+                editor.setValue(value)
+            self._action_feedback.pulse_widget(editor)
         return {
             "material": viewer.handler.mdf.materials[index].header.mat_name,
             "changed": list(changes),
