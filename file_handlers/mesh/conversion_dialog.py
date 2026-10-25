@@ -222,8 +222,7 @@ class MeshConversionDialog(QDialog):
         self.files.verticalHeader().hide()
         self.files.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.files.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.files.cellClicked.connect(lambda row, _column: self.preview.part_combo.setCurrentIndex(row + 1)
-                                      if self.result and row < len(self.result.parts) else None)
+        self.files.cellClicked.connect(self._show_file_part)
         self.details.addTab(self.files, self.tr("Export files"))
         review_split.addWidget(self.details)
         review_split.setStretchFactor(0, 1)
@@ -239,7 +238,7 @@ class MeshConversionDialog(QDialog):
         self.copy_report_button = QPushButton(self.tr("Copy report"))
         self.copy_report_button.setAutoDefault(False)
         self.copy_report_button.setToolTip(self.tr("Copy the conversion report for notes or troubleshooting."))
-        self.copy_report_button.clicked.connect(lambda: QApplication.clipboard().setText(self.report.toPlainText()))
+        self.copy_report_button.clicked.connect(self._copy_report)
         footer.addWidget(self.copy_report_button)
         buttons = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Close)
         self.save_button = buttons.button(QDialogButtonBox.Save)
@@ -257,6 +256,13 @@ class MeshConversionDialog(QDialog):
     def _set_status(self, text: str, tone: str = "neutral") -> None:
         self.status.setText(text)
         set_style_role(self.status, badge=tone)
+
+    def _show_file_part(self, row):
+        if self.result and row < len(self.result.parts):
+            self.preview.part_combo.setCurrentIndex(row + 1)
+
+    def _copy_report(self):
+        QApplication.clipboard().setText(self.report.toPlainText())
 
     def _build_options(self):
         options = QFrame()

@@ -345,7 +345,7 @@ class MeshDistanceFieldDialog(QDialog):
         self.thickness.setPrefix(self.tr('Shell thickness: '))
         self.thickness.setSuffix(self.tr(' local units'))
         self.thickness.setEnabled(False)
-        self.sign_mode.currentIndexChanged.connect(lambda i: self.thickness.setEnabled(i == 1))
+        self.sign_mode.currentIndexChanged.connect(self._shell_mode)
         row.addWidget(self.thickness)
         self.bake_button = QPushButton(self.tr('Bake from LOD 0…'))
         set_style_role(self.bake_button, variant="primary")
@@ -383,6 +383,9 @@ class MeshDistanceFieldDialog(QDialog):
     def _grid_mode(self, *_):
         self.resolution.setEnabled(not self.keep_grids.isChecked())
         self.storage.setEnabled(not self.keep_grids.isChecked())
+
+    def _shell_mode(self, *_):
+        self.thickness.setEnabled(self.sign_mode.currentIndex() == 1)
 
     def _bake(self):
         try:

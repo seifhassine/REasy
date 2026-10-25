@@ -424,15 +424,16 @@ class MaterialBranchDialog(QDialog):
             self.tabs.addTab(editor, label)
             self.editors.append(editor)
         for editor in self.editors:
-            editor.interface_changed.connect(lambda source=editor: self._sync_interface(source))
+            editor.interface_changed.connect(self._sync_interface)
         root.addWidget(self.tabs)
         apply_buttons(self, root)
 
-    def _sync_interface(self, source):
+    def _sync_interface(self):
         if self._syncing:
             return
         self._syncing = True
         try:
+            source = self.sender()
             target = self.editors[1 - self.editors.index(source)]
             ports = {node.properties["pin_id"]: node for node in source.project.graph.nodes
                      if node.kind in {"function_input", "function_output"}}

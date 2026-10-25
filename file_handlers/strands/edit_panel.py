@@ -1088,10 +1088,9 @@ class StrandEditPanel(QWidget):
     def _fill_presets(self) -> None:
         self.preset_choice.clear()
         while self.preset_forms.count():
-            # ``removeWidget`` leaves the form parented to the stack; unparent it so Python alone owns it.
             widget = self.preset_forms.widget(0)
             self.preset_forms.removeWidget(widget)
-            widget.setParent(None)
+            widget.deleteLater()
         for file, preset in self.presets:
             form = PresetForm(preset)
             form.changed.connect(self._form_edited)

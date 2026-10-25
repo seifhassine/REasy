@@ -52,16 +52,24 @@ class MaterialLoopDialog(QDialog):
 
         continuation = choice([(self.tr('Choose a boolean result'), None),
             *((p['display_name'], p['pin_id']) for p in outputs if p['value_type'] == 'bool')], self.continuation)
-        continuation.currentIndexChanged.connect(lambda: setattr(self, 'continuation', continuation.currentData()))
+        continuation.currentIndexChanged.connect(self._continue_while)
         form.addRow(self.tr('Continue while'), continuation)
         for pin in inputs:
             if pin['value_type'] not in NUMERIC_VALUE_TYPES:
                 continue
             update = choice([(self.tr('Keep the caller value'), None),
                 *((p['display_name'], p['pin_id']) for p in outputs if p['value_type'] == pin['value_type'])], self.states.get(pin['pin_id']))
-            update.currentIndexChanged.connect(lambda _index, key=pin['pin_id'], combo=update: self._set_state(key, combo.currentData()))
+            update.setProperty('pin_id', pin['pin_id'])
+            update.currentIndexChanged.connect(self._update_state)
             form.addRow(pin['display_name'], update)
         self.bindings.setWidget(widget)
+
+    def _continue_while(self):
+        self.continuation = self.sender().currentData()
+
+    def _update_state(self):
+        combo = self.sender()
+        self._set_state(combo.property('pin_id'), combo.currentData())
 
     def _set_state(self, source, target):
         if target is None:

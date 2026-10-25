@@ -1338,7 +1338,8 @@ class SdfShaderGraphEditor(QWidget):
         self.properties_scroll.setWidget(self.properties_host)
         self.inspector_tabs.addTab(self.properties_scroll, self.tr("Properties"))
 
-        source_page = QWidget()
+        source_page = QWidget(self)
+        source_page.hide()
         source_layout = QVBoxLayout(source_page)
         source_layout.setContentsMargins(6, 6, 6, 6)
         source_layout.setSpacing(4)
