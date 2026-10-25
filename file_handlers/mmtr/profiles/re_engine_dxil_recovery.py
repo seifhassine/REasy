@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import itertools
 import json
 import re
 
 from file_handlers.sdf.dxc import DxcError, disassemble_dxil
 from file_handlers.sdf.shader_graph import ShaderGraphError
+lazy import fastdxiltext
 lazy from file_handlers.sdf.storage_codec import pack_ir_storage, unpack_ir_storage
 
 
@@ -18,14 +20,11 @@ MAX_IR_LINES = 250_000
 LLVM_NAME = r'(?:"(?:[^"\\]|\\.)*"|[-$._A-Za-z0-9]+)'
 
 _ASSIGNMENT = re.compile(r"^(?P<result>%[^=\s]+)\s*=\s*(?P<body>.+)$")
-_UNNAMED_LABEL = re.compile(r"^\s*;\s*<label>:(\d+)\b")
-_LABEL = re.compile(r"^(?:[A-Za-z$._][A-Za-z0-9$._-]*|\d+):$")
-_METADATA = re.compile(r"^![A-Za-z0-9$._-]+\s*=|^!\d+\s*=")
-_TYPE = re.compile(r'^(?P<name>%(?:"(?:[^"\\]|\\.)*"|[^\s=]+))\s*=\s*type\b')
-_GLOBAL = re.compile(r'^(?P<name>@(?:"(?:[^"\\]|\\.)*"|[^\s=]+))\s*=')
+_QUOTED_LABEL = re.compile(r'^("(?:[^"\\]|\\.)*"):', re.M)
+_LOCAL_NAME = re.compile(r"%([-$._A-Za-z0-9]+)|^([-$._A-Za-z0-9]+):", re.M)
+_LOCAL_VALUE = re.compile(r"%([-$._A-Za-z0-9]+)")
+_OWN_VALUE = re.compile(r"^\s+%(reasy\.(?!prior\.)[-$._A-Za-z0-9]+)\s*=", re.M)
 _DEFINE = re.compile(r"^define\s+.+\{\s*$")
-_DECLARE = re.compile(r"^declare\s+")
-_ATTRIBUTE = re.compile(r"^attributes\s+#\d+\s*=")
 
 _EXECUTABLE_OPCODES = frozenset(
     {
@@ -84,46 +83,6 @@ _ARITHMETIC_FLAGS = frozenset(
 )
 
 
-def _strip_comment(line: str) -> str:
-    if '"' not in line:
-        return line.partition(";")[0].rstrip()
-    quoted = False
-    escaped = False
-    for index, character in enumerate(line):
-        if escaped:
-            escaped = False
-            continue
-        if character == "\\" and quoted:
-            escaped = True
-            continue
-        if character == '"':
-            quoted = not quoted
-            continue
-        if character == ";" and not quoted:
-            return line[:index].rstrip()
-    return line.rstrip()
-
-
-def _bracket_delta(text: str) -> int:
-    if '"' not in text:
-        return text.count("[") - text.count("]")
-    quoted = escaped = False
-    result = 0
-    for character in text:
-        if escaped:
-            escaped = False
-            continue
-        if character == "\\" and quoted:
-            escaped = True
-        elif character == '"':
-            quoted = not quoted
-        elif not quoted and character == "[":
-            result += 1
-        elif not quoted and character == "]":
-            result -= 1
-    return result
-
-
 def _opcode(body: str) -> str:
     tokens = str(body).split(None, 1)
     if not tokens:
@@ -167,7 +126,7 @@ class DxilSemanticRecord:
         )
 
 
-def _validate_record(record: DxilSemanticRecord, *, _parsed: bool = False) -> None:
+def _validate_record(record: DxilSemanticRecord) -> None:
     if (
         record.kind not in {"module", "function", "label", "instruction"}
         or not record.text
@@ -182,12 +141,11 @@ def _validate_record(record: DxilSemanticRecord, *, _parsed: bool = False) -> No
             raise ShaderGraphError(
                 f"Recovered DXIL opcode {record.opcode!r} is not understood."
             )
-        if not _parsed:
-            match = _ASSIGNMENT.match(record.text)
-            expected_result = match.group("result") if match else ""
-            body = match.group("body") if match else record.text
-            if record.result != expected_result or record.opcode != _opcode(body):
-                raise ShaderGraphError("Recovered DXIL instruction record is inconsistent.")
+        match = _ASSIGNMENT.match(record.text)
+        expected_result = match.group("result") if match else ""
+        body = match.group("body") if match else record.text
+        if record.result != expected_result or record.opcode != _opcode(body):
+            raise ShaderGraphError("Recovered DXIL instruction record is inconsistent.")
     elif record.opcode or record.result:
         raise ShaderGraphError("Recovered DXIL non-instruction has executable fields.")
 
@@ -281,19 +239,6 @@ def compact_recovered_dxil_storage(text: str) -> str:
     return compact if len(compact) < len(text) else text
 
 
-def _module_record(line: str) -> DxilSemanticRecord:
-    if (
-        line.startswith(("target datalayout =", "target triple =", "source_filename ="))
-        or _TYPE.match(line)
-        or _GLOBAL.match(line)
-        or _DECLARE.match(line)
-        or _ATTRIBUTE.match(line)
-        or _METADATA.match(line)
-    ):
-        return DxilSemanticRecord("module", line)
-    raise ShaderGraphError(f"Recovered DXIL module statement is not understood: {line[:120]}")
-
-
 def _validate_module_structure(records: tuple[DxilSemanticRecord, ...]) -> None:
     depth = 0
     functions = 0
@@ -319,73 +264,34 @@ def _validate_module_structure(records: tuple[DxilSemanticRecord, ...]) -> None:
         )
 
 
+def _plain_block_names(assembly: str) -> str:
+    """DXC quotes the exit block of a helper inlined by its mangled name; REasy's readers take plain names."""
+    if '\n"' not in assembly:
+        return assembly
+    quoted = dict.fromkeys(_QUOTED_LABEL.findall(assembly))
+    taken = {plain or label for plain, label in _LOCAL_NAME.findall(assembly)}
+    fresh = (name for name in map("reasy.block.{}".format, itertools.count()) if name not in taken)
+    for label, name in zip(quoted, fresh):
+        assembly = assembly.replace("%" + label, "%" + name).replace("\n" + label + ":", "\n" + name + ":")
+    return assembly
+
+
+def _prior_value_names(assembly: str) -> str:
+    """A shader REasy built keeps the value names its next build gives the values it adds."""
+    own = dict.fromkeys(_OWN_VALUE.findall(assembly)) if "%reasy." in assembly else None
+    if not own:
+        return assembly
+    taken = {plain or label for plain, label in _LOCAL_NAME.findall(assembly)}
+    rename = dict(zip(own, (name for name in map("reasy.prior.{}".format, itertools.count()) if name not in taken)))
+    return _LOCAL_VALUE.sub(lambda token: "%" + rename.get(token[1], token[1]), assembly)
+
+
 def parse_re_engine_dxil_assembly(assembly: str) -> ReEngineDxilSemanticIr:
     if not isinstance(assembly, str) or "\0" in assembly:
         raise ShaderGraphError("Recovered DXIL assembly is invalid.")
-    records: list[DxilSemanticRecord] = []
-    in_function = False
-    pending_instruction = ""
-    pending_brackets = 0
-
-    def instruction(line: str) -> None:
-        match = _ASSIGNMENT.match(line)
-        body = match.group("body") if match else line
-        record = object.__new__(DxilSemanticRecord)
-        object.__setattr__(record, "kind", "instruction")
-        object.__setattr__(record, "text", line)
-        object.__setattr__(record, "opcode", _opcode(body))
-        object.__setattr__(record, "result", match.group("result") if match else "")
-        _validate_record(record, _parsed=True)
-        records.append(record)
-
-    for source_line in assembly.splitlines():
-        # LLVM prints unnamed block declarations as comments; keep them as block identities.
-        unnamed_label = (
-            _UNNAMED_LABEL.match(source_line)
-            if in_function and not pending_instruction and source_line.lstrip().startswith(";")
-            else None
-        )
-        if unnamed_label:
-            records.append(DxilSemanticRecord("label", unnamed_label[1] + ":"))
-            continue
-        line = _strip_comment(source_line).strip()
-        if not line:
-            continue
-        if pending_instruction:
-            pending_instruction += " " + line
-            pending_brackets += _bracket_delta(line)
-            if pending_brackets < 0:
-                raise ShaderGraphError("Recovered DXIL instruction brackets are unbalanced.")
-            if pending_brackets == 0:
-                instruction(pending_instruction)
-                pending_instruction = ""
-            continue
-        if line.startswith("define") and _DEFINE.match(line):
-            if in_function:
-                raise ShaderGraphError("Recovered DXIL contains nested functions.")
-            records.append(DxilSemanticRecord("function", line))
-            in_function = True
-            continue
-        if in_function and line == "}":
-            records.append(DxilSemanticRecord("function", line))
-            in_function = False
-            continue
-        if in_function:
-            if line.endswith(":") and _LABEL.match(line):
-                records.append(DxilSemanticRecord("label", line))
-                continue
-            pending_brackets = _bracket_delta(line)
-            if pending_brackets < 0:
-                raise ShaderGraphError("Recovered DXIL instruction brackets are unbalanced.")
-            if pending_brackets:
-                pending_instruction = line
-            else:
-                instruction(line)
-            continue
-        records.append(_module_record(line))
-    if pending_instruction:
-        raise ShaderGraphError("Recovered DXIL instruction is incomplete.")
-    return ReEngineDxilSemanticIr(tuple(records))
+    return ReEngineDxilSemanticIr(tuple(fastdxiltext.recovery_records(
+        _prior_value_names(_plain_block_names(assembly)), DxilSemanticRecord, _EXECUTABLE_OPCODES, _CALL_PREFIXES,
+        _ARITHMETIC_FLAGS)))
 
 
 def recover_re_engine_dxil_ir(bytecode: bytes) -> ReEngineDxilSemanticIr:

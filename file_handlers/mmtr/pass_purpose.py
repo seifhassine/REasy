@@ -7,6 +7,7 @@ from file_handlers.sdf.shader_graph import (
     ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension,
 )
 
+lazy from .material_region_read import region_derived_cache
 lazy from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
 
 
@@ -51,14 +52,21 @@ def drawing_for(node, purpose: str) -> bool:
 
 
 def graph_draws_for(graph) -> bool:
+    cache = region_derived_cache("graph_draws_for")
+    if cache is not None and id(graph) in cache:
+        return cache[id(graph)][1]
+
     def found(value) -> bool:
         if isinstance(value, dict):
             return value.get("kind") == DRAWING_FOR_KIND or any(found(item) for item in value.values())
         return isinstance(value, (list, tuple)) and any(found(item) for item in value)
 
     # The recovered master's properties are its programs, which nest no graph.
-    return any(node.kind == DRAWING_FOR_KIND or node.kind != RE_ENGINE_RECOVERED_MASTER_KIND and found(node.properties)
-               for node in graph.nodes)
+    result = any(node.kind == DRAWING_FOR_KIND or node.kind != RE_ENGINE_RECOVERED_MASTER_KIND
+                 and found(node.properties) for node in graph.nodes)
+    if cache is not None:
+        cache[id(graph)] = graph, result
+    return result
 
 
 translate = QCoreApplication.translate

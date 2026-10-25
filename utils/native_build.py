@@ -128,3 +128,7 @@ def ensure_fastmotion():
 
 def ensure_fastsdftex():
     return _build_native_module('fastsdftex')
+
+
+def ensure_fastkey():
+    return _build_native_module('fastkey')

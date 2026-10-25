@@ -41,7 +41,7 @@ function Fresh($stamp, $inputs, $outputs) {
     -not (Get-ChildItem $inputs -File -ErrorAction SilentlyContinue | Where-Object LastWriteTimeUtc -gt $t | Select-Object -First 1)
 }
 function Prep {
-    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "native\*.cpp", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmotion*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "resources\i18n\*.qm"))) { return $true }
+    if (-not $UseCurrentPython -and (Fresh $pyStamp @("requirements.txt", "setup.py", "native\*.c", "native\*.cpp", "scripts\compile_qm.py", "resources\i18n\*.ts") @("fast_pakresolve*.pyd", "fast_string_scan*.pyd", "fastmesh*.pyd", "fastmotion*.pyd", "fastmatpreview*.pyd", "fastdxil*.pyd", "fastdxiltext*.pyd", "fastsurface*.pyd", "fast_path_search*.pyd", "fastsdftex*.pyd", "fastkey*.pyd", "resources\i18n\*.qm"))) { return $true }
     if (-not $UseCurrentPython -and -not (OK $py @("-m", "ensurepip", "--upgrade"))) { return $false }
     if (-not $UseCurrentPython -and -not (OK $py @("-m", "pip", "--disable-pip-version-check", "install", "-r", "requirements.txt"))) { return $false }
     if (-not (OK $py @("setup.py", "build_ext", "--inplace"))) { return $false }

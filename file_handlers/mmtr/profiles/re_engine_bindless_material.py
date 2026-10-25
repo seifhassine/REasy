@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+from functools import lru_cache
 import operator
 import re
 
@@ -10,6 +11,7 @@ lazy from ..native_resource import DXIL_RESOURCE_CLASSES, DXIL_TEXTURE_KINDS
 lazy from .re_engine_dxil_signatures import DxilEntryMetadata
 lazy from ..native_loop_flow import predecessor_map
 lazy from ..surface_flow_dxil import _control_flow, _entry
+lazy import fastdxiltext
 
 
 _VALUE = r"%[-$._A-Za-z0-9]+"
@@ -42,16 +44,6 @@ _EXTRACT = re.compile(
 _ADD = re.compile(r"add(?: nuw| nsw)* i32 ([^,]+), (.+)$")
 _INTEGER_CAST = re.compile(rf"bitcast float ({_VALUE}) to i32$")
 _MASK = re.compile(rf"and i32 ({_VALUE}), -?\d+$")
-_INPUT = re.compile(r"@dx\.op\.loadInput\.i32\(i32 4, i32 (\d+), i32 (\d+), i8 (\d+),")
-_SHIFT = re.compile(r"(?:lshr|shl)(?: nuw| nsw)* i32 ([^,]+), (\d+)$")
-_SELECT = re.compile(rf"select i1 [^,]+, i32 ({_VALUE}|-?\d+), i32 ({_VALUE}|-?\d+)$")
-_INTEGER_DEPENDENCIES = re.compile(r"(?:add|sub|mul|shl|lshr|ashr|and|or|xor|select|phi)\b")
-_VALUES = re.compile(_VALUE)
-_INTEGER = re.compile(r"-?\d+")
-_DIVIDE_REGISTER = re.compile(r"[su]div i32 ([^,]+), 16")
-_WAVE_MIN = re.compile(r"@dx\.op\.waveActiveOp\.i32\(i32 119, i32 ([^,]+), i8 2, i8 1\)")
-# Kunitsu-Gami/DRDR make the material handle wave-uniform with WaveReadLaneFirst instead of WaveActiveMin.
-_WAVE_FIRST = re.compile(rf"@dx\.op\.waveReadLaneFirst\.i32\(i32 118, i32 ({_VALUE})\)")
 _TEXTURE_INDEX = re.compile(rf", i32 ({_VALUE}), i1 (?:true|false)\)")
 # DXIL's resource kind of a raw (byte address) buffer (``annotateHandle``'s first property word, low byte).
 _RAW_BUFFER = 11
@@ -126,25 +118,29 @@ def material_record_accesses(
     entry_metadata: DxilEntryMetadata | None = None,
     _texture_candidates: list[tuple[str, str]] | None = None,
 ) -> tuple[BindlessMaterialAccess, ...]:
+    if entry_metadata is None and _texture_candidates is None:
+        return _shader_record_accesses("\n".join(lines), contract)
+    return _record_accesses(lines, contract, entry_metadata=entry_metadata, _texture_candidates=_texture_candidates)
+
+
+@lru_cache(maxsize=8)
+def _shader_record_accesses(assembly: str, contract: ShaderContract) -> tuple[BindlessMaterialAccess, ...]:
+    """A shader's readers ask in turn: its flow, then its reach."""
+    return _record_accesses(assembly.split("\n"), contract)
+
+
+def _record_accesses(
+    lines: list[str],
+    contract: ShaderContract,
+    *,
+    entry_metadata: DxilEntryMetadata | None = None,
+    _texture_candidates: list[tuple[str, str]] | None = None,
+) -> tuple[BindlessMaterialAccess, ...]:
     by_id = {(r.register_class, r.resource_id): r for r in contract.resources}
     by_binding = {
         (r.register_class, r.register_space, r.bind_point): r
         for r in contract.resources
     }
-    handles = {}
-    # Values read from the CBV table are descriptor indices, not material words.
-    table_loads: dict[str, str] = {}
-    table_indices: set[str] = set()
-    integer_dependencies = {}
-    descriptors: set[str] = set()
-    heaps: dict[str, str] = {}
-    dynamic_handles: dict[str, tuple[str, int]] = {}
-    affine: dict[str, tuple[str, int]] = {}
-    parameter_register_offsets: dict[str, int] = {}
-    loads: dict[str, tuple[tuple[str, str, str, int], int, int]] = {}
-    words: dict[tuple[str, str, str, int], list[MaterialWordRead]] = {}
-    origins: dict[str, str] = {}
-    named_loads = {}
     structured = {(b.register_space, b.bind_point): b for b in contract.structured_buffers}
     metadata = entry_metadata or DxilEntryMetadata.parse(lines)
     root = contract.buffer("RootConstant")
@@ -175,276 +171,45 @@ def material_record_accesses(
         and any(v.name == "constant32Bits" and v.byte_offset == 0 and v.byte_size == 4
                 and v.graph_type == "uint" and v.array_length == 1 for v in root.variables)
     )
-    root_handle_loads = set()
-    expressions = {}
+    root_binding = (root.register_space, root.bind_point) if root_material_handle else None
     material_inputs = {
         location for (semantic, index), location in metadata.input_rows().items()
         if semantic in {"materialhandle", "material", "vis_param"} and index == 0
     }
 
-    def index(value: str) -> tuple[str, int]:
-        return affine.get(value, (value, 0))
+    def describe(resource):
+        schema = structured.get((resource.register_space, resource.bind_point))
+        return _resource_facts(resource, schema, material_redirects, root_binding)
 
-    def merged_origin(values):
-        kinds = {"invalid-handle" if value == "-1" else origins.get(value) for value in values}
-        if kinds == {"material-handle", "invalid-handle"}:
-            return "material-handle"
-        if len(kinds) == 1:
-            return next(iter(kinds))
-        if kinds == {"renderer-record-bytes", "renderer-record-word"}:
-            return "renderer-record-bytes"
-        return None
+    return fastdxiltext.record_accesses(
+        lines, describe, by_id, by_binding, DXIL_RESOURCE_CLASSES, material_inputs, spline_entry, speedtree_entry,
+        arena is not None and arena.sample_count in (16, 256), _texture_candidates, MaterialWordRead,
+        BindlessMaterialAccess,
+    )
 
-    def paged_address(element, element_offset):
-        page_value, page_delta = index(element)
-        page = re.fullmatch(rf"lshr(?: nuw| nsw)* i32 ({_VALUE}), 8", expressions.get(page_value, ""))
-        if page is None:
-            raise ShaderGraphError("Paged shared-buffer load has no proven page address.")
-        address = page[1]
-        base, byte_offset = index(address)
-        if element_offset.isdecimal():
-            # Material allocations are page-aligned; renderer records are not.
-            if origins.get(base) != "material-handle" or byte_offset % 256:
-                raise ShaderGraphError("Constant page offset requires a page-aligned material allocation.")
-            return base, byte_offset + page_delta * 256 + int(element_offset)
-        masked = re.fullmatch(rf"and i32 ({_VALUE}), (255|240)", expressions.get(element_offset, ""))
-        masked_base, masked_offset = index(masked[1]) if masked else (None, 0)
-        if masked and masked_base == base and (masked_offset - byte_offset) % 256 == 0 and page_delta == 0:
-            return base, byte_offset if masked[2] == "255" else byte_offset & -16
-        aligned = re.fullmatch(rf"and i32 ({_VALUE}), -16", expressions.get(element_offset, ""))
-        remainder = re.fullmatch(rf"sub i32 ({_VALUE}), ({_VALUE})", expressions.get(aligned[1], "")) if aligned else None
-        page_bytes = re.fullmatch(rf"shl(?: nuw| nsw)* i32 ({_VALUE}), 8", expressions.get(remainder[2], "")) if remainder else None
-        if remainder and page_bytes and remainder[1] == address and page_bytes[1] == page_value and page_delta == 0:
-            return base, byte_offset & -16
-        raise ShaderGraphError("Paged shared-buffer load has no proven page/remainder address.")
 
-    for line_index, line in enumerate(lines):
-        stripped = line.strip()
-        if not stripped.startswith("%"):
-            continue
-        assignment = _ASSIGN.match(stripped)
-        if assignment is None:
-            continue
-        result, body = assignment.group("result", "body")
-        if _texture_candidates is not None and (
-            body.startswith("add ") or "Handle" in body
-        ):
-            _texture_candidates.append((result, body))
-        if _INTEGER_DEPENDENCIES.match(body):
-            integer_dependencies[result] = tuple(_VALUES.findall(body))
-        elif not body.startswith(("extractvalue ", "sdiv ", "udiv ")) and "@dx.op." not in body:
-            continue
-        if body.startswith(("lshr ", "and ", "sub ", "shl ")):
-            expressions[result] = body.split(";", 1)[0].strip()
-        if "@dx.op.loadInput.i32(" in body and (match := _INPUT.search(body)):
-            signature, row, lane = map(int, match.groups())
-            if (signature, row) in material_inputs and lane == 0:
-                origins[result] = "material-handle"
-        elif (resource := bound_resource(body, by_id, by_binding)) is not None:
-            handles[result] = resource
-        elif "@dx.op.annotateHandle(" in body and (match := _ANNOTATE.search(body)):
-            base, kind, size = match.groups()
-            if base in handles:
-                handles[result] = handles[base]
-            if base in heaps and int(kind) == 13:
-                dynamic_handles[result] = (heaps[base], int(size))
-        elif "@dx.op.createHandleFromHeap(" in body and (match := _HEAP.search(body)):
-            if match[1] in descriptors:
-                heaps[result] = match[1]
-        elif body.startswith("add ") and (match := _ADD.fullmatch(body)):
-            left, right = match.groups()
-            if _INTEGER.fullmatch(left):
-                left, right = right, left
-            if _INTEGER.fullmatch(right):
-                base, offset = index(left)
-                affine[result] = (base, offset + int(right))
-                if left in origins:
-                    origins[result] = origins[left]
-            else:
-                for kind in ("meshlet-material-table-bytes", "meshlet-material-table-register", "renderer-record-bytes", "renderer-record-register"):
-                    if kind in {origins.get(left), origins.get(right)}:
-                        origins[result] = kind
-                        break
-        elif body.startswith(("sdiv ", "udiv ")) and (match := _DIVIDE_REGISTER.fullmatch(body)):
-            if origins.get(match[1]) == "meshlet-material-table-bytes":
-                origins[result] = "meshlet-material-table-register"
-        elif body.startswith(("lshr ", "shl ")) and (match := _SHIFT.fullmatch(body)):
-            source, amount = match[1], int(match[2])
-            if body.startswith("lshr"):
-                kind = origins.get(source)
-                if kind == "material-handle" and amount in (4, 8):
-                    origins[result] = "material-register-address" if amount == 4 else "material-cbv-index"
-                elif kind == "meshlet-material-table-bytes" and amount == 4:
-                    origins[result] = "meshlet-material-table-register"
-                elif kind == "renderer-record-bytes" and amount == 4:
-                    origins[result] = "renderer-record-register"
-                elif kind == "speedtree-extension-bytes" and amount == 4:
-                    origins[result] = "speedtree-extension-register"
-                elif kind == "speedtree-parameters-bytes" and amount == 4:
-                    origins[result] = "speedtree-parameters-register"
-                    parameter_register_offsets[result] = index(source)[1]
-                elif kind == "speedtree-wind-buffer-bytes" and amount == 8:
-                    origins[result] = "renderer-cbv-index"
-        elif body.startswith("select ") and (match := _SELECT.fullmatch(body)):
-            if kind := merged_origin(match.groups()):
-                origins[result] = kind
-        elif "@dx.op.waveActiveOp.i32(" in body and (match := _WAVE_MIN.search(body)):
-            if match[1] == "-1":
-                origins[result] = "invalid-handle"
-            elif match[1] in origins:
-                origins[result] = origins[match[1]]
-        elif "@dx.op.waveReadLaneFirst.i32(" in body and (match := _WAVE_FIRST.search(body)):
-            if match[1] in origins:
-                origins[result] = origins[match[1]]
-        elif body.startswith("phi i32 "):
-            values = [value for value, _block in _INCOMING.findall(body)]
-            if values and (kind := merged_origin(values)):
-                origins[result] = kind
-        elif ("@dx.op.rawBufferLoad." in body or "@dx.op.bufferLoad." in body) and (match := _RAW_LOAD.search(body)):
-            scalar_type, handle, element, element_offset, mask, _alignment = match.groups()
-            resource = handles.get(handle)
-            if resource is None:
-                continue
-            if element_offset.isdecimal():
-                named_loads[result] = (resource, int(element_offset))
-            elif resource.name in material_redirects and resource.input_type == "byte-address-buffer" and element_offset == "undef" and mask in (None, "1"):
-                named_loads[result] = (resource, 0)
-            name = resource.name.casefold()
-            if name == "bindlessconstantbufferviewtbl":
-                if resource.input_type != "structured-buffer" or resource.sample_count != 4:
-                    raise ShaderGraphError("Material CBV table has an unexpected element type.")
-                if element_offset == "0" and mask in (None, "1"):
-                    table_loads[result] = element
-                    table_indices.add(element)
-                else:
-                    raise ShaderGraphError("Material CBV selection has an unsupported table element access.")
-            elif resource.name == "BindlessBuffer":
-                schema = structured.get((resource.register_space, resource.bind_point))
-                if resource.sample_count == 256:
-                    # The current DD2 arena uses uint4[16] pages.
-                    valid_element = (resource.input_type == "structured-buffer" and schema is not None
-                        and schema.byte_size == 256 and len(schema.variables) == 1
-                        and schema.variables[0].name == "block" and schema.variables[0].byte_offset == 0
-                        and schema.variables[0].byte_size == 256 and schema.variables[0].hlsl_declaration == "uint4"
-                        and schema.variables[0].array_length == 16)
-                    if not valid_element:
-                        raise ShaderGraphError("Paged shared buffer has an unexpected element type.")
-                    base, byte_offset = paged_address(element, element_offset)
-                    key = ("paged-structured-buffer", resource.name, base, 0)
-                    loads[result] = (key, byte_offset, line_index)
-                    continue
-                if resource.input_type != "structured-buffer" or resource.sample_count != 16:
-                    raise ShaderGraphError("Material shared buffer has an unexpected element type.")
-                if not re.fullmatch(r"\d+", element_offset):
-                    raise ShaderGraphError("Material load has a nonconstant element offset.")
-                base, register_offset = index(element)
-                byte_offset = register_offset * 16 + int(element_offset)
-                # WotS shifts (parameterBase + fieldOffset); other variants add the offset after shifting.
-                byte_offset += parameter_register_offsets.get(base, 0)
-                if byte_offset < 0 or byte_offset % 4:
-                    raise ShaderGraphError("Material load has an invalid byte offset.")
-                key = ("structured-buffer", resource.name, base, 0)
-                loads[result] = (key, byte_offset, line_index)
-        elif "@dx.op.cbufferLoadLegacy." in body and (match := _CB_LOAD.search(body)):
-            scalar_type, handle, register = match.groups()
-            resource = handles.get(handle)
-            if (root_material_handle and scalar_type == "i32" and register == "0"
-                    and resource is not None and resource.register_class == "b"
-                    and (resource.register_space, resource.bind_point) == (root.register_space, root.bind_point)):
-                root_handle_loads.add(result)
-            dynamic = dynamic_handles.get(handle)
-            if dynamic is None:
-                continue
-            descriptor, size = dynamic
-            if origins.get(descriptor) == "renderer-cbv-descriptor":
-                continue
-            if not register.isdigit():
-                raise ShaderGraphError("Material constant-buffer indexing is dynamic.")
-            key = ("descriptor-heap", "BindlessConstantBufferViewTbl", descriptor, size)
-            loads[result] = (key, int(register) * 16, line_index)
-        elif body.startswith("extractvalue ") and (match := _EXTRACT.fullmatch(body)):
-            scalar_type, loaded, component = match.groups()
-            if loaded in root_handle_loads and scalar_type == "i32" and component == "0":
-                origins[result] = "material-handle"
-            if loaded in named_loads:
-                resource, offset = named_loads[loaded]
-                if resource.name in material_redirects and component == "0":
-                    origins[result] = "material-handle"
-                schema = structured.get((resource.register_space, resource.bind_point))
-                if resource.name == "BINDLESSINFOSRV" and schema is not None and any(
-                    v.name in {"materialByteOffset", "geometryByteOffset"} and v.byte_offset == offset + int(component) * 4
-                    and v.byte_size == 4 and v.graph_type == "uint" for v in schema.variables
-                ):
-                    origins[result] = "renderer-record-bytes"
-                if resource.name == "Instances" and schema is not None:
-                    for variable in schema.variables:
-                        if (variable.byte_offset != offset + int(component) * 4
-                                or variable.byte_size != 4 or variable.array_length != 1):
-                            continue
-                        if variable.name == "material" and variable.graph_type in {"int", "uint"}:
-                            origins[result] = "meshlet-material-table-bytes"
-                        elif (speedtree_entry and variable.name == "extendedBindlessIndex"
-                              and variable.graph_type == "uint" and scalar_type == "i32"):
-                            origins[result] = "speedtree-extension-bytes"
-                        elif (spline_entry
-                              and variable.name == "extendedBindlessIndex"
-                              and variable.graph_type == "uint" and scalar_type == "i32"):
-                            origins[result] = "spline-extension-bytes"
-            if loaded in table_loads and component == "0":
-                descriptors.add(result)
-                if origins.get(table_loads[loaded]) == "renderer-cbv-index":
-                    origins[result] = "renderer-cbv-descriptor"
-            load = loads.get(loaded)
-            if load is None:
-                continue
-            key, offset, load_line_index = load
-            offset += int(component) * 4
-            if origins.get(key[2]) in {"renderer-record-register", "renderer-record-bytes"}:
-                origins[result] = "renderer-record-word"
-            if origins.get(key[2]) in {"speedtree-extension-register", "speedtree-extension-bytes"} and offset == 0:
-                # Extension word zero points to per-instance SpeedTree parameters, not the meshlet MDF handle table.
-                origins[result] = "speedtree-parameters-bytes"
-            if (origins.get(key[2]) in {"speedtree-parameters-bytes", "speedtree-parameters-register"}
-                    and offset in (16, 20) and arena is not None and arena.sample_count in (16, 256)):
-                # DD2/WotS: current/previous wind-buffer handles at +16/+20, wind-state index at +24.
-                origins[result] = "speedtree-wind-buffer-bytes"
-            if origins.get(key[2]) == "spline-extension-bytes" and offset in (0, 4, 8):
-                origins[result] = "renderer-record-bytes"
-            if origins.get(key[2]) in {"meshlet-material-table-register", "meshlet-material-table-bytes"}:
-                # Meshlet material entries are two uint2 handles per uint4: X/Z address the MDF allocation, Y/W are flags.
-                if offset in (0, 8):
-                    origins[result] = "material-handle"
-            if key[3] and offset + 4 > key[3]:
-                raise ShaderGraphError("Material word exceeds its declared constant buffer.")
-            words.setdefault(key, []).append(
-                MaterialWordRead(offset, result, scalar_type, line_index, load_line_index)
-            )
-    word_records = {word.value: key for key, reads in words.items() for word in reads}
-    visited, pending = set(), list(table_indices)
-    while pending:
-        value = pending.pop()
-        if value in visited:
-            continue
-        visited.add(value)
-        key = word_records.get(value)
-        if key is not None:
-            if key[0] in {"structured-buffer", "paged-structured-buffer"} and origins.get(key[2]) not in {"material-register-address", "material-handle"}:
-                origins[key[2]] = "material-indirection-record"
-        else:
-            pending.extend(integer_dependencies.get(value, ()))
-    unresolved = [key[2] for key in words if key[0] in {"structured-buffer", "paged-structured-buffer"} and origins.get(key[2]) not in {
-        "material-register-address", "meshlet-material-table-register", "material-indirection-record", "renderer-record-register",
-        "speedtree-extension-register", "material-handle", "meshlet-material-table-bytes", "renderer-record-bytes",
-        "speedtree-extension-bytes", "spline-extension-bytes",
-        "speedtree-parameters-bytes", "speedtree-parameters-register",
-    }]
-    if unresolved:
-        raise ShaderGraphError("Shared-buffer access has no proven material/renderer address origin: " + ", ".join(unresolved))
-    return tuple(
-        BindlessMaterialAccess(storage, name, address, tuple(reads), size)
-        for (storage, name, address, size), reads in words.items()
-        if storage == "descriptor-heap" or origins.get(address) == "material-register-address"
-        or (storage == "paged-structured-buffer" and origins.get(address) == "material-handle")
+def _resource_facts(resource, schema, material_redirects, root_binding):
+    """What the record reader asks of a resource it loads from, in fastdxiltext's Fact order."""
+    name, structured = resource.name, resource.input_type == "structured-buffer"
+    variables = () if schema is None else schema.variables
+    # The current DD2 arena uses uint4[16] pages.
+    paged_element = (structured and schema is not None and schema.byte_size == 256 and len(variables) == 1
+                     and variables[0].name == "block" and variables[0].byte_offset == 0
+                     and variables[0].byte_size == 256 and variables[0].hlsl_declaration == "uint4"
+                     and variables[0].array_length == 16)
+    return (
+        name, name.casefold() == "bindlessconstantbufferviewtbl", structured and resource.sample_count == 4,
+        name == "BindlessBuffer", resource.sample_count == 256, paged_element,
+        structured and resource.sample_count == 16, name in material_redirects,
+        resource.input_type == "byte-address-buffer",
+        root_binding is not None and resource.register_class == "b"
+        and (resource.register_space, resource.bind_point) == root_binding,
+        tuple(v.byte_offset for v in variables if name == "BINDLESSINFOSRV"
+              and v.name in {"materialByteOffset", "geometryByteOffset"} and v.byte_size == 4 and v.graph_type == "uint"),
+        tuple((v.byte_offset, v.name == "material") for v in variables if name == "Instances"
+              and v.byte_size == 4 and v.array_length == 1
+              and (v.name == "material" and v.graph_type in {"int", "uint"}
+                   or v.name == "extendedBindlessIndex" and v.graph_type == "uint")),
     )
 
 
@@ -728,29 +493,11 @@ def texture_handles(lines: list[str], contract: ShaderContract,
     sources = {word.value: word.byte_offset for access in accesses for word in access.words}
     by_id = {(r.register_class, r.resource_id): r for r in contract.resources}
     by_binding = {(r.register_class, r.register_space, r.bind_point): r for r in contract.resources}
-    result: dict[str, str] = {}
-    for value, body in _texture_instructions(lines):
-        if body.startswith("add ") and (match := _ADD.fullmatch(body)):
-            source = _zero_add_source(match)
-            if source in sources:
-                sources[value] = sources[source]
-        elif "@dx.op.createHandleFromHeap(" in body and (match := _HEAP.search(body)):
-            if match[1] in sources:
-                result[value] = f"@{sources[match[1]]}"
-        elif "@dx.op.annotateHandle(" in body and (match := _ANNOTATE.search(body)):
-            if match[1] in result:
-                result[value] = result[match[1]]
-        else:
-            resource = bound_resource(body, by_id, by_binding)
-            if resource is None or (not resource.input_type.startswith("rw") if writable
-                                    else resource.input_type != "texture"):
-                continue
-            index = _TEXTURE_INDEX.search(body)
-            if index and index[1] in sources:
-                result[value] = f"@{sources[index[1]]}"
-            elif resource.bind_count == 1:
-                result[value] = resource.name
-    return result
+
+    def describe(resource):
+        wanted = resource.input_type.startswith("rw") if writable else resource.input_type == "texture"
+        return wanted, resource.bind_count == 1, resource.name
+    return fastdxiltext.texture_handles(lines, sources, by_id, by_binding, DXIL_RESOURCE_CLASSES, describe)
 
 
 def material_input_accesses(

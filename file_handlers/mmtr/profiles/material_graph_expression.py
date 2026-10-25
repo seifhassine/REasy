@@ -33,7 +33,7 @@ lazy from file_handlers.sdf.shader_graph_unassigned import unassigned_expression
 lazy from ..pass_purpose import drawing_for
 lazy from ..surface_data import MATERIAL_COORDINATES, surface_data_available, surface_data_keys, surface_data_value
 lazy from ..surface_outputs import validate_output_pin
-lazy from ..vertex_values import per_vertex_value, upstream as upstream_nodes
+lazy from ..vertex_values import per_vertex_value, where_available_input
 lazy from .renderer_inputs import (
     engine_input_nodes, engine_inputs_available, recovered_structured_slot, recovered_structured_word,
     renderer_field_expression, renderer_fields, renderer_resource_expression, renderer_value_expression,
@@ -378,18 +378,19 @@ def recovered_graph_expression(
                 raise ShaderGraphError("Computed per Vertex is read by vertex and pixel shaders only.")
             return finish(incoming("value", value_type), value_type, materialize=False)
         if kind == "re_engine_where_available":
-            # A pixel shader reads what a Computed per Vertex node computes, not what the node reads.
-            first = links.get((node.node_id, "value"))
-            producers, per_vertex = upstream_nodes(project.graph, links, [first.source_node] if first else [],
-                                                   through_per_vertex=contract.stage != "pixel")
-            producers = [producer for producer in producers if producer not in per_vertex]
-            upstream = [*engine_input_nodes(producer) for producer in producers]
-            value_type = str(node.properties.get("value_type", "float"))
             computed = {value.source for value in program_semantics.vertex_values}
-            chosen = ("value" if engine_inputs_available(contract, upstream) and surface_data_available(
-                program_semantics, [*surface_data_keys(producer) for producer in producers])
-                and (contract.stage != "pixel" or all(f"node:{item.node_id}" in computed for item in per_vertex))
-                else "otherwise")
+
+            def provides(producers, per_vertex):
+                # A pixel shader reads what a Computed per Vertex node computes, not what the node reads.
+                producers = [producer for producer in producers if producer not in per_vertex]
+                return (engine_inputs_available(contract, [*engine_input_nodes(producer) for producer in producers])
+                        and surface_data_available(program_semantics,
+                                                   [*surface_data_keys(producer) for producer in producers])
+                        and (contract.stage != "pixel"
+                             or all(f"node:{item.node_id}" in computed for item in per_vertex)))
+
+            value_type = str(node.properties.get("value_type", "float"))
+            chosen = where_available_input(project.graph, links, node, contract.stage != "pixel", provides)
             return finish(incoming(chosen, value_type), value_type, materialize=False)
         if kind in {"aggregate_construct", "aggregate_extract", "aggregate_replace"}:
             fields = aggregate_fields(node.properties)

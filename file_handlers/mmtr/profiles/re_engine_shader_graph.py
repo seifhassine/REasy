@@ -6,6 +6,8 @@ import hashlib
 from pathlib import Path
 import re
 from typing import Mapping
+lazy import fastdxiltext
+from file_handlers.bounded_cache import BoundedCache
 lazy from file_handlers.material_names import logical_material_parameter_name
 lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
 
@@ -61,7 +63,7 @@ from .material_graph_expression import (
     recovered_master_pins,
 )
 from file_handlers.sdf.shader_graph_math import value_width
-from .re_engine_dxil_authoring import rebuild_re_engine_dxil_batch
+from .re_engine_dxil_authoring import NativeDxilBatch
 from .re_engine_dxil_recovery import ReEngineDxilSemanticIr, recover_re_engine_dxil_ir
 from . import re_engine_dxil_recovery as _dxil_recovery
 from .re_engine_bindless_material import material_record_accesses, material_texture_accesses
@@ -75,14 +77,15 @@ lazy from .constant_words import ConstantWord, constant_word, word_parts
 lazy from file_handlers.sdf.aggregate_values import aggregate_projection
 lazy from ..material_family import distinct_members, seed_material_family
 lazy from ..material_project import MaterialTextureDefinition, _TEXTURE_CONTRACT_DIMENSIONS, material_resource_dimension
-lazy from ..surface_flow import ChannelSplit, SurfaceChannel, recovered_surface_flow
+lazy from ..surface_flow import ChannelSplit, SurfaceChannel
 lazy from ..surface_outputs import (
     SURFACE_OUTPUTS_VERSION, SurfaceEdit, SurfaceTap, channel_for_pin, channel_pin_name, material_texture_names,
     named_texture_reads, native_program_channels, native_program_surface, output_pin_records,
-    prefetch_native_program_surfaces, reach_records, recovered_channels,
+    prefetch_native_program_surfaces, prefetch_program_flows, program_flow, reach_records,
 )
 lazy from ..surface_splice_dxbc import splice_dxbc_surface
 lazy from ..surface_splice_dxil import dxil_surface_plan
+lazy from ..worker_pool import MIN_JOBS, parallel_map, shared_workers, start_workers, submit
 lazy from ..surface_splice_spirv import spirv_surface_plan
 lazy from ..vertex_values import VALUE_SEMANTIC
 lazy from .renderer_inputs import renderer_field_expression, renderer_fields
@@ -92,6 +95,8 @@ RE_ENGINE_RECOVERED_MASTER_KIND = "re_engine_recovered_master_material"
 SEMANTIC_BUNDLE_VERSION = 4
 _MODEL_PREFIX = "re_engine.recovered_master."
 _DXIL_PROGRAM_CACHE = NativeBuildCache(max_entries=2048, max_bytes=64 * 1024 * 1024)
+_SURFACE_RECIPES = BoundedCache()
+_SURFACE_RECIPE_BYTES = 128 * 1024 * 1024
 _DXIL_INPUT_ANALYSIS_CACHE = NativeBuildCache(max_entries=2048, max_bytes=16 * 1024 * 1024)
 
 
@@ -632,7 +637,8 @@ def _compile_spirv_product(product: _SpirvProduct) -> _NativeCompileResult:
                                 binary_format="spirv-module")
 
 
-def _recover_shader(document, profile, target_index, program_index, role, interpolation_cache) -> dict[str, object]:
+def _recover_shader(document, profile, target_index, program_index, role, interpolation_cache,
+                    recipes=None) -> dict[str, object]:
     source_program = document.sdf.targets[target_index].programs[program_index]
     shader = source_program.shader(role)
     raw = bytes(shader.payload)
@@ -654,8 +660,33 @@ def _recover_shader(document, profile, target_index, program_index, role, interp
             contract = with_pixel_interpolation(contract, pixel_contract, interpolation_cache[pixel.payload])
     else:
         kind = "dxil"
-        semantic_ir = _recover_dxil_recipe(raw)
+        semantic_ir = _recover_dxil_recipe(raw, (recipes or {}).get(raw))
     return {"ir_kind": kind, "semantic_ir": semantic_ir, "semantic_contract": contract_to_storage(contract)}
+
+
+def _dxil_recipes(document, profile, routes) -> dict[bytes, tuple]:
+    """``_dxil_recipe`` of the routes' DXIL programs, in worker processes; a program missing is recovered by
+    ``_recover_shader`` itself."""
+    context = _dxil_recipe_context()
+    if context[0] != _DXIL_RECIPE_PUBLICATION_RUNTIME:
+        return {}
+    payloads = {}
+    for target_index, program_index, role in routes:
+        try:
+            program = document.sdf.targets[target_index].programs[program_index]
+            shader = program.shader(role)
+            if not shader.spirv and int(profile.shader_contract(document, program, role).model_major) >= 6:
+                payloads[bytes(shader.payload)] = None
+        except Exception:
+            continue
+    recipes = {}
+    for payload in payloads:
+        known = _SURFACE_RECIPES.pop(payload)
+        if known is not None and known[0] == context[1]:
+            recipes[payload] = known[1]
+    jobs = [(payload, context[1]) for payload in payloads if payload not in recipes]
+    recipes.update((job[0], found) for job, found in zip(jobs, parallel_map(_recipe_job, jobs) or ()) if found)
+    return recipes
 
 
 def _route_record(document, target_index, program_index, role) -> dict[str, object]:
@@ -665,20 +696,19 @@ def _route_record(document, target_index, program_index, role) -> dict[str, obje
 
 
 def _bundle(document, profile, *, recover_programs: bool = True) -> tuple[list[dict[str, object]], list[dict[str, object]]]:
-    programs: dict[str, dict[str, object]] = {}
-    interpolation_cache = {}
+    first: dict[str, tuple[int, int, str]] = {}
     routes: list[dict[str, object]] = []
     for target_index, program_index, role in profile.material_program_routes(document):
         route = _route_record(document, target_index, program_index, role)
-        digest = str(route["source_sha256"])
-        if digest not in programs:
-            programs[digest] = {"source_sha256": digest}
-            if recover_programs:
-                programs[digest].update(_recover_shader(document, profile, target_index, program_index, role,
-                                                        interpolation_cache))
+        first.setdefault(str(route["source_sha256"]), (target_index, program_index, role))
         routes.append(route)
-    if not programs or not routes:
+    if not first or not routes:
         raise ShaderGraphError("Master material has no recoverable material program.")
+    programs: dict[str, dict[str, object]] = {digest: {"source_sha256": digest} for digest in first}
+    if recover_programs:
+        recipes, interpolation_cache = _dxil_recipes(document, profile, first.values()), {}
+        for digest, route in first.items():
+            programs[digest].update(_recover_shader(document, profile, *route, interpolation_cache, recipes))
     return (
         [programs[key] for key in sorted(programs)],
         sorted(routes, key=lambda item: (int(item["target"]), int(item["program"]), str(item["role"]))),
@@ -803,7 +833,12 @@ def _surface(project):
                  if node.kind == "material_surface" and node.properties.get("accepts_recovered_material")), None)
 
 
-def _edited_channels(project) -> list[tuple[dict, object]]:
+def _edited_channels(project) -> tuple[tuple[dict, object], ...]:
+    from ..material_region_read import per_build_of
+    return per_build_of("edited_channels", (project.graph,), None, lambda: tuple(_find_edited_channels(project)))
+
+
+def _find_edited_channels(project) -> list[tuple[dict, object]]:
     master = _master(project)
     surface = _surface(project)
     if surface is None:
@@ -822,6 +857,13 @@ def _reads_vertex_data(graph) -> bool:
 
 
 def _vertex_values(project, document, profile, target_index: int, program_index: int) -> tuple[tuple, tuple]:
+    from ..material_region_read import per_build
+
+    return per_build("vertex_values", (id(document), id(project.graph), target_index, program_index),
+                     lambda: _plan_vertex_values(project, document, profile, target_index, program_index))
+
+
+def _plan_vertex_values(project, document, profile, target_index: int, program_index: int) -> tuple[tuple, tuple]:
     graph = project.graph
     if not _reads_vertex_data(graph):
         return (), ()
@@ -987,17 +1029,16 @@ def _dxil_recipe_runtime():
         ReEngineDxilSemanticIr.to_assembly, ReEngineDxilSemanticIr.from_json,
         ReEngineDxilSemanticIr.from_storage,
         _dxil_recovery._validate_record, _dxil_recovery._validate_module_structure,
-        _dxil_recovery._opcode, _dxil_recovery._module_record,
-        _dxil_recovery._strip_comment, _dxil_recovery._bracket_delta,
+        _dxil_recovery._opcode, fastdxiltext.recovery_records, _dxil_recovery._plain_block_names,
+        _dxil_recovery._prior_value_names,
         storage_codec.pack_ir_storage, storage_codec.unpack_ir_storage, _dxil_recovery._unpack_storage,
         _dxil_recovery.json.dumps, _dxil_recovery.json.loads,
         storage_codec.zlib.compress, storage_codec.zlib.decompressobj,
         storage_codec.base64.urlsafe_b64encode, storage_codec.base64.b64decode,
         _dxil_recovery._EXECUTABLE_OPCODES, _dxil_recovery._CALL_PREFIXES,
-        _dxil_recovery._ARITHMETIC_FLAGS, _dxil_recovery._ASSIGNMENT,
-        _dxil_recovery._DEFINE, _dxil_recovery._LABEL, _dxil_recovery._UNNAMED_LABEL,
-        _dxil_recovery._METADATA, _dxil_recovery._TYPE,
-        _dxil_recovery._GLOBAL, _dxil_recovery._DECLARE, _dxil_recovery._ATTRIBUTE,
+        _dxil_recovery._ARITHMETIC_FLAGS, _dxil_recovery._ASSIGNMENT, _dxil_recovery._DEFINE,
+        _dxil_recovery._QUOTED_LABEL, _dxil_recovery._LOCAL_NAME, _dxil_recovery._LOCAL_VALUE,
+        _dxil_recovery._OWN_VALUE,
     )
     return tuple(getattr(value, "__func__", value) for value in values)
 
@@ -1018,9 +1059,30 @@ def _dxil_program_key(storage, context=None):
     return native_build_key(runtime, storage, *rules)
 
 
-def _recover_dxil_recipe(bytecode):
+def _dxil_recipe(bytecode) -> tuple[str, str | None]:
+    """A DXIL program's recipe, and its assembly when the published code recovered it."""
+    context = _dxil_recipe_context()
+    return _recipe_of(recover_re_engine_dxil_ir(bytecode), context)
+
+
+def surface_dxil_ir(bytecode):
+    """A DXIL program's IR for the surface readers, and its rules and recipe for recovery (None when it has none)."""
     context = _dxil_recipe_context()
     ir = recover_re_engine_dxil_ir(bytecode)
+    assembly = ir.to_assembly()
+    try:
+        recipe = context[1], _recipe_of(ir, context, assembly)
+    except ShaderGraphError:
+        recipe = None
+    return _ValidatedDxilAssembly(assembly), recipe
+
+
+def remember_recipe(bytecode: bytes, rules, recipe) -> None:
+    storage, assembly = recipe
+    _SURFACE_RECIPES.put(bytecode, (rules, recipe), len(storage) + len(assembly or ""), 4096, _SURFACE_RECIPE_BYTES)
+
+
+def _recipe_of(ir, context, assembly: str | None = None) -> tuple[str, str | None]:
     schema, version, prefix, *limits = context[1]
     canonical = (context[0] == _DXIL_RECIPE_PUBLICATION_RUNTIME
         and type(schema) is str and type(version) is int and type(prefix) is str
@@ -1035,16 +1097,42 @@ def _recover_dxil_recipe(bytecode):
     storage = ir.to_storage()
     if not isinstance(storage, str) or len(storage) > _dxil_recovery.MAX_IR_STORAGE_BYTES:
         raise ShaderGraphError("Recovered DXIL semantics are too large.")
-    if canonical and context == _dxil_recipe_context():
+    if not (canonical and context == _dxil_recipe_context()):
+        return storage, None
+    return storage, ir.to_assembly() if assembly is None else assembly
+
+
+def _recipe_job(job):
+    """None when this worker's recovery rules differ from its parent's or recovery fails; the parent then recovers
+    the program itself."""
+    bytecode, rules = job
+    try:
+        return _dxil_recipe(bytecode) if _dxil_recipe_context()[1] == rules else None
+    except Exception:
+        return None
+
+
+def _recover_dxil_recipe(bytecode, recovered=None):
+    """``recovered``: ``_dxil_recipe`` of ``bytecode`` from a worker process."""
+    storage, assembly = recovered or _dxil_recipe(bytecode)
+    context = _dxil_recipe_context()
+    if assembly is not None and context[0] == _DXIL_RECIPE_PUBLICATION_RUNTIME:
         key = _dxil_program_key(storage, context)
         if _DXIL_PROGRAM_CACHE.get(key) is None:
-            _DXIL_PROGRAM_CACHE.put(key, _ValidatedDxilAssembly(ir.to_assembly()))
+            _DXIL_PROGRAM_CACHE.put(key, _ValidatedDxilAssembly(assembly))
     else:
         _program_ir("dxil", storage)
     return storage
 
 
 def _program_ir(kind, storage):
+    from ..material_region_read import per_build
+    if type(storage) is not str:
+        return _read_program_ir(kind, storage)
+    return per_build("program_irs", (kind, storage), lambda: _read_program_ir(kind, storage))
+
+
+def _read_program_ir(kind, storage):
     if kind == "dxil":
         context = _dxil_recipe_context()
         decoder = ReEngineDxilSemanticIr.from_storage
@@ -1110,7 +1198,7 @@ def _program(project, semantics, document, profile) -> _RecoveredProgram:
     if item is None:
         item = _recover_shader(document, profile, int(semantics.target_index), int(semantics.program_index),
                                semantics.shader_role, {})
-    source_contract = contract_from_storage(item.get("semantic_contract"), digest)
+    source_contract = _stored_contract(item.get("semantic_contract"), digest)
     kind = str(item.get("ir_kind", ""))
     ir = _program_ir(kind, item.get("semantic_ir"))
     return _RecoveredProgram(
@@ -1120,6 +1208,14 @@ def _program(project, semantics, document, profile) -> _RecoveredProgram:
         digest,
         binary_format,
     )
+
+
+def _stored_contract(text, digest: str) -> ShaderContract:
+    """A stored program's contract, read once per build."""
+    from ..material_region_read import per_build
+    if type(text) is not str:
+        return contract_from_storage(text, digest)
+    return per_build("stored_contracts", (text, digest), lambda: contract_from_storage(text, digest))
 
 
 def _program_key(digest: str, binary_format: str, semantics: MmtrProgramSemantics) -> str:
@@ -1135,8 +1231,7 @@ def _program_key(digest: str, binary_format: str, semantics: MmtrProgramSemantic
 
 def _identity_source(project, value, source, source_pin: str, contract, profile) -> bool:
     if value.get("input_kind") == "renderer_value":
-        return (source.kind == RENDERER_VALUE_KIND and source_pin == "value"
-                and source.properties.get("source_register_space", 0) == value.get("source_register_space", 0) and all(
+        return (source.kind == RENDERER_VALUE_KIND and source_pin == "value" and all(
             source.properties.get(key) == value.get(key)
             for key in ("source_buffer", "source_name", "source_byte_offset", "value_type", "value_layout")
         ))
@@ -1323,6 +1418,9 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
     incoming = {
         (link.target_node, link.target_pin): link for link in project.graph.links
     }
+    nodes = {}
+    for node in project.graph.nodes:
+        nodes.setdefault(node.node_id, node)
     pending = []
     for value in values:
         if not isinstance(value, dict):
@@ -1331,7 +1429,7 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
         link = incoming.get((master.node_id, pin))
         if link is None:
             raise ShaderGraphError(f"Recovered material input {value.get('label', pin)} is unconnected.")
-        source = project.graph.node(link.source_node)
+        source = nodes.get(link.source_node)
         if source is None:
             raise ShaderGraphError("Recovered material connection is dangling.")
         if not _identity_source(project, value, source, link.source_pin, contract, profile):
@@ -1523,6 +1621,27 @@ def _added_values(profile, project, contract, semantics, helpers: dict, texture_
     return edits
 
 
+def _prefetch_program_flows(project) -> None:
+    """A build edits channels pass by pass; its stored DXIL programs' flows are started at once in worker processes,
+    in the order of the passes that read them."""
+    from ..material_region_read import region_derived_cache
+
+    started = region_derived_cache("program_flow_prefetch")
+    if started is None or started:
+        return
+    started["programs"] = True
+    master = _master(project)
+    first = {}
+    for index, route in enumerate(master.properties.get("program_routes", ())):
+        first.setdefault(str(route.get("source_sha256", "")), index)
+    programs = sorted((item for item in master.properties.get("semantic_programs", ()) if item.get("ir_kind") == "dxil"),
+                      key=lambda item: first.get(str(item.get("source_sha256", "")), len(first)))
+    prefetch_program_flows(
+        (_program_ir("dxil", item.get("semantic_ir")).to_assembly(),
+         _stored_contract(item.get("semantic_contract"), str(item.get("source_sha256", ""))))
+        for item in programs)
+
+
 def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredProgram, helpers: dict,
                    texture_resolver=None):
     master = _master(project)
@@ -1532,12 +1651,17 @@ def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredP
     if not (edited or added):
         return (), None
     incoming = {(link.target_node, link.target_pin): link for link in project.graph.links}
-    flow = recovered_surface_flow(recovered.ir_kind, recovered.ir, recovered.contract)
-    channels = recovered_channels(recovered.ir_kind, recovered.ir, recovered.contract, flow)
+    _prefetch_program_flows(project)
+    flow, channels = program_flow(recovered.ir_kind, recovered.ir, recovered.contract)
     if recovered.ir_kind == "dxil":
-        layouts = tuple(MaterialDescriptorLayout.from_dict(item) for item in master.properties.get("descriptor_layouts", ()))
-        channels = named_texture_reads(channels, material_texture_names(
-            layouts, master.properties.get("shader_lod"), profile.material_record_prefix_size))
+        from ..material_region_read import per_build
+
+        def named():
+            layouts = tuple(MaterialDescriptorLayout.from_dict(item)
+                            for item in master.properties.get("descriptor_layouts", ()))
+            return named_texture_reads(channels, material_texture_names(
+                layouts, master.properties.get("shader_lod"), profile.material_record_prefix_size))
+        channels = per_build("named_channels", (id(channels), id(master)), named)
     outputs = {record["pin"]: (index, record) for index, record in enumerate(master.properties.get("output_pins", ()))}
     # Only a bindless DXIL pass hands the drawn material's record address to the code that stores a channel.
     material_readable = (recovered.ir_kind == "dxil" and contract.buffer(profile.user_buffer_name) is None
@@ -2030,18 +2154,24 @@ class ReEngineShaderGraphProfile:
         return _program_key(digest, binary_format, self._pass_semantics(project, document, semantics))
 
     def _pass_semantics(self, project, document, semantics):
+        from ..material_region_read import per_build_of
+        return per_build_of("pass_semantics", (self, project, document, semantics), None,
+                            lambda: self._derived_semantics(project, document, semantics))
+
+    def _derived_semantics(self, project, document, semantics):
         target, program = semantics.target_index, semantics.program_index
+        changes = {}
         if graph_draws_for(project.graph):
-            semantics = replace(semantics, purpose=pass_purpose(document, self, target, program))
+            changes["purpose"] = pass_purpose(document, self, target, program)
         if semantics.shader_role in {"vertex", "pixel"}:
-            values, refusals = _vertex_values(project, document, self, target, program)
-            semantics = replace(semantics, vertex_values=values, vertex_value_refusals=refusals)
+            changes["vertex_values"], changes["vertex_value_refusals"] = _vertex_values(
+                project, document, self, target, program)
         if graph_reads_surface_data(project.graph):
             if semantics.shader_role == "pixel":
-                semantics = replace(semantics, surface_data=program_surface_data(document, self, target, program))
+                changes["surface_data"] = program_surface_data(document, self, target, program)
             elif semantics.shader_role == "vertex":
-                semantics = replace(semantics, surface_data=program_vertex_inputs(document, self, target, program))
-        return semantics
+                changes["surface_data"] = program_vertex_inputs(document, self, target, program)
+        return replace(semantics, **changes) if changes else semantics
 
     def generate_recovered_material_shader_source(
         self, project, document, contract, semantics
@@ -2058,6 +2188,8 @@ class ReEngineShaderGraphProfile:
         descriptor_layout = None
         source_descriptor_layout = None
         if bindless:
+            from ..material_region_read import per_build, per_build_of
+
             original = {
                 str(pin.get("source_id")): pin
                 for pin in master.properties.get("input_pins", [])
@@ -2067,12 +2199,17 @@ class ReEngineShaderGraphProfile:
             if len(sizes) != 1:
                 raise ShaderGraphError("Bindless material allocation needs one exact MDF size.")
             native_buffer = recovered.contract.buffer(self.user_buffer_name)
-            semantic_buffer = ShaderContractBuffer(
-                self.user_buffer_name, int(sizes[0]), native_buffer.bind_point if native_buffer else 0, 1,
-                tuple(ShaderContractVariable(self.shader_parameter_name(pin["source_name"]), int(pin["source_byte_offset"]),
-                                             value_width(pin["value_type"]) * 4, pin["value_type"], pin["value_type"])
-                      for pin in original.values()),
-            )
+            bind_point = native_buffer.bind_point if native_buffer else 0
+
+            def material_buffer():
+                return ShaderContractBuffer(
+                    self.user_buffer_name, int(sizes[0]), bind_point, 1,
+                    tuple(ShaderContractVariable(self.shader_parameter_name(pin["source_name"]),
+                                                 int(pin["source_byte_offset"]), value_width(pin["value_type"]) * 4,
+                                                 pin["value_type"], pin["value_type"])
+                          for pin in original.values()),
+                )
+            semantic_buffer = per_build_of("semantic_material_buffers", (self, master), bind_point, material_buffer)
             adjusted, layout = _augmented_contract(
                 project, recovered.contract, self, document, semantics.shader_role, material_buffer=semantic_buffer,
                 augment_textures=native_buffer is not None or any(
@@ -2086,8 +2223,11 @@ class ReEngineShaderGraphProfile:
                 material_word_offsets = {source + prefix: target + prefix for source, target in material_word_offsets.items()}
             else:
                 _validate_fixed_descriptor_interface(project)
-            by_name = {v.name: v for v in layout.variables}
-            project = replace(project, parameters=[replace(p, source_byte_offset=by_name[p.name].byte_offset) for p in project.parameters])
+
+            def placed():
+                by_name = {v.name: v for v in layout.variables}
+                return tuple(replace(p, source_byte_offset=by_name[p.name].byte_offset) for p in project.parameters)
+            project = replace(project, parameters=list(per_build("placed_parameters", (id(project), layout), placed)))
         else:
             adjusted, layout = _augmented_contract(project, recovered.contract, self, document, semantics.shader_role)
         adjusted = add_engine_buffers(document, adjusted, semantics, graph_renderer_buffers(project.graph))
@@ -2166,26 +2306,18 @@ class ReEngineShaderGraphProfile:
         )
         return product, adjusted, layout, semantic_key
 
+    def material_shader_batch(self, project):
+        if _is_project(project, self.profile_id) and _edited_channels(project):
+            programs = _master(project).properties.get("semantic_programs", ())
+            if sum(item.get("ir_kind") == "dxil" for item in programs) >= MIN_JOBS:
+                start_workers()
+        return _MaterialShaderBatch(self, project)
+
     def compile_material_shaders(self, project, requests):
-        results = [None] * len(requests)
-        dxil = []
-        for index, request in enumerate(requests):
-            generated = request.generated
-            if isinstance(generated, _DxilProduct):
-                dxil.append((index, (generated.ir, generated.source_contract,
-                    request.adjusted_contract, generated.rebuild_options())))
-            else:
-                try:
-                    results[index] = self.compile_material_shader(
-                        project, generated, request.adjusted_contract, request.semantics,
-                        request.shader, request.target_index,
-                    )
-                except Exception as exc:
-                    results[index] = exc
-        if dxil:
-            for (index, _request), result in zip(dxil, rebuild_re_engine_dxil_batch(tuple(item[1] for item in dxil))):
-                results[index] = result if isinstance(result, Exception) else _NativeCompileResult(result.bytecode, result.contract)
-        return tuple(results)
+        batch = self.material_shader_batch(project)
+        for request in requests:
+            batch.add(request)
+        return batch.results()
 
     def compile_material_shader(
         self,
@@ -2196,28 +2328,7 @@ class ReEngineShaderGraphProfile:
         shader,
         _target_index,
     ):
-        if isinstance(generated, _SpirvProduct):
-            try:
-                return _compile_spirv_product(generated)
-            except (DxcError, SpirvError) as exc:
-                raise ShaderGraphError(
-                    f"DXC could not build the SPIR-V material route: {exc}"
-                ) from exc
-        if shader.binary_format == "spirv-module":
-            raise ShaderGraphError("SPIR-V material route lacks its native binding plan.")
-        result = compile_hlsl_source_detailed(
-            generated.source,
-            entry_point=generated.entry_point,
-            target=generated.target,
-            ieee_strict=generated.ieee_strict,
-            warnings_as_errors=True,
-        )
-        if adjusted.stage in {"domain", "geometry", "hull"}:
-            original = recover_dxbc_ir(bytes(shader.payload))
-            rebuilt = recover_dxbc_ir(result.bytecode)
-            if original.execution != rebuilt.execution:
-                raise ShaderGraphError("Compiled primitive/tessellation execution contract changed")
-        return result
+        return _compile_native(generated, adjusted, shader.binary_format, shader.payload)
 
     @staticmethod
     def compiled_material_shader_contract(bytecode, binary_format):
@@ -2237,6 +2348,100 @@ class ReEngineShaderGraphProfile:
         parsed = parse_dxbc(bytecode)
         if int(parsed.model_major) < 6:
             validate_recovered_dxbc_shader_bytecode(bytecode)
+
+
+def _compile_native(generated, adjusted, binary_format, payload):
+    if isinstance(generated, _SpirvProduct):
+        try:
+            return _compile_spirv_product(generated)
+        except (DxcError, SpirvError) as exc:
+            raise ShaderGraphError(
+                f"DXC could not build the SPIR-V material route: {exc}"
+            ) from exc
+    if binary_format == "spirv-module":
+        raise ShaderGraphError("SPIR-V material route lacks its native binding plan.")
+    result = compile_hlsl_source_detailed(
+        generated.source,
+        entry_point=generated.entry_point,
+        target=generated.target,
+        ieee_strict=generated.ieee_strict,
+        warnings_as_errors=True,
+    )
+    if adjusted.stage in {"domain", "geometry", "hull"}:
+        original = recover_dxbc_ir(bytes(payload))
+        rebuilt = recover_dxbc_ir(result.bytecode)
+        if original.execution != rebuilt.execution:
+            raise ShaderGraphError("Compiled primitive/tessellation execution contract changed")
+    return result
+
+
+def _compile_job(job):
+    try:
+        return _compile_native(*job)
+    except Exception:
+        return None
+
+
+MIN_NATIVE_JOBS = 8
+
+
+class _MaterialShaderBatch:
+    """Compiles each request as it is added: DXIL rebuilds stream to worker processes, other native compiles start
+    there once MIN_NATIVE_JOBS wait. ``results`` waits for them all."""
+
+    def __init__(self, profile, project):
+        self.profile, self.project = profile, project
+        self.requests, self.rebuilds, self.others, self.started = [], {}, [], {}
+        self.dxil = NativeDxilBatch(stream=True)
+        self.failure = None
+
+    def add(self, request):
+        index = len(self.requests)
+        self.requests.append(request)
+        generated = request.generated
+        if isinstance(generated, _DxilProduct):
+            self.rebuilds[index] = self.dxil.add(generated.ir, generated.source_contract, request.adjusted_contract,
+                                                 generated.rebuild_options())
+            return
+        self.others.append(index)
+        if len(self.others) >= MIN_NATIVE_JOBS and self.failure is None:
+            try:
+                self._start()
+            except Exception as exc:
+                self.failure = exc
+
+    def _start(self):
+        waiting = [index for index in self.others if index not in self.started]
+        jobs = [(self.requests[index].generated, self.requests[index].adjusted_contract,
+                 self.requests[index].shader.binary_format, self.requests[index].shader.payload) for index in waiting]
+        self.started.update(zip(waiting, submit(_compile_job, jobs, 1) or ()))
+
+    def results(self) -> tuple:
+        if self.failure is not None:
+            raise self.failure
+        results = [None] * len(self.requests)
+        with shared_workers():
+            if len(self.others) >= MIN_NATIVE_JOBS:
+                self._start()
+            rebuilt = self.dxil.results()
+            for index, item in self.rebuilds.items():
+                found = rebuilt[item]
+                results[index] = found if isinstance(found, Exception) else _NativeCompileResult(found.bytecode,
+                                                                                                 found.contract)
+            for index in self.others:
+                pending = self.started.get(index)
+                result = pending.result() if pending is not None else None
+                if result is None:
+                    request = self.requests[index]
+                    try:
+                        result = self.profile.compile_material_shader(
+                            self.project, request.generated, request.adjusted_contract, request.semantics,
+                            request.shader, request.target_index,
+                        )
+                    except Exception as exc:
+                        result = exc
+                results[index] = result
+        return tuple(results)
 
 
 _TEXTURE_CODES = {

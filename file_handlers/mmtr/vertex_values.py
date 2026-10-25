@@ -10,9 +10,10 @@ from file_handlers.sdf.shader_graph import (
 )
 
 lazy from .profiles.renderer_inputs import (
-    add_engine_buffers, add_engine_resources, engine_input_nodes, engine_inputs_available, graph_renderer_buffers,
-    graph_renderer_resources,
+    WHERE_AVAILABLE_KIND, add_engine_buffers, add_engine_resources, engine_input_nodes, engine_inputs_available,
+    graph_renderer_buffers, graph_renderer_resources,
 )
+lazy from .material_region_read import per_build_of
 lazy from .surface_data import program_surface_data, program_vertex_inputs, surface_data_keys
 
 PER_VERTEX_KIND = "re_engine_per_vertex"
@@ -125,17 +126,21 @@ def first_register(document, profile, program) -> int:
     return 1 + max((int(item.register) for item in fields if item.register != 0xFFFFFFFF), default=-1)
 
 
-def upstream(graph, links, roots, *, through_per_vertex: bool):
+def upstream(graph, links, roots, *, through_per_vertex: bool, provides=None):
+    """With ``provides`` (producers, per-vertex nodes -> bool), a Where Available counts by the input it takes."""
     sources: dict[str, list[str]] = {}
     for (target, _pin), link in links.items():
         sources.setdefault(target, []).append(link.source_node)
+    nodes = {}
+    for item in graph.nodes:
+        nodes.setdefault(item.node_id, item)
     pending, seen, found, per_vertex = list(roots), set(), [], []
     while pending:
         node_id = pending.pop()
         if node_id in seen:
             continue
         seen.add(node_id)
-        node = graph.node(node_id)
+        node = nodes.get(node_id)
         if node is None:
             raise ShaderGraphError("Recovered material connection is dangling.")
         found.append(node)
@@ -143,14 +148,30 @@ def upstream(graph, links, roots, *, through_per_vertex: bool):
             per_vertex.append(node)
             if not through_per_vertex:
                 continue
+        if provides is not None and node.kind == WHERE_AVAILABLE_KIND:
+            taken = links.get((node_id, where_available_input(graph, links, node, through_per_vertex, provides)))
+            pending.extend((taken.source_node,) if taken else ())
+            continue
         pending.extend(sources.get(node_id, ()))
     return found, per_vertex
 
 
-def vertex_value_plan(document, profile, graph, target_index: int, program_index: int, roots):
+def where_available_input(graph, links, node, through_per_vertex: bool, provides) -> str:
+    value = links.get((node.node_id, "value"))
+    return "value" if provides(*upstream(graph, links, [value.source_node] if value else [],
+                                         through_per_vertex=through_per_vertex, provides=provides)) else "otherwise"
+
+
+def _pixel_reads(graph, roots) -> tuple[dict, list, set]:
+    """The graph's links by target, and what the pixel stage behind ``roots`` reads: its Computed per Vertex nodes
+    and the Surface Data its nodes want."""
     links = {(link.target_node, link.target_pin): link for link in graph.links}
     pixel_nodes, per_vertex = upstream(graph, links, roots, through_per_vertex=False)
-    wanted = {*surface_data_keys(node) for node in pixel_nodes}
+    return links, per_vertex, {*surface_data_keys(node) for node in pixel_nodes}
+
+
+def vertex_value_plan(document, profile, graph, target_index: int, program_index: int, roots):
+    links, per_vertex, wanted = per_build_of("pixel_reads", (graph,), tuple(roots), lambda: _pixel_reads(graph, roots))
     if not (per_vertex or wanted):
         return (), ()
     program = document.sdf.targets[int(target_index)].programs[int(program_index)]
@@ -167,9 +188,15 @@ def vertex_value_plan(document, profile, graph, target_index: int, program_index
     contract = profile.shader_contract(document, program, "vertex")
     contract = add_engine_buffers(document, contract, stage, graph_renderer_buffers(graph))
     contract = add_engine_resources(document, contract, stage, graph_renderer_resources(graph))
+
+    def provides(producers, _per_vertex):
+        return (engine_inputs_available(contract, [*engine_input_nodes(producer) for producer in producers])
+                and {*surface_data_keys(producer) for producer in producers} <= inputs)
+
     for node in per_vertex:
         behind, _nested = upstream(graph, links, [link.source_node for (target, _pin), link in links.items()
-                                                  if target == node.node_id], through_per_vertex=True)
+                                                  if target == node.node_id], through_per_vertex=True,
+                                   provides=provides)
         if not engine_inputs_available(contract, [*engine_input_nodes(producer) for producer in behind]):
             refusals.append((f"node:{node.node_id}", "Its vertex shader cannot read an engine input Value reads."))
         elif not {*surface_data_keys(producer) for producer in behind} <= inputs:

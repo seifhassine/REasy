@@ -1,21 +1,20 @@
 from __future__ import annotations
 
-lazy from concurrent.futures import ProcessPoolExecutor
 from dataclasses import dataclass, replace
-lazy import multiprocessing
-import os
 import re
 
 from file_handlers.bounded_cache import BoundedCache
 lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr
-from utils.garbage_collection import configure_garbage_collector
 
+lazy from .material_region_read import per_build_of, region_derived_cache
+lazy from .worker_pool import Pending, parallel_map, submit
 lazy from .surface_flow import ChannelSplit, SurfaceChannel, recovered_surface_flow, surface_channels
 lazy from .surface_meaning import GBUFFER_PURPOSE, pixel_shader_digest, shader_bytes
 lazy from .surface_reach import channel_reach, parameter_sources
 lazy from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
-lazy from .surface_data import projected_position
+lazy from .profiles.re_engine_shader_graph import remember_recipe, surface_dxil_ir
+lazy from .surface_data import native_analysis, native_key, native_known, projected_position, remember_native
 
 
 SURFACE_OUTPUTS_VERSION = 6
@@ -42,8 +41,6 @@ class SurfaceEdit:
 
 
 _CACHE_LIMIT = 4096
-# Fewer programs than this are analysed in the calling process: starting workers would cost more.
-_PARALLEL_MINIMUM = 32
 _CHANNEL_CACHE = BoundedCache()
 _SEMANTIC_LABELS = {"sv_target": "Target {index}", "sv_depth": "Depth", "sv_depthgreaterequal": "Depth",
                     "sv_depthlessequal": "Depth", "sv_coverage": "Coverage", "sv_stencilref": "Stencil Reference",
@@ -55,14 +52,18 @@ def _recover_ir(ir_kind: str, data: bytes):
     if ir_kind == "spirv":
         return SpirvSemanticIr.from_bytes(data)
     if ir_kind == "dxil":
-        return recover_re_engine_dxil_ir(data)
+        from .profiles.re_engine_shader_graph import _ValidatedDxilAssembly
+        return _ValidatedDxilAssembly(recover_re_engine_dxil_ir(data).to_assembly())
     from .profiles.dxbc_recovery import recover_dxbc_ir
     return recover_dxbc_ir(data)
 
 
 def _analyse(ir_kind: str, data: bytes, contract, buffer_name: str, prefix: int):
     ir = _recover_ir(ir_kind, data)
-    flow = recovered_surface_flow(ir_kind, ir, contract)
+    return _analysed(ir_kind, ir, contract, buffer_name, prefix, recovered_surface_flow(ir_kind, ir, contract))
+
+
+def _analysed(ir_kind: str, ir, contract, buffer_name: str, prefix: int, flow):
     splits = recovered_channels(ir_kind, ir, contract, flow)
     sources = {value: f"parameter@{offset}"
                for value, offset in parameter_sources(ir_kind, ir, contract, flow, buffer_name, prefix).items()}
@@ -72,10 +73,26 @@ def _analyse(ir_kind: str, data: bytes, contract, buffer_name: str, prefix: int)
 
 
 def _analyse_job(arguments):
+    """The program's surface, and the surface-data analysis asked for, both from one flow, and a DXIL program's
+    recipe for recovery; None for what failed."""
+    ir_kind, data, contract, buffer_name, prefix, native = arguments
+    recipe = None
     try:
-        return _analyse(*arguments)
+        if ir_kind == "dxil":
+            ir, recipe = surface_dxil_ir(data)
+        else:
+            ir = _recover_ir(ir_kind, data)
+        flow = recovered_surface_flow(ir_kind, ir, contract)
     except ShaderGraphError:
-        return None
+        return None, None, recipe
+    found = []
+    for analysis in (lambda: _analysed(ir_kind, ir, contract, buffer_name, prefix, flow),
+                     lambda: native(ir_kind, ir, contract, flow) if native is not None else None):
+        try:
+            found.append(analysis())
+        except ShaderGraphError:
+            found.append(None)
+    return (*found, recipe)
 
 
 def _surface_key(ir_kind: str, contract, digest: str, buffer_name: str, prefix: int) -> tuple:
@@ -93,20 +110,75 @@ def program_surface(ir_kind: str, data: bytes, contract, digest: str, buffer_nam
 
 
 def prefetch_program_surfaces(jobs) -> None:
+    """``program_surface`` of (kind, data, contract, digest, buffer, prefix, surface-data analysis) jobs in worker
+    processes; the shader's surface-data analysis, if asked for, comes from the same flow."""
     pending = {}
-    for ir_kind, data, contract, digest, buffer_name, prefix in jobs:
+    for ir_kind, data, contract, digest, buffer_name, prefix, native in jobs:
         key = _surface_key(ir_kind, contract, digest, buffer_name, prefix)
-        if key not in _CHANNEL_CACHE.entries:
-            pending.setdefault(key, (ir_kind, data, contract, buffer_name, prefix))
-    if len(pending) < _PARALLEL_MINIMUM:
+        if key in _CHANNEL_CACHE.entries:
+            continue
+        known = native is None or native_known(native_key(native, ir_kind, digest, contract))
+        pending.setdefault(key, (ir_kind, data, contract, buffer_name, prefix, None if known else native, digest))
+    found = parallel_map(_analyse_job, [job[:6] for job in pending.values()]) or ()
+    for (key, job), (surface, native, recipe) in zip(pending.items(), found):
+        if surface is not None:
+            _CHANNEL_CACHE.put(key, surface, 0, _CACHE_LIMIT, 0)
+        if recipe is not None:
+            remember_recipe(job[1], *recipe)
+        if native is not None:
+            ir_kind, _data, contract, _buffer_name, _prefix, analysis, digest = job
+            remember_native(native_key(analysis, ir_kind, digest, contract), native)
+
+
+def program_flow(ir_kind: str, ir, contract):
+    """A recovered program's flow and channels; a build reads a DXIL program's once."""
+    cache = region_derived_cache("program_flows") if ir_kind == "dxil" else None
+    key = (ir.to_assembly(), contract.fingerprint) if cache is not None else None
+    found = cache.get(key) if cache is not None else None
+    if type(found) is Pending:
+        found = found.result() if found.done() else None
+        if found is not None:
+            found, records = found
+            if records is not None:
+                region_derived_cache("material_records")[key] = records
+        cache[key] = found
+    if found is None:
+        flow = recovered_surface_flow(ir_kind, ir, contract)
+        found = flow, recovered_channels(ir_kind, ir, contract, flow)
+        if cache is not None:
+            cache[key] = found
+    return found
+
+
+def _flow_job(job):
+    """The flow and channels, and the material records a material edit reads; None for what failed, which the
+    build works out itself to raise its error."""
+    from .profiles.re_engine_shader_graph import _ValidatedDxilAssembly
+    from .surface_flow_dxil import material_records
+    assembly, contract = job
+    ir = _ValidatedDxilAssembly(assembly)
+    try:
+        flow = recovered_surface_flow("dxil", ir, contract)
+        found = flow, recovered_channels("dxil", ir, contract, flow)
+    except ShaderGraphError:
+        return None
+    try:
+        return found, material_records(assembly, contract)
+    except ShaderGraphError:
+        return found, None
+
+
+def prefetch_program_flows(jobs) -> None:
+    """``program_flow`` of DXIL (assembly, contract) jobs, started in the shared worker processes."""
+    cache = region_derived_cache("program_flows")
+    if cache is None:
         return
-    workers = min(os.process_cpu_count() or 1, len(pending) // (_PARALLEL_MINIMUM // 4))
-    with ProcessPoolExecutor(max_workers=workers, mp_context=multiprocessing.get_context("spawn"),
-                             initializer=configure_garbage_collector) as pool:
-        results = pool.map(_analyse_job, pending.values(), chunksize=max(1, len(pending) // (workers * 4)))
-        for key, result in zip(pending, results):
-            if result is not None:
-                _CHANNEL_CACHE.put(key, result, 0, _CACHE_LIMIT, 0)
+    pending = {}
+    for assembly, contract in jobs:
+        key = assembly, contract.fingerprint
+        if key not in cache:
+            pending.setdefault(key, (assembly, contract))
+    cache.update(zip(pending, submit(_flow_job, list(pending.values())) or ()))
 
 
 def recovered_channels(ir_kind: str, ir, contract, flow) -> tuple[ChannelSplit, ...]:
@@ -152,25 +224,36 @@ def _native_job(document, profile, target_index: int, program_index: int, role: 
 
 def prefetch_native_program_surfaces(profile, routes) -> None:
     jobs = []
-    for document, *route in routes:
+    for document, target_index, program_index, role in routes:
         try:
-            jobs.append(_native_job(document, profile, *route))
+            job = _native_job(document, profile, target_index, program_index, role)
         except ShaderGraphError:
             continue
+        program = document.sdf.targets[int(target_index)].programs[int(program_index)]
+        jobs.append((*job, native_analysis(program, role)))
     prefetch_program_surfaces(jobs)
 
 
 def native_program_surface(document, profile, target_index: int, program_index: int, role: str):
+    return per_build_of("native_program_surfaces", (document, profile), (target_index, program_index, role),
+                        lambda: _native_program_surface(document, profile, target_index, program_index, role))
+
+
+def _native_program_surface(document, profile, target_index: int, program_index: int, role: str):
     job = _native_job(document, profile, target_index, program_index, role)
-    splits, reach = program_surface(*job)
+    found = program_surface(*job)
+    splits, reach = found
     if job[0] != "dxil":
         return splits, reach
-    interface = document.material_interface
-    names = material_texture_names(interface.descriptor_layouts, interface.shader_lod,
-                                   profile.material_record_prefix_size)
-    renamed = {f"texture:@{offset}": f"texture:{name}" for offset, name in names.items()}
-    return named_texture_reads(splits, names), {renamed.get(source, source): channels
-                                                for source, channels in reach.items()}
+
+    def named():
+        interface = document.material_interface
+        names = material_texture_names(interface.descriptor_layouts, interface.shader_lod,
+                                       profile.material_record_prefix_size)
+        renamed = {f"texture:@{offset}": f"texture:{name}" for offset, name in names.items()}
+        return named_texture_reads(splits, names), {renamed.get(source, source): channels
+                                                    for source, channels in reach.items()}
+    return per_build_of("named_program_surfaces", (found, document, profile), None, named)
 
 
 def native_program_channels(document, profile, target_index: int, program_index: int, role: str):

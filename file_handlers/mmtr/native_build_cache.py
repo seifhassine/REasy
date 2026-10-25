@@ -2,14 +2,14 @@ from collections import namedtuple
 from collections.abc import Mapping
 from contextlib import ExitStack, contextmanager
 from contextvars import ContextVar
-from dataclasses import Field, dataclass, fields, is_dataclass
+from dataclasses import _FIELD, Field, dataclass, fields, is_dataclass
 from functools import lru_cache
 import hashlib
 import struct
 import sys
-from types import MemberDescriptorType
 
 lazy from file_handlers.bounded_cache import BoundedCache
+lazy from utils.native_build import ensure_fastkey
 
 
 class _Uncacheable(TypeError):
@@ -41,7 +41,7 @@ class _TraversalMemo:
             return None
         if kind in self.schemas:
             return self.schemas[kind]
-        schema = _plain_record_schema(kind)
+        schema = ensure_fastkey().plain_record_schema(kind, _KEY_RULES)
         if len(self.schemas) < 128:
             self.schemas[kind] = schema
         return schema
@@ -51,43 +51,6 @@ class _TraversalMemo:
                 and self.bytes + cost <= _TRAVERSAL_MEMO_BYTES):
             self.entries[id(value)] = value, result
             self.bytes += cost
-
-
-def _class_member(kind, name):
-    for base in kind.__mro__:
-        if name in base.__dict__:
-            return base.__dict__[name]
-    return None
-
-
-def _plain_record_schema(kind):
-    if (kind.__dictoffset__ or _class_member(kind, "__getattribute__") is not object.__getattribute__
-            or _class_member(kind, "__sizeof__") is not object.__sizeof__):
-        return None
-    namespace = kind.__dict__
-    schema = namespace.get("__dataclass_fields__")
-    parameters = namespace.get("__dataclass_params__")
-    if type(schema) is not dict or type(parameters) is not _DATACLASS_PARAMS_TYPE:
-        return None
-    for metadata_kind, names in ((Field, ("name", "_field_type")), (_DATACLASS_PARAMS_TYPE, ("frozen",))):
-        if _class_member(metadata_kind, "__getattribute__") is not object.__getattribute__:
-            return None
-        for name in names:
-            member = _class_member(metadata_kind, name)
-            if type(member) is not MemberDescriptorType or member.__objclass__ is not metadata_kind:
-                return None
-    if (type(parameters.frozen) is not bool or not parameters.frozen
-            or any(type(field) is not Field for field in schema.values())):
-        return None
-    field_names = tuple(field.name for field in fields(kind))
-    if any(type(name) is not str or type(namespace.get(name)) is not MemberDescriptorType
-           for name in field_names):
-        return None
-    module = namespace.get("__module__")
-    qualname = type.__dict__["__qualname__"].__get__(kind)
-    if type(module) is not str or type(qualname) is not str:
-        return None
-    return module + "." + qualname, field_names
 
 
 @lru_cache(maxsize=128)
@@ -103,88 +66,6 @@ def _dataclass_schema(name, field_names):
     return prefix, tuple(members)
 
 
-def _signature(digest, value, active, buffer, memo=None):
-    if len(buffer) >= _SIGNATURE_BUFFER_SIZE:
-        digest.update(buffer)
-        buffer.clear()
-        if memo is not None:
-            memo.generation += 1
-    kind = type(value)
-    if value is None:
-        buffer.extend(b"n")
-    elif kind is bool:
-        buffer.extend(b"t" if value else b"f")
-    elif kind is int:
-        raw = str(value).encode("utf-8")
-        buffer.extend(b"is" + struct.pack("!Q", len(raw)) + raw)
-    elif kind is float:
-        buffer.extend(b"d" + struct.pack("!d", value))
-    elif kind in (str, bytes):
-        raw = value.encode("utf-8") if kind is str else value
-        prefix = (b"s" if kind is str else b"b") + struct.pack("!Q", len(raw))
-        if len(raw) >= _SIGNATURE_BUFFER_SIZE:
-            digest.update(buffer)
-            buffer.clear()
-            if memo is not None:
-                memo.generation += 1
-            digest.update(prefix)
-            digest.update(raw)
-        else:
-            buffer.extend(prefix)
-            buffer.extend(raw)
-    else:
-        identity = id(value)
-        if identity in active:
-            raise _Uncacheable("Cyclic compiler input")
-        if memo is not None and (entry := memo.entries.get(identity)) is not None:
-            buffer.extend(entry[1])
-            return
-        owner = memo
-        schema = memo.schema(kind) if memo is not None and kind not in (tuple, list, dict) else None
-        if memo is not None and kind not in (tuple, list, dict) and schema is None:
-            memo.invalidate()
-            memo = None
-        generation = memo.generation if memo is not None else None
-        start = len(buffer)
-        active.add(identity)
-        try:
-            if kind in (tuple, list):
-                buffer.extend((b"(" if kind is tuple else b"[") + struct.pack("!Q", len(value)))
-                for item in value:
-                    _signature(digest, item, active, buffer, memo)
-            elif isinstance(value, Mapping):
-                buffer.extend(b"{" + struct.pack("!Q", len(value)))
-                for key, item in value.items():
-                    _signature(digest, key, active, buffer, memo)
-                    _signature(digest, item, active, buffer, memo)
-            elif is_dataclass(value) and not isinstance(value, type):
-                if schema is None:
-                    name = kind.__module__ + "." + kind.__qualname__
-                    if type(name) is not str:
-                        raise _Uncacheable("Unsupported dataclass name")
-                    field_names = []
-                    for field in fields(value):
-                        if type(field.name) is not str:
-                            raise _Uncacheable("Unsupported dataclass field name")
-                        field_names.append(field.name)
-                    schema = name, tuple(field_names)
-                prefix, members = _dataclass_schema(*schema)
-                buffer.extend(prefix)
-                for field_name, encoded in members:
-                    buffer.extend(encoded)
-                    _signature(digest, getattr(value, field_name), active, buffer, memo)
-                buffer.extend(b";")
-            else:
-                raise _Uncacheable("Unsupported compiler input")
-        finally:
-            active.remove(identity)
-            if owner is not memo:
-                owner.invalidate()
-        if memo is not None and memo.generation == generation:
-            encoded = bytes(buffer[start:])
-            memo.remember(value, encoded, len(encoded) + 128)
-
-
 @dataclass(frozen=True, slots=True)
 class _BuildKey:
     runtime: tuple
@@ -194,14 +75,15 @@ class _BuildKey:
 _DATACLASS_PARAMS_TYPE = type(_BuildKey.__dataclass_params__)
 
 
+_KEY_RULES = (_dataclass_schema, is_dataclass, fields, _FIELD, Field, _DATACLASS_PARAMS_TYPE, Mapping, _Uncacheable)
+
+
 def native_build_key(runtime, *inputs):
     try:
         runtime = tuple(runtime)
         hash(runtime)
         digest = hashlib.sha256(b"REasy native build cache\0v1\0")
-        buffer = bytearray()
-        _signature(digest, inputs, set(), buffer, _TraversalMemo())
-        digest.update(buffer)
+        ensure_fastkey().write_key(inputs, digest.update, _SIGNATURE_BUFFER_SIZE, _KEY_RULES)
     except (TypeError, ValueError, OverflowError, RecursionError):
         return None
     return _BuildKey(runtime, digest.digest())
@@ -281,15 +163,16 @@ class NativeBuildCache:
             return scoped.get(key)
         return None if key is None else self._cache.get(key)
 
-    def put(self, key, result):
+    def put(self, key, result, size=None):
+        """``size``: ``_immutable_size(result)``, when a worker measured it."""
         scoped = self._scope.get()
         if scoped is not None:
-            return scoped.put(key, result)
+            return scoped.put(key, result, size)
         if key is None:
             return False
         try:
             cost = (sys.getsizeof(key) + sys.getsizeof(key.runtime) + sys.getsizeof(key.digest)
-                    + _immutable_size(result) + 256)  # LRU entry overhead.
+                    + (_immutable_size(result) if size is None else size) + 256)  # LRU entry overhead.
         except (TypeError, ValueError, RecursionError):
             return False
         return self._cache.put(key, result, cost, self.max_entries, self.max_bytes)

@@ -15,15 +15,19 @@ lazy from file_handlers.sdf.spirv import reflect_spirv
 lazy from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
 
 lazy from .surface_flow import (
-    SCALAR_TYPES, ChannelSplit, FlowStore, NativeFlow, SurfaceChannel, _vector, recovered_surface_flow,
+    SCALAR_TYPES, ChannelSplit, FlowStore, FlowValue, NativeFlow, SurfaceChannel, _vector, recovered_surface_flow,
 )
+lazy from .material_region_read import per_build, per_build_of, region_derived_cache
 lazy from .pass_purpose import pass_purpose
-lazy from .profiles.re_engine_bindless_material import bound_resource
+lazy from .native_resource import DXIL_RESOURCE_CLASSES
 lazy from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
 lazy from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
 lazy from .profiles.re_engine_spirv_authoring import _Module
 lazy from .surface_outputs import _recover_ir, _shader_bytes
+lazy from .worker_pool import parallel_map
 lazy from .vertex_values import MAX_REGISTERS, first_register, linkage_problem, carried_value
+lazy import fastdxiltext
+lazy import fastsurface
 
 SURFACE_DATA_KIND = "re_engine_surface_data"
 MATERIAL_COORDINATES = "coordinates"
@@ -46,7 +50,7 @@ register_shader_graph_node_extension(ShaderGraphNodeExtension(
         "A value the pass hands its pixel shader, such as a UV set, the normal or the position, read in every pass "
         "that has it."),
 ))
-_CACHE_LIMIT = 1024
+_CACHE_LIMIT = 4096
 _CACHE = BoundedCache()
 
 
@@ -98,43 +102,16 @@ def _dxbc_sources(ir, contract, flow: NativeFlow) -> dict[int, tuple]:
     return result
 
 
-_DXIL_LINE = re.compile(r"\s*(%[\w.]+) = (.*)")
-_DXIL_INPUT = re.compile(r"@dx\.op\.loadInput\.\w+\(i32 4, i32 (\d+), i32 (\d+), i8 (\d+)")
-_DXIL_HEAP = re.compile(r"@dx\.op\.createHandleFromHeap\(i32 218, [^,]+, i1 (false|true)")
-_DXIL_ANNOTATE = re.compile(r"@dx\.op\.annotateHandle\(i32 216, %dx\.types\.Handle (%[\w.]+)")
-_DXIL_VALUE = re.compile(r"%[\w.]+")
-
-
 def _dxil_sources(ir, contract, flow: NativeFlow) -> dict[int, tuple]:
     lines = ir.to_assembly().splitlines()
     rows = {row: key for key, row in DxilEntryMetadata.parse(lines).input_rows().items()}
     fields = {(item.semantic_name.casefold(), item.semantic_index): item for item in contract.inputs}
-    by_id = {(item.register_class, item.resource_id): item for item in contract.resources}
-    by_binding = {(item.register_class, item.register_space, item.bind_point): item for item in contract.resources}
-    handles, names = {}, {}
-    for line in lines:
-        match = _DXIL_LINE.match(line)
-        if match is None:
-            continue
-        result, body = match.groups()
-        if (found := _DXIL_INPUT.search(body)) is not None:
-            field = fields.get(rows.get((int(found[1]), int(found[2]))))
-            if field is not None:
-                names[result] = ("attribute", f"{field.semantic_name}{field.semantic_index}", int(found[3]))
-        elif (resource := bound_resource(body, by_id, by_binding)) is not None:
-            handles[result] = resource.name
-        elif (found := _DXIL_HEAP.search(body)) is not None:
-            handles[result] = "SamplerDescriptorHeap" if found[1] == "true" else "ResourceDescriptorHeap"
-        elif (found := _DXIL_ANNOTATE.search(body)) is not None:
-            if found[1] in handles:
-                handles[result] = handles[found[1]]
-        elif body.startswith("call") and (handle := next((handles[item] for item in _DXIL_VALUE.findall(body)
-                                                         if item in handles), None)) is not None:
-            names[result] = ("data", handle)
-        elif body.startswith("extractvalue") and (source := next(
-                (names[item] for item in _DXIL_VALUE.findall(body) if names.get(item, ("",))[0] == "data"),
-                None)) is not None:
-            names[result] = source
+    inputs = {row: f"{field.semantic_name}{field.semantic_index}" for row, key in rows.items()
+              if (field := fields.get(key)) is not None}
+    by_id = {(item.register_class, item.resource_id): item.name for item in contract.resources}
+    by_binding = {(item.register_class, item.register_space, item.bind_point): item.name for item in contract.resources}
+    names = fastdxiltext.value_names(lines, inputs, by_id, by_binding, DXIL_RESOURCE_CLASSES, "SamplerDescriptorHeap",
+                                     "ResourceDescriptorHeap")
     return {index: names[value.origin] for index, value in enumerate(flow.values)
             if value.kind == "source" and value.origin in names}
 
@@ -180,19 +157,10 @@ def _named_sources(ir_kind: str, ir, contract, flow: NativeFlow) -> dict[int, tu
     return _spirv_sources(ir, contract, flow)
 
 
-def _closure(flow: NativeFlow, roots) -> set[int]:
-    seen, pending = set(), list(roots)
-    while pending:
-        index = pending.pop()
-        if index not in seen:
-            seen.add(index)
-            pending.extend(flow.values[index].operands)
-    return seen
-
-
-def vertex_data(ir_kind: str, ir, contract) -> dict[str, tuple]:
-    """key -> (output lanes, label, vacuous)."""
-    return _vertex_analysis(ir_kind, ir, contract, recovered_surface_flow(ir_kind, ir, contract))[0]
+def vertex_data(ir_kind: str, ir, contract, flow: NativeFlow | None = None) -> dict[str, tuple]:
+    """key -> (output lanes, label, vacuous). ``flow``: the shader's, when already worked out."""
+    return _vertex_analysis(ir_kind, ir, contract,
+                            recovered_surface_flow(ir_kind, ir, contract) if flow is None else flow)[0]
 
 
 def projected_position(ir_kind: str, ir, contract, flow: NativeFlow) -> ChannelSplit | None:
@@ -207,6 +175,7 @@ def projected_position(ir_kind: str, ir, contract, flow: NativeFlow) -> ChannelS
 
 def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict[str, tuple], tuple | None]:
     named = _named_sources(ir_kind, ir, contract, flow)
+    graph = fastsurface.Graph(flow.values, FlowValue)
     outputs = {(item.semantic_name.casefold(), item.semantic_index): item for item in contract.outputs}
     system = {key: item.system_value for key, item in outputs.items()}
     stores = [store for store in flow.stores if store.scope == "output" and store.value is not None]
@@ -217,10 +186,9 @@ def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict
                   for store in stores if (store.semantic, store.semantic_index) in outputs]
     position = [store.value for store in stores if system.get((store.semantic, store.semantic_index)) == "position"]
     reach = {}
-    for store in stores:
-        if system.get((store.semantic, store.semantic_index), "undefined") != "undefined":
-            continue
-        sources = {named[index] for index in _closure(flow, (store.value,)) if index in named}
+    free = [store for store in stores if system.get((store.semantic, store.semantic_index), "undefined") == "undefined"]
+    for store, reached in zip(free, graph.reaches([(store.value,) for store in free], tuple(named))):
+        sources = {named[index] for index in reached}
         attributes = sorted({source[1] for source in sources if source[0] == "attribute"})
         data = tuple(sorted({source[1] for source in sources if source[0] == "data"}))
         copy = named.get(store.value) if named.get(store.value, ("",))[0] == "attribute" else None
@@ -243,11 +211,11 @@ def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict
         labels[f"attribute:{name}"] = translate("SurfaceData", "Vertex {attribute}").format(attribute=name)
     groups = {key: value for key, value in lanes.items() if len(value) <= 4}
     result = {key: (tuple(where), labels[key], False) for key, where in groups.items()}
-    values = _projection(ir_kind, ir, flow, position,
-                         {index for index, source in named.items() if source[0] == "attribute"})
+    values = _projection(ir_kind, ir, flow, graph, position,
+                         tuple(index for index, source in named.items() if source[0] == "attribute"))
     if values is None:
         return result, None
-    sources = {named[index] for index in _closure(flow, values) if index in named}
+    sources = {named[index] for index in graph.reaches([values], tuple(named))[0]}
     space = tuple(sorted({source[1] for source in sources if source[0] == "data"}))
     # Attributes that place the position place everything computed like it.
     placed = [set(reach[item][1]) for where in groups.values() for item in where
@@ -278,26 +246,18 @@ def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict
     return result, values
 
 
-def _projection(ir_kind: str, ir, flow: NativeFlow, position, attributes) -> tuple[int, ...] | None:
+def _projection(ir_kind: str, ir, flow: NativeFlow, graph, position, attributes) -> tuple[int, ...] | None:
     if not position:
         return None
-    closures = [_closure(flow, (value,)) for value in position]
-    shared, projecting = set.intersection(*closures), set.union(*closures)
-    consumers: dict[int, set[int]] = {}
-    for index, value in enumerate(flow.values):
-        for operand in value.operands:
-            consumers.setdefault(operand, set()).add(index)
-    projection = projecting - shared
-    frontier = [value for value in sorted(shared) if consumers.get(value, set()) & projection
-                and _closure(flow, (value,)) & attributes]
+    frontier, consumed = graph.frontier(position, attributes)
     if len(frontier) != 3 or any(flow.values[value].scalar not in {"", "float"} for value in frontier):
         return None
     words = _words(ir_kind, ir, flow)
     keys = []
-    for value in frontier:
+    for value, consumers in zip(frontier, consumed):
         # Each component multiplies one row or column of the projection.
-        found = {words[operand] for consumer in consumers[value] & projection
-                 for operand in flow.values[consumer].operands if operand in words}
+        found = {words[operand] for consumer in consumers for operand in flow.values[consumer].operands
+                 if operand in words}
         rows, lanes = {word[:2] for word in found}, {word[2] for word in found}
         if len(found) >= 2 and (len(rows) == 1) != (len(lanes) == 1):
             keys.append(("row", *next(iter(rows))) if len(rows) == 1 else ("lane", next(iter(lanes))))
@@ -318,10 +278,6 @@ def _projection(ir_kind: str, ir, flow: NativeFlow, position, attributes) -> tup
     return None
 
 
-_DXIL_CONSTANT_ROW = re.compile(r"@dx\.op\.cbufferLoadLegacy\.\w+\(i32 59, %dx\.types\.Handle (%[\w.]+), i32 (\d+)\)")
-_DXIL_EXTRACT = re.compile(r"extractvalue %dx\.types\.CBufRet\.\w+ (%[\w.]+), (\d+)")
-
-
 def _words(ir_kind: str, ir, flow: NativeFlow) -> dict[int, tuple]:
     """Flow value -> (buffer, register, lane) of the constant buffer word it reads."""
     if ir_kind == "dxbc-sm5":
@@ -330,31 +286,24 @@ def _words(ir_kind: str, ir, flow: NativeFlow) -> dict[int, tuple]:
                 and value.origin[0] == "cb"}
     if ir_kind != "dxil":
         return {}
-    rows, words = {}, {}
-    for line in ir.to_assembly().splitlines():
-        match = _DXIL_LINE.match(line)
-        if match is None:
-            continue
-        result, body = match.groups()
-        if (found := _DXIL_CONSTANT_ROW.search(body)) is not None:
-            rows[result] = (found[1], int(found[2]))
-        elif (found := _DXIL_EXTRACT.search(body)) is not None and found[1] in rows:
-            words[result] = (*rows[found[1]], int(found[2]))
+    words = fastdxiltext.constant_words(ir.to_assembly().splitlines())
     return {index: words[value.origin] for index, value in enumerate(flow.values) if value.origin in words}
 
 
-def texture_read_inputs(ir_kind: str, ir, contract) -> dict[str, frozenset]:
-    flow = recovered_surface_flow(ir_kind, ir, contract)
+def texture_read_inputs(ir_kind: str, ir, contract, flow: NativeFlow | None = None) -> dict[str, frozenset]:
+    """``flow``: the shader's, when already worked out."""
+    if flow is None:
+        flow = recovered_surface_flow(ir_kind, ir, contract)
     named = _named_sources(ir_kind, ir, contract, flow)
     fields = {f"{item.semantic_name}{item.semantic_index}": item for item in contract.inputs}
     result: dict[str, set] = {}
-    for store in flow.stores:
-        if store.scope != "read" or store.value is None:
-            continue
+    reads = [store for store in flow.stores if store.scope == "read" and store.value is not None]
+    graph = fastsurface.Graph(flow.values, FlowValue)
+    for store, reached in zip(reads, graph.reaches([(store.value,) for store in reads], tuple(named))):
         lanes = result.setdefault(store.semantic, set())
-        for index in _closure(flow, (store.value,)):
-            source = named.get(index)
-            if source is not None and source[0] == "attribute" and source[1] in fields:
+        for index in reached:
+            source = named[index]
+            if source[0] == "attribute" and source[1] in fields:
                 field = fields[source[1]]
                 physical = [bit for bit in range(4) if field.mask & (1 << bit)]
                 if source[2] < len(physical):
@@ -362,14 +311,65 @@ def texture_read_inputs(ir_kind: str, ir, contract) -> dict[str, frozenset]:
     return {name: frozenset(lanes) for name, lanes in result.items()}
 
 
+def native_analysis(program, role: str):
+    """What ``program_surface_data`` reads of a program's ``role`` shader: ``vertex_data``, ``texture_read_inputs``
+    or None."""
+    stages = {shader.role for shader in program.shaders if shader.present}
+    if not {"vertex", "pixel"} <= stages or stages & {"geometry", "hull", "domain"}:
+        return None
+    return {"vertex": vertex_data, "pixel": texture_read_inputs}.get(role)
+
+
+def native_key(compute, kind: str, digest: str, contract) -> tuple:
+    return compute.__name__, f"{kind}:{digest}", contract.fingerprint
+
+
+def native_known(key) -> bool:
+    return key in _CACHE.entries
+
+
+def remember_native(key, found) -> None:
+    """``compute``'s result for ``native_key``, worked out elsewhere."""
+    _CACHE.put(key, found, 0, _CACHE_LIMIT, 0)
+
+
 def _native(compute, document, profile, program, role: str):
     kind, data, contract, digest = _shader_bytes(document, profile, program, role)
-    key = compute.__name__, f"{kind}:{digest}", contract.fingerprint
+    key = native_key(compute, kind, digest, contract)
     found = _CACHE.get(key)
     if found is None:
         found = compute(kind, _recover_ir(kind, data), contract)
         _CACHE.put(key, found, 0, _CACHE_LIMIT, 0)
     return found
+
+
+def _native_job(job):
+    compute, kind, data, contract = job
+    try:
+        return compute(kind, _recover_ir(kind, data), contract)
+    except ShaderGraphError:
+        return None
+
+
+def _prefetch_native(document, profile) -> None:
+    """What ``program_surface_data`` reads of each shader, in worker processes."""
+    pending = {}
+    for target in document.sdf.targets:
+        for program in target.programs:
+            for role in ("vertex", "pixel"):
+                compute = native_analysis(program, role)
+                if compute is None:
+                    continue
+                try:
+                    kind, data, contract, digest = _shader_bytes(document, profile, program, role)
+                except ShaderGraphError:
+                    continue
+                key = native_key(compute, kind, digest, contract)
+                if key not in _CACHE.entries:
+                    pending.setdefault(key, (compute, kind, data, contract))
+    for key, found in zip(pending, parallel_map(_native_job, list(pending.values())) or ()):
+        if found is not None:
+            _CACHE.put(key, found, 0, _CACHE_LIMIT, 0)
 
 
 def _material_coordinates(document, profile, program, data) -> SurfaceDatum | None:
@@ -386,6 +386,11 @@ def _material_coordinates(document, profile, program, data) -> SurfaceDatum | No
 
 
 def program_surface_data(document, profile, target_index: int, program_index: int) -> tuple[SurfaceDatum, ...]:
+    return per_build_of("program_surface_data", (document, profile), (target_index, program_index),
+                        lambda: _program_surface_data(document, profile, target_index, program_index))
+
+
+def _program_surface_data(document, profile, target_index: int, program_index: int) -> tuple[SurfaceDatum, ...]:
     program = document.sdf.targets[int(target_index)].programs[int(program_index)]
     pixel = program.shader("pixel")
     if pixel is None or not pixel.present:
@@ -419,6 +424,11 @@ def program_surface_data(document, profile, target_index: int, program_index: in
 
 
 def program_vertex_inputs(document, profile, target_index: int, program_index: int) -> tuple[SurfaceDatum, ...]:
+    return per_build_of("program_vertex_inputs", (document, profile), (target_index, program_index),
+                        lambda: _program_vertex_inputs(document, profile, target_index, program_index))
+
+
+def _program_vertex_inputs(document, profile, target_index: int, program_index: int) -> tuple[SurfaceDatum, ...]:
     program = document.sdf.targets[int(target_index)].programs[int(program_index)]
     vertex = program.shader("vertex")
     if vertex is None or not vertex.present:
@@ -451,6 +461,7 @@ class SurfaceDataOffer:
 
 
 def document_surface_data(document, profile) -> tuple[SurfaceDataOffer, ...]:
+    _prefetch_native(document, profile)
     totals, found, carried, labels, real = {}, {}, {}, {}, set()
     for target in document.sdf.targets:
         for program in target.programs:
@@ -492,10 +503,13 @@ def _node_datum(kind, properties):
     return (MATERIAL_COORDINATES, "float2") if kind == "texture_coordinates" else None
 
 
-def surface_data_keys(node) -> list[tuple[str, str]]:
+def surface_data_keys(node) -> tuple[tuple[str, str], ...]:
     """(key, value type) pairs."""
     if node.kind == RE_ENGINE_RECOVERED_MASTER_KIND:
-        return []  # Its properties are the recovered programs, which nest no graph.
+        return ()  # Its properties are the recovered programs, which nest no graph.
+    cache = region_derived_cache("surface_data_keys")
+    if cache is not None and id(node) in cache:
+        return cache[id(node)][1]
     found = []
 
     def visit(value):
@@ -513,11 +527,13 @@ def surface_data_keys(node) -> list[tuple[str, str]]:
     if datum is not None:
         found.append(datum)
     visit(node.properties)
-    return found
+    if cache is not None:
+        cache[id(node)] = node, tuple(found)
+    return tuple(found)
 
 
 def graph_reads_surface_data(graph) -> bool:
-    return any(surface_data_keys(node) for node in graph.nodes)
+    return per_build("graph_reads_surface_data", id(graph), lambda: any(surface_data_keys(node) for node in graph.nodes))
 
 
 def surface_data_available(semantics, keys) -> bool:

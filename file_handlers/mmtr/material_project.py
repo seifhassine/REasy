@@ -1750,6 +1750,23 @@ def _augmented_contract(
     material_buffer: ShaderContractBuffer | None = None,
     augment_textures: bool = True,
 ) -> tuple[ShaderContract, MaterialBufferLayout]:
+    from .material_region_read import per_build_of
+    return per_build_of("augmented_contracts", (project, contract, profile, document),
+                        (stage, material_buffer, augment_textures),
+                        lambda: _augment_contract(project, contract, profile, document, stage,
+                                                  material_buffer=material_buffer, augment_textures=augment_textures))
+
+
+def _augment_contract(
+    project: MmtrMaterialProject,
+    contract: ShaderContract,
+    profile,
+    document,
+    stage: str,
+    *,
+    material_buffer: ShaderContractBuffer | None = None,
+    augment_textures: bool = True,
+) -> tuple[ShaderContract, MaterialBufferLayout]:
     if augment_textures:
         contract = _augment_material_textures(project, contract, profile, document, stage)
     buffer_name = profile.user_buffer_name
@@ -1763,29 +1780,8 @@ def _augmented_contract(
         original = contract.structured_buffer(instances.name) or ShaderContractBuffer(
             instances.name, instances.sample_count, instances.bind_point, instances.bind_count, (),
         )
-    logical_name, shader_name = profile.logical_parameter_name, profile.shader_parameter_name
     target_name_resolver = profile.material_parameter_name
-    existing = {
-        logical_name(variable.name): variable
-        for variable in original.variables
-    }
-    folded_existing: dict[str, list[ShaderContractVariable]] = {}
-    for logical, variable in existing.items():
-        folded_existing.setdefault(logical.casefold(), []).append(variable)
-    variables: list[ShaderContractVariable] = []
-    layout_variables: list[MaterialBufferVariable] = []
-    occupied: list[tuple[int, int]] = []
-    occupied_words: set[int] = set()
-    pending: list[tuple[MaterialParameterDefinition, str]] = []
     target_names: dict[str, str] = {}
-
-    def place(definition, target_name, offset, size):
-        variables.append(ShaderContractVariable(
-            shader_name(target_name), offset, size, definition.value_type, definition.value_type))
-        layout_variables.append(MaterialBufferVariable(
-            target_name, offset, size, definition.value_type, tuple(float(value) for value in definition.default),
-            str(definition.source_name or "")))
-
     for definition in project.parameters:
         target_name = str(
             target_name_resolver(
@@ -1803,6 +1799,59 @@ def _augmented_contract(
                 f"{definition.name} and {target_names[target_name]} map to the same target-game parameter."
             )
         target_names[target_name] = definition.name
+    from .material_region_read import per_build_of
+    replacement_buffer, layout = per_build_of(
+        "parameter_placements", (project, profile, original), (tuple(target_names), declared_buffer is None),
+        lambda: _place_parameters(project, profile, original, tuple(target_names), declared_buffer is None))
+    if instances is not None:
+        adjusted = replace(
+            contract,
+            resources=tuple(
+                replace(item, sample_count=replacement_buffer.byte_size) if item.name == instances.name else item
+                for item in contract.resources
+            ),
+            structured_buffers=tuple(
+                item for item in contract.structured_buffers if item.name != instances.name
+            ) + (replacement_buffer,),
+        )
+    else:
+        adjusted = replace(
+            contract,
+            constant_buffers=tuple(
+                replacement_buffer
+                if item.name.casefold() == buffer_name.casefold()
+                else item
+                for item in contract.constant_buffers
+            ),
+        )
+    return adjusted, layout
+
+
+def _place_parameters(project, profile, original: ShaderContractBuffer, names: tuple[str, ...],
+                      undeclared: bool) -> tuple[ShaderContractBuffer, MaterialBufferLayout]:
+    """``original`` with the project's parameters, named ``names``, placed in it."""
+    logical_name, shader_name = profile.logical_parameter_name, profile.shader_parameter_name
+    existing = {
+        logical_name(variable.name): variable
+        for variable in original.variables
+    }
+    folded_existing: dict[str, list[ShaderContractVariable]] = {}
+    for logical, variable in existing.items():
+        folded_existing.setdefault(logical.casefold(), []).append(variable)
+    variables: list[ShaderContractVariable] = []
+    layout_variables: list[MaterialBufferVariable] = []
+    occupied: list[tuple[int, int]] = []
+    occupied_words: set[int] = set()
+    pending: list[tuple[MaterialParameterDefinition, str]] = []
+
+    def place(definition, target_name, offset, size):
+        variables.append(ShaderContractVariable(
+            shader_name(target_name), offset, size, definition.value_type, definition.value_type))
+        layout_variables.append(MaterialBufferVariable(
+            target_name, offset, size, definition.value_type, tuple(float(value) for value in definition.default),
+            str(definition.source_name or "")))
+
+    for definition, target_name in zip(project.parameters, names):
         candidates = (
             target_name,
             str(definition.source_name),
@@ -1833,7 +1882,7 @@ def _augmented_contract(
             and int(offset) % 4 == 0
             and int(offset) + size <= original.byte_size
             and occupied_words.isdisjoint(range(int(offset), int(offset) + size, 4))
-            and (declared_buffer is None or int(offset) % 16 + size <= 16)
+            and (undeclared or int(offset) % 16 + size <= 16)
         )
         if not valid_source:
             pending.append((definition, target_name))
@@ -1843,7 +1892,7 @@ def _augmented_contract(
         occupied_words.update(range(resolved_offset, resolved_offset + size, 4))
         place(definition, target_name, resolved_offset, size)
 
-    parameter_names = {name.casefold() for name in target_names}
+    parameter_names = {name.casefold() for name in names}
     for variable in original.variables:
         if logical_name(variable.name).casefold() in parameter_names:
             continue
@@ -1866,29 +1915,8 @@ def _augmented_contract(
         byte_size=byte_size,
         variables=tuple(sorted(variables, key=lambda item: (item.byte_offset, item.name.casefold()))),
     )
-    if instances is not None:
-        adjusted = replace(
-            contract,
-            resources=tuple(
-                replace(item, sample_count=byte_size) if item.name == instances.name else item
-                for item in contract.resources
-            ),
-            structured_buffers=tuple(
-                item for item in contract.structured_buffers if item.name != instances.name
-            ) + (replacement_buffer,),
-        )
-    else:
-        adjusted = replace(
-            contract,
-            constant_buffers=tuple(
-                replacement_buffer
-                if item.name.casefold() == buffer_name.casefold()
-                else item
-                for item in contract.constant_buffers
-            ),
-        )
-    return adjusted, MaterialBufferLayout(
-        buffer_name,
+    return replacement_buffer, MaterialBufferLayout(
+        profile.user_buffer_name,
         byte_size,
         tuple(sorted(layout_variables, key=lambda item: (item.byte_offset, item.name.casefold()))),
     )
@@ -1899,11 +1927,13 @@ def build_material_project(project: MmtrMaterialProject, document) -> MmtrMateri
         validate_pipeline_states(document, project.pipeline_states)
     except PipelineSettingError as exc:
         raise MaterialBuildError(str(exc)) from exc
-    if getattr(document, "material_family", None) is not None:
-        if project.implementations:
-            raise MaterialBuildError("Graph-owned bodies in shader-LOD families need explicit per-member renderer templates.")
-        return build_material_family(project, document)
-    return _build_material_project(project, document)
+    from .worker_pool import shared_workers
+    with shared_workers():
+        if getattr(document, "material_family", None) is not None:
+            if project.implementations:
+                raise MaterialBuildError("Graph-owned bodies in shader-LOD families need explicit per-member renderer templates.")
+            return build_material_family(project, document)
+        return _build_material_project(project, document)
 
 
 def _build_material_project(project: MmtrMaterialProject, document) -> MmtrMaterialBuild:
@@ -1965,8 +1995,10 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
     project_owns_contract = profile.material_project_owns_contract(project)
     prepared: dict[str, _PreparedMaterialShader] = {}
     compiled_results: dict[str, object] = {}
+    texture_layouts: dict[str, tuple[MaterialTextureSlot, ...]] = {}
 
     engine_buffers, engine_resources = graph_renderer_buffers(project.graph), graph_renderer_resources(project.graph)
+    batch, batched = profile.material_shader_batch(project), []
 
     def prepare_route(target_index, program_index, shader_role, *, first):
         authored = authored_routes.get((target_index, program_index, shader_role))
@@ -2067,6 +2099,9 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
                 execution if authored is not None else None,
             )
             prepared[cache_key] = cached
+            if authored is None:
+                batch.add(cached.request)
+                batched.append(cache_key)
         return _PreparedMaterialRoute(
             int(target_index), int(program_index), shader_role, cache_key, cached,
         )
@@ -2171,21 +2206,23 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
             raise MaterialBuildError(
                 "The master material uses inconsistent parameter layouts across required passes."
             )
-        binding_by_id = {item.texture_id: item for item in cached.texture_interface}
-        candidate_texture_layout = tuple(
-            MaterialTextureSlot(
-                texture_id=definition.texture_id,
-                name=(
-                    binding_by_id[definition.texture_id].name
-                    if definition.texture_id in binding_by_id
-                    else _material_texture_name(definition)
-                ),
-                dimension=definition.dimension,
-                default_path=definition.default_path,
-                source_name=definition.source_name,
+        candidate_texture_layout = texture_layouts.get(cache_key)
+        if candidate_texture_layout is None:
+            binding_by_id = {item.texture_id: item for item in cached.texture_interface}
+            candidate_texture_layout = texture_layouts[cache_key] = tuple(
+                MaterialTextureSlot(
+                    texture_id=definition.texture_id,
+                    name=(
+                        binding_by_id[definition.texture_id].name
+                        if definition.texture_id in binding_by_id
+                        else _material_texture_name(definition)
+                    ),
+                    dimension=definition.dimension,
+                    default_path=definition.default_path,
+                    source_name=definition.source_name,
+                )
+                for definition in project.textures
             )
-            for definition in project.textures
-        )
         if texture_layout is None:
             texture_layout = candidate_texture_layout
         elif texture_layout != candidate_texture_layout:
@@ -2216,15 +2253,14 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
         except Exception as exc:
             preparation_error = exc
             break
-    pending = [(key, product.request) for key, product in prepared.items() if product.authored is None]
-    if pending:
+    if batched:
         try:
-            results = tuple(profile.compile_material_shaders(project, tuple(request for _key, request in pending)))
-            if len(results) != len(pending):
+            results = tuple(batch.results())
+            if len(results) != len(batched):
                 raise ShaderGraphError("The material compiler returned an incomplete shader batch.")
         except Exception as exc:
-            results = (exc,) * len(pending)
-        compiled_results.update((key, result) for (key, _request), result in zip(pending, results))
+            results = (exc,) * len(batched)
+        compiled_results.update(zip(batched, results))
     for route in staged_routes:
         finish_route(route)
     if preparation_error is not None:

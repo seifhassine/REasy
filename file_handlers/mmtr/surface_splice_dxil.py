@@ -2,14 +2,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import re
 
 lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from file_handlers.sdf.shader_graph_math import value_width
 
-lazy from .profiles.re_engine_dxil_authoring import _CALL, _SSA, _VALUE, _function_spans, _symbol
+lazy from .profiles.re_engine_dxil_authoring import _SSA, _VALUE
 lazy from .surface_flow import NativeFlow
-lazy from .surface_flow_dxil import call_access, entry_dominance, value_numbers, _entry
+lazy from .material_region_read import per_build
+lazy from .surface_flow_dxil import material_records, _entry
+lazy import fastdxiltext
 
 
 EDITED_OPTIMIZER_PASSES = ("-dce",)
@@ -17,8 +18,6 @@ EDITED_OPTIMIZER_PASSES = ("-dce",)
 RECORDED_DISCARD_PASSES = ("-mem2reg", "-dce")
 _DISCARDED = "%reasy.discarded"
 _TEXELS = tuple(f"%reasy.texel.{component}" for component in range(4))
-_MEMORY_EFFECTS = {"alloca", "store", "atomicrmw", "cmpxchg", "fence"}
-_STORED_VALUE = re.compile(r"(,\s*(?:half|float|double|i1|i8|i16|i32|i64)\s+)([^,()]+?)(\)\s*(?:,\s*!.*)?)$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -71,14 +70,11 @@ def dxil_surface_plan(flow: NativeFlow, edits, assembly: str = "", contract=None
         return str(flow.values[value_id].origin)
 
     def material_address(block, line) -> str:
-        from .profiles.re_engine_bindless_material import material_record_accesses
-        defined, dominators = entry_dominance(assembly)
-        numbers = value_numbers(assembly)
         records: dict[str, list] = {}
-        for access in material_record_accesses(assembly.splitlines(), contract):
-            where = defined.get(access.address)
-            if where is not None and where[0] in dominators[block] and (where[0] != block or where[1] < line):
-                records.setdefault(numbers.get(access.address, access.address), []).append((where[1], access.address))
+        for number, defined_block, defined_line, address, dominated in per_build(
+                "material_records", (assembly, contract.fingerprint), lambda: material_records(assembly, contract)):
+            if block in dominated and (defined_block != block or defined_line < line):
+                records.setdefault(number, []).append((defined_line, address))
         if len(records) != 1:
             raise ShaderGraphError("This pass does not read the drawn material's values where the channel is stored, "
                                    "so the edit cannot use them here. Use Drawing For to leave this pass out of the edit."
@@ -221,253 +217,14 @@ def surface_helper_source(plan, parameters: list[tuple[str, str]], registers: di
     return lines, calls
 
 
-def _closure(carrier_entry: list[str], roots: list[str]) -> list[str]:
-    definitions, order = {}, []
-    for line in carrier_entry:
-        match = _VALUE.match(line)
-        if match is not None:
-            definitions[match["result"]] = line
-            order.append(match["result"])
-    needed, pending = set(), list(roots)
-    while pending:
-        name = pending.pop()
-        if name in needed or name not in definitions:
-            continue
-        needed.add(name)
-        body = definitions[name][_VALUE.match(definitions[name]).end():]
-        pending.extend(_SSA.findall(body))
-    return [definitions[name] for name in order if name in needed]
-
-
-def _call_parts(line: str):
-    match = re.match(r"^\s*(%[-$._A-Za-z0-9\"\\]+)\s*=\s*call\s+(.+?)\s+(@(?:\"(?:[^\"\\]|\\.)*\"|[-$._A-Za-z0-9]+))"
-                     r"\((.*)\)(.*)$", line)
-    if match is None:
-        raise ShaderGraphError("A DXIL surface helper call is malformed.")
-    arguments, depth, current = [], 0, ""
-    for character in match[4]:
-        if character == "," and depth == 0:
-            arguments.append(current.strip())
-            current = ""
-            continue
-        depth += character in "([{<"
-        depth -= character in ")]}>"
-        current += character
-    if current.strip():
-        arguments.append(current.strip())
-    return match[1], match[2], match[3], arguments, match[5]
-
-
-def _helper_body(carrier_lines: list[str], callee: str):
-    span = _function_spans(carrier_lines).get(_symbol(callee[1:]))
-    if span is None:
-        raise ShaderGraphError("DXIL carrier omitted a surface helper definition.")
-    header, body = carrier_lines[span[0]], [line for line in carrier_lines[span[0] + 1:span[1] - 1] if line.strip()]
-    parameters = re.findall(r"(%[-$._A-Za-z0-9]+)(?=\s*[,)])", header.split("(", 1)[1])
-    if not body or not body[-1].strip().startswith("ret ") or any(
-            re.match(r"^\s*(?:;\s*<label>|[-$._A-Za-z0-9]+:)", line) or line.strip().startswith(("br ", "switch "))
-            for line in body):
-        return None
-    return parameters, body[:-1], body[-1].strip().split(None, 2)[2]
-
-
-def _merge_repeated(code: list[str], access: dict[str, str], aliases: dict[str, str]) -> list[str]:
-    seen: dict[str, str] = {}
-    reads: set[str] = set()
-    result = []
-    for line in code:
-        line = _rename(line, aliases)
-        match = _VALUE.match(line)
-        operation = line[match.end():].split(None, 1)[0] if match else line.split(None, 1)[0]
-        callee = _CALL.search(line) if operation in {"call", "tail"} else None
-        kind = (access.get(callee["name"], "effect") if callee else "effect" if operation in _MEMORY_EFFECTS
-                else "readonly" if operation == "load" else "readnone")
-        if kind == "effect" or match is None:
-            for key in reads:
-                seen.pop(key, None)
-            reads.clear()
-            result.append(line)
-            continue
-        key = line[match.end():]
-        if key in seen:
-            aliases[match["result"]] = seen[key]
-            continue
-        seen[key] = match["result"]
-        if kind == "readonly":
-            reads.add(key)
-        result.append(line)
-    return result
-
-
 def apply_surface_plan(lines: list[str], start: int, carrier_lines: list[str], carrier_entry: list[str],
                        plan, outputs: dict) -> tuple[list[str], dict[str, list[str]]]:
     """``start`` is ``lines[0]``'s assembly line."""
-    defining = {match["result"]: index for index, line in enumerate(lines) if (match := _VALUE.match(line))}
-    carrier: dict[int, list[str]] = {}
-    native: dict[int, list[str]] = {}
-    prelude: dict[int, list[str]] = {}
-    replaced: dict[int, list[str]] = {}
-    renamed: dict[str, str] = {}
-    pending = []
-    # Store line -> store argument -> new value.
-    stored: dict[int, dict[int, str]] = {}
-    serial = 0
-
-    def fresh() -> str:
-        nonlocal serial
-        serial += 1
-        return f"%reasy.surface.{serial}"
-
-    for edit in plan:
-        width = value_width(edit.value_type)
-        tap_count = sum(value_width(tap_type) for _tap, tap_type in edit.taps)
-        for line in edit.discards:
-            condition = _STORED_VALUE.search(lines[line - start])
-            if condition is None:
-                raise ShaderGraphError("A DXIL discard has an unexpected form.")
-            recorded = fresh() if edit.records else ""
-            replaced[line - start] = [] if not edit.records else [
-                f"  {recorded} = load i32, i32* {_DISCARDED}, align 4",
-                f"  {recorded}.bit = zext i1 {condition[2]} to i32",
-                f"  {recorded}.any = or i32 {recorded}, {recorded}.bit",
-                f"  store i32 {recorded}.any, i32* {_DISCARDED}, align 4"]
-        for site in edit.sites:
-            store_lines = [line for line, _item, _argument in (site.stores or site.roots)]
-            anchor = (site.exit if site.exit is not None else site.read + 1 if site.read is not None
-                      else min(store_lines)) - start
-            site_arguments = list(site.arguments)
-            if site.read is not None and site.texels:
-                texels = re.search(r"call (%dx\.types\.ResRet\.\w+)", lines[site.read - start])
-                if texels is None:
-                    raise ShaderGraphError("A DXIL texture read has an unexpected form.")
-                extracted = {placeholder: fresh() for placeholder in _TEXELS}
-                prelude.setdefault(anchor, []).extend(f"  {name} = extractvalue {texels[1]} {site.texels}, {component}"
-                                                      for component, name in enumerate(extracted.values()))
-                site_arguments = [extracted.get(item, item) for item in site_arguments]
-            if _DISCARDED in site_arguments:
-                recorded = fresh()
-                prelude.setdefault(anchor, []).extend((f"  {recorded}.word = load i32, i32* {_DISCARDED}, align 4",
-                                                       f"  {recorded} = icmp ne i32 {recorded}.word, 0"))
-                site_arguments = [recorded if item == _DISCARDED else item for item in site_arguments]
-            code, results = [], []
-            for component in range(width):
-                helper = f"{edit.name}_{component}"
-                call = next((line for line in carrier_entry if " call " in line
-                             and re.search(rf"{re.escape(helper)}(?![0-9])", line)), None)
-                if call is None:
-                    raise ShaderGraphError(f"DXIL carrier omitted surface helper {helper}.")
-                result, return_type, callee, arguments, tail = _call_parts(call)
-                native_count = tap_count + edit.material
-                if len(arguments) < native_count:
-                    raise ShaderGraphError("A DXIL surface helper lost its channel parameters.")
-                inputs = arguments[:len(arguments) - native_count]
-                taps = [f"{argument.rsplit(' ', 1)[0]} {value}"
-                        for argument, value in zip(arguments[len(arguments) - tap_count:], site_arguments)]
-                address = [f"i32 {site.material_address}"] if edit.material else []
-                inline = _helper_body(carrier_lines, callee)
-                needed = inputs
-                if inline is not None:
-                    parameters, body, returned = inline
-                    used = {*_SSA.findall(line) for line in body} | set(_SSA.findall(returned))
-                    needed = [argument for parameter, argument in zip(parameters, inputs) if parameter in used]
-                closure = _closure(carrier_entry, [*_SSA.findall(argument) for argument in needed])
-                names = {match["result"]: fresh() for line in closure if (match := _VALUE.match(line))}
-                code.extend(_rename(line, names) for line in closure)
-                arguments = [*(_rename(argument, names) for argument in inputs), *address, *taps]
-                if inline is not None:
-                    names = {parameter: argument.rsplit(" ", 1)[1] for parameter, argument in zip(parameters, arguments)}
-                    names.update({match["result"]: fresh() for line in body if (match := _VALUE.match(line))})
-                    code.extend(_rename(line, names) for line in body)
-                    results.append(_rename(returned, names))
-                else:
-                    value = fresh()
-                    code.append(f"  {value} = call {return_type} {callee}({', '.join(arguments)}){tail}")
-                    results.append(value)
-            if edit.output:
-                identity, _row = outputs[edit.output]
-                kind, scalar = ("f32", "float") if edit.value_type.startswith("float") else ("i32", "i32")
-                code.extend(f"  call void @dx.op.storeOutput.{kind}(i32 5, i32 {identity}, i32 0, i8 {component}, "
-                            f"{scalar} {value})" for component, value in enumerate(results))
-            elif site.exit is not None and results[0] != "false":
-                code.append(f"  call void @dx.op.discard(i32 82, i1 {results[0]})")
-            carrier.setdefault(anchor, []).extend(code)
-            pending.append((anchor, site, results))
-    access = call_access(carrier_lines)
-    aliases: dict[str, str] = {}
-    for anchor, code in carrier.items():
-        carrier[anchor] = _merge_repeated(code, access, aliases)
-    for anchor, site, results in pending:
-        results = [aliases.get(value, value) for value in results]
-        if site.exit is not None:
-            continue
-        if site.read is not None:
-            renamed.update((original, results[lane]) for lane, original in site.lanes)
-            continue
-        if site.stores:
-            for line, component, argument in site.stores:
-                stored.setdefault(line - start, {})[argument] = results[component]
-            continue
-        mapping = dict(zip(site.frontier, results))
-        for name in site.tail:
-            original = lines[defining[name]]
-            body = original[_VALUE.match(original).end():]
-            rewritten = _rename(body, mapping)
-            if rewritten == body:
-                mapping[name] = name
-                continue
-            mapping[name] = fresh()
-            native.setdefault(anchor, []).append(f"  {mapping[name]} ={rewritten}")
-        for line, root, argument in site.roots:
-            if mapping.get(root, root) != root:
-                stored.setdefault(line - start, {})[argument] = mapping[root]
-    result, markers = [], {}
-    for index, line in enumerate(lines):
-        if index == 1 and any(edit.records for edit in plan):
-            result.extend((f"  {_DISCARDED} = alloca i32, align 4", f"  store i32 0, i32* {_DISCARDED}, align 4"))
-        if index in replaced:
-            result.extend(replaced[index])
-            continue
-        result.extend(prelude.get(index, ()))
-        if carrier.get(index):
-            markers[f"; reasy.surface.code {index}"] = carrier[index]
-            result.append(f"; reasy.surface.code {index}")
-        result.extend(native.get(index, ()))
-        if index in stored:
-            line = _with_arguments(line, stored[index])
-        result.append(line)
-    if renamed:
-        result = [_rename_uses(line, renamed) for line in result]
-    return result, markers
-
-
-def _with_arguments(line: str, values: dict[int, str]) -> str:
-    callee = _CALL.search(line)
-    end = line.rfind(")")
-    if callee is None or end < callee.end():
-        raise ShaderGraphError("A DXIL store has an unexpected form.")
-    arguments = [item.strip() for item in line[callee.end():end].split(",")]
-    for argument, value in values.items():
-        if argument >= len(arguments) or " " not in arguments[argument]:
-            raise ShaderGraphError("A DXIL store has an unexpected form.")
-        arguments[argument] = f"{arguments[argument].rsplit(' ', 1)[0]} {value}"
-    return f"{line[:callee.end()]}{', '.join(arguments)}{line[end:]}"
-
-
-def _rename_uses(line: str, names: dict[str, str]) -> str:
-    definition = _VALUE.match(line)
-    head, body = (line[:definition.end()], line[definition.end():]) if definition else ("", line)
-    return head + _rename(body, names)
-
-
-def _rename(text: str, names: dict[str, str]) -> str:
-    return _SSA.sub(lambda token: names.get(token[0], token[0]), text)
+    return fastdxiltext.apply_surface_plan(lines, start, carrier_lines, carrier_entry, plan, outputs, value_width)
 
 
 def place_surface_code(lines: list[str], markers: dict[str, list[str]]) -> list[str]:
-    result = [*markers.get(line, (line,)) for line in lines]
-    if sum(line in markers for line in lines) != len(markers):
-        raise ShaderGraphError("A DXIL rewrite lost the place of a surface edit.")
-    return result
+    return fastdxiltext.place_surface_code(lines, markers)
 
 
 __all__ = [

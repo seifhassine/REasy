@@ -8,9 +8,14 @@ lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from .surface_flow_dxbc import dxbc_flow
 lazy from .surface_flow_dxil import dxil_flow
 lazy from .surface_flow_spirv import spirv_flow
+lazy import fastsurface
 
 
 MAX_CHANNEL_WIDTH = 4
+
+
+def _constructed(self):
+    return type(self), tuple(getattr(self, name) for name in self.__slots__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -23,6 +28,7 @@ class FlowValue:
     signature: tuple = ()
     scalar: str = ""
     origin: object = None
+    __reduce__ = _constructed
 
 
 @dataclass(frozen=True, slots=True)
@@ -34,6 +40,7 @@ class FlowStore:
     constant: str = ""
     site: object = None
     scope: str = "output"
+    __reduce__ = _constructed
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,16 +56,24 @@ class NativeFlow:
     exits: tuple = ()
 
     def __post_init__(self):
-        count = len(self.values)
-        for value in self.values:
-            if value.kind not in {"pure", "source", "join"}:
-                raise ShaderGraphError("Native dataflow has an unknown value kind.")
-            if value.kind == "pure" and not value.operands:
-                raise ShaderGraphError("Native dataflow has arithmetic without operands.")
-            if any(not 0 <= item < count for item in (*value.operands, *value.controls)):
-                raise ShaderGraphError("Native dataflow references an undefined value.")
-        if any(store.value is not None and not 0 <= store.value < count for store in (*self.stores, *self.discards)):
-            raise ShaderGraphError("Native dataflow stores an undefined value.")
+        fastsurface.check_flow(self.values, self.stores, self.discards, FlowValue, FlowStore)
+
+    def __reduce__(self):
+        state = [getattr(self, name) for name in self.__slots__]
+        columns = fastsurface.value_columns(state[1], FlowValue)
+        if columns is not None:
+            state[1] = None
+        return _loaded_flow, (columns, *state)
+
+
+def _loaded_flow(columns, *state):
+    """A pickled ``NativeFlow``, set as its dataclass state was set: without its checks."""
+    flow = object.__new__(NativeFlow)
+    for name, value in zip(NativeFlow.__slots__, state):
+        object.__setattr__(flow, name, value)
+    if columns is not None:
+        object.__setattr__(flow, "values", fastsurface.flow_values(columns, FlowValue))
+    return flow
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,6 +87,7 @@ class SurfaceChannel:
     stored_type: str
     packed: bool = False
     constant: bool = False
+    __reduce__ = _constructed
 
     @property
     def key(self) -> str:
@@ -86,117 +102,11 @@ class ChannelSplit:
     # Values before packing, in definition order; empty when the stored lanes are edited directly.
     frontier: tuple[int, ...] = ()
     tail: frozenset[int] = frozenset()
+    __reduce__ = _constructed
 
 
 def parallel_signatures(flow: NativeFlow) -> list[int]:
-    interned: dict[tuple, int] = {}
-    result: list[int | None] = [None] * len(flow.values)
-
-    def key(index, inner):
-        value = flow.values[index]
-        return (value.kind, value.signature, tuple(sorted(map(inner, value.operands))),
-                tuple(sorted(map(inner, value.controls))))
-
-    for component in _components(flow):
-        if len(component) == 1 and component[0] not in _dependencies(flow, component[0]):
-            result[component[0]] = interned.setdefault(key(component[0], result.__getitem__), len(interned))
-            continue
-        members = set(component)
-        colours = dict.fromkeys(component, 0)
-        while True:
-            local: dict[tuple, int] = {}
-            updated = {index: local.setdefault(key(index, lambda item: (
-                -1 - colours[item]) if item in members else result[item]), len(local)) for index in component}
-            if len(set(updated.values())) == len(set(colours.values())):
-                break
-            colours = updated
-        for index in component:
-            result[index] = interned.setdefault(("cycle", key(index, lambda item: (
-                -1 - colours[item]) if item in members else result[item])), len(interned))
-    return result
-
-
-def _dependencies(flow: NativeFlow, index: int) -> tuple[int, ...]:
-    value = flow.values[index]
-    return (*value.operands, *value.controls)
-
-
-def _components(flow: NativeFlow) -> list[list[int]]:
-    """Dependencies first."""
-    order, low, stack, on_stack, result = {}, {}, [], set(), []
-    for root in range(len(flow.values)):
-        if root in order:
-            continue
-        work = [(root, iter(_dependencies(flow, root)))]
-        order[root] = low[root] = len(order)
-        stack.append(root)
-        on_stack.add(root)
-        while work:
-            node, children = work[-1]
-            child = next(children, None)
-            if child is not None:
-                if child not in order:
-                    order[child] = low[child] = len(order)
-                    stack.append(child)
-                    on_stack.add(child)
-                    work.append((child, iter(_dependencies(flow, child))))
-                elif child in on_stack:
-                    low[node] = min(low[node], order[child])
-                continue
-            work.pop()
-            if work:
-                low[work[-1][0]] = min(low[work[-1][0]], low[node])
-            if low[node] == order[node]:
-                component = []
-                while True:
-                    item = stack.pop()
-                    on_stack.discard(item)
-                    component.append(item)
-                    if item == node:
-                        break
-                result.append(sorted(component))
-    return result
-
-
-def _separated(flow: NativeFlow, roots, members) -> tuple[set[int], set[int]] | None:
-    region, frontier, pending = set(), set(), list(roots)
-    while pending:
-        current = pending.pop()
-        if current in members:
-            frontier.add(current)
-            continue
-        if current in region:
-            continue
-        item = flow.values[current]
-        if item.kind != "pure":
-            return None
-        region.add(current)
-        pending.extend(item.operands)
-    return region, frontier
-
-
-def _packing(flow: NativeFlow, signatures: list[int], roots: tuple[int, ...]):
-    reached, pending, order = set(), list(roots), []
-    while pending:
-        current = pending.pop(0)
-        if current in reached:
-            continue
-        reached.add(current)
-        order.append(current)
-        if flow.values[current].kind == "pure":
-            pending.extend(flow.values[current].operands)
-    classes: dict[int, set[int]] = {}
-    for item in order:
-        if item not in roots and flow.values[item].kind != "source":
-            classes.setdefault(signatures[item], set()).add(item)
-    best = None
-    for signature in sorted(classes):
-        separated = _separated(flow, roots, classes[signature])
-        if separated is None or not 0 < len(separated[1]) <= MAX_CHANNEL_WIDTH:
-            continue
-        if best is None or len(separated[0]) > len(best[0]):
-            best = separated
-    return (frozenset(best[0]), tuple(sorted(best[1]))) if best else (frozenset(), ())
+    return fastsurface.Graph(flow.values, FlowValue).signatures()
 
 
 def constant_field(contract, binding: int, space: int, offset: int) -> str:
@@ -253,26 +163,6 @@ def recovered_surface_flow(ir_kind: str, ir, contract) -> NativeFlow:
     raise ShaderGraphError(f"Recovered program kind {ir_kind!r} has no surface dataflow reader.")
 
 
-def _tail_shape(flow: NativeFlow, frontier, roots) -> tuple:
-    shapes: dict[int, int] = dict.fromkeys(frontier, 0)
-    interned: dict[tuple, int] = {("input",): 0}
-    pending = list(roots)
-    while pending:
-        current = pending[-1]
-        if current in shapes:
-            pending.pop()
-            continue
-        value = flow.values[current]
-        missing = [item for item in value.operands if item not in shapes]
-        if missing:
-            pending.extend(missing)
-            continue
-        pending.pop()
-        shapes[current] = interned.setdefault(
-            (value.kind, value.signature, tuple(sorted(shapes[item] for item in value.operands))), len(interned))
-    return tuple(shapes[item] for item in roots)
-
-
 SCALAR_TYPES = {"float32": "float", "uint32": "uint", "sint32": "int"}
 
 
@@ -288,7 +178,8 @@ def _vector(base: str, width: int) -> str:
 
 
 def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
-    signatures = parallel_signatures(flow)
+    graph = fastsurface.Graph(flow.values, FlowValue)
+    signatures = graph.signatures()
     elements: dict[tuple[str, str, int], dict[int, list[FlowStore]]] = {}
     textures: dict[str, list[FlowStore]] = {}
     for store in flow.stores:
@@ -310,7 +201,7 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
         # A lane stored at several sites keeps its packing; only the stored value is editable.
         single = {lane: stores[0].value for lane, stores in lanes.items()
                   if len(stores) == 1 and stores[0].value is not None}
-        packing = {lane: _packing(flow, signatures, (value,)) for lane, value in sorted(single.items())}
+        packing = {lane: graph.packing((value,), MAX_CHANNEL_WIDTH) for lane, value in sorted(single.items())}
         packing = {lane: item for lane, item in packing.items() if item[0]}
 
         def shared(lane, other):
@@ -324,13 +215,13 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
         joint = []
         for group in groups:
             members = tuple(sorted(group))
-            tail, frontier = _packing(flow, signatures, tuple(single[lane] for lane in members))
+            tail, frontier = graph.packing(tuple(single[lane] for lane in members), MAX_CHANNEL_WIDTH)
             if tail:
                 joint.append((members, frontier, tail))
         # Separate packings with the same steps re-encode one vector lane by lane.
         alike: dict[tuple, list] = {}
         for members, frontier, tail in joint:
-            shape = _tail_shape(flow, frontier, tuple(single[lane] for lane in members))
+            shape = graph.tail_shape(frontier, tuple(single[lane] for lane in members))
             alike.setdefault((shape, len(frontier)), []).append((members, frontier, tail))
         splits = []
         for parts in alike.values():

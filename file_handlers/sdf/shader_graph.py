@@ -216,6 +216,32 @@ def _semantic_token(name: str, index: int) -> str:
 
 
 @dataclass(frozen=True, slots=True)
+class _JsonValue:
+    value: object
+
+
+def _json_value(value) -> str:
+    return json.dumps(asdict(_JsonValue(value))["value"], sort_keys=True, separators=(",", ":"))
+
+
+def _contract_json(contract, omitted: tuple) -> bytes:
+    """json.dumps(asdict(contract), sort_keys=True, separators=(",", ":")) without the ``omitted`` fields, written
+    natively."""
+    from utils.native_build import ensure_fastkey
+
+    return ensure_fastkey().record_json(contract, omitted, _json_value)
+
+
+def _record_state(self):
+    return [getattr(self, name) for name in self.__slots__]
+
+
+def _set_record_state(self, state):
+    for name, value in zip(self.__slots__, state):
+        object.__setattr__(self, name, value)
+
+
+@dataclass(frozen=True, slots=True)
 class ShaderSignatureField:
     semantic_name: str
     semantic_index: int
@@ -227,6 +253,8 @@ class ShaderSignatureField:
     stream: int = 0
     array_length: int = 1
     interpolation: str = ""
+    __getstate__ = _record_state
+    __setstate__ = _set_record_state
 
     def __post_init__(self):
         if not isinstance(self.array_length, int) or not 1 <= self.array_length <= 65536:
@@ -278,6 +306,8 @@ class ShaderContractVariable:
     matrix: bool = False
     struct_name: str = ""
     members: tuple["ShaderContractVariable", ...] = ()
+    __getstate__ = _record_state
+    __setstate__ = _set_record_state
 
 
 @dataclass(frozen=True, slots=True)
@@ -288,6 +318,8 @@ class ShaderContractBuffer:
     bind_count: int
     variables: tuple[ShaderContractVariable, ...]
     register_space: int = 0
+    __getstate__ = _record_state
+    __setstate__ = _set_record_state
 
 
 @dataclass(frozen=True, slots=True)
@@ -298,6 +330,8 @@ class ShaderContractResource:
     dimension: str
     sample_count: int
     bind_point: int
+    __getstate__ = _record_state
+    __setstate__ = _set_record_state
     bind_count: int
     flags: int
     register_space: int = 0
@@ -430,6 +464,8 @@ class ShaderContract:
     mesh_execution: 'ShaderMeshExecution | None' = None
     vulkan_execution: 'ShaderVulkanExecution | None' = None
     _fingerprint: str = field(default="", init=False, compare=False, repr=False)
+    __getstate__ = _record_state
+    __setstate__ = _set_record_state
 
     @classmethod
     def from_shader(cls, shader: DxbcShader) -> "ShaderContract":
@@ -633,14 +669,9 @@ class ShaderContract:
     def fingerprint(self) -> str:
         if self._fingerprint:
             return self._fingerprint
-        payload = asdict(self)
-        payload.pop("source_sha256")
-        payload.pop("_fingerprint")
-        for name in ('primitive_execution', 'mesh_execution', 'vulkan_execution'):
-            if getattr(self, name) is None:
-                payload.pop(name)
-        raw = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
-        fingerprint = hashlib.sha256(raw).hexdigest()
+        omitted = ("source_sha256", "_fingerprint", *(name for name in ('primitive_execution', 'mesh_execution',
+                                                                        'vulkan_execution') if getattr(self, name) is None))
+        fingerprint = hashlib.sha256(_contract_json(self, omitted)).hexdigest()
         object.__setattr__(self, "_fingerprint", fingerprint)
         return fingerprint
 

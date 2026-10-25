@@ -4,15 +4,12 @@ import re
 from file_handlers.sdf.shader_graph import ShaderGraphError
 
 
-from file_handlers.sdf.dxil_metadata import metadata_definitions
+lazy import fastdxiltext
 lazy from file_handlers.sdf.dxil_metadata import native_float_literal
 lazy from file_handlers.sdf.shader_stage_execution import ShaderMeshExecution, ShaderPrimitiveExecution
 lazy from file_handlers.sdf.shader_storage import native_storage_type
 
 
-_STORAGE_TYPE = re.compile(r'(%[-\w.$]+) = type (.+)')
-_MESH_PAYLOAD = re.compile(r'(?:call|declare) (%[-\w.$]+)\* @dx\.op\.getMeshPayload\.')
-_DISPATCH_PAYLOAD = re.compile(r'@dx\.op\.dispatchMesh\.[^(]+\(.*?, (%[-\w.$]+) addrspace\(3\)\*')
 _INTERPOLATION_MODES = ("", "constant", "linear", "linear centroid", "linear noperspective",
                         "linear noperspective centroid", "linear sample", "linear noperspective sample")
 _COMPONENT_CODES = {"float32": 9, "uint32": 5, "sint32": 4}
@@ -28,18 +25,10 @@ class DxilEntryMetadata:
 
     @classmethod
     def parse_entries(cls, lines: list[str]) -> tuple["DxilEntryMetadata", ...]:
-        definitions = metadata_definitions(lines)
+        definitions, types, payloads = fastdxiltext.entry_tables(lines)
         entries = definitions.get("!dx.entryPoints", ())
         if not entries or any(len(definitions.get(entry, ())) != 5 for entry in entries):
             raise ShaderGraphError("DXIL has invalid entry metadata records.")
-        types = {match[1]:match[2] for line in lines
-                 if line.startswith('%') and (match := _STORAGE_TYPE.fullmatch(line))}
-        payloads = set()
-        for line in lines:
-            if '@dx.op.getMeshPayload.' in line and (match := _MESH_PAYLOAD.search(line)):
-                payloads.add(match[1])
-            if '@dx.op.dispatchMesh.' in line and (match := _DISPATCH_PAYLOAD.search(line)):
-                payloads.add(match[1])
         if len(payloads) > 1:
             raise ShaderGraphError('One mesh/amplification entry cannot declare conflicting payload types.')
         payload = next(iter(payloads), '')
@@ -295,7 +284,9 @@ def with_signature_rows(lines: list[str], metadata: DxilEntryMetadata, *, inputs
     return [replaced.get(line.split(" = ", 1)[0], line) for line in lines] + added
 
 
-def map_carrier_inputs(lines: list[str], source: DxilEntryMetadata, carrier: DxilEntryMetadata, indexed_reads=()) -> list[str]:
+def carrier_input_rows(source: DxilEntryMetadata, carrier: DxilEntryMetadata, indexed_reads=()) -> dict:
+    """The native row each carrier input row reads: (identity, row) -> (native identity, row, indexed element or
+    None). fastdxiltext.merge_entry rewrites the carrier's input operations with it."""
     source_rows = source.input_rows()
     indexed = {read.carrier.key: read for read in indexed_reads}
     mapping = {}
@@ -305,21 +296,4 @@ def map_carrier_inputs(lines: list[str], source: DxilEntryMetadata, carrier: Dxi
         if semantic not in source_rows:
             raise ShaderGraphError(f"Carrier requests absent DXIL semantic {semantic!r}.")
         mapping[location] = (*source_rows[semantic], read.element if read else None)
-    operation = re.compile(
-        r"(@dx\.op\.(?:loadInput|evalCentroid|evalSampleIndex|evalSnapped)\.[\w]+"
-        r"\(i32 \d+, i32 )(\d+)(, i32 )(\d+)(, i8 \d+, i32 [\w%.-]+)?"
-    )
-
-    def replace(match):
-        location = (int(match[2]), int(match[4]))
-        if location not in mapping:
-            raise ShaderGraphError("Carrier input operation has no native semantic row.")
-        identity, row, element = mapping[location]
-        tail = match[5] or ""
-        if element is not None:
-            if not tail or "loadInput" not in match[1]:
-                raise ShaderGraphError("Indexed primitive input must be a native LoadInput operation")
-            tail = re.sub(r"i32 [\w%.-]+$", f"i32 {element}", tail)
-        return f"{match[1]}{identity}{match[3]}{row}{tail}"
-
-    return [operation.sub(replace, line) for line in lines]
+    return mapping

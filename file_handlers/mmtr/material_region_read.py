@@ -39,6 +39,30 @@ def region_derived_cache(name):
     return session.derived.setdefault(name, {}) if session is not None else None
 
 
+def per_build(name, key, compute):
+    """``compute()`` once per build for ``key``; every call outside a build."""
+    cache = region_derived_cache(name)
+    if cache is None:
+        return compute()
+    found = cache.get(key)
+    if found is None:
+        found = cache[key] = compute()
+    return found
+
+
+def per_build_of(name, owners: tuple, key, compute):
+    """``per_build`` for a result of ``owners`` by identity: the entry keeps them, so no other object takes their
+    identity while the build lasts."""
+    cache = region_derived_cache(name)
+    if cache is None:
+        return compute()
+    full = (*map(id, owners), key)
+    found = cache.get(full)
+    if found is None:
+        found = cache[full] = owners, compute()
+    return found[1]
+
+
 def publish_region_properties(properties):
     session = _session.get()
     if session is None:

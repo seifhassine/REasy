@@ -2,6 +2,7 @@ import hashlib
 from collections import Counter
 from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
+from functools import lru_cache
 from typing import Any
 
 from file_handlers.sdf.dxc import enrich_dxil_shader
@@ -16,6 +17,7 @@ from file_handlers.sdf.shader_graph import (
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 lazy from file_handlers.mmtr.engine_inputs import engine_input_catalog_for, resource_from_dict, resource_to_dict
+lazy from file_handlers.mmtr.material_region_read import per_build, region_derived_cache
 lazy from file_handlers.mmtr.pass_purpose import pass_purpose
 lazy from file_handlers.sdf.hlsl_contract import resource_identifier
 lazy from file_handlers.sdf.shader_graph_resource import resource_value_type
@@ -115,12 +117,12 @@ _REGISTERS = {"b": 14, "t": 128, "s": 16}
 
 
 def _renderer_pin(buffer, variable, cache):
-    cache_key = (buffer.name, buffer.register_space, variable)
+    cache_key = (buffer.name, variable)
     if cache_key not in cache:
         layout = constant_value_fields(variable)
         aggregate = len(layout) != 1 or layout[0].path != ""
         value_type = aggregate_type(layout) if aggregate else layout[0].value_type
-        key = (buffer.name, variable.name, variable.byte_offset, value_type, buffer.register_space,
+        key = (buffer.name, variable.name, variable.byte_offset, value_type,
                tuple((field.path, field.value_type, field.offsets) for field in layout))
         identity = hashlib.sha256(repr(key).encode("utf-8")).hexdigest()[:24]
         cache[cache_key] = key, dict(
@@ -129,7 +131,6 @@ def _renderer_pin(buffer, variable, cache):
             value_type=value_type, input_kind="renderer_value",
             source_buffer=buffer.name, source_name=variable.name,
             source_byte_offset=variable.byte_offset,
-            source_register_space=buffer.register_space,
             **({"value_layout": [field.to_dict() for field in layout]} if aggregate else {}),
         )
     return cache[cache_key]
@@ -245,6 +246,9 @@ def engine_buffer_unavailable_reason(document, program, stage, contract, name):
 
 
 def _nested_nodes(node, kinds):
+    cache, key = region_derived_cache("nested_engine_nodes"), (id(node), frozenset(kinds))
+    if cache is not None and key in cache:
+        return cache[key][1]
     found = [(node.kind, node.properties)] if node.kind in kinds else []
 
     def visit(value):
@@ -258,12 +262,14 @@ def _nested_nodes(node, kinds):
                 visit(item)
 
     visit(node.properties)
-    return found
+    if cache is not None:
+        cache[key] = node, tuple(found)
+    return tuple(found)
 
 
 def _graph_names(graph, kind, key):
-    return frozenset(str(properties.get(key, "")) for node in graph.nodes
-                     for _kind, properties in _nested_nodes(node, {kind})) - {""}
+    return per_build("graph_engine_names", (id(graph), kind, key), lambda: frozenset(
+        str(properties.get(key, "")) for node in graph.nodes for _kind, properties in _nested_nodes(node, {kind})) - {""})
 
 
 def graph_renderer_buffers(graph):
@@ -306,6 +312,7 @@ def texel_components(resource):
     return ((resource.flags & _TEXTURE_COMPONENTS) >> 2) + 1 if resource.input_type == "texture" else 0
 
 
+@lru_cache(maxsize=4096)
 def _shape(resource):
     """Shaders reading one texture vary in its declared component count."""
     flags = resource.flags & ~_TEXTURE_COMPONENTS if resource.input_type == "texture" else resource.flags
@@ -412,7 +419,7 @@ def recovered_structured_slot(identifier, stride, index, byte_offset):
 
 
 def _engine_resource_entries(document, program, role, contract, catalog, declarations):
-    readable = {}
+    readable, free = {}, {}
     for name in sorted(catalog.pass_resources(program.shader(role).binary_format, program.name, role)):
         if name not in declarations:
             declaration = engine_resource_declaration(catalog, name)
@@ -425,8 +432,10 @@ def _engine_resource_entries(document, program, role, contract, catalog, declara
             usable = _supplies(bound, declaration)
         else:
             layout, _reason = engine_resource_layout(document, program, role, name)
-            usable = (layout is not None and _supplies(layout.resource, declaration)
-                      and free_register(document, contract, role, layout.resource.register_class) is not None)
+            register_class = layout.resource.register_class if layout is not None else None
+            if register_class not in free and layout is not None:
+                free[register_class] = free_register(document, contract, role, register_class)
+            usable = layout is not None and _supplies(layout.resource, declaration) and free[register_class] is not None
         if usable:
             readable[("resource", pin["pin"])] = pin
     return readable
@@ -450,13 +459,17 @@ def material_engine_inputs(document, profile):
                                          for key, pin in _buffer_pins(buffer, cache)}
         pass_key = (identity, program.name, role)
         if pass_key not in readable_by_pass:
-            readable = dict(bound_by_shader[identity])
+            readable, free_buffer = dict(bound_by_shader[identity]), None
             if catalog is not None:
                 for name in catalog.pass_buffers(program.shader(role).binary_format, program.name, role):
                     if name.casefold() in user_buffers or contract.buffer(name) is not None:
                         continue
                     layout, _reason = engine_buffer_layout(document, program, role, name)
-                    if layout is not None and free_register(document, contract, role, "b") is not None:
+                    if layout is None:
+                        continue
+                    if free_buffer is None:
+                        free_buffer = (free_register(document, contract, role, "b"),)
+                    if free_buffer[0] is not None:
                         readable.update(_buffer_pins(layout.buffer, cache))
                 readable.update(_engine_resource_entries(document, program, role, contract, catalog, declarations))
             readable_by_pass[pass_key] = readable
@@ -481,7 +494,7 @@ def material_engine_inputs(document, profile):
 
 def renderer_buffer(contract, properties):
     buffer = contract.buffer(str(properties["source_buffer"]))
-    if buffer is None or buffer.register_space != properties.get("source_register_space", 0):
+    if buffer is None or buffer.register_space and contract.model_major < 6:
         return None
     fields = renderer_fields(properties)
     return buffer if any(v.name == properties["source_name"] and v.byte_offset == properties["source_byte_offset"]
@@ -506,8 +519,6 @@ def renderer_field_expression(contract, properties, field):
         raise RendererValueUnavailable(str(properties["label"]), str(properties["source_buffer"]))
     if contract.model_major >= 6:
         return str(properties["source_name"]) + field.path
-    if buffer.register_space:
-        raise ShaderGraphError("Legacy renderer-value lowering requires a space-zero native binding")
     words = [f"REasyCB{buffer.bind_point}[{offset // 16}].{'xyzw'[offset % 16 // 4]}" for offset in field.offsets]
     if field.value_type.startswith("float"):
         words = [f"asfloat({word})" for word in words]

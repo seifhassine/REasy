@@ -1,6 +1,7 @@
 lazy from file_handlers.sdf.shader_graph import ShaderContractResource, ShaderGraphError
 import re
 from dataclasses import replace
+from functools import cache
 
 lazy from .profiles.re_engine_dxil_recovery import LLVM_NAME
 
@@ -13,10 +14,15 @@ DXIL_TEXTURE_KINDS = {1: 'texture1d', 2: 'texture2d', 3: 'texture2d-ms', 4: 'tex
                       8: 'texture2d-ms-array', 9: 'texture-cube-array'}
 
 
+@cache
+def _type_definition():
+    return re.compile('(%' + LLVM_NAME + r') = type \{\s*(.*?)\s*\}')
+
+
 def complete_typed_resources(contract, metadata, lines):
     identifier = '%' + LLVM_NAME
     types = {match[1]: match[2] for line in lines
-             if (match := re.fullmatch('(' + identifier + r') = type \{\s*(.*?)\s*\}', line.strip()))}
+             if ' = type {' in line and (match := _type_definition().fullmatch(line.strip()))}
     root = metadata.operands[3]
     if root == 'null':
         roots = metadata.definitions.get('!dx.resources', ())

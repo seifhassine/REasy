@@ -97,7 +97,7 @@ class MaterialImplementationDialog(QDialog):
         preferred = next((r for r in listed if r in owners), None) or next((r for r in listed if r[2] == "pixel"), None)
         if preferred is not None:
             self.routes.setCurrentIndex(find_combo_data(self.routes, preferred))
-        self.purposes.currentIndexChanged.connect(lambda _index: self._fill_routes())
+        self.purposes.currentIndexChanged.connect(self._fill_routes)
         actions.addWidget(self.routes, 1)
         root.addLayout(actions)
         actions = QHBoxLayout()

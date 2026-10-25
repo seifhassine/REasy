@@ -6,6 +6,7 @@ from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 lazy from file_handlers.material_names import resolve_material_name
 lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr
 lazy from .profiles.re_engine_spirv_authoring import spirv_uniform_reads, spirv_resource_reads
+lazy from .worker_pool import parallel_map
 
 
 class InputUsage(Enum):
@@ -61,6 +62,20 @@ class NativeInputUsage:
     record_words: frozenset[int] = frozenset()
 
 
+def _record_reads(job):
+    """The material record words and indirect textures a bindless DXIL shader reads; None when it cannot be read."""
+    from file_handlers.sdf.dxc import disassemble_dxil
+    from .profiles.re_engine_bindless_material import material_input_accesses
+    payload, contract, prefix = job
+    try:
+        accesses, texture_accesses = material_input_accesses(disassemble_dxil(payload).splitlines(), contract)
+    except ValueError:
+        return None
+    return ({word.byte_offset - prefix for access in accesses for word in access.words if word.byte_offset >= prefix},
+            {(access.byte_offset - prefix, access.dimension) for access in texture_accesses
+             if access.byte_offset >= prefix})
+
+
 def native_input_usage(document):
     cache = getattr(document, "_native_input_usage_cache", None)
     if cache is None:
@@ -68,13 +83,13 @@ def native_input_usage(document):
     if "usage" in cache:
         return cache["usage"]
 
-    from file_handlers.sdf.dxc import disassemble_dxil, enrich_dxil_shader
-    from .profiles.re_engine_bindless_material import material_input_accesses
+    from file_handlers.sdf.dxc import enrich_dxil_shader
 
     profile = document.profile.shader_graph_profile
     user_names = {name.casefold() for name in document.profile.user_material_buffer_names}
     arena_names = set(profile.material_instance_resource_names)
     ranges, textures, indirect, seen, record_words = set(), set(), set(), set(), set()
+    record_jobs = []
     parameters_complete = textures_complete = True
     bindless = False
     for target in document.sdf.targets:
@@ -137,18 +152,18 @@ def native_input_usage(document):
                     if dxbc.model_major < 6:
                         parameters_complete = textures_complete = False
                         continue
-                    contract = profile.shader_contract(document, program, shader.role)
-                    lines = disassemble_dxil(shader.payload).splitlines()
-                    accesses, texture_accesses = material_input_accesses(lines, contract)
-                    prefix = profile.material_record_prefix_size
-                    words = {word.byte_offset - prefix for access in accesses for word in access.words
-                             if word.byte_offset >= prefix}
-                    record_words.update(words)
-                    ranges.update((offset, offset + 4) for offset in words)
-                    indirect.update((access.byte_offset - prefix, access.dimension)
-                                    for access in texture_accesses if access.byte_offset >= prefix)
+                    record_jobs.append((shader.payload, profile.shader_contract(document, program, shader.role),
+                                  profile.material_record_prefix_size))
                 except ValueError:
                     parameters_complete = textures_complete = False
+    for found in parallel_map(_record_reads, record_jobs) or map(_record_reads, record_jobs):
+        if found is None:
+            parameters_complete = textures_complete = False
+            continue
+        words, texture_reads = found
+        record_words.update(words)
+        ranges.update((offset, offset + 4) for offset in words)
+        indirect.update(texture_reads)
     inputs = MaterialInputUsage(tuple(sorted(ranges)), frozenset(textures),
                                 parameters_complete and bool(seen), textures_complete and bool(seen))
     result = NativeInputUsage(inputs, tuple(sorted(indirect)), bindless, frozenset(record_words))

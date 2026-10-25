@@ -350,7 +350,8 @@ def _inline_precise_helpers(bytecode):
         return bytecode
     from .profiles.re_engine_dxil_authoring import _DXIL_OPTIMIZER_PASSES, _attach_reflection
     from file_handlers.sdf.dxc import assemble_dxil, optimize_dxil
-    bitcode = optimize_dxil(re.sub(r"\bnoinline\b", "alwaysinline", assembly), _DXIL_OPTIMIZER_PASSES)
+    import fastdxiltext
+    bitcode = optimize_dxil(fastdxiltext.always_inline(assembly), _DXIL_OPTIMIZER_PASSES)
     return assemble_dxil(_attach_reflection(disassemble_dxil(bitcode), bytecode)).bytecode
 
 

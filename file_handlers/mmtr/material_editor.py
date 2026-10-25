@@ -116,6 +116,7 @@ lazy from .profiles.renderer_inputs import (
 )
 lazy from .render_settings import RenderSettingsDialog
 lazy from .vertex_values import PER_VERTEX_KIND
+lazy from .worker_pool import shared_workers
 lazy from ui.editor_widgets import delete_button, editor_strip, pane_header, search_field, strip_button, styled_label, toolbar_separator
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
@@ -518,6 +519,10 @@ class MmtrMaterialEditor(QWidget):
         )
 
     def set_document(self, document) -> None:
+        with shared_workers():
+            self._set_document(document)
+
+    def _set_document(self, document) -> None:
         self._document = document
         opening_project = self._project is None
         unreadable_sidecar = ""
