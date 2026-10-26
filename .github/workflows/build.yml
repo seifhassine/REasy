@@ -6,6 +6,10 @@ on:
       version:
         description: 'Version (preferably starts with "v")'
         required: true
+      debug:
+        description: 'Debug build: a console exe uploaded as an artifact, not signed or released'
+        type: boolean
+        default: false
 
   release:
     types: [published]
@@ -91,15 +95,17 @@ jobs:
       env:
         FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
         FIREBASE_APP_ID: ${{ secrets.FIREBASE_APP_ID }}
+        REASY_DEBUG: ${{ inputs.debug }}
 
-    - name: Upload unsigned artifact (for SignPath)
+    - name: Upload unsigned artifact (for SignPath, or the debug build)
       id: upload_unsigned
       uses: actions/upload-artifact@v4
       with:
-        name: REasy-${{ env.release_version }}
+        name: REasy-${{ env.release_version }}${{ inputs.debug && '-debug' || '' }}
         path: dist/**
 
     - name: Submit signing request to SignPath (release cert)
+      if: ${{ !inputs.debug }}
       id: sign
       uses: signpath/github-action-submit-signing-request@v1.2
       with:
@@ -115,6 +121,7 @@ jobs:
         output-artifact-directory: reasy-signed
 
     - name: Zip signed output
+      if: ${{ !inputs.debug }}
       shell: pwsh
       run: |
         Compress-Archive -Path reasy-signed\* `
@@ -122,6 +129,7 @@ jobs:
                         -Force
                         
     - name: Upload ZIP to GitHub Release (SIGNED)
+      if: ${{ !inputs.debug }}
       uses: softprops/action-gh-release@v2
       with:
         name: "REasy ${{ env.release_version }}"
@@ -131,6 +139,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Upload ZIP artifact (SIGNED)
+      if: ${{ !inputs.debug }}
       uses: actions/upload-artifact@v4
       with:
         name: REasy ${{ env.release_version }}

@@ -1,4 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
+import os
 import re
 
 from PyInstaller.utils.hooks import collect_all, collect_submodules
@@ -35,7 +36,7 @@ exe = EXE(
     [],
     name='REasy',
     upx=False,
-    console=False,
+    console=os.environ.get('REASY_DEBUG') == 'true',
     version='version.txt',
     icon=['resources/icons/reasy_editor_logo.ico'],
 )
