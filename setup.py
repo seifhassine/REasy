@@ -23,7 +23,7 @@ if os.name == 'nt':
             'fastmatpreview',
             sources=['native/fastmatpreview.cpp'],
             extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
-            libraries=['d3d12', 'dxgi'],
+            libraries=['d3d12', 'dxgi', 'dxguid'],
             py_limited_api=True,
         )
     )

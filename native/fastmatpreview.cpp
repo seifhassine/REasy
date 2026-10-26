@@ -2685,6 +2685,30 @@ PyObject *gdeflate_call(PyObject *, PyObject *object) {
     Py_RETURN_NONE;
 }
 
+PyObject *heap_indexing_call(PyObject *, PyObject *) {
+    D3D12_VERSIONED_ROOT_SIGNATURE_DESC desc{D3D_ROOT_SIGNATURE_VERSION_1_1};
+    desc.Desc_1_1.Flags = D3D12_ROOT_SIGNATURE_FLAG_CBV_SRV_UAV_HEAP_DIRECTLY_INDEXED
+        | D3D12_ROOT_SIGNATURE_FLAG_SAMPLER_HEAP_DIRECTLY_INDEXED;
+    ComPtr<ID3DBlob> blob;
+    return PyBool_FromLong(SUCCEEDED(D3D12SerializeVersionedRootSignature(&desc, &blob, nullptr)));
+}
+
+PyObject *runtime_call(PyObject *, PyObject *arguments) {
+    const char *folder;
+    UINT version;
+    if (!PyArg_ParseTuple(arguments, "sI", &folder, &version)) return nullptr;
+    if (!unlocked([&] {
+            ComPtr<ID3D12SDKConfiguration1> configuration;
+            ComPtr<ID3D12DeviceFactory> factory;
+            if (FAILED(D3D12GetInterface(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&configuration))))
+                throw Failure{"loading another Direct3D 12 runtime needs Windows updates from September 2023 on"};
+            check(configuration->CreateDeviceFactory(version, folder, IID_PPV_ARGS(&factory)), "CreateDeviceFactory");
+            check(factory->ApplyToGlobalState(), "ApplyToGlobalState");
+        }))
+        return nullptr;
+    Py_RETURN_NONE;
+}
+
 PyObject *draw_call(PyObject *, PyObject *object) {
     Job job;
     bool hardware;
@@ -3109,6 +3133,8 @@ PyMethodDef methods[] = {
     {"gdeflate", gdeflate_call, METH_O,
      "gdeflate(path)\n"
      "Loads libGDeflate from ``path``: textures' rows may then be GDeflate streams, which their fill inflates."},
+    {"heap_indexing", heap_indexing_call, METH_NOARGS, "heap_indexing() -> bool"},
+    {"runtime", runtime_call, METH_VARARGS, "runtime(folder, SDK version)"},
     {nullptr, nullptr, 0, nullptr},
 };
 

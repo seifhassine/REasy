@@ -13,6 +13,7 @@ class ShaderToolDownloadCancelled(Exception):
 
 
 _SPIRV_HEADERS_REVISION = "496543121ce6419f23d6fa5d7194ba66c36212d2"
+AGILITY_SDK = "1.619.6"
 
 PACKAGES = {
     "dxc": (
@@ -34,6 +35,13 @@ PACKAGES = {
               "include/spirv/unified1/spirv.core.grammar.json",
               "include/spirv/unified1/extinst.glsl.std.450.grammar.json", "LICENSE")))),
     ),
+    "d3d12": (
+        "Microsoft DirectX 12 Agility SDK",
+        ((f"https://api.nuget.org/v3-flatcontainer/microsoft.direct3d.d3d12/{AGILITY_SDK}/"
+          f"microsoft.direct3d.d3d12.{AGILITY_SDK}.nupkg",
+          "08f0489281401aa430fc37322d6c3fc98a8025175aacd714c10d562f4963f1e9",
+          ("build/native/bin/x64/D3D12Core.dll", "LICENSE.txt")),),
+    ),
 }
 PAGES = {
     "dxc": "https://github.com/microsoft/DirectXShaderCompiler/releases/tag/v1.9.2607 (bin/x64/dxcompiler.dll and "
@@ -41,6 +49,8 @@ PAGES = {
     "spirv_tools": "https://github.com/KhronosGroup/SPIRV-Tools/blob/main/docs/downloads.md (bin/spirv-val.exe, "
                    "spirv-opt.exe and SPIRV-Tools-shared.dll) and https://github.com/KhronosGroup/SPIRV-Headers "
                    "(include/spirv/unified1/spirv.core.grammar.json and extinst.glsl.std.450.grammar.json)",
+    "d3d12": f"https://www.nuget.org/packages/Microsoft.Direct3D.D3D12/{AGILITY_SDK} "
+             "(build/native/bin/x64/D3D12Core.dll)",
 }
 
 

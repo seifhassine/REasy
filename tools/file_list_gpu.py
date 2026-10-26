@@ -4,7 +4,7 @@ from itertools import accumulate, chain
 lazy import numpy as np
 
 lazy from file_handlers.mmtr.material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV
-lazy from file_handlers.mmtr.resident import BUFFER, UNORDERED_ACCESS
+lazy from file_handlers.mmtr.resident import BUFFER, UNORDERED_ACCESS, prepare_runtime
 lazy from file_handlers.sdf.hlsl import compile_hlsl_source
 lazy from file_handlers.pak.utils import filepath_hash
 lazy from tools.file_list_generator import CombinedStems
@@ -158,6 +158,7 @@ class GpuPathValidator:
         self._scene = None
         try:
             import fastmatpreview
+            prepare_runtime()
             self._scene = fastmatpreview.Scene(True)
             self.device = self._scene.adapter()
             self._shader = bytes(compile_hlsl_source(_SHADER, entry_point="main", target="cs_5_0"))

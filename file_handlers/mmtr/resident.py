@@ -5,7 +5,11 @@ from collections.abc import Callable, Hashable, Iterable, Sequence
 from threading import Lock, Thread
 
 lazy import fastmatpreview
+lazy from PySide6.QtWidgets import QApplication
 lazy from file_handlers.tex.gdeflate import library_path
+lazy from tools.github_downloader import show_download_failure
+lazy from tools.shader_tools import AGILITY_SDK, PAGES, ShaderToolDownloadCancelled, prompt_shader_tool_download
+lazy from utils.app_paths import downloads_directory
 
 from .material_preview import RANGE_CBV, RANGE_SRV, VIEW_DIMENSIONS, Following, TexelRows, same_texels, texel_sample
 
@@ -19,6 +23,8 @@ _warm_up_failure: Exception | None = None
 _software_reason = ""
 _inflating = Lock()
 _inflates = False
+_runtime = Lock()
+_runtime_ready = _runtime_offered = False
 
 
 def _inflate() -> None:
@@ -30,10 +36,31 @@ def _inflate() -> None:
             _inflates = True
 
 
+def prepare_runtime() -> None:
+    global _runtime_ready
+    with _runtime:
+        if not _runtime_ready and not fastmatpreview.heap_indexing():
+            folder = downloads_directory("d3d12")
+            if not (folder / "D3D12Core.dll").is_file():
+                raise RuntimeError(f"Windows' Direct3D 12 runtime lacks Shader Model 6.6: get {PAGES['d3d12']} into "
+                                   f"{folder}.")
+            fastmatpreview.runtime(str(folder), int(AGILITY_SDK.split(".")[1]))
+        _runtime_ready = True
+
+
 def warm_up() -> None:
     """Makes the process's hardware device on a thread of its own, once; the first hardware ``Resident`` waits for it
     and raises what it raised."""
-    global _warm_up
+    global _warm_up, _runtime_offered
+    if not (_runtime_offered or fastmatpreview.heap_indexing()
+            or (downloads_directory("d3d12") / "D3D12Core.dll").is_file()):
+        _runtime_offered = True
+        try:
+            prompt_shader_tool_download("d3d12")
+        except ShaderToolDownloadCancelled:
+            pass
+        except RuntimeError as exc:
+            show_download_failure(QApplication.activeWindow(), exc)
     with _warming:
         if _warm_up is None:
             _warm_up = Thread(target=_make_device, name="Device warm-up", daemon=True)
@@ -43,6 +70,7 @@ def warm_up() -> None:
 def _make_device() -> None:
     global _warm_up_failure
     try:
+        prepare_runtime()
         # The device and the scene's queue stay with the process when the scene goes.
         fastmatpreview.Scene(True)
     except Exception as exc:
@@ -72,6 +100,7 @@ def _scene(hardware: bool):
     if hardware and not _software_reason:
         try:
             _joined_warm_up()
+            prepare_runtime()
             return fastmatpreview.Scene(True)
         except RuntimeError as exc:
             # Virtual machines and old GPUs have no Direct3D 12 adapter; every Windows 10+ has WARP.
@@ -80,6 +109,7 @@ def _scene(hardware: bool):
             _software_reason = str(exc)
             print(f"No graphics adapter makes a Direct3D 12 device ({exc}); "
                   "viewports draw with Windows' software renderer (WARP).")
+    prepare_runtime()
     return fastmatpreview.Scene(False)
 
 
