@@ -37,9 +37,9 @@ The interface is available in English, Chinese, Russian and Spanish.
 - **Material editing**, from MDF values down to master materials (MMTR) as a node graph.
 - **Hair strand editing** for RE9 and Pragmata.
 - **PAK tools**: fast extraction (whole archives or single files, with regex search) and packing.
-- **Projects**: build a mod and export it as a PAK or a Fluffy Mod Manager zip (*File > Create Project*).
+- **Projects**: build a mod and export it as a PAK or a Fluffy Mod Manager zip (*File > New Project (Create Mod)...*).
 - **Search** across folders for text, numbers, GUIDs or RSZ field values.
-- **Diff viewer** for SCN files, and a detector for RSZ files outdated by game updates (*Tools*).
+- **Diff viewer** for SCN, PFB and USER files, and a detector for RSZ files outdated by game updates (*Tools*).
 - **AI assistant** (optional) using DeepSeek or a local OpenAI-compatible server such as LM Studio. It can browse projects, tabs and PAKs and edit MDF and MSG files. Your messages and the editor context it asks for are sent to the provider you pick.
 
 ## Supported files
