@@ -93,6 +93,71 @@ class TransitionTables:
         return fields
 
 
+class TransitionCopies:
+    """Plan fresh map identities and optional independent native data records."""
+    def __init__(self, document):
+        self.document = document
+        self.tables = TransitionTables(document)
+        if list(self.tables.maps) != sorted(self.tables.maps):
+            raise ValueError('Transition-map table is not sorted')
+        used = set(self.tables.maps)
+        used.update(s.TransitionMaps for n in document.bhvt.nodes for s in n.states)
+        used.update(s.mAllTransitionID for n in document.bhvt.nodes for s in n.all_states)
+        self.next_map = max(used, default=0) + 1
+        self.next_data = max((struct.unpack_from('<I', self.tables.record(i))[0]
+                              for i in range(document.transition_data_count)), default=0) + 1
+        self.maps = []
+        self.records = []
+
+    def clone(self, identity, *, independent_data=False):
+        index = self.tables.resolve(identity)
+        if index is None:
+            return 0, None
+        if self.next_map >= 0xFFFFFFFF:
+            raise ValueError('Transition-map identities are exhausted')
+        if independent_data:
+            if self.next_data > 0xFFFFFFFF:
+                raise ValueError('Transition-data identities are exhausted')
+            record = bytearray(self.tables.record(index))
+            struct.pack_into('<I', record, 0, self.next_data)
+            index = self.document.transition_data_count + len(self.records)
+            self.records.append(bytes(record))
+            self.next_data += 1
+        fresh = self.next_map
+        self.next_map += 1
+        self.maps.append((fresh, index))
+        return fresh, index
+
+    @property
+    def map_bytes(self):
+        return b''.join(struct.pack('<Ii', identity, index) for identity, index in self.maps)
+
+    @property
+    def data_bytes(self):
+        return b''.join(self.records)
+
+    def splices(self):
+        if not self.maps:
+            return []
+        document = self.document
+        insert = document.transition_map_tbl_offset + document.transition_map_count * 8
+        end = document.transition_data_tbl_offset
+        if document.transition_map_tbl_offset % 16 or end % 16 or end - insert not in (0, 8):
+            raise ValueError('Unsupported transition-table alignment')
+        data = self.map_bytes
+        result = [(insert, end, data + bytes(-(insert + len(data)) % 16))]
+        if self.records:
+            result.append((len(document.source), len(document.source), self.data_bytes))
+        return result
+
+    def apply(self, splices=()):
+        """Combine graph section edits and transition additions in one relocation."""
+        output = splice_document(self.document, [*splices, *self.splices()])
+        struct.pack_into('<II', output, 48, self.document.transition_map_count + len(self.maps),
+                         self.document.transition_data_count + len(self.records))
+        return bytes(output)
+
+
 def patch_record(tables, index, name, value):
     field = next((field for field in tables.fields(index) if field.name == name), None)
     if field is None:

@@ -16,7 +16,7 @@ class FieldInspectionTests(unittest.TestCase):
                         {'name': 'Disabled', 'value': 0}, {'name': 'A', 'value': 1},
                         {'name': 'B', 'value': 2}]
         self.catalog = {'test.Mode': self.members}
-        patcher = patch('tools.rsz_inspection.registry_enums', return_value=self.catalog)
+        patcher = patch('file_handlers.rsz.inspection.registry_enums', return_value=self.catalog)
         patcher.start()
         self.addCleanup(patcher.stop)
 

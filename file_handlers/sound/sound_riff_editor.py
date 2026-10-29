@@ -10,7 +10,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from tools.riff_metadata import RiffLoop, RiffMarker, RiffMetadata
+from file_handlers.sound.riff_metadata import RiffLoop, RiffMarker, RiffMetadata
 
 from .sound_hirc_editor import RowsEditor, _number
 

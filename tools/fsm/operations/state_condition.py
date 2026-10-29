@@ -7,12 +7,11 @@ node - untouched.  The new condition is appended to the RSZ `conditions` block w
 `v0_ID`; nothing else in the file changes.
 
 """
-import copy
-import struct
 
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.motfsm.authoring import block_ids, clone_block_object, verify_block
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from tools.fsm.common import resolve_node
@@ -49,7 +48,8 @@ def run(args):
 
     node = nodes[node_index(args.node)]
     target = nodes[node_index(args.target)]
-    states = [i for i, state in enumerate(node.states) if state.mTransitions == target.id_hash]
+    states = [i for i, state in enumerate(node.states)
+              if (state.mTransitions, state.mTransitionAttributes) == (target.id_hash, target.ex_id)]
     if len(states) != 1:
         raise SystemExit(f'{node.name} has {len(states)} states pointing at {target.name}')
     position = states[0]
@@ -82,20 +82,8 @@ def run(args):
     # ---------------------------------------------------------------- new condition instance
     block = doc.rsz_blocks.get_block('conditions')
 
-    def block_ids(block_names, field_index):
-        used = set()
-        for name in block_names:
-            candidate = doc.rsz_blocks.get_block(name)
-            for index in candidate.object_table:
-                instance = candidate.get_instance(index)
-                if instance is None or len(instance.fields) <= field_index:
-                    continue
-                value = instance.fields[field_index].value
-                if isinstance(value, int) and not isinstance(value, bool):
-                    used.add(value)
-        return used
 
-    cursor = block_ids(('conditions', 'static_conditions', 'expression_tree_conditions',
+    cursor = block_ids(doc, ('conditions', 'static_conditions', 'expression_tree_conditions',
                         'static_expression_tree_conditions'), 0)
     new_id = 1
     while new_id in cursor:
@@ -109,14 +97,9 @@ def run(args):
     native = block.file
     template_raw = template_node.states[args.template_state].TransitionConditions & 0xFFFFFFFF
     template_block_name = 'static_conditions' if template_raw >> 24 == 0x40 else 'conditions'
-    template_native = doc.rsz_blocks.get_block(template_block_name).file
-    instance_index = len(native.instance_infos)
-    native.instance_infos.append(copy.deepcopy(template_native.instance_infos[template_condition.index]))
-    native.parsed_elements[instance_index] = copy.deepcopy(template_native.parsed_elements[template_condition.index])
-    for name, value in new_fields.items():
-        native.parsed_elements[instance_index][name].value = value
-    native.object_table.append(instance_index)
-    new_object = len(block.object_table) - 1
+    instance_index, new_object = clone_block_object(
+        block, template_condition.index, new_fields,
+        source_block=doc.rsz_blocks.get_block(template_block_name))
     block_data = native.build_validated()
     block_data += bytes((-len(block_data)) % 16)
     print(f'  new condition instance {instance_index} object {new_object} v0_ID={new_id}')
@@ -168,7 +151,7 @@ def run(args):
     expected.update(copy_fields)
     expected.update(overrides)
     expected['v0_ID'] = new_id
-    assert fields == expected, (fields, expected)
+    verify_block(doc, verified, 'conditions')
     # the old instance must be untouched, the new one must be a fresh slot
     assert new_object >= len(original.rsz_blocks.get_block('conditions').object_table)
     assert original.references.object_instance('conditions', old_raw) is not None

@@ -6,12 +6,11 @@ turn limit in degrees, e.g. 180).  A state's `mStates.values` holds **object ind
 `transition_events` block, so a new event is one cloned instance plus one index appended there.
 
 """
-import copy
-import struct
 
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.motfsm.authoring import block_splice, clone_block_object, verify_block
 
 EVENTS_BLOCK = 'transition_events'
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
@@ -51,13 +50,10 @@ def run(args):
     template_object = values[args.from_event]
 
     events_block = doc.rsz_blocks.get_block(EVENTS_BLOCK)
-    old_objects = list(events_block.object_table)
-    old_instances = len(events_block.file.instance_infos)
     template_instance = doc.references.object_instance(EVENTS_BLOCK, template_object)
     assert template_instance is not None, f'event object {template_object} does not resolve'
     file_index = template_instance.index
     template_block_name = 'static_transition_events' if (template_object & 0xFFFFFFFF) >> 24 == 0x40 else EVENTS_BLOCK
-    template_native = doc.rsz_blocks.get_block(template_block_name).file
     print(f'  template event: {template_instance.class_name}')
 
     overrides = assignments(template_instance, args.set)
@@ -75,21 +71,10 @@ def run(args):
     overrides.setdefault('v0_UID', uid)
     overrides.setdefault('v1_Enabled', True)
 
-    native = events_block.file
-    instance_index = len(native.instance_infos)
-    native.instance_infos.append(copy.deepcopy(template_native.instance_infos[file_index]))
-    native.parsed_elements[instance_index] = copy.deepcopy(template_native.parsed_elements[file_index])
-    for name, value in overrides.items():
-        assert name in native.parsed_elements[instance_index], f'unknown field {name}'
-        native.parsed_elements[instance_index][name].value = value
-    native.object_table.append(instance_index)
-    new_object = len(native.object_table) - 1
+    _, new_object = clone_block_object(
+        events_block, file_index, overrides,
+        source_block=doc.rsz_blocks.get_block(template_block_name))
     print(f'  new event instance={new_object} ' + ', '.join(f'{k}={v}' for k, v in overrides.items()))
-
-
-    def block_splice(block):
-        data = block.file.build_validated()
-        return (block.offset, block.end, data + bytes((-len(data)) % 16))
 
 
     events_splice = block_splice(events_block)
@@ -106,8 +91,6 @@ def run(args):
     nodes_data += bytes((node_tail - nodes_start - len(nodes_data)) % 16)
     splices = sorted([(nodes_start, node_tail, nodes_data), events_splice])
     output = splice_document(doc, splices)
-    tree_growth = len(output) - len(source)
-    assert tree_growth > 0, 'expected the BHVT tree to grow'
     output = bytes(output)
 
     verified = MotfsmFile()
@@ -128,8 +111,6 @@ def run(args):
     assert list(check.states[args.state].mStates.values)[-1] == new_object
     new_event = verified.references.object_instance(EVENTS_BLOCK, new_object)
     assert new_event.class_name == template_instance.class_name
-    expected_fields = {field.name: field.value for field in template_instance.fields}
-    expected_fields.update(overrides)
-    assert {field.name: field.value for field in new_event.fields} == expected_fields
+    verify_block(doc, verified, EVENTS_BLOCK)
 
     return bytes(output)

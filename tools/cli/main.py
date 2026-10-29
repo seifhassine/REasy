@@ -38,6 +38,8 @@ def build_parser():
     parser = Parser(prog='python -m tools', description='REasy resource CLI for agents and scripts.')
     parser.add_argument('--json', action='store_true', help='one JSON document on stdout; diagnostics on stderr')
     domains = parser.add_subparsers(dest='domain', required=True)
+    from .formats import audio
+    audio.configure(domains)
     from . import move
     group = domains.add_parser('move', help='Validate or retime a MOTLIST/FSM/RCOL move bundle')
     group.add_argument('--json', action='store_true', default=argparse.SUPPRESS)
@@ -71,6 +73,8 @@ def build_parser():
             motion.configure_query(sub)
             sub.set_defaults(inspect=motion.query)
             if domain == 'motion':
+                from .formats import motion_batch
+                motion_batch.configure(commands)
                 from .formats import motion_bake
                 sub = mutation_parser(commands, 'bake', 'Bake frame ranges and speeds into one animation slot')
                 motion_bake.configure(sub)

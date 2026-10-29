@@ -3,9 +3,8 @@ import argparse
 from types import SimpleNamespace
 from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.rsz.rsz_data_types import ArrayData, ObjectData, UserDataData
+from file_handlers.rsz.effect_elements import find_root
 from tools.cli.runtime import MHR_REGISTRY
-
-ROOT_TYPE = 'via.effect.script.EPVStandardData'
 
 
 def open_pfb(path, data=None):
@@ -45,14 +44,6 @@ def snapshot(rsz, instance_id, depth=2):
         else:
             out[name] = scalar_value(field)
     return out
-
-
-def find_root(rsz, registry):
-    for instance in range(1, len(rsz.instance_infos)):
-        definition = registry.get_type_info(rsz.instance_infos[instance].type_id)
-        if definition and definition['name'] == ROOT_TYPE:
-            return instance
-    raise SystemExit(f'{ROOT_TYPE} not found')
 
 
 def triple(text):

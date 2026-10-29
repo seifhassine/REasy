@@ -22,11 +22,11 @@ equal, the reopened file resolves the new action to the source class with identi
 fields, the data/object tables keep their length invariant, and REasy's own
 ``rebuild()`` is stable on the candidate.
 """
-import copy
 from pathlib import Path
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
-from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES, native_value_state
+from file_handlers.motfsm.authoring import block_ids, block_padding_is_zero, block_splice, clone_block_object, next_identity
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
 from tools.fsm.common import resolve_node
@@ -109,58 +109,9 @@ def run(args):
         raise ValueError(f'{ex_ids_attribute} has {len(old_ex_ids)} entries but {src_block_name} has '
                          f'{len(old_objects)} objects')
 
-    # ------------------------------------------------------------------ helpers
-    def next_identity(used):
-        value = 1
-        while value != 0xFFFFFFFF and value in used:
-            value += 1
-        if value == 0xFFFFFFFF:
-            raise ValueError('no free action identity')
-        return value
-
-    def block_ids(block_names, field_index):
-        """Action v1_ID is field 1 on the RSZ instance."""
-        used = set()
-        for name in block_names:
-            block = doc.rsz_blocks.get_block(name)
-            if block is None:
-                continue
-            for index in block.object_table:
-                instance = block.get_instance(index)
-                if instance is None or len(instance.fields) <= field_index:
-                    continue
-                value = instance.fields[field_index].value
-                if isinstance(value, int) and not isinstance(value, bool):
-                    used.add(value)
-        return used
-
-    def clone_block_object(block, template_instance_index, new_fields=None, source_block=None):
-        """Append a copy of one RSZ instance; returns (instance_index, object_index)."""
-        native = block.file
-        origin = (source_block or block).file
-        instance_index = len(native.instance_infos)
-        native.instance_infos.append(copy.deepcopy(origin.instance_infos[template_instance_index]))
-        native.parsed_elements[instance_index] = copy.deepcopy(origin.parsed_elements[template_instance_index])
-        for name, value in (new_fields or {}).items():
-            native.parsed_elements[instance_index][name].value = value
-        native.object_table.append(instance_index)
-        return instance_index, len(block.object_table) - 1
-
-    def block_padding_is_zero(block):
-        """Pristine-only check: the rebuilt block must reproduce the region plus zero padding."""
-        baseline = block.file.build_validated()
-        padding = block.end - block.offset - len(baseline)
-        if padding < 0:
-            raise ValueError(f'{block.name} rebuild is longer than its region by {-padding} bytes')
-        return source[block.offset:block.end] == baseline + bytes(padding)
-
-    def block_splice(block):
-        baseline = block.file.build_validated()
-        return (block.offset, block.end, baseline + bytes((-len(baseline)) % 16))
-
     # ------------------------------------------------------------------ clone the instance
     assert block_padding_is_zero(target_block), f'{src_block_name} does not round-trip before the edit'
-    new_action_id = next_identity(block_ids(('actions', 'static_actions'), 1))
+    new_action_id = next_identity(block_ids(doc, ('actions', 'static_actions'), 1))
     new_ex_id = int(src_ref.ex_id)
     _, new_object = clone_block_object(target_block, src_instance_index, {'v1_ID': new_action_id},
                                        source_block=src_block)
@@ -214,14 +165,9 @@ def run(args):
     assert imported.class_name == klass, f'imported class mismatch: {imported.class_name}'
     assert [str(f.name) for f in imported.fields] == [str(f.name) for f in src_instance.fields], \
         'imported field names differ from the template'
-    for new_field, old_field in zip(imported.fields, src_instance.fields):
-        if str(new_field.name) == 'v1_ID':       # the fresh identity, deliberately not copied
-            assert str(new_field.value) == str(new_action_id), 'fresh v1_ID was not written'
-            continue
-        assert str(new_field.value) == str(old_field.value), \
-            f'imported field {new_field.name} differs from the template'
-
     reopened_block = verified.rsz_blocks.get_block(src_block_name)
+    assert native_value_state(reopened_block.file.parsed_elements) == native_value_state(target_block.file.parsed_elements), \
+        'imported native graph differs from the authored graph'
     assert len(reopened_block.object_table) == len(getattr(verified.bhvt, ex_ids_attribute)), \
         f'{src_block_name} object table and {ex_ids_attribute} lengths diverged'
     assert reopened_block.object_table[:len(old_objects)] == old_objects, 'object table reordered'

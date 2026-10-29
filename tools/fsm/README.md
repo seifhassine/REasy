@@ -106,6 +106,34 @@ omit the source, `-o`, and `--dry-run` inside steps:
 Each step reads the previous verified candidate. Failure leaves the final output untouched;
 temporary intermediates are removed. No automatic deployment or runtime verification is performed.
 
+## Reusable Python APIs
+
+Generic operations use `file_handlers.motfsm.editing.GraphEditor`, including
+`clone_object` and `import_object` for same-file and cross-file copies. They share
+`file_handlers.rsz.graph_copy.copy_graph`, which remaps owned descendants, aliases
+and external userdata. Callers supply the source registry; incompatible schemas
+are rejected. `file_handlers.motfsm.transitions.TransitionCopies` allocates private
+map identities with shared or independently copied transition data.
+
+MHR branch policy lives in four modules under `services.mhr.fsm`: `node_clone`,
+`attack_clone`, `node_action_child` and `node_chainsaw`. Each exports a frozen plan
+dataclass and `build(source: bytes, recipe, *, registry=None) -> bytes`. Builds reopen
+and verify the candidate; they do not read or publish resource files. For example:
+
+```python
+from services.mhr.fsm.node_clone import NodeClonePlan, build
+
+plan = NodeClonePlan(name="atk_custom", copy_node="atk_101", parent="atk", motion=620)
+candidate = build(source_bytes, plan, registry=registry)
+```
+
+Select actual template nodes, actions and identities from the source. These recipes
+retain their existing MHR assumptions and options; they are not arbitrary subtree
+cloners. Run without Python `-O` so native verification assertions remain enabled.
+Command adapters retain the same flags and feed these plans into the shared CLI
+publisher. New Python consumers should import `file_handlers.motfsm.selection`,
+`values` and `scalar_editing`; the former `tools.fsm` helper imports remain available.
+
 ## Migration from `tools/mhr_edit`
 
 The standalone FSM scripts have been folded into this package. Replace `SOURCE OUTDIR`

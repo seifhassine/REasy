@@ -38,7 +38,7 @@ from PySide6.QtWidgets import (
 
 from file_handlers.rsz.rsz_handler import RszHandler
 from file_handlers.rsz.rsz_object_operations import RszObjectOperations
-from file_handlers.rsz.utils.rsz_gameobject_utils import insert_into_object_table, remove_from_object_table
+from file_handlers.rsz.utils.rsz_gameobject_utils import remove_from_object_table
 from file_handlers.pyside.component_selector import ComponentSelectorDialog
 from utils.id_manager import IdManager
 
@@ -1220,54 +1220,17 @@ class RcolViewer(QWidget):
         return legacy_request_start_indices, legacy_group_base_min_indices
 
     def _insert_root_object_id_at(self, desired_object_index: int, appended_object_index: int):
+        from .editing import insert_request_root
         if not self.rcol.rsz:
             return
-        object_table = self.rcol.rsz.object_table
-        if object_table is None:
+        table = self.rcol.rsz.object_table
+        if not 0 <= appended_object_index < len(table):
             return
-        if not (0 <= appended_object_index < len(object_table)):
+        index = max(0, min(desired_object_index, len(table) - 1))
+        if index == appended_object_index:
             return
-        insert_index = max(0, min(desired_object_index, len(object_table) - 1))
-        if insert_index == appended_object_index:
-            return
-
-        # Snapshot pre-insert effective shape-userdata starts for legacy (pre-v25)
-        # request sets so shape_offset can be shifted when insertion happens before
-        # their per-group userdata window.
-        legacy_request_start_indices, legacy_group_base_min_indices = self._legacy_request_shape_start_indices()
-
-        inserted_value = object_table[appended_object_index]
-        insert_into_object_table(self.rcol.rsz, insert_index, inserted_value)
-        shifted_old_index = appended_object_index + (1 if insert_index <= appended_object_index else 0)
-        remove_from_object_table(self.rcol.rsz, shifted_old_index)
-
-        # Every object-table index at/after insertion point shifts by +1.
-        if self.handler.file_version < 25:
-            for group in self.rcol.groups:
-                for shape in group.shapes:
-                    idx = getattr(shape.info, "user_data_index", -1)
-                    if isinstance(idx, int) and idx >= insert_index:
-                        shape.info.user_data_index = idx + 1
-            for request_set in self.rcol.request_sets:
-                start_idx = legacy_request_start_indices.get(id(request_set))
-                base_min_idx = legacy_group_base_min_indices.get(id(request_set))
-                if start_idx is None:
-                    continue
-                if base_min_idx is None:
-                    continue
-                # If group base indices are shifted by this insertion, effective request
-                # windows already move with them and shape_offset must remain unchanged.
-                if base_min_idx < insert_index <= start_idx:
-                    current_offset = int(getattr(request_set.info, "shape_offset", 0) or 0)
-                    request_set.info.shape_offset = current_offset + 1
-
-        for request_set in self.rcol.request_sets:
-            info = request_set.info
-            if self.handler.file_version >= 25:
-                if isinstance(info.request_set_userdata_index, int) and info.request_set_userdata_index >= insert_index:
-                    info.request_set_userdata_index += 1
-                if isinstance(info.group_userdata_index_start, int) and info.group_userdata_index_start >= insert_index:
-                    info.group_userdata_index_start += 1
+        insert_request_root(self.rcol, index, table[appended_object_index])
+        del table[appended_object_index + (index <= appended_object_index)]
 
     def _remove_request_root_object_id_at(self, object_index: int):
         if not self.rcol.rsz:

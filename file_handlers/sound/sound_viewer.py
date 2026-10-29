@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tools.wem_converter import (
+from services.audio.wem_converter import (
     CHANNEL_AS_INPUT,
     CHANNEL_MONO,
     CHANNEL_STEREO,
@@ -61,16 +61,16 @@ from tools.wem_converter import (
     prepare_wwise_project,
     wem_codec_tag,
 )
-from tools.wwise_ir_converter import (
+from services.audio.wwise_ir_converter import (
     convert_file_to_convolution_reverb_ir,
     convert_file_to_hybrid_reverb_ir,
 )
-from tools.riff_metadata import (
+from file_handlers.sound.riff_metadata import (
     RiffMetadataInheritanceError,
     read_riff_metadata,
     write_riff_metadata,
 )
-from tools.wwise_toolchain import (
+from services.audio.wwise_toolchain import (
     WwiseToolchainError,
     configured_wwise_path,
     set_configured_wwise_path,

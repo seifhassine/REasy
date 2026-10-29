@@ -25,10 +25,11 @@ import zlib
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.motfsm.authoring import block_ids, block_padding_is_zero, block_splice, clone_block_object
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
 
 HEADER_MAP_COUNT, HEADER_DATA_COUNT = 48, 52
-from file_handlers.motfsm.serialization import serialize_nodes, splice_document
+from file_handlers.motfsm.serialization import serialize_nodes
 from tools.fsm.common import resolve_node
 from tools.fsm.values import assignments
 
@@ -127,21 +128,9 @@ def run(args):
         f'unknown field(s): {sorted(set(overrides) - set(fields_of(template_condition)))}'
 
     # ---------------------------------------------------------------- new identities
-    def block_ids(block_names, field_index):
-        used = set()
-        for name in block_names:
-            block = doc.rsz_blocks.get_block(name)
-            for index in block.object_table:
-                instance = block.get_instance(index)
-                if instance is None or len(instance.fields) <= field_index:
-                    continue
-                value = instance.fields[field_index].value
-                if isinstance(value, int) and not isinstance(value, bool):
-                    used.add(value)
-        return used
 
 
-    cursor = block_ids(('conditions', 'static_conditions', 'expression_tree_conditions',
+    cursor = block_ids(doc, ('conditions', 'static_conditions', 'expression_tree_conditions',
                         'static_expression_tree_conditions'), 0)
     new_condition_id = 1
     while new_condition_id in cursor:
@@ -152,28 +141,6 @@ def run(args):
         values = {field.name: field.value for field in instance.fields}
         if isinstance(values.get('v0_UID'), int):
             uid_cursor.add(values['v0_UID'])
-
-
-    def block_padding_is_zero(block):
-        baseline = block.file.build_validated()
-        return source[block.offset:block.end] == baseline + bytes(block.end - block.offset - len(baseline))
-
-
-    def clone_block_object(block, template_instance_index, new_fields=None):
-        native = block.file
-        instance_index = len(native.instance_infos)
-        native.instance_infos.append(copy.deepcopy(native.instance_infos[template_instance_index]))
-        native.parsed_elements[instance_index] = copy.deepcopy(native.parsed_elements[template_instance_index])
-        if new_fields:
-            for name, value in new_fields.items():
-                native.parsed_elements[instance_index][name].value = value
-        native.object_table.append(instance_index)
-        return instance_index, len(block.object_table) - 1
-
-
-    def block_splice(block):
-        data = block.file.build_validated()
-        return (block.offset, block.end, data + bytes((-len(data)) % 16))
 
 
     condition_block = doc.rsz_blocks.get_block(block_name)
@@ -190,7 +157,7 @@ def run(args):
         if args.events == 'copy':
             assert block_padding_is_zero(events_block), 'transition_events block has non-zero padding'
             for value in template.mStates.values:
-                template_event = events_block.get_object(value)
+                template_event = doc.references.object_instance('transition_events', value)
                 assert template_event is not None, f'unknown transition event object {value}'
                 event_fields = fields_of(template_event)
                 fresh = {}
@@ -201,7 +168,7 @@ def run(args):
                         uid = (uid + 1) & 0xFFFFFFFF
                     uid_cursor.add(uid)
                     fresh['v0_UID'] = uid
-                _, new_object = clone_block_object(events_block, template_event.index, fresh)
+                _, new_object = clone_block_object(events_block, template_event.index, fresh, template_event.block)
                 new_event_objects.append(new_object)
             events_splice = block_splice(events_block)
         else:
@@ -209,19 +176,15 @@ def run(args):
         print(f'  transition events {list(template.mStates.values)} -> {new_event_objects} ({args.events})')
 
     # ---------------------------------------------------------------- the new state owns a fresh map id
+    from file_handlers.motfsm.transitions import TransitionCopies
     map_offset, map_count = doc.transition_map_tbl_offset, doc.transition_map_count
     data_offset, data_count = doc.transition_data_tbl_offset, doc.transition_data_count
-    map_entries = [struct.unpack_from('<Ii', source, map_offset + i * 8) for i in range(map_count)]
-    assert all(map_entries[i][0] <= map_entries[i + 1][0] for i in range(map_count - 1)), 'map table unsorted'
-    assert map_offset % 16 == 0 and data_offset % 16 == 0, 'tail tables are not 16-byte aligned'
+    copies = TransitionCopies(doc)
+    new_map_id, _ = copies.clone(template.TransitionMaps)
+    if not copies.maps:
+        raise ValueError('Template state has no transition map')
+    new_map_bytes = copies.map_bytes
     old_gap = data_offset - (map_offset + map_count * 8)
-    assert old_gap in (0, 8), f'unexpected map/data gap {old_gap}'
-    entry = next((item for item in map_entries if item[0] == template.TransitionMaps), None)
-    assert entry is not None, f'template map {template.TransitionMaps} is not in the map table'
-    new_map_id = max({item[0] for item in map_entries} |
-                     {state.TransitionMaps for n in nodes for state in n.states if state.TransitionMaps}) + 1
-    new_map_bytes = struct.pack('<Ii', new_map_id, entry[1])
-    print(f'  new transition map {new_map_id} -> data#{entry[1]} (one map id per state, like native data)')
 
     # ---------------------------------------------------------------- new state + node table
     new_state = copy.deepcopy(template)
@@ -245,14 +208,12 @@ def run(args):
     map_insert = map_offset + map_count * 8
     new_gap = (16 - (map_insert + len(new_map_bytes)) % 16) % 16
     assert new_gap in (0, 8), f'unexpected new gap {new_gap}'
-    splices = [(nodes_start, node_tail, nodes_data), block_splice(condition_block),
-               (map_insert, data_offset, new_map_bytes + bytes(new_gap))]
+    splices = [(nodes_start, node_tail, nodes_data), block_splice(condition_block)]
     if events_splice is not None:
         splices.append(events_splice)
     splices.sort()
     map_delta = (len(new_map_bytes) + new_gap) - old_gap
-    output = splice_document(doc, splices)
-    struct.pack_into('<i', output, HEADER_MAP_COUNT, map_count + 1)
+    output = copies.apply(splices)
     assert struct.unpack_from('<i', output, HEADER_DATA_COUNT)[0] == data_count, 'data count changed'
     assert len(output) - len(source) - map_delta > 0, 'expected the BHVT tree to grow'
     output = bytes(output)
@@ -330,10 +291,11 @@ def run(args):
     expected = {field.name: field.value for field in template_condition.fields}
     expected.update(overrides)
     expected['v0_ID'] = new_condition_id
-    assert verified_fields == expected, (verified_fields, expected)
+    from file_handlers.motfsm.authoring import verify_block
+    verify_block(doc, verified, block_name)
     # every field must be the template's value unless it was overridden on the command line
     for field_name, field in fields_of(template_condition).items():
-        if field_name in overrides or field_name == 'v0_ID':
+        if field_name in overrides or field_name == 'v0_ID' or field.reference or field.is_array:
             continue
         assert verified_fields[field_name] == field.value, f'{field_name} was not copied from the template'
     for field_name, value in overrides.items():

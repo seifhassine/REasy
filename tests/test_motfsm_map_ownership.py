@@ -10,7 +10,8 @@ from unittest.mock import patch
 from file_handlers.motfsm.map_ownership import detach_state_maps
 from file_handlers.motfsm.motfsm_file import MotfsmFile, BHVTNode
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
-from file_handlers.motfsm.transitions import TransitionTables
+from file_handlers.motfsm.transitions import TransitionTables, TransitionCopies
+from file_handlers.motfsm.serialization import serialize_nodes
 from test_motfsm_native_writer import fixture
 
 
@@ -103,6 +104,43 @@ class MapOwnershipTests(unittest.TestCase):
         saved = self.reopen(doc, output)
         self.assertEqual(saved.bhvt.nodes[0].states[0], doc.bhvt.nodes[0].states[0])
         self.assertNotEqual(saved.bhvt.nodes[0].states[1].TransitionMaps, 5)
+
+    def test_independent_data_copy_preserves_original_records_in_both_layouts(self):
+        for compact in (False, True):
+            with self.subTest(compact=compact):
+                doc = mapped_fixture(self.folder.name, compact)
+                plan = TransitionCopies(doc)
+                identity, index = plan.clone(5, independent_data=True)
+                doc.bhvt.nodes[0].states[1].TransitionMaps = identity
+                start = doc.bhvt.offsets['nodes']
+                raw = plan.apply([(start, doc.bhvt.node_data_end, serialize_nodes(doc))])
+                saved = self.reopen(doc, raw)
+                tables = TransitionTables(saved)
+                self.assertEqual(tables.resolve(identity), index)
+                self.assertEqual(tables.record(0), plan.tables.record(0))
+                self.assertEqual(tables.record(index)[4:], tables.record(0)[4:])
+                self.assertNotEqual(tables.record(index)[:4], tables.record(0)[:4])
+                self.assertEqual(saved.transition_data_count, 2)
+                self.assertEqual(saved.build_validated(), raw)
+
+    def test_node_recipe_uses_public_bytes_api_and_allocates_private_maps(self):
+        from services.mhr.fsm.node_clone import NodeClonePlan, build
+        doc = mapped_fixture(self.folder.name)
+        doc.bhvt.nodes[0].node_attribute = 0x20
+        doc.bhvt.nodes[0].selector_id = 0
+        doc.bhvt.nodes[0].states[0].mStates.values = [0x40000000]
+        source = doc.build_validated()
+        plan = NodeClonePlan(name='cloned', copy_node='index:0', parent='index:0', motion=1,
+                             set_effect=0, allow_no_motion=True)
+        output = build(source, plan, registry=doc.type_registry)
+        saved = self.reopen(doc, output)
+        clone = saved.bhvt.nodes[-1]
+        self.assertEqual([s.TransitionMaps for s in clone.states], [6, 7])
+        self.assertEqual(saved.transition_map_count, 3)
+        self.assertEqual(saved.transition_data_count, 1)
+        self.assertEqual(clone.states[0].mStates.values, [0x40000000])
+        self.assertIsNotNone(saved.references.object_instance('transition_events', 0x40000000))
+        self.assertEqual(saved.build_validated(), output)
 
 
 if __name__ == '__main__':

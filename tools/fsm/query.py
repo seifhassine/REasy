@@ -4,7 +4,7 @@ from dataclasses import asdict
 from file_handlers.motfsm.graph_model import MotfsmGraph
 from .common import identity, resolve_node
 from .editing import open_document
-from tools.rsz_inspection import field_record
+from file_handlers.rsz.inspection import field_record
 
 
 def instance_record(instance, enums):

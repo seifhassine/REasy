@@ -9,8 +9,9 @@ from pathlib import Path
 import struct
 import sys
 import tempfile
+from services.file_io import publish_bytes as publish, check_output
 
-MHR_REGISTRY = Path(__file__).resolve().parents[2] / 'resources/data/dumps/rszmhrise.json'
+from services.mhr.context import MHR_REGISTRY
 _application = None
 
 
@@ -104,33 +105,6 @@ def run_batch(args, parser):
         return EditResult(result.data, {'operations': reports}), len(plan)
 
 
-def publish(path, data):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = None
-    try:
-        with tempfile.NamedTemporaryFile(dir=path.parent, prefix=f'.{path.name}.', delete=False) as stream:
-            temporary = Path(stream.name)
-            stream.write(data)
-            stream.flush()
-            os.fsync(stream.fileno())
-        if temporary.read_bytes() != data:
-            raise OSError('Staged output differs from the verified bytes')
-        temporary.replace(path)
-    finally:
-        if temporary is not None and temporary.exists():
-            temporary.unlink()
-
-
-def check_output(destination, inputs):
-    destination = Path(destination).resolve()
-    for path in inputs:
-        if path is None:
-            continue
-        path = Path(path).resolve()
-        if path == destination or (destination.exists() and path.samefile(destination)):
-            raise ValueError('Output must not replace the source or another input')
-
-
 def main(build_parser, argv=None):
     argv = list(sys.argv[1:] if argv is None else argv)
     json_mode = '--json' in argv
@@ -152,9 +126,10 @@ def main(build_parser, argv=None):
                 raise ValueError('Resource verification requires Python without -O')
             with redirect_stdout(sys.stderr):
                 result = args.run(args)
-            result.update(status='ok', command=args.command)
+            valid = result.get('valid', True) if getattr(args, 'check_valid', False) else True
+            result.update(status='ok' if valid else 'error', command=args.command)
             print(json.dumps(result, ensure_ascii=False, indent=None if json_mode else 2))
-            return 0
+            return 0 if valid else 2
         source, destination = args.source.resolve(), args.output.resolve()
         inputs = [source]
         if getattr(args, 'extra_inputs', None):
@@ -170,7 +145,7 @@ def main(build_parser, argv=None):
                   'output_sha256': hashlib.sha256(result.data).hexdigest(), 'changed': original != result.data,
                   'details': result.details}
         if not args.dry_run:
-            publish(destination, result.data)
+            publish(destination, result.data, inputs=inputs)
         if json_mode:
             print(json.dumps(report, ensure_ascii=False))
         else:

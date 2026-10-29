@@ -1,0 +1,39 @@
+name: Resource authoring contracts
+
+on:
+  push:
+    paths: ['file_handlers/**', 'services/**', 'tools/**', 'utils/**', 'tests/**', 'requirements.txt', '.github/workflows/authoring-tests.yml']
+  pull_request:
+    paths: ['file_handlers/**', 'services/**', 'tools/**', 'utils/**', 'tests/**', 'requirements.txt', '.github/workflows/authoring-tests.yml']
+  workflow_dispatch:
+
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    env:
+      QT_QPA_PLATFORM: offscreen
+      PYTHONPATH: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+      - name: Install Linux Qt runtime
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libegl1 libopengl0
+      - run: python -m pip install -r requirements.txt
+      - name: Test generated resources and public APIs
+        run: >-
+          python -m unittest -v
+          test_rsz_graph_copy test_mhr_events test_authoring_services
+          test_motfsm_native_writer test_motfsm_map_ownership test_motfsm_selectors
+          test_rsz_inspection test_rsz_clipboard_structs test_clip_graph_v43 test_clip_cli
+          test_resource_cli.CliContractTests test_fsm_cli.SelectorAndDisplayTests
+          test_wwise_graph_validation test_wwise_playback_graph.PlaybackGraphTests

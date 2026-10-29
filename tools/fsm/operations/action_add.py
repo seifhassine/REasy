@@ -5,12 +5,11 @@ are all `_Type/_StartFrame/_EndFrame` windows, so "give node X a reflex window" 
 appended to that node - no new node, no new state.
 
 """
-import copy
-import struct
 
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.motfsm.authoring import block_ids, block_splice, clone_block_object, verify_block
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from tools.fsm.common import resolve_node
 from tools.fsm.values import assignments
@@ -66,37 +65,9 @@ def run(args):
     # ---------------------------------------------------------------- new Action instance
     actions_block = doc.rsz_blocks.get_block('actions')
     old_objects = list(actions_block.object_table)
-    old_instances = len(actions_block.file.instance_infos)
 
 
-    def clone_block_object(block, template_instance_index, new_fields=None, source_block=None):
-        native = block.file
-        origin = (source_block or block).file
-        instance_index = len(native.instance_infos)
-        native.instance_infos.append(copy.deepcopy(origin.instance_infos[template_instance_index]))
-        native.parsed_elements[instance_index] = copy.deepcopy(origin.parsed_elements[template_instance_index])
-        for name, value in (new_fields or {}).items():
-            assert name in native.parsed_elements[instance_index], f'unknown field {name}'
-            native.parsed_elements[instance_index][name].value = value
-        native.object_table.append(instance_index)
-        return instance_index
-
-
-    def block_ids(block_names, field_index):
-        used = set()
-        for name in block_names:
-            block = doc.rsz_blocks.get_block(name)
-            for index in block.object_table:
-                fields = block.file.parsed_elements[index]
-                if not fields or len(fields) <= field_index:
-                    continue
-                value = fields['v1_ID'].value if 'v1_ID' in fields else None
-                if isinstance(value, int) and not isinstance(value, bool):
-                    used.add(value)
-        return used
-
-
-    used_ids = block_ids(('actions', 'static_actions'), 1)
+    used_ids = block_ids(doc, ('actions', 'static_actions'), 1)
     new_action_id = 1
     while new_action_id != 0xFFFFFFFF and new_action_id in used_ids:
         new_action_id += 1
@@ -104,11 +75,6 @@ def run(args):
     clone_block_object(actions_block, template_index, overrides, source_block=template_block)
     print(f'  new action v1_ID={new_action_id} on {target.name}: '
           + ', '.join(f'{k}={v}' for k, v in overrides.items() if k != 'v1_ID'))
-
-
-    def block_splice(block):
-        data = block.file.build_validated()
-        return (block.offset, block.end, data + bytes((-len(data)) % 16))
 
 
     action_splice = block_splice(actions_block)
@@ -131,8 +97,6 @@ def run(args):
     nodes_data += bytes((node_tail - nodes_start - len(nodes_data)) % 16)
     splices = sorted([(nodes_start, node_tail, nodes_data), action_splice])
     output = splice_document(doc, splices)
-    tree_growth = len(output) - len(source)
-    assert tree_growth > 0, 'expected the BHVT tree to grow'
     output = bytes(output)
 
     # ---------------------------------------------------------------- verification
@@ -150,7 +114,8 @@ def run(args):
     new_block = verified.rsz_blocks.get_block('actions')
     assert new_block.object_table[:len(old_objects)] == old_objects, 'actions object table reordered'
     assert len(new_block.object_table) == len(old_objects) + 1
-    assert len(new_block.file.instance_infos) == old_instances + 1
+    assert len(new_block.file.instance_infos) == len(actions_block.file.instance_infos)
+    verify_block(doc, verified, 'actions')
     assert len(verified.bhvt.nodes) == len(original.bhvt.nodes), 'node count changed'
     check = verified.bhvt.nodes[node_index(args.node)]
     assert len(check.actions) == len(original.bhvt.nodes[node_index(args.node)].actions) + 1

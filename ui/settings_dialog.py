@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
 from app_config import GAMES
 from i18n.language_manager import LanguageManager
 from settings import DEFAULT_SETTINGS
-from tools.wwise_toolchain import (
+from services.audio.wwise_toolchain import (
     suggested_wwise_browse_path,
     validate_wwise_installation,
     wwise_profile_for_game,

@@ -11,11 +11,11 @@ With `--clear` it instead **removes** the matching events from the selected stat
 options it inherited from its template.
 
 """
-import copy
 
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
+from file_handlers.motfsm.authoring import block_splice, clone_block_object, verify_block
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from tools.fsm.common import resolve_node, state_indexes
 from tools.fsm.values import assignments
@@ -46,13 +46,15 @@ def run(args):
 
     events_block = doc.rsz_blocks.get_block(EVENTS_BLOCK)
     users = {}
-    for other in nodes:
-        for state in list(other.states) + list(getattr(other, 'all_states', []) or []):
-            for raw in (getattr(state.mStates, 'values', []) or []):
+    for node_index, other in enumerate(nodes):
+        lists = [('state', i, state.mStates.values) for i, state in enumerate(other.states)]
+        if doc.layout.transition_event_lists is not False:
+            lists += [('start', i, row.mStartTransitionEvent.values) for i, row in enumerate(other.transitions)]
+        for kind, position, values in lists:
+            for slot, raw in enumerate(values):
                 event = doc.references.object_instance(EVENTS_BLOCK, raw)
-                if event is None:
-                    continue
-                users.setdefault(event.index, set()).add((other.name, raw))
+                if event is not None:
+                    users.setdefault((event.block.name, event.index), set()).add((node_index, kind, position, slot))
     print(f'  {node.name}: {len(users)} distinct transition events in use')
 
     plan = []
@@ -71,7 +73,7 @@ def run(args):
         slot = matches[0]
         old_object = values[slot]
         old_instance = doc.references.object_instance(EVENTS_BLOCK, old_object)
-        shared = users.get(old_instance.index, set())
+        shared = users.get((old_instance.block.name, old_instance.index), set())
         if len(shared) <= 1 and not args.clear:
             print(f'  {node.name}[{position}]: {old_instance.class_name.rsplit(".", 1)[-1]} is already private, skipped')
             continue
@@ -114,6 +116,7 @@ def run(args):
         raise ValueError('Nothing to copy')
 
     native = events_block.file
+    old_event_objects = len(native.object_table)
     created = []
     for position, slot, old_object, old_instance, shared in plan:
         overrides = assignments(old_instance, args.set)
@@ -133,15 +136,9 @@ def run(args):
             overrides.setdefault('v0_UID', uid)
         description = ', '.join(f'{name}={value}' for name, value in overrides.items()) or 'no overrides'
         print(f'  {node.name}[{position}]: shared with {shared} -> private copy ({description})')
-        instance_index = len(native.instance_infos)
-        native.instance_infos.append(copy.deepcopy(native.instance_infos[old_instance.index]))
-        native.parsed_elements[instance_index] = copy.deepcopy(native.parsed_elements[old_instance.index])
-        for name, value in overrides.items():
-            if name not in native.parsed_elements[instance_index]:
-                raise ValueError(f'unknown field {name} on {old_instance.class_name}')
-            native.parsed_elements[instance_index][name].value = value
-        native.object_table.append(instance_index)
-        new_object = len(native.object_table) - 1
+        origin = doc.rsz_blocks.get_block(
+            'static_transition_events' if (old_object & 0xFFFFFFFF) >> 24 == 0x40 else EVENTS_BLOCK)
+        instance_index, new_object = clone_block_object(events_block, old_instance.index, overrides, origin)
         created.append((position, slot, old_object, new_object, overrides, {field.name: field.value for field in old_instance.fields}))
         values = list(getattr(node.states[position].mStates, 'values', []) or [])
         assert values[slot] == old_object, 'state event slot changed while copying'
@@ -149,9 +146,6 @@ def run(args):
         node.states[position].mStates.values = values
         assert len(node.states[position].mStates.values) == len(values)
 
-    def block_splice(block):
-        data = block.file.build_validated()
-        return (block.offset, block.end, data + bytes((-len(data)) % 16))
 
     events_splice = block_splice(events_block)
 
@@ -171,12 +165,12 @@ def run(args):
     nodes_data += bytes((node_tail - nodes_start - len(nodes_data)) % 16)
     splices = sorted([(nodes_start, node_tail, nodes_data), events_splice])
     output = bytes(splice_document(doc, splices))
-    assert len(output) > len(source), 'expected the BHVT tree to grow'
 
     verified = MotfsmFile()
     original = MotfsmFile()
     verified.read(output)
     original.read(source)
+    assert len(verified.rsz_blocks.get_block(EVENTS_BLOCK).object_table) == old_event_objects + len(created)
     assert verified.bhvt.nodes == doc.bhvt.nodes, 'reopened node table differs from the authored model'
     assert verified.bhvt.action_ex_ids == original.bhvt.action_ex_ids
     assert verified.bhvt.static_action_ex_ids == original.bhvt.static_action_ex_ids
@@ -187,7 +181,7 @@ def run(args):
         copy_instance = verified.references.object_instance(EVENTS_BLOCK, new_object)
         expected = dict(fields)
         expected.update(overrides)
-        assert {field.name: field.value for field in copy_instance.fields} == expected
+        verify_block(doc, verified, EVENTS_BLOCK)
         kept = verified.references.object_instance(EVENTS_BLOCK, old_object)
         assert kept is not None and {field.name: field.value for field in kept.fields} == fields
     for name in BLOCK_NAMES:

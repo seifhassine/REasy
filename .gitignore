@@ -43,6 +43,9 @@ Thumbs.db
 !/tests/fixtures/*.py
 !/tests/fixtures/*.lua
 !/tests/test_userdata_dependencies.py
+!/tests/test_rsz_graph_copy.py
+!/tests/test_mhr_events.py
+!/tests/test_authoring_services.py
 !/tests/test_motfsm_map_ownership.py
 !/tests/test_scn_parser.py
 !/tests/test_motbank_roundtrip.py

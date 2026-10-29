@@ -9,7 +9,7 @@ from file_handlers.rsz.rsz_data_types import ArrayData, ObjectData, UserDataData
 from utils.type_registry import TypeRegistry
 from tools.fsm.common import integer
 from tools.cli.runtime import MHR_REGISTRY
-from tools.rsz_inspection import scalar, fields_record
+from file_handlers.rsz.inspection import fields_record
 
 
 def load(path, registry):

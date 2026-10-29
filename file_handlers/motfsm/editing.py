@@ -4,9 +4,8 @@ from contextlib import contextmanager
 
 from file_handlers.rsz.rsz_file import RszInstanceInfo
 from file_handlers.rsz.rsz_instance_operations import RszInstanceOperations
-from file_handlers.rsz.utils.rsz_field_utils import (
-    create_field_value_from_definition, coerce_field_value, update_references_with_mapping,
-)
+from file_handlers.rsz.graph_copy import copy_graph
+from file_handlers.rsz.utils.rsz_field_utils import create_field_value_from_definition, coerce_field_value
 from .motfsm_file import MotfsmFile, ChildNode, Action, State, Transition, AllState, IndexList
 from .rsz_adapter import BLOCK_NAMES
 
@@ -280,23 +279,27 @@ class GraphEditor:
 
     def clone_object(self, name, raw, *, identity=None, extension=0):
         """Clone the owned Object graph; keep shared roots and external userdata."""
+        return self.import_object(name, raw, identity=identity, extension=extension,
+                                  owned_only=True)
+
+    def import_object(self, name, raw, *, source=None, source_name=None,
+                      identity=None, extension=0, owned_only=False, shared=None):
+        """Import a graph across blocks/documents with explicit native identities."""
         block = self._block(name)
         native = block.file
-        root = block.get_object(self._slot(name, raw)).index
-        owned = RszInstanceOperations.collect_owned_instances(native.parsed_elements, root,
-                    object_table=native.object_table, valid_instance_ids=range(len(native.instance_infos)))
-        originals = sorted({root, *owned})
-        mapping = {old: len(native.instance_infos) + i for i, old in enumerate(originals)}
-        fields = {mapping[old]: copy.deepcopy(native.parsed_elements[old]) for old in originals}
-        for data in fields.values():
-            update_references_with_mapping(data, mapping)
-        self._identity(name, fields[mapping[root]], identity, extension)
+        origin = source or self.document
+        source_name = source_name or name
+        source_block = origin.rsz_blocks.get_block(source_name)
+        root = source_block.get_object(self._slot(source_name, raw)).index
+        fields = copy.deepcopy(source_block.file.parsed_elements[root])
+        self._identity(name, fields, identity, extension)
         slot = len(native.object_table)
         if slot > 0xFFFF:
             raise ValueError('BHVT object table exceeds its 16-bit reference range')
-        native.instance_infos.extend(copy.deepcopy(native.instance_infos[i]) for i in originals)
-        native.parsed_elements.update(fields)
-        native.object_table.append(mapping[root])
+        copied = copy_graph(source_block.file, native, [root], owned_only=owned_only, shared=shared)
+        index = copied.roots[0]
+        self._identity(name, native.parsed_elements[index], identity, extension)
+        native.object_table.append(index)
         extensions = self._extensions(name)
         if extensions is not None:
             extensions.append(extension)

@@ -1,13 +1,9 @@
 """Fixed-width edits through the document bindings used by the editor."""
-from file_handlers.motfsm.motfsm_file import MotfsmFile
+from file_handlers.motfsm.scalar_editing import open_document, save_edits
 from .common import resolve_node, state_indexes
 from .values import parse_field
 
 
-def open_document(source):
-    document = MotfsmFile()
-    document.read(source.read_bytes())
-    return document
 
 
 def action_targets(document, node, klass, exact=False, position=None):
@@ -45,22 +41,6 @@ def edit_instances(document, instances, assignments):
     return save_edits(document, edits.values())
 
 
-def save_edits(document, edits):
-    edits = list(edits)
-    for binding, value in edits:
-        print(f'{binding.name}: {binding.value} -> {value}')
-        document.edit_field(binding, value)
-    output = document.rebuild()
-    expected = bytearray(document.source)
-    for binding, _ in edits:
-        expected[binding.offset:binding.offset + binding.size] = binding.encode(binding.value)
-    if output != bytes(expected):
-        raise ValueError('Rebuild changed bytes outside the requested fields')
-    reopened = MotfsmFile()
-    reopened.read(output)
-    if reopened.rebuild() != output:
-        raise ValueError('Reopened candidate does not rebuild identically')
-    return output
 
 
 def action_edit(args):

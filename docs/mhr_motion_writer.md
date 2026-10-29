@@ -1,17 +1,25 @@
 # Rise native motion batch writer
 
-`tools/mhr_motion_writer.py` provides a headless API and JSON batch CLI for native
-MOTLIST 528, MOT 495, MTRE 14, CLIP 43 and MOTBANK 3. It writes offline candidates;
+`services/mhr/motion_batch.py` provides the headless composition API for native
+MOTLIST 528, MOT 495, MTRE 14, CLIP 43 and MOTBANK 3. The resource CLI exposes it as
+`motion build`; `tools/mhr_motion_writer.py` retains its script and import entrypoints.
+It writes offline candidates;
 it does not deploy them or perform World-to-Rise retargeting.
 
 ```powershell
 $env:REASY_MHR_NATIVE_CORPUS='absolute/path/to/extracted/em100/00/mot'
 & ./.venv/Scripts/python.exe -m unittest discover -s tests -p test_mhr_native_writer.py -v
 & ./.venv/Scripts/python.exe tools/mhr_motion_writer.py batch_plan.json --report report.json
+& ./.venv/Scripts/python.exe -m tools motion build batch_plan.json --report report.json --dry-run --json
 ```
 
 ## Python API
 
+* `services.mhr.motion_batch.execute_plan(plan)` returns verified output bytes by
+  destination path plus a report, without publishing. `build_plan(plan,
+  plan_path=None, report_path=None, dry_run=False)` additionally protects inputs
+  and stages all output files before publication. Relative paths in the plan are
+  relative to the working directory; they are not rebased against the plan file.
 * `MHR_MOTION_FORMAT_CODEC.parse(bytes)` / `.write(document)` read, edit, reopen
   and rebuild source-backed native documents. Unchanged documents retain exact
   source bytes. Supported scalar, string, track and MotionAppend edits relocate
@@ -94,10 +102,14 @@ values and start/end boundaries. Key counts must match; use ClipGraph for count
 changes. `shift`, all six `filter_pages`, and `clip_total_frame` are explicit.
 The tool does not equate a CLIP's total frame with its MOT duration.
 
-All candidates are validated and reopened before any output is written. CLI
-outputs must have distinct paths and cannot overwrite input motion/bank templates.
-Reports include hashes and payload/sequence sharing. Rebuilding a reopened candidate
-must produce identical bytes.
+All candidates are validated and reopened before any output is written. Outputs
+must have distinct paths and cannot overwrite input templates, the plan, or its
+skeleton/UVAR dependencies. The optional report cannot replace a resource output.
+`--dry-run` produces the result without writing resources or a report file.
+Publication stages all bytes first, replaces each file atomically, and restores
+replaced files if a later replacement fails; it is not atomic across a system crash.
+Reports include hashes and payload/sequence sharing. Rebuilding a reopened
+candidate must produce identical bytes.
 
 ## Proven scope and remaining semantics
 

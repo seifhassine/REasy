@@ -13,7 +13,8 @@ Run from the repository root with its Python environment:
 | Group | Commands |
 | --- | --- |
 | `fsm` | Query/dump, node/Action/Condition/State edits, cloning, derivations, events; [detailed guide](../fsm/README.md) |
-| `motion` | `query`, `duplicate`, `bake`, `import-wilds` |
+| `motion` | `query`, `duplicate`, `bake`, `import-wilds`, `build` (native resource plan) |
+| `audio` | `build` (bound playback graph jobs) |
 | `clip` | `query`, `dump`, `layout`, `sequence-copy/delete`, `node-copy/delete`, `property-copy/delete`, `key-copy/delete`, `track-add`, `event-move`, `events-drop`, `effect-set`, `property-range`, `bool-window` |
 | `pfb` | `query`, `elements`, `element-add`, `element-edit` |
 | `rcol` | `query`, `request-add`, `request-edit` |
@@ -26,8 +27,9 @@ Motion/CLIP and effect/attack recipes target MHR MOTLIST 528, MOT 495, CLIP 43,
 PFB 17, and RCOL 20. Wilds import reads MOTLIST 992 and writes a Rise target.
 RSZ commands accept `--registry PATH`; the default is the bundled MHRise registry.
 They use the existing format handlers and reject registry mismatches.
-GUI support and parameterized tool libraries remain under `tools`; offline
-format-validation generators and manual Lua checks live under `tests/fixtures`.
+Native edit APIs live under `file_handlers`; MHR composition and audio toolchain
+APIs live under `services/mhr` and `services/audio`. CLI modules adapt those APIs.
+Offline format-validation generators and manual Lua checks live under `tests/fixtures`.
 
 ## Agent contract
 
@@ -41,6 +43,31 @@ format-validation generators and manual Lua checks live under `tests/fixtures`.
 - Run without Python `-O`: structural verification uses assertions.
 
 No command deploys a candidate to a game automatically. Read-back verification and game behavior are separate checks.
+
+### Native motion and audio builds
+
+```powershell
+.\.venv\Scripts\python.exe -m tools motion build batch_plan.json --report out\motion-report.json --dry-run --json
+.\.venv\Scripts\python.exe -m tools audio build jobs.json -o out\audio --dry-run --json
+```
+
+`motion build` takes the [schema 1 native motion plan](../../docs/mhr_motion_writer.md).
+Each document/bank names its own output file; `--report` is optional. This differs
+from the argument-array `motion batch`, which chains commands against one file.
+
+`audio build` takes `{"schema":"reasy.playback-batch/1","jobs":[...]}`. Prepare
+jobs with `python -m tools.wwise_graph_importer prepare` or `prepare-music`, then
+resolve the reported media, object and external bindings. A build with unresolved
+bindings returns exit 2 and keeps the full `unbound` report; no banks are published.
+Without `--dry-run`, that report is saved as `build-report.json` even if unbound.
+
+Both builds interpret paths inside their plans relative to the working directory,
+preserving the standalone tools' contract. They verify all resources before
+publication and protect input files. Each output replacement is atomic; a later
+replacement failure restores previously replaced outputs. This is not a transaction
+across a process or machine crash. `--dry-run` writes neither candidates nor reports.
+The original `tools/mhr_motion_writer.py` and `tools.wwise_graph_importer` commands
+remain available.
 
 ### EFX structural editing
 
@@ -434,6 +461,9 @@ Group-local batches such as `tools clip batch` and `tools fsm batch` omit the gr
 - `property-range` extends a selected property's end and last key; it does not shorten the range.
 - `bool-window` retimes a four-key BOOL track in place: keys become `(0,False) (on,True) (off,True) (off+1,False)`
   and the property range becomes `0 .. off+1`; the file size does not change.
+- Fixed-size event edits use `file_handlers.motion.mhr_events` and reject changes
+  that would also change another motion slot sharing the same storage. Structural
+  CLIP operations can detach shared payloads before such edits.
 - RCOL request `id`, table position, and `field0` are distinct. Inspect `rcol query` before editing.
 - RCOL query/edit selectors are `--id`, `--index`, or `--field0`. Request cloning allocates a fresh field0 independently of its authoring ID.
 - Motion duplication/import keeps slot rows and pointers sorted by MotionID; physical payload order stays independent of slot order.
@@ -479,7 +509,8 @@ results contain before/after checks and the applied frame factor.
 
 ## Script migration
 
-Standalone resource scripts now live as importable commands under `tools/cli/formats`.
+Standalone resource scripts expose commands under `tools/cli/formats`, with shared
+native operations in `file_handlers` and composed workflows in `services`.
 Replace positional `SOURCE OUTDIR` with `SOURCE -o OUTPUT_FILE`.
 
 | Former script | Command |
