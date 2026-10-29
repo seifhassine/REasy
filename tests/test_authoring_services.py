@@ -15,7 +15,7 @@ from tools.cli.main import main
 class AuthoringServiceTests(unittest.TestCase):
     def test_batch_write_failure_restores_existing_outputs_and_keeps_user_backups(self):
         with tempfile.TemporaryDirectory() as folder:
-            root = Path(folder); a, b = root / 'a', root / 'b'
+            root = Path(folder).resolve(); a, b = root / 'a', root / 'b'
             backup = root / 'a.bak'; backup.write_bytes(b'user backup')
             a.write_bytes(b'original a'); b.write_bytes(b'original b')
             replace = os.replace
