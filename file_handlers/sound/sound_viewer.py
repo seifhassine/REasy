@@ -9,6 +9,7 @@ lazy import subprocess
 import tempfile
 import threading
 import wave
+from collections import Counter
 from contextlib import suppress
 from dataclasses import replace
 from functools import partial
@@ -110,6 +111,7 @@ from .bnk_parser import (
     set_hirc_children,
     wwise_id_from_name,
 )
+from .pck_codec import pck_language_names
 lazy from .sound_graph import EventFlowGraph
 lazy from .sound_hirc_editor import ActionPickerDialog, HircPropertiesDialog, WwiseFieldsEditor
 from .sound_metadata import SoundMetadata
@@ -127,8 +129,14 @@ lazy from .sound_waveform import (
     write_wave_preview,
     write_wave_edit,
 )
-from .wwise_schema import STRUCTURED_BANK_VERSIONS, is_hirc_bus, is_hirc_plugin
-from .wwise_v132 import set_v132_fields
+from .wwise_schema import STRUCTURED_BANK_VERSIONS, _hirc_type_name, is_hirc_bus, is_hirc_plugin
+from .wwise_v132 import (
+    hirc_layout_exists,
+    new_structured_object,
+    parse_structured_chunk,
+    reorder_wwise_list,
+    set_v132_fields,
+)
 lazy from .wwise_media import (
     WwiseMediaKind,
     convolution_reverb_to_wav,
@@ -156,6 +164,7 @@ _AUDIO_FILTER = "Sound Replacement (*.wem *.wav);;WEM Files (*.wem);;WAV Files (
 _MIDI_FILTER = "MIDI Replacement (*.mid *.wmid);;MIDI Files (*.mid);;Wwise MIDI (*.wmid)"
 _IR_FILTER = "Impulse Response (*.wav *.wir);;WAV Files (*.wav);;Compiled IR (*.wir)"
 _REV_FILTER = "Crankcase REV Model (*.model *.adm);;REV Model Files (*.model *.adm)"
+_NODE_TYPES = frozenset({0x02, 0x05, 0x06, 0x07, 0x09, 0x0A, 0x0B, 0x0C, 0x0D})
 
 
 def _sound_surface(widget: QWidget) -> QWidget:
@@ -981,6 +990,9 @@ class SoundViewer(QWidget):
         ))
         self.meta_wem = self._make_btn(self.tr("Loop / Markers…"), "bookmark", self._on_edit_wem_metadata, enabled=False, compact=True)
         self.exp_wem = self._make_btn(self.tr("Export WEM…"), "export", self._on_export_wem, enabled=False, compact=True)
+        self.remove_media_btn = self._make_btn(
+            self.tr("Remove Media"), "delete", self._on_remove_media, enabled=False, compact=True,
+        )
         self.exp_wav = self._make_btn(self.tr("Export WAV…"), "export", self._on_export_wav, enabled=False, compact=True)
         self.rep_bulk = self._make_btn(self.tr("Bulk Replace…"), "layers", self._on_bulk_replace, compact=True)
         self.add_audio_source = self._make_btn(
@@ -995,7 +1007,7 @@ class SoundViewer(QWidget):
         actions.setHorizontalSpacing(8)
         actions.setVerticalSpacing(4)
         for row, (caption, buttons) in enumerate((
-            (self.tr("Selected source"), (self.rep_wem, self.meta_wem, self.exp_wem, self.exp_wav)),
+            (self.tr("Selected source"), (self.rep_wem, self.meta_wem, self.exp_wem, self.exp_wav, self.remove_media_btn)),
             (self.tr("Container"), (self.rep_settings_btn, self.rep_bulk, self.exp_all, self.add_audio_source)),
         )):
             label = styled_label(caption, heading="caption")
@@ -1063,6 +1075,7 @@ class SoundViewer(QWidget):
             enabled=False, compact=True, variant="danger",
         )
         self.hirc_properties_btn = self._make_btn(self.tr("Properties…"), "details", self._on_edit_hirc, enabled=False, compact=True)
+        self.hirc_new_btn = self._make_btn(self.tr("New Object…"), "add", self._on_new_hirc, compact=True)
         self.hirc_connect_btn = self._make_btn(self.tr("Connect Child…"), "link", self._on_connect_hirc, enabled=False, compact=True)
         self.hirc_disconnect_btn = self._make_btn(self.tr("Disconnect Child…"), "unlink", self._on_disconnect_hirc, enabled=False, compact=True)
         self.hirc_reference_btn = self._make_btn(self.tr("Retarget Link…"), "target", self._on_retarget_hirc_reference, enabled=False, compact=True)
@@ -1072,7 +1085,7 @@ class SoundViewer(QWidget):
         tools.setContentsMargins(6, 5, 6, 5)
         tools.setSpacing(4)
         for button in (
-            self.hirc_properties_btn, self.hirc_duplicate_btn,
+            self.hirc_properties_btn, self.hirc_new_btn, self.hirc_duplicate_btn,
             self.hirc_connect_btn, self.hirc_disconnect_btn,
         ):
             tools.addWidget(button)
@@ -1796,6 +1809,30 @@ class SoundViewer(QWidget):
             return False
         self.status.setText(self.tr("{label} exported to {path}").format(label=label, path=path))
         return True
+
+    def _on_remove_media(self):
+        title = self.tr("Remove Media")
+        selected = self._require_track(title)
+        if not selected:
+            return
+        _, track = selected
+        if QMessageBox.question(
+            self, title,
+            self.tr("Remove media {id} from this file? Objects in other banks that stream it lose their audio.").format(
+                id=track.source_id
+            ),
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+        ) != QMessageBox.Yes:
+            return
+        try:
+            self.handler.remove_media_source(track.source_id)
+        except ValueError as exc:
+            QMessageBox.warning(self, title, str(exc))
+            return
+        if self._refresh_tracks():
+            if self._parse_result.container_type.lower() == "pck":
+                self._stage_pck_index()
+            self.status.setText(self.tr("Removed media {id}.").format(id=track.source_id))
 
     def _on_export_wem(self):
         selected = self._require_track(self.tr("Export"))
@@ -2606,6 +2643,19 @@ class SoundViewer(QWidget):
             return
         if not self._confirm_replacement_scope((source_id,)):
             return
+        language_id = None
+        used = {entry.language_id for entry in self._parse_result.pck_entries if entry.table_kind == "sounds"}
+        if is_pck and len(used) > 1:
+            names = pck_language_names(self.handler.raw_data)
+            choices = sorted(used | set(names))
+            labels = [f"{names.get(language, '?')} ({language})" for language in choices]
+            choice, accepted = QInputDialog.getItem(
+                self, title, self.tr("This PCK holds media of several languages. Language of the new source:"),
+                labels, 0, False,
+            )
+            if not accepted:
+                return
+            language_id = choices[labels.index(choice)]
         path, _ = QFileDialog.getOpenFileName(
             self, self.tr("Select Audio for Source {id}").format(id=source_id),
             f"{source_id}.wem", _AUDIO_FILTER,
@@ -2630,7 +2680,7 @@ class SoundViewer(QWidget):
             )
             if not data:
                 return
-            self.handler.add_media_source(source_id, data)
+            self.handler.add_media_source(source_id, data, language_id)
             if self._refresh_tracks():
                 if is_pck:
                     self._stage_pck_index()
@@ -2915,12 +2965,17 @@ class SoundViewer(QWidget):
             )
         )
         self._bank_chunk_editor = WwiseFieldsEditor(
-            structure, self._sound_metadata, parent=self.bank_chunk_host
+            structure, self._sound_metadata, parent=self.bank_chunk_host,
+            payload=chunk.payload if chunk.chunk_id != "DIDX" else None,
         )
+        self._bank_chunk_editor.structureEdited.connect(self._apply_bank_chunk_structure)
         self.bank_chunk_layout.addWidget(self._bank_chunk_editor)
         self.bank_chunk_apply.setEnabled(bool(editable))
 
     def _apply_bank_chunk(self):
+        self._apply_bank_chunk_structure(None)
+
+    def _apply_bank_chunk_structure(self, request):
         editor = self._bank_chunk_editor
         index = self.bank_chunk_combo.currentData()
         chunks = self._parse_result.bank_chunks if self._parse_result else ()
@@ -2929,10 +2984,15 @@ class SoundViewer(QWidget):
         chunk = chunks[int(index)]
         try:
             changes = editor.changes()
-            if not changes:
+            if not changes and request is None:
                 self.status.setText(self.tr("No bank-setting values changed."))
                 return
             payload = set_v132_fields(chunk.payload, chunk.structure, changes)
+            if request is not None and request[0] == "list":
+                layout = parse_structured_chunk(
+                    chunk.chunk_id, payload, self._parse_result.bank_version
+                ).structure
+                payload = reorder_wwise_list(payload, layout, *request[1:])
             self.handler.set_bank_chunk_payload(chunk.chunk_id, payload)
             if not self._refresh_tracks():
                 return
@@ -3287,21 +3347,27 @@ class SoundViewer(QWidget):
         root = add(selected, 1, self.tr("Selected · ShortID {id}").format(id=selected.object_id))
         nodes[root]["tone"] = "selected"
         nodes[root]["selected"] = True
+        shared = len(objects_by_id[selected.object_id]) > 1
         for source in self._parse_result.objects:
             fields = [
                 field for field in source.reference_fields
                 if field.target_id == selected.object_id and field.role != "parent"
+                and (not shared or selected.type_id in compatible_hirc_reference_types(source, field))
             ]
             if not fields or source.index == selected.index:
                 continue
             key = add(source, 0, ", ".join(dict.fromkeys(field.role for field in fields)))
             edges.append((key, root))
-        outgoing: dict[int, list[str]] = {}
+        outgoing: dict[int, list] = {}
         for field in selected.reference_fields:
             if field.role != "parent":
-                outgoing.setdefault(field.target_id, []).append(field.role)
-        for target_id, roles in outgoing.items():
+                outgoing.setdefault(field.target_id, []).append(field)
+        for target_id, fields in outgoing.items():
+            roles = [field.role for field in fields]
             targets = objects_by_id.get(target_id, ())
+            if len(targets) > 1:
+                allowed = set().union(*(compatible_hirc_reference_types(selected, field) for field in fields))
+                targets = [target for target in targets if target.type_id in allowed]
             for target in targets:
                 key = add(target, 2, ", ".join(dict.fromkeys(roles)))
                 edges.append((root, key))
@@ -3366,15 +3432,13 @@ class SoundViewer(QWidget):
             is_bnk and self._bank_edits_supported()
             and typed_count == 1 and structured
         )
-        global_editable = exact_editable and id_count == 1
         safe_children = bool(obj and can_edit_hirc_children(obj))
         self.hirc_duplicate_btn.setEnabled(exact_editable)
-        self.hirc_rename_btn.setEnabled(global_editable)
-        self.hirc_delete_btn.setEnabled(global_editable)
-        event_editable = bool(obj and (obj.type_id != 0x04 or global_editable))
-        self.hirc_properties_btn.setEnabled(exact_editable and structured and event_editable)
-        self.hirc_connect_btn.setEnabled(global_editable and safe_children)
-        self.hirc_disconnect_btn.setEnabled(global_editable and safe_children and bool(obj.child_ids))
+        self.hirc_rename_btn.setEnabled(exact_editable)
+        self.hirc_delete_btn.setEnabled(exact_editable)
+        self.hirc_properties_btn.setEnabled(exact_editable)
+        self.hirc_connect_btn.setEnabled(exact_editable and safe_children)
+        self.hirc_disconnect_btn.setEnabled(exact_editable and safe_children and bool(obj.child_ids))
         scalar_links = bool(
             obj
             and any(
@@ -3389,7 +3453,7 @@ class SoundViewer(QWidget):
                 for field in obj.reference_fields
             )
         )
-        self.hirc_reference_btn.setEnabled(global_editable and scalar_links)
+        self.hirc_reference_btn.setEnabled(exact_editable and scalar_links)
         if obj is None:
             self.bank_graph.clear_message(self.tr("Select a HIRC object."))
             self.bank_detail.setText(self.tr("No object selected."))
@@ -3397,6 +3461,7 @@ class SoundViewer(QWidget):
         self.bank_graph.set_graph(*self._bank_graph_model(obj))
         incoming = sum(
             field.target_id == obj.object_id and field.role != "parent"
+            and (id_count == 1 or obj.type_id in compatible_hirc_reference_types(source, field))
             for source in self._parse_result.objects
             for field in source.reference_fields
             if source.index != obj.index
@@ -3478,6 +3543,43 @@ class SoundViewer(QWidget):
             return None
         return object_id
 
+    def _on_new_hirc(self):
+        result = self._parse_result
+        if result is None or result.bank_version not in STRUCTURED_BANK_VERSIONS:
+            return
+        version, title = result.bank_version, self.tr("New HIRC Object")
+        types = [
+            type_id for type_id in range(1, 0x20)
+            if type_id not in {0x03, 0x04} and hirc_layout_exists(type_id, version)
+        ]
+        labels = [f"{_hirc_type_name(type_id, version)} (0x{type_id:02X})" for type_id in types]
+        choice, accepted = QInputDialog.getItem(self, title, self.tr("Object type:"), labels, 0, False)
+        if not accepted:
+            return
+        type_id = types[labels.index(choice)]
+        new_id = self._prompt_new_hirc_id(title)
+        if new_id is None:
+            return
+        if any(item.object_id == new_id for item in result.objects):
+            QMessageBox.warning(self, title, self.tr("ShortID {id} already exists.").format(id=new_id))
+            return
+        try:
+            payload = new_structured_object(
+                type_id, new_id, version,
+                feedback=any(item.bank_feedback for item in result.objects),
+            )
+        except ValueError as exc:
+            QMessageBox.warning(self, title, str(exc))
+            return
+        self.handler.upsert_hirc_object(type_id, new_id, payload)
+        self._finish_hirc_edit(
+            self.tr("Created {type} {id}; connect it where needed.").format(
+                type=_hirc_type_name(type_id, version), id=new_id
+            ),
+            new_id,
+            type_id,
+        )
+
     def _on_duplicate_hirc(self):
         obj = self._selected_bank_object()
         if obj is None:
@@ -3512,21 +3614,52 @@ class SoundViewer(QWidget):
             QMessageBox.warning(self, self.tr("Rename HIRC ShortID"), self.tr("ShortID {id} already exists.").format(id=new_id))
             return
         old_id = obj.object_id
-        self.handler.rename_hirc_object(old_id, new_id)
+        users = self._outside_users(obj)
+        if users and QMessageBox.warning(
+            self, self.tr("Rename HIRC ShortID"),
+            self.tr(
+                "Files outside this bank use {type} {id}:\n\n{users}\n\nREasy renames it in this bank only, so they "
+                "keep the old ID. Rename anyway?"
+            ).format(type=obj.type_name, id=old_id, users="\n".join(users)),
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
+        ) != QMessageBox.Yes:
+            return
+        self.handler.rename_hirc_object(old_id, new_id, obj.type_id)
         self._finish_hirc_edit(
             self.tr("Renamed HIRC ShortID {old} to {new} and updated resolved links.").format(old=old_id, new=new_id),
             new_id,
             obj.type_id,
         )
 
+    def _outside_users(self, obj):
+        metadata = self._sound_metadata
+        own = Path(self.handler.filepath or self.handler.filename).name.split(".")[0].casefold()
+        banks = [
+            bank for bank in dict.fromkeys(map(str, metadata.external_object(obj.object_id).get("referenced_by", ())))
+            if bank.casefold() != own
+        ]
+        lines = [self.tr("Banks: {banks}").format(banks=", ".join(banks[:6]))] if banks else []
+        if len(banks) > 6:
+            lines.append(self.tr("and {count} more banks").format(count=len(banks) - 6))
+        contexts = metadata.event_context_lines(obj.object_id) if obj.type_id == 0x04 else ()
+        lines.extend(contexts[:6])
+        if len(contexts) > 6:
+            lines.append(self.tr("and {count} more game files").format(count=len(contexts) - 6))
+        return lines
+
     def _on_delete_hirc(self):
         obj = self._selected_bank_object()
         if obj is None:
             return
+        shared = sum(item.object_id == obj.object_id for item in self._parse_result.objects) > 1
         incoming = [
             source for source in self._parse_result.objects
-            if source.object_id != obj.object_id
-            and any(field.target_id == obj.object_id for field in source.reference_fields)
+            if source is not obj
+            and any(
+                field.target_id == obj.object_id
+                and (not shared or obj.type_id in compatible_hirc_reference_types(source, field))
+                for field in source.reference_fields
+            )
         ]
         warning = self.tr("Delete {type} {id}?").format(type=obj.type_name, id=obj.object_id)
         if incoming:
@@ -3534,12 +3667,14 @@ class SoundViewer(QWidget):
                 "{count} object(s) still link to it. Deleting leaves those links unresolved; retarget or disconnect "
                 "them first."
             ).format(count=len(incoming))
+        if users := self._outside_users(obj):
+            warning += "\n\n" + self.tr("Files outside this bank use it:\n\n{users}").format(users="\n".join(users))
         if QMessageBox.warning(
             self, self.tr("Delete HIRC Object"), warning,
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No,
         ) != QMessageBox.Yes:
             return
-        self.handler.delete_hirc_objects((obj.object_id,))
+        self.handler.delete_hirc_objects(((obj.object_id, obj.type_id),))
         self._finish_hirc_edit(self.tr("Deleted {type} {id}.").format(type=obj.type_name, id=obj.object_id))
 
     def _on_edit_hirc(self):
@@ -3586,7 +3721,7 @@ class SoundViewer(QWidget):
         if not accepted:
             return
         child = candidates[labels.index(choice)]
-        by_id = {obj.object_id: obj for obj in self._parse_result.objects}
+        by_id = {obj.object_id: obj for obj in self._parse_result.objects if obj.type_id in _NODE_TYPES}
         edits = []
         old_parent = by_id.get(child.parent_id)
         if old_parent and old_parent.object_id != parent.object_id and child.object_id in old_parent.child_ids:
@@ -3620,7 +3755,7 @@ class SoundViewer(QWidget):
         parent = self._selected_bank_object()
         if parent is None or not parent.child_ids:
             return
-        by_id = {obj.object_id: obj for obj in self._parse_result.objects}
+        by_id = {obj.object_id: obj for obj in self._parse_result.objects if obj.type_id in _NODE_TYPES}
         labels = [
             f"{by_id[value].type_name if value in by_id else 'Missing'} {value}"
             for value in parent.child_ids
@@ -3665,18 +3800,18 @@ class SoundViewer(QWidget):
         by_id = {}
         for item in self._parse_result.objects:
             by_id.setdefault(item.object_id, []).append(item)
-        labels = [
-            self.tr("offset {offset} · {role} → {type} {id}").format(
+        labels = []
+        for field in fields:
+            allowed = compatible_hirc_reference_types(obj, field)
+            local = [item for item in by_id.get(field.target_id, ()) if item.type_id in allowed]
+            labels.append(self.tr("offset {offset} · {role} → {type} {id}").format(
                 offset=field.offset, role=field.role,
                 type=(
-                    by_id[field.target_id][0].type_name
-                    if len(by_id.get(field.target_id, ())) == 1 else
+                    local[0].type_name if len(local) == 1 else
                     self._sound_metadata.external_object_label(field.target_id)
                 ),
                 id=field.target_id,
-            )
-            for field in fields
-        ]
+            ))
         choice, accepted = QInputDialog.getItem(self, self.tr("Retarget Exact Link"), self.tr("Link field:"), labels, 0, False)
         if not accepted:
             return
@@ -3693,7 +3828,7 @@ class SoundViewer(QWidget):
         if not accepted:
             return
         target = targets[target_labels.index(target_choice)]
-        self.handler.set_hirc_reference(obj.object_id, field.offset, target.object_id)
+        self.handler.set_hirc_reference(obj.object_id, field.offset, target.object_id, obj.type_id)
         self._finish_hirc_edit(
             self.tr("Retargeted {role} in {id} to {target}.").format(
                 role=field.role, id=obj.object_id, target=target.object_id
@@ -4131,28 +4266,21 @@ class SoundViewer(QWidget):
         template = actions[labels.index(choice) - 2] if choice not in {play_label, stop_label} else None
         target_kind = template.action_target_kind if template else "object"
         objects = self._parse_result.objects
-        id_counts = {obj.object_id: 0 for obj in objects}
-        for obj in objects:
-            id_counts[obj.object_id] += 1
-        unique_objects = [obj for obj in objects if id_counts[obj.object_id] == 1]
-        playback_types = {0x02, 0x05, 0x06, 0x07, 0x09, 0x0A, 0x0C, 0x0D}
+        playback_types = _NODE_TYPES - {0x0B}
         if choice == play_label:
-            targets = [obj for obj in unique_objects if obj.type_id in playback_types]
+            allowed = playback_types
         elif choice == stop_label:
-            targets = [
-                obj for obj in unique_objects
-                if obj.type_id in playback_types
-                or is_hirc_bus(obj.type_id, obj.bank_version)
-            ]
+            allowed = playback_types | {obj.type_id for obj in objects if is_hirc_bus(obj.type_id, obj.bank_version)}
         elif target_kind in {"object", "event"}:
             field = next((
                 field for field in template.reference_fields
                 if field.role in {"action target", "event target"}
             ), None)
             allowed = compatible_hirc_reference_types(template, field) if field else ()
-            targets = [obj for obj in unique_objects if obj.type_id in allowed]
         else:
-            targets = []
+            allowed = ()
+        counts = Counter(obj.object_id for obj in objects if obj.type_id in allowed)
+        targets = [obj for obj in objects if obj.type_id in allowed and counts[obj.object_id] == 1]
         target = None
         if targets:
             target_labels = [f"{obj.type_name} {obj.object_id}" for obj in targets]
@@ -4165,13 +4293,15 @@ class SoundViewer(QWidget):
         elif template is None or target_kind in {"object", "event"}:
             QMessageBox.warning(self, self.tr("Add Action"), self.tr("This bank has no compatible target."))
             return
+        version = self._parse_result.bank_version
         if choice == play_label:
-            payload = create_play_action_payload(new_id, target.object_id)
+            payload = create_play_action_payload(new_id, target.object_id, version)
         elif choice == stop_label:
             payload = create_stop_action_payload(
                 new_id,
                 target.object_id,
                 target_is_bus=is_hirc_bus(target.type_id, target.bank_version),
+                bank_version=version,
             )
         else:
             payload = template.payload
@@ -4561,7 +4691,7 @@ class SoundViewer(QWidget):
             self.source_help.setText(self.tr("Select a row to see where its media is stored."))
             self.source_usage.clear()
             self.source_usage.setToolTip("")
-            for button in (self.play_btn, self.rep_wem, self.meta_wem, self.exp_wem, self.exp_wav):
+            for button in (self.play_btn, self.rep_wem, self.meta_wem, self.exp_wem, self.exp_wav, self.remove_media_btn):
                 button.setEnabled(False)
             self._configure_media_buttons(None)
             return
@@ -4594,6 +4724,10 @@ class SoundViewer(QWidget):
             and (kind == WwiseMediaKind.AUDIO or (kind == WwiseMediaKind.UNKNOWN and not ready))
         )
         self.exp_wem.setEnabled(ready)
+        self.remove_media_btn.setEnabled(
+            track.available and not track.object_ids and self._parse_result is not None
+            and (self._parse_result.container_type.lower() == "pck" or self._bank_edits_supported())
+        )
         self.exp_wav.setEnabled(
             ready and kind in (
                 WwiseMediaKind.AUDIO,

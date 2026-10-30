@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-lazy from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 lazy from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QListWidget,
     QListWidgetItem,
+    QMenu,
     QMessageBox,
     QPushButton,
     QScrollArea,
@@ -39,7 +40,6 @@ lazy from .bnk_parser import (
     BnkAttenuationCurve,
     BnkGraphPoint,
     HircReference,
-    BnkMusicClip,
     BnkMusicMarker,
     BnkPlaylistItem,
     BnkPropertyRange,
@@ -58,11 +58,14 @@ lazy from .bnk_parser import (
     set_fx_parameters,
     set_hirc_children,
     set_music_segment,
-    set_music_track_clips,
     set_property_bundle,
     set_random_sequence,
     set_silence_source,
     set_switch_container,
+    wwise_id_from_name,
+    _decode_one_hirc_object,
+    _resolve_fx_state_property_names,
+    HircObject,
 )
 from .sound_metadata import SoundMetadata
 from .wwise_schema import (
@@ -73,7 +76,16 @@ from .wwise_schema import (
     attenuation_targets,
     property_names,
 )
-lazy from .wwise_v132 import set_v132_fields
+lazy from .wwise_v132 import (
+    WwiseDecisionPath,
+    decision_tree,
+    parse_structured_chunk,
+    parse_structured_object,
+    reorder_wwise_list,
+    set_decision_tree,
+    set_v132_fields,
+    wwise_lists,
+)
 lazy from ui.editor_widgets import styled_label
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
@@ -310,8 +322,15 @@ class RowsEditor(QWidget):
             buttons.addWidget(down)
             buttons.addStretch()
             layout.addLayout(buttons)
-        for row in rows:
+        for index, row in enumerate(rows):
             self.add_row(row)
+            self.table.item(index, 0).setData(Qt.ItemDataRole.UserRole, index)
+
+    def origins(self):
+        return [
+            item.data(Qt.ItemDataRole.UserRole) if (item := self.table.item(row, 0)) else None
+            for row in range(self.table.rowCount())
+        ]
 
     def add_row(self, values=()):
         row = self.table.rowCount()
@@ -699,6 +718,7 @@ class AttenuationEditor(QWidget):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         targets = attenuation_targets(bank_version)
+        self.project_rows = range(7, len(targets)) if (bank_version or 0) >= 142 else range(0)
         self.assignments = QTableWidget(len(targets), 2)
         self.assignments.setHorizontalHeaderLabels((self.tr("Affects"), self.tr("Curve")))
         self.assignments.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -763,10 +783,12 @@ class AttenuationEditor(QWidget):
 
     def _refresh_assignments(self, values=None):
         values = values or [int(choice.currentData()) for choice in self.assignment_choices]
-        for choice, value in zip(self.assignment_choices, values):
+        for row, (choice, value) in enumerate(zip(self.assignment_choices, values)):
             choice.blockSignals(True)
             choice.clear()
             choice.addItem(self.tr("None"), -1)
+            if row in self.project_rows:
+                choice.addItem(self.tr("Use project curve"), -2)
             for index in range(len(self.curve_editors)):
                 choice.addItem(self.tr("Curve {number}").format(number=index + 1), index)
             choice.setCurrentIndex(max(0, choice.findData(int(value))))
@@ -781,18 +803,35 @@ class AttenuationEditor(QWidget):
         return assignments, curves
 
 
+def _reparse(layout, payload):
+    source = layout.source
+    if source[0] == "hirc":
+        return parse_structured_object(source[1], payload, source[2], feedback=source[3])
+    return parse_structured_chunk(source[1], payload, source[2]).structure
+
+
 class WwiseFieldsEditor(QWidget):
     """Compact tree for the complete field-level Wwise representation."""
 
+    structureEdited = Signal(object)
+
     def __init__(
-        self, layout, metadata, hidden_prefixes=(), parent=None, *, objects=()
+        self, layout, metadata, hidden_prefixes=(), parent=None, *, objects=(),
+        payload=None,
     ):
         super().__init__(parent)
-        self.layout, self.metadata = layout, metadata
+        self.layout, self.metadata, self.payload = layout, metadata, payload
         self._objects = {}
         for obj in objects:
             self._objects.setdefault(obj.object_id, []).append(obj)
         self._items = {}
+        self._lists = {}
+        if payload is not None:
+            for entry in wwise_lists(payload, layout):
+                self._lists.setdefault(entry.path, (entry, None))
+                self._lists[entry.count_path] = (entry, None)
+                for index, item in enumerate(entry.items):
+                    self._lists[item] = (entry, index)
         tree = self.tree = QTreeWidget()
         tree.setColumnCount(3)
         tree.setHeaderLabels((self.tr("Setting"), self.tr("Value"), self.tr("Meaning")))
@@ -803,7 +842,7 @@ class WwiseFieldsEditor(QWidget):
         tree.header().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         tree.header().setStretchLastSection(True)
         read_only_color = QColor(current_colors()["text_subtle"])
-        roots = {}
+        roots = self._sections = {}
         for field in layout.fields:
             if not field.visible or any(
                 field.path == prefix or field.path.startswith(prefix + "/")
@@ -820,6 +859,7 @@ class WwiseFieldsEditor(QWidget):
                 if item is None:
                     item = QTreeWidgetItem(parent_item, (part, "", ""))
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                    item.setData(0, Qt.ItemDataRole.UserRole + 1, key)
                     roots[key] = item
                 parent_item = item
             value = self._display(field)
@@ -844,12 +884,9 @@ class WwiseFieldsEditor(QWidget):
                 0,
                 self.tr("Payload offset 0x{offset:X}, {size} byte(s), {storage}").format(
                     offset=field.offset, size=field.size, storage=field.storage,
-                ) + (
-                    self.tr("\nReference targets are changed through a type-safe picker.")
-                    if field.reference_role else ""
                 ),
             )
-            if field.editable and not field.reference_role:
+            if field.editable:
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEditable)
                 item.setToolTip(1, self.tr("Double-click to edit."))
             else:
@@ -857,6 +894,10 @@ class WwiseFieldsEditor(QWidget):
                 item.setForeground(1, read_only_color)
             self._items[field.path] = item
         tree.expandToDepth(0)
+        if payload is not None:
+            tree.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            tree.customContextMenuRequested.connect(self._context_menu)
+            tree.itemChanged.connect(self._item_changed)
         layout_box = QVBoxLayout(self)
         layout_box.setContentsMargins(0, 0, 0, 0)
         layout_box.addWidget(tree)
@@ -864,10 +905,7 @@ class WwiseFieldsEditor(QWidget):
     def _edit_item(self, item, column):
         path = item.data(0, Qt.ItemDataRole.UserRole)
         field = next((value for value in self.layout.fields if value.path == path), None)
-        if (
-            column == 1 and field is not None
-            and field.editable and not field.reference_role
-        ):
+        if column == 1 and field is not None and field.editable:
             self.tree.editItem(item, 1)
 
     @staticmethod
@@ -876,23 +914,85 @@ class WwiseFieldsEditor(QWidget):
             return repr(float(field.value))
         return str(field.value)
 
+    @staticmethod
+    def _value(field, text):
+        enum = {label.casefold(): value for value, label in field.enum}
+        if text.casefold() in enum:
+            return enum[text.casefold()]
+        if field.storage in {"string", "bytes"}:
+            return text
+        if field.storage.startswith("f"):
+            return float(text)
+        return int(text, 0)
+
     def changes(self):
         changes = {}
         fields = {field.path: field for field in self.layout.fields}
         for path, item in self._items.items():
             original = item.data(1, Qt.ItemDataRole.UserRole)
-            text = item.text(1).strip()
-            if text == original:
-                continue
-            field = fields[path]
-            enum = {label.casefold(): value for value, label in field.enum}
-            if text.casefold() in enum:
-                changes[path] = enum[text.casefold()]
-            elif field.storage.startswith("f"):
-                changes[path] = float(text)
-            else:
-                changes[path] = int(text, 0)
+            text = item.text(1) if fields[path].storage == "string" else item.text(1).strip()
+            if text != original:
+                changes[path] = self._value(fields[path], text)
         return changes
+
+    def expanded_sections(self):
+        return {key for key, item in self._sections.items() if item.isExpanded()}
+
+    def expand_sections(self, keys):
+        for key in keys:
+            if key in self._sections:
+                self._sections[key].setExpanded(True)
+
+    def _item_changed(self, item, column):
+        if column != 1 or item.text(1) == item.data(1, Qt.ItemDataRole.UserRole):
+            return
+        path = item.data(0, Qt.ItemDataRole.UserRole)
+        field = next((value for value in self.layout.fields if value.path == path), None)
+        if field is None:
+            return
+        try:
+            edited = set_v132_fields(
+                self.payload, self.layout, {path: self._value(field, item.text(1))}
+            )
+        except (ValueError, OverflowError):
+            return
+        paths = {value.path for value in self.layout.fields}
+        if {value.path for value in _reparse(self.layout, edited).fields} != paths:
+            self.structureEdited.emit(("values",))
+
+    def _context_menu(self, point):
+        item = self.tree.itemAt(point)
+        if item is None:
+            return
+        key = item.data(0, Qt.ItemDataRole.UserRole) or item.data(0, Qt.ItemDataRole.UserRole + 1)
+        entry, index = self._lists.get(key, (None, None))
+        if entry is None:
+            return
+        order = list(range(len(entry.items)))
+        if index is None:
+            actions = [(self.tr("Add item"), [*order, None])]
+            if order:
+                actions.append((self.tr("Add copy of last item"), [*order, order[-1]]))
+        else:
+            actions = [
+                (self.tr("Insert item before"), [*order[:index], None, *order[index:]]),
+                (self.tr("Duplicate"), [*order[:index + 1], index, *order[index + 1:]]),
+                (self.tr("Remove"), [*order[:index], *order[index + 1:]]),
+            ]
+            if index:
+                swapped = list(order)
+                swapped[index - 1:index + 1] = index, index - 1
+                actions.append((self.tr("Move up"), swapped))
+            if index + 1 < len(order):
+                swapped = list(order)
+                swapped[index:index + 2] = index + 1, index
+                actions.append((self.tr("Move down"), swapped))
+        menu = QMenu(self.tree)
+        choices = {menu.addAction(text): value for text, value in actions}
+        chosen = menu.exec(self.tree.viewport().mapToGlobal(point))
+        menu.deleteLater()
+        if chosen in choices:
+            self.structureEdited.emit(("list", entry.count_path, choices[chosen]))
 
 
 class HircPropertiesDialog(QDialog):
@@ -911,13 +1011,25 @@ class HircPropertiesDialog(QDialog):
         hint = styled_label(self.tr("Only the fields shown below are rebuilt; every other byte in this HIRC object is preserved."), tone="muted")
         hint.setWordWrap(True)
         layout.addWidget(hint)
-        form_content = QWidget()
-        self.form = QFormLayout(form_content)
         self.form_scroll = QScrollArea()
         self.form_scroll.setWidgetResizable(True)
         self.form_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self.form_scroll.setWidget(form_content)
+        host = QWidget()
+        self._host = QVBoxLayout(host)
+        self._host.setContentsMargins(0, 0, 0, 0)
+        self.form_scroll.setWidget(host)
         layout.addWidget(self.form_scroll, 1)
+        self._content = None
+        self._populate()
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def _populate(self, show_all=None, expanded=()):
+        obj = self.obj
+        form_content = QWidget()
+        self.form = QFormLayout(form_content)
         self.kind = "read_only"
         self._build()
         self.property_editor = None
@@ -927,27 +1039,53 @@ class HircPropertiesDialog(QDialog):
                 self.kind = "properties"
             self.property_editor = PropertyBundleEditor(obj.property_bundle)
             self.form.addRow(self.tr("Playback properties"), self.property_editor)
-        self.structure_editor = None
+        self.structure_editor = self.all_settings = None
         if obj.structure and obj.structure.complete:
             self.structure_editor = WwiseFieldsEditor(
                 obj.structure, self.metadata, self._covered_structure_fields(),
-                objects=self.objects,
+                objects=self.objects, payload=obj.payload,
             )
-            complete = QGroupBox(self.tr("All compiled Wwise settings"))
+            self.structure_editor.expand_sections(expanded)
+            self.structure_editor.structureEdited.connect(self._structure_edited)
+            complete = self.all_settings = QGroupBox(self.tr("All compiled Wwise settings"))
             complete.setCheckable(True)
             complete.setChecked(
                 self.kind in {"read_only", "structure", "children", "properties"}
                 or (self.kind == "fx" and not obj.fx_plugin.parameters)
+                if show_all is None else show_all
             )
             complete_layout = QVBoxLayout(complete)
             complete_layout.addWidget(self.structure_editor)
             self.structure_editor.setVisible(complete.isChecked())
             complete.toggled.connect(self.structure_editor.setVisible)
             self.form.addRow(complete)
-        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        if self._content is not None:
+            self._content.hide()
+            self._content.deleteLater()
+        self._content = form_content
+        self._host.addWidget(form_content)
+
+    def _structure_edited(self, request):
+        obj = self.obj
+        try:
+            payload = self.payload()
+            if request[0] == "list":
+                layout = parse_structured_object(
+                    obj.type_id, payload, obj.bank_version, feedback=obj.bank_feedback
+                )
+                payload = reorder_wwise_list(payload, layout, *request[1:])
+        except (ValueError, OverflowError) as exc:
+            QMessageBox.warning(self, self.tr("Invalid Properties"), str(exc))
+            return
+        edited = HircObject(
+            obj.index, obj.type_id, obj.type_name, obj.object_id, payload,
+            obj.payload_offset, bank_version=obj.bank_version,
+        )
+        _decode_one_hirc_object(edited, list(self.objects))
+        _resolve_fx_state_property_names([*(item for item in self.objects if item.fx_plugin), edited])
+        expanded = self.structure_editor.expanded_sections()
+        self.obj = edited
+        self._populate(self.all_settings.isChecked(), expanded)
 
     @staticmethod
     def _spin(value, maximum=0xFFFF):
@@ -991,6 +1129,10 @@ class HircPropertiesDialog(QDialog):
     @staticmethod
     def _line(value):
         return QLineEdit(str(value))
+
+    def _id_text(self, category, value):
+        names = self.metadata.names(category, value)
+        return names[0] if names else str(value)
 
     @staticmethod
     def _choice(value, choices):
@@ -1128,7 +1270,10 @@ class HircPropertiesDialog(QDialog):
             self.action_bypass.setChecked(bool(settings.bypass))
             self.action_target_mask = self._spin(settings.target_mask or 0, 0xFF)
             self.form.addRow("", self.action_bypass)
-            self.form.addRow(self.tr("Effect-slot mask"), self.action_target_mask)
+            self.form.addRow(
+                self.tr("Effect slot") if (obj.bank_version or 0) >= 150 else self.tr("Effect-slot mask"),
+                self.action_target_mask,
+            )
         if settings.kind == "seek":
             self.action_relative = QCheckBox(self.tr("Position is relative to duration"))
             self.action_relative.setChecked(bool(settings.relative_to_duration))
@@ -1230,10 +1375,14 @@ class HircPropertiesDialog(QDialog):
             self.form.addRow(self.tr("Media storage"), self.stream_type)
             self.form.addRow(self.tr("In-memory bytes"), self.memory_size)
             self.form.addRow(self.tr("Source flags"), self.source_flags)
-            self.form.addRow(
-                self.tr("Codec"),
-                QLabel(BNK_PLUGIN_NAMES.get(source.plugin_id, str(source.plugin_id))),
-            )
+            self.codec = QComboBox()
+            self.codec.setEditable(True)
+            self.codec.addItems([
+                name for plugin_id, name in BNK_PLUGIN_NAMES.items()
+                if plugin_id & 0x0F == source.plugin_id & 0x0F
+            ])
+            self.codec.setCurrentText(BNK_PLUGIN_NAMES.get(source.plugin_id, str(source.plugin_id)))
+            self.form.addRow(self.tr("Codec"), self.codec)
             return
         if obj.random_sequence:
             self.kind, data = "random", obj.random_sequence
@@ -1264,6 +1413,7 @@ class HircPropertiesDialog(QDialog):
                 self.form.addRow(self.tr(label), field)
             self.random_flags = []
             for label, mask in (
+                ("Use weights", 0x01),
                 ("Reset playlist each play", 0x02), ("Restart sequence backwards", 0x04),
                 ("Continuous playback", 0x08), ("Use one global playlist", 0x10),
             ):
@@ -1331,7 +1481,7 @@ class HircPropertiesDialog(QDialog):
             self.form.addRow(self.tr("Duration"), self.duration)
             self.form.addRow(self.tr("Music cues"), self.rows)
             return
-        if obj.music_track:
+        if obj.music_track and obj.structure and obj.structure.complete:
             self.kind, data = "track", obj.music_track
             self.source_rows = RowsEditor(
                 [self.tr("Codec"), self.tr("Stream type"), self.tr("Source ID"), self.tr("In-memory bytes"), self.tr("Flags")],
@@ -1393,6 +1543,34 @@ class HircPropertiesDialog(QDialog):
             self.attenuation_editor = AttenuationEditor(data, obj.bank_version)
             self.form.addRow(self.tr("Distance attenuation"), self.attenuation_editor)
             return
+        if obj.type_id == 0x0C and obj.structure and obj.structure.complete:
+            self.kind = "music_switch"
+            arguments, paths = decision_tree(obj.structure)
+            self.decision_arguments = RowsEditor(
+                [self.tr("Group type"), self.tr("Group")],
+                (
+                    ("State" if kind else "Switch", self._id_text(f"{'state' if kind else 'switch'}_group", group))
+                    for group, kind in arguments
+                ),
+                ("Switch", ""),
+            )
+            self.decision_paths = RowsEditor(
+                [self.tr("Values (comma-separated, * = any)"), self.tr("Target ShortID"), self.tr("Weight"), self.tr("Probability")],
+                (
+                    (
+                        ", ".join(
+                            "*" if key == 0 else self._id_text(f"{'state' if arguments[level][1] else 'switch'}_value", key)
+                            for level, key in enumerate(path.keys)
+                        ),
+                        path.target, path.weight, path.probability,
+                    )
+                    for path in paths
+                ),
+                ("", "", "50", "100"),
+            )
+            self.form.addRow(self.tr("Decision arguments"), self.decision_arguments)
+            self.form.addRow(self.tr("Decision paths"), self.decision_paths)
+            return
         if can_edit_hirc_children(obj):
             self.kind = "children"
             self.children = self._line(", ".join(map(str, obj.child_ids)))
@@ -1409,14 +1587,18 @@ class HircPropertiesDialog(QDialog):
         self.form.addRow(self.tr("Read-only"), self.read_only)
 
     def payload(self):
+        payload = self._focused_payload()
+        changes = self.structure_editor.changes() if self.structure_editor is not None else {}
+        if not changes:
+            return payload
         obj = self.obj
-        if self.structure_editor is not None:
-            obj = replace(
-                obj,
-                payload=set_v132_fields(
-                    obj.payload, obj.structure, self.structure_editor.changes()
-                ),
-            )
+        layout = parse_structured_object(
+            obj.type_id, payload, obj.bank_version, feedback=obj.bank_feedback
+        )
+        return set_v132_fields(payload, layout, changes)
+
+    def _focused_payload(self):
+        obj = self.obj
         if self.kind == "action":
             if self.target is not None:
                 target_id = self.target.object_id()
@@ -1432,13 +1614,11 @@ class HircPropertiesDialog(QDialog):
             else:
                 target_id = _number(self.raw_target.text(), "External ID")
                 target_is_bus = obj.action_target_is_bus
+            action_type = _number(self.action_type.text(), "Action type", bits=16)
             payload = self._with_properties(set_action_fields(
-                obj,
-                _number(self.action_type.text(), "Action type", bits=16),
-                target_id,
-                target_is_bus,
+                obj, action_type, target_id, target_is_bus,
             ))
-            if obj.action_settings:
+            if obj.action_settings and action_type & 0xFF00 == obj.action_type & 0xFF00:
                 delta = len(payload) - len(obj.payload)
                 shifted_settings = replace(
                     obj.action_settings,
@@ -1460,6 +1640,7 @@ class HircPropertiesDialog(QDialog):
                 (
                     replace(
                         source,
+                        plugin_id=_plugin_id(self.codec.currentText()),
                         source_id=_number(self.source_id.text(), "Source ID", allow_zero=False),
                         stream_type=int(self.stream_type.currentData()),
                         in_memory_size=self.memory_size.value(),
@@ -1472,7 +1653,7 @@ class HircPropertiesDialog(QDialog):
                 BnkPlaylistItem(_number(row[0], "Child ShortID", allow_zero=False), int(row[1]))
                 for row in self.rows.values()
             )
-            flags = obj.random_sequence.flags & ~0x1E
+            flags = obj.random_sequence.flags & ~0x1F
             flags |= sum(mask for checkbox, mask in self.random_flags if checkbox.isChecked())
             data = replace(
                 obj.random_sequence,
@@ -1519,12 +1700,18 @@ class HircPropertiesDialog(QDialog):
             )
             return self._with_properties(set_switch_container(obj, data, children, mappings, params))
         if self.kind == "segment":
+            named = {marker.name for marker in obj.music_segment.markers}
             markers = tuple(
                 BnkMusicMarker(
-                    _number(row[0], "Cue ShortID"), float(row[1]), row[2]
+                    wwise_id_from_name(row[2]) if row[2] and row[2] not in named
+                    else _number(row[0], "Cue ShortID"),
+                    float(row[1]), row[2],
                 )
                 for row in self.rows.values()
             )
+            markers = tuple(sorted(markers, key=lambda item: (
+                {43_573_010: 0, 1_539_036_744: 2}.get(item.marker_id, 1), item.position_ms,
+            )))
             return self._with_properties(set_music_segment(obj, self._time_value(self.duration), markers))
         if self.kind == "track":
             sources = tuple(
@@ -1538,20 +1725,40 @@ class HircPropertiesDialog(QDialog):
                 )
                 for source, row in zip(obj.sources, self.source_rows.values())
             )
-            clips = tuple(
-                BnkMusicClip(
-                    _number(row[0], "Track index"),
-                    _number(row[1], "Source ID", allow_zero=False),
-                    *map(float, row[3:]),
-                    _number(row[2], "Event ID"),
-                )
+            rows = [
+                {
+                    "Subtrack ID": _number(row[0], "Track index"),
+                    "Source": _number(row[1], "Source ID", allow_zero=False),
+                    **({"Event": _number(row[2], "Event ID")} if obj.bank_version >= 133 else {}),
+                    **dict(zip(
+                        ("Play at (ms)", "Begin trim (ms)", "End trim (ms)", "Source duration (ms)"),
+                        map(float, row[3:]),
+                    )),
+                }
                 for row in self.rows.values()
-            )
-            with_properties = self._with_properties(obj.payload)
-            source_payload = set_bank_sources(replace(obj, payload=with_properties), sources)
-            return set_music_track_clips(
-                replace(obj, payload=source_payload), clips, self.subtracks.value()
-            )
+            ]
+            origins = self.rows.origins()
+
+            def parse(data):
+                return parse_structured_object(obj.type_id, data, obj.bank_version, feedback=obj.bank_feedback)
+
+            payload = set_bank_sources(replace(obj, payload=self._with_properties(obj.payload)), sources)
+            payload = set_v132_fields(payload, parse(payload), {
+                f"Clips/{origin + 1}/{label}": value
+                for origin, values in zip(origins, rows) if origin is not None
+                for label, value in values.items()
+            })
+            payload = reorder_wwise_list(payload, parse(payload), "Clips/Clip count", origins)
+            placed = sorted(range(len(rows)), key=lambda row: 0 if origins[row] is None else rows[row]["Subtrack ID"])
+            payload = set_v132_fields(payload, parse(payload), {
+                **{
+                    f"Clips/{position}/{label}": value
+                    for position, row in enumerate(placed, 1) if origins[row] is None
+                    for label, value in rows[row].items()
+                },
+                **({"Clips/Subtrack count": self.subtracks.value()} if rows else {}),
+            })
+            return reorder_wwise_list(payload, parse(payload), "Clips/Clip count", range(len(rows)))
         if self.kind == "attenuation":
             assignments, curves = self.attenuation_editor.values()
             cone = (
@@ -1575,6 +1782,30 @@ class HircPropertiesDialog(QDialog):
             return set_fx_parameters(
                 obj, self.fx_editor.parameters() if self.fx_editor is not None else ()
             )
+        if self.kind == "music_switch":
+            arguments = []
+            for kind_text, group_text in self.decision_arguments.values():
+                kind = {"switch": 0, "0": 0, "state": 1, "1": 1}.get(kind_text.casefold())
+                if kind is None:
+                    raise ValueError(self.tr("Group type must be Switch or State."))
+                category = "state" if kind else "switch"
+                arguments.append((self.metadata.resolve_id(f"{category}_group", group_text), kind))
+            paths = []
+            for keys_text, target, weight, probability in self.decision_paths.values():
+                parts = [part.strip() for part in keys_text.split(",")] if keys_text else []
+                if not arguments or len(parts) != len(arguments):
+                    raise ValueError(self.tr("Each decision path needs one value per argument."))
+                keys = tuple(
+                    0 if part in {"", "*"} else self.metadata.resolve_id(
+                        f"{'state' if arguments[level][1] else 'switch'}_value", part
+                    )
+                    for level, part in enumerate(parts)
+                )
+                paths.append(WwiseDecisionPath(
+                    keys, _number(target, "Target ShortID"),
+                    _number(weight, "Weight", bits=16), _number(probability, "Probability", bits=16),
+                ))
+            return self._with_properties(set_decision_tree(obj.payload, obj.structure, arguments, paths))
         if self.kind == "children":
             return self._with_properties(set_hirc_children(obj, _id_list(self.children.text())))
         if self.kind == "properties":
@@ -1597,7 +1828,10 @@ class HircPropertiesDialog(QDialog):
             "Node/Properties", "Node/Randomizers", "Properties", "Randomizers",
         ) if self.property_editor is not None else ()
         focused = {
-            "action": ("Action type", "Target", "Target flags", "Properties", "Randomizers", "Play fade", "Fade", "Scope", "Exceptions", "Value", "State", "Switch"),
+            "action": ("Action type", "Target", "Target flags", "Properties", "Randomizers") + (
+                ("Play fade", "Fade", "Scope", "Exceptions", "Value", "State", "Switch")
+                if self.obj.action_settings else ()
+            ),
             "sound": tuple(f"Source/{name}" for name in _SOURCE_HEADER_FIELDS),
             "random": ("Playlist behavior", "Children", "Playlist"),
             "switch": ("Group type", "Group", "Default value", "Continuous validation", "Children", "Value assignments", "Switch transitions"),
@@ -1609,6 +1843,7 @@ class HircPropertiesDialog(QDialog):
             ),
             "silence": ("Plug-in parameters",),
             "attenuation": ("Directional cone enabled", "Directional cone", "Curve assignments", "Attenuation curves"),
+            "music_switch": ("Decision depth", "Decision arguments", "Decision-tree bytes", "Decision tree"),
             "children": ("Children",),
         }.get(self.kind, ())
         if self.kind == "track" and self.obj.structure:

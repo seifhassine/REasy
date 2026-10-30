@@ -20,8 +20,10 @@ from .pck_codec import (
     rewrite_pck,
 )
 lazy from .wwise_schema import (
+    BNK_FUTZBOX_139_FIELDS,
     BNK_FX_SCHEMAS,
     BNK_PLUGIN_NAMES,
+    BNK_TIME_STRETCH_16_FIELDS,
     STRUCTURED_BANK_VERSIONS,
     attenuation_targets,
     fx_property_names,
@@ -32,6 +34,7 @@ lazy from .wwise_schema import (
     _ACTION_EXTERNAL_TARGET_KINDS,
     _ACTION_SET_VALUE_TYPES,
     _ACTION_TYPE_NAMES,
+    _ACTION_TYPE_NAMES_150,
     _AUDIO_CONTAINER_TYPES,
     _hirc_layout,
     _hirc_type_name,
@@ -40,8 +43,10 @@ lazy from .wwise_schema import (
 from .wwise_v132 import (
     WwiseChunkLayout,
     WwiseObjectLayout,
+    new_structured_object,
     parse_structured_chunk,
     parse_structured_object,
+    set_wwise_fields,
 )
 from .wwise_media import (
     WwiseMediaKind,
@@ -68,13 +73,22 @@ _WEM_CODEC_NAMES = {
     0xFFFF: "Wwise Vorbis",
 }
 
-# Bus references that Wwise routinely keeps in a separate init/master-bus bank,
-# so a bank is allowed to reference them without resolving them locally.
-_CROSS_BANK_BUS_ROLES = frozenset({
+# Buses, devices, ShareSets and modulators Wwise often keeps in another bank (init), and music
+# switch and dialogue event leaves in other banks, so a bank may reference them without resolving them locally.
+_CROSS_BANK_ROLES = frozenset({
     "auxiliary bus",
     "reflections bus",
     "output bus",
     "ducked bus",
+    "feedback bus",
+    "audio device",
+    "attenuation",
+    "effect",
+    "metadata effect",
+    "attached effect",
+    "modulator",
+    "decision leaf",
+    "dialogue leaf",
 })
 
 # Wwise music transition rules use 0xFFFFFFFF as the "Any" source/destination
@@ -393,16 +407,14 @@ def compatible_hirc_reference_types(
 
     if role == "state object":
         return frozenset({0x01})
+    if role == "feedback bus" or role == "output bus" and type_names.get(owner.type_id) == "Feedback Bus":
+        return frozenset(type_id for type_id, name in type_names.items() if name == "Feedback Bus")
     if role in {"effect", "metadata effect", "attached effect"}:
         return effects
     if role in {"auxiliary bus", "reflections bus"}:
         return auxiliary_buses
-    if role == "output bus":
-        # Some RE9 nodes route their output bus directly to an Audio Device
-        # (e.g. 0xE611314A in init), so a device is a valid output target in
-        # addition to the bus types.
-        return frozenset(bus_types) | devices
-    if role == "ducked bus":
+    if role in {"output bus", "ducked bus"}:
+        # A device sharing a bus's ShortID (RE9 init 0xE611314A) is not the output target.
         return frozenset(bus_types)
     if role == "audio device":
         return devices
@@ -414,9 +426,9 @@ def compatible_hirc_reference_types(
         return _PLAYBACK_TARGET_TYPES
     if role in {"stinger segment", "transition segment", "playlist segment"}:
         return frozenset({0x0A})
-    if role in {"transition source", "transition destination"}:
+    if role in {"transition source", "transition destination", "decision leaf"}:
         return _MUSIC_HIERARCHY_TYPES
-    if role in {"playlist item", "switch assignment", "switch child", "layer child"}:
+    if role in {"playlist item", "switch assignment", "switch child", "layer child", "dialogue leaf"}:
         return _ACTOR_CHILD_TYPES
     if role == "event action":
         return frozenset({0x03})
@@ -451,13 +463,13 @@ def compatible_hirc_reference_targets(
     """Return unambiguous local objects valid for a decoded reference."""
 
     objects = tuple(objects)
-    counts = Counter(obj.object_id for obj in objects)
     allowed = compatible_hirc_reference_types(owner, field)
+    counts = Counter(obj.object_id for obj in objects if obj.type_id in allowed)
     return tuple(
         obj for obj in objects
-        if counts[obj.object_id] == 1
-        and obj.object_id != owner.object_id
-        and obj.type_id in allowed
+        if obj.type_id in allowed
+        and counts[obj.object_id] == 1
+        and (obj.object_id, obj.type_id) != (owner.object_id, owner.type_id)
     )
 
 
@@ -549,6 +561,7 @@ def rewrite_soundbank(
     replacements: dict[int, bytes],
     *,
     added_source_ids: set[int] | None = None,
+    removed_source_ids: set[int] | None = None,
     event_actions: dict[int, list[int] | tuple[int, ...]] | None = None,
     action_targets: dict[int, int] | None = None,
     deleted_event_ids: set[int] | None = None,
@@ -560,6 +573,7 @@ def rewrite_soundbank(
     hirc_payload: bytes | None = None,
     hirc_source_renames: dict[int, int] | None = None,
     parsed_result: BnkParseResult | None = None,
+    pck_languages: dict[int, int] | None = None,
 ) -> bytes:
     """Rewrite supported fields; only explicit additions may create media entries."""
 
@@ -587,12 +601,15 @@ def rewrite_soundbank(
     if hirc_source_renames is not None and hirc_payload is None:
         raise ValueError("HIRC source renames require a final HIRC payload")
     has_hirc_edits = semantic_hirc_edits or hirc_payload is not None
-    if not replacements and not has_hirc_edits and not bank_chunk_payloads:
+    removed_source_ids = {int(value) for value in (removed_source_ids or ())}
+    if removed_source_ids & set(replacements):
+        raise ValueError("A Source ID cannot be replaced and removed together")
+    if not replacements and not removed_source_ids and not has_hirc_edits and not bank_chunk_payloads:
         return bytes(data)
     if data[:4] == _PCK_MAGIC:
         if has_hirc_edits or bank_chunk_payloads:
             raise ValueError("Wwise graph/settings edits require a BNK, not a PCK")
-        return rewrite_pck(data, replacements)
+        return rewrite_pck(data, replacements, removed_source_ids, pck_languages)
     return _rewrite_bnk(
         data,
         replacements,
@@ -607,6 +624,7 @@ def rewrite_soundbank(
         hirc_source_renames=hirc_source_renames,
         parsed_result=parsed_result,
         added_source_ids=added_source_ids,
+        removed_source_ids=removed_source_ids,
     )
 
 
@@ -1196,13 +1214,13 @@ def _infer_hirc_parents(objects: list[HircObject], by_id: dict[int, HircObject])
 def _decode_hirc_references(obj: HircObject, known_ids: set[int]) -> None:
     if obj.structure and obj.structure.complete:
         fields = tuple(
-            HircReference(
-                field.offset, int(field.value), field.reference_role, field.id_kind
+            reference for reference in (
+                HircReference(field.offset, int(field.value), field.reference_role, field.id_kind)
+                for field in obj.structure.fields
+                if field.reference_role and int(field.value)
             )
-            for field in obj.structure.fields
-            if field.reference_role
-            and int(field.value)
-            and int(field.value) != obj.object_id
+            if reference.target_id != obj.object_id
+            or obj.type_id not in compatible_hirc_reference_types(obj, reference)
         )
         obj.reference_fields = fields
         obj.references = tuple(dict.fromkeys(field.target_id for field in fields))
@@ -1261,11 +1279,8 @@ def _resolve_fx_state_property_names(objects: list[HircObject]) -> None:
 
     owners: dict[int, list[dict[int, str]]] = {}
     for owner in objects:
-        names = (
-            fx_property_names(owner.fx_plugin.plugin_id, owner.bank_version)
-            if owner.fx_plugin else None
-        )
-        if names:
+        if owner.fx_plugin:
+            names = fx_property_names(owner.fx_plugin.plugin_id, owner.bank_version) or {}
             for reference in owner.reference_fields:
                 if reference.role == "state object":
                     owners.setdefault(reference.target_id, []).append(names)
@@ -1274,7 +1289,8 @@ def _resolve_fx_state_property_names(objects: list[HircObject]) -> None:
         layout = obj.structure
         if obj.type_id != 0x01 or not layout or not layout.complete:
             continue
-        generic = property_names("state", obj.bank_version)
+        tables = owners.get(obj.object_id) or [property_names("state", obj.bank_version)]
+        enum = tuple(sorted({key: value for names in tables for key, value in names.items()}.items()))
         properties = [
             field for field in layout.fields
             if field.path.startswith("State values/")
@@ -1286,18 +1302,9 @@ def _resolve_fx_state_property_names(objects: list[HircObject]) -> None:
         ]
         updates = {}
         for prop, value in zip(properties, values):
-            labels = {
-                names.get(int(prop.value)) for names in owners.get(obj.object_id, ())
-            }
-            label = (
-                next(iter(labels))
-                if len(labels) == 1 and None not in labels
-                else generic.get(int(prop.value))
-            )
-            enum = dict(generic)
-            if label:
-                enum[int(prop.value)] = label
-            updates[prop.offset] = replace(prop, enum=tuple(sorted(enum.items())))
+            labels = {names.get(int(prop.value)) for names in tables}
+            label = next(iter(labels)) if len(labels) == 1 else None
+            updates[prop.offset] = replace(prop, enum=enum)
             value_label = f"{label or f'Property 0x{int(prop.value):04X}'} value"
             updates[value.offset] = replace(
                 value, label=value_label,
@@ -1398,9 +1405,16 @@ def _parse_attenuation(
         )
         pos += point_count * 12
         curves.append(BnkAttenuationCurve(scaling, points))
-    if any(index < -1 or index >= curve_count for index in assignments):
+    if not _valid_attenuation_assignments(assignments, curve_count, bank_version):
         return None
     return BnkAttenuation(cone_flags, cone, assignments, tuple(curves), offset, pos)
+
+
+def _valid_attenuation_assignments(assignments, curve_count, bank_version) -> bool:
+    return all(
+        -1 <= index < curve_count or (index == -2 and slot >= 7 and (bank_version or 0) >= 142)
+        for slot, index in enumerate(assignments)
+    )
 
 
 def _parse_silence_source(payload: bytes) -> BnkSilenceSource | None:
@@ -1431,7 +1445,9 @@ def _parse_fx_plugin(payload: bytes) -> BnkFxPlugin | None:
         return None
     name, fields = schema
     if plugin_id == 0x006E1003 and parameter_size == 139:
-        fields = fields[:12] + fields[16:-1]
+        fields = BNK_FUTZBOX_139_FIELDS
+    elif plugin_id == 0x00820003 and parameter_size == 16:
+        fields = BNK_TIME_STRETCH_16_FIELDS
     if plugin_id == 0x00730003 and parameter_size >= 29:
         delay_count = struct.unpack_from("<I", payload, 20)[0]
         delay_mode = struct.unpack_from("<I", payload, 37)[0]
@@ -1442,6 +1458,8 @@ def _parse_fx_plugin(payload: bytes) -> BnkFxPlugin | None:
             )
     if plugin_id == 0x007F0003 and parameter_size == 57:
         fields = fields + (("Block size", "u8", "convolution_block_size"),)
+    elif plugin_id == 0x007F0003 and parameter_size == 52:
+        fields = fields[:-1]
     elif plugin_id == 0x00810003 and parameter_size == 28:
         fields = fields[:5] + (("Infinite hold", "bool"),) + fields[5:]
     if parameter_size == 0:
@@ -1501,13 +1519,8 @@ def _decode_action(obj: HircObject) -> None:
     action_type = struct.unpack_from("<H", payload, 4)[0]
     type_key = action_type & 0xFF00
     obj.action_type = action_type
-    action_names = (
-        {0x1A00: "Break", 0x1B00: "Trigger"}
-        if (obj.bank_version or 0) >= 150 else {}
-    )
-    obj.action_name = action_names.get(
-        type_key, _ACTION_TYPE_NAMES.get(type_key, f"Action 0x{type_key:04X}")
-    )
+    names = _ACTION_TYPE_NAMES_150 if (obj.bank_version or 0) >= 150 else _ACTION_TYPE_NAMES
+    obj.action_name = names.get(type_key, f"Action 0x{type_key:04X}")
     obj.action_raw_id = struct.unpack_from("<I", payload, 6)[0]
     obj.action_target_kind = _action_target_kind(action_type, obj.bank_version)
     if obj.action_target_kind in {"object", "event"}:
@@ -1655,6 +1668,8 @@ def _decode_node_base(obj: HircObject, known_ids: set[int]) -> None:
                 payload, offset, bank_version=obj.bank_version
             )
         return
+    if (obj.bank_version or 0) > 136:
+        return
     offset = _node_base_parent_offset(payload, start)
     if offset is None or (obj.child_list_offset is not None and offset >= obj.child_list_offset):
         return
@@ -1662,9 +1677,9 @@ def _decode_node_base(obj: HircObject, known_ids: set[int]) -> None:
     if parent_id == 0 or parent_id in known_ids:
         obj.parent_id = parent_id
         obj.parent_reference_offset = offset
-    obj.property_bundle = _parse_property_bundle(
-        payload, offset + 5, bank_version=obj.bank_version
-    )
+        obj.property_bundle = _parse_property_bundle(
+            payload, offset + 5, bank_version=obj.bank_version
+        )
 
 
 def _parse_property_bundle(
@@ -2200,20 +2215,10 @@ def clone_hirc_payload(obj: HircObject, object_id: int) -> bytes:
     return payload.take_bytes()
 
 
-def create_play_action_payload(object_id: int, target_id: int) -> bytes:
-    """Create a minimal Play Action for the registered legacy schemas."""
-
-    return struct.pack(
-        "<IHIBBBBI",
-        _object_id(object_id),
-        0x0403,
-        _object_id(target_id),
-        0,  # target is not a bus
-        0,  # property count
-        0,  # ranged-property count
-        0,  # play flags
-        0,  # bank file ID
-    )
+def create_play_action_payload(object_id: int, target_id: int, bank_version: int = 132) -> bytes:
+    return new_structured_object(0x03, _object_id(object_id), bank_version, {
+        "Action type": 0x0403, "Target": _object_id(target_id),
+    })
 
 
 def create_stop_action_payload(
@@ -2221,21 +2226,14 @@ def create_stop_action_payload(
     target_id: int,
     *,
     target_is_bus: bool = False,
+    bank_version: int = 132,
 ) -> bytes:
-    """Create a minimal Stop Action with linear fade settings."""
+    """Create a Stop Action with a linear fade that also stops state transitions and sequences."""
 
-    return struct.pack(
-        "<IHIBBBBBB",
-        _object_id(object_id),
-        0x0102 if target_is_bus else 0x0103,
-        _object_id(target_id),
-        int(bool(target_is_bus)),
-        0,  # property count
-        0,  # ranged-property count
-        4,  # linear fade curve
-        6,  # apply to state transitions and dynamic sequences
-        0,  # exception-list count (varuint)
-    )
+    return new_structured_object(0x03, _object_id(object_id), bank_version, {
+        "Action type": 0x0102 if target_is_bus else 0x0103, "Target": _object_id(target_id),
+        "Target flags": int(bool(target_is_bus)), "Fade": 4, "Scope": 6,
+    })
 
 
 def patch_hirc_reference(obj: HircObject, offset: int, target_id: int) -> bytes:
@@ -2271,13 +2269,13 @@ def _validate_hirc_reference_target(
             "safely typed HIRC reference"
         )
     matches = [obj for obj in objects if obj.object_id == target_id]
+    if len(matches) > 1:
+        matches = [obj for obj in matches if obj.type_id in allowed] or matches
     if not matches and (
         field.target_kind == "event"
-        or field.role in _CROSS_BANK_BUS_ROLES
+        or field.role in _CROSS_BANK_ROLES
     ):
-        # Event Actions may intentionally call an Event in another loaded bank,
-        # and buses (output/auxiliary/reflections/ducked) conventionally live in
-        # a separate init/master-bus bank, so both are valid cross-bank links.
+        # Events and _CROSS_BANK_ROLES targets may live in another loaded bank.
         return
     if len(matches) != 1:
         state = "missing" if not matches else f"ambiguous ({len(matches)} objects)"
@@ -2310,11 +2308,11 @@ def set_action_fields(
     action_type = int(action_type)
     if not 0 <= action_type <= 0xFFFF:
         raise ValueError("Action type is outside the u16 range")
-    if obj.action_type is not None and (action_type & 0xFF00) != (obj.action_type & 0xFF00):
-        raise ValueError(
-            "Changing the Action family would invalidate its type-specific payload; clone a matching template"
-        )
     payload = bytearray(obj.payload)
+    if obj.action_type is not None and (action_type & 0xFF00) != (obj.action_type & 0xFF00):
+        if obj.structure is None:
+            raise ValueError(f"Action {obj.object_id} has no decoded layout to rebuild")
+        payload = bytearray(set_wwise_fields(obj.payload, obj.structure, {"Action type": action_type}))
     struct.pack_into("<HI", payload, 4, action_type, _object_id(target_id, allow_zero=True))
     payload[10] = (payload[10] & ~1) | int(bool(target_is_bus))
     return payload.take_bytes()
@@ -2377,7 +2375,7 @@ def set_action_specific(obj: HircObject, settings: BnkActionSettings) -> bytes:
     elif settings.kind == "bypass_fx":
         out += struct.pack(
             "<BB", int(bool(settings.bypass)),
-            _u8(settings.target_mask or 0, "Target effect mask"),
+            _u8(settings.target_mask or 0, "Effect slot" if (obj.bank_version or 0) >= 150 else "Target effect mask"),
         )
         out += _pack_action_exceptions(settings.exceptions)
     elif settings.kind == "seek":
@@ -2422,7 +2420,7 @@ def set_attenuation(obj: HircObject, settings: BnkAttenuation) -> bytes:
         )
     if len(curves) > 0xFF:
         raise ValueError("An attenuation cannot contain more than 255 curves")
-    if any(index < -1 or index >= len(curves) for index in assignments):
+    if not _valid_attenuation_assignments(assignments, len(curves), obj.bank_version):
         raise ValueError("Each attenuation target must use an existing curve or None")
 
     cone = None if settings.cone is None else tuple(map(float, settings.cone))
@@ -2625,7 +2623,7 @@ def can_edit_hirc_children(obj: HircObject) -> bool:
 
     if obj.child_list_offset is None:
         return False
-    if obj.type_id in {0x05, 0x06, 0x07, 0x0A}:
+    if obj.type_id in {0x05, 0x06, 0x07, 0x0A, 0x0C, 0x0D}:
         return True
     if obj.type_id != 0x09:
         return False
@@ -3338,6 +3336,7 @@ def _edit_hirc_chunk(
 
     by_id = group_by_id()
     upsert_reference_baselines = {}
+    complete_baselines = set()
 
     def reference_signature(owner: HircObject, field: HircReference):
         return (
@@ -3392,6 +3391,8 @@ def _edit_hirc_chunk(
             reference_signature(baseline, field)
             for field in (baseline.reference_fields if baseline else ())
         )
+        if baseline is not None and baseline.structure is not None and baseline.structure.complete:
+            complete_baselines.add((object_id, type_id))
         if existing is None:
             existing = HircObject(
                 len(objects) + 1,
@@ -3468,6 +3469,13 @@ def _edit_hirc_chunk(
                 f"it identifies {len(matches)} objects"
             )
         owner = matches[0]
+        if (
+            owner.structure is not None and not owner.structure.complete
+            and (object_id, type_id) in complete_baselines
+        ):
+            raise ValueError(
+                f"{owner.type_name} {object_id} does not decode completely: {owner.structure.error}"
+            )
         preserved = baseline.copy()
         for reference in owner.reference_fields:
             signature = reference_signature(owner, reference)
@@ -3625,8 +3633,11 @@ class BnkEditModel:
     def objects(self) -> list[HircObject]:
         return self.result.objects
 
-    def _unique(self, object_id: int, operation: str) -> HircObject | None:
-        matches = [obj for obj in self.objects if obj.object_id == object_id]
+    def _unique(self, object_id: int, operation: str, type_id: int | None = None) -> HircObject | None:
+        matches = [
+            obj for obj in self.objects
+            if obj.object_id == object_id and type_id in (None, obj.type_id)
+        ]
         if len(matches) > 1:
             raise ValueError(
                 f"Cannot {operation} ShortID {object_id}: it identifies "
@@ -3828,8 +3839,16 @@ class BnkEditModel:
             decoded.append(obj)
             baselines.append(baseline)
 
-        for obj in decoded:
+        for obj, baseline in zip(decoded, baselines):
             _decode_one_hirc_object(obj, future)
+            if (
+                obj.structure is not None and not obj.structure.complete
+                and baseline is not None and baseline.structure is not None
+                and baseline.structure.complete
+            ):
+                raise ValueError(
+                    f"{obj.type_name} {obj.object_id} does not decode completely: {obj.structure.error}"
+                )
         _resolve_fx_state_property_names(future)
         for obj, baseline in zip(decoded, baselines):
             preserved = Counter(
@@ -3852,13 +3871,10 @@ class BnkEditModel:
     def set_event_actions(self, event_id: int, action_ids) -> None:
         event_id = _object_id(event_id)
         actions = tuple(_object_id(value) for value in action_ids)
-        existing = self._unique(event_id, "edit Event")
-        if existing is not None and existing.type_id != 0x04:
-            raise ValueError(f"HIRC object {event_id} already exists and is not an Event")
+        self._unique(event_id, "edit Event", 0x04)
         invalid = [
             action_id for action_id in actions
-            if len(matches := [obj for obj in self.objects if obj.object_id == action_id]) != 1
-            or matches[0].type_id != 0x03
+            if sum(obj.object_id == action_id and obj.type_id == 0x03 for obj in self.objects) != 1
         ]
         if invalid:
             raise ValueError(
@@ -3867,36 +3883,50 @@ class BnkEditModel:
         self.upsert_objects(((0x04, event_id, _pack_event_payload(event_id, actions)),))
 
     def delete_objects(self, object_ids) -> None:
-        object_ids = {_object_id(value) for value in object_ids}
-        if not object_ids:
-            return
-        for object_id in object_ids:
-            if self._unique(object_id, "delete") is None:
+        doomed = set()
+        for value in object_ids:
+            object_id, type_id = value if isinstance(value, tuple) else (value, None)
+            obj = self._unique(_object_id(object_id), "delete", type_id)
+            if obj is None:
                 raise ValueError(f"Cannot delete missing HIRC object {object_id}")
+            doomed.add(id(obj))
+        if not doomed:
+            return
         before_sources = _decoded_hirc_source_map(self.objects)
-        self.result.objects = [
-            obj for obj in self.objects if obj.object_id not in object_ids
-        ]
+        self.result.objects = [obj for obj in self.objects if id(obj) not in doomed]
         self._refresh_context()
         self._refresh_derived(before_sources)
         self.hirc_dirty = True
 
-    def rename_object(self, old_id: int, new_id: int) -> None:
+    def rename_object(self, old_id: int, new_id: int, type_id: int | None = None) -> None:
         old_id, new_id = _object_id(old_id), _object_id(new_id)
         if old_id == new_id:
             return
-        if self._unique(old_id, "rename") is None:
+        target = self._unique(old_id, "rename", type_id)
+        if target is None:
             raise ValueError(f"Cannot rename missing HIRC object {old_id}")
         if any(obj.object_id == new_id for obj in self.objects):
             raise ValueError(f"HIRC rename target {new_id} already exists")
+        sharers = [obj for obj in self.objects if obj.object_id == old_id]
         before_sources = _decoded_hirc_source_map(self.objects)
         future = list(self.objects)
         changed = []
         for index, original in enumerate(future):
-            offsets = {0, *(
-                field.offset for field in original.reference_fields
-                if field.target_id == old_id
-            )}
+            offsets = {0} if original is target else set()
+            for field in original.reference_fields:
+                if field.target_id != old_id:
+                    continue
+                if len(sharers) > 1:
+                    allowed = compatible_hirc_reference_types(original, field)
+                    owners = [obj for obj in sharers if obj.type_id in allowed]
+                    if len(owners) != 1:
+                        raise ValueError(
+                            f"'{field.role}' in {original.type_name} {original.object_id} could mean any "
+                            f"object with ShortID {old_id}"
+                        )
+                    if owners[0] is not target:
+                        continue
+                offsets.add(field.offset)
             payload = bytearray(original.payload)
             touched = False
             for offset in offsets:
@@ -3905,7 +3935,7 @@ class BnkEditModel:
                     touched = True
             if not touched:
                 continue
-            object_id = new_id if original.object_id == old_id else original.object_id
+            object_id = new_id if original is target else original.object_id
             obj = HircObject(
                 original.index,
                 original.type_id,
@@ -3924,9 +3954,9 @@ class BnkEditModel:
         self._refresh_derived(before_sources)
         self.hirc_dirty = True
 
-    def set_reference(self, object_id: int, offset: int, target_id: int) -> None:
+    def set_reference(self, object_id: int, offset: int, target_id: int, type_id: int | None = None) -> None:
         object_id, target_id = _object_id(object_id), _object_id(target_id)
-        obj = self._unique(object_id, "edit reference in")
+        obj = self._unique(object_id, "edit reference in", type_id)
         if obj is None:
             raise ValueError(f"Cannot edit reference in missing HIRC object {object_id}")
         fields = [field for field in obj.reference_fields if field.offset == int(offset)]
@@ -4015,6 +4045,7 @@ def _rewrite_bnk(
     hirc_source_renames: dict[int, int] | None,
     parsed_result: BnkParseResult | None,
     added_source_ids: set[int],
+    removed_source_ids: set[int] = frozenset(),
 ) -> bytes:
     chunks, trailing = _split_chunk_records(data, zero_copy_data=True)
     header = next((chunk.payload for chunk in chunks if chunk.chunk_id == b"BKHD"), None)
@@ -4082,9 +4113,10 @@ def _rewrite_bnk(
         )
         _rekey_didx(chunks, renames)
 
-    if replacements:
+    if replacements or removed_source_ids:
         _rewrite_bnk_media(
-            chunks, replacements, bank_version, parsed_result, added_source_ids
+            chunks, replacements, bank_version, parsed_result, added_source_ids,
+            removed_source_ids,
         )
     return _pack_chunk_records(chunks, trailing)
 
@@ -4095,6 +4127,7 @@ def _rewrite_bnk_media(
     bank_version: int,
     parsed_result: BnkParseResult | None = None,
     added_source_ids: set[int] | None = None,
+    removed_source_ids=frozenset(),
 ) -> None:
     added_source_ids = set(added_source_ids or ())
     hirc_index = next((i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"HIRC"), None)
@@ -4128,11 +4161,17 @@ def _rewrite_bnk_media(
     duplicates = added_source_ids & (existing_ids | source_ids)
     if duplicates:
         raise ValueError(f"BNK source {min(duplicates)} already exists")
+    if removed_source_ids - existing_ids:
+        raise ValueError(f"BNK has no embedded media {min(removed_source_ids - existing_ids)}")
+    if removed_source_ids & (embedded_ids | prefetch_ids):
+        raise ValueError(
+            f"Media {min(removed_source_ids & (embedded_ids | prefetch_ids))} is still used by an object in this bank"
+        )
     media_target_ids = (
         set(replacements) & (existing_ids | embedded_ids | prefetch_ids)
     ) | added_source_ids
     hirc_target_ids = set(replacements) & (embedded_ids | prefetch_ids)
-    if not media_target_ids and not hirc_target_ids:
+    if not media_target_ids and not hirc_target_ids and not removed_source_ids:
         return
     if hirc_target_ids and not hirc.complete:
         raise ValueError("Refusing to resize media referenced by a truncated HIRC chunk")
@@ -4164,24 +4203,31 @@ def _rewrite_bnk_media(
         chunks[hirc_index] = ChunkRecord(
             b"HIRC", _pack_hirc(hirc.objects, hirc.trailing)
         )
-    if not media_target_ids:
+    if not media_target_ids and not removed_source_ids:
         return
 
     if didx_index is None:
         insert_at = hirc_index if hirc_index is not None else len(chunks)
         chunks[insert_at:insert_at] = [ChunkRecord(b"DIDX", b""), ChunkRecord(b"DATA", b"")]
         didx_index, data_index = insert_at, insert_at + 1
+    entries = [entry for entry in entries if entry.source_id not in removed_source_ids]
     for source_id in sorted(media_target_ids - existing_ids):
         entries.append(BnkEmbeddedAudio(source_id, 0, 0))
+    if not entries:
+        for index in sorted((didx_index, data_index), reverse=True):
+            del chunks[index]
+        return
     media = dict(replacements)
     for source_id, size in prefetch_sizes.items():
         if source_id in media_target_ids:
             media[source_id] = bytes(media[source_id])[:size]
 
     old_data = chunks[data_index].payload
-    alignment = _infer_media_alignment(entries) if existing_ids else 16
+    bkhd_index = next(i for i, chunk in enumerate(chunks) if chunk.chunk_id == b"BKHD")
+    header = chunks[bkhd_index].payload
+    alignment = (struct.unpack_from("<H", header, 12)[0] if bank_version >= 135 else 0) or 16
     new_didx, new_data = bytearray(), bytearray()
-    for entry in entries:
+    for entry in sorted(entries, key=lambda item: item.source_id):
         while len(new_data) % alignment:
             new_data.append(0)
         payload = bytes(media[entry.source_id]) if entry.source_id in media_target_ids else _safe_slice(
@@ -4191,16 +4237,9 @@ def _rewrite_bnk_media(
         new_data += payload
     chunks[didx_index] = ChunkRecord(b"DIDX", new_didx.take_bytes())
     chunks[data_index] = ChunkRecord(b"DATA", new_data.take_bytes())
-
-
-def _infer_media_alignment(entries: list[BnkEmbeddedAudio]) -> int:
-    offsets = [entry.offset for entry in entries if entry.offset]
-    if not offsets:
-        return 1
-    common = offsets[0]
-    for offset in offsets[1:]:
-        common = math.gcd(common, offset)
-    for candidate in (16, 8, 4, 2):
-        if common % candidate == 0:
-            return candidate
-    return 1
+    fixed = 40 if bank_version >= 142 else 20
+    start = 8 + fixed + sum(8 + len(chunk.payload) for chunk in chunks[bkhd_index + 1:data_index + 1]) - len(
+        chunks[data_index].payload
+    )
+    if len(header) - fixed != -start % alignment:
+        chunks[bkhd_index] = ChunkRecord(b"BKHD", header[:fixed] + bytes(-start % alignment))

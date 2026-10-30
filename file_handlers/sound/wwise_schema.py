@@ -149,11 +149,24 @@ _ACTION_TYPE_NAMES = {
     0x3000: "Reset HPF",
     0x3100: "Set FX",
     0x3200: "Reset FX",
-    0x3300: "Bypass FX Slot 0",
-    0x3400: "Bypass FX Slot 1",
-    0x3500: "Bypass FX Slot 2",
-    0x3600: "Bypass FX Slot 3",
-    0x3700: "Bypass All FX",
+}
+_ACTION_TYPE_NAMES_150 = {
+    **_ACTION_TYPE_NAMES,
+    0x1A00: "Break",
+    0x1B00: "Trigger",
+    0x3300: "Set Bypass FX Slot",
+    0x3400: "Reset Bypass FX Slot",
+    0x3500: "Set Bypass All FX",
+    0x3600: "Reset Bypass All FX",
+    0x3700: "Reset All Bypass FX",
+}
+_ACTION_FAMILIES_125 = frozenset({
+    *range(0x0100, 0x0500, 0x100), *range(0x0600, 0x1500, 0x100), *range(0x1900, 0x2300, 0x100), 0x3000,
+})
+_ACTION_FAMILIES = {
+    **dict.fromkeys((125, 132, 135, 140), _ACTION_FAMILIES_125),
+    145: _ACTION_FAMILIES_125 | {0x3100, 0x3200},
+    150: _ACTION_FAMILIES_125 - {0x1C00, 0x1D00} | {*range(0x3100, 0x3800, 0x100)},
 }
 
 _ACTION_EXTERNAL_TARGET_KINDS = {
@@ -204,7 +217,7 @@ BNK_PROPERTY_NAMES = {
     0x3A: "Loop count (0 = infinite)", 0x3B: "Initial Delay (seconds)",
 }
 BNK_INTEGER_PROPERTIES = frozenset({
-    0x0F, 0x10, 0x12, 0x28, 0x29, 0x2B, 0x2C,
+    0x0F, 0x10, 0x12, 0x1E, 0x28, 0x29, 0x2B, 0x2C,
     *range(0x2D, 0x36), 0x37, 0x38, 0x39, 0x3A,
 })
 BNK_PROPERTY_NAMES_132 = {
@@ -270,8 +283,8 @@ BNK_PROPERTY_NAMES_150 = {
     0x55: "Attenuation ShortID",
 }
 BNK_INTEGER_PROPERTIES_150 = frozenset({
-    0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
-    0x39, 0x3A, 0x3C, 0x3D, 0x3E, 0x3F, 0x46, 0x47, 0x49, 0x4A,
+    0x1F, 0x20, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+    0x39, 0x3A, 0x3C, 0x3D, 0x46, 0x47, 0x49, 0x4A,
     *range(0x4B, 0x56),
 })
 BNK_STATE_PROPERTY_NAMES = {
@@ -281,8 +294,8 @@ BNK_STATE_PROPERTY_NAMES = {
     0x08: "Feedback Volume", 0x09: "Feedback LPF", 0x0A: "Feedback Pitch",
     0x0B: "MIDI Transposition", 0x0C: "MIDI Velocity Offset",
     0x0D: "Playback Speed", 0x0E: "Mute Ratio",
-    0x0F: "Special Transition Value", 0x10: "Priority",
-    0x11: "Maximum Instances", 0x12: "Pan X (2D)", 0x13: "Pan Y (2D)",
+    0x0F: "Special Transition Value", 0x10: "Maximum Instances",
+    0x11: "Priority", 0x12: "Pan X (2D)", 0x13: "Pan Y (2D)",
     0x14: "Pan X (3D)", 0x15: "Pan Y (3D)", 0x16: "Pan Z (3D)",
     0x17: "Positioning Type", 0x18: "Center %",
     0x19: "Cone Attenuation Enabled", 0x1A: "Cone Attenuation",
@@ -294,6 +307,7 @@ BNK_STATE_PROPERTY_NAMES = {
     0x27: "User Aux Send Volume 0", 0x28: "User Aux Send Volume 1",
     0x29: "User Aux Send Volume 2", 0x2A: "User Aux Send Volume 3",
     0x2B: "Output Bus Volume", 0x2C: "Output Bus HPF", 0x2D: "Output Bus LPF",
+    0x2E: "Attenuation Enabled",
     0xFF: "Capcom extension 0xFF (meaning unconfirmed; preserved exactly)",
 }
 BNK_STATE_PROPERTY_NAMES_132 = {
@@ -303,8 +317,7 @@ BNK_STATE_PROPERTY_NAMES_132 = {
         if key != 0xFF
     },
     0x08: "Feedback Volume (deprecated)", 0x09: "Feedback LPF (deprecated)",
-    0x0A: "Feedback Pitch (deprecated)", 0x10: "Maximum Instances",
-    0x11: "Priority", 0x17: "Positioning Type Blend",
+    0x0A: "Feedback Pitch (deprecated)", 0x17: "Positioning Type Blend",
     0x2E: "Attenuation Enabled", 0x2F: "User Aux Send LPF 0",
     0x30: "User Aux Send LPF 1", 0x31: "User Aux Send LPF 2",
     0x32: "User Aux Send LPF 3", 0x33: "User Aux Send HPF 0",
@@ -326,6 +339,10 @@ BNK_STATE_PROPERTY_NAMES_140 = {
     0x38: "Game Aux Send LPF", 0x39: "Game Aux Send HPF",
     0x3A: "Pan Z (2D)", 0x3B: "Bypass All Metadata",
 }
+BNK_STATE_PROPERTY_NAMES_150 = {
+    **{key: value for key, value in BNK_PROPERTY_NAMES_150.items() if key < 0x38},
+    **{0x30 | slot << 8: f"Bypass FX slot {slot}" for slot in range(4)},
+}
 BNK_MODULATOR_PROPERTY_NAMES = {
     0x00: "Scope", 0x01: "Envelope: stop playback", 0x02: "LFO: depth",
     0x03: "LFO: attack time", 0x04: "LFO: frequency", 0x05: "LFO: waveform",
@@ -337,6 +354,17 @@ BNK_MODULATOR_PROPERTY_NAMES = {
     0x12: "Time: playback rate", 0x13: "Time: initial delay",
 }
 BNK_MODULATOR_INTEGER_PROPERTIES = frozenset({0x00, 0x01, 0x05, 0x0A, 0x0F, 0x11})
+BNK_MODULATOR_RTPC_NAMES = {
+    0x00: "LFO: depth", 0x01: "LFO: attack time", 0x02: "LFO: frequency",
+    0x03: "LFO: waveform", 0x04: "LFO: smoothing", 0x05: "LFO: pulse width",
+    0x06: "LFO: initial phase", 0x07: "LFO: retrigger",
+    0x08: "Envelope: attack time", 0x09: "Envelope: attack curve",
+    0x0A: "Envelope: decay time", 0x0B: "Envelope: sustain level",
+    0x0C: "Envelope: sustain time", 0x0D: "Envelope: release time",
+}
+BNK_MODULATOR_RTPC_NAMES_132 = {
+    **BNK_MODULATOR_RTPC_NAMES, 0x0E: "Time: playback rate", 0x0F: "Time: initial delay",
+}
 BNK_MODULATOR_PROPERTY_NAMES_150 = {
     0x00: "Scope", 0x01: "Envelope: stop playback", 0x02: "LFO: depth",
     0x03: "LFO: attack time", 0x04: "LFO: frequency", 0x05: "LFO: waveform",
@@ -355,7 +383,9 @@ BNK_MODULATOR_INTEGER_PROPERTIES_150 = frozenset({
 
 def property_names(kind: str, bank_version: int | None = 125):
     if kind == "state":
-        if bank_version in {135, 140, 145, 150}:
+        if bank_version == 150:
+            return BNK_STATE_PROPERTY_NAMES_150
+        if bank_version in {135, 140, 145}:
             return BNK_STATE_PROPERTY_NAMES_140
         return BNK_STATE_PROPERTY_NAMES_132 if bank_version == 132 else BNK_STATE_PROPERTY_NAMES
     if kind == "modulator":
@@ -363,6 +393,10 @@ def property_names(kind: str, bank_version: int | None = 125):
             BNK_MODULATOR_PROPERTY_NAMES_150
             if bank_version == 150 else BNK_MODULATOR_PROPERTY_NAMES
         )
+    if kind == "modulator_rtpc":
+        if bank_version == 150:
+            return BNK_MODULATOR_PROPERTY_NAMES_150
+        return BNK_MODULATOR_RTPC_NAMES if bank_version == 125 else BNK_MODULATOR_RTPC_NAMES_132
     if bank_version == 150:
         return BNK_PROPERTY_NAMES_150
     if bank_version in {140, 145}:
@@ -388,7 +422,7 @@ def integer_properties(kind: str, bank_version: int | None = 125):
 
 BNK_ATTENUATION_TARGETS = (
     "Dry volume", "Game-defined aux send", "User-defined aux send",
-    "Low-pass filter", "Spread", "High-pass filter", "Focus",
+    "Low-pass filter", "High-pass filter", "Spread", "Focus",
 )
 BNK_ATTENUATION_TARGETS_145 = BNK_ATTENUATION_TARGETS + (
     "Obstruction volume", "Obstruction low-pass filter",
@@ -452,6 +486,9 @@ BNK_FX_ENUMS = {
     "futz_eq": ("High-pass", "EQ", "Low-pass"),
     "futz_bit_depth": {
         0: "Off", **{index: str(24 - index) for index in range(1, 23)},
+    },
+    "futz_bit_depth_139": {
+        0: "Off", **{index: str(17 - index) for index in range(1, 16)},
     },
     "futz_downsample": (
         "Off", "24000 Hz", "16000 Hz", "12000 Hz", "9600 Hz", "8000 Hz",
@@ -535,9 +572,9 @@ BNK_FX_SCHEMAS = {
         (f"Parametric EQ band {band} enabled", "bool") for band in range(1, 7)
     ) + _MASTERING_EQ + (
         ("Compressor band count", "u32"),
+        ("Compressor link mode", "u32", "mastering_link"),
         ("Compressor link strength", "f32"),
         ("Compressor stereo pairs linked", "bool"),
-        ("Compressor link mode", "u32", "mastering_link"),
     ) + tuple(
         (f"Compressor band {band} enabled", "bool") for band in range(1, 5)
     ) + tuple(
@@ -545,9 +582,9 @@ BNK_FX_SCHEMAS = {
         for number in range(1, 4)
     ) + _MASTERING_COMPRESSOR + tuple(
         (f"Master volume: {channel}", "f32") for channel in (
-            "Left", "Right", "Center", "Surround left", "Surround right",
+            "Left", "Right", "Center", "LFE", "Surround left", "Surround right",
             "Back left", "Back right", "Height front left",
-            "Height front right", "Height back left", "Height back right", "LFE",
+            "Height front right", "Height back left", "Height back right",
         )
     ) + (
         ("Limiter mode", "u32", "mastering_limiter"),
@@ -564,6 +601,12 @@ BNK_FX_SCHEMAS = {
         ("Dry level", "f32"), ("Reverb level", "f32"),
         ("Reverb type", "u32", "convolution_mode"),
         ("Input threshold", "f32"),
+    )),
+    0x00041033: ("iZotope Trash Delay", (
+        ("Dry out", "f32"), ("Wet out", "f32"), ("Low cutoff", "f32"),
+        ("Low Q", "f32"), ("High cutoff", "f32"), ("High Q", "f32"),
+        ("Time", "f32"), ("Feedback", "f32"), ("Trash", "f32"),
+        ("Delay type", "u32"),
     )),
     0x00021033: ("iZotope Hybrid Reverb", (
         ("Decay time", "f32"), ("Decay low frequency", "f32"),
@@ -768,12 +811,18 @@ BNK_FX_SCHEMAS = {
         ("Minimum system audio objects", "u16"),
     )),
     0x00AA1137: ("Microsoft Spatial Sound", ()),
-    0x00B40007: ("Vibration", ()),
+    0x00B40007: ("Auxiliary", ()),
     0x00B50007: ("No Output", ()),
     0x03840009: ("Wwise System Output Settings", (
         ("Mix behavior", "u32", "system_mix"),
     )),
 }
+
+BNK_FUTZBOX_139_FIELDS = tuple(
+    (label, storage, "futz_bit_depth_139") if label == "Lo-Fi bit depth" else (label, storage, *enum)
+    for label, storage, *enum in BNK_FX_SCHEMAS[0x006E1003][1][:12] + BNK_FX_SCHEMAS[0x006E1003][1][16:-1]
+)
+BNK_TIME_STRETCH_16_FIELDS = BNK_FX_SCHEMAS[0x00820003][1][:3] + BNK_FX_SCHEMAS[0x00820003][1][5:6]
 
 # AudioEnginePropertyID values from the matching Audiokinetic plug-in XMLs.
 # These IDs are independent of each plug-in's serialized parameter order and
@@ -918,8 +967,76 @@ BNK_FX_PROPERTY_NAMES = {
         40: "Center Input Level", 41: "LFE Input Level",
         50: "Front Level", 51: "Rear Level", 52: "Center Level",
         53: "LFE Level", 60: "Dry Level", 61: "Early-reflection Level",
-        62: "Reverb Level",
+        62: "Reverb Level", 100: "Density Delay Min", 101: "Density Delay Max",
+        102: "Density Delay Random %", 103: "Room Shape Min", 104: "Room Shape Max",
+        105: "Diffusion Delay Scale %", 106: "Diffusion Delay Max",
+        107: "Diffusion Delay Random %", 108: "DC Filter Cutoff Frequency",
+        109: "Reverb Unit Input Delay", 110: "Reverb Unit Input Delay Random %",
     },
+    0x00021033: {
+        0: "Decay Time", 1: "Decay Low Frequency", 2: "Decay High Frequency",
+        3: "Decay Low Ratio", 4: "Decay Mid Ratio", 5: "Decay High Ratio",
+        6: "Early Gain", 7: "Tail Gain", 8: "Predelay Front", 9: "Predelay Rear",
+        10: "Front Wet", 11: "Front Dry", 12: "Rear Wet", 13: "Rear Dry", 14: "Quality",
+    },
+    0x00041033: {
+        0: "Dry Out", 1: "Wet Out", 2: "Low Cutoff", 3: "Low Q", 4: "High Cutoff",
+        5: "High Q", 6: "Time", 7: "Feedback", 8: "Trash", 9: "Delay Type",
+    },
+    0x00640002: {0: "Frequency", 1: "Gain", 2: "Duration", 3: "Channel Mask"},
+    0x00650002: {0: "Duration", 1: "Duration Random Min", 2: "Duration Random Max"},
+    0x00660002: {
+        0: "Gain", 1: "Start Frequency", 2: "Start Frequency Random Min",
+        3: "Start Frequency Random Max", 4: "Sweep Frequency", 5: "Sweep Frequency Type",
+        6: "Stop Frequency", 7: "Stop Frequency Random Min", 8: "Stop Frequency Random Max",
+        9: "Waveform", 10: "Duration Mode", 11: "Fixed Duration", 12: "Attack Time",
+        13: "Decay Time", 14: "Sustain Time", 15: "Sustain Level", 16: "Release Time",
+        17: "Channel Mask",
+    },
+    0x006A0003: {
+        0: "Delay Time", 1: "Feedback", 2: "Wet/Dry Mix", 3: "Output Level",
+        4: "Feedback Enable", 5: "Process LFE",
+    },
+    0x006D0003: {
+        0: "Threshold", 1: "Ratio", 2: "Attack Time", 3: "Release Time",
+        4: "Output Gain", 5: "Process LFE", 6: "Channel Link",
+    },
+    0x006E0003: {
+        0: "Threshold", 1: "Ratio", 2: "Look Ahead Time", 3: "Release Time",
+        4: "Output Gain", 5: "Process LFE", 6: "Channel Link",
+    },
+    0x007D0003: {
+        0: "Delay Time", 1: "Wet/Dry Mix", 2: "Process LFE", 5: "Blend",
+        6: "Feedforward", 7: "Feedback", 8: "LFO Waveform", 9: "LFO Frequency",
+        10: "LFO Depth", 14: "LFO Enable", 16: "Output Gain", 17: "Process Center",
+        18: "LFO Smoothing", 19: "LFO PWM", 20: "LFO Phase Offset",
+        21: "LFO Spread Mode", 22: "LFO Phase Spread",
+    },
+    0x00830003: {
+        1: "LFO Depth", 2: "LFO Frequency", 3: "LFO Waveform", 4: "LFO Smoothing",
+        5: "LFO PWM", 6: "LFO Phase Offset", 7: "LFO Spread Mode",
+        8: "LFO Phase Spread", 9: "Output Gain", 10: "Process Center", 11: "Process LFE",
+    },
+    0x00840003: {
+        0: "Center", 1: "Back", 2: "Authoring Filename", 3: "Downmix To Stereo",
+        4: "Front", 5: "Surround", 6: "LFE", 7: "Format",
+        8: "Apply Downstream Volume", 9: "Game Filename", 10: "Ambisonics Channel Ordering",
+    },
+    0x00870003: {
+        0: "Enable Crossfeed", 1: "Enable Feedback", 2: "Dry Level", 3: "Wet Level",
+        4: "Front/Rear Balance", 5: "Filter Type", 6: "Filter Gain",
+        7: "Filter Frequency", 8: "Filter Q Factor", 9: "Left Input Type",
+        10: "Left Delay Time", 11: "Left Feedback", 12: "Left Crossfeed",
+        13: "Right Input Type", 14: "Right Delay Time", 15: "Right Feedback",
+        16: "Right Crossfeed",
+    },
+    0x008B0003: {0: "Full-band Gain", 1: "LFE Gain"},
+    0x00AE0007: {
+        0: "Allow 3D Audio", 1: "Main Mix Configuration for Binauralization",
+        2: "Main Mix Configuration for Home Theater", 3: "Allow System Audio Objects",
+        4: "Minimum System Audio Objects Required",
+    },
+    0x00C80002: {1: "Gain"},
     0x007E0003: {
         0: "Pre-EQ Band 1 Filter Type", 1: "Pre-EQ Band 1 Gain",
         2: "Pre-EQ Band 1 Frequency", 3: "Pre-EQ Band 1 Q Factor",
@@ -961,6 +1078,11 @@ BNK_FX_PROPERTY_NAMES = {
         18: "Voice 2 Filter Frequency", 19: "Voice 2 Filter Q Factor",
     },
     0x03840009: {0: "Mix Behavior"},
+    0x007F0003: dict(zip(
+        (0, 1, 2, 10, 11, 33, 20, 21, 22, 23, 30, 31, 32, 34),
+        (field[0] for field in BNK_FX_SCHEMAS[0x007F0003][1]),
+    )),
+    0x01A01052: {0: "Gain", 1: "RPM", 2: "Throttle", 3: "Gear", 4: "Velocity", 5: "Enable shifting"},
 }
 
 # Reflect's AudioEnginePropertyID table changed in Wwise 2022.1 and again in
@@ -991,6 +1113,10 @@ def fx_property_names(plugin_id: int, bank_version: int | None = None):
         return _REFLECT_PROPERTY_NAMES_150
     if bank_version is not None and bank_version >= 145 and plugin_id == 0x00AB0003:
         return _REFLECT_PROPERTY_NAMES_145
+    if plugin_id == 0x00AE0007 and (bank_version or 0) < 140:
+        return None
+    if plugin_id == 0x00840003 and bank_version == 125:
+        return {key: value for key, value in BNK_FX_PROPERTY_NAMES[plugin_id].items() if key != 10}
     return BNK_FX_PROPERTY_NAMES.get(plugin_id)
 
 BNK_PLUGIN_NAMES = {

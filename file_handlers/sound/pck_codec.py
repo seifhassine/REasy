@@ -66,6 +66,21 @@ def export_non_streaming_pck(data: bytes) -> bytes:
     return bytes(data[: min(layout.blob_base, len(data))])
 
 
+def pck_language_names(data: bytes) -> dict[int, str]:
+    layout = parse_pck_layout(data)
+    if layout is None or layout.language_size < 4:
+        return {}
+    start = layout.fixed_header_size
+    names = {}
+    for index in range(struct.unpack_from("<I", data, start)[0]):
+        offset, language_id = struct.unpack_from("<II", data, start + 4 + index * 8)
+        raw = data[start + offset:layout.tables_start]
+        wide = raw[1:2] == b"\0"
+        end = next((i for i in range(0, len(raw) - 1, 2) if raw[i:i + 2] == b"\0\0"), len(raw)) if wide else raw.find(b"\0")
+        names[language_id] = raw[:end].decode("utf-16-le" if wide else "latin-1")
+    return names
+
+
 def parse_pck_layout(data: bytes) -> _PckLayout | None:
     if len(data) < 24 or data[:4] != _PCK_MAGIC:
         return None
@@ -168,7 +183,44 @@ def _encode_pck_entry(out: bytearray, entry: PckEntry) -> None:
         struct.pack_into("<IIIII", out, entry.record_offset, *values)
 
 
-def rewrite_pck(data: bytes, replacements: dict[int, bytes]) -> bytes:
+def _remove_pck_entries(data: bytes, entry_ids: set[int]) -> bytes:
+    layout = parse_pck_layout(data)
+    if layout is None:
+        raise ValueError("Cannot remove media from an invalid PCK")
+    media = [entry for table in layout.tables if table.kind != "banks" for entry in table.entries]
+    missing = entry_ids - {entry.entry_id for entry in media}
+    if missing:
+        raise ValueError(f"PCK has no media entry {min(missing)}")
+    header = bytearray(data[:layout.tables_end])
+    pos = layout.tables_start
+    for index, table in enumerate(layout.tables):
+        kept = [
+            replace(entry) for entry in table.entries
+            if table.kind == "banks" or entry.entry_id not in entry_ids
+        ]
+        size = 4 + len(kept) * table.entry_size if table.size else 0
+        if table.size:
+            struct.pack_into("<I", header, pos, len(kept))
+            for row, entry in enumerate(kept):
+                entry.record_offset = pos + 4 + row * table.entry_size
+                _encode_pck_entry(header, entry)
+        if index < 2 or layout.fixed_header_size == 28:
+            struct.pack_into("<I", header, 16 + index * 4, size)
+        pos += size
+    freed = layout.tables_end - pos
+    struct.pack_into("<I", header, 4, layout.header_size - freed)
+    end = max(
+        [layout.tables_end] + [
+            entry.offset + entry.length for entry in media
+            if entry.entry_id not in entry_ids and entry.length
+        ]
+    )
+    return bytes(header[:pos]) + bytes(freed) + data[layout.tables_end:end]
+
+
+def rewrite_pck(data: bytes, replacements: dict[int, bytes], removed=(), languages=None) -> bytes:
+    if removed:
+        data = _remove_pck_entries(data, set(removed))
     layout = parse_pck_layout(data)
     if layout is None:
         return bytes(data)
@@ -180,7 +232,7 @@ def rewrite_pck(data: bytes, replacements: dict[int, bytes]) -> bytes:
     }
     out = bytes(data)
     for source_id in sorted(set(replacements) - existing_media_ids):
-        out = _add_pck_sound_entry(out, source_id, replacements[source_id])
+        out = _add_pck_sound_entry(out, source_id, replacements[source_id], (languages or {}).get(source_id))
     data = out
     layout = parse_pck_layout(data)
     if layout is None:
@@ -242,7 +294,7 @@ def rewrite_pck(data: bytes, replacements: dict[int, bytes]) -> bytes:
     return bytes(out)
 
 
-def _add_pck_sound_entry(data: bytes, source_id: int, payload: bytes) -> bytes:
+def _add_pck_sound_entry(data: bytes, source_id: int, payload: bytes, language_id: int | None = None) -> bytes:
     source_id, payload = _source_id(source_id), bytes(payload)
     layout = parse_pck_layout(data)
     if layout is None:
@@ -281,19 +333,35 @@ def _add_pck_sound_entry(data: bytes, source_id: int, payload: bytes) -> bytes:
                 entry.start_block = entry.offset // entry.block_size if entry.block_size else entry.offset
             _encode_pck_entry(header, entry)
 
+    languages = {language_id} if language_id is not None else {entry.language_id for entry in sound_table.entries}
     new_entry = PckEntry(
         entry_id=source_id,
         block_size=1,
         length=len(payload),
         start_block=new_blob_base,
-        language_id=0,
+        language_id=languages.pop() if len(languages) == 1 else 0,
         offset=new_blob_base,
         table_kind="sounds",
         entry_size=entry_size,
         record_offset=insert_at,
     )
     _encode_pck_entry(header, new_entry)
-    return header.take_bytes() + payload + b"\0" * (media_span - len(payload)) + data[layout.blob_base :]
+    return _sort_pck_records(
+        header.take_bytes() + payload + b"\0" * (media_span - len(payload)) + data[layout.blob_base :]
+    )
+
+
+def _sort_pck_records(data: bytes) -> bytes:
+    layout = parse_pck_layout(data)
+    out = bytearray(data)
+    for table in layout.tables:
+        if table.kind == "banks":
+            continue
+        rows = sorted((replace(entry) for entry in table.entries), key=lambda entry: (entry.entry_id, entry.language_id))
+        for row, entry in enumerate(rows):
+            entry.record_offset = table.offset + 4 + row * table.entry_size
+            _encode_pck_entry(out, entry)
+    return bytes(out)
 
 
 def _align_up(value: int, alignment: int) -> int:
@@ -305,5 +373,6 @@ __all__ = [
     "PckEntry",
     "export_non_streaming_pck",
     "parse_pck_layout",
+    "pck_language_names",
     "rewrite_pck",
 ]

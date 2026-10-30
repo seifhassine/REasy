@@ -9,6 +9,7 @@ from .bnk_parser import (
     BnkEditModel,
     BnkParseResult,
     BnkTrack,
+    _decoded_hirc_source_map,
     export_non_streaming_pck,
     extract_embedded_wem,
     music_clip_source_ids,
@@ -17,6 +18,8 @@ from .bnk_parser import (
     parse_wem_metadata,
     rewrite_soundbank,
 )
+from .pck_codec import parse_pck_layout, rewrite_pck
+lazy from .sound_profile import sound_profile_for_handler
 lazy from .sound_resources import (
     local_sound_directories,
     read_sound_resource,
@@ -301,12 +304,14 @@ def resolve_sound_replacement(
     handler,
     result: BnkParseResult,
     track: BnkTrack,
+    *,
+    materialize: bool = True,
 ) -> SoundReplacementPlan:
     """Resolve every asset that must change for one profiled Source ID."""
 
-    materialize = getattr(handler, "materialize_sound_edits", None)
-    if callable(materialize):
-        materialize()
+    materialize_edits = getattr(handler, "materialize_sound_edits", None) if materialize else None
+    if callable(materialize_edits):
+        materialize_edits()
     source_id = int(track.source_id)
     current = resource_key(getattr(handler, "filepath", ""))
     if (
@@ -550,11 +555,64 @@ def build_sound_replacement_outputs(
     return outputs
 
 
+def source_rename_outputs(handler, before: BnkEditModel, after: BnkEditModel) -> dict[str, bytes]:
+    after_sources = _decoded_hirc_source_map(after.objects)
+    changes = dict.fromkeys(
+        (old.source_id, new.source_id)
+        for key, sources in _decoded_hirc_source_map(before.objects).items()
+        if len(after_sources.get(key, ())) == len(sources)
+        for old, new in zip(sources, after_sources[key])
+        if old.source_id != new.source_id and old.stream_type == new.stream_type
+    )
+    outputs: dict[str, bytes] = {}
+    current = resource_key(getattr(handler, "filepath", ""))
+    for old, new in changes:
+        track = _track(before.result, old)
+        if track is None or (track.stream_type == 0 and track.available) or _track(before.result, new):
+            continue
+        profile = sound_profile_for_handler(handler, before.result.bank_version)
+        if profile is None:
+            raise SoundMediaResolutionError(
+                f"Source ID {old} plays media stored outside this bank. REasy needs to know the "
+                "game to find that media; select the game this bank belongs to."
+            )
+        metadata = profile.metadata_for_handler(handler)
+        metadata.prepare_operational_index(wait=True)
+        if metadata.preview_media_paths(new):
+            continue
+        plan = resolve_sound_replacement(profile, handler, before.result, track, materialize=False)
+        if not plan.original_wem:
+            raise SoundMediaResolutionError(f"No media was found for Source ID {old} outside this bank.")
+        for package in plan.packages:
+            data = outputs.get(package.media.path, package.media.data)
+            if _track(parse_soundbank(data), new) is None:
+                language = next(
+                    (entry.language_id for table in parse_pck_layout(data).tables for entry in table.entries
+                     if table.kind == "sounds" and entry.entry_id == old),
+                    None,
+                )
+                data = outputs[package.media.path] = rewrite_pck(data, {new: plan.original_wem}, languages={new: language})
+                if package.index is not None:
+                    outputs[package.index.path] = export_non_streaming_pck(data)
+        for bank in plan.banks:
+            if bank.asset.path == current:
+                continue
+            data = outputs.get(bank.asset.path, bank.asset.data)
+            parsed = parse_soundbank(data)
+            source = _track(parsed, old)
+            if _track(parsed, new) is None and source is not None and source.available:
+                outputs[bank.asset.path] = rewrite_soundbank(
+                    data, {new: extract_embedded_wem(data, source)}, added_source_ids={new}
+                )
+    return outputs
+
+
 __all__ = [
     "SoundMediaResolutionError",
     "SoundReplacementPlan",
     "build_sound_replacement_outputs",
     "resolve_indexed_streaming_pck",
     "resolve_sound_replacement",
+    "source_rename_outputs",
     "validate_streaming_pck_match",
 ]

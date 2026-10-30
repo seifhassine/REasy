@@ -7,6 +7,7 @@ MHWilds/RE9's v145, and Pragmata/Onimusha: Way of the Sword's v150 structures.
 
 from __future__ import annotations
 
+import bisect
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
 import math
@@ -17,7 +18,10 @@ from .wwise_schema import (
     BNK_CURVE_SCALING,
     BNK_FX_ENUMS,
     BNK_FX_SCHEMAS,
+    BNK_FUTZBOX_139_FIELDS,
     BNK_STANDARD_CUE_NAMES,
+    BNK_TIME_STRETCH_16_FIELDS,
+    _ACTION_FAMILIES,
     attenuation_targets,
     fx_property_names,
     integer_properties,
@@ -120,6 +124,15 @@ _REFLECT_CURVES = {
     6: "Diffraction low-pass filter",
     7: "Diffraction high-pass filter",
 }
+_REFLECT_CURVES_145 = {
+    0: "Image-source/listener distance attenuation",
+    1: "Image-source/listener distance low-pass filter",
+    2: "Image-source/listener distance high-pass filter",
+    3: "Image-source/listener distance spread",
+    4: "Diffraction attenuation",
+    5: "Diffraction low-pass filter",
+    6: "Diffraction high-pass filter",
+}
 _WOOSH_CHANNELS = {0: "1.0", 1: "2.0", 2: "4.0"}
 _WOOSH_NOISE = {0: "White", 1: "Pink", 2: "Red", 3: "Purple"}
 _WOOSH_CURVES = {
@@ -163,6 +176,7 @@ class WwiseObjectLayout:
     size: int
     anchors: tuple[tuple[str, int], ...] = ()
     error: str = ""
+    source: tuple = ()
 
     @property
     def complete(self) -> bool:
@@ -185,8 +199,41 @@ class WwiseChunkLayout:
     structure: WwiseObjectLayout
 
 
+@dataclass(frozen=True, slots=True)
+class WwiseList:
+    path: str
+    count_path: str
+    items: tuple[str, ...]
+
+
 class _LayoutError(ValueError):
     pass
+
+
+class _Unit:
+    __slots__ = ("path", "storage", "offset", "raw")
+
+    def __init__(self, path, storage, offset, raw):
+        self.path, self.storage, self.offset, self.raw = path, storage, offset, raw
+
+
+class _Lane:
+    __slots__ = ("base", "root", "start", "end", "items", "ordered")
+
+    def __init__(self, base, root, start, ordered=False):
+        self.base, self.root, self.start, self.end, self.items = base, root, start, start, []
+        self.ordered = ordered
+
+    def item_root(self, index):
+        label = self.root.format(index + 1)
+        return f"{self.base}/{label}" if self.base else label
+
+
+class _List:
+    __slots__ = ("count", "scale", "lanes", "editable")
+
+    def __init__(self, count, scale, editable):
+        self.count, self.scale, self.lanes, self.editable = count, scale, [], editable
 
 
 class _Reader:
@@ -194,14 +241,43 @@ class _Reader:
         "u8": "B", "i8": "b", "u16": "H", "i16": "h",
         "u32": "I", "i32": "i", "f32": "f", "f64": "d", "bool": "B",
     }
+    writing = False
 
-    def __init__(self, data: bytes, version: int = 132, feedback: bool = False):
+    def __init__(
+        self, data: bytes, version: int = 132, feedback: bool = False, record: bool = False
+    ):
         self.data, self.pos, self.version = data, 0, int(version)
         # v126 and older nodes end with a feedback bus when the bank header enables it.
         self.feedback = bool(feedback)
         self.fields: list[WwiseField] = []
         self.parts: list[str] = []
         self.anchors: dict[str, int] = {}
+        self.units: list[_Unit] | None = [] if record else None
+        self.lists: list[_List] | None = [] if record else None
+        self._pending = self._list = None
+
+    def _raw(self, path: str, storage: str, size: int, problem: str = "") -> bytes:
+        if size < 0 or self.pos + size > len(self.data):
+            raise _LayoutError(f"{path} {problem or f'exceeds the payload at 0x{self.pos:X}'}")
+        raw = bytes(self.data[self.pos:self.pos + size])
+        if self.units is not None:
+            self.units.append(_Unit(path, storage, self.pos, raw))
+        self.pos += size
+        return raw
+
+    def _var_size(self, path: str) -> int:
+        for size in range(1, 6):
+            if self.pos + size > len(self.data):
+                raise _LayoutError(f"{path} has a truncated variable integer")
+            if not self.data[self.pos + size - 1] & 0x80:
+                return size
+        raise _LayoutError(f"{path} has an oversized variable integer")
+
+    def _zstring_size(self, path: str) -> int:
+        end = self.data.find(b"\0", self.pos)
+        if end < 0:
+            raise _LayoutError(f"{path} has no NUL terminator")
+        return end + 1 - self.pos
 
     @contextmanager
     def section(self, name: str):
@@ -229,17 +305,13 @@ class _Reader:
         editable: bool = True,
         visible: bool = True,
     ):
-        fmt = self._FORMATS[storage]
-        size = struct.calcsize("<" + fmt)
-        if self.pos + size > len(self.data):
-            raise _LayoutError(f"{self._path(label)} exceeds the payload at 0x{self.pos:X}")
-        offset = self.pos
-        value = struct.unpack_from("<" + fmt, self.data, offset)[0]
-        self.pos += size
+        fmt = "<" + self._FORMATS[storage]
+        path, offset = self._path(label), self.pos
+        value = struct.unpack(fmt, self._raw(path, storage, struct.calcsize(fmt)))[0]
         if storage.startswith("f") and not math.isfinite(value):
-            raise _LayoutError(f"{self._path(label)} is not finite")
+            raise _LayoutError(f"{path} is not finite")
         self.fields.append(WwiseField(
-            self._path(label), label, storage, offset, size, value,
+            path, label, storage, offset, self.pos - offset, value,
             self._enum(enum), id_kind, reference_role, editable, visible,
         ))
         return value
@@ -253,30 +325,21 @@ class _Reader:
         editable: bool = False,
         visible: bool = True,
     ) -> int:
-        offset = self.pos
+        path, offset = self._path(label), self.pos
         value = 0
-        for _ in range(5):
-            if self.pos >= len(self.data):
-                raise _LayoutError(f"{self._path(label)} has a truncated variable integer")
-            byte = self.data[self.pos]
-            self.pos += 1
+        for byte in self._raw(path, "var", self._var_size(path)):
             value = (value << 7) | (byte & 0x7F)
-            if not byte & 0x80:
-                self.fields.append(WwiseField(
-                    self._path(label), label, "var", offset, self.pos - offset, value,
-                    self._enum(enum), id_kind, "", editable, visible,
-                ))
-                return value
-        raise _LayoutError(f"{self._path(label)} has an oversized variable integer")
+        self.fields.append(WwiseField(
+            path, label, "var", offset, self.pos - offset, value,
+            self._enum(enum), id_kind, "", editable, visible,
+        ))
+        return value
 
     def flags(self, label: str, specs, *, storage: str = "u8") -> int:
-        fmt = self._FORMATS[storage]
-        size = struct.calcsize("<" + fmt)
-        if self.pos + size > len(self.data):
-            raise _LayoutError(f"{self._path(label)} exceeds the payload at 0x{self.pos:X}")
+        fmt = "<" + self._FORMATS[storage]
         offset = self.pos
-        raw = struct.unpack_from("<" + fmt, self.data, offset)[0]
-        self.pos += size
+        raw = struct.unpack(fmt, self._raw(self._path(label), storage, struct.calcsize(fmt)))[0]
+        size = self.pos - offset
         used = 0
         for spec in specs:
             name, shift = spec[:2]
@@ -300,44 +363,140 @@ class _Reader:
             ))
         return raw
 
-    def blob(self, label: str, size: int, *, visible: bool = False) -> bytes:
-        if size < 0 or self.pos + size > len(self.data):
-            raise _LayoutError(f"{self._path(label)} has invalid size {size}")
-        offset, value = self.pos, self.data[self.pos:self.pos + size]
-        self.pos += size
+    def blob(
+        self, label: str, size: int, *, visible: bool = False, editable: bool = False
+    ) -> bytes:
+        path, offset = self._path(label), self.pos
+        value = self._raw(path, "bytes", size, f"has invalid size {size}")
         self.fields.append(WwiseField(
-            self._path(label), label, "bytes", offset, size, value.hex(" "),
-            editable=False, visible=visible,
+            path, label, "bytes", offset, len(value), value.hex(" "),
+            editable=editable, visible=visible,
         ))
         return value
 
-    def string(self, label: str, size: int) -> str:
+    def string(self, label: str, size: int, *, ending: str = "cstring") -> str:
         value = self.blob(label, size, visible=True)
         field = self.fields[-1]
         text = value.rstrip(b"\0").decode("utf-8", "replace")
         self.fields[-1] = WwiseField(
             field.path, label, "string", field.offset, field.size, text,
-            editable=False, visible=True,
+            editable=True, visible=True,
         )
+        if self.units is not None:
+            self.units[-1].storage = ending
         return text
 
     def zstring(self, label: str) -> str:
-        end = self.data.find(b"\0", self.pos)
-        if end < 0:
-            raise _LayoutError(f"{self._path(label)} has no NUL terminator")
-        return self.string(label, end + 1 - self.pos)
+        return self.string(label, self._zstring_size(self._path(label)), ending="zstring")
 
     def mark(self, name: str, offset: int | None = None) -> None:
         self.anchors[name] = self.pos if offset is None else offset
 
+    def count(self, label: str, storage: str, *, scale: int = 1) -> int:
+        unit = len(self.units) if self.units is not None else None
+        value = (
+            self.var(label, editable=False) if storage == "var"
+            else self.scalar(label, storage, editable=False)
+        )
+        if value % scale:
+            raise _LayoutError(f"{self._path(label)} is not a multiple of {scale}")
+        self._pending = unit, scale
+        return value // scale
 
-def _items(r: _Reader, section: str, count: int, parser) -> None:
-    if count < 0 or count > 0x100000:
-        raise _LayoutError(f"{section} has unreasonable count {count}")
-    with r.section(section):
+    def each(self, count: int, root: str | None = "{}", *, section: bool = True,
+             again: bool = False, editable: bool = True, ordered: bool = False):
+        if count < 0 or count > 0x100000:
+            raise _LayoutError(f"{self._path('')} has unreasonable count {count}")
+        lane = None
+        if self.lists is not None:
+            if not again:
+                unit, scale = self._pending or (None, 1)
+                self._list = _List(unit, scale, editable and unit is not None)
+                self.lists.append(self._list)
+            lane = _Lane("/".join(self.parts), root, len(self.units), ordered)
+            self._list.lanes.append(lane)
+        self._pending = None
         for index in range(count):
-            with r.section(f"{index + 1}"):
-                parser(index)
+            start = len(self.units) if lane else 0
+            if section:
+                self.parts.append(root.format(index + 1))
+            yield index
+            if section:
+                self.parts.pop()
+            if lane:
+                lane.items.append((start, len(self.units)))
+        if lane:
+            lane.end = len(self.units)
+
+    def deferred(self, label: str, storage: str):
+        offset = self.pos
+        value = self.scalar(label, storage, editable=False)
+        return value, (offset, storage, len(self.fields) - 1)
+
+    def resolve(self, token, actual: int, message: str) -> None:
+        if self.fields[token[2]].value != actual:
+            raise _LayoutError(message)
+
+    def tail(self, label: str) -> None:
+        if self.pos < len(self.data):
+            self.blob(label, len(self.data) - self.pos)
+
+
+class _Writer(_Reader):
+    writing = True
+
+    def __init__(
+        self, data: bytes, units: list[_Unit], version: int, feedback: bool, values=None
+    ):
+        super().__init__(data, version, feedback)
+        self.out = bytearray()
+        self._units = units
+        self._values = values or {}
+        self._where: dict[str, list[int]] = {}
+        for index, unit in enumerate(units):
+            self._where.setdefault(unit.path, []).append(index)
+        self._next = 0
+
+    def _raw(self, path: str, storage: str, size: int, problem: str = "") -> bytes:
+        positions = self._where.get(path, ())
+        index = bisect.bisect_left(positions, self._next)
+        if index < len(positions):
+            self._next = positions[index] + 1
+            raw = self._units[positions[index]].raw
+        elif path in self._values:
+            value = self._values[path]
+            raw = (
+                bytes(value) if storage == "bytes"
+                else _pack_var(value) if storage == "var"
+                else struct.pack("<" + self._FORMATS[storage], value)
+            )
+        else:
+            raw = bytes(max(size, 0))
+        self.out += raw
+        self.pos = len(self.out)
+        return raw
+
+    def _var_size(self, path: str) -> int:
+        return 1
+
+    def _zstring_size(self, path: str) -> int:
+        return 1
+
+    def resolve(self, token, actual: int, message: str) -> None:
+        offset, storage, index = token
+        packed = struct.pack("<" + self._FORMATS[storage], actual)
+        self.out[offset:offset + len(packed)] = packed
+        self.fields[index] = replace(self.fields[index], value=actual)
+
+    def tail(self, label: str) -> None:
+        if self._where.get(self._path(label)):
+            self.blob(label, 0)
+
+
+def _items(r: _Reader, section: str, count: int, parser, *, again: bool = False) -> None:
+    with r.section(section):
+        for index in r.each(count, again=again):
+            parser(index)
 
 
 def _property_value_storage(r: _Reader, kind: str, prop_id: int) -> str:
@@ -348,11 +507,12 @@ def _properties(r: _Reader, *, kind: str = "object", ranges: bool = True) -> Non
     names = property_names(kind, r.version)
     r.mark("property_bundle")
     with r.section("Properties"):
-        count = r.scalar("Property count", "u8", editable=False)
+        count = r.count("Property count", "u8")
         ids = [r.scalar(
-            f"Property {index + 1} type", "u8", enum=names, editable=False,
-        ) for index in range(count)]
-        for index, prop_id in enumerate(ids):
+            f"Property {index + 1} type", "u8", enum=names,
+        ) for index in r.each(count, "Property {} type", section=False)]
+        for index in r.each(count, None, section=False, again=True):
+            prop_id = ids[index]
             storage = _property_value_storage(r, kind, prop_id)
             references = (
                 {0x53: "MIDI target", 0x55: "attenuation"}
@@ -368,11 +528,12 @@ def _properties(r: _Reader, *, kind: str = "object", ranges: bool = True) -> Non
     if not ranges:
         return
     with r.section("Randomizers"):
-        count = r.scalar("Randomizer count", "u8", editable=False)
+        count = r.count("Randomizer count", "u8")
         ids = [r.scalar(
-            f"Randomizer {index + 1} type", "u8", enum=names, editable=False,
-        ) for index in range(count)]
-        for prop_id in ids:
+            f"Randomizer {index + 1} type", "u8", enum=names,
+        ) for index in r.each(count, "Randomizer {} type", section=False)]
+        for index in r.each(count, None, section=False, again=True):
+            prop_id = ids[index]
             storage = _property_value_storage(r, kind, prop_id)
             label = names.get(prop_id, f"Property 0x{prop_id:02X}")
             r.scalar(f"{label} minimum", storage)
@@ -380,46 +541,36 @@ def _properties(r: _Reader, *, kind: str = "object", ranges: bool = True) -> Non
 
 
 def _state_properties(r: _Reader, names: dict[int, str] | None = None) -> None:
-    names = names or property_names("state", r.version)
+    names = property_names("state", r.version) if names is None else names
     with r.section("State properties"):
-        count = r.var("Property count", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.var("Property", enum=names, editable=False)
-                r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
-                if r.version > 126:
-                    r.scalar("Stored in decibels", "u8", enum=_BOOL)
+        count = r.count("Property count", "var")
+        for index in r.each(count):
+            r.var("Property", enum=names, editable=True)
+            r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
+            if r.version > 126:
+                r.scalar("Stored in decibels", "u8", enum=_BOOL)
     with r.section("State groups"):
-        count = r.var("Group count", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("State group", "u32", id_kind="state_group")
-                r.scalar("Synchronization", "u8", enum=_SYNC)
-                states = r.var("State count", editable=False)
-                for state in range(states):
-                    with r.section(f"State {state + 1}"):
-                        r.scalar("State", "u32", id_kind="state_value")
-                        if r.version <= 145:
-                            r.scalar(
-                                "State object", "u32", id_kind="hirc",
-                                reference_role="state object",
-                            )
-                        else:
-                            value_count = r.scalar(
-                                "Property count", "u16", editable=False
-                            )
-                            ids = [
-                                r.scalar(
-                                    f"Property {item + 1} type", "u16",
-                                    enum=names, editable=False,
-                                )
-                                for item in range(value_count)
-                            ]
-                            for prop_id in ids:
-                                label = names.get(
-                                    prop_id, f"Property 0x{prop_id:04X}"
-                                )
-                                r.scalar(f"{label} value", "f32")
+        count = r.count("Group count", "var")
+        for index in r.each(count):
+            r.scalar("State group", "u32", id_kind="state_group")
+            r.scalar("Synchronization", "u8", enum=_SYNC)
+            states = r.count("State count", "var")
+            for state in r.each(states, "State {}"):
+                r.scalar("State", "u32", id_kind="state_value")
+                if r.version <= 145:
+                    r.scalar(
+                        "State object", "u32", id_kind="hirc",
+                        reference_role="state object",
+                    )
+                    continue
+                value_count = r.count("Property count", "u16")
+                ids = [
+                    r.scalar(f"Property {item + 1} type", "u16", enum=names)
+                    for item in r.each(value_count, "Property {} type", section=False)
+                ]
+                for item in r.each(value_count, None, section=False, again=True):
+                    label = names.get(ids[item], f"Property 0x{ids[item]:04X}")
+                    r.scalar(f"{label} value", "f32")
 
 
 def _graph(r: _Reader, count: int, section: str = "Points") -> None:
@@ -464,47 +615,43 @@ def _rtpc(
     r: _Reader, *, modulator: bool = False,
     names: dict[int, str] | None = None,
 ) -> None:
-    names = names or property_names(
-        "modulator" if modulator else "state", r.version
-    )
+    if names is None:
+        names = property_names("modulator_rtpc" if modulator else "state", r.version)
     with r.section("RTPC curves"):
-        count = r.scalar("Curve count", "u16", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                _typed_rtpc_input(r)
-                r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
-                r.var("Target property", enum=names, editable=False)
-                r.scalar("Curve ID", "u32", id_kind="curve")
-                r.scalar("Scaling", "u8", enum=_SCALING)
-                points = r.scalar("Point count", "u16", editable=False)
-                _graph(r, points)
+        count = r.count("Curve count", "u16")
+        for index in r.each(count):
+            _typed_rtpc_input(r)
+            r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
+            r.var("Target property", enum=names, editable=True)
+            r.scalar("Curve ID", "u32", id_kind="curve")
+            r.scalar("Scaling", "u8", enum=_SCALING)
+            _graph(r, r.count("Point count", "u16"))
 
 
 def _effects(r: _Reader, *, node: bool) -> None:
     with r.section("Effects"):
         if node:
             r.scalar("Override parent effects", "u8", enum=_BOOL)
-        count = r.scalar("Effect count", "u8", editable=False)
+        count = r.count("Effect count", "u8")
         if count:
             if r.version <= 145:
                 r.flags(
                     "Bypass flags",
-                    tuple((f"Bypass slot {slot}", slot) for slot in range(4)),
+                    (*((f"Bypass slot {slot}", slot) for slot in range(4)), ("Bypass all effects", 4)),
                 )
             else:
                 r.scalar("Bypass all effects", "u8", enum=_BOOL)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Slot", "u8")
-                r.scalar("Effect", "u32", id_kind="hirc", reference_role="effect")
-                if r.version <= 145:
-                    r.scalar("Shared effect", "u8", enum=_BOOL)
-                    r.scalar("Rendered effect", "u8", enum=_BOOL)
-                else:
-                    flags = (("Bypassed", 0), ("Shared effect", 1))
-                    if node:
-                        flags += (("Rendered effect", 2),)
-                    r.flags("Effect flags", flags)
+        for index in r.each(count):
+            r.scalar("Slot", "u8")
+            r.scalar("Effect", "u32", id_kind="hirc", reference_role="effect")
+            if r.version <= 145:
+                r.scalar("Shared effect", "u8", enum=_BOOL)
+                r.scalar("Rendered effect", "u8", enum=_BOOL)
+            else:
+                flags = (("Bypassed", 0), ("Shared effect", 1))
+                if node:
+                    flags += (("Rendered effect", 2),)
+                r.flags("Effect flags", flags)
 
 
 def _metadata(r: _Reader, *, node: bool) -> None:
@@ -515,21 +662,26 @@ def _metadata(r: _Reader, *, node: bool) -> None:
     with r.section("Metadata"):
         if node:
             r.scalar("Override parent metadata", "u8", enum=_BOOL)
-        count = r.scalar("Metadata count", "u8", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Slot", "u8")
-                r.scalar(
-                    "Effect", "u32", id_kind="hirc",
-                    reference_role="metadata effect",
-                )
-                r.scalar("Shared effect", "u8", enum=_BOOL)
+        count = r.count("Metadata count", "u8")
+        for index in r.each(count):
+            r.scalar("Slot", "u8")
+            r.scalar(
+                "Effect", "u32", id_kind="hirc",
+                reference_role="metadata effect",
+            )
+            r.scalar("Shared effect", "u8", enum=_BOOL)
 
 
 def _positioning_129(r: _Reader) -> None:
     """Positioning before Wwise v130: 3D is its own bit and owns the attenuation ID."""
 
     flags = r.flags("Routing", (
+        ("Override parent positioning", 0),
+        ("Positioning type from RTPC", 1),
+        ("2D positioning", 2),
+        ("Enable panner", 3),
+        ("3D positioning available", 4),
+    ) if r.version <= 126 else (
         ("Override parent positioning", 0),
         ("3D positioning available", 4),
     ))
@@ -538,10 +690,11 @@ def _positioning_129(r: _Reader) -> None:
     # Bit 4 (v126-) or 6 (v127-129) is the 3D position type; 1 has no automation path.
     automation_bit = 4 if r.version <= 126 else 6
     bits = r.flags("3D flags", (
-        ("Spatialization", 0, 1, _SPATIALIZATION),
-        ("Hold emitter position and orientation", 3),
+        ("Spatialization", 0),
+        ("Loop 3D automation path", 1),
+        ("Update at each frame", 2),
+        ("Follow listener orientation", 3),
         ("3D position type", automation_bit, 1, {0: "Automated path", 1: "Emitter"}),
-        ("Loop 3D automation path", 5),
     ) if r.version <= 126 else (
         ("Spatialization", 0, 2, _SPATIALIZATION),
         ("Hold emitter position and orientation", 3),
@@ -557,23 +710,23 @@ def _positioning_129(r: _Reader) -> None:
 def _automation_path(r: _Reader) -> None:
     r.scalar("Path mode", "u8", enum=_PATH_MODE)
     r.scalar("Transition time (ms)", "i32")
-    vertex_count = r.scalar("Vertex count", "u32", editable=False)
+    vertex_count = r.count("Vertex count", "u32")
     def vertex(_index):
         r.scalar("X", "f32")
         r.scalar("Y", "f32")
         r.scalar("Z", "f32")
         r.scalar("Duration (ms)", "i32")
     _items(r, "Path vertices", vertex_count, vertex)
-    item_count = r.scalar("Path count", "u32", editable=False)
+    item_count = r.count("Path count", "u32")
     def path(_index):
         r.scalar("First vertex", "u32")
-        r.scalar("Vertex count", "u32", editable=False)
+        r.scalar("Vertex count", "u32")
     _items(r, "Paths", item_count, path)
     def ranges(_index):
         r.scalar("X random range", "f32")
         r.scalar("Y random range", "f32")
         r.scalar("Z random range", "f32")
-    _items(r, "Path randomization", item_count, ranges)
+    _items(r, "Path randomization", item_count, ranges, again=True)
 
 
 def _positioning(r: _Reader) -> None:
@@ -612,8 +765,8 @@ def _positioning(r: _Reader) -> None:
 def _aux(r: _Reader) -> None:
     with r.section("Auxiliary sends"):
         flags = r.flags("Aux flags", (
-            ("Use game-defined sends", 0),
-            ("Override game-defined sends", 1),
+            ("Override game-defined sends", 0),
+            ("Use game-defined sends", 1),
             ("Override user-defined sends", 2),
             ("Has user-defined sends", 3),
             ("Override reflections bus", 4),
@@ -686,9 +839,9 @@ def _feedback(r: _Reader) -> None:
 def _children(r: _Reader) -> None:
     with r.section("Children"):
         start = r.pos
-        count = r.scalar("Child count", "u32", editable=False)
+        count = r.count("Child count", "u32")
         r.mark("child_count", start)
-        for index in range(count):
+        for index in r.each(count, "Child {}", section=False, ordered=True):
             r.scalar(
                 f"Child {index + 1}", "u32", id_kind="hirc",
                 reference_role="child",
@@ -706,8 +859,7 @@ def _source(r: _Reader, section: str = "Source") -> None:
             ("Non-cacheable", 3), ("Has source", 7),
         ))
         if plugin & 0x0F in ((2, 5) if r.version <= 126 else (2,)):
-            size = r.scalar("Plug-in parameter bytes", "u32", editable=False)
-            _plugin_parameters(r, plugin, size)
+            _sized_plugin_parameters(r, plugin)
 
 
 def _music_node(r: _Reader) -> None:
@@ -726,87 +878,90 @@ def _music_node(r: _Reader) -> None:
         r.scalar("Beat value", "u8")
         r.scalar("Override meter", "u8", enum=_BOOL)
     with r.section("Stingers"):
-        count = r.scalar("Stinger count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Trigger", "u32", id_kind="trigger")
-                r.scalar("Segment", "u32", id_kind="hirc", reference_role="stinger segment")
+        count = r.count("Stinger count", "u32")
+        for index in r.each(count):
+            r.scalar("Trigger", "u32", id_kind="trigger")
+            r.scalar("Segment", "u32", id_kind="hirc", reference_role="stinger segment")
+            r.scalar("Synchronization", "u32", enum=_SYNC)
+            r.scalar(
+                "Cue-name filter", "u32", enum=_STANDARD_CUES,
+                id_kind="cue",
+            )
+            r.scalar("Do-not-repeat time (ms)", "i32")
+            r.scalar("Segment look-ahead count", "u32")
+
+
+def _transitions(r: _Reader) -> None:
+    with r.section("Transition rules"):
+        count = r.count("Rule count", "u32")
+        for index in r.each(count):
+            sources = r.count("Source count", "u32")
+            for item in r.each(sources, "Source {}", section=False, ordered=True):
+                r.scalar(
+                    f"Source {item + 1}", "u32", id_kind="hirc",
+                    reference_role="transition source",
+                )
+            destinations = r.count("Destination count", "u32")
+            for item in r.each(destinations, "Destination {}", section=False, ordered=True):
+                r.scalar(
+                    f"Destination {item + 1}", "u32", id_kind="hirc",
+                    reference_role="transition destination",
+                )
+            with r.section("Source behavior"):
+                r.scalar("Fade time (ms)", "i32")
+                r.scalar("Fade curve", "u32", enum=_CURVE)
+                r.scalar("Fade offset (ms)", "i32")
                 r.scalar("Synchronization", "u32", enum=_SYNC)
                 r.scalar(
                     "Cue-name filter", "u32", enum=_STANDARD_CUES,
                     id_kind="cue",
                 )
-                r.scalar("Do-not-repeat time (ms)", "i32")
-                r.scalar("Segment look-ahead count", "u32")
-
-
-def _transitions(r: _Reader) -> None:
-    with r.section("Transition rules"):
-        count = r.scalar("Rule count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                sources = r.scalar("Source count", "u32", editable=False)
-                for item in range(sources):
-                    r.scalar(
-                        f"Source {item + 1}", "u32", id_kind="hirc",
-                        reference_role="transition source",
-                    )
-                destinations = r.scalar("Destination count", "u32", editable=False)
-                for item in range(destinations):
-                    r.scalar(
-                        f"Destination {item + 1}", "u32", id_kind="hirc",
-                        reference_role="transition destination",
-                    )
-                with r.section("Source behavior"):
-                    r.scalar("Fade time (ms)", "i32")
-                    r.scalar("Fade curve", "u32", enum=_CURVE)
-                    r.scalar("Fade offset (ms)", "i32")
-                    r.scalar("Synchronization", "u32", enum=_SYNC)
-                    r.scalar(
-                        "Cue-name filter", "u32", enum=_STANDARD_CUES,
-                        id_kind="cue",
-                    )
-                    r.scalar("Play post-exit", "u8", enum=_BOOL)
-                with r.section("Destination behavior"):
-                    r.scalar("Fade time (ms)", "i32")
-                    r.scalar("Fade curve", "u32", enum=_CURVE)
-                    r.scalar("Fade offset (ms)", "i32")
-                    r.scalar(
-                        "Cue-name filter", "u32", enum=_STANDARD_CUES,
-                        id_kind="cue",
-                    )
-                    r.scalar("Jump-to playlist item", "u32", id_kind="playlist_item")
-                    if r.version >= 133:
-                        r.scalar("Jump-to selection", "u16", enum=_JUMP_TO)
-                    r.scalar("Entry type", "u16", enum=_ENTRY_TYPE)
+                r.scalar("Play post-exit", "u8", enum=_BOOL)
+            with r.section("Destination behavior"):
+                r.scalar("Fade time (ms)", "i32")
+                r.scalar("Fade curve", "u32", enum=_CURVE)
+                r.scalar("Fade offset (ms)", "i32")
+                r.scalar(
+                    "Cue-name filter", "u32", enum=_STANDARD_CUES,
+                    id_kind="cue",
+                )
+                r.scalar("Jump-to playlist item", "u32", id_kind="playlist_item")
+                if r.version >= 133:
+                    r.scalar("Jump-to selection", "u16", enum=_JUMP_TO)
+                r.scalar("Entry type", "u16", enum=_ENTRY_TYPE)
+                r.scalar("Play pre-entry", "u8", enum=_BOOL)
+                r.scalar("Match source cue name", "u8", enum=_BOOL)
+            has_object = r.scalar("Use transition segment", "u8", enum=_BOOL)
+            if has_object:
+                with r.section("Transition segment"):
+                    r.scalar("Segment", "u32", id_kind="hirc", reference_role="transition segment")
+                    for side in ("Fade in", "Fade out"):
+                        with r.section(side):
+                            r.scalar("Time (ms)", "i32")
+                            r.scalar("Curve", "u32", enum=_CURVE)
+                            r.scalar("Offset (ms)", "i32")
                     r.scalar("Play pre-entry", "u8", enum=_BOOL)
-                    r.scalar("Match source cue name", "u8", enum=_BOOL)
-                has_object = r.scalar("Use transition segment", "u8", enum=_BOOL)
-                if has_object:
-                    with r.section("Transition segment"):
-                        r.scalar("Segment", "u32", id_kind="hirc", reference_role="transition segment")
-                        for side in ("Fade in", "Fade out"):
-                            with r.section(side):
-                                r.scalar("Time (ms)", "i32")
-                                r.scalar("Curve", "u32", enum=_CURVE)
-                                r.scalar("Offset (ms)", "i32")
-                        r.scalar("Play pre-entry", "u8", enum=_BOOL)
-                        r.scalar("Play post-exit", "u8", enum=_BOOL)
+                    r.scalar("Play post-exit", "u8", enum=_BOOL)
 
 
 def _state(r: _Reader) -> None:
     names = property_names("state", r.version)
     width = "u8" if r.version <= 126 else "u16"
     with r.section("State values"):
-        count = r.scalar("Value count", width, editable=False)
-        ids = [r.scalar(f"Value {index + 1} property", width, enum=names, editable=False) for index in range(count)]
-        for prop_id in ids:
-            r.scalar(f"{names.get(prop_id, f'Property 0x{prop_id:04X}')} value", "f32")
+        count = r.count("Value count", width)
+        ids = [
+            r.scalar(f"Value {index + 1} property", width, enum=names)
+            for index in r.each(count, "Value {} property", section=False)
+        ]
+        for index in r.each(count, None, section=False, again=True):
+            r.scalar(f"{names.get(ids[index], f'Property 0x{ids[index]:04X}')} value", "f32")
 
 
 def _action(r: _Reader) -> None:
-    action_type = r.scalar("Action type", "u16", editable=False)
+    action_type = r.scalar("Action type", "u16")
     target_kind = action_type & 0xFF00
+    if target_kind not in _ACTION_FAMILIES[r.version]:
+        raise _LayoutError(f"Wwise v{r.version} cannot load action family 0x{target_kind:04X}")
     external_kind = {
         0x1200: "state_value",
         0x1300: "game_parameter",
@@ -814,11 +969,7 @@ def _action(r: _Reader) -> None:
         0x1900: "switch_value",
         (0x1B00 if r.version >= 150 else 0x1D00): "trigger",
     }.get(target_kind)
-    is_event = target_kind in (
-        {0x2100, 0x2300}
-        if r.version >= 150 else
-        {0x1500, 0x1600, 0x1700, 0x2100, 0x2300}
-    )
+    is_event = target_kind == 0x2100
     r.scalar(
         "Target", "u32", id_kind=external_kind or ("event" if is_event else "hirc"),
         reference_role=("event target" if is_event else "action target")
@@ -829,13 +980,12 @@ def _action(r: _Reader) -> None:
 
     def exceptions():
         with r.section("Exceptions"):
-            count = r.var("Exception count", editable=False)
-            for index in range(count):
-                with r.section(f"{index + 1}"):
-                    r.scalar("Object", "u32", id_kind="hirc", reference_role="exception")
-                    r.scalar("Object is a bus", "u8", enum=_BOOL)
+            count = r.count("Exception count", "var")
+            for index in r.each(count):
+                r.scalar("Object", "u32", id_kind="hirc", reference_role="exception")
+                r.scalar("Object is a bus", "u8", enum=_BOOL)
 
-    if target_kind in {0x0400, 0x0500, 0x2300}:
+    if target_kind == 0x0400:
         r.flags("Play fade", (("Fade curve", 0, 5, _CURVE),))
         r.scalar("Required bank", "u32", id_kind="bank")
         if r.version >= 144:
@@ -877,10 +1027,11 @@ def _action(r: _Reader) -> None:
         prefix = "State" if target_kind == 0x1200 else "Switch"
         r.scalar(f"{prefix} group", "u32", id_kind=f"{prefix.lower()}_group")
         r.scalar(prefix, "u32", id_kind=f"{prefix.lower()}_value")
-    elif target_kind in {
-        0x1000, 0x1100, 0x1500, 0x1600, 0x1700, 0x1800,
-        0x1C00, 0x1D00, 0x1F00, 0x2100,
-    } | ({0x1A00, 0x1B00} if r.version >= 150 else set()):
+    elif target_kind in (
+        {0x1000, 0x1100, 0x1A00, 0x1B00, 0x1F00, 0x2100}
+        if r.version >= 150 else
+        {0x1000, 0x1100, 0x1C00, 0x1D00, 0x1F00, 0x2100}
+    ):
         pass
     elif target_kind in (
         {0x3300, 0x3400, 0x3500, 0x3600, 0x3700}
@@ -910,8 +1061,8 @@ def _action(r: _Reader) -> None:
 
 def _event(r: _Reader) -> None:
     with r.section("Actions"):
-        count = r.var("Action count", editable=False)
-        for index in range(count):
+        count = r.count("Action count", "var")
+        for index in r.each(count, "Action {}", section=False):
             r.scalar(
                 f"Action {index + 1}", "u32", id_kind="hirc",
                 reference_role="event action",
@@ -937,11 +1088,10 @@ def _random_container(r: _Reader) -> None:
         ))
     _children(r)
     with r.section("Playlist"):
-        count = r.scalar("Item count", "u16", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Object", "u32", id_kind="hirc", reference_role="playlist item")
-                r.scalar("Weight", "i32")
+        count = r.count("Item count", "u16")
+        for index in r.each(count):
+            r.scalar("Object", "u32", id_kind="hirc", reference_role="playlist item")
+            r.scalar("Weight", "i32")
 
 
 def _switch_container(r: _Reader) -> None:
@@ -953,62 +1103,64 @@ def _switch_container(r: _Reader) -> None:
     r.scalar("Continuous validation", "u8", enum=_BOOL)
     _children(r)
     with r.section("Value assignments"):
-        count = r.scalar("Assignment count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Value", "u32", id_kind=f"{category}_value")
-                nodes = r.scalar("Object count", "u32", editable=False)
-                for item in range(nodes):
-                    r.scalar(
-                        f"Object {item + 1}", "u32", id_kind="hirc",
-                        reference_role="switch assignment",
-                    )
+        count = r.count("Assignment count", "u32")
+        for index in r.each(count):
+            r.scalar("Value", "u32", id_kind=f"{category}_value")
+            nodes = r.count("Object count", "u32")
+            for item in r.each(nodes, "Object {}", section=False):
+                r.scalar(
+                    f"Object {item + 1}", "u32", id_kind="hirc",
+                    reference_role="switch assignment",
+                )
     with r.section("Switch transitions"):
-        count = r.scalar("Transition count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Object", "u32", id_kind="hirc", reference_role="switch child")
-                r.flags("Playback", (("Play first only", 0), ("Continue playback", 1)))
-                r.flags("Mode", (("On switch", 0, 3, {0: "Play to end", 1: "Stop"}),))
-                r.scalar("Fade-out time (ms)", "i32")
-                r.scalar("Fade-in time (ms)", "i32")
+        count = r.count("Transition count", "u32")
+        for index in r.each(count):
+            r.scalar("Object", "u32", id_kind="hirc", reference_role="switch child")
+            r.flags("Playback", (("Play first only", 0), ("Continue playback", 1)))
+            r.flags("Mode", (("On switch", 0, 3, {0: "Play to end", 1: "Stop"}),))
+            r.scalar("Fade-out time (ms)", "i32")
+            r.scalar("Fade-in time (ms)", "i32")
 
 
 def _layer_container(r: _Reader) -> None:
     _node_base(r)
     _children(r)
     with r.section("Layers"):
-        count = r.scalar("Layer count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                # CAkLayer is serialized inline inside the container.  ulLayerID
-                # identifies that inline record; it is not a top-level HIRC ID.
-                r.scalar("Layer ID", "u32", id_kind="layer")
-                _rtpc(r)
-                _typed_rtpc_input(r, "Crossfade input")
-                associations = r.scalar("Child curve count", "u32", editable=False)
-                for item in range(associations):
-                    with r.section(f"Child curve {item + 1}"):
-                        r.scalar("Child", "u32", id_kind="hirc", reference_role="layer child")
-                        points = r.scalar("Point count", "u32", editable=False)
-                        _graph(r, points)
+        count = r.count("Layer count", "u32")
+        for index in r.each(count):
+            # CAkLayer is serialized inline inside the container.  ulLayerID
+            # identifies that inline record; it is not a top-level HIRC ID.
+            r.scalar("Layer ID", "u32", id_kind="layer")
+            _rtpc(r)
+            _typed_rtpc_input(r, "Crossfade input")
+            associations = r.count("Child curve count", "u32")
+            for item in r.each(associations, "Child curve {}"):
+                r.scalar("Child", "u32", id_kind="hirc", reference_role="layer child")
+                _graph(r, r.count("Point count", "u32"))
     r.scalar("Continuous validation", "u8", enum=_BOOL)
+
+
+def _sized_string(
+    r: _Reader, size_label: str, label: str, storage: str = "u32", ending: str = "cstring"
+) -> None:
+    size, token = r.deferred(size_label, storage)
+    start = r.pos
+    r.string(label, size, ending=ending)
+    r.resolve(token, r.pos - start, f"{label} does not match {size_label}")
 
 
 def _music_segment(r: _Reader) -> None:
     _music_node(r)
     r.scalar("Duration (ms)", "f64")
     with r.section("Cues"):
-        count = r.scalar("Cue count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Cue ID", "u32", enum=_STANDARD_CUES, id_kind="cue")
-                r.scalar("Position (ms)", "f64")
-                if r.version >= 137:
-                    r.zstring("Name")
-                else:
-                    size = r.scalar("Name bytes", "u32", editable=False)
-                    r.string("Name", size)
+        count = r.count("Cue count", "u32")
+        for index in r.each(count):
+            r.scalar("Cue ID", "u32", enum={**_STANDARD_CUES, 0: "Unnamed custom cue"}, id_kind="cue")
+            r.scalar("Position (ms)", "f64")
+            if r.version >= 137:
+                r.zstring("Name")
+            else:
+                _sized_string(r, "Name bytes", "Name")
 
 
 def _music_track(r: _Reader) -> None:
@@ -1017,34 +1169,31 @@ def _music_track(r: _Reader) -> None:
         ("Override parent MIDI target", 2),
         ("MIDI target is a bus", 3),
     ))
-    sources = r.scalar("Source count", "u32", editable=False)
-    for index in range(sources):
+    sources = r.count("Source count", "u32")
+    for index in r.each(sources, "Source {}", section=False):
         _source(r, f"Source {index + 1}")
     with r.section("Clips"):
-        count = r.scalar("Clip count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Subtrack ID", "u32")
-                r.scalar("Source", "u32", id_kind="source")
-                if r.version >= 133:
-                    r.scalar(
-                        "Event", "u32", id_kind="event",
-                        reference_role="clip event",
-                    )
-                r.scalar("Play at (ms)", "f64")
-                r.scalar("Begin trim (ms)", "f64")
-                r.scalar("End trim (ms)", "f64")
-                r.scalar("Source duration (ms)", "f64")
+        count = r.count("Clip count", "u32")
+        for index in r.each(count):
+            r.scalar("Subtrack ID", "u32")
+            r.scalar("Source", "u32", id_kind="source")
+            if r.version >= 133:
+                r.scalar(
+                    "Event", "u32", id_kind="event",
+                    reference_role="clip event",
+                )
+            r.scalar("Play at (ms)", "f64")
+            r.scalar("Begin trim (ms)", "f64")
+            r.scalar("End trim (ms)", "f64")
+            r.scalar("Source duration (ms)", "f64")
         if count:
             r.scalar("Subtrack count", "u32")
     with r.section("Clip automation"):
-        count = r.scalar("Automation count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Clip index", "u32")
-                r.scalar("Automation type", "u32", enum=_CLIP_AUTOMATION)
-                points = r.scalar("Point count", "u32", editable=False)
-                _graph(r, points)
+        count = r.count("Automation count", "u32")
+        for index in r.each(count):
+            r.scalar("Clip index", "u32")
+            r.scalar("Automation type", "u32", enum=_CLIP_AUTOMATION)
+            _graph(r, r.count("Point count", "u32"))
     _node_base(r)
     track_type = r.scalar("Track type", "u8", enum=_TRACK_TYPE)
     if track_type == 3:
@@ -1052,8 +1201,8 @@ def _music_track(r: _Reader) -> None:
         category = "switch" if group_type == 0 else "state"
         r.scalar("Switch group", "u32", id_kind=f"{category}_group")
         r.scalar("Default switch", "u32", id_kind=f"{category}_value")
-        count = r.scalar("Switch association count", "u32", editable=False)
-        for index in range(count):
+        count = r.count("Switch association count", "u32")
+        for index in r.each(count, "Switch association {}", section=False):
             r.scalar(f"Switch association {index + 1}", "u32", id_kind=f"{category}_value")
         with r.section("Track transition"):
             r.scalar("Source fade time (ms)", "i32")
@@ -1074,14 +1223,24 @@ def _music_switch(r: _Reader) -> None:
     _music_node(r)
     _transitions(r)
     r.scalar("Continue playback", "u8", enum=_BOOL)
-    depth = r.scalar("Decision depth", "u32", editable=False)
+    _decision_tree(r)
+
+
+def _dialogue_event(r: _Reader) -> None:
+    r.scalar("Probability (%)", "u8")
+    _decision_tree(r, "dialogue leaf")
+    _properties(r)
+
+
+def _decision_tree(r: _Reader, leaf_role: str = "decision leaf") -> None:
+    depth = r.count("Decision depth", "u32")
     group_fields = []
     with r.section("Decision arguments"):
-        for index in range(depth):
+        for index in r.each(depth, "Group {}", section=False, editable=False):
             group_fields.append(len(r.fields))
             r.scalar(f"Group {index + 1}", "u32")
         group_types = []
-        for index in range(depth):
+        for index in r.each(depth, "Group {} type", section=False, again=True):
             group_type = r.scalar(f"Group {index + 1} type", "u8", enum=_GROUP)
             group_types.append(group_type)
             category = "switch" if group_type == 0 else "state"
@@ -1089,40 +1248,34 @@ def _music_switch(r: _Reader) -> None:
             r.fields[field_index] = replace(
                 r.fields[field_index], id_kind=f"{category}_group",
             )
-    size = r.scalar("Decision-tree bytes", "u32", editable=False)
+    count = r.count("Decision-tree bytes", "u32", scale=12)
     r.scalar("Decision mode", "u8", enum=_DECISION_MODE)
-    if size % 12:
-        raise _LayoutError(f"decision tree has non-node size {size}")
-    count = size // 12
     with r.section("Decision tree"):
         rows = []
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                key_field = len(r.fields)
-                r.scalar("Value", "u32")
-                branch_field = len(r.fields)
-                branch = r.scalar("Branch or audio object", "u32", editable=False)
-                r.scalar("Weight", "u16")
-                r.scalar("Probability", "u16")
-                rows.append((key_field, branch_field, branch))
-        # Classify the packed branch union using the same depth traversal Wwise uses.
+        for index in r.each(count, editable=False):
+            key_field = len(r.fields)
+            r.scalar("Value", "u32", editable=False)
+            branch_field = len(r.fields)
+            branch = r.scalar("Branch or audio object", "u32", editable=False)
+            r.scalar("Weight", "u16")
+            r.scalar("Probability", "u16")
+            rows.append((key_field, branch_field, branch))
+        # Classify the packed branch union by depth, as Wwise walks it: nodes at the last level
+        # are leaves; the root and inner nodes are branches (a depth-0 root packs first child 1, count 0).
         levels: dict[int, int] = {}
         kinds: dict[int, bool] = {}
         pending = [(0, 0)] if rows else []
         while pending:
             index, level = pending.pop()
             if index >= count or index in kinds:
-                continue
+                raise _LayoutError(f"decision tree node {index + 1} is outside the tree or reached twice")
             levels[index] = level
-            branch = rows[index][2]
-            child_index, child_count = branch & 0xFFFF, branch >> 16
-            # The root is a branch; a depth-0 tree packs it as first child 1, count 0.
-            leaf = index > 0 and (
-                level >= depth or child_index >= count or child_count > count - child_index
-            )
-            kinds[index] = leaf
+            kinds[index] = leaf = index > 0 and level == depth
             if not leaf:
-                pending.extend((child_index + item, level + 1) for item in range(child_count))
+                branch = rows[index][2]
+                pending.extend(((branch & 0xFFFF) + item, level + 1) for item in range(branch >> 16))
+        if len(kinds) != count:
+            raise _LayoutError("decision tree has nodes no branch reaches")
         branch_fields = {branch_field for _key, branch_field, _branch in rows}
         replacements = []
         for index, (key_field, branch_field, branch) in enumerate(rows):
@@ -1137,12 +1290,12 @@ def _music_switch(r: _Reader) -> None:
             if kinds.get(index, True):
                 replacements.append(WwiseField(
                     f"{base}/Audio object", "Audio object", "u32", offset, 4,
-                    branch, (), "hirc", "decision leaf",
+                    branch, (), "hirc", leaf_role,
                 ))
             else:
                 replacements.extend((
                     WwiseField(f"{base}/First child", "First child", "bit", offset, 4,
-                               branch & 0xFFFF, (), mask=0xFFFF),
+                               branch & 0xFFFF, (), editable=False, mask=0xFFFF),
                     WwiseField(f"{base}/Child count", "Child count", "bit", offset, 4,
                                branch >> 16, (), editable=False, mask=0xFFFF0000, shift=16),
                 ))
@@ -1151,37 +1304,34 @@ def _music_switch(r: _Reader) -> None:
         ] + replacements
 
 
-def _playlist_node(r: _Reader, remaining: list[int], index: list[int]) -> None:
-    if remaining[0] <= 0:
+def _playlist_node(r: _Reader, nodes: list[int], total: int) -> None:
+    nodes[0] += 1
+    if nodes[0] > total and not r.writing:
         raise _LayoutError("music playlist contains more nodes than declared")
-    remaining[0] -= 1
-    index[0] += 1
-    with r.section(f"{index[0]}"):
-        r.scalar("Segment", "u32", id_kind="hirc", reference_role="playlist segment")
-        r.scalar("Playlist item ID", "u32", id_kind="playlist_item")
-        children = r.scalar("Child count", "u32", editable=False)
-        r.scalar("Selection type", "u32", enum=_RANDOM_SEQUENCE_TYPE)
-        r.scalar("Loop count", "i16")
-        r.scalar("Loop random minimum", "i16")
-        r.scalar("Loop random maximum", "i16")
-        r.scalar("Weight", "u32")
-        r.scalar("Avoid-repeat count", "u16")
-        r.scalar("Use weight", "u8", enum=_BOOL)
-        r.scalar("Shuffle", "u8", enum=_BOOL)
-        for _ in range(children):
-            _playlist_node(r, remaining, index)
+    r.scalar("Segment", "u32", id_kind="hirc", reference_role="playlist segment")
+    r.scalar("Playlist item ID", "u32", id_kind="playlist_item")
+    children = r.count("Child count", "u32")
+    r.scalar("Selection type", "u32", enum=_RANDOM_SEQUENCE_TYPE)
+    r.scalar("Loop count", "i16")
+    r.scalar("Loop random minimum", "i16")
+    r.scalar("Loop random maximum", "i16")
+    r.scalar("Weight", "u32")
+    r.scalar("Avoid-repeat count", "u16")
+    r.scalar("Use weight", "u8", enum=_BOOL)
+    r.scalar("Shuffle", "u8", enum=_BOOL)
+    for _ in r.each(children):
+        _playlist_node(r, nodes, total)
 
 
 def _music_random(r: _Reader) -> None:
     _music_node(r)
     _transitions(r)
-    total = r.scalar("Playlist node count", "u32", editable=False)
-    remaining, index = [total], [0]
+    total, token = r.deferred("Playlist node count", "u32")
+    nodes = [0]
     with r.section("Music playlist"):
         if total:
-            _playlist_node(r, remaining, index)
-    if remaining[0]:
-        raise _LayoutError(f"music playlist left {remaining[0]} declared nodes unread")
+            _playlist_node(r, nodes, total)
+    r.resolve(token, nodes[0], f"music playlist left {total - nodes[0]} declared nodes unread")
 
 
 def _attenuation(r: _Reader) -> None:
@@ -1199,27 +1349,26 @@ def _attenuation(r: _Reader) -> None:
         for name in attenuation_targets(r.version):
             r.scalar(name, "i8")
     with r.section("Attenuation curves"):
-        count = r.scalar("Curve count", "u8", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Scaling", "u8", enum=_SCALING)
-                points = r.scalar("Point count", "u16", editable=False)
-                _graph(r, points)
+        count = r.count("Curve count", "u8")
+        for index in r.each(count):
+            r.scalar("Scaling", "u8", enum=_SCALING)
+            _graph(r, r.count("Point count", "u16"))
     _rtpc(r)
 
 
-def _reflect_parameters(r: _Reader, _size: int) -> None:
-    """Wwise Reflect parameter block used by Wwise 2021.1 through 2023.1.
+def _reflect_parameters(r: _Reader, size: int) -> None:
+    """Wwise Reflect parameter block used by Wwise 2017.1 through 2023.1.
 
-    The scalar order and curve bundle are the exact SetParamsBlock layouts from
+    The scalar order and curve bundle are the exact GetBankParameters layouts from
     AkReflect.dll. Authoring-only properties are not serialized.
     """
 
+    start = r.pos
     if r.version >= 145:
         scalars = [
             ("Speed of sound", "f32", None),
-            ("Distance warping", "f32", None),
-            ("Diffraction warping", "f32", None),
+            ("Center percentage", "f32", None),
+            ("Maximum reflections", "f32", None),
             ("Dry level", "f32", None),
             ("Wet level", "f32", None),
             ("Maximum distance", "f32", None),
@@ -1230,9 +1379,9 @@ def _reflect_parameters(r: _Reader, _size: int) -> None:
             ("Pitch threshold", "f32", None),
             ("Distance threshold", "f32", None),
             ("Threshold mode", "u32", _REFLECT_THRESHOLD),
+            ("Distance warping", "f32", None),
+            ("Diffraction warping", "f32", None),
             ("Output channel configuration", "u32", _REFLECT_OUTPUT),
-            ("Maximum reflections", "f32", None),
-            ("Center percentage", "f32", None),
         ]
         if r.version >= 150:
             scalars.extend((
@@ -1261,17 +1410,18 @@ def _reflect_parameters(r: _Reader, _size: int) -> None:
             ("Distance threshold", "f32", None),
             ("Threshold mode", "u32", _REFLECT_THRESHOLD),
             ("Output channel configuration", "u32", _REFLECT_OUTPUT),
-        )
+        )[:8 if r.version <= 125 else 13 if r.version <= 132 else 14]
     for label, storage, enum in scalars:
         r.scalar(label, storage, enum=enum)
 
-    count = r.scalar("Curve count", "u16", editable=False)
+    count = r.count("Curve count", "u16")
     with r.section("Curves"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Curve", "u32", enum=_REFLECT_CURVES)
-                points = r.scalar("Point count", "u16", editable=False)
-                _graph(r, points)
+        for index in r.each(count):
+            r.scalar("Curve", "u32", enum=_REFLECT_CURVES_145 if r.version >= 145 else _REFLECT_CURVES)
+            _graph(r, r.count("Point count", "u16"))
+    path = r._path("Phasing suppression")
+    if r.version == 145 and (r._where.get(path) if r.writing else size - (r.pos - start) == 4):
+        r.scalar("Phasing suppression", "f32")
 
 
 def _matrix_reverb_parameters(r: _Reader, _size: int) -> None:
@@ -1302,7 +1452,7 @@ def _futzbox_parameters(r: _Reader, size: int) -> None:
 
     fields = BNK_FX_SCHEMAS[0x006E1003][1]
     if size == 139:
-        fields = fields[:12] + fields[16:-1]
+        fields = BNK_FUTZBOX_139_FIELDS
     elif size != 159:
         raise _LayoutError(f"unsupported McDSP FutzBox parameter size {size}")
     _schema_parameters(r, fields)
@@ -1315,12 +1465,12 @@ def _soundseed_woosh_parameters(r: _Reader, _size: int) -> None:
     # value/random/enable triplets. Duration is deliberately Real32 here even
     # though the authoring XML exposes it as Real64.
     for label, storage, enum in (
-        ("Dynamic range", "f32", None),
+        ("Duration", "f32", None),
         ("Duration random", "f32", None),
         ("Channels", "u16", _WOOSH_CHANNELS),
         ("Minimum distance", "f32", None),
         ("Roll-off factor", "f32", None),
-        ("Duration", "f32", None),
+        ("Dynamic range", "f32", None),
         ("Playback rate", "f32", None),
         ("Noise color", "u16", _WOOSH_NOISE),
         ("Point time random", "f32", None),
@@ -1338,7 +1488,7 @@ def _soundseed_woosh_parameters(r: _Reader, _size: int) -> None:
 
     anchor_field = len(r.fields)
     anchor = r.scalar("Anchor deflector", "i16")
-    count = r.scalar("Deflector count", "u16", editable=False)
+    count = r.count("Deflector count", "u16")
     if anchor < -1 or anchor >= count:
         raise _LayoutError(f"SoundSeed Woosh has invalid anchor deflector {anchor}")
     r.fields[anchor_field] = replace(
@@ -1346,36 +1496,32 @@ def _soundseed_woosh_parameters(r: _Reader, _size: int) -> None:
         enum=((-1, "None"), *((index, f"Deflector {index + 1}") for index in range(count))),
     )
     with r.section("Deflectors"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Frequency", "f32")
-                r.scalar("Q factor", "f32")
-                r.scalar("Gain", "f32")
-                # Anchor is stored once as the zero-based deflector index.
-                if index == anchor:
-                    r.fields.append(WwiseField(
-                        r._path("Anchor"), "Anchor", "derived", r.pos, 0,
-                        1, tuple(_BOOL.items()), editable=False,
-                    ))
+        for index in r.each(count):
+            r.scalar("Frequency", "f32")
+            r.scalar("Q factor", "f32")
+            r.scalar("Gain", "f32")
+            # Anchor is stored once as the zero-based deflector index.
+            if index == anchor:
+                r.fields.append(WwiseField(
+                    r._path("Anchor"), "Anchor", "derived", r.pos, 0,
+                    1, tuple(_BOOL.items()), editable=False,
+                ))
 
-    count = r.scalar("Automation curve count", "u16", editable=False)
+    count = r.count("Automation curve count", "u16")
     with r.section("Automation curves"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Property", "u32", enum=_WOOSH_CURVES)
-                points = r.scalar("Point count", "u16", editable=False)
-                _graph(r, points)
+        for index in r.each(count):
+            r.scalar("Property", "u32", enum=_WOOSH_CURVES)
+            _graph(r, r.count("Point count", "u16"))
 
     # The final bundle mirrors the authored Path2D: LinearTime followed by each
     # point's X position, Y position, and time coordinate.
-    count = r.scalar("Path point count", "u16", editable=False)
+    count = r.count("Path point count", "u16")
     r.scalar("Linear path timing", "f32", enum=_BOOL)
     with r.section("Path points"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("X", "f32")
-                r.scalar("Y", "f32")
-                r.scalar("Time", "f32")
+        for index in r.each(count):
+            r.scalar("X", "f32")
+            r.scalar("Y", "f32")
+            r.scalar("Time", "f32")
 
 
 def _soundseed_wind_parameters(r: _Reader, _size: int) -> None:
@@ -1405,24 +1551,21 @@ def _soundseed_wind_parameters(r: _Reader, _size: int) -> None:
             r.scalar("Random", "f32")
             r.scalar("Automate", "bool", enum=_BOOL)
 
-    count = r.scalar("Deflector count", "u16", editable=False)
+    count = r.count("Deflector count", "u16")
     r.scalar("Maximum distance", "f32")
     with r.section("Deflectors"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Distance", "f32")
-                r.scalar("Direction", "f32")
-                r.scalar("Frequency", "f32")
-                r.scalar("Q factor", "f32")
-                r.scalar("Gain", "f32")
+        for index in r.each(count):
+            r.scalar("Distance", "f32")
+            r.scalar("Direction", "f32")
+            r.scalar("Frequency", "f32")
+            r.scalar("Q factor", "f32")
+            r.scalar("Gain", "f32")
 
-    count = r.scalar("Automation curve count", "u16", editable=False)
+    count = r.count("Automation curve count", "u16")
     with r.section("Automation curves"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Property", "u32", enum=_WIND_CURVES)
-                points = r.scalar("Point count", "u16", editable=False)
-                _graph(r, points)
+        for index in r.each(count):
+            r.scalar("Property", "u32", enum=_WIND_CURVES)
+            _graph(r, r.count("Point count", "u16"))
 
 
 def _schema_parameters(r: _Reader, fields) -> None:
@@ -1439,7 +1582,7 @@ def _schema_parameters(r: _Reader, fields) -> None:
 
 
 def _convolution_reverb_parameters(r: _Reader, size: int) -> None:
-    _schema_parameters(r, BNK_FX_SCHEMAS[0x007F0003][1])
+    _schema_parameters(r, BNK_FX_SCHEMAS[0x007F0003][1][:None if size >= 56 else -1])
     if size >= 57:
         r.scalar("Block size", "u8", enum=dict(enumerate(
             BNK_FX_ENUMS["convolution_block_size"]
@@ -1457,8 +1600,34 @@ def _meter_parameters(r: _Reader, size: int) -> None:
     r.scalar("Game Parameter ShortID", "u32", id_kind="game_parameter")
 
 
-def _plugin_parameters(r: _Reader, plugin: int, size: int) -> None:
-    schema = BNK_FX_SCHEMAS.get(plugin)
+def _rev_parameters(r: _Reader, size: int) -> None:
+    if size != 212:
+        r.blob("Bytes", size, visible=True, editable=True)
+        return
+
+    def block(words):
+        r.scalar("Version", "u16", editable=False)
+        r.scalar("Size", "u16", editable=False)
+        for number, kind in enumerate(words, 1):
+            r.scalar(f"Value {number}", "u32" if kind == "i" else "f32")
+
+    for label in ("Gain", "RPM", "Throttle"):
+        r.scalar(label, "f32")
+    r.scalar("Gear", "u32")
+    r.scalar("Velocity", "f32")
+    r.scalar("Enable shifting", "u32", enum=_BOOL)
+    with r.section("Property 6 block"):
+        block("fffffiffffffffff")
+    with r.section("Property 7 block"):
+        block("ffifiiifif")
+        for index in (1, 2):
+            with r.section(f"Sub-block {index}"):
+                block("ifffffii")
+    r.scalar("Last value", "u32")
+
+
+def _sized_plugin_parameters(r: _Reader, plugin: int) -> None:
+    size, token = r.deferred("Plug-in parameter bytes", "u32")
     start = r.pos
     custom = {
         0x006E1003: _futzbox_parameters,
@@ -1468,56 +1637,51 @@ def _plugin_parameters(r: _Reader, plugin: int, size: int) -> None:
         0x007F0003: _convolution_reverb_parameters,
         0x00810003: _meter_parameters,
         0x00AB0003: _reflect_parameters,
+        0x01A01052: _rev_parameters,
     }.get(plugin)
-    if custom and size:
+    schema = BNK_FX_SCHEMAS.get(plugin)
+    if plugin == 0x00820003 and size == 16:
+        schema = (schema[0], BNK_TIME_STRETCH_16_FIELDS)
+    if (custom or schema) and size:
         with r.section("Plug-in parameters"):
-            custom(r, size)
-        if r.pos - start != size:
-            raise _LayoutError(
-                f"plug-in 0x{plugin:08X} layout used {r.pos - start} of {size} bytes"
-            )
-    elif schema and size:
-        with r.section("Plug-in parameters"):
-            _schema_parameters(r, schema[1])
-        if r.pos - start != size:
-            raise _LayoutError(
-                f"plug-in 0x{plugin:08X} schema used {r.pos - start} of {size} bytes"
-            )
+            if custom:
+                custom(r, size)
+            else:
+                _schema_parameters(r, schema[1])
     elif size:
-        r.blob("Plug-in parameters", size, visible=True)
+        r.blob("Plug-in parameters", size, visible=True, editable=True)
+    r.resolve(
+        token, r.pos - start,
+        f"plug-in 0x{plugin:08X} layout used {r.pos - start} of {size} bytes",
+    )
 
 
 def _fx(r: _Reader) -> None:
     plugin = r.scalar("Plug-in", "u32", id_kind="plugin")
-    names = fx_property_names(plugin, r.version)
-    size = r.scalar("Plug-in parameter bytes", "u32", editable=False)
-    _plugin_parameters(r, plugin, size)
+    names = fx_property_names(plugin, r.version) or {}
+    _sized_plugin_parameters(r, plugin)
     with r.section("Plug-in media"):
-        count = r.scalar("Media count", "u8", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Slot", "u8")
-                r.scalar("Source ID", "u32", id_kind="source")
+        count = r.count("Media count", "u8")
+        for index in r.each(count):
+            r.scalar("Slot", "u8")
+            r.scalar("Source ID", "u32", id_kind="source")
     _rtpc(r, names=names)
     if r.version <= 126:
         r.scalar("Reserved 1", "u8", editable=False, visible=False)
         r.scalar("Reserved 2", "u8", editable=False, visible=False)
         with r.section("RTPC initial values"):
-            count = r.scalar("Value count", "u16", editable=False)
-            for index in range(count):
-                with r.section(f"{index + 1}"):
-                    r.var("Property", enum=names or property_names("state", r.version), editable=False)
-                    r.scalar("Value", "f32")
+            count = r.count("Value count", "u16")
+            for index in r.each(count):
+                r.var("Property", enum=names, editable=True)
+                r.scalar("Value", "f32")
         return
     _state_properties(r, names=names)
     with r.section("Plug-in property values"):
-        count = r.scalar("Value count", "u16", editable=False)
-        names = names or property_names("state", r.version)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.var("Property", enum=names, editable=False)
-                r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
-                r.scalar("Value", "f32")
+        count = r.count("Value count", "u16")
+        for index in r.each(count):
+            r.var("Property", enum=names, editable=True)
+            r.scalar("Accumulation", "u8", enum=_ACCUM_125 if r.version <= 125 else _ACCUM)
+            r.scalar("Value", "f32")
 
 
 def _bus(r: _Reader) -> None:
@@ -1547,19 +1711,18 @@ def _bus(r: _Reader) -> None:
     r.scalar("Recovery time (ms)", "i32")
     r.scalar("Maximum duck volume", "f32")
     with r.section("Ducking"):
-        count = r.scalar("Duck count", "u32", editable=False)
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Bus", "u32", id_kind="hirc", reference_role="ducked bus")
-                r.scalar("Volume", "f32")
-                r.scalar("Fade-out time (ms)", "i32")
-                r.scalar("Fade-in time (ms)", "i32")
-                r.scalar("Fade curve", "u8", enum=_CURVE)
-                r.scalar("Target property", "u8", enum=property_names("object", r.version))
+        count = r.count("Duck count", "u32")
+        for index in r.each(count):
+            r.scalar("Bus", "u32", id_kind="hirc", reference_role="ducked bus")
+            r.scalar("Volume", "f32")
+            r.scalar("Fade-out time (ms)", "i32")
+            r.scalar("Fade-in time (ms)", "i32")
+            r.scalar("Fade curve", "u8", enum=_CURVE)
+            r.scalar("Target property", "u8", enum=property_names("object", r.version))
     _effects(r, node=False)
     if r.version <= 145:
-        r.scalar("Effect slot 0", "u32", id_kind="hirc", reference_role="effect")
-        r.scalar("Effect slot 0 is a ShareSet", "u8", enum=_BOOL)
+        r.scalar("Mixer plug-in", "u32", id_kind="hirc", reference_role="effect")
+        r.scalar("Mixer plug-in is a ShareSet", "u8", enum=_BOOL)
         r.scalar("Override attachment parameters", "u8", enum=_BOOL)
     _metadata(r, node=False)
     _rtpc(r)
@@ -1585,14 +1748,16 @@ def _chunk_bkhd(r: _Reader) -> None:
     if r.version <= 126:
         r.scalar("Feedback in bank", "u32", enum=_BOOL, editable=False)
     else:
-        r.scalar("Unused alternate value", "u16", editable=False, visible=False)
+        if r.version >= 135:
+            r.scalar("Media alignment", "u16")
+        else:
+            r.scalar("Unused alternate value", "u16", editable=False, visible=False)
         r.scalar("Device allocated", "u16", enum=_BOOL)
-    r.scalar("Project ID", "u32", id_kind="project", editable=False)
+    r.scalar("Project ID", "u32", id_kind="project")
     if r.version >= 142:
         r.scalar("SoundBank type", "u32", enum=_BANK_TYPE)
-        r.blob("SoundBank hash", 16)
-    if r.pos < len(r.data):
-        r.blob("Alignment padding", len(r.data) - r.pos)
+        r.blob("SoundBank hash", 16, visible=True, editable=True)
+    r.tail("Alignment padding")
 
 
 def _chunk_didx(r: _Reader) -> None:
@@ -1608,26 +1773,24 @@ def _chunk_didx(r: _Reader) -> None:
 
 
 def _chunk_init(r: _Reader) -> None:
-    count = r.scalar("Plug-in count", "u32", editable=False)
+    count = r.count("Plug-in count", "u32")
     with r.section("Registered plug-ins"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                plugin = r.scalar("Plug-in ID", "u32", id_kind="plugin", editable=False)
-                field = r.fields[-1]
-                for label, value, enum in (
-                    ("Type", plugin & 0x0F, _PLUGIN_TYPE),
-                    ("Company ID", (plugin >> 4) & 0x03FF, None),
-                    ("Plug-in number", plugin >> 16, None),
-                ):
-                    r.fields.append(WwiseField(
-                        f"{field.path}/{label}", label, "derived", field.offset,
-                        field.size, value, r._enum(enum), editable=False,
-                    ))
-                if r.version >= 137:
-                    r.zstring("Library name")
-                else:
-                    size = r.scalar("Library name bytes", "u32", editable=False)
-                    r.string("Library name", size)
+        for index in r.each(count):
+            plugin = r.scalar("Plug-in ID", "u32", id_kind="plugin")
+            field = r.fields[-1]
+            for label, value, enum in (
+                ("Type", plugin & 0x0F, _PLUGIN_TYPE),
+                ("Company ID", (plugin >> 4) & 0x03FF, None),
+                ("Plug-in number", plugin >> 16, None),
+            ):
+                r.fields.append(WwiseField(
+                    f"{field.path}/{label}", label, "derived", field.offset,
+                    field.size, value, r._enum(enum), editable=False,
+                ))
+            if r.version >= 137:
+                r.zstring("Library name")
+            else:
+                _sized_string(r, "Library name bytes", "Library name")
 
 
 def _chunk_stmg(r: _Reader) -> None:
@@ -1638,51 +1801,45 @@ def _chunk_stmg(r: _Reader) -> None:
     if r.version > 126:
         r.scalar("Maximum dangerous virtual voices", "u16")
 
-    count = r.scalar("State group count", "u32", editable=False)
+    count = r.count("State group count", "u32")
     with r.section("State groups"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("State group", "u32", id_kind="state_group")
-                r.scalar("Default transition time (ms)", "u32")
-                transitions = r.scalar("Transition count", "u32", editable=False)
-                with r.section("Transitions"):
-                    for item in range(transitions):
-                        with r.section(f"{item + 1}"):
-                            r.scalar("From state", "u32", id_kind="state_value")
-                            r.scalar("To state", "u32", id_kind="state_value")
-                            r.scalar("Transition time (ms)", "u32")
+        for index in r.each(count):
+            r.scalar("State group", "u32", id_kind="state_group")
+            r.scalar("Default transition time (ms)", "u32")
+            transitions = r.count("Transition count", "u32")
+            with r.section("Transitions"):
+                for item in r.each(transitions):
+                    r.scalar("From state", "u32", id_kind="state_value")
+                    r.scalar("To state", "u32", id_kind="state_value")
+                    r.scalar("Transition time (ms)", "u32")
 
-    count = r.scalar("Switch group count", "u32", editable=False)
+    count = r.count("Switch group count", "u32")
     with r.section("Switch groups"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Switch group", "u32", id_kind="switch_group")
-                _typed_rtpc_input(r)
-                points = r.scalar("Point count", "u32", editable=False)
-                _switch_graph(r, points)
+        for index in r.each(count):
+            r.scalar("Switch group", "u32", id_kind="switch_group")
+            _typed_rtpc_input(r)
+            _switch_graph(r, r.count("Point count", "u32"))
 
-    count = r.scalar("Game parameter count", "u32", editable=False)
+    count = r.count("Game parameter count", "u32")
     with r.section("Game parameters"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Game parameter", "u32", id_kind="game_parameter")
-                r.scalar("Default value", "f32")
-                r.scalar("Ramping", "u32", enum=_RAMP)
-                r.scalar("Ramp up", "f32")
-                r.scalar("Ramp down", "f32")
-                r.scalar("Built-in parameter", "u8", enum=_BUILT_IN if r.version > 126 else _BUILT_IN_126)
+        for index in r.each(count):
+            r.scalar("Game parameter", "u32", id_kind="game_parameter")
+            r.scalar("Default value", "f32")
+            r.scalar("Ramping", "u32", enum=_RAMP)
+            r.scalar("Ramp up", "f32")
+            r.scalar("Ramp down", "f32")
+            r.scalar("Built-in parameter", "u8", enum=_BUILT_IN if r.version > 126 else _BUILT_IN_126)
 
-    count = r.scalar("Acoustic texture count", "u32", editable=False)
+    count = r.count("Acoustic texture count", "u32")
     with r.section("Acoustic textures"):
-        for index in range(count):
-            with r.section(f"{index + 1}"):
-                r.scalar("Texture ID", "u32", id_kind="acoustic_texture")
-                r.scalar("Absorption offset", "f32")
-                r.scalar("Low-frequency absorption", "f32")
-                r.scalar("Mid-low absorption", "f32")
-                r.scalar("Mid-high absorption", "f32")
-                r.scalar("High-frequency absorption", "f32")
-                r.scalar("Scattering", "f32")
+        for index in r.each(count):
+            r.scalar("Texture ID", "u32", id_kind="acoustic_texture")
+            r.scalar("Absorption offset", "f32")
+            r.scalar("Low-frequency absorption", "f32")
+            r.scalar("Mid-low absorption", "f32")
+            r.scalar("Mid-high absorption", "f32")
+            r.scalar("High-frequency absorption", "f32")
+            r.scalar("Scattering", "f32")
 
 
 def _chunk_envs(r: _Reader) -> None:
@@ -1692,16 +1849,23 @@ def _chunk_envs(r: _Reader) -> None:
                 with r.section(y_name):
                     r.scalar("Enabled", "u8", enum=_BOOL)
                     r.scalar("Scaling", "u8", enum=_SCALING)
-                    points = r.scalar("Point count", "u16", editable=False)
-                    _graph(r, points)
+                    _graph(r, r.count("Point count", "u16"))
 
 
 def _chunk_plat(r: _Reader) -> None:
     if r.version >= 137:
         r.zstring("Platform")
     else:
-        size = r.scalar("Platform name bytes", "u32", editable=False)
-        r.string("Platform", size)
+        _sized_string(r, "Platform name bytes", "Platform")
+
+
+def _chunk_stid(r: _Reader) -> None:
+    r.scalar("String type", "u32", enum={0: "None", 1: "Bank"})
+    count = r.count("Entry count", "u32")
+    with r.section("Bank file names"):
+        for index in r.each(count):
+            r.scalar("SoundBank", "u32", id_kind="bank")
+            _sized_string(r, "Name bytes", "File name", "u8", "bytes")
 
 
 _CHUNK_PARSERS = {
@@ -1711,11 +1875,23 @@ _CHUNK_PARSERS = {
     "STMG": ("Global Wwise settings", _chunk_stmg),
     "ENVS": ("Obstruction and occlusion", _chunk_envs),
     "PLAT": ("Target platform", _chunk_plat),
+    "STID": ("SoundBank file names", _chunk_stid),
 }
 
 
 def _sound(r: _Reader) -> None:
     _source(r)
+    _node_base(r)
+
+
+def _feedback_node(r: _Reader) -> None:
+    with r.section("Sources"):
+        count = r.count("Source count", "u32")
+        for index in r.each(count):
+            r.scalar("Company ID", "u16")
+            r.scalar("Device ID", "u16")
+            r.scalar("Volume offset (dB)", "f32")
+            _source(r)
     _node_base(r)
 
 
@@ -1739,6 +1915,7 @@ _PARSERS = {
     0x0C: _music_switch,
     0x0D: _music_random,
     0x0E: _attenuation,
+    0x0F: _dialogue_event,
     0x10: _fx,
     0x11: _fx,
     0x12: _bus,
@@ -1749,7 +1926,9 @@ _PARSERS = {
 }
 # v126 and older number the types after 0x0F differently (0x10/0x11 are feedback).
 _PARSERS_126 = {
-    **{type_id: parser for type_id, parser in _PARSERS.items() if type_id <= 0x0E},
+    **{type_id: parser for type_id, parser in _PARSERS.items() if type_id <= 0x0F},
+    0x10: _bus,
+    0x11: _feedback_node,
     0x12: _fx,
     0x13: _fx,
     0x14: _bus,
@@ -1757,6 +1936,37 @@ _PARSERS_126 = {
     0x16: _envelope,
     0x17: _audio_device,
 }
+
+
+_ERRORS = (IndexError, struct.error, _LayoutError, UnicodeError)
+
+
+def _run(r: _Reader, source: tuple) -> None:
+    if source[0] == "hirc":
+        r.scalar("Object ID", "u32", editable=False, visible=False)
+        parser = (_PARSERS_126 if r.version <= 126 else _PARSERS).get(source[1])
+        if parser is None:
+            raise _LayoutError(f"HIRC type 0x{source[1]:02X} has no v{r.version} layout")
+    else:
+        parser = _CHUNK_PARSERS[source[1]][1]
+    parser(r)
+    if not r.writing and r.pos != len(r.data):
+        raise _LayoutError(
+            f"layout stopped at 0x{r.pos:X}; payload ends at 0x{len(r.data):X}"
+        )
+
+
+def _parse(payload: bytes, source: tuple) -> WwiseObjectLayout:
+    reader = _Reader(payload, source[2], source[0] == "hirc" and source[3])
+    error = ""
+    try:
+        _run(reader, source)
+    except _ERRORS as exc:
+        error = str(exc)
+    return WwiseObjectLayout(
+        tuple(reader.fields), reader.pos, len(payload), tuple(reader.anchors.items()),
+        error, source,
+    )
 
 
 def parse_structured_object(
@@ -1767,27 +1977,7 @@ def parse_structured_object(
     ``feedback`` is the v126-and-older bank header flag that adds a feedback bus to nodes.
     """
 
-    reader = _Reader(payload, version, feedback)
-    try:
-        reader.scalar("Object ID", "u32", editable=False, visible=False)
-        parser = (_PARSERS_126 if version <= 126 else _PARSERS).get(int(type_id))
-        if parser is None:
-            raise _LayoutError(
-                f"HIRC type 0x{int(type_id):02X} has no v{version} layout"
-            )
-        parser(reader)
-        if reader.pos != len(payload):
-            raise _LayoutError(
-                f"layout stopped at 0x{reader.pos:X}; payload ends at 0x{len(payload):X}"
-            )
-        return WwiseObjectLayout(
-            tuple(reader.fields), reader.pos, len(payload), tuple(reader.anchors.items())
-        )
-    except (IndexError, struct.error, _LayoutError, UnicodeError) as exc:
-        return WwiseObjectLayout(
-            tuple(reader.fields), reader.pos, len(payload), tuple(reader.anchors.items()),
-            str(exc),
-        )
+    return _parse(payload, ("hirc", int(type_id), int(version), bool(feedback)))
 
 
 def parse_v132_object(type_id: int, payload: bytes) -> WwiseObjectLayout:
@@ -1819,26 +2009,12 @@ def parse_structured_chunk(
         chunk_id.decode("ascii", "replace")
         if isinstance(chunk_id, bytes) else str(chunk_id)
     )
-    configured = _CHUNK_PARSERS.get(key)
-    if configured is None:
+    if key not in _CHUNK_PARSERS:
         return None
-    title, parser = configured
-    reader = _Reader(payload, version)
-    try:
-        parser(reader)
-        if reader.pos != len(payload):
-            raise _LayoutError(
-                f"layout stopped at 0x{reader.pos:X}; payload ends at 0x{len(payload):X}"
-            )
-        structure = WwiseObjectLayout(
-            tuple(reader.fields), reader.pos, len(payload), tuple(reader.anchors.items())
-        )
-    except (IndexError, struct.error, _LayoutError, UnicodeError) as exc:
-        structure = WwiseObjectLayout(
-            tuple(reader.fields), reader.pos, len(payload), tuple(reader.anchors.items()),
-            str(exc),
-        )
-    return WwiseChunkLayout(key, title, bytes(payload), structure)
+    payload = bytes(payload)
+    return WwiseChunkLayout(
+        key, _CHUNK_PARSERS[key][0], payload, _parse(payload, ("chunk", key, int(version)))
+    )
 
 
 def parse_v132_chunk(chunk_id: bytes | str, payload: bytes) -> WwiseChunkLayout | None:
@@ -1873,61 +2049,408 @@ def _pack_var(value: int) -> bytes:
     return bytes(part | (0x80 if index + 1 < len(groups) else 0) for index, part in enumerate(groups))
 
 
-def set_v132_fields(payload: bytes, layout: WwiseObjectLayout, changes: dict[str, object]) -> bytes:
-    """Patch editable leaves; structural counts remain owned by focused editors."""
-
+def _record(payload: bytes, layout: WwiseObjectLayout) -> _Reader:
     if not layout.complete:
         raise ValueError(f"Cannot edit an incomplete Wwise layout: {layout.error}")
+    source = layout.source
+    reader = _Reader(payload, source[2], source[0] == "hirc" and source[3], record=True)
+    try:
+        _run(reader, source)
+    except _ERRORS as exc:
+        raise ValueError(f"Cannot edit an incomplete Wwise layout: {exc}") from exc
+    return reader
+
+
+def _write(payload: bytes, source: tuple, units: list[_Unit], values=None) -> bytes:
+    writer = _Writer(payload, units, source[2], source[0] == "hirc" and source[3], values)
+    try:
+        _run(writer, source)
+    except _ERRORS as exc:
+        raise ValueError(f"The edited layout cannot be written: {exc}") from exc
+    return writer.out.take_bytes()
+
+
+def _rebuild(payload: bytes, layout: WwiseObjectLayout, units: list[_Unit], values=None) -> bytes:
+    source = layout.source
+    result = _write(payload, source, units, values)
+    reader = _Reader(result, source[2], source[0] == "hirc" and source[3], record=True)
+    try:
+        _run(reader, source)
+    except _ERRORS as exc:
+        raise ValueError(f"The edited layout does not read back: {exc}") from exc
+    unsorted = False
+    for lane in (lane for item in reader.lists for lane in item.lanes if lane.ordered):
+        cells = [reader.units[start] for start, _end in lane.items]
+        for cell, raw in zip(cells, sorted(
+            (cell.raw for cell in cells), key=lambda raw: int.from_bytes(raw, "little")
+        )):
+            unsorted |= cell.raw != raw
+            cell.raw = raw
+    return _write(result, source, reader.units) if unsorted else result
+
+
+def _encode(field: WwiseField, unit: _Unit, value) -> bytes:
+    path, raw = field.path, unit.raw
+    if field.storage == "bit":
+        number = int(value)
+        maximum = field.mask >> field.shift
+        if not 0 <= number <= maximum:
+            raise ValueError(f"{path} must be between 0 and {maximum}")
+        current = int.from_bytes(raw, "little") & ~field.mask
+        return (current | (number << field.shift)).to_bytes(len(raw), "little")
+    if field.storage == "var":
+        return _pack_var(int(value))
+    if field.storage == "string":
+        text = str(value)
+        if "\0" in text:
+            raise ValueError(f"{path} cannot contain NUL characters")
+        encoded = text.encode("utf-8")
+        if unit.storage == "bytes":
+            return encoded
+        return encoded + b"\0" if encoded or unit.storage == "zstring" else b""
+    if field.storage == "bytes":
+        try:
+            return bytes.fromhex(str(value))
+        except ValueError as exc:
+            raise ValueError(f"{path} must be hexadecimal bytes") from exc
+    number = (
+        float(value) if field.storage.startswith("f")
+        else int(value, 0) if isinstance(value, str) else int(value)
+    )
+    if isinstance(number, float) and not math.isfinite(number):
+        raise ValueError(f"{path} must be finite")
+    try:
+        return struct.pack("<" + _Reader._FORMATS[field.storage], number)
+    except (KeyError, struct.error) as exc:
+        raise ValueError(f"Invalid value for {path}: {value}") from exc
+
+
+def set_v132_fields(payload: bytes, layout: WwiseObjectLayout, changes: dict[str, object]) -> bytes:
+    if not changes:
+        return bytes(payload)
+    reader = _record(payload, layout)
     by_path = {field.path: field for field in layout.fields}
-    result = bytearray(payload)
-    formats = _Reader._FORMATS
-    for path, raw_value in changes.items():
+    starts: dict[int, list[_Unit]] = {}
+    for unit in reader.units:
+        starts.setdefault(unit.offset, []).append(unit)
+    for path, value in changes.items():
         field = by_path.get(path)
         if field is None:
             raise ValueError(f"Unknown Wwise field: {path}")
         if not field.editable:
             raise ValueError(f"{path} controls structure and is read-only here")
-        if field.storage == "bit":
-            value = int(raw_value)
-            maximum = field.mask >> field.shift
-            if value < 0 or value > maximum:
-                raise ValueError(f"{path} must be between 0 and {maximum}")
-            fmt = "<" + formats["u8" if field.size == 1 else "u32"]
-            current = struct.unpack_from(fmt, result, field.offset)[0]
-            current = (current & ~field.mask) | ((value << field.shift) & field.mask)
-            struct.pack_into(fmt, result, field.offset, current)
-            continue
-        if field.storage == "var":
-            packed = _pack_var(int(raw_value))
-            if len(packed) != field.size:
-                raise ValueError(f"{path} must keep its {field.size}-byte encoded width")
-        elif field.storage == "string":
-            raise ValueError(f"{path} is resized through its focused editor")
-        elif field.storage == "bytes":
-            packed = bytes.fromhex(str(raw_value))
-            if len(packed) != field.size:
-                raise ValueError(f"{path} must remain {field.size} bytes")
-        else:
-            value = float(raw_value) if field.storage.startswith("f") else int(raw_value, 0) if isinstance(raw_value, str) else int(raw_value)
-            if isinstance(value, float) and not math.isfinite(value):
-                raise ValueError(f"{path} must be finite")
-            try:
-                packed = struct.pack("<" + formats[field.storage], value)
-            except (KeyError, struct.error) as exc:
-                raise ValueError(f"Invalid value for {path}: {raw_value}") from exc
-        result[field.offset:field.offset + field.size] = packed
-    return result.take_bytes()
+        units = starts.get(field.offset, ())
+        unit = next((item for item in units if item.path == path), None) or next(
+            item for item in units if item.raw
+        )
+        unit.raw = _encode(field, unit, value)
+    return _rebuild(payload, layout, reader.units)
 
 
 set_wwise_fields = set_v132_fields
 
 
+_ANY_TO_ANY = {
+    "Source count": 1, "Source 1": 0xFFFFFFFF, "Destination count": 1, "Destination 1": 0xFFFFFFFF,
+    "Source behavior/Fade curve": 4, "Destination behavior/Fade curve": 4,
+}
+_NEW_ITEM_VALUES = {
+    "Points": {"Interpolation": 4},
+    "Playlist": {"Weight": 50_000},
+    "Music playlist": {"Selection type": 0xFFFFFFFF, "Loop count": 1, "Weight": 50_000},
+    "Transition rules": _ANY_TO_ANY,
+}
+_METER = {
+    "Meter/Grid period": 2000.0, "Meter/Tempo": 120.0, "Meter/Beats per bar": 4,
+    "Meter/Beat value": 4, "Meter/Override meter": 1,
+}
+_FIRST_RULE = {
+    "Transition rules/Rule count": 1,
+    **{f"Transition rules/1/{label}": value for label, value in _ANY_TO_ANY.items()},
+}
+_ENTRY_CUE, _EXIT_CUE = 43_573_010, 1_539_036_744
+_NEW_OBJECT_VALUES = {
+    0x0A: {**_METER, "Cues/Cue count": 2, "Cues/1/Cue ID": _ENTRY_CUE, "Cues/2/Cue ID": _EXIT_CUE},
+    0x0C: {
+        **_METER, **_FIRST_RULE, "Decision-tree bytes": 12,
+        "Decision tree/1/Branch or audio object": 1, "Decision tree/1/Weight": 50,
+        "Decision tree/1/Probability": 100,
+    },
+    0x0D: {
+        **_METER, **_FIRST_RULE, "Playlist node count": 1,
+        "Music playlist/Loop count": 1, "Music playlist/Weight": 50_000,
+    },
+    0x0F: {"Probability (%)": 100},
+}
+
+
+def wwise_lists(payload: bytes, layout: WwiseObjectLayout) -> tuple[WwiseList, ...]:
+    reader = _record(payload, layout)
+    return tuple(
+        WwiseList(
+            item.lanes[0].base, reader.units[item.count].path,
+            tuple(item.lanes[0].item_root(index) for index in range(len(item.lanes[0].items))),
+        )
+        for item in reader.lists if item.editable
+    )
+
+
+def reorder_wwise_list(
+    payload: bytes, layout: WwiseObjectLayout, count_path: str, order
+) -> bytes:
+    reader = _record(payload, layout)
+    units = reader.units
+    target = next((
+        item for item in reader.lists
+        if item.editable and units[item.count].path == count_path
+    ), None)
+    if target is None:
+        raise ValueError(f"{count_path} is not an editable list")
+    order = list(order)
+    first = target.lanes[0]
+    size = len(first.items)
+    if any(index is not None and not 0 <= index < size for index in order):
+        raise ValueError(f"{count_path} has no such item")
+    values = {field.path: field.value for field in layout.fields}
+    if count_path == "Transition rules/Rule count" and size and order[:1] != [0]:
+        raise ValueError("The first transition rule (Any to Any) must stay first")
+    if count_path == "Cues/Cue count":
+        order.sort(key=lambda index: (1, 0.0) if index is None else (
+            {_ENTRY_CUE: 0, _EXIT_CUE: 2}.get(values[f"Cues/{index + 1}/Cue ID"], 1),
+            values[f"Cues/{index + 1}/Position (ms)"],
+        ))
+    if count_path == "Clips/Clip count":
+        order.sort(key=lambda index: 0 if index is None else values[f"Clips/{index + 1}/Subtrack ID"])
+    keyed = size and any(lane.root is None for lane in target.lanes)
+    if keyed:
+        storage = units[first.items[0][0]].storage
+        fmt = "<" + _Reader._FORMATS[storage]
+        used = {struct.unpack(fmt, units[start].raw)[0] for start, _end in first.items}
+        free = (value for value in range(1 << 16) if value not in used)
+    result = list(units)
+    for lane in reversed(target.lanes):
+        block = []
+        for position, index in enumerate(order):
+            if index is None:
+                if keyed and lane is first:
+                    block.append(_Unit(
+                        lane.item_root(position), storage, -1, struct.pack(fmt, next(free))
+                    ))
+                continue
+            start, end = lane.items[index]
+            old = new = ""
+            if lane.root is not None:
+                old, new = lane.item_root(index), lane.item_root(position)
+            for unit in units[start:end]:
+                path = unit.path
+                if old != new and (path == old or path.startswith(old + "/")):
+                    path = new + path[len(old):]
+                block.append(_Unit(path, unit.storage, unit.offset, unit.raw))
+        result[lane.start:lane.end] = block
+    count = units[target.count]
+    value = len(order) * target.scale
+    try:
+        raw = _pack_var(value) if count.storage == "var" else struct.pack(
+            "<" + _Reader._FORMATS[count.storage], value
+        )
+    except struct.error as exc:
+        raise ValueError(f"{count_path} cannot hold {len(order)} items") from exc
+    result[target.count] = _Unit(count.path, count.storage, count.offset, raw)
+    kind = "Music playlist" if first.base.split("/")[0] == "Music playlist" else first.base.rsplit("/", 1)[-1]
+    defaults = _NEW_ITEM_VALUES.get(kind, {}) if first.root == "{}" else {}
+    edited = _rebuild(payload, layout, result, {
+        "Clips/Subtrack count": 1,
+        **{
+            f"{first.item_root(position)}/{label}": value
+            for position, index in enumerate(order) if index is None
+            for label, value in defaults.items()
+        },
+    })
+    source = layout.source
+    if kind == "Music playlist":
+        reader = _Reader(edited, source[2], source[0] == "hirc" and source[3], record=True)
+        _run(reader, source)
+        ids = [unit for unit in reader.units if unit.path.endswith("Playlist item ID")]
+        seen, top = set(), max((int.from_bytes(unit.raw, "little") for unit in ids), default=0)
+        for unit in ids:
+            item = int.from_bytes(unit.raw, "little")
+            if not item or item in seen:
+                top = item = top + 1
+                unit.raw = item.to_bytes(4, "little")
+            seen.add(item)
+        edited = _write(edited, source, reader.units)
+    if count_path == "Clips/Clip count":
+        mapping = {}
+        for position, index in enumerate(order):
+            if index is not None:
+                mapping.setdefault(index, position)
+        current = _parse(edited, source)
+        fields = {field.path: field.value for field in current.fields}
+        indexes = [
+            fields[f"Clip automation/{item}/Clip index"]
+            for item in range(1, fields["Clip automation/Automation count"] + 1)
+        ]
+        kept = [item for item, index in enumerate(indexes) if index in mapping]
+        if len(kept) != len(indexes):
+            edited = reorder_wwise_list(edited, current, "Clip automation/Automation count", kept)
+            current = _parse(edited, source)
+        changes = {
+            f"Clip automation/{row}/Clip index": mapping[indexes[item]]
+            for row, item in enumerate(kept, 1) if mapping[indexes[item]] != indexes[item]
+        }
+        if changes:
+            edited = set_v132_fields(edited, current, changes)
+            current = _parse(edited, source)
+        fields = {field.path: field.value for field in current.fields}
+        have, need = fields.get("Switch association count", 0), fields.get("Clips/Subtrack count", 0)
+        if fields["Track type"] == 3 and have < need:
+            edited = reorder_wwise_list(
+                edited, current, "Switch association count", [*range(have), *[None] * (need - have)]
+            )
+    return edited
+
+
+def hirc_layout_exists(type_id: int, version: int) -> bool:
+    return int(type_id) in (_PARSERS_126 if version <= 126 else _PARSERS)
+
+
+def new_structured_object(
+    type_id: int, object_id: int, version: int, values=None, *, feedback: bool = False
+) -> bytes:
+    source = ("hirc", int(type_id), int(version), bool(feedback))
+    seeds = {f"Curve assignments/{name}": -1 for name in attenuation_targets(version)} if type_id == 0x0E else {
+        **_NEW_OBJECT_VALUES.get(int(type_id), {}),
+        **({"Music playlist/Playlist item ID": int(object_id)} if type_id == 0x0D else {}),
+    }
+    writer = _Writer(b"", [], version, feedback, {**seeds, "Object ID": int(object_id), **(values or {})})
+    try:
+        _run(writer, source)
+    except _ERRORS as exc:
+        raise ValueError(f"Cannot create HIRC type 0x{int(type_id):02X}: {exc}") from exc
+    result = writer.out.take_bytes()
+    check = _parse(result, source)
+    if not check.complete:
+        raise ValueError(f"Cannot create HIRC type 0x{int(type_id):02X}: {check.error}")
+    return result
+
+
+@dataclass(frozen=True, slots=True)
+class WwiseDecisionPath:
+    keys: tuple[int, ...]
+    target: int
+    weight: int = 50
+    probability: int = 100
+
+
+def _decision_rows(layout: WwiseObjectLayout):
+    values = {field.path: field.value for field in layout.fields}
+    rows, index = [], 1
+    while f"Decision tree/{index}/Value" in values:
+        base = f"Decision tree/{index}"
+        rows.append((
+            values[f"{base}/Value"], values.get(f"{base}/Audio object"),
+            values.get(f"{base}/First child", 0), values.get(f"{base}/Child count", 0),
+            values[f"{base}/Weight"], values[f"{base}/Probability"],
+        ))
+        index += 1
+    return values, rows
+
+
+def _decision_walk(rows, visit, index=0, keys=(), limit=64):
+    key, audio, first, count, weight, probability = rows[index]
+    visit(keys, rows[index])
+    if audio is None and len(keys) < limit:
+        for child in range(first, min(first + count, len(rows))):
+            _decision_walk(rows, visit, child, keys + (rows[child][0],), limit)
+
+
+def decision_tree(layout: WwiseObjectLayout):
+    values, rows = _decision_rows(layout)
+    depth = values["Decision depth"]
+    arguments = tuple(
+        (values[f"Decision arguments/Group {index}"], values[f"Decision arguments/Group {index} type"])
+        for index in range(1, depth + 1)
+    )
+    paths = []
+    if rows:
+        _decision_walk(rows, lambda keys, row: keys and row[1] is not None and paths.append(
+            WwiseDecisionPath(keys, row[1], row[4], row[5])
+        ), limit=depth)
+    return arguments, tuple(paths)
+
+
+def set_decision_tree(payload: bytes, layout: WwiseObjectLayout, arguments, paths) -> bytes:
+    values, rows = _decision_rows(layout)
+    arguments = [(int(group), int(kind)) for group, kind in arguments]
+    depth = len(arguments)
+    leaves = {}
+    for path in paths:
+        keys = tuple(int(key) for key in path.keys)
+        if not depth or len(keys) != depth:
+            raise ValueError("Each decision path needs one value per argument")
+        if keys in leaves:
+            raise ValueError(f"Decision path {keys} appears twice")
+        leaves[keys] = path
+    branches = {}
+    if rows:
+        _decision_walk(rows, lambda keys, row: row[1] is None and branches.setdefault(
+            keys, (row[0], row[4], row[5])
+        ), limit=values["Decision depth"])
+    key, weight, probability = branches.get((), (0, 50, 100))
+    packed = [[key, 0, weight, probability]]
+
+    def place(prefix, row):
+        kids = sorted({keys[len(prefix)] for keys in leaves if keys[:len(prefix)] == prefix})
+        first = len(packed)
+        packed[row][1] = first | len(kids) << 16
+        for key in kids:
+            child = prefix + (key,)
+            if len(child) == depth:
+                leaf = leaves[child]
+                packed.append([key, leaf.target, leaf.weight, leaf.probability])
+            else:
+                packed.append([key, 0, *branches.get(child, (key, 50, 100))[1:]])
+        for offset, key in enumerate(kids):
+            if len(prefix) + 1 < depth:
+                place(prefix + (key,), first + offset)
+
+    place((), 0)
+
+    reader = _record(payload, layout)
+    units = reader.units
+    position = {unit.path: index for index, unit in enumerate(units)}
+    lists = {item.count: item for item in reader.lists}
+
+    def unit(path, storage, value):
+        return _Unit(path, storage, -1, struct.pack("<" + _Reader._FORMATS[storage], value))
+
+    result = list(units)
+    lane = lists[position["Decision-tree bytes"]].lanes[0]
+    result[lane.start:lane.end] = [
+        unit(f"Decision tree/{row}/{label}", storage, value)
+        for row, item in enumerate(packed, 1)
+        for label, storage, value in zip(
+            ("Value", "Branch or audio object", "Weight", "Probability"),
+            ("u32", "u32", "u16", "u16"), item,
+        )
+    ]
+    result[position["Decision-tree bytes"]] = unit("Decision-tree bytes", "u32", 12 * len(packed))
+    lanes = lists[position["Decision depth"]].lanes
+    result[lanes[0].start:lanes[-1].end] = [
+        *(unit(f"Decision arguments/Group {row}", "u32", group) for row, (group, _kind) in enumerate(arguments, 1)),
+        *(unit(f"Decision arguments/Group {row} type", "u8", kind) for row, (_group, kind) in enumerate(arguments, 1)),
+    ]
+    result[position["Decision depth"]] = unit("Decision depth", "u32", depth)
+    return _rebuild(payload, layout, result)
+
+
 __all__ = [
-    "WwiseChunkLayout", "WwiseField", "WwiseObjectLayout",
+    "WwiseChunkLayout", "WwiseDecisionPath", "WwiseField", "WwiseList", "WwiseObjectLayout",
+    "decision_tree", "hirc_layout_exists", "new_structured_object", "set_decision_tree",
     "parse_structured_chunk", "parse_structured_object",
     "parse_v132_chunk", "parse_v132_object", "parse_v135_chunk",
     "parse_v135_object", "parse_v140_chunk", "parse_v140_object",
     "parse_v145_chunk", "parse_v145_object", "parse_v150_chunk",
     "parse_v150_object",
-    "set_v132_fields", "set_wwise_fields",
+    "reorder_wwise_list", "set_v132_fields", "set_wwise_fields", "wwise_lists",
 ]

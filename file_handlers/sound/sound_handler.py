@@ -10,6 +10,7 @@ lazy from .bnk_parser import (
     parse_soundbank,
     rewrite_soundbank,
 )
+lazy from .sound_media import source_rename_outputs
 lazy from .sound_resources import resource_key
 
 SOUND_MAGICS = frozenset({b"BKHD", b"AKPK", b"SBNK", b"SPCK"})
@@ -23,6 +24,8 @@ class SoundHandler(FileHandler):
         self.extension: str = ""
         self._replacements: dict[int, bytes] = {}
         self._added_source_ids: set[int] = set()
+        self._added_languages: dict[int, int] = {}
+        self._removed_source_ids: set[int] = set()
         self._pending_graph_edits: list[tuple[str, tuple]] = []
         self._parse_result: BnkParseResult | None = None
         self._edit_model: BnkEditModel | None = None
@@ -34,6 +37,8 @@ class SoundHandler(FileHandler):
     def _clear_edits(self):
         self._replacements.clear()
         self._added_source_ids.clear()
+        self._added_languages.clear()
+        self._removed_source_ids.clear()
         self._pending_graph_edits.clear()
 
     @classmethod
@@ -80,21 +85,31 @@ class SoundHandler(FileHandler):
         if not self._pending_graph_edits:
             return self.parse_result()
         self.parse_result()
-        if self._edit_model is None:
-            raise ValueError("Wwise graph/settings edits require a structured BNK")
-        working = self._edit_model.clone()
-        for method, arguments in self._pending_graph_edits:
-            getattr(working, method)(*arguments)
+        try:
+            if self._edit_model is None:
+                raise ValueError("Wwise graph/settings edits require a structured BNK")
+            working = self._edit_model.clone()
+            for method, arguments in self._pending_graph_edits:
+                getattr(working, method)(*arguments)
+            outputs = source_rename_outputs(self, self._edit_model, working)
+            if outputs:
+                self._related_root()
+        except Exception:
+            self._pending_graph_edits.clear()
+            raise
         self._edit_model = working
         self._parse_result = working.result
         self._pending_graph_edits.clear()
+        for path, data in outputs.items():
+            self._related_parses.pop(path, None)
+        self._related_outputs.update(outputs)
         return working.result
 
     def preview_result(self) -> BnkParseResult:
         """Apply queued edits to the logical model without rebuilding the container."""
 
         result = self._apply_pending_graph_edits()
-        if self._replacements:
+        if self._replacements or self._removed_source_ids:
             self._materialize_edits()
             result = self.parse_result()
         return result
@@ -104,6 +119,7 @@ class SoundHandler(FileHandler):
         if (
             not self._pending_graph_edits
             and not self._replacements
+            and not self._removed_source_ids
             and not (model and (model.hirc_dirty or model.chunk_payloads))
         ):
             return self.raw_data
@@ -111,20 +127,24 @@ class SoundHandler(FileHandler):
         model = self._edit_model
         hirc_payload = model.hirc_payload() if model and model.hirc_dirty else None
         chunk_payloads = model.chunk_payloads if model else {}
-        if not self._replacements and hirc_payload is None and not chunk_payloads:
+        if (
+            not self._replacements and not self._removed_source_ids
+            and hirc_payload is None and not chunk_payloads
+        ):
             return self.raw_data
-        had_media_edits = bool(self._replacements)
+        had_media_edits = bool(self._replacements or self._removed_source_ids)
         self.raw_data = rewrite_soundbank(
             self.raw_data,
             self._replacements,
             added_source_ids=self._added_source_ids,
+            removed_source_ids=self._removed_source_ids,
             bank_chunk_payloads=chunk_payloads,
             hirc_payload=hirc_payload,
             hirc_source_renames=model.source_renames if hirc_payload is not None else None,
             parsed_result=model.result if model is not None else self._parse_result,
+            pck_languages=self._added_languages,
         )
-        self._replacements.clear()
-        self._added_source_ids.clear()
+        self._clear_edits()
         if had_media_edits:
             self._parse_result = None
             self._edit_model = None
@@ -164,7 +184,7 @@ class SoundHandler(FileHandler):
         self._replacements[int(source_id)] = bytes(wem_data)
         self.modified = True
 
-    def add_media_source(self, source_id: int, media_data: bytes):
+    def add_media_source(self, source_id: int, media_data: bytes, language_id: int | None = None):
         """Stage one explicitly new PCK entry or embedded BNK media source."""
 
         source_id = int(source_id)
@@ -182,6 +202,18 @@ class SoundHandler(FileHandler):
             raise ValueError(f"Wwise source {source_id} already exists")
         self._replacements[source_id] = media_data
         self._added_source_ids.add(source_id)
+        if language_id is not None:
+            self._added_languages[source_id] = int(language_id)
+        self.modified = True
+
+    def remove_media_source(self, source_id: int):
+        source_id = int(source_id)
+        result = self.parse_result()
+        present = {track.source_id for track in result.tracks if track.available}
+        if source_id not in present:
+            raise ValueError(f"Wwise source {source_id} has no media in this file")
+        self._replacements.pop(source_id, None)
+        self._removed_source_ids.add(source_id)
         self.modified = True
 
     def apply_replacement_outputs(self, outputs: dict[str, bytes]):
@@ -221,22 +253,24 @@ class SoundHandler(FileHandler):
             self._related_parses.pop(key, None)
         self._related_inputs[key] = value
 
+    def _related_root(self) -> Path:
+        project_dir = str(getattr(self.resource_context, "project_dir", "") or "")
+        if project_dir:
+            return Path(project_dir).resolve()
+        current = str(self.filepath or self.filename).replace("\\", "/")
+        marker = current.casefold().find("natives/")
+        if marker < 0 or not Path(current).is_absolute():
+            raise ValueError(
+                "Related BNK/PCK outputs require an active REasy project or a file inside a natives directory."
+            )
+        return Path(current[:marker]).resolve()
+
     def related_output_targets(self, primary_path: str) -> dict[str, bytes]:
         # ``primary_path`` is unused: the BNK/PCK companions' paths are relative to the project or natives root.
+        self._apply_pending_graph_edits()
         if not self._related_outputs:
             return {}
-        context = self.resource_context
-        project_dir = str(getattr(context, "project_dir", "") or "")
-        if project_dir:
-            root = Path(project_dir).resolve()
-        else:
-            current = str(self.filepath or self.filename).replace("\\", "/")
-            marker = current.casefold().find("natives/")
-            if marker < 0 or not Path(current).is_absolute():
-                raise ValueError(
-                    "Related BNK/PCK outputs require an active REasy project or a file inside a natives directory."
-                )
-            root = Path(current[:marker]).resolve()
+        root = self._related_root()
         targets = {}
         for path, data in self._related_outputs.items():
             target = (root / Path(path.replace("/", "\\"))).resolve()
@@ -264,7 +298,7 @@ class SoundHandler(FileHandler):
         )
 
     def delete_event(self, event_id: int):
-        self.delete_hirc_objects((event_id,))
+        self.delete_hirc_objects(((event_id, 0x04),))
 
     def upsert_hirc_object(self, type_id: int, object_id: int, payload: bytes):
         self.upsert_hirc_objects(((type_id, object_id, payload),))
@@ -278,23 +312,28 @@ class SoundHandler(FileHandler):
             self._queue_graph_edit("upsert_objects", entries)
 
     def delete_hirc_objects(self, object_ids):
-        values = tuple(int(value) & 0xFFFFFFFF for value in object_ids)
+        values = tuple(
+            (int(value[0]) & 0xFFFFFFFF, int(value[1])) if isinstance(value, tuple) else int(value) & 0xFFFFFFFF
+            for value in object_ids
+        )
         if values:
             self._queue_graph_edit("delete_objects", values)
 
-    def rename_hirc_object(self, old_id: int, new_id: int):
+    def rename_hirc_object(self, old_id: int, new_id: int, type_id: int | None = None):
         self._queue_graph_edit(
             "rename_object",
             int(old_id) & 0xFFFFFFFF,
             int(new_id) & 0xFFFFFFFF,
+            type_id,
         )
 
-    def set_hirc_reference(self, object_id: int, offset: int, target_id: int):
+    def set_hirc_reference(self, object_id: int, offset: int, target_id: int, type_id: int | None = None):
         self._queue_graph_edit(
             "set_reference",
             int(object_id) & 0xFFFFFFFF,
             int(offset),
             int(target_id) & 0xFFFFFFFF,
+            type_id,
         )
 
     def set_bank_chunk_payload(self, chunk_id: bytes | str, payload: bytes):
