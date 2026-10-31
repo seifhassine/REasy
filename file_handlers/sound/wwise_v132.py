@@ -204,6 +204,7 @@ class WwiseList:
     path: str
     count_path: str
     items: tuple[str, ...]
+    lanes: tuple[tuple[str | None, ...], ...] = ()
 
 
 class _LayoutError(ValueError):
@@ -1573,7 +1574,7 @@ def _schema_parameters(r: _Reader, fields) -> None:
         choices = BNK_FX_ENUMS.get(enum_name[0]) if enum_name else None
         enum = (
             choices if isinstance(choices, dict)
-            else dict(enumerate(choices)) if choices else None
+            else dict(enumerate(choices)) if choices else _BOOL if storage == "bool" else None
         )
         r.scalar(
             label, storage, enum=enum,
@@ -2190,9 +2191,39 @@ def wwise_lists(payload: bytes, layout: WwiseObjectLayout) -> tuple[WwiseList, .
         WwiseList(
             item.lanes[0].base, reader.units[item.count].path,
             tuple(item.lanes[0].item_root(index) for index in range(len(item.lanes[0].items))),
+            tuple(
+                tuple(lane.item_root(index) if lane.root else None for index in range(len(lane.items)))
+                for lane in item.lanes
+            ),
         )
         for item in reader.lists if item.editable
     )
+
+
+def set_wwise_keyed_values(payload: bytes, layout: WwiseObjectLayout, count_path: str, entries) -> bytes:
+    reader = _record(payload, layout)
+    units = reader.units
+    target = next(item for item in reader.lists if units[item.count].path == count_path)
+    lanes, count = target.lanes, units[target.count]
+    fmt = "<" + _Reader._FORMATS[count.storage]
+    ids = sorted(entries)
+    result = list(units)
+    for lane in reversed(lanes[1:]):
+        result[lane.start:lane.end] = []
+    result[lanes[0].start:lanes[0].end] = [
+        _Unit(lanes[0].item_root(index), count.storage, -1, struct.pack(fmt, prop_id)) for index, prop_id in enumerate(ids)
+    ]
+    result[target.count] = _Unit(count.path, count.storage, count.offset, struct.pack(fmt, len(ids)))
+    edited = _rebuild(payload, layout, result)
+    layout = _parse(edited, layout.source)
+    reader = _record(edited, layout)
+    target = next(item for item in reader.lists if reader.units[item.count].path == count_path)
+    changes = {}
+    for index, prop_id in enumerate(ids):
+        values = entries[prop_id] if isinstance(entries[prop_id], tuple) else (entries[prop_id],)
+        paths = [unit.path for lane in target.lanes[1:] for unit in reader.units[slice(*lane.items[index])]]
+        changes.update(zip(paths, values))
+    return set_v132_fields(edited, layout, changes)
 
 
 def reorder_wwise_list(
@@ -2452,5 +2483,5 @@ __all__ = [
     "parse_v135_object", "parse_v140_chunk", "parse_v140_object",
     "parse_v145_chunk", "parse_v145_object", "parse_v150_chunk",
     "parse_v150_object",
-    "reorder_wwise_list", "set_v132_fields", "set_wwise_fields", "wwise_lists",
+    "reorder_wwise_list", "set_v132_fields", "set_wwise_fields", "set_wwise_keyed_values", "wwise_lists",
 ]

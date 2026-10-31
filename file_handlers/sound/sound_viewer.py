@@ -113,7 +113,8 @@ from .bnk_parser import (
 )
 from .pck_codec import pck_language_names
 lazy from .sound_graph import EventFlowGraph
-lazy from .sound_hirc_editor import ActionPickerDialog, HircPropertiesDialog, WwiseFieldsEditor
+lazy from .sound_hirc_editor import ActionPickerDialog, HircPropertiesDialog
+lazy from .sound_property_editor import chunk_editor
 from .sound_metadata import SoundMetadata
 from .sound_profile import sound_profile_for_handler
 lazy from .sound_riff_editor import RiffMetadataDialog
@@ -133,9 +134,6 @@ from .wwise_schema import STRUCTURED_BANK_VERSIONS, _hirc_type_name, is_hirc_bus
 from .wwise_v132 import (
     hirc_layout_exists,
     new_structured_object,
-    parse_structured_chunk,
-    reorder_wwise_list,
-    set_v132_fields,
 )
 lazy from .wwise_media import (
     WwiseMediaKind,
@@ -1144,11 +1142,6 @@ class SoundViewer(QWidget):
         body = QVBoxLayout()
         body.setContentsMargins(8, 6, 8, 8)
         body.setSpacing(6)
-        hint = styled_label(self.tr(
-            "Double-click an editable value to change a global SoundBank setting."
-        ), tone="muted")
-        hint.setWordWrap(True)
-        body.addWidget(hint)
         self.bank_chunk_note = styled_label("", tone="muted")
         self.bank_chunk_note.setWordWrap(True)
         body.addWidget(self.bank_chunk_note)
@@ -2958,24 +2951,20 @@ class SoundViewer(QWidget):
             )
             self.bank_chunk_apply.setEnabled(False)
             return
-        editable = sum(field.visible and field.editable for field in structure.fields)
-        self.bank_chunk_note.setText(
-            self.tr("{count} editable setting(s)").format(
-                count=editable
-            )
+        self.bank_chunk_note.clear()
+        self._bank_chunk_editor = chunk_editor(
+            chunk, self._parse_result.objects, self._sound_metadata, self.bank_chunk_host,
         )
-        self._bank_chunk_editor = WwiseFieldsEditor(
-            structure, self._sound_metadata, parent=self.bank_chunk_host,
-            payload=chunk.payload if chunk.chunk_id != "DIDX" else None,
-        )
-        self._bank_chunk_editor.structureEdited.connect(self._apply_bank_chunk_structure)
+        self._bank_chunk_editor.edited.connect(self._bank_chunk_edited)
         self.bank_chunk_layout.addWidget(self._bank_chunk_editor)
-        self.bank_chunk_apply.setEnabled(bool(editable))
+        self.bank_chunk_apply.setEnabled(False)
+
+    def _bank_chunk_edited(self):
+        index = self.bank_chunk_combo.currentData()
+        chunk = self._parse_result.bank_chunks[int(index)]
+        self.bank_chunk_apply.setEnabled(self._bank_chunk_editor.payload() != chunk.payload)
 
     def _apply_bank_chunk(self):
-        self._apply_bank_chunk_structure(None)
-
-    def _apply_bank_chunk_structure(self, request):
         editor = self._bank_chunk_editor
         index = self.bank_chunk_combo.currentData()
         chunks = self._parse_result.bank_chunks if self._parse_result else ()
@@ -2983,16 +2972,10 @@ class SoundViewer(QWidget):
             return
         chunk = chunks[int(index)]
         try:
-            changes = editor.changes()
-            if not changes and request is None:
+            payload = editor.payload()
+            if payload == chunk.payload:
                 self.status.setText(self.tr("No bank-setting values changed."))
                 return
-            payload = set_v132_fields(chunk.payload, chunk.structure, changes)
-            if request is not None and request[0] == "list":
-                layout = parse_structured_chunk(
-                    chunk.chunk_id, payload, self._parse_result.bank_version
-                ).structure
-                payload = reorder_wwise_list(payload, layout, *request[1:])
             self.handler.set_bank_chunk_payload(chunk.chunk_id, payload)
             if not self._refresh_tracks():
                 return
@@ -3436,7 +3419,7 @@ class SoundViewer(QWidget):
         self.hirc_duplicate_btn.setEnabled(exact_editable)
         self.hirc_rename_btn.setEnabled(exact_editable)
         self.hirc_delete_btn.setEnabled(exact_editable)
-        self.hirc_properties_btn.setEnabled(exact_editable)
+        self.hirc_properties_btn.setEnabled(exact_editable and (obj.type_id == 0x04 or bool(obj.structure and obj.structure.complete)))
         self.hirc_connect_btn.setEnabled(exact_editable and safe_children)
         self.hirc_disconnect_btn.setEnabled(exact_editable and safe_children and bool(obj.child_ids))
         scalar_links = bool(
@@ -3689,9 +3672,12 @@ class SoundViewer(QWidget):
             self.handler.set_event_actions(obj.object_id, actions)
         else:
             dialog = HircPropertiesDialog(obj, self)
-            if dialog.exec() != QDialog.DialogCode.Accepted:
+            accepted = dialog.exec() == QDialog.DialogCode.Accepted
+            payload = dialog.edited_payload()
+            dialog.deleteLater()
+            if not accepted or payload == obj.payload:
                 return
-            self.handler.upsert_hirc_object(obj.type_id, obj.object_id, dialog.edited_payload())
+            self.handler.upsert_hirc_object(obj.type_id, obj.object_id, payload)
         self._finish_hirc_edit(
             self.tr("Updated {type} {id}.").format(type=obj.type_name, id=obj.object_id),
             obj.object_id,

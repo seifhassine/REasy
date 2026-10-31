@@ -353,7 +353,7 @@ BNK_MODULATOR_PROPERTY_NAMES = {
     0x0F: "Envelope: trigger on", 0x10: "Time: duration", 0x11: "Time: loops",
     0x12: "Time: playback rate", 0x13: "Time: initial delay",
 }
-BNK_MODULATOR_INTEGER_PROPERTIES = frozenset({0x00, 0x01, 0x05, 0x0A, 0x0F, 0x11})
+BNK_MODULATOR_INTEGER_PROPERTIES = frozenset({0x00, 0x01, 0x05, 0x0F, 0x11})
 BNK_MODULATOR_RTPC_NAMES = {
     0x00: "LFO: depth", 0x01: "LFO: attack time", 0x02: "LFO: frequency",
     0x03: "LFO: waveform", 0x04: "LFO: smoothing", 0x05: "LFO: pulse width",
@@ -377,8 +377,46 @@ BNK_MODULATOR_PROPERTY_NAMES_150 = {
     0x13: "Time: playback rate", 0x14: "Time: initial delay",
 }
 BNK_MODULATOR_INTEGER_PROPERTIES_150 = frozenset({
-    0x00, 0x01, 0x05, 0x09, 0x0B, 0x10, 0x12,
+    0x00, 0x01, 0x05, 0x09, 0x10, 0x12,
 })
+_PROPERTY_DEFAULTS = {
+    0x07: 50.0, 0x08: -10.0, 0x0B: 1.0, 0x11: 100.0, 0x1B: 96.0, 0x1C: 16.0, 0x1D: 1.0, 0x20: 200.0,
+    0x21: 12.0, 0x28: 1, 0x29: 1, 0x2B: 1, 0x2C: 7, 0x2D: 60, 0x2E: 1, 0x32: 127, 0x34: 127, 0x35: 0xFFFF,
+    0x36: 1.0, 0x39: 0xFFFFFFFF, 0x3A: 1, 0x47: 100.0,
+}
+_PROPERTY_DEFAULTS_150 = {
+    0x06: 50.0, 0x07: 1.0, 0x1B: 96.0, 0x1C: 16.0, 0x1D: 1.0, 0x1E: 12.0, 0x21: 1.0, 0x2A: 100.0, 0x38: -10.0,
+    0x3B: 100.0, 0x3F: 200.0, 0x46: 1, 0x47: 1, 0x49: 1, 0x4A: 7, 0x4B: 60, 0x4C: 1, 0x4E: 127, 0x50: 127,
+    0x51: 0xFFFF, 0x54: 1,
+}
+_ACTION_VARIANTS = {
+    **dict.fromkeys((0x0100, 0x0200, 0x0300, 0x0700, 0x0900, 0x0B00, 0x0F00, 0x1E00, 0x3000), (2, 3, 4, 5, 8, 9)),
+    **dict.fromkeys((0x0600, 0x0800, 0x0A00, 0x0C00, 0x0E00, 0x1300, 0x1400, 0x1F00, 0x2000, 0x2200), (2, 3)),
+    **dict.fromkeys((0x0400, 0x2100), (3,)),
+    **dict.fromkeys((0x1000, 0x1100, 0x3100), (2,)),
+    0x0D00: (2, 3, 4, 8), 0x1200: (4,), 0x1900: (1,), 0x1A00: (2, 3), 0x1B00: (2, 3, 4, 5, 8, 9),
+    0x1C00: (2, 3), 0x1D00: (0, 1), 0x3200: (2, 4),
+}
+_ACTION_VARIANTS_150 = {
+    **_ACTION_VARIANTS, 0x1B00: (0, 1),
+    **dict.fromkeys((0x3300, 0x3500), (2, 3)), **dict.fromkeys((0x3400, 0x3600, 0x3700), (2, 3, 4, 5)),
+}
+
+
+def property_default(kind: str, bank_version: int | None, prop_id: int):
+    if kind != "object":
+        return 0 if kind == "state" else None
+    table = _PROPERTY_DEFAULTS_150 if bank_version == 150 else _PROPERTY_DEFAULTS
+    return table.get(prop_id, 0 if prop_id in integer_properties(kind, bank_version) else 0.0)
+
+
+def action_types(bank_version: int | None) -> dict[int, tuple[str, tuple[int, ...]]]:
+    names = _ACTION_TYPE_NAMES_150 if bank_version == 150 else _ACTION_TYPE_NAMES
+    variants = _ACTION_VARIANTS_150 if bank_version == 150 else _ACTION_VARIANTS
+    return {
+        family: (names[family], variants[family])
+        for family in sorted(_ACTION_FAMILIES.get(bank_version, _ACTION_FAMILIES_125))
+    }
 
 
 def property_names(kind: str, bank_version: int | None = 125):
