@@ -32,7 +32,7 @@ class ClipHeader:
     track_num: int = 0
     clip_info_num: int = 0
     track_child_num: int = 0
-    node_count_pragmata: int = 0
+    clip_root_node_num: int = 0
     node_num: int = 0
     property_num: int = 0
     key_num: int = 0
@@ -44,8 +44,8 @@ class ClipHeader:
     root_node_tbl_ptr: int = 0
     track_tbl_ptr: int = 0
     clip_info_tbl_ptr: int = 0
-    nodes_reorder_offset2: int = 0
     track_child_tbl_ptr: int = 0
+    clip_root_node_tbl_ptr: int = 0
     node_tbl_ptr: int = 0
     property_tbl_ptr: int = 0
     key_tbl_ptr: int = 0
@@ -61,7 +61,7 @@ class ClipHeader:
     c16_ptr: int = 0
     oword_ptr: int = 0
     data_ptr: int = 0
-    legacy_clip_info_tbl_ptr: int = 0
+    path_point_aux_tbl_ptr: int = 0
 
 
 @dataclass(slots=True)
@@ -69,8 +69,8 @@ class Track:
     enable: int = 0
     clip_num: int = 0
     child_node_num: int = 0
-    type_ascii: str = ""
-    type_unicode: str = ""
+    name: str = ""
+    unicode_name: str = ""
     group_name: str = ""
     clip_info_offset: int = 0
     child_node_start_index: int = 0
@@ -97,17 +97,19 @@ class Node:
     property_num: int = 0
     begin_frame: float = 0.0
     end_frame: float = 0.0
-    root_node_guid: bytes = b"\x00" * 16
-    ex_id: bytes = b"\x00" * 16
+    guid: bytes = b"\x00" * 16
+    # v43 and older only; v53+ identifies nodes by unique_id.
+    node_id_guid: bytes = b"\x00" * 16
     node_type: int = 0
     unique_id: int = 0
     extra_property_pass_mask: int = 0
-    # Unknown v86+ node word; the same slot is required-zero padding before v86.
-    dev32_id: int = 0
+    # v86+: the authoring tool's node ID, never read by the game; zero padding before v86.
+    editor_id: int = 0
     name_hash: int = 0
-    unique32_id: int = 0
     unicode_name_hash: int = 0
     name: str = ""
+    # v27 only: the ASCII name beside the UTF-16 one.
+    ascii_name: str = ""
     node_tag: str = ""
     child_offset: int = 0
     property_offset: int = 0
@@ -188,7 +190,7 @@ class Property:
     begin_frame: float = 0.0
     end_frame: float = 0.0
     name_hash: int = 0
-    unique32_id: int = 0
+    editor_id: int = 0
     unicode_name_hash: int = 0
     name: str = ""
     legacy_unicode_name: str = ""
@@ -208,14 +210,12 @@ class Property:
     is_prev_key_value_set: int = 0
     is_delayed_execution: int = 0
     is_array_count_set: int = 0
-    has_set_property_delegate: int = 0
     extra_key_flags: int = 0
     aux_key_flags: int = 0
     is_restoration: int = 0
 
     last_key_offset: int = 0
     speed_point_offset: int = 0
-    clip_property_offset: int = 0
 
     keys: list[object] = field(default_factory=list)
     # Ordered extra records immediately following ``keys`` in the selected table.
@@ -224,4 +224,3 @@ class Property:
     child_properties: list["Property"] = field(default_factory=list)
     last_key_ref: "Key | None" = None
     speed_points_ref: list["SpeedPoint"] = field(default_factory=list)
-    clip_property_ref: "Property | None" = None

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .enums import CLIP_MAGIC, PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
+from .enums import CLIP_MAGIC, PropertyType, property_type_has_children, property_type_or_unknown
 from .reader import ClipParserError, Reader
 from .structures import (
     ActionKey,
@@ -25,8 +25,8 @@ class ParsedClip:
     header: ClipHeader
     root_node_offsets: list[int]
     root_nodes: list[Node]
-    nodes_reorder_offsets: list[int]
-    nodes_reorder_nodes: list[Node]
+    clip_root_node_offsets: list[int]
+    clip_root_nodes: list[Node]
     track_child_offsets: list[int]
     tracks: list[Track]
     clip_infos: list[ClipInfo]
@@ -77,7 +77,7 @@ _HEADER_LAYOUT = (
     ("u32", "track_num", 0, None),
     ("u32", "clip_info_num", 40, None),
     ("u32", "track_child_num", 0, None),
-    ("u32", "node_count_pragmata", 85, None),
+    ("u32", "clip_root_node_num", 85, None),
     ("u32", "node_num", 0, None),
     ("u32", "property_num", 0, None),
     ("u32", "key_num", 0, None),
@@ -89,8 +89,8 @@ _HEADER_LAYOUT = (
     ("u64", "root_node_tbl_ptr", 0, None),
     ("u64", "track_tbl_ptr", 0, None),
     ("u64", "clip_info_tbl_ptr", 40, None),
-    ("u64", "nodes_reorder_offset2", 85, None),
     ("u64", "track_child_tbl_ptr", 0, None),
+    ("u64", "clip_root_node_tbl_ptr", 85, None),
     ("u64", "node_tbl_ptr", 0, None),
     ("u64", "property_tbl_ptr", 0, None),
     ("u64", "key_tbl_ptr", 0, None),
@@ -100,7 +100,7 @@ _HEADER_LAYOUT = (
     ("u64", "speed_point_tbl_ptr", 0, None),
     ("u64", "interpolation_hermite_tbl_ptr", 0, None),
     ("u64", "interpolation_hermite3d_tbl_ptr", 0, None),
-    ("u64", "legacy_clip_info_tbl_ptr", 0, 27),
+    ("u64", "path_point_aux_tbl_ptr", 0, 27),
     ("u64", "last_key_tbl_ptr", 0, 43),
     ("u64", "user_data_asset_info_ptr", 62, None),
     ("u64", "c8_ptr", 0, None),
@@ -120,16 +120,15 @@ def header_size(version: int) -> int:
     return 8 + sum(_HEADER_FIELD_SIZES[kind] for kind, _ in iter_header_fields(version))
 
 
-EXTRA_KEY_FLAGS_MASK = 0xF
+def extra_key_flag_mask(version: int) -> int:
+    return 0xF if version >= 85 else 0x7 if version >= 53 else 0
 
 
 def _extra_key_count(flags: int, version: int) -> int:
-    if version < 53:
-        return 0
-    return (flags & EXTRA_KEY_FLAGS_MASK).bit_count()
+    return (flags & extra_key_flag_mask(version)).bit_count()
 
 
-INTERPOLATION_TYPE_HERMITE = 0x5
+INTERPOLATION_TYPES_HERMITE_TABLE = (0x5, 0x7)
 INTERPOLATION_TYPE_BEZIER3D = 0xC
 
 
@@ -160,8 +159,7 @@ class ClipParser:
         header = self._read_header(r)
 
         root_offsets = self._read_u64_table(r, header.root_node_tbl_ptr, header.root_node_num)
-        nodes_reorder_count = header.node_count_pragmata if header.node_count_pragmata > 0 else header.root_node_num
-        reorder_offsets = self._read_u64_table(r, header.nodes_reorder_offset2, nodes_reorder_count)
+        clip_root_offsets = self._read_u64_table(r, header.clip_root_node_tbl_ptr, header.clip_root_node_num)
         track_child_offsets = self._read_u64_table(r, header.track_child_tbl_ptr, header.track_child_num)
 
         tracks = self._read_tracks(r, header)
@@ -170,6 +168,10 @@ class ClipParser:
         properties = self._read_properties(r, header)
 
         main_keys = self._read_key_table(r, header.key_tbl_ptr, header.key_num, header.version)
+        self._assert(
+            header.version != 27 or header.path_point_aux_tbl_ptr in (0, header.last_key_tbl_ptr),
+            "v27 PathPoint3D auxiliary tables are unsupported",
+        )
         last_keys = self._read_last_keys(r, header)
         bool_keys = self._read_bool_keys(r, header)
         action_keys = self._read_action_keys(r, header)
@@ -186,8 +188,8 @@ class ClipParser:
             header=header,
             root_node_offsets=root_offsets,
             root_nodes=[],
-            nodes_reorder_offsets=reorder_offsets,
-            nodes_reorder_nodes=[],
+            clip_root_node_offsets=clip_root_offsets,
+            clip_root_nodes=[],
             track_child_offsets=track_child_offsets,
             tracks=tracks,
             clip_infos=clip_infos,
@@ -252,16 +254,15 @@ class ClipParser:
         # Root-node table -> concrete node references
         root_nodes = _resolve_nodes(parsed.root_node_offsets, "Invalid root-node pointer entry")
         track_nodes = _resolve_nodes(parsed.track_child_offsets, "Invalid track-child pointer entry")
-        reorder_nodes = _resolve_nodes(parsed.nodes_reorder_offsets, "Invalid nodes-reorder pointer entry")
+        clip_root_nodes = _resolve_nodes(parsed.clip_root_node_offsets, "Invalid clip root-node pointer entry")
 
         parsed.root_nodes = root_nodes
-        parsed.nodes_reorder_nodes = reorder_nodes
+        parsed.clip_root_nodes = clip_root_nodes
         parsed.track_child_nodes = track_nodes
 
-        # ClipInfo -> root nodes
         for ci in parsed.clip_infos:
             ci.root_nodes = _slice(
-                root_nodes,
+                clip_root_nodes,
                 ci.root_node_offset,
                 ci.root_node_count,
                 "ClipInfo root range out of bounds",
@@ -288,8 +289,8 @@ class ClipParser:
     def _decode_key_string_payloads(self, parsed: ParsedClip, r: Reader):
         c8_types = {PropertyType.ENUM, PropertyType.STR8}
         c16_types = {
-            PropertyType.STR16, PropertyType.ASSET, PropertyType.USER_DATA_ASSET,
-            PropertyType.RESOURCE_PATH, PropertyType.GAME_OBJECT_REF, PropertyType.GUID,
+            PropertyType.STR16, PropertyType.ASSET, PropertyType.RESOURCE_PATH,
+            PropertyType.GAME_OBJECT_REF, PropertyType.GUID,
         }
 
         def walk_unique(roots, child_attr: str):
@@ -323,11 +324,7 @@ class ClipParser:
         live_last_widths: dict[int, set[bool]] = {}
         for prop in parsed.properties:
             ptype = property_type_or_unknown(prop.property_type)
-            if (
-                ptype == PropertyType.USER_DATA_ASSET
-                and parsed.header.version >= 62
-                and parsed.header.user_data_asset_info_ptr != 0
-            ) or (ptype not in c8_types and ptype not in c16_types):
+            if ptype not in c8_types and ptype not in c16_types:
                 continue
             wide = ptype in c16_types
             live = id(prop) in live_property_ids
@@ -411,11 +408,12 @@ class ClipParser:
             o = h.track_tbl_ptr + i * stride
             tr = Track()
             tr.enable = r.u8(o)
+            self._assert(r.bytes(o + 1, 3) == bytes(3), "Unexpected nonzero track flag bits")
             tr.reserved = r.u32(o + 4)
             tr.clip_num = r.i32(o + 8)
             tr.child_node_num = r.i32(o + 12)
-            tr.type_ascii = self._string(r, h, r.u64(o + 16), False)
-            tr.type_unicode = self._string(r, h, r.u64(o + 24), True)
+            tr.name = self._string(r, h, r.u64(o + 16), False)
+            tr.unicode_name = self._string(r, h, r.u64(o + 24), True)
             tr.group_name = self._string(r, h, r.u64(o + 32), True)
             if h.version >= 40:
                 tr.clip_info_offset = r.u64(o + 40)
@@ -439,7 +437,8 @@ class ClipParser:
             ci.source_in = r.f32(o + 8)
             ci.source_out = r.f32(o + 12)
             if h.version >= 85:
-                ci.root_node_count = r.u64(o + 16)
+                ci.root_node_count = r.u32(o + 16)
+                self._assert(r.u32(o + 20) == 0, "Unexpected nonzero ClipInfo word after rootNodeCount")
                 ci.unicode_name = self._string(r, h, r.u64(o + 24), True)
                 ci.root_node_offset = r.u64(o + 32)
             else:
@@ -460,9 +459,9 @@ class ClipParser:
             n.begin_frame = r.f32(o + 8)
             n.end_frame = r.f32(o + 12)
             p = o + 16
-            n.root_node_guid = r.bytes(p, 16); p += 16
             if h.version <= 43:
-                n.ex_id = r.bytes(p, 16); p += 16
+                n.node_id_guid = r.bytes(p, 16); p += 16
+            n.guid = r.bytes(p, 16); p += 16
 
             bits = r.u32(p)
             n.node_type = bits & 0xFF
@@ -478,21 +477,20 @@ class ClipParser:
             p += 4
             node_word = r.u32(p); p += 4
             self._assert(h.version >= 86 or node_word == 0, "Unexpected nonzero node padding word")
-            n.dev32_id = node_word if h.version >= 86 else 0
-            if h.version >= 86:
-                n.unique32_id = r.u32(p)
-                n.name_hash = 0
-            else:
-                n.name_hash = r.u32(p)
-                n.unique32_id = 0
+            n.editor_id = node_word if h.version >= 86 else 0
+            n.name_hash = r.u32(p)
             n.unicode_name_hash = r.u32(p + 4)
             if h.version == 34:
                 n.name = self._string(r, h, r.u64(p + 8), True)
                 n.child_offset = r.u64(p + 16)
                 n.property_offset = r.u64(p + 24)
             else:
-                n.name = self._string(r, h, r.u64(p + 8), h.version != 27)
-                n.node_tag = self._string(r, h, r.u64(p + 16), True)
+                if h.version == 27:
+                    n.ascii_name = self._string(r, h, r.u64(p + 8), False)
+                    n.name = self._string(r, h, r.u64(p + 16), True)
+                else:
+                    n.name = self._string(r, h, r.u64(p + 8), True)
+                    n.node_tag = self._string(r, h, r.u64(p + 16), True)
                 n.child_offset = r.u64(p + 24)
                 n.property_offset = r.u64(p + 32)
             out.append(n)
@@ -510,11 +508,11 @@ class ClipParser:
                 p.begin_frame = r.f32(o)
                 p.end_frame = r.f32(o + 4)
                 if h.version >= 86:
-                    p.unique32_id = r.u32(o + 8)
+                    p.editor_id = r.u32(o + 8)
                     p.name_hash = 0
                 else:
                     p.name_hash = r.u32(o + 8)
-                    p.unique32_id = 0
+                    p.editor_id = 0
                 p.unicode_name_hash = r.u32(o + 12)
                 p.name = self._string(r, h, r.u64(o + 16), False)
                 p.data_offset = r.u64(o + 24)
@@ -535,7 +533,7 @@ class ClipParser:
                 p.is_next_diff_frame_set = (fb1 >> 4) & 1 if h.version >= 44 else (fb1 >> 6) & 1
                 p.is_prev_key_value_set = (fb1 >> 5) & 1 if h.version >= 44 else (fb1 >> 7) & 1
                 p.is_delayed_execution = (fb1 >> 6) & 1 if h.version >= 44 else 0
-                p.is_array_count_set = (fb1 >> 7) & 1 if 44 <= h.version < 85 else 0
+                p.is_array_count_set = (fb1 >> 7) & 1 if h.version >= 44 else 0
 
                 if h.version >= 44:
                     fb2 = r.u8(o + 47)
@@ -544,10 +542,8 @@ class ClipParser:
                         self._assert(fb2 >> 4 == 0, "Unexpected nonzero property reserved flags")
                     else:
                         # v85+ layout:
-                        # - byte 46 bit7: has_set_property_delegate
                         # - byte 47 bits 0..3: extra_key_flags
                         # - byte 47 bits 4..7: aux_key_flags
-                        p.has_set_property_delegate = (fb1 >> 7) & 0x1
                         p.extra_key_flags = fb2 & 0xF
                         p.aux_key_flags = (fb2 >> 4) & 0xF
                         self._assert(p.aux_key_flags <= 0x3, "Unknown aux_key_flags value")
@@ -560,7 +556,7 @@ class ClipParser:
                     table_p += 8
                 p.speed_point_offset = r.u64(table_p)
                 if h.version <= 43:
-                    p.clip_property_offset = r.u64(table_p + 8)
+                    self._assert(r.u64(table_p + 8) == 0, "Legacy property restoration pointer must be zero")
             else:
                 p.array_index = r.i32(o)
                 p.begin_frame = r.f32(o + 4)
@@ -586,30 +582,25 @@ class ClipParser:
                 p.is_prev_key_value_set = (fb1 >> 7) & 0x1
 
                 p.name_hash = r.u32(o + 24)
-                p.unique32_id = 0
+                p.editor_id = 0
                 p.unicode_name_hash = r.u32(o + 28)
                 p.name = self._string(r, h, r.u64(o + 32), False)
-                p.legacy_unicode_name = self._string(r, h, r.u64(o + 40), True)
+                if h.version == 27:
+                    p.legacy_unicode_name = self._string(r, h, r.u64(o + 40), True)
+                    p.data_offset = r.u64(o + 48)
+                    reserved = r.bytes(o + 56, 16)
+                else:
+                    p.data_offset = r.u64(o + 40)
+                    reserved = r.bytes(o + 48, 24)
+                self._assert(reserved == bytes(len(reserved)), "Legacy property reserved fields must be zero")
 
-                ukn_ptr = r.u64(o + 48)
-                ukn_num = r.u16(o + 56)
-                ukn0 = r.i16(o + 58)
-                ukn1 = r.u16(o + 60)
-                ukn2 = r.u16(o + 62)
-                self._assert(
-                    ukn_ptr == 0 and ukn_num == 0 and ukn0 == 0 and ukn1 == 0 and ukn2 == 0,
-                    "Legacy property unknown fields must be zero",
-                )
-
-                p.data_offset = r.u64(o + 64)
                 p.key_or_child_offset = r.u64(o + 72)
                 p.key_num_or_element_num = r.u64(o + 80)
                 p.last_key_offset = r.u64(o + 88)
                 p.speed_point_offset = r.u64(o + 96)
-                p.clip_property_offset = r.u64(o + 104)
 
                 self._assert(p.data_offset == 0, "Legacy property dataOffset nonzero is unsupported")
-                self._assert(p.clip_property_offset == 0, "Legacy property clipPropertyOffset nonzero is unsupported")
+                self._assert(r.u64(o + 104) == 0, "Legacy property restoration pointer must be zero")
             out.append(p)
         return out
 
@@ -624,6 +615,7 @@ class ClipParser:
             k.frame = r.f32(o)
             k.rate = r.f32(o + 4)
             packed = r.u32(o + 8)
+            self._assert(version != 27 or packed >> 8 == 0, "v27 keys hold the interpolation type in the whole word")
             k.interpolation_type = packed & 0xFF
             k.offset_frame_flag = (packed >> 8) & 0x1
             k.reserved = (packed >> 9) & 0x7FFFFF
@@ -636,7 +628,7 @@ class ClipParser:
             k.raw1 = r.u32(o + 20)
             k.interpolation_offset = r.u64(o + 24)
             if stride == 40:
-                self._assert(r.u64(o + 32) == 0, "v27 key padding must be zero")
+                self._assert(r.u64(o + 32) == 0, "v27 PathPoint3D auxiliary-table indices are unsupported")
             out.append(k)
         return out
 
@@ -705,6 +697,8 @@ class ClipParser:
         return out
 
     def _post_interpolation_ptr(self, h: ClipHeader) -> int:
+        if h.version == 27 and h.path_point_aux_tbl_ptr:
+            return h.path_point_aux_tbl_ptr
         if h.version <= 43 and h.last_key_tbl_ptr:
             return h.last_key_tbl_ptr
         if h.version >= 62 and h.user_data_asset_info_ptr:
@@ -796,10 +790,10 @@ class ClipParser:
         ]
         for prop in parsed.properties:
             ptype = property_type_or_unknown(prop.property_type)
+            has_children = property_type_has_children(prop.property_type, h.version)
             prop.last_key_ref = None
             prop.extra_keys = []
             prop.speed_points_ref = []
-            prop.clip_property_ref = None
             if h.version < 40 and prop.speed_point_num > 0:
                 self._assert(
                     prop.property_type == PropertyType.PATH_POINT3D,
@@ -808,10 +802,7 @@ class ClipParser:
             extra = _extra_key_count(prop.extra_key_flags, h.version)
             total = prop.key_num_or_element_num + extra
             if prop.speed_point_num > 0:
-                self._assert(
-                    ptype not in PROPERTY_TYPES_WITH_CHILDREN,
-                    "Container property cannot own speed points",
-                )
+                self._assert(not has_children, "Container property cannot own speed points")
                 self._assert(
                     prop.speed_point_offset + prop.speed_point_num <= len(parsed.speed_points),
                     "Property speed-point range exceeds table",
@@ -824,14 +815,8 @@ class ClipParser:
                     "Property last-key offset out of range",
                 )
                 prop.last_key_ref = parsed.last_keys[prop.last_key_offset]
-            if h.version <= 43 and prop.clip_property_offset > 0:
-                self._assert(
-                    prop.clip_property_offset < len(parsed.properties),
-                    "clipPropertyOffset index out of range",
-                )
-                prop.clip_property_ref = parsed.properties[prop.clip_property_offset]
             if total > 0:
-                if ptype in PROPERTY_TYPES_WITH_CHILDREN:
+                if has_children:
                     self._assert(
                         prop.key_or_child_offset + prop.key_num_or_element_num <= len(parsed.properties),
                         "Property child range out of bounds",
@@ -876,21 +861,21 @@ class ClipParser:
         hermite_nodes = parsed.hermite_nodes
         bezier3d_nodes = parsed.bezier3d_nodes
 
-        def _attach(obj):
+        def _attach(obj, bezier3d: bool):
             obj.interpolation_ref = None
-            if obj.interpolation_type == INTERPOLATION_TYPE_HERMITE:
+            if obj.interpolation_type in INTERPOLATION_TYPES_HERMITE_TABLE:
                 self._assert(
                     0 <= obj.interpolation_offset < len(hermite_nodes),
-                    "Hermite interpolation index out of range",
+                    "Hermite/Bezier interpolation index out of range",
                 )
                 obj.interpolation_ref = hermite_nodes[obj.interpolation_offset]
-            elif obj.interpolation_type == INTERPOLATION_TYPE_BEZIER3D:
+            elif bezier3d and obj.interpolation_type == INTERPOLATION_TYPE_BEZIER3D:
                 self._assert(
                     0 <= obj.interpolation_offset < len(bezier3d_nodes),
                     "Bezier3D interpolation index out of range",
                 )
                 obj.interpolation_ref = bezier3d_nodes[obj.interpolation_offset]
 
-        for group in (parsed.main_keys, parsed.last_keys, parsed.speed_points):
+        for group, bezier3d in ((parsed.main_keys, True), (parsed.last_keys, True), (parsed.speed_points, False)):
             for obj in group:
-                _attach(obj)
+                _attach(obj, bezier3d)

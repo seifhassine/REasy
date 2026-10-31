@@ -4,8 +4,8 @@ import copy
 import uuid
 from dataclasses import fields
 
-from .enums import PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
-from .parser import ParsedClip
+from .enums import PropertyType, property_type_has_children, property_type_or_unknown
+from .parser import ParsedClip, extra_key_flag_mask
 from .reader import ClipParserError
 lazy from .structures import (
     ActionKey,
@@ -44,20 +44,22 @@ class ClipGraphOperations:
 
     @staticmethod
     def create_track() -> Track:
-        return Track(enable=1, type_ascii="Timeline", type_unicode="Timeline", group_name="New Track")
+        return Track(enable=1, name="Timeline", unicode_name="Timeline", group_name="New Track")
 
     @staticmethod
     def create_clip_info(total_frame: float = 0.0) -> ClipInfo:
         return ClipInfo(frame_out=total_frame, source_out=total_frame, unicode_name="New Clip")
 
     @staticmethod
-    def create_node(total_frame: float = 0.0) -> Node:
+    def create_node(total_frame: float = 0.0, version: int = 0) -> Node:
         return Node(
             begin_frame=0.0,
             end_frame=total_frame,
-            root_node_guid=uuid.uuid4().bytes_le,
-            ex_id=uuid.uuid4().bytes_le,
+            guid=uuid.uuid4().bytes_le,
+            node_id_guid=uuid.uuid4().bytes_le,
+            editor_id=(uuid.uuid4().int & 0xFFFFFFFF or 1) if version >= 86 else 0,
             name="New Node",
+            ascii_name="New Node",
             node_tag="",
         )
 
@@ -73,8 +75,9 @@ class ClipGraphOperations:
             end_frame=total_frame,
             name="New Property",
             property_type=int(property_type),
+            editor_id=(uuid.uuid4().int & 0xFFFFFFFF or 1) if version >= 86 else 0,
         )
-        if not cls.is_property_container(prop):
+        if not cls.is_property_container(prop, version):
             prop.keys.append(cls.create_key_for_type(property_type, version))
         return prop
 
@@ -169,13 +172,8 @@ class ClipGraphOperations:
             return
         old_type = property_type_or_unknown(prop.property_type)
         new_type = property_type_or_unknown(int(property_type))
-        old_container = old_type in PROPERTY_TYPES_WITH_CHILDREN
-        new_container = new_type in PROPERTY_TYPES_WITH_CHILDREN
-        removed_descendant_ids = (
-            {id(item) for item in self._walk_unique(prop.child_properties, "child_properties")}
-            if old_container and not new_container
-            else set()
-        )
+        old_container = property_type_has_children(prop.property_type, self.parsed.header.version)
+        new_container = property_type_has_children(property_type, self.parsed.header.version)
         prop.property_type = int(property_type)
 
         if new_container:
@@ -193,7 +191,6 @@ class ClipGraphOperations:
 
         prop.child_properties = []
         prop.children = []
-        self._clear_clip_property_refs_to(removed_descendant_ids)
         if old_container:
             prop.keys = [self.create_key_for_type(new_type, self.parsed.header.version)]
         else:
@@ -316,7 +313,7 @@ class ClipGraphOperations:
         self._append_unique(node.properties, prop)
 
     def add_property_child(self, parent_prop: Property, child_prop: Property):
-        if not self.is_property_container(parent_prop):
+        if not self.is_property_container(parent_prop, self.parsed.header.version):
             raise ClipParserError("Only container properties can own child properties")
         if parent_prop is child_prop or self._graph_contains(child_prop, parent_prop, "child_properties"):
             raise ClipParserError("Attaching this property would create a cycle")
@@ -332,10 +329,9 @@ class ClipGraphOperations:
             node.properties = [item for item in node.properties if id(item) not in doomed_ids]
         for parent in self._all_properties():
             parent.child_properties = [item for item in parent.child_properties if id(item) not in doomed_ids]
-        self._clear_clip_property_refs_to(doomed_ids)
 
     def add_property_key(self, prop: Property, key_obj: object | None = None):
-        if self.is_property_container(prop):
+        if self.is_property_container(prop, self.parsed.header.version):
             raise ClipParserError(_CONTAINER_KEY_ERROR)
         if key_obj is None:
             key_obj = self._create_key_for_property(prop)
@@ -353,15 +349,16 @@ class ClipGraphOperations:
         key_obj: object | None = None,
         slot: int | None = None,
     ):
-        """Add or move a key into one of the four v53+ extra-key slots."""
-        if self.is_property_container(prop):
+        """Add or move a key into one of the v53+ extra-key slots (three before v85, four from v85)."""
+        if self.is_property_container(prop, self.parsed.header.version):
             raise ClipParserError(_CONTAINER_KEY_ERROR)
         if self.parsed.header.version < 53:
             raise ClipParserError("Properties before v53 cannot own extra keys")
-        if slot is not None and not 0 <= slot < 4:
-            raise ClipParserError("Extra-key slot must be in the range 0..3")
-        if len(prop.extra_keys) > 4:
-            raise ClipParserError("Properties support at most four extra-key flags")
+        slot_count = extra_key_flag_mask(self.parsed.header.version).bit_count()
+        if slot is not None and not 0 <= slot < slot_count:
+            raise ClipParserError(f"Extra-key slot must be in the range 0..{slot_count - 1}")
+        if len(prop.extra_keys) > slot_count:
+            raise ClipParserError(f"Properties support at most {slot_count} extra keys")
 
         if key_obj is None:
             key_obj = self._create_key_for_property(prop)
@@ -375,7 +372,7 @@ class ClipGraphOperations:
         if current_slot is not None and (slot is None or slot == current_slot):
             return key_obj
 
-        slot = self._resolve_extra_key_slot(prop, slot, current_slot)
+        slot = self._resolve_extra_key_slot(prop, slot, current_slot, slot_count)
         self._detach_key(key_obj, prop)
         slots = self.extra_key_slots(prop)
         insert_at = sum(existing < slot for existing in slots)
@@ -390,18 +387,19 @@ class ClipGraphOperations:
         prop: Property,
         slot: int | None,
         current_slot: int | None,
+        slot_count: int,
     ) -> int:
         occupied = set(cls.extra_key_slots(prop))
         if current_slot is not None:
             occupied.remove(current_slot)
         if slot is None:
-            slot = next((candidate for candidate in range(4) if candidate not in occupied), None)
+            slot = next((candidate for candidate in range(slot_count) if candidate not in occupied), None)
             if slot is None:
-                raise ClipParserError("Properties support at most four extra keys")
+                raise ClipParserError(f"Properties support at most {slot_count} extra keys")
         elif slot in occupied:
             raise ClipParserError(f"Extra-key slot {slot} is already occupied")
-        if current_slot is None and len(prop.extra_keys) >= 4:
-            raise ClipParserError("Properties support at most four extra keys")
+        if current_slot is None and len(prop.extra_keys) >= slot_count:
+            raise ClipParserError(f"Properties support at most {slot_count} extra keys")
         return slot
 
     def add_last_key(self, prop: Property, key_obj: object | None = None):
@@ -416,7 +414,7 @@ class ClipGraphOperations:
 
     def set_last_key(self, prop: Property, key_obj: object | None):
         """Replace or clear the versioned LastKey relationship."""
-        if self.is_property_container(prop):
+        if self.is_property_container(prop, self.parsed.header.version):
             raise ClipParserError(_CONTAINER_KEY_ERROR)
         if self.parsed.header.version >= 53:
             return self._set_extra_last_key(prop, key_obj)
@@ -435,8 +433,9 @@ class ClipGraphOperations:
         return key_obj
 
     def _set_extra_last_key(self, prop: Property, key_obj: object | None):
-        if len(prop.extra_keys) > 4:
-            raise ClipParserError("Properties support at most four extra-key flags")
+        slot_count = extra_key_flag_mask(self.parsed.header.version).bit_count()
+        if len(prop.extra_keys) > slot_count:
+            raise ClipParserError(f"Properties support at most {slot_count} extra keys")
         slots = self.extra_key_slots(prop)
         current = next((key for key, slot in zip(prop.extra_keys, slots) if slot == 0), None)
         if key_obj is current:
@@ -449,7 +448,7 @@ class ClipGraphOperations:
         return self.add_extra_key(prop, key_obj, slot=0) if key_obj is not None else None
 
     def add_speed_point(self, prop: Property, point: SpeedPoint | None = None) -> SpeedPoint:
-        if self.is_property_container(prop):
+        if self.is_property_container(prop, self.parsed.header.version):
             raise ClipParserError("Container properties cannot own speed points")
         if (
             self.parsed.header.version < 40
@@ -522,19 +521,23 @@ class ClipGraphOperations:
         return True
 
     def duplicate_node(self, node: Node, randomize_guids: bool = True) -> Node:
-        new_node = copy.deepcopy(node, self._external_reference_memo([node]))
+        new_node = copy.deepcopy(node, self._external_reference_memo())
         if randomize_guids:
-            self._randomize_node_guids(new_node)
+            self._randomize_node_guids(new_node, self.parsed.header.version >= 86)
         return new_node
 
     def duplicate_property(self, prop: Property) -> Property:
-        return copy.deepcopy(prop, self._external_reference_memo([], [prop]))
+        new_prop = copy.deepcopy(prop, self._external_reference_memo())
+        if self.parsed.header.version >= 86:
+            for item in self._walk_unique([new_prop], "child_properties"):
+                item.editor_id = uuid.uuid4().int & 0xFFFFFFFF or 1
+        return new_prop
 
     def duplicate_clip_info(self, clip_info: ClipInfo) -> ClipInfo:
-        return copy.deepcopy(clip_info, self._external_reference_memo(clip_info.root_nodes))
+        return copy.deepcopy(clip_info, self._external_reference_memo())
 
     def duplicate_track(self, track: Track) -> Track:
-        return copy.deepcopy(track, self._external_reference_memo(track.child_nodes))
+        return copy.deepcopy(track, self._external_reference_memo())
 
     def duplicate_key(self, key):
         memo = {id(asset): asset for asset in self.parsed.user_data_assets}
@@ -623,7 +626,16 @@ class ClipGraphOperations:
     def extra_key_slots(prop: Property) -> list[int]:
         flags = prop.extra_key_flags & 0xF
         slots = [slot for slot in range(4) if flags & (1 << slot)]
-        return slots if len(slots) == len(prop.extra_keys) else list(range(len(prop.extra_keys)))
+        # Before v85 a stray bit 3 owns no key; it is always the highest set bit, so the owners come first.
+        return slots[:len(prop.extra_keys)] if len(slots) >= len(prop.extra_keys) else list(range(len(prop.extra_keys)))
+
+    @classmethod
+    def subtree_extra_key_mask(cls, node: Node) -> int:
+        nodes = cls._walk_unique([node], "child_nodes")
+        mask = 0
+        for prop in cls._walk_unique([prop for item in nodes for prop in item.properties], "child_properties"):
+            mask |= prop.extra_key_flags
+        return mask & 0xE
 
     @classmethod
     def _remove_key_from_owner(cls, prop: Property, key_obj: object):
@@ -638,8 +650,8 @@ class ClipGraphOperations:
             prop.last_key_offset = 0
 
     @staticmethod
-    def is_property_container(prop: Property) -> bool:
-        return property_type_or_unknown(prop.property_type) in PROPERTY_TYPES_WITH_CHILDREN
+    def is_property_container(prop: Property, version: int) -> bool:
+        return property_type_has_children(prop.property_type, version)
 
     @staticmethod
     def iter_property_payload_keys(prop: Property, include_last: bool = False):
@@ -668,7 +680,7 @@ class ClipGraphOperations:
 
     def _detach_node_root_references(self, node: Node):
         self._remove_attr(self.parsed, "root_nodes", node)
-        self._remove_attr(self.parsed, "nodes_reorder_nodes", node)
+        self._remove_attr(self.parsed, "clip_root_nodes", node)
         for track in self.parsed.tracks:
             self._remove_attr(track, "child_nodes", node)
         for clip in self.parsed.clip_infos:
@@ -683,14 +695,6 @@ class ClipGraphOperations:
             self._remove_attr(node, "properties", prop)
         for parent in self._all_properties():
             self._remove_attr(parent, "child_properties", prop)
-
-    def _clear_clip_property_refs_to(self, target_ids: set[int]):
-        if not target_ids:
-            return
-        for owner in self._all_properties():
-            if owner.clip_property_ref is not None and id(owner.clip_property_ref) in target_ids:
-                owner.clip_property_ref = None
-                owner.clip_property_offset = 0
 
     def _track_for_clip(self, clip_info: ClipInfo) -> Track | None:
         return next((track for track in self.parsed.tracks if self._contains_identity(
@@ -709,33 +713,22 @@ class ClipGraphOperations:
         roots = [*node.properties for node in self._all_nodes()]
         return list(self._walk_unique(roots, "child_properties"))
 
-    def _external_reference_memo(
-        self,
-        node_roots: list[Node],
-        property_roots: list[Property] | None = None,
-    ) -> dict[int, object]:
-        memo: dict[int, object] = {id(asset): asset for asset in self.parsed.user_data_assets}
-        owned_props = list(property_roots or [])
-        for node in self._walk_unique(node_roots, "child_nodes"):
-            owned_props.extend(node.properties)
-        owned = list(self._walk_unique(owned_props, "child_properties"))
-        owned_ids = {id(prop) for prop in owned}
-        for prop in owned:
-            ref = prop.clip_property_ref
-            if ref is not None and id(ref) not in owned_ids:
-                memo[id(ref)] = ref
-        return memo
+    def _external_reference_memo(self) -> dict[int, object]:
+        return {id(asset): asset for asset in self.parsed.user_data_assets}
 
     @classmethod
-    def _randomize_node_guids(cls, node: Node, seen: set[int] | None = None):
+    def _randomize_node_guids(cls, node: Node, editor_ids: bool = False, seen: set[int] | None = None):
         seen = seen or set()
         if id(node) in seen:
             return
         seen.add(id(node))
-        node.root_node_guid = uuid.uuid4().bytes_le
-        node.ex_id = uuid.uuid4().bytes_le
+        node.guid = uuid.uuid4().bytes_le
+        node.node_id_guid = uuid.uuid4().bytes_le
+        if editor_ids:
+            for item in [node, *cls._walk_unique(node.properties, "child_properties")]:
+                item.editor_id = uuid.uuid4().int & 0xFFFFFFFF or 1
         for child in node.child_nodes:
-            cls._randomize_node_guids(child, seen)
+            cls._randomize_node_guids(child, editor_ids, seen)
 
     @staticmethod
     def _graph_contains(root, target, child_attr: str) -> bool:

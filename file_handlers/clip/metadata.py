@@ -25,6 +25,7 @@ INTERPOLATION_NAMES = {
 INTERPOLATION_BY_NAME = {name.lower(): value for value, name in INTERPOLATION_NAMES.items()}
 INTERPOLATION_DEFAULT_REFS = {
     0x5: (0.0, 0.0, 0.0, 0.0),
+    0x7: (0.0, 0.0, 0.0, 0.0),
     0xC: (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
 }
 

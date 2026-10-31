@@ -4,9 +4,12 @@ import struct
 from collections import Counter
 from copy import deepcopy
 
-from .enums import CLIP_MAGIC, PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
+from .enums import CLIP_MAGIC, PropertyType, property_type_has_children, property_type_or_unknown
+lazy from .graph_operations import ClipGraphOperations
 lazy from .parser import (
+    INTERPOLATION_TYPES_HERMITE_TABLE,
     ParsedClip,
+    extra_key_flag_mask,
     header_size,
     iter_header_fields,
     key_size,
@@ -26,7 +29,6 @@ lazy from .structures import (
 lazy from utils.hash_util import murmur3_hash
 
 
-INTERPOLATION_TYPE_HERMITE = 0x5
 INTERPOLATION_TYPE_BEZIER3D = 0xC
 _HEADER_PACK_FORMATS = {
     "f32": "<f",
@@ -81,7 +83,7 @@ class ClipWriter:
         h.track_num = len(parsed.tracks)
         h.clip_info_num = len(parsed.clip_infos) if h.version >= 40 else 0
         h.track_child_num = len(parsed.track_child_offsets)
-        h.node_count_pragmata = len(parsed.nodes_reorder_offsets) if h.version >= 85 else 0
+        h.clip_root_node_num = len(parsed.clip_root_node_offsets) if h.version >= 85 else 0
         h.node_num = len(parsed.nodes)
         h.property_num = len(parsed.properties)
         h.key_num = len(parsed.main_keys)
@@ -190,8 +192,8 @@ class ClipWriter:
             w32(tr.reserved)
             out.extend(struct.pack("<i", tr.clip_num))
             out.extend(struct.pack("<i", tr.child_node_num))
-            write_string_ref(tr.type_ascii, False)
-            write_string_ref(tr.type_unicode, True)
+            write_string_ref(tr.name, False)
+            write_string_ref(tr.unicode_name, True)
             write_string_ref(tr.group_name, True)
             if h.version >= 40:
                 w64(tr.clip_info_offset)
@@ -204,25 +206,25 @@ class ClipWriter:
             for ci in parsed.clip_infos:
                 wf(ci.frame_in); wf(ci.frame_out); wf(ci.source_in); wf(ci.source_out)
                 if h.version >= 85:
-                    w64(ci.root_node_count)
+                    w32(ci.root_node_count)
+                    w32(0)
                 write_string_ref(ci.unicode_name, True)
                 if h.version >= 85:
                     w64(ci.root_node_offset)
 
-        # Nodes reorder
-        align(8)
-        h.nodes_reorder_offset2 = tell() if h.version >= 85 else 0
-        nodes_reorder_patch_pos = tell()
-        if h.version >= 85:
-            for _ in parsed.nodes_reorder_offsets:
-                w64(0)
-
-        # Track children (patched once node table position is known)
+        # Track children and (v85+) clip roots, patched once node table position is known
         align(8)
         h.track_child_tbl_ptr = tell()
         track_child_table_patch_pos = tell()
         for _ in parsed.track_child_offsets:
             w64(0)
+
+        align(8)
+        h.clip_root_node_tbl_ptr = tell() if h.version >= 85 else 0
+        clip_root_table_patch_pos = tell()
+        if h.version >= 85:
+            for _ in parsed.clip_root_node_offsets:
+                w64(0)
 
         # Nodes
         align(8)
@@ -233,15 +235,16 @@ class ClipWriter:
             struct.pack_into("<I", rec, 4, n.property_num)
             struct.pack_into("<f", rec, 8, n.begin_frame)
             struct.pack_into("<f", rec, 12, n.end_frame)
-            if len(n.root_node_guid) != 16:
-                raise ClipParserError("Node root_node_guid must be 16 bytes")
-            rec[16:32] = n.root_node_guid
-            p = 32
+            p = 16
             if h.version <= 43:
-                if len(n.ex_id) != 16:
-                    raise ClipParserError("Node ex_id must be 16 bytes for CLIP <= 43")
-                rec[p:p + 16] = n.ex_id
+                if len(n.node_id_guid) != 16:
+                    raise ClipParserError("Node node_id_guid must be 16 bytes for CLIP <= 43")
+                rec[p:p + 16] = n.node_id_guid
                 p += 16
+            if len(n.guid) != 16:
+                raise ClipParserError("Node guid must be 16 bytes")
+            rec[p:p + 16] = n.guid
+            p += 16
             if h.version >= 53:
                 bits = (n.node_type & 0xFF) | ((n.unique_id & 0xFFFF) << 8)
                 if h.version >= 85:
@@ -249,14 +252,17 @@ class ClipWriter:
             else:
                 bits = n.node_type & 0xFF
             struct.pack_into("<I", rec, p, bits); p += 4
-            struct.pack_into("<I", rec, p, n.dev32_id if h.version >= 86 else 0); p += 4
-            struct.pack_into("<I", rec, p, n.unique32_id if h.version >= 86 else n.name_hash)
+            struct.pack_into("<I", rec, p, n.editor_id if h.version >= 86 else 0); p += 4
+            struct.pack_into("<I", rec, p, n.name_hash)
             struct.pack_into("<I", rec, p + 4, n.unicode_name_hash)
 
-            name_wide = h.version != 27
-            patch_entries.append((tell() + p + 8, n.name, name_wide, False))
-            if h.version != 34:
-                patch_entries.append((tell() + p + 16, n.node_tag, True, False))
+            if h.version == 27:
+                patch_entries.append((tell() + p + 8, n.ascii_name, False, False))
+                patch_entries.append((tell() + p + 16, n.name, True, False))
+            else:
+                patch_entries.append((tell() + p + 8, n.name, True, False))
+                if h.version != 34:
+                    patch_entries.append((tell() + p + 16, n.node_tag, True, False))
             if h.version == 34:
                 struct.pack_into("<Q", rec, p + 16, n.child_offset)
                 struct.pack_into("<Q", rec, p + 24, n.property_offset)
@@ -268,8 +274,8 @@ class ClipWriter:
         # Patch root/track-child tables using resolved node references (raw node-record pointers).
         nsz = node_size(h.version)
         if h.version >= 85:
-            for i, idx in enumerate(parsed.nodes_reorder_offsets):
-                struct.pack_into("<Q", out, nodes_reorder_patch_pos + i * 8, h.node_tbl_ptr + idx * nsz)
+            for i, idx in enumerate(parsed.clip_root_node_offsets):
+                struct.pack_into("<Q", out, clip_root_table_patch_pos + i * 8, h.node_tbl_ptr + idx * nsz)
         for i, idx in enumerate(parsed.root_node_offsets):
             struct.pack_into("<Q", out, root_table_patch_pos + i * 8, h.node_tbl_ptr + idx * nsz)
         for i, idx in enumerate(parsed.track_child_offsets):
@@ -283,7 +289,7 @@ class ClipWriter:
             if h.version >= 40:
                 struct.pack_into("<f", rec, 0, p.begin_frame)
                 struct.pack_into("<f", rec, 4, p.end_frame)
-                struct.pack_into("<I", rec, 8, p.unique32_id if h.version >= 86 else p.name_hash)
+                struct.pack_into("<I", rec, 8, p.editor_id if h.version >= 86 else p.name_hash)
                 struct.pack_into("<I", rec, 12, p.unicode_name_hash)
                 patch_entries.append((tell() + 16, p.name, False, False))
                 struct.pack_into("<Q", rec, 24, p.data_offset)
@@ -302,7 +308,6 @@ class ClipWriter:
                     struct.pack_into("<B", rec, prop_type_off + 1, legacy_property_flags(p))
                     struct.pack_into("<Q", rec, 48, p.last_key_offset)
                     struct.pack_into("<Q", rec, 56, p.speed_point_offset)
-                    struct.pack_into("<Q", rec, 64, p.clip_property_offset)
                 else:
                     fb1 = (
                         (p.is_enum_closed & 1)
@@ -312,13 +317,9 @@ class ClipWriter:
                         | ((p.is_next_diff_frame_set & 1) << 4)
                         | ((p.is_prev_key_value_set & 1) << 5)
                         | ((p.is_delayed_execution & 1) << 6)
+                        | ((p.is_array_count_set & 1) << 7)
                     )
-                    if h.version >= 85:
-                        fb1 |= (p.has_set_property_delegate & 1) << 7
-                    else:
-                        fb1 |= (p.is_array_count_set & 1) << 7
                     # v85+ layout:
-                    # - byte 46 bit7: has_set_property_delegate
                     # - byte 47 bits 0..3: extra_key_flags
                     # - byte 47 bits 4..7: aux_key_flags
                     fb2 = ((p.extra_key_flags & 0xF) if h.version < 85 else
@@ -339,13 +340,15 @@ class ClipWriter:
                 struct.pack_into("<I", rec, 24, p.name_hash)
                 struct.pack_into("<I", rec, 28, p.unicode_name_hash)
                 patch_entries.append((tell() + 32, p.name, False, False))
-                patch_entries.append((tell() + 40, p.legacy_unicode_name, True, False))
-                struct.pack_into("<Q", rec, 64, p.data_offset)
+                if h.version == 27:
+                    patch_entries.append((tell() + 40, p.legacy_unicode_name, True, False))
+                    struct.pack_into("<Q", rec, 48, p.data_offset)
+                else:
+                    struct.pack_into("<Q", rec, 40, p.data_offset)
                 struct.pack_into("<Q", rec, 72, p.key_or_child_offset)
                 struct.pack_into("<Q", rec, 80, p.key_num_or_element_num)
                 struct.pack_into("<Q", rec, 88, p.last_key_offset)
                 struct.pack_into("<Q", rec, 96, p.speed_point_offset)
-                struct.pack_into("<Q", rec, 104, p.clip_property_offset)
             out.extend(rec)
 
         # Key tables
@@ -420,7 +423,7 @@ class ClipWriter:
 
         if h.version <= 27:
             align(8)
-            h.legacy_clip_info_tbl_ptr = tell()
+            h.path_point_aux_tbl_ptr = tell()
 
         align(8)
         h.last_key_tbl_ptr = tell() if h.version <= 43 else 0
@@ -496,7 +499,9 @@ class ClipWriter:
         return [] if parsed.header.version >= 85 else list(parsed.root_nodes)
 
     def _rebuild_tables_from_graph(self, parsed: ParsedClip):
+        version = parsed.header.version
         old_root_nodes = list(parsed.root_nodes)
+        old_clip_root_nodes = list(parsed.clip_root_nodes)
         old_track_child_nodes = list(getattr(parsed, "track_child_nodes", []))
         has_clip_info_table = parsed.header.version >= 40
         has_clip_root_ranges = parsed.header.version >= 85
@@ -558,29 +563,18 @@ class ClipWriter:
             node.property_offset = prop_to_index[id(node.properties[0])] if node.properties else 0
             node.property_num = len(node.properties)
 
-        if parsed.header.version <= 43:
-            for prop in properties:
-                if prop.clip_property_ref is None:
-                    prop.clip_property_offset = 0
-                    continue
-                target = prop_to_index.get(id(prop.clip_property_ref))
-                if target is None:
-                    raise ClipParserError("clip_property_ref points outside the serialized property table")
-                if target == 0:
-                    raise ClipParserError(
-                        "clip_property_ref cannot target property index 0 because zero is the null sentinel"
-                    )
-                prop.clip_property_offset = target
-
         key_sequences: dict[int, list[list]] = {0: [], 1: [], 2: [], 3: []}
         prepared_keys: dict[int, tuple[list, int]] = {}
         for prop in properties:
-            if property_type_or_unknown(prop.property_type) in PROPERTY_TYPES_WITH_CHILDREN:
+            if property_type_has_children(prop.property_type, version):
                 continue
             ordered_keys, key_kind = self._prepare_property_key_sequence(parsed, prop)
             prepared_keys[id(prop)] = ordered_keys, key_kind
             if ordered_keys:
                 key_sequences[key_kind].append(ordered_keys)
+        if version >= 85:
+            for node in nodes:
+                node.extra_property_pass_mask = ClipGraphOperations.subtree_extra_key_mask(node)
         old_key_tables = (
             parsed.main_keys, parsed.bool_keys, parsed.action_keys, parsed.no_hermite_keys
         )
@@ -638,26 +632,28 @@ class ClipWriter:
                 (clip, clip.root_nodes, clip.root_node_offset)
                 for clip in parsed.clip_infos
             ]
-            parsed.root_nodes, starts = self._occurrence_table(old_root_nodes, root_owners)
+            parsed.clip_root_nodes, starts = self._occurrence_table(old_clip_root_nodes, root_owners)
             for clip in parsed.clip_infos:
                 clip.root_node_offset = starts[id(clip)]
                 clip.root_node_count = len(clip.root_nodes)
         else:
-            required_roots = (
-                [*track.child_nodes for track in parsed.tracks]
-                if parsed.tracks else old_root_nodes
-            )
-            # Root and track-child pointer tables can have different ordering,
-            # so retain the root occurrence order while it still represents
-            # exactly the live track roots. Reconcile it when an edit changes
-            # that identity multiset, even if the total count stays unchanged.
-            parsed.root_nodes = (
-                list(old_root_nodes)
-                if self._identity_counts(old_root_nodes) == self._identity_counts(required_roots)
-                else self._reconcile_occurrences(old_root_nodes, required_roots)
-            )
+            parsed.clip_root_nodes = []
+        required_roots = (
+            [*track.child_nodes for track in parsed.tracks]
+            if parsed.tracks else old_root_nodes
+        )
+        # Root and track-child pointer tables can have different ordering,
+        # so retain the root occurrence order while it still represents
+        # exactly the live track roots. Reconcile it when an edit changes
+        # that identity multiset, even if the total count stays unchanged.
+        parsed.root_nodes = (
+            list(old_root_nodes)
+            if self._identity_counts(old_root_nodes) == self._identity_counts(required_roots)
+            else self._reconcile_occurrences(old_root_nodes, required_roots)
+        )
 
         parsed.root_node_offsets = self._indices_for(parsed.root_nodes, node_to_index, "Root node")
+        parsed.clip_root_node_offsets = self._indices_for(parsed.clip_root_nodes, node_to_index, "Clip root node")
         track_owners = [
             (track, track.child_nodes, track.child_node_start_index)
             for track in parsed.tracks
@@ -679,13 +675,6 @@ class ClipWriter:
             node_to_index,
             "Track child",
         )
-        if parsed.header.version >= 85:
-            parsed.nodes_reorder_nodes = self._reconcile_occurrences(
-                parsed.nodes_reorder_nodes, parsed.root_nodes
-            )
-            parsed.nodes_reorder_offsets = [
-                node_to_index[id(node)] for node in parsed.nodes_reorder_nodes
-            ]
         self._recalculate_interpolation_offsets_from_references(parsed)
 
     def _validate_graph(self, parsed: ParsedClip):
@@ -701,8 +690,8 @@ class ClipWriter:
         all_properties = self._walk_acyclic(property_roots, "child_properties", "Property")
         self._validate_counts(parsed, clip_infos, node_roots, all_nodes, all_properties)
         self._validate_single_ownership(parsed, all_nodes, all_properties)
-        if parsed.header.version < 86 and any(node.dev32_id for node in all_nodes):
-            raise ClipParserError("Node.dev32_id is reserved before CLIP v86")
+        if parsed.header.version < 86 and any(node.editor_id for node in all_nodes):
+            raise ClipParserError("Node.editor_id is reserved before CLIP v86")
 
         c8_types = {PropertyType.ENUM, PropertyType.STR8}
         c16_types = {
@@ -712,8 +701,7 @@ class ClipWriter:
             PropertyType.GAME_OBJECT_REF,
             PropertyType.GUID,
         }
-        if parsed.header.version < 62:
-            c16_types.add(PropertyType.USER_DATA_ASSET)
+        extra_key_limit = extra_key_flag_mask(parsed.header.version).bit_count()
         for prop in all_properties:
             if prop.data_offset:
                 raise ClipParserError(
@@ -723,14 +711,14 @@ class ClipWriter:
             extras = prop.extra_keys
             if parsed.header.version < 53 and extras:
                 raise ClipParserError("Properties before v53 cannot own extra keys")
+            if len(extras) > extra_key_limit:
+                raise ClipParserError(f"CLIP v{parsed.header.version} properties own at most {extra_key_limit} extra keys")
             if parsed.header.version > 43 and prop.last_key_ref is not None:
                 raise ClipParserError("Properties after v43 cannot own legacy last-key records")
-            if parsed.header.version > 43 and prop.clip_property_ref is not None:
-                raise ClipParserError("Properties after v43 cannot own clip_property_ref relationships")
             if parsed.header.version >= 85 and not 0 <= prop.aux_key_flags <= 0x3:
                 raise ClipParserError("Unknown aux_key_flags value")
             payload_keys = self._property_payload_keys(prop)
-            if ptype in PROPERTY_TYPES_WITH_CHILDREN:
+            if property_type_has_children(prop.property_type, parsed.header.version):
                 if payload_keys:
                     raise ClipParserError("Container properties cannot also own key payloads")
                 if prop.speed_points_ref:
@@ -755,6 +743,8 @@ class ClipWriter:
             else:
                 expected_width = None
             for key in payload_keys:
+                if parsed.header.version == 27 and (key.offset_frame_flag or key.reserved):
+                    raise ClipParserError("v27 keys hold the interpolation type in the whole word")
                 if expected_width is not None and getattr(key, "string_is_wide", -1) != expected_width:
                     encoding = "UTF-16" if expected_width else "ASCII"
                     raise ClipParserError(f"{encoding} string property key has no modeled string payload")
@@ -768,15 +758,13 @@ class ClipWriter:
                     except ValueError as exc:
                         raise ClipParserError(str(exc)) from None
 
+        key_tables = {*INTERPOLATION_TYPES_HERMITE_TABLE, INTERPOLATION_TYPE_BEZIER3D}
         interpolation_objects = [
-            key for prop in all_properties for key in self._property_payload_keys(prop)
+            (key, key_tables) for prop in all_properties for key in self._property_payload_keys(prop)
             if isinstance(key, Key)
-        ] + [*prop.speed_points_ref for prop in all_properties]
-        for item in interpolation_objects:
-            if (
-                item.interpolation_type in {INTERPOLATION_TYPE_HERMITE, INTERPOLATION_TYPE_BEZIER3D}
-                and item.interpolation_ref is None
-            ):
+        ] + [(point, INTERPOLATION_TYPES_HERMITE_TABLE) for prop in all_properties for point in prop.speed_points_ref]
+        for item, table_types in interpolation_objects:
+            if item.interpolation_type in table_types and item.interpolation_ref is None:
                 raise ClipParserError("Interpolated key has no referenced control-point record")
 
         if parsed.header.version >= 85:
@@ -811,10 +799,8 @@ class ClipWriter:
         key_counts = Counter()
         key_types = (Key, BoolKey, ActionKey, NoHermiteKey)
         for prop in properties:
-            ptype = property_type_or_unknown(prop.property_type)
-            range_count = len(
-                prop.child_properties if ptype in PROPERTY_TYPES_WITH_CHILDREN else prop.keys
-            )
+            has_children = property_type_has_children(prop.property_type, version)
+            range_count = len(prop.child_properties if has_children else prop.keys)
             if version >= 40 and range_count > 0xFFFF:
                 raise ClipParserError("Property key/child count exceeds u16")
             if version >= 43:
@@ -825,7 +811,7 @@ class ClipWriter:
                 speed_bits = 32
             if len(prop.speed_points_ref) >= 1 << speed_bits:
                 raise ClipParserError(f"Property speed-point count exceeds u{speed_bits}")
-            if ptype not in PROPERTY_TYPES_WITH_CHILDREN:
+            if not has_children:
                 key_counts.update(next((kind for kind in key_types if isinstance(key, kind)), None) for key in (*prop.keys, *prop.extra_keys))
         if any(key_counts[key_type] > 0xFFFFFFFF for key_type in key_types):
             raise ClipParserError("Key-table count exceeds u32")
@@ -861,7 +847,7 @@ class ClipWriter:
             (
                 cls._property_payload_keys(prop)
                 for prop in properties
-                if property_type_or_unknown(prop.property_type) not in PROPERTY_TYPES_WITH_CHILDREN
+                if not property_type_has_children(prop.property_type, parsed.header.version)
             ),
             "Key",
         )
@@ -1010,10 +996,11 @@ class ClipWriter:
                 raise ClipParserError("Properties before v53 cannot own extra keys")
             prop.extra_key_flags = 0
         else:
-            if len(extras) > 4:
-                raise ClipParserError("Properties support at most four extra-key flags")
+            mask = extra_key_flag_mask(parsed.header.version)
+            if len(extras) > mask.bit_count():
+                raise ClipParserError(f"CLIP v{parsed.header.version} properties own at most {mask.bit_count()} extra keys")
             flags = prop.extra_key_flags & 0xF
-            prop.extra_key_flags = flags if flags.bit_count() == len(extras) else (1 << len(extras)) - 1
+            prop.extra_key_flags = flags if (flags & mask).bit_count() == len(extras) else (1 << len(extras)) - 1
 
         ordered_keys = [*prop.keys, *extras]
         if (
@@ -1046,8 +1033,7 @@ class ClipWriter:
         speed_point_index_by_id: dict[int, int],
         property_index_by_id: dict[int, int],
     ):
-        ptype = property_type_or_unknown(prop.property_type)
-        if ptype in PROPERTY_TYPES_WITH_CHILDREN:
+        if property_type_has_children(prop.property_type, parsed.header.version):
             prop.key_num_or_element_num = len(prop.child_properties)
             prop.key_or_child_offset = (
                 property_index_by_id[id(prop.child_properties[0])]
@@ -1074,35 +1060,32 @@ class ClipWriter:
         )
 
     def _recalculate_interpolation_offsets_from_references(self, parsed: ParsedClip):
-        objects = [*parsed.main_keys, *parsed.last_keys, *parsed.speed_points]
-        tables = {}
-        for interpolation_type, attr in (
-            (INTERPOLATION_TYPE_HERMITE, "hermite_nodes"),
-            (INTERPOLATION_TYPE_BEZIER3D, "bezier3d_nodes"),
+        keys = [*parsed.main_keys, *parsed.last_keys]
+        objects = [*keys, *parsed.speed_points]
+        indexed: set[int] = set()
+        for interpolation_types, attr, owners in (
+            (INTERPOLATION_TYPES_HERMITE_TABLE, "hermite_nodes", objects),
+            ((INTERPOLATION_TYPE_BEZIER3D,), "bezier3d_nodes", keys),
         ):
-            references = [
-                item.interpolation_ref
-                for item in objects
-                if item.interpolation_type == interpolation_type and item.interpolation_ref is not None
-            ]
-            table = self._retain_reference_order(getattr(parsed, attr), references)
+            users = [item for item in owners if item.interpolation_type in interpolation_types]
+            table = self._retain_reference_order(getattr(parsed, attr), [item.interpolation_ref for item in users])
             setattr(parsed, attr, table)
-            tables[interpolation_type] = {id(row): index for index, row in enumerate(table)}
+            index = {id(row): i for i, row in enumerate(table)}
+            for item in users:
+                item.interpolation_offset = 0 if item.interpolation_ref is None else index[id(item.interpolation_ref)]
+                indexed.add(id(item))
 
         for item in objects:
-            table = tables.get(item.interpolation_type)
-            if table is None:
+            if id(item) not in indexed:
                 item.interpolation_ref = None
                 item.interpolation_offset = 0
-            elif item.interpolation_ref is None:
-                item.interpolation_offset = 0
-            else:
-                item.interpolation_offset = table[id(item.interpolation_ref)]
 
     def _recalculate_string_hashes(self, parsed: ParsedClip):
         if parsed.header.version <= 27:
             for item in [*parsed.nodes, *parsed.properties]:
-                item.name_hash = item.unique32_id = item.unicode_name_hash = 0
+                item.name_hash = item.unicode_name_hash = 0
+            for p in parsed.properties:
+                p.editor_id = 0
             return
         for n in parsed.nodes:
             if parsed.header.version < 86:

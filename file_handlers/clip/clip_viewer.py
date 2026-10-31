@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from .enums import PROPERTY_TYPES_WITH_CHILDREN, PropertyType, property_type_or_unknown
+from .enums import PropertyType, property_type_or_unknown
 from .graph_operations import ClipGraphOperations
 lazy from .metadata import (
     AUX_KEY_TABLE_NAMES,
@@ -135,10 +135,6 @@ def _prop_type_name(prop: Property) -> str:
     return ptype.name if ptype is not PropertyType.UNKNOWN else f"0x{int(prop.property_type):X}"
 
 
-def _is_property_container(prop: Property) -> bool:
-    return _prop_type(prop) in PROPERTY_TYPES_WITH_CHILDREN
-
-
 def _guid_text(raw: bytes) -> str:
     if not raw:
         return ""
@@ -167,8 +163,9 @@ def _parse_guid_text(text: str) -> bytes:
 def _node_display_name(node: Node) -> str:
     return (
         node.name
+        or node.ascii_name
         or node.node_tag
-        or _guid_text(node.root_node_guid)
+        or _guid_text(node.guid)
         or QCoreApplication.translate("ClipViewer", "Node")
     )
 
@@ -360,8 +357,8 @@ class ClipTimelineCanvas(QWidget):
     def _add_track_rows(self, index: int, track: Track):
         label = (
             track.group_name
-            or track.type_unicode
-            or track.type_ascii
+            or track.unicode_name
+            or track.name
             or self.tr("Track {index}").format(index=index)
         )
         self.rows.append(self._row(
@@ -469,7 +466,7 @@ class ClipTimelineCanvas(QWidget):
             owner_badge=owner_badge,
             meta=self._property_meta(prop),
         ))
-        if not self._is_collapsed(prop) and ClipGraphOperations.is_property_container(prop) and self._show_property_children(prop):
+        if not self._is_collapsed(prop) and ClipGraphOperations.is_property_container(prop, self.parsed.header.version) and self._show_property_children(prop):
             for child in prop.child_properties:
                 self._add_property_rows(child, depth + 1, owner_node, prop)
 
@@ -505,8 +502,8 @@ class ClipTimelineCanvas(QWidget):
         return prop.name or self.tr("Property")
 
     def _property_meta(self, prop: Property):
-        count = len(prop.child_properties) if ClipGraphOperations.is_property_container(prop) else len(prop.keys)
-        if ClipGraphOperations.is_property_container(prop):
+        count = len(prop.child_properties) if ClipGraphOperations.is_property_container(prop, self.parsed.header.version) else len(prop.keys)
+        if ClipGraphOperations.is_property_container(prop, self.parsed.header.version):
             suffix = (
                 self.tr("{count} child").format(count=count)
                 if count == 1
@@ -967,7 +964,7 @@ class ClipTimelineCanvas(QWidget):
         obj = meta["obj"]
         if isinstance(obj, Track):
             return self.tr("Track: {name}").format(
-                name=obj.group_name or obj.type_unicode or obj.type_ascii or self.tr("Track")
+                name=obj.group_name or obj.unicode_name or obj.name or self.tr("Track")
             )
         if isinstance(obj, ClipInfo):
             return self.tr("Clip: {name}\nFrames {frames}").format(
@@ -1276,7 +1273,7 @@ class ClipTimelineCanvas(QWidget):
         row = self.rows[index]
         if isinstance(obj, Track):
             row.update(
-                label=obj.group_name or obj.type_unicode or obj.type_ascii or self.tr("Track"),
+                label=obj.group_name or obj.unicode_name or obj.name or self.tr("Track"),
 				badge=self.tr("ON") if obj.enable else self.tr("OFF"),
                 badge_color=QColor("#4f8f5b" if obj.enable else "#7a4f4f"),
                 meta=self._track_meta(obj),
@@ -1375,7 +1372,7 @@ class ClipTimelineCanvas(QWidget):
                         self.insert_property_row(item, owner_node if parent is None else None, parent)
                         parent = item
         row_index = self.row_index_for(prop)
-        if row_index < 0 or not ClipGraphOperations.is_property_container(prop) or not self._show_property_children(prop):
+        if row_index < 0 or not ClipGraphOperations.is_property_container(prop, self.parsed.header.version) or not self._show_property_children(prop):
             return
         row = self.rows[row_index]
         for child in prop.child_properties:
@@ -1760,9 +1757,9 @@ class ClipViewer(QWidget):
             roots = _visible_track_child_nodes(obj)
             self._bool_check(obj, "enable", "Enabled")
             self._lines(obj, (
-                ("group_name", "Name"),
-                ("type_ascii", "Type (ASCII)"),
-                ("type_unicode", "Type (Unicode)"),
+                ("group_name", "Group Name"),
+                ("name", "Name (ASCII)"),
+                ("unicode_name", "Name (Unicode)"),
             ))
             self._readonlys((("ClipInfo refs", len(obj.clip_infos)), ("Root nodes", len(roots))))
             self._related(obj.clip_infos, "clip_info", owner_track=obj, owner_list=obj.clip_infos)
@@ -1777,28 +1774,35 @@ class ClipViewer(QWidget):
             ))
             self._related(obj.root_nodes, "node", owner_clip=obj, owner_list=obj.root_nodes)
         elif isinstance(obj, Node):
-            self._lines(obj, (("name", "Name"), ("node_tag", "Tag")))
-            self._guid_line(obj, "root_node_guid", "GUID")
+            version = self.parsed.header.version
+            if version == 27:
+                self._lines(obj, (("name", "Name"), ("ascii_name", "ASCII Name")))
+            elif version == 34:
+                self._lines(obj, (("name", "Name"),))
+            else:
+                self._lines(obj, (("name", "Name"), ("node_tag", "Tag")))
+            self._guid_line(obj, "guid", "GUID")
             self._lines(obj, (("begin_frame", "Begin"), ("end_frame", "End")))
             self._enum_combo(obj, "node_type", "Node Type", NODE_TYPE_NAMES)
             if self.advanced.isChecked():
                 node_fields = []
                 if self.parsed.header.version >= 53:
-                    node_fields.append(("unique_id", "Unique ID"))
+                    node_fields.append(("unique_id", "Node ID"))
                 if self.parsed.header.version >= 86:
-                    node_fields += (("unique32_id", "Unique32 ID"), ("dev32_id", "Unknown v86 Word"))
+                    node_fields += (("name_hash", "Name/Type Hash"), ("editor_id", "Editor ID"))
                 self._lines(obj, node_fields)
                 if self.parsed.header.version <= 43:
-                    self._guid_line(obj, "ex_id", "Ex ID")
-                if self.parsed.header.version >= 86:
-                    self._flag_checks(obj, "extra_property_pass_mask", "Extra Property Mask", EXTRA_PROPERTY_MASK_NAMES)
+                    self._guid_line(obj, "node_id_guid", "Node ID")
+                if self.parsed.header.version >= 85:
+                    mask = ClipGraphOperations.subtree_extra_key_mask(obj)
+                    self._readonly("Extra Property Mask", ", ".join(n for bit, n in EXTRA_PROPERTY_MASK_NAMES.items() if mask & bit))
             self._readonlys((("Properties", len(obj.properties)), ("Children", len(obj.child_nodes))))
             self._related(obj.properties, "property", owner_node=obj, owner_list=obj.properties)
             self._related(obj.child_nodes, "node", owner_node=obj, owner_list=obj.child_nodes)
         elif isinstance(obj, Property):
             self._lines(obj, (("name", "Name"),))
-            if self.advanced.isChecked() and self.parsed.header.version < 40:
-                self._lines(obj, (("legacy_unicode_name", "Legacy Unicode Name"),))
+            if self.advanced.isChecked() and self.parsed.header.version == 27:
+                self._lines(obj, (("legacy_unicode_name", "Unicode Name"),))
             self._property_type(obj)
             self._lines(obj, (("begin_frame", "Begin"), ("end_frame", "End")))
             if self.advanced.isChecked():
@@ -1816,14 +1820,13 @@ class ClipViewer(QWidget):
                     ("is_next_diff_frame_set", "Next Diff Frame"),
                     ("is_prev_key_value_set", "Prev Key Value"),
                     *((("is_delayed_execution", "Delayed Execution"),) if self.parsed.header.version >= 44 else ()),
-                    *((("is_array_count_set", "Array Count Set"),) if 44 <= self.parsed.header.version < 85 else ()),
-                    *((("has_set_property_delegate", "Set Delegate Callback"),) if self.parsed.header.version >= 85 else ()),
+                    *((("is_array_count_set", "Array Count Set"),) if self.parsed.header.version >= 44 else ()),
                 ))
                 self._readonlys((
                     ("Extra Keys", len(obj.extra_keys)),
                     ("Key Table", enum_text(obj.aux_key_flags, AUX_KEY_TABLE_NAMES)),
                 ))
-            if _is_property_container(obj):
+            if ClipGraphOperations.is_property_container(obj, self.parsed.header.version):
                 self._readonly("Children", self._child_count_text(obj))
                 self._related(obj.child_properties, "property", owner_prop=obj, owner_list=obj.child_properties)
             else:
@@ -1852,7 +1855,7 @@ class ClipViewer(QWidget):
     def _update_section_visibility(self, obj):
         has_contents = self.related.count() > 0
         has_key_context = (
-            isinstance(obj, Property) and not _is_property_container(obj)
+            isinstance(obj, Property) and not ClipGraphOperations.is_property_container(obj, self.parsed.header.version)
         ) or (
             isinstance(obj, KEY_OBJECT_TYPES)
             and isinstance(self.current.get("owner_prop") if self.current else None, Property)
@@ -2037,30 +2040,6 @@ class ClipViewer(QWidget):
         combo.currentIndexChanged.connect(lambda index: changed(combo.itemData(index)))
         self.form.addRow(label, combo)
         return combo
-
-    def _flag_checks(self, obj, attr: str, label: str, names: dict[int, str]):
-        host = QWidget()
-        row = QHBoxLayout(host)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(8)
-        value = int(getattr(obj, attr, 0))
-        checks = []
-        for bit, name in names.items():
-            check = QCheckBox(name)
-            check.setChecked(bool(value & bit))
-            row.addWidget(check)
-            checks.append((bit, check))
-        row.addStretch(1)
-        def changed(_state):
-            new_value = 0
-            for bit, check in checks:
-                if check.isChecked():
-                    new_value |= bit
-            setattr(obj, attr, new_value)
-            self._object_changed(obj)
-        for _bit, check in checks:
-            check.stateChanged.connect(changed)
-        self.form.addRow(label, host)
 
     def _show_clip_overview(self):
         h = self.parsed.header
@@ -2330,7 +2309,7 @@ class ClipViewer(QWidget):
         if attr:
             self._interpolation_combo(key, attr, "Interpolation")
         if hasattr(key, "offset_frame_flag"):
-            self._bool_check(key, "offset_frame_flag", "Offset Frame")
+            self._bool_check(key, "offset_frame_flag", "Instance Value")
         if hasattr(key, "frame_span"):
             self._line(key, "frame_span", "Frame Span")
         if hasattr(key, "range_v2_frame_span"):
@@ -2474,7 +2453,7 @@ class ClipViewer(QWidget):
     def _add_node(self):
         obj = self.current.get("obj") if self.current else None
         def mutate():
-            node = ClipGraphOperations.create_node(self.parsed.header.total_frame)
+            node = ClipGraphOperations.create_node(self.parsed.header.total_frame, self.parsed.header.version)
             if isinstance(obj, Node):
                 self.ops.add_node_child(obj, node)
                 self.timeline.insert_node_row(node, owner_node=obj)
@@ -2500,7 +2479,7 @@ class ClipViewer(QWidget):
 
     def _add_child_property(self):
         obj = self.current.get("obj") if self.current else None
-        if not isinstance(obj, Property) or not _is_property_container(obj):
+        if not isinstance(obj, Property) or not ClipGraphOperations.is_property_container(obj, self.parsed.header.version):
             return
         def mutate():
             index = len(obj.child_properties)
@@ -2513,7 +2492,7 @@ class ClipViewer(QWidget):
 
     def _add_key(self):
         obj = self.current.get("obj") if self.current else None
-        if not isinstance(obj, Property) or _is_property_container(obj):
+        if not isinstance(obj, Property) or ClipGraphOperations.is_property_container(obj, self.parsed.header.version):
             return
         def mutate():
             key = self.ops.add_property_key(obj)
@@ -2764,9 +2743,9 @@ class ClipViewer(QWidget):
         can_add_clip = self.parsed.header.version >= 40 and isinstance(obj, Track)
         can_add_node = isinstance(obj, (Track, ClipInfo, Node)) or obj is None
         can_add_prop = isinstance(obj, Node)
-        can_add_child = isinstance(obj, Property) and _is_property_container(obj)
-        can_add_key = isinstance(obj, Property) and not _is_property_container(obj)
-        can_add_speed = isinstance(obj, Property) and not _is_property_container(obj) and (
+        can_add_child = isinstance(obj, Property) and ClipGraphOperations.is_property_container(obj, self.parsed.header.version)
+        can_add_key = isinstance(obj, Property) and not ClipGraphOperations.is_property_container(obj, self.parsed.header.version)
+        can_add_speed = isinstance(obj, Property) and not ClipGraphOperations.is_property_container(obj, self.parsed.header.version) and (
             _prop_type(obj) == PropertyType.PATH_POINT3D or bool(obj.speed_points_ref)
         )
         key_role = _key_role(key_owner, obj)
@@ -2876,7 +2855,7 @@ class ClipViewer(QWidget):
         if self.current and self.current.get("kind") == "oword":
             return f"Path Point {self.current.get('index', 0)}"
         if isinstance(obj, Track):
-            return obj.group_name or obj.type_unicode or obj.type_ascii or "Track"
+            return obj.group_name or obj.unicode_name or obj.name or "Track"
         if isinstance(obj, ClipInfo):
             return obj.unicode_name or "ClipInfo"
         if isinstance(obj, Node):

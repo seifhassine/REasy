@@ -73,42 +73,20 @@ def property_type_or_unknown(value: int) -> PropertyType:
     return PropertyType(value) if value in PropertyType._value2member_map_ else PropertyType.UNKNOWN
 
 
-PROPERTY_TYPES_WITH_CHILDREN = {
-    PropertyType.ARRAY,
-    PropertyType.NATIVE_ARRAY,
-    PropertyType.CLASS,
-    PropertyType.STRUCT,
-    PropertyType.NULLABLE,
-    PropertyType.ANIMATION_CURVE,
-    PropertyType.KEY_FRAME,
-    PropertyType.NATIVE_CLASS,
-    PropertyType.VEC2,
-    PropertyType.VEC3,
-    PropertyType.VEC4,
-    PropertyType.QUATERNION,
-    PropertyType.SPHERE,
-    PropertyType.PLANE,
-    PropertyType.CAPSULE,
-    PropertyType.AABB,
-    PropertyType.COLOR,
-    PropertyType.RANGE,
-    PropertyType.RANGEI,
-    PropertyType.POINT,
-    PropertyType.SIZE,
-    PropertyType.UINT2,
-    PropertyType.UINT3,
-    PropertyType.UINT4,
-    PropertyType.INT2,
-    PropertyType.INT3,
-    PropertyType.INT4,
-    PropertyType.SFIX2,
-    PropertyType.SFIX3,
-    PropertyType.SFIX4,
-    PropertyType.FLOAT2,
-    PropertyType.FLOAT3,
-    PropertyType.FLOAT4,
-    PropertyType.OBB,
-    PropertyType.MAT4,
-    PropertyType.RECT,
-    PropertyType.POSITION,
-}
+# Property::isPrimitive per CLIP version: these types own keys, every other type owns child properties.
+_KEY_OWNER_TYPES_SINCE = (
+    (0, frozenset({*range(PropertyType.BOOL, PropertyType.QUATERNION), PropertyType.ASSET, PropertyType.ACTION,
+                   PropertyType.GUID, PropertyType.PATH_POINT3D, PropertyType.SFIX})),
+    (40, frozenset({PropertyType.GAME_OBJECT_REF})),
+    (62, frozenset({PropertyType.USER_DATA_ASSET})),
+    (85, frozenset({PropertyType.RESOURCE_PATH})),
+)
+
+
+def property_type_has_children(property_type: int, version: int) -> bool:
+    return not any(version >= since and int(property_type) in types for since, types in _KEY_OWNER_TYPES_SINCE)
+
+
+PROPERTY_TYPES_WITH_CHILDREN = frozenset(
+    ptype for ptype in PropertyType if ptype is not PropertyType.UNKNOWN and property_type_has_children(ptype, 85)
+)
