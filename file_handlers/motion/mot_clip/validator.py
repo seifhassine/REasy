@@ -117,14 +117,14 @@ class CompactMotClipV27Validator:
                 ):
                     self._fail("Hermite/Bezier key requires a HermiteCurve")
                 if (
-                    key.interpolation == ClipInterpolation.BEZIER_3D
+                    key.interpolation == ClipInterpolation.BEZIER3D
                     and not isinstance(key.curve, Bezier3DCurve)
                 ):
                     self._fail("Bezier key requires a Bezier3DCurve")
                 if key.interpolation not in (
                     ClipInterpolation.HERMITE,
                     ClipInterpolation.BEZIER,
-                    ClipInterpolation.BEZIER_3D,
+                    ClipInterpolation.BEZIER3D,
                 ) and key.curve is not None:
                     self._fail("non-curve key cannot reference a curve")
                 if key.interpolation in ascii_value_interpolations:
@@ -150,14 +150,14 @@ class CompactMotClipV27Validator:
                         "Hermite/Bezier speed point requires a HermiteCurve"
                     )
                 if (
-                    point.interpolation == ClipInterpolation.BEZIER_3D
+                    point.interpolation == ClipInterpolation.BEZIER3D
                     and not isinstance(point.curve, Bezier3DCurve)
                 ):
                     self._fail("Bezier speed point requires a Bezier3DCurve")
                 if point.interpolation not in (
                     ClipInterpolation.HERMITE,
                     ClipInterpolation.BEZIER,
-                    ClipInterpolation.BEZIER_3D,
+                    ClipInterpolation.BEZIER3D,
                 ) and point.curve is not None:
                     self._fail("non-curve speed point cannot reference a curve")
                 all_speeds.append(point)

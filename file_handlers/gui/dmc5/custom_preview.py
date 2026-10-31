@@ -8,7 +8,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
-lazy from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.rules import PropertyType
 
 lazy from ..adapter import GuiPreviewControl, GuiPreviewOption, GuiPreviewScenario
 lazy from ..scene import GuiScene, normalize_gui_resource_path

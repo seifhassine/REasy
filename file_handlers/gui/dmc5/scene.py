@@ -6,11 +6,11 @@ import math
 from functools import lru_cache
 
 lazy from ..errors import GuiSceneError
-lazy from ..native_math import f32 as _f32
-lazy from ..native_math import fadd as _fadd
-lazy from ..native_math import fdiv as _fdiv
-lazy from ..native_math import fmul as _fmul
-lazy from ..native_math import fsub as _fsub
+lazy from file_handlers.native_math import f32 as _f32
+lazy from file_handlers.native_math import fadd as _fadd
+lazy from file_handlers.native_math import fdiv as _fdiv
+lazy from file_handlers.native_math import fmul as _fmul
+lazy from file_handlers.native_math import fsub as _fsub
 from ..scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
 from .adapter import DMC5_DEFAULT_SAFE_AREA_RATIO
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 import uuid
 
-lazy from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.rules import PropertyType
 lazy from file_handlers.motion.binary import ReadContext
 lazy from file_handlers.motion.errors import MotionParseError
 from file_handlers.motion.mot_clip.model import ClipInterpolation

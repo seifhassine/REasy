@@ -1,6 +1,6 @@
 """Format independent REE GUI property type categories """
 
-from file_handlers.clip.enums import PropertyType
+from file_handlers.clip.rules import PropertyType
 
 
 SIGNED_FORMATS = {

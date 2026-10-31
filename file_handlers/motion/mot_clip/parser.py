@@ -606,7 +606,7 @@ class CompactClipV27Parser:
                         f"{c.label}: compact CLIP key Hermite index is out of range"
                     )
                 record.key.curve = hermite[record.curve_index]
-            elif record.key.interpolation == ClipInterpolation.BEZIER_3D:
+            elif record.key.interpolation == ClipInterpolation.BEZIER3D:
                 if record.curve_index >= len(bezier):
                     raise MotionParseError(
                         f"{c.label}: compact CLIP key Bezier3D index is out of range"
@@ -625,7 +625,7 @@ class CompactClipV27Parser:
                         f"{c.label}: compact CLIP speed-point Hermite index is out of range"
                     )
                 point.curve = hermite[record.curve_index]
-            elif point.interpolation == ClipInterpolation.BEZIER_3D:
+            elif point.interpolation == ClipInterpolation.BEZIER3D:
                 if record.curve_index >= len(bezier):
                     raise MotionParseError(
                         f"{c.label}: compact CLIP speed-point Bezier3D index is out of range"

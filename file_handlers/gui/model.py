@@ -9,7 +9,7 @@ import uuid
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Iterator, Protocol
 
-from file_handlers.clip.enums import PropertyType
+from file_handlers.clip.rules import PropertyType
 lazy from file_handlers.motion.mot_clip.model import (
     ClipNode,
     ClipProperty,

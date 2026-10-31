@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-lazy from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.rules import PropertyType
 from file_handlers.motion.mot_clip.model import (
     ASCII_VALUE_PROPERTY_TYPES,
     CONTAINER_PROPERTY_TYPES,

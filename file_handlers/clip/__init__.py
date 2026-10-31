@@ -1,23 +1,24 @@
-from .clip_file import ClipFile
-from .enums import CLIP_MAGIC, PropertyType
-from .graph_operations import ClipGraphOperations
-from .parser import ParsedClip
-from .reader import ClipParserError
+"""See docs/internals/clip-format.md and clip-editor.md."""
+
+from .decode import read_timeline
+from .encode import write_timeline
+from .layout import ClipFormatError
+from .model import Clip, Key, Node, Property, ResourceKind, SpeedPoint, Timeline, Track
+from .rules import InterpolationType, NodeType, PropertyType
 
 __all__ = [
-    "ClipFile",
-    "ClipHandler",
-    "ClipGraphOperations",
-    "ClipParserError",
-    "ParsedClip",
-    "CLIP_MAGIC",
+    "Clip",
+    "ClipFormatError",
+    "InterpolationType",
+    "Key",
+    "Node",
+    "NodeType",
+    "Property",
     "PropertyType",
+    "ResourceKind",
+    "SpeedPoint",
+    "Timeline",
+    "Track",
+    "read_timeline",
+    "write_timeline",
 ]
-
-
-def __getattr__(name: str):
-    if name == "ClipHandler":
-        from .clip_handler import ClipHandler
-
-        return ClipHandler
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

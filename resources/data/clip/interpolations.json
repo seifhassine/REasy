@@ -1,0 +1,14 @@
+{
+ "format": 1,
+ "types": {
+  "Linear": {"numeric": true},
+  "Slerp": {"numeric": true},
+  "Hermite": {"numeric": true, "control": "hermite"},
+  "AutoHermite": {"numeric": true},
+  "Bezier": {"numeric": true, "control": "hermite"},
+  "AutoBezier": {"numeric": true},
+  "Bezier3D": {"numeric": true, "control": "hermite3d"}
+ },
+ "control_tables": {"hermite": 4, "hermite3d": 8},
+ "control_owners": {"key": ["hermite", "hermite3d"], "speed_point": ["hermite"]}
+}

@@ -7,7 +7,7 @@ from typing import Any
 from ..adapter import GuiPreviewControl, GuiPreviewScenario, GuiRuntimeEditorConfig
 lazy from ..errors import GuiFormatError
 
-lazy from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.rules import PropertyType
 lazy from utils.resource_file_utils import ResourceDataLoader
 
 lazy from ..dependencies import GuiDependencyCatalog

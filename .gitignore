@@ -52,6 +52,9 @@ extracted_mesh_samples/**
 run_reasy_debug.bat
 Murmur3.1sc
 
+# Local notes beside data files (<name>_comments.json next to <name>.json)
+*_comments.json
+
 # Local tests
 /tests/**
 

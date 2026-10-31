@@ -1,4 +1,4 @@
-"""Native-style binary32 arithmetic shared by GUI runtime projections."""
+"""Native-style binary32 arithmetic."""
 
 from __future__ import annotations
 

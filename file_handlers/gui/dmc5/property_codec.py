@@ -8,7 +8,7 @@ import uuid
 from dataclasses import dataclass
 from typing import Any, Protocol
 
-from file_handlers.clip.enums import PropertyType
+from file_handlers.clip.rules import PropertyType
 
 lazy from ..errors import GuiFormatError, GuiWriteError
 from ..property_types import (

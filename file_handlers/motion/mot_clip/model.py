@@ -1,34 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from enum import IntEnum
 
-from file_handlers.clip.enums import PROPERTY_TYPES_WITH_CHILDREN, PropertyType
+from file_handlers.clip.rules import InterpolationType, PropertyType, owns_keys, supported_versions
 
 ClipPropertyType = PropertyType
+ClipInterpolation = InterpolationType
 
-
-class ClipInterpolation(IntEnum):
-    UNKNOWN = 0
-    DISCRETE = 1
-    LINEAR = 2
-    EVENT = 3
-    SLERP = 4
-    HERMITE = 5
-    AUTO_HERMITE = 6
-    BEZIER = 7
-    AUTO_BEZIER = 8
-    OFFSET_FRAME = 9
-    OFFSET_SECONDS = 10
-    PASS_EVENT = 11
-    BEZIER_3D = 12
-    RANGE = 13
-    DISCRETE_TO_END = 14
-    RANGE_V2 = 15
-    NONE = 16
-
-
-CONTAINER_PROPERTY_TYPES = frozenset(PROPERTY_TYPES_WITH_CHILDREN)
+CONTAINER_PROPERTY_TYPES = frozenset(
+    kind for kind in PropertyType if kind is not PropertyType.UNKNOWN and not owns_keys(kind, supported_versions()[-1])
+)
 
 ASCII_VALUE_PROPERTY_TYPES = frozenset(
     {ClipPropertyType.STR8, ClipPropertyType.ENUM}

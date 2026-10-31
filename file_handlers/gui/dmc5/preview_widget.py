@@ -33,11 +33,11 @@ lazy from ui.styles import current_colors
 lazy from ..dependencies import GuiDependencyCatalog
 lazy from ..errors import GuiSceneError
 lazy from ..model import GuiAnimation, GuiNineSlice, GuiSymbol, GuiTextureSet
-lazy from ..native_math import f32 as _preview_f32
-lazy from ..native_math import fadd as _pfadd
-lazy from ..native_math import fdiv as _pfdiv
-lazy from ..native_math import fmul as _pfmul
-lazy from ..native_math import fsub as _pfsub
+lazy from file_handlers.native_math import f32 as _preview_f32
+lazy from file_handlers.native_math import fadd as _pfadd
+lazy from file_handlers.native_math import fdiv as _pfdiv
+lazy from file_handlers.native_math import fmul as _pfmul
+lazy from file_handlers.native_math import fsub as _pfsub
 lazy from ..scene import GuiSceneNode
 lazy from .adapter import DMC5_DEFAULT_LANGUAGE, DMC5_DEFAULT_SAFE_AREA_RATIO
 lazy from .controllers import Dmc5GuiControllerContext

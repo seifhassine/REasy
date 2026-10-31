@@ -4,11 +4,21 @@ from __future__ import annotations
 
 import copy
 import math
-import struct
 from collections.abc import Callable
 from dataclasses import dataclass
 
-from file_handlers.clip.enums import PropertyType
+lazy from file_handlers.clip.evaluation import (
+    NUMERIC_TYPES,
+    bezier_value,
+    convert_number,
+    hermite_parameter,
+    hermite_value,
+    interpolation_input,
+    linear_value,
+    ordered_equal,
+    surrounding_keys,
+)
+from file_handlers.clip.rules import PropertyType
 lazy from file_handlers.motion.mot_clip.model import (
     ClipInterpolation,
     ClipKey,
@@ -25,23 +35,14 @@ lazy from ..model import (
     iter_clip_nodes,
     resolve_properties,
 )
-lazy from ..native_math import f32 as _f32
-lazy from ..native_math import fadd as _fadd
-lazy from ..native_math import fdiv as _fdiv
-lazy from ..native_math import fsub as _fsub
+lazy from file_handlers.native_math import f32 as _f32
+lazy from file_handlers.native_math import fadd as _fadd
+lazy from file_handlers.native_math import fdiv as _fdiv
+lazy from file_handlers.native_math import fsub as _fsub
 lazy from ..scene import GuiSceneNode
 lazy from .scene import Dmc5GuiScene
 
 
-_NUMERIC_TYPES = {
-    PropertyType.S8, PropertyType.U8, PropertyType.S16, PropertyType.U16,
-    PropertyType.S32, PropertyType.U32, PropertyType.S64, PropertyType.U64,
-    PropertyType.F32, PropertyType.F64,
-}
-_INTEGER_TYPES = {
-    PropertyType.S8, PropertyType.U8, PropertyType.S16, PropertyType.U16,
-    PropertyType.S32, PropertyType.U32, PropertyType.S64, PropertyType.U64,
-}
 _CONTROL_FIELDS = {
     "Play", "PlayFrame", "PlayState", "Segment", "StatePattern",
     "NextStateEnable",
@@ -899,6 +900,30 @@ def _action_events(
     return result
 
 
+def _native_hermite_value(
+    kind: PropertyType,
+    start: ClipKey,
+    end: ClipKey,
+    frame: float,
+) -> float:
+    curve = start.curve
+    if not isinstance(curve, HermiteCurve):
+        raise GuiSceneError("Hermite animation key has no Hermite curve")
+    out_x, out_y, in_x, in_y = curve.values
+    parameter = hermite_parameter(start.frame, end.frame, frame, out_x, in_x)
+    return hermite_value(kind, start.value, end.value, parameter, out_y, in_y)
+
+
+def _native_bezier_value(start: ClipKey, end: ClipKey, frame: float) -> float:
+    curve = start.curve
+    if not isinstance(curve, HermiteCurve):
+        raise GuiSceneError("Bezier animation key has no Hermite curve")
+    _out_x, out_y, _in_x, in_y = curve.values
+    span = _fsub(end.frame, start.frame)
+    parameter = _fdiv(_fsub(frame, start.frame), span) if span else 0.0
+    return bezier_value(start.value, end.value, parameter, out_y, in_y)
+
+
 def _ucomiss_equal(left: float, right: float) -> bool:
     return not (math.isnan(left) or math.isnan(right)) and left == right
 
@@ -957,16 +982,16 @@ def _sample(track: ClipProperty, frame: float) -> object | None:
         # continuously assigned reflected property.
         return None
     frame = _f32(frame)
-    left, right = _surrounding_keys(keys, frame)
+    left, right = surrounding_keys(keys, frame)
     if left is None:
         return copy.deepcopy(right.value) if right is not None else None
-    if right is None or left is right or _ordered_equal(frame, left.frame):
+    if right is None or left is right or ordered_equal(frame, left.frame):
         return copy.deepcopy(left.value)
     if left.interpolation == ClipInterpolation.DISCRETE:
         return copy.deepcopy(left.value)
     if left.interpolation in (ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT):
         return None
-    if track.property_type == PropertyType.BOOL or track.property_type not in _NUMERIC_TYPES:
+    if track.property_type == PropertyType.BOOL or track.property_type not in NUMERIC_TYPES:
         if left.interpolation == ClipInterpolation.LINEAR:
             return copy.deepcopy(left.value)
         raise GuiSceneError(
@@ -977,7 +1002,7 @@ def _sample(track: ClipProperty, frame: float) -> object | None:
         raise GuiSceneError(f"numeric track {track.name!r} contains a nonnumeric key")
 
     if left.interpolation == ClipInterpolation.OFFSET_FRAME:
-        value = _fadd(_interpolation_input(track.property_type, left.value), _fsub(frame, left.frame))
+        value = _fadd(interpolation_input(track.property_type, left.value), _fsub(frame, left.frame))
     elif left.interpolation == ClipInterpolation.HERMITE:
         value = _native_hermite_value(track.property_type, left, right, frame)
     elif left.interpolation == ClipInterpolation.BEZIER:
@@ -987,244 +1012,9 @@ def _sample(track: ClipProperty, frame: float) -> object | None:
     elif left.interpolation == ClipInterpolation.LINEAR:
         span = _fsub(right.frame, left.frame)
         ratio = _fdiv(_fsub(frame, left.frame), span) if span else 0.0
-        inverse = _fsub(1.0, ratio)
-        start = _interpolation_input(track.property_type, left.value)
-        end = _interpolation_input(track.property_type, right.value)
-        value = _fadd(_f32(inverse * start), _f32(ratio * end))
+        value = linear_value(track.property_type, left.value, right.value, ratio)
     else:
         raise GuiSceneError(f"unsupported animation evaluation mode {left.interpolation.name}")
-    return _convert_number(track.property_type, value)
+    return convert_number(track.property_type, value)
 
 
-def _surrounding_keys(
-    keys: list[ClipKey],
-    frame: float,
-) -> tuple[ClipKey | None, ClipKey | None]:
-    """Reproduce DMC5's midpoint search, including duplicate-frame policy."""
-
-    first, last = _f32(keys[0].frame), _f32(keys[-1].frame)
-    if _ordered_greater(first, frame):
-        return None, keys[0]
-    if _ordered_greater_equal(frame, last):
-        return keys[-1], None
-    lower, upper = 0, len(keys) - 1
-    while lower < upper - 1:
-        middle = lower + (upper - lower) // 2
-        middle_frame = _f32(keys[middle].frame)
-        if _ordered_equal(middle_frame, frame):
-            return keys[middle], keys[middle]
-        if math.isnan(middle_frame) or math.isnan(frame) or middle_frame <= frame:
-            lower = middle
-        else:
-            upper = middle
-    return keys[lower], keys[upper]
-
-
-def _native_hermite_value(
-    kind: PropertyType,
-    start: ClipKey,
-    end: ClipKey,
-    frame: float,
-) -> float:
-    curve = start.curve
-    if not isinstance(curve, HermiteCurve):
-        raise GuiSceneError("Hermite animation key has no Hermite curve")
-    out_x, out_y, in_x, in_y = curve.values
-    parameter = _native_hermite_parameter(start.frame, end.frame, frame, out_x, in_x)
-    squared = _f32(parameter * parameter)
-    cubed = _f32(squared * parameter)
-    tangent0, tangent1 = _f32(out_y), _f32_negate(in_y)
-    tangent_term = _f32(tangent0 * parameter)
-    if kind == PropertyType.F64:
-        value0, value1 = float(start.value), float(end.value)
-        coefficient_a = value0 * 2.0 - value1 * 2.0
-        coefficient_a += float(tangent0) + float(tangent1)
-        coefficient_b = value1 * 3.0 - value0 * 3.0
-        coefficient_b -= float(_f32(tangent0 * 2.0)) + float(tangent1)
-        return coefficient_a * float(cubed) + coefficient_b * float(squared) + float(tangent_term) + value0
-
-    value0 = _interpolation_input(kind, start.value)
-    value1 = _interpolation_input(kind, end.value)
-    coefficient_a = _fadd(_fsub(_f32(value0 * 2.0), _f32(value1 * 2.0)), tangent0)
-    coefficient_a = _fadd(coefficient_a, tangent1)
-    coefficient_b = _fsub(_f32(value1 * 3.0), _f32(value0 * 3.0))
-    coefficient_b = _fsub(coefficient_b, _f32(tangent0 * 2.0))
-    coefficient_b = _fsub(coefficient_b, tangent1)
-    value = _fadd(_f32(coefficient_a * cubed), _f32(coefficient_b * squared))
-    return _fadd(_fadd(value, tangent_term), value0)
-
-
-def _native_hermite_parameter(
-    start_frame: float,
-    end_frame: float,
-    frame: float,
-    outgoing_tangent: float,
-    incoming_tangent: float,
-) -> float:
-    """DMC5's binary32 Newton solve for compact-CLIP mode 5."""
-
-    x0, x1, target = _f32(start_frame), _f32(end_frame), _f32(frame)
-    tangent0 = _f32(outgoing_tangent)
-    tangent1 = _f32_negate(incoming_tangent)
-    if math.isnan(target) or math.isnan(x0) or math.isnan(x1):
-        return math.nan
-    if target <= x0:
-        return 0.0
-    if target >= x1:
-        return 1.0
-    parameter = _fdiv(_fsub(target, x0), _fsub(x1, x0))
-    coefficient_a = _fadd(_fadd(_fsub(_f32(x0 * 2.0), _f32(x1 * 2.0)), tangent0), tangent1)
-    if not coefficient_a or math.isnan(coefficient_a):
-        return parameter
-    coefficient_b = _fsub(_fsub(_fsub(_f32(x1 * 3.0), _f32(x0 * 3.0)), _f32(tangent0 * 2.0)), tangent1)
-    b_over_a = _fdiv(coefficient_b, coefficient_a)
-    c_over_a = _fdiv(tangent0, coefficient_a)
-    constant = _fdiv(_fsub(x0, target), coefficient_a)
-    denominator = _fadd(_f32(_f32(parameter * 3.0) * parameter), _f32(_f32(b_over_a * 2.0) * parameter))
-    denominator = _fadd(denominator, c_over_a)
-    if denominator and not math.isnan(denominator):
-        tolerance = _f32(1.0e-5)
-        for _ in range(100):
-            previous = parameter
-            numerator = _f32(_f32(parameter * 2.0) * parameter)
-            numerator = _f32(numerator * parameter)
-            numerator = _fadd(numerator, _f32(_f32(parameter * b_over_a) * parameter))
-            numerator = _fsub(numerator, constant)
-            denominator = _fadd(
-                _f32(_f32(parameter * 3.0) * parameter),
-                _f32(_f32(b_over_a * 2.0) * parameter),
-            )
-            denominator = _fadd(denominator, c_over_a)
-            parameter = _fdiv(numerator, denominator)
-            if tolerance >= _f32(abs(_fsub(parameter, previous))):
-                break
-    if not 0.0 <= parameter <= 1.0:
-        total = _fadd(parameter, b_over_a)
-        expression = _fadd(_fadd(_f32(parameter * b_over_a), c_over_a), _f32(parameter * parameter))
-        discriminant = _fsub(_f32(total * total), _f32(expression * 4.0))
-        candidate_a = _f32(_fsub(discriminant, total) * 0.5)
-        candidate_b = _f32(_fsub(_f32_negate(total), discriminant) * 0.5)
-        if 0.0 <= candidate_a <= 1.0:
-            parameter = candidate_a
-        elif 0.0 <= candidate_b <= 1.0:
-            parameter = candidate_b
-    return parameter
-
-
-def _native_bezier_value(start: ClipKey, end: ClipKey, frame: float) -> float:
-    curve = start.curve
-    if not isinstance(curve, HermiteCurve):
-        raise GuiSceneError("Bezier animation key has no Hermite curve")
-    _out_x, out_y, _in_x, in_y = curve.values
-    span = _fsub(end.frame, start.frame)
-    parameter = _fdiv(_fsub(frame, start.frame), span) if span else 0.0
-    squared = _f32(parameter * parameter)
-    cubed = _f32(squared * parameter)
-    basis0 = _fadd(_fadd(_fsub(_f32(cubed * -1.0), _f32(squared * -3.0)), _f32(parameter * -3.0)), 1.0)
-    basis1 = _fadd(_fadd(_f32(cubed * 3.0), _f32(squared * -6.0)), _f32(parameter * 3.0))
-    basis2 = _fadd(_f32(cubed * -3.0), _f32(squared * 3.0))
-    basis3 = cubed
-    value0, value1 = _f32(float(start.value)), _f32(float(end.value))
-    outgoing = _fadd(value0, out_y)
-    incoming = _fsub(value1, in_y)
-    value = _fadd(_f32(basis0 * value0), _f32(basis1 * value1))
-    return _fadd(_fadd(value, _f32(basis2 * incoming)), _f32(basis3 * outgoing))
-
-
-def _convert_number(kind: PropertyType, value: float) -> int | float:
-    if kind == PropertyType.F32:
-        return _f32(value)
-    if kind == PropertyType.F64:
-        return float(value)
-    if kind not in _INTEGER_TYPES:
-        return value
-    signed = kind in {PropertyType.S8, PropertyType.S16, PropertyType.S32, PropertyType.S64}
-    width = {PropertyType.S8: 8, PropertyType.U8: 8, PropertyType.S16: 16,
-             PropertyType.U16: 16, PropertyType.S32: 32, PropertyType.U32: 32,
-             PropertyType.S64: 64, PropertyType.U64: 64}[kind]
-    rounded = _fadd(value, 0.5)
-    if kind == PropertyType.U64:
-        raw = _native_cvttss2ui64(rounded)
-    else:
-        conversion_width = 64 if width == 64 or kind == PropertyType.U32 else 32
-        raw = _native_cvttss2si(rounded, conversion_width)
-    mask = (1 << width) - 1
-    raw &= mask
-    return raw - (1 << width) if signed and raw & (1 << (width - 1)) else raw
-
-
-def _interpolation_input(kind: PropertyType, value: int | float) -> float:
-    if kind == PropertyType.S64:
-        return _native_integer_to_f32(int(value))
-    if kind == PropertyType.U64:
-        return _native_u64_to_f32(int(value))
-    return _f32(float(value))
-
-
-def _native_cvttss2si(value: float, width: int) -> int:
-    value = _f32(value)
-    indefinite = 1 << (width - 1)
-    if not math.isfinite(value):
-        return indefinite
-    converted = math.trunc(value)
-    if not -(1 << (width - 1)) <= converted < 1 << (width - 1):
-        return indefinite
-    return converted & ((1 << width) - 1)
-
-
-def _native_integer_to_f32(value: int) -> float:
-    integer = int(value)
-    if integer == 0:
-        return 0.0
-    sign, magnitude = (1, -integer) if integer < 0 else (0, integer)
-    exponent = magnitude.bit_length() - 1
-    if exponent <= 23:
-        significand = magnitude << (23 - exponent)
-    else:
-        shift = exponent - 23
-        significand = magnitude >> shift
-        remainder = magnitude & ((1 << shift) - 1)
-        halfway = 1 << (shift - 1)
-        if remainder > halfway or remainder == halfway and significand & 1:
-            significand += 1
-            if significand == 1 << 24:
-                significand >>= 1
-                exponent += 1
-    bits = (sign << 31) | ((exponent + 127) << 23) | (significand & 0x7FFFFF)
-    return struct.unpack("<f", struct.pack("<I", bits))[0]
-
-
-def _native_u64_to_f32(value: int) -> float:
-    raw = int(value) & 0xFFFF_FFFF_FFFF_FFFF
-    signed = raw - (1 << 64) if raw & (1 << 63) else raw
-    result = _native_integer_to_f32(signed)
-    return _fadd(result, _f32(float(1 << 64))) if raw & (1 << 63) else result
-
-
-def _native_cvttss2ui64(value: float) -> int:
-    adjusted = _f32(value)
-    threshold = _f32(float(1 << 63))
-    bias = 0
-    if not math.isnan(adjusted) and adjusted >= threshold:
-        adjusted = _fsub(adjusted, threshold)
-        if not math.isnan(adjusted) and adjusted < threshold:
-            bias = 1 << 63
-    return (_native_cvttss2si(adjusted, 64) + bias) & 0xFFFF_FFFF_FFFF_FFFF
-
-
-def _f32_negate(value: float) -> float:
-    bits = struct.unpack("<I", struct.pack("<f", _f32(value)))[0]
-    return struct.unpack("<f", struct.pack("<I", bits ^ 0x80000000))[0]
-
-
-def _ordered_equal(left: float, right: float) -> bool:
-    left, right = _f32(left), _f32(right)
-    return not (math.isnan(left) or math.isnan(right)) and left == right
-
-
-def _ordered_greater(left: float, right: float) -> bool:
-    return not (math.isnan(left) or math.isnan(right)) and left > right
-
-
-def _ordered_greater_equal(left: float, right: float) -> bool:
-    return not (math.isnan(left) or math.isnan(right)) and left >= right

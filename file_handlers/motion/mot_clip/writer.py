@@ -309,7 +309,7 @@ class CompactMotClipV27Writer:
             ClipInterpolation.BEZIER,
         ):
             return hermite_index[id(item.curve)]
-        if item.interpolation == ClipInterpolation.BEZIER_3D:
+        if item.interpolation == ClipInterpolation.BEZIER3D:
             return bezier_index[id(item.curve)]
         return 0
 

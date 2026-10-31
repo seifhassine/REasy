@@ -1,0 +1,19 @@
+{
+ "format": 1,
+ "enums": {"PropertyType": "via.timeline.PropertyType", "InterpolationType": "via.InterpolationType", "NodeType": "via.timeline.NodeType", "ExtraKeyType": "via.timeline.ExtraKeyType", "BindType": "via.timeline.BindType", "KeyType": "via.timeline.KeyType"},
+ "versions": {
+  "27": {"layout": "v27", "games": ["DMC5", "RE2"]},
+  "34": {"layout": "v34", "games": ["RE3", "RE Resistance"]},
+  "40": {"layout": "v40", "games": ["RE8"]},
+  "43": {"layout": "v43", "games": ["RE2 RT", "RE3 RT", "RE7 RT", "MH Rise"]},
+  "53": {"layout": "v53", "games": ["SF6"]},
+  "54": {"layout": "v53", "games": ["RE4"]},
+  "62": {"layout": "v62", "games": ["DD2 Old"]},
+  "72": {"layout": "v62", "games": ["DRDR", "Kunitsu-Gami"], "checked": false},
+  "85": {"layout": "v85", "games": ["MH Wilds"]},
+  "86": {"layout": "v86", "games": ["MHST3"]},
+  "89": {"layout": "v86", "games": ["Onimusha WotS"]},
+  "90": {"layout": "v86", "games": ["RE9"]},
+  "91": {"layout": "v91", "games": ["DD2", "PRAGMATA"]}
+ }
+}
