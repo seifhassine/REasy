@@ -174,6 +174,8 @@ class UvsFile:
         hdr.magic = UVS_MAGIC
         hdr.texture_count = len(self.textures)
         hdr.sequence_count = len(self.sequences)
+        cutouts = any(pat.cutout_uvs for seq in self.sequences for pat in seq.patterns)
+        hdr.attributes = (hdr.attributes & ~1) | cutouts
 
         self._write_header(h, final=False)
 
@@ -208,11 +210,11 @@ class UvsFile:
         hdr.pattern_offset = h.tell
         for seq in self.sequences:
             for pat in seq.patterns:
-                self._write_pattern(h, pat)
+                self._write_pattern(h, pat, cutouts)
 
         hdr.string_offset = h.tell
         if strings:
-            h.write_wstring("\0".join(strings) + "\0")
+            h.write_wstring("\0".join(strings))
         
         if (string_table_size := h.tell - hdr.string_offset) > 0:
             target_blocks = 1 << ((string_table_size + 255) // 256 - 1).bit_length()
@@ -231,14 +233,8 @@ class UvsFile:
         h.write_int64(tex.tex_handle_3)
 
     @staticmethod
-    def _write_pattern(h: BinaryHandler, pat: UvsPattern):
-        if pat.cutout_uvs:
-            pat.cutout_uv_count = len(pat.cutout_uvs)
-        elif pat.cutout_uv_count > 0:
-            pat.cutout_uv_count = 0
-        elif pat.cutout_uv_count not in (-1, 0):
-            pat.cutout_uv_count = -1
-
+    def _write_pattern(h: BinaryHandler, pat: UvsPattern, cutouts: bool):
+        pat.cutout_uv_count = len(pat.cutout_uvs) or (0 if cutouts else -1)
         h.write_int64(pat.flags)
         h.write_float(pat.left)
         h.write_float(pat.top)
@@ -246,11 +242,9 @@ class UvsFile:
         h.write_float(pat.bottom)
         h.write_int32(pat.texture_index)
         h.write_int32(pat.cutout_uv_count)
-        
-        if pat.cutout_uv_count > 0:
-            for u, v in pat.cutout_uvs:
-                h.write_float(u)
-                h.write_float(v)
+        for u, v in pat.cutout_uvs:
+            h.write_float(u)
+            h.write_float(v)
 
     def _write_header(self, h: BinaryHandler, final: bool):
         if final:
