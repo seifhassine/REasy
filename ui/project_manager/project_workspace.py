@@ -131,7 +131,6 @@ class ProjectWorkspaceController:
         self.host.update_from_app_settings()
         self.host.save_settings()
         dock.show()
-        self.host._shrink_project_dock()
         dock.set_project(path, on_loaded)
         self.host.status_bar.showMessage(
             self.tr("Project: {name}").format(name=os.path.basename(path)), 3000

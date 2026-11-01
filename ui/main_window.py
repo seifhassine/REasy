@@ -725,10 +725,6 @@ class REasyEditorApp(QMainWindow):
                     tab.update_tab_title()
         return True
 
-    def _shrink_project_dock(self):
-        min_w = max(360, self.proj_dock.minimumSizeHint().width())
-        self.resizeDocks([self.proj_dock], [min_w], Qt.Horizontal)
-
     def _show_singleton_dialog(self, attribute, factory):
         dialog = getattr(self, attribute, None)
         if dialog is None:

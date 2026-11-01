@@ -204,6 +204,11 @@ class _EmptyState(QWidget):
         super().showEvent(event)
 
 
+class _BrowserBody(QWidget):
+    def sizeHint(self) -> QSize:
+        return QSize(360, super().sizeHint().height())
+
+
 class ProjectManager(QDockWidget):
     PAK_HISTORY_PREFIX = "pak://"
     PROJECT_HISTORY_PREFIX = "project://"
@@ -342,7 +347,7 @@ class ProjectManager(QDockWidget):
         self._active_tab   = "proj"
         self._pak_list_path: str | None = None
 
-        c = QWidget(self)
+        c = _BrowserBody(self)
         c.setObjectName("projectBrowserBody")
         self.setWidget(c)
         # Views sit flush with the dock edges, under the line closing the toolbar above them.
@@ -479,6 +484,7 @@ class ProjectManager(QDockWidget):
         self._project_load_started_at = 0.0
         self._project_load_min_visible_ms = 300
         self._project_pak_states = {}
+        self._project_views = {}
         self._pak_filter_proxy = self._new_pak_filter_proxy()
         hdr_p = self.tree_pak.header()
         hdr_p.setSectionResizeMode(0, QHeaderView.Interactive)
@@ -999,10 +1005,8 @@ class ProjectManager(QDockWidget):
             "reader": self._pak_cached_reader,
             "tree_model": self._pak_tree_model,
             "filter_proxy": self._pak_filter_proxy,
-            "filter_text": self.pak_filter_edit.text(),
             "index_dirty": self._pak_index_dirty,
             "modded": self._mod_paks_found,
-            "scroll_value": self.tree_pak.verticalScrollBar().value(),
             "signature": (self._path_key(self.pak_dir), signature),
         }
 
@@ -1036,22 +1040,9 @@ class ProjectManager(QDockWidget):
             self._pak_flat_model = self._pak_filter_proxy.sourceModel()
             self.unpacked_dir = unpacked_dir
             self._set_pak_list_display(self._pak_list_path)
-            previous = self.pak_filter_edit.blockSignals(True)
-            self.pak_filter_edit.setText(state.get("filter_text", ""))
-            self.pak_filter_edit.blockSignals(previous)
             if self.unpacked_dir and os.path.isdir(self.unpacked_dir):
                 self._show_sys_root()
-            self.tree_pak.setModel(
-                self._pak_filter_proxy if state.get("filter_text") else self._pak_tree_model
-            )
-            scroll_value = state.get("scroll_value")
-            if scroll_value is not None:
-                self.tree_pak.doItemsLayout()
-                scroll_bar = self.tree_pak.verticalScrollBar()
-                scroll_bar.setValue(max(
-                    scroll_bar.minimum(),
-                    min(int(scroll_value), scroll_bar.maximum()),
-                ))
+            self.tree_pak.setModel(self._pak_tree_model)
             self._pak_index_dirty = state.get("index_dirty", self._pak_tree_model is None)
             self._update_path_label()
             return True
@@ -1073,6 +1064,7 @@ class ProjectManager(QDockWidget):
     def set_project(self, proj_dir, on_loaded=None):
         if self.project_dir:
             self._save_project_state()
+            self._project_views[self._path_key(self.project_dir)] = self.capture_view_state()
         self.project_dir = proj_dir
         self._project_load_ticket += 1
         ticket = self._project_load_ticket
@@ -1093,6 +1085,7 @@ class ProjectManager(QDockWidget):
                 self._update_placeholders()
                 self.bookmarks.refresh()
                 self._set_loading_overlay(False)
+                self.restore_view_state(self._project_views.pop(self._path_key(proj_dir), None))
                 if on_loaded:
                     on_loaded()
                 return
@@ -1153,6 +1146,7 @@ class ProjectManager(QDockWidget):
             self.bookmarks.refresh()
             self._hide_loading_overlay(ticket)
             self._update_placeholders()
+            self.restore_view_state(self._project_views.pop(self._path_key(proj_dir), None))
             if on_loaded:
                 on_loaded()
 
@@ -1938,30 +1932,17 @@ class ProjectManager(QDockWidget):
 
     def capture_view_state(self) -> dict:
         """Return the persistent, JSON-safe state of the project browser."""
+        trees = ("unpacked", self.tree_sys), ("project", self.tree_proj), ("pak", self.tree_pak)
         return {
             "active_view": self._active_tab,
             "minimized": bool(self._minimized),
             "docked_size": [self._docked_size.width(), self._docked_size.height()],
             "pak_filter": self.pak_filter_edit.text(),
             "project_filter": self.proj_filter_edit.text(),
-            "column_widths": {
-                name: tree.header().sectionSize(0)
-                for name, tree in (
-                    ("unpacked", self.tree_sys),
-                    ("project", self.tree_proj),
-                    ("pak", self.tree_pak),
-                )
-            },
-            "expanded": {
-                "unpacked": self._expanded_keys(self.tree_sys),
-                "project": self._expanded_keys(self.tree_proj),
-                "pak": self._expanded_keys(self.tree_pak),
-            },
-            "scroll": {
-                "unpacked": self.tree_sys.verticalScrollBar().value(),
-                "project": self.tree_proj.verticalScrollBar().value(),
-                "pak": self.tree_pak.verticalScrollBar().value(),
-            },
+            "column_widths": {name: tree.header().sectionSize(0) for name, tree in trees},
+            "expanded": {name: self._expanded_keys(tree) for name, tree in trees},
+            "current": {name: self._state_key_for_index(tree, tree.currentIndex()) for name, tree in trees},
+            "scroll": {name: tree.verticalScrollBar().value() for name, tree in trees},
         }
 
     def restore_view_state(self, state: dict) -> None:
@@ -1974,29 +1955,27 @@ class ProjectManager(QDockWidget):
                 self._docked_size = QSize(max(240, int(docked_size[0])), max(180, int(docked_size[1])))
             except (TypeError, ValueError):
                 pass
+        trees = ("unpacked", self.tree_sys), ("project", self.tree_proj), ("pak", self.tree_pak)
         widths = state.get("column_widths", {})
-        for name, tree in (
-            ("unpacked", self.tree_sys),
-            ("project", self.tree_proj),
-            ("pak", self.tree_pak),
-        ):
+        for name, tree in trees:
             try:
                 tree.header().resizeSection(0, max(160, int(widths.get(name, 160))))
             except (TypeError, ValueError):
                 pass
         self.pak_filter_edit.setText(str(state.get("pak_filter", "")))
         self.proj_filter_edit.setText(str(state.get("project_filter", "")))
+        self._pak_filter_timer.stop()
+        self._proj_filter_timer.stop()
+        self._apply_pak_filter_now()
+        self._apply_proj_filter_now()
         self._switch_tab(str(state.get("active_view", "proj")))
-        expanded = state.get("expanded", {})
-        self._restore_expanded_keys(self.tree_sys, expanded.get("unpacked", []))
-        self._restore_expanded_keys(self.tree_proj, expanded.get("project", []))
-        self._restore_expanded_keys(self.tree_pak, expanded.get("pak", []))
-        scroll = state.get("scroll", {})
-        for name, tree in (
-            ("unpacked", self.tree_sys),
-            ("project", self.tree_proj),
-            ("pak", self.tree_pak),
-        ):
+        expanded, current, scroll = (state.get(key, {}) for key in ("expanded", "current", "scroll"))
+        for name, tree in trees:
+            self._restore_expanded_keys(tree, expanded.get(name, []))
+            index = self._index_for_state_key(tree, str(current.get(name, "")))
+            if index.isValid() and index.model() is tree.model():
+                tree.setCurrentIndex(index)
+            tree.doItemsLayout()
             try:
                 tree.verticalScrollBar().setValue(int(scroll.get(name, 0)))
             except (TypeError, ValueError):
