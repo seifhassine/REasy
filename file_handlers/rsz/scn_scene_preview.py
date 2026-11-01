@@ -8,7 +8,7 @@ from concurrent.futures import Future
 from dataclasses import dataclass, replace
 from functools import partial
 from pathlib import Path
-from typing import Callable, Mapping
+from typing import Callable
 
 lazy import numpy as np
 from PySide6.QtCore import QTimer, Signal
@@ -59,7 +59,6 @@ class _RenderableQueueItem:
 class ScnLoadedMesh:
     renderable: ScnRenderableMesh
     handler: MeshHandler
-    bind_mesh: SceneDrawMesh
 
     @property
     def key(self) -> str:
@@ -103,10 +102,6 @@ class ScnScenePreviewWidget(QWidget):
         self._pending_material_renderables: OrderedDict[str, _RenderableQueueItem] = OrderedDict()
         self._draw_meshes: list[SceneDrawMesh] = []
         self._hidden_renderables: set[str] = set()
-        self._visibility_overrides: dict[str, bool] = {}
-        self._user_visibility_overrides: dict[str, bool] = {}
-        self._part_visibility_overrides: dict[str, tuple[bool, ...]] = {}
-        self._focused_renderables: set[str] | None = None
         self._retired_renderables: set[str] = set()
         self._loading = False
         # An SCN added to the scene shown loads.
@@ -211,10 +206,6 @@ class ScnScenePreviewWidget(QWidget):
         self._draw_meshes.clear()
         if not keep_hidden:
             self._hidden_renderables.clear()
-            self._user_visibility_overrides.clear()
-        self._visibility_overrides.clear()
-        self._part_visibility_overrides.clear()
-        self._focused_renderables = None
         self._retired_renderables.clear()
         self._materials.clear()
         self._mesh_cache.clear()
@@ -277,54 +268,6 @@ class ScnScenePreviewWidget(QWidget):
         self._hidden_renderables = set(keys)
         self._apply_hidden_renderables()
 
-    def set_renderable_visibility_overrides(
-        self,
-        overrides: Mapping[str, bool],
-    ) -> None:
-        normalized = {
-            str(key): bool(visible)
-            for key, visible in overrides.items()
-        }
-        if normalized == self._visibility_overrides:
-            return
-        self._visibility_overrides = normalized
-        self._apply_hidden_renderables()
-
-    def set_user_renderable_visibility_overrides(
-        self,
-        overrides: Mapping[str, bool],
-    ) -> None:
-        normalized = {
-            str(key): bool(visible)
-            for key, visible in overrides.items()
-        }
-        if normalized == self._user_visibility_overrides:
-            return
-        self._user_visibility_overrides = normalized
-        self._apply_hidden_renderables()
-
-    def set_renderable_part_overrides(
-        self,
-        overrides: Mapping[str, tuple[bool, ...]],
-    ) -> None:
-        normalized = {
-            str(key): tuple(bool(enabled) for enabled in parts)
-            for key, parts in overrides.items()
-        }
-        if normalized == self._part_visibility_overrides:
-            return
-        self._part_visibility_overrides = normalized
-        self._apply_hidden_renderables()
-
-    def set_focused_renderables(self, keys: set[str] | None) -> None:
-        normalized = (
-            None if keys is None else {str(key) for key in keys}
-        )
-        if normalized == self._focused_renderables:
-            return
-        self._focused_renderables = normalized
-        self._apply_hidden_renderables()
-
     def set_selection(
         self,
         keys: set[str],
@@ -351,25 +294,8 @@ class ScnScenePreviewWidget(QWidget):
                 continue
             handler, bind_mesh = cached
             if handler is not None and bind_mesh is not None:
-                result.append(
-                    ScnLoadedMesh(renderable, handler, bind_mesh)
-                )
+                result.append(ScnLoadedMesh(renderable, handler))
         return tuple(result)
-
-    def restore_mesh_geometry(self, key: str) -> None:
-        loaded = next(
-            (item for item in self.loaded_meshes() if item.key == key),
-            None,
-        )
-        if loaded is None:
-            return
-        self.preview.update_mesh_geometry(
-            key,
-            loaded.bind_mesh.vertices,
-            loaded.bind_mesh.normals,
-            recompute_bounds=False,
-        )
-
 
     def _sync_preview_materials(self) -> None:
         self._materials.refresh()
@@ -381,22 +307,6 @@ class ScnScenePreviewWidget(QWidget):
             for renderable in graph.renderables
             if not renderable.visible_by_default
         }
-        for overrides in (
-            self._visibility_overrides,
-            self._user_visibility_overrides,
-        ):
-            for key, visible in overrides.items():
-                if visible:
-                    authored_hidden.discard(key)
-                else:
-                    authored_hidden.add(key)
-        if self._focused_renderables is not None:
-            authored_hidden.update(
-                renderable.key
-                for graph in self.graphs
-                for renderable in graph.renderables
-                if renderable.key not in self._focused_renderables
-            )
         self.preview.set_hidden_keys(
             self._hidden_renderables
             | self._retired_renderables
@@ -407,12 +317,7 @@ class ScnScenePreviewWidget(QWidget):
             {
                 renderable.key: {
                     index
-                    for index, enabled in enumerate(
-                        self._part_visibility_overrides.get(
-                            renderable.key,
-                            renderable.enabled_parts or (),
-                        )
-                    )
+                    for index, enabled in enumerate(renderable.enabled_parts or ())
                     if not enabled
                 }
                 for graph in self.graphs
@@ -457,16 +362,6 @@ class ScnScenePreviewWidget(QWidget):
         )
         self._draw_meshes = [mesh for mesh in self._draw_meshes if mesh.key not in removed_keys]
         self._hidden_renderables.difference_update(removed_keys)
-        for overrides in (
-            self._visibility_overrides,
-            self._user_visibility_overrides,
-        ):
-            for key in removed_keys:
-                overrides.pop(key, None)
-        for key in removed_keys:
-            self._part_visibility_overrides.pop(key, None)
-        if self._focused_renderables is not None:
-            self._focused_renderables.difference_update(removed_keys)
         self._retired_renderables.update(removed_keys)
         self._load_light_probe_instances()
         remaining_assets = {self._material_asset_key(renderable) for graph in self.graphs for renderable in graph.renderables}
@@ -868,15 +763,6 @@ class ScnScenePreviewWidget(QWidget):
     @staticmethod
     def _material_key(asset_key: str, material_name: str) -> str:
         return scoped_material_key(asset_key, material_name)
-
-    def material_scope_for(self, renderable: ScnRenderableMesh) -> str:
-        return self._material_asset_key(renderable)
-
-    def set_material_parameter_values(
-        self,
-        values: dict[str, dict[str, float]],
-    ) -> None:
-        self.preview.set_material_parameters(values)
 
     def _material_asset_key(self, renderable: ScnRenderableMesh) -> str:
         mesh = normalize_scene_path(renderable.mesh_path).lower()

@@ -53,8 +53,7 @@ lazy from .lightprobe_shading import ProbeShadeLayer, layer_order, snapshot_prob
 lazy from .scene_marks import (
     GIZMO_AXES, GIZMO_PLANES, bounds_marks, gizmo_circle_points, gizmo_marks, gizmo_plane_corners, probe_marks, unorm,
 )
-lazy from .scene_model import SceneDrawBatch, SceneDrawMesh, SceneSkinningBinding
-lazy from .scene_skinning import SceneSkinning
+lazy from .scene_model import SceneDrawBatch, SceneDrawMesh
 lazy from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
 lazy from .viewport_overlay import ViewportOverlayManager, add_overlay_header, overlay_panel_stylesheet
 
@@ -185,7 +184,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self.freecam = FreecamController()
         self._cursor_lock_pos = self._fullscreen_restore = None
         self._fullscreen_content: QWidget | None = None
-        self._fullscreen_transition = False
 
         self._meshes: list[SceneDrawMesh] = []
         self._highlighted_keys: set[str] = set()
@@ -200,8 +198,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._material_parameters: dict[str, dict[str, float]] = {}
         self._hidden_keys: set[str] = set()
         self._hidden_parts: dict[str, frozenset[int]] = {}
-        self._skinning = SceneSkinning()
-        self._mesh_draw_matrices: dict[str, np.ndarray] = {}
 
         self._wireframe_key = "mesh_viewer_wireframe_mode" if self._controls == "mesh" else "scene_render_mode"
         wireframe = str(self._setting_value(self._wireframe_key))
@@ -350,7 +346,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def _enter_view_fullscreen(self):
         if self._fullscreen_restore is not None:
             return
-        self._fullscreen_transition = True
         content = self._fullscreen_content or self
         window = content.window()
         self._fullscreen_restore = _FullscreenRestore(
@@ -392,7 +387,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def leave_view_fullscreen(self):
         if self._fullscreen_restore is None:
             return
-        self._fullscreen_transition = True
         restore = self._fullscreen_restore
         self._fullscreen_restore = None
         self.show_fullscreen_state(False)
@@ -414,11 +408,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._gizmo_projection = None
         self.place_viewport_overlays()
         self.update()
-        self._fullscreen_transition = False
         self._overlays.place_later(50)
-
-    def is_fullscreen_transitioning(self) -> bool:
-        return self._fullscreen_transition
 
     def eventFilter(self, obj, event):
         handled = self._overlays.event_filter(obj, event)
@@ -732,9 +722,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         save_settings(self._settings)
 
     def set_scene(self, meshes: list[SceneDrawMesh], highlighted_keys: set[str] | None = None, *, reset_camera: bool = True):
-        self._skinning.clear()
         self._mesh_poses.clear()
-        self._mesh_draw_matrices.clear()
         self._meshes = meshes
         self._device_changed()
         self._highlighted_keys = set(self._selection_keys if highlighted_keys is None else highlighted_keys)
@@ -743,46 +731,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._refresh_selection_bounds()
         if reset_camera:
             self.freecam.reset(self.center, self.extent, self.camera_speed)
-        self.update()
-
-    def set_mesh_skinning(
-        self,
-        key: str,
-        binding: SceneSkinningBinding,
-    ) -> None:
-        matches = [mesh for mesh in self._meshes if mesh.key == key]
-        if len(matches) != 1:
-            raise ValueError(
-                f"skinned mesh key {key!r} matched {len(matches)} scene meshes"
-            )
-        if len(matches[0].vertices) != len(binding.positions):
-            raise ValueError(
-                f"skinned mesh {key!r} has {len(binding.positions)} bind "
-                f"vertices; scene geometry has {len(matches[0].vertices)}"
-            )
-        self._skinning.set_binding(key, binding)
-        self._device_rebound({key})
-        self.update()
-
-    def update_mesh_skinning(
-        self,
-        key: str,
-        matrices: np.ndarray,
-    ) -> None:
-        self._skinning.update_palette(key, matrices)
-        self._device_moved({key})
-        self.update()
-
-    def update_mesh_skinning_source(
-        self,
-        key: str,
-        positions: np.ndarray,
-        normals: np.ndarray | None,
-    ) -> None:
-        self._skinning.update_source(key, positions, normals)
-        for mesh in self._meshes:
-            if mesh.key == key:
-                self._device_reshaped(mesh)
         self.update()
 
     def offer_game_lighting(self) -> None:
@@ -842,17 +790,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self.update()
 
     def set_mesh_pose(self, key: str, pose: ScenePose | None) -> None:
-        if pose is None:
-            self._mesh_poses.pop(key, None)
-        else:
+        held = self._mesh_poses.pop(key, None)
+        if pose is not None:
             self._mesh_poses[key] = pose
-        self._device_moved({key})
-        self.update()
-
-    def clear_mesh_skinning(self, keys: set[str] | None = None) -> None:
-        removed = self._skinning.remove(keys)
-        if removed:
-            self._device_rebound(removed)
+        if (held is None or held.bones is None) != (pose is None or pose.bones is None):
+            self._device_rebound()
+        else:
+            self._device_moved({key})
         self.update()
 
     def set_light_probe_instances(self, instances: list[SceneLightProbeInstance]) -> None:
@@ -989,35 +933,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._refresh_selection_bounds()
         self.update()
 
-    def set_mesh_draw_transforms(
-        self,
-        matrices: dict[str, np.ndarray],
-    ) -> None:
-        """Set transient world transforms without rewriting vertex buffers."""
-        by_key = {mesh.key: mesh for mesh in self._meshes}
-        draw_matrices: dict[str, np.ndarray] = {}
-        for key, value in matrices.items():
-            mesh = by_key.get(str(key))
-            if mesh is None:
-                continue
-            world = np.asarray(value, dtype=np.float32).reshape(4, 4)
-            authored = np.asarray(
-                mesh.transform_matrix
-                if mesh.transform_matrix is not None
-                else IDENTITY4,
-                dtype=np.float32,
-            )
-            if not np.isfinite(world).all():
-                raise ValueError(f"mesh {key!r} has a nonfinite draw transform")
-            delta = world @ np.linalg.inv(authored)
-            draw_matrices[str(key)] = delta.astype(np.float32, copy=False)
-        self._device_moved(self._mesh_draw_matrices.keys() | draw_matrices.keys())
-        self._mesh_draw_matrices = draw_matrices
-        self.update()
-
-    def clear_mesh_draw_transforms(self) -> None:
-        self.set_mesh_draw_transforms({})
-
     def update_mesh_geometry(
         self,
         key: str,
@@ -1116,7 +1031,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if values == self._material_parameters:
             return
         if values.keys() != self._material_parameters.keys():
-            self._device_rebound(())
+            self._device_rebound()
         else:
             self._device_moved(())
         self._material_parameters = values
@@ -1770,9 +1685,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._unlock_scene_cursor()
         self.freecam.clear_input()
         self._meshes.clear()
-        self._skinning.clear()
         self._device_changed()
-        self._mesh_draw_matrices.clear()
         self._highlighted_keys.clear()
         self._selection_keys.clear()
         self._hidden_keys.clear()
@@ -1910,14 +1823,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._device_scene = self._device_placed = self._device_before = None
         self._device_shapes.clear()
 
-    def _device_rebound(self, keys) -> None:
-        """The device gets new content only if it differs, so an identical rebind (switching animations) keeps it."""
+    def _device_rebound(self) -> None:
+        """The device gets new content only if it differs, so keys set back before a frame keep it."""
         if self._device_scene is not None and self._device_before is None:
             self._device_before = self._device_scene[0], frozenset(self._material_parameters)
         self._device_scene = None
-        for mesh in self._meshes:
-            if mesh.key in keys:
-                self._device_shapes.pop(id(mesh), None)
         self._device_moved()
 
     def _device_reshaped(self, mesh: SceneDrawMesh) -> None:
@@ -1977,7 +1887,6 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                                    else replace(batch, indices=triangles_of[shared]))
             if not batches:
                 continue
-            skin = self._skinning.influences(mesh.key)
             flat = np.ones(4)
             if self._vertex_colours(mesh, count) is None:
                 given = np.asarray(mesh.color, np.float64).reshape(-1)[:4]
@@ -1990,11 +1899,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                             uvs_of[id(given)] = np.asarray(given, np.float32).reshape(-1, 2)
                         sets.append(uvs_of[id(given)])
             uvs = sets[0] if sets else None
-            number = len(geometries)
-            if skin is None:
-                number = first.setdefault((id(mesh.vertices), id(mesh.normals), id(mesh.colors), id(mesh.uvs)), number)
+            pose = self._mesh_poses.get(mesh.key)
+            bones, weights = (None, None) if pose is None or pose.bones is None else (mesh.bones, mesh.weights)
+            number = first.setdefault((id(mesh.vertices), id(mesh.normals), id(mesh.colors), id(mesh.uvs), id(bones)),
+                                      len(geometries))
             geometries.append(SceneGeometry(mesh.key, number, uvs, tuple(map(float, flat)),
-                                            *((None, None) if skin is None else skin), tuple(batches),
+                                            bones, weights, tuple(batches),
                                             solid=bool(mesh.force_solid), edge_excluded=mesh.edge_excluded,
                                             decal_receive_mode=mesh.decal_receive_mode,
                                             transparent_bias=mesh.transparent_bias,
@@ -2083,28 +1993,23 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         dragged = drag["matrices"] if drag.get("matrix") is not None else {}
         for row in rows:
             geometry, mesh = geometries[row], meshes[row]
-            skinned = self._skinning.influences(mesh.key) is not None
-            positions, normals, bones = (self._skinning.posed(mesh.key) if skinned
-                                         else (mesh.vertices, mesh.normals, None))
             of = meshes[geometry.vertices]
             shape = self._device_shapes.get(id(of))
             if shape is None:
-                # A mesh's own arrays are replaced, never written, so its shape shares them; posed ones are copied.
-                held = np.array if skinned else np.asarray
-                positions = held(positions, np.float32).reshape(-1, 3)
-                normals = (held(normals, np.float32).reshape(-1, 3)
-                           if normals is not None and np.size(normals) == positions.size else computed_normals(
+                # A mesh's own arrays are replaced, never written, so its shape shares them.
+                positions = np.asarray(mesh.vertices, np.float32).reshape(-1, 3)
+                normals = (np.asarray(mesh.normals, np.float32).reshape(-1, 3)
+                           if mesh.normals is not None and np.size(mesh.normals) == positions.size
+                           else computed_normals(
                                positions, np.concatenate([batch.indices for batch in geometry.batches])))
                 shape = SceneShape(positions, normals, self._vertex_colours(mesh, len(positions)))
                 self._device_shapes[id(of)] = shape
             world = IDENTITY4 if mesh.transform_matrix is None else np.asarray(mesh.transform_matrix, np.float32)
-            moved = self._mesh_draw_matrices.get(mesh.key)
-            if moved is not None:
-                world = moved @ world
             if mesh.key in dragged:
                 world = drag["matrix"] @ world
-            placements[row] = ScenePlacement(shape, np.array(world[:3], np.float64), bones,
-                                             self._mesh_poses.get(mesh.key))
+            pose = self._mesh_poses.get(mesh.key)
+            placements[row] = ScenePlacement(shape, np.array(world[:3], np.float64),
+                                             None if geometry.bones is None else pose.bones, pose)
         self._device_placed = self._device_motion, tuple(placements), meshes
         return self._device_placed[1]
 

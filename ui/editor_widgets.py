@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QPoint, QRect, QSize, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter
+from PySide6.QtCore import QEvent, QPoint, QSize, Qt
+from PySide6.QtGui import QPainter
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
@@ -11,9 +11,6 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QSizePolicy,
-    QStyle,
-    QStyledItemDelegate,
-    QStyleOptionViewItem,
     QToolButton,
     QWidget,
 )
@@ -21,10 +18,6 @@ from shiboken6 import isValid
 
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
-
-
-EDITOR_TITLE_ROLE = int(Qt.ItemDataRole.UserRole) + 100
-EDITOR_META_ROLE = EDITOR_TITLE_ROLE + 1
 
 
 def styled_label(text: str = "", parent=None, **roles) -> QLabel:
@@ -234,82 +227,3 @@ class EmbeddedPopupComboBox(QComboBox):
         ):
             self.hidePopup()
         return False
-
-
-class EditorListItemDelegate(QStyledItemDelegate):
-    """Paint compact title/metadata rows while retaining native controls."""
-
-    def __init__(self, parent=None, *, row_height: int = 36):
-        super().__init__(parent)
-        self._row_height = max(34, int(row_height))
-
-    @staticmethod
-    def _title_font(font: QFont) -> QFont:
-        title_font = QFont(font)
-        title_font.setWeight(QFont.Weight.DemiBold)
-        return title_font
-
-    def sizeHint(self, option, index) -> QSize:  # noqa: N802
-        lines = QFontMetrics(self._title_font(option.font)).height() + option.fontMetrics.height()
-        return QSize(super().sizeHint(option, index).width(), max(self._row_height, lines + 4))
-
-    def paint(
-        self,
-        painter: QPainter,
-        option: QStyleOptionViewItem,
-        index,
-    ) -> None:
-        styled = QStyleOptionViewItem(option)
-        self.initStyleOption(styled, index)
-        styled.text = ""
-        style = styled.widget.style() if styled.widget else None
-        if style is None:
-            return super().paint(painter, option, index)
-        style.drawControl(
-            QStyle.ControlElement.CE_ItemViewItem,
-            styled,
-            painter,
-            styled.widget,
-        )
-
-        rect = style.subElementRect(
-            QStyle.SubElement.SE_ItemViewItemText,
-            styled,
-            styled.widget,
-        ).adjusted(7, 2, -5, -2)
-        selected = bool(styled.state & QStyle.StateFlag.State_Selected)
-        enabled = bool(styled.state & QStyle.StateFlag.State_Enabled)
-        palette = styled.palette
-        title_color = (
-            palette.highlightedText().color()
-            if selected
-            else palette.text().color()
-        )
-        meta_color = QColor(title_color)
-        meta_color.setAlpha(165 if enabled else 90)
-
-        title_font = self._title_font(styled.font)
-        title_metrics = QFontMetrics(title_font)
-        meta_metrics = QFontMetrics(styled.font)
-        title_height, meta_height = title_metrics.height(), meta_metrics.height()
-        top = rect.top() + max(0, (rect.height() - title_height - meta_height) // 2)
-        align = Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        title = str(index.data(EDITOR_TITLE_ROLE) or index.data() or "")
-        meta = str(index.data(EDITOR_META_ROLE) or "")
-
-        painter.save()
-        painter.setFont(title_font)
-        painter.setPen(title_color)
-        painter.drawText(
-            QRect(rect.left(), top, rect.width(), title_height),
-            align,
-            title_metrics.elidedText(title, Qt.TextElideMode.ElideRight, rect.width()),
-        )
-        painter.setFont(styled.font)
-        painter.setPen(meta_color)
-        painter.drawText(
-            QRect(rect.left(), top + title_height, rect.width(), meta_height),
-            align,
-            meta_metrics.elidedText(meta, Qt.TextElideMode.ElideRight, rect.width()),
-        )
-        painter.restore()

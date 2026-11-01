@@ -11,6 +11,7 @@ class ResourceKind(Enum):
     CLIP = "clip"
     TIMELINE = "tml"
     USER_CURVE = "ucurve"
+    MOT_CLIP = "motclip"
 
 
 @dataclass(eq=False, slots=True)
@@ -71,6 +72,8 @@ class Node:
     tag: str = ""
     editor_id: int = 0
     type_hash: int = 0
+    name_hashes: tuple[int, int] | None = None
+    unique_id: int | None = None
     children: list[Node] = field(default_factory=list)
     properties: list[Property] = field(default_factory=list)
 
@@ -100,6 +103,13 @@ class Track:
 
 
 @dataclass(eq=False, slots=True)
+class TrackInterval:
+    track: Node
+    ranges: list[tuple[float | None, int]] = field(default_factory=list)
+    property_hash: int | None = None
+
+
+@dataclass(eq=False, slots=True)
 class Timeline:
     version: int
     kind: ResourceKind = ResourceKind.CLIP
@@ -107,6 +117,7 @@ class Timeline:
     header_guid: bytes = bytes(16)
     tracks: list[Track] = field(default_factory=list)
     root_order: list[Node] | None = None
+    intervals: list[list[TrackInterval]] | None = None
 
     @property
     def roots(self) -> list[Node]:

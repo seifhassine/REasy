@@ -1,0 +1,153 @@
+{
+ "format": 1,
+ "families": {
+  "mot65": {
+   "rules": {
+    "float": {"blend": "mix"},
+    "vector3": {"order": "code*recip*scale", "blend": "mix"},
+    "quaternion": {"order": "code*recip*scale", "blend": "nlerp"},
+    "quaternion.packed": {"order": "code*(scale*recip)"}
+   },
+   "keys": {
+    "float": {
+     "0": {"size": 4, "decode": "full"}
+    },
+    "vector3": {
+     "0": {"size": 12, "decode": "full"},
+     "32": {"size": 2, "params": 8, "decode": "packed", "bits": 5},
+     "33": {"size": 2, "params": 4, "decode": "axis", "axis": 0, "bits": 16},
+     "34": {"size": 2, "params": 4, "decode": "axis", "axis": 1, "bits": 16},
+     "35": {"size": 2, "params": 4, "decode": "axis", "axis": 2, "bits": 16},
+     "36": {"size": 2, "params": 2, "decode": "uniform", "bits": 16},
+     "48": {"size": 4, "params": 8, "decode": "packed", "bits": 10},
+     "49": {"size": 4, "params": 3, "decode": "axis", "axis": 0},
+     "50": {"size": 4, "params": 3, "decode": "axis", "axis": 1},
+     "51": {"size": 4, "params": 3, "decode": "axis", "axis": 2},
+     "52": {"size": 4, "decode": "uniform"},
+     "112": {"size": 8, "params": 8, "decode": "packed", "bits": 21}
+    },
+    "quaternion": {
+     "0": {"size": 16, "decode": "full"},
+     "33": {"size": 2, "params": 2, "decode": "axis", "axis": 0, "bits": 16},
+     "34": {"size": 2, "params": 2, "decode": "axis", "axis": 1, "bits": 16},
+     "35": {"size": 2, "params": 2, "decode": "axis", "axis": 2, "bits": 16},
+     "48": {"size": 4, "params": 8, "decode": "packed", "bits": 10},
+     "49": {"size": 4, "decode": "axis", "axis": 0},
+     "50": {"size": 4, "decode": "axis", "axis": 1},
+     "51": {"size": 4, "decode": "axis", "axis": 2},
+     "80": {"size": 6, "params": 8, "decode": "packed", "bits": 16},
+     "112": {"size": 8, "params": 8, "decode": "packed", "bits": 21},
+     "176": {"size": 12, "decode": "full"}
+    }
+   }
+  },
+  "mot78": {
+   "rules": {
+    "float": {"order": "code*recip*scale", "blend": "lerp"},
+    "vector3": {"order": "code*recip*scale", "blend": "lerp"},
+    "vector3.uniform": {"blend_order": "code*(scale*recip)"},
+    "quaternion": {"order": "code*recip*scale", "blend": "nlerp"},
+    "quaternion.packed": {"order": "code*(scale*recip)"}
+   },
+   "keys": {
+    "float": {
+     "0": {"size": 4, "decode": "full"}
+    },
+    "vector3": {
+     "0": {"size": 12, "decode": "full"},
+     "32": {"size": 2, "params": 6, "decode": "packed", "bits": 5},
+     "33": {"size": 2, "params": 4, "decode": "axis", "axis": 0, "bits": 16},
+     "34": {"size": 2, "params": 4, "decode": "axis", "axis": 1, "bits": 16},
+     "35": {"size": 2, "params": 4, "decode": "axis", "axis": 2, "bits": 16},
+     "36": {"size": 2, "params": 2, "decode": "uniform", "bits": 16},
+     "64": {"size": 4, "params": 6, "decode": "packed", "bits": 10},
+     "65": {"size": 4, "params": 3, "decode": "axis", "axis": 0},
+     "66": {"size": 4, "params": 3, "decode": "axis", "axis": 1},
+     "67": {"size": 4, "params": 3, "decode": "axis", "axis": 2},
+     "68": {"size": 4, "decode": "uniform"},
+     "128": {"size": 8, "params": 6, "decode": "packed", "bits": 21}
+    },
+    "quaternion": {
+     "0": {"size": 16, "decode": "full"},
+     "32": {"size": 2, "params": 8, "decode": "packed", "bits": 5},
+     "33": {"size": 2, "params": 2, "decode": "axis", "axis": 0, "bits": 16},
+     "34": {"size": 2, "params": 2, "decode": "axis", "axis": 1, "bits": 16},
+     "35": {"size": 2, "params": 2, "decode": "axis", "axis": 2, "bits": 16},
+     "48": {"size": 3, "params": 8, "decode": "packed", "bits": 8},
+     "64": {"size": 4, "params": 8, "decode": "packed", "bits": 10},
+     "65": {"size": 4, "decode": "axis", "axis": 0},
+     "66": {"size": 4, "decode": "axis", "axis": 1},
+     "67": {"size": 4, "decode": "axis", "axis": 2},
+     "80": {"size": 5, "params": 8, "decode": "packed", "bits": 13, "endian": "big"},
+     "96": {"size": 6, "params": 8, "decode": "packed", "bits": 16},
+     "112": {"size": 7, "params": 8, "decode": "packed", "bits": 18, "endian": "big"},
+     "128": {"size": 8, "params": 8, "decode": "packed", "bits": 21},
+     "192": {"size": 12, "decode": "full"}
+    }
+   }
+  },
+  "mot458": {
+   "extends": "mot78",
+   "keys": {
+    "float": {
+     "16": {"size": 1, "params": 2, "decode": "packed", "bits": 8},
+     "32": {"size": 2, "params": 2, "decode": "packed", "bits": 16},
+     "48": {"size": 3, "params": 2, "decode": "packed", "bits": 24, "endian": "big"}
+    }
+   }
+  },
+  "mot932": {
+   "extends": "mot458",
+   "rules": {
+    "float": {"order": "code*recip*scale", "blend": "lerp"},
+    "vector3": {"order": "code*scale*recip", "blend": "code", "blend_order": "code*(scale*recip)"},
+    "vector3.packed": {"blend_order": "code*scale*recip"},
+    "quaternion": {"order": "code*scale*recip", "blend": "nlerp2"},
+    "quaternion.packed": {"order": "code*(scale*recip)", "blend": "nlerp"},
+    "quaternion.full": {"blend": "nlerp"}
+   },
+   "keys": {
+    "vector3": {
+     "37": {"size": 2, "params": 5, "decode": "pair", "axes": [0, 1], "bits": 8},
+     "38": {"size": 2, "params": 5, "decode": "pair", "axes": [1, 2], "bits": 8},
+     "39": {"size": 2, "params": 5, "decode": "pair", "axes": [2, 0], "bits": 8},
+     "48": {"size": 3, "params": 6, "decode": "packed", "bits": 8},
+     "49": {"size": 3, "params": 4, "decode": "axis", "axis": 0, "bits": 24, "endian": "big"},
+     "50": {"size": 3, "params": 4, "decode": "axis", "axis": 1, "bits": 24, "endian": "big"},
+     "51": {"size": 3, "params": 4, "decode": "axis", "axis": 2, "bits": 24, "endian": "big"},
+     "52": {"size": 3, "params": 2, "decode": "uniform", "bits": 24, "endian": "big"},
+     "53": {"size": 3, "params": 5, "decode": "pair", "axes": [0, 1], "bits": 12, "endian": "big"},
+     "54": {"size": 3, "params": 5, "decode": "pair", "axes": [1, 2], "bits": 12, "endian": "big"},
+     "55": {"size": 3, "params": 5, "decode": "pair", "axes": [2, 0], "bits": 12, "endian": "big"},
+     "69": {"size": 4, "params": 5, "decode": "pair", "axes": [0, 1], "bits": 16},
+     "70": {"size": 4, "params": 5, "decode": "pair", "axes": [1, 2], "bits": 16},
+     "71": {"size": 4, "params": 5, "decode": "pair", "axes": [2, 0], "bits": 16},
+     "80": {"size": 5, "params": 6, "decode": "packed", "bits": 13, "endian": "big"},
+     "85": {"size": 5, "params": 5, "decode": "pair", "axes": [0, 1], "bits": 20, "endian": "big"},
+     "86": {"size": 5, "params": 5, "decode": "pair", "axes": [1, 2], "bits": 20, "endian": "big"},
+     "87": {"size": 5, "params": 5, "decode": "pair", "axes": [2, 0], "bits": 20, "endian": "big"},
+     "96": {"size": 6, "params": 6, "decode": "packed", "bits": 16, "endian": "big"},
+     "101": {"size": 6, "params": 5, "decode": "pair", "axes": [0, 1], "bits": 24, "endian": "big"},
+     "102": {"size": 6, "params": 5, "decode": "pair", "axes": [1, 2], "bits": 24, "endian": "big"},
+     "103": {"size": 6, "params": 5, "decode": "pair", "axes": [2, 0], "bits": 24, "endian": "big"},
+     "112": {"size": 7, "params": 6, "decode": "packed", "bits": 18, "endian": "big"},
+     "117": {"size": 7, "params": 5, "decode": "pair", "axes": [0, 1], "bits": 28, "endian": "big"},
+     "118": {"size": 7, "params": 5, "decode": "pair", "axes": [1, 2], "bits": 28, "endian": "big"},
+     "119": {"size": 7, "params": 5, "decode": "pair", "axes": [2, 0], "bits": 28, "endian": "big"},
+     "133": {"size": 8, "params": 3, "decode": "pair", "axes": [0, 1]},
+     "134": {"size": 8, "params": 3, "decode": "pair", "axes": [1, 2]},
+     "135": {"size": 8, "params": 3, "decode": "pair", "axes": [2, 0]}
+    },
+    "quaternion": {
+     "17": {"size": 1, "params": 2, "decode": "axis", "axis": 0, "bits": 8},
+     "18": {"size": 1, "params": 2, "decode": "axis", "axis": 1, "bits": 8},
+     "19": {"size": 1, "params": 2, "decode": "axis", "axis": 2, "bits": 8},
+     "49": {"size": 3, "params": 2, "decode": "axis", "axis": 0, "bits": 24, "endian": "big"},
+     "50": {"size": 3, "params": 2, "decode": "axis", "axis": 1, "bits": 24, "endian": "big"},
+     "51": {"size": 3, "params": 2, "decode": "axis", "axis": 2, "bits": 24, "endian": "big"},
+     "96": {"size": 6, "params": 8, "decode": "packed", "bits": 16, "endian": "big"}
+    }
+   }
+  }
+ }
+}

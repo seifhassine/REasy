@@ -4,7 +4,7 @@ from setuptools import setup, Extension
 
 compile_args = ['/O2'] if os.name == 'nt' else ['-O3']
 ext_modules = []
-for module_name in ('fast_pakresolve', 'fast_path_search', 'fast_string_scan', 'fastmesh', 'fastmotion', 'fastsdftex',
+for module_name in ('fast_pakresolve', 'fast_path_search', 'fast_string_scan', 'fastmesh', 'fastsdftex',
                     'fastkey'):
     source_path = f'native/{module_name}.c'
     if os.path.exists(source_path):

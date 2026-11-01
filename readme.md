@@ -44,8 +44,8 @@ The interface is available in English, Chinese, Russian and Spanish.
 
 ## Supported files
 
-- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR,  SDFTEX (baked from a mesh), DDS (to TEX), SDF, MESH, TEX, MOTBANK, MCAMBANK, CLIP, TML, UCURVE, GUI, BNK, PCK, WEL, WCC and other headless sound files, hair strands
-- **View:** FOL, STMESH, GCF, IFT, OFT, MOTLIST, light probes (in SCN scenes)
+- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR,  SDFTEX (baked from a mesh), DDS (to TEX), SDF, MESH, TEX, MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, CLIP, TML, UCURVE, GUI, BNK, PCK, WEL, WCC and other headless sound files, hair strands
+- **View:** FOL, STMESH, GCF, IFT, OFT, light probes (in SCN scenes)
 - **Other:** PAK through *Tools > PAK Browser*, MOV in your default video player
 
 <details>
@@ -55,7 +55,8 @@ The interface is available in English, Chinese, Russian and Spanish.
 - **MMTR, SDF**: not RE7 non-RT. Older DD2 and the Onimusha demo: pixel shaders only.
 - **RCOL**: not RE7 non-RT (rcol.2) or MH Wilds rcol.38.
 - **Hair strands**: edit in RE9 and Pragmata, view in RE4.
-- **GUI, MOTLIST**: DMC5 only.
+- **GUI**: DMC5 only.
+- **MOT, MOTLIST, MOTTREE**: not RE7 non-RT, MH Stories 3, O2, Kunitsu-Gami or DRDR.
 - **WEL**: RE2, RE3, RE7 RT, RE8, DMC5, MH Rise.
 - **BNK, PCK**: no audio replacement for RE7 non-RT, RE Resistance, MH Stories 3, O2, Kunitsu-Gami or DRDR.
 - **Light probes**: not RE7 non-RT, RE Resistance or DRDR.

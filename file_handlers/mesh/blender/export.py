@@ -12,20 +12,18 @@ def joint_names(mesh):
     return [joint_name(mesh, joint) for joint in range(len(mesh.bone_indices))]
 
 
-def _bone_lengths(mesh, heads):
+def bone_lengths(parents, heads):
     lengths = np.full(len(heads), 0.0)
     children = {}
-    for node in mesh.bones:
-        children.setdefault(int(node.parent_index), []).append(int(node.index))
+    for joint, parent in enumerate(parents):
+        children.setdefault(int(parent), []).append(joint)
     for joint in range(len(heads)):
         distances = [np.linalg.norm(heads[child] - heads[joint]) for child in children.get(joint, ())]
         distances = [d for d in distances if d > 1e-4]
         lengths[joint] = min(distances) if distances else 0.0
     fallback = float(np.median(lengths[lengths > 0])) if np.any(lengths > 0) else 0.05
-    for node in mesh.bones:
-        joint = int(node.index)
+    for joint, parent in enumerate(parents):
         if lengths[joint] <= 0:
-            parent = int(node.parent_index)
             lengths[joint] = 0.5 * lengths[parent] if 0 <= parent < len(lengths) and lengths[parent] > 0 else fallback
     return np.maximum(lengths, 1e-3)
 
@@ -192,11 +190,10 @@ def build_export_package(mesh, *, title, source_main, source_streaming, file_ver
     if mesh.bones:
         world = [matrix_to_blender(matrix) for matrix in mesh.world_matrices]
         heads = np.array([matrix[:3, 3] for matrix in world]) if world else np.zeros((0, 3))
-        lengths = _bone_lengths(mesh, heads)
+        parents = [int(node.parent_index) for node in mesh.bones]
         arrays["bones.matrix"] = np.array(world, dtype=np.float64).reshape(-1, 16)
-        arrays["bones.length"] = lengths
-        skeleton = {"names": names, "parents": [int(node.parent_index) for node in mesh.bones],
-                    "palette": palette}
+        arrays["bones.length"] = bone_lengths(parents, heads)
+        skeleton = {"names": names, "parents": parents, "palette": palette}
 
     manifest = {
         "title": title,

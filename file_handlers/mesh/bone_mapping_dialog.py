@@ -177,16 +177,20 @@ class _Delegate(QStyledItemDelegate):
 
 
 class BoneMappingDialog(QDialog):
-    def __init__(self, mapping, reference_label="", parent=None):
+    def __init__(self, mapping, reference_label="", parent=None, motion=False):
+        """``motion``: bones drive joints of a motion (the rows' ``weighted`` counts keyed bones)."""
         super().__init__(parent)
-        self.mapping = mapping
-        self.setWindowTitle(self.tr("Map the model's bones"))
+        self.mapping, self.motion = mapping, motion
+        self.setWindowTitle(self.tr("Map the action's bones") if motion else self.tr("Map the model's bones"))
         self.resize(980, 640)
         layout = QVBoxLayout(self)
-        intro = QLabel(self.tr(
+        intro = QLabel((self.tr(
+            "Each bone of the armature drives the joint of {reference} it maps to, found by body part, then by name; "
+            "joints without a bone follow their parents. Rows needing a look: keyed bones without a joint.")
+            if motion else self.tr(
             "Each bone or vertex group of the model sends its weights to a joint of {reference}. "
             "Rows needing a look: guesses by position, weighted bones without a joint, and bones far from "
-            "their joint's rest position.").format(reference=reference_label or self.tr("the reference")))
+            "their joint's rest position.")).format(reference=reference_label or self.tr("the reference")))
         intro.setWordWrap(True)
         layout.addWidget(intro)
         self.summary = QLabel()
@@ -214,6 +218,11 @@ class BoneMappingDialog(QDialog):
             header.setSectionResizeMode(column, QHeaderView.ResizeToContents)
         header.resizeSection(TARGET, 220)
         header.resizeSection(UNMAPPED, 230)
+        if motion:
+            # Rest offsets compare skeletons in other poses and sizes.
+            self.model.limit = float("inf")
+            for column in (VERTICES, UNMAPPED, OFFSET):
+                self.table.setColumnHidden(column, True)
         layout.addWidget(self.table, 1)
 
         files = QHBoxLayout()
@@ -255,7 +264,9 @@ class BoneMappingDialog(QDialog):
                                                                            target=self.mapping.families[1]))
         if guessed:
             parts.append(self.tr("{count} by position").format(count=guessed))
-        if weighted:
+        if weighted and self.motion:
+            parts.append(self.tr("{count} keyed bones without a joint").format(count=len(weighted)))
+        elif weighted:
             parts.append(self.tr("{count} weighted unmapped ({merged} merged, {added} added, {dropped} dropped)")
                          .format(count=len(weighted), merged=merged, added=added, dropped=dropped))
         if far:

@@ -80,7 +80,7 @@ def require_blender(parent, app):
     return path
 
 
-def _run_busy(parent, label, work):
+def run_busy(parent, label, work):
     """``work()`` runs off the GUI thread."""
     try:
         return run_job(parent, translate("BlenderRoundTrip", "Blender"), lambda _progress, _cancelled: work(),
@@ -133,12 +133,12 @@ class BlendImportReview(QDialog):
         apply_modifiers = self.modifiers.isChecked()
         dump = self._dumps.get(apply_modifiers)
         if dump is None:
-            dump, error = _run_busy(self, self.tr("Reading the Blender scene…"), lambda: self.read(apply_modifiers))
+            dump, error = run_busy(self, self.tr("Reading the Blender scene…"), lambda: self.read(apply_modifiers))
             if error:
                 self._show_error(error)
                 return False
             self._dumps[apply_modifiers] = dump
-        result, error = _run_busy(self, self.tr("Building the mesh…"),
+        result, error = run_busy(self, self.tr("Building the mesh…"),
                                   lambda: self.apply(dump, self.normals.isChecked(), self.skin.isChecked()))
         if error:
             self._show_error(error)
@@ -231,13 +231,13 @@ def save_and_open(parent, app, result, name):
     return path
 
 
-def _skeleton_key(mesh):
-    return hashlib.sha1("\n".join(joint_names(mesh)).encode("utf-8")).hexdigest()[:16]
+def _skeleton_key(joints):
+    return hashlib.sha1("\n".join(joints).encode("utf-8")).hexdigest()[:16]
 
 
-def _recall_mapping(app, mesh, mapping) -> str:
+def _recall_mapping(app, joints, mapping) -> str:
     saved = (app_settings(app) or {}).get(MAPPINGS_KEY, {})
-    text = saved.get(_skeleton_key(mesh)) if isinstance(saved, dict) else None
+    text = saved.get(_skeleton_key(joints)) if isinstance(saved, dict) else None
     if text:
         try:
             mapping.apply_json(text)
@@ -246,15 +246,27 @@ def _recall_mapping(app, mesh, mapping) -> str:
     return ""
 
 
-def _store_mapping(app, mesh, mapping):
+def _store_mapping(app, joints, mapping):
     saved = (app_settings(app) or {}).get(MAPPINGS_KEY, {})
     saved = dict(saved) if isinstance(saved, dict) else {}
-    key = _skeleton_key(mesh)
+    key = _skeleton_key(joints)
     saved.pop(key, None)
     saved[key] = mapping.to_json()
     while len(saved) > REMEMBERED_MAPPINGS:
         saved.pop(next(iter(saved)))
     remember_setting(app, MAPPINGS_KEY, saved)
+
+
+def review_mapping(parent, app, mapping, joints, label, motion=False) -> bool:
+    unread = _recall_mapping(app, joints, mapping)
+    if unread:
+        QMessageBox.warning(parent, translate("BlenderRoundTrip", "Bone mapping"), translate("BlenderRoundTrip",
+            "The bone mapping remembered for this skeleton could not be read; the suggested mapping is shown."
+        ) + "\n\n" + unread)
+    if BoneMappingDialog(mapping, label, parent, motion=motion).exec() != QDialog.Accepted:
+        return False
+    _store_mapping(app, joints, mapping)
+    return True
 
 
 def _scene_reader(path, blender):
@@ -268,15 +280,9 @@ def _reference_review(parent, app, path, blender, dump, current=None):
         return None
     choice = picker.choice
     mapping = suggest(bones, reference_bones(choice.mesh), weighted)
-    if choice.mesh.bones and mapping.rows:
-        unread = _recall_mapping(app, choice.mesh, mapping)
-        if unread:
-            QMessageBox.warning(parent, translate("BlenderRoundTrip", "Bone mapping"), translate("BlenderRoundTrip",
-                "The bone mapping remembered for this skeleton could not be read; the suggested mapping is shown."
-            ) + "\n\n" + unread)
-        if BoneMappingDialog(mapping, choice.label, parent).exec() != QDialog.Accepted:
-            return None
-        _store_mapping(app, choice.mesh, mapping)
+    if choice.mesh.bones and mapping.rows and not review_mapping(parent, app, mapping, joint_names(choice.mesh),
+                                                                 choice.label):
+        return None
     review = BlendImportReview(
         f"{Path(path).name} → {choice.label}", _scene_reader(path, blender),
         lambda scene, recompute, skin: reference_import(scene, choice.reference, mapping, recompute_normals=recompute,
@@ -298,7 +304,7 @@ def _open_scene(parent, app, start=""):
     blender = require_blender(parent, app) if path else None
     if blender is None:
         return None
-    dump, error = _run_busy(parent, translate("BlenderRoundTrip", "Reading the Blender scene…"),
+    dump, error = run_busy(parent, translate("BlenderRoundTrip", "Reading the Blender scene…"),
                             lambda: read_blend(path, blender=blender))
     if not error and dump.foreign and not dump.manifest["objects"]:
         error = translate("BlenderRoundTrip", "The scene has no visible mesh objects.")
@@ -364,4 +370,4 @@ def import_mesh_from_blender(window):
 
 
 __all__ = ["BlendImportReview", "apply_to_document", "import_into_viewer", "import_mesh_from_blender",
-           "require_blender", "save_and_open"]
+           "require_blender", "run_busy", "save_and_open"]

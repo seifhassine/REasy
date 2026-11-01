@@ -57,10 +57,6 @@ def mesh_geometry_choices(mesh):
     return choices
 
 
-def mesh_lod0_submeshes(mesh) -> list[object]:
-    return [submesh for _part, submesh in mesh_lod_parts(mesh)]
-
-
 def mesh_lod_parts(
     mesh,
     lod_index: int = 0,
@@ -361,6 +357,23 @@ def build_mesh_scene(
     uvs = merge_attribute(records, "uv0", 2, np.float32)
     uv1 = merge_attribute(records, "uv1", 2, np.float32)
     uv2 = merge_attribute(records, "uv2", 2, np.float32)
+    bones = weights = None
+    if payload_records_have_complete_attribute(records, "skin_weights", {}):
+        streams = [[stream for stream in (record.payload.skin_weights, record.payload.extra_skin_weights)
+                    if stream is not None] for record in records]
+        width = max(sum(stream.influence_count for stream in held) for held in streams)
+        bones, weights = np.zeros((len(vertices), width), np.uint16), np.zeros((len(vertices), width), np.float32)
+        for record, held in zip(records, streams):
+            rows = slice(record.vertex_base, record.vertex_base + record.vertex_count)
+            span, lane = slice(record.source_vertex_start, record.source_vertex_start + record.vertex_count), 0
+            for stream in held:
+                count = stream.influence_count
+                bones[rows, lane:lane + count] = np.asarray(stream.deform_indices).reshape(-1, count)[span]
+                weights[rows, lane:lane + count] = np.asarray(stream.weights).reshape(-1, count)[span]
+                lane += count
+        bones[weights == 0] = 0
+        used = int(np.flatnonzero(weights.any(axis=0)).max(initial=-1)) + 1
+        bones, weights = (bones[:, :used].copy(), weights[:, :used].copy()) if used else (None, None)
     if layer == "main":
         vertices, normals = deform_mesh_vertices(
             mesh, vertices, normals, records, lod_index=lod_index,
@@ -491,6 +504,8 @@ def build_mesh_scene(
             uv1=uv1,
             uv2=uv2,
             colors=colors,
+            bones=bones,
+            weights=weights,
             batches=batches,
             bounds_minimum=bounds_minimum,
             bounds_maximum=bounds_maximum,

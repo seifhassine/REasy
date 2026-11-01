@@ -1,23 +1,18 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt
+from PySide6.QtCore import QObject, Qt
 
 lazy from ui.icons import line_icon
 
-from ..document import Change, ClipDocument
+from file_handlers.document_commands import Change
+from ui.outline_model import OutlineModel as TreeOutline
+
+from ..document import ClipDocument
 from ..model import Clip, Node, Property, Track
 from ..rules import NodeType, display_names, property_type
 from .lanes import tone
 
 _NODE_ICONS = {NodeType.GAME_OBJECT: "gameobject", NodeType.COMPONENT: "component", NodeType.FOLDER: "folder"}
-
-
-class _Row:
-    __slots__ = ("item", "parent", "row", "children")
-
-    def __init__(self, item, parent: _Row | None, row: int):
-        self.item, self.parent, self.row = item, parent, row
-        self.children: list[_Row] | None = None
 
 
 def children_of(item) -> list:
@@ -32,75 +27,25 @@ def children_of(item) -> list:
     return item.tracks
 
 
-class OutlineModel(QAbstractItemModel):
+class OutlineModel(TreeOutline):
     def __init__(self, document: ClipDocument, parent: QObject | None = None):
-        super().__init__(parent)
+        super().__init__(document.timeline, parent)
         self.document = document
-        self._root = _Row(document.timeline, None, 0)
         document.changed.connect(self._on_changed)
 
-    def item(self, index: QModelIndex) -> object:
-        return self._row(index).item
+    def children_of(self, item) -> list:
+        return children_of(item)
 
-    def index_of(self, item) -> QModelIndex:
-        path = []
-        while (found := self.document.parent(item)) is not None and item is not self.document.timeline:
-            path.append(item)
-            item = found[0]
-        row, index = self._root, QModelIndex()
-        for target in reversed(path):
-            children = self._children(row)
-            match = next((child for child in children if child.item is target), None)
-            if match is None:
-                return QModelIndex()
-            row, index = match, self.createIndex(match.row, 0, match)
-        return index
+    def owner_of(self, item) -> object | None:
+        found = self.document.parent(item)
+        return None if found is None else found[0]
 
-    def index(self, row: int, column: int, parent: QModelIndex = QModelIndex()) -> QModelIndex:
-        children = self._children(self._row(parent))
-        if not 0 <= row < len(children) or not 0 <= column < 2:
-            return QModelIndex()
-        return self.createIndex(row, column, children[row])
-
-    def parent(self, index: QModelIndex) -> QModelIndex:
-        if not index.isValid():
-            return QModelIndex()
-        parent = index.internalPointer().parent
-        if parent is None or parent is self._root:
-            return QModelIndex()
-        return self.createIndex(parent.row, 0, parent)
-
-    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        if parent.isValid() and parent.column() != 0:
-            return 0
-        return len(self._children(self._row(parent)))
-
-    def hasChildren(self, parent: QModelIndex = QModelIndex()) -> bool:
-        return bool(children_of(self._row(parent).item))
-
-    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-        return 2
-
-    def headerData(self, section: int, orientation, role: int = Qt.DisplayRole):
-        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
-            return (self.tr("Name"), self.tr("Type"))[section]
-        return None
-
-    def flags(self, index: QModelIndex):
-        if not index.isValid():
-            return Qt.NoItemFlags
-        flags = Qt.ItemIsEnabled | Qt.ItemIsSelectable
-        return flags | Qt.ItemIsEditable if index.column() == 0 else flags
-
-    def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
-        if not index.isValid():
-            return None
-        item = self.item(index)
+    def display(self, item, row: int, column: int, role: int):
         if role == Qt.DisplayRole:
-            return self._name(index, item) if index.column() == 0 else self._kind(item)
-        if role == Qt.EditRole and index.column() == 0:
+            return self._name(row, item) if column == 0 else self._kind(item)
+        if role == Qt.EditRole and column == 0:
             return item.name
-        if role == Qt.DecorationRole and index.column() == 0:
+        if role == Qt.DecorationRole and column == 0:
             return line_icon(self._icon(item))
         if role == Qt.ForegroundRole and isinstance(item, Track) and not item.enabled:
             return tone("text_disabled")
@@ -109,27 +54,16 @@ class OutlineModel(QAbstractItemModel):
             return "\n".join(messages) or None
         return None
 
-    def setData(self, index: QModelIndex, value, role: int = Qt.EditRole) -> bool:
-        if role != Qt.EditRole or index.column() != 0 or not isinstance(value, str):
-            return False
+    def rename(self, item, name: str | None) -> bool:
         from ..edits import rename
 
-        item = self.item(index)
-        if value != item.name and "\0" not in value:
-            rename(self.document, item, value)
+        if name is not None and name != item.name:
+            rename(self.document, item, name)
         return True
 
-    def _row(self, index: QModelIndex) -> _Row:
-        return index.internalPointer() if index.isValid() else self._root
-
-    def _children(self, row: _Row) -> list[_Row]:
-        if row.children is None:
-            row.children = [_Row(item, row, position) for position, item in enumerate(children_of(row.item))]
-        return row.children
-
-    def _name(self, index: QModelIndex, item) -> str:
+    def _name(self, row: int, item) -> str:
         if isinstance(item, Clip) and not item.name:
-            return self.tr("Clip {0}").format(index.row() + 1)
+            return self.tr("Clip {0}").format(row + 1)
         return item.name
 
     def _kind(self, item) -> str:
@@ -154,10 +88,6 @@ class OutlineModel(QAbstractItemModel):
 
     def _on_changed(self, change: Change) -> None:
         if change.structural:
-            self.beginResetModel()
-            self._root = _Row(self.document.timeline, None, 0)
-            self.endResetModel()
+            self.reset(self.document.timeline)
         elif change.field in ("name", "group", "enabled", "node_type", "type", "frame_in", "frame_out"):
-            index = self.index_of(change.target)
-            if index.isValid():
-                self.dataChanged.emit(index, index.siblingAtColumn(1))
+            self.refresh(change.target)

@@ -10,8 +10,9 @@ from PySide6.QtWidgets import QTreeView, QWidget
 
 lazy from ui.styles import current_colors, qcolor
 
+from file_handlers.document_commands import SetFields
+
 from .. import edits
-from ..commands import SetFields
 from ..model import Clip, Key, Node, Property, Track
 from ..rules import InterpolationType, interpolation, owns_keys
 from .state import EditorState

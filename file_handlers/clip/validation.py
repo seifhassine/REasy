@@ -7,9 +7,9 @@ import struct
 from collections import Counter
 from dataclasses import dataclass
 
-from .layout import ClipFormatError
-from .model import FLAG_NAMES, Key, Node, Property, SpeedPoint, Timeline, walk_nodes
-from .rules import FormatRules, control_tables, control_width, interpolation, profile, property_type
+from .errors import ClipFormatError
+from .model import FLAG_NAMES, Key, Node, Property, ResourceKind, SpeedPoint, Timeline, walk_nodes
+from .rules import FormatRules, control_tables, control_width, interpolation, property_type, rules_for
 from .values import value_problem
 
 _FLOAT = struct.Struct("<f")
@@ -24,7 +24,7 @@ class Issue:
 
 def validate(timeline: Timeline) -> list[Issue]:
     try:
-        rules = profile(timeline.version).rules
+        rules = rules_for(timeline.version, timeline.kind)
     except ClipFormatError as exc:
         return [Issue(timeline, str(exc))]
     return _Validator(timeline, rules).run()
@@ -49,7 +49,8 @@ class _Validator:
 
     def run(self) -> list[Issue]:
         timeline, rules = self.timeline, self.rules
-        if not _f32(timeline.total_frame):
+        if not _f32(timeline.total_frame) and not (timeline.kind is ResourceKind.MOT_CLIP
+                                                   and timeline.total_frame == -math.inf):
             self._add(timeline, "The total frame is not a finite 32-bit float")
         if timeline.header_guid != bytes(16) and "header_guid" not in rules.header.names:
             self._add(timeline, "This version stores no header GUID")
@@ -72,8 +73,12 @@ class _Validator:
                     if not _f32(getattr(clip, name)):
                         self._add(clip, f"{name} is not a finite 32-bit float")
         held = [node for track in timeline.tracks for node in track.roots]
-        if timeline.root_order is not None and (clip_roots or Counter(map(id, timeline.root_order))
-                                                != Counter(map(id, held))):
+        if timeline.kind is ResourceKind.MOT_CLIP:
+            held = list(timeline.roots)
+            if len(held) != 1 or timeline.tracks:
+                self._add(timeline, "A MOT clip holds one root node and no tracks")
+        elif timeline.root_order is not None and (clip_roots or Counter(map(id, timeline.root_order))
+                                                  != Counter(map(id, held))):
             self._add(timeline, "The root order does not list the tracks' root nodes")
         self._ownership(held)
         nodes = list(walk_nodes(timeline.roots))

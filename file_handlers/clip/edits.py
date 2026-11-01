@@ -8,10 +8,12 @@ from collections import Counter
 
 lazy from utils.hash_util import murmur3_hash
 
-from .commands import ReplaceContents, SetFields
+lazy from file_handlers.layout_codec import RecordCodec
+
+from file_handlers.document_commands import ReplaceContents, SetFields
+
 from .document import ClipDocument
 from .evaluation import NUMERIC_TYPES, sample
-from .layout import RecordCodec
 from .model import Clip, Key, Node, Property, SpeedPoint, Track, walk_nodes, walk_properties
 from .rules import (
     InterpolationType,

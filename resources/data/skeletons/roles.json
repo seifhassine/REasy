@@ -12,6 +12,7 @@
  "chains": ["spine", "neck", "thumb", "index", "middle", "ring", "pinky"],
  "proportional": ["spine", "neck"],
  "anchors": {"spine": "hips", "neck": "spine", "thumb": "hand", "index": "hand", "middle": "hand", "ring": "hand", "pinky": "hand"},
+ "leg": ["hips", "ankle"],
  "fallbacks": {
   "cog": ["hips"],
   "spine": ["hips"],

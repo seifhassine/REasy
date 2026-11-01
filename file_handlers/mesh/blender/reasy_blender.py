@@ -83,6 +83,7 @@ def _build_armature(manifest, arrays, root):
         bone = data.bones[name]
         bone["reasy_joint"] = joint
         bone["reasy_rest"] = [value for row in bone.matrix_local for value in row]
+        bone["reasy_built"] = [value for row in _orthonormal(matrices[joint]) for value in row]
         bone["reasy_exported_name"] = bone.name
     palette = set(skeleton["palette"])
     for joint, name in enumerate(names):
@@ -494,11 +495,104 @@ def dump(blend, package, root_name="", apply_modifiers=True):
     _save(package, manifest, arrays)
 
 
+def _rest_turns(armature, names):
+    """Per bone, the turn from the rest asked for to the one Blender stored: float32 heads and tails turn a short
+    bone far from the origin."""
+    return np.array([np.reshape(bone["reasy_built"], (4, 4))[:3, :3].T @ np.array(bone.matrix_local.to_3x3())
+                     for bone in (armature.data.bones[name] for name in names)])
+
+
+def export_motions(package, output):
+    manifest, arrays = _load(package)
+    bpy.ops.wm.read_factory_settings(use_empty=True)
+    scene = bpy.context.scene
+    root = bpy.data.collections.new(manifest["title"])
+    scene.collection.children.link(root)
+    armature, names = _build_armature(manifest, arrays, root)
+    turns = _rest_turns(armature, names)
+    armature.animation_data_create()
+    for number, spec in enumerate(manifest["actions"]):
+        action = bpy.data.actions.new(spec["name"])
+        action.use_fake_user = True
+        slot = action.slots.new(id_type="OBJECT", name=armature.name)
+        bag = action.layers.new("Layer").strips.new(type="KEYFRAME").channelbag(slot, ensure=True)
+        frames = arrays[f"a{number}.frames"]
+        for transform, prop in manifest["channels"].items():
+            values = arrays[f"a{number}.{transform}"].astype(np.float64)
+            vectors = {"location": slice(0, 3), "rotation_quaternion": slice(1, 4)}.get(prop)
+            if vectors is not None:
+                values[..., vectors] = np.einsum("fjk,jkl->fjl", values[..., vectors], turns[spec[transform]])
+            for column, joint in enumerate(spec[transform]):
+                for index in range(values.shape[2]):
+                    curve = bag.fcurves.new(f'pose.bones["{bpy.utils.escape_identifier(names[joint])}"].{prop}',
+                                            index=index, group_name=names[joint])
+                    curve.keyframe_points.add(len(frames))
+                    curve.keyframe_points.foreach_set("co", np.column_stack((frames, values[:, column, index])).ravel())
+                    curve.keyframe_points.foreach_set("interpolation", np.ones(len(frames), np.int32))
+                    curve.update()
+        if number == 0:
+            armature.animation_data.action = action
+            armature.animation_data.action_slot = slot
+            scene.render.fps = int(spec["fps"])
+            scene.frame_start, scene.frame_end = 0, int(frames[-1])
+    bpy.ops.wm.save_as_mainfile(filepath=str(output), compress=True)
+
+
+def _animated_bones(action, slot):
+    found = {}
+    for layer in action.layers:
+        for strip in layer.strips:
+            bag = strip.channelbag(slot)
+            for curve in () if bag is None else bag.fcurves:
+                head, _, prop = curve.data_path.partition('"].')
+                if head.startswith('pose.bones["') and prop:
+                    name = bpy.utils.unescape_identifier(head[len('pose.bones["'):])
+                    found.setdefault(name, set()).add(prop)
+    return {name: sorted(props) for name, props in found.items()}
+
+
+def dump_motions(blend, package):
+    bpy.ops.wm.open_mainfile(filepath=str(blend), load_ui=False)
+    scene = bpy.context.scene
+    armature = next((obj for obj in scene.objects if obj.type == "ARMATURE"), None)
+    if armature is None:
+        raise SystemExit("REASY_ERROR: the .blend holds no armature")
+    names = [bone.name for bone in armature.data.bones]
+    manifest = {"names": names, "actions": [],
+                "turn": [value for row in armature.matrix_world.to_quaternion().to_matrix().to_4x4() for value in row],
+                "parents": [bone.parent.name if bone.parent else "" for bone in armature.data.bones],
+                "rest": [[value for row in bone.matrix_local for value in row] for bone in armature.data.bones],
+                "built": [list(bone.get("reasy_built", bone.get("reasy_rest", []))) for bone in armature.data.bones]}
+    arrays = {}
+    armature.animation_data_create()
+    for action in bpy.data.actions:
+        slot = next((slot for slot in action.slots if slot.target_id_type == "OBJECT"), None)
+        bones = {} if slot is None else _animated_bones(action, slot)
+        if not bones:
+            continue
+        start, end = (int(round(value)) for value in action.frame_range)
+        armature.animation_data.action = action
+        armature.animation_data.action_slot = slot
+        matrices = np.empty((end - start + 1, len(names), 4, 4), np.float32)
+        posed = [armature.pose.bones[name] for name in names]
+        for offset in range(end - start + 1):
+            scene.frame_set(start + offset)
+            for index, bone in enumerate(posed):
+                matrices[offset, index] = np.array(bone.matrix, np.float32)
+        arrays[f"a{len(manifest['actions'])}.matrix"] = matrices
+        manifest["actions"].append({"name": action.name, "bones": bones})
+    _save(package, manifest, arrays)
+
+
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:]
     mode = argv[0]
     if mode == "export":
         export(argv[1], argv[2])
+    elif mode == "motion_export":
+        export_motions(argv[1], argv[2])
+    elif mode == "motion_dump":
+        dump_motions(argv[1], argv[2])
     elif mode == "dump":
         flags = [value for value in argv[3:] if value.startswith("--")]
         positional = [value for value in argv[3:] if not value.startswith("--")]

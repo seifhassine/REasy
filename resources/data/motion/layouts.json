@@ -1,0 +1,536 @@
+{
+ "format": 1,
+ "solvers": {"162": "float", "242": "vector3", "274": "quaternion"},
+ "frame_types": {"2": "u8", "4": "u16", "5": "u32"},
+ "mot": {
+  "mot65": {
+   "header": {"size": 116, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 544501613, "what": "magic"},
+    [8, "u32", "error_flags"],
+    [12, "u32", "master_size"],
+    [16, "u64", "skeleton"],
+    [24, "u64", "animation"],
+    [32, "u64", "properties"],
+    {"at": 40, "type": "u64", "zero": "custom_keys"},
+    [48, "u64", "sequences"],
+    [56, "u64", "character"],
+    [64, "u64", "sync"],
+    [72, "u64", "append"],
+    [80, "u64", "name"],
+    [88, "f32", "end_frame"],
+    [92, "f32", "loop_frame"],
+    [96, "f32", "raw_start_frame"],
+    [100, "f32", "raw_end_frame"],
+    [104, "u16", "joint_count"],
+    [106, "u16", "animation_count"],
+    [108, "u8", "sequence_count"],
+    [109, "u8", "sync_count"],
+    [110, "u16", "fps"],
+    [112, "u16", "property_count"],
+    [114, "u16", "attributes"]
+   ]},
+   "order": ["name", "skeleton", "animation", "character", "sequences", "properties", "append", "sync"],
+   "align": {"name": 1, "skeleton": 16, "animation": 16, "character": 16, "sequences": 16, "properties": 16, "append": 16, "sync": 16},
+   "rules": {"tracks": "legacy", "master_size": false, "sequence_clip": 64},
+   "records": {
+    "skeleton": {"size": 16, "fields": [
+     [0, "u64", "joints"],
+     [8, "u32", "joint_count"],
+     {"at": 12, "type": "u32", "zero": "hash"}
+    ]},
+    "joint": {"size": 80, "fields": [
+     [0, "u64", "name"],
+     [8, "u64", "parent"],
+     [16, "u64", "child"],
+     [24, "u64", "sibling"],
+     [32, "f32x3", "translation"],
+     {"at": 44, "type": "u32", "zero": "translation_w"},
+     [48, "f32x4", "rotation"],
+     [64, "u32", "joint_id"],
+     [68, "u32", "name_hash"],
+     [72, "u32", "extra_type"],
+     {"at": 76, "type": "u32", "zero": "reserved"}
+    ]},
+    "channel": {"size": 24, "fields": [
+     [0, "u16", "joint_id"],
+     [2, "u8", "transforms"],
+     [4, "u32", "name_hash"],
+     [8, "f32", "weight"],
+     [16, "u64", "tracks"]
+    ]},
+    "track": {"size": 40, "fields": [
+     {"at": 0, "type": "u32", "bits": [[0, 12, "solver"], [12, 8, "encoding"], [20, 4, "frame_type"]]},
+     [4, "u32", "key_count"],
+     [8, "u32", "frame_rate"],
+     [12, "f32", "max_frame"],
+     [16, "u64", "frames"],
+     [24, "u64", "values"],
+     [32, "u64", "parameters"]
+    ]},
+    "property": {"size": 16, "fields": [
+     [0, "u64", "track"],
+     [8, "u32", "name_hash"]
+    ]},
+    "sequence": {"size": 40, "fields": [
+     {"at": 0, "type": "u64", "zero": "name"},
+     [8, "u64", "clip"],
+     [16, "u64", "tracks"],
+     {"at": 24, "type": "u32", "zero": "attributes"},
+     [28, "u32", "track_count"],
+     {"at": 32, "type": "u32", "const": 1, "what": "use flags"},
+     [36, "u32", "category"]
+    ]},
+    "sequence_track": {"size": 16, "fields": [
+     [0, "u32", "id"],
+     [4, "u32", "filter0"],
+     [8, "u32", "filter1"],
+     [12, "u32", "filter2"]
+    ]},
+    "sync": {"size": 16, "fields": [
+     [0, "u64", "frames"],
+     [8, "u8", "block_count"],
+     [9, "u8", "point_count"],
+     [10, "u8", "start_point"],
+     [11, "u8", "end_point"]
+    ]},
+    "append": {"size": 32, "fields": [
+     [0, "u64", "classes"],
+     [8, "u64", "remaps"],
+     [16, "u32", "class_count"],
+     [20, "u32", "remap_count"]
+    ]},
+    "append_class": {"size": 32, "fields": [
+     [0, "u64", "properties"],
+     [8, "u64", "arrays"],
+     [16, "u32", "property_count"],
+     [20, "u32", "array_count"],
+     [24, "u32", "name_hash"],
+     [28, "u32", "id"]
+    ]},
+    "append_property": {"size": 16, "fields": [
+     [0, "u64", "value"],
+     [8, "u32", "name_hash"],
+     [12, "u8", "type"],
+     [13, "u8", "primitive"]
+    ]},
+    "append_array": {"size": 24, "fields": [
+     [0, "u64", "values"],
+     [8, "u32", "name_hash"],
+     [12, "u32", "count"],
+     [20, "u8", "type"],
+     [21, "u8", "primitive"]
+    ]},
+    "append_remap": {"size": 8, "fields": [
+     [0, "u32", "requested"],
+     [4, "u32", "stored"]
+    ]},
+    "pose_payload": {"size": 32, "fields": [
+     [0, "u64", "poses"],
+     {"at": 8, "type": "u64", "zero": "reserved"},
+     [16, "u32", "pose_count"]
+    ]},
+    "pose": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "u32", "frame_count"],
+     [8, "u64", "frames"]
+    ]},
+    "pose_frame": {"size": 8, "fields": [
+     [0, "u32", "values"],
+     [4, "u32", "flags"]
+    ]},
+    "gpu": {"size": 80, "fields": [
+     [0, "u64", "translation"],
+     [8, "u64", "rotation"],
+     [16, "u64", "translation_ranges"],
+     [24, "u64", "rotation_ranges"],
+     {"at": 32, "type": "u64", "zero": "reserved"},
+     [40, "u64", "joints"],
+     [48, "u32", "joint_count"],
+     [52, "u32", "frame_count"],
+     [56, "u32", "frame_rate"],
+     [64, "u8", "translation_format"],
+     [65, "u8", "rotation_format"]
+    ]}
+   },
+   "payload_order": ["name", "character", "skeleton"],
+   "payload_align": {"name": 1, "character": 16, "skeleton": 16}
+  },
+  "mot78": {
+   "extends": "mot65",
+   "order": ["name", "animation", "character", "sequences", "properties", "append", "sync", "skeleton"],
+   "align": {"animation": 4},
+   "rules": {"tracks": "modern", "master_size": true},
+   "records": {
+    "channel": {"size": 12, "fields": [
+     [0, "u16", "joint_id"],
+     [2, "u8", "transforms"],
+     [3, "u8", "weight"],
+     [4, "u32", "name_hash"],
+     [8, "u32", "tracks"]
+    ]},
+    "track": {"size": 20, "fields": [
+     {"at": 0, "type": "u32", "bits": [[0, 12, "solver"], [12, 8, "encoding"], [20, 4, "frame_type"]]},
+     [4, "u32", "key_count"],
+     [8, "u32", "frames"],
+     [12, "u32", "values"],
+     [16, "u32", "parameters"]
+    ]}
+   }
+  },
+  "mot458": {
+   "extends": "mot78",
+   "header": {"size": 126, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 544501613, "what": "magic"},
+    [8, "u32", "error_flags"],
+    [12, "u32", "master_size"],
+    [16, "u64", "skeleton"],
+    [24, "u64", "animation"],
+    [32, "u64", "properties"],
+    {"at": 40, "type": "u64", "zero": "custom_keys"},
+    [48, "u64", "sequences"],
+    [56, "u64", "character"],
+    [64, "u64", "sync"],
+    [72, "u64", "raw_sync"],
+    [80, "u64", "append"],
+    [88, "u64", "name"],
+    [96, "f32", "end_frame"],
+    [100, "f32", "loop_frame"],
+    [104, "f32", "raw_start_frame"],
+    [108, "f32", "raw_end_frame"],
+    [112, "u16", "joint_count"],
+    [114, "u16", "animation_count"],
+    [116, "u8", "sequence_count"],
+    [117, "u8", "sync_count"],
+    [118, "u8", "raw_sync_count"],
+    [120, "u16", "fps"],
+    [122, "u16", "property_count"],
+    [124, "u16", "attributes"]
+   ]},
+   "order": ["animation", "character", "sequences", "properties", "append", "sync", "name", "skeleton"],
+   "align": {"animation": 16, "sync": 8, "name": 1},
+   "records": {
+    "sequence_track": {"size": 28, "fields": [
+     [0, "u32", "id"],
+     [4, "u32", "filter0"],
+     [8, "u32", "filter1"],
+     [12, "u32", "filter2"],
+     [16, "u32", "invalid0"],
+     [20, "u32", "invalid1"],
+     [24, "u32", "invalid2"]
+    ]},
+    "sync": {"size": 4, "fields": [
+     [0, "u8", "block_count"],
+     [1, "u8", "point_count"],
+     [2, "u8", "start_point"],
+     [3, "u8", "end_point"]
+    ]},
+    "raw_sync": {"size": 4, "fields": [[0, "u8", "count"]]},
+    "gpu": {"size": 80, "fields": [
+     [0, "u64", "translation"],
+     [8, "u64", "rotation"],
+     [16, "u64", "translation_ranges"],
+     [24, "u64", "rotation_ranges"],
+     {"at": 32, "type": "u64", "zero": "reserved"},
+     [40, "u64", "joints"],
+     [48, "u32", "joint_count"],
+     [52, "u32", "frame_count"],
+     [56, "f32", "frame_rate"],
+     [64, "f32", "start_frame"],
+     [68, "f32", "end_frame"],
+     [72, "u8", "translation_format"],
+     [73, "u8", "rotation_format"]
+    ]}
+   },
+   "payload_align": {"name": 16}
+  },
+  "mot603": {
+   "extends": "mot458",
+   "records": {
+    "pose_payload": {"size": 32, "fields": [
+     [0, "u64", "poses"],
+     [8, "u32", "pose_count"],
+     [12, "u32", "frame_count"],
+     {"at": 16, "type": "u64", "zero": "reserved0"},
+     {"at": 24, "type": "u64", "zero": "reserved1"}
+    ]},
+    "pose": {"size": 16, "fields": [
+     [0, "u64", "frames"],
+     [8, "u32", "name_hash"]
+    ]},
+    "pose_frame": {"size": 4, "fields": [[0, "u32", "flags"]]}
+   }
+  }
+ },
+ "append_types": {"Boolean": "?", "Enum": "i", "Int8": "b", "Uint8": "B", "Int16": "h", "Uint16": "H", "Int32": "i", "Uint32": "I", "Int64": "q", "Uint64": "Q", "Single": "f", "Double": "d", "C8": "b", "C16": "H", "String": "string", "Struct": "primitive", "Class": "primitive"},
+ "append_primitives": {"Vec2": "2f", "Vec3": "3f", "Vec4": "4f", "Quaternion": "4f", "Matrix": "16f"},
+ "pose_flags": {"Trans": "3f", "Rotation": "4f", "Scale": "3f"},
+ "gpu_formats": {
+  "translation": {
+   "0": {"size": 12, "decode": "full"},
+   "1": {"size": 6, "decode": "ranged", "bits": 16, "shifts": [0, 16, 32]},
+   "2": {"size": 4, "decode": "ranged", "bits": 10, "shifts": [20, 10, 0]}
+  },
+  "rotation": {
+   "0": {"size": 16, "decode": "full"},
+   "1": {"size": 6, "decode": "ranged", "bits": 16, "shifts": [0, 16, 32]},
+   "2": {"size": 4, "decode": "ranged", "bits": 10, "shifts": [20, 10, 0]}
+  }
+ },
+ "gpu_range_floats": 6,
+ "motlist": {
+  "list85": {
+   "header": {"size": 52, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 1953721453, "what": "magic"},
+    [8, "u32", "error_flags"],
+    {"at": 12, "type": "u32", "zero": "master_size"},
+    [16, "u64", "motions"],
+    [24, "u64", "rows"],
+    [32, "u64", "name"],
+    [40, "u64", "base_list"],
+    [48, "u32", "count"]
+   ]},
+   "records": {
+    "row": {"size": 24, "fields": [
+     [0, "u64", "overrides"],
+     [8, "u16", "motion_id"],
+     [10, "u8", "type"],
+     [11, "u8", "flags"],
+     [12, "u32", "tag_hash"],
+     [16, "u8", "physics"],
+     [17, "u8", "override_count"],
+     [20, "u32", "joint_mask"]
+    ]},
+    "reference": {"size": 4, "fields": [{"at": 0, "type": "u32", "const": 1, "what": "reference type"}]}
+   },
+   "rules": {"override_base": "file"}
+  },
+  "list528": {
+   "extends": "list85",
+   "records": {
+    "row": {"size": 72, "fields": [
+     [0, "u64", "overrides"],
+     [8, "u32", "motion_id"],
+     [12, "u32", "joint_mask"],
+     [16, "u32", "tag_hash"],
+     [20, "u8", "type"],
+     [21, "u8", "flags"],
+     [22, "u8", "physics"],
+     [23, "u8", "override_count"],
+     [24, "u32", "tag0"],
+     [28, "u32", "tag1"],
+     [32, "u32", "tag2"],
+     [36, "u32", "tag3"],
+     [40, "u32", "tag4"],
+     [44, "u32", "tag5"],
+     [48, "u32", "tag6"],
+     [52, "u32", "tag7"],
+     [56, "u32", "tag8"],
+     [60, "u32", "tag9"],
+     [64, "u16", "additional_sequences"],
+     [67, "u8", "source_bank"],
+     [68, "u32", "source_key"]
+    ]}
+   }
+  },
+  "list653": {
+   "extends": "list528",
+   "header": {"size": 54, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 1953721453, "what": "magic"},
+    [8, "u32", "error_flags"],
+    {"at": 12, "type": "u32", "zero": "master_size"},
+    [16, "u64", "motions"],
+    [24, "u64", "rows"],
+    [32, "u64", "name"],
+    [40, "u64", "base_list"],
+    [48, "u32", "count"],
+    [52, "u8", "joint_mask_mode"]
+   ]}
+  },
+  "list1036": {
+   "extends": "list528",
+   "header": {"size": 62, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 1953721453, "what": "magic"},
+    [8, "u32", "error_flags"],
+    {"at": 12, "type": "u32", "zero": "master_size"},
+    [16, "u64", "motions"],
+    [24, "u64", "rows"],
+    [32, "u64", "name"],
+    [40, "u64", "base_list"],
+    [48, "u64", "motion_packs"],
+    [56, "u32", "count"],
+    [60, "u8", "motion_pack_count"],
+    [61, "u8", "first_update"]
+   ]},
+   "rules": {"override_base": "sequence"}
+  },
+  "list486": {
+   "extends": "list85",
+   "records": {
+    "row": {"size": 24, "fields": [
+     [0, "u64", "overrides"],
+     [8, "u32", "motion_id"],
+     [12, "u32", "joint_mask"],
+     [16, "u32", "tag_hash"],
+     [20, "u8", "type"],
+     [21, "u8", "flags"],
+     [22, "u8", "physics"],
+     [23, "u8", "override_count"]
+    ]}
+   }
+  },
+  "list992": {
+   "extends": "list653",
+   "rules": {"override_base": "sequence"}
+  }
+ },
+ "tree": {
+  "tree4": {
+   "header": {"size": 80, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 1701999725, "what": "magic"},
+    {"at": 8, "type": "u64", "zero": "reserved"},
+    {"at": 16, "type": "u64", "zero": "data"},
+    {"at": 24, "type": "u64", "zero": "paths"},
+    [32, "u64", "nodes"],
+    [40, "u64", "links"],
+    [48, "u64", "name"],
+    [56, "u64", "remaps"],
+    [64, "u16", "node_count"],
+    [66, "u16", "link_count"],
+    [68, "u16", "root"],
+    {"at": 70, "type": "u16", "zero": "path_count"},
+    [72, "u16", "remap_count"],
+    {"at": 74, "type": "u16", "zero": "reserved_a"},
+    {"at": 76, "type": "u32", "zero": "reserved_b"}
+   ]},
+   "records": {
+    "node": {"size": 56, "fields": [
+     [0, "u64", "class"],
+     [8, "u64", "name"],
+     [16, "u64", "tags"],
+     [24, "u64", "tag_hashes"],
+     [32, "u64", "params"],
+     [40, "u32", "id"],
+     [44, "u32", "class_hash"],
+     [48, "u32", "name_hash"],
+     [52, "u8", "tag_count"],
+     [53, "u8", "param_count"],
+     [54, "u8", "node_type"],
+     [55, "u8", "flags"]
+    ]},
+    "param": {"size": 24, "fields": [
+     [0, "u64", "name"],
+     [8, "u32", "type"],
+     [12, "u32", "key"],
+     [16, "u64", "value"]
+    ]},
+    "link": {"size": 40, "fields": [
+     [0, "u32", "parent"],
+     [4, "u32", "pin"],
+     [8, "u32", "child"],
+     [12, "u32", "child_pin"],
+     [16, "u32", "type"],
+     {"at": 20, "type": "u32", "zero": "reserved"},
+     {"at": 24, "type": "u64", "zero": "input_guid"},
+     [32, "u64", "guid"]
+    ]},
+    "remap": {"size": 4, "fields": [
+     [0, "i16", "target"],
+     [2, "i16", "source"]
+    ]}
+   },
+   "rules": {"class_names": "pointer", "remaps": "pairs"}
+  },
+  "tree13": {
+   "extends": "tree4",
+   "records": {
+    "node": {"size": 56, "fields": [
+     [0, "u64", "name"],
+     [8, "u64", "tags"],
+     [16, "u64", "tag_hashes"],
+     [24, "u64", "params"],
+     [32, "u32", "id"],
+     [36, "u32", "class_hash"],
+     [40, "u32", "class_check"],
+     [44, "u32", "name_hash"],
+     [48, "u8", "tag_count"],
+     [49, "u8", "param_count"],
+     [50, "u8", "node_type"],
+     [51, "u8", "flags"],
+     {"at": 52, "type": "u32", "zero": "reserved"}
+    ]},
+    "param": {"size": 16, "fields": [
+     [0, "u32", "type"],
+     [4, "u32", "key"],
+     [8, "u64", "value"]
+    ]},
+    "remap": {"size": 6, "fields": [
+     [0, "u16", "target"],
+     [2, "u16", "bank"],
+     [4, "u16", "motion"]
+    ]}
+   },
+   "rules": {"class_names": "inline", "remaps": "triples"}
+  },
+  "tree19": {
+   "extends": "tree13",
+   "header": {"size": 88, "fields": [
+    [0, "u32", "version"],
+    {"at": 4, "type": "u32", "const": 1701999725, "what": "magic"},
+    {"at": 8, "type": "u64", "zero": "reserved"},
+    {"at": 16, "type": "u64", "zero": "data"},
+    {"at": 24, "type": "u64", "zero": "paths"},
+    [32, "u64", "nodes"],
+    [40, "u64", "links"],
+    [48, "u64", "name"],
+    [56, "u64", "remaps"],
+    [64, "u64", "choices"],
+    [72, "u16", "node_count"],
+    [74, "u16", "link_count"],
+    [76, "u16", "root"],
+    {"at": 78, "type": "u16", "zero": "path_count"},
+    [80, "u16", "unknown_50"],
+    [82, "u16", "remap_count"],
+    {"at": 84, "type": "u32", "zero": "reserved_b"}
+   ]},
+   "records": {
+    "node": {"size": 48, "fields": [
+     [0, "u64", "name"],
+     [8, "u64", "tags"],
+     [16, "u64", "tag_hashes"],
+     [24, "u64", "params"],
+     [32, "u32", "class_hash"],
+     [36, "u32", "class_check"],
+     [40, "u32", "name_hash"],
+     [44, "u8", "tag_count"],
+     [45, "u8", "param_count"],
+     [46, "u8", "node_type"],
+     [47, "u8", "flags"]
+    ]},
+    "remap": {"size": 6, "fields": [
+     [0, "u16", "node"],
+     [2, "u16", "count"],
+     [4, "u16", "start"]
+    ]},
+    "choice": {"size": 8, "fields": [
+     [0, "u32", "bank"],
+     [4, "u32", "motion"]
+    ]}
+   },
+   "rules": {"class_names": "inline", "remaps": "groups"}
+  }
+ },
+ "tree_params": {
+  "0": "u8",
+  "5": "i32",
+  "6": "u32",
+  "9": "f32",
+  "12": "string16",
+  "13": "blob"
+ }
+}

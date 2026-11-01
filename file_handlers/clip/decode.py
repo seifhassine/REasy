@@ -2,39 +2,62 @@
 
 from __future__ import annotations
 
+import functools
 import struct
 from collections import Counter
 
-from .layout import ClipFormatError
-from .model import FLAG_NAMES, Clip, Key, Node, Property, ResourceKind, SpeedPoint, Timeline, Track
-from .rules import PropertyTypeInfo, control_tables, interpolation, profile, property_type
+lazy from utils.hash_util import murmur3_hash
+lazy from utils.hex_util import align as _align
+
+from .errors import ClipFormatError
+from .model import (
+    FLAG_NAMES,
+    Clip,
+    Key,
+    Node,
+    Property,
+    ResourceKind,
+    SpeedPoint,
+    Timeline,
+    Track,
+    TrackInterval,
+)
+from .rules import PropertyTypeInfo, control_tables, interpolation, profile, property_type, rules_for
 from .values import decode_value, default_value
 
 MAGIC = b"CLIP"
-_VERSION = struct.Struct("<I")
+_U32 = struct.Struct("<I")
+_F32 = struct.Struct("<f")
+
+
+def node_hashes(node: Node) -> tuple[int, int]:
+    return node.name_hashes or (murmur3_hash(node.name.encode("utf-8")), murmur3_hash(node.name.encode("utf-16-le")))
 
 
 def read_timeline(data: bytes, kind: ResourceKind | None = None) -> Timeline:
     return _Decoder(data).read(kind)
 
 
-def _align(value: int, alignment: int) -> int:
-    return -(-value // alignment) * alignment
+def read_motclip(data: bytes, start: int, base: int) -> tuple[Timeline, int]:
+    return _MotClipDecoder(data, start, base).read_motclip()
 
 
 class _Decoder:
-    def __init__(self, data: bytes):
-        if len(data) < 8 or data[:4] != MAGIC:
+    def __init__(self, data: bytes, start: int = 0, base: int = 0):
+        if len(data) < start + 8 or data[start:start + 4] != MAGIC:
             raise ClipFormatError("Not a CLIP file")
-        self.data = data
-        self.profile = profile(_VERSION.unpack_from(data, 4)[0])
-        self.rules = self.profile.rules
-        if len(data) < self.rules.header_size:
+        self.data, self.start, self.base = data, start, base
+        self.profile = profile(_U32.unpack_from(data, start + 4)[0])
+        self.rules = self._rules()
+        if len(data) < start + self.rules.header_size:
             raise ClipFormatError("CLIP header is truncated")
-        self.header = self.rules.header.decode(data, 0)
+        self.header = self.rules.header.decode(data, start)
         self.tables: dict[str, list[dict]] = {}
         self.pools: dict[str, tuple[int, int]] = {}
         self._strings: dict[tuple[str, int], str] = {}
+
+    def _rules(self):
+        return self.profile.rules
 
     def read(self, kind: ResourceKind | None) -> Timeline:
         self._read_sections()
@@ -96,12 +119,15 @@ class _Decoder:
 
     def _read_sections(self) -> None:
         data, header, size = self.data, self.header, len(self.data)
-        placed = [(section, header[section.pointer]) for section in self.rules.sections
+        placed = [(section, self.base + header[section.pointer]) for section in self.rules.sections
                   if not (section.user_curve and header[section.pointer] == 0)]
-        position = self.rules.header_size
+        position = self.start + self.rules.header_size
         for index, (section, start) in enumerate(placed):
             if start != _align(position, section.align) or any(data[position:start]):
                 raise ClipFormatError(f"The {section.table} table is not where the previous table ends")
+            if section.extra:
+                self.extra_at, position = start, size
+                break
             end = placed[index + 1][1] if index + 1 < len(placed) else size
             if end < start or end > size:
                 raise ClipFormatError(f"The {section.table} table overruns the file")
@@ -150,6 +176,13 @@ class _Decoder:
         self._strings[(pool, offset)] = text
         return text
 
+    @functools.cached_property
+    def _pool_names(self) -> dict[tuple[int, int], str]:
+        start, end = self.pools["c16"]
+        texts = self.data[start:end].decode("utf-16-le", "replace").split("\0")
+        return {(murmur3_hash(text.encode("utf-8")), murmur3_hash(text.encode("utf-16-le"))): text
+                for text in texts if text}
+
     def _same_name(self, record: dict, field: str, pool: str, name: str) -> None:
         if field in record and self._string(pool, record[field]) != name:
             raise ClipFormatError(f"The two copies of the name {name!r} differ")
@@ -171,6 +204,10 @@ class _Decoder:
         return refs
 
     def _node(self, record: dict) -> Node:
+        if "name" not in record:
+            hashes = (record["name_hash"], record["unicode_hash"])
+            name = self._pool_names.get(hashes)
+            return Node(name or "", name_hashes=None if name is not None else hashes, unique_id=record["unique_id"])
         name = self._string("c16", record["name"])
         self._same_name(record, "name_c8", "c8", name)
         return Node(name, record["node_type"], record["begin_frame"], record["end_frame"], record["guid"],
@@ -265,3 +302,42 @@ class _Decoder:
                 track.nodes = roots
             tracks.append(track)
         return tracks
+
+
+class _MotClipDecoder(_Decoder):
+    def _rules(self):
+        return rules_for(self.profile.version, ResourceKind.MOT_CLIP)
+
+    def read_motclip(self) -> tuple[Timeline, int]:
+        extra = self.rules.extra
+        self._read_sections()
+        nodes = [self._node(record) for record in self.tables["nodes"]]
+        if not nodes:
+            raise ClipFormatError("A MOT clip has no root node")
+        root = nodes[0]
+        timeline = Timeline(self.profile.version, ResourceKind.MOT_CLIP, self.header["total_frame"],
+                            self.header.get("header_guid", bytes(16)), [], [root])
+        self._link([root], nodes)
+        head = extra["header"].decode(self.data, self.extra_at)
+        end = self.extra_at + extra["header"].size
+        timeline.intervals = []
+        for suffix in ("", "2"):
+            if f"records{suffix}" not in head:
+                continue
+            records = extra["record"].decode_table(self.data, self.base + head[f"records{suffix}"],
+                                                   head[f"count{suffix}"])
+            end = max(end, self.base + head[f"records{suffix}"] + len(records) * extra["record"].size)
+            table = []
+            for record in records:
+                if not 0 <= record["track"] < len(root.children) or record["count"] < 0:
+                    raise ClipFormatError("A MOT clip interval list names a track the clip does not have")
+                track = root.children[record["track"]]
+                if not suffix and record["name_hash"] != node_hashes(track)[1]:
+                    raise ClipFormatError("A MOT clip interval list has another track's name hash")
+                values = extra["value"].decode_table(self.data, self.base + record["values"], record["count"])
+                table.append(TrackInterval(track, [(None if value["begin"] == 0xFFFFFFFF else
+                                                    _F32.unpack(_U32.pack(value["begin"]))[0], value["span"])
+                                                   for value in values], record["name_hash"] if suffix else None))
+                end = max(end, self.base + record["values"] + record["count"] * extra["value"].size)
+            timeline.intervals.append(table)
+        return timeline, _align(end, 16)

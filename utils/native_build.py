@@ -122,10 +122,6 @@ def ensure_fastmesh():
     return _build_native_module('fastmesh')
 
 
-def ensure_fastmotion():
-    return _build_native_module('fastmotion')
-
-
 def ensure_fastsdftex():
     return _build_native_module('fastsdftex')
 

@@ -105,29 +105,6 @@ class CompactClipV27Parser:
         profile.require_versions(mot_clip=27)
         self.profile = profile
 
-    def parse(
-        self,
-        context: ReadContext,
-        clip_offset: int,
-        following_data_offset: int | None,
-        *,
-        pointer_base: int,
-        following_data_name: str,
-        allow_missing_extra: bool = False,
-        require_canonical_layout: bool = True,
-        ascii_value_interpolations: frozenset[ClipInterpolation] = frozenset(),
-    ) -> CompactMotClip:
-        return self.parse_result(
-            context,
-            clip_offset,
-            following_data_offset,
-            pointer_base=pointer_base,
-            allow_missing_extra=allow_missing_extra,
-            require_canonical_layout=require_canonical_layout,
-            following_data_name=following_data_name,
-            ascii_value_interpolations=ascii_value_interpolations,
-        ).clip
-
     def parse_result(
         self,
         context: ReadContext,

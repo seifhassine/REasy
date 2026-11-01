@@ -29,6 +29,7 @@ class RoleTable:
     proportional: frozenset
     anchors: dict
     fallbacks: dict
+    leg: tuple            # (top role, end role): the chain whose length compares two skeletons' sizes
 
 
 @dataclass(frozen=True)
@@ -61,7 +62,8 @@ def _family(data):
 
 def table_from_dict(data):
     return RoleTable(tuple(_family(f) for f in data["families"]), frozenset(data["chains"]),
-                     frozenset(data["proportional"]), dict(data.get("anchors", {})), dict(data.get("fallbacks", {})))
+                     frozenset(data["proportional"]), dict(data.get("anchors", {})), dict(data.get("fallbacks", {})),
+                     tuple(data["leg"]))
 
 
 @lru_cache(maxsize=1)

@@ -45,7 +45,7 @@ lazy from .utils.rsz_field_utils import (
 lazy from .utils.rsz_guid_utils import create_guid_data
 lazy from .utils.rsz_instance_defaults import apply_instance_defaults
 lazy from .rsz_lazy_loading import RszLazyNodeBuilder
-lazy from file_handlers.motion.preview.integration import create_pfb_motion_preview
+lazy from file_handlers.motion.preview import create_prefab_motion_preview
 lazy from file_handlers.strands.pfb_preview import create_pfb_strands_preview
 lazy from .scn_scene_loader import holds_scene
 lazy import ui.scene.scn_scene_workspace as scn_scene_workspace
@@ -196,11 +196,10 @@ class RszHandler(BaseFileHandler):
         viewer._initialize_editor_services()
         viewer.populate_tree()
 
-        preview = create_pfb_motion_preview(self)
-        if preview is None:
-            preview = create_pfb_strands_preview(self)
-        if preview is not None:
-            viewer.add_preview_tab(preview, QCoreApplication.translate("RszViewer", "3D"))
+        if (strands := create_pfb_strands_preview(self)) is not None:
+            viewer.add_preview_tab(strands, QCoreApplication.translate("RszViewer", "3D"))
+        if (motions := create_prefab_motion_preview(self)) is not None:
+            viewer.add_preview_tab(motions, QCoreApplication.translate("RszViewer", "Motion"))
         viewer.destroyed.connect(viewer.cleanup)
         viewer.modified_changed.connect(self.modified_changed.emit)
         self._viewer = viewer

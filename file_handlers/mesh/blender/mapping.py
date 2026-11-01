@@ -100,7 +100,7 @@ class BoneMapping:
         return applied
 
 
-def suggest(source, target, weighted):
+def suggest(source, target, weighted, positions=True):
     mapping = BoneMapping({b.name: b for b in source}, {b.name: b for b in target},
                           [MappingRow(b.name, int(weighted.get(b.name, 0))) for b in source])
     taken = set()
@@ -125,7 +125,8 @@ def suggest(source, target, weighted):
         candidates = [n for n in keys.get(normalized_name(row.source), ()) if n not in taken]
         if len(candidates) == 1:
             claim(row, candidates[0], NAME)
-    _suggest_positions(mapping, taken, claim)
+    if positions:
+        _suggest_positions(mapping, taken, claim)
     return mapping
 
 

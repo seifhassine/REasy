@@ -12,3 +12,7 @@ class MotionValidationError(MotionCodecError):
 
 class MotionWriteError(MotionCodecError):
     """A deterministic layout could not be completed."""
+
+
+class MotionFormatError(ValueError):
+    pass

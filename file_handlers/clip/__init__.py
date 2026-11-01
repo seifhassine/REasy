@@ -2,7 +2,7 @@
 
 from .decode import read_timeline
 from .encode import write_timeline
-from .layout import ClipFormatError
+from .errors import ClipFormatError
 from .model import Clip, Key, Node, Property, ResourceKind, SpeedPoint, Timeline, Track
 from .rules import InterpolationType, NodeType, PropertyType
 

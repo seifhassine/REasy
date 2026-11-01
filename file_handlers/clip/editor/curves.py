@@ -7,8 +7,9 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QApplication, QWidget
 
+from file_handlers.document_commands import Change
+
 from .. import edits
-from ..document import Change
 from ..evaluation import NUMERIC_TYPES, sample
 from ..model import Clip, Key, Node, Property, SpeedPoint, Track, walk_nodes, walk_properties
 from ..rules import InterpolationType, property_type

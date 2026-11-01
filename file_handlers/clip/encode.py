@@ -3,25 +3,31 @@
 from __future__ import annotations
 
 lazy from utils.hash_util import murmur3_hash
+lazy from utils.hex_util import align as _align
 
-from .decode import MAGIC
-from .layout import ClipFormatError
+from .decode import MAGIC, _F32, _U32, node_hashes
+from .errors import ClipFormatError
 from .model import FLAG_NAMES, Key, Node, Property, ResourceKind, Timeline, walk_nodes
-from .rules import control_tables, interpolation, profile, property_type
+from .rules import control_tables, interpolation, property_type, rules_for
 from .values import encode_value
 
 
 def write_timeline(timeline: Timeline) -> bytes:
+    _validated(timeline)
+    return _Encoder(timeline).write()
+
+
+def write_motclip(timeline: Timeline, offset: int) -> bytes:
+    _validated(timeline)
+    return _Encoder(timeline).write(offset)
+
+
+def _validated(timeline: Timeline) -> None:
     from .validation import validate
 
     errors = [issue for issue in validate(timeline) if issue.error]
     if errors:
         raise ClipFormatError(f"{errors[0].message} ({len(errors)} problem{'s' if len(errors) > 1 else ''})")
-    return _Encoder(timeline).write()
-
-
-def _align(value: int, alignment: int) -> int:
-    return -(-value // alignment) * alignment
 
 
 class _Pool:
@@ -43,20 +49,20 @@ class _Encoder:
     def __init__(self, timeline: Timeline):
         self.timeline = timeline
         self.version = timeline.version
-        self.rules = profile(timeline.version).rules
+        self.rules = rules_for(timeline.version, timeline.kind)
         dedupe = self.rules.string_dedupe
         self.pools = {"c8": _Pool(False, dedupe), "c16": _Pool(True, dedupe)}
         self.rows: dict[str, list] = {"path_points": [], "user_data": []}
         self._masks: dict[int, int] = {}
 
-    def write(self) -> bytes:
+    def write(self, offset: int = 0) -> bytes:
         self._order()
         rules = self.rules
         node_ref = rules.records["node_ref"]
         tables = {"roots": self.roots, "track_children": self.track_children, "clip_roots": self.clip_roots}
         blobs, counts = {}, {}
         for section in rules.sections:
-            if section.pool or section.user_curve:
+            if section.pool or section.user_curve or section.extra:
                 continue
             if section.record is node_ref:
                 counts[section.table] = len(tables[section.table])
@@ -72,7 +78,10 @@ class _Encoder:
                 continue
             position = _align(position, section.align)
             placement[section.table] = position
-            if section.record is node_ref:
+            if section.extra:
+                blobs[section.table] = self._intervals(position, offset)
+                size = len(blobs[section.table])
+            elif section.record is node_ref:
                 size = 8 * counts[section.table]
             elif section.user_curve:
                 size = section.record.size
@@ -88,7 +97,7 @@ class _Encoder:
         header = {"magic": int.from_bytes(MAGIC, "little"), "version": self.version,
                   "total_frame": self.timeline.total_frame, "header_guid": self.timeline.header_guid}
         for section in rules.sections:
-            header[section.pointer] = placement.get(section.table, 0)
+            header[section.pointer] = placement[section.table] + offset if section.table in placement else 0
             if section.count:
                 header[section.count] = counts[section.table]
             if section.user_curve and section.table in placement:
@@ -97,6 +106,34 @@ class _Encoder:
         out[:rules.header_size] = rules.header.encode(header)
         for table, start in placement.items():
             out[start:start + len(blobs[table])] = blobs[table]
+        return bytes(out)
+
+    def _intervals(self, at: int, offset: int) -> bytes:
+        extra, root = self.rules.extra, self.timeline.roots[0]
+        tracks = {id(child): index for index, child in enumerate(root.children)}
+        lists = self.timeline.intervals or []
+        out = bytearray(extra["header"].size)
+        head = {}
+        for index, suffix in enumerate(("", "2")):
+            if f"records{suffix}" not in extra["header"].names:
+                continue
+            table = lists[index] if index < len(lists) else []
+            head[f"count{suffix}"], head[f"records{suffix}"] = len(table), at + len(out) + offset
+            cursor = at + len(out) + len(table) * extra["record"].size
+            records, values = bytearray(), bytearray()
+            for interval in table:
+                track = tracks.get(id(interval.track))
+                if track is None:
+                    raise ClipFormatError("A MOT clip interval list names a node that is not one of its tracks")
+                records += extra["record"].encode({
+                    "name_hash": node_hashes(interval.track)[1] if interval.property_hash is None
+                    else interval.property_hash,
+                    "track": track, "count": len(interval.ranges), "values": cursor + len(values) + offset})
+                for begin, span in interval.ranges:
+                    values += extra["value"].encode({"begin": 0xFFFFFFFF if begin is None else
+                                                     _U32.unpack(_F32.pack(begin))[0], "span": span})
+            out += records + values
+        out[:extra["header"].size] = extra["header"].encode(head)
         return bytes(out)
 
     def _encode(self, codec, record: dict) -> bytes:
@@ -207,11 +244,14 @@ class _Encoder:
         return records
 
     def _node_record(self, node: Node, index: int) -> dict:
+        if "name" not in self.rules.records["node"].names and node.name_hashes is None:
+            self._intern("c16", node.name)
+        name_hash, unicode_hash = node_hashes(node)
         return {"name": node.name, "name_c8": node.name, "node_type": node.node_type, "begin_frame": node.begin_frame,
                 "end_frame": node.end_frame, "guid": node.guid, "node_id": node.node_id, "tag": node.tag,
-                "editor_id": node.editor_id, "type_hash": node.type_hash, "unique_id": index,
-                "extra_mask": self._extra_mask(node), "name_hash": murmur3_hash(node.name.encode("utf-8")),
-                "unicode_hash": murmur3_hash(node.name.encode("utf-16-le")),
+                "editor_id": node.editor_id, "type_hash": node.type_hash,
+                "unique_id": index if node.unique_id is None else node.unique_id,
+                "extra_mask": self._extra_mask(node), "name_hash": name_hash, "unicode_hash": unicode_hash,
                 "child_count": len(node.children),
                 "child_index": self.node_index[id(node.children[0])] if node.children else 0,
                 "property_count": len(node.properties),

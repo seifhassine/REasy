@@ -6,7 +6,7 @@ import math
 import struct
 from collections.abc import Callable
 
-from .layout import ClipFormatError
+from .errors import ClipFormatError
 from .rules import ValueCodec
 
 _DOUBLE = struct.Struct("<d")

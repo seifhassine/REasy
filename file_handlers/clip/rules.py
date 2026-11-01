@@ -3,15 +3,14 @@
 from __future__ import annotations
 
 import functools
-import json
 import re
 from dataclasses import dataclass
 from enum import IntEnum
 
-lazy from utils.app_paths import resource_path
-lazy from utils.enum_manager import game_enum_definitions
+lazy from file_handlers.layout_codec import RecordCodec, game_enums, load_table, merged
 
-from .layout import ClipFormatError, RecordCodec
+from .errors import ClipFormatError
+from .model import ResourceKind
 
 DATA_DIRECTORY = "resources/data/clip"
 
@@ -61,6 +60,7 @@ class Section:
     align: int
     empty: str
     user_curve: bool
+    extra: bool
 
 
 @dataclass(frozen=True, slots=True)
@@ -80,6 +80,7 @@ class FormatRules:
     sections: tuple[Section, ...]
     records: dict[str, RecordCodec]
     tables: dict[str, RecordCodec]
+    extra: dict[str, RecordCodec] | None = None
 
     def key_table(self, info: PropertyTypeInfo | None, version: int, compact: bool) -> str:
         if info is None or not info.owns_keys(version):
@@ -98,15 +99,12 @@ class VersionProfile:
     games: tuple[str, ...]
     checked: bool
     rules: FormatRules
+    motclip: FormatRules | None = None
 
 
 @functools.cache
 def _load(name: str) -> dict:
-    with open(resource_path(f"{DATA_DIRECTORY}/{name}.json", required=True), encoding="utf-8") as stream:
-        table = json.load(stream)
-    if table.get("format") != 1:
-        raise ClipFormatError(f"{name}.json has format {table.get('format')}, not 1")
-    return table
+    return load_table(DATA_DIRECTORY, name, ClipFormatError)
 
 
 def _member_name(name: str) -> str:
@@ -114,28 +112,22 @@ def _member_name(name: str) -> str:
 
 
 @functools.cache
-def _family(name: str) -> dict:
-    family = dict(_load("layouts")["families"][name])
-    if parent := family.pop("extends", None):
-        base = _family(parent)
-        family = {**base, **family, "records": {**base["records"], **family.get("records", {})},
-                  "rules": {**base["rules"], **family.get("rules", {})}}
-    return family
-
-
-@functools.cache
 def format_rules(family: str) -> FormatRules:
-    data = _family(family)
-    records = {name: RecordCodec(name, spec["size"], spec["fields"]) for name, spec in data["records"].items()}
+    data = merged(_load("layouts")["families"], family, ("records", "rules"))
+    records = {name: RecordCodec(name, spec["size"], spec["fields"], ClipFormatError)
+               for name, spec in data["records"].items()}
     sections = tuple(Section(item["table"], item["pointer"], records.get(item.get("record", "")),
                              item.get("count", ""), item.get("pool", ""), item.get("align", 8),
-                             item.get("empty", ""), item.get("user_curve", False))
+                             item.get("empty", ""), item.get("user_curve", False), item.get("extra", False))
                      for item in data["sections"])
     rules = {**data["rules"], "key_tables": tuple(data["rules"]["key_tables"])}
+    extra = {name: RecordCodec(name, spec["size"], spec["fields"], ClipFormatError)
+             for name, spec in data["extra"].items()} if "extra" in data else None
     return FormatRules(family, header_size=data["header_size"],
-                       header=RecordCodec("header", data["header_size"], data["header"]),
+                       header=RecordCodec("header", data["header_size"], data["header"], ClipFormatError),
                        sections=sections, records=records,
-                       tables={section.table: section.record for section in sections if section.record}, **rules)
+                       tables={section.table: section.record for section in sections if section.record},
+                       extra=extra, **rules)
 
 
 @functools.cache
@@ -154,16 +146,22 @@ def profile(version: int) -> VersionProfile:
         raise ClipFormatError(f"CLIP version {version} is not supported "
                               f"(supported: {', '.join(map(str, supported_versions()))})")
     return VersionProfile(version, tuple(entry.get("games", ())), entry.get("checked", True),
-                          format_rules(entry["layout"]))
+                          format_rules(entry["layout"]),
+                          format_rules(entry["motclip"]) if "motclip" in entry else None)
+
+
+def rules_for(version: int, kind: ResourceKind) -> FormatRules:
+    found = profile(version)
+    if kind is not ResourceKind.MOT_CLIP:
+        return found.rules
+    if found.motclip is None:
+        raise ClipFormatError(f"CLIP v{version} has no MOT clip layout")
+    return found.motclip
 
 
 @functools.cache
 def _game_enums(game: str) -> dict[str, dict[int, str]]:
-    engine = _load("versions")["enums"]
-    namespace = min((name.rpartition(".")[0] for name in engine.values()), key=len) + "."
-    definitions = game_enum_definitions(game, namespace=namespace)
-    return {enum: {member["value"]: member["name"] for member in definitions.get(name, ())}
-            for enum, name in engine.items()}
+    return game_enums(_load("versions")["enums"], game)
 
 
 @functools.cache

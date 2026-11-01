@@ -1,19 +1,41 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QElapsedTimer, QSignalBlocker, Qt, QTimer
+import math
+
+from PySide6.QtCore import QElapsedTimer, QObject, QSignalBlocker, Qt, QTimer, Signal
 from PySide6.QtWidgets import QDoubleSpinBox, QHBoxLayout, QLabel, QWidget
 
 lazy from ui.editor_widgets import tool_button, toolbar_separator
 lazy from ui.icons import line_icon
 lazy from ui.styles import set_style_role
 
-from .state import EditorState
+
+class Playback(QObject):
+    frame_changed = Signal(float)
+    end_frame_changed = Signal()
+
+    def __init__(self, parent: QObject | None = None):
+        super().__init__(parent)
+        self.frame = 0.0
+        self.end_frame = 0.0
+
+    def set_frame(self, frame: float) -> None:
+        frame = max(0.0, float(frame))
+        if math.isfinite(frame) and frame != self.frame:
+            self.frame = frame
+            self.frame_changed.emit(frame)
+
+    def set_end_frame(self, end: float) -> None:
+        if end != self.end_frame:
+            self.end_frame = end
+            self.end_frame_changed.emit()
 
 
 class Transport(QWidget):
-    def __init__(self, state: EditorState, parent: QWidget | None = None):
+    def __init__(self, state: Playback, parent: QWidget | None = None, viewport=None):
         super().__init__(parent)
-        self.state = state
+        self.state, self.viewport = state, viewport
+        self._playing = False
         self.setAttribute(Qt.WA_StyledBackground, True)
         set_style_role(self, surface="footer")
         row = QHBoxLayout(self)
@@ -53,46 +75,51 @@ class Transport(QWidget):
         self._timer.timeout.connect(self._tick)
         self._clock = QElapsedTimer()
         state.frame_changed.connect(self._show_frame)
-        state.document.changed.connect(self._show_total)
+        state.end_frame_changed.connect(self._show_total)
         self._show_total()
 
     @property
     def playing(self) -> bool:
-        return self._timer.isActive()
+        return self._playing
 
     def toggle(self) -> None:
-        if self.playing:
-            self._timer.stop()
-        else:
+        self._playing = not self._playing
+        if self.viewport is not None:
+            self.viewport.set_frame_callback(self._advance if self._playing else None)
+        elif self._playing:
             self._clock.start()
             self._timer.start()
-        self.play_button.setIcon(line_icon("pause" if self.playing else "play"))
+        else:
+            self._timer.stop()
+        self.play_button.setIcon(line_icon("pause" if self._playing else "play"))
 
     def stop(self) -> None:
         if self.playing:
             self.toggle()
 
     def go_to_end(self) -> None:
-        self.state.set_frame(self.state.document.timeline.total_frame)
+        self.state.set_frame(self.state.end_frame)
 
     def _tick(self) -> None:
-        elapsed = self._clock.restart() / 1000.0
-        end = self.state.document.timeline.total_frame
-        frame = self.state.frame + elapsed * self.rate_spin.value()
+        self._advance(self._clock.restart() / 1000.0)
+
+    def _advance(self, seconds: float) -> None:
+        end = self.state.end_frame
+        frame = self.state.frame + seconds * self.rate_spin.value()
         if frame > end:
             if not self.loop_button.isChecked():
                 self.state.set_frame(end)
                 self.stop()
                 return
-            frame = frame - end if end > 0 else 0.0
+            frame = math.fmod(frame, end) if end > 0 else 0.0
         self.state.set_frame(frame)
 
     def _show_frame(self, frame: float) -> None:
         with QSignalBlocker(self.frame_spin):
             self.frame_spin.setValue(frame)
 
-    def _show_total(self, *_change) -> None:
-        self.total_label.setText(f"/ {self.state.document.timeline.total_frame:g}")
+    def _show_total(self) -> None:
+        self.total_label.setText(f"/ {self.state.end_frame:g}")
 
     def hideEvent(self, event) -> None:
         self.stop()

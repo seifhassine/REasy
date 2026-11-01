@@ -721,6 +721,453 @@
      [72, "u64", "property_index"]
     ]}
    }
+  },
+  "mot27": {
+   "extends": "v27",
+   "header_size": 136,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "guid", "header_guid"],
+    [40, "u64", "node_table"],
+    [48, "u64", "property_table"],
+    [56, "u64", "key_table"],
+    [64, "u64", "speed_point_table"],
+    [72, "u64", "hermite_table"],
+    [80, "u64", "hermite3d_table"],
+    [88, "u64", "path_point_aux_table"],
+    [96, "u64", "last_key_table"],
+    [104, "u64", "c8_pool"],
+    [112, "u64", "c16_pool"],
+    [120, "u64", "path_point_table"],
+    [128, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "path_point_aux", "record": "path_point_aux", "pointer": "path_point_aux_table", "empty": "PathPoint3D auxiliary table"},
+    {"table": "last_keys", "record": "key", "pointer": "last_key_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 16, "fields": [
+     [0, "u32", "count"],
+     {"at": 4, "type": "u32", "zero": "second_count"},
+     [8, "u64", "records"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
+  },
+  "mot34": {
+   "extends": "v34",
+   "header_size": 112,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "u64", "node_table"],
+    [32, "u64", "property_table"],
+    [40, "u64", "key_table"],
+    [48, "u64", "speed_point_table"],
+    [56, "u64", "hermite_table"],
+    [64, "u64", "hermite3d_table"],
+    [72, "u64", "last_key_table"],
+    [80, "u64", "c8_pool"],
+    [88, "u64", "c16_pool"],
+    [96, "u64", "path_point_table"],
+    [104, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "last_keys", "record": "key", "pointer": "last_key_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 16, "fields": [
+     [0, "u32", "count"],
+     {"at": 4, "type": "u32", "zero": "second_count"},
+     [8, "u64", "records"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
+  },
+  "mot40": {
+   "extends": "v40",
+   "records": {
+    "node": {"size": 40, "fields": [
+     [0, "u16", "child_count"],
+     [2, "u16", "property_count"],
+     [8, "u32", "name_hash"],
+     [12, "u32", "unicode_hash"],
+     [16, "u32", "unique_id"],
+     [24, "u64", "child_index"],
+     [32, "u64", "property_index"]
+    ]}
+   },
+   "header_size": 112,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "u64", "node_table"],
+    [32, "u64", "property_table"],
+    [40, "u64", "key_table"],
+    [48, "u64", "speed_point_table"],
+    [56, "u64", "hermite_table"],
+    [64, "u64", "hermite3d_table"],
+    [72, "u64", "last_key_table"],
+    [80, "u64", "c8_pool"],
+    [88, "u64", "c16_pool"],
+    [96, "u64", "path_point_table"],
+    [104, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "last_keys", "record": "key", "pointer": "last_key_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 16, "fields": [
+     [0, "u32", "count"],
+     {"at": 4, "type": "u32", "zero": "second_count"},
+     [8, "u64", "records"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
+  },
+  "mot43": {
+   "extends": "v43",
+   "records": {
+    "node": {"size": 40, "fields": [
+     [0, "u16", "child_count"],
+     [2, "u16", "property_count"],
+     [8, "u32", "name_hash"],
+     [12, "u32", "unicode_hash"],
+     [16, "u32", "unique_id"],
+     [24, "u64", "child_index"],
+     [32, "u64", "property_index"]
+    ]}
+   },
+   "header_size": 112,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "u64", "node_table"],
+    [32, "u64", "property_table"],
+    [40, "u64", "key_table"],
+    [48, "u64", "speed_point_table"],
+    [56, "u64", "hermite_table"],
+    [64, "u64", "hermite3d_table"],
+    [72, "u64", "last_key_table"],
+    [80, "u64", "c8_pool"],
+    [88, "u64", "c16_pool"],
+    [96, "u64", "path_point_table"],
+    [104, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "last_keys", "record": "key", "pointer": "last_key_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 16, "fields": [
+     [0, "u32", "count"],
+     {"at": 4, "type": "u32", "zero": "second_count"},
+     [8, "u64", "records"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
+  },
+  "mot53": {
+   "extends": "v53",
+   "records": {
+    "node": {"size": 40, "fields": [
+     [0, "u16", "child_count"],
+     [2, "u16", "property_count"],
+     [8, "u32", "name_hash"],
+     [12, "u32", "unicode_hash"],
+     [16, "u32", "unique_id"],
+     [24, "u64", "child_index"],
+     [32, "u64", "property_index"]
+    ]}
+   },
+   "header_size": 104,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "u64", "node_table"],
+    [32, "u64", "property_table"],
+    [40, "u64", "key_table"],
+    [48, "u64", "speed_point_table"],
+    [56, "u64", "hermite_table"],
+    [64, "u64", "hermite3d_table"],
+    [72, "u64", "c8_pool"],
+    [80, "u64", "c16_pool"],
+    [88, "u64", "path_point_table"],
+    [96, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 16, "fields": [
+     [0, "u32", "count"],
+     {"at": 4, "type": "u32", "zero": "second_count"},
+     [8, "u64", "records"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
+  },
+  "mot85": {
+   "extends": "v85",
+   "records": {
+    "node": {"size": 40, "fields": [
+     [0, "u16", "child_count"],
+     [2, "u16", "property_count"],
+     [8, "u32", "name_hash"],
+     [12, "u32", "unicode_hash"],
+     [16, "u32", "unique_id"],
+     [24, "u64", "child_index"],
+     [32, "u64", "property_index"]
+    ]}
+   },
+   "header_size": 152,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "u32", "bool_key_count"],
+    [28, "u32", "action_key_count"],
+    [32, "u32", "compact_key_count"],
+    [40, "u64", "node_table"],
+    [48, "u64", "property_table"],
+    [56, "u64", "key_table"],
+    [64, "u64", "bool_key_table"],
+    [72, "u64", "action_key_table"],
+    [80, "u64", "compact_key_table"],
+    [88, "u64", "speed_point_table"],
+    [96, "u64", "hermite_table"],
+    [104, "u64", "hermite3d_table"],
+    [112, "u64", "user_data_table"],
+    [120, "u64", "c8_pool"],
+    [128, "u64", "c16_pool"],
+    [136, "u64", "path_point_table"],
+    [144, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "bool_keys", "record": "bool_key", "pointer": "bool_key_table", "count": "bool_key_count"},
+    {"table": "action_keys", "record": "action_key", "pointer": "action_key_table", "count": "action_key_count"},
+    {"table": "compact_keys", "record": "compact_key", "pointer": "compact_key_table", "count": "compact_key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "user_data", "record": "user_data", "pointer": "user_data_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 24, "fields": [
+     [0, "u32", "count"],
+     [4, "u32", "count2"],
+     [8, "u64", "records"],
+     [16, "u64", "records2"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
+  },
+  "mot86": {
+   "extends": "v86",
+   "records": {
+    "node": {"size": 40, "fields": [
+     [0, "u16", "child_count"],
+     [2, "u16", "property_count"],
+     [8, "u32", "name_hash"],
+     [12, "u32", "unicode_hash"],
+     [16, "u32", "unique_id"],
+     [24, "u64", "child_index"],
+     [32, "u64", "property_index"]
+    ]}
+   },
+   "header_size": 152,
+   "header": [
+    [0, "u32", "magic"],
+    [4, "u32", "version"],
+    [8, "f32", "total_frame"],
+    [12, "u32", "node_count"],
+    [16, "u32", "property_count"],
+    [20, "u32", "key_count"],
+    [24, "u32", "bool_key_count"],
+    [28, "u32", "action_key_count"],
+    [32, "u32", "compact_key_count"],
+    [40, "u64", "node_table"],
+    [48, "u64", "property_table"],
+    [56, "u64", "key_table"],
+    [64, "u64", "bool_key_table"],
+    [72, "u64", "action_key_table"],
+    [80, "u64", "compact_key_table"],
+    [88, "u64", "speed_point_table"],
+    [96, "u64", "hermite_table"],
+    [104, "u64", "hermite3d_table"],
+    [112, "u64", "user_data_table"],
+    [120, "u64", "c8_pool"],
+    [128, "u64", "c16_pool"],
+    [136, "u64", "path_point_table"],
+    [144, "u64", "extra_table"]
+   ],
+   "sections": [
+    {"table": "nodes", "record": "node", "pointer": "node_table", "count": "node_count"},
+    {"table": "properties", "record": "property", "pointer": "property_table", "count": "property_count"},
+    {"table": "keys", "record": "key", "pointer": "key_table", "count": "key_count"},
+    {"table": "bool_keys", "record": "bool_key", "pointer": "bool_key_table", "count": "bool_key_count"},
+    {"table": "action_keys", "record": "action_key", "pointer": "action_key_table", "count": "action_key_count"},
+    {"table": "compact_keys", "record": "compact_key", "pointer": "compact_key_table", "count": "compact_key_count"},
+    {"table": "speed_points", "record": "speed_point", "pointer": "speed_point_table"},
+    {"table": "hermite", "record": "hermite", "pointer": "hermite_table"},
+    {"table": "hermite3d", "record": "hermite3d", "pointer": "hermite3d_table"},
+    {"table": "user_data", "record": "user_data", "pointer": "user_data_table"},
+    {"table": "c8", "pool": "c8", "pointer": "c8_pool"},
+    {"table": "c16", "pool": "c16", "pointer": "c16_pool"},
+    {"table": "path_points", "record": "path_point", "pointer": "path_point_table"},
+    {"table": "extra", "pointer": "extra_table", "align": 16, "extra": true}
+   ],
+   "extra": {
+    "header": {"size": 24, "fields": [
+     [0, "u32", "count"],
+     [4, "u32", "count2"],
+     [8, "u64", "records"],
+     [16, "u64", "records2"]
+    ]},
+    "record": {"size": 16, "fields": [
+     [0, "u32", "name_hash"],
+     [4, "i16", "track"],
+     [6, "i16", "count"],
+     [8, "u64", "values"]
+    ]},
+    "value": {"size": 8, "fields": [
+     [0, "u32", "begin"],
+     [4, "u32", "span"]
+    ]}
+   }
   }
  }
 }

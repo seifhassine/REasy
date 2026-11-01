@@ -4,23 +4,25 @@ import math
 
 from PySide6.QtCore import QObject, Signal
 
-from ..document import Change, ClipDocument
+from file_handlers.document_commands import Change
+
+from ..document import ClipDocument
 from ..model import Key, SpeedPoint
+from .transport import Playback
 
 
-class EditorState(QObject):
+class EditorState(Playback):
     selection_changed = Signal()
-    frame_changed = Signal(float)
     view_changed = Signal()
 
     def __init__(self, document: ClipDocument, parent: QObject | None = None):
         super().__init__(parent)
         self.document = document
         self.selection: list = []
-        self.frame = 0.0
         self.view_start = 0.0
         self.view_scale = 4.0
         self.snap = True
+        self.set_end_frame(document.timeline.total_frame)
         document.changed.connect(self._on_changed)
 
     @property
@@ -47,12 +49,6 @@ class EditorState(QObject):
             self.selection = selection
             self.selection_changed.emit()
 
-    def set_frame(self, frame: float) -> None:
-        frame = max(0.0, float(frame))
-        if math.isfinite(frame) and frame != self.frame:
-            self.frame = frame
-            self.frame_changed.emit(frame)
-
     def set_view(self, start: float, scale: float) -> None:
         scale = min(400.0, max(0.02, scale))
         if math.isfinite(start) and (start, scale) != (self.view_start, self.view_scale):
@@ -63,6 +59,8 @@ class EditorState(QObject):
         return float(round(frame)) if self.snap else frame
 
     def _on_changed(self, change: Change) -> None:
+        if change.target is self.document.timeline and change.field == "total_frame":
+            self.set_end_frame(self.document.timeline.total_frame)
         if not change.structural:
             return
         live = [item for item in self.selection if self.document.parent(item) is not None]

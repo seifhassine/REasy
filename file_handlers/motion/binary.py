@@ -2,12 +2,8 @@ from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-from typing import Callable, TypeVar
 
 lazy from .errors import MotionParseError
-
-
-_T = TypeVar("_T")
 
 
 def align_up(value: int, alignment: int) -> int:
@@ -29,39 +25,18 @@ class Span:
         if self.start < 0 or self.end < self.start:
             raise ValueError(f"invalid span [{self.start}, {self.end})")
 
-    @property
-    def size(self) -> int:
-        return self.end - self.start
-
     def contains(self, offset: int, size: int = 0) -> bool:
         return size >= 0 and self.start <= offset and offset + size <= self.end
 
 
-@dataclass(frozen=True, slots=True)
-class PointerBases:
-    file: int = 0
-    object: int = 0
-    sequence: int = 0
-
-    def resolve(self, base: str, stored: int) -> int:
-        try:
-            origin = getattr(self, base)
-        except AttributeError as exc:
-            raise MotionParseError(f"unknown pointer base {base!r}") from exc
-        return origin + stored
-
-
 _STRUCTS = {
     "u8": struct.Struct("<B"),
-    "i8": struct.Struct("<b"),
     "u16": struct.Struct("<H"),
     "i16": struct.Struct("<h"),
     "u32": struct.Struct("<I"),
     "i32": struct.Struct("<i"),
     "u64": struct.Struct("<Q"),
-    "i64": struct.Struct("<q"),
     "f32": struct.Struct("<f"),
-    "f64": struct.Struct("<d"),
 }
 
 
@@ -69,13 +44,12 @@ _STRUCTS = {
 class ReadContext:
     data: memoryview
     span: Span
-    bases: PointerBases = PointerBases()
     label: str = "file"
 
     @classmethod
     def from_bytes(cls, data: bytes | bytearray | memoryview, label: str = "file") -> "ReadContext":
         view = memoryview(data)
-        return cls(view, Span(0, len(view)), PointerBases(), label)
+        return cls(view, Span(0, len(view)), label)
 
     def require(self, offset: int, size: int, what: str) -> None:
         if not self.span.contains(offset, size):
@@ -92,9 +66,6 @@ class ReadContext:
     def u8(self, offset: int, what: str = "u8") -> int:
         return self.unpack("u8", offset, what)
 
-    def i8(self, offset: int, what: str = "i8") -> int:
-        return self.unpack("i8", offset, what)
-
     def u16(self, offset: int, what: str = "u16") -> int:
         return self.unpack("u16", offset, what)
 
@@ -110,53 +81,12 @@ class ReadContext:
     def u64(self, offset: int, what: str = "u64") -> int:
         return self.unpack("u64", offset, what)
 
-    def i64(self, offset: int, what: str = "i64") -> int:
-        return self.unpack("i64", offset, what)
-
     def f32(self, offset: int, what: str = "f32") -> float:
         return self.unpack("f32", offset, what)
-
-    def f64(self, offset: int, what: str = "f64") -> float:
-        return self.unpack("f64", offset, what)
 
     def bytes(self, offset: int, size: int, what: str = "bytes") -> bytes:
         self.require(offset, size, what)
         return bytes(self.data[offset : offset + size])
-
-    def subcontext(
-        self,
-        start: int,
-        end: int,
-        *,
-        label: str,
-        object_base: int | None = None,
-        sequence_base: int | None = None,
-    ) -> "ReadContext":
-        self.require(start, end - start, label)
-        return ReadContext(
-            self.data,
-            Span(start, end),
-            PointerBases(
-                file=self.bases.file,
-                object=start if object_base is None else object_base,
-                sequence=self.bases.sequence if sequence_base is None else sequence_base,
-            ),
-            label,
-        )
-
-    def read_array(
-        self,
-        offset: int,
-        count: int,
-        stride: int,
-        reader: Callable[[int], _T],
-        what: str,
-    ) -> list[_T]:
-        if count < 0 or stride < 0:
-            raise MotionParseError(f"{self.label}: negative {what} count/stride")
-        total = count * stride
-        self.require(offset, total, what)
-        return [reader(offset + index * stride) for index in range(count)]
 
     def ascii_z(self, offset: int, what: str = "ASCII string") -> tuple[str, int]:
         self.require(offset, 1, what)

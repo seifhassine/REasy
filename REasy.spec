@@ -7,7 +7,7 @@ from PyInstaller.utils.hooks import collect_all, collect_submodules
 datas = [('file_handlers/mesh/blender/reasy_blender.py', 'file_handlers/mesh/blender')]
 binaries = [('.cache/gdeflate/libGDeflate.dll', 'tools/runtimes/win-x64/native'), ('.cache/msvc/msvcp140.dll', '.'),
             ('.cache/dxc/dxcompiler.dll', '.')]
-hiddenimports = ['fast_pakresolve', 'fast_path_search', 'fast_string_scan', 'fastmesh', 'fastmotion', 'fastsdftex',
+hiddenimports = ['fast_pakresolve', 'fast_path_search', 'fast_string_scan', 'fastmesh', 'fastsdftex',
                  'fastmatpreview', 'fastdxil', 'fastdxiltext', 'fastsurface', 'fastkey', 'texture2ddecoder']
 hiddenimports += collect_submodules('file_handlers')
 texture_datas, texture_binaries, texture_imports = collect_all('texture2ddecoder')

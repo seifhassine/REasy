@@ -14,7 +14,7 @@ lazy from file_handlers.sdftex.sdftex_handler import SdfTexHandler
 lazy from file_handlers.sdf.sdf_handler import SdfHandler
 lazy from file_handlers.sound.sound_handler import SoundHandler
 lazy from file_handlers.clip.clip_handler import ClipHandler
-lazy from file_handlers.motion.motlist_handler import MotListHandler
+lazy from file_handlers.motion.motion_handler import MotionHandler
 lazy from file_handlers.uvs.uvs_handler import UvsHandler
 lazy from file_handlers.gui.gui_handler import GuiHandler
 lazy from file_handlers.gcf.gcf_handler import GcfHandler
@@ -48,7 +48,7 @@ def _handler_classes():
     yield SdfHandler
     yield SoundHandler
     yield ClipHandler
-    yield MotListHandler
+    yield MotionHandler
     yield UvsHandler
     yield GuiHandler
     yield GcfHandler

@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
-from dataclasses import dataclass
+from PySide6.QtCore import QObject
 
-from PySide6.QtCore import QObject, Signal
-from PySide6.QtGui import QUndoCommand, QUndoStack
+from file_handlers.document_commands import Change, EditDocument
 
 from .decode import read_timeline
 from .encode import write_timeline
@@ -15,21 +13,11 @@ from .rules import FormatRules, VersionProfile, profile
 from .validation import Issue, validate
 
 
-@dataclass(frozen=True, slots=True)
-class Change:
-    target: object
-    field: str = ""
-    structural: bool = False
-
-
-class ClipDocument(QObject):
-    changed = Signal(object)
-
+class ClipDocument(EditDocument):
     def __init__(self, timeline: Timeline, parent: QObject | None = None):
         super().__init__(parent)
         self.timeline = timeline
         self.profile: VersionProfile = profile(timeline.version)
-        self.undo_stack = QUndoStack(self)
         self._issues: list[Issue] | None = None
         self._parents: dict[int, tuple[object, str]] | None = None
         self.changed.connect(self._forget)
@@ -44,24 +32,6 @@ class ClipDocument(QObject):
     @property
     def rules(self) -> FormatRules:
         return self.profile.rules
-
-    @property
-    def modified(self) -> bool:
-        return not self.undo_stack.isClean()
-
-    def mark_saved(self) -> None:
-        self.undo_stack.setClean()
-
-    def push(self, command: QUndoCommand) -> None:
-        self.undo_stack.push(command)
-
-    @contextmanager
-    def macro(self, text: str):
-        self.undo_stack.beginMacro(text)
-        try:
-            yield
-        finally:
-            self.undo_stack.endMacro()
 
     def issues(self) -> list[Issue]:
         if self._issues is None:
