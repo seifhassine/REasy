@@ -232250,5 +232250,533 @@
 			"name": "QR_MASK_PATTERN",
 			"value": 13
 		}
+	],
+	"via.motion.JointConstraintsResource.LegacyVersion": [
+		{
+			"name": "Latest",
+			"value": 0
+		},
+		{
+			"name": "Legacy1",
+			"value": 1
+		}
+	],
+	"via.motion.JointExBsplineConstraint.Axis": [
+		{
+			"name": "X",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "Z",
+			"value": 2
+		},
+		{
+			"name": "NX",
+			"value": 3
+		},
+		{
+			"name": "NY",
+			"value": 4
+		},
+		{
+			"name": "NZ",
+			"value": 5
+		}
+	],
+	"via.motion.JointExMultiRemapValue.AimConstraintData.WorldUpType": [
+		{
+			"name": "SceneUp",
+			"value": 0
+		},
+		{
+			"name": "ObjectUp",
+			"value": 1
+		},
+		{
+			"name": "ObjectRotationUp",
+			"value": 2
+		},
+		{
+			"name": "Vector",
+			"value": 3
+		},
+		{
+			"name": "None",
+			"value": 4
+		}
+	],
+	"via.motion.JointExMultiRemapValue.ConeInputData.AttrFlags": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "BasePose",
+			"value": 1
+		}
+	],
+	"via.motion.JointExMultiRemapValue.ConeInputData.ConeAxis": [
+		{
+			"name": "X",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "Z",
+			"value": 2
+		},
+		{
+			"name": "MinusX",
+			"value": 3
+		},
+		{
+			"name": "MinusY",
+			"value": 4
+		},
+		{
+			"name": "MinusZ",
+			"value": 5
+		},
+		{
+			"name": "Vector",
+			"value": 6
+		}
+	],
+	"via.motion.JointExMultiRemapValue.ConstraintType": [
+		{
+			"name": "Outputs",
+			"value": 0
+		},
+		{
+			"name": "RotExpression",
+			"value": 1
+		},
+		{
+			"name": "Multi",
+			"value": 2
+		},
+		{
+			"name": "Aim",
+			"value": 3
+		},
+		{
+			"name": "Material",
+			"value": 4
+		},
+		{
+			"name": "Max",
+			"value": 5
+		}
+	],
+	"via.motion.JointExMultiRemapValue.MaterialConstraintData.ApplyMode": [
+		{
+			"name": "Trans",
+			"value": 0
+		},
+		{
+			"name": "Euler",
+			"value": 1
+		},
+		{
+			"name": "Scale",
+			"value": 2
+		},
+		{
+			"name": "Rot",
+			"value": 3
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.AttrFlags": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "BasePose",
+			"value": 1
+		},
+		{
+			"name": "World",
+			"value": 2
+		},
+		{
+			"name": "ClampMin",
+			"value": 4
+		},
+		{
+			"name": "ClampMax",
+			"value": 8
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.Axis": [
+		{
+			"name": "X",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "Z",
+			"value": 2
+		},
+		{
+			"name": "W",
+			"value": 3
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.Interpolation": [
+		{
+			"name": "Linear",
+			"value": 0
+		},
+		{
+			"name": "Slow",
+			"value": 1
+		},
+		{
+			"name": "Fast",
+			"value": 2
+		},
+		{
+			"name": "Smooth",
+			"value": 3
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.JointDriverData.AttrFlags": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "BasePose",
+			"value": 1
+		},
+		{
+			"name": "MidPoint",
+			"value": 2
+		},
+		{
+			"name": "World",
+			"value": 4
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.JointDriverData.CurveType": [
+		{
+			"name": "MinMax",
+			"value": 0
+		},
+		{
+			"name": "Function",
+			"value": 1
+		},
+		{
+			"name": "Scaling",
+			"value": 2
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType": [
+		{
+			"name": "Const",
+			"value": 0
+		},
+		{
+			"name": "Linear",
+			"value": 1
+		},
+		{
+			"name": "Oscilate",
+			"value": 2
+		},
+		{
+			"name": "Cycle",
+			"value": 3
+		},
+		{
+			"name": "CycleRelative",
+			"value": 4
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType": [
+		{
+			"name": "Trans",
+			"value": 0
+		},
+		{
+			"name": "Rot",
+			"value": 1
+		},
+		{
+			"name": "Scale",
+			"value": 2
+		},
+		{
+			"name": "RotRPY",
+			"value": 3
+		},
+		{
+			"name": "RotPYR",
+			"value": 4
+		},
+		{
+			"name": "ExpMap",
+			"value": 5
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.OutputMode": [
+		{
+			"name": "Mode_Sum",
+			"value": 0
+		},
+		{
+			"name": "Mode_Average",
+			"value": 1
+		},
+		{
+			"name": "Mode_Mul",
+			"value": 2
+		},
+		{
+			"name": "Mode_Min",
+			"value": 3
+		},
+		{
+			"name": "Mode_Max",
+			"value": 4
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.PackFlags": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "InputPack",
+			"value": 1
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.TangentType": [
+		{
+			"name": "Auto",
+			"value": 0
+		},
+		{
+			"name": "Spline",
+			"value": 1
+		},
+		{
+			"name": "Linear",
+			"value": 2
+		},
+		{
+			"name": "Fast",
+			"value": 3
+		},
+		{
+			"name": "Slow",
+			"value": 4
+		},
+		{
+			"name": "Flat",
+			"value": 5
+		},
+		{
+			"name": "Step",
+			"value": 6
+		},
+		{
+			"name": "StepNext",
+			"value": 7
+		},
+		{
+			"name": "Fixed",
+			"value": 8
+		},
+		{
+			"name": "Clamped",
+			"value": 9
+		},
+		{
+			"name": "Plateau",
+			"value": 10
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.TransformElement": [
+		{
+			"name": "Trans",
+			"value": 0
+		},
+		{
+			"name": "Rot",
+			"value": 1
+		},
+		{
+			"name": "Scale",
+			"value": 2
+		},
+		{
+			"name": "Deform",
+			"value": 3
+		},
+		{
+			"name": "RotRPY",
+			"value": 4
+		},
+		{
+			"name": "RotPYR",
+			"value": 5
+		},
+		{
+			"name": "ExpMap",
+			"value": 6
+		},
+		{
+			"name": "Material",
+			"value": 7
+		},
+		{
+			"name": "MaterialF4",
+			"value": 8
+		},
+		{
+			"name": "MaterialPosF4",
+			"value": 9
+		},
+		{
+			"name": "MaterialRotF4",
+			"value": 10
+		},
+		{
+			"name": "ComponentProperty",
+			"value": 11
+		},
+		{
+			"name": "UserValue",
+			"value": 12
+		}
+	],
+	"via.motion.JointExMultiRemapValue.RotOrder": [
+		{
+			"name": "XYZ",
+			"value": 0
+		},
+		{
+			"name": "YZX",
+			"value": 1
+		},
+		{
+			"name": "ZXY",
+			"value": 2
+		},
+		{
+			"name": "ZYX",
+			"value": 3
+		},
+		{
+			"name": "YXZ",
+			"value": 4
+		},
+		{
+			"name": "XZY",
+			"value": 5
+		}
+	],
+	"via.motion.SubExJointRemapInput.Axis": [
+		{
+			"name": "X",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "Z",
+			"value": 2
+		}
+	],
+	"via.motion.SubExJointRemapInput.InputType": [
+		{
+			"name": "Trans",
+			"value": 0
+		},
+		{
+			"name": "Rot",
+			"value": 1
+		},
+		{
+			"name": "Scale",
+			"value": 2
+		},
+		{
+			"name": "Cone",
+			"value": 3
+		}
+	],
+	"via.motion.SubExJointRemapInput.JointLimitFlags": [
+		{
+			"name": "BasePose",
+			"value": 1
+		},
+		{
+			"name": "MidPoint",
+			"value": 2
+		},
+		{
+			"name": "Enable",
+			"value": 4
+		}
+	],
+	"via.motion.SubExJointRemapOutput.Axis": [
+		{
+			"name": "X",
+			"value": 0
+		},
+		{
+			"name": "Y",
+			"value": 1
+		},
+		{
+			"name": "Z",
+			"value": 2
+		}
+	],
+	"via.motion.SubExJointRemapOutput.CalculateMode": [
+		{
+			"name": "Sum",
+			"value": 0
+		},
+		{
+			"name": "Average",
+			"value": 1
+		}
+	],
+	"via.motion.SubExJointRemapOutput.JointLimitFlags": [
+		{
+			"name": "BasePose",
+			"value": 1
+		}
+	],
+	"via.motion.SubExJointRemapOutput.TRS": [
+		{
+			"name": "Trans",
+			"value": 0
+		},
+		{
+			"name": "Rot",
+			"value": 1
+		},
+		{
+			"name": "Scale",
+			"value": 2
+		}
 	]
 }

@@ -174484,6 +174484,30 @@
 		{
 			"name": "ExpMap",
 			"value": 6
+		},
+		{
+			"name": "Material",
+			"value": 7
+		},
+		{
+			"name": "MaterialF4",
+			"value": 8
+		},
+		{
+			"name": "MaterialPosF4",
+			"value": 9
+		},
+		{
+			"name": "MaterialRotF4",
+			"value": 10
+		},
+		{
+			"name": "ComponentProperty",
+			"value": 11
+		},
+		{
+			"name": "UserValue",
+			"value": 12
 		}
 	],
 	"via.browser.utility.Request.State": [
@@ -174972,6 +174996,18 @@
 		{
 			"name": "Mode_Average",
 			"value": 1
+		},
+		{
+			"name": "Mode_Mul",
+			"value": 2
+		},
+		{
+			"name": "Mode_Min",
+			"value": 3
+		},
+		{
+			"name": "Mode_Max",
+			"value": 4
 		}
 	],
 	"via.motion.MotionListElementData.Flags": [
@@ -176130,6 +176166,10 @@
 		{
 			"name": "Z",
 			"value": 2
+		},
+		{
+			"name": "W",
+			"value": 3
 		}
 	],
 	"via.wwise.ListenerBitMask": [
@@ -178764,6 +178804,18 @@
 		{
 			"name": "BasePose",
 			"value": 1
+		},
+		{
+			"name": "World",
+			"value": 2
+		},
+		{
+			"name": "ClampMin",
+			"value": 4
+		},
+		{
+			"name": "ClampMax",
+			"value": 8
 		}
 	],
 	"via.effect.script.EffectControlAction.TargetGameObjectModeEnum": [
@@ -180758,6 +180810,10 @@
 		{
 			"name": "MidPoint",
 			"value": 2
+		},
+		{
+			"name": "World",
+			"value": 4
 		}
 	],
 	"via.effect.script.MathEx.RotationOrder": [
@@ -181216,6 +181272,10 @@
 		{
 			"name": "MinusZ",
 			"value": 5
+		},
+		{
+			"name": "Vector",
+			"value": 6
 		}
 	],
 	"via.wwise.PriorityMode": [
@@ -182965,6 +183025,220 @@
 		{
 			"name": "End",
 			"value": 1
+		}
+	],
+	"via.motion.JointConstraintsResource.LegacyVersion": [
+		{
+			"name": "Latest",
+			"value": 0
+		},
+		{
+			"name": "Legacy1",
+			"value": 1
+		}
+	],
+	"via.motion.JointExMultiRemapValue.AimConstraintData.WorldUpType": [
+		{
+			"name": "SceneUp",
+			"value": 0
+		},
+		{
+			"name": "ObjectUp",
+			"value": 1
+		},
+		{
+			"name": "ObjectRotationUp",
+			"value": 2
+		},
+		{
+			"name": "Vector",
+			"value": 3
+		},
+		{
+			"name": "None",
+			"value": 4
+		}
+	],
+	"via.motion.JointExMultiRemapValue.ConstraintType": [
+		{
+			"name": "Outputs",
+			"value": 0
+		},
+		{
+			"name": "RotExpression",
+			"value": 1
+		},
+		{
+			"name": "Multi",
+			"value": 2
+		},
+		{
+			"name": "Aim",
+			"value": 3
+		},
+		{
+			"name": "Material",
+			"value": 4
+		},
+		{
+			"name": "Max",
+			"value": 5
+		}
+	],
+	"via.motion.JointExMultiRemapValue.MaterialConstraintData.ApplyMode": [
+		{
+			"name": "Trans",
+			"value": 0
+		},
+		{
+			"name": "Euler",
+			"value": 1
+		},
+		{
+			"name": "Scale",
+			"value": 2
+		},
+		{
+			"name": "Rot",
+			"value": 3
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.JointDriverData.CurveType": [
+		{
+			"name": "MinMax",
+			"value": 0
+		},
+		{
+			"name": "Function",
+			"value": 1
+		},
+		{
+			"name": "Scaling",
+			"value": 2
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.PackFlags": [
+		{
+			"name": "None",
+			"value": 0
+		},
+		{
+			"name": "InputPack",
+			"value": 1
+		}
+	],
+	"via.motion.JointExMultiRemapValue.OutputData.TangentType": [
+		{
+			"name": "Auto",
+			"value": 0
+		},
+		{
+			"name": "Spline",
+			"value": 1
+		},
+		{
+			"name": "Linear",
+			"value": 2
+		},
+		{
+			"name": "Fast",
+			"value": 3
+		},
+		{
+			"name": "Slow",
+			"value": 4
+		},
+		{
+			"name": "Flat",
+			"value": 5
+		},
+		{
+			"name": "Step",
+			"value": 6
+		},
+		{
+			"name": "StepNext",
+			"value": 7
+		},
+		{
+			"name": "Fixed",
+			"value": 8
+		},
+		{
+			"name": "Clamped",
+			"value": 9
+		},
+		{
+			"name": "Plateau",
+			"value": 10
+		}
+	],
+	"via.motion.detail.JointDriverInfinityType": [
+		{
+			"name": "Const",
+			"value": 0
+		},
+		{
+			"name": "Linear",
+			"value": 1
+		},
+		{
+			"name": "Oscilate",
+			"value": 2
+		},
+		{
+			"name": "Cycle",
+			"value": 3
+		},
+		{
+			"name": "CycleRelative",
+			"value": 4
+		}
+	],
+	"via.motion.detail.JointDriverTangentType": [
+		{
+			"name": "Auto",
+			"value": 0
+		},
+		{
+			"name": "Spline",
+			"value": 1
+		},
+		{
+			"name": "Linear",
+			"value": 2
+		},
+		{
+			"name": "Fast",
+			"value": 3
+		},
+		{
+			"name": "Slow",
+			"value": 4
+		},
+		{
+			"name": "Flat",
+			"value": 5
+		},
+		{
+			"name": "Step",
+			"value": 6
+		},
+		{
+			"name": "StepNext",
+			"value": 7
+		},
+		{
+			"name": "Fixed",
+			"value": 8
+		},
+		{
+			"name": "Clamped",
+			"value": 9
+		},
+		{
+			"name": "Plateau",
+			"value": 10
 		}
 	]
 }
