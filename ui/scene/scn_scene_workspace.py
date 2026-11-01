@@ -189,9 +189,11 @@ class ScnSceneTab:
         self.remove_button = self._tool_button("remove", QCoreApplication.translate("ScnSceneWorkspace", "Remove selected from scene"), self.remove_selected_sources)
         self.rename_button = self._tool_button("edit", QCoreApplication.translate("ScnSceneWorkspace", "Rename scene"), lambda: self.app.scenes.rename_scene(self))
         self.close_button = self._tool_button("close", QCoreApplication.translate("ScnSceneWorkspace", "Close scene"), lambda: self.app.scenes.close_scene(self))
+        self.focus_button = self._tool_button("target", QCoreApplication.translate("ScnSceneWorkspace", "Move the camera to objects selected in the list"))
+        self.focus_button.setCheckable(True)
         header.addWidget(self.source_fold_button)
         header.addWidget(self.source_label, 1)
-        for button in (self.add_button, self.remove_button, self.save_button, self.rename_button, self.menu_button):
+        for button in (self.focus_button, self.add_button, self.remove_button, self.save_button, self.rename_button, self.menu_button):
             header.addWidget(button)
         header.addSpacing(4)
         header.addWidget(self.close_button)
@@ -627,7 +629,7 @@ class ScnSceneTab:
         self.preview.set_selection(
             keys,
             preferred_keys=direct_keys,
-            focus=focus_changed and changed and bool(keys),
+            focus=focus_changed and changed and bool(keys) and self.focus_button.isChecked(),
         )
         self.add_button.setEnabled(bool(self.app.scenes.open_scn_sources()))
         self.remove_button.setEnabled(has_selection)
