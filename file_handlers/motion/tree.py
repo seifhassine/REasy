@@ -60,14 +60,16 @@ class _TreeReader(_Reader):
             guid = bytes(self.data[self.base + raw["guid"]:self.base + raw["guid"] + 16]) if raw["guid"] else None
             links.append(TreeLink(nodes[raw["parent"]], raw["pin"], nodes[raw["child"]], raw["child_pin"],
                                   raw["type"], guid))
-        tree = MotionTree(rules.version, self._string(h["name"]), nodes, links,
-                          nodes[h["root"]] if nodes else None, unknown_50=h.get("unknown_50", 0))
+        tree = MotionTree(rules.version, self._string(h["name"]), nodes, links, nodes[h["root"]] if nodes else None)
         rows = self._table("remap", h["remaps"], h["remap_count"])
         if rules.remaps == "pairs":
             tree.remaps = [(row["target"], row["source"]) for row in rows]
         elif rules.remaps == "triples":
             tree.motions = [TreeMotion(nodes[row["target"]], [(row["bank"], row["motion"])]) for row in rows]
         else:
+            if (rows != sorted(rows, key=lambda row: (row["count"] != 1, row["node"]))
+                    or h["child_motion_count"] != sum(row["count"] == 1 for row in rows)):
+                raise MotionFormatError("MotTree motion groups are not single-choice first in node order")
             total = sum(row["count"] for row in rows)
             choices = [(row["bank"], row["motion"]) for row in self._table("choice", h["choices"], total)]
             start = 0
@@ -122,8 +124,7 @@ class _TreeWriter(_Writer):
     def write(self) -> bytes:
         tree, rules, records = self.tree, self.rules, self.rules.records
         h = {"version": tree.version, "node_count": len(tree.nodes), "link_count": len(tree.links),
-             "root": self._node_index(tree.root) if tree.root is not None else 0, "unknown_50": tree.unknown_50,
-             "remaps": 0, "choices": 0}
+             "root": self._node_index(tree.root) if tree.root is not None else 0, "remaps": 0, "choices": 0}
         h.update(self._remaps())
         h["name"] = self._put(_utf16z(tree.name), 8)
         h["nodes"] = self._pad(8)
@@ -169,16 +170,19 @@ class _TreeWriter(_Writer):
                 rows.append({"target": self._node_index(motion.node), "bank": motion.choices[0][0],
                              "motion": motion.choices[0][1]})
         else:
+            motions = sorted(tree.motions, key=lambda motion: (len(motion.choices) != 1, self._node_index(motion.node)))
             rows, start = [], 0
-            for motion in tree.motions:
+            for motion in motions:
                 rows.append({"node": self._node_index(motion.node), "count": len(motion.choices), "start": start})
                 start += len(motion.choices)
         found = {"remap_count": len(rows)}
         if rows:
             found["remaps"] = self._put(b"".join(records["remap"].encode(row) for row in rows))
-        if self.rules.remaps == "groups" and rows:
-            found["choices"] = self._put(b"".join(records["choice"].encode({"bank": bank, "motion": motion})
-                                                  for motion in tree.motions for bank, motion in motion.choices), 8)
+        if self.rules.remaps == "groups":
+            found["child_motion_count"] = sum(row["count"] == 1 for row in rows)
+            if rows:
+                found["choices"] = self._put(b"".join(records["choice"].encode({"bank": bank, "motion": motion})
+                                                      for motion in motions for bank, motion in motion.choices), 8)
         return found
 
     def _tags(self, rows: list[dict]) -> None:

@@ -159,16 +159,12 @@ class Inspector(FieldPanel):
 
     def _tree_fields(self, tree: MotionTree) -> list[Field]:
         setter = self._set(tree, self.tr("Edit MotTree"))
-        fields = [Field(self.tr("Version"), "readonly", lambda: tree.version),
-                  Field(self.tr("Name"), "text", lambda: tree.name, setter("name")),
-                  Field(self.tr("Root"), "readonly", lambda: "-" if tree.root is None else
-                        tree.root.name or tree.root.class_name),
-                  Field(self.tr("Contents"), "readonly", lambda: self.tr("{0} nodes, {1} links").format(
-                      len(tree.nodes), len(tree.links)))]
-        if "unknown_50" in tree_rules(tree.version).header.names:
-            fields.append(Field(self.tr("Value at 0x50"), "int", lambda: tree.unknown_50, setter("unknown_50"),
-                                tooltip=self.tr("No accessor of the engine reads it; kept as stored.")))
-        return fields
+        return [Field(self.tr("Version"), "readonly", lambda: tree.version),
+                Field(self.tr("Name"), "text", lambda: tree.name, setter("name")),
+                Field(self.tr("Root"), "readonly", lambda: "-" if tree.root is None else
+                      tree.root.name or tree.root.class_name),
+                Field(self.tr("Contents"), "readonly", lambda: self.tr("{0} nodes, {1} links").format(
+                    len(tree.nodes), len(tree.links)))]
 
     def _node_fields(self, node: TreeNode) -> list[Field]:
         setter = self._set(node, self.tr("Edit Node"))

@@ -494,7 +494,7 @@
     [74, "u16", "link_count"],
     [76, "u16", "root"],
     {"at": 78, "type": "u16", "zero": "path_count"},
-    [80, "u16", "unknown_50"],
+    [80, "u16", "child_motion_count"],
     [82, "u16", "remap_count"],
     {"at": 84, "type": "u32", "zero": "reserved_b"}
    ]},

@@ -206,7 +206,6 @@ class MotionTree:
     root: TreeNode | None = None
     remaps: list[tuple[int, int]] = field(default_factory=list)
     motions: list[TreeMotion] = field(default_factory=list)
-    unknown_50: int = 0
 
 
 @dataclass(eq=False, slots=True)
