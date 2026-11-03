@@ -1191,9 +1191,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         super().leaveEvent(event)
 
     def event(self, event):
-        if (event.type() == QEvent.ShortcutOverride and self.edit_tool is not None
-                and self.edit_tool.takes_key(event)):
-            # Accepting ShortcutOverride gives the tool its keys before the window's shortcuts.
+        if event.type() == QEvent.ShortcutOverride and (
+                self.edit_tool is not None and self.edit_tool.takes_key(event)
+                or self._controls != "mesh" and self.freecam.key_action(event)):
+            # Accepting ShortcutOverride gives the tool and freecam their keys before the window's shortcuts.
             event.accept()
             return True
         if event.type() == QEvent.HoverMove and getattr(self, "_hover_detect_down", False) and getattr(self, "_controls", "mesh") != "mesh" and getattr(self, "_gizmo_drag", None) is None and getattr(self, "_cursor_lock_pos", None) is None:
