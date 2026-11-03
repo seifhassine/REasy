@@ -161,36 +161,39 @@
 			"value": 8
 		}
 	],
-	"via.puppet.dev.SyncInfo.Event": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SendTransform",
-			"value": 1
-		},
-		{
-			"name": "RecvTransform",
-			"value": 2
-		},
-		{
-			"name": "SendState",
-			"value": 4
-		},
-		{
-			"name": "RecvState",
-			"value": 8
-		},
-		{
-			"name": "Warp",
-			"value": 16
-		},
-		{
-			"name": "SwitchParent",
-			"value": 32
-		}
-	],
+	"via.puppet.dev.SyncInfo.Event": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SendTransform",
+				"value": 1
+			},
+			{
+				"name": "RecvTransform",
+				"value": 2
+			},
+			{
+				"name": "SendState",
+				"value": 4
+			},
+			{
+				"name": "RecvState",
+				"value": 8
+			},
+			{
+				"name": "Warp",
+				"value": 16
+			},
+			{
+				"name": "SwitchParent",
+				"value": 32
+			}
+		]
+	},
 	"via.ScreenShotOverlayImageOrigin": [
 		{
 			"name": "LeftTop",
@@ -5531,156 +5534,159 @@
 			"value": 8
 		}
 	],
-	"via.hid.GamePadButton": [
-		{
-			"name": "LUp",
-			"value": 1
-		},
-		{
-			"name": "LDown",
-			"value": 2
-		},
-		{
-			"name": "LLeft",
-			"value": 4
-		},
-		{
-			"name": "LRight",
-			"value": 8
-		},
-		{
-			"name": "RUp",
-			"value": 16
-		},
-		{
-			"name": "RDown",
-			"value": 32
-		},
-		{
-			"name": "RLeft",
-			"value": 64
-		},
-		{
-			"name": "RRight",
-			"value": 128
-		},
-		{
-			"name": "LTrigTop",
-			"value": 256
-		},
-		{
-			"name": "LTrigBottom",
-			"value": 512
-		},
-		{
-			"name": "RTrigTop",
-			"value": 1024
-		},
-		{
-			"name": "RTrigBottom",
-			"value": 2048
-		},
-		{
-			"name": "LStickPush",
-			"value": 4096
-		},
-		{
-			"name": "RStickPush",
-			"value": 8192
-		},
-		{
-			"name": "CLeft",
-			"value": 16384
-		},
-		{
-			"name": "CRight",
-			"value": 32768
-		},
-		{
-			"name": "CCenter",
-			"value": 65536
-		},
-		{
-			"name": "Decide",
-			"value": 131072
-		},
-		{
-			"name": "Cancel",
-			"value": 262144
-		},
-		{
-			"name": "PlatformHome",
-			"value": 524288
-		},
-		{
-			"name": "EmuLup",
-			"value": 1048576
-		},
-		{
-			"name": "EmuLright",
-			"value": 2097152
-		},
-		{
-			"name": "EmuLdown",
-			"value": 4194304
-		},
-		{
-			"name": "EmuLleft",
-			"value": 8388608
-		},
-		{
-			"name": "EmuRup",
-			"value": 16777216
-		},
-		{
-			"name": "EmuRright",
-			"value": 33554432
-		},
-		{
-			"name": "EmuRdown",
-			"value": 67108864
-		},
-		{
-			"name": "EmuRleft",
-			"value": 134217728
-		},
-		{
-			"name": "EmuAll",
-			"value": 267386880
-		},
-		{
-			"name": "LSL",
-			"value": 268435456
-		},
-		{
-			"name": "LSR",
-			"value": 536870912
-		},
-		{
-			"name": "RSL",
-			"value": 1073741824
-		},
-		{
-			"name": "RSR",
-			"value": 2147483648
-		},
-		{
-			"name": "LSide",
-			"value": 268435456
-		},
-		{
-			"name": "RSide",
-			"value": 536870912
-		},
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.GamePadButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LUp",
+				"value": 1
+			},
+			{
+				"name": "LDown",
+				"value": 2
+			},
+			{
+				"name": "LLeft",
+				"value": 4
+			},
+			{
+				"name": "LRight",
+				"value": 8
+			},
+			{
+				"name": "RUp",
+				"value": 16
+			},
+			{
+				"name": "RDown",
+				"value": 32
+			},
+			{
+				"name": "RLeft",
+				"value": 64
+			},
+			{
+				"name": "RRight",
+				"value": 128
+			},
+			{
+				"name": "LTrigTop",
+				"value": 256
+			},
+			{
+				"name": "LTrigBottom",
+				"value": 512
+			},
+			{
+				"name": "RTrigTop",
+				"value": 1024
+			},
+			{
+				"name": "RTrigBottom",
+				"value": 2048
+			},
+			{
+				"name": "LStickPush",
+				"value": 4096
+			},
+			{
+				"name": "RStickPush",
+				"value": 8192
+			},
+			{
+				"name": "CLeft",
+				"value": 16384
+			},
+			{
+				"name": "CRight",
+				"value": 32768
+			},
+			{
+				"name": "CCenter",
+				"value": 65536
+			},
+			{
+				"name": "Decide",
+				"value": 131072
+			},
+			{
+				"name": "Cancel",
+				"value": 262144
+			},
+			{
+				"name": "PlatformHome",
+				"value": 524288
+			},
+			{
+				"name": "EmuLup",
+				"value": 1048576
+			},
+			{
+				"name": "EmuLright",
+				"value": 2097152
+			},
+			{
+				"name": "EmuLdown",
+				"value": 4194304
+			},
+			{
+				"name": "EmuLleft",
+				"value": 8388608
+			},
+			{
+				"name": "EmuRup",
+				"value": 16777216
+			},
+			{
+				"name": "EmuRright",
+				"value": 33554432
+			},
+			{
+				"name": "EmuRdown",
+				"value": 67108864
+			},
+			{
+				"name": "EmuRleft",
+				"value": 134217728
+			},
+			{
+				"name": "EmuAll",
+				"value": 267386880
+			},
+			{
+				"name": "LSL",
+				"value": 268435456
+			},
+			{
+				"name": "LSR",
+				"value": 536870912
+			},
+			{
+				"name": "RSL",
+				"value": 1073741824
+			},
+			{
+				"name": "RSR",
+				"value": 2147483648
+			},
+			{
+				"name": "LSide",
+				"value": 268435456
+			},
+			{
+				"name": "RSide",
+				"value": 536870912
+			},
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"via.motion.IkFourLeg.RayCastCallbackID": [
 		{
 			"name": "BackLeft",
@@ -15333,24 +15339,27 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.EventAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "ReservedMask",
-			"value": 1024
-		}
-	],
+	"System.Reflection.EventAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "ReservedMask",
+				"value": 1024
+			}
+		]
+	},
 	"via.navigation.MapAccessor.SearchResult": [
 		{
 			"name": "Found",
@@ -15567,28 +15576,31 @@
 			"value": 3
 		}
 	],
-	"via.motion.IkLeg2.CastRayEventIdFlags": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Left",
-			"value": 1
-		},
-		{
-			"name": "Right",
-			"value": 2
-		},
-		{
-			"name": "Heal",
-			"value": 4
-		},
-		{
-			"name": "Detail",
-			"value": 8
-		}
-	],
+	"via.motion.IkLeg2.CastRayEventIdFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Left",
+				"value": 1
+			},
+			{
+				"name": "Right",
+				"value": 2
+			},
+			{
+				"name": "Heal",
+				"value": 4
+			},
+			{
+				"name": "Detail",
+				"value": 8
+			}
+		]
+	},
 	"app.CH8Telemetry.GameOverType": [
 		{
 			"name": "CountOfByCaughtMother",
@@ -18551,40 +18563,43 @@
 			"value": 4
 		}
 	],
-	"app.CarInGarage.HijackedByEnemy.CoordGroup": [
-		{
-			"name": "PosSouthEast",
-			"value": 1
-		},
-		{
-			"name": "PosSouthWest",
-			"value": 2
-		},
-		{
-			"name": "PosNorthEast",
-			"value": 4
-		},
-		{
-			"name": "PosNorthWest",
-			"value": 8
-		},
-		{
-			"name": "DirNorth",
-			"value": 16
-		},
-		{
-			"name": "DirEast",
-			"value": 32
-		},
-		{
-			"name": "DirSouth",
-			"value": 64
-		},
-		{
-			"name": "DirWest",
-			"value": 128
-		}
-	],
+	"app.CarInGarage.HijackedByEnemy.CoordGroup": {
+		"flags": true,
+		"values": [
+			{
+				"name": "PosSouthEast",
+				"value": 1
+			},
+			{
+				"name": "PosSouthWest",
+				"value": 2
+			},
+			{
+				"name": "PosNorthEast",
+				"value": 4
+			},
+			{
+				"name": "PosNorthWest",
+				"value": 8
+			},
+			{
+				"name": "DirNorth",
+				"value": 16
+			},
+			{
+				"name": "DirEast",
+				"value": 32
+			},
+			{
+				"name": "DirSouth",
+				"value": 64
+			},
+			{
+				"name": "DirWest",
+				"value": 128
+			}
+		]
+	},
 	"via.vr.VrEye": [
 		{
 			"name": "Left",
@@ -18659,136 +18674,139 @@
 			"value": 4
 		}
 	],
-	"app.MotionExtraData.ContactStatus": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "LeftLegContact",
-			"value": 1
-		},
-		{
-			"name": "RightLegContact",
-			"value": 2
-		},
-		{
-			"name": "LeftLegStop",
-			"value": 4
-		},
-		{
-			"name": "RightLegStop",
-			"value": 8
-		},
-		{
-			"name": "LeftLegFix",
-			"value": 5
-		},
-		{
-			"name": "RightLegFix",
-			"value": 10
-		},
-		{
-			"name": "BothLegContact",
-			"value": 3
-		},
-		{
-			"name": "BothLegFix",
-			"value": 15
-		},
-		{
-			"name": "LeftLegStep",
-			"value": 16
-		},
-		{
-			"name": "RightLegStep",
-			"value": 32
-		},
-		{
-			"name": "LeftToeStop",
-			"value": 64
-		},
-		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
-			"name": "LeftToeFix",
-			"value": 65
-		},
-		{
-			"name": "RightToeFix",
-			"value": 130
-		},
-		{
-			"name": "BothToeFix",
-			"value": 195
-		},
-		{
-			"name": "LegAll",
-			"value": 255
-		},
-		{
-			"name": "LeftHandContact",
-			"value": 256
-		},
-		{
-			"name": "RightHandContact",
-			"value": 512
-		},
-		{
-			"name": "LeftHandStop",
-			"value": 1024
-		},
-		{
-			"name": "RightHandStop",
-			"value": 2048
-		},
-		{
-			"name": "LeftHandFix",
-			"value": 1280
-		},
-		{
-			"name": "RightHandFix",
-			"value": 2560
-		},
-		{
-			"name": "BothHandContact",
-			"value": 768
-		},
-		{
-			"name": "BothHandFix",
-			"value": 3840
-		},
-		{
-			"name": "LeftHandStep",
-			"value": 4096
-		},
-		{
-			"name": "RightHandStep",
-			"value": 8192
-		},
-		{
-			"name": "LeftHandTipStop",
-			"value": 16384
-		},
-		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
-			"name": "LeftHandTipFix",
-			"value": 16640
-		},
-		{
-			"name": "RightHandTipFix",
-			"value": 33280
-		},
-		{
-			"name": "BothHandTipFix",
-			"value": 49920
-		}
-	],
+	"app.MotionExtraData.ContactStatus": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "LeftLegContact",
+				"value": 1
+			},
+			{
+				"name": "RightLegContact",
+				"value": 2
+			},
+			{
+				"name": "LeftLegStop",
+				"value": 4
+			},
+			{
+				"name": "RightLegStop",
+				"value": 8
+			},
+			{
+				"name": "LeftLegFix",
+				"value": 5
+			},
+			{
+				"name": "RightLegFix",
+				"value": 10
+			},
+			{
+				"name": "BothLegContact",
+				"value": 3
+			},
+			{
+				"name": "BothLegFix",
+				"value": 15
+			},
+			{
+				"name": "LeftLegStep",
+				"value": 16
+			},
+			{
+				"name": "RightLegStep",
+				"value": 32
+			},
+			{
+				"name": "LeftToeStop",
+				"value": 64
+			},
+			{
+				"name": "RightToeStop",
+				"value": 128
+			},
+			{
+				"name": "LeftToeFix",
+				"value": 65
+			},
+			{
+				"name": "RightToeFix",
+				"value": 130
+			},
+			{
+				"name": "BothToeFix",
+				"value": 195
+			},
+			{
+				"name": "LegAll",
+				"value": 255
+			},
+			{
+				"name": "LeftHandContact",
+				"value": 256
+			},
+			{
+				"name": "RightHandContact",
+				"value": 512
+			},
+			{
+				"name": "LeftHandStop",
+				"value": 1024
+			},
+			{
+				"name": "RightHandStop",
+				"value": 2048
+			},
+			{
+				"name": "LeftHandFix",
+				"value": 1280
+			},
+			{
+				"name": "RightHandFix",
+				"value": 2560
+			},
+			{
+				"name": "BothHandContact",
+				"value": 768
+			},
+			{
+				"name": "BothHandFix",
+				"value": 3840
+			},
+			{
+				"name": "LeftHandStep",
+				"value": 4096
+			},
+			{
+				"name": "RightHandStep",
+				"value": 8192
+			},
+			{
+				"name": "LeftHandTipStop",
+				"value": 16384
+			},
+			{
+				"name": "RightHandTipStop",
+				"value": 32768
+			},
+			{
+				"name": "LeftHandTipFix",
+				"value": 16640
+			},
+			{
+				"name": "RightHandTipFix",
+				"value": 33280
+			},
+			{
+				"name": "BothHandTipFix",
+				"value": 49920
+			}
+		]
+	},
 	"via.DateTime.Comparison": [
 		{
 			"name": "Full",
@@ -18917,40 +18935,43 @@
 			"value": 1
 		}
 	],
-	"System.Reflection.PropertyAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "Reserved2",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 62464
-		}
-	],
+	"System.Reflection.PropertyAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "Reserved2",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 62464
+			}
+		]
+	},
 	"via.network.native.StadiaEntitlementConsumeResult.ConsumeError": [
 		{
 			"name": "None",
@@ -19589,44 +19610,47 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.MemberTypes": [
-		{
-			"name": "Constructor",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		},
-		{
-			"name": "Field",
-			"value": 4
-		},
-		{
-			"name": "Method",
-			"value": 8
-		},
-		{
-			"name": "Property",
-			"value": 16
-		},
-		{
-			"name": "TypeInfo",
-			"value": 32
-		},
-		{
-			"name": "Custom",
-			"value": 64
-		},
-		{
-			"name": "NestedType",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 191
-		}
-	],
+	"System.Reflection.MemberTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Constructor",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			},
+			{
+				"name": "Field",
+				"value": 4
+			},
+			{
+				"name": "Method",
+				"value": 8
+			},
+			{
+				"name": "Property",
+				"value": 16
+			},
+			{
+				"name": "TypeInfo",
+				"value": 32
+			},
+			{
+				"name": "Custom",
+				"value": 64
+			},
+			{
+				"name": "NestedType",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 191
+			}
+		]
+	},
 	"via.motion.IkLeg2Data.AxisFlags": [
 		{
 			"name": "X",
@@ -22645,84 +22669,87 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.FieldAttributes": [
-		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "InitOnly",
-			"value": 32
-		},
-		{
-			"name": "Literal",
-			"value": 64
-		},
-		{
-			"name": "NotSerialized",
-			"value": 128
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 4096
-		},
-		{
-			"name": "HasDefault",
-			"value": 32768
-		},
-		{
-			"name": "HasFieldRVA",
-			"value": 256
-		},
-		{
-			"name": "ReservedMask",
-			"value": 38144
-		}
-	],
+	"System.Reflection.FieldAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FieldAccessMask",
+				"value": 7
+			},
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "InitOnly",
+				"value": 32
+			},
+			{
+				"name": "Literal",
+				"value": 64
+			},
+			{
+				"name": "NotSerialized",
+				"value": 128
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 4096
+			},
+			{
+				"name": "HasDefault",
+				"value": 32768
+			},
+			{
+				"name": "HasFieldRVA",
+				"value": 256
+			},
+			{
+				"name": "ReservedMask",
+				"value": 38144
+			}
+		]
+	},
 	"via.motion.IkSpineConformGround.ManageJoint.JOINT_TYPE": [
 		{
 			"name": "NON",
@@ -26441,32 +26468,35 @@
 			"value": 2
 		}
 	],
-	"via.attribute.FsmCategoryAttribute.Category": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "Mot",
-			"value": 2
-		},
-		{
-			"name": "Auto",
-			"value": 4
-		},
-		{
-			"name": "BehaviorTree",
-			"value": 8
-		},
-		{
-			"name": "Timeline",
-			"value": 16
-		}
-	],
+	"via.attribute.FsmCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "Mot",
+				"value": 2
+			},
+			{
+				"name": "Auto",
+				"value": 4
+			},
+			{
+				"name": "BehaviorTree",
+				"value": 8
+			},
+			{
+				"name": "Timeline",
+				"value": 16
+			}
+		]
+	},
 	"via.render.SSAOControl.SSAOAlgorithm": [
 		{
 			"name": "Default",
@@ -32004,48 +32034,51 @@
 			"value": 2
 		}
 	],
-	"System.Threading.ThreadState": [
-		{
-			"name": "Running",
-			"value": 0
-		},
-		{
-			"name": "StopRequested",
-			"value": 1
-		},
-		{
-			"name": "SuspendRequested",
-			"value": 2
-		},
-		{
-			"name": "Background",
-			"value": 4
-		},
-		{
-			"name": "Unstarted",
-			"value": 8
-		},
-		{
-			"name": "Stopped",
-			"value": 16
-		},
-		{
-			"name": "WaitSleepJoin",
-			"value": 32
-		},
-		{
-			"name": "Suspended",
-			"value": 64
-		},
-		{
-			"name": "AbortRequested",
-			"value": 128
-		},
-		{
-			"name": "Aborted",
-			"value": 256
-		}
-	],
+	"System.Threading.ThreadState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Running",
+				"value": 0
+			},
+			{
+				"name": "StopRequested",
+				"value": 1
+			},
+			{
+				"name": "SuspendRequested",
+				"value": 2
+			},
+			{
+				"name": "Background",
+				"value": 4
+			},
+			{
+				"name": "Unstarted",
+				"value": 8
+			},
+			{
+				"name": "Stopped",
+				"value": 16
+			},
+			{
+				"name": "WaitSleepJoin",
+				"value": 32
+			},
+			{
+				"name": "Suspended",
+				"value": 64
+			},
+			{
+				"name": "AbortRequested",
+				"value": 128
+			},
+			{
+				"name": "Aborted",
+				"value": 256
+			}
+		]
+	},
 	"app.CH9Em6400.ThinkOrderSet.Type": [
 		{
 			"name": "None",
@@ -37873,20 +37906,23 @@
 			"value": 0
 		}
 	],
-	"via.hid.gamePlayer.AutoDeviceSelectionFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "TryOnAssign",
-			"value": 2
-		},
-		{
-			"name": "TryOnReassign",
-			"value": 4
-		}
-	],
+	"via.hid.gamePlayer.AutoDeviceSelectionFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "TryOnAssign",
+				"value": 2
+			},
+			{
+				"name": "TryOnReassign",
+				"value": 4
+			}
+		]
+	},
 	"app.EventCharaID": [
 		{
 			"name": "Pl0000",
@@ -42433,32 +42469,35 @@
 			"value": 2
 		}
 	],
-	"app.Command.PlatformType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "PS4",
-			"value": 1
-		},
-		{
-			"name": "XboxOne",
-			"value": 2
-		},
-		{
-			"name": "PC",
-			"value": 4
-		},
-		{
-			"name": "PSVitaRemotePlay",
-			"value": 8
-		},
-		{
-			"name": "PSVR",
-			"value": 16
-		}
-	],
+	"app.Command.PlatformType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "PS4",
+				"value": 1
+			},
+			{
+				"name": "XboxOne",
+				"value": 2
+			},
+			{
+				"name": "PC",
+				"value": 4
+			},
+			{
+				"name": "PSVitaRemotePlay",
+				"value": 8
+			},
+			{
+				"name": "PSVR",
+				"value": 16
+			}
+		]
+	},
 	"app.CH9Em6400.Action.Appeal.Type": [
 		{
 			"name": "Type00",
@@ -43349,52 +43388,55 @@
 			"value": 2
 		}
 	],
-	"app.GroupFlag": [
-		{
-			"name": "Player",
-			"value": 1
-		},
-		{
-			"name": "Enemy",
-			"value": 2
-		},
-		{
-			"name": "Item",
-			"value": 8
-		},
-		{
-			"name": "Weapon",
-			"value": 4
-		},
-		{
-			"name": "Prop",
-			"value": 16
-		},
-		{
-			"name": "Etc",
-			"value": 32
-		},
-		{
-			"name": "Vfx",
-			"value": 64
-		},
-		{
-			"name": "Camera",
-			"value": 128
-		},
-		{
-			"name": "ActionPoint",
-			"value": 256
-		},
-		{
-			"name": "EventChara",
-			"value": 512
-		},
-		{
-			"name": "Souko",
-			"value": 1024
-		}
-	],
+	"app.GroupFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Player",
+				"value": 1
+			},
+			{
+				"name": "Enemy",
+				"value": 2
+			},
+			{
+				"name": "Item",
+				"value": 8
+			},
+			{
+				"name": "Weapon",
+				"value": 4
+			},
+			{
+				"name": "Prop",
+				"value": 16
+			},
+			{
+				"name": "Etc",
+				"value": 32
+			},
+			{
+				"name": "Vfx",
+				"value": 64
+			},
+			{
+				"name": "Camera",
+				"value": 128
+			},
+			{
+				"name": "ActionPoint",
+				"value": 256
+			},
+			{
+				"name": "EventChara",
+				"value": 512
+			},
+			{
+				"name": "Souko",
+				"value": 1024
+			}
+		]
+	},
 	"app.VrGui.TargetTypeDef": [
 		{
 			"name": "ActiveCamera",
@@ -49664,40 +49706,43 @@
 			"value": 2
 		}
 	],
-	"via.hid.DeviceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ForceFeedback",
-			"value": 1
-		},
-		{
-			"name": "TouchInterface",
-			"value": 2
-		},
-		{
-			"name": "GamePadButtonCLeft",
-			"value": 4
-		},
-		{
-			"name": "GamePadButtonCCenter",
-			"value": 8
-		},
-		{
-			"name": "GamePadButtonCRight",
-			"value": 16
-		},
-		{
-			"name": "MotionSensor",
-			"value": 32
-		},
-		{
-			"name": "Tracking",
-			"value": 64
-		}
-	],
+	"via.hid.DeviceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ForceFeedback",
+				"value": 1
+			},
+			{
+				"name": "TouchInterface",
+				"value": 2
+			},
+			{
+				"name": "GamePadButtonCLeft",
+				"value": 4
+			},
+			{
+				"name": "GamePadButtonCCenter",
+				"value": 8
+			},
+			{
+				"name": "GamePadButtonCRight",
+				"value": 16
+			},
+			{
+				"name": "MotionSensor",
+				"value": 32
+			},
+			{
+				"name": "Tracking",
+				"value": 64
+			}
+		]
+	},
 	"app.Em8001.Action.Acid.Type": [
 		{
 			"name": "Start",
@@ -49832,48 +49877,51 @@
 			"value": 5
 		}
 	],
-	"System.Globalization.DateTimeStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AllowLeadingWhite",
-			"value": 1
-		},
-		{
-			"name": "AllowTrailingWhite",
-			"value": 2
-		},
-		{
-			"name": "AllowInnerWhite",
-			"value": 4
-		},
-		{
-			"name": "AllowWhiteSpaces",
-			"value": 7
-		},
-		{
-			"name": "NoCurrentDateDefault",
-			"value": 8
-		},
-		{
-			"name": "AdjustToUniversal",
-			"value": 16
-		},
-		{
-			"name": "AssumeLocal",
-			"value": 32
-		},
-		{
-			"name": "AssumeUniversal",
-			"value": 64
-		},
-		{
-			"name": "RoundtripKind",
-			"value": 128
-		}
-	],
+	"System.Globalization.DateTimeStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AllowLeadingWhite",
+				"value": 1
+			},
+			{
+				"name": "AllowTrailingWhite",
+				"value": 2
+			},
+			{
+				"name": "AllowInnerWhite",
+				"value": 4
+			},
+			{
+				"name": "AllowWhiteSpaces",
+				"value": 7
+			},
+			{
+				"name": "NoCurrentDateDefault",
+				"value": 8
+			},
+			{
+				"name": "AdjustToUniversal",
+				"value": 16
+			},
+			{
+				"name": "AssumeLocal",
+				"value": 32
+			},
+			{
+				"name": "AssumeUniversal",
+				"value": 64
+			},
+			{
+				"name": "RoundtripKind",
+				"value": 128
+			}
+		]
+	},
 	"via.render.SupportRenderMode": [
 		{
 			"name": "DeferredAndForward",
@@ -56490,68 +56538,71 @@
 			"value": 3
 		}
 	],
-	"System.AttributeTargets": [
-		{
-			"name": "Assembly",
-			"value": 1
-		},
-		{
-			"name": "Module",
-			"value": 2
-		},
-		{
-			"name": "Class",
-			"value": 4
-		},
-		{
-			"name": "Struct",
-			"value": 8
-		},
-		{
-			"name": "Enum",
-			"value": 16
-		},
-		{
-			"name": "Constructor",
-			"value": 32
-		},
-		{
-			"name": "Method",
-			"value": 64
-		},
-		{
-			"name": "Property",
-			"value": 128
-		},
-		{
-			"name": "Field",
-			"value": 256
-		},
-		{
-			"name": "Event",
-			"value": 512
-		},
-		{
-			"name": "Interface",
-			"value": 1024
-		},
-		{
-			"name": "Parameter",
-			"value": 2048
-		},
-		{
-			"name": "Delegate",
-			"value": 4096
-		},
-		{
-			"name": "ReturnValue",
-			"value": 8192
-		},
-		{
-			"name": "All",
-			"value": 16383
-		}
-	],
+	"System.AttributeTargets": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Assembly",
+				"value": 1
+			},
+			{
+				"name": "Module",
+				"value": 2
+			},
+			{
+				"name": "Class",
+				"value": 4
+			},
+			{
+				"name": "Struct",
+				"value": 8
+			},
+			{
+				"name": "Enum",
+				"value": 16
+			},
+			{
+				"name": "Constructor",
+				"value": 32
+			},
+			{
+				"name": "Method",
+				"value": 64
+			},
+			{
+				"name": "Property",
+				"value": 128
+			},
+			{
+				"name": "Field",
+				"value": 256
+			},
+			{
+				"name": "Event",
+				"value": 512
+			},
+			{
+				"name": "Interface",
+				"value": 1024
+			},
+			{
+				"name": "Parameter",
+				"value": 2048
+			},
+			{
+				"name": "Delegate",
+				"value": 4096
+			},
+			{
+				"name": "ReturnValue",
+				"value": 8192
+			},
+			{
+				"name": "All",
+				"value": 16383
+			}
+		]
+	},
 	"via.effect.BindingType": [
 		{
 			"name": "Joint",
@@ -60184,16 +60235,19 @@
 			"value": 1
 		}
 	],
-	"via.Serializer.Options": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "FloatValueCompression",
-			"value": 1
-		}
-	],
+	"via.Serializer.Options": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "FloatValueCompression",
+				"value": 1
+			}
+		]
+	},
 	"app.CH9Em6400.Action.Turn.Type": [
 		{
 			"name": "Idle",
@@ -60774,28 +60828,31 @@
 			"value": 28
 		}
 	],
-	"System.Reflection.CallingConventions": [
-		{
-			"name": "Standard",
-			"value": 1
-		},
-		{
-			"name": "VarArgs",
-			"value": 2
-		},
-		{
-			"name": "Any",
-			"value": 3
-		},
-		{
-			"name": "HasThis",
-			"value": 32
-		},
-		{
-			"name": "ExplicitThis",
-			"value": 64
-		}
-	],
+	"System.Reflection.CallingConventions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Standard",
+				"value": 1
+			},
+			{
+				"name": "VarArgs",
+				"value": 2
+			},
+			{
+				"name": "Any",
+				"value": 3
+			},
+			{
+				"name": "HasThis",
+				"value": 32
+			},
+			{
+				"name": "ExplicitThis",
+				"value": 64
+			}
+		]
+	},
 	"via.physics.CharacterController.ContactType": [
 		{
 			"name": "Ground",
@@ -64024,136 +64081,139 @@
 			"value": 21
 		}
 	],
-	"System.Reflection.TypeAttributes": [
-		{
-			"name": "NotPublic",
-			"value": 0
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
-			"name": "Class",
-			"value": 0
-		},
-		{
-			"name": "Public",
-			"value": 1
-		},
-		{
-			"name": "NestedPublic",
-			"value": 2
-		},
-		{
-			"name": "NestedPrivate",
-			"value": 3
-		},
-		{
-			"name": "NestedFamily",
-			"value": 4
-		},
-		{
-			"name": "NestedAssembly",
-			"value": 5
-		},
-		{
-			"name": "NestedFamANDAssem",
-			"value": 6
-		},
-		{
-			"name": "NestedFamORAssem",
-			"value": 7
-		},
-		{
-			"name": "VisibilityMask",
-			"value": 7
-		},
-		{
-			"name": "SequentialLayout",
-			"value": 8
-		},
-		{
-			"name": "ExplicitLayout",
-			"value": 16
-		},
-		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "Interface",
-			"value": 32
-		},
-		{
-			"name": "ClassSemanticsMask",
-			"value": 32
-		},
-		{
-			"name": "Abstract",
-			"value": 128
-		},
-		{
-			"name": "Sealed",
-			"value": 256
-		},
-		{
-			"name": "SpecialName",
-			"value": 1024
-		},
-		{
-			"name": "Import",
-			"value": 4096
-		},
-		{
-			"name": "Serializable",
-			"value": 8192
-		},
-		{
-			"name": "WindowsRuntime",
-			"value": 16384
-		},
-		{
-			"name": "UnicodeClass",
-			"value": 65536
-		},
-		{
-			"name": "AutoClass",
-			"value": 131072
-		},
-		{
-			"name": "CustomFormatClass",
-			"value": 196608
-		},
-		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
-		},
-		{
-			"name": "HasSecurity",
-			"value": 262144
-		},
-		{
-			"name": "ReservedMask",
-			"value": 264192
-		}
-	],
+	"System.Reflection.TypeAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NotPublic",
+				"value": 0
+			},
+			{
+				"name": "AutoLayout",
+				"value": 0
+			},
+			{
+				"name": "AnsiClass",
+				"value": 0
+			},
+			{
+				"name": "Class",
+				"value": 0
+			},
+			{
+				"name": "Public",
+				"value": 1
+			},
+			{
+				"name": "NestedPublic",
+				"value": 2
+			},
+			{
+				"name": "NestedPrivate",
+				"value": 3
+			},
+			{
+				"name": "NestedFamily",
+				"value": 4
+			},
+			{
+				"name": "NestedAssembly",
+				"value": 5
+			},
+			{
+				"name": "NestedFamANDAssem",
+				"value": 6
+			},
+			{
+				"name": "NestedFamORAssem",
+				"value": 7
+			},
+			{
+				"name": "VisibilityMask",
+				"value": 7
+			},
+			{
+				"name": "SequentialLayout",
+				"value": 8
+			},
+			{
+				"name": "ExplicitLayout",
+				"value": 16
+			},
+			{
+				"name": "LayoutMask",
+				"value": 24
+			},
+			{
+				"name": "Interface",
+				"value": 32
+			},
+			{
+				"name": "ClassSemanticsMask",
+				"value": 32
+			},
+			{
+				"name": "Abstract",
+				"value": 128
+			},
+			{
+				"name": "Sealed",
+				"value": 256
+			},
+			{
+				"name": "SpecialName",
+				"value": 1024
+			},
+			{
+				"name": "Import",
+				"value": 4096
+			},
+			{
+				"name": "Serializable",
+				"value": 8192
+			},
+			{
+				"name": "WindowsRuntime",
+				"value": 16384
+			},
+			{
+				"name": "UnicodeClass",
+				"value": 65536
+			},
+			{
+				"name": "AutoClass",
+				"value": 131072
+			},
+			{
+				"name": "CustomFormatClass",
+				"value": 196608
+			},
+			{
+				"name": "CustomFormatMask",
+				"value": 12582912
+			},
+			{
+				"name": "StringFormatMask",
+				"value": 196608
+			},
+			{
+				"name": "BeforeFieldInit",
+				"value": 1048576
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 2048
+			},
+			{
+				"name": "HasSecurity",
+				"value": 262144
+			},
+			{
+				"name": "ReservedMask",
+				"value": 264192
+			}
+		]
+	},
 	"app.CH8Em4100.Action.CH8Idle.Type": [
 		{
 			"name": "Normal",
@@ -65484,32 +65544,35 @@
 			"value": 1
 		}
 	],
-	"via.attribute.AreaQueryCategoryAttribute.Category": [
-		{
-			"name": "Unknown",
-			"value": 0
-		},
-		{
-			"name": "AreaItem",
-			"value": 1
-		},
-		{
-			"name": "Position",
-			"value": 2
-		},
-		{
-			"name": "GameObject",
-			"value": 4
-		},
-		{
-			"name": "AreaRegion",
-			"value": 8
-		},
-		{
-			"name": "Any",
-			"value": 255
-		}
-	],
+	"via.attribute.AreaQueryCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unknown",
+				"value": 0
+			},
+			{
+				"name": "AreaItem",
+				"value": 1
+			},
+			{
+				"name": "Position",
+				"value": 2
+			},
+			{
+				"name": "GameObject",
+				"value": 4
+			},
+			{
+				"name": "AreaRegion",
+				"value": 8
+			},
+			{
+				"name": "Any",
+				"value": 255
+			}
+		]
+	},
 	"via.network.Matchmaking.Option": [
 		{
 			"name": "Normal",
@@ -66840,20 +66903,23 @@
 			"value": 15
 		}
 	],
-	"app.SmoothAnimator.SimilarityOptionType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AppendData",
-			"value": 1
-		},
-		{
-			"name": "DummyMotion",
-			"value": 2
-		}
-	],
+	"app.SmoothAnimator.SimilarityOptionType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AppendData",
+				"value": 1
+			},
+			{
+				"name": "DummyMotion",
+				"value": 2
+			}
+		]
+	},
 	"via.render.FFTBloom.SceneFFTSize": [
 		{
 			"name": "Fix512x512",
@@ -69480,140 +69546,143 @@
 			"value": 1
 		}
 	],
-	"via.AABB.VoronoiId": [
-		{
-			"name": "X_MinBit",
-			"value": 1
-		},
-		{
-			"name": "X_MaxBit",
-			"value": 2
-		},
-		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
-			"name": "P_YZX1",
-			"value": 2
-		},
-		{
-			"name": "P_ZXY0",
-			"value": 4
-		},
-		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
-		},
-		{
-			"name": "E_ZX0Y0",
-			"value": 5
-		},
-		{
-			"name": "E_ZX1Y0",
-			"value": 6
-		},
-		{
-			"name": "E_ZX0Y1",
-			"value": 9
-		},
-		{
-			"name": "E_ZX1Y1",
-			"value": 10
-		},
-		{
-			"name": "V_X0Y0Z0",
-			"value": 21
-		},
-		{
-			"name": "V_X1Y0Z0",
-			"value": 22
-		},
-		{
-			"name": "V_X0Y1Z0",
-			"value": 25
-		},
-		{
-			"name": "V_X1Y1Z0",
-			"value": 26
-		},
-		{
-			"name": "V_X0Y0Z1",
-			"value": 37
-		},
-		{
-			"name": "V_X1Y0Z1",
-			"value": 38
-		},
-		{
-			"name": "V_X0Y1Z1",
-			"value": 41
-		},
-		{
-			"name": "V_X1Y1Z1",
-			"value": 42
-		}
-	],
+	"via.AABB.VoronoiId": {
+		"flags": true,
+		"values": [
+			{
+				"name": "X_MinBit",
+				"value": 1
+			},
+			{
+				"name": "X_MaxBit",
+				"value": 2
+			},
+			{
+				"name": "Y_MinBit",
+				"value": 4
+			},
+			{
+				"name": "Y_MaxBit",
+				"value": 8
+			},
+			{
+				"name": "Z_MinBit",
+				"value": 16
+			},
+			{
+				"name": "Z_MaxBit",
+				"value": 32
+			},
+			{
+				"name": "Internal",
+				"value": 0
+			},
+			{
+				"name": "P_YZX0",
+				"value": 1
+			},
+			{
+				"name": "P_YZX1",
+				"value": 2
+			},
+			{
+				"name": "P_ZXY0",
+				"value": 4
+			},
+			{
+				"name": "P_ZXY1",
+				"value": 8
+			},
+			{
+				"name": "P_XYZ0",
+				"value": 16
+			},
+			{
+				"name": "P_XYZ1",
+				"value": 32
+			},
+			{
+				"name": "E_XY0Z0",
+				"value": 20
+			},
+			{
+				"name": "E_XY1Z0",
+				"value": 24
+			},
+			{
+				"name": "E_XY0Z1",
+				"value": 36
+			},
+			{
+				"name": "E_XY1Z1",
+				"value": 40
+			},
+			{
+				"name": "E_YZ0X0",
+				"value": 17
+			},
+			{
+				"name": "E_YZ1X0",
+				"value": 33
+			},
+			{
+				"name": "E_YZ0X1",
+				"value": 18
+			},
+			{
+				"name": "E_YZ1X1",
+				"value": 34
+			},
+			{
+				"name": "E_ZX0Y0",
+				"value": 5
+			},
+			{
+				"name": "E_ZX1Y0",
+				"value": 6
+			},
+			{
+				"name": "E_ZX0Y1",
+				"value": 9
+			},
+			{
+				"name": "E_ZX1Y1",
+				"value": 10
+			},
+			{
+				"name": "V_X0Y0Z0",
+				"value": 21
+			},
+			{
+				"name": "V_X1Y0Z0",
+				"value": 22
+			},
+			{
+				"name": "V_X0Y1Z0",
+				"value": 25
+			},
+			{
+				"name": "V_X1Y1Z0",
+				"value": 26
+			},
+			{
+				"name": "V_X0Y0Z1",
+				"value": 37
+			},
+			{
+				"name": "V_X1Y0Z1",
+				"value": 38
+			},
+			{
+				"name": "V_X0Y1Z1",
+				"value": 41
+			},
+			{
+				"name": "V_X1Y1Z1",
+				"value": 42
+			}
+		]
+	},
 	"via.navigation.map.LinkObject.LinkStatus": [
 		{
 			"name": "LinkStatus_Enabled",
@@ -78307,72 +78376,75 @@
 			"value": 11
 		}
 	],
-	"System.Reflection.MethodImplAttributes": [
-		{
-			"name": "CodeTypeMask",
-			"value": 3
-		},
-		{
-			"name": "IL",
-			"value": 0
-		},
-		{
-			"name": "Native",
-			"value": 1
-		},
-		{
-			"name": "OPTIL",
-			"value": 2
-		},
-		{
-			"name": "Runtime",
-			"value": 3
-		},
-		{
-			"name": "ManagedMask",
-			"value": 4
-		},
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "Managed",
-			"value": 0
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "MaxMethodImplVal",
-			"value": 65535
-		}
-	],
+	"System.Reflection.MethodImplAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CodeTypeMask",
+				"value": 3
+			},
+			{
+				"name": "IL",
+				"value": 0
+			},
+			{
+				"name": "Native",
+				"value": 1
+			},
+			{
+				"name": "OPTIL",
+				"value": 2
+			},
+			{
+				"name": "Runtime",
+				"value": 3
+			},
+			{
+				"name": "ManagedMask",
+				"value": 4
+			},
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "Managed",
+				"value": 0
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "MaxMethodImplVal",
+				"value": 65535
+			}
+		]
+	},
 	"app.BirthdaySelect.RankingStateEnum": [
 		{
 			"name": "None",
@@ -80293,124 +80365,127 @@
 			"value": 2
 		}
 	],
-	"via.SystemServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Language",
-			"value": 1
-		},
-		{
-			"name": "DateFormat",
-			"value": 2
-		},
-		{
-			"name": "TimeFormat",
-			"value": 4
-		},
-		{
-			"name": "TimeZoneOffset",
-			"value": 8
-		},
-		{
-			"name": "SummerTime",
-			"value": 16
-		},
-		{
-			"name": "SystemUiOverlay",
-			"value": 32
-		},
-		{
-			"name": "BackgroundExecution",
-			"value": 64
-		},
-		{
-			"name": "ApplicationSuspend",
-			"value": 128
-		},
-		{
-			"name": "ApplicationResume",
-			"value": 256
-		},
-		{
-			"name": "GetDisplaySafeAreaRatio",
-			"value": 512
-		},
-		{
-			"name": "SplashScreenControl",
-			"value": 1024
-		},
-		{
-			"name": "ScreenSaverControl",
-			"value": 2048
-		},
-		{
-			"name": "ApplicationParameter",
-			"value": 4096
-		},
-		{
-			"name": "SkuFlag",
-			"value": 8192
-		},
-		{
-			"name": "ResetVrPosition",
-			"value": 16384
-		},
-		{
-			"name": "OpenShareMenu",
-			"value": 32768
-		},
-		{
-			"name": "VideoRecorder",
-			"value": 65536
-		},
-		{
-			"name": "ApplicationActivate",
-			"value": 131072
-		},
-		{
-			"name": "ApplicationDeactivate",
-			"value": 262144
-		},
-		{
-			"name": "Country",
-			"value": 524288
-		},
-		{
-			"name": "AccountPicker",
-			"value": 1048576
-		},
-		{
-			"name": "Geography",
-			"value": 4194304
-		},
-		{
-			"name": "SetScreenBrightness",
-			"value": 8388608
-		},
-		{
-			"name": "GetApplicationVersion",
-			"value": 8388608
-		},
-		{
-			"name": "ApplicationExitRequestControl",
-			"value": 16777216
-		},
-		{
-			"name": "NoticeScreenShownControl",
-			"value": 33554432
-		},
-		{
-			"name": "InputIdleSectionControl",
-			"value": 67108864
-		},
-		{
-			"name": "DyingMessage",
-			"value": 134217728
-		}
-	],
+	"via.SystemServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Language",
+				"value": 1
+			},
+			{
+				"name": "DateFormat",
+				"value": 2
+			},
+			{
+				"name": "TimeFormat",
+				"value": 4
+			},
+			{
+				"name": "TimeZoneOffset",
+				"value": 8
+			},
+			{
+				"name": "SummerTime",
+				"value": 16
+			},
+			{
+				"name": "SystemUiOverlay",
+				"value": 32
+			},
+			{
+				"name": "BackgroundExecution",
+				"value": 64
+			},
+			{
+				"name": "ApplicationSuspend",
+				"value": 128
+			},
+			{
+				"name": "ApplicationResume",
+				"value": 256
+			},
+			{
+				"name": "GetDisplaySafeAreaRatio",
+				"value": 512
+			},
+			{
+				"name": "SplashScreenControl",
+				"value": 1024
+			},
+			{
+				"name": "ScreenSaverControl",
+				"value": 2048
+			},
+			{
+				"name": "ApplicationParameter",
+				"value": 4096
+			},
+			{
+				"name": "SkuFlag",
+				"value": 8192
+			},
+			{
+				"name": "ResetVrPosition",
+				"value": 16384
+			},
+			{
+				"name": "OpenShareMenu",
+				"value": 32768
+			},
+			{
+				"name": "VideoRecorder",
+				"value": 65536
+			},
+			{
+				"name": "ApplicationActivate",
+				"value": 131072
+			},
+			{
+				"name": "ApplicationDeactivate",
+				"value": 262144
+			},
+			{
+				"name": "Country",
+				"value": 524288
+			},
+			{
+				"name": "AccountPicker",
+				"value": 1048576
+			},
+			{
+				"name": "Geography",
+				"value": 4194304
+			},
+			{
+				"name": "SetScreenBrightness",
+				"value": 8388608
+			},
+			{
+				"name": "GetApplicationVersion",
+				"value": 8388608
+			},
+			{
+				"name": "ApplicationExitRequestControl",
+				"value": 16777216
+			},
+			{
+				"name": "NoticeScreenShownControl",
+				"value": 33554432
+			},
+			{
+				"name": "InputIdleSectionControl",
+				"value": 67108864
+			},
+			{
+				"name": "DyingMessage",
+				"value": 134217728
+			}
+		]
+	},
 	"app.CardGameManager.HandItemRemoveRequestType": [],
 	"app.Em4200.Goal.EvaluatorID": [
 		{
@@ -81248,40 +81323,43 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.GenericParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
-			"name": "Covariant",
-			"value": 1
-		},
-		{
-			"name": "Contravariant",
-			"value": 2
-		},
-		{
-			"name": "SpecialConstraintMask",
-			"value": 28
-		},
-		{
-			"name": "ReferenceTypeConstraint",
-			"value": 4
-		},
-		{
-			"name": "NotNullableValueTypeConstraint",
-			"value": 8
-		},
-		{
-			"name": "DefaultConstructorConstraint",
-			"value": 16
-		}
-	],
+	"System.Reflection.GenericParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "VarianceMask",
+				"value": 3
+			},
+			{
+				"name": "Covariant",
+				"value": 1
+			},
+			{
+				"name": "Contravariant",
+				"value": 2
+			},
+			{
+				"name": "SpecialConstraintMask",
+				"value": 28
+			},
+			{
+				"name": "ReferenceTypeConstraint",
+				"value": 4
+			},
+			{
+				"name": "NotNullableValueTypeConstraint",
+				"value": 8
+			},
+			{
+				"name": "DefaultConstructorConstraint",
+				"value": 16
+			}
+		]
+	},
 	"via.os.FileAttr": [
 		{
 			"name": "Read",
@@ -83156,16 +83234,19 @@
 			"value": 4
 		}
 	],
-	"via.hid.VirtualDeviceOwnerType": [
-		{
-			"name": "VirtualInput",
-			"value": 1
-		},
-		{
-			"name": "RemoteInput",
-			"value": 2
-		}
-	],
+	"via.hid.VirtualDeviceOwnerType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "VirtualInput",
+				"value": 1
+			},
+			{
+				"name": "RemoteInput",
+				"value": 2
+			}
+		]
+	},
 	"app.dev1lab.AnalysisLogUtil.SupportEnvironment": [
 		{
 			"name": "Invalid",
@@ -87743,104 +87824,107 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.MethodAttributes": [
-		{
-			"name": "MemberAccessMask",
-			"value": 7
-		},
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "Final",
-			"value": 32
-		},
-		{
-			"name": "Virtual",
-			"value": 64
-		},
-		{
-			"name": "HideBySig",
-			"value": 128
-		},
-		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
-			"name": "VtableLayoutMask",
-			"value": 256
-		},
-		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
-			"name": "NewSlot",
-			"value": 256
-		},
-		{
-			"name": "Abstract",
-			"value": 1024
-		},
-		{
-			"name": "SpecialName",
-			"value": 2048
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 4096
-		},
-		{
-			"name": "HasSecurity",
-			"value": 16384
-		},
-		{
-			"name": "RequireSecObject",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 53248
-		}
-	],
+	"System.Reflection.MethodAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MemberAccessMask",
+				"value": 7
+			},
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "Final",
+				"value": 32
+			},
+			{
+				"name": "Virtual",
+				"value": 64
+			},
+			{
+				"name": "HideBySig",
+				"value": 128
+			},
+			{
+				"name": "CheckAccessOnOverride",
+				"value": 512
+			},
+			{
+				"name": "VtableLayoutMask",
+				"value": 256
+			},
+			{
+				"name": "ReuseSlot",
+				"value": 0
+			},
+			{
+				"name": "NewSlot",
+				"value": 256
+			},
+			{
+				"name": "Abstract",
+				"value": 1024
+			},
+			{
+				"name": "SpecialName",
+				"value": 2048
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "UnmanagedExport",
+				"value": 8
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 4096
+			},
+			{
+				"name": "HasSecurity",
+				"value": 16384
+			},
+			{
+				"name": "RequireSecObject",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 53248
+			}
+		]
+	},
 	"via.motion.IkSpine.RAY_TYPE": [
 		{
 			"name": "DEFAULT",
@@ -89045,88 +89129,91 @@
 			"value": 5
 		}
 	],
-	"System.Reflection.BindingFlags": [
-		{
-			"name": "Default",
-			"value": 0
-		},
-		{
-			"name": "IgnoreCase",
-			"value": 1
-		},
-		{
-			"name": "DeclaredOnly",
-			"value": 2
-		},
-		{
-			"name": "Instance",
-			"value": 4
-		},
-		{
-			"name": "Static",
-			"value": 8
-		},
-		{
-			"name": "Public",
-			"value": 16
-		},
-		{
-			"name": "NonPublic",
-			"value": 32
-		},
-		{
-			"name": "FlattenHierarchy",
-			"value": 64
-		},
-		{
-			"name": "InvokeMethod",
-			"value": 256
-		},
-		{
-			"name": "CreateInstance",
-			"value": 512
-		},
-		{
-			"name": "GetField",
-			"value": 1024
-		},
-		{
-			"name": "SetField",
-			"value": 2048
-		},
-		{
-			"name": "GetProperty",
-			"value": 4096
-		},
-		{
-			"name": "SetProperty",
-			"value": 8192
-		},
-		{
-			"name": "PutDispProperty",
-			"value": 16384
-		},
-		{
-			"name": "PutRefDispProperty",
-			"value": 32768
-		},
-		{
-			"name": "ExactBinding",
-			"value": 65536
-		},
-		{
-			"name": "SuppressChangeType",
-			"value": 131072
-		},
-		{
-			"name": "OptionalParamBinding",
-			"value": 262144
-		},
-		{
-			"name": "IgnoreReturn",
-			"value": 16777216
-		}
-	],
+	"System.Reflection.BindingFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Default",
+				"value": 0
+			},
+			{
+				"name": "IgnoreCase",
+				"value": 1
+			},
+			{
+				"name": "DeclaredOnly",
+				"value": 2
+			},
+			{
+				"name": "Instance",
+				"value": 4
+			},
+			{
+				"name": "Static",
+				"value": 8
+			},
+			{
+				"name": "Public",
+				"value": 16
+			},
+			{
+				"name": "NonPublic",
+				"value": 32
+			},
+			{
+				"name": "FlattenHierarchy",
+				"value": 64
+			},
+			{
+				"name": "InvokeMethod",
+				"value": 256
+			},
+			{
+				"name": "CreateInstance",
+				"value": 512
+			},
+			{
+				"name": "GetField",
+				"value": 1024
+			},
+			{
+				"name": "SetField",
+				"value": 2048
+			},
+			{
+				"name": "GetProperty",
+				"value": 4096
+			},
+			{
+				"name": "SetProperty",
+				"value": 8192
+			},
+			{
+				"name": "PutDispProperty",
+				"value": 16384
+			},
+			{
+				"name": "PutRefDispProperty",
+				"value": 32768
+			},
+			{
+				"name": "ExactBinding",
+				"value": 65536
+			},
+			{
+				"name": "SuppressChangeType",
+				"value": 131072
+			},
+			{
+				"name": "OptionalParamBinding",
+				"value": 262144
+			},
+			{
+				"name": "IgnoreReturn",
+				"value": 16777216
+			}
+		]
+	},
 	"app.CH9Em5901.ThinkState": [
 		{
 			"name": "None",
@@ -90179,20 +90266,23 @@
 			"value": 1
 		}
 	],
-	"app.RecordSystem.RecordOrder.OrderTypeEnum": [
-		{
-			"name": "Stamp",
-			"value": 1
-		},
-		{
-			"name": "Decal",
-			"value": 2
-		},
-		{
-			"name": "StampAndDecal",
-			"value": 3
-		}
-	],
+	"app.RecordSystem.RecordOrder.OrderTypeEnum": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Stamp",
+				"value": 1
+			},
+			{
+				"name": "Decal",
+				"value": 2
+			},
+			{
+				"name": "StampAndDecal",
+				"value": 3
+			}
+		]
+	},
 	"System.DateTimeKind": [
 		{
 			"name": "Unspecified",
@@ -93587,88 +93677,91 @@
 			"value": 32
 		}
 	],
-	"via.ShareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ScreenShot",
-			"value": 1
-		},
-		{
-			"name": "ScreenShotControl",
-			"value": 2
-		},
-		{
-			"name": "ScreenShotRequest",
-			"value": 4
-		},
-		{
-			"name": "ScreenShotOverlayImage",
-			"value": 8
-		},
-		{
-			"name": "ScreenShotChangeOverlayImage",
-			"value": 16
-		},
-		{
-			"name": "VideoRecording",
-			"value": 32
-		},
-		{
-			"name": "VideoRecordingControl",
-			"value": 64
-		},
-		{
-			"name": "VideoRecordingRequest",
-			"value": 128
-		},
-		{
-			"name": "VideoRecordingOverlayImage",
-			"value": 256
-		},
-		{
-			"name": "VideoRecordingChangeOverlayImage",
-			"value": 512
-		},
-		{
-			"name": "GameLiveStreaming",
-			"value": 1024
-		},
-		{
-			"name": "GameLiveStreamingControl",
-			"value": 2048
-		},
-		{
-			"name": "GameLiveStreamingRequest",
-			"value": 4096
-		},
-		{
-			"name": "GameLiveStreamingStatusWatching",
-			"value": 8192
-		},
-		{
-			"name": "SharePlay",
-			"value": 16384
-		},
-		{
-			"name": "SharePlayControl",
-			"value": 32768
-		},
-		{
-			"name": "SharePlayStatusWatching",
-			"value": 65536
-		},
-		{
-			"name": "ShareUtility",
-			"value": 131072
-		},
-		{
-			"name": "ScreenShotShowFiles",
-			"value": 262144
-		}
-	],
+	"via.ShareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ScreenShot",
+				"value": 1
+			},
+			{
+				"name": "ScreenShotControl",
+				"value": 2
+			},
+			{
+				"name": "ScreenShotRequest",
+				"value": 4
+			},
+			{
+				"name": "ScreenShotOverlayImage",
+				"value": 8
+			},
+			{
+				"name": "ScreenShotChangeOverlayImage",
+				"value": 16
+			},
+			{
+				"name": "VideoRecording",
+				"value": 32
+			},
+			{
+				"name": "VideoRecordingControl",
+				"value": 64
+			},
+			{
+				"name": "VideoRecordingRequest",
+				"value": 128
+			},
+			{
+				"name": "VideoRecordingOverlayImage",
+				"value": 256
+			},
+			{
+				"name": "VideoRecordingChangeOverlayImage",
+				"value": 512
+			},
+			{
+				"name": "GameLiveStreaming",
+				"value": 1024
+			},
+			{
+				"name": "GameLiveStreamingControl",
+				"value": 2048
+			},
+			{
+				"name": "GameLiveStreamingRequest",
+				"value": 4096
+			},
+			{
+				"name": "GameLiveStreamingStatusWatching",
+				"value": 8192
+			},
+			{
+				"name": "SharePlay",
+				"value": 16384
+			},
+			{
+				"name": "SharePlayControl",
+				"value": 32768
+			},
+			{
+				"name": "SharePlayStatusWatching",
+				"value": 65536
+			},
+			{
+				"name": "ShareUtility",
+				"value": 131072
+			},
+			{
+				"name": "ScreenShotShowFiles",
+				"value": 262144
+			}
+		]
+	},
 	"app.OptionMenu.OnOff": [
 		{
 			"name": "On",
@@ -94531,24 +94624,27 @@
 			"value": 22
 		}
 	],
-	"via.hid.gamePlayer.AutoPlayFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SkipDialog",
-			"value": 2
-		},
-		{
-			"name": "AutoAssign",
-			"value": 4
-		},
-		{
-			"name": "AutoCreateVirtualDevice",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.AutoPlayFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SkipDialog",
+				"value": 2
+			},
+			{
+				"name": "AutoAssign",
+				"value": 4
+			},
+			{
+				"name": "AutoCreateVirtualDevice",
+				"value": 8
+			}
+		]
+	},
 	"via.motion.IkLeg.EffectorCtrl": [
 		{
 			"name": "None",
@@ -95461,16 +95557,19 @@
 			"value": 7
 		}
 	],
-	"System.Base64FormattingOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "InsertLineBreaks",
-			"value": 1
-		}
-	],
+	"System.Base64FormattingOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "InsertLineBreaks",
+				"value": 1
+			}
+		]
+	},
 	"via.Serializer.JsonToken.Kind": [
 		{
 			"name": "Map",
@@ -100001,76 +100100,79 @@
 			"value": 6
 		}
 	],
-	"via.HardwareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "GeneralName",
-			"value": 1
-		},
-		{
-			"name": "InternalName",
-			"value": 2
-		},
-		{
-			"name": "CpuName",
-			"value": 4
-		},
-		{
-			"name": "Manufacturer",
-			"value": 8
-		},
-		{
-			"name": "BrandName",
-			"value": 16
-		},
-		{
-			"name": "IllegalDevice",
-			"value": 32
-		},
-		{
-			"name": "BatteryState",
-			"value": 64
-		},
-		{
-			"name": "BoardName",
-			"value": 128
-		},
-		{
-			"name": "Bootloader",
-			"value": 256
-		},
-		{
-			"name": "StorageSize",
-			"value": 512
-		},
-		{
-			"name": "ExternalStorageSize",
-			"value": 1024
-		},
-		{
-			"name": "PhysicalCoreNumber",
-			"value": 2048
-		},
-		{
-			"name": "LogicalCoreNumber",
-			"value": 4096
-		},
-		{
-			"name": "BaseFrequency",
-			"value": 8192
-		},
-		{
-			"name": "RamSize",
-			"value": 16384
-		},
-		{
-			"name": "ThermalState",
-			"value": 32768
-		}
-	],
+	"via.HardwareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "GeneralName",
+				"value": 1
+			},
+			{
+				"name": "InternalName",
+				"value": 2
+			},
+			{
+				"name": "CpuName",
+				"value": 4
+			},
+			{
+				"name": "Manufacturer",
+				"value": 8
+			},
+			{
+				"name": "BrandName",
+				"value": 16
+			},
+			{
+				"name": "IllegalDevice",
+				"value": 32
+			},
+			{
+				"name": "BatteryState",
+				"value": 64
+			},
+			{
+				"name": "BoardName",
+				"value": 128
+			},
+			{
+				"name": "Bootloader",
+				"value": 256
+			},
+			{
+				"name": "StorageSize",
+				"value": 512
+			},
+			{
+				"name": "ExternalStorageSize",
+				"value": 1024
+			},
+			{
+				"name": "PhysicalCoreNumber",
+				"value": 2048
+			},
+			{
+				"name": "LogicalCoreNumber",
+				"value": 4096
+			},
+			{
+				"name": "BaseFrequency",
+				"value": 8192
+			},
+			{
+				"name": "RamSize",
+				"value": 16384
+			},
+			{
+				"name": "ThermalState",
+				"value": 32768
+			}
+		]
+	},
 	"app.GameManager.PauseRequestType": [
 		{
 			"name": "None",
@@ -104687,40 +104789,43 @@
 			"value": 4
 		}
 	],
-	"via.gui.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		}
-	],
+	"via.gui.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			}
+		]
+	},
 	"app.Em3102.Goal.BattleRest.LeaveStatus": [
 		{
 			"name": "Non",
@@ -108111,80 +108216,83 @@
 			"value": 6
 		}
 	],
-	"app.CarInGarage.HijackedByEnemy.DestinationGroup": [
-		{
-			"name": "WallSouth",
-			"value": 1
-		},
-		{
-			"name": "WallWest",
-			"value": 2
-		},
-		{
-			"name": "WallNorth",
-			"value": 4
-		},
-		{
-			"name": "WallEast",
-			"value": 8
-		},
-		{
-			"name": "Wall",
-			"value": 15
-		},
-		{
-			"name": "Nearest",
-			"value": 16
-		},
-		{
-			"name": "Center",
-			"value": 32
-		},
-		{
-			"name": "Farest",
-			"value": 64
-		},
-		{
-			"name": "WallSouthNearest",
-			"value": 17
-		},
-		{
-			"name": "WallSouthFarest",
-			"value": 65
-		},
-		{
-			"name": "WallWestNearest",
-			"value": 18
-		},
-		{
-			"name": "WallWestCenter",
-			"value": 34
-		},
-		{
-			"name": "WallWestFarest",
-			"value": 66
-		},
-		{
-			"name": "WallNorthNearest",
-			"value": 20
-		},
-		{
-			"name": "WallNorthFarest",
-			"value": 68
-		},
-		{
-			"name": "WallEastNearest",
-			"value": 24
-		},
-		{
-			"name": "WallEastCenter",
-			"value": 40
-		},
-		{
-			"name": "WallEastFarest",
-			"value": 72
-		}
-	],
+	"app.CarInGarage.HijackedByEnemy.DestinationGroup": {
+		"flags": true,
+		"values": [
+			{
+				"name": "WallSouth",
+				"value": 1
+			},
+			{
+				"name": "WallWest",
+				"value": 2
+			},
+			{
+				"name": "WallNorth",
+				"value": 4
+			},
+			{
+				"name": "WallEast",
+				"value": 8
+			},
+			{
+				"name": "Wall",
+				"value": 15
+			},
+			{
+				"name": "Nearest",
+				"value": 16
+			},
+			{
+				"name": "Center",
+				"value": 32
+			},
+			{
+				"name": "Farest",
+				"value": 64
+			},
+			{
+				"name": "WallSouthNearest",
+				"value": 17
+			},
+			{
+				"name": "WallSouthFarest",
+				"value": 65
+			},
+			{
+				"name": "WallWestNearest",
+				"value": 18
+			},
+			{
+				"name": "WallWestCenter",
+				"value": 34
+			},
+			{
+				"name": "WallWestFarest",
+				"value": 66
+			},
+			{
+				"name": "WallNorthNearest",
+				"value": 20
+			},
+			{
+				"name": "WallNorthFarest",
+				"value": 68
+			},
+			{
+				"name": "WallEastNearest",
+				"value": 24
+			},
+			{
+				"name": "WallEastCenter",
+				"value": 40
+			},
+			{
+				"name": "WallEastFarest",
+				"value": 72
+			}
+		]
+	},
 	"app.CH9Em7900.Action.ActionNo": [
 		{
 			"name": "MountTry",
@@ -108529,56 +108637,59 @@
 			"value": 7
 		}
 	],
-	"via.network.protocol.SendOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Unreliable",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_Low",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_High",
-			"value": 1
-		},
-		{
-			"name": "Reliable",
-			"value": 4
-		},
-		{
-			"name": "ReliableBuffer",
-			"value": 12
-		},
-		{
-			"name": "FastCallback",
-			"value": 16
-		},
-		{
-			"name": "CheckAbsent",
-			"value": 32
-		},
-		{
-			"name": "Tag",
-			"value": 64
-		},
-		{
-			"name": "FastPass",
-			"value": 128
-		},
-		{
-			"name": "CheckNonce",
-			"value": 256
-		},
-		{
-			"name": "SkipReceiveQueue",
-			"value": 512
-		}
-	],
+	"via.network.protocol.SendOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Unreliable",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_Low",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_High",
+				"value": 1
+			},
+			{
+				"name": "Reliable",
+				"value": 4
+			},
+			{
+				"name": "ReliableBuffer",
+				"value": 12
+			},
+			{
+				"name": "FastCallback",
+				"value": 16
+			},
+			{
+				"name": "CheckAbsent",
+				"value": 32
+			},
+			{
+				"name": "Tag",
+				"value": 64
+			},
+			{
+				"name": "FastPass",
+				"value": 128
+			},
+			{
+				"name": "CheckNonce",
+				"value": 256
+			},
+			{
+				"name": "SkipReceiveQueue",
+				"value": 512
+			}
+		]
+	},
 	"app.Em3000.Em8000CorpsebagManager.State": [
 		{
 			"name": "None",
@@ -108683,24 +108794,27 @@
 			"value": 13
 		}
 	],
-	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "UseFirstSelected",
-			"value": 2
-		},
-		{
-			"name": "UseLastSelected",
-			"value": 4
-		},
-		{
-			"name": "AssignToOtherPlayer",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "UseFirstSelected",
+				"value": 2
+			},
+			{
+				"name": "UseLastSelected",
+				"value": 4
+			},
+			{
+				"name": "AssignToOtherPlayer",
+				"value": 8
+			}
+		]
+	},
 	"via.effect.gpgpu.RibbonFollowCS.RibbonFollowResource.RibbonFollowComputeShaderType": [
 		{
 			"name": "InitializeCS",
@@ -112641,62 +112755,68 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.ParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "In",
-			"value": 1
-		},
-		{
-			"name": "Out",
-			"value": 2
-		},
-		{
-			"name": "Lcid",
-			"value": 4
-		},
-		{
-			"name": "Retval",
-			"value": 8
-		},
-		{
-			"name": "Optional",
-			"value": 16
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 61440
-		}
-	],
-	"System.StringSplitOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "RemoveEmptyEntries",
-			"value": 1
-		}
-	],
+	"System.Reflection.ParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "In",
+				"value": 1
+			},
+			{
+				"name": "Out",
+				"value": 2
+			},
+			{
+				"name": "Lcid",
+				"value": 4
+			},
+			{
+				"name": "Retval",
+				"value": 8
+			},
+			{
+				"name": "Optional",
+				"value": 16
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 61440
+			}
+		]
+	},
+	"System.StringSplitOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "RemoveEmptyEntries",
+				"value": 1
+			}
+		]
+	},
 	"via.render.Shadow.ShadowPriority": [
 		{
 			"name": "Low",
@@ -112802,40 +112922,43 @@
 		}
 	],
 	"via.effect.graph.ItemType": [],
-	"System.Runtime.CompilerServices.MethodImplOptions": [
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		}
-	],
+	"System.Runtime.CompilerServices.MethodImplOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			}
+		]
+	},
 	"via.nnfc.nfp.ErrorDialogCode": [
 		{
 			"name": "None",
@@ -113130,44 +113253,47 @@
 			"value": 2
 		}
 	],
-	"via.hid.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"app.Em3002.Action.OpenDoor.Type": [
 		{
 			"name": "Normal",
@@ -114908,16 +115034,19 @@
 			"value": 3
 		}
 	],
-	"System.Globalization.TimeSpanStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AssumeNegative",
-			"value": 1
-		}
-	],
+	"System.Globalization.TimeSpanStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AssumeNegative",
+				"value": 1
+			}
+		]
+	},
 	"app.CH9Em7700.Action.Suspend.Option": [
 		{
 			"name": "None",

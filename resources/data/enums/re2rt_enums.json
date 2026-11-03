@@ -217,36 +217,39 @@
 			"value": 8
 		}
 	],
-	"via.puppet.dev.SyncInfo.Event": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SendTransform",
-			"value": 1
-		},
-		{
-			"name": "RecvTransform",
-			"value": 2
-		},
-		{
-			"name": "SendState",
-			"value": 4
-		},
-		{
-			"name": "RecvState",
-			"value": 8
-		},
-		{
-			"name": "Warp",
-			"value": 16
-		},
-		{
-			"name": "SwitchParent",
-			"value": 32
-		}
-	],
+	"via.puppet.dev.SyncInfo.Event": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SendTransform",
+				"value": 1
+			},
+			{
+				"name": "RecvTransform",
+				"value": 2
+			},
+			{
+				"name": "SendState",
+				"value": 4
+			},
+			{
+				"name": "RecvState",
+				"value": 8
+			},
+			{
+				"name": "Warp",
+				"value": 16
+			},
+			{
+				"name": "SwitchParent",
+				"value": 32
+			}
+		]
+	},
 	"via.ScreenShotOverlayImageOrigin": [
 		{
 			"name": "LeftTop",
@@ -5985,156 +5988,159 @@
 			"value": 3
 		}
 	],
-	"via.hid.GamePadButton": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "LUp",
-			"value": 1
-		},
-		{
-			"name": "LDown",
-			"value": 2
-		},
-		{
-			"name": "LLeft",
-			"value": 4
-		},
-		{
-			"name": "LRight",
-			"value": 8
-		},
-		{
-			"name": "RUp",
-			"value": 16
-		},
-		{
-			"name": "RDown",
-			"value": 32
-		},
-		{
-			"name": "RLeft",
-			"value": 64
-		},
-		{
-			"name": "RRight",
-			"value": 128
-		},
-		{
-			"name": "LTrigTop",
-			"value": 256
-		},
-		{
-			"name": "LTrigBottom",
-			"value": 512
-		},
-		{
-			"name": "RTrigTop",
-			"value": 1024
-		},
-		{
-			"name": "RTrigBottom",
-			"value": 2048
-		},
-		{
-			"name": "LStickPush",
-			"value": 4096
-		},
-		{
-			"name": "RStickPush",
-			"value": 8192
-		},
-		{
-			"name": "CLeft",
-			"value": 16384
-		},
-		{
-			"name": "CRight",
-			"value": 32768
-		},
-		{
-			"name": "CCenter",
-			"value": 65536
-		},
-		{
-			"name": "Decide",
-			"value": 131072
-		},
-		{
-			"name": "Cancel",
-			"value": 262144
-		},
-		{
-			"name": "PlatformHome",
-			"value": 524288
-		},
-		{
-			"name": "EmuLup",
-			"value": 1048576
-		},
-		{
-			"name": "EmuLright",
-			"value": 2097152
-		},
-		{
-			"name": "EmuLdown",
-			"value": 4194304
-		},
-		{
-			"name": "EmuLleft",
-			"value": 8388608
-		},
-		{
-			"name": "EmuRup",
-			"value": 16777216
-		},
-		{
-			"name": "EmuRright",
-			"value": 33554432
-		},
-		{
-			"name": "EmuRdown",
-			"value": 67108864
-		},
-		{
-			"name": "EmuRleft",
-			"value": 134217728
-		},
-		{
-			"name": "EmuAll",
-			"value": 267386880
-		},
-		{
-			"name": "LSL",
-			"value": 268435456
-		},
-		{
-			"name": "LSide",
-			"value": 268435456
-		},
-		{
-			"name": "LSR",
-			"value": 536870912
-		},
-		{
-			"name": "RSide",
-			"value": 536870912
-		},
-		{
-			"name": "RSL",
-			"value": 1073741824
-		},
-		{
-			"name": "RSR",
-			"value": 2147483648
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.GamePadButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "LUp",
+				"value": 1
+			},
+			{
+				"name": "LDown",
+				"value": 2
+			},
+			{
+				"name": "LLeft",
+				"value": 4
+			},
+			{
+				"name": "LRight",
+				"value": 8
+			},
+			{
+				"name": "RUp",
+				"value": 16
+			},
+			{
+				"name": "RDown",
+				"value": 32
+			},
+			{
+				"name": "RLeft",
+				"value": 64
+			},
+			{
+				"name": "RRight",
+				"value": 128
+			},
+			{
+				"name": "LTrigTop",
+				"value": 256
+			},
+			{
+				"name": "LTrigBottom",
+				"value": 512
+			},
+			{
+				"name": "RTrigTop",
+				"value": 1024
+			},
+			{
+				"name": "RTrigBottom",
+				"value": 2048
+			},
+			{
+				"name": "LStickPush",
+				"value": 4096
+			},
+			{
+				"name": "RStickPush",
+				"value": 8192
+			},
+			{
+				"name": "CLeft",
+				"value": 16384
+			},
+			{
+				"name": "CRight",
+				"value": 32768
+			},
+			{
+				"name": "CCenter",
+				"value": 65536
+			},
+			{
+				"name": "Decide",
+				"value": 131072
+			},
+			{
+				"name": "Cancel",
+				"value": 262144
+			},
+			{
+				"name": "PlatformHome",
+				"value": 524288
+			},
+			{
+				"name": "EmuLup",
+				"value": 1048576
+			},
+			{
+				"name": "EmuLright",
+				"value": 2097152
+			},
+			{
+				"name": "EmuLdown",
+				"value": 4194304
+			},
+			{
+				"name": "EmuLleft",
+				"value": 8388608
+			},
+			{
+				"name": "EmuRup",
+				"value": 16777216
+			},
+			{
+				"name": "EmuRright",
+				"value": 33554432
+			},
+			{
+				"name": "EmuRdown",
+				"value": 67108864
+			},
+			{
+				"name": "EmuRleft",
+				"value": 134217728
+			},
+			{
+				"name": "EmuAll",
+				"value": 267386880
+			},
+			{
+				"name": "LSL",
+				"value": 268435456
+			},
+			{
+				"name": "LSide",
+				"value": 268435456
+			},
+			{
+				"name": "LSR",
+				"value": 536870912
+			},
+			{
+				"name": "RSide",
+				"value": 536870912
+			},
+			{
+				"name": "RSL",
+				"value": 1073741824
+			},
+			{
+				"name": "RSR",
+				"value": 2147483648
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"via.motion.IkFourLeg.RayCastCallbackID": [
 		{
 			"name": "BackLeft",
@@ -8220,36 +8226,39 @@
 			"value": 27
 		}
 	],
-	"app.ropeway.behaviortree.condition.BtCondition_PlayerState.State": [
-		{
-			"name": "IDLE",
-			"value": 0
-		},
-		{
-			"name": "WALK",
-			"value": 1
-		},
-		{
-			"name": "JOG",
-			"value": 2
-		},
-		{
-			"name": "HOLD",
-			"value": 3
-		},
-		{
-			"name": "CREEPING",
-			"value": 4
-		},
-		{
-			"name": "REACTION",
-			"value": 5
-		},
-		{
-			"name": "ATTACKED",
-			"value": 6
-		}
-	],
+	"app.ropeway.behaviortree.condition.BtCondition_PlayerState.State": {
+		"flags": true,
+		"values": [
+			{
+				"name": "IDLE",
+				"value": 0
+			},
+			{
+				"name": "WALK",
+				"value": 1
+			},
+			{
+				"name": "JOG",
+				"value": 2
+			},
+			{
+				"name": "HOLD",
+				"value": 3
+			},
+			{
+				"name": "CREEPING",
+				"value": 4
+			},
+			{
+				"name": "REACTION",
+				"value": 5
+			},
+			{
+				"name": "ATTACKED",
+				"value": 6
+			}
+		]
+	},
 	"via.vr.VrDeviceType": [
 		{
 			"name": "Invalid",
@@ -15708,28 +15717,31 @@
 			"value": 4
 		}
 	],
-	"app.ropeway.SurvivorAssignManager.CastingReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "InitialSet",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		},
-		{
-			"name": "Level",
-			"value": 4
-		},
-		{
-			"name": "Debug",
-			"value": 8
-		}
-	],
+	"app.ropeway.SurvivorAssignManager.CastingReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "InitialSet",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			},
+			{
+				"name": "Level",
+				"value": 4
+			},
+			{
+				"name": "Debug",
+				"value": 8
+			}
+		]
+	},
 	"via.physics.FilterInfoData.Attribute": [
 		{
 			"name": "MaskNAND",
@@ -15846,24 +15858,27 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.EventAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "ReservedMask",
-			"value": 1024
-		}
-	],
+	"System.Reflection.EventAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "ReservedMask",
+				"value": 1024
+			}
+		]
+	},
 	"app.ropeway.enemy.em4000.tracks.Em4000DamageMotTypeTrack.MotType": [
 		{
 			"name": "DEFAULT",
@@ -15986,74 +16001,80 @@
 			"value": 2
 		}
 	],
-	"via.motion.IkLeg2.CastRayEventIdFlags": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Left",
-			"value": 1
-		},
-		{
-			"name": "Right",
-			"value": 2
-		},
-		{
-			"name": "Heal",
-			"value": 4
-		},
-		{
-			"name": "Detail",
-			"value": 8
-		}
-	],
-	"app.ropeway.SurvivorDefine.ColliderSkipId": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Press",
-			"value": 1
-		},
-		{
-			"name": "TouchAppeal",
-			"value": 2
-		},
-		{
-			"name": "GimmickSensor",
-			"value": 4
-		},
-		{
-			"name": "EffectSensor",
-			"value": 8
-		},
-		{
-			"name": "SoundSensor",
-			"value": 16
-		},
-		{
-			"name": "SoundMarkerEnemyAttack",
-			"value": 32
-		},
-		{
-			"name": "DamageUpper",
-			"value": 1024
-		},
-		{
-			"name": "DamageMiddle",
-			"value": 2048
-		},
-		{
-			"name": "DamageLower",
-			"value": 4096
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.motion.IkLeg2.CastRayEventIdFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Left",
+				"value": 1
+			},
+			{
+				"name": "Right",
+				"value": 2
+			},
+			{
+				"name": "Heal",
+				"value": 4
+			},
+			{
+				"name": "Detail",
+				"value": 8
+			}
+		]
+	},
+	"app.ropeway.SurvivorDefine.ColliderSkipId": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Press",
+				"value": 1
+			},
+			{
+				"name": "TouchAppeal",
+				"value": 2
+			},
+			{
+				"name": "GimmickSensor",
+				"value": 4
+			},
+			{
+				"name": "EffectSensor",
+				"value": 8
+			},
+			{
+				"name": "SoundSensor",
+				"value": 16
+			},
+			{
+				"name": "SoundMarkerEnemyAttack",
+				"value": 32
+			},
+			{
+				"name": "DamageUpper",
+				"value": 1024
+			},
+			{
+				"name": "DamageMiddle",
+				"value": 2048
+			},
+			{
+				"name": "DamageLower",
+				"value": 4096
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"app.ropeway.enemy.em0000.EM0200_MONTAGE_PARTS_PANTS": [
 		{
 			"name": "NONE",
@@ -17318,136 +17339,139 @@
 			"value": 3
 		}
 	],
-	"via.motion.script.MotionExtraData.ContactStatus": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "LeftLegContact",
-			"value": 1
-		},
-		{
-			"name": "RightLegContact",
-			"value": 2
-		},
-		{
-			"name": "BothLegContact",
-			"value": 3
-		},
-		{
-			"name": "LeftLegStop",
-			"value": 4
-		},
-		{
-			"name": "LeftLegFix",
-			"value": 5
-		},
-		{
-			"name": "RightLegStop",
-			"value": 8
-		},
-		{
-			"name": "RightLegFix",
-			"value": 10
-		},
-		{
-			"name": "BothLegFix",
-			"value": 15
-		},
-		{
-			"name": "LeftLegStep",
-			"value": 16
-		},
-		{
-			"name": "RightLegStep",
-			"value": 32
-		},
-		{
-			"name": "LeftToeStop",
-			"value": 64
-		},
-		{
-			"name": "LeftToeFix",
-			"value": 65
-		},
-		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
-			"name": "RightToeFix",
-			"value": 130
-		},
-		{
-			"name": "BothToeFix",
-			"value": 195
-		},
-		{
-			"name": "LegAll",
-			"value": 255
-		},
-		{
-			"name": "LeftHandContact",
-			"value": 256
-		},
-		{
-			"name": "RightHandContact",
-			"value": 512
-		},
-		{
-			"name": "BothHandContact",
-			"value": 768
-		},
-		{
-			"name": "LeftHandStop",
-			"value": 1024
-		},
-		{
-			"name": "LeftHandFix",
-			"value": 1280
-		},
-		{
-			"name": "RightHandStop",
-			"value": 2048
-		},
-		{
-			"name": "RightHandFix",
-			"value": 2560
-		},
-		{
-			"name": "BothHandFix",
-			"value": 3840
-		},
-		{
-			"name": "LeftHandStep",
-			"value": 4096
-		},
-		{
-			"name": "RightHandStep",
-			"value": 8192
-		},
-		{
-			"name": "LeftHandTipStop",
-			"value": 16384
-		},
-		{
-			"name": "LeftHandTipFix",
-			"value": 16640
-		},
-		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
-			"name": "RightHandTipFix",
-			"value": 33280
-		},
-		{
-			"name": "BothHandTipFix",
-			"value": 49920
-		}
-	],
+	"via.motion.script.MotionExtraData.ContactStatus": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "LeftLegContact",
+				"value": 1
+			},
+			{
+				"name": "RightLegContact",
+				"value": 2
+			},
+			{
+				"name": "BothLegContact",
+				"value": 3
+			},
+			{
+				"name": "LeftLegStop",
+				"value": 4
+			},
+			{
+				"name": "LeftLegFix",
+				"value": 5
+			},
+			{
+				"name": "RightLegStop",
+				"value": 8
+			},
+			{
+				"name": "RightLegFix",
+				"value": 10
+			},
+			{
+				"name": "BothLegFix",
+				"value": 15
+			},
+			{
+				"name": "LeftLegStep",
+				"value": 16
+			},
+			{
+				"name": "RightLegStep",
+				"value": 32
+			},
+			{
+				"name": "LeftToeStop",
+				"value": 64
+			},
+			{
+				"name": "LeftToeFix",
+				"value": 65
+			},
+			{
+				"name": "RightToeStop",
+				"value": 128
+			},
+			{
+				"name": "RightToeFix",
+				"value": 130
+			},
+			{
+				"name": "BothToeFix",
+				"value": 195
+			},
+			{
+				"name": "LegAll",
+				"value": 255
+			},
+			{
+				"name": "LeftHandContact",
+				"value": 256
+			},
+			{
+				"name": "RightHandContact",
+				"value": 512
+			},
+			{
+				"name": "BothHandContact",
+				"value": 768
+			},
+			{
+				"name": "LeftHandStop",
+				"value": 1024
+			},
+			{
+				"name": "LeftHandFix",
+				"value": 1280
+			},
+			{
+				"name": "RightHandStop",
+				"value": 2048
+			},
+			{
+				"name": "RightHandFix",
+				"value": 2560
+			},
+			{
+				"name": "BothHandFix",
+				"value": 3840
+			},
+			{
+				"name": "LeftHandStep",
+				"value": 4096
+			},
+			{
+				"name": "RightHandStep",
+				"value": 8192
+			},
+			{
+				"name": "LeftHandTipStop",
+				"value": 16384
+			},
+			{
+				"name": "LeftHandTipFix",
+				"value": 16640
+			},
+			{
+				"name": "RightHandTipStop",
+				"value": 32768
+			},
+			{
+				"name": "RightHandTipFix",
+				"value": 33280
+			},
+			{
+				"name": "BothHandTipFix",
+				"value": 49920
+			}
+		]
+	},
 	"via.navigation.NavigationSurface.LineAdjustSideType": [
 		{
 			"name": "ContourSide",
@@ -17506,64 +17530,67 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.navigation.Definition.Attr1": [
-		{
-			"name": "Door",
-			"value": 1
-		},
-		{
-			"name": "Ladder",
-			"value": 2
-		},
-		{
-			"name": "Box",
-			"value": 4
-		},
-		{
-			"name": "G2Jump",
-			"value": 8
-		},
-		{
-			"name": "Step",
-			"value": 16
-		},
-		{
-			"name": "Ladder_Upper",
-			"value": 32
-		},
-		{
-			"name": "Ladder_Lower",
-			"value": 64
-		},
-		{
-			"name": "Edge_Upper",
-			"value": 128
-		},
-		{
-			"name": "Edge_Lower",
-			"value": 256
-		},
-		{
-			"name": "Edge",
-			"value": 512
-		},
-		{
-			"name": "Detour00",
-			"value": 1024
-		},
-		{
-			"name": "Detour01",
-			"value": 2048
-		},
-		{
-			"name": "Licker",
-			"value": 4096
-		},
-		{
-			"name": "Divide",
-			"value": 8192
-		}
-	],
+	"app.ropeway.navigation.Definition.Attr1": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Door",
+				"value": 1
+			},
+			{
+				"name": "Ladder",
+				"value": 2
+			},
+			{
+				"name": "Box",
+				"value": 4
+			},
+			{
+				"name": "G2Jump",
+				"value": 8
+			},
+			{
+				"name": "Step",
+				"value": 16
+			},
+			{
+				"name": "Ladder_Upper",
+				"value": 32
+			},
+			{
+				"name": "Ladder_Lower",
+				"value": 64
+			},
+			{
+				"name": "Edge_Upper",
+				"value": 128
+			},
+			{
+				"name": "Edge_Lower",
+				"value": 256
+			},
+			{
+				"name": "Edge",
+				"value": 512
+			},
+			{
+				"name": "Detour00",
+				"value": 1024
+			},
+			{
+				"name": "Detour01",
+				"value": 2048
+			},
+			{
+				"name": "Licker",
+				"value": 4096
+			},
+			{
+				"name": "Divide",
+				"value": 8192
+			}
+		]
+	},
 	"app.ropeway.ChoreographPlayer.ChoreographTimeline.GimmickEventEnd": [
 		{
 			"name": "NONE",
@@ -22316,40 +22343,43 @@
 			"value": 7
 		}
 	],
-	"System.Reflection.PropertyAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "Reserved2",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 62464
-		}
-	],
+	"System.Reflection.PropertyAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "Reserved2",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 62464
+			}
+		]
+	},
 	"via.network.native.StadiaEntitlementConsumeResult.ConsumeError": [
 		{
 			"name": "None",
@@ -22852,44 +22882,47 @@
 			"value": 9
 		}
 	],
-	"System.Reflection.MemberTypes": [
-		{
-			"name": "Constructor",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		},
-		{
-			"name": "Field",
-			"value": 4
-		},
-		{
-			"name": "Method",
-			"value": 8
-		},
-		{
-			"name": "Property",
-			"value": 16
-		},
-		{
-			"name": "TypeInfo",
-			"value": 32
-		},
-		{
-			"name": "Custom",
-			"value": 64
-		},
-		{
-			"name": "NestedType",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 191
-		}
-	],
+	"System.Reflection.MemberTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Constructor",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			},
+			{
+				"name": "Field",
+				"value": 4
+			},
+			{
+				"name": "Method",
+				"value": 8
+			},
+			{
+				"name": "Property",
+				"value": 16
+			},
+			{
+				"name": "TypeInfo",
+				"value": 32
+			},
+			{
+				"name": "Custom",
+				"value": 64
+			},
+			{
+				"name": "NestedType",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 191
+			}
+		]
+	},
 	"via.motion.IkLeg2Data.AxisFlags": [
 		{
 			"name": "X",
@@ -24893,20 +24926,23 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.render.StreamingTextureManager.RequestType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "StandbyMediator",
-			"value": 1
-		},
-		{
-			"name": "TimelineManager",
-			"value": 2
-		}
-	],
+	"app.ropeway.render.StreamingTextureManager.RequestType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "StandbyMediator",
+				"value": 1
+			},
+			{
+				"name": "TimelineManager",
+				"value": 2
+			}
+		]
+	},
 	"via.landscape.MeshBakeType": [
 		{
 			"name": "TwoWay",
@@ -25635,84 +25671,87 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.FieldAttributes": [
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "InitOnly",
-			"value": 32
-		},
-		{
-			"name": "Literal",
-			"value": 64
-		},
-		{
-			"name": "NotSerialized",
-			"value": 128
-		},
-		{
-			"name": "HasFieldRVA",
-			"value": 256
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 4096
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "HasDefault",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 38144
-		}
-	],
+	"System.Reflection.FieldAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "FieldAccessMask",
+				"value": 7
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "InitOnly",
+				"value": 32
+			},
+			{
+				"name": "Literal",
+				"value": 64
+			},
+			{
+				"name": "NotSerialized",
+				"value": 128
+			},
+			{
+				"name": "HasFieldRVA",
+				"value": 256
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 4096
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "HasDefault",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 38144
+			}
+		]
+	},
 	"via.motion.IkSpineConformGround.ManageJoint.JOINT_TYPE": [
 		{
 			"name": "NON",
@@ -25745,56 +25784,59 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.SurvivorDefine.ActionOrder.Precede": [
-		{
-			"name": "INVALID",
-			"value": 0
-		},
-		{
-			"name": "TURN",
-			"value": 1
-		},
-		{
-			"name": "QUICK_TURN",
-			"value": 2
-		},
-		{
-			"name": "ATTACK",
-			"value": 4
-		},
-		{
-			"name": "RELOAD",
-			"value": 8
-		},
-		{
-			"name": "CHANGE_WEAPON",
-			"value": 16
-		},
-		{
-			"name": "SWITCH_SIGHT",
-			"value": 32
-		},
-		{
-			"name": "SWITCH_LIGHT",
-			"value": 64
-		},
-		{
-			"name": "CHANGE_BULLET",
-			"value": 128
-		},
-		{
-			"name": "STEP_UP",
-			"value": 256
-		},
-		{
-			"name": "STEP_DOWN",
-			"value": 512
-		},
-		{
-			"name": "QUICK_TURN_EX",
-			"value": 1024
-		}
-	],
+	"app.ropeway.SurvivorDefine.ActionOrder.Precede": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INVALID",
+				"value": 0
+			},
+			{
+				"name": "TURN",
+				"value": 1
+			},
+			{
+				"name": "QUICK_TURN",
+				"value": 2
+			},
+			{
+				"name": "ATTACK",
+				"value": 4
+			},
+			{
+				"name": "RELOAD",
+				"value": 8
+			},
+			{
+				"name": "CHANGE_WEAPON",
+				"value": 16
+			},
+			{
+				"name": "SWITCH_SIGHT",
+				"value": 32
+			},
+			{
+				"name": "SWITCH_LIGHT",
+				"value": 64
+			},
+			{
+				"name": "CHANGE_BULLET",
+				"value": 128
+			},
+			{
+				"name": "STEP_UP",
+				"value": 256
+			},
+			{
+				"name": "STEP_DOWN",
+				"value": 512
+			},
+			{
+				"name": "QUICK_TURN_EX",
+				"value": 1024
+			}
+		]
+	},
 	"via.render.ToneMapping.TemporalAAAlgorithm": [
 		{
 			"name": "Legacy",
@@ -25823,60 +25865,63 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.SurvivorDefine.Restriction.Target": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "NonUpdate",
-			"value": 1
-		},
-		{
-			"name": "Hide",
-			"value": 2
-		},
-		{
-			"name": "DisabledCharacterController",
-			"value": 4
-		},
-		{
-			"name": "DisabledRequestSetCollider",
-			"value": 8
-		},
-		{
-			"name": "DisabledGoundFixer",
-			"value": 16
-		},
-		{
-			"name": "DisabledIkController",
-			"value": 32
-		},
-		{
-			"name": "DisabledRagdoll",
-			"value": 64
-		},
-		{
-			"name": "DisabledPressController",
-			"value": 128
-		},
-		{
-			"name": "FixedPressController",
-			"value": 256
-		},
-		{
-			"name": "Invincible",
-			"value": 512
-		},
-		{
-			"name": "IgnoreBlow",
-			"value": 1024
-		},
-		{
-			"name": "IgnoreGrapple",
-			"value": 2048
-		}
-	],
+	"app.ropeway.SurvivorDefine.Restriction.Target": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "NonUpdate",
+				"value": 1
+			},
+			{
+				"name": "Hide",
+				"value": 2
+			},
+			{
+				"name": "DisabledCharacterController",
+				"value": 4
+			},
+			{
+				"name": "DisabledRequestSetCollider",
+				"value": 8
+			},
+			{
+				"name": "DisabledGoundFixer",
+				"value": 16
+			},
+			{
+				"name": "DisabledIkController",
+				"value": 32
+			},
+			{
+				"name": "DisabledRagdoll",
+				"value": 64
+			},
+			{
+				"name": "DisabledPressController",
+				"value": 128
+			},
+			{
+				"name": "FixedPressController",
+				"value": 256
+			},
+			{
+				"name": "Invincible",
+				"value": 512
+			},
+			{
+				"name": "IgnoreBlow",
+				"value": 1024
+			},
+			{
+				"name": "IgnoreGrapple",
+				"value": 2048
+			}
+		]
+	},
 	"via.os.dialog.Error": [
 		{
 			"name": "None",
@@ -27591,40 +27636,43 @@
 			"value": 4
 		}
 	],
-	"app.ropeway.SurvivorDefine.SurvivorMotionType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Male",
-			"value": 1
-		},
-		{
-			"name": "Male2",
-			"value": 2
-		},
-		{
-			"name": "Female",
-			"value": 4
-		},
-		{
-			"name": "Female2",
-			"value": 8
-		},
-		{
-			"name": "ChildMale",
-			"value": 16
-		},
-		{
-			"name": "ChildFemale",
-			"value": 32
-		},
-		{
-			"name": "Female3",
-			"value": 64
-		}
-	],
+	"app.ropeway.SurvivorDefine.SurvivorMotionType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Male",
+				"value": 1
+			},
+			{
+				"name": "Male2",
+				"value": 2
+			},
+			{
+				"name": "Female",
+				"value": 4
+			},
+			{
+				"name": "Female2",
+				"value": 8
+			},
+			{
+				"name": "ChildMale",
+				"value": 16
+			},
+			{
+				"name": "ChildFemale",
+				"value": 32
+			},
+			{
+				"name": "Female3",
+				"value": 64
+			}
+		]
+	},
 	"via.hid.FlickDirection": [
 		{
 			"name": "Up",
@@ -29469,32 +29517,35 @@
 			"value": 2
 		}
 	],
-	"via.attribute.FsmCategoryAttribute.Category": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "Mot",
-			"value": 2
-		},
-		{
-			"name": "Auto",
-			"value": 4
-		},
-		{
-			"name": "BehaviorTree",
-			"value": 8
-		},
-		{
-			"name": "Timeline",
-			"value": 16
-		}
-	],
+	"via.attribute.FsmCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "Mot",
+				"value": 2
+			},
+			{
+				"name": "Auto",
+				"value": 4
+			},
+			{
+				"name": "BehaviorTree",
+				"value": 8
+			},
+			{
+				"name": "Timeline",
+				"value": 16
+			}
+		]
+	},
 	"via.effect.script.EffectMaterialController.PlayTypeEnum": [
 		{
 			"name": "Return",
@@ -30177,32 +30228,35 @@
 			"value": 4
 		}
 	],
-	"app.ropeway.EnvironmentStandbyController.FolderActivateReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SceneActivate",
-			"value": 1
-		},
-		{
-			"name": "DynamicSpaceConnection",
-			"value": 4
-		},
-		{
-			"name": "LinkDraw",
-			"value": 8
-		},
-		{
-			"name": "NormalControlMask",
-			"value": 13
-		},
-		{
-			"name": "EventSpecialControl",
-			"value": 65536
-		}
-	],
+	"app.ropeway.EnvironmentStandbyController.FolderActivateReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SceneActivate",
+				"value": 1
+			},
+			{
+				"name": "DynamicSpaceConnection",
+				"value": 4
+			},
+			{
+				"name": "LinkDraw",
+				"value": 8
+			},
+			{
+				"name": "NormalControlMask",
+				"value": 13
+			},
+			{
+				"name": "EventSpecialControl",
+				"value": 65536
+			}
+		]
+	},
 	"app.ropeway.fsmv2.TraceVariableAction.TimingType": [
 		{
 			"name": "Start",
@@ -31058,20 +31112,23 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.SurvivorDefine.BodyParts": [
-		{
-			"name": "Body",
-			"value": 0
-		},
-		{
-			"name": "Sling",
-			"value": 100
-		},
-		{
-			"name": "Handgun",
-			"value": 200
-		}
-	],
+	"app.ropeway.SurvivorDefine.BodyParts": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Body",
+				"value": 0
+			},
+			{
+				"name": "Sling",
+				"value": 100
+			},
+			{
+				"name": "Handgun",
+				"value": 200
+			}
+		]
+	},
 	"app.ropeway.gimmick.action.GimmickRogueRaccoonFigure.State": [
 		{
 			"name": "INVALID",
@@ -31304,24 +31361,27 @@
 			"value": 3
 		}
 	],
-	"app.ropeway.FourFootLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		},
-		{
-			"name": "FRONT_LEFT",
-			"value": 4
-		},
-		{
-			"name": "FRONT_RIGHT",
-			"value": 8
-		}
-	],
+	"app.ropeway.FourFootLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			},
+			{
+				"name": "FRONT_LEFT",
+				"value": 4
+			},
+			{
+				"name": "FRONT_RIGHT",
+				"value": 8
+			}
+		]
+	},
 	"via.render.InterporateResolve": [
 		{
 			"name": "Default",
@@ -33586,16 +33646,19 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.TwoHandLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		}
-	],
+	"app.ropeway.TwoHandLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			}
+		]
+	},
 	"app.ropeway.gamemastering.RogueRecordManager.RogueRewardId": [
 		{
 			"name": "ACCESSORY_00",
@@ -35293,48 +35356,51 @@
 			"value": 2
 		}
 	],
-	"System.Threading.ThreadState": [
-		{
-			"name": "Running",
-			"value": 0
-		},
-		{
-			"name": "StopRequested",
-			"value": 1
-		},
-		{
-			"name": "SuspendRequested",
-			"value": 2
-		},
-		{
-			"name": "Background",
-			"value": 4
-		},
-		{
-			"name": "Unstarted",
-			"value": 8
-		},
-		{
-			"name": "Stopped",
-			"value": 16
-		},
-		{
-			"name": "WaitSleepJoin",
-			"value": 32
-		},
-		{
-			"name": "Suspended",
-			"value": 64
-		},
-		{
-			"name": "AbortRequested",
-			"value": 128
-		},
-		{
-			"name": "Aborted",
-			"value": 256
-		}
-	],
+	"System.Threading.ThreadState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Running",
+				"value": 0
+			},
+			{
+				"name": "StopRequested",
+				"value": 1
+			},
+			{
+				"name": "SuspendRequested",
+				"value": 2
+			},
+			{
+				"name": "Background",
+				"value": 4
+			},
+			{
+				"name": "Unstarted",
+				"value": 8
+			},
+			{
+				"name": "Stopped",
+				"value": 16
+			},
+			{
+				"name": "WaitSleepJoin",
+				"value": 32
+			},
+			{
+				"name": "Suspended",
+				"value": 64
+			},
+			{
+				"name": "AbortRequested",
+				"value": 128
+			},
+			{
+				"name": "Aborted",
+				"value": 256
+			}
+		]
+	},
 	"app.ropeway.fsmv2.GmkCustomJackHelperOn.StateType": [
 		{
 			"name": "BEFORE",
@@ -35831,20 +35897,23 @@
 			"value": 3
 		}
 	],
-	"via.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": [
-		{
-			"name": "Stamp",
-			"value": 1
-		},
-		{
-			"name": "Decal",
-			"value": 2
-		},
-		{
-			"name": "StampAndDecal",
-			"value": 3
-		}
-	],
+	"via.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Stamp",
+				"value": 1
+			},
+			{
+				"name": "Decal",
+				"value": 2
+			},
+			{
+				"name": "StampAndDecal",
+				"value": 3
+			}
+		]
+	},
 	"via.effect.VectorFieldDrawFlag": [
 		{
 			"name": "None",
@@ -36021,48 +36090,51 @@
 			"value": 3
 		}
 	],
-	"app.ropeway.EquipmentDefine.DisplayControlTarget": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Main",
-			"value": 1
-		},
-		{
-			"name": "Sub",
-			"value": 2
-		},
-		{
-			"name": "Holsters",
-			"value": 4
-		},
-		{
-			"name": "FlashLight",
-			"value": 8
-		},
-		{
-			"name": "FlashLightSource",
-			"value": 16
-		},
-		{
-			"name": "Reserve05",
-			"value": 32
-		},
-		{
-			"name": "Reserve06",
-			"value": 64
-		},
-		{
-			"name": "Other",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 255
-		}
-	],
+	"app.ropeway.EquipmentDefine.DisplayControlTarget": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Main",
+				"value": 1
+			},
+			{
+				"name": "Sub",
+				"value": 2
+			},
+			{
+				"name": "Holsters",
+				"value": 4
+			},
+			{
+				"name": "FlashLight",
+				"value": 8
+			},
+			{
+				"name": "FlashLightSource",
+				"value": 16
+			},
+			{
+				"name": "Reserve05",
+				"value": 32
+			},
+			{
+				"name": "Reserve06",
+				"value": 64
+			},
+			{
+				"name": "Other",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 255
+			}
+		]
+	},
 	"app.ropeway.enemy.em6000.MotionPattern.DirLR": [
 		{
 			"name": "Left",
@@ -43065,20 +43137,23 @@
 			"value": 0
 		}
 	],
-	"via.hid.gamePlayer.AutoDeviceSelectionFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "TryOnAssign",
-			"value": 2
-		},
-		{
-			"name": "TryOnReassign",
-			"value": 4
-		}
-	],
+	"via.hid.gamePlayer.AutoDeviceSelectionFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "TryOnAssign",
+				"value": 2
+			},
+			{
+				"name": "TryOnReassign",
+				"value": 4
+			}
+		]
+	},
 	"via.render.layer.DeferredLighting.AllowShadowType": [
 		{
 			"name": "Standard",
@@ -47823,16 +47898,19 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.MansionManager.NeighboringAreaInfo.NeighboringInfo.Attribute": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "DisconnectOnDynamicSpace",
-			"value": 1
-		}
-	],
+	"app.ropeway.MansionManager.NeighboringAreaInfo.NeighboringInfo.Attribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "DisconnectOnDynamicSpace",
+				"value": 1
+			}
+		]
+	},
 	"app.ropeway.gui.RogueInventoryBehavior.State": [
 		{
 			"name": "NoMove",
@@ -49971,140 +50049,143 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.ReNetData.Type": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Header",
-			"value": 1
-		},
-		{
-			"name": "Basic",
-			"value": 2
-		},
-		{
-			"name": "MainProgress",
-			"value": 4
-		},
-		{
-			"name": "ExtraProgress",
-			"value": 8
-		},
-		{
-			"name": "MainWeapon",
-			"value": 16
-		},
-		{
-			"name": "SubWeapon",
-			"value": 32
-		},
-		{
-			"name": "Bullet",
-			"value": 64
-		},
-		{
-			"name": "WeaponFlags",
-			"value": 112
-		},
-		{
-			"name": "HealItem",
-			"value": 128
-		},
-		{
-			"name": "CombineItem",
-			"value": 256
-		},
-		{
-			"name": "DropItem",
-			"value": 512
-		},
-		{
-			"name": "ItemFlags",
-			"value": 896
-		},
-		{
-			"name": "DefeatEnemy",
-			"value": 1024
-		},
-		{
-			"name": "BreakParts",
-			"value": 2048
-		},
-		{
-			"name": "EnemyFlags",
-			"value": 3072
-		},
-		{
-			"name": "GameOver",
-			"value": 4096
-		},
-		{
-			"name": "Costume",
-			"value": 8192
-		},
-		{
-			"name": "BonusModePlay",
-			"value": 16384
-		},
-		{
-			"name": "DlcPlay",
-			"value": 32768
-		},
-		{
-			"name": "DlcInstall",
-			"value": 65536
-		},
-		{
-			"name": "PuzzlePlay",
-			"value": 131072
-		},
-		{
-			"name": "Other",
-			"value": 262144
-		},
-		{
-			"name": "GameClear",
-			"value": 524288
-		},
-		{
-			"name": "GameClearExtra",
-			"value": 1048576
-		},
-		{
-			"name": "WeeklyChallenge",
-			"value": 2097152
-		},
-		{
-			"name": "Record",
-			"value": 4194304
-		},
-		{
-			"name": "Env",
-			"value": 8388608
-		},
-		{
-			"name": "Option",
-			"value": 16777216
-		},
-		{
-			"name": "WeeklyChallengeExtra",
-			"value": 33554432
-		},
-		{
-			"name": "GameClearLost",
-			"value": 67108864
-		},
-		{
-			"name": "RecordLost",
-			"value": 134217728
-		},
-		{
-			"name": "TransferSaveData",
-			"value": 268435456
-		}
-	],
+	"app.ropeway.ReNetData.Type": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Header",
+				"value": 1
+			},
+			{
+				"name": "Basic",
+				"value": 2
+			},
+			{
+				"name": "MainProgress",
+				"value": 4
+			},
+			{
+				"name": "ExtraProgress",
+				"value": 8
+			},
+			{
+				"name": "MainWeapon",
+				"value": 16
+			},
+			{
+				"name": "SubWeapon",
+				"value": 32
+			},
+			{
+				"name": "Bullet",
+				"value": 64
+			},
+			{
+				"name": "WeaponFlags",
+				"value": 112
+			},
+			{
+				"name": "HealItem",
+				"value": 128
+			},
+			{
+				"name": "CombineItem",
+				"value": 256
+			},
+			{
+				"name": "DropItem",
+				"value": 512
+			},
+			{
+				"name": "ItemFlags",
+				"value": 896
+			},
+			{
+				"name": "DefeatEnemy",
+				"value": 1024
+			},
+			{
+				"name": "BreakParts",
+				"value": 2048
+			},
+			{
+				"name": "EnemyFlags",
+				"value": 3072
+			},
+			{
+				"name": "GameOver",
+				"value": 4096
+			},
+			{
+				"name": "Costume",
+				"value": 8192
+			},
+			{
+				"name": "BonusModePlay",
+				"value": 16384
+			},
+			{
+				"name": "DlcPlay",
+				"value": 32768
+			},
+			{
+				"name": "DlcInstall",
+				"value": 65536
+			},
+			{
+				"name": "PuzzlePlay",
+				"value": 131072
+			},
+			{
+				"name": "Other",
+				"value": 262144
+			},
+			{
+				"name": "GameClear",
+				"value": 524288
+			},
+			{
+				"name": "GameClearExtra",
+				"value": 1048576
+			},
+			{
+				"name": "WeeklyChallenge",
+				"value": 2097152
+			},
+			{
+				"name": "Record",
+				"value": 4194304
+			},
+			{
+				"name": "Env",
+				"value": 8388608
+			},
+			{
+				"name": "Option",
+				"value": 16777216
+			},
+			{
+				"name": "WeeklyChallengeExtra",
+				"value": 33554432
+			},
+			{
+				"name": "GameClearLost",
+				"value": 67108864
+			},
+			{
+				"name": "RecordLost",
+				"value": 134217728
+			},
+			{
+				"name": "TransferSaveData",
+				"value": 268435456
+			}
+		]
+	},
 	"via.motion.LowerBodyRetarget.TransformMode": [
 		{
 			"name": "Default",
@@ -52481,40 +52562,43 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.SurvivorDefine.ActionOrder.Petient": [
-		{
-			"name": "INVALID",
-			"value": 0
-		},
-		{
-			"name": "IDLE",
-			"value": 1
-		},
-		{
-			"name": "LIGHT_WHEEL",
-			"value": 2
-		},
-		{
-			"name": "MOVE",
-			"value": 4
-		},
-		{
-			"name": "JOG",
-			"value": 8
-		},
-		{
-			"name": "HOLD",
-			"value": 16
-		},
-		{
-			"name": "HOLD_WHEEL",
-			"value": 32
-		},
-		{
-			"name": "HOLD_WALK",
-			"value": 64
-		}
-	],
+	"app.ropeway.SurvivorDefine.ActionOrder.Petient": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INVALID",
+				"value": 0
+			},
+			{
+				"name": "IDLE",
+				"value": 1
+			},
+			{
+				"name": "LIGHT_WHEEL",
+				"value": 2
+			},
+			{
+				"name": "MOVE",
+				"value": 4
+			},
+			{
+				"name": "JOG",
+				"value": 8
+			},
+			{
+				"name": "HOLD",
+				"value": 16
+			},
+			{
+				"name": "HOLD_WHEEL",
+				"value": 32
+			},
+			{
+				"name": "HOLD_WALK",
+				"value": 64
+			}
+		]
+	},
 	"via.storage.saveService.SaveIcon": [
 		{
 			"name": "IconNew",
@@ -53487,24 +53571,27 @@
 			"value": 4
 		}
 	],
-	"app.ropeway.CharacterDefine.MarkerReactionType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Heat",
-			"value": 1
-		},
-		{
-			"name": "Burn",
-			"value": 2
-		},
-		{
-			"name": "Cold",
-			"value": 4
-		}
-	],
+	"app.ropeway.CharacterDefine.MarkerReactionType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Heat",
+				"value": 1
+			},
+			{
+				"name": "Burn",
+				"value": 2
+			},
+			{
+				"name": "Cold",
+				"value": 4
+			}
+		]
+	},
 	"app.ropeway.effect.script.EffectRecordSave.SaveTypes": [
 		{
 			"name": "Template",
@@ -54195,40 +54282,43 @@
 			"value": 2
 		}
 	],
-	"via.hid.DeviceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ForceFeedback",
-			"value": 1
-		},
-		{
-			"name": "TouchInterface",
-			"value": 2
-		},
-		{
-			"name": "GamePadButtonCLeft",
-			"value": 4
-		},
-		{
-			"name": "GamePadButtonCCenter",
-			"value": 8
-		},
-		{
-			"name": "GamePadButtonCRight",
-			"value": 16
-		},
-		{
-			"name": "MotionSensor",
-			"value": 32
-		},
-		{
-			"name": "Tracking",
-			"value": 64
-		}
-	],
+	"via.hid.DeviceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ForceFeedback",
+				"value": 1
+			},
+			{
+				"name": "TouchInterface",
+				"value": 2
+			},
+			{
+				"name": "GamePadButtonCLeft",
+				"value": 4
+			},
+			{
+				"name": "GamePadButtonCCenter",
+				"value": 8
+			},
+			{
+				"name": "GamePadButtonCRight",
+				"value": 16
+			},
+			{
+				"name": "MotionSensor",
+				"value": 32
+			},
+			{
+				"name": "Tracking",
+				"value": 64
+			}
+		]
+	},
 	"app.ropeway.RogueGUIMaster.RogueState": [
 		{
 			"name": "ExtraMenu",
@@ -54419,48 +54509,51 @@
 			"value": 5
 		}
 	],
-	"System.Globalization.DateTimeStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AllowLeadingWhite",
-			"value": 1
-		},
-		{
-			"name": "AllowTrailingWhite",
-			"value": 2
-		},
-		{
-			"name": "AllowInnerWhite",
-			"value": 4
-		},
-		{
-			"name": "AllowWhiteSpaces",
-			"value": 7
-		},
-		{
-			"name": "NoCurrentDateDefault",
-			"value": 8
-		},
-		{
-			"name": "AdjustToUniversal",
-			"value": 16
-		},
-		{
-			"name": "AssumeLocal",
-			"value": 32
-		},
-		{
-			"name": "AssumeUniversal",
-			"value": 64
-		},
-		{
-			"name": "RoundtripKind",
-			"value": 128
-		}
-	],
+	"System.Globalization.DateTimeStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AllowLeadingWhite",
+				"value": 1
+			},
+			{
+				"name": "AllowTrailingWhite",
+				"value": 2
+			},
+			{
+				"name": "AllowInnerWhite",
+				"value": 4
+			},
+			{
+				"name": "AllowWhiteSpaces",
+				"value": 7
+			},
+			{
+				"name": "NoCurrentDateDefault",
+				"value": 8
+			},
+			{
+				"name": "AdjustToUniversal",
+				"value": 16
+			},
+			{
+				"name": "AssumeLocal",
+				"value": 32
+			},
+			{
+				"name": "AssumeUniversal",
+				"value": 64
+			},
+			{
+				"name": "RoundtripKind",
+				"value": 128
+			}
+		]
+	},
 	"via.render.SupportRenderMode": [
 		{
 			"name": "DeferredAndForward",
@@ -59311,28 +59404,31 @@
 			"value": 3
 		}
 	],
-	"app.ropeway.navigation.Definition.Attr0": [
-		{
-			"name": "Ground",
-			"value": 1
-		},
-		{
-			"name": "Wall",
-			"value": 2
-		},
-		{
-			"name": "Ceiling",
-			"value": 4
-		},
-		{
-			"name": "WallCorner",
-			"value": 8
-		},
-		{
-			"name": "SewerSideway",
-			"value": 16
-		}
-	],
+	"app.ropeway.navigation.Definition.Attr0": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Ground",
+				"value": 1
+			},
+			{
+				"name": "Wall",
+				"value": 2
+			},
+			{
+				"name": "Ceiling",
+				"value": 4
+			},
+			{
+				"name": "WallCorner",
+				"value": 8
+			},
+			{
+				"name": "SewerSideway",
+				"value": 16
+			}
+		]
+	},
 	"app.ropeway.EnemyMoveController.ForceMoveInfo.EndTypeAttr": [
 		{
 			"name": "Attention",
@@ -60471,20 +60567,23 @@
 			"value": 2147483647
 		}
 	],
-	"app.ropeway.enemy.sensor.EnemySensor.SensorKind": [
-		{
-			"name": "SIGHT",
-			"value": 1
-		},
-		{
-			"name": "HEARING",
-			"value": 2
-		},
-		{
-			"name": "TOUCH",
-			"value": 4
-		}
-	],
+	"app.ropeway.enemy.sensor.EnemySensor.SensorKind": {
+		"flags": true,
+		"values": [
+			{
+				"name": "SIGHT",
+				"value": 1
+			},
+			{
+				"name": "HEARING",
+				"value": 2
+			},
+			{
+				"name": "TOUCH",
+				"value": 4
+			}
+		]
+	},
 	"via.motion.ActorMotion.StartFrameMode": [
 		{
 			"name": "CurrentFrame",
@@ -60532,16 +60631,19 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.camera.fsmv2.action.ActionCameraPlayRequestRoot.MotSeqCheckTargetMask": [
-		{
-			"name": "FsmOwner",
-			"value": 1
-		},
-		{
-			"name": "MotionJackTarget",
-			"value": 2
-		}
-	],
+	"app.ropeway.camera.fsmv2.action.ActionCameraPlayRequestRoot.MotSeqCheckTargetMask": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FsmOwner",
+				"value": 1
+			},
+			{
+				"name": "MotionJackTarget",
+				"value": 2
+			}
+		]
+	},
 	"app.ropeway.RagdollController.RequestTriggerKind": [
 		{
 			"name": "TransformRagdoll",
@@ -61854,68 +61956,71 @@
 			"value": 1
 		}
 	],
-	"System.AttributeTargets": [
-		{
-			"name": "Assembly",
-			"value": 1
-		},
-		{
-			"name": "Module",
-			"value": 2
-		},
-		{
-			"name": "Class",
-			"value": 4
-		},
-		{
-			"name": "Struct",
-			"value": 8
-		},
-		{
-			"name": "Enum",
-			"value": 16
-		},
-		{
-			"name": "Constructor",
-			"value": 32
-		},
-		{
-			"name": "Method",
-			"value": 64
-		},
-		{
-			"name": "Property",
-			"value": 128
-		},
-		{
-			"name": "Field",
-			"value": 256
-		},
-		{
-			"name": "Event",
-			"value": 512
-		},
-		{
-			"name": "Interface",
-			"value": 1024
-		},
-		{
-			"name": "Parameter",
-			"value": 2048
-		},
-		{
-			"name": "Delegate",
-			"value": 4096
-		},
-		{
-			"name": "ReturnValue",
-			"value": 8192
-		},
-		{
-			"name": "All",
-			"value": 16383
-		}
-	],
+	"System.AttributeTargets": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Assembly",
+				"value": 1
+			},
+			{
+				"name": "Module",
+				"value": 2
+			},
+			{
+				"name": "Class",
+				"value": 4
+			},
+			{
+				"name": "Struct",
+				"value": 8
+			},
+			{
+				"name": "Enum",
+				"value": 16
+			},
+			{
+				"name": "Constructor",
+				"value": 32
+			},
+			{
+				"name": "Method",
+				"value": 64
+			},
+			{
+				"name": "Property",
+				"value": 128
+			},
+			{
+				"name": "Field",
+				"value": 256
+			},
+			{
+				"name": "Event",
+				"value": 512
+			},
+			{
+				"name": "Interface",
+				"value": 1024
+			},
+			{
+				"name": "Parameter",
+				"value": 2048
+			},
+			{
+				"name": "Delegate",
+				"value": 4096
+			},
+			{
+				"name": "ReturnValue",
+				"value": 8192
+			},
+			{
+				"name": "All",
+				"value": 16383
+			}
+		]
+	},
 	"app.ropeway.gimmick.action.AreaAccessSensor.NPCType": [
 		{
 			"name": "ADA",
@@ -64911,16 +65016,19 @@
 			"value": 1
 		}
 	],
-	"via.Serializer.Options": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "FloatValueCompression",
-			"value": 1
-		}
-	],
+	"via.Serializer.Options": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "FloatValueCompression",
+				"value": 1
+			}
+		]
+	},
 	"app.ropeway.EnemyDataManager.DynamicMotionBankInfo.LoadStatus": [
 		{
 			"name": "STANDBY",
@@ -65507,28 +65615,31 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.CallingConventions": [
-		{
-			"name": "Standard",
-			"value": 1
-		},
-		{
-			"name": "VarArgs",
-			"value": 2
-		},
-		{
-			"name": "Any",
-			"value": 3
-		},
-		{
-			"name": "HasThis",
-			"value": 32
-		},
-		{
-			"name": "ExplicitThis",
-			"value": 64
-		}
-	],
+	"System.Reflection.CallingConventions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Standard",
+				"value": 1
+			},
+			{
+				"name": "VarArgs",
+				"value": 2
+			},
+			{
+				"name": "Any",
+				"value": 3
+			},
+			{
+				"name": "HasThis",
+				"value": 32
+			},
+			{
+				"name": "ExplicitThis",
+				"value": 64
+			}
+		]
+	},
 	"via.physics.CharacterController.ContactType": [
 		{
 			"name": "Ground",
@@ -68457,136 +68568,139 @@
 			"value": 21
 		}
 	],
-	"System.Reflection.TypeAttributes": [
-		{
-			"name": "NotPublic",
-			"value": 0
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
-			"name": "Class",
-			"value": 0
-		},
-		{
-			"name": "Public",
-			"value": 1
-		},
-		{
-			"name": "NestedPublic",
-			"value": 2
-		},
-		{
-			"name": "NestedPrivate",
-			"value": 3
-		},
-		{
-			"name": "NestedFamily",
-			"value": 4
-		},
-		{
-			"name": "NestedAssembly",
-			"value": 5
-		},
-		{
-			"name": "NestedFamANDAssem",
-			"value": 6
-		},
-		{
-			"name": "NestedFamORAssem",
-			"value": 7
-		},
-		{
-			"name": "VisibilityMask",
-			"value": 7
-		},
-		{
-			"name": "SequentialLayout",
-			"value": 8
-		},
-		{
-			"name": "ExplicitLayout",
-			"value": 16
-		},
-		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "Interface",
-			"value": 32
-		},
-		{
-			"name": "ClassSemanticsMask",
-			"value": 32
-		},
-		{
-			"name": "Abstract",
-			"value": 128
-		},
-		{
-			"name": "Sealed",
-			"value": 256
-		},
-		{
-			"name": "SpecialName",
-			"value": 1024
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
-		},
-		{
-			"name": "Import",
-			"value": 4096
-		},
-		{
-			"name": "Serializable",
-			"value": 8192
-		},
-		{
-			"name": "WindowsRuntime",
-			"value": 16384
-		},
-		{
-			"name": "UnicodeClass",
-			"value": 65536
-		},
-		{
-			"name": "AutoClass",
-			"value": 131072
-		},
-		{
-			"name": "CustomFormatClass",
-			"value": 196608
-		},
-		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "HasSecurity",
-			"value": 262144
-		},
-		{
-			"name": "ReservedMask",
-			"value": 264192
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		}
-	],
+	"System.Reflection.TypeAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NotPublic",
+				"value": 0
+			},
+			{
+				"name": "AutoLayout",
+				"value": 0
+			},
+			{
+				"name": "AnsiClass",
+				"value": 0
+			},
+			{
+				"name": "Class",
+				"value": 0
+			},
+			{
+				"name": "Public",
+				"value": 1
+			},
+			{
+				"name": "NestedPublic",
+				"value": 2
+			},
+			{
+				"name": "NestedPrivate",
+				"value": 3
+			},
+			{
+				"name": "NestedFamily",
+				"value": 4
+			},
+			{
+				"name": "NestedAssembly",
+				"value": 5
+			},
+			{
+				"name": "NestedFamANDAssem",
+				"value": 6
+			},
+			{
+				"name": "NestedFamORAssem",
+				"value": 7
+			},
+			{
+				"name": "VisibilityMask",
+				"value": 7
+			},
+			{
+				"name": "SequentialLayout",
+				"value": 8
+			},
+			{
+				"name": "ExplicitLayout",
+				"value": 16
+			},
+			{
+				"name": "LayoutMask",
+				"value": 24
+			},
+			{
+				"name": "Interface",
+				"value": 32
+			},
+			{
+				"name": "ClassSemanticsMask",
+				"value": 32
+			},
+			{
+				"name": "Abstract",
+				"value": 128
+			},
+			{
+				"name": "Sealed",
+				"value": 256
+			},
+			{
+				"name": "SpecialName",
+				"value": 1024
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 2048
+			},
+			{
+				"name": "Import",
+				"value": 4096
+			},
+			{
+				"name": "Serializable",
+				"value": 8192
+			},
+			{
+				"name": "WindowsRuntime",
+				"value": 16384
+			},
+			{
+				"name": "UnicodeClass",
+				"value": 65536
+			},
+			{
+				"name": "AutoClass",
+				"value": 131072
+			},
+			{
+				"name": "CustomFormatClass",
+				"value": 196608
+			},
+			{
+				"name": "StringFormatMask",
+				"value": 196608
+			},
+			{
+				"name": "HasSecurity",
+				"value": 262144
+			},
+			{
+				"name": "ReservedMask",
+				"value": 264192
+			},
+			{
+				"name": "BeforeFieldInit",
+				"value": 1048576
+			},
+			{
+				"name": "CustomFormatMask",
+				"value": 12582912
+			}
+		]
+	},
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.State": [
 		{
 			"name": "DISABLE",
@@ -69945,32 +70059,35 @@
 			"value": 3
 		}
 	],
-	"via.attribute.AreaQueryCategoryAttribute.Category": [
-		{
-			"name": "Unknown",
-			"value": 0
-		},
-		{
-			"name": "AreaItem",
-			"value": 1
-		},
-		{
-			"name": "Position",
-			"value": 2
-		},
-		{
-			"name": "GameObject",
-			"value": 4
-		},
-		{
-			"name": "AreaRegion",
-			"value": 8
-		},
-		{
-			"name": "Any",
-			"value": 255
-		}
-	],
+	"via.attribute.AreaQueryCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unknown",
+				"value": 0
+			},
+			{
+				"name": "AreaItem",
+				"value": 1
+			},
+			{
+				"name": "Position",
+				"value": 2
+			},
+			{
+				"name": "GameObject",
+				"value": 4
+			},
+			{
+				"name": "AreaRegion",
+				"value": 8
+			},
+			{
+				"name": "Any",
+				"value": 255
+			}
+		]
+	},
 	"app.ropeway.RagdollController.RagdollStatus": [
 		{
 			"name": "DEACTIVATE",
@@ -72775,16 +72892,19 @@
 			"value": 3
 		}
 	],
-	"app.ropeway.SurvivorAssignManager.TransactionOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "KeepPlayerPosition",
-			"value": 1
-		}
-	],
+	"app.ropeway.SurvivorAssignManager.TransactionOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "KeepPlayerPosition",
+				"value": 1
+			}
+		]
+	},
 	"System.Runtime.CompilerServices.MethodCodeType": [
 		{
 			"name": "IL",
@@ -73283,140 +73403,143 @@
 			"value": 3
 		}
 	],
-	"via.AABB.VoronoiId": [
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "X_MinBit",
-			"value": 1
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
-			"name": "X_MaxBit",
-			"value": 2
-		},
-		{
-			"name": "P_YZX1",
-			"value": 2
-		},
-		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "P_ZXY0",
-			"value": 4
-		},
-		{
-			"name": "E_ZX0Y0",
-			"value": 5
-		},
-		{
-			"name": "E_ZX1Y0",
-			"value": 6
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "E_ZX0Y1",
-			"value": 9
-		},
-		{
-			"name": "E_ZX1Y1",
-			"value": 10
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "V_X0Y0Z0",
-			"value": 21
-		},
-		{
-			"name": "V_X1Y0Z0",
-			"value": 22
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "V_X0Y1Z0",
-			"value": 25
-		},
-		{
-			"name": "V_X1Y1Z0",
-			"value": 26
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "V_X0Y0Z1",
-			"value": 37
-		},
-		{
-			"name": "V_X1Y0Z1",
-			"value": 38
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "V_X0Y1Z1",
-			"value": 41
-		},
-		{
-			"name": "V_X1Y1Z1",
-			"value": 42
-		}
-	],
+	"via.AABB.VoronoiId": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Internal",
+				"value": 0
+			},
+			{
+				"name": "X_MinBit",
+				"value": 1
+			},
+			{
+				"name": "P_YZX0",
+				"value": 1
+			},
+			{
+				"name": "X_MaxBit",
+				"value": 2
+			},
+			{
+				"name": "P_YZX1",
+				"value": 2
+			},
+			{
+				"name": "Y_MinBit",
+				"value": 4
+			},
+			{
+				"name": "P_ZXY0",
+				"value": 4
+			},
+			{
+				"name": "E_ZX0Y0",
+				"value": 5
+			},
+			{
+				"name": "E_ZX1Y0",
+				"value": 6
+			},
+			{
+				"name": "Y_MaxBit",
+				"value": 8
+			},
+			{
+				"name": "P_ZXY1",
+				"value": 8
+			},
+			{
+				"name": "E_ZX0Y1",
+				"value": 9
+			},
+			{
+				"name": "E_ZX1Y1",
+				"value": 10
+			},
+			{
+				"name": "Z_MinBit",
+				"value": 16
+			},
+			{
+				"name": "P_XYZ0",
+				"value": 16
+			},
+			{
+				"name": "E_YZ0X0",
+				"value": 17
+			},
+			{
+				"name": "E_YZ0X1",
+				"value": 18
+			},
+			{
+				"name": "E_XY0Z0",
+				"value": 20
+			},
+			{
+				"name": "V_X0Y0Z0",
+				"value": 21
+			},
+			{
+				"name": "V_X1Y0Z0",
+				"value": 22
+			},
+			{
+				"name": "E_XY1Z0",
+				"value": 24
+			},
+			{
+				"name": "V_X0Y1Z0",
+				"value": 25
+			},
+			{
+				"name": "V_X1Y1Z0",
+				"value": 26
+			},
+			{
+				"name": "Z_MaxBit",
+				"value": 32
+			},
+			{
+				"name": "P_XYZ1",
+				"value": 32
+			},
+			{
+				"name": "E_YZ1X0",
+				"value": 33
+			},
+			{
+				"name": "E_YZ1X1",
+				"value": 34
+			},
+			{
+				"name": "E_XY0Z1",
+				"value": 36
+			},
+			{
+				"name": "V_X0Y0Z1",
+				"value": 37
+			},
+			{
+				"name": "V_X1Y0Z1",
+				"value": 38
+			},
+			{
+				"name": "E_XY1Z1",
+				"value": 40
+			},
+			{
+				"name": "V_X0Y1Z1",
+				"value": 41
+			},
+			{
+				"name": "V_X1Y1Z1",
+				"value": 42
+			}
+		]
+	},
 	"via.navigation.map.LinkObject.LinkStatus": [
 		{
 			"name": "LinkStatus_Enabled",
@@ -73591,28 +73714,31 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.network.service.StoreServiceControllerForXB1.ProductItemTypes": [
-		{
-			"name": "App",
-			"value": 1
-		},
-		{
-			"name": "Game",
-			"value": 1
-		},
-		{
-			"name": "Consumable",
-			"value": 4
-		},
-		{
-			"name": "Durable",
-			"value": 8
-		},
-		{
-			"name": "GameDemo",
-			"value": 16
-		}
-	],
+	"app.ropeway.network.service.StoreServiceControllerForXB1.ProductItemTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "App",
+				"value": 1
+			},
+			{
+				"name": "Game",
+				"value": 1
+			},
+			{
+				"name": "Consumable",
+				"value": 4
+			},
+			{
+				"name": "Durable",
+				"value": 8
+			},
+			{
+				"name": "GameDemo",
+				"value": 16
+			}
+		]
+	},
 	"app.ropeway.gui.NewInventorySlotBehavior.SlotSelectMode": [
 		{
 			"name": "Normal",
@@ -74797,28 +74923,31 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.PlatformType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "STM",
-			"value": 1
-		},
-		{
-			"name": "XBS",
-			"value": 2
-		},
-		{
-			"name": "PS5",
-			"value": 4
-		},
-		{
-			"name": "All",
-			"value": 7
-		}
-	],
+	"app.ropeway.PlatformType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "STM",
+				"value": 1
+			},
+			{
+				"name": "XBS",
+				"value": 2
+			},
+			{
+				"name": "PS5",
+				"value": 4
+			},
+			{
+				"name": "All",
+				"value": 7
+			}
+		]
+	},
 	"app.ropeway.gimmick.action.GimmickC4Bomb.C4State": [
 		{
 			"name": "INIT",
@@ -75011,24 +75140,27 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.EnvironmentStandbyManager.PauseLoadReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Timeline",
-			"value": 1
-		},
-		{
-			"name": "SurvivorControl",
-			"value": 2
-		},
-		{
-			"name": "DebugMenu",
-			"value": 4
-		}
-	],
+	"app.ropeway.EnvironmentStandbyManager.PauseLoadReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Timeline",
+				"value": 1
+			},
+			{
+				"name": "SurvivorControl",
+				"value": 2
+			},
+			{
+				"name": "DebugMenu",
+				"value": 4
+			}
+		]
+	},
 	"app.ropeway.enemy.em5000.Em5000Think.CheckEliminateResult": [
 		{
 			"name": "Stay",
@@ -77022,24 +77154,27 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.fsm.OwnerFsmComponentType": [
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "MotionFsm",
-			"value": 2
-		},
-		{
-			"name": "MotionJackFsm",
-			"value": 4
-		},
-		{
-			"name": "Other",
-			"value": 1073741824
-		}
-	],
+	"app.ropeway.fsm.OwnerFsmComponentType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "MotionFsm",
+				"value": 2
+			},
+			{
+				"name": "MotionJackFsm",
+				"value": 4
+			},
+			{
+				"name": "Other",
+				"value": 1073741824
+			}
+		]
+	},
 	"app.ropeway.enemy.savedata.EmSaveData.HitPointDataIndex": [
 		{
 			"name": "DEFAULT_HITPOINT",
@@ -77828,64 +77963,67 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.EquipmentDefine.Bullet": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Handgun",
-			"value": 1
-		},
-		{
-			"name": "Shotgun",
-			"value": 2
-		},
-		{
-			"name": "SubMachinegun",
-			"value": 4
-		},
-		{
-			"name": "Magnum",
-			"value": 8
-		},
-		{
-			"name": "AcidGrenade",
-			"value": 16
-		},
-		{
-			"name": "FireGrenade",
-			"value": 32
-		},
-		{
-			"name": "EnergyPack",
-			"value": 64
-		},
-		{
-			"name": "Battery",
-			"value": 128
-		},
-		{
-			"name": "Fuel",
-			"value": 256
-		},
-		{
-			"name": "Handgun2",
-			"value": 512
-		},
-		{
-			"name": "Magnum2",
-			"value": 1024
-		},
-		{
-			"name": "Rocket",
-			"value": 2048
-		},
-		{
-			"name": "Minigun",
-			"value": 4096
-		}
-	],
+	"app.ropeway.EquipmentDefine.Bullet": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Handgun",
+				"value": 1
+			},
+			{
+				"name": "Shotgun",
+				"value": 2
+			},
+			{
+				"name": "SubMachinegun",
+				"value": 4
+			},
+			{
+				"name": "Magnum",
+				"value": 8
+			},
+			{
+				"name": "AcidGrenade",
+				"value": 16
+			},
+			{
+				"name": "FireGrenade",
+				"value": 32
+			},
+			{
+				"name": "EnergyPack",
+				"value": 64
+			},
+			{
+				"name": "Battery",
+				"value": 128
+			},
+			{
+				"name": "Fuel",
+				"value": 256
+			},
+			{
+				"name": "Handgun2",
+				"value": 512
+			},
+			{
+				"name": "Magnum2",
+				"value": 1024
+			},
+			{
+				"name": "Rocket",
+				"value": 2048
+			},
+			{
+				"name": "Minigun",
+				"value": 4096
+			}
+		]
+	},
 	"app.ropeway.enemy.em0000.RoleAction.WindowSealed": [
 		{
 			"name": "REACH",
@@ -78772,24 +78910,27 @@
 			"value": 100
 		}
 	],
-	"app.ropeway.fsmv2.OwnerFsmComponentType": [
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "MotionFsm",
-			"value": 2
-		},
-		{
-			"name": "MotionJackFsm",
-			"value": 4
-		},
-		{
-			"name": "Other",
-			"value": 1073741824
-		}
-	],
+	"app.ropeway.fsmv2.OwnerFsmComponentType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "MotionFsm",
+				"value": 2
+			},
+			{
+				"name": "MotionJackFsm",
+				"value": 4
+			},
+			{
+				"name": "Other",
+				"value": 1073741824
+			}
+		]
+	},
 	"via.motion.detail.ChainDebugMode": [
 		{
 			"name": "DebugDraw",
@@ -81675,28 +81816,31 @@
 			"value": 32768
 		}
 	],
-	"app.ropeway.CollisionDefine.AttackEnchantAttribute": [
-		{
-			"name": "Poison",
-			"value": 1
-		},
-		{
-			"name": "Acid",
-			"value": 2
-		},
-		{
-			"name": "Burn",
-			"value": 4
-		},
-		{
-			"name": "Electric",
-			"value": 8
-		},
-		{
-			"name": "PairLinkRay",
-			"value": 16
-		}
-	],
+	"app.ropeway.CollisionDefine.AttackEnchantAttribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Poison",
+				"value": 1
+			},
+			{
+				"name": "Acid",
+				"value": 2
+			},
+			{
+				"name": "Burn",
+				"value": 4
+			},
+			{
+				"name": "Electric",
+				"value": 8
+			},
+			{
+				"name": "PairLinkRay",
+				"value": 16
+			}
+		]
+	},
 	"via.network.error.CauseInvitation": [
 		{
 			"name": "Debug",
@@ -82487,20 +82631,23 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.qc.QualityPerformanceBalancer.PauseReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Debug",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		}
-	],
+	"app.ropeway.qc.QualityPerformanceBalancer.PauseReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Debug",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			}
+		]
+	},
 	"app.ropeway.posteffect.SetPostEffectParam.UseParamBitFlags": [
 		{
 			"name": "UseChangeFogParam",
@@ -82801,72 +82948,75 @@
 			"value": 11
 		}
 	],
-	"System.Reflection.MethodImplAttributes": [
-		{
-			"name": "IL",
-			"value": 0
-		},
-		{
-			"name": "Managed",
-			"value": 0
-		},
-		{
-			"name": "Native",
-			"value": 1
-		},
-		{
-			"name": "OPTIL",
-			"value": 2
-		},
-		{
-			"name": "CodeTypeMask",
-			"value": 3
-		},
-		{
-			"name": "Runtime",
-			"value": 3
-		},
-		{
-			"name": "ManagedMask",
-			"value": 4
-		},
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
-			"name": "MaxMethodImplVal",
-			"value": 65535
-		}
-	],
+	"System.Reflection.MethodImplAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "IL",
+				"value": 0
+			},
+			{
+				"name": "Managed",
+				"value": 0
+			},
+			{
+				"name": "Native",
+				"value": 1
+			},
+			{
+				"name": "OPTIL",
+				"value": 2
+			},
+			{
+				"name": "CodeTypeMask",
+				"value": 3
+			},
+			{
+				"name": "Runtime",
+				"value": 3
+			},
+			{
+				"name": "ManagedMask",
+				"value": 4
+			},
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			},
+			{
+				"name": "MaxMethodImplVal",
+				"value": 65535
+			}
+		]
+	},
 	"via.behaviortree.SelectorCallerArg.EventType": [
 		{
 			"name": "None",
@@ -84111,24 +84261,27 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.fsmv2.ExecutePhase": [
-		{
-			"name": "START",
-			"value": 1
-		},
-		{
-			"name": "UPDATE",
-			"value": 2
-		},
-		{
-			"name": "END",
-			"value": 4
-		},
-		{
-			"name": "SEQUENCE",
-			"value": 8
-		}
-	],
+	"app.ropeway.fsmv2.ExecutePhase": {
+		"flags": true,
+		"values": [
+			{
+				"name": "START",
+				"value": 1
+			},
+			{
+				"name": "UPDATE",
+				"value": 2
+			},
+			{
+				"name": "END",
+				"value": 4
+			},
+			{
+				"name": "SEQUENCE",
+				"value": 8
+			}
+		]
+	},
 	"app.ropeway.gimmick.option.ChangeMapSpaceInfoSettings.Param.Command": [
 		{
 			"name": "Invalid",
@@ -84351,124 +84504,127 @@
 			"value": 2
 		}
 	],
-	"via.SystemServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Language",
-			"value": 1
-		},
-		{
-			"name": "DateFormat",
-			"value": 2
-		},
-		{
-			"name": "TimeFormat",
-			"value": 4
-		},
-		{
-			"name": "TimeZoneOffset",
-			"value": 8
-		},
-		{
-			"name": "SummerTime",
-			"value": 16
-		},
-		{
-			"name": "SystemUiOverlay",
-			"value": 32
-		},
-		{
-			"name": "BackgroundExecution",
-			"value": 64
-		},
-		{
-			"name": "ApplicationSuspend",
-			"value": 128
-		},
-		{
-			"name": "ApplicationResume",
-			"value": 256
-		},
-		{
-			"name": "GetDisplaySafeAreaRatio",
-			"value": 512
-		},
-		{
-			"name": "SplashScreenControl",
-			"value": 1024
-		},
-		{
-			"name": "ScreenSaverControl",
-			"value": 2048
-		},
-		{
-			"name": "ApplicationParameter",
-			"value": 4096
-		},
-		{
-			"name": "SkuFlag",
-			"value": 8192
-		},
-		{
-			"name": "ResetVrPosition",
-			"value": 16384
-		},
-		{
-			"name": "OpenShareMenu",
-			"value": 32768
-		},
-		{
-			"name": "VideoRecorder",
-			"value": 65536
-		},
-		{
-			"name": "ApplicationActivate",
-			"value": 131072
-		},
-		{
-			"name": "ApplicationDeactivate",
-			"value": 262144
-		},
-		{
-			"name": "Country",
-			"value": 524288
-		},
-		{
-			"name": "AccountPicker",
-			"value": 1048576
-		},
-		{
-			"name": "Geography",
-			"value": 4194304
-		},
-		{
-			"name": "SetScreenBrightness",
-			"value": 8388608
-		},
-		{
-			"name": "GetApplicationVersion",
-			"value": 8388608
-		},
-		{
-			"name": "ApplicationExitRequestControl",
-			"value": 16777216
-		},
-		{
-			"name": "NoticeScreenShownControl",
-			"value": 33554432
-		},
-		{
-			"name": "InputIdleSectionControl",
-			"value": 67108864
-		},
-		{
-			"name": "DyingMessage",
-			"value": 134217728
-		}
-	],
+	"via.SystemServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Language",
+				"value": 1
+			},
+			{
+				"name": "DateFormat",
+				"value": 2
+			},
+			{
+				"name": "TimeFormat",
+				"value": 4
+			},
+			{
+				"name": "TimeZoneOffset",
+				"value": 8
+			},
+			{
+				"name": "SummerTime",
+				"value": 16
+			},
+			{
+				"name": "SystemUiOverlay",
+				"value": 32
+			},
+			{
+				"name": "BackgroundExecution",
+				"value": 64
+			},
+			{
+				"name": "ApplicationSuspend",
+				"value": 128
+			},
+			{
+				"name": "ApplicationResume",
+				"value": 256
+			},
+			{
+				"name": "GetDisplaySafeAreaRatio",
+				"value": 512
+			},
+			{
+				"name": "SplashScreenControl",
+				"value": 1024
+			},
+			{
+				"name": "ScreenSaverControl",
+				"value": 2048
+			},
+			{
+				"name": "ApplicationParameter",
+				"value": 4096
+			},
+			{
+				"name": "SkuFlag",
+				"value": 8192
+			},
+			{
+				"name": "ResetVrPosition",
+				"value": 16384
+			},
+			{
+				"name": "OpenShareMenu",
+				"value": 32768
+			},
+			{
+				"name": "VideoRecorder",
+				"value": 65536
+			},
+			{
+				"name": "ApplicationActivate",
+				"value": 131072
+			},
+			{
+				"name": "ApplicationDeactivate",
+				"value": 262144
+			},
+			{
+				"name": "Country",
+				"value": 524288
+			},
+			{
+				"name": "AccountPicker",
+				"value": 1048576
+			},
+			{
+				"name": "Geography",
+				"value": 4194304
+			},
+			{
+				"name": "SetScreenBrightness",
+				"value": 8388608
+			},
+			{
+				"name": "GetApplicationVersion",
+				"value": 8388608
+			},
+			{
+				"name": "ApplicationExitRequestControl",
+				"value": 16777216
+			},
+			{
+				"name": "NoticeScreenShownControl",
+				"value": 33554432
+			},
+			{
+				"name": "InputIdleSectionControl",
+				"value": 67108864
+			},
+			{
+				"name": "DyingMessage",
+				"value": 134217728
+			}
+		]
+	},
 	"via.SystemServiceNgWordsDetectingResult": [
 		{
 			"name": "OK",
@@ -85611,40 +85767,43 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.GenericParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Covariant",
-			"value": 1
-		},
-		{
-			"name": "Contravariant",
-			"value": 2
-		},
-		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
-			"name": "ReferenceTypeConstraint",
-			"value": 4
-		},
-		{
-			"name": "NotNullableValueTypeConstraint",
-			"value": 8
-		},
-		{
-			"name": "DefaultConstructorConstraint",
-			"value": 16
-		},
-		{
-			"name": "SpecialConstraintMask",
-			"value": 28
-		}
-	],
+	"System.Reflection.GenericParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Covariant",
+				"value": 1
+			},
+			{
+				"name": "Contravariant",
+				"value": 2
+			},
+			{
+				"name": "VarianceMask",
+				"value": 3
+			},
+			{
+				"name": "ReferenceTypeConstraint",
+				"value": 4
+			},
+			{
+				"name": "NotNullableValueTypeConstraint",
+				"value": 8
+			},
+			{
+				"name": "DefaultConstructorConstraint",
+				"value": 16
+			},
+			{
+				"name": "SpecialConstraintMask",
+				"value": 28
+			}
+		]
+	},
 	"via.os.FileAttr": [
 		{
 			"name": "Read",
@@ -85905,96 +86064,99 @@
 			"value": 7
 		}
 	],
-	"app.ropeway.EnemyDefine.DamageReaction": [
-		{
-			"name": "None",
-			"value": 1
-		},
-		{
-			"name": "NoReaction",
-			"value": 2
-		},
-		{
-			"name": "Stun",
-			"value": 4
-		},
-		{
-			"name": "Knockback",
-			"value": 8
-		},
-		{
-			"name": "Down",
-			"value": 16
-		},
-		{
-			"name": "Burst",
-			"value": 32
-		},
-		{
-			"name": "Cut",
-			"value": 64
-		},
-		{
-			"name": "Acid",
-			"value": 128
-		},
-		{
-			"name": "Burn",
-			"value": 256
-		},
-		{
-			"name": "Flash",
-			"value": 512
-		},
-		{
-			"name": "Bind",
-			"value": 1024
-		},
-		{
-			"name": "Shock",
-			"value": 2048
-		},
-		{
-			"name": "Knife",
-			"value": 4096
-		},
-		{
-			"name": "Tangle",
-			"value": 8192
-		},
-		{
-			"name": "Scatter",
-			"value": 16384
-		},
-		{
-			"name": "OneKill",
-			"value": 32768
-		},
-		{
-			"name": "SparkBullet",
-			"value": 65536
-		},
-		{
-			"name": "SparkSmall",
-			"value": 131072
-		},
-		{
-			"name": "SparkLarge",
-			"value": 262144
-		},
-		{
-			"name": "GrenadeBullet",
-			"value": 524288
-		},
-		{
-			"name": "GrenadeBlow",
-			"value": 1048576
-		},
-		{
-			"name": "Unique00",
-			"value": 1073741824
-		}
-	],
+	"app.ropeway.EnemyDefine.DamageReaction": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 1
+			},
+			{
+				"name": "NoReaction",
+				"value": 2
+			},
+			{
+				"name": "Stun",
+				"value": 4
+			},
+			{
+				"name": "Knockback",
+				"value": 8
+			},
+			{
+				"name": "Down",
+				"value": 16
+			},
+			{
+				"name": "Burst",
+				"value": 32
+			},
+			{
+				"name": "Cut",
+				"value": 64
+			},
+			{
+				"name": "Acid",
+				"value": 128
+			},
+			{
+				"name": "Burn",
+				"value": 256
+			},
+			{
+				"name": "Flash",
+				"value": 512
+			},
+			{
+				"name": "Bind",
+				"value": 1024
+			},
+			{
+				"name": "Shock",
+				"value": 2048
+			},
+			{
+				"name": "Knife",
+				"value": 4096
+			},
+			{
+				"name": "Tangle",
+				"value": 8192
+			},
+			{
+				"name": "Scatter",
+				"value": 16384
+			},
+			{
+				"name": "OneKill",
+				"value": 32768
+			},
+			{
+				"name": "SparkBullet",
+				"value": 65536
+			},
+			{
+				"name": "SparkSmall",
+				"value": 131072
+			},
+			{
+				"name": "SparkLarge",
+				"value": 262144
+			},
+			{
+				"name": "GrenadeBullet",
+				"value": 524288
+			},
+			{
+				"name": "GrenadeBlow",
+				"value": 1048576
+			},
+			{
+				"name": "Unique00",
+				"value": 1073741824
+			}
+		]
+	},
 	"app.ropeway.gui.RopewayGimmickAttachmentGUI.ResultState": [
 		{
 			"name": "NotExecute",
@@ -86869,16 +87031,19 @@
 			"value": 2
 		}
 	],
-	"via.hid.VirtualDeviceOwnerType": [
-		{
-			"name": "VirtualInput",
-			"value": 1
-		},
-		{
-			"name": "RemoteInput",
-			"value": 2
-		}
-	],
+	"via.hid.VirtualDeviceOwnerType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "VirtualInput",
+				"value": 1
+			},
+			{
+				"name": "RemoteInput",
+				"value": 2
+			}
+		]
+	},
 	"via.render.FakeLensflare.ResolutionLevel": [
 		{
 			"name": "Full",
@@ -91941,104 +92106,107 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.MethodAttributes": [
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "MemberAccessMask",
-			"value": 7
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "Final",
-			"value": 32
-		},
-		{
-			"name": "Virtual",
-			"value": 64
-		},
-		{
-			"name": "HideBySig",
-			"value": 128
-		},
-		{
-			"name": "VtableLayoutMask",
-			"value": 256
-		},
-		{
-			"name": "NewSlot",
-			"value": 256
-		},
-		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
-			"name": "Abstract",
-			"value": 1024
-		},
-		{
-			"name": "SpecialName",
-			"value": 2048
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 4096
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "HasSecurity",
-			"value": 16384
-		},
-		{
-			"name": "RequireSecObject",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 53248
-		}
-	],
+	"System.Reflection.MethodAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "ReuseSlot",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "MemberAccessMask",
+				"value": 7
+			},
+			{
+				"name": "UnmanagedExport",
+				"value": 8
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "Final",
+				"value": 32
+			},
+			{
+				"name": "Virtual",
+				"value": 64
+			},
+			{
+				"name": "HideBySig",
+				"value": 128
+			},
+			{
+				"name": "VtableLayoutMask",
+				"value": 256
+			},
+			{
+				"name": "NewSlot",
+				"value": 256
+			},
+			{
+				"name": "CheckAccessOnOverride",
+				"value": 512
+			},
+			{
+				"name": "Abstract",
+				"value": 1024
+			},
+			{
+				"name": "SpecialName",
+				"value": 2048
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 4096
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "HasSecurity",
+				"value": 16384
+			},
+			{
+				"name": "RequireSecObject",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 53248
+			}
+		]
+	},
 	"app.ropeway.gui.DialogBehavior.Mode": [
 		{
 			"name": "NO_YES__SELECTED_NO",
@@ -93491,88 +93659,91 @@
 			"value": 5
 		}
 	],
-	"System.Reflection.BindingFlags": [
-		{
-			"name": "Default",
-			"value": 0
-		},
-		{
-			"name": "IgnoreCase",
-			"value": 1
-		},
-		{
-			"name": "DeclaredOnly",
-			"value": 2
-		},
-		{
-			"name": "Instance",
-			"value": 4
-		},
-		{
-			"name": "Static",
-			"value": 8
-		},
-		{
-			"name": "Public",
-			"value": 16
-		},
-		{
-			"name": "NonPublic",
-			"value": 32
-		},
-		{
-			"name": "FlattenHierarchy",
-			"value": 64
-		},
-		{
-			"name": "InvokeMethod",
-			"value": 256
-		},
-		{
-			"name": "CreateInstance",
-			"value": 512
-		},
-		{
-			"name": "GetField",
-			"value": 1024
-		},
-		{
-			"name": "SetField",
-			"value": 2048
-		},
-		{
-			"name": "GetProperty",
-			"value": 4096
-		},
-		{
-			"name": "SetProperty",
-			"value": 8192
-		},
-		{
-			"name": "PutDispProperty",
-			"value": 16384
-		},
-		{
-			"name": "PutRefDispProperty",
-			"value": 32768
-		},
-		{
-			"name": "ExactBinding",
-			"value": 65536
-		},
-		{
-			"name": "SuppressChangeType",
-			"value": 131072
-		},
-		{
-			"name": "OptionalParamBinding",
-			"value": 262144
-		},
-		{
-			"name": "IgnoreReturn",
-			"value": 16777216
-		}
-	],
+	"System.Reflection.BindingFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Default",
+				"value": 0
+			},
+			{
+				"name": "IgnoreCase",
+				"value": 1
+			},
+			{
+				"name": "DeclaredOnly",
+				"value": 2
+			},
+			{
+				"name": "Instance",
+				"value": 4
+			},
+			{
+				"name": "Static",
+				"value": 8
+			},
+			{
+				"name": "Public",
+				"value": 16
+			},
+			{
+				"name": "NonPublic",
+				"value": 32
+			},
+			{
+				"name": "FlattenHierarchy",
+				"value": 64
+			},
+			{
+				"name": "InvokeMethod",
+				"value": 256
+			},
+			{
+				"name": "CreateInstance",
+				"value": 512
+			},
+			{
+				"name": "GetField",
+				"value": 1024
+			},
+			{
+				"name": "SetField",
+				"value": 2048
+			},
+			{
+				"name": "GetProperty",
+				"value": 4096
+			},
+			{
+				"name": "SetProperty",
+				"value": 8192
+			},
+			{
+				"name": "PutDispProperty",
+				"value": 16384
+			},
+			{
+				"name": "PutRefDispProperty",
+				"value": 32768
+			},
+			{
+				"name": "ExactBinding",
+				"value": 65536
+			},
+			{
+				"name": "SuppressChangeType",
+				"value": 131072
+			},
+			{
+				"name": "OptionalParamBinding",
+				"value": 262144
+			},
+			{
+				"name": "IgnoreReturn",
+				"value": 16777216
+			}
+		]
+	},
 	"app.ropeway.gui.FloorMapSt5ABehavior.RoomId": [
 		{
 			"name": "Room_invalid",
@@ -96877,20 +97048,23 @@
 			"value": 7
 		}
 	],
-	"app.ropeway.ThreeFootLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		},
-		{
-			"name": "THIRD",
-			"value": 4
-		}
-	],
+	"app.ropeway.ThreeFootLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			},
+			{
+				"name": "THIRD",
+				"value": 4
+			}
+		]
+	},
 	"via.gui.EffectAlphaType": [
 		{
 			"name": "Independence",
@@ -99553,88 +99727,91 @@
 			"value": 4
 		}
 	],
-	"via.ShareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ScreenShot",
-			"value": 1
-		},
-		{
-			"name": "ScreenShotControl",
-			"value": 2
-		},
-		{
-			"name": "ScreenShotRequest",
-			"value": 4
-		},
-		{
-			"name": "ScreenShotOverlayImage",
-			"value": 8
-		},
-		{
-			"name": "ScreenShotChangeOverlayImage",
-			"value": 16
-		},
-		{
-			"name": "VideoRecording",
-			"value": 32
-		},
-		{
-			"name": "VideoRecordingControl",
-			"value": 64
-		},
-		{
-			"name": "VideoRecordingRequest",
-			"value": 128
-		},
-		{
-			"name": "VideoRecordingOverlayImage",
-			"value": 256
-		},
-		{
-			"name": "VideoRecordingChangeOverlayImage",
-			"value": 512
-		},
-		{
-			"name": "GameLiveStreaming",
-			"value": 1024
-		},
-		{
-			"name": "GameLiveStreamingControl",
-			"value": 2048
-		},
-		{
-			"name": "GameLiveStreamingRequest",
-			"value": 4096
-		},
-		{
-			"name": "GameLiveStreamingStatusWatching",
-			"value": 8192
-		},
-		{
-			"name": "SharePlay",
-			"value": 16384
-		},
-		{
-			"name": "SharePlayControl",
-			"value": 32768
-		},
-		{
-			"name": "SharePlayStatusWatching",
-			"value": 65536
-		},
-		{
-			"name": "ShareUtility",
-			"value": 131072
-		},
-		{
-			"name": "ScreenShotShowFiles",
-			"value": 262144
-		}
-	],
+	"via.ShareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ScreenShot",
+				"value": 1
+			},
+			{
+				"name": "ScreenShotControl",
+				"value": 2
+			},
+			{
+				"name": "ScreenShotRequest",
+				"value": 4
+			},
+			{
+				"name": "ScreenShotOverlayImage",
+				"value": 8
+			},
+			{
+				"name": "ScreenShotChangeOverlayImage",
+				"value": 16
+			},
+			{
+				"name": "VideoRecording",
+				"value": 32
+			},
+			{
+				"name": "VideoRecordingControl",
+				"value": 64
+			},
+			{
+				"name": "VideoRecordingRequest",
+				"value": 128
+			},
+			{
+				"name": "VideoRecordingOverlayImage",
+				"value": 256
+			},
+			{
+				"name": "VideoRecordingChangeOverlayImage",
+				"value": 512
+			},
+			{
+				"name": "GameLiveStreaming",
+				"value": 1024
+			},
+			{
+				"name": "GameLiveStreamingControl",
+				"value": 2048
+			},
+			{
+				"name": "GameLiveStreamingRequest",
+				"value": 4096
+			},
+			{
+				"name": "GameLiveStreamingStatusWatching",
+				"value": 8192
+			},
+			{
+				"name": "SharePlay",
+				"value": 16384
+			},
+			{
+				"name": "SharePlayControl",
+				"value": 32768
+			},
+			{
+				"name": "SharePlayStatusWatching",
+				"value": 65536
+			},
+			{
+				"name": "ShareUtility",
+				"value": 131072
+			},
+			{
+				"name": "ScreenShotShowFiles",
+				"value": 262144
+			}
+		]
+	},
 	"app.ropeway.TerrainAnalyzer.AnalyzeType": [
 		{
 			"name": "STEP",
@@ -100647,24 +100824,27 @@
 			"value": 22
 		}
 	],
-	"via.hid.gamePlayer.AutoPlayFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SkipDialog",
-			"value": 2
-		},
-		{
-			"name": "AutoAssign",
-			"value": 4
-		},
-		{
-			"name": "AutoCreateVirtualDevice",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.AutoPlayFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SkipDialog",
+				"value": 2
+			},
+			{
+				"name": "AutoAssign",
+				"value": 4
+			},
+			{
+				"name": "AutoCreateVirtualDevice",
+				"value": 8
+			}
+		]
+	},
 	"via.motion.IkLeg.EffectorCtrl": [
 		{
 			"name": "None",
@@ -100705,40 +100885,43 @@
 			"value": 3277248676
 		}
 	],
-	"app.ropeway.gamemastering.Map.AreaFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "_0",
-			"value": 1
-		},
-		{
-			"name": "_1",
-			"value": 2
-		},
-		{
-			"name": "_2",
-			"value": 4
-		},
-		{
-			"name": "_3",
-			"value": 8
-		},
-		{
-			"name": "_4",
-			"value": 16
-		},
-		{
-			"name": "_5",
-			"value": 32
-		},
-		{
-			"name": "ALL",
-			"value": 63
-		}
-	],
+	"app.ropeway.gamemastering.Map.AreaFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "_0",
+				"value": 1
+			},
+			{
+				"name": "_1",
+				"value": 2
+			},
+			{
+				"name": "_2",
+				"value": 4
+			},
+			{
+				"name": "_3",
+				"value": 8
+			},
+			{
+				"name": "_4",
+				"value": 16
+			},
+			{
+				"name": "_5",
+				"value": 32
+			},
+			{
+				"name": "ALL",
+				"value": 63
+			}
+		]
+	},
 	"app.ropeway.IkAdjustLimb.SolvePhase": [
 		{
 			"name": "LateUpdate",
@@ -101181,28 +101364,31 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.EquipmentDefine.WeaponParts": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "A",
-			"value": 1
-		},
-		{
-			"name": "B",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "FullCustom",
-			"value": 7
-		}
-	],
+	"app.ropeway.EquipmentDefine.WeaponParts": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "A",
+				"value": 1
+			},
+			{
+				"name": "B",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "FullCustom",
+				"value": 7
+			}
+		]
+	},
 	"via.effect.gpgpu.NodeBillboardCS.NodeBillboardResource.ShaderType": [
 		{
 			"name": "Default",
@@ -101237,16 +101423,19 @@
 			"value": 7
 		}
 	],
-	"System.Base64FormattingOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "InsertLineBreaks",
-			"value": 1
-		}
-	],
+	"System.Base64FormattingOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "InsertLineBreaks",
+				"value": 1
+			}
+		]
+	},
 	"via.Serializer.JsonToken.Kind": [
 		{
 			"name": "Map",
@@ -102383,32 +102572,35 @@
 			"value": 7
 		}
 	],
-	"app.ropeway.MainSceneUpdateManager.InstantiateMode": [
-		{
-			"name": "FrameHead",
-			"value": 1
-		},
-		{
-			"name": "Immediately",
-			"value": 4
-		},
-		{
-			"name": "FrameTail",
-			"value": 8
-		},
-		{
-			"name": "WaitPrefabReady",
-			"value": 4096
-		},
-		{
-			"name": "NoNullReaction",
-			"value": 8192
-		},
-		{
-			"name": "NoRetry",
-			"value": 16384
-		}
-	],
+	"app.ropeway.MainSceneUpdateManager.InstantiateMode": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FrameHead",
+				"value": 1
+			},
+			{
+				"name": "Immediately",
+				"value": 4
+			},
+			{
+				"name": "FrameTail",
+				"value": 8
+			},
+			{
+				"name": "WaitPrefabReady",
+				"value": 4096
+			},
+			{
+				"name": "NoNullReaction",
+				"value": 8192
+			},
+			{
+				"name": "NoRetry",
+				"value": 16384
+			}
+		]
+	},
 	"via.motion.IkLookAt.LookAtState": [
 		{
 			"name": "None",
@@ -105518,76 +105710,79 @@
 			"value": 3
 		}
 	],
-	"via.HardwareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "GeneralName",
-			"value": 1
-		},
-		{
-			"name": "InternalName",
-			"value": 2
-		},
-		{
-			"name": "CpuName",
-			"value": 4
-		},
-		{
-			"name": "Manufacturer",
-			"value": 8
-		},
-		{
-			"name": "BrandName",
-			"value": 16
-		},
-		{
-			"name": "IllegalDevice",
-			"value": 32
-		},
-		{
-			"name": "BatteryState",
-			"value": 64
-		},
-		{
-			"name": "BoardName",
-			"value": 128
-		},
-		{
-			"name": "Bootloader",
-			"value": 256
-		},
-		{
-			"name": "StorageSize",
-			"value": 512
-		},
-		{
-			"name": "ExternalStorageSize",
-			"value": 1024
-		},
-		{
-			"name": "PhysicalCoreNumber",
-			"value": 2048
-		},
-		{
-			"name": "LogicalCoreNumber",
-			"value": 4096
-		},
-		{
-			"name": "BaseFrequency",
-			"value": 8192
-		},
-		{
-			"name": "RamSize",
-			"value": 16384
-		},
-		{
-			"name": "ThermalState",
-			"value": 32768
-		}
-	],
+	"via.HardwareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "GeneralName",
+				"value": 1
+			},
+			{
+				"name": "InternalName",
+				"value": 2
+			},
+			{
+				"name": "CpuName",
+				"value": 4
+			},
+			{
+				"name": "Manufacturer",
+				"value": 8
+			},
+			{
+				"name": "BrandName",
+				"value": 16
+			},
+			{
+				"name": "IllegalDevice",
+				"value": 32
+			},
+			{
+				"name": "BatteryState",
+				"value": 64
+			},
+			{
+				"name": "BoardName",
+				"value": 128
+			},
+			{
+				"name": "Bootloader",
+				"value": 256
+			},
+			{
+				"name": "StorageSize",
+				"value": 512
+			},
+			{
+				"name": "ExternalStorageSize",
+				"value": 1024
+			},
+			{
+				"name": "PhysicalCoreNumber",
+				"value": 2048
+			},
+			{
+				"name": "LogicalCoreNumber",
+				"value": 4096
+			},
+			{
+				"name": "BaseFrequency",
+				"value": 8192
+			},
+			{
+				"name": "RamSize",
+				"value": 16384
+			},
+			{
+				"name": "ThermalState",
+				"value": 32768
+			}
+		]
+	},
 	"app.ropeway.SurvivorDefine.ActionOrder.ActionCategoryBits": [
 		{
 			"name": "IDLE",
@@ -109276,24 +109471,27 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.CollisionDefine.AttackAttribute": [
-		{
-			"name": "INFINITE_HIT",
-			"value": 1
-		},
-		{
-			"name": "OWNER_HIT",
-			"value": 2
-		},
-		{
-			"name": "NOT_KILL",
-			"value": 4
-		},
-		{
-			"name": "THROUGH_TERRAIN",
-			"value": 8
-		}
-	],
+	"app.ropeway.CollisionDefine.AttackAttribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INFINITE_HIT",
+				"value": 1
+			},
+			{
+				"name": "OWNER_HIT",
+				"value": 2
+			},
+			{
+				"name": "NOT_KILL",
+				"value": 4
+			},
+			{
+				"name": "THROUGH_TERRAIN",
+				"value": 8
+			}
+		]
+	},
 	"via.autoplay.action.AutoAttack.Unit": [
 		{
 			"name": "Second",
@@ -110406,32 +110604,35 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.SurvivorDefine.Parts": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Body",
-			"value": 1
-		},
-		{
-			"name": "Face",
-			"value": 2
-		},
-		{
-			"name": "Hair",
-			"value": 4
-		},
-		{
-			"name": "Other",
-			"value": 8
-		},
-		{
-			"name": "All",
-			"value": 15
-		}
-	],
+	"app.ropeway.SurvivorDefine.Parts": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Body",
+				"value": 1
+			},
+			{
+				"name": "Face",
+				"value": 2
+			},
+			{
+				"name": "Hair",
+				"value": 4
+			},
+			{
+				"name": "Other",
+				"value": 8
+			},
+			{
+				"name": "All",
+				"value": 15
+			}
+		]
+	},
 	"app.ropeway.AssetPackagePair.ClassType": [
 		{
 			"name": "PLAYER",
@@ -112221,40 +112422,43 @@
 			"value": 1
 		}
 	],
-	"via.gui.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		}
-	],
+	"via.gui.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			}
+		]
+	},
 	"app.ropeway.fsmv2.PlayTimelineComponent.TargetType": [
 		{
 			"name": "SELF",
@@ -112681,212 +112885,215 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.InputDefine.Kind": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "MOVE",
-			"value": 1
-		},
-		{
-			"name": "WATCH",
-			"value": 2
-		},
-		{
-			"name": "WALK",
-			"value": 4
-		},
-		{
-			"name": "JOG0",
-			"value": 8
-		},
-		{
-			"name": "JOG1",
-			"value": 16
-		},
-		{
-			"name": "QUICK_TURN",
-			"value": 32
-		},
-		{
-			"name": "HOLD",
-			"value": 64
-		},
-		{
-			"name": "SUPPORT_HOLD",
-			"value": 128
-		},
-		{
-			"name": "ATTACK",
-			"value": 256
-		},
-		{
-			"name": "RELOAD",
-			"value": 512
-		},
-		{
-			"name": "RESET_CAMERA",
-			"value": 1024
-		},
-		{
-			"name": "QUICK_TURN_EX",
-			"value": 2048
-		},
-		{
-			"name": "DEFENSE",
-			"value": 4096
-		},
-		{
-			"name": "ACTION",
-			"value": 8192
-		},
-		{
-			"name": "ITEM",
-			"value": 16384
-		},
-		{
-			"name": "GIMMICK_EX",
-			"value": 32768
-		},
-		{
-			"name": "PRESS_START",
-			"value": 65536
-		},
-		{
-			"name": "INVENTORY",
-			"value": 131072
-		},
-		{
-			"name": "CHANGE_BULLET",
-			"value": 262144
-		},
-		{
-			"name": "MINIMAP",
-			"value": 524288
-		},
-		{
-			"name": "PAUSE",
-			"value": 1048576
-		},
-		{
-			"name": "SKIP_EVENT",
-			"value": 2097152
-		},
-		{
-			"name": "DECIDE",
-			"value": 4194304
-		},
-		{
-			"name": "CANCEL",
-			"value": 8388608
-		},
-		{
-			"name": "UI_UP",
-			"value": 16777216
-		},
-		{
-			"name": "UI_DOWN",
-			"value": 33554432
-		},
-		{
-			"name": "UI_LEFT",
-			"value": 67108864
-		},
-		{
-			"name": "UI_RIGHT",
-			"value": 134217728
-		},
-		{
-			"name": "UI_SHIFT_LEFT",
-			"value": 268435456
-		},
-		{
-			"name": "UI_SHIFT_RIGHT",
-			"value": 536870912
-		},
-		{
-			"name": "UI_SHIFT_LEFT_2",
-			"value": 1073741824
-		},
-		{
-			"name": "UI_SHIFT_RIGHT_2",
-			"value": 2147483648
-		},
-		{
-			"name": "UI_EXCHANGE",
-			"value": 4294967296
-		},
-		{
-			"name": "UI_RESET",
-			"value": 8589934592
-		},
-		{
-			"name": "SHORTCUT_UP",
-			"value": 17179869184
-		},
-		{
-			"name": "SHORTCUT_DOWN",
-			"value": 34359738368
-		},
-		{
-			"name": "SHORTCUT_LEFT",
-			"value": 68719476736
-		},
-		{
-			"name": "SHORTCUT_RIGHT",
-			"value": 137438953472
-		},
-		{
-			"name": "UI_L_STICK",
-			"value": 274877906944
-		},
-		{
-			"name": "UI_R_STICK",
-			"value": 549755813888
-		},
-		{
-			"name": "DIALOG_DECIDE",
-			"value": 1099511627776
-		},
-		{
-			"name": "DIALOG_CANCEL",
-			"value": 2199023255552
-		},
-		{
-			"name": "UI_PAGE_UP",
-			"value": 4398046511104
-		},
-		{
-			"name": "UI_PAGE_DOWN",
-			"value": 8796093022208
-		},
-		{
-			"name": "UI_SCALE_UP",
-			"value": 17592186044416
-		},
-		{
-			"name": "UI_SCALE_DOWN",
-			"value": 35184372088832
-		},
-		{
-			"name": "UI_MAP_UP",
-			"value": 70368744177664
-		},
-		{
-			"name": "UI_MAP_DOWN",
-			"value": 140737488355328
-		},
-		{
-			"name": "UI_SORT",
-			"value": 281474976710656
-		},
-		{
-			"name": "UI_DISP",
-			"value": 562949953421312
-		}
-	],
+	"app.ropeway.InputDefine.Kind": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "MOVE",
+				"value": 1
+			},
+			{
+				"name": "WATCH",
+				"value": 2
+			},
+			{
+				"name": "WALK",
+				"value": 4
+			},
+			{
+				"name": "JOG0",
+				"value": 8
+			},
+			{
+				"name": "JOG1",
+				"value": 16
+			},
+			{
+				"name": "QUICK_TURN",
+				"value": 32
+			},
+			{
+				"name": "HOLD",
+				"value": 64
+			},
+			{
+				"name": "SUPPORT_HOLD",
+				"value": 128
+			},
+			{
+				"name": "ATTACK",
+				"value": 256
+			},
+			{
+				"name": "RELOAD",
+				"value": 512
+			},
+			{
+				"name": "RESET_CAMERA",
+				"value": 1024
+			},
+			{
+				"name": "QUICK_TURN_EX",
+				"value": 2048
+			},
+			{
+				"name": "DEFENSE",
+				"value": 4096
+			},
+			{
+				"name": "ACTION",
+				"value": 8192
+			},
+			{
+				"name": "ITEM",
+				"value": 16384
+			},
+			{
+				"name": "GIMMICK_EX",
+				"value": 32768
+			},
+			{
+				"name": "PRESS_START",
+				"value": 65536
+			},
+			{
+				"name": "INVENTORY",
+				"value": 131072
+			},
+			{
+				"name": "CHANGE_BULLET",
+				"value": 262144
+			},
+			{
+				"name": "MINIMAP",
+				"value": 524288
+			},
+			{
+				"name": "PAUSE",
+				"value": 1048576
+			},
+			{
+				"name": "SKIP_EVENT",
+				"value": 2097152
+			},
+			{
+				"name": "DECIDE",
+				"value": 4194304
+			},
+			{
+				"name": "CANCEL",
+				"value": 8388608
+			},
+			{
+				"name": "UI_UP",
+				"value": 16777216
+			},
+			{
+				"name": "UI_DOWN",
+				"value": 33554432
+			},
+			{
+				"name": "UI_LEFT",
+				"value": 67108864
+			},
+			{
+				"name": "UI_RIGHT",
+				"value": 134217728
+			},
+			{
+				"name": "UI_SHIFT_LEFT",
+				"value": 268435456
+			},
+			{
+				"name": "UI_SHIFT_RIGHT",
+				"value": 536870912
+			},
+			{
+				"name": "UI_SHIFT_LEFT_2",
+				"value": 1073741824
+			},
+			{
+				"name": "UI_SHIFT_RIGHT_2",
+				"value": 2147483648
+			},
+			{
+				"name": "UI_EXCHANGE",
+				"value": 4294967296
+			},
+			{
+				"name": "UI_RESET",
+				"value": 8589934592
+			},
+			{
+				"name": "SHORTCUT_UP",
+				"value": 17179869184
+			},
+			{
+				"name": "SHORTCUT_DOWN",
+				"value": 34359738368
+			},
+			{
+				"name": "SHORTCUT_LEFT",
+				"value": 68719476736
+			},
+			{
+				"name": "SHORTCUT_RIGHT",
+				"value": 137438953472
+			},
+			{
+				"name": "UI_L_STICK",
+				"value": 274877906944
+			},
+			{
+				"name": "UI_R_STICK",
+				"value": 549755813888
+			},
+			{
+				"name": "DIALOG_DECIDE",
+				"value": 1099511627776
+			},
+			{
+				"name": "DIALOG_CANCEL",
+				"value": 2199023255552
+			},
+			{
+				"name": "UI_PAGE_UP",
+				"value": 4398046511104
+			},
+			{
+				"name": "UI_PAGE_DOWN",
+				"value": 8796093022208
+			},
+			{
+				"name": "UI_SCALE_UP",
+				"value": 17592186044416
+			},
+			{
+				"name": "UI_SCALE_DOWN",
+				"value": 35184372088832
+			},
+			{
+				"name": "UI_MAP_UP",
+				"value": 70368744177664
+			},
+			{
+				"name": "UI_MAP_DOWN",
+				"value": 140737488355328
+			},
+			{
+				"name": "UI_SORT",
+				"value": 281474976710656
+			},
+			{
+				"name": "UI_DISP",
+				"value": 562949953421312
+			}
+		]
+	},
 	"via.gui.detail.ControlPointH": [
 		{
 			"name": "Left",
@@ -112969,16 +113176,19 @@
 			"value": 10
 		}
 	],
-	"app.ropeway.TwoFootLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		}
-	],
+	"app.ropeway.TwoFootLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			}
+		]
+	},
 	"via.render.RtvDimension": [
 		{
 			"name": "Unknown",
@@ -114657,48 +114867,51 @@
 			"value": 7
 		}
 	],
-	"via.effect.script.GroupFlag": [
-		{
-			"name": "Player",
-			"value": 1
-		},
-		{
-			"name": "Enemy",
-			"value": 2
-		},
-		{
-			"name": "Weapon",
-			"value": 4
-		},
-		{
-			"name": "Item",
-			"value": 8
-		},
-		{
-			"name": "Prop",
-			"value": 16
-		},
-		{
-			"name": "Etc",
-			"value": 32
-		},
-		{
-			"name": "Vfx",
-			"value": 64
-		},
-		{
-			"name": "Camera",
-			"value": 128
-		},
-		{
-			"name": "ActionPoint",
-			"value": 256
-		},
-		{
-			"name": "EventChara",
-			"value": 512
-		}
-	],
+	"via.effect.script.GroupFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Player",
+				"value": 1
+			},
+			{
+				"name": "Enemy",
+				"value": 2
+			},
+			{
+				"name": "Weapon",
+				"value": 4
+			},
+			{
+				"name": "Item",
+				"value": 8
+			},
+			{
+				"name": "Prop",
+				"value": 16
+			},
+			{
+				"name": "Etc",
+				"value": 32
+			},
+			{
+				"name": "Vfx",
+				"value": 64
+			},
+			{
+				"name": "Camera",
+				"value": 128
+			},
+			{
+				"name": "ActionPoint",
+				"value": 256
+			},
+			{
+				"name": "EventChara",
+				"value": 512
+			}
+		]
+	},
 	"app.ropeway.NoticeMode": [
 		{
 			"name": "Normal",
@@ -116000,56 +116213,59 @@
 			"value": 2
 		}
 	],
-	"via.network.protocol.SendOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Unreliable",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_Low",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_High",
-			"value": 1
-		},
-		{
-			"name": "Reliable",
-			"value": 4
-		},
-		{
-			"name": "ReliableBuffer",
-			"value": 12
-		},
-		{
-			"name": "FastCallback",
-			"value": 16
-		},
-		{
-			"name": "CheckAbsent",
-			"value": 32
-		},
-		{
-			"name": "Tag",
-			"value": 64
-		},
-		{
-			"name": "FastPass",
-			"value": 128
-		},
-		{
-			"name": "CheckNonce",
-			"value": 256
-		},
-		{
-			"name": "SkipReceiveQueue",
-			"value": 512
-		}
-	],
+	"via.network.protocol.SendOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Unreliable",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_Low",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_High",
+				"value": 1
+			},
+			{
+				"name": "Reliable",
+				"value": 4
+			},
+			{
+				"name": "ReliableBuffer",
+				"value": 12
+			},
+			{
+				"name": "FastCallback",
+				"value": 16
+			},
+			{
+				"name": "CheckAbsent",
+				"value": 32
+			},
+			{
+				"name": "Tag",
+				"value": 64
+			},
+			{
+				"name": "FastPass",
+				"value": 128
+			},
+			{
+				"name": "CheckNonce",
+				"value": 256
+			},
+			{
+				"name": "SkipReceiveQueue",
+				"value": 512
+			}
+		]
+	},
 	"app.ropeway.InputDefine.AssignType": [
 		{
 			"name": "XboxOne",
@@ -116226,24 +116442,27 @@
 			"value": 13
 		}
 	],
-	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "UseFirstSelected",
-			"value": 2
-		},
-		{
-			"name": "UseLastSelected",
-			"value": 4
-		},
-		{
-			"name": "AssignToOtherPlayer",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "UseFirstSelected",
+				"value": 2
+			},
+			{
+				"name": "UseLastSelected",
+				"value": 4
+			},
+			{
+				"name": "AssignToOtherPlayer",
+				"value": 8
+			}
+		]
+	},
 	"via.effect.gpgpu.RibbonFollowCS.RibbonFollowResource.RibbonFollowComputeShaderType": [
 		{
 			"name": "InitializeCS",
@@ -116636,24 +116855,27 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.survivor.fsmv2.action.SurvivorOrientAction.Source": [
-		{
-			"name": "Front",
-			"value": 1
-		},
-		{
-			"name": "Back",
-			"value": 2
-		},
-		{
-			"name": "Left",
-			"value": 4
-		},
-		{
-			"name": "Right",
-			"value": 8
-		}
-	],
+	"app.ropeway.survivor.fsmv2.action.SurvivorOrientAction.Source": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Front",
+				"value": 1
+			},
+			{
+				"name": "Back",
+				"value": 2
+			},
+			{
+				"name": "Left",
+				"value": 4
+			},
+			{
+				"name": "Right",
+				"value": 8
+			}
+		]
+	},
 	"app.ropeway.InputDefine.KeyAssignType": [
 		{
 			"name": "Type_0",
@@ -116970,16 +117192,19 @@
 			"value": 14
 		}
 	],
-	"app.ropeway.DynamicsManager.PauseCause": [
-		{
-			"name": "General",
-			"value": 1
-		},
-		{
-			"name": "Restrict",
-			"value": 2
-		}
-	],
+	"app.ropeway.DynamicsManager.PauseCause": {
+		"flags": true,
+		"values": [
+			{
+				"name": "General",
+				"value": 1
+			},
+			{
+				"name": "Restrict",
+				"value": 2
+			}
+		]
+	},
 	"System.Collections.Generic.TreeRotation": [
 		{
 			"name": "Left",
@@ -119038,62 +119263,68 @@
 			"value": 7
 		}
 	],
-	"System.Reflection.ParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "In",
-			"value": 1
-		},
-		{
-			"name": "Out",
-			"value": 2
-		},
-		{
-			"name": "Lcid",
-			"value": 4
-		},
-		{
-			"name": "Retval",
-			"value": 8
-		},
-		{
-			"name": "Optional",
-			"value": 16
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 61440
-		}
-	],
-	"System.StringSplitOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "RemoveEmptyEntries",
-			"value": 1
-		}
-	],
+	"System.Reflection.ParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "In",
+				"value": 1
+			},
+			{
+				"name": "Out",
+				"value": 2
+			},
+			{
+				"name": "Lcid",
+				"value": 4
+			},
+			{
+				"name": "Retval",
+				"value": 8
+			},
+			{
+				"name": "Optional",
+				"value": 16
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 61440
+			}
+		]
+	},
+	"System.StringSplitOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "RemoveEmptyEntries",
+				"value": 1
+			}
+		]
+	},
 	"app.ropeway.gui.FloorMapSt43Behavior.RoomId": [
 		{
 			"name": "Room_invalid",
@@ -119231,40 +119462,43 @@
 		}
 	],
 	"via.effect.graph.ItemType": [],
-	"System.Runtime.CompilerServices.MethodImplOptions": [
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		}
-	],
+	"System.Runtime.CompilerServices.MethodImplOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			}
+		]
+	},
 	"via.nnfc.nfp.ErrorDialogCode": [
 		{
 			"name": "None",
@@ -119471,44 +119705,47 @@
 			"value": 0
 		}
 	],
-	"via.hid.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"app.ropeway.SurvivorDefine.Costume": [
 		{
 			"name": "Default",
@@ -121017,16 +121254,19 @@
 			"value": 3
 		}
 	],
-	"System.Globalization.TimeSpanStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AssumeNegative",
-			"value": 1
-		}
-	],
+	"System.Globalization.TimeSpanStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AssumeNegative",
+				"value": 1
+			}
+		]
+	},
 	"via.motion.script.FootEffectController.JointPartsType": [
 		{
 			"name": "Foot",

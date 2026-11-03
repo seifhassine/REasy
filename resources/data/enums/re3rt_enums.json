@@ -287,36 +287,39 @@
 			"value": 1
 		}
 	],
-	"via.puppet.dev.SyncInfo.Event": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SendTransform",
-			"value": 1
-		},
-		{
-			"name": "RecvTransform",
-			"value": 2
-		},
-		{
-			"name": "SendState",
-			"value": 4
-		},
-		{
-			"name": "RecvState",
-			"value": 8
-		},
-		{
-			"name": "Warp",
-			"value": 16
-		},
-		{
-			"name": "SwitchParent",
-			"value": 32
-		}
-	],
+	"via.puppet.dev.SyncInfo.Event": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SendTransform",
+				"value": 1
+			},
+			{
+				"name": "RecvTransform",
+				"value": 2
+			},
+			{
+				"name": "SendState",
+				"value": 4
+			},
+			{
+				"name": "RecvState",
+				"value": 8
+			},
+			{
+				"name": "Warp",
+				"value": 16
+			},
+			{
+				"name": "SwitchParent",
+				"value": 32
+			}
+		]
+	},
 	"via.ScreenShotOverlayImageOrigin": [
 		{
 			"name": "LeftTop",
@@ -7391,156 +7394,159 @@
 			"value": 3
 		}
 	],
-	"via.hid.GamePadButton": [
-		{
-			"name": "LUp",
-			"value": 1
-		},
-		{
-			"name": "LDown",
-			"value": 2
-		},
-		{
-			"name": "LLeft",
-			"value": 4
-		},
-		{
-			"name": "LRight",
-			"value": 8
-		},
-		{
-			"name": "RUp",
-			"value": 16
-		},
-		{
-			"name": "RDown",
-			"value": 32
-		},
-		{
-			"name": "RLeft",
-			"value": 64
-		},
-		{
-			"name": "RRight",
-			"value": 128
-		},
-		{
-			"name": "LTrigTop",
-			"value": 256
-		},
-		{
-			"name": "LTrigBottom",
-			"value": 512
-		},
-		{
-			"name": "RTrigTop",
-			"value": 1024
-		},
-		{
-			"name": "RTrigBottom",
-			"value": 2048
-		},
-		{
-			"name": "LStickPush",
-			"value": 4096
-		},
-		{
-			"name": "RStickPush",
-			"value": 8192
-		},
-		{
-			"name": "CLeft",
-			"value": 16384
-		},
-		{
-			"name": "CRight",
-			"value": 32768
-		},
-		{
-			"name": "CCenter",
-			"value": 65536
-		},
-		{
-			"name": "Decide",
-			"value": 131072
-		},
-		{
-			"name": "Cancel",
-			"value": 262144
-		},
-		{
-			"name": "PlatformHome",
-			"value": 524288
-		},
-		{
-			"name": "EmuLup",
-			"value": 1048576
-		},
-		{
-			"name": "EmuLright",
-			"value": 2097152
-		},
-		{
-			"name": "EmuLdown",
-			"value": 4194304
-		},
-		{
-			"name": "EmuLleft",
-			"value": 8388608
-		},
-		{
-			"name": "EmuRup",
-			"value": 16777216
-		},
-		{
-			"name": "EmuRright",
-			"value": 33554432
-		},
-		{
-			"name": "EmuRdown",
-			"value": 67108864
-		},
-		{
-			"name": "EmuRleft",
-			"value": 134217728
-		},
-		{
-			"name": "EmuAll",
-			"value": 267386880
-		},
-		{
-			"name": "LSL",
-			"value": 268435456
-		},
-		{
-			"name": "LSR",
-			"value": 536870912
-		},
-		{
-			"name": "RSL",
-			"value": 1073741824
-		},
-		{
-			"name": "RSR",
-			"value": 2147483648
-		},
-		{
-			"name": "LSide",
-			"value": 268435456
-		},
-		{
-			"name": "RSide",
-			"value": 536870912
-		},
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.GamePadButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LUp",
+				"value": 1
+			},
+			{
+				"name": "LDown",
+				"value": 2
+			},
+			{
+				"name": "LLeft",
+				"value": 4
+			},
+			{
+				"name": "LRight",
+				"value": 8
+			},
+			{
+				"name": "RUp",
+				"value": 16
+			},
+			{
+				"name": "RDown",
+				"value": 32
+			},
+			{
+				"name": "RLeft",
+				"value": 64
+			},
+			{
+				"name": "RRight",
+				"value": 128
+			},
+			{
+				"name": "LTrigTop",
+				"value": 256
+			},
+			{
+				"name": "LTrigBottom",
+				"value": 512
+			},
+			{
+				"name": "RTrigTop",
+				"value": 1024
+			},
+			{
+				"name": "RTrigBottom",
+				"value": 2048
+			},
+			{
+				"name": "LStickPush",
+				"value": 4096
+			},
+			{
+				"name": "RStickPush",
+				"value": 8192
+			},
+			{
+				"name": "CLeft",
+				"value": 16384
+			},
+			{
+				"name": "CRight",
+				"value": 32768
+			},
+			{
+				"name": "CCenter",
+				"value": 65536
+			},
+			{
+				"name": "Decide",
+				"value": 131072
+			},
+			{
+				"name": "Cancel",
+				"value": 262144
+			},
+			{
+				"name": "PlatformHome",
+				"value": 524288
+			},
+			{
+				"name": "EmuLup",
+				"value": 1048576
+			},
+			{
+				"name": "EmuLright",
+				"value": 2097152
+			},
+			{
+				"name": "EmuLdown",
+				"value": 4194304
+			},
+			{
+				"name": "EmuLleft",
+				"value": 8388608
+			},
+			{
+				"name": "EmuRup",
+				"value": 16777216
+			},
+			{
+				"name": "EmuRright",
+				"value": 33554432
+			},
+			{
+				"name": "EmuRdown",
+				"value": 67108864
+			},
+			{
+				"name": "EmuRleft",
+				"value": 134217728
+			},
+			{
+				"name": "EmuAll",
+				"value": 267386880
+			},
+			{
+				"name": "LSL",
+				"value": 268435456
+			},
+			{
+				"name": "LSR",
+				"value": 536870912
+			},
+			{
+				"name": "RSL",
+				"value": 1073741824
+			},
+			{
+				"name": "RSR",
+				"value": 2147483648
+			},
+			{
+				"name": "LSide",
+				"value": 268435456
+			},
+			{
+				"name": "RSide",
+				"value": 536870912
+			},
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"via.motion.IkFourLeg.RayCastCallbackID": [
 		{
 			"name": "BackLeft",
@@ -8051,16 +8057,19 @@
 			"value": 1964617847
 		}
 	],
-	"offline.DynamicsManager.PauseCause": [
-		{
-			"name": "General",
-			"value": 1
-		},
-		{
-			"name": "Restrict",
-			"value": 2
-		}
-	],
+	"offline.DynamicsManager.PauseCause": {
+		"flags": true,
+		"values": [
+			{
+				"name": "General",
+				"value": 1
+			},
+			{
+				"name": "Restrict",
+				"value": 2
+			}
+		]
+	},
 	"via.simplewwise.AudioInputModuleType": [
 		{
 			"name": "None",
@@ -9293,16 +9302,19 @@
 			"value": 1
 		}
 	],
-	"offline.TwoHandLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		}
-	],
+	"offline.TwoHandLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			}
+		]
+	},
 	"via.GameLiveStreamingStatus": [
 		{
 			"name": "Stop",
@@ -10963,24 +10975,27 @@
 			"value": 1
 		}
 	],
-	"offline.survivor.fsmv2.action.SurvivorOrientAction.Source": [
-		{
-			"name": "Front",
-			"value": 1
-		},
-		{
-			"name": "Back",
-			"value": 2
-		},
-		{
-			"name": "Left",
-			"value": 4
-		},
-		{
-			"name": "Right",
-			"value": 8
-		}
-	],
+	"offline.survivor.fsmv2.action.SurvivorOrientAction.Source": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Front",
+				"value": 1
+			},
+			{
+				"name": "Back",
+				"value": 2
+			},
+			{
+				"name": "Left",
+				"value": 4
+			},
+			{
+				"name": "Right",
+				"value": 8
+			}
+		]
+	},
 	"offline.gimmick.action.GimmickDoorOptions.OptionType": [
 		{
 			"name": "INSIDE_LOCK_NODISP",
@@ -17395,24 +17410,27 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.EventAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "ReservedMask",
-			"value": 1024
-		}
-	],
+	"System.Reflection.EventAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "ReservedMask",
+				"value": 1024
+			}
+		]
+	},
 	"via.navigation.MapAccessor.SearchResult": [
 		{
 			"name": "Found",
@@ -17605,28 +17623,31 @@
 			"value": 4
 		}
 	],
-	"via.motion.IkLeg2.CastRayEventIdFlags": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Left",
-			"value": 1
-		},
-		{
-			"name": "Right",
-			"value": 2
-		},
-		{
-			"name": "Heal",
-			"value": 4
-		},
-		{
-			"name": "Detail",
-			"value": 8
-		}
-	],
+	"via.motion.IkLeg2.CastRayEventIdFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Left",
+				"value": 1
+			},
+			{
+				"name": "Right",
+				"value": 2
+			},
+			{
+				"name": "Heal",
+				"value": 4
+			},
+			{
+				"name": "Detail",
+				"value": 8
+			}
+		]
+	},
 	"offline.escape.enemy.em9030.RequestSetID": [
 		{
 			"name": "DAMAGE",
@@ -21384,40 +21405,43 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.PropertyAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "Reserved2",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 62464
-		}
-	],
+	"System.Reflection.PropertyAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "Reserved2",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 62464
+			}
+		]
+	},
 	"offline.escape.gimmick.action.EsGimmickTelevision.RNO": [
 		{
 			"name": "RNO_WAIT",
@@ -23424,44 +23448,47 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.MemberTypes": [
-		{
-			"name": "Constructor",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		},
-		{
-			"name": "Field",
-			"value": 4
-		},
-		{
-			"name": "Method",
-			"value": 8
-		},
-		{
-			"name": "Property",
-			"value": 16
-		},
-		{
-			"name": "TypeInfo",
-			"value": 32
-		},
-		{
-			"name": "Custom",
-			"value": 64
-		},
-		{
-			"name": "NestedType",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 191
-		}
-	],
+	"System.Reflection.MemberTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Constructor",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			},
+			{
+				"name": "Field",
+				"value": 4
+			},
+			{
+				"name": "Method",
+				"value": 8
+			},
+			{
+				"name": "Property",
+				"value": 16
+			},
+			{
+				"name": "TypeInfo",
+				"value": 32
+			},
+			{
+				"name": "Custom",
+				"value": 64
+			},
+			{
+				"name": "NestedType",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 191
+			}
+		]
+	},
 	"via.motion.IkLeg2Data.AxisFlags": [
 		{
 			"name": "X",
@@ -26068,84 +26095,87 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.FieldAttributes": [
-		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "InitOnly",
-			"value": 32
-		},
-		{
-			"name": "Literal",
-			"value": 64
-		},
-		{
-			"name": "NotSerialized",
-			"value": 128
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 4096
-		},
-		{
-			"name": "HasDefault",
-			"value": 32768
-		},
-		{
-			"name": "HasFieldRVA",
-			"value": 256
-		},
-		{
-			"name": "ReservedMask",
-			"value": 38144
-		}
-	],
+	"System.Reflection.FieldAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FieldAccessMask",
+				"value": 7
+			},
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "InitOnly",
+				"value": 32
+			},
+			{
+				"name": "Literal",
+				"value": 64
+			},
+			{
+				"name": "NotSerialized",
+				"value": 128
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 4096
+			},
+			{
+				"name": "HasDefault",
+				"value": 32768
+			},
+			{
+				"name": "HasFieldRVA",
+				"value": 256
+			},
+			{
+				"name": "ReservedMask",
+				"value": 38144
+			}
+		]
+	},
 	"via.motion.IkSpineConformGround.ManageJoint.JOINT_TYPE": [
 		{
 			"name": "NON",
@@ -28013,40 +28043,43 @@
 			"value": 128
 		}
 	],
-	"offline.gamemastering.Map.AreaFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "_0",
-			"value": 1
-		},
-		{
-			"name": "_1",
-			"value": 2
-		},
-		{
-			"name": "_2",
-			"value": 4
-		},
-		{
-			"name": "_3",
-			"value": 8
-		},
-		{
-			"name": "_4",
-			"value": 16
-		},
-		{
-			"name": "_5",
-			"value": 32
-		},
-		{
-			"name": "ALL",
-			"value": 63
-		}
-	],
+	"offline.gamemastering.Map.AreaFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "_0",
+				"value": 1
+			},
+			{
+				"name": "_1",
+				"value": 2
+			},
+			{
+				"name": "_2",
+				"value": 4
+			},
+			{
+				"name": "_3",
+				"value": 8
+			},
+			{
+				"name": "_4",
+				"value": 16
+			},
+			{
+				"name": "_5",
+				"value": 32
+			},
+			{
+				"name": "ALL",
+				"value": 63
+			}
+		]
+	},
 	"offline.FacialController.Layer": [
 		{
 			"name": "EVENT",
@@ -28415,60 +28448,63 @@
 			"value": 7
 		}
 	],
-	"offline.SurvivorDefine.Restriction.Target": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "NonUpdate",
-			"value": 1
-		},
-		{
-			"name": "Hide",
-			"value": 2
-		},
-		{
-			"name": "DisabledCharacterController",
-			"value": 4
-		},
-		{
-			"name": "DisabledRequestSetCollider",
-			"value": 8
-		},
-		{
-			"name": "DisabledGoundFixer",
-			"value": 16
-		},
-		{
-			"name": "DisabledIkController",
-			"value": 32
-		},
-		{
-			"name": "DisabledRagdoll",
-			"value": 64
-		},
-		{
-			"name": "DisabledPressController",
-			"value": 128
-		},
-		{
-			"name": "FixedPressController",
-			"value": 256
-		},
-		{
-			"name": "Invincible",
-			"value": 512
-		},
-		{
-			"name": "IgnoreBlow",
-			"value": 1024
-		},
-		{
-			"name": "IgnoreGrapple",
-			"value": 2048
-		}
-	],
+	"offline.SurvivorDefine.Restriction.Target": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "NonUpdate",
+				"value": 1
+			},
+			{
+				"name": "Hide",
+				"value": 2
+			},
+			{
+				"name": "DisabledCharacterController",
+				"value": 4
+			},
+			{
+				"name": "DisabledRequestSetCollider",
+				"value": 8
+			},
+			{
+				"name": "DisabledGoundFixer",
+				"value": 16
+			},
+			{
+				"name": "DisabledIkController",
+				"value": 32
+			},
+			{
+				"name": "DisabledRagdoll",
+				"value": 64
+			},
+			{
+				"name": "DisabledPressController",
+				"value": 128
+			},
+			{
+				"name": "FixedPressController",
+				"value": 256
+			},
+			{
+				"name": "Invincible",
+				"value": 512
+			},
+			{
+				"name": "IgnoreBlow",
+				"value": 1024
+			},
+			{
+				"name": "IgnoreGrapple",
+				"value": 2048
+			}
+		]
+	},
 	"via.physics.BoundingVolumeHierarchy.ErrorCode": [
 		{
 			"name": "None",
@@ -30763,56 +30799,59 @@
 			"value": 20
 		}
 	],
-	"offline.SurvivorDefine.ColliderSkipId": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Press",
-			"value": 1
-		},
-		{
-			"name": "TouchAppeal",
-			"value": 2
-		},
-		{
-			"name": "GimmickSensor",
-			"value": 4
-		},
-		{
-			"name": "EffectSensor",
-			"value": 8
-		},
-		{
-			"name": "SoundSensor",
-			"value": 16
-		},
-		{
-			"name": "SoundMarkerEnemyAttack",
-			"value": 32
-		},
-		{
-			"name": "DamageUpper",
-			"value": 1024
-		},
-		{
-			"name": "DamageMiddle",
-			"value": 2048
-		},
-		{
-			"name": "DamageLower",
-			"value": 4096
-		},
-		{
-			"name": "PreventOvertaking",
-			"value": 2147483648
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"offline.SurvivorDefine.ColliderSkipId": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Press",
+				"value": 1
+			},
+			{
+				"name": "TouchAppeal",
+				"value": 2
+			},
+			{
+				"name": "GimmickSensor",
+				"value": 4
+			},
+			{
+				"name": "EffectSensor",
+				"value": 8
+			},
+			{
+				"name": "SoundSensor",
+				"value": 16
+			},
+			{
+				"name": "SoundMarkerEnemyAttack",
+				"value": 32
+			},
+			{
+				"name": "DamageUpper",
+				"value": 1024
+			},
+			{
+				"name": "DamageMiddle",
+				"value": 2048
+			},
+			{
+				"name": "DamageLower",
+				"value": 4096
+			},
+			{
+				"name": "PreventOvertaking",
+				"value": 2147483648
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"via.render.LightShaft.LightShaftType": [
 		{
 			"name": "AABB",
@@ -30973,32 +31012,35 @@
 			"value": 2
 		}
 	],
-	"via.attribute.FsmCategoryAttribute.Category": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "Mot",
-			"value": 2
-		},
-		{
-			"name": "Auto",
-			"value": 4
-		},
-		{
-			"name": "BehaviorTree",
-			"value": 8
-		},
-		{
-			"name": "Timeline",
-			"value": 16
-		}
-	],
+	"via.attribute.FsmCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "Mot",
+				"value": 2
+			},
+			{
+				"name": "Auto",
+				"value": 4
+			},
+			{
+				"name": "BehaviorTree",
+				"value": 8
+			},
+			{
+				"name": "Timeline",
+				"value": 16
+			}
+		]
+	},
 	"via.render.SSAOControl.SSAOAlgorithm": [
 		{
 			"name": "Default",
@@ -32558,20 +32600,23 @@
 			"value": 15
 		}
 	],
-	"offline.render.StreamingTextureManager.RequestType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "StandbyMediator",
-			"value": 1
-		},
-		{
-			"name": "TimelineManager",
-			"value": 2
-		}
-	],
+	"offline.render.StreamingTextureManager.RequestType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "StandbyMediator",
+				"value": 1
+			},
+			{
+				"name": "TimelineManager",
+				"value": 2
+			}
+		]
+	},
 	"via.render.LightProbes.LightProbesPriority": [
 		{
 			"name": "Base",
@@ -32813,28 +32858,31 @@
 			"value": 5
 		}
 	],
-	"offline.PlatformType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "STM",
-			"value": 1
-		},
-		{
-			"name": "XBS",
-			"value": 2
-		},
-		{
-			"name": "PS5",
-			"value": 4
-		},
-		{
-			"name": "All",
-			"value": 7
-		}
-	],
+	"offline.PlatformType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "STM",
+				"value": 1
+			},
+			{
+				"name": "XBS",
+				"value": 2
+			},
+			{
+				"name": "PS5",
+				"value": 4
+			},
+			{
+				"name": "All",
+				"value": 7
+			}
+		]
+	},
 	"offline.GameClock.Kind": [
 		{
 			"name": "System",
@@ -36231,16 +36279,19 @@
 			"value": 2
 		}
 	],
-	"offline.camera.GimmickTwirlerCameraController.HitStatusType": [
-		{
-			"name": "NO_HIT",
-			"value": 0
-		},
-		{
-			"name": "HIT_CAMERA",
-			"value": 1
-		}
-	],
+	"offline.camera.GimmickTwirlerCameraController.HitStatusType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NO_HIT",
+				"value": 0
+			},
+			{
+				"name": "HIT_CAMERA",
+				"value": 1
+			}
+		]
+	},
 	"offline.weapon.shell.ShellManager.WeaponShellTypeKind": [
 		{
 			"name": "Bullet_Default",
@@ -37635,48 +37686,51 @@
 			"value": 2
 		}
 	],
-	"System.Threading.ThreadState": [
-		{
-			"name": "Running",
-			"value": 0
-		},
-		{
-			"name": "StopRequested",
-			"value": 1
-		},
-		{
-			"name": "SuspendRequested",
-			"value": 2
-		},
-		{
-			"name": "Background",
-			"value": 4
-		},
-		{
-			"name": "Unstarted",
-			"value": 8
-		},
-		{
-			"name": "Stopped",
-			"value": 16
-		},
-		{
-			"name": "WaitSleepJoin",
-			"value": 32
-		},
-		{
-			"name": "Suspended",
-			"value": 64
-		},
-		{
-			"name": "AbortRequested",
-			"value": 128
-		},
-		{
-			"name": "Aborted",
-			"value": 256
-		}
-	],
+	"System.Threading.ThreadState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Running",
+				"value": 0
+			},
+			{
+				"name": "StopRequested",
+				"value": 1
+			},
+			{
+				"name": "SuspendRequested",
+				"value": 2
+			},
+			{
+				"name": "Background",
+				"value": 4
+			},
+			{
+				"name": "Unstarted",
+				"value": 8
+			},
+			{
+				"name": "Stopped",
+				"value": 16
+			},
+			{
+				"name": "WaitSleepJoin",
+				"value": 32
+			},
+			{
+				"name": "Suspended",
+				"value": 64
+			},
+			{
+				"name": "AbortRequested",
+				"value": 128
+			},
+			{
+				"name": "Aborted",
+				"value": 256
+			}
+		]
+	},
 	"offline.gamemastering.UIMapManager.MapDispState": [
 		{
 			"name": "NONE",
@@ -39470,28 +39524,31 @@
 			"value": 51
 		}
 	],
-	"offline.SurvivorAssignManager.CastingReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "InitialSet",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		},
-		{
-			"name": "Level",
-			"value": 4
-		},
-		{
-			"name": "Debug",
-			"value": 8
-		}
-	],
+	"offline.SurvivorAssignManager.CastingReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "InitialSet",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			},
+			{
+				"name": "Level",
+				"value": 4
+			},
+			{
+				"name": "Debug",
+				"value": 8
+			}
+		]
+	},
 	"via.effect.detail.GroupLevel": [
 		{
 			"name": "GroupLevel_0",
@@ -43404,100 +43461,103 @@
 			"value": 9
 		}
 	],
-	"offline.EnemyDefine.DamageReaction": [
-		{
-			"name": "None",
-			"value": 1
-		},
-		{
-			"name": "NoReaction",
-			"value": 2
-		},
-		{
-			"name": "Stun",
-			"value": 4
-		},
-		{
-			"name": "Knockback",
-			"value": 8
-		},
-		{
-			"name": "Down",
-			"value": 16
-		},
-		{
-			"name": "Burst",
-			"value": 32
-		},
-		{
-			"name": "Cut",
-			"value": 64
-		},
-		{
-			"name": "Acid",
-			"value": 128
-		},
-		{
-			"name": "Burn",
-			"value": 256
-		},
-		{
-			"name": "Flash",
-			"value": 512
-		},
-		{
-			"name": "Bind",
-			"value": 1024
-		},
-		{
-			"name": "Shock",
-			"value": 2048
-		},
-		{
-			"name": "Knife",
-			"value": 4096
-		},
-		{
-			"name": "Tangle",
-			"value": 8192
-		},
-		{
-			"name": "Scatter",
-			"value": 16384
-		},
-		{
-			"name": "OneKill",
-			"value": 32768
-		},
-		{
-			"name": "SparkBullet",
-			"value": 65536
-		},
-		{
-			"name": "SparkSmall",
-			"value": 131072
-		},
-		{
-			"name": "SparkLarge",
-			"value": 262144
-		},
-		{
-			"name": "GrenadeBullet",
-			"value": 524288
-		},
-		{
-			"name": "GrenadeBlow",
-			"value": 1048576
-		},
-		{
-			"name": "AccumulateDown",
-			"value": 2097152
-		},
-		{
-			"name": "Unique00",
-			"value": 1073741824
-		}
-	],
+	"offline.EnemyDefine.DamageReaction": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 1
+			},
+			{
+				"name": "NoReaction",
+				"value": 2
+			},
+			{
+				"name": "Stun",
+				"value": 4
+			},
+			{
+				"name": "Knockback",
+				"value": 8
+			},
+			{
+				"name": "Down",
+				"value": 16
+			},
+			{
+				"name": "Burst",
+				"value": 32
+			},
+			{
+				"name": "Cut",
+				"value": 64
+			},
+			{
+				"name": "Acid",
+				"value": 128
+			},
+			{
+				"name": "Burn",
+				"value": 256
+			},
+			{
+				"name": "Flash",
+				"value": 512
+			},
+			{
+				"name": "Bind",
+				"value": 1024
+			},
+			{
+				"name": "Shock",
+				"value": 2048
+			},
+			{
+				"name": "Knife",
+				"value": 4096
+			},
+			{
+				"name": "Tangle",
+				"value": 8192
+			},
+			{
+				"name": "Scatter",
+				"value": 16384
+			},
+			{
+				"name": "OneKill",
+				"value": 32768
+			},
+			{
+				"name": "SparkBullet",
+				"value": 65536
+			},
+			{
+				"name": "SparkSmall",
+				"value": 131072
+			},
+			{
+				"name": "SparkLarge",
+				"value": 262144
+			},
+			{
+				"name": "GrenadeBullet",
+				"value": 524288
+			},
+			{
+				"name": "GrenadeBlow",
+				"value": 1048576
+			},
+			{
+				"name": "AccumulateDown",
+				"value": 2097152
+			},
+			{
+				"name": "Unique00",
+				"value": 1073741824
+			}
+		]
+	},
 	"via.hid.AudioInManager.AUDIO_IN_TYPE": [
 		{
 			"name": "NORMAL",
@@ -44156,20 +44216,23 @@
 			"value": 399
 		}
 	],
-	"via.hid.gamePlayer.AutoDeviceSelectionFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "TryOnAssign",
-			"value": 2
-		},
-		{
-			"name": "TryOnReassign",
-			"value": 4
-		}
-	],
+	"via.hid.gamePlayer.AutoDeviceSelectionFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "TryOnAssign",
+				"value": 2
+			},
+			{
+				"name": "TryOnReassign",
+				"value": 4
+			}
+		]
+	},
 	"via.render.layer.DeferredLighting.AllowShadowType": [
 		{
 			"name": "Standard",
@@ -46054,136 +46117,139 @@
 			"value": 1
 		}
 	],
-	"offline.ReNetData.Type": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Header",
-			"value": 1
-		},
-		{
-			"name": "Basic",
-			"value": 2
-		},
-		{
-			"name": "MainProgress",
-			"value": 4
-		},
-		{
-			"name": "ExtraProgress",
-			"value": 8
-		},
-		{
-			"name": "MainWeapon",
-			"value": 16
-		},
-		{
-			"name": "SubWeapon",
-			"value": 32
-		},
-		{
-			"name": "Bullet",
-			"value": 64
-		},
-		{
-			"name": "HealItem",
-			"value": 128
-		},
-		{
-			"name": "CombineItem",
-			"value": 256
-		},
-		{
-			"name": "DropItem",
-			"value": 512
-		},
-		{
-			"name": "DefeatEnemy",
-			"value": 1024
-		},
-		{
-			"name": "BreakParts",
-			"value": 2048
-		},
-		{
-			"name": "GameOver",
-			"value": 4096
-		},
-		{
-			"name": "Costume",
-			"value": 8192
-		},
-		{
-			"name": "BonusModePlay",
-			"value": 16384
-		},
-		{
-			"name": "DlcPlay",
-			"value": 32768
-		},
-		{
-			"name": "DlcInstall",
-			"value": 65536
-		},
-		{
-			"name": "PuzzlePlay",
-			"value": 131072
-		},
-		{
-			"name": "Other",
-			"value": 262144
-		},
-		{
-			"name": "GameClear",
-			"value": 524288
-		},
-		{
-			"name": "GameClearExtra",
-			"value": 1048576
-		},
-		{
-			"name": "WeeklyChallenge",
-			"value": 2097152
-		},
-		{
-			"name": "Record",
-			"value": 4194304
-		},
-		{
-			"name": "Env",
-			"value": 8388608
-		},
-		{
-			"name": "Option",
-			"value": 16777216
-		},
-		{
-			"name": "WeeklyChallengeExtra",
-			"value": 33554432
-		},
-		{
-			"name": "ShopItem",
-			"value": 67108864
-		},
-		{
-			"name": "TransferSaveData",
-			"value": 134217728
-		},
-		{
-			"name": "WeaponFlags",
-			"value": 112
-		},
-		{
-			"name": "ItemFlags",
-			"value": 896
-		},
-		{
-			"name": "EnemyFlags",
-			"value": 3072
-		}
-	],
+	"offline.ReNetData.Type": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Header",
+				"value": 1
+			},
+			{
+				"name": "Basic",
+				"value": 2
+			},
+			{
+				"name": "MainProgress",
+				"value": 4
+			},
+			{
+				"name": "ExtraProgress",
+				"value": 8
+			},
+			{
+				"name": "MainWeapon",
+				"value": 16
+			},
+			{
+				"name": "SubWeapon",
+				"value": 32
+			},
+			{
+				"name": "Bullet",
+				"value": 64
+			},
+			{
+				"name": "HealItem",
+				"value": 128
+			},
+			{
+				"name": "CombineItem",
+				"value": 256
+			},
+			{
+				"name": "DropItem",
+				"value": 512
+			},
+			{
+				"name": "DefeatEnemy",
+				"value": 1024
+			},
+			{
+				"name": "BreakParts",
+				"value": 2048
+			},
+			{
+				"name": "GameOver",
+				"value": 4096
+			},
+			{
+				"name": "Costume",
+				"value": 8192
+			},
+			{
+				"name": "BonusModePlay",
+				"value": 16384
+			},
+			{
+				"name": "DlcPlay",
+				"value": 32768
+			},
+			{
+				"name": "DlcInstall",
+				"value": 65536
+			},
+			{
+				"name": "PuzzlePlay",
+				"value": 131072
+			},
+			{
+				"name": "Other",
+				"value": 262144
+			},
+			{
+				"name": "GameClear",
+				"value": 524288
+			},
+			{
+				"name": "GameClearExtra",
+				"value": 1048576
+			},
+			{
+				"name": "WeeklyChallenge",
+				"value": 2097152
+			},
+			{
+				"name": "Record",
+				"value": 4194304
+			},
+			{
+				"name": "Env",
+				"value": 8388608
+			},
+			{
+				"name": "Option",
+				"value": 16777216
+			},
+			{
+				"name": "WeeklyChallengeExtra",
+				"value": 33554432
+			},
+			{
+				"name": "ShopItem",
+				"value": 67108864
+			},
+			{
+				"name": "TransferSaveData",
+				"value": 134217728
+			},
+			{
+				"name": "WeaponFlags",
+				"value": 112
+			},
+			{
+				"name": "ItemFlags",
+				"value": 896
+			},
+			{
+				"name": "EnemyFlags",
+				"value": 3072
+			}
+		]
+	},
 	"via.simplewwise.OutputDevice": [
 		{
 			"name": "None",
@@ -46518,24 +46584,27 @@
 			"value": 3
 		}
 	],
-	"offline.EnvironmentStandbyManager.PauseLoadReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Timeline",
-			"value": 1
-		},
-		{
-			"name": "SurvivorControl",
-			"value": 2
-		},
-		{
-			"name": "DebugMenu",
-			"value": 4
-		}
-	],
+	"offline.EnvironmentStandbyManager.PauseLoadReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Timeline",
+				"value": 1
+			},
+			{
+				"name": "SurvivorControl",
+				"value": 2
+			},
+			{
+				"name": "DebugMenu",
+				"value": 4
+			}
+		]
+	},
 	"via.motion.SecondaryRetarget.TransStretchMode": [
 		{
 			"name": "LengthRate",
@@ -47110,20 +47179,23 @@
 			"value": 5
 		}
 	],
-	"offline.SurvivorDefine.BodyParts": [
-		{
-			"name": "Body",
-			"value": 0
-		},
-		{
-			"name": "Sling",
-			"value": 100
-		},
-		{
-			"name": "Handgun",
-			"value": 200
-		}
-	],
+	"offline.SurvivorDefine.BodyParts": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Body",
+				"value": 0
+			},
+			{
+				"name": "Sling",
+				"value": 100
+			},
+			{
+				"name": "Handgun",
+				"value": 200
+			}
+		]
+	},
 	"offline.enemy.em3000.MotionPattern.Jump": [
 		{
 			"name": "CeillingFromGround",
@@ -48750,36 +48822,39 @@
 			"value": 8
 		}
 	],
-	"offline.behaviortree.condition.BtCondition_PlayerState.State": [
-		{
-			"name": "IDLE",
-			"value": 0
-		},
-		{
-			"name": "WALK",
-			"value": 1
-		},
-		{
-			"name": "JOG",
-			"value": 2
-		},
-		{
-			"name": "HOLD",
-			"value": 3
-		},
-		{
-			"name": "CREEPING",
-			"value": 4
-		},
-		{
-			"name": "REACTION",
-			"value": 5
-		},
-		{
-			"name": "ATTACKED",
-			"value": 6
-		}
-	],
+	"offline.behaviortree.condition.BtCondition_PlayerState.State": {
+		"flags": true,
+		"values": [
+			{
+				"name": "IDLE",
+				"value": 0
+			},
+			{
+				"name": "WALK",
+				"value": 1
+			},
+			{
+				"name": "JOG",
+				"value": 2
+			},
+			{
+				"name": "HOLD",
+				"value": 3
+			},
+			{
+				"name": "CREEPING",
+				"value": 4
+			},
+			{
+				"name": "REACTION",
+				"value": 5
+			},
+			{
+				"name": "ATTACKED",
+				"value": 6
+			}
+		]
+	},
 	"offline.gimmick.action.GimmickPressed.BoxType": [
 		{
 			"name": "BIG",
@@ -48856,72 +48931,75 @@
 			"value": 5
 		}
 	],
-	"offline.SurvivorDefine.ActionOrder.Petient": [
-		{
-			"name": "INVALID",
-			"value": 0
-		},
-		{
-			"name": "IDLE",
-			"value": 1
-		},
-		{
-			"name": "LIGHT_WHEEL",
-			"value": 2
-		},
-		{
-			"name": "MOVE",
-			"value": 4
-		},
-		{
-			"name": "JOG",
-			"value": 8
-		},
-		{
-			"name": "HOLD",
-			"value": 16
-		},
-		{
-			"name": "HOLD_WHEEL",
-			"value": 32
-		},
-		{
-			"name": "HOLD_WALK",
-			"value": 64
-		},
-		{
-			"name": "FALL",
-			"value": 128
-		},
-		{
-			"name": "HOLD_RUN_ES",
-			"value": 256
-		},
-		{
-			"name": "HOLD_RUN_IDLE_ES",
-			"value": 512
-		},
-		{
-			"name": "HOLD_DODGE",
-			"value": 1024
-		},
-		{
-			"name": "S_HOLD_DODGE",
-			"value": 2048
-		},
-		{
-			"name": "SLIDING",
-			"value": 4096
-		},
-		{
-			"name": "SHORT_ATTACK",
-			"value": 8192
-		},
-		{
-			"name": "GAZING",
-			"value": 16384
-		}
-	],
+	"offline.SurvivorDefine.ActionOrder.Petient": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INVALID",
+				"value": 0
+			},
+			{
+				"name": "IDLE",
+				"value": 1
+			},
+			{
+				"name": "LIGHT_WHEEL",
+				"value": 2
+			},
+			{
+				"name": "MOVE",
+				"value": 4
+			},
+			{
+				"name": "JOG",
+				"value": 8
+			},
+			{
+				"name": "HOLD",
+				"value": 16
+			},
+			{
+				"name": "HOLD_WHEEL",
+				"value": 32
+			},
+			{
+				"name": "HOLD_WALK",
+				"value": 64
+			},
+			{
+				"name": "FALL",
+				"value": 128
+			},
+			{
+				"name": "HOLD_RUN_ES",
+				"value": 256
+			},
+			{
+				"name": "HOLD_RUN_IDLE_ES",
+				"value": 512
+			},
+			{
+				"name": "HOLD_DODGE",
+				"value": 1024
+			},
+			{
+				"name": "S_HOLD_DODGE",
+				"value": 2048
+			},
+			{
+				"name": "SLIDING",
+				"value": 4096
+			},
+			{
+				"name": "SHORT_ATTACK",
+				"value": 8192
+			},
+			{
+				"name": "GAZING",
+				"value": 16384
+			}
+		]
+	},
 	"offline.escape.enemy.em3300.AttackFrequencyState": [
 		{
 			"name": "PlayerFine",
@@ -48988,20 +49066,23 @@
 			"value": 1
 		}
 	],
-	"offline.ThreeFootLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		},
-		{
-			"name": "THIRD",
-			"value": 4
-		}
-	],
+	"offline.ThreeFootLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			},
+			{
+				"name": "THIRD",
+				"value": 4
+			}
+		]
+	},
 	"offline.UpdateOrderGroup.TailSystemPhase": [],
 	"offline.escape.gimmick.action.EsGimmickCarBase.WwiseAccelState": [
 		{
@@ -55857,40 +55938,43 @@
 			"value": 2
 		}
 	],
-	"via.hid.DeviceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ForceFeedback",
-			"value": 1
-		},
-		{
-			"name": "TouchInterface",
-			"value": 2
-		},
-		{
-			"name": "GamePadButtonCLeft",
-			"value": 4
-		},
-		{
-			"name": "GamePadButtonCCenter",
-			"value": 8
-		},
-		{
-			"name": "GamePadButtonCRight",
-			"value": 16
-		},
-		{
-			"name": "MotionSensor",
-			"value": 32
-		},
-		{
-			"name": "Tracking",
-			"value": 64
-		}
-	],
+	"via.hid.DeviceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ForceFeedback",
+				"value": 1
+			},
+			{
+				"name": "TouchInterface",
+				"value": 2
+			},
+			{
+				"name": "GamePadButtonCLeft",
+				"value": 4
+			},
+			{
+				"name": "GamePadButtonCCenter",
+				"value": 8
+			},
+			{
+				"name": "GamePadButtonCRight",
+				"value": 16
+			},
+			{
+				"name": "MotionSensor",
+				"value": 32
+			},
+			{
+				"name": "Tracking",
+				"value": 64
+			}
+		]
+	},
 	"offline.CatalogManager.CatalogContext.Phase": [
 		{
 			"name": "Initial",
@@ -56005,48 +56089,51 @@
 			"value": 5
 		}
 	],
-	"System.Globalization.DateTimeStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AllowLeadingWhite",
-			"value": 1
-		},
-		{
-			"name": "AllowTrailingWhite",
-			"value": 2
-		},
-		{
-			"name": "AllowInnerWhite",
-			"value": 4
-		},
-		{
-			"name": "AllowWhiteSpaces",
-			"value": 7
-		},
-		{
-			"name": "NoCurrentDateDefault",
-			"value": 8
-		},
-		{
-			"name": "AdjustToUniversal",
-			"value": 16
-		},
-		{
-			"name": "AssumeLocal",
-			"value": 32
-		},
-		{
-			"name": "AssumeUniversal",
-			"value": 64
-		},
-		{
-			"name": "RoundtripKind",
-			"value": 128
-		}
-	],
+	"System.Globalization.DateTimeStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AllowLeadingWhite",
+				"value": 1
+			},
+			{
+				"name": "AllowTrailingWhite",
+				"value": 2
+			},
+			{
+				"name": "AllowInnerWhite",
+				"value": 4
+			},
+			{
+				"name": "AllowWhiteSpaces",
+				"value": 7
+			},
+			{
+				"name": "NoCurrentDateDefault",
+				"value": 8
+			},
+			{
+				"name": "AdjustToUniversal",
+				"value": 16
+			},
+			{
+				"name": "AssumeLocal",
+				"value": 32
+			},
+			{
+				"name": "AssumeUniversal",
+				"value": 64
+			},
+			{
+				"name": "RoundtripKind",
+				"value": 128
+			}
+		]
+	},
 	"via.render.SupportRenderMode": [
 		{
 			"name": "DeferredAndForward",
@@ -56415,32 +56502,35 @@
 			"value": 2
 		}
 	],
-	"offline.MainSceneUpdateManager.InstantiateMode": [
-		{
-			"name": "FrameHead",
-			"value": 1
-		},
-		{
-			"name": "Immediately",
-			"value": 4
-		},
-		{
-			"name": "FrameTail",
-			"value": 8
-		},
-		{
-			"name": "WaitPrefabReady",
-			"value": 4096
-		},
-		{
-			"name": "NoNullReaction",
-			"value": 8192
-		},
-		{
-			"name": "NoRetry",
-			"value": 16384
-		}
-	],
+	"offline.MainSceneUpdateManager.InstantiateMode": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FrameHead",
+				"value": 1
+			},
+			{
+				"name": "Immediately",
+				"value": 4
+			},
+			{
+				"name": "FrameTail",
+				"value": 8
+			},
+			{
+				"name": "WaitPrefabReady",
+				"value": 4096
+			},
+			{
+				"name": "NoNullReaction",
+				"value": 8192
+			},
+			{
+				"name": "NoRetry",
+				"value": 16384
+			}
+		]
+	},
 	"via.fluidflock.FluidFlockSimulationModelBase.NeiborSearchMethod": [
 		{
 			"name": "Default",
@@ -58367,24 +58457,27 @@
 			"value": 1
 		}
 	],
-	"offline.fsmv2.ExecutePhase": [
-		{
-			"name": "START",
-			"value": 1
-		},
-		{
-			"name": "UPDATE",
-			"value": 2
-		},
-		{
-			"name": "END",
-			"value": 4
-		},
-		{
-			"name": "SEQUENCE",
-			"value": 8
-		}
-	],
+	"offline.fsmv2.ExecutePhase": {
+		"flags": true,
+		"values": [
+			{
+				"name": "START",
+				"value": 1
+			},
+			{
+				"name": "UPDATE",
+				"value": 2
+			},
+			{
+				"name": "END",
+				"value": 4
+			},
+			{
+				"name": "SEQUENCE",
+				"value": 8
+			}
+		]
+	},
 	"offline.gamemastering.TimelineEventManager.DispEquipStateForClip": [
 		{
 			"name": "NONE",
@@ -58399,28 +58492,31 @@
 			"value": 2
 		}
 	],
-	"offline.CharacterDefine.MarkerReactionType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Heat",
-			"value": 1
-		},
-		{
-			"name": "Burn",
-			"value": 2
-		},
-		{
-			"name": "Cold",
-			"value": 4
-		},
-		{
-			"name": "BurnWithoutDamageForPlayer",
-			"value": 8
-		}
-	],
+	"offline.CharacterDefine.MarkerReactionType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Heat",
+				"value": 1
+			},
+			{
+				"name": "Burn",
+				"value": 2
+			},
+			{
+				"name": "Cold",
+				"value": 4
+			},
+			{
+				"name": "BurnWithoutDamageForPlayer",
+				"value": 8
+			}
+		]
+	},
 	"offline.effect.script.EffectDecal.DecalFollowEnum": [
 		{
 			"name": "NotFollow",
@@ -62892,16 +62988,19 @@
 			"value": 1
 		}
 	],
-	"offline.TwoFootLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		}
-	],
+	"offline.TwoFootLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			}
+		]
+	},
 	"offline.LookAtDefine.LimitAngleKind": [
 		{
 			"name": "Rectangle",
@@ -63202,24 +63301,27 @@
 			"value": 2
 		}
 	],
-	"offline.fsm.OwnerFsmComponentType": [
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "MotionFsm",
-			"value": 2
-		},
-		{
-			"name": "MotionJackFsm",
-			"value": 4
-		},
-		{
-			"name": "Other",
-			"value": 1073741824
-		}
-	],
+	"offline.fsm.OwnerFsmComponentType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "MotionFsm",
+				"value": 2
+			},
+			{
+				"name": "MotionJackFsm",
+				"value": 4
+			},
+			{
+				"name": "Other",
+				"value": 1073741824
+			}
+		]
+	},
 	"via.render.AlphaAA.AntialiasingMethod": [
 		{
 			"name": "FXAA",
@@ -63874,68 +63976,71 @@
 			"value": 5
 		}
 	],
-	"System.AttributeTargets": [
-		{
-			"name": "Assembly",
-			"value": 1
-		},
-		{
-			"name": "Module",
-			"value": 2
-		},
-		{
-			"name": "Class",
-			"value": 4
-		},
-		{
-			"name": "Struct",
-			"value": 8
-		},
-		{
-			"name": "Enum",
-			"value": 16
-		},
-		{
-			"name": "Constructor",
-			"value": 32
-		},
-		{
-			"name": "Method",
-			"value": 64
-		},
-		{
-			"name": "Property",
-			"value": 128
-		},
-		{
-			"name": "Field",
-			"value": 256
-		},
-		{
-			"name": "Event",
-			"value": 512
-		},
-		{
-			"name": "Interface",
-			"value": 1024
-		},
-		{
-			"name": "Parameter",
-			"value": 2048
-		},
-		{
-			"name": "Delegate",
-			"value": 4096
-		},
-		{
-			"name": "ReturnValue",
-			"value": 8192
-		},
-		{
-			"name": "All",
-			"value": 16383
-		}
-	],
+	"System.AttributeTargets": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Assembly",
+				"value": 1
+			},
+			{
+				"name": "Module",
+				"value": 2
+			},
+			{
+				"name": "Class",
+				"value": 4
+			},
+			{
+				"name": "Struct",
+				"value": 8
+			},
+			{
+				"name": "Enum",
+				"value": 16
+			},
+			{
+				"name": "Constructor",
+				"value": 32
+			},
+			{
+				"name": "Method",
+				"value": 64
+			},
+			{
+				"name": "Property",
+				"value": 128
+			},
+			{
+				"name": "Field",
+				"value": 256
+			},
+			{
+				"name": "Event",
+				"value": 512
+			},
+			{
+				"name": "Interface",
+				"value": 1024
+			},
+			{
+				"name": "Parameter",
+				"value": 2048
+			},
+			{
+				"name": "Delegate",
+				"value": 4096
+			},
+			{
+				"name": "ReturnValue",
+				"value": 8192
+			},
+			{
+				"name": "All",
+				"value": 16383
+			}
+		]
+	},
 	"via.effect.BindingType": [
 		{
 			"name": "Joint",
@@ -67006,16 +67111,19 @@
 			"value": 6
 		}
 	],
-	"via.Serializer.Options": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "FloatValueCompression",
-			"value": 1
-		}
-	],
+	"via.Serializer.Options": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "FloatValueCompression",
+				"value": 1
+			}
+		]
+	},
 	"offline.ReNet.PostTimingType": [
 		{
 			"name": "ManualSave",
@@ -67656,28 +67764,31 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.CallingConventions": [
-		{
-			"name": "Standard",
-			"value": 1
-		},
-		{
-			"name": "VarArgs",
-			"value": 2
-		},
-		{
-			"name": "Any",
-			"value": 3
-		},
-		{
-			"name": "HasThis",
-			"value": 32
-		},
-		{
-			"name": "ExplicitThis",
-			"value": 64
-		}
-	],
+	"System.Reflection.CallingConventions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Standard",
+				"value": 1
+			},
+			{
+				"name": "VarArgs",
+				"value": 2
+			},
+			{
+				"name": "Any",
+				"value": 3
+			},
+			{
+				"name": "HasThis",
+				"value": 32
+			},
+			{
+				"name": "ExplicitThis",
+				"value": 64
+			}
+		]
+	},
 	"via.physics.CharacterController.ContactType": [
 		{
 			"name": "Ground",
@@ -69048,84 +69159,87 @@
 			"value": 1
 		}
 	],
-	"offline.SurvivorDefine.ActionOrder.Precede": [
-		{
-			"name": "INVALID",
-			"value": 0
-		},
-		{
-			"name": "TURN",
-			"value": 1
-		},
-		{
-			"name": "QUICK_TURN",
-			"value": 2
-		},
-		{
-			"name": "ATTACK",
-			"value": 4
-		},
-		{
-			"name": "RELOAD",
-			"value": 8
-		},
-		{
-			"name": "CHANGE_WEAPON",
-			"value": 16
-		},
-		{
-			"name": "SWITCH_SIGHT",
-			"value": 32
-		},
-		{
-			"name": "SWITCH_LIGHT",
-			"value": 64
-		},
-		{
-			"name": "CHANGE_BULLET",
-			"value": 128
-		},
-		{
-			"name": "STEP_UP",
-			"value": 256
-		},
-		{
-			"name": "STEP_DOWN",
-			"value": 512
-		},
-		{
-			"name": "HOLD_DODGE",
-			"value": 1024
-		},
-		{
-			"name": "S_HOLD_DODGE",
-			"value": 2048
-		},
-		{
-			"name": "SHORT_ATTACK",
-			"value": 4096
-		},
-		{
-			"name": "RESIST_PARASITE",
-			"value": 8192
-		},
-		{
-			"name": "TACKLE",
-			"value": 16384
-		},
-		{
-			"name": "QUICK_TURN_EX",
-			"value": 32768
-		},
-		{
-			"name": "PUNCH",
-			"value": 65536
-		},
-		{
-			"name": "BACK_KNIFE",
-			"value": 131072
-		}
-	],
+	"offline.SurvivorDefine.ActionOrder.Precede": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INVALID",
+				"value": 0
+			},
+			{
+				"name": "TURN",
+				"value": 1
+			},
+			{
+				"name": "QUICK_TURN",
+				"value": 2
+			},
+			{
+				"name": "ATTACK",
+				"value": 4
+			},
+			{
+				"name": "RELOAD",
+				"value": 8
+			},
+			{
+				"name": "CHANGE_WEAPON",
+				"value": 16
+			},
+			{
+				"name": "SWITCH_SIGHT",
+				"value": 32
+			},
+			{
+				"name": "SWITCH_LIGHT",
+				"value": 64
+			},
+			{
+				"name": "CHANGE_BULLET",
+				"value": 128
+			},
+			{
+				"name": "STEP_UP",
+				"value": 256
+			},
+			{
+				"name": "STEP_DOWN",
+				"value": 512
+			},
+			{
+				"name": "HOLD_DODGE",
+				"value": 1024
+			},
+			{
+				"name": "S_HOLD_DODGE",
+				"value": 2048
+			},
+			{
+				"name": "SHORT_ATTACK",
+				"value": 4096
+			},
+			{
+				"name": "RESIST_PARASITE",
+				"value": 8192
+			},
+			{
+				"name": "TACKLE",
+				"value": 16384
+			},
+			{
+				"name": "QUICK_TURN_EX",
+				"value": 32768
+			},
+			{
+				"name": "PUNCH",
+				"value": 65536
+			},
+			{
+				"name": "BACK_KNIFE",
+				"value": 131072
+			}
+		]
+	},
 	"via.navigation.map.VerticesMatrixType": [
 		{
 			"name": "Original",
@@ -69162,32 +69276,35 @@
 			"value": 5
 		}
 	],
-	"offline.SurvivorDefine.Parts": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Body",
-			"value": 1
-		},
-		{
-			"name": "Face",
-			"value": 2
-		},
-		{
-			"name": "Hair",
-			"value": 4
-		},
-		{
-			"name": "Other",
-			"value": 8
-		},
-		{
-			"name": "All",
-			"value": 15
-		}
-	],
+	"offline.SurvivorDefine.Parts": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Body",
+				"value": 1
+			},
+			{
+				"name": "Face",
+				"value": 2
+			},
+			{
+				"name": "Hair",
+				"value": 4
+			},
+			{
+				"name": "Other",
+				"value": 8
+			},
+			{
+				"name": "All",
+				"value": 15
+			}
+		]
+	},
 	"offline.gimmick.action.GimmickMedicineMachine.CylinderPointType": [
 		{
 			"name": "POINT_A",
@@ -70633,232 +70750,235 @@
 			"value": 6
 		}
 	],
-	"offline.InputDefine.Kind": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "MOVE",
-			"value": 1
-		},
-		{
-			"name": "WATCH",
-			"value": 2
-		},
-		{
-			"name": "WALK",
-			"value": 4
-		},
-		{
-			"name": "JOG0",
-			"value": 8
-		},
-		{
-			"name": "JOG1",
-			"value": 16
-		},
-		{
-			"name": "QUICK_TURN",
-			"value": 32
-		},
-		{
-			"name": "HOLD",
-			"value": 64
-		},
-		{
-			"name": "SUPPORT_HOLD",
-			"value": 128
-		},
-		{
-			"name": "ATTACK",
-			"value": 256
-		},
-		{
-			"name": "RELOAD",
-			"value": 512
-		},
-		{
-			"name": "RESET_CAMERA",
-			"value": 1024
-		},
-		{
-			"name": "QUICK_TURN_EX",
-			"value": 2048
-		},
-		{
-			"name": "DEFENSE",
-			"value": 4096
-		},
-		{
-			"name": "ACTION",
-			"value": 8192
-		},
-		{
-			"name": "ITEM",
-			"value": 16384
-		},
-		{
-			"name": "GIMMICK_EX",
-			"value": 32768
-		},
-		{
-			"name": "PRESS_START",
-			"value": 65536
-		},
-		{
-			"name": "INVENTORY",
-			"value": 131072
-		},
-		{
-			"name": "CHANGE_BULLET",
-			"value": 262144
-		},
-		{
-			"name": "MINIMAP",
-			"value": 524288
-		},
-		{
-			"name": "PAUSE",
-			"value": 1048576
-		},
-		{
-			"name": "SKIP_EVENT",
-			"value": 2097152
-		},
-		{
-			"name": "DECIDE",
-			"value": 4194304
-		},
-		{
-			"name": "CANCEL",
-			"value": 8388608
-		},
-		{
-			"name": "UI_UP",
-			"value": 16777216
-		},
-		{
-			"name": "UI_DOWN",
-			"value": 33554432
-		},
-		{
-			"name": "UI_LEFT",
-			"value": 67108864
-		},
-		{
-			"name": "UI_RIGHT",
-			"value": 134217728
-		},
-		{
-			"name": "UI_SHIFT_LEFT",
-			"value": 268435456
-		},
-		{
-			"name": "UI_SHIFT_RIGHT",
-			"value": 536870912
-		},
-		{
-			"name": "UI_SHIFT_LEFT_2",
-			"value": 1073741824
-		},
-		{
-			"name": "UI_SHIFT_RIGHT_2",
-			"value": 2147483648
-		},
-		{
-			"name": "UI_EXCHANGE",
-			"value": 4294967296
-		},
-		{
-			"name": "UI_RESET",
-			"value": 8589934592
-		},
-		{
-			"name": "SHORTCUT_UP",
-			"value": 17179869184
-		},
-		{
-			"name": "SHORTCUT_DOWN",
-			"value": 34359738368
-		},
-		{
-			"name": "SHORTCUT_LEFT",
-			"value": 68719476736
-		},
-		{
-			"name": "SHORTCUT_RIGHT",
-			"value": 137438953472
-		},
-		{
-			"name": "UI_L_STICK",
-			"value": 274877906944
-		},
-		{
-			"name": "UI_R_STICK",
-			"value": 549755813888
-		},
-		{
-			"name": "DIALOG_DECIDE",
-			"value": 1099511627776
-		},
-		{
-			"name": "DIALOG_CANCEL",
-			"value": 2199023255552
-		},
-		{
-			"name": "UI_PAGE_UP",
-			"value": 4398046511104
-		},
-		{
-			"name": "UI_PAGE_DOWN",
-			"value": 8796093022208
-		},
-		{
-			"name": "UI_SCALE_UP",
-			"value": 17592186044416
-		},
-		{
-			"name": "UI_SCALE_DOWN",
-			"value": 35184372088832
-		},
-		{
-			"name": "UI_MAP_UP",
-			"value": 70368744177664
-		},
-		{
-			"name": "UI_MAP_DOWN",
-			"value": 140737488355328
-		},
-		{
-			"name": "UI_SORT",
-			"value": 281474976710656
-		},
-		{
-			"name": "UI_DISP",
-			"value": 562949953421312
-		},
-		{
-			"name": "FEVER",
-			"value": 1125899906842624
-		},
-		{
-			"name": "ESCAPE",
-			"value": 2251799813685248
-		},
-		{
-			"name": "GE_RDown",
-			"value": 4503599627370496
-		},
-		{
-			"name": "GE_RTrigTop",
-			"value": 9007199254740992
-		},
-		{
-			"name": "GE_RTrigBottom",
-			"value": 18014398509481984
-		}
-	],
+	"offline.InputDefine.Kind": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "MOVE",
+				"value": 1
+			},
+			{
+				"name": "WATCH",
+				"value": 2
+			},
+			{
+				"name": "WALK",
+				"value": 4
+			},
+			{
+				"name": "JOG0",
+				"value": 8
+			},
+			{
+				"name": "JOG1",
+				"value": 16
+			},
+			{
+				"name": "QUICK_TURN",
+				"value": 32
+			},
+			{
+				"name": "HOLD",
+				"value": 64
+			},
+			{
+				"name": "SUPPORT_HOLD",
+				"value": 128
+			},
+			{
+				"name": "ATTACK",
+				"value": 256
+			},
+			{
+				"name": "RELOAD",
+				"value": 512
+			},
+			{
+				"name": "RESET_CAMERA",
+				"value": 1024
+			},
+			{
+				"name": "QUICK_TURN_EX",
+				"value": 2048
+			},
+			{
+				"name": "DEFENSE",
+				"value": 4096
+			},
+			{
+				"name": "ACTION",
+				"value": 8192
+			},
+			{
+				"name": "ITEM",
+				"value": 16384
+			},
+			{
+				"name": "GIMMICK_EX",
+				"value": 32768
+			},
+			{
+				"name": "PRESS_START",
+				"value": 65536
+			},
+			{
+				"name": "INVENTORY",
+				"value": 131072
+			},
+			{
+				"name": "CHANGE_BULLET",
+				"value": 262144
+			},
+			{
+				"name": "MINIMAP",
+				"value": 524288
+			},
+			{
+				"name": "PAUSE",
+				"value": 1048576
+			},
+			{
+				"name": "SKIP_EVENT",
+				"value": 2097152
+			},
+			{
+				"name": "DECIDE",
+				"value": 4194304
+			},
+			{
+				"name": "CANCEL",
+				"value": 8388608
+			},
+			{
+				"name": "UI_UP",
+				"value": 16777216
+			},
+			{
+				"name": "UI_DOWN",
+				"value": 33554432
+			},
+			{
+				"name": "UI_LEFT",
+				"value": 67108864
+			},
+			{
+				"name": "UI_RIGHT",
+				"value": 134217728
+			},
+			{
+				"name": "UI_SHIFT_LEFT",
+				"value": 268435456
+			},
+			{
+				"name": "UI_SHIFT_RIGHT",
+				"value": 536870912
+			},
+			{
+				"name": "UI_SHIFT_LEFT_2",
+				"value": 1073741824
+			},
+			{
+				"name": "UI_SHIFT_RIGHT_2",
+				"value": 2147483648
+			},
+			{
+				"name": "UI_EXCHANGE",
+				"value": 4294967296
+			},
+			{
+				"name": "UI_RESET",
+				"value": 8589934592
+			},
+			{
+				"name": "SHORTCUT_UP",
+				"value": 17179869184
+			},
+			{
+				"name": "SHORTCUT_DOWN",
+				"value": 34359738368
+			},
+			{
+				"name": "SHORTCUT_LEFT",
+				"value": 68719476736
+			},
+			{
+				"name": "SHORTCUT_RIGHT",
+				"value": 137438953472
+			},
+			{
+				"name": "UI_L_STICK",
+				"value": 274877906944
+			},
+			{
+				"name": "UI_R_STICK",
+				"value": 549755813888
+			},
+			{
+				"name": "DIALOG_DECIDE",
+				"value": 1099511627776
+			},
+			{
+				"name": "DIALOG_CANCEL",
+				"value": 2199023255552
+			},
+			{
+				"name": "UI_PAGE_UP",
+				"value": 4398046511104
+			},
+			{
+				"name": "UI_PAGE_DOWN",
+				"value": 8796093022208
+			},
+			{
+				"name": "UI_SCALE_UP",
+				"value": 17592186044416
+			},
+			{
+				"name": "UI_SCALE_DOWN",
+				"value": 35184372088832
+			},
+			{
+				"name": "UI_MAP_UP",
+				"value": 70368744177664
+			},
+			{
+				"name": "UI_MAP_DOWN",
+				"value": 140737488355328
+			},
+			{
+				"name": "UI_SORT",
+				"value": 281474976710656
+			},
+			{
+				"name": "UI_DISP",
+				"value": 562949953421312
+			},
+			{
+				"name": "FEVER",
+				"value": 1125899906842624
+			},
+			{
+				"name": "ESCAPE",
+				"value": 2251799813685248
+			},
+			{
+				"name": "GE_RDown",
+				"value": 4503599627370496
+			},
+			{
+				"name": "GE_RTrigTop",
+				"value": 9007199254740992
+			},
+			{
+				"name": "GE_RTrigBottom",
+				"value": 18014398509481984
+			}
+		]
+	},
 	"via.rebe.RebeWorkingState": [
 		{
 			"name": "Unknown",
@@ -71387,136 +71507,139 @@
 			"value": 21
 		}
 	],
-	"System.Reflection.TypeAttributes": [
-		{
-			"name": "NotPublic",
-			"value": 0
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
-			"name": "Class",
-			"value": 0
-		},
-		{
-			"name": "Public",
-			"value": 1
-		},
-		{
-			"name": "NestedPublic",
-			"value": 2
-		},
-		{
-			"name": "NestedPrivate",
-			"value": 3
-		},
-		{
-			"name": "NestedFamily",
-			"value": 4
-		},
-		{
-			"name": "NestedAssembly",
-			"value": 5
-		},
-		{
-			"name": "NestedFamANDAssem",
-			"value": 6
-		},
-		{
-			"name": "NestedFamORAssem",
-			"value": 7
-		},
-		{
-			"name": "VisibilityMask",
-			"value": 7
-		},
-		{
-			"name": "SequentialLayout",
-			"value": 8
-		},
-		{
-			"name": "ExplicitLayout",
-			"value": 16
-		},
-		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "Interface",
-			"value": 32
-		},
-		{
-			"name": "ClassSemanticsMask",
-			"value": 32
-		},
-		{
-			"name": "Abstract",
-			"value": 128
-		},
-		{
-			"name": "Sealed",
-			"value": 256
-		},
-		{
-			"name": "SpecialName",
-			"value": 1024
-		},
-		{
-			"name": "Import",
-			"value": 4096
-		},
-		{
-			"name": "Serializable",
-			"value": 8192
-		},
-		{
-			"name": "WindowsRuntime",
-			"value": 16384
-		},
-		{
-			"name": "UnicodeClass",
-			"value": 65536
-		},
-		{
-			"name": "AutoClass",
-			"value": 131072
-		},
-		{
-			"name": "CustomFormatClass",
-			"value": 196608
-		},
-		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
-		},
-		{
-			"name": "HasSecurity",
-			"value": 262144
-		},
-		{
-			"name": "ReservedMask",
-			"value": 264192
-		}
-	],
+	"System.Reflection.TypeAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NotPublic",
+				"value": 0
+			},
+			{
+				"name": "AutoLayout",
+				"value": 0
+			},
+			{
+				"name": "AnsiClass",
+				"value": 0
+			},
+			{
+				"name": "Class",
+				"value": 0
+			},
+			{
+				"name": "Public",
+				"value": 1
+			},
+			{
+				"name": "NestedPublic",
+				"value": 2
+			},
+			{
+				"name": "NestedPrivate",
+				"value": 3
+			},
+			{
+				"name": "NestedFamily",
+				"value": 4
+			},
+			{
+				"name": "NestedAssembly",
+				"value": 5
+			},
+			{
+				"name": "NestedFamANDAssem",
+				"value": 6
+			},
+			{
+				"name": "NestedFamORAssem",
+				"value": 7
+			},
+			{
+				"name": "VisibilityMask",
+				"value": 7
+			},
+			{
+				"name": "SequentialLayout",
+				"value": 8
+			},
+			{
+				"name": "ExplicitLayout",
+				"value": 16
+			},
+			{
+				"name": "LayoutMask",
+				"value": 24
+			},
+			{
+				"name": "Interface",
+				"value": 32
+			},
+			{
+				"name": "ClassSemanticsMask",
+				"value": 32
+			},
+			{
+				"name": "Abstract",
+				"value": 128
+			},
+			{
+				"name": "Sealed",
+				"value": 256
+			},
+			{
+				"name": "SpecialName",
+				"value": 1024
+			},
+			{
+				"name": "Import",
+				"value": 4096
+			},
+			{
+				"name": "Serializable",
+				"value": 8192
+			},
+			{
+				"name": "WindowsRuntime",
+				"value": 16384
+			},
+			{
+				"name": "UnicodeClass",
+				"value": 65536
+			},
+			{
+				"name": "AutoClass",
+				"value": 131072
+			},
+			{
+				"name": "CustomFormatClass",
+				"value": 196608
+			},
+			{
+				"name": "CustomFormatMask",
+				"value": 12582912
+			},
+			{
+				"name": "StringFormatMask",
+				"value": 196608
+			},
+			{
+				"name": "BeforeFieldInit",
+				"value": 1048576
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 2048
+			},
+			{
+				"name": "HasSecurity",
+				"value": 262144
+			},
+			{
+				"name": "ReservedMask",
+				"value": 264192
+			}
+		]
+	},
 	"offline.effect.script.CreatedEffectContainer.RequestCommand.Command": [
 		{
 			"name": "None",
@@ -73528,32 +73651,35 @@
 			"value": 3
 		}
 	],
-	"via.attribute.AreaQueryCategoryAttribute.Category": [
-		{
-			"name": "Unknown",
-			"value": 0
-		},
-		{
-			"name": "AreaItem",
-			"value": 1
-		},
-		{
-			"name": "Position",
-			"value": 2
-		},
-		{
-			"name": "GameObject",
-			"value": 4
-		},
-		{
-			"name": "AreaRegion",
-			"value": 8
-		},
-		{
-			"name": "Any",
-			"value": 255
-		}
-	],
+	"via.attribute.AreaQueryCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unknown",
+				"value": 0
+			},
+			{
+				"name": "AreaItem",
+				"value": 1
+			},
+			{
+				"name": "Position",
+				"value": 2
+			},
+			{
+				"name": "GameObject",
+				"value": 4
+			},
+			{
+				"name": "AreaRegion",
+				"value": 8
+			},
+			{
+				"name": "Any",
+				"value": 255
+			}
+		]
+	},
 	"offline.camera.userdata.PlyaerCameraForceTwirlerUserData.TriggerType": [
 		{
 			"name": "Start",
@@ -76138,28 +76264,31 @@
 			"value": 17
 		}
 	],
-	"offline.navigation.Definition.Attr0": [
-		{
-			"name": "Ground",
-			"value": 1
-		},
-		{
-			"name": "Wall",
-			"value": 2
-		},
-		{
-			"name": "Ceiling",
-			"value": 4
-		},
-		{
-			"name": "WallCorner",
-			"value": 8
-		},
-		{
-			"name": "SewerSideway",
-			"value": 16
-		}
-	],
+	"offline.navigation.Definition.Attr0": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Ground",
+				"value": 1
+			},
+			{
+				"name": "Wall",
+				"value": 2
+			},
+			{
+				"name": "Ceiling",
+				"value": 4
+			},
+			{
+				"name": "WallCorner",
+				"value": 8
+			},
+			{
+				"name": "SewerSideway",
+				"value": 16
+			}
+		]
+	},
 	"offline.environment.GameObjectSwitcher.OrderTarget.Command": [
 		{
 			"name": "Keep",
@@ -76934,80 +77063,83 @@
 			"value": 2
 		}
 	],
-	"offline.EquipmentDefine.Bullet": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Handgun",
-			"value": 1
-		},
-		{
-			"name": "Shotgun",
-			"value": 2
-		},
-		{
-			"name": "SubMachinegun",
-			"value": 4
-		},
-		{
-			"name": "Magnum",
-			"value": 8
-		},
-		{
-			"name": "AcidGrenade",
-			"value": 16
-		},
-		{
-			"name": "FireGrenade",
-			"value": 32
-		},
-		{
-			"name": "EnergyPack",
-			"value": 64
-		},
-		{
-			"name": "Battery",
-			"value": 128
-		},
-		{
-			"name": "Fuel",
-			"value": 256
-		},
-		{
-			"name": "Handgun2",
-			"value": 512
-		},
-		{
-			"name": "Magnum2",
-			"value": 1024
-		},
-		{
-			"name": "MineGrenade",
-			"value": 2048
-		},
-		{
-			"name": "NormalGrenade",
-			"value": 4096
-		},
-		{
-			"name": "Rocket",
-			"value": 8192
-		},
-		{
-			"name": "Minigun",
-			"value": 16384
-		},
-		{
-			"name": "RailCannon",
-			"value": 32768
-		},
-		{
-			"name": "Solution",
-			"value": 65536
-		}
-	],
+	"offline.EquipmentDefine.Bullet": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Handgun",
+				"value": 1
+			},
+			{
+				"name": "Shotgun",
+				"value": 2
+			},
+			{
+				"name": "SubMachinegun",
+				"value": 4
+			},
+			{
+				"name": "Magnum",
+				"value": 8
+			},
+			{
+				"name": "AcidGrenade",
+				"value": 16
+			},
+			{
+				"name": "FireGrenade",
+				"value": 32
+			},
+			{
+				"name": "EnergyPack",
+				"value": 64
+			},
+			{
+				"name": "Battery",
+				"value": 128
+			},
+			{
+				"name": "Fuel",
+				"value": 256
+			},
+			{
+				"name": "Handgun2",
+				"value": 512
+			},
+			{
+				"name": "Magnum2",
+				"value": 1024
+			},
+			{
+				"name": "MineGrenade",
+				"value": 2048
+			},
+			{
+				"name": "NormalGrenade",
+				"value": 4096
+			},
+			{
+				"name": "Rocket",
+				"value": 8192
+			},
+			{
+				"name": "Minigun",
+				"value": 16384
+			},
+			{
+				"name": "RailCannon",
+				"value": 32768
+			},
+			{
+				"name": "Solution",
+				"value": 65536
+			}
+		]
+	},
 	"System.Runtime.CompilerServices.MethodCodeType": [
 		{
 			"name": "IL",
@@ -77174,24 +77306,27 @@
 			"value": 3
 		}
 	],
-	"offline.FourFootLockBitFlag": [
-		{
-			"name": "LEFT",
-			"value": 1
-		},
-		{
-			"name": "RIGHT",
-			"value": 2
-		},
-		{
-			"name": "FRONT_LEFT",
-			"value": 4
-		},
-		{
-			"name": "FRONT_RIGHT",
-			"value": 8
-		}
-	],
+	"offline.FourFootLockBitFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LEFT",
+				"value": 1
+			},
+			{
+				"name": "RIGHT",
+				"value": 2
+			},
+			{
+				"name": "FRONT_LEFT",
+				"value": 4
+			},
+			{
+				"name": "FRONT_RIGHT",
+				"value": 8
+			}
+		]
+	},
 	"via.storage.saveService.SaveServiceMode": [
 		{
 			"name": "SaveServiceMode_Default",
@@ -77334,140 +77469,143 @@
 			"value": 1
 		}
 	],
-	"via.AABB.VoronoiId": [
-		{
-			"name": "X_MinBit",
-			"value": 1
-		},
-		{
-			"name": "X_MaxBit",
-			"value": 2
-		},
-		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
-			"name": "P_YZX1",
-			"value": 2
-		},
-		{
-			"name": "P_ZXY0",
-			"value": 4
-		},
-		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
-		},
-		{
-			"name": "E_ZX0Y0",
-			"value": 5
-		},
-		{
-			"name": "E_ZX1Y0",
-			"value": 6
-		},
-		{
-			"name": "E_ZX0Y1",
-			"value": 9
-		},
-		{
-			"name": "E_ZX1Y1",
-			"value": 10
-		},
-		{
-			"name": "V_X0Y0Z0",
-			"value": 21
-		},
-		{
-			"name": "V_X1Y0Z0",
-			"value": 22
-		},
-		{
-			"name": "V_X0Y1Z0",
-			"value": 25
-		},
-		{
-			"name": "V_X1Y1Z0",
-			"value": 26
-		},
-		{
-			"name": "V_X0Y0Z1",
-			"value": 37
-		},
-		{
-			"name": "V_X1Y0Z1",
-			"value": 38
-		},
-		{
-			"name": "V_X0Y1Z1",
-			"value": 41
-		},
-		{
-			"name": "V_X1Y1Z1",
-			"value": 42
-		}
-	],
+	"via.AABB.VoronoiId": {
+		"flags": true,
+		"values": [
+			{
+				"name": "X_MinBit",
+				"value": 1
+			},
+			{
+				"name": "X_MaxBit",
+				"value": 2
+			},
+			{
+				"name": "Y_MinBit",
+				"value": 4
+			},
+			{
+				"name": "Y_MaxBit",
+				"value": 8
+			},
+			{
+				"name": "Z_MinBit",
+				"value": 16
+			},
+			{
+				"name": "Z_MaxBit",
+				"value": 32
+			},
+			{
+				"name": "Internal",
+				"value": 0
+			},
+			{
+				"name": "P_YZX0",
+				"value": 1
+			},
+			{
+				"name": "P_YZX1",
+				"value": 2
+			},
+			{
+				"name": "P_ZXY0",
+				"value": 4
+			},
+			{
+				"name": "P_ZXY1",
+				"value": 8
+			},
+			{
+				"name": "P_XYZ0",
+				"value": 16
+			},
+			{
+				"name": "P_XYZ1",
+				"value": 32
+			},
+			{
+				"name": "E_XY0Z0",
+				"value": 20
+			},
+			{
+				"name": "E_XY1Z0",
+				"value": 24
+			},
+			{
+				"name": "E_XY0Z1",
+				"value": 36
+			},
+			{
+				"name": "E_XY1Z1",
+				"value": 40
+			},
+			{
+				"name": "E_YZ0X0",
+				"value": 17
+			},
+			{
+				"name": "E_YZ1X0",
+				"value": 33
+			},
+			{
+				"name": "E_YZ0X1",
+				"value": 18
+			},
+			{
+				"name": "E_YZ1X1",
+				"value": 34
+			},
+			{
+				"name": "E_ZX0Y0",
+				"value": 5
+			},
+			{
+				"name": "E_ZX1Y0",
+				"value": 6
+			},
+			{
+				"name": "E_ZX0Y1",
+				"value": 9
+			},
+			{
+				"name": "E_ZX1Y1",
+				"value": 10
+			},
+			{
+				"name": "V_X0Y0Z0",
+				"value": 21
+			},
+			{
+				"name": "V_X1Y0Z0",
+				"value": 22
+			},
+			{
+				"name": "V_X0Y1Z0",
+				"value": 25
+			},
+			{
+				"name": "V_X1Y1Z0",
+				"value": 26
+			},
+			{
+				"name": "V_X0Y0Z1",
+				"value": 37
+			},
+			{
+				"name": "V_X1Y0Z1",
+				"value": 38
+			},
+			{
+				"name": "V_X0Y1Z1",
+				"value": 41
+			},
+			{
+				"name": "V_X1Y1Z1",
+				"value": 42
+			}
+		]
+	},
 	"via.navigation.map.LinkObject.LinkStatus": [
 		{
 			"name": "LinkStatus_Enabled",
@@ -79573,136 +79711,139 @@
 			"value": 5
 		}
 	],
-	"offline.motion.script.MotionExtraData.ContactStatus": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "LeftLegContact",
-			"value": 1
-		},
-		{
-			"name": "RightLegContact",
-			"value": 2
-		},
-		{
-			"name": "LeftLegStop",
-			"value": 4
-		},
-		{
-			"name": "RightLegStop",
-			"value": 8
-		},
-		{
-			"name": "LeftLegFix",
-			"value": 5
-		},
-		{
-			"name": "RightLegFix",
-			"value": 10
-		},
-		{
-			"name": "BothLegContact",
-			"value": 3
-		},
-		{
-			"name": "BothLegFix",
-			"value": 15
-		},
-		{
-			"name": "LeftLegStep",
-			"value": 16
-		},
-		{
-			"name": "RightLegStep",
-			"value": 32
-		},
-		{
-			"name": "LeftToeStop",
-			"value": 64
-		},
-		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
-			"name": "LeftToeFix",
-			"value": 65
-		},
-		{
-			"name": "RightToeFix",
-			"value": 130
-		},
-		{
-			"name": "BothToeFix",
-			"value": 195
-		},
-		{
-			"name": "LegAll",
-			"value": 255
-		},
-		{
-			"name": "LeftHandContact",
-			"value": 256
-		},
-		{
-			"name": "RightHandContact",
-			"value": 512
-		},
-		{
-			"name": "LeftHandStop",
-			"value": 1024
-		},
-		{
-			"name": "RightHandStop",
-			"value": 2048
-		},
-		{
-			"name": "LeftHandFix",
-			"value": 1280
-		},
-		{
-			"name": "RightHandFix",
-			"value": 2560
-		},
-		{
-			"name": "BothHandContact",
-			"value": 768
-		},
-		{
-			"name": "BothHandFix",
-			"value": 3840
-		},
-		{
-			"name": "LeftHandStep",
-			"value": 4096
-		},
-		{
-			"name": "RightHandStep",
-			"value": 8192
-		},
-		{
-			"name": "LeftHandTipStop",
-			"value": 16384
-		},
-		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
-			"name": "LeftHandTipFix",
-			"value": 16640
-		},
-		{
-			"name": "RightHandTipFix",
-			"value": 33280
-		},
-		{
-			"name": "BothHandTipFix",
-			"value": 49920
-		}
-	],
+	"offline.motion.script.MotionExtraData.ContactStatus": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "LeftLegContact",
+				"value": 1
+			},
+			{
+				"name": "RightLegContact",
+				"value": 2
+			},
+			{
+				"name": "LeftLegStop",
+				"value": 4
+			},
+			{
+				"name": "RightLegStop",
+				"value": 8
+			},
+			{
+				"name": "LeftLegFix",
+				"value": 5
+			},
+			{
+				"name": "RightLegFix",
+				"value": 10
+			},
+			{
+				"name": "BothLegContact",
+				"value": 3
+			},
+			{
+				"name": "BothLegFix",
+				"value": 15
+			},
+			{
+				"name": "LeftLegStep",
+				"value": 16
+			},
+			{
+				"name": "RightLegStep",
+				"value": 32
+			},
+			{
+				"name": "LeftToeStop",
+				"value": 64
+			},
+			{
+				"name": "RightToeStop",
+				"value": 128
+			},
+			{
+				"name": "LeftToeFix",
+				"value": 65
+			},
+			{
+				"name": "RightToeFix",
+				"value": 130
+			},
+			{
+				"name": "BothToeFix",
+				"value": 195
+			},
+			{
+				"name": "LegAll",
+				"value": 255
+			},
+			{
+				"name": "LeftHandContact",
+				"value": 256
+			},
+			{
+				"name": "RightHandContact",
+				"value": 512
+			},
+			{
+				"name": "LeftHandStop",
+				"value": 1024
+			},
+			{
+				"name": "RightHandStop",
+				"value": 2048
+			},
+			{
+				"name": "LeftHandFix",
+				"value": 1280
+			},
+			{
+				"name": "RightHandFix",
+				"value": 2560
+			},
+			{
+				"name": "BothHandContact",
+				"value": 768
+			},
+			{
+				"name": "BothHandFix",
+				"value": 3840
+			},
+			{
+				"name": "LeftHandStep",
+				"value": 4096
+			},
+			{
+				"name": "RightHandStep",
+				"value": 8192
+			},
+			{
+				"name": "LeftHandTipStop",
+				"value": 16384
+			},
+			{
+				"name": "RightHandTipStop",
+				"value": 32768
+			},
+			{
+				"name": "LeftHandTipFix",
+				"value": 16640
+			},
+			{
+				"name": "RightHandTipFix",
+				"value": 33280
+			},
+			{
+				"name": "BothHandTipFix",
+				"value": 49920
+			}
+		]
+	},
 	"offline.gamemastering.SaveDataManager.AnalyzedSaveFileTextList": [
 		{
 			"name": "SCENARIO_TYPE",
@@ -79793,16 +79934,19 @@
 			"value": 1
 		}
 	],
-	"offline.camera.fsmv2.action.ActionCameraPlayRequestRoot.MotSeqCheckTargetMask": [
-		{
-			"name": "FsmOwner",
-			"value": 1
-		},
-		{
-			"name": "MotionJackTarget",
-			"value": 2
-		}
-	],
+	"offline.camera.fsmv2.action.ActionCameraPlayRequestRoot.MotSeqCheckTargetMask": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FsmOwner",
+				"value": 1
+			},
+			{
+				"name": "MotionJackTarget",
+				"value": 2
+			}
+		]
+	},
 	"offline.escape.SlowManagerBehavior.SlowGroup": [
 		{
 			"name": "Etc",
@@ -80167,20 +80311,23 @@
 			"value": 7
 		}
 	],
-	"offline.enemy.sensor.EnemySensor.SensorKind": [
-		{
-			"name": "SIGHT",
-			"value": 1
-		},
-		{
-			"name": "HEARING",
-			"value": 2
-		},
-		{
-			"name": "TOUCH",
-			"value": 4
-		}
-	],
+	"offline.enemy.sensor.EnemySensor.SensorKind": {
+		"flags": true,
+		"values": [
+			{
+				"name": "SIGHT",
+				"value": 1
+			},
+			{
+				"name": "HEARING",
+				"value": 2
+			},
+			{
+				"name": "TOUCH",
+				"value": 4
+			}
+		]
+	},
 	"via.wwise.StateThread": [
 		{
 			"name": "None",
@@ -82367,28 +82514,31 @@
 			"value": 255
 		}
 	],
-	"offline.EquipmentDefine.WeaponParts": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "A",
-			"value": 1
-		},
-		{
-			"name": "B",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "FullCustom",
-			"value": 7
-		}
-	],
+	"offline.EquipmentDefine.WeaponParts": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "A",
+				"value": 1
+			},
+			{
+				"name": "B",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "FullCustom",
+				"value": 7
+			}
+		]
+	},
 	"offline.gimmick.action.GimmickCircuitPuzzle.ColorType": [
 		{
 			"name": "NONE",
@@ -83159,48 +83309,51 @@
 			"value": 33
 		}
 	],
-	"offline.EquipmentDefine.DisplayControlTarget": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Main",
-			"value": 1
-		},
-		{
-			"name": "Sub",
-			"value": 2
-		},
-		{
-			"name": "Holsters",
-			"value": 4
-		},
-		{
-			"name": "FlashLight",
-			"value": 8
-		},
-		{
-			"name": "FlashLightSource",
-			"value": 16
-		},
-		{
-			"name": "Reserve05",
-			"value": 32
-		},
-		{
-			"name": "Reserve06",
-			"value": 64
-		},
-		{
-			"name": "Other",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 255
-		}
-	],
+	"offline.EquipmentDefine.DisplayControlTarget": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Main",
+				"value": 1
+			},
+			{
+				"name": "Sub",
+				"value": 2
+			},
+			{
+				"name": "Holsters",
+				"value": 4
+			},
+			{
+				"name": "FlashLight",
+				"value": 8
+			},
+			{
+				"name": "FlashLightSource",
+				"value": 16
+			},
+			{
+				"name": "Reserve05",
+				"value": 32
+			},
+			{
+				"name": "Reserve06",
+				"value": 64
+			},
+			{
+				"name": "Other",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 255
+			}
+		]
+	},
 	"offline.IkHumanRetargetSolver.RetargetTargetType": [
 		{
 			"name": "Self",
@@ -86246,20 +86399,23 @@
 			"value": 3
 		}
 	],
-	"offline.qc.QualityPerformanceBalancer.PauseReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Debug",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		}
-	],
+	"offline.qc.QualityPerformanceBalancer.PauseReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Debug",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			}
+		]
+	},
 	"via.sound.SoundCurveYValueType": [
 		{
 			"name": "FloatValue",
@@ -88414,72 +88570,75 @@
 			"value": 10
 		}
 	],
-	"System.Reflection.MethodImplAttributes": [
-		{
-			"name": "CodeTypeMask",
-			"value": 3
-		},
-		{
-			"name": "IL",
-			"value": 0
-		},
-		{
-			"name": "Native",
-			"value": 1
-		},
-		{
-			"name": "OPTIL",
-			"value": 2
-		},
-		{
-			"name": "Runtime",
-			"value": 3
-		},
-		{
-			"name": "ManagedMask",
-			"value": 4
-		},
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "Managed",
-			"value": 0
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "MaxMethodImplVal",
-			"value": 65535
-		}
-	],
+	"System.Reflection.MethodImplAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CodeTypeMask",
+				"value": 3
+			},
+			{
+				"name": "IL",
+				"value": 0
+			},
+			{
+				"name": "Native",
+				"value": 1
+			},
+			{
+				"name": "OPTIL",
+				"value": 2
+			},
+			{
+				"name": "Runtime",
+				"value": 3
+			},
+			{
+				"name": "ManagedMask",
+				"value": 4
+			},
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "Managed",
+				"value": 0
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "MaxMethodImplVal",
+				"value": 65535
+			}
+		]
+	},
 	"via.behaviortree.SelectorCallerArg.EventType": [
 		{
 			"name": "None",
@@ -88898,40 +89057,43 @@
 			"value": 2
 		}
 	],
-	"offline.SurvivorDefine.SurvivorMotionType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Male",
-			"value": 1
-		},
-		{
-			"name": "Male2",
-			"value": 2
-		},
-		{
-			"name": "Female",
-			"value": 4
-		},
-		{
-			"name": "Female2",
-			"value": 8
-		},
-		{
-			"name": "ChildMale",
-			"value": 16
-		},
-		{
-			"name": "ChildFemale",
-			"value": 32
-		},
-		{
-			"name": "Female3",
-			"value": 64
-		}
-	],
+	"offline.SurvivorDefine.SurvivorMotionType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Male",
+				"value": 1
+			},
+			{
+				"name": "Male2",
+				"value": 2
+			},
+			{
+				"name": "Female",
+				"value": 4
+			},
+			{
+				"name": "Female2",
+				"value": 8
+			},
+			{
+				"name": "ChildMale",
+				"value": 16
+			},
+			{
+				"name": "ChildFemale",
+				"value": 32
+			},
+			{
+				"name": "Female3",
+				"value": 64
+			}
+		]
+	},
 	"via.storage.ProprietaryDLC.DownloadStatus": [
 		{
 			"name": "InvalidToken",
@@ -90246,124 +90408,127 @@
 			"value": 1
 		}
 	],
-	"via.SystemServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Language",
-			"value": 1
-		},
-		{
-			"name": "DateFormat",
-			"value": 2
-		},
-		{
-			"name": "TimeFormat",
-			"value": 4
-		},
-		{
-			"name": "TimeZoneOffset",
-			"value": 8
-		},
-		{
-			"name": "SummerTime",
-			"value": 16
-		},
-		{
-			"name": "SystemUiOverlay",
-			"value": 32
-		},
-		{
-			"name": "BackgroundExecution",
-			"value": 64
-		},
-		{
-			"name": "ApplicationSuspend",
-			"value": 128
-		},
-		{
-			"name": "ApplicationResume",
-			"value": 256
-		},
-		{
-			"name": "GetDisplaySafeAreaRatio",
-			"value": 512
-		},
-		{
-			"name": "SplashScreenControl",
-			"value": 1024
-		},
-		{
-			"name": "ScreenSaverControl",
-			"value": 2048
-		},
-		{
-			"name": "ApplicationParameter",
-			"value": 4096
-		},
-		{
-			"name": "SkuFlag",
-			"value": 8192
-		},
-		{
-			"name": "ResetVrPosition",
-			"value": 16384
-		},
-		{
-			"name": "OpenShareMenu",
-			"value": 32768
-		},
-		{
-			"name": "VideoRecorder",
-			"value": 65536
-		},
-		{
-			"name": "ApplicationActivate",
-			"value": 131072
-		},
-		{
-			"name": "ApplicationDeactivate",
-			"value": 262144
-		},
-		{
-			"name": "Country",
-			"value": 524288
-		},
-		{
-			"name": "AccountPicker",
-			"value": 1048576
-		},
-		{
-			"name": "Geography",
-			"value": 4194304
-		},
-		{
-			"name": "SetScreenBrightness",
-			"value": 8388608
-		},
-		{
-			"name": "GetApplicationVersion",
-			"value": 8388608
-		},
-		{
-			"name": "ApplicationExitRequestControl",
-			"value": 16777216
-		},
-		{
-			"name": "NoticeScreenShownControl",
-			"value": 33554432
-		},
-		{
-			"name": "InputIdleSectionControl",
-			"value": 67108864
-		},
-		{
-			"name": "DyingMessage",
-			"value": 134217728
-		}
-	],
+	"via.SystemServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Language",
+				"value": 1
+			},
+			{
+				"name": "DateFormat",
+				"value": 2
+			},
+			{
+				"name": "TimeFormat",
+				"value": 4
+			},
+			{
+				"name": "TimeZoneOffset",
+				"value": 8
+			},
+			{
+				"name": "SummerTime",
+				"value": 16
+			},
+			{
+				"name": "SystemUiOverlay",
+				"value": 32
+			},
+			{
+				"name": "BackgroundExecution",
+				"value": 64
+			},
+			{
+				"name": "ApplicationSuspend",
+				"value": 128
+			},
+			{
+				"name": "ApplicationResume",
+				"value": 256
+			},
+			{
+				"name": "GetDisplaySafeAreaRatio",
+				"value": 512
+			},
+			{
+				"name": "SplashScreenControl",
+				"value": 1024
+			},
+			{
+				"name": "ScreenSaverControl",
+				"value": 2048
+			},
+			{
+				"name": "ApplicationParameter",
+				"value": 4096
+			},
+			{
+				"name": "SkuFlag",
+				"value": 8192
+			},
+			{
+				"name": "ResetVrPosition",
+				"value": 16384
+			},
+			{
+				"name": "OpenShareMenu",
+				"value": 32768
+			},
+			{
+				"name": "VideoRecorder",
+				"value": 65536
+			},
+			{
+				"name": "ApplicationActivate",
+				"value": 131072
+			},
+			{
+				"name": "ApplicationDeactivate",
+				"value": 262144
+			},
+			{
+				"name": "Country",
+				"value": 524288
+			},
+			{
+				"name": "AccountPicker",
+				"value": 1048576
+			},
+			{
+				"name": "Geography",
+				"value": 4194304
+			},
+			{
+				"name": "SetScreenBrightness",
+				"value": 8388608
+			},
+			{
+				"name": "GetApplicationVersion",
+				"value": 8388608
+			},
+			{
+				"name": "ApplicationExitRequestControl",
+				"value": 16777216
+			},
+			{
+				"name": "NoticeScreenShownControl",
+				"value": 33554432
+			},
+			{
+				"name": "InputIdleSectionControl",
+				"value": 67108864
+			},
+			{
+				"name": "DyingMessage",
+				"value": 134217728
+			}
+		]
+	},
 	"offline.gimmick.action.GimmickStatueOfWisdomControl.Rno": [
 		{
 			"name": "INIT",
@@ -91070,92 +91235,95 @@
 			"value": 33
 		}
 	],
-	"offline.navigation.Definition.Attr1": [
-		{
-			"name": "Door",
-			"value": 1
-		},
-		{
-			"name": "Ladder",
-			"value": 2
-		},
-		{
-			"name": "Box",
-			"value": 4
-		},
-		{
-			"name": "G2Jump",
-			"value": 8
-		},
-		{
-			"name": "Step",
-			"value": 16
-		},
-		{
-			"name": "Ladder_Upper",
-			"value": 32
-		},
-		{
-			"name": "Ladder_Lower",
-			"value": 64
-		},
-		{
-			"name": "Edge_Upper",
-			"value": 128
-		},
-		{
-			"name": "Edge_Lower",
-			"value": 256
-		},
-		{
-			"name": "Edge",
-			"value": 512
-		},
-		{
-			"name": "Detour00",
-			"value": 1024
-		},
-		{
-			"name": "Detour01",
-			"value": 2048
-		},
-		{
-			"name": "Licker",
-			"value": 4096
-		},
-		{
-			"name": "Step1M",
-			"value": 8192
-		},
-		{
-			"name": "Step1M_Up",
-			"value": 16384
-		},
-		{
-			"name": "Step1M_Down",
-			"value": 32768
-		},
-		{
-			"name": "GimmickPassingThrough",
-			"value": 65536
-		},
-		{
-			"name": "GimmickJumpOver",
-			"value": 131072
-		},
-		{
-			"name": "GimmickNemesisPassingThrough",
-			"value": 262144
-		},
-		{
-			"name": "GimmickEm3500PassingThrough",
-			"value": 524288
-		},
-		{
-			"name": "GimmickHunterBetaJumpOver",
-			"value": 1048576
-		}
-	],
+	"offline.navigation.Definition.Attr1": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Door",
+				"value": 1
+			},
+			{
+				"name": "Ladder",
+				"value": 2
+			},
+			{
+				"name": "Box",
+				"value": 4
+			},
+			{
+				"name": "G2Jump",
+				"value": 8
+			},
+			{
+				"name": "Step",
+				"value": 16
+			},
+			{
+				"name": "Ladder_Upper",
+				"value": 32
+			},
+			{
+				"name": "Ladder_Lower",
+				"value": 64
+			},
+			{
+				"name": "Edge_Upper",
+				"value": 128
+			},
+			{
+				"name": "Edge_Lower",
+				"value": 256
+			},
+			{
+				"name": "Edge",
+				"value": 512
+			},
+			{
+				"name": "Detour00",
+				"value": 1024
+			},
+			{
+				"name": "Detour01",
+				"value": 2048
+			},
+			{
+				"name": "Licker",
+				"value": 4096
+			},
+			{
+				"name": "Step1M",
+				"value": 8192
+			},
+			{
+				"name": "Step1M_Up",
+				"value": 16384
+			},
+			{
+				"name": "Step1M_Down",
+				"value": 32768
+			},
+			{
+				"name": "GimmickPassingThrough",
+				"value": 65536
+			},
+			{
+				"name": "GimmickJumpOver",
+				"value": 131072
+			},
+			{
+				"name": "GimmickNemesisPassingThrough",
+				"value": 262144
+			},
+			{
+				"name": "GimmickEm3500PassingThrough",
+				"value": 524288
+			},
+			{
+				"name": "GimmickHunterBetaJumpOver",
+				"value": 1048576
+			}
+		]
+	},
 	"offline.enemy.em0000.RoleMotionID.RailingFall": [
 		{
 			"name": "RAILING_FALL_FENCE",
@@ -91314,40 +91482,43 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.GenericParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
-			"name": "Covariant",
-			"value": 1
-		},
-		{
-			"name": "Contravariant",
-			"value": 2
-		},
-		{
-			"name": "SpecialConstraintMask",
-			"value": 28
-		},
-		{
-			"name": "ReferenceTypeConstraint",
-			"value": 4
-		},
-		{
-			"name": "NotNullableValueTypeConstraint",
-			"value": 8
-		},
-		{
-			"name": "DefaultConstructorConstraint",
-			"value": 16
-		}
-	],
+	"System.Reflection.GenericParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "VarianceMask",
+				"value": 3
+			},
+			{
+				"name": "Covariant",
+				"value": 1
+			},
+			{
+				"name": "Contravariant",
+				"value": 2
+			},
+			{
+				"name": "SpecialConstraintMask",
+				"value": 28
+			},
+			{
+				"name": "ReferenceTypeConstraint",
+				"value": 4
+			},
+			{
+				"name": "NotNullableValueTypeConstraint",
+				"value": 8
+			},
+			{
+				"name": "DefaultConstructorConstraint",
+				"value": 16
+			}
+		]
+	},
 	"via.os.FileAttr": [
 		{
 			"name": "Read",
@@ -92512,16 +92683,19 @@
 			"value": 2
 		}
 	],
-	"via.hid.VirtualDeviceOwnerType": [
-		{
-			"name": "VirtualInput",
-			"value": 1
-		},
-		{
-			"name": "RemoteInput",
-			"value": 2
-		}
-	],
+	"via.hid.VirtualDeviceOwnerType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "VirtualInput",
+				"value": 1
+			},
+			{
+				"name": "RemoteInput",
+				"value": 2
+			}
+		]
+	},
 	"offline.CollisionDefine.HitPriority": [
 		{
 			"name": "Priority_00",
@@ -92644,28 +92818,31 @@
 			"value": 7
 		}
 	],
-	"offline.CollisionDefine.AttackEnchantAttribute": [
-		{
-			"name": "Poison",
-			"value": 1
-		},
-		{
-			"name": "Acid",
-			"value": 2
-		},
-		{
-			"name": "Burn",
-			"value": 4
-		},
-		{
-			"name": "Electric",
-			"value": 8
-		},
-		{
-			"name": "PairLinkRay",
-			"value": 16
-		}
-	],
+	"offline.CollisionDefine.AttackEnchantAttribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Poison",
+				"value": 1
+			},
+			{
+				"name": "Acid",
+				"value": 2
+			},
+			{
+				"name": "Burn",
+				"value": 4
+			},
+			{
+				"name": "Electric",
+				"value": 8
+			},
+			{
+				"name": "PairLinkRay",
+				"value": 16
+			}
+		]
+	},
 	"via.geometry.BrushPrimitive": [
 		{
 			"name": "Box",
@@ -92730,24 +92907,27 @@
 			"value": 2
 		}
 	],
-	"offline.fsmv2.OwnerFsmComponentType": [
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "MotionFsm",
-			"value": 2
-		},
-		{
-			"name": "MotionJackFsm",
-			"value": 4
-		},
-		{
-			"name": "Other",
-			"value": 1073741824
-		}
-	],
+	"offline.fsmv2.OwnerFsmComponentType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "MotionFsm",
+				"value": 2
+			},
+			{
+				"name": "MotionJackFsm",
+				"value": 4
+			},
+			{
+				"name": "Other",
+				"value": 1073741824
+			}
+		]
+	},
 	"offline.SurvivorDefine.Damage.Type": [
 		{
 			"name": "None",
@@ -93488,48 +93668,51 @@
 			"value": 2
 		}
 	],
-	"offline.effect.script.GroupFlag": [
-		{
-			"name": "Player",
-			"value": 1
-		},
-		{
-			"name": "Enemy",
-			"value": 2
-		},
-		{
-			"name": "Item",
-			"value": 8
-		},
-		{
-			"name": "Weapon",
-			"value": 4
-		},
-		{
-			"name": "Prop",
-			"value": 16
-		},
-		{
-			"name": "Etc",
-			"value": 32
-		},
-		{
-			"name": "Vfx",
-			"value": 64
-		},
-		{
-			"name": "Camera",
-			"value": 128
-		},
-		{
-			"name": "ActionPoint",
-			"value": 256
-		},
-		{
-			"name": "EventChara",
-			"value": 512
-		}
-	],
+	"offline.effect.script.GroupFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Player",
+				"value": 1
+			},
+			{
+				"name": "Enemy",
+				"value": 2
+			},
+			{
+				"name": "Item",
+				"value": 8
+			},
+			{
+				"name": "Weapon",
+				"value": 4
+			},
+			{
+				"name": "Prop",
+				"value": 16
+			},
+			{
+				"name": "Etc",
+				"value": 32
+			},
+			{
+				"name": "Vfx",
+				"value": 64
+			},
+			{
+				"name": "Camera",
+				"value": 128
+			},
+			{
+				"name": "ActionPoint",
+				"value": 256
+			},
+			{
+				"name": "EventChara",
+				"value": 512
+			}
+		]
+	},
 	"via.render.UIColorCorrect.SourceType": [
 		{
 			"name": "LDRPostProcess",
@@ -94442,20 +94625,23 @@
 			"value": 4
 		}
 	],
-	"offline.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": [
-		{
-			"name": "Stamp",
-			"value": 1
-		},
-		{
-			"name": "Decal",
-			"value": 2
-		},
-		{
-			"name": "StampAndDecal",
-			"value": 3
-		}
-	],
+	"offline.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Stamp",
+				"value": 1
+			},
+			{
+				"name": "Decal",
+				"value": 2
+			},
+			{
+				"name": "StampAndDecal",
+				"value": 3
+			}
+		]
+	},
 	"via.landscape.path.InterpolateType": [
 		{
 			"name": "Bezier",
@@ -95274,16 +95460,19 @@
 			"value": 7
 		}
 	],
-	"offline.SurvivorAssignManager.TransactionOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "KeepPlayerPosition",
-			"value": 1
-		}
-	],
+	"offline.SurvivorAssignManager.TransactionOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "KeepPlayerPosition",
+				"value": 1
+			}
+		]
+	},
 	"offline.escape.enemy.em9300.fsmv2.action.EsEm9300FsmAction_SceArmR_AttackBlendRate.MulAttackBlendRateName": [
 		{
 			"name": "L_SceArm",
@@ -96359,104 +96548,107 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.MethodAttributes": [
-		{
-			"name": "MemberAccessMask",
-			"value": 7
-		},
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "Final",
-			"value": 32
-		},
-		{
-			"name": "Virtual",
-			"value": 64
-		},
-		{
-			"name": "HideBySig",
-			"value": 128
-		},
-		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
-			"name": "VtableLayoutMask",
-			"value": 256
-		},
-		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
-			"name": "NewSlot",
-			"value": 256
-		},
-		{
-			"name": "Abstract",
-			"value": 1024
-		},
-		{
-			"name": "SpecialName",
-			"value": 2048
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 4096
-		},
-		{
-			"name": "HasSecurity",
-			"value": 16384
-		},
-		{
-			"name": "RequireSecObject",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 53248
-		}
-	],
+	"System.Reflection.MethodAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MemberAccessMask",
+				"value": 7
+			},
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "Final",
+				"value": 32
+			},
+			{
+				"name": "Virtual",
+				"value": 64
+			},
+			{
+				"name": "HideBySig",
+				"value": 128
+			},
+			{
+				"name": "CheckAccessOnOverride",
+				"value": 512
+			},
+			{
+				"name": "VtableLayoutMask",
+				"value": 256
+			},
+			{
+				"name": "ReuseSlot",
+				"value": 0
+			},
+			{
+				"name": "NewSlot",
+				"value": 256
+			},
+			{
+				"name": "Abstract",
+				"value": 1024
+			},
+			{
+				"name": "SpecialName",
+				"value": 2048
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "UnmanagedExport",
+				"value": 8
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 4096
+			},
+			{
+				"name": "HasSecurity",
+				"value": 16384
+			},
+			{
+				"name": "RequireSecObject",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 53248
+			}
+		]
+	},
 	"offline.gui.GimmickKeyInputGuiBehavior.KeyType": [
 		{
 			"name": "ABC",
@@ -96921,28 +97113,31 @@
 			"value": 5
 		}
 	],
-	"offline.CollisionDefine.AttackAttribute": [
-		{
-			"name": "INFINITE_HIT",
-			"value": 1
-		},
-		{
-			"name": "OWNER_HIT",
-			"value": 2
-		},
-		{
-			"name": "NOT_KILL",
-			"value": 4
-		},
-		{
-			"name": "THROUGH_TERRAIN",
-			"value": 8
-		},
-		{
-			"name": "DIS_SPIRITS_UP_RATE",
-			"value": 16
-		}
-	],
+	"offline.CollisionDefine.AttackAttribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INFINITE_HIT",
+				"value": 1
+			},
+			{
+				"name": "OWNER_HIT",
+				"value": 2
+			},
+			{
+				"name": "NOT_KILL",
+				"value": 4
+			},
+			{
+				"name": "THROUGH_TERRAIN",
+				"value": 8
+			},
+			{
+				"name": "DIS_SPIRITS_UP_RATE",
+				"value": 16
+			}
+		]
+	},
 	"offline.gamemastering.item.Type": [
 		{
 			"name": "Invalid",
@@ -97737,88 +97932,91 @@
 			"value": 5
 		}
 	],
-	"System.Reflection.BindingFlags": [
-		{
-			"name": "Default",
-			"value": 0
-		},
-		{
-			"name": "IgnoreCase",
-			"value": 1
-		},
-		{
-			"name": "DeclaredOnly",
-			"value": 2
-		},
-		{
-			"name": "Instance",
-			"value": 4
-		},
-		{
-			"name": "Static",
-			"value": 8
-		},
-		{
-			"name": "Public",
-			"value": 16
-		},
-		{
-			"name": "NonPublic",
-			"value": 32
-		},
-		{
-			"name": "FlattenHierarchy",
-			"value": 64
-		},
-		{
-			"name": "InvokeMethod",
-			"value": 256
-		},
-		{
-			"name": "CreateInstance",
-			"value": 512
-		},
-		{
-			"name": "GetField",
-			"value": 1024
-		},
-		{
-			"name": "SetField",
-			"value": 2048
-		},
-		{
-			"name": "GetProperty",
-			"value": 4096
-		},
-		{
-			"name": "SetProperty",
-			"value": 8192
-		},
-		{
-			"name": "PutDispProperty",
-			"value": 16384
-		},
-		{
-			"name": "PutRefDispProperty",
-			"value": 32768
-		},
-		{
-			"name": "ExactBinding",
-			"value": 65536
-		},
-		{
-			"name": "SuppressChangeType",
-			"value": 131072
-		},
-		{
-			"name": "OptionalParamBinding",
-			"value": 262144
-		},
-		{
-			"name": "IgnoreReturn",
-			"value": 16777216
-		}
-	],
+	"System.Reflection.BindingFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Default",
+				"value": 0
+			},
+			{
+				"name": "IgnoreCase",
+				"value": 1
+			},
+			{
+				"name": "DeclaredOnly",
+				"value": 2
+			},
+			{
+				"name": "Instance",
+				"value": 4
+			},
+			{
+				"name": "Static",
+				"value": 8
+			},
+			{
+				"name": "Public",
+				"value": 16
+			},
+			{
+				"name": "NonPublic",
+				"value": 32
+			},
+			{
+				"name": "FlattenHierarchy",
+				"value": 64
+			},
+			{
+				"name": "InvokeMethod",
+				"value": 256
+			},
+			{
+				"name": "CreateInstance",
+				"value": 512
+			},
+			{
+				"name": "GetField",
+				"value": 1024
+			},
+			{
+				"name": "SetField",
+				"value": 2048
+			},
+			{
+				"name": "GetProperty",
+				"value": 4096
+			},
+			{
+				"name": "SetProperty",
+				"value": 8192
+			},
+			{
+				"name": "PutDispProperty",
+				"value": 16384
+			},
+			{
+				"name": "PutRefDispProperty",
+				"value": 32768
+			},
+			{
+				"name": "ExactBinding",
+				"value": 65536
+			},
+			{
+				"name": "SuppressChangeType",
+				"value": 131072
+			},
+			{
+				"name": "OptionalParamBinding",
+				"value": 262144
+			},
+			{
+				"name": "IgnoreReturn",
+				"value": 16777216
+			}
+		]
+	},
 	"offline.effect.script.RenderTargetTextureManager.RTTRequestState": [
 		{
 			"name": "Invalid",
@@ -98835,28 +99033,31 @@
 			"value": 2
 		}
 	],
-	"offline.gamemastering.network.StoreXB1.ProductItemTypes": [
-		{
-			"name": "App",
-			"value": 1
-		},
-		{
-			"name": "Consumable",
-			"value": 4
-		},
-		{
-			"name": "Durable",
-			"value": 8
-		},
-		{
-			"name": "Game",
-			"value": 1
-		},
-		{
-			"name": "GameDemo",
-			"value": 16
-		}
-	],
+	"offline.gamemastering.network.StoreXB1.ProductItemTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "App",
+				"value": 1
+			},
+			{
+				"name": "Consumable",
+				"value": 4
+			},
+			{
+				"name": "Durable",
+				"value": 8
+			},
+			{
+				"name": "Game",
+				"value": 1
+			},
+			{
+				"name": "GameDemo",
+				"value": 16
+			}
+		]
+	},
 	"via.network.core.InterfaceType": [
 		{
 			"name": "Unknown",
@@ -103353,88 +103554,91 @@
 			"value": 20
 		}
 	],
-	"via.ShareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ScreenShot",
-			"value": 1
-		},
-		{
-			"name": "ScreenShotControl",
-			"value": 2
-		},
-		{
-			"name": "ScreenShotRequest",
-			"value": 4
-		},
-		{
-			"name": "ScreenShotOverlayImage",
-			"value": 8
-		},
-		{
-			"name": "ScreenShotChangeOverlayImage",
-			"value": 16
-		},
-		{
-			"name": "VideoRecording",
-			"value": 32
-		},
-		{
-			"name": "VideoRecordingControl",
-			"value": 64
-		},
-		{
-			"name": "VideoRecordingRequest",
-			"value": 128
-		},
-		{
-			"name": "VideoRecordingOverlayImage",
-			"value": 256
-		},
-		{
-			"name": "VideoRecordingChangeOverlayImage",
-			"value": 512
-		},
-		{
-			"name": "GameLiveStreaming",
-			"value": 1024
-		},
-		{
-			"name": "GameLiveStreamingControl",
-			"value": 2048
-		},
-		{
-			"name": "GameLiveStreamingRequest",
-			"value": 4096
-		},
-		{
-			"name": "GameLiveStreamingStatusWatching",
-			"value": 8192
-		},
-		{
-			"name": "SharePlay",
-			"value": 16384
-		},
-		{
-			"name": "SharePlayControl",
-			"value": 32768
-		},
-		{
-			"name": "SharePlayStatusWatching",
-			"value": 65536
-		},
-		{
-			"name": "ShareUtility",
-			"value": 131072
-		},
-		{
-			"name": "ScreenShotShowFiles",
-			"value": 262144
-		}
-	],
+	"via.ShareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ScreenShot",
+				"value": 1
+			},
+			{
+				"name": "ScreenShotControl",
+				"value": 2
+			},
+			{
+				"name": "ScreenShotRequest",
+				"value": 4
+			},
+			{
+				"name": "ScreenShotOverlayImage",
+				"value": 8
+			},
+			{
+				"name": "ScreenShotChangeOverlayImage",
+				"value": 16
+			},
+			{
+				"name": "VideoRecording",
+				"value": 32
+			},
+			{
+				"name": "VideoRecordingControl",
+				"value": 64
+			},
+			{
+				"name": "VideoRecordingRequest",
+				"value": 128
+			},
+			{
+				"name": "VideoRecordingOverlayImage",
+				"value": 256
+			},
+			{
+				"name": "VideoRecordingChangeOverlayImage",
+				"value": 512
+			},
+			{
+				"name": "GameLiveStreaming",
+				"value": 1024
+			},
+			{
+				"name": "GameLiveStreamingControl",
+				"value": 2048
+			},
+			{
+				"name": "GameLiveStreamingRequest",
+				"value": 4096
+			},
+			{
+				"name": "GameLiveStreamingStatusWatching",
+				"value": 8192
+			},
+			{
+				"name": "SharePlay",
+				"value": 16384
+			},
+			{
+				"name": "SharePlayControl",
+				"value": 32768
+			},
+			{
+				"name": "SharePlayStatusWatching",
+				"value": 65536
+			},
+			{
+				"name": "ShareUtility",
+				"value": 131072
+			},
+			{
+				"name": "ScreenShotShowFiles",
+				"value": 262144
+			}
+		]
+	},
 	"offline.escape.enemy.EsEnemyModificationDefine.GrappleSafeRotationMode": [
 		{
 			"name": "Invalid",
@@ -104799,24 +105003,27 @@
 			"value": 11
 		}
 	],
-	"via.hid.gamePlayer.AutoPlayFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SkipDialog",
-			"value": 2
-		},
-		{
-			"name": "AutoAssign",
-			"value": 4
-		},
-		{
-			"name": "AutoCreateVirtualDevice",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.AutoPlayFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SkipDialog",
+				"value": 2
+			},
+			{
+				"name": "AutoAssign",
+				"value": 4
+			},
+			{
+				"name": "AutoCreateVirtualDevice",
+				"value": 8
+			}
+		]
+	},
 	"offline.escape.gimmick.action.EsGimmickRailCannonBase.MOT_TYPE": [
 		{
 			"name": "MOT_START",
@@ -107579,16 +107786,19 @@
 			"value": 7
 		}
 	],
-	"System.Base64FormattingOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "InsertLineBreaks",
-			"value": 1
-		}
-	],
+	"System.Base64FormattingOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "InsertLineBreaks",
+				"value": 1
+			}
+		]
+	},
 	"offline.escape.enemy.em9000.MOTION_PATTERN": [
 		{
 			"name": "TargetLR",
@@ -111995,76 +112205,79 @@
 			"value": 16
 		}
 	],
-	"via.HardwareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "GeneralName",
-			"value": 1
-		},
-		{
-			"name": "InternalName",
-			"value": 2
-		},
-		{
-			"name": "CpuName",
-			"value": 4
-		},
-		{
-			"name": "Manufacturer",
-			"value": 8
-		},
-		{
-			"name": "BrandName",
-			"value": 16
-		},
-		{
-			"name": "IllegalDevice",
-			"value": 32
-		},
-		{
-			"name": "BatteryState",
-			"value": 64
-		},
-		{
-			"name": "BoardName",
-			"value": 128
-		},
-		{
-			"name": "Bootloader",
-			"value": 256
-		},
-		{
-			"name": "StorageSize",
-			"value": 512
-		},
-		{
-			"name": "ExternalStorageSize",
-			"value": 1024
-		},
-		{
-			"name": "PhysicalCoreNumber",
-			"value": 2048
-		},
-		{
-			"name": "LogicalCoreNumber",
-			"value": 4096
-		},
-		{
-			"name": "BaseFrequency",
-			"value": 8192
-		},
-		{
-			"name": "RamSize",
-			"value": 16384
-		},
-		{
-			"name": "ThermalState",
-			"value": 32768
-		}
-	],
+	"via.HardwareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "GeneralName",
+				"value": 1
+			},
+			{
+				"name": "InternalName",
+				"value": 2
+			},
+			{
+				"name": "CpuName",
+				"value": 4
+			},
+			{
+				"name": "Manufacturer",
+				"value": 8
+			},
+			{
+				"name": "BrandName",
+				"value": 16
+			},
+			{
+				"name": "IllegalDevice",
+				"value": 32
+			},
+			{
+				"name": "BatteryState",
+				"value": 64
+			},
+			{
+				"name": "BoardName",
+				"value": 128
+			},
+			{
+				"name": "Bootloader",
+				"value": 256
+			},
+			{
+				"name": "StorageSize",
+				"value": 512
+			},
+			{
+				"name": "ExternalStorageSize",
+				"value": 1024
+			},
+			{
+				"name": "PhysicalCoreNumber",
+				"value": 2048
+			},
+			{
+				"name": "LogicalCoreNumber",
+				"value": 4096
+			},
+			{
+				"name": "BaseFrequency",
+				"value": 8192
+			},
+			{
+				"name": "RamSize",
+				"value": 16384
+			},
+			{
+				"name": "ThermalState",
+				"value": 32768
+			}
+		]
+	},
 	"offline.gamemastering.MovieManager.PlayingMovie": [
 		{
 			"name": "True",
@@ -116067,40 +116280,43 @@
 			"value": 2
 		}
 	],
-	"via.gui.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		}
-	],
+	"via.gui.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			}
+		]
+	},
 	"offline.LookAtDefine.GraphStateKind": [
 		{
 			"name": "Zero",
@@ -117295,32 +117511,35 @@
 			"value": 1
 		}
 	],
-	"offline.EnvironmentStandbyController.FolderActivateReason": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SceneActivate",
-			"value": 1
-		},
-		{
-			"name": "DynamicSpaceConnection",
-			"value": 4
-		},
-		{
-			"name": "LinkDraw",
-			"value": 8
-		},
-		{
-			"name": "EventSpecialControl",
-			"value": 65536
-		},
-		{
-			"name": "NormalControlMask",
-			"value": 13
-		}
-	],
+	"offline.EnvironmentStandbyController.FolderActivateReason": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SceneActivate",
+				"value": 1
+			},
+			{
+				"name": "DynamicSpaceConnection",
+				"value": 4
+			},
+			{
+				"name": "LinkDraw",
+				"value": 8
+			},
+			{
+				"name": "EventSpecialControl",
+				"value": 65536
+			},
+			{
+				"name": "NormalControlMask",
+				"value": 13
+			}
+		]
+	},
 	"offline.fsmv2.condition.CheckCameraMode.CameraMode": [
 		{
 			"name": "NEW",
@@ -117335,28 +117554,31 @@
 			"value": 2
 		}
 	],
-	"offline.network.service.StoreServiceControllerForXB1.ProductItemTypes": [
-		{
-			"name": "App",
-			"value": 1
-		},
-		{
-			"name": "Consumable",
-			"value": 4
-		},
-		{
-			"name": "Durable",
-			"value": 8
-		},
-		{
-			"name": "Game",
-			"value": 1
-		},
-		{
-			"name": "GameDemo",
-			"value": 16
-		}
-	],
+	"offline.network.service.StoreServiceControllerForXB1.ProductItemTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "App",
+				"value": 1
+			},
+			{
+				"name": "Consumable",
+				"value": 4
+			},
+			{
+				"name": "Durable",
+				"value": 8
+			},
+			{
+				"name": "Game",
+				"value": 1
+			},
+			{
+				"name": "GameDemo",
+				"value": 16
+			}
+		]
+	},
 	"via.render.RenderTargetTextureResource.ResolutionType": [
 		{
 			"name": "Absolute",
@@ -119229,56 +119451,59 @@
 			"value": 2
 		}
 	],
-	"via.network.protocol.SendOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Unreliable",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_Low",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_High",
-			"value": 1
-		},
-		{
-			"name": "Reliable",
-			"value": 4
-		},
-		{
-			"name": "ReliableBuffer",
-			"value": 12
-		},
-		{
-			"name": "FastCallback",
-			"value": 16
-		},
-		{
-			"name": "CheckAbsent",
-			"value": 32
-		},
-		{
-			"name": "Tag",
-			"value": 64
-		},
-		{
-			"name": "FastPass",
-			"value": 128
-		},
-		{
-			"name": "CheckNonce",
-			"value": 256
-		},
-		{
-			"name": "SkipReceiveQueue",
-			"value": 512
-		}
-	],
+	"via.network.protocol.SendOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Unreliable",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_Low",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_High",
+				"value": 1
+			},
+			{
+				"name": "Reliable",
+				"value": 4
+			},
+			{
+				"name": "ReliableBuffer",
+				"value": 12
+			},
+			{
+				"name": "FastCallback",
+				"value": 16
+			},
+			{
+				"name": "CheckAbsent",
+				"value": 32
+			},
+			{
+				"name": "Tag",
+				"value": 64
+			},
+			{
+				"name": "FastPass",
+				"value": 128
+			},
+			{
+				"name": "CheckNonce",
+				"value": 256
+			},
+			{
+				"name": "SkipReceiveQueue",
+				"value": 512
+			}
+		]
+	},
 	"offline.gimmick.action.GimmickTerrainStepOffsetlink.JACK_TYPE": [
 		{
 			"name": "JACK_STEP_UP",
@@ -119375,24 +119600,27 @@
 			"value": 13
 		}
 	],
-	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "UseFirstSelected",
-			"value": 2
-		},
-		{
-			"name": "UseLastSelected",
-			"value": 4
-		},
-		{
-			"name": "AssignToOtherPlayer",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "UseFirstSelected",
+				"value": 2
+			},
+			{
+				"name": "UseLastSelected",
+				"value": 4
+			},
+			{
+				"name": "AssignToOtherPlayer",
+				"value": 8
+			}
+		]
+	},
 	"via.effect.gpgpu.RibbonFollowCS.RibbonFollowResource.RibbonFollowComputeShaderType": [
 		{
 			"name": "InitializeCS",
@@ -121975,62 +122203,68 @@
 			"value": 6
 		}
 	],
-	"System.Reflection.ParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "In",
-			"value": 1
-		},
-		{
-			"name": "Out",
-			"value": 2
-		},
-		{
-			"name": "Lcid",
-			"value": 4
-		},
-		{
-			"name": "Retval",
-			"value": 8
-		},
-		{
-			"name": "Optional",
-			"value": 16
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 61440
-		}
-	],
-	"System.StringSplitOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "RemoveEmptyEntries",
-			"value": 1
-		}
-	],
+	"System.Reflection.ParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "In",
+				"value": 1
+			},
+			{
+				"name": "Out",
+				"value": 2
+			},
+			{
+				"name": "Lcid",
+				"value": 4
+			},
+			{
+				"name": "Retval",
+				"value": 8
+			},
+			{
+				"name": "Optional",
+				"value": 16
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 61440
+			}
+		]
+	},
+	"System.StringSplitOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "RemoveEmptyEntries",
+				"value": 1
+			}
+		]
+	},
 	"via.render.Shadow.ShadowPriority": [
 		{
 			"name": "Low",
@@ -122094,40 +122328,43 @@
 		}
 	],
 	"via.effect.graph.ItemType": [],
-	"System.Runtime.CompilerServices.MethodImplOptions": [
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		}
-	],
+	"System.Runtime.CompilerServices.MethodImplOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			}
+		]
+	},
 	"offline.Report.Category": [
 		{
 			"name": "LevelDesign",
@@ -122510,44 +122747,47 @@
 			"value": 1
 		}
 	],
-	"via.hid.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"offline.escape.enemy.em9020.PressGroup": [
 		{
 			"name": "Default",
@@ -124129,16 +124369,19 @@
 			"value": 2
 		}
 	],
-	"System.Globalization.TimeSpanStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AssumeNegative",
-			"value": 1
-		}
-	],
+	"System.Globalization.TimeSpanStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AssumeNegative",
+				"value": 1
+			}
+		]
+	},
 	"via.motion.IkDog.RayCastMode": [
 		{
 			"name": "Default",

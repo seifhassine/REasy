@@ -22,6 +22,7 @@ lazy from file_handlers.rsz.rsz_data_types import (
     UserDataData,
 )
 lazy from file_handlers.rsz.utils.rsz_field_utils import (
+    INTEGER_BOUNDS,
     VALUE_COMPONENTS as _COMPONENTS,
     coerce_field_value,
     contains_resource_value,
@@ -46,7 +47,7 @@ lazy from ui.ai.tool_registry import (
     tool as _tool,
     translate_tool_text as _tr,
 )
-lazy from utils.enum_manager import EnumManager
+lazy from utils.enum_manager import EnumManager, FlagMembers, flag_names
 
 
 RSZ_CAPABILITY = "rsz"
@@ -705,6 +706,10 @@ def _enum_payload(data_obj) -> dict[str, Any] | None:
     if not members:
         return None
     value = data_obj.value
+    bounds = INTEGER_BOUNDS.get(type(data_obj).__name__)
+    if isinstance(members, FlagMembers) and bounds and isinstance(value, int):
+        names, rest = flag_names(members, value, (bounds[1] - bounds[0]).bit_length())
+        return {"type": original_type, "flags": True, "names": names, "unknown_bits": rest, "known": not rest}
     match = next((member for member in members if member.get("value") == value), None)
     if match is None and isinstance(value, int):
         alternate = value & 0xFFFFFFFF
@@ -1992,6 +1997,7 @@ class RszAssistantToolMixin:
                 if enum_values:
                     record["enum_members"] = list(enum_values[:256])
                     record["enum_members_truncated"] = len(enum_values) > 256
+                    record["enum_flags"] = isinstance(enum_values, FlagMembers)
                 fields.append(record)
             results.append(
                 {

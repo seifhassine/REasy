@@ -1,5 +1,7 @@
 import copy
+import functools
 import math
+import operator
 import uuid
 
 lazy from file_handlers.rsz.rsz_data_types import (
@@ -16,7 +18,7 @@ lazy from file_handlers.rsz.rsz_data_types import (
     is_reference_type,
     is_array_type,
 )
-lazy from utils.enum_manager import EnumManager
+lazy from utils.enum_manager import EnumManager, FlagMembers
 
 
 INTEGER_BOUNDS = {
@@ -185,12 +187,22 @@ def _enum_value(data_obj, value):
     if not isinstance(value, str) or not getattr(data_obj, "orig_type", ""):
         return value
     members = EnumManager.instance().get_enum_values(data_obj.orig_type)
-    matches = [
-        member
-        for member in members
-        if str(member.get("name", "")).casefold() == value.casefold()
-    ]
-    return matches[0].get("value") if len(matches) == 1 else value
+    names = [name.strip() for name in value.split("|")] if isinstance(members, FlagMembers) else [value]
+    values = []
+    for name in names:
+        matches = [
+            member
+            for member in members
+            if str(member.get("name", "")).casefold() == name.casefold()
+        ]
+        if len(matches) != 1:
+            return value
+        values.append(matches[0].get("value"))
+    if len(values) == 1:
+        return values[0]
+    low, high = INTEGER_BOUNDS[type(data_obj).__name__]
+    combined = functools.reduce(operator.or_, (member & (high - low) for member in values))
+    return combined - (high - low + 1) if combined > high else combined
 
 
 def _sequence(value, names, label: str):

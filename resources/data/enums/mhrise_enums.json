@@ -2363,36 +2363,39 @@
 			"value": 3
 		}
 	],
-	"via.puppet.dev.SyncInfo.Event": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SendTransform",
-			"value": 1
-		},
-		{
-			"name": "RecvTransform",
-			"value": 2
-		},
-		{
-			"name": "SendState",
-			"value": 4
-		},
-		{
-			"name": "RecvState",
-			"value": 8
-		},
-		{
-			"name": "Warp",
-			"value": 16
-		},
-		{
-			"name": "SwitchParent",
-			"value": 32
-		}
-	],
+	"via.puppet.dev.SyncInfo.Event": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SendTransform",
+				"value": 1
+			},
+			{
+				"name": "RecvTransform",
+				"value": 2
+			},
+			{
+				"name": "SendState",
+				"value": 4
+			},
+			{
+				"name": "RecvState",
+				"value": 8
+			},
+			{
+				"name": "Warp",
+				"value": 16
+			},
+			{
+				"name": "SwitchParent",
+				"value": 32
+			}
+		]
+	},
 	"snow.enemy.em019.Em019ActionTune.EmMove5017TuneVariation": [
 		{
 			"name": "Variation01",
@@ -2729,12 +2732,15 @@
 			"value": 2
 		}
 	],
-	"snow.enemy.EnemyDef.InterruptFlag": [
-		{
-			"name": "RequestUniqueInterrupt",
-			"value": 1
-		}
-	],
+	"snow.enemy.EnemyDef.InterruptFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "RequestUniqueInterrupt",
+				"value": 1
+			}
+		]
+	},
 	"snow.enemy.em044.Em044ActionTune.EmDamage005TuneVariation": [
 		{
 			"name": "Variation01",
@@ -8736,32 +8742,35 @@
 			"value": 2
 		}
 	],
-	"snow.equip.OtOverwearIdModule.CreateStatusFlag": [
-		{
-			"name": "Creatable",
-			"value": 0
-		},
-		{
-			"name": "ShortOfMaterial",
-			"value": 1
-		},
-		{
-			"name": "ShortOfMoney",
-			"value": 2
-		},
-		{
-			"name": "HasAlready",
-			"value": 4
-		},
-		{
-			"name": "RecipeLocked",
-			"value": 8
-		},
-		{
-			"name": "ProcureMaterial",
-			"value": 16
-		}
-	],
+	"snow.equip.OtOverwearIdModule.CreateStatusFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Creatable",
+				"value": 0
+			},
+			{
+				"name": "ShortOfMaterial",
+				"value": 1
+			},
+			{
+				"name": "ShortOfMoney",
+				"value": 2
+			},
+			{
+				"name": "HasAlready",
+				"value": 4
+			},
+			{
+				"name": "RecipeLocked",
+				"value": 8
+			},
+			{
+				"name": "ProcureMaterial",
+				"value": 16
+			}
+		]
+	},
 	"snow.player.IkController.BankAngleType": [
 		{
 			"name": "Walk",
@@ -25971,128 +25980,131 @@
 			"value": 2
 		}
 	],
-	"snow.player.PlayerCondition.Weapon": [
-		{
-			"name": "ShotDamageUp",
-			"value": 1
-		},
-		{
-			"name": "Kijin",
-			"value": 2
-		},
-		{
-			"name": "Kijin_Jyuu",
-			"value": 4
-		},
-		{
-			"name": "Kijin_Kyouka",
-			"value": 8
-		},
-		{
-			"name": "HeavyBowgun_ReduseChargeTime",
-			"value": 16
-		},
-		{
-			"name": "OverHeatGunLance",
-			"value": 32
-		},
-		{
-			"name": "MoveWpOffBuffGreatSword",
-			"value": 64
-		},
-		{
-			"name": "S_Axe_NoUseSlashGuage",
-			"value": 128
-		},
-		{
-			"name": "RedExtractiveInsectGlaive",
-			"value": 256
-		},
-		{
-			"name": "WhiteExtractiveInsectGlaive",
-			"value": 512
-		},
-		{
-			"name": "OrangeExtractiveInsectGlaive",
-			"value": 1024
-		},
-		{
-			"name": "BowWirePowerUp",
-			"value": 2048
-		},
-		{
-			"name": "LanceChargePowerUp",
-			"value": 4096
-		},
-		{
-			"name": "LanceGuardRage_S",
-			"value": 8192
-		},
-		{
-			"name": "LanceGuardRage_M",
-			"value": 16384
-		},
-		{
-			"name": "LanceGuardRage_L",
-			"value": 32768
-		},
-		{
-			"name": "LanceRuten",
-			"value": 65536
-		},
-		{
-			"name": "S_Axe_BottleAwake",
-			"value": 131072
-		},
-		{
-			"name": "LightBowgunWireBuff",
-			"value": 262144
-		},
-		{
-			"name": "C_Axe_ShieldBuff",
-			"value": 524288
-		},
-		{
-			"name": "C_Axe_SwordBuff",
-			"value": 1048576
-		},
-		{
-			"name": "DualBladesSharpnessRecoveryBuff",
-			"value": 2097152
-		},
-		{
-			"name": "HammerImpactPullsBuff",
-			"value": 4194304
-		},
-		{
-			"name": "ShortSwordOilBuff",
-			"value": 8388608
-		},
-		{
-			"name": "HeavyBowgunFullAutoOverHeat",
-			"value": 16777216
-		},
-		{
-			"name": "BowArrowUp",
-			"value": 33554432
-		},
-		{
-			"name": "GunLanceExplodePileBuff",
-			"value": 67108864
-		},
-		{
-			"name": "HornImpactPullsBuff",
-			"value": 134217728
-		},
-		{
-			"name": "LongSwordIaiCounterLv2",
-			"value": 268435456
-		},
-		{
-			"name": "LongSwordIaiCounterLv3",
-			"value": 536870912
-		}
-	],
+	"snow.player.PlayerCondition.Weapon": {
+		"flags": true,
+		"values": [
+			{
+				"name": "ShotDamageUp",
+				"value": 1
+			},
+			{
+				"name": "Kijin",
+				"value": 2
+			},
+			{
+				"name": "Kijin_Jyuu",
+				"value": 4
+			},
+			{
+				"name": "Kijin_Kyouka",
+				"value": 8
+			},
+			{
+				"name": "HeavyBowgun_ReduseChargeTime",
+				"value": 16
+			},
+			{
+				"name": "OverHeatGunLance",
+				"value": 32
+			},
+			{
+				"name": "MoveWpOffBuffGreatSword",
+				"value": 64
+			},
+			{
+				"name": "S_Axe_NoUseSlashGuage",
+				"value": 128
+			},
+			{
+				"name": "RedExtractiveInsectGlaive",
+				"value": 256
+			},
+			{
+				"name": "WhiteExtractiveInsectGlaive",
+				"value": 512
+			},
+			{
+				"name": "OrangeExtractiveInsectGlaive",
+				"value": 1024
+			},
+			{
+				"name": "BowWirePowerUp",
+				"value": 2048
+			},
+			{
+				"name": "LanceChargePowerUp",
+				"value": 4096
+			},
+			{
+				"name": "LanceGuardRage_S",
+				"value": 8192
+			},
+			{
+				"name": "LanceGuardRage_M",
+				"value": 16384
+			},
+			{
+				"name": "LanceGuardRage_L",
+				"value": 32768
+			},
+			{
+				"name": "LanceRuten",
+				"value": 65536
+			},
+			{
+				"name": "S_Axe_BottleAwake",
+				"value": 131072
+			},
+			{
+				"name": "LightBowgunWireBuff",
+				"value": 262144
+			},
+			{
+				"name": "C_Axe_ShieldBuff",
+				"value": 524288
+			},
+			{
+				"name": "C_Axe_SwordBuff",
+				"value": 1048576
+			},
+			{
+				"name": "DualBladesSharpnessRecoveryBuff",
+				"value": 2097152
+			},
+			{
+				"name": "HammerImpactPullsBuff",
+				"value": 4194304
+			},
+			{
+				"name": "ShortSwordOilBuff",
+				"value": 8388608
+			},
+			{
+				"name": "HeavyBowgunFullAutoOverHeat",
+				"value": 16777216
+			},
+			{
+				"name": "BowArrowUp",
+				"value": 33554432
+			},
+			{
+				"name": "GunLanceExplodePileBuff",
+				"value": 67108864
+			},
+			{
+				"name": "HornImpactPullsBuff",
+				"value": 134217728
+			},
+			{
+				"name": "LongSwordIaiCounterLv2",
+				"value": 268435456
+			},
+			{
+				"name": "LongSwordIaiCounterLv3",
+				"value": 536870912
+			}
+		]
+	},
 	"snow.enemy.em093.Em093_01Define.MultiPartsDamage": [
 		{
 			"name": "MultiPartsDamage000",
@@ -31902,156 +31914,159 @@
 			"value": 8
 		}
 	],
-	"via.hid.GamePadButton": [
-		{
-			"name": "LUp",
-			"value": 1
-		},
-		{
-			"name": "LDown",
-			"value": 2
-		},
-		{
-			"name": "LLeft",
-			"value": 4
-		},
-		{
-			"name": "LRight",
-			"value": 8
-		},
-		{
-			"name": "RUp",
-			"value": 16
-		},
-		{
-			"name": "RDown",
-			"value": 32
-		},
-		{
-			"name": "RLeft",
-			"value": 64
-		},
-		{
-			"name": "RRight",
-			"value": 128
-		},
-		{
-			"name": "LTrigTop",
-			"value": 256
-		},
-		{
-			"name": "LTrigBottom",
-			"value": 512
-		},
-		{
-			"name": "RTrigTop",
-			"value": 1024
-		},
-		{
-			"name": "RTrigBottom",
-			"value": 2048
-		},
-		{
-			"name": "LStickPush",
-			"value": 4096
-		},
-		{
-			"name": "RStickPush",
-			"value": 8192
-		},
-		{
-			"name": "CLeft",
-			"value": 16384
-		},
-		{
-			"name": "CRight",
-			"value": 32768
-		},
-		{
-			"name": "CCenter",
-			"value": 65536
-		},
-		{
-			"name": "Decide",
-			"value": 131072
-		},
-		{
-			"name": "Cancel",
-			"value": 262144
-		},
-		{
-			"name": "PlatformHome",
-			"value": 524288
-		},
-		{
-			"name": "EmuLup",
-			"value": 1048576
-		},
-		{
-			"name": "EmuLright",
-			"value": 2097152
-		},
-		{
-			"name": "EmuLdown",
-			"value": 4194304
-		},
-		{
-			"name": "EmuLleft",
-			"value": 8388608
-		},
-		{
-			"name": "EmuRup",
-			"value": 16777216
-		},
-		{
-			"name": "EmuRright",
-			"value": 33554432
-		},
-		{
-			"name": "EmuRdown",
-			"value": 67108864
-		},
-		{
-			"name": "EmuRleft",
-			"value": 134217728
-		},
-		{
-			"name": "EmuAll",
-			"value": 267386880
-		},
-		{
-			"name": "LSL",
-			"value": 268435456
-		},
-		{
-			"name": "LSR",
-			"value": 536870912
-		},
-		{
-			"name": "RSL",
-			"value": 1073741824
-		},
-		{
-			"name": "RSR",
-			"value": 2147483648
-		},
-		{
-			"name": "LSide",
-			"value": 268435456
-		},
-		{
-			"name": "RSide",
-			"value": 536870912
-		},
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.GamePadButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LUp",
+				"value": 1
+			},
+			{
+				"name": "LDown",
+				"value": 2
+			},
+			{
+				"name": "LLeft",
+				"value": 4
+			},
+			{
+				"name": "LRight",
+				"value": 8
+			},
+			{
+				"name": "RUp",
+				"value": 16
+			},
+			{
+				"name": "RDown",
+				"value": 32
+			},
+			{
+				"name": "RLeft",
+				"value": 64
+			},
+			{
+				"name": "RRight",
+				"value": 128
+			},
+			{
+				"name": "LTrigTop",
+				"value": 256
+			},
+			{
+				"name": "LTrigBottom",
+				"value": 512
+			},
+			{
+				"name": "RTrigTop",
+				"value": 1024
+			},
+			{
+				"name": "RTrigBottom",
+				"value": 2048
+			},
+			{
+				"name": "LStickPush",
+				"value": 4096
+			},
+			{
+				"name": "RStickPush",
+				"value": 8192
+			},
+			{
+				"name": "CLeft",
+				"value": 16384
+			},
+			{
+				"name": "CRight",
+				"value": 32768
+			},
+			{
+				"name": "CCenter",
+				"value": 65536
+			},
+			{
+				"name": "Decide",
+				"value": 131072
+			},
+			{
+				"name": "Cancel",
+				"value": 262144
+			},
+			{
+				"name": "PlatformHome",
+				"value": 524288
+			},
+			{
+				"name": "EmuLup",
+				"value": 1048576
+			},
+			{
+				"name": "EmuLright",
+				"value": 2097152
+			},
+			{
+				"name": "EmuLdown",
+				"value": 4194304
+			},
+			{
+				"name": "EmuLleft",
+				"value": 8388608
+			},
+			{
+				"name": "EmuRup",
+				"value": 16777216
+			},
+			{
+				"name": "EmuRright",
+				"value": 33554432
+			},
+			{
+				"name": "EmuRdown",
+				"value": 67108864
+			},
+			{
+				"name": "EmuRleft",
+				"value": 134217728
+			},
+			{
+				"name": "EmuAll",
+				"value": 267386880
+			},
+			{
+				"name": "LSL",
+				"value": 268435456
+			},
+			{
+				"name": "LSR",
+				"value": 536870912
+			},
+			{
+				"name": "RSL",
+				"value": 1073741824
+			},
+			{
+				"name": "RSR",
+				"value": 2147483648
+			},
+			{
+				"name": "LSide",
+				"value": 268435456
+			},
+			{
+				"name": "RSide",
+				"value": 536870912
+			},
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"via.motion.IkFourLeg.RayCastCallbackID": [
 		{
 			"name": "BackLeft",
@@ -33184,84 +33199,87 @@
 			"value": 0
 		}
 	],
-	"snow.enemy.EnemyDef.MarioDirectFlag": [
-		{
-			"name": "MarioEndSelf",
-			"value": 2
-		},
-		{
-			"name": "MarioEndFailed",
-			"value": 4
-		},
-		{
-			"name": "MarionettActionNearAttack",
-			"value": 8
-		},
-		{
-			"name": "MarionettActionNearAttackF",
-			"value": 16
-		},
-		{
-			"name": "MarionettActionNearAttackB",
-			"value": 32
-		},
-		{
-			"name": "MarionettActionNearAttackL",
-			"value": 64
-		},
-		{
-			"name": "MarionettActionNearAttackR",
-			"value": 128
-		},
-		{
-			"name": "MarionettActionFarAttack",
-			"value": 256
-		},
-		{
-			"name": "MarionettActionFarAttackF",
-			"value": 512
-		},
-		{
-			"name": "MarionettActionFarAttackB",
-			"value": 1024
-		},
-		{
-			"name": "MarionettActionFarAttackL",
-			"value": 2048
-		},
-		{
-			"name": "MarionettActionFarAttackR",
-			"value": 4096
-		},
-		{
-			"name": "MarionettActionResetAttack",
-			"value": 8192
-		},
-		{
-			"name": "MarionettActionDodge",
-			"value": 16384
-		},
-		{
-			"name": "MarionettActionDodgeF",
-			"value": 32768
-		},
-		{
-			"name": "MarionettActionDodgeB",
-			"value": 65536
-		},
-		{
-			"name": "MarionettActionDodgeL",
-			"value": 131072
-		},
-		{
-			"name": "MarionettActionDodgeR",
-			"value": 262144
-		},
-		{
-			"name": "MarionettActionFreeRun",
-			"value": 524288
-		}
-	],
+	"snow.enemy.EnemyDef.MarioDirectFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MarioEndSelf",
+				"value": 2
+			},
+			{
+				"name": "MarioEndFailed",
+				"value": 4
+			},
+			{
+				"name": "MarionettActionNearAttack",
+				"value": 8
+			},
+			{
+				"name": "MarionettActionNearAttackF",
+				"value": 16
+			},
+			{
+				"name": "MarionettActionNearAttackB",
+				"value": 32
+			},
+			{
+				"name": "MarionettActionNearAttackL",
+				"value": 64
+			},
+			{
+				"name": "MarionettActionNearAttackR",
+				"value": 128
+			},
+			{
+				"name": "MarionettActionFarAttack",
+				"value": 256
+			},
+			{
+				"name": "MarionettActionFarAttackF",
+				"value": 512
+			},
+			{
+				"name": "MarionettActionFarAttackB",
+				"value": 1024
+			},
+			{
+				"name": "MarionettActionFarAttackL",
+				"value": 2048
+			},
+			{
+				"name": "MarionettActionFarAttackR",
+				"value": 4096
+			},
+			{
+				"name": "MarionettActionResetAttack",
+				"value": 8192
+			},
+			{
+				"name": "MarionettActionDodge",
+				"value": 16384
+			},
+			{
+				"name": "MarionettActionDodgeF",
+				"value": 32768
+			},
+			{
+				"name": "MarionettActionDodgeB",
+				"value": 65536
+			},
+			{
+				"name": "MarionettActionDodgeL",
+				"value": 131072
+			},
+			{
+				"name": "MarionettActionDodgeR",
+				"value": 262144
+			},
+			{
+				"name": "MarionettActionFreeRun",
+				"value": 524288
+			}
+		]
+	},
 	"via.motion.tree.LinkType": [
 		{
 			"name": "Unknown",
@@ -36854,28 +36872,31 @@
 			"value": 1
 		}
 	],
-	"snow.model.ModelMaterialParamChangeManager.PlayTrackType": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Float",
-			"value": 1
-		},
-		{
-			"name": "Float4",
-			"value": 2
-		},
-		{
-			"name": "Bool",
-			"value": 3
-		},
-		{
-			"name": "Color",
-			"value": 4
-		}
-	],
+	"snow.model.ModelMaterialParamChangeManager.PlayTrackType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Float",
+				"value": 1
+			},
+			{
+				"name": "Float4",
+				"value": 2
+			},
+			{
+				"name": "Bool",
+				"value": 3
+			},
+			{
+				"name": "Color",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.em093.Em093ActionTune.EmMove006TuneVariation": [
 		{
 			"name": "Variation01",
@@ -37428,44 +37449,47 @@
 			"value": 1
 		}
 	],
-	"snow.npc.AccessAreaType": [
-		{
-			"name": "No00",
-			"value": 1
-		},
-		{
-			"name": "No01",
-			"value": 2
-		},
-		{
-			"name": "No02",
-			"value": 4
-		},
-		{
-			"name": "No03",
-			"value": 8
-		},
-		{
-			"name": "No04",
-			"value": 16
-		},
-		{
-			"name": "No05",
-			"value": 32
-		},
-		{
-			"name": "No06",
-			"value": 64
-		},
-		{
-			"name": "No07",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 255
-		}
-	],
+	"snow.npc.AccessAreaType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "No00",
+				"value": 1
+			},
+			{
+				"name": "No01",
+				"value": 2
+			},
+			{
+				"name": "No02",
+				"value": 4
+			},
+			{
+				"name": "No03",
+				"value": 8
+			},
+			{
+				"name": "No04",
+				"value": 16
+			},
+			{
+				"name": "No05",
+				"value": 32
+			},
+			{
+				"name": "No06",
+				"value": 64
+			},
+			{
+				"name": "No07",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 255
+			}
+		]
+	},
 	"snow.enemy.em007.Em007Define.EmDamageNo": [
 		{
 			"name": "None",
@@ -50767,24 +50791,27 @@
 			"value": 1
 		}
 	],
-	"System.Reflection.EventAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "ReservedMask",
-			"value": 1024
-		}
-	],
+	"System.Reflection.EventAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "ReservedMask",
+				"value": 1024
+			}
+		]
+	},
 	"snow.enemy.em109.Em109ActionTune.EmMove019TuneVariation": [
 		{
 			"name": "Variation01",
@@ -51995,28 +52022,31 @@
 			"value": 1
 		}
 	],
-	"via.motion.IkLeg2.CastRayEventIdFlags": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Left",
-			"value": 1
-		},
-		{
-			"name": "Right",
-			"value": 2
-		},
-		{
-			"name": "Heal",
-			"value": 4
-		},
-		{
-			"name": "Detail",
-			"value": 8
-		}
-	],
+	"via.motion.IkLeg2.CastRayEventIdFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Left",
+				"value": 1
+			},
+			{
+				"name": "Right",
+				"value": 2
+			},
+			{
+				"name": "Heal",
+				"value": 4
+			},
+			{
+				"name": "Detail",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.em024.Em024ActionTune.EmAttack13002TuneVariation": [
 		{
 			"name": "Variation01",
@@ -56589,136 +56619,139 @@
 			"value": 1
 		}
 	],
-	"via.motion.script.MotionExtraData.ContactStatus": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "LeftLegContact",
-			"value": 1
-		},
-		{
-			"name": "RightLegContact",
-			"value": 2
-		},
-		{
-			"name": "LeftLegStop",
-			"value": 4
-		},
-		{
-			"name": "RightLegStop",
-			"value": 8
-		},
-		{
-			"name": "LeftLegFix",
-			"value": 5
-		},
-		{
-			"name": "RightLegFix",
-			"value": 10
-		},
-		{
-			"name": "BothLegContact",
-			"value": 3
-		},
-		{
-			"name": "BothLegFix",
-			"value": 15
-		},
-		{
-			"name": "LeftLegStep",
-			"value": 16
-		},
-		{
-			"name": "RightLegStep",
-			"value": 32
-		},
-		{
-			"name": "LeftToeStop",
-			"value": 64
-		},
-		{
-			"name": "RightToeStop",
-			"value": 128
-		},
-		{
-			"name": "LeftToeFix",
-			"value": 65
-		},
-		{
-			"name": "RightToeFix",
-			"value": 130
-		},
-		{
-			"name": "BothToeFix",
-			"value": 195
-		},
-		{
-			"name": "LegAll",
-			"value": 255
-		},
-		{
-			"name": "LeftHandContact",
-			"value": 256
-		},
-		{
-			"name": "RightHandContact",
-			"value": 512
-		},
-		{
-			"name": "LeftHandStop",
-			"value": 1024
-		},
-		{
-			"name": "RightHandStop",
-			"value": 2048
-		},
-		{
-			"name": "LeftHandFix",
-			"value": 1280
-		},
-		{
-			"name": "RightHandFix",
-			"value": 2560
-		},
-		{
-			"name": "BothHandContact",
-			"value": 768
-		},
-		{
-			"name": "BothHandFix",
-			"value": 3840
-		},
-		{
-			"name": "LeftHandStep",
-			"value": 4096
-		},
-		{
-			"name": "RightHandStep",
-			"value": 8192
-		},
-		{
-			"name": "LeftHandTipStop",
-			"value": 16384
-		},
-		{
-			"name": "RightHandTipStop",
-			"value": 32768
-		},
-		{
-			"name": "LeftHandTipFix",
-			"value": 16640
-		},
-		{
-			"name": "RightHandTipFix",
-			"value": 33280
-		},
-		{
-			"name": "BothHandTipFix",
-			"value": 49920
-		}
-	],
+	"via.motion.script.MotionExtraData.ContactStatus": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "LeftLegContact",
+				"value": 1
+			},
+			{
+				"name": "RightLegContact",
+				"value": 2
+			},
+			{
+				"name": "LeftLegStop",
+				"value": 4
+			},
+			{
+				"name": "RightLegStop",
+				"value": 8
+			},
+			{
+				"name": "LeftLegFix",
+				"value": 5
+			},
+			{
+				"name": "RightLegFix",
+				"value": 10
+			},
+			{
+				"name": "BothLegContact",
+				"value": 3
+			},
+			{
+				"name": "BothLegFix",
+				"value": 15
+			},
+			{
+				"name": "LeftLegStep",
+				"value": 16
+			},
+			{
+				"name": "RightLegStep",
+				"value": 32
+			},
+			{
+				"name": "LeftToeStop",
+				"value": 64
+			},
+			{
+				"name": "RightToeStop",
+				"value": 128
+			},
+			{
+				"name": "LeftToeFix",
+				"value": 65
+			},
+			{
+				"name": "RightToeFix",
+				"value": 130
+			},
+			{
+				"name": "BothToeFix",
+				"value": 195
+			},
+			{
+				"name": "LegAll",
+				"value": 255
+			},
+			{
+				"name": "LeftHandContact",
+				"value": 256
+			},
+			{
+				"name": "RightHandContact",
+				"value": 512
+			},
+			{
+				"name": "LeftHandStop",
+				"value": 1024
+			},
+			{
+				"name": "RightHandStop",
+				"value": 2048
+			},
+			{
+				"name": "LeftHandFix",
+				"value": 1280
+			},
+			{
+				"name": "RightHandFix",
+				"value": 2560
+			},
+			{
+				"name": "BothHandContact",
+				"value": 768
+			},
+			{
+				"name": "BothHandFix",
+				"value": 3840
+			},
+			{
+				"name": "LeftHandStep",
+				"value": 4096
+			},
+			{
+				"name": "RightHandStep",
+				"value": 8192
+			},
+			{
+				"name": "LeftHandTipStop",
+				"value": 16384
+			},
+			{
+				"name": "RightHandTipStop",
+				"value": 32768
+			},
+			{
+				"name": "LeftHandTipFix",
+				"value": 16640
+			},
+			{
+				"name": "RightHandTipFix",
+				"value": 33280
+			},
+			{
+				"name": "BothHandTipFix",
+				"value": 49920
+			}
+		]
+	},
 	"via.navigation.NavigationSurface.LineAdjustSideType": [
 		{
 			"name": "ContourSide",
@@ -58723,56 +58756,59 @@
 			"value": 1
 		}
 	],
-	"snow.quest.QuestType": [
-		{
-			"name": "INVALID",
-			"value": 0
-		},
-		{
-			"name": "HUNTING",
-			"value": 1
-		},
-		{
-			"name": "KILL",
-			"value": 2
-		},
-		{
-			"name": "CAPTURE",
-			"value": 4
-		},
-		{
-			"name": "BOSSRUSH",
-			"value": 8
-		},
-		{
-			"name": "COLLECTS",
-			"value": 16
-		},
-		{
-			"name": "TOUR",
-			"value": 32
-		},
-		{
-			"name": "ARENA",
-			"value": 64
-		},
-		{
-			"name": "SPECIAL",
-			"value": 128
-		},
-		{
-			"name": "HYAKURYU",
-			"value": 256
-		},
-		{
-			"name": "TRAINING",
-			"value": 512
-		},
-		{
-			"name": "KYOUSEI",
-			"value": 1024
-		}
-	],
+	"snow.quest.QuestType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "INVALID",
+				"value": 0
+			},
+			{
+				"name": "HUNTING",
+				"value": 1
+			},
+			{
+				"name": "KILL",
+				"value": 2
+			},
+			{
+				"name": "CAPTURE",
+				"value": 4
+			},
+			{
+				"name": "BOSSRUSH",
+				"value": 8
+			},
+			{
+				"name": "COLLECTS",
+				"value": 16
+			},
+			{
+				"name": "TOUR",
+				"value": 32
+			},
+			{
+				"name": "ARENA",
+				"value": 64
+			},
+			{
+				"name": "SPECIAL",
+				"value": 128
+			},
+			{
+				"name": "HYAKURYU",
+				"value": 256
+			},
+			{
+				"name": "TRAINING",
+				"value": 512
+			},
+			{
+				"name": "KYOUSEI",
+				"value": 1024
+			}
+		]
+	},
 	"snow.camera.fsm.action.FixedCameraFsmAction_RequestFixedCameraEnd.SetTiming": [
 		{
 			"name": "Start",
@@ -61203,48 +61239,51 @@
 			"value": 81
 		}
 	],
-	"snow.enemy.EnemyDef.MarionetteCommand": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "EndFailed",
-			"value": 1
-		},
-		{
-			"name": "Shoot",
-			"value": 2
-		},
-		{
-			"name": "WeakAttack",
-			"value": 4
-		},
-		{
-			"name": "StrongAttack",
-			"value": 8
-		},
-		{
-			"name": "FinalAttack",
-			"value": 16
-		},
-		{
-			"name": "Dodge",
-			"value": 32
-		},
-		{
-			"name": "FreeRun",
-			"value": 64
-		},
-		{
-			"name": "SuperDodge",
-			"value": 128
-		},
-		{
-			"name": "ChallengeStart",
-			"value": 256
-		}
-	],
+	"snow.enemy.EnemyDef.MarionetteCommand": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "EndFailed",
+				"value": 1
+			},
+			{
+				"name": "Shoot",
+				"value": 2
+			},
+			{
+				"name": "WeakAttack",
+				"value": 4
+			},
+			{
+				"name": "StrongAttack",
+				"value": 8
+			},
+			{
+				"name": "FinalAttack",
+				"value": 16
+			},
+			{
+				"name": "Dodge",
+				"value": 32
+			},
+			{
+				"name": "FreeRun",
+				"value": 64
+			},
+			{
+				"name": "SuperDodge",
+				"value": 128
+			},
+			{
+				"name": "ChallengeStart",
+				"value": 256
+			}
+		]
+	},
 	"snow.enemy.Em089ActionOverWrite.EmAttack028ActOverWriteVariation": [
 		{
 			"name": "Variation001",
@@ -65643,40 +65682,43 @@
 			"value": 3
 		}
 	],
-	"System.Reflection.PropertyAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "Reserved2",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 62464
-		}
-	],
+	"System.Reflection.PropertyAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "Reserved2",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 62464
+			}
+		]
+	},
 	"snow.wwise.WwiseListenerManager.ListenerType": [
 		{
 			"name": "Normal",
@@ -68839,44 +68881,47 @@
 			"value": 2
 		}
 	],
-	"System.Reflection.MemberTypes": [
-		{
-			"name": "Constructor",
-			"value": 1
-		},
-		{
-			"name": "Event",
-			"value": 2
-		},
-		{
-			"name": "Field",
-			"value": 4
-		},
-		{
-			"name": "Method",
-			"value": 8
-		},
-		{
-			"name": "Property",
-			"value": 16
-		},
-		{
-			"name": "TypeInfo",
-			"value": 32
-		},
-		{
-			"name": "Custom",
-			"value": 64
-		},
-		{
-			"name": "NestedType",
-			"value": 128
-		},
-		{
-			"name": "All",
-			"value": 191
-		}
-	],
+	"System.Reflection.MemberTypes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Constructor",
+				"value": 1
+			},
+			{
+				"name": "Event",
+				"value": 2
+			},
+			{
+				"name": "Field",
+				"value": 4
+			},
+			{
+				"name": "Method",
+				"value": 8
+			},
+			{
+				"name": "Property",
+				"value": 16
+			},
+			{
+				"name": "TypeInfo",
+				"value": 32
+			},
+			{
+				"name": "Custom",
+				"value": 64
+			},
+			{
+				"name": "NestedType",
+				"value": 128
+			},
+			{
+				"name": "All",
+				"value": 191
+			}
+		]
+	},
 	"snow.enemy.em002.Em002ActionTune.EmFly028TuneVariation": [
 		{
 			"name": "Variation01",
@@ -69165,40 +69210,43 @@
 			"value": 10
 		}
 	],
-	"snow.progress.ProgressUpdateFilter": [
-		{
-			"name": "Progress",
-			"value": 1
-		},
-		{
-			"name": "Facility",
-			"value": 2
-		},
-		{
-			"name": "Ec019",
-			"value": 4
-		},
-		{
-			"name": "Dango",
-			"value": 8
-		},
-		{
-			"name": "ActionSlider",
-			"value": 16
-		},
-		{
-			"name": "QuestUnlock",
-			"value": 32
-		},
-		{
-			"name": "All",
-			"value": 63
-		},
-		{
-			"name": "None",
-			"value": 0
-		}
-	],
+	"snow.progress.ProgressUpdateFilter": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Progress",
+				"value": 1
+			},
+			{
+				"name": "Facility",
+				"value": 2
+			},
+			{
+				"name": "Ec019",
+				"value": 4
+			},
+			{
+				"name": "Dango",
+				"value": 8
+			},
+			{
+				"name": "ActionSlider",
+				"value": 16
+			},
+			{
+				"name": "QuestUnlock",
+				"value": 32
+			},
+			{
+				"name": "All",
+				"value": 63
+			},
+			{
+				"name": "None",
+				"value": 0
+			}
+		]
+	},
 	"snow.gui.fsm.smithy.GuiSmithyFsmManager.SmithyWeaponState": [
 		{
 			"name": "WEAPON_SELECT_MENU",
@@ -79086,20 +79134,23 @@
 			"value": 1372439153
 		}
 	],
-	"snow.hit.DamageAttr": [
-		{
-			"name": "AllowDisable",
-			"value": 1
-		},
-		{
-			"name": "NoBreakConstObject",
-			"value": 2
-		},
-		{
-			"name": "NoBreakConstObjectUnique",
-			"value": 4
-		}
-	],
+	"snow.hit.DamageAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "AllowDisable",
+				"value": 1
+			},
+			{
+				"name": "NoBreakConstObject",
+				"value": 2
+			},
+			{
+				"name": "NoBreakConstObjectUnique",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.ems049.Ems049ActionTune.EmMove008TuneVariation": [
 		{
 			"name": "Variation01",
@@ -82292,84 +82343,87 @@
 			"value": 5
 		}
 	],
-	"System.Reflection.FieldAttributes": [
-		{
-			"name": "FieldAccessMask",
-			"value": 7
-		},
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "InitOnly",
-			"value": 32
-		},
-		{
-			"name": "Literal",
-			"value": 64
-		},
-		{
-			"name": "NotSerialized",
-			"value": 128
-		},
-		{
-			"name": "SpecialName",
-			"value": 512
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 1024
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 4096
-		},
-		{
-			"name": "HasDefault",
-			"value": 32768
-		},
-		{
-			"name": "HasFieldRVA",
-			"value": 256
-		},
-		{
-			"name": "ReservedMask",
-			"value": 38144
-		}
-	],
+	"System.Reflection.FieldAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FieldAccessMask",
+				"value": 7
+			},
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "InitOnly",
+				"value": 32
+			},
+			{
+				"name": "Literal",
+				"value": 64
+			},
+			{
+				"name": "NotSerialized",
+				"value": 128
+			},
+			{
+				"name": "SpecialName",
+				"value": 512
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 1024
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 4096
+			},
+			{
+				"name": "HasDefault",
+				"value": 32768
+			},
+			{
+				"name": "HasFieldRVA",
+				"value": 256
+			},
+			{
+				"name": "ReservedMask",
+				"value": 38144
+			}
+		]
+	},
 	"snow.enemy.ems013.Ems013Define.EmTerrainNo": [
 		{
 			"name": "None",
@@ -90736,116 +90790,119 @@
 			"value": 5
 		}
 	],
-	"snow.otomo.OtomoCondition.Buff": [
-		{
-			"name": "AttackUp",
-			"value": 1
-		},
-		{
-			"name": "DefenceUp",
-			"value": 2
-		},
-		{
-			"name": "CriticalUp",
-			"value": 4
-		},
-		{
-			"name": "Scroll00",
-			"value": 8
-		},
-		{
-			"name": "Scroll01",
-			"value": 16
-		},
-		{
-			"name": "Scroll02",
-			"value": 32
-		},
-		{
-			"name": "Scroll03",
-			"value": 64
-		},
-		{
-			"name": "Scroll04",
-			"value": 128
-		},
-		{
-			"name": "Scroll05",
-			"value": 256
-		},
-		{
-			"name": "Scroll06",
-			"value": 512
-		},
-		{
-			"name": "Scroll07",
-			"value": 1024
-		},
-		{
-			"name": "Scroll08",
-			"value": 2048
-		},
-		{
-			"name": "Regene",
-			"value": 4096
-		},
-		{
-			"name": "HornElementAttackUp",
-			"value": 8192
-		},
-		{
-			"name": "HornEarS",
-			"value": 16384
-		},
-		{
-			"name": "HornEarL",
-			"value": 32768
-		},
-		{
-			"name": "HornQuake",
-			"value": 65536
-		},
-		{
-			"name": "HornWind",
-			"value": 131072
-		},
-		{
-			"name": "HornStun",
-			"value": 262144
-		},
-		{
-			"name": "HornRevolt",
-			"value": 524288
-		},
-		{
-			"name": "StatusUpRoar",
-			"value": 1048576
-		},
-		{
-			"name": "UseDonguri",
-			"value": 2097152
-		},
-		{
-			"name": "Drum",
-			"value": 4194304
-		},
-		{
-			"name": "Anger",
-			"value": 8388608
-		},
-		{
-			"name": "WireAtkUp",
-			"value": 16777216
-		},
-		{
-			"name": "DebuffAtkUp",
-			"value": 33554432
-		},
-		{
-			"name": "KitchenSkill054",
-			"value": 67108864
-		}
-	],
+	"snow.otomo.OtomoCondition.Buff": {
+		"flags": true,
+		"values": [
+			{
+				"name": "AttackUp",
+				"value": 1
+			},
+			{
+				"name": "DefenceUp",
+				"value": 2
+			},
+			{
+				"name": "CriticalUp",
+				"value": 4
+			},
+			{
+				"name": "Scroll00",
+				"value": 8
+			},
+			{
+				"name": "Scroll01",
+				"value": 16
+			},
+			{
+				"name": "Scroll02",
+				"value": 32
+			},
+			{
+				"name": "Scroll03",
+				"value": 64
+			},
+			{
+				"name": "Scroll04",
+				"value": 128
+			},
+			{
+				"name": "Scroll05",
+				"value": 256
+			},
+			{
+				"name": "Scroll06",
+				"value": 512
+			},
+			{
+				"name": "Scroll07",
+				"value": 1024
+			},
+			{
+				"name": "Scroll08",
+				"value": 2048
+			},
+			{
+				"name": "Regene",
+				"value": 4096
+			},
+			{
+				"name": "HornElementAttackUp",
+				"value": 8192
+			},
+			{
+				"name": "HornEarS",
+				"value": 16384
+			},
+			{
+				"name": "HornEarL",
+				"value": 32768
+			},
+			{
+				"name": "HornQuake",
+				"value": 65536
+			},
+			{
+				"name": "HornWind",
+				"value": 131072
+			},
+			{
+				"name": "HornStun",
+				"value": 262144
+			},
+			{
+				"name": "HornRevolt",
+				"value": 524288
+			},
+			{
+				"name": "StatusUpRoar",
+				"value": 1048576
+			},
+			{
+				"name": "UseDonguri",
+				"value": 2097152
+			},
+			{
+				"name": "Drum",
+				"value": 4194304
+			},
+			{
+				"name": "Anger",
+				"value": 8388608
+			},
+			{
+				"name": "WireAtkUp",
+				"value": 16777216
+			},
+			{
+				"name": "DebuffAtkUp",
+				"value": 33554432
+			},
+			{
+				"name": "KitchenSkill054",
+				"value": 67108864
+			}
+		]
+	},
 	"snow.enemy.em002.Em002ActionTune.EmAttack093TuneVariation": [
 		{
 			"name": "Variation01",
@@ -92554,32 +92611,35 @@
 			"value": 255
 		}
 	],
-	"via.attribute.FsmCategoryAttribute.Category": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Fsm",
-			"value": 1
-		},
-		{
-			"name": "Mot",
-			"value": 2
-		},
-		{
-			"name": "Auto",
-			"value": 4
-		},
-		{
-			"name": "BehaviorTree",
-			"value": 8
-		},
-		{
-			"name": "Timeline",
-			"value": 16
-		}
-	],
+	"via.attribute.FsmCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Fsm",
+				"value": 1
+			},
+			{
+				"name": "Mot",
+				"value": 2
+			},
+			{
+				"name": "Auto",
+				"value": 4
+			},
+			{
+				"name": "BehaviorTree",
+				"value": 8
+			},
+			{
+				"name": "Timeline",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.em062.Em062Define.UniqueStance": [
 		{
 			"name": "TwoFoots",
@@ -94233,28 +94293,31 @@
 			"value": 1
 		}
 	],
-	"snow.stage.StageObjectZoneController.TargetCharacter": [
-		{
-			"name": "MasterPlayer",
-			"value": 1
-		},
-		{
-			"name": "Player",
-			"value": 2
-		},
-		{
-			"name": "Enemy",
-			"value": 4
-		},
-		{
-			"name": "ZakoEnemy",
-			"value": 8
-		},
-		{
-			"name": "Servant",
-			"value": 16
-		}
-	],
+	"snow.stage.StageObjectZoneController.TargetCharacter": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MasterPlayer",
+				"value": 1
+			},
+			{
+				"name": "Player",
+				"value": 2
+			},
+			{
+				"name": "Enemy",
+				"value": 4
+			},
+			{
+				"name": "ZakoEnemy",
+				"value": 8
+			},
+			{
+				"name": "Servant",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.em019.Em019ActionTune.EmMove5006TuneVariation": [
 		{
 			"name": "Variation01",
@@ -125517,20 +125580,23 @@
 			"value": 15
 		}
 	],
-	"snow.npc.fsm.action.NpcFsmAction_nid032_ConstArm.ConstraintState": [
-		{
-			"name": "Position",
-			"value": 1
-		},
-		{
-			"name": "Rotation",
-			"value": 2
-		},
-		{
-			"name": "Both",
-			"value": 3
-		}
-	],
+	"snow.npc.fsm.action.NpcFsmAction_nid032_ConstArm.ConstraintState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Position",
+				"value": 1
+			},
+			{
+				"name": "Rotation",
+				"value": 2
+			},
+			{
+				"name": "Both",
+				"value": 3
+			}
+		]
+	},
 	"snow.enemy.ems034.Ems034ActionTune.EmMove012TuneVariation": [
 		{
 			"name": "Variation01",
@@ -126220,24 +126286,27 @@
 			"value": 1372439153
 		}
 	],
-	"snow.enemy.EnemyDef.CheckFrameRangeResult": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "RangeIn",
-			"value": 1
-		},
-		{
-			"name": "Range",
-			"value": 2
-		},
-		{
-			"name": "RangeOut",
-			"value": 4
-		}
-	],
+	"snow.enemy.EnemyDef.CheckFrameRangeResult": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "RangeIn",
+				"value": 1
+			},
+			{
+				"name": "Range",
+				"value": 2
+			},
+			{
+				"name": "RangeOut",
+				"value": 4
+			}
+		]
+	},
 	"snow.otomo.fsm.action.OtomoFsm2A_TurnDir.ActType": [
 		{
 			"name": "SetTime",
@@ -131714,68 +131783,71 @@
 			"value": 2
 		}
 	],
-	"snow.otomo.OtomoCondition.Debuff": [
-		{
-			"name": "NormalPoison",
-			"value": 1
-		},
-		{
-			"name": "NoxiousPoison",
-			"value": 2
-		},
-		{
-			"name": "DeadlyPoison",
-			"value": 4
-		},
-		{
-			"name": "Sleep",
-			"value": 8
-		},
-		{
-			"name": "Paralyze",
-			"value": 16
-		},
-		{
-			"name": "Stun",
-			"value": 32
-		},
-		{
-			"name": "AllResDownS",
-			"value": 64
-		},
-		{
-			"name": "AllResDownL",
-			"value": 128
-		},
-		{
-			"name": "DefenceDownS",
-			"value": 256
-		},
-		{
-			"name": "DefenceDownL",
-			"value": 512
-		},
-		{
-			"name": "Bomb1",
-			"value": 1024
-		},
-		{
-			"name": "Bomb2",
-			"value": 2048
-		},
-		{
-			"name": "OniBomb1",
-			"value": 8192
-		},
-		{
-			"name": "OniBomb2",
-			"value": 16384
-		},
-		{
-			"name": "Beto",
-			"value": 32768
-		}
-	],
+	"snow.otomo.OtomoCondition.Debuff": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NormalPoison",
+				"value": 1
+			},
+			{
+				"name": "NoxiousPoison",
+				"value": 2
+			},
+			{
+				"name": "DeadlyPoison",
+				"value": 4
+			},
+			{
+				"name": "Sleep",
+				"value": 8
+			},
+			{
+				"name": "Paralyze",
+				"value": 16
+			},
+			{
+				"name": "Stun",
+				"value": 32
+			},
+			{
+				"name": "AllResDownS",
+				"value": 64
+			},
+			{
+				"name": "AllResDownL",
+				"value": 128
+			},
+			{
+				"name": "DefenceDownS",
+				"value": 256
+			},
+			{
+				"name": "DefenceDownL",
+				"value": 512
+			},
+			{
+				"name": "Bomb1",
+				"value": 1024
+			},
+			{
+				"name": "Bomb2",
+				"value": 2048
+			},
+			{
+				"name": "OniBomb1",
+				"value": 8192
+			},
+			{
+				"name": "OniBomb2",
+				"value": 16384
+			},
+			{
+				"name": "Beto",
+				"value": 32768
+			}
+		]
+	},
 	"snow.gui.postman.POSTMAN_HR_AND_MR_RANK_CONFIG": [
 		{
 			"name": "NO",
@@ -148594,48 +148666,51 @@
 			"value": 0
 		}
 	],
-	"System.Threading.ThreadState": [
-		{
-			"name": "Running",
-			"value": 0
-		},
-		{
-			"name": "StopRequested",
-			"value": 1
-		},
-		{
-			"name": "SuspendRequested",
-			"value": 2
-		},
-		{
-			"name": "Background",
-			"value": 4
-		},
-		{
-			"name": "Unstarted",
-			"value": 8
-		},
-		{
-			"name": "Stopped",
-			"value": 16
-		},
-		{
-			"name": "WaitSleepJoin",
-			"value": 32
-		},
-		{
-			"name": "Suspended",
-			"value": 64
-		},
-		{
-			"name": "AbortRequested",
-			"value": 128
-		},
-		{
-			"name": "Aborted",
-			"value": 256
-		}
-	],
+	"System.Threading.ThreadState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Running",
+				"value": 0
+			},
+			{
+				"name": "StopRequested",
+				"value": 1
+			},
+			{
+				"name": "SuspendRequested",
+				"value": 2
+			},
+			{
+				"name": "Background",
+				"value": 4
+			},
+			{
+				"name": "Unstarted",
+				"value": 8
+			},
+			{
+				"name": "Stopped",
+				"value": 16
+			},
+			{
+				"name": "WaitSleepJoin",
+				"value": 32
+			},
+			{
+				"name": "Suspended",
+				"value": 64
+			},
+			{
+				"name": "AbortRequested",
+				"value": 128
+			},
+			{
+				"name": "Aborted",
+				"value": 256
+			}
+		]
+	},
 	"snow.StmInputManager.InputMode": [
 		{
 			"name": "System",
@@ -150933,20 +151008,23 @@
 			"value": 3
 		}
 	],
-	"via.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": [
-		{
-			"name": "Stamp",
-			"value": 1
-		},
-		{
-			"name": "Decal",
-			"value": 2
-		},
-		{
-			"name": "StampAndDecal",
-			"value": 3
-		}
-	],
+	"via.effect.script.RecordSystem.RecordOrder.OrderTypeEnum": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Stamp",
+				"value": 1
+			},
+			{
+				"name": "Decal",
+				"value": 2
+			},
+			{
+				"name": "StampAndDecal",
+				"value": 3
+			}
+		]
+	},
 	"snow.enemy.em095.Em095ActionTune.EmAttack6031TuneVariation": [
 		{
 			"name": "Variation01",
@@ -157145,12 +157223,15 @@
 			"value": 1
 		}
 	],
-	"snow.stage.StageObjectRemoteSync.OwnSyncTarget": [
-		{
-			"name": "BehaviorTree",
-			"value": 1
-		}
-	],
+	"snow.stage.StageObjectRemoteSync.OwnSyncTarget": {
+		"flags": true,
+		"values": [
+			{
+				"name": "BehaviorTree",
+				"value": 1
+			}
+		]
+	},
 	"snow.enemy.em132.Em132ActionTune.EmAttack10037TuneVariation": [
 		{
 			"name": "Variation01",
@@ -159580,124 +159661,127 @@
 			"value": 2
 		}
 	],
-	"snow.enemy.EnemyDef.DamageCategoryFlag": [
-		{
-			"name": "MarionetteFriendlyFire",
-			"value": 1
-		},
-		{
-			"name": "MarionetteStart",
-			"value": 2
-		},
-		{
-			"name": "PartsLoss",
-			"value": 4
-		},
-		{
-			"name": "FallTrap",
-			"value": 8
-		},
-		{
-			"name": "ShockTrap",
-			"value": 16
-		},
-		{
-			"name": "Paralyze",
-			"value": 32
-		},
-		{
-			"name": "Sleep",
-			"value": 64
-		},
-		{
-			"name": "Stun",
-			"value": 128
-		},
-		{
-			"name": "MarionetteL",
-			"value": 256
-		},
-		{
-			"name": "Flash",
-			"value": 512
-		},
-		{
-			"name": "Sound",
-			"value": 1024
-		},
-		{
-			"name": "GimmickL",
-			"value": 2048
-		},
-		{
-			"name": "Em2EmL",
-			"value": 4096
-		},
-		{
-			"name": "GimmickKnockBack",
-			"value": 8192
-		},
-		{
-			"name": "HighParts",
-			"value": 16384
-		},
-		{
-			"name": "MarionetteM",
-			"value": 32768
-		},
-		{
-			"name": "GimmickM",
-			"value": 65536
-		},
-		{
-			"name": "Em2EmM",
-			"value": 131072
-		},
-		{
-			"name": "MultiParts",
-			"value": 262144
-		},
-		{
-			"name": "ElementWeak",
-			"value": 524288
-		},
-		{
-			"name": "PartsBreak",
-			"value": 1048576
-		},
-		{
-			"name": "SleepEnd",
-			"value": 2097152
-		},
-		{
-			"name": "Stamina",
-			"value": 4194304
-		},
-		{
-			"name": "Parts",
-			"value": 8388608
-		},
-		{
-			"name": "MarionetteS",
-			"value": 16777216
-		},
-		{
-			"name": "GimmickS",
-			"value": 33554432
-		},
-		{
-			"name": "Em2EmS",
-			"value": 67108864
-		},
-		{
-			"name": "SteelFang",
-			"value": 134217728
-		},
-		{
-			"name": "MysteryMaximumActivityRelease",
-			"value": 268435456
-		}
-	],
+	"snow.enemy.EnemyDef.DamageCategoryFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MarionetteFriendlyFire",
+				"value": 1
+			},
+			{
+				"name": "MarionetteStart",
+				"value": 2
+			},
+			{
+				"name": "PartsLoss",
+				"value": 4
+			},
+			{
+				"name": "FallTrap",
+				"value": 8
+			},
+			{
+				"name": "ShockTrap",
+				"value": 16
+			},
+			{
+				"name": "Paralyze",
+				"value": 32
+			},
+			{
+				"name": "Sleep",
+				"value": 64
+			},
+			{
+				"name": "Stun",
+				"value": 128
+			},
+			{
+				"name": "MarionetteL",
+				"value": 256
+			},
+			{
+				"name": "Flash",
+				"value": 512
+			},
+			{
+				"name": "Sound",
+				"value": 1024
+			},
+			{
+				"name": "GimmickL",
+				"value": 2048
+			},
+			{
+				"name": "Em2EmL",
+				"value": 4096
+			},
+			{
+				"name": "GimmickKnockBack",
+				"value": 8192
+			},
+			{
+				"name": "HighParts",
+				"value": 16384
+			},
+			{
+				"name": "MarionetteM",
+				"value": 32768
+			},
+			{
+				"name": "GimmickM",
+				"value": 65536
+			},
+			{
+				"name": "Em2EmM",
+				"value": 131072
+			},
+			{
+				"name": "MultiParts",
+				"value": 262144
+			},
+			{
+				"name": "ElementWeak",
+				"value": 524288
+			},
+			{
+				"name": "PartsBreak",
+				"value": 1048576
+			},
+			{
+				"name": "SleepEnd",
+				"value": 2097152
+			},
+			{
+				"name": "Stamina",
+				"value": 4194304
+			},
+			{
+				"name": "Parts",
+				"value": 8388608
+			},
+			{
+				"name": "MarionetteS",
+				"value": 16777216
+			},
+			{
+				"name": "GimmickS",
+				"value": 33554432
+			},
+			{
+				"name": "Em2EmS",
+				"value": 67108864
+			},
+			{
+				"name": "SteelFang",
+				"value": 134217728
+			},
+			{
+				"name": "MysteryMaximumActivityRelease",
+				"value": 268435456
+			}
+		]
+	},
 	"snow.gui.fsm.itembox.GuiItemBoxFsmManager.WeaponSwapSkillState": [
 		{
 			"name": "SelectSwapSkill",
@@ -161632,24 +161716,27 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemySetInfo.HyakuryuAttr": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Marionette",
-			"value": 1
-		},
-		{
-			"name": "SubWaveTop",
-			"value": 2
-		},
-		{
-			"name": "ExtraEm",
-			"value": 4
-		}
-	],
+	"snow.enemy.EnemySetInfo.HyakuryuAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Marionette",
+				"value": 1
+			},
+			{
+				"name": "SubWaveTop",
+				"value": 2
+			},
+			{
+				"name": "ExtraEm",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.em132_00.IgnoreTag": [
 		{
 			"name": "Tag000",
@@ -162636,20 +162723,23 @@
 			"value": 3
 		}
 	],
-	"snow.eventcut.EventOtomoModelManager.EquipmentOverrideFlag": [
-		{
-			"name": "Weapon",
-			"value": 1
-		},
-		{
-			"name": "Helm",
-			"value": 2
-		},
-		{
-			"name": "Body",
-			"value": 4
-		}
-	],
+	"snow.eventcut.EventOtomoModelManager.EquipmentOverrideFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Weapon",
+				"value": 1
+			},
+			{
+				"name": "Helm",
+				"value": 2
+			},
+			{
+				"name": "Body",
+				"value": 4
+			}
+		]
+	},
 	"snow.envCreature.BuffType": [
 		{
 			"name": "ResistDmg",
@@ -163928,28 +164018,31 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyDef.ActionAttrPlan": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "HateSubAction",
-			"value": 1
-		},
-		{
-			"name": "RoarAction",
-			"value": 2
-		},
-		{
-			"name": "DownAction",
-			"value": 4
-		},
-		{
-			"name": "InsideMoveActionForArena",
-			"value": 8
-		}
-	],
+	"snow.enemy.EnemyDef.ActionAttrPlan": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "HateSubAction",
+				"value": 1
+			},
+			{
+				"name": "RoarAction",
+				"value": 2
+			},
+			{
+				"name": "DownAction",
+				"value": 4
+			},
+			{
+				"name": "InsideMoveActionForArena",
+				"value": 8
+			}
+		]
+	},
 	"snow.gui.fsm.otomoboard.GuiOtomoBoardFsmManager.OtomoBoardOpenedFacilityType": [
 		{
 			"name": "OtomoBoard_Self",
@@ -165460,28 +165553,31 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyDef.PosRelation": [
-		{
-			"name": "Any",
-			"value": 1
-		},
-		{
-			"name": "Land",
-			"value": 2
-		},
-		{
-			"name": "Fly",
-			"value": 4
-		},
-		{
-			"name": "Wall",
-			"value": 8
-		},
-		{
-			"name": "Hang",
-			"value": 16
-		}
-	],
+	"snow.enemy.EnemyDef.PosRelation": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Any",
+				"value": 1
+			},
+			{
+				"name": "Land",
+				"value": 2
+			},
+			{
+				"name": "Fly",
+				"value": 4
+			},
+			{
+				"name": "Wall",
+				"value": 8
+			},
+			{
+				"name": "Hang",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.em135.Em135ActionTune.EmDie5001TuneVariation": [
 		{
 			"name": "Variation01",
@@ -172174,20 +172270,23 @@
 			"value": 8
 		}
 	],
-	"via.hid.gamePlayer.AutoDeviceSelectionFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "TryOnAssign",
-			"value": 2
-		},
-		{
-			"name": "TryOnReassign",
-			"value": 4
-		}
-	],
+	"via.hid.gamePlayer.AutoDeviceSelectionFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "TryOnAssign",
+				"value": 2
+			},
+			{
+				"name": "TryOnReassign",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.ems009.Ems009ActionTune.EmMove5000TuneVariation": [
 		{
 			"name": "Variation01",
@@ -176247,28 +176346,31 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyDef.NoDamageReactionCategory": [
-		{
-			"name": "System",
-			"value": 1
-		},
-		{
-			"name": "Think",
-			"value": 2
-		},
-		{
-			"name": "Sequence",
-			"value": 4
-		},
-		{
-			"name": "Action",
-			"value": 8
-		},
-		{
-			"name": "Stance",
-			"value": 16
-		}
-	],
+	"snow.enemy.EnemyDef.NoDamageReactionCategory": {
+		"flags": true,
+		"values": [
+			{
+				"name": "System",
+				"value": 1
+			},
+			{
+				"name": "Think",
+				"value": 2
+			},
+			{
+				"name": "Sequence",
+				"value": 4
+			},
+			{
+				"name": "Action",
+				"value": 8
+			},
+			{
+				"name": "Stance",
+				"value": 16
+			}
+		]
+	},
 	"snow.otomo.DogToolCheckEventType": [
 		{
 			"name": "None",
@@ -178569,96 +178671,99 @@
 			"value": 2
 		}
 	],
-	"snow.player.PlayerCondition.HornMusicUp": [
-		{
-			"name": "HornAttackUp",
-			"value": 1
-		},
-		{
-			"name": "HornDefenceUp",
-			"value": 2
-		},
-		{
-			"name": "HornMyUp",
-			"value": 4
-		},
-		{
-			"name": "HornCriticalUp",
-			"value": 8
-		},
-		{
-			"name": "HornElementAttackUp",
-			"value": 16
-		},
-		{
-			"name": "HornSuperArmor",
-			"value": 32
-		},
-		{
-			"name": "HornEarS",
-			"value": 64
-		},
-		{
-			"name": "HornEarL",
-			"value": 128
-		},
-		{
-			"name": "HornQuake",
-			"value": 256
-		},
-		{
-			"name": "HornWind",
-			"value": 512
-		},
-		{
-			"name": "HornStun",
-			"value": 1024
-		},
-		{
-			"name": "HornElementDamage",
-			"value": 2048
-		},
-		{
-			"name": "HornKago",
-			"value": 4096
-		},
-		{
-			"name": "HornHpRegene",
-			"value": 8192
-		},
-		{
-			"name": "HornStamina",
-			"value": 16384
-		},
-		{
-			"name": "HornStaminaRegene",
-			"value": 32768
-		},
-		{
-			"name": "HornSlash",
-			"value": 65536
-		},
-		{
-			"name": "HornGroundDamage",
-			"value": 131072
-		},
-		{
-			"name": "HornRevolt",
-			"value": 262144
-		},
-		{
-			"name": "HornHyperArmor",
-			"value": 524288
-		},
-		{
-			"name": "HornKireajiRegene",
-			"value": 1048576
-		},
-		{
-			"name": "HornTakumi",
-			"value": 2097152
-		}
-	],
+	"snow.player.PlayerCondition.HornMusicUp": {
+		"flags": true,
+		"values": [
+			{
+				"name": "HornAttackUp",
+				"value": 1
+			},
+			{
+				"name": "HornDefenceUp",
+				"value": 2
+			},
+			{
+				"name": "HornMyUp",
+				"value": 4
+			},
+			{
+				"name": "HornCriticalUp",
+				"value": 8
+			},
+			{
+				"name": "HornElementAttackUp",
+				"value": 16
+			},
+			{
+				"name": "HornSuperArmor",
+				"value": 32
+			},
+			{
+				"name": "HornEarS",
+				"value": 64
+			},
+			{
+				"name": "HornEarL",
+				"value": 128
+			},
+			{
+				"name": "HornQuake",
+				"value": 256
+			},
+			{
+				"name": "HornWind",
+				"value": 512
+			},
+			{
+				"name": "HornStun",
+				"value": 1024
+			},
+			{
+				"name": "HornElementDamage",
+				"value": 2048
+			},
+			{
+				"name": "HornKago",
+				"value": 4096
+			},
+			{
+				"name": "HornHpRegene",
+				"value": 8192
+			},
+			{
+				"name": "HornStamina",
+				"value": 16384
+			},
+			{
+				"name": "HornStaminaRegene",
+				"value": 32768
+			},
+			{
+				"name": "HornSlash",
+				"value": 65536
+			},
+			{
+				"name": "HornGroundDamage",
+				"value": 131072
+			},
+			{
+				"name": "HornRevolt",
+				"value": 262144
+			},
+			{
+				"name": "HornHyperArmor",
+				"value": 524288
+			},
+			{
+				"name": "HornKireajiRegene",
+				"value": 1048576
+			},
+			{
+				"name": "HornTakumi",
+				"value": 2097152
+			}
+		]
+	},
 	"via.network.BattleReplay.Error": [
 		{
 			"name": "None",
@@ -179197,72 +179302,75 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyDef.CancelFlag": [
-		{
-			"name": "CombatMode",
-			"value": 1
-		},
-		{
-			"name": "ContinueCombatMode",
-			"value": 2
-		},
-		{
-			"name": "CautionMode",
-			"value": 4
-		},
-		{
-			"name": "AngerStart",
-			"value": 8
-		},
-		{
-			"name": "AngerEnd",
-			"value": 16
-		},
-		{
-			"name": "TiredStart",
-			"value": 32
-		},
-		{
-			"name": "RecoverStart",
-			"value": 64
-		},
-		{
-			"name": "LeadStart",
-			"value": 128
-		},
-		{
-			"name": "GrappleReceive",
-			"value": 256
-		},
-		{
-			"name": "FlashEnd",
-			"value": 512
-		},
-		{
-			"name": "MurePushReaction",
-			"value": 1024
-		},
-		{
-			"name": "MureOrderExecute",
-			"value": 2048
-		},
-		{
-			"name": "SelfSleepMoveCancel",
-			"value": 4096
-		},
-		{
-			"name": "MureCombatModeCancel",
-			"value": 8192
-		},
-		{
-			"name": "MysteryMaximumActivityReleaseFailed",
-			"value": 16384
-		},
-		{
-			"name": "OverMysteryBurst",
-			"value": 32768
-		}
-	],
+	"snow.enemy.EnemyDef.CancelFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CombatMode",
+				"value": 1
+			},
+			{
+				"name": "ContinueCombatMode",
+				"value": 2
+			},
+			{
+				"name": "CautionMode",
+				"value": 4
+			},
+			{
+				"name": "AngerStart",
+				"value": 8
+			},
+			{
+				"name": "AngerEnd",
+				"value": 16
+			},
+			{
+				"name": "TiredStart",
+				"value": 32
+			},
+			{
+				"name": "RecoverStart",
+				"value": 64
+			},
+			{
+				"name": "LeadStart",
+				"value": 128
+			},
+			{
+				"name": "GrappleReceive",
+				"value": 256
+			},
+			{
+				"name": "FlashEnd",
+				"value": 512
+			},
+			{
+				"name": "MurePushReaction",
+				"value": 1024
+			},
+			{
+				"name": "MureOrderExecute",
+				"value": 2048
+			},
+			{
+				"name": "SelfSleepMoveCancel",
+				"value": 4096
+			},
+			{
+				"name": "MureCombatModeCancel",
+				"value": 8192
+			},
+			{
+				"name": "MysteryMaximumActivityReleaseFailed",
+				"value": 16384
+			},
+			{
+				"name": "OverMysteryBurst",
+				"value": 32768
+			}
+		]
+	},
 	"snow.shell.Em102_00ShellManager.EmShell306_ID": [
 		{
 			"name": "FogBeamBreath",
@@ -180591,72 +180699,75 @@
 			"value": 1
 		}
 	],
-	"snow.player.fsm.PlayerFsm2ActionAddMotionSequenceFilter.ValueFlag": [
-		{
-			"name": "Page0_No_00",
-			"value": 1
-		},
-		{
-			"name": "Page0_No_01",
-			"value": 2
-		},
-		{
-			"name": "Page0_No_02",
-			"value": 4
-		},
-		{
-			"name": "Page0_No_03",
-			"value": 8
-		},
-		{
-			"name": "Page0_No_04",
-			"value": 16
-		},
-		{
-			"name": "Page0_No_05",
-			"value": 32
-		},
-		{
-			"name": "Page0_No_06",
-			"value": 64
-		},
-		{
-			"name": "Page0_No_07",
-			"value": 128
-		},
-		{
-			"name": "Page0_No_08",
-			"value": 256
-		},
-		{
-			"name": "Page0_No_09",
-			"value": 512
-		},
-		{
-			"name": "Page0_No_10",
-			"value": 1024
-		},
-		{
-			"name": "Page0_No_11",
-			"value": 2048
-		},
-		{
-			"name": "Page0_No_12",
-			"value": 4096
-		},
-		{
-			"name": "Page0_No_13",
-			"value": 8192
-		},
-		{
-			"name": "Page0_No_14",
-			"value": 16384
-		},
-		{
-			"name": "Page0_No_15",
-			"value": 32768
-		}
-	],
+	"snow.player.fsm.PlayerFsm2ActionAddMotionSequenceFilter.ValueFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Page0_No_00",
+				"value": 1
+			},
+			{
+				"name": "Page0_No_01",
+				"value": 2
+			},
+			{
+				"name": "Page0_No_02",
+				"value": 4
+			},
+			{
+				"name": "Page0_No_03",
+				"value": 8
+			},
+			{
+				"name": "Page0_No_04",
+				"value": 16
+			},
+			{
+				"name": "Page0_No_05",
+				"value": 32
+			},
+			{
+				"name": "Page0_No_06",
+				"value": 64
+			},
+			{
+				"name": "Page0_No_07",
+				"value": 128
+			},
+			{
+				"name": "Page0_No_08",
+				"value": 256
+			},
+			{
+				"name": "Page0_No_09",
+				"value": 512
+			},
+			{
+				"name": "Page0_No_10",
+				"value": 1024
+			},
+			{
+				"name": "Page0_No_11",
+				"value": 2048
+			},
+			{
+				"name": "Page0_No_12",
+				"value": 4096
+			},
+			{
+				"name": "Page0_No_13",
+				"value": 8192
+			},
+			{
+				"name": "Page0_No_14",
+				"value": 16384
+			},
+			{
+				"name": "Page0_No_15",
+				"value": 32768
+			}
+		]
+	},
 	"via.DeviceOrientation": [
 		{
 			"name": "Portrait",
@@ -190746,20 +190857,23 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.define.Em132_05.PowerUpModeFlags": [
-		{
-			"name": "EX1",
-			"value": 1
-		},
-		{
-			"name": "EX2",
-			"value": 2
-		},
-		{
-			"name": "EX3",
-			"value": 4
-		}
-	],
+	"snow.enemy.define.Em132_05.PowerUpModeFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "EX1",
+				"value": 1
+			},
+			{
+				"name": "EX2",
+				"value": 2
+			},
+			{
+				"name": "EX3",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.em102.Em102ActionTune.EmMove016TuneVariation": [
 		{
 			"name": "Variation01",
@@ -192400,20 +192514,23 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em081.Em081Define.ElectricPartsFlags": [
-		{
-			"name": "Head",
-			"value": 1
-		},
-		{
-			"name": "Wing",
-			"value": 2
-		},
-		{
-			"name": "Tail",
-			"value": 4
-		}
-	],
+	"snow.enemy.em081.Em081Define.ElectricPartsFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Head",
+				"value": 1
+			},
+			{
+				"name": "Wing",
+				"value": 2
+			},
+			{
+				"name": "Tail",
+				"value": 4
+			}
+		]
+	},
 	"via.hid.VibrationOutputMotor": [
 		{
 			"name": "Motor0",
@@ -195654,28 +195771,31 @@
 			"value": 7
 		}
 	],
-	"snow.quest.nHyakuryuQuest.Attr": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "FixWaveOrder",
-			"value": 1
-		},
-		{
-			"name": "Lot_HighEx",
-			"value": 2
-		},
-		{
-			"name": "Lot_TrueED",
-			"value": 4
-		},
-		{
-			"name": "FinalBossKill",
-			"value": 8
-		}
-	],
+	"snow.quest.nHyakuryuQuest.Attr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "FixWaveOrder",
+				"value": 1
+			},
+			{
+				"name": "Lot_HighEx",
+				"value": 2
+			},
+			{
+				"name": "Lot_TrueED",
+				"value": 4
+			},
+			{
+				"name": "FinalBossKill",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.ems020.Ems020Define.EmDieNo": [
 		{
 			"name": "None",
@@ -195926,12 +196046,15 @@
 			"value": 0
 		}
 	],
-	"snow.shell.ShellBase.ShellRequestHitAttribute": [
-		{
-			"name": "NoHitOwnerObject",
-			"value": 1
-		}
-	],
+	"snow.shell.ShellBase.ShellRequestHitAttribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NoHitOwnerObject",
+				"value": 1
+			}
+		]
+	},
 	"snow.wwise.WwiseEm086.CometMode": [
 		{
 			"name": "Init",
@@ -199852,40 +199975,46 @@
 			"value": 1
 		}
 	],
-	"snow.hit.LimitedHitAttr": [
-		{
-			"name": "LimitedStan",
-			"value": 1
-		}
-	],
+	"snow.hit.LimitedHitAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LimitedStan",
+				"value": 1
+			}
+		]
+	},
 	"snow.enemy.em097.Em097ActionTune.EmAttack099TuneVariation": [
 		{
 			"name": "Variation01",
 			"value": 1
 		}
 	],
-	"snow.enemy.em108.Em108Define.MadPartsFlags": [
-		{
-			"name": "Head",
-			"value": 1
-		},
-		{
-			"name": "Body",
-			"value": 2
-		},
-		{
-			"name": "Leg_L",
-			"value": 4
-		},
-		{
-			"name": "Leg_R",
-			"value": 8
-		},
-		{
-			"name": "Tail",
-			"value": 16
-		}
-	],
+	"snow.enemy.em108.Em108Define.MadPartsFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Head",
+				"value": 1
+			},
+			{
+				"name": "Body",
+				"value": 2
+			},
+			{
+				"name": "Leg_L",
+				"value": 4
+			},
+			{
+				"name": "Leg_R",
+				"value": 8
+			},
+			{
+				"name": "Tail",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.em057.Em057ActionTune.EmAttack076TuneVariation": [
 		{
 			"name": "Variation01",
@@ -202707,32 +202836,35 @@
 			"value": 3
 		}
 	],
-	"snow.enemy.em118.Em118Define.CrimsonGlowStatus": [
-		{
-			"name": "CrimsonGlowNone",
-			"value": 1
-		},
-		{
-			"name": "CrimsonGlowMiddle",
-			"value": 2
-		},
-		{
-			"name": "CrimsonGlowHigh_Maximum",
-			"value": 4
-		},
-		{
-			"name": "CrimsonGlowHigh_Head",
-			"value": 8
-		},
-		{
-			"name": "CrimsonGlowHigh_Tail",
-			"value": 16
-		},
-		{
-			"name": "CrimsonGlowLow",
-			"value": 32
-		}
-	],
+	"snow.enemy.em118.Em118Define.CrimsonGlowStatus": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CrimsonGlowNone",
+				"value": 1
+			},
+			{
+				"name": "CrimsonGlowMiddle",
+				"value": 2
+			},
+			{
+				"name": "CrimsonGlowHigh_Maximum",
+				"value": 4
+			},
+			{
+				"name": "CrimsonGlowHigh_Head",
+				"value": 8
+			},
+			{
+				"name": "CrimsonGlowHigh_Tail",
+				"value": 16
+			},
+			{
+				"name": "CrimsonGlowLow",
+				"value": 32
+			}
+		]
+	},
 	"snow.enemy.em071.Em071ActionTune.EmFly5004TuneVariation": [
 		{
 			"name": "Variation01",
@@ -204587,24 +204719,27 @@
 			"value": 1
 		}
 	],
-	"snow.stage.StageObjectZoneController.MapLayer": [
-		{
-			"name": "OutDoor",
-			"value": 1
-		},
-		{
-			"name": "InDoor",
-			"value": 2
-		},
-		{
-			"name": "OutDoor_Height",
-			"value": 4
-		},
-		{
-			"name": "InDoor_Height",
-			"value": 8
-		}
-	],
+	"snow.stage.StageObjectZoneController.MapLayer": {
+		"flags": true,
+		"values": [
+			{
+				"name": "OutDoor",
+				"value": 1
+			},
+			{
+				"name": "InDoor",
+				"value": 2
+			},
+			{
+				"name": "OutDoor_Height",
+				"value": 4
+			},
+			{
+				"name": "InDoor_Height",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.em007.Em007ActionTune.EmAttack025TuneVariation": [
 		{
 			"name": "Variation01",
@@ -217766,40 +217901,43 @@
 			"value": 1
 		}
 	],
-	"snow.quest.QN_Attr": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Select",
-			"value": 1
-		},
-		{
-			"name": "Urgent",
-			"value": 2
-		},
-		{
-			"name": "UnlockHall",
-			"value": 4
-		},
-		{
-			"name": "Npc",
-			"value": 8
-		},
-		{
-			"name": "Once",
-			"value": 16
-		},
-		{
-			"name": "DispQuickMatch",
-			"value": 32
-		},
-		{
-			"name": "Duty",
-			"value": 64
-		}
-	],
+	"snow.quest.QN_Attr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Select",
+				"value": 1
+			},
+			{
+				"name": "Urgent",
+				"value": 2
+			},
+			{
+				"name": "UnlockHall",
+				"value": 4
+			},
+			{
+				"name": "Npc",
+				"value": 8
+			},
+			{
+				"name": "Once",
+				"value": 16
+			},
+			{
+				"name": "DispQuickMatch",
+				"value": 32
+			},
+			{
+				"name": "Duty",
+				"value": 64
+			}
+		]
+	},
 	"snow.enemy.em001.Em001ActionTune.EmAttack041TuneVariation": [
 		{
 			"name": "Variation01",
@@ -220384,24 +220522,27 @@
 			"value": 5
 		}
 	],
-	"snow.camera.DemoCamera.IgnoreRequest": [
-		{
-			"name": "KillCamera",
-			"value": 1
-		},
-		{
-			"name": "ResultSuccess",
-			"value": 2
-		},
-		{
-			"name": "ResultFailed",
-			"value": 4
-		},
-		{
-			"name": "ResultRetire",
-			"value": 8
-		}
-	],
+	"snow.camera.DemoCamera.IgnoreRequest": {
+		"flags": true,
+		"values": [
+			{
+				"name": "KillCamera",
+				"value": 1
+			},
+			{
+				"name": "ResultSuccess",
+				"value": 2
+			},
+			{
+				"name": "ResultFailed",
+				"value": 4
+			},
+			{
+				"name": "ResultRetire",
+				"value": 8
+			}
+		]
+	},
 	"snow.gui.fsm.questcounter.GuiQuestCounterFsmManager.QuestCounterRankMenuType": [
 		{
 			"name": "High",
@@ -223276,132 +223417,135 @@
 			"value": 7
 		}
 	],
-	"snow.enemy.EnemyDef.IgnoreNoDamageReactionFlag": [
-		{
-			"name": "MarionetteFriendlyFire",
-			"value": 1
-		},
-		{
-			"name": "MarionetteStart",
-			"value": 2
-		},
-		{
-			"name": "PartsLoss",
-			"value": 4
-		},
-		{
-			"name": "FallTrap",
-			"value": 8
-		},
-		{
-			"name": "ShockTrap",
-			"value": 16
-		},
-		{
-			"name": "Paralyze",
-			"value": 32
-		},
-		{
-			"name": "Sleep",
-			"value": 64
-		},
-		{
-			"name": "Stun",
-			"value": 128
-		},
-		{
-			"name": "MarionetteL",
-			"value": 256
-		},
-		{
-			"name": "Flash",
-			"value": 512
-		},
-		{
-			"name": "Sound",
-			"value": 1024
-		},
-		{
-			"name": "GimmickL",
-			"value": 2048
-		},
-		{
-			"name": "Em2EmL",
-			"value": 4096
-		},
-		{
-			"name": "GimmickKnockBack",
-			"value": 8192
-		},
-		{
-			"name": "HighParts",
-			"value": 16384
-		},
-		{
-			"name": "MarionetteM",
-			"value": 32768
-		},
-		{
-			"name": "GimmickM",
-			"value": 65536
-		},
-		{
-			"name": "Em2EmM",
-			"value": 131072
-		},
-		{
-			"name": "MultiParts",
-			"value": 262144
-		},
-		{
-			"name": "ElementWeak",
-			"value": 524288
-		},
-		{
-			"name": "PartsBreak",
-			"value": 1048576
-		},
-		{
-			"name": "SleepEnd",
-			"value": 2097152
-		},
-		{
-			"name": "Stamina",
-			"value": 4194304
-		},
-		{
-			"name": "Parts",
-			"value": 8388608
-		},
-		{
-			"name": "MarionetteS",
-			"value": 16777216
-		},
-		{
-			"name": "GimmickS",
-			"value": 33554432
-		},
-		{
-			"name": "Em2EmS",
-			"value": 67108864
-		},
-		{
-			"name": "SteelFang",
-			"value": 134217728
-		},
-		{
-			"name": "MysteryMaximumActivityRelease",
-			"value": 268435456
-		},
-		{
-			"name": "HyakuryuExit",
-			"value": 536870912
-		},
-		{
-			"name": "Die",
-			"value": 1073741824
-		}
-	],
+	"snow.enemy.EnemyDef.IgnoreNoDamageReactionFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MarionetteFriendlyFire",
+				"value": 1
+			},
+			{
+				"name": "MarionetteStart",
+				"value": 2
+			},
+			{
+				"name": "PartsLoss",
+				"value": 4
+			},
+			{
+				"name": "FallTrap",
+				"value": 8
+			},
+			{
+				"name": "ShockTrap",
+				"value": 16
+			},
+			{
+				"name": "Paralyze",
+				"value": 32
+			},
+			{
+				"name": "Sleep",
+				"value": 64
+			},
+			{
+				"name": "Stun",
+				"value": 128
+			},
+			{
+				"name": "MarionetteL",
+				"value": 256
+			},
+			{
+				"name": "Flash",
+				"value": 512
+			},
+			{
+				"name": "Sound",
+				"value": 1024
+			},
+			{
+				"name": "GimmickL",
+				"value": 2048
+			},
+			{
+				"name": "Em2EmL",
+				"value": 4096
+			},
+			{
+				"name": "GimmickKnockBack",
+				"value": 8192
+			},
+			{
+				"name": "HighParts",
+				"value": 16384
+			},
+			{
+				"name": "MarionetteM",
+				"value": 32768
+			},
+			{
+				"name": "GimmickM",
+				"value": 65536
+			},
+			{
+				"name": "Em2EmM",
+				"value": 131072
+			},
+			{
+				"name": "MultiParts",
+				"value": 262144
+			},
+			{
+				"name": "ElementWeak",
+				"value": 524288
+			},
+			{
+				"name": "PartsBreak",
+				"value": 1048576
+			},
+			{
+				"name": "SleepEnd",
+				"value": 2097152
+			},
+			{
+				"name": "Stamina",
+				"value": 4194304
+			},
+			{
+				"name": "Parts",
+				"value": 8388608
+			},
+			{
+				"name": "MarionetteS",
+				"value": 16777216
+			},
+			{
+				"name": "GimmickS",
+				"value": 33554432
+			},
+			{
+				"name": "Em2EmS",
+				"value": 67108864
+			},
+			{
+				"name": "SteelFang",
+				"value": 134217728
+			},
+			{
+				"name": "MysteryMaximumActivityRelease",
+				"value": 268435456
+			},
+			{
+				"name": "HyakuryuExit",
+				"value": 536870912
+			},
+			{
+				"name": "Die",
+				"value": 1073741824
+			}
+		]
+	},
 	"snow.camera.FixedCamera.UserDataKind_RoomService": [
 		{
 			"name": "Scroll",
@@ -224090,40 +224234,43 @@
 			"value": 2
 		}
 	],
-	"via.hid.DeviceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ForceFeedback",
-			"value": 1
-		},
-		{
-			"name": "TouchInterface",
-			"value": 2
-		},
-		{
-			"name": "GamePadButtonCLeft",
-			"value": 4
-		},
-		{
-			"name": "GamePadButtonCCenter",
-			"value": 8
-		},
-		{
-			"name": "GamePadButtonCRight",
-			"value": 16
-		},
-		{
-			"name": "MotionSensor",
-			"value": 32
-		},
-		{
-			"name": "Tracking",
-			"value": 64
-		}
-	],
+	"via.hid.DeviceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ForceFeedback",
+				"value": 1
+			},
+			{
+				"name": "TouchInterface",
+				"value": 2
+			},
+			{
+				"name": "GamePadButtonCLeft",
+				"value": 4
+			},
+			{
+				"name": "GamePadButtonCCenter",
+				"value": 8
+			},
+			{
+				"name": "GamePadButtonCRight",
+				"value": 16
+			},
+			{
+				"name": "MotionSensor",
+				"value": 32
+			},
+			{
+				"name": "Tracking",
+				"value": 64
+			}
+		]
+	},
 	"via.render.PrimitiveDrawObject.DrawType": [
 		{
 			"name": "Default",
@@ -224874,48 +225021,51 @@
 			"value": 5
 		}
 	],
-	"System.Globalization.DateTimeStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AllowLeadingWhite",
-			"value": 1
-		},
-		{
-			"name": "AllowTrailingWhite",
-			"value": 2
-		},
-		{
-			"name": "AllowInnerWhite",
-			"value": 4
-		},
-		{
-			"name": "AllowWhiteSpaces",
-			"value": 7
-		},
-		{
-			"name": "NoCurrentDateDefault",
-			"value": 8
-		},
-		{
-			"name": "AdjustToUniversal",
-			"value": 16
-		},
-		{
-			"name": "AssumeLocal",
-			"value": 32
-		},
-		{
-			"name": "AssumeUniversal",
-			"value": 64
-		},
-		{
-			"name": "RoundtripKind",
-			"value": 128
-		}
-	],
+	"System.Globalization.DateTimeStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AllowLeadingWhite",
+				"value": 1
+			},
+			{
+				"name": "AllowTrailingWhite",
+				"value": 2
+			},
+			{
+				"name": "AllowInnerWhite",
+				"value": 4
+			},
+			{
+				"name": "AllowWhiteSpaces",
+				"value": 7
+			},
+			{
+				"name": "NoCurrentDateDefault",
+				"value": 8
+			},
+			{
+				"name": "AdjustToUniversal",
+				"value": 16
+			},
+			{
+				"name": "AssumeLocal",
+				"value": 32
+			},
+			{
+				"name": "AssumeUniversal",
+				"value": 64
+			},
+			{
+				"name": "RoundtripKind",
+				"value": 128
+			}
+		]
+	},
 	"snow.enemy.em102.Em102ActionTune.EmAttack023TuneVariation": [
 		{
 			"name": "Variation01",
@@ -229441,28 +229591,31 @@
 			"value": 3
 		}
 	],
-	"snow.enemy.EnemyDef.RestartThinkCheckAttr": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "DisableNoCancel",
-			"value": 1
-		},
-		{
-			"name": "CheckMure",
-			"value": 2
-		},
-		{
-			"name": "DisableExitThinkCheck",
-			"value": 4
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"snow.enemy.EnemyDef.RestartThinkCheckAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "DisableNoCancel",
+				"value": 1
+			},
+			{
+				"name": "CheckMure",
+				"value": 2
+			},
+			{
+				"name": "DisableExitThinkCheck",
+				"value": 4
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"via.userdata.VariableError": [
 		{
 			"name": "None",
@@ -231463,32 +231616,35 @@
 			"value": 2
 		}
 	],
-	"snow.enemy.EnemyDef.DamageActionAttr": [
-		{
-			"name": "MarionetteBlockingDamageS",
-			"value": 1
-		},
-		{
-			"name": "MarionetteBlockingDamageM",
-			"value": 2
-		},
-		{
-			"name": "InFallTrapConditionDamage",
-			"value": 4
-		},
-		{
-			"name": "SwampLeechDownDamage",
-			"value": 8
-		},
-		{
-			"name": "MysteryDropToActivityDamage",
-			"value": 536870912
-		},
-		{
-			"name": "MysteryMaximumActivityRelease",
-			"value": 1073741824
-		}
-	],
+	"snow.enemy.EnemyDef.DamageActionAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MarionetteBlockingDamageS",
+				"value": 1
+			},
+			{
+				"name": "MarionetteBlockingDamageM",
+				"value": 2
+			},
+			{
+				"name": "InFallTrapConditionDamage",
+				"value": 4
+			},
+			{
+				"name": "SwampLeechDownDamage",
+				"value": 8
+			},
+			{
+				"name": "MysteryDropToActivityDamage",
+				"value": 536870912
+			},
+			{
+				"name": "MysteryMaximumActivityRelease",
+				"value": 1073741824
+			}
+		]
+	},
 	"snow.enemy.em081.Em081ActionTune.EmAttack5001TuneVariation": [
 		{
 			"name": "Variation01",
@@ -232461,20 +232617,23 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.define.Em132_05.UniqueCreateShellMethod": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "PriorCreate",
-			"value": 1
-		},
-		{
-			"name": "DelayCreate",
-			"value": 2
-		}
-	],
+	"snow.enemy.define.Em132_05.UniqueCreateShellMethod": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "PriorCreate",
+				"value": 1
+			},
+			{
+				"name": "DelayCreate",
+				"value": 2
+			}
+		]
+	},
 	"snow.enemy.em077.Em077ActionTune.EmDamage5004TuneVariation": [
 		{
 			"name": "Variation01",
@@ -237522,40 +237681,43 @@
 			"value": 5
 		}
 	],
-	"snow.hit.AttackConditionMatchHitAttr": [
-		{
-			"name": "HitDuringWire",
-			"value": 1
-		},
-		{
-			"name": "NoHitDuringWire",
-			"value": 2
-		},
-		{
-			"name": "HitOnGround",
-			"value": 4
-		},
-		{
-			"name": "HitOnWall",
-			"value": 8
-		},
-		{
-			"name": "HitOnGroundFoEnemy",
-			"value": 16
-		},
-		{
-			"name": "NoHitInAirForPlayer",
-			"value": 32
-		},
-		{
-			"name": "HitDuringCantVacuumPlayer",
-			"value": 64
-		},
-		{
-			"name": "HitFloatingPlayer",
-			"value": 128
-		}
-	],
+	"snow.hit.AttackConditionMatchHitAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "HitDuringWire",
+				"value": 1
+			},
+			{
+				"name": "NoHitDuringWire",
+				"value": 2
+			},
+			{
+				"name": "HitOnGround",
+				"value": 4
+			},
+			{
+				"name": "HitOnWall",
+				"value": 8
+			},
+			{
+				"name": "HitOnGroundFoEnemy",
+				"value": 16
+			},
+			{
+				"name": "NoHitInAirForPlayer",
+				"value": 32
+			},
+			{
+				"name": "HitDuringCantVacuumPlayer",
+				"value": 64
+			},
+			{
+				"name": "HitFloatingPlayer",
+				"value": 128
+			}
+		]
+	},
 	"snow.player.fsm.PlayerFsm2ActionResetSpineAimAngle.Timing": [
 		{
 			"name": "Start",
@@ -247657,28 +247819,31 @@
 			"value": 0
 		}
 	],
-	"snow.enemy.em007.Em007_07Character.VfxSequenceFilter": [
-		{
-			"name": "DivingDownExplosion",
-			"value": 1
-		},
-		{
-			"name": "BindVoiceRush",
-			"value": 2
-		},
-		{
-			"name": "DivingIntroRoar",
-			"value": 4
-		},
-		{
-			"name": "HellRush",
-			"value": 8
-		},
-		{
-			"name": "SpecialAttack",
-			"value": 16
-		}
-	],
+	"snow.enemy.em007.Em007_07Character.VfxSequenceFilter": {
+		"flags": true,
+		"values": [
+			{
+				"name": "DivingDownExplosion",
+				"value": 1
+			},
+			{
+				"name": "BindVoiceRush",
+				"value": 2
+			},
+			{
+				"name": "DivingIntroRoar",
+				"value": 4
+			},
+			{
+				"name": "HellRush",
+				"value": 8
+			},
+			{
+				"name": "SpecialAttack",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.ems042.Ems042Define.EmMoveNo": [
 		{
 			"name": "None",
@@ -253723,68 +253888,71 @@
 			"value": 1
 		}
 	],
-	"System.AttributeTargets": [
-		{
-			"name": "Assembly",
-			"value": 1
-		},
-		{
-			"name": "Module",
-			"value": 2
-		},
-		{
-			"name": "Class",
-			"value": 4
-		},
-		{
-			"name": "Struct",
-			"value": 8
-		},
-		{
-			"name": "Enum",
-			"value": 16
-		},
-		{
-			"name": "Constructor",
-			"value": 32
-		},
-		{
-			"name": "Method",
-			"value": 64
-		},
-		{
-			"name": "Property",
-			"value": 128
-		},
-		{
-			"name": "Field",
-			"value": 256
-		},
-		{
-			"name": "Event",
-			"value": 512
-		},
-		{
-			"name": "Interface",
-			"value": 1024
-		},
-		{
-			"name": "Parameter",
-			"value": 2048
-		},
-		{
-			"name": "Delegate",
-			"value": 4096
-		},
-		{
-			"name": "ReturnValue",
-			"value": 8192
-		},
-		{
-			"name": "All",
-			"value": 16383
-		}
-	],
+	"System.AttributeTargets": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Assembly",
+				"value": 1
+			},
+			{
+				"name": "Module",
+				"value": 2
+			},
+			{
+				"name": "Class",
+				"value": 4
+			},
+			{
+				"name": "Struct",
+				"value": 8
+			},
+			{
+				"name": "Enum",
+				"value": 16
+			},
+			{
+				"name": "Constructor",
+				"value": 32
+			},
+			{
+				"name": "Method",
+				"value": 64
+			},
+			{
+				"name": "Property",
+				"value": 128
+			},
+			{
+				"name": "Field",
+				"value": 256
+			},
+			{
+				"name": "Event",
+				"value": 512
+			},
+			{
+				"name": "Interface",
+				"value": 1024
+			},
+			{
+				"name": "Parameter",
+				"value": 2048
+			},
+			{
+				"name": "Delegate",
+				"value": 4096
+			},
+			{
+				"name": "ReturnValue",
+				"value": 8192
+			},
+			{
+				"name": "All",
+				"value": 16383
+			}
+		]
+	},
 	"snow.shell.Em058_00ShellManager.EmShell340_ReplaceEffectParam_ID": [
 		{
 			"name": "First_L",
@@ -254241,20 +254409,23 @@
 			"value": 4
 		}
 	],
-	"snow.npc.owl.action.village.ConstraintState": [
-		{
-			"name": "Position",
-			"value": 1
-		},
-		{
-			"name": "Rotation",
-			"value": 2
-		},
-		{
-			"name": "Both",
-			"value": 3
-		}
-	],
+	"snow.npc.owl.action.village.ConstraintState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Position",
+				"value": 1
+			},
+			{
+				"name": "Rotation",
+				"value": 2
+			},
+			{
+				"name": "Both",
+				"value": 3
+			}
+		]
+	},
 	"via.effect.BindingType": [
 		{
 			"name": "Joint",
@@ -254525,244 +254696,247 @@
 			"value": 1
 		}
 	],
-	"snow.player.PlayerCondition.Common": [
-		{
-			"name": "AttackUp",
-			"value": 1
-		},
-		{
-			"name": "DefenceUp",
-			"value": 2
-		},
-		{
-			"name": "StaminaUp",
-			"value": 4
-		},
-		{
-			"name": "DebuffPrevention",
-			"value": 8
-		},
-		{
-			"name": "CriticalUp",
-			"value": 16
-		},
-		{
-			"name": "SuperArmor",
-			"value": 32
-		},
-		{
-			"name": "ElementAttackUp",
-			"value": 64
-		},
-		{
-			"name": "Stamina",
-			"value": 128
-		},
-		{
-			"name": "HpRegene",
-			"value": 256
-		},
-		{
-			"name": "HpFish",
-			"value": 512
-		},
-		{
-			"name": "HyperArmor",
-			"value": 1024
-		},
-		{
-			"name": "DamageDown",
-			"value": 2048
-		},
-		{
-			"name": "EarS",
-			"value": 4096
-		},
-		{
-			"name": "EscapeUp",
-			"value": 8192
-		},
-		{
-			"name": "HpHealRegene",
-			"value": 16384
-		},
-		{
-			"name": "AttackUpEffectOnly",
-			"value": 32768
-		},
-		{
-			"name": "EquipSkill228LvUp",
-			"value": 65536
-		},
-		{
-			"name": "EquipSkill_230_Start",
-			"value": 131072
-		},
-		{
-			"name": "EquipSkill_230_Invocation",
-			"value": 262144
-		},
-		{
-			"name": "Reserve19",
-			"value": 524288
-		},
-		{
-			"name": "Reserve20",
-			"value": 1048576
-		},
-		{
-			"name": "Reserve21",
-			"value": 2097152
-		},
-		{
-			"name": "Reserve22",
-			"value": 4194304
-		},
-		{
-			"name": "Reserve23",
-			"value": 8388608
-		},
-		{
-			"name": "Reserve24",
-			"value": 16777216
-		},
-		{
-			"name": "Reserve25",
-			"value": 33554432
-		},
-		{
-			"name": "EquipSkill_090",
-			"value": 67108864
-		},
-		{
-			"name": "EquipSkill_002",
-			"value": 134217728
-		},
-		{
-			"name": "EquipSkill_102",
-			"value": 268435456
-		},
-		{
-			"name": "EquipSkill_008",
-			"value": 536870912
-		},
-		{
-			"name": "EquipSkill_001",
-			"value": 1073741824
-		},
-		{
-			"name": "EquipSkill_036",
-			"value": 2147483648
-		},
-		{
-			"name": "EquipSkill_206",
-			"value": 4294967296
-		},
-		{
-			"name": "EquipSkill_215",
-			"value": 8589934592
-		},
-		{
-			"name": "MarionetteType_Power",
-			"value": 17179869184
-		},
-		{
-			"name": "MarionetteType_Reward",
-			"value": 68719476736
-		},
-		{
-			"name": "EquipSkill_209",
-			"value": 1099511627776
-		},
-		{
-			"name": "SymbiosisLevel1",
-			"value": 2199023255552
-		},
-		{
-			"name": "SymbiosisLevel2",
-			"value": 4398046511104
-		},
-		{
-			"name": "SymbiosisLevel3",
-			"value": 8796093022208
-		},
-		{
-			"name": "FuriousHalf",
-			"value": 17592186044416
-		},
-		{
-			"name": "FuriousFull",
-			"value": 35184372088832
-		},
-		{
-			"name": "KitchenSkill048",
-			"value": 70368744177664
-		},
-		{
-			"name": "DebuffAttackUp",
-			"value": 140737488355328
-		},
-		{
-			"name": "EarL",
-			"value": 281474976710656
-		},
-		{
-			"name": "Quake",
-			"value": 562949953421312
-		},
-		{
-			"name": "Wind",
-			"value": 1125899906842624
-		},
-		{
-			"name": "VirusOvercomeCriticalUp",
-			"value": 2251799813685248
-		},
-		{
-			"name": "BloodySkillHeal",
-			"value": 4503599627370496
-		},
-		{
-			"name": "FuriousStaminaBuff",
-			"value": 9007199254740992
-		},
-		{
-			"name": "EquipSkill_222",
-			"value": 18014398509481984
-		},
-		{
-			"name": "WireStopRegene",
-			"value": 36028797018963968
-		},
-		{
-			"name": "VirusOvercomeIcon",
-			"value": 72057594037927936
-		},
-		{
-			"name": "EquipSkill_226",
-			"value": 144115188075855872
-		},
-		{
-			"name": "EquipSkill_227_Red",
-			"value": 288230376151711744
-		},
-		{
-			"name": "EquipSkill_227_Blue",
-			"value": 576460752303423488
-		},
-		{
-			"name": "EquipSkill_233_Small",
-			"value": 1152921504606846976
-		},
-		{
-			"name": "EquipSkill_233_Large",
-			"value": 2305843009213693952
-		},
-		{
-			"name": "EquipSkill_225",
-			"value": 4611686018427387904
-		}
-	],
+	"snow.player.PlayerCondition.Common": {
+		"flags": true,
+		"values": [
+			{
+				"name": "AttackUp",
+				"value": 1
+			},
+			{
+				"name": "DefenceUp",
+				"value": 2
+			},
+			{
+				"name": "StaminaUp",
+				"value": 4
+			},
+			{
+				"name": "DebuffPrevention",
+				"value": 8
+			},
+			{
+				"name": "CriticalUp",
+				"value": 16
+			},
+			{
+				"name": "SuperArmor",
+				"value": 32
+			},
+			{
+				"name": "ElementAttackUp",
+				"value": 64
+			},
+			{
+				"name": "Stamina",
+				"value": 128
+			},
+			{
+				"name": "HpRegene",
+				"value": 256
+			},
+			{
+				"name": "HpFish",
+				"value": 512
+			},
+			{
+				"name": "HyperArmor",
+				"value": 1024
+			},
+			{
+				"name": "DamageDown",
+				"value": 2048
+			},
+			{
+				"name": "EarS",
+				"value": 4096
+			},
+			{
+				"name": "EscapeUp",
+				"value": 8192
+			},
+			{
+				"name": "HpHealRegene",
+				"value": 16384
+			},
+			{
+				"name": "AttackUpEffectOnly",
+				"value": 32768
+			},
+			{
+				"name": "EquipSkill228LvUp",
+				"value": 65536
+			},
+			{
+				"name": "EquipSkill_230_Start",
+				"value": 131072
+			},
+			{
+				"name": "EquipSkill_230_Invocation",
+				"value": 262144
+			},
+			{
+				"name": "Reserve19",
+				"value": 524288
+			},
+			{
+				"name": "Reserve20",
+				"value": 1048576
+			},
+			{
+				"name": "Reserve21",
+				"value": 2097152
+			},
+			{
+				"name": "Reserve22",
+				"value": 4194304
+			},
+			{
+				"name": "Reserve23",
+				"value": 8388608
+			},
+			{
+				"name": "Reserve24",
+				"value": 16777216
+			},
+			{
+				"name": "Reserve25",
+				"value": 33554432
+			},
+			{
+				"name": "EquipSkill_090",
+				"value": 67108864
+			},
+			{
+				"name": "EquipSkill_002",
+				"value": 134217728
+			},
+			{
+				"name": "EquipSkill_102",
+				"value": 268435456
+			},
+			{
+				"name": "EquipSkill_008",
+				"value": 536870912
+			},
+			{
+				"name": "EquipSkill_001",
+				"value": 1073741824
+			},
+			{
+				"name": "EquipSkill_036",
+				"value": 2147483648
+			},
+			{
+				"name": "EquipSkill_206",
+				"value": 4294967296
+			},
+			{
+				"name": "EquipSkill_215",
+				"value": 8589934592
+			},
+			{
+				"name": "MarionetteType_Power",
+				"value": 17179869184
+			},
+			{
+				"name": "MarionetteType_Reward",
+				"value": 68719476736
+			},
+			{
+				"name": "EquipSkill_209",
+				"value": 1099511627776
+			},
+			{
+				"name": "SymbiosisLevel1",
+				"value": 2199023255552
+			},
+			{
+				"name": "SymbiosisLevel2",
+				"value": 4398046511104
+			},
+			{
+				"name": "SymbiosisLevel3",
+				"value": 8796093022208
+			},
+			{
+				"name": "FuriousHalf",
+				"value": 17592186044416
+			},
+			{
+				"name": "FuriousFull",
+				"value": 35184372088832
+			},
+			{
+				"name": "KitchenSkill048",
+				"value": 70368744177664
+			},
+			{
+				"name": "DebuffAttackUp",
+				"value": 140737488355328
+			},
+			{
+				"name": "EarL",
+				"value": 281474976710656
+			},
+			{
+				"name": "Quake",
+				"value": 562949953421312
+			},
+			{
+				"name": "Wind",
+				"value": 1125899906842624
+			},
+			{
+				"name": "VirusOvercomeCriticalUp",
+				"value": 2251799813685248
+			},
+			{
+				"name": "BloodySkillHeal",
+				"value": 4503599627370496
+			},
+			{
+				"name": "FuriousStaminaBuff",
+				"value": 9007199254740992
+			},
+			{
+				"name": "EquipSkill_222",
+				"value": 18014398509481984
+			},
+			{
+				"name": "WireStopRegene",
+				"value": 36028797018963968
+			},
+			{
+				"name": "VirusOvercomeIcon",
+				"value": 72057594037927936
+			},
+			{
+				"name": "EquipSkill_226",
+				"value": 144115188075855872
+			},
+			{
+				"name": "EquipSkill_227_Red",
+				"value": 288230376151711744
+			},
+			{
+				"name": "EquipSkill_227_Blue",
+				"value": 576460752303423488
+			},
+			{
+				"name": "EquipSkill_233_Small",
+				"value": 1152921504606846976
+			},
+			{
+				"name": "EquipSkill_233_Large",
+				"value": 2305843009213693952
+			},
+			{
+				"name": "EquipSkill_225",
+				"value": 4611686018427387904
+			}
+		]
+	},
 	"snow.stage.StageSceneLoadManager.State": [
 		{
 			"name": "Idle",
@@ -258515,180 +258689,183 @@
 			"value": 1
 		}
 	],
-	"snow.hit.AATrianglePole.TriangleRegion": [
-		{
-			"name": "In_P0_P1",
-			"value": 1
-		},
-		{
-			"name": "In_P1_P2",
-			"value": 2
-		},
-		{
-			"name": "In_P2_P0",
-			"value": 4
-		},
-		{
-			"name": "Over_P0P1",
-			"value": 64
-		},
-		{
-			"name": "Under_P0P1",
-			"value": 128
-		},
-		{
-			"name": "Between_P0P1",
-			"value": 256
-		},
-		{
-			"name": "Over_P1P2",
-			"value": 512
-		},
-		{
-			"name": "Under_P1P2",
-			"value": 1024
-		},
-		{
-			"name": "Between_P1P2",
-			"value": 2048
-		},
-		{
-			"name": "Over_P2P0",
-			"value": 4096
-		},
-		{
-			"name": "Under_P2P0",
-			"value": 8192
-		},
-		{
-			"name": "Between_P2P0",
-			"value": 16384
-		},
-		{
-			"name": "OverTop",
-			"value": 32768
-		},
-		{
-			"name": "Between",
-			"value": 65536
-		},
-		{
-			"name": "UnderBottom",
-			"value": 131072
-		},
-		{
-			"name": "In",
-			"value": 7
-		},
-		{
-			"name": "P0",
-			"value": 4226
-		},
-		{
-			"name": "P1",
-			"value": 68
-		},
-		{
-			"name": "P2",
-			"value": 8705
-		},
-		{
-			"name": "P0_P1",
-			"value": 262
-		},
-		{
-			"name": "P1_P2",
-			"value": 2053
-		},
-		{
-			"name": "P2_P0",
-			"value": 16387
-		},
-		{
-			"name": "P_P01",
-			"value": 65798
-		},
-		{
-			"name": "P_P12",
-			"value": 67589
-		},
-		{
-			"name": "P_P20",
-			"value": 81923
-		},
-		{
-			"name": "P_Top",
-			"value": 32775
-		},
-		{
-			"name": "P_Bot",
-			"value": 131079
-		},
-		{
-			"name": "Internal",
-			"value": 65543
-		},
-		{
-			"name": "E_TP01",
-			"value": 33030
-		},
-		{
-			"name": "E_TP12",
-			"value": 34821
-		},
-		{
-			"name": "E_TP20",
-			"value": 49155
-		},
-		{
-			"name": "E_BP01",
-			"value": 131334
-		},
-		{
-			"name": "E_BP12",
-			"value": 133125
-		},
-		{
-			"name": "E_BP20",
-			"value": 147459
-		},
-		{
-			"name": "E_TP0BP0",
-			"value": 69762
-		},
-		{
-			"name": "E_TP1BP1",
-			"value": 65604
-		},
-		{
-			"name": "E_TP2BP2",
-			"value": 74241
-		},
-		{
-			"name": "V_TP0",
-			"value": 36994
-		},
-		{
-			"name": "V_TP1",
-			"value": 32836
-		},
-		{
-			"name": "V_TP2",
-			"value": 41473
-		},
-		{
-			"name": "V_BP0",
-			"value": 69762
-		},
-		{
-			"name": "V_BP1",
-			"value": 65604
-		},
-		{
-			"name": "V_BP2",
-			"value": 74241
-		}
-	],
+	"snow.hit.AATrianglePole.TriangleRegion": {
+		"flags": true,
+		"values": [
+			{
+				"name": "In_P0_P1",
+				"value": 1
+			},
+			{
+				"name": "In_P1_P2",
+				"value": 2
+			},
+			{
+				"name": "In_P2_P0",
+				"value": 4
+			},
+			{
+				"name": "Over_P0P1",
+				"value": 64
+			},
+			{
+				"name": "Under_P0P1",
+				"value": 128
+			},
+			{
+				"name": "Between_P0P1",
+				"value": 256
+			},
+			{
+				"name": "Over_P1P2",
+				"value": 512
+			},
+			{
+				"name": "Under_P1P2",
+				"value": 1024
+			},
+			{
+				"name": "Between_P1P2",
+				"value": 2048
+			},
+			{
+				"name": "Over_P2P0",
+				"value": 4096
+			},
+			{
+				"name": "Under_P2P0",
+				"value": 8192
+			},
+			{
+				"name": "Between_P2P0",
+				"value": 16384
+			},
+			{
+				"name": "OverTop",
+				"value": 32768
+			},
+			{
+				"name": "Between",
+				"value": 65536
+			},
+			{
+				"name": "UnderBottom",
+				"value": 131072
+			},
+			{
+				"name": "In",
+				"value": 7
+			},
+			{
+				"name": "P0",
+				"value": 4226
+			},
+			{
+				"name": "P1",
+				"value": 68
+			},
+			{
+				"name": "P2",
+				"value": 8705
+			},
+			{
+				"name": "P0_P1",
+				"value": 262
+			},
+			{
+				"name": "P1_P2",
+				"value": 2053
+			},
+			{
+				"name": "P2_P0",
+				"value": 16387
+			},
+			{
+				"name": "P_P01",
+				"value": 65798
+			},
+			{
+				"name": "P_P12",
+				"value": 67589
+			},
+			{
+				"name": "P_P20",
+				"value": 81923
+			},
+			{
+				"name": "P_Top",
+				"value": 32775
+			},
+			{
+				"name": "P_Bot",
+				"value": 131079
+			},
+			{
+				"name": "Internal",
+				"value": 65543
+			},
+			{
+				"name": "E_TP01",
+				"value": 33030
+			},
+			{
+				"name": "E_TP12",
+				"value": 34821
+			},
+			{
+				"name": "E_TP20",
+				"value": 49155
+			},
+			{
+				"name": "E_BP01",
+				"value": 131334
+			},
+			{
+				"name": "E_BP12",
+				"value": 133125
+			},
+			{
+				"name": "E_BP20",
+				"value": 147459
+			},
+			{
+				"name": "E_TP0BP0",
+				"value": 69762
+			},
+			{
+				"name": "E_TP1BP1",
+				"value": 65604
+			},
+			{
+				"name": "E_TP2BP2",
+				"value": 74241
+			},
+			{
+				"name": "V_TP0",
+				"value": 36994
+			},
+			{
+				"name": "V_TP1",
+				"value": 32836
+			},
+			{
+				"name": "V_TP2",
+				"value": 41473
+			},
+			{
+				"name": "V_BP0",
+				"value": 69762
+			},
+			{
+				"name": "V_BP1",
+				"value": 65604
+			},
+			{
+				"name": "V_BP2",
+				"value": 74241
+			}
+		]
+	},
 	"snow.shell.LongSwordShell020.LongSwordShell020AttackState": [
 		{
 			"name": "None",
@@ -260935,28 +261112,31 @@
 			"value": 3
 		}
 	],
-	"snow.stage.StageDef.PhotoFilter": [
-		{
-			"name": "None",
-			"value": 1
-		},
-		{
-			"name": "MonoTone",
-			"value": 2
-		},
-		{
-			"name": "SepiaTone",
-			"value": 4
-		},
-		{
-			"name": "NegaPosi",
-			"value": 8
-		},
-		{
-			"name": "Wasi",
-			"value": 16
-		}
-	],
+	"snow.stage.StageDef.PhotoFilter": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 1
+			},
+			{
+				"name": "MonoTone",
+				"value": 2
+			},
+			{
+				"name": "SepiaTone",
+				"value": 4
+			},
+			{
+				"name": "NegaPosi",
+				"value": 8
+			},
+			{
+				"name": "Wasi",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.em086.Em086ActionTune.EmMove020TuneVariation": [
 		{
 			"name": "Variation01",
@@ -261409,16 +261589,19 @@
 			"value": 1
 		}
 	],
-	"via.Serializer.Options": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "FloatValueCompression",
-			"value": 1
-		}
-	],
+	"via.Serializer.Options": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "FloatValueCompression",
+				"value": 1
+			}
+		]
+	},
 	"snow.enemy.EnemyDef.VersusPatternType": [
 		{
 			"name": "InvalidVersusPatternNo",
@@ -263336,28 +263519,31 @@
 			"value": 1
 		}
 	],
-	"System.Reflection.CallingConventions": [
-		{
-			"name": "Standard",
-			"value": 1
-		},
-		{
-			"name": "VarArgs",
-			"value": 2
-		},
-		{
-			"name": "Any",
-			"value": 3
-		},
-		{
-			"name": "HasThis",
-			"value": 32
-		},
-		{
-			"name": "ExplicitThis",
-			"value": 64
-		}
-	],
+	"System.Reflection.CallingConventions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Standard",
+				"value": 1
+			},
+			{
+				"name": "VarArgs",
+				"value": 2
+			},
+			{
+				"name": "Any",
+				"value": 3
+			},
+			{
+				"name": "HasThis",
+				"value": 32
+			},
+			{
+				"name": "ExplicitThis",
+				"value": 64
+			}
+		]
+	},
 	"snow.enemy.em081.Em081ActionTune.EmFly5009TuneVariation": [
 		{
 			"name": "Variation01",
@@ -263394,80 +263580,83 @@
 			"value": 3
 		}
 	],
-	"snow.hit.AttackAttr": [
-		{
-			"name": "ElementS",
-			"value": 1
-		},
-		{
-			"name": "Bomb",
-			"value": 2
-		},
-		{
-			"name": "EnsureDebuff",
-			"value": 4
-		},
-		{
-			"name": "TriggerMarionetteStart",
-			"value": 8
-		},
-		{
-			"name": "ForceKill",
-			"value": 16
-		},
-		{
-			"name": "Koyashi",
-			"value": 32
-		},
-		{
-			"name": "AllowDisabled",
-			"value": 64
-		},
-		{
-			"name": "PreventCheepTech",
-			"value": 128
-		},
-		{
-			"name": "HyakuryuBossAngerEndSpStop",
-			"value": 256
-		},
-		{
-			"name": "ForcePartsLossPermitDamageAttrSlash",
-			"value": 512
-		},
-		{
-			"name": "KeepRedDamage",
-			"value": 1024
-		},
-		{
-			"name": "CreatureNetSendDamage",
-			"value": 2048
-		},
-		{
-			"name": "EmHpStop1",
-			"value": 4096
-		},
-		{
-			"name": "RestraintPLOnly",
-			"value": 8192
-		},
-		{
-			"name": "RestraintAll",
-			"value": 16384
-		},
-		{
-			"name": "SuckBlood",
-			"value": 32768
-		},
-		{
-			"name": "ForcePartsLossPermitDamageAttrStrike",
-			"value": 65536
-		},
-		{
-			"name": "FrozenZakoEm",
-			"value": 131072
-		}
-	],
+	"snow.hit.AttackAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "ElementS",
+				"value": 1
+			},
+			{
+				"name": "Bomb",
+				"value": 2
+			},
+			{
+				"name": "EnsureDebuff",
+				"value": 4
+			},
+			{
+				"name": "TriggerMarionetteStart",
+				"value": 8
+			},
+			{
+				"name": "ForceKill",
+				"value": 16
+			},
+			{
+				"name": "Koyashi",
+				"value": 32
+			},
+			{
+				"name": "AllowDisabled",
+				"value": 64
+			},
+			{
+				"name": "PreventCheepTech",
+				"value": 128
+			},
+			{
+				"name": "HyakuryuBossAngerEndSpStop",
+				"value": 256
+			},
+			{
+				"name": "ForcePartsLossPermitDamageAttrSlash",
+				"value": 512
+			},
+			{
+				"name": "KeepRedDamage",
+				"value": 1024
+			},
+			{
+				"name": "CreatureNetSendDamage",
+				"value": 2048
+			},
+			{
+				"name": "EmHpStop1",
+				"value": 4096
+			},
+			{
+				"name": "RestraintPLOnly",
+				"value": 8192
+			},
+			{
+				"name": "RestraintAll",
+				"value": 16384
+			},
+			{
+				"name": "SuckBlood",
+				"value": 32768
+			},
+			{
+				"name": "ForcePartsLossPermitDamageAttrStrike",
+				"value": 65536
+			},
+			{
+				"name": "FrozenZakoEm",
+				"value": 131072
+			}
+		]
+	},
 	"via.kernel.bcat.BcatResult": [
 		{
 			"name": "OK",
@@ -272712,136 +272901,139 @@
 			"value": 21
 		}
 	],
-	"System.Reflection.TypeAttributes": [
-		{
-			"name": "NotPublic",
-			"value": 0
-		},
-		{
-			"name": "AutoLayout",
-			"value": 0
-		},
-		{
-			"name": "AnsiClass",
-			"value": 0
-		},
-		{
-			"name": "Class",
-			"value": 0
-		},
-		{
-			"name": "Public",
-			"value": 1
-		},
-		{
-			"name": "NestedPublic",
-			"value": 2
-		},
-		{
-			"name": "NestedPrivate",
-			"value": 3
-		},
-		{
-			"name": "NestedFamily",
-			"value": 4
-		},
-		{
-			"name": "NestedAssembly",
-			"value": 5
-		},
-		{
-			"name": "NestedFamANDAssem",
-			"value": 6
-		},
-		{
-			"name": "NestedFamORAssem",
-			"value": 7
-		},
-		{
-			"name": "VisibilityMask",
-			"value": 7
-		},
-		{
-			"name": "SequentialLayout",
-			"value": 8
-		},
-		{
-			"name": "ExplicitLayout",
-			"value": 16
-		},
-		{
-			"name": "LayoutMask",
-			"value": 24
-		},
-		{
-			"name": "Interface",
-			"value": 32
-		},
-		{
-			"name": "ClassSemanticsMask",
-			"value": 32
-		},
-		{
-			"name": "Abstract",
-			"value": 128
-		},
-		{
-			"name": "Sealed",
-			"value": 256
-		},
-		{
-			"name": "SpecialName",
-			"value": 1024
-		},
-		{
-			"name": "Import",
-			"value": 4096
-		},
-		{
-			"name": "Serializable",
-			"value": 8192
-		},
-		{
-			"name": "WindowsRuntime",
-			"value": 16384
-		},
-		{
-			"name": "UnicodeClass",
-			"value": 65536
-		},
-		{
-			"name": "AutoClass",
-			"value": 131072
-		},
-		{
-			"name": "CustomFormatClass",
-			"value": 196608
-		},
-		{
-			"name": "CustomFormatMask",
-			"value": 12582912
-		},
-		{
-			"name": "StringFormatMask",
-			"value": 196608
-		},
-		{
-			"name": "BeforeFieldInit",
-			"value": 1048576
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 2048
-		},
-		{
-			"name": "HasSecurity",
-			"value": 262144
-		},
-		{
-			"name": "ReservedMask",
-			"value": 264192
-		}
-	],
+	"System.Reflection.TypeAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NotPublic",
+				"value": 0
+			},
+			{
+				"name": "AutoLayout",
+				"value": 0
+			},
+			{
+				"name": "AnsiClass",
+				"value": 0
+			},
+			{
+				"name": "Class",
+				"value": 0
+			},
+			{
+				"name": "Public",
+				"value": 1
+			},
+			{
+				"name": "NestedPublic",
+				"value": 2
+			},
+			{
+				"name": "NestedPrivate",
+				"value": 3
+			},
+			{
+				"name": "NestedFamily",
+				"value": 4
+			},
+			{
+				"name": "NestedAssembly",
+				"value": 5
+			},
+			{
+				"name": "NestedFamANDAssem",
+				"value": 6
+			},
+			{
+				"name": "NestedFamORAssem",
+				"value": 7
+			},
+			{
+				"name": "VisibilityMask",
+				"value": 7
+			},
+			{
+				"name": "SequentialLayout",
+				"value": 8
+			},
+			{
+				"name": "ExplicitLayout",
+				"value": 16
+			},
+			{
+				"name": "LayoutMask",
+				"value": 24
+			},
+			{
+				"name": "Interface",
+				"value": 32
+			},
+			{
+				"name": "ClassSemanticsMask",
+				"value": 32
+			},
+			{
+				"name": "Abstract",
+				"value": 128
+			},
+			{
+				"name": "Sealed",
+				"value": 256
+			},
+			{
+				"name": "SpecialName",
+				"value": 1024
+			},
+			{
+				"name": "Import",
+				"value": 4096
+			},
+			{
+				"name": "Serializable",
+				"value": 8192
+			},
+			{
+				"name": "WindowsRuntime",
+				"value": 16384
+			},
+			{
+				"name": "UnicodeClass",
+				"value": 65536
+			},
+			{
+				"name": "AutoClass",
+				"value": 131072
+			},
+			{
+				"name": "CustomFormatClass",
+				"value": 196608
+			},
+			{
+				"name": "CustomFormatMask",
+				"value": 12582912
+			},
+			{
+				"name": "StringFormatMask",
+				"value": 196608
+			},
+			{
+				"name": "BeforeFieldInit",
+				"value": 1048576
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 2048
+			},
+			{
+				"name": "HasSecurity",
+				"value": 262144
+			},
+			{
+				"name": "ReservedMask",
+				"value": 264192
+			}
+		]
+	},
 	"snow.enemy.fsm.condition.EnemyTargetLRCheck.eType": [
 		{
 			"name": "TypeL",
@@ -275824,24 +276016,27 @@
 			"value": 0
 		}
 	],
-	"snow.data.OtomoData.OtomoPartsVisible": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Weapon",
-			"value": 1
-		},
-		{
-			"name": "Head",
-			"value": 2
-		},
-		{
-			"name": "Chest",
-			"value": 4
-		}
-	],
+	"snow.data.OtomoData.OtomoPartsVisible": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Weapon",
+				"value": 1
+			},
+			{
+				"name": "Head",
+				"value": 2
+			},
+			{
+				"name": "Chest",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.EnemyDef.MeatEatType": [
 		{
 			"name": "SetMeat",
@@ -276997,20 +277192,23 @@
 			"value": 3
 		}
 	],
-	"snow.eventcut.UniqueEventManager.EventOtomoAttr": [
-		{
-			"name": "Airou",
-			"value": 1
-		},
-		{
-			"name": "Dog",
-			"value": 2
-		},
-		{
-			"name": "Both",
-			"value": 3
-		}
-	],
+	"snow.eventcut.UniqueEventManager.EventOtomoAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Airou",
+				"value": 1
+			},
+			{
+				"name": "Dog",
+				"value": 2
+			},
+			{
+				"name": "Both",
+				"value": 3
+			}
+		]
+	},
 	"snow.camera.FixedCamera.UserDataKind_Tent": [
 		{
 			"name": "Default",
@@ -278541,32 +278739,35 @@
 			"value": 2
 		}
 	],
-	"via.attribute.AreaQueryCategoryAttribute.Category": [
-		{
-			"name": "Unknown",
-			"value": 0
-		},
-		{
-			"name": "AreaItem",
-			"value": 1
-		},
-		{
-			"name": "Position",
-			"value": 2
-		},
-		{
-			"name": "GameObject",
-			"value": 4
-		},
-		{
-			"name": "AreaRegion",
-			"value": 8
-		},
-		{
-			"name": "Any",
-			"value": 255
-		}
-	],
+	"via.attribute.AreaQueryCategoryAttribute.Category": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unknown",
+				"value": 0
+			},
+			{
+				"name": "AreaItem",
+				"value": 1
+			},
+			{
+				"name": "Position",
+				"value": 2
+			},
+			{
+				"name": "GameObject",
+				"value": 4
+			},
+			{
+				"name": "AreaRegion",
+				"value": 8
+			},
+			{
+				"name": "Any",
+				"value": 255
+			}
+		]
+	},
 	"snow.enemy.em081.Em081ActionTune.EmAttack5013TuneVariation": [
 		{
 			"name": "Variation01",
@@ -280697,60 +280898,63 @@
 			"value": 3
 		}
 	],
-	"snow.hit.OtomoAttackAttr": [
-		{
-			"name": "SameWithWeapon",
-			"value": 1
-		},
-		{
-			"name": "EnableCritical",
-			"value": 2
-		},
-		{
-			"name": "AttackTypeShort",
-			"value": 4
-		},
-		{
-			"name": "AttackTypeLong",
-			"value": 8
-		},
-		{
-			"name": "SlashOnly",
-			"value": 16
-		},
-		{
-			"name": "StrikeOnly",
-			"value": 32
-		},
-		{
-			"name": "NoWeaponElementDamage",
-			"value": 64
-		},
-		{
-			"name": "OtomoBomb",
-			"value": 128
-		},
-		{
-			"name": "RideAttack",
-			"value": 256
-		},
-		{
-			"name": "FixDamage",
-			"value": 1024
-		},
-		{
-			"name": "Penetration",
-			"value": 2048
-		},
-		{
-			"name": "CounterAttack",
-			"value": 4096
-		},
-		{
-			"name": "Max",
-			"value": 4097
-		}
-	],
+	"snow.hit.OtomoAttackAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "SameWithWeapon",
+				"value": 1
+			},
+			{
+				"name": "EnableCritical",
+				"value": 2
+			},
+			{
+				"name": "AttackTypeShort",
+				"value": 4
+			},
+			{
+				"name": "AttackTypeLong",
+				"value": 8
+			},
+			{
+				"name": "SlashOnly",
+				"value": 16
+			},
+			{
+				"name": "StrikeOnly",
+				"value": 32
+			},
+			{
+				"name": "NoWeaponElementDamage",
+				"value": 64
+			},
+			{
+				"name": "OtomoBomb",
+				"value": 128
+			},
+			{
+				"name": "RideAttack",
+				"value": 256
+			},
+			{
+				"name": "FixDamage",
+				"value": 1024
+			},
+			{
+				"name": "Penetration",
+				"value": 2048
+			},
+			{
+				"name": "CounterAttack",
+				"value": 4096
+			},
+			{
+				"name": "Max",
+				"value": 4097
+			}
+		]
+	},
 	"snow.enemy.em090.Em090ActionTune.EmMove006TuneVariation": [
 		{
 			"name": "Variation01",
@@ -280939,20 +281143,23 @@
 			"value": 38
 		}
 	],
-	"snow.npc.otomo.ItemType": [
-		{
-			"name": "Item_00",
-			"value": 1
-		},
-		{
-			"name": "Item_01",
-			"value": 2
-		},
-		{
-			"name": "Item_02",
-			"value": 4
-		}
-	],
+	"snow.npc.otomo.ItemType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Item_00",
+				"value": 1
+			},
+			{
+				"name": "Item_01",
+				"value": 2
+			},
+			{
+				"name": "Item_02",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.Em081ActionOverWrite.EmAttack5024ActOverWriteVariation": [
 		{
 			"name": "Variation001",
@@ -282781,28 +282988,31 @@
 			"value": 5
 		}
 	],
-	"snow.enemy.EnemyDef.LateJoinStatusBit": [
-		{
-			"name": "NonCombat",
-			"value": 1
-		},
-		{
-			"name": "Caution",
-			"value": 2
-		},
-		{
-			"name": "Combat",
-			"value": 4
-		},
-		{
-			"name": "Anger",
-			"value": 8
-		},
-		{
-			"name": "Tired",
-			"value": 16
-		}
-	],
+	"snow.enemy.EnemyDef.LateJoinStatusBit": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NonCombat",
+				"value": 1
+			},
+			{
+				"name": "Caution",
+				"value": 2
+			},
+			{
+				"name": "Combat",
+				"value": 4
+			},
+			{
+				"name": "Anger",
+				"value": 8
+			},
+			{
+				"name": "Tired",
+				"value": 16
+			}
+		]
+	},
 	"via.clr.TypeFlag": [
 		{
 			"name": "VisibilityMask",
@@ -291522,140 +291732,143 @@
 			"value": 0
 		}
 	],
-	"via.AABB.VoronoiId": [
-		{
-			"name": "X_MinBit",
-			"value": 1
-		},
-		{
-			"name": "X_MaxBit",
-			"value": 2
-		},
-		{
-			"name": "Y_MinBit",
-			"value": 4
-		},
-		{
-			"name": "Y_MaxBit",
-			"value": 8
-		},
-		{
-			"name": "Z_MinBit",
-			"value": 16
-		},
-		{
-			"name": "Z_MaxBit",
-			"value": 32
-		},
-		{
-			"name": "Internal",
-			"value": 0
-		},
-		{
-			"name": "P_YZX0",
-			"value": 1
-		},
-		{
-			"name": "P_YZX1",
-			"value": 2
-		},
-		{
-			"name": "P_ZXY0",
-			"value": 4
-		},
-		{
-			"name": "P_ZXY1",
-			"value": 8
-		},
-		{
-			"name": "P_XYZ0",
-			"value": 16
-		},
-		{
-			"name": "P_XYZ1",
-			"value": 32
-		},
-		{
-			"name": "E_XY0Z0",
-			"value": 20
-		},
-		{
-			"name": "E_XY1Z0",
-			"value": 24
-		},
-		{
-			"name": "E_XY0Z1",
-			"value": 36
-		},
-		{
-			"name": "E_XY1Z1",
-			"value": 40
-		},
-		{
-			"name": "E_YZ0X0",
-			"value": 17
-		},
-		{
-			"name": "E_YZ1X0",
-			"value": 33
-		},
-		{
-			"name": "E_YZ0X1",
-			"value": 18
-		},
-		{
-			"name": "E_YZ1X1",
-			"value": 34
-		},
-		{
-			"name": "E_ZX0Y0",
-			"value": 5
-		},
-		{
-			"name": "E_ZX1Y0",
-			"value": 6
-		},
-		{
-			"name": "E_ZX0Y1",
-			"value": 9
-		},
-		{
-			"name": "E_ZX1Y1",
-			"value": 10
-		},
-		{
-			"name": "V_X0Y0Z0",
-			"value": 21
-		},
-		{
-			"name": "V_X1Y0Z0",
-			"value": 22
-		},
-		{
-			"name": "V_X0Y1Z0",
-			"value": 25
-		},
-		{
-			"name": "V_X1Y1Z0",
-			"value": 26
-		},
-		{
-			"name": "V_X0Y0Z1",
-			"value": 37
-		},
-		{
-			"name": "V_X1Y0Z1",
-			"value": 38
-		},
-		{
-			"name": "V_X0Y1Z1",
-			"value": 41
-		},
-		{
-			"name": "V_X1Y1Z1",
-			"value": 42
-		}
-	],
+	"via.AABB.VoronoiId": {
+		"flags": true,
+		"values": [
+			{
+				"name": "X_MinBit",
+				"value": 1
+			},
+			{
+				"name": "X_MaxBit",
+				"value": 2
+			},
+			{
+				"name": "Y_MinBit",
+				"value": 4
+			},
+			{
+				"name": "Y_MaxBit",
+				"value": 8
+			},
+			{
+				"name": "Z_MinBit",
+				"value": 16
+			},
+			{
+				"name": "Z_MaxBit",
+				"value": 32
+			},
+			{
+				"name": "Internal",
+				"value": 0
+			},
+			{
+				"name": "P_YZX0",
+				"value": 1
+			},
+			{
+				"name": "P_YZX1",
+				"value": 2
+			},
+			{
+				"name": "P_ZXY0",
+				"value": 4
+			},
+			{
+				"name": "P_ZXY1",
+				"value": 8
+			},
+			{
+				"name": "P_XYZ0",
+				"value": 16
+			},
+			{
+				"name": "P_XYZ1",
+				"value": 32
+			},
+			{
+				"name": "E_XY0Z0",
+				"value": 20
+			},
+			{
+				"name": "E_XY1Z0",
+				"value": 24
+			},
+			{
+				"name": "E_XY0Z1",
+				"value": 36
+			},
+			{
+				"name": "E_XY1Z1",
+				"value": 40
+			},
+			{
+				"name": "E_YZ0X0",
+				"value": 17
+			},
+			{
+				"name": "E_YZ1X0",
+				"value": 33
+			},
+			{
+				"name": "E_YZ0X1",
+				"value": 18
+			},
+			{
+				"name": "E_YZ1X1",
+				"value": 34
+			},
+			{
+				"name": "E_ZX0Y0",
+				"value": 5
+			},
+			{
+				"name": "E_ZX1Y0",
+				"value": 6
+			},
+			{
+				"name": "E_ZX0Y1",
+				"value": 9
+			},
+			{
+				"name": "E_ZX1Y1",
+				"value": 10
+			},
+			{
+				"name": "V_X0Y0Z0",
+				"value": 21
+			},
+			{
+				"name": "V_X1Y0Z0",
+				"value": 22
+			},
+			{
+				"name": "V_X0Y1Z0",
+				"value": 25
+			},
+			{
+				"name": "V_X1Y1Z0",
+				"value": 26
+			},
+			{
+				"name": "V_X0Y0Z1",
+				"value": 37
+			},
+			{
+				"name": "V_X1Y0Z1",
+				"value": 38
+			},
+			{
+				"name": "V_X0Y1Z1",
+				"value": 41
+			},
+			{
+				"name": "V_X1Y1Z1",
+				"value": 42
+			}
+		]
+	},
 	"snow.enemy.em095.Em095Define.EmGrappleNo": [
 		{
 			"name": "None",
@@ -304957,220 +305170,223 @@
 			"value": 1
 		}
 	],
-	"snow.player.PlayerCondition.Debuff": [
-		{
-			"name": "__0_",
-			"value": 1
-		},
-		{
-			"name": "FireL",
-			"value": 2
-		},
-		{
-			"name": "__2_",
-			"value": 4
-		},
-		{
-			"name": "WaterL",
-			"value": 8
-		},
-		{
-			"name": "__4_",
-			"value": 16
-		},
-		{
-			"name": "ThunderL",
-			"value": 32
-		},
-		{
-			"name": "__6_",
-			"value": 64
-		},
-		{
-			"name": "IceL",
-			"value": 128
-		},
-		{
-			"name": "__8_",
-			"value": 256
-		},
-		{
-			"name": "DragonL",
-			"value": 512
-		},
-		{
-			"name": "AllResDownS",
-			"value": 1024
-		},
-		{
-			"name": "AllResDownL",
-			"value": 2048
-		},
-		{
-			"name": "VitalDamaging",
-			"value": 4096
-		},
-		{
-			"name": "Bubble",
-			"value": 8192
-		},
-		{
-			"name": "RedBubble",
-			"value": 16384
-		},
-		{
-			"name": "GreenBubble",
-			"value": 32768
-		},
-		{
-			"name": "VirusLatency",
-			"value": 65536
-		},
-		{
-			"name": "VirusOnsetNearness",
-			"value": 131072
-		},
-		{
-			"name": "VirusOvercomeNearness",
-			"value": 262144
-		},
-		{
-			"name": "VirusOnset",
-			"value": 524288
-		},
-		{
-			"name": "VirusOvercome",
-			"value": 1048576
-		},
-		{
-			"name": "Territory",
-			"value": 2097152
-		},
-		{
-			"name": "OniBomb1",
-			"value": 4194304
-		},
-		{
-			"name": "OniBomb2",
-			"value": 8388608
-		},
-		{
-			"name": "Bomb1",
-			"value": 16777216
-		},
-		{
-			"name": "Bomb2",
-			"value": 33554432
-		},
-		{
-			"name": "Bomb3",
-			"value": 67108864
-		},
-		{
-			"name": "GoldMudSlip",
-			"value": 134217728
-		},
-		{
-			"name": "MagmaSlip",
-			"value": 268435456
-		},
-		{
-			"name": "EnemyFireSlip",
-			"value": 536870912
-		},
-		{
-			"name": "__30__",
-			"value": 1073741824
-		},
-		{
-			"name": "__31__",
-			"value": 2147483648
-		},
-		{
-			"name": "Poison",
-			"value": 4294967296
-		},
-		{
-			"name": "NoxiousPoison",
-			"value": 8589934592
-		},
-		{
-			"name": "DeadlyPoison",
-			"value": 17179869184
-		},
-		{
-			"name": "Sleep",
-			"value": 34359738368
-		},
-		{
-			"name": "Paralyze",
-			"value": 68719476736
-		},
-		{
-			"name": "Stun",
-			"value": 137438953472
-		},
-		{
-			"name": "Stink",
-			"value": 274877906944
-		},
-		{
-			"name": "LeadEnemy",
-			"value": 549755813888
-		},
-		{
-			"name": "LeadEnemyAfter",
-			"value": 1099511627776
-		},
-		{
-			"name": "BubbleDaruma",
-			"value": 2199023255552
-		},
-		{
-			"name": "RedBubbleDaruma",
-			"value": 4398046511104
-		},
-		{
-			"name": "GreenBubbleDaruma",
-			"value": 8796093022208
-		},
-		{
-			"name": "Blooding",
-			"value": 17592186044416
-		},
-		{
-			"name": "Bleeding",
-			"value": 35184372088832
-		},
-		{
-			"name": "Confusion",
-			"value": 70368744177664
-		},
-		{
-			"name": "DefenceDownS",
-			"value": 140737488355328
-		},
-		{
-			"name": "DefenceDownL",
-			"value": 281474976710656
-		},
-		{
-			"name": "Beto",
-			"value": 562949953421312
-		},
-		{
-			"name": "VirusLatencyMiddle",
-			"value": 2251799813685248
-		},
-		{
-			"name": "MysteryDebuff",
-			"value": 4503599627370496
-		},
-		{
-			"name": "MysteryDebuffHeal",
-			"value": 9007199254740992
-		}
-	],
+	"snow.player.PlayerCondition.Debuff": {
+		"flags": true,
+		"values": [
+			{
+				"name": "__0_",
+				"value": 1
+			},
+			{
+				"name": "FireL",
+				"value": 2
+			},
+			{
+				"name": "__2_",
+				"value": 4
+			},
+			{
+				"name": "WaterL",
+				"value": 8
+			},
+			{
+				"name": "__4_",
+				"value": 16
+			},
+			{
+				"name": "ThunderL",
+				"value": 32
+			},
+			{
+				"name": "__6_",
+				"value": 64
+			},
+			{
+				"name": "IceL",
+				"value": 128
+			},
+			{
+				"name": "__8_",
+				"value": 256
+			},
+			{
+				"name": "DragonL",
+				"value": 512
+			},
+			{
+				"name": "AllResDownS",
+				"value": 1024
+			},
+			{
+				"name": "AllResDownL",
+				"value": 2048
+			},
+			{
+				"name": "VitalDamaging",
+				"value": 4096
+			},
+			{
+				"name": "Bubble",
+				"value": 8192
+			},
+			{
+				"name": "RedBubble",
+				"value": 16384
+			},
+			{
+				"name": "GreenBubble",
+				"value": 32768
+			},
+			{
+				"name": "VirusLatency",
+				"value": 65536
+			},
+			{
+				"name": "VirusOnsetNearness",
+				"value": 131072
+			},
+			{
+				"name": "VirusOvercomeNearness",
+				"value": 262144
+			},
+			{
+				"name": "VirusOnset",
+				"value": 524288
+			},
+			{
+				"name": "VirusOvercome",
+				"value": 1048576
+			},
+			{
+				"name": "Territory",
+				"value": 2097152
+			},
+			{
+				"name": "OniBomb1",
+				"value": 4194304
+			},
+			{
+				"name": "OniBomb2",
+				"value": 8388608
+			},
+			{
+				"name": "Bomb1",
+				"value": 16777216
+			},
+			{
+				"name": "Bomb2",
+				"value": 33554432
+			},
+			{
+				"name": "Bomb3",
+				"value": 67108864
+			},
+			{
+				"name": "GoldMudSlip",
+				"value": 134217728
+			},
+			{
+				"name": "MagmaSlip",
+				"value": 268435456
+			},
+			{
+				"name": "EnemyFireSlip",
+				"value": 536870912
+			},
+			{
+				"name": "__30__",
+				"value": 1073741824
+			},
+			{
+				"name": "__31__",
+				"value": 2147483648
+			},
+			{
+				"name": "Poison",
+				"value": 4294967296
+			},
+			{
+				"name": "NoxiousPoison",
+				"value": 8589934592
+			},
+			{
+				"name": "DeadlyPoison",
+				"value": 17179869184
+			},
+			{
+				"name": "Sleep",
+				"value": 34359738368
+			},
+			{
+				"name": "Paralyze",
+				"value": 68719476736
+			},
+			{
+				"name": "Stun",
+				"value": 137438953472
+			},
+			{
+				"name": "Stink",
+				"value": 274877906944
+			},
+			{
+				"name": "LeadEnemy",
+				"value": 549755813888
+			},
+			{
+				"name": "LeadEnemyAfter",
+				"value": 1099511627776
+			},
+			{
+				"name": "BubbleDaruma",
+				"value": 2199023255552
+			},
+			{
+				"name": "RedBubbleDaruma",
+				"value": 4398046511104
+			},
+			{
+				"name": "GreenBubbleDaruma",
+				"value": 8796093022208
+			},
+			{
+				"name": "Blooding",
+				"value": 17592186044416
+			},
+			{
+				"name": "Bleeding",
+				"value": 35184372088832
+			},
+			{
+				"name": "Confusion",
+				"value": 70368744177664
+			},
+			{
+				"name": "DefenceDownS",
+				"value": 140737488355328
+			},
+			{
+				"name": "DefenceDownL",
+				"value": 281474976710656
+			},
+			{
+				"name": "Beto",
+				"value": 562949953421312
+			},
+			{
+				"name": "VirusLatencyMiddle",
+				"value": 2251799813685248
+			},
+			{
+				"name": "MysteryDebuff",
+				"value": 4503599627370496
+			},
+			{
+				"name": "MysteryDebuffHeal",
+				"value": 9007199254740992
+			}
+		]
+	},
 	"snow.gui.fsm.charamake.GuiCharamakeAirouFsmManager.ScoutTopMenu": [
 		{
 			"name": "AllNonCustom",
@@ -307737,80 +307953,83 @@
 			"value": 3
 		}
 	],
-	"snow.ZoneDef.Em058SpecialAttr": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "A_Type",
-			"value": 1
-		},
-		{
-			"name": "B_Type",
-			"value": 2
-		},
-		{
-			"name": "C_Type",
-			"value": 4
-		},
-		{
-			"name": "D_Type",
-			"value": 8
-		},
-		{
-			"name": "E_Type",
-			"value": 16
-		},
-		{
-			"name": "F_Type",
-			"value": 32
-		},
-		{
-			"name": "G_Type",
-			"value": 64
-		},
-		{
-			"name": "H_Type",
-			"value": 128
-		},
-		{
-			"name": "I_Type",
-			"value": 256
-		},
-		{
-			"name": "J_Type",
-			"value": 512
-		},
-		{
-			"name": "K_Type",
-			"value": 1024
-		},
-		{
-			"name": "L_Type",
-			"value": 2048
-		},
-		{
-			"name": "M_Type",
-			"value": 4096
-		},
-		{
-			"name": "N_Type",
-			"value": 8192
-		},
-		{
-			"name": "O_Type",
-			"value": 16384
-		},
-		{
-			"name": "P_Type",
-			"value": 32768
-		},
-		{
-			"name": "Q_Type",
-			"value": 65536
-		}
-	],
+	"snow.ZoneDef.Em058SpecialAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "A_Type",
+				"value": 1
+			},
+			{
+				"name": "B_Type",
+				"value": 2
+			},
+			{
+				"name": "C_Type",
+				"value": 4
+			},
+			{
+				"name": "D_Type",
+				"value": 8
+			},
+			{
+				"name": "E_Type",
+				"value": 16
+			},
+			{
+				"name": "F_Type",
+				"value": 32
+			},
+			{
+				"name": "G_Type",
+				"value": 64
+			},
+			{
+				"name": "H_Type",
+				"value": 128
+			},
+			{
+				"name": "I_Type",
+				"value": 256
+			},
+			{
+				"name": "J_Type",
+				"value": 512
+			},
+			{
+				"name": "K_Type",
+				"value": 1024
+			},
+			{
+				"name": "L_Type",
+				"value": 2048
+			},
+			{
+				"name": "M_Type",
+				"value": 4096
+			},
+			{
+				"name": "N_Type",
+				"value": 8192
+			},
+			{
+				"name": "O_Type",
+				"value": 16384
+			},
+			{
+				"name": "P_Type",
+				"value": 32768
+			},
+			{
+				"name": "Q_Type",
+				"value": 65536
+			}
+		]
+	},
 	"snow.player.fsm.PlayerFsm2EventGimmick.GimmickEventMethodType": [
 		{
 			"name": "Cannon_Escape",
@@ -330700,28 +330919,31 @@
 			"value": 25
 		}
 	],
-	"snow.enemy.EnemyFlashDamageParam.StanceStatusFlags": [
-		{
-			"name": "Stand",
-			"value": 1
-		},
-		{
-			"name": "Fly",
-			"value": 2
-		},
-		{
-			"name": "Diving",
-			"value": 4
-		},
-		{
-			"name": "Wall",
-			"value": 8
-		},
-		{
-			"name": "Ceiling",
-			"value": 16
-		}
-	],
+	"snow.enemy.EnemyFlashDamageParam.StanceStatusFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Stand",
+				"value": 1
+			},
+			{
+				"name": "Fly",
+				"value": 2
+			},
+			{
+				"name": "Diving",
+				"value": 4
+			},
+			{
+				"name": "Wall",
+				"value": 8
+			},
+			{
+				"name": "Ceiling",
+				"value": 16
+			}
+		]
+	},
 	"snow.enemy.ems090.Ems090ActionTune.EmDamage003TuneVariation": [
 		{
 			"name": "Variation01",
@@ -333620,20 +333842,23 @@
 			"value": 1
 		}
 	],
-	"snow.eventcut.EventOtomo.EquipmentOverrideFlag": [
-		{
-			"name": "Weapon",
-			"value": 1
-		},
-		{
-			"name": "Helm",
-			"value": 2
-		},
-		{
-			"name": "Body",
-			"value": 4
-		}
-	],
+	"snow.eventcut.EventOtomo.EquipmentOverrideFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Weapon",
+				"value": 1
+			},
+			{
+				"name": "Helm",
+				"value": 2
+			},
+			{
+				"name": "Body",
+				"value": 4
+			}
+		]
+	},
 	"snow.DlcDef.DlcId": [
 		{
 			"name": "ZZBXX_b_003",
@@ -337966,28 +338191,31 @@
 			"value": 2
 		}
 	],
-	"snow.progress.fsm.action.ProgressFsmAction_Em060_SetAcceptMarionetteCommandAction.AcceptCommand": [
-		{
-			"name": "Shoot",
-			"value": 2
-		},
-		{
-			"name": "WeakAttack",
-			"value": 4
-		},
-		{
-			"name": "StrongAttack",
-			"value": 8
-		},
-		{
-			"name": "Dodge",
-			"value": 32
-		},
-		{
-			"name": "FreeRun",
-			"value": 64
-		}
-	],
+	"snow.progress.fsm.action.ProgressFsmAction_Em060_SetAcceptMarionetteCommandAction.AcceptCommand": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Shoot",
+				"value": 2
+			},
+			{
+				"name": "WeakAttack",
+				"value": 4
+			},
+			{
+				"name": "StrongAttack",
+				"value": 8
+			},
+			{
+				"name": "Dodge",
+				"value": 32
+			},
+			{
+				"name": "FreeRun",
+				"value": 64
+			}
+		]
+	},
 	"snow.player.fsm.PlayerFsm2ActionWallRunWallVec.MoveType": [
 		{
 			"name": "Front",
@@ -338764,36 +338992,39 @@
 			"value": 1
 		}
 	],
-	"snow.data.EquipDataManager.VisiblePartsFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Weapon",
-			"value": 1
-		},
-		{
-			"name": "Head",
-			"value": 2
-		},
-		{
-			"name": "Chest",
-			"value": 4
-		},
-		{
-			"name": "Arm",
-			"value": 8
-		},
-		{
-			"name": "Waist",
-			"value": 16
-		},
-		{
-			"name": "Leg",
-			"value": 32
-		}
-	],
+	"snow.data.EquipDataManager.VisiblePartsFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Weapon",
+				"value": 1
+			},
+			{
+				"name": "Head",
+				"value": 2
+			},
+			{
+				"name": "Chest",
+				"value": 4
+			},
+			{
+				"name": "Arm",
+				"value": 8
+			},
+			{
+				"name": "Waist",
+				"value": 16
+			},
+			{
+				"name": "Leg",
+				"value": 32
+			}
+		]
+	},
 	"snow.RistrictTargetType": [
 		{
 			"name": "Player",
@@ -347265,72 +347496,75 @@
 			"value": 401
 		}
 	],
-	"System.Reflection.MethodImplAttributes": [
-		{
-			"name": "CodeTypeMask",
-			"value": 3
-		},
-		{
-			"name": "IL",
-			"value": 0
-		},
-		{
-			"name": "Native",
-			"value": 1
-		},
-		{
-			"name": "OPTIL",
-			"value": 2
-		},
-		{
-			"name": "Runtime",
-			"value": 3
-		},
-		{
-			"name": "ManagedMask",
-			"value": 4
-		},
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "Managed",
-			"value": 0
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "MaxMethodImplVal",
-			"value": 65535
-		}
-	],
+	"System.Reflection.MethodImplAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CodeTypeMask",
+				"value": 3
+			},
+			{
+				"name": "IL",
+				"value": 0
+			},
+			{
+				"name": "Native",
+				"value": 1
+			},
+			{
+				"name": "OPTIL",
+				"value": 2
+			},
+			{
+				"name": "Runtime",
+				"value": 3
+			},
+			{
+				"name": "ManagedMask",
+				"value": 4
+			},
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "Managed",
+				"value": 0
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "MaxMethodImplVal",
+				"value": 65535
+			}
+		]
+	},
 	"snow.gui.GuiOtomoDetail.OtomoDetailWindowArmsType": [
 		{
 			"name": "Weapon",
@@ -348083,24 +348317,27 @@
 			"value": 5
 		}
 	],
-	"snow.enemy.EnemyDef.TargetPosRelation": [
-		{
-			"name": "Any",
-			"value": 1
-		},
-		{
-			"name": "Land",
-			"value": 2
-		},
-		{
-			"name": "Fly",
-			"value": 4
-		},
-		{
-			"name": "Wall",
-			"value": 8
-		}
-	],
+	"snow.enemy.EnemyDef.TargetPosRelation": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Any",
+				"value": 1
+			},
+			{
+				"name": "Land",
+				"value": 2
+			},
+			{
+				"name": "Fly",
+				"value": 4
+			},
+			{
+				"name": "Wall",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.em060.Em060ActionTune.EmMove020TuneVariation": [
 		{
 			"name": "Variation01",
@@ -351071,96 +351308,99 @@
 			"value": 2
 		}
 	],
-	"snow.enemy.aifsm.Ems091_05EnemyUpdateTarget.EnemyTargetTypeFlag": [
-		{
-			"name": "None",
-			"value": 1
-		},
-		{
-			"name": "Player",
-			"value": 2
-		},
-		{
-			"name": "OtomoAirou",
-			"value": 8
-		},
-		{
-			"name": "OtomoDog",
-			"value": 16
-		},
-		{
-			"name": "BossEnemy",
-			"value": 32
-		},
-		{
-			"name": "ZakoEnemy",
-			"value": 64
-		},
-		{
-			"name": "MarionettePlayTarget",
-			"value": 128
-		},
-		{
-			"name": "MarionetteBossEnemy",
-			"value": 256
-		},
-		{
-			"name": "Props",
-			"value": 512
-		},
-		{
-			"name": "WalkAroundPoint",
-			"value": 1024
-		},
-		{
-			"name": "BlockMove",
-			"value": 2048
-		},
-		{
-			"name": "ExitAction",
-			"value": 4096
-		},
-		{
-			"name": "UniquePoint",
-			"value": 8192
-		},
-		{
-			"name": "WallPoint",
-			"value": 16384
-		},
-		{
-			"name": "CeilingPoint",
-			"value": 32768
-		},
-		{
-			"name": "GrapplePoint",
-			"value": 65536
-		},
-		{
-			"name": "PredatorPoint",
-			"value": 131072
-		},
-		{
-			"name": "MeatEatPoint",
-			"value": 262144
-		},
-		{
-			"name": "HyakuryuSpecialAttackBeginPoint",
-			"value": 524288
-		},
-		{
-			"name": "EnvCreature",
-			"value": 1048576
-		},
-		{
-			"name": "DirectPos",
-			"value": 2097152
-		},
-		{
-			"name": "Max",
-			"value": 4194304
-		}
-	],
+	"snow.enemy.aifsm.Ems091_05EnemyUpdateTarget.EnemyTargetTypeFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 1
+			},
+			{
+				"name": "Player",
+				"value": 2
+			},
+			{
+				"name": "OtomoAirou",
+				"value": 8
+			},
+			{
+				"name": "OtomoDog",
+				"value": 16
+			},
+			{
+				"name": "BossEnemy",
+				"value": 32
+			},
+			{
+				"name": "ZakoEnemy",
+				"value": 64
+			},
+			{
+				"name": "MarionettePlayTarget",
+				"value": 128
+			},
+			{
+				"name": "MarionetteBossEnemy",
+				"value": 256
+			},
+			{
+				"name": "Props",
+				"value": 512
+			},
+			{
+				"name": "WalkAroundPoint",
+				"value": 1024
+			},
+			{
+				"name": "BlockMove",
+				"value": 2048
+			},
+			{
+				"name": "ExitAction",
+				"value": 4096
+			},
+			{
+				"name": "UniquePoint",
+				"value": 8192
+			},
+			{
+				"name": "WallPoint",
+				"value": 16384
+			},
+			{
+				"name": "CeilingPoint",
+				"value": 32768
+			},
+			{
+				"name": "GrapplePoint",
+				"value": 65536
+			},
+			{
+				"name": "PredatorPoint",
+				"value": 131072
+			},
+			{
+				"name": "MeatEatPoint",
+				"value": 262144
+			},
+			{
+				"name": "HyakuryuSpecialAttackBeginPoint",
+				"value": 524288
+			},
+			{
+				"name": "EnvCreature",
+				"value": 1048576
+			},
+			{
+				"name": "DirectPos",
+				"value": 2097152
+			},
+			{
+				"name": "Max",
+				"value": 4194304
+			}
+		]
+	},
 	"snow.shell.StageCommonShellManager.ShellIndex": [
 		{
 			"name": "StShell005_Index",
@@ -352667,132 +352907,135 @@
 			"value": 7
 		}
 	],
-	"via.SystemServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Language",
-			"value": 1
-		},
-		{
-			"name": "DateFormat",
-			"value": 2
-		},
-		{
-			"name": "TimeFormat",
-			"value": 4
-		},
-		{
-			"name": "TimeZoneOffset",
-			"value": 8
-		},
-		{
-			"name": "SummerTime",
-			"value": 16
-		},
-		{
-			"name": "SystemUiOverlay",
-			"value": 32
-		},
-		{
-			"name": "BackgroundExecution",
-			"value": 64
-		},
-		{
-			"name": "ApplicationSuspend",
-			"value": 128
-		},
-		{
-			"name": "ApplicationResume",
-			"value": 256
-		},
-		{
-			"name": "GetDisplaySafeAreaRatio",
-			"value": 512
-		},
-		{
-			"name": "SplashScreenControl",
-			"value": 1024
-		},
-		{
-			"name": "ScreenSaverControl",
-			"value": 2048
-		},
-		{
-			"name": "ApplicationParameter",
-			"value": 4096
-		},
-		{
-			"name": "SkuFlag",
-			"value": 8192
-		},
-		{
-			"name": "ResetVrPosition",
-			"value": 16384
-		},
-		{
-			"name": "OpenShareMenu",
-			"value": 32768
-		},
-		{
-			"name": "VideoRecorder",
-			"value": 65536
-		},
-		{
-			"name": "ApplicationActivate",
-			"value": 131072
-		},
-		{
-			"name": "ApplicationDeactivate",
-			"value": 262144
-		},
-		{
-			"name": "Country",
-			"value": 524288
-		},
-		{
-			"name": "AccountPicker",
-			"value": 1048576
-		},
-		{
-			"name": "Geography",
-			"value": 4194304
-		},
-		{
-			"name": "SetScreenBrightness",
-			"value": 8388608
-		},
-		{
-			"name": "GetApplicationVersion",
-			"value": 8388608
-		},
-		{
-			"name": "ApplicationExitRequestControl",
-			"value": 16777216
-		},
-		{
-			"name": "NoticeScreenShownControl",
-			"value": 33554432
-		},
-		{
-			"name": "InputIdleSectionControl",
-			"value": 67108864
-		},
-		{
-			"name": "DyingMessage",
-			"value": 134217728
-		},
-		{
-			"name": "NgWordsDetecting",
-			"value": 268435456
-		},
-		{
-			"name": "NgWordsReplacement",
-			"value": 536870912
-		}
-	],
+	"via.SystemServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Language",
+				"value": 1
+			},
+			{
+				"name": "DateFormat",
+				"value": 2
+			},
+			{
+				"name": "TimeFormat",
+				"value": 4
+			},
+			{
+				"name": "TimeZoneOffset",
+				"value": 8
+			},
+			{
+				"name": "SummerTime",
+				"value": 16
+			},
+			{
+				"name": "SystemUiOverlay",
+				"value": 32
+			},
+			{
+				"name": "BackgroundExecution",
+				"value": 64
+			},
+			{
+				"name": "ApplicationSuspend",
+				"value": 128
+			},
+			{
+				"name": "ApplicationResume",
+				"value": 256
+			},
+			{
+				"name": "GetDisplaySafeAreaRatio",
+				"value": 512
+			},
+			{
+				"name": "SplashScreenControl",
+				"value": 1024
+			},
+			{
+				"name": "ScreenSaverControl",
+				"value": 2048
+			},
+			{
+				"name": "ApplicationParameter",
+				"value": 4096
+			},
+			{
+				"name": "SkuFlag",
+				"value": 8192
+			},
+			{
+				"name": "ResetVrPosition",
+				"value": 16384
+			},
+			{
+				"name": "OpenShareMenu",
+				"value": 32768
+			},
+			{
+				"name": "VideoRecorder",
+				"value": 65536
+			},
+			{
+				"name": "ApplicationActivate",
+				"value": 131072
+			},
+			{
+				"name": "ApplicationDeactivate",
+				"value": 262144
+			},
+			{
+				"name": "Country",
+				"value": 524288
+			},
+			{
+				"name": "AccountPicker",
+				"value": 1048576
+			},
+			{
+				"name": "Geography",
+				"value": 4194304
+			},
+			{
+				"name": "SetScreenBrightness",
+				"value": 8388608
+			},
+			{
+				"name": "GetApplicationVersion",
+				"value": 8388608
+			},
+			{
+				"name": "ApplicationExitRequestControl",
+				"value": 16777216
+			},
+			{
+				"name": "NoticeScreenShownControl",
+				"value": 33554432
+			},
+			{
+				"name": "InputIdleSectionControl",
+				"value": 67108864
+			},
+			{
+				"name": "DyingMessage",
+				"value": 134217728
+			},
+			{
+				"name": "NgWordsDetecting",
+				"value": 268435456
+			},
+			{
+				"name": "NgWordsReplacement",
+				"value": 536870912
+			}
+		]
+	},
 	"snow.enemy.EnemyDef.Em2EmDamageType": [
 		{
 			"name": "S",
@@ -355901,40 +356144,43 @@
 			"value": 1
 		}
 	],
-	"System.Reflection.GenericParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "VarianceMask",
-			"value": 3
-		},
-		{
-			"name": "Covariant",
-			"value": 1
-		},
-		{
-			"name": "Contravariant",
-			"value": 2
-		},
-		{
-			"name": "SpecialConstraintMask",
-			"value": 28
-		},
-		{
-			"name": "ReferenceTypeConstraint",
-			"value": 4
-		},
-		{
-			"name": "NotNullableValueTypeConstraint",
-			"value": 8
-		},
-		{
-			"name": "DefaultConstructorConstraint",
-			"value": 16
-		}
-	],
+	"System.Reflection.GenericParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "VarianceMask",
+				"value": 3
+			},
+			{
+				"name": "Covariant",
+				"value": 1
+			},
+			{
+				"name": "Contravariant",
+				"value": 2
+			},
+			{
+				"name": "SpecialConstraintMask",
+				"value": 28
+			},
+			{
+				"name": "ReferenceTypeConstraint",
+				"value": 4
+			},
+			{
+				"name": "NotNullableValueTypeConstraint",
+				"value": 8
+			},
+			{
+				"name": "DefaultConstructorConstraint",
+				"value": 16
+			}
+		]
+	},
 	"via.os.FileAttr": [
 		{
 			"name": "Read",
@@ -360675,16 +360921,19 @@
 			"value": 1
 		}
 	],
-	"via.hid.VirtualDeviceOwnerType": [
-		{
-			"name": "VirtualInput",
-			"value": 1
-		},
-		{
-			"name": "RemoteInput",
-			"value": 2
-		}
-	],
+	"via.hid.VirtualDeviceOwnerType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "VirtualInput",
+				"value": 1
+			},
+			{
+				"name": "RemoteInput",
+				"value": 2
+			}
+		]
+	},
 	"snow.player.PlayerWeaponCtrl.ConstType": [
 		{
 			"name": "None",
@@ -360707,132 +360956,135 @@
 			"value": 4
 		}
 	],
-	"snow.enemy.EnemyDef.TargetDamageStatusAttr": [
-		{
-			"name": "Fire",
-			"value": 1
-		},
-		{
-			"name": "Water",
-			"value": 2
-		},
-		{
-			"name": "Thunder",
-			"value": 4
-		},
-		{
-			"name": "Ice",
-			"value": 8
-		},
-		{
-			"name": "Dragon",
-			"value": 16
-		},
-		{
-			"name": "Poison",
-			"value": 32
-		},
-		{
-			"name": "Paralyze",
-			"value": 64
-		},
-		{
-			"name": "Sleep",
-			"value": 128
-		},
-		{
-			"name": "Stun",
-			"value": 256
-		},
-		{
-			"name": "Bomb",
-			"value": 512
-		},
-		{
-			"name": "Bubble",
-			"value": 1024
-		},
-		{
-			"name": "Buttobi",
-			"value": 2048
-		},
-		{
-			"name": "ButtobiNoDown",
-			"value": 4096
-		},
-		{
-			"name": "ButtobiSp",
-			"value": 16384
-		},
-		{
-			"name": "Upper",
-			"value": 8192
-		},
-		{
-			"name": "KnockBack",
-			"value": 32768
-		},
-		{
-			"name": "FallDown",
-			"value": 65536
-		},
-		{
-			"name": "ButtobiSlamDown",
-			"value": 131072
-		},
-		{
-			"name": "Wind",
-			"value": 262144
-		},
-		{
-			"name": "Quake",
-			"value": 524288
-		},
-		{
-			"name": "Ear",
-			"value": 1048576
-		},
-		{
-			"name": "Beto",
-			"value": 2097152
-		},
-		{
-			"name": "Mud",
-			"value": 4194304
-		},
-		{
-			"name": "GoldMud",
-			"value": 8388608
-		},
-		{
-			"name": "Onibi",
-			"value": 16777216
-		},
-		{
-			"name": "Tornado",
-			"value": 33554432
-		},
-		{
-			"name": "ResDown",
-			"value": 67108864
-		},
-		{
-			"name": "DefenceDown",
-			"value": 134217728
-		},
-		{
-			"name": "BetoFireDown",
-			"value": 268435456
-		},
-		{
-			"name": "WireEscape",
-			"value": 536870912
-		},
-		{
-			"name": "CatchSmash",
-			"value": 1073741824
-		}
-	],
+	"snow.enemy.EnemyDef.TargetDamageStatusAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Fire",
+				"value": 1
+			},
+			{
+				"name": "Water",
+				"value": 2
+			},
+			{
+				"name": "Thunder",
+				"value": 4
+			},
+			{
+				"name": "Ice",
+				"value": 8
+			},
+			{
+				"name": "Dragon",
+				"value": 16
+			},
+			{
+				"name": "Poison",
+				"value": 32
+			},
+			{
+				"name": "Paralyze",
+				"value": 64
+			},
+			{
+				"name": "Sleep",
+				"value": 128
+			},
+			{
+				"name": "Stun",
+				"value": 256
+			},
+			{
+				"name": "Bomb",
+				"value": 512
+			},
+			{
+				"name": "Bubble",
+				"value": 1024
+			},
+			{
+				"name": "Buttobi",
+				"value": 2048
+			},
+			{
+				"name": "ButtobiNoDown",
+				"value": 4096
+			},
+			{
+				"name": "ButtobiSp",
+				"value": 16384
+			},
+			{
+				"name": "Upper",
+				"value": 8192
+			},
+			{
+				"name": "KnockBack",
+				"value": 32768
+			},
+			{
+				"name": "FallDown",
+				"value": 65536
+			},
+			{
+				"name": "ButtobiSlamDown",
+				"value": 131072
+			},
+			{
+				"name": "Wind",
+				"value": 262144
+			},
+			{
+				"name": "Quake",
+				"value": 524288
+			},
+			{
+				"name": "Ear",
+				"value": 1048576
+			},
+			{
+				"name": "Beto",
+				"value": 2097152
+			},
+			{
+				"name": "Mud",
+				"value": 4194304
+			},
+			{
+				"name": "GoldMud",
+				"value": 8388608
+			},
+			{
+				"name": "Onibi",
+				"value": 16777216
+			},
+			{
+				"name": "Tornado",
+				"value": 33554432
+			},
+			{
+				"name": "ResDown",
+				"value": 67108864
+			},
+			{
+				"name": "DefenceDown",
+				"value": 134217728
+			},
+			{
+				"name": "BetoFireDown",
+				"value": 268435456
+			},
+			{
+				"name": "WireEscape",
+				"value": 536870912
+			},
+			{
+				"name": "CatchSmash",
+				"value": 1073741824
+			}
+		]
+	},
 	"snow.enemy.em020.Em020ActionTune.EmMove5007TuneVariation": [
 		{
 			"name": "Variation01",
@@ -379034,12 +379286,15 @@
 			"value": 8
 		}
 	],
-	"snow.hit.PlShapeAttr": [
-		{
-			"name": "JustMeet",
-			"value": 1
-		}
-	],
+	"snow.hit.PlShapeAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "JustMeet",
+				"value": 1
+			}
+		]
+	},
 	"snow.data.DataManager.KpiItemAppearanceTypeId": [
 		{
 			"name": "Hagi",
@@ -380078,24 +380333,27 @@
 			"value": 65535
 		}
 	],
-	"snow.enemy.EnemyDef.DisableUpdateTargetPosAttribute": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ActionStart",
-			"value": 1
-		},
-		{
-			"name": "ActionEnd",
-			"value": 2
-		},
-		{
-			"name": "Max",
-			"value": 3
-		}
-	],
+	"snow.enemy.EnemyDef.DisableUpdateTargetPosAttribute": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ActionStart",
+				"value": 1
+			},
+			{
+				"name": "ActionEnd",
+				"value": 2
+			},
+			{
+				"name": "Max",
+				"value": 3
+			}
+		]
+	},
 	"snow.enemy.em054.Em054ActionTune.EmMove002TuneVariation": [
 		{
 			"name": "Variation01",
@@ -380326,32 +380584,35 @@
 			"value": 65535
 		}
 	],
-	"snow.player.PlayerSequenceController.MotionLayerSelectType": [
-		{
-			"name": "Layer0",
-			"value": 1
-		},
-		{
-			"name": "Layer1",
-			"value": 2
-		},
-		{
-			"name": "Layer2",
-			"value": 4
-		},
-		{
-			"name": "Layer3",
-			"value": 8
-		},
-		{
-			"name": "Layer4",
-			"value": 16
-		},
-		{
-			"name": "All",
-			"value": 31
-		}
-	],
+	"snow.player.PlayerSequenceController.MotionLayerSelectType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Layer0",
+				"value": 1
+			},
+			{
+				"name": "Layer1",
+				"value": 2
+			},
+			{
+				"name": "Layer2",
+				"value": 4
+			},
+			{
+				"name": "Layer3",
+				"value": 8
+			},
+			{
+				"name": "Layer4",
+				"value": 16
+			},
+			{
+				"name": "All",
+				"value": 31
+			}
+		]
+	},
 	"snow.enemy.em071.Em071ActionTune.EmMove10000TuneVariation": [
 		{
 			"name": "Variation01",
@@ -381267,104 +381528,107 @@
 			"value": 1
 		}
 	],
-	"System.Reflection.MethodAttributes": [
-		{
-			"name": "MemberAccessMask",
-			"value": 7
-		},
-		{
-			"name": "PrivateScope",
-			"value": 0
-		},
-		{
-			"name": "Private",
-			"value": 1
-		},
-		{
-			"name": "FamANDAssem",
-			"value": 2
-		},
-		{
-			"name": "Assembly",
-			"value": 3
-		},
-		{
-			"name": "Family",
-			"value": 4
-		},
-		{
-			"name": "FamORAssem",
-			"value": 5
-		},
-		{
-			"name": "Public",
-			"value": 6
-		},
-		{
-			"name": "Static",
-			"value": 16
-		},
-		{
-			"name": "Final",
-			"value": 32
-		},
-		{
-			"name": "Virtual",
-			"value": 64
-		},
-		{
-			"name": "HideBySig",
-			"value": 128
-		},
-		{
-			"name": "CheckAccessOnOverride",
-			"value": 512
-		},
-		{
-			"name": "VtableLayoutMask",
-			"value": 256
-		},
-		{
-			"name": "ReuseSlot",
-			"value": 0
-		},
-		{
-			"name": "NewSlot",
-			"value": 256
-		},
-		{
-			"name": "Abstract",
-			"value": 1024
-		},
-		{
-			"name": "SpecialName",
-			"value": 2048
-		},
-		{
-			"name": "PinvokeImpl",
-			"value": 8192
-		},
-		{
-			"name": "UnmanagedExport",
-			"value": 8
-		},
-		{
-			"name": "RTSpecialName",
-			"value": 4096
-		},
-		{
-			"name": "HasSecurity",
-			"value": 16384
-		},
-		{
-			"name": "RequireSecObject",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 53248
-		}
-	],
+	"System.Reflection.MethodAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MemberAccessMask",
+				"value": 7
+			},
+			{
+				"name": "PrivateScope",
+				"value": 0
+			},
+			{
+				"name": "Private",
+				"value": 1
+			},
+			{
+				"name": "FamANDAssem",
+				"value": 2
+			},
+			{
+				"name": "Assembly",
+				"value": 3
+			},
+			{
+				"name": "Family",
+				"value": 4
+			},
+			{
+				"name": "FamORAssem",
+				"value": 5
+			},
+			{
+				"name": "Public",
+				"value": 6
+			},
+			{
+				"name": "Static",
+				"value": 16
+			},
+			{
+				"name": "Final",
+				"value": 32
+			},
+			{
+				"name": "Virtual",
+				"value": 64
+			},
+			{
+				"name": "HideBySig",
+				"value": 128
+			},
+			{
+				"name": "CheckAccessOnOverride",
+				"value": 512
+			},
+			{
+				"name": "VtableLayoutMask",
+				"value": 256
+			},
+			{
+				"name": "ReuseSlot",
+				"value": 0
+			},
+			{
+				"name": "NewSlot",
+				"value": 256
+			},
+			{
+				"name": "Abstract",
+				"value": 1024
+			},
+			{
+				"name": "SpecialName",
+				"value": 2048
+			},
+			{
+				"name": "PinvokeImpl",
+				"value": 8192
+			},
+			{
+				"name": "UnmanagedExport",
+				"value": 8
+			},
+			{
+				"name": "RTSpecialName",
+				"value": 4096
+			},
+			{
+				"name": "HasSecurity",
+				"value": 16384
+			},
+			{
+				"name": "RequireSecObject",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 53248
+			}
+		]
+	},
 	"snow.camera.fsm.action.CameraFsmActionRoot.OffsetType": [
 		{
 			"name": "WorldPos",
@@ -381557,76 +381821,79 @@
 			"value": 3
 		}
 	],
-	"snow.enemy.EnemyDef.IgnoreNoCancelFlag": [
-		{
-			"name": "CombatMode",
-			"value": 1
-		},
-		{
-			"name": "ContinueCombatMode",
-			"value": 2
-		},
-		{
-			"name": "CautionMode",
-			"value": 4
-		},
-		{
-			"name": "AngerStart",
-			"value": 8
-		},
-		{
-			"name": "AngerEnd",
-			"value": 16
-		},
-		{
-			"name": "TiredStart",
-			"value": 32
-		},
-		{
-			"name": "RecoverStart",
-			"value": 64
-		},
-		{
-			"name": "LeadStart",
-			"value": 128
-		},
-		{
-			"name": "GrappleReceive",
-			"value": 256
-		},
-		{
-			"name": "FlashEnd",
-			"value": 512
-		},
-		{
-			"name": "MurePushReaction",
-			"value": 1024
-		},
-		{
-			"name": "MureOrderExecute",
-			"value": 2048
-		},
-		{
-			"name": "SelfSleepMoveCancel",
-			"value": 4096
-		},
-		{
-			"name": "MureCombatModeCancel",
-			"value": 8192
-		},
-		{
-			"name": "MysteryMaximumActivityReleaseFailed",
-			"value": 16384
-		},
-		{
-			"name": "OverMysteryBurst",
-			"value": 32768
-		},
-		{
-			"name": "UniqueInterrupt",
-			"value": 1073741824
-		}
-	],
+	"snow.enemy.EnemyDef.IgnoreNoCancelFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CombatMode",
+				"value": 1
+			},
+			{
+				"name": "ContinueCombatMode",
+				"value": 2
+			},
+			{
+				"name": "CautionMode",
+				"value": 4
+			},
+			{
+				"name": "AngerStart",
+				"value": 8
+			},
+			{
+				"name": "AngerEnd",
+				"value": 16
+			},
+			{
+				"name": "TiredStart",
+				"value": 32
+			},
+			{
+				"name": "RecoverStart",
+				"value": 64
+			},
+			{
+				"name": "LeadStart",
+				"value": 128
+			},
+			{
+				"name": "GrappleReceive",
+				"value": 256
+			},
+			{
+				"name": "FlashEnd",
+				"value": 512
+			},
+			{
+				"name": "MurePushReaction",
+				"value": 1024
+			},
+			{
+				"name": "MureOrderExecute",
+				"value": 2048
+			},
+			{
+				"name": "SelfSleepMoveCancel",
+				"value": 4096
+			},
+			{
+				"name": "MureCombatModeCancel",
+				"value": 8192
+			},
+			{
+				"name": "MysteryMaximumActivityReleaseFailed",
+				"value": 16384
+			},
+			{
+				"name": "OverMysteryBurst",
+				"value": 32768
+			},
+			{
+				"name": "UniqueInterrupt",
+				"value": 1073741824
+			}
+		]
+	},
 	"snow.PlayerFsm2ArgCheckCommandConverter.CommandType": [
 		{
 			"name": "None",
@@ -382919,12 +383186,15 @@
 			"value": 1
 		}
 	],
-	"snow.hit.EmShapeAttr": [
-		{
-			"name": "UseCheckTerrain",
-			"value": 1
-		}
-	],
+	"snow.hit.EmShapeAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "UseCheckTerrain",
+				"value": 1
+			}
+		]
+	},
 	"snow.enemy.em027.Em027Define.EmDamageNo": [
 		{
 			"name": "None",
@@ -383069,36 +383339,39 @@
 			"value": 1
 		}
 	],
-	"snow.stage.PropsManager.HMIrregularLimitationOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "TotalUseCountEnable",
-			"value": 2
-		},
-		{
-			"name": "ShareUseCountOtherHm",
-			"value": 4
-		},
-		{
-			"name": "DuplicateCountAsMap",
-			"value": 8
-		},
-		{
-			"name": "ResetTotalUseCountByWave",
-			"value": 16
-		},
-		{
-			"name": "ResetTotalUseCountByHyakuryuLv",
-			"value": 32
-		},
-		{
-			"name": "Max",
-			"value": 33
-		}
-	],
+	"snow.stage.PropsManager.HMIrregularLimitationOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "TotalUseCountEnable",
+				"value": 2
+			},
+			{
+				"name": "ShareUseCountOtherHm",
+				"value": 4
+			},
+			{
+				"name": "DuplicateCountAsMap",
+				"value": 8
+			},
+			{
+				"name": "ResetTotalUseCountByWave",
+				"value": 16
+			},
+			{
+				"name": "ResetTotalUseCountByHyakuryuLv",
+				"value": 32
+			},
+			{
+				"name": "Max",
+				"value": 33
+			}
+		]
+	},
 	"snow.DlcManager.CharaRefundRno": [
 		{
 			"name": "Start",
@@ -383917,24 +384190,27 @@
 			"value": 1
 		}
 	],
-	"snow.player.fsm.PlayerFsm2ActionResultSetServantSubWeaponOffset.SubWeaponType": [
-		{
-			"name": "LongSword",
-			"value": 1
-		},
-		{
-			"name": "GunLance",
-			"value": 2
-		},
-		{
-			"name": "Lance",
-			"value": 4
-		},
-		{
-			"name": "ShortSword",
-			"value": 8
-		}
-	],
+	"snow.player.fsm.PlayerFsm2ActionResultSetServantSubWeaponOffset.SubWeaponType": {
+		"flags": true,
+		"values": [
+			{
+				"name": "LongSword",
+				"value": 1
+			},
+			{
+				"name": "GunLance",
+				"value": 2
+			},
+			{
+				"name": "Lance",
+				"value": 4
+			},
+			{
+				"name": "ShortSword",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.em107.Em107Define.EmMoguriNo": [
 		{
 			"name": "None",
@@ -387363,88 +387639,91 @@
 			"value": 5
 		}
 	],
-	"System.Reflection.BindingFlags": [
-		{
-			"name": "Default",
-			"value": 0
-		},
-		{
-			"name": "IgnoreCase",
-			"value": 1
-		},
-		{
-			"name": "DeclaredOnly",
-			"value": 2
-		},
-		{
-			"name": "Instance",
-			"value": 4
-		},
-		{
-			"name": "Static",
-			"value": 8
-		},
-		{
-			"name": "Public",
-			"value": 16
-		},
-		{
-			"name": "NonPublic",
-			"value": 32
-		},
-		{
-			"name": "FlattenHierarchy",
-			"value": 64
-		},
-		{
-			"name": "InvokeMethod",
-			"value": 256
-		},
-		{
-			"name": "CreateInstance",
-			"value": 512
-		},
-		{
-			"name": "GetField",
-			"value": 1024
-		},
-		{
-			"name": "SetField",
-			"value": 2048
-		},
-		{
-			"name": "GetProperty",
-			"value": 4096
-		},
-		{
-			"name": "SetProperty",
-			"value": 8192
-		},
-		{
-			"name": "PutDispProperty",
-			"value": 16384
-		},
-		{
-			"name": "PutRefDispProperty",
-			"value": 32768
-		},
-		{
-			"name": "ExactBinding",
-			"value": 65536
-		},
-		{
-			"name": "SuppressChangeType",
-			"value": 131072
-		},
-		{
-			"name": "OptionalParamBinding",
-			"value": 262144
-		},
-		{
-			"name": "IgnoreReturn",
-			"value": 16777216
-		}
-	],
+	"System.Reflection.BindingFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Default",
+				"value": 0
+			},
+			{
+				"name": "IgnoreCase",
+				"value": 1
+			},
+			{
+				"name": "DeclaredOnly",
+				"value": 2
+			},
+			{
+				"name": "Instance",
+				"value": 4
+			},
+			{
+				"name": "Static",
+				"value": 8
+			},
+			{
+				"name": "Public",
+				"value": 16
+			},
+			{
+				"name": "NonPublic",
+				"value": 32
+			},
+			{
+				"name": "FlattenHierarchy",
+				"value": 64
+			},
+			{
+				"name": "InvokeMethod",
+				"value": 256
+			},
+			{
+				"name": "CreateInstance",
+				"value": 512
+			},
+			{
+				"name": "GetField",
+				"value": 1024
+			},
+			{
+				"name": "SetField",
+				"value": 2048
+			},
+			{
+				"name": "GetProperty",
+				"value": 4096
+			},
+			{
+				"name": "SetProperty",
+				"value": 8192
+			},
+			{
+				"name": "PutDispProperty",
+				"value": 16384
+			},
+			{
+				"name": "PutRefDispProperty",
+				"value": 32768
+			},
+			{
+				"name": "ExactBinding",
+				"value": 65536
+			},
+			{
+				"name": "SuppressChangeType",
+				"value": 131072
+			},
+			{
+				"name": "OptionalParamBinding",
+				"value": 262144
+			},
+			{
+				"name": "IgnoreReturn",
+				"value": 16777216
+			}
+		]
+	},
 	"snow.enemy.EnemyDef.ConditionDamageStockStartType": [
 		{
 			"name": "ConditionEnd",
@@ -388045,72 +388324,75 @@
 			"value": 2
 		}
 	],
-	"snow.hit.PlayerAttackAttr": [
-		{
-			"name": "FixWeaponDamage",
-			"value": 1
-		},
-		{
-			"name": "FixWeaponElements",
-			"value": 2
-		},
-		{
-			"name": "EnableCritical",
-			"value": 4
-		},
-		{
-			"name": "GunnerShell",
-			"value": 8
-		},
-		{
-			"name": "Batto",
-			"value": 16
-		},
-		{
-			"name": "NoSharpnessAdjust",
-			"value": 32
-		},
-		{
-			"name": "KindWeaponAttack",
-			"value": 256
-		},
-		{
-			"name": "WireAttack",
-			"value": 512
-		},
-		{
-			"name": "S_AxeBottleON",
-			"value": 1024
-		},
-		{
-			"name": "S_AxeBottle100",
-			"value": 2048
-		},
-		{
-			"name": "S_AxeBottle0",
-			"value": 4096
-		},
-		{
-			"name": "GunLanceHitResponse",
-			"value": 8192
-		},
-		{
-			"name": "NoCalcElementSkill",
-			"value": 16384
-		},
-		{
-			"name": "NotAssassin",
-			"value": 32768
-		},
-		{
-			"name": "EnableChargeMaster",
-			"value": 65536
-		},
-		{
-			"name": "UseAsDetectHit",
-			"value": 131072
-		}
-	],
+	"snow.hit.PlayerAttackAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FixWeaponDamage",
+				"value": 1
+			},
+			{
+				"name": "FixWeaponElements",
+				"value": 2
+			},
+			{
+				"name": "EnableCritical",
+				"value": 4
+			},
+			{
+				"name": "GunnerShell",
+				"value": 8
+			},
+			{
+				"name": "Batto",
+				"value": 16
+			},
+			{
+				"name": "NoSharpnessAdjust",
+				"value": 32
+			},
+			{
+				"name": "KindWeaponAttack",
+				"value": 256
+			},
+			{
+				"name": "WireAttack",
+				"value": 512
+			},
+			{
+				"name": "S_AxeBottleON",
+				"value": 1024
+			},
+			{
+				"name": "S_AxeBottle100",
+				"value": 2048
+			},
+			{
+				"name": "S_AxeBottle0",
+				"value": 4096
+			},
+			{
+				"name": "GunLanceHitResponse",
+				"value": 8192
+			},
+			{
+				"name": "NoCalcElementSkill",
+				"value": 16384
+			},
+			{
+				"name": "NotAssassin",
+				"value": 32768
+			},
+			{
+				"name": "EnableChargeMaster",
+				"value": 65536
+			},
+			{
+				"name": "UseAsDetectHit",
+				"value": 131072
+			}
+		]
+	},
 	"snow.enemy.em037.Em037ActionTune.EmAttack061TuneVariation": [
 		{
 			"name": "Variation01",
@@ -398080,136 +398362,139 @@
 			"value": 1
 		}
 	],
-	"snow.player.PlayerDefine.MotSeqFilterPage0All": [
-		{
-			"name": "FluidReserved00",
-			"value": 1
-		},
-		{
-			"name": "FluidReserved01",
-			"value": 2
-		},
-		{
-			"name": "FluidReserved02",
-			"value": 4
-		},
-		{
-			"name": "FluidReserved03",
-			"value": 8
-		},
-		{
-			"name": "FluidReserved04",
-			"value": 16
-		},
-		{
-			"name": "FluidReserved05",
-			"value": 32
-		},
-		{
-			"name": "FluidReserved06",
-			"value": 64
-		},
-		{
-			"name": "FluidReserved07",
-			"value": 128
-		},
-		{
-			"name": "FluidReserved08",
-			"value": 256
-		},
-		{
-			"name": "FluidReserved09",
-			"value": 512
-		},
-		{
-			"name": "FluidReserved10",
-			"value": 1024
-		},
-		{
-			"name": "FluidReserved11",
-			"value": 2048
-		},
-		{
-			"name": "FluidReserved12",
-			"value": 4096
-		},
-		{
-			"name": "FluidReserved13",
-			"value": 8192
-		},
-		{
-			"name": "FluidReserved14",
-			"value": 16384
-		},
-		{
-			"name": "FluidReserved15",
-			"value": 32768
-		},
-		{
-			"name": "_FixReserved16",
-			"value": 65536
-		},
-		{
-			"name": "_FixReserved17",
-			"value": 131072
-		},
-		{
-			"name": "_FixReserved18",
-			"value": 262144
-		},
-		{
-			"name": "_FixReserved19",
-			"value": 524288
-		},
-		{
-			"name": "_FixReserved20",
-			"value": 1048576
-		},
-		{
-			"name": "_FixReserved21",
-			"value": 2097152
-		},
-		{
-			"name": "_FixReserved22",
-			"value": 4194304
-		},
-		{
-			"name": "_FixReserved23",
-			"value": 8388608
-		},
-		{
-			"name": "_FixReserved24",
-			"value": 16777216
-		},
-		{
-			"name": "_FixReserved25",
-			"value": 33554432
-		},
-		{
-			"name": "_FixReserved26",
-			"value": 67108864
-		},
-		{
-			"name": "_FixReserved27",
-			"value": 134217728
-		},
-		{
-			"name": "FixReservedWeaponGimmickType0",
-			"value": 268435456
-		},
-		{
-			"name": "FixReservedWeaponGimmickType1",
-			"value": 536870912
-		},
-		{
-			"name": "FixReservedWeaponGimmickType2",
-			"value": 1073741824
-		},
-		{
-			"name": "FixReservedWeaponGimmickType3",
-			"value": 2147483648
-		}
-	],
+	"snow.player.PlayerDefine.MotSeqFilterPage0All": {
+		"flags": true,
+		"values": [
+			{
+				"name": "FluidReserved00",
+				"value": 1
+			},
+			{
+				"name": "FluidReserved01",
+				"value": 2
+			},
+			{
+				"name": "FluidReserved02",
+				"value": 4
+			},
+			{
+				"name": "FluidReserved03",
+				"value": 8
+			},
+			{
+				"name": "FluidReserved04",
+				"value": 16
+			},
+			{
+				"name": "FluidReserved05",
+				"value": 32
+			},
+			{
+				"name": "FluidReserved06",
+				"value": 64
+			},
+			{
+				"name": "FluidReserved07",
+				"value": 128
+			},
+			{
+				"name": "FluidReserved08",
+				"value": 256
+			},
+			{
+				"name": "FluidReserved09",
+				"value": 512
+			},
+			{
+				"name": "FluidReserved10",
+				"value": 1024
+			},
+			{
+				"name": "FluidReserved11",
+				"value": 2048
+			},
+			{
+				"name": "FluidReserved12",
+				"value": 4096
+			},
+			{
+				"name": "FluidReserved13",
+				"value": 8192
+			},
+			{
+				"name": "FluidReserved14",
+				"value": 16384
+			},
+			{
+				"name": "FluidReserved15",
+				"value": 32768
+			},
+			{
+				"name": "_FixReserved16",
+				"value": 65536
+			},
+			{
+				"name": "_FixReserved17",
+				"value": 131072
+			},
+			{
+				"name": "_FixReserved18",
+				"value": 262144
+			},
+			{
+				"name": "_FixReserved19",
+				"value": 524288
+			},
+			{
+				"name": "_FixReserved20",
+				"value": 1048576
+			},
+			{
+				"name": "_FixReserved21",
+				"value": 2097152
+			},
+			{
+				"name": "_FixReserved22",
+				"value": 4194304
+			},
+			{
+				"name": "_FixReserved23",
+				"value": 8388608
+			},
+			{
+				"name": "_FixReserved24",
+				"value": 16777216
+			},
+			{
+				"name": "_FixReserved25",
+				"value": 33554432
+			},
+			{
+				"name": "_FixReserved26",
+				"value": 67108864
+			},
+			{
+				"name": "_FixReserved27",
+				"value": 134217728
+			},
+			{
+				"name": "FixReservedWeaponGimmickType0",
+				"value": 268435456
+			},
+			{
+				"name": "FixReservedWeaponGimmickType1",
+				"value": 536870912
+			},
+			{
+				"name": "FixReservedWeaponGimmickType2",
+				"value": 1073741824
+			},
+			{
+				"name": "FixReservedWeaponGimmickType3",
+				"value": 2147483648
+			}
+		]
+	},
 	"snow.enemy.EnemyDef.StanceStatus": [
 		{
 			"name": "Stand",
@@ -398852,24 +399137,27 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.SetupActionData.ExtensionData.SpecialFlag": [
-		{
-			"name": "MvActCtrlNaviResearch",
-			"value": 1
-		},
-		{
-			"name": "NoNaviFilter",
-			"value": 2
-		},
-		{
-			"name": "NoActTuneOffset",
-			"value": 4
-		},
-		{
-			"name": "MvActCtrlActionRequest",
-			"value": 8
-		}
-	],
+	"snow.enemy.SetupActionData.ExtensionData.SpecialFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "MvActCtrlNaviResearch",
+				"value": 1
+			},
+			{
+				"name": "NoNaviFilter",
+				"value": 2
+			},
+			{
+				"name": "NoActTuneOffset",
+				"value": 4
+			},
+			{
+				"name": "MvActCtrlActionRequest",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.fsm.action.EnemyTerrainStartAdjust.StepInfoCalcType": [
 		{
 			"name": "Default",
@@ -398914,28 +399202,31 @@
 			"value": 2
 		}
 	],
-	"snow.quest.EnemyRewardData.Attr": [
-		{
-			"name": "PartsBreak",
-			"value": 1
-		},
-		{
-			"name": "Capture",
-			"value": 2
-		},
-		{
-			"name": "HuntAdd",
-			"value": 4
-		},
-		{
-			"name": "HyakuryuRunaway",
-			"value": 8
-		},
-		{
-			"name": "MainTarget",
-			"value": 1024
-		}
-	],
+	"snow.quest.EnemyRewardData.Attr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "PartsBreak",
+				"value": 1
+			},
+			{
+				"name": "Capture",
+				"value": 2
+			},
+			{
+				"name": "HuntAdd",
+				"value": 4
+			},
+			{
+				"name": "HyakuryuRunaway",
+				"value": 8
+			},
+			{
+				"name": "MainTarget",
+				"value": 1024
+			}
+		]
+	},
 	"snow.shell.Em060_00ShellManager.EmShell013_ReplaceEffectParam_ID": [
 		{
 			"name": "WetRock",
@@ -402876,20 +403167,23 @@
 			"value": 1
 		}
 	],
-	"snow.network.session.SessionAttr": [
-		{
-			"name": "Lobby",
-			"value": 1
-		},
-		{
-			"name": "Quest",
-			"value": 2
-		},
-		{
-			"name": "Both",
-			"value": 3
-		}
-	],
+	"snow.network.session.SessionAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Lobby",
+				"value": 1
+			},
+			{
+				"name": "Quest",
+				"value": 2
+			},
+			{
+				"name": "Both",
+				"value": 3
+			}
+		]
+	},
 	"snow.gui.OptionManager.Gyroscope_AutoCorrectionOperation": [
 		{
 			"name": "Default",
@@ -402904,32 +403198,35 @@
 			"value": 2
 		}
 	],
-	"snow.enemy.EnemyBindWireData.FlyAcceptCommand": [
-		{
-			"name": "Shoot",
-			"value": 2
-		},
-		{
-			"name": "WeakAttack",
-			"value": 4
-		},
-		{
-			"name": "StrongAttack",
-			"value": 8
-		},
-		{
-			"name": "FinalAttack",
-			"value": 16
-		},
-		{
-			"name": "Dodge",
-			"value": 32
-		},
-		{
-			"name": "FreeRun",
-			"value": 64
-		}
-	],
+	"snow.enemy.EnemyBindWireData.FlyAcceptCommand": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Shoot",
+				"value": 2
+			},
+			{
+				"name": "WeakAttack",
+				"value": 4
+			},
+			{
+				"name": "StrongAttack",
+				"value": 8
+			},
+			{
+				"name": "FinalAttack",
+				"value": 16
+			},
+			{
+				"name": "Dodge",
+				"value": 32
+			},
+			{
+				"name": "FreeRun",
+				"value": 64
+			}
+		]
+	},
 	"snow.enemy.em024.Em024ActionTune.EmAttack031TuneVariation": [
 		{
 			"name": "Variation01",
@@ -407030,88 +407327,91 @@
 			"value": 15
 		}
 	],
-	"via.ShareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "ScreenShot",
-			"value": 1
-		},
-		{
-			"name": "ScreenShotControl",
-			"value": 2
-		},
-		{
-			"name": "ScreenShotRequest",
-			"value": 4
-		},
-		{
-			"name": "ScreenShotOverlayImage",
-			"value": 8
-		},
-		{
-			"name": "ScreenShotChangeOverlayImage",
-			"value": 16
-		},
-		{
-			"name": "VideoRecording",
-			"value": 32
-		},
-		{
-			"name": "VideoRecordingControl",
-			"value": 64
-		},
-		{
-			"name": "VideoRecordingRequest",
-			"value": 128
-		},
-		{
-			"name": "VideoRecordingOverlayImage",
-			"value": 256
-		},
-		{
-			"name": "VideoRecordingChangeOverlayImage",
-			"value": 512
-		},
-		{
-			"name": "GameLiveStreaming",
-			"value": 1024
-		},
-		{
-			"name": "GameLiveStreamingControl",
-			"value": 2048
-		},
-		{
-			"name": "GameLiveStreamingRequest",
-			"value": 4096
-		},
-		{
-			"name": "GameLiveStreamingStatusWatching",
-			"value": 8192
-		},
-		{
-			"name": "SharePlay",
-			"value": 16384
-		},
-		{
-			"name": "SharePlayControl",
-			"value": 32768
-		},
-		{
-			"name": "SharePlayStatusWatching",
-			"value": 65536
-		},
-		{
-			"name": "ShareUtility",
-			"value": 131072
-		},
-		{
-			"name": "ScreenShotShowFiles",
-			"value": 262144
-		}
-	],
+	"via.ShareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "ScreenShot",
+				"value": 1
+			},
+			{
+				"name": "ScreenShotControl",
+				"value": 2
+			},
+			{
+				"name": "ScreenShotRequest",
+				"value": 4
+			},
+			{
+				"name": "ScreenShotOverlayImage",
+				"value": 8
+			},
+			{
+				"name": "ScreenShotChangeOverlayImage",
+				"value": 16
+			},
+			{
+				"name": "VideoRecording",
+				"value": 32
+			},
+			{
+				"name": "VideoRecordingControl",
+				"value": 64
+			},
+			{
+				"name": "VideoRecordingRequest",
+				"value": 128
+			},
+			{
+				"name": "VideoRecordingOverlayImage",
+				"value": 256
+			},
+			{
+				"name": "VideoRecordingChangeOverlayImage",
+				"value": 512
+			},
+			{
+				"name": "GameLiveStreaming",
+				"value": 1024
+			},
+			{
+				"name": "GameLiveStreamingControl",
+				"value": 2048
+			},
+			{
+				"name": "GameLiveStreamingRequest",
+				"value": 4096
+			},
+			{
+				"name": "GameLiveStreamingStatusWatching",
+				"value": 8192
+			},
+			{
+				"name": "SharePlay",
+				"value": 16384
+			},
+			{
+				"name": "SharePlayControl",
+				"value": 32768
+			},
+			{
+				"name": "SharePlayStatusWatching",
+				"value": 65536
+			},
+			{
+				"name": "ShareUtility",
+				"value": 131072
+			},
+			{
+				"name": "ScreenShotShowFiles",
+				"value": 262144
+			}
+		]
+	},
 	"snow.enemy.em071.Em071Define.EmFlyNo": [
 		{
 			"name": "None",
@@ -409622,56 +409922,59 @@
 			"value": 65535
 		}
 	],
-	"snow.hit.HitAttr": [
-		{
-			"name": "CalcHitDirection",
-			"value": 1
-		},
-		{
-			"name": "CalcHitDirectionBasedRootPos",
-			"value": 2
-		},
-		{
-			"name": "AllDirGuardable",
-			"value": 4
-		},
-		{
-			"name": "UseHitStop",
-			"value": 8
-		},
-		{
-			"name": "UseHitSlow",
-			"value": 16
-		},
-		{
-			"name": "AbsHitStop",
-			"value": 32
-		},
-		{
-			"name": "UseCycleHit",
-			"value": 64
-		},
-		{
-			"name": "CheckRayCast",
-			"value": 128
-		},
-		{
-			"name": "IgnoreEndDelay",
-			"value": 256
-		},
-		{
-			"name": "UseDirectionObject",
-			"value": 512
-		},
-		{
-			"name": "OverrideCollisionResultByRay",
-			"value": 1024
-		},
-		{
-			"name": "HitPosCorrection",
-			"value": 2048
-		}
-	],
+	"snow.hit.HitAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "CalcHitDirection",
+				"value": 1
+			},
+			{
+				"name": "CalcHitDirectionBasedRootPos",
+				"value": 2
+			},
+			{
+				"name": "AllDirGuardable",
+				"value": 4
+			},
+			{
+				"name": "UseHitStop",
+				"value": 8
+			},
+			{
+				"name": "UseHitSlow",
+				"value": 16
+			},
+			{
+				"name": "AbsHitStop",
+				"value": 32
+			},
+			{
+				"name": "UseCycleHit",
+				"value": 64
+			},
+			{
+				"name": "CheckRayCast",
+				"value": 128
+			},
+			{
+				"name": "IgnoreEndDelay",
+				"value": 256
+			},
+			{
+				"name": "UseDirectionObject",
+				"value": 512
+			},
+			{
+				"name": "OverrideCollisionResultByRay",
+				"value": 1024
+			},
+			{
+				"name": "HitPosCorrection",
+				"value": 2048
+			}
+		]
+	},
 	"snow.enemy.ems007.Ems007Define.EmDamageNo": [
 		{
 			"name": "None",
@@ -410316,24 +410619,27 @@
 			"value": 2
 		}
 	],
-	"via.hid.gamePlayer.AutoPlayFlag": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "SkipDialog",
-			"value": 2
-		},
-		{
-			"name": "AutoAssign",
-			"value": 4
-		},
-		{
-			"name": "AutoCreateVirtualDevice",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.AutoPlayFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "SkipDialog",
+				"value": 2
+			},
+			{
+				"name": "AutoAssign",
+				"value": 4
+			},
+			{
+				"name": "AutoCreateVirtualDevice",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.em118.Em118ActionTune.EmFly021TuneVariation": [
 		{
 			"name": "Variation01",
@@ -418056,40 +418362,43 @@
 			"value": 3
 		}
 	],
-	"snow.ZoneDef.BlockSectionAttr": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "A",
-			"value": 1
-		},
-		{
-			"name": "B",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "D",
-			"value": 8
-		},
-		{
-			"name": "E",
-			"value": 16
-		},
-		{
-			"name": "F",
-			"value": 32
-		},
-		{
-			"name": "G",
-			"value": 64
-		}
-	],
+	"snow.ZoneDef.BlockSectionAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "A",
+				"value": 1
+			},
+			{
+				"name": "B",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "D",
+				"value": 8
+			},
+			{
+				"name": "E",
+				"value": 16
+			},
+			{
+				"name": "F",
+				"value": 32
+			},
+			{
+				"name": "G",
+				"value": 64
+			}
+		]
+	},
 	"snow.data.monsterList.StatusChartType": [
 		{
 			"name": "Type_01",
@@ -420022,76 +420331,79 @@
 			"value": 95
 		}
 	],
-	"snow.enemy.EnemyDef.ConditionDamageTypeFlag": [
-		{
-			"name": "Paralyze",
-			"value": 1
-		},
-		{
-			"name": "Sleep",
-			"value": 2
-		},
-		{
-			"name": "Stun",
-			"value": 4
-		},
-		{
-			"name": "Flash",
-			"value": 8
-		},
-		{
-			"name": "Poison",
-			"value": 16
-		},
-		{
-			"name": "Blast",
-			"value": 32
-		},
-		{
-			"name": "Stamina",
-			"value": 64
-		},
-		{
-			"name": "MarionetteStart",
-			"value": 128
-		},
-		{
-			"name": "Water",
-			"value": 256
-		},
-		{
-			"name": "Fire",
-			"value": 512
-		},
-		{
-			"name": "Ice",
-			"value": 1024
-		},
-		{
-			"name": "Thunder",
-			"value": 2048
-		},
-		{
-			"name": "FallTrap",
-			"value": 4096
-		},
-		{
-			"name": "ShockTrap",
-			"value": 8192
-		},
-		{
-			"name": "Capture",
-			"value": 16384
-		},
-		{
-			"name": "Koyashi",
-			"value": 32768
-		},
-		{
-			"name": "SteelFang",
-			"value": 65536
-		}
-	],
+	"snow.enemy.EnemyDef.ConditionDamageTypeFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Paralyze",
+				"value": 1
+			},
+			{
+				"name": "Sleep",
+				"value": 2
+			},
+			{
+				"name": "Stun",
+				"value": 4
+			},
+			{
+				"name": "Flash",
+				"value": 8
+			},
+			{
+				"name": "Poison",
+				"value": 16
+			},
+			{
+				"name": "Blast",
+				"value": 32
+			},
+			{
+				"name": "Stamina",
+				"value": 64
+			},
+			{
+				"name": "MarionetteStart",
+				"value": 128
+			},
+			{
+				"name": "Water",
+				"value": 256
+			},
+			{
+				"name": "Fire",
+				"value": 512
+			},
+			{
+				"name": "Ice",
+				"value": 1024
+			},
+			{
+				"name": "Thunder",
+				"value": 2048
+			},
+			{
+				"name": "FallTrap",
+				"value": 4096
+			},
+			{
+				"name": "ShockTrap",
+				"value": 8192
+			},
+			{
+				"name": "Capture",
+				"value": 16384
+			},
+			{
+				"name": "Koyashi",
+				"value": 32768
+			},
+			{
+				"name": "SteelFang",
+				"value": 65536
+			}
+		]
+	},
 	"snow.enemy.em095_01.ShellIgnoreTag": [
 		{
 			"name": "Tag000",
@@ -421076,16 +421388,19 @@
 			"value": 2
 		}
 	],
-	"System.Base64FormattingOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "InsertLineBreaks",
-			"value": 1
-		}
-	],
+	"System.Base64FormattingOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "InsertLineBreaks",
+				"value": 1
+			}
+		]
+	},
 	"snow.shell.Hm24ShellManager.StShell005_ID": [
 		{
 			"name": "Hm24Shell005_CannonBasic",
@@ -421748,24 +422063,27 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyDef.AttackerAttr": [
-		{
-			"name": "Zako",
-			"value": 1
-		},
-		{
-			"name": "StrongMarionetteCharacter",
-			"value": 2
-		},
-		{
-			"name": "MarionetteModeReward",
-			"value": 4
-		},
-		{
-			"name": "OtomoRide",
-			"value": 8
-		}
-	],
+	"snow.enemy.EnemyDef.AttackerAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Zako",
+				"value": 1
+			},
+			{
+				"name": "StrongMarionetteCharacter",
+				"value": 2
+			},
+			{
+				"name": "MarionetteModeReward",
+				"value": 4
+			},
+			{
+				"name": "OtomoRide",
+				"value": 8
+			}
+		]
+	},
 	"snow.npc.TalkFlag": [
 		{
 			"name": "EV_PRO_VDEMO_0001",
@@ -429508,56 +429826,59 @@
 			"value": 2
 		}
 	],
-	"snow.hit.HitFlagAttr": [
-		{
-			"name": "SelfHit",
-			"value": 1
-		},
-		{
-			"name": "TeamHit",
-			"value": 2
-		},
-		{
-			"name": "TeamHitPlNoDamage",
-			"value": 4
-		},
-		{
-			"name": "FirstHitId",
-			"value": 8
-		},
-		{
-			"name": "BattoPower",
-			"value": 16
-		},
-		{
-			"name": "DownStaminaBottle",
-			"value": 32
-		},
-		{
-			"name": "BowUpperShinzaku",
-			"value": 64
-		},
-		{
-			"name": "BowFirstArrowSlash",
-			"value": 128
-		},
-		{
-			"name": "SuperSmashPLBody",
-			"value": 256
-		},
-		{
-			"name": "IsCreateSubDebuffShell",
-			"value": 512
-		},
-		{
-			"name": "IsEnableSubDebuffShellChargeMaster",
-			"value": 1024
-		},
-		{
-			"name": "SubDebuffShellChargeMasterRate",
-			"value": 2048
-		}
-	],
+	"snow.hit.HitFlagAttr": {
+		"flags": true,
+		"values": [
+			{
+				"name": "SelfHit",
+				"value": 1
+			},
+			{
+				"name": "TeamHit",
+				"value": 2
+			},
+			{
+				"name": "TeamHitPlNoDamage",
+				"value": 4
+			},
+			{
+				"name": "FirstHitId",
+				"value": 8
+			},
+			{
+				"name": "BattoPower",
+				"value": 16
+			},
+			{
+				"name": "DownStaminaBottle",
+				"value": 32
+			},
+			{
+				"name": "BowUpperShinzaku",
+				"value": 64
+			},
+			{
+				"name": "BowFirstArrowSlash",
+				"value": 128
+			},
+			{
+				"name": "SuperSmashPLBody",
+				"value": 256
+			},
+			{
+				"name": "IsCreateSubDebuffShell",
+				"value": 512
+			},
+			{
+				"name": "IsEnableSubDebuffShellChargeMaster",
+				"value": 1024
+			},
+			{
+				"name": "SubDebuffShellChargeMasterRate",
+				"value": 2048
+			}
+		]
+	},
 	"snow.enemy.em001.Em001ActionTune.EmDamage012TuneVariation": [
 		{
 			"name": "Variation01",
@@ -432881,16 +433202,19 @@
 			"value": 65535
 		}
 	],
-	"snow.stage.StuckFloorSetting.SlowTarget": [
-		{
-			"name": "Trans",
-			"value": 1
-		},
-		{
-			"name": "Rotation",
-			"value": 2
-		}
-	],
+	"snow.stage.StuckFloorSetting.SlowTarget": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Trans",
+				"value": 1
+			},
+			{
+				"name": "Rotation",
+				"value": 2
+			}
+		]
+	},
 	"snow.enemy.em090.Em090ActionTune.EmAttack5003TuneVariation": [
 		{
 			"name": "Variation01",
@@ -433221,52 +433545,55 @@
 			"value": 1
 		}
 	],
-	"snow.AppTag": [
-		{
-			"name": "NPC",
-			"value": 1
-		},
-		{
-			"name": "NaviTarget",
-			"value": 2
-		},
-		{
-			"name": "EnvAlphaTestPassThrough",
-			"value": 4
-		},
-		{
-			"name": "StageGridExcluded",
-			"value": 8
-		},
-		{
-			"name": "EnvEffect",
-			"value": 16
-		},
-		{
-			"name": "AIMapEffector",
-			"value": 32
-		},
-		{
-			"name": "StageGridObjSize_S",
-			"value": 64
-		},
-		{
-			"name": "StageGridObjSize_M",
-			"value": 128
-		},
-		{
-			"name": "StageGridObjSize_L",
-			"value": 256
-		},
-		{
-			"name": "NaviMeshCollisionTarget",
-			"value": 512
-		},
-		{
-			"name": "StageGridDissolveExcluded",
-			"value": 1024
-		}
-	],
+	"snow.AppTag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NPC",
+				"value": 1
+			},
+			{
+				"name": "NaviTarget",
+				"value": 2
+			},
+			{
+				"name": "EnvAlphaTestPassThrough",
+				"value": 4
+			},
+			{
+				"name": "StageGridExcluded",
+				"value": 8
+			},
+			{
+				"name": "EnvEffect",
+				"value": 16
+			},
+			{
+				"name": "AIMapEffector",
+				"value": 32
+			},
+			{
+				"name": "StageGridObjSize_S",
+				"value": 64
+			},
+			{
+				"name": "StageGridObjSize_M",
+				"value": 128
+			},
+			{
+				"name": "StageGridObjSize_L",
+				"value": 256
+			},
+			{
+				"name": "NaviMeshCollisionTarget",
+				"value": 512
+			},
+			{
+				"name": "StageGridDissolveExcluded",
+				"value": 1024
+			}
+		]
+	},
 	"snow.enemy.ems090.Ems090Define.EmDieNo": [
 		{
 			"name": "None",
@@ -437923,76 +438250,79 @@
 			"value": 3
 		}
 	],
-	"via.HardwareServiceCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "GeneralName",
-			"value": 1
-		},
-		{
-			"name": "InternalName",
-			"value": 2
-		},
-		{
-			"name": "CpuName",
-			"value": 4
-		},
-		{
-			"name": "Manufacturer",
-			"value": 8
-		},
-		{
-			"name": "BrandName",
-			"value": 16
-		},
-		{
-			"name": "IllegalDevice",
-			"value": 32
-		},
-		{
-			"name": "BatteryState",
-			"value": 64
-		},
-		{
-			"name": "BoardName",
-			"value": 128
-		},
-		{
-			"name": "Bootloader",
-			"value": 256
-		},
-		{
-			"name": "StorageSize",
-			"value": 512
-		},
-		{
-			"name": "ExternalStorageSize",
-			"value": 1024
-		},
-		{
-			"name": "PhysicalCoreNumber",
-			"value": 2048
-		},
-		{
-			"name": "LogicalCoreNumber",
-			"value": 4096
-		},
-		{
-			"name": "BaseFrequency",
-			"value": 8192
-		},
-		{
-			"name": "RamSize",
-			"value": 16384
-		},
-		{
-			"name": "ThermalState",
-			"value": 32768
-		}
-	],
+	"via.HardwareServiceCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "GeneralName",
+				"value": 1
+			},
+			{
+				"name": "InternalName",
+				"value": 2
+			},
+			{
+				"name": "CpuName",
+				"value": 4
+			},
+			{
+				"name": "Manufacturer",
+				"value": 8
+			},
+			{
+				"name": "BrandName",
+				"value": 16
+			},
+			{
+				"name": "IllegalDevice",
+				"value": 32
+			},
+			{
+				"name": "BatteryState",
+				"value": 64
+			},
+			{
+				"name": "BoardName",
+				"value": 128
+			},
+			{
+				"name": "Bootloader",
+				"value": 256
+			},
+			{
+				"name": "StorageSize",
+				"value": 512
+			},
+			{
+				"name": "ExternalStorageSize",
+				"value": 1024
+			},
+			{
+				"name": "PhysicalCoreNumber",
+				"value": 2048
+			},
+			{
+				"name": "LogicalCoreNumber",
+				"value": 4096
+			},
+			{
+				"name": "BaseFrequency",
+				"value": 8192
+			},
+			{
+				"name": "RamSize",
+				"value": 16384
+			},
+			{
+				"name": "ThermalState",
+				"value": 32768
+			}
+		]
+	},
 	"snow.enemy.em057.Em057ActionTune.EmAttack024TuneVariation": [
 		{
 			"name": "Variation01",
@@ -449789,24 +450119,27 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyDef.NoMarionetteCommandCategory": [
-		{
-			"name": "System",
-			"value": 1
-		},
-		{
-			"name": "Think",
-			"value": 2
-		},
-		{
-			"name": "Sequence",
-			"value": 4
-		},
-		{
-			"name": "Action",
-			"value": 8
-		}
-	],
+	"snow.enemy.EnemyDef.NoMarionetteCommandCategory": {
+		"flags": true,
+		"values": [
+			{
+				"name": "System",
+				"value": 1
+			},
+			{
+				"name": "Think",
+				"value": 2
+			},
+			{
+				"name": "Sequence",
+				"value": 4
+			},
+			{
+				"name": "Action",
+				"value": 8
+			}
+		]
+	},
 	"via.motion.detail.ChainCollisionType": [
 		{
 			"name": "Self",
@@ -449921,24 +450254,27 @@
 			"value": 1
 		}
 	],
-	"snow.camera.CameraFsmVariables.CheckDirectionFlg": [
-		{
-			"name": "Forward",
-			"value": 1
-		},
-		{
-			"name": "Backward",
-			"value": 2
-		},
-		{
-			"name": "RightSide",
-			"value": 4
-		},
-		{
-			"name": "LeftSide",
-			"value": 8
-		}
-	],
+	"snow.camera.CameraFsmVariables.CheckDirectionFlg": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Forward",
+				"value": 1
+			},
+			{
+				"name": "Backward",
+				"value": 2
+			},
+			{
+				"name": "RightSide",
+				"value": 4
+			},
+			{
+				"name": "LeftSide",
+				"value": 8
+			}
+		]
+	},
 	"via.clr.VMObjType": [
 		{
 			"name": "Null",
@@ -450525,20 +450861,23 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.MarionetteModeFlags": [
-		{
-			"name": "Default",
-			"value": 1
-		},
-		{
-			"name": "Power",
-			"value": 2
-		},
-		{
-			"name": "Reward",
-			"value": 4
-		}
-	],
+	"snow.enemy.MarionetteModeFlags": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Default",
+				"value": 1
+			},
+			{
+				"name": "Power",
+				"value": 2
+			},
+			{
+				"name": "Reward",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.em086.Em086ActionTune.EmDamage024TuneVariation": [
 		{
 			"name": "Variation01",
@@ -450831,52 +451170,55 @@
 			"value": 3
 		}
 	],
-	"snow.data.DataDef.FilterRare": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Ra1",
-			"value": 1
-		},
-		{
-			"name": "Ra2",
-			"value": 2
-		},
-		{
-			"name": "Ra3",
-			"value": 4
-		},
-		{
-			"name": "Ra4",
-			"value": 8
-		},
-		{
-			"name": "Ra5",
-			"value": 16
-		},
-		{
-			"name": "Ra6",
-			"value": 32
-		},
-		{
-			"name": "Ra7",
-			"value": 64
-		},
-		{
-			"name": "Ra8",
-			"value": 128
-		},
-		{
-			"name": "Ra9",
-			"value": 256
-		},
-		{
-			"name": "Ra10",
-			"value": 512
-		}
-	],
+	"snow.data.DataDef.FilterRare": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Ra1",
+				"value": 1
+			},
+			{
+				"name": "Ra2",
+				"value": 2
+			},
+			{
+				"name": "Ra3",
+				"value": 4
+			},
+			{
+				"name": "Ra4",
+				"value": 8
+			},
+			{
+				"name": "Ra5",
+				"value": 16
+			},
+			{
+				"name": "Ra6",
+				"value": 32
+			},
+			{
+				"name": "Ra7",
+				"value": 64
+			},
+			{
+				"name": "Ra8",
+				"value": 128
+			},
+			{
+				"name": "Ra9",
+				"value": 256
+			},
+			{
+				"name": "Ra10",
+				"value": 512
+			}
+		]
+	},
 	"snow.wwise.WwiseMixManager.TalkDemoQuestMix": [
 		{
 			"name": "None",
@@ -457049,20 +457391,23 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.EnemyStanceSettingParam.DisableDivingSetting": [
-		{
-			"name": "Push",
-			"value": 1
-		},
-		{
-			"name": "DrawSelf",
-			"value": 2
-		},
-		{
-			"name": "TargetCamera",
-			"value": 4
-		}
-	],
+	"snow.enemy.EnemyStanceSettingParam.DisableDivingSetting": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Push",
+				"value": 1
+			},
+			{
+				"name": "DrawSelf",
+				"value": 2
+			},
+			{
+				"name": "TargetCamera",
+				"value": 4
+			}
+		]
+	},
 	"snow.enemy.ems038.Ems038ActionTune.EmDamage008TuneVariation": [
 		{
 			"name": "Variation01",
@@ -459051,40 +459396,43 @@
 			"value": 2
 		}
 	],
-	"via.gui.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		}
-	],
+	"via.gui.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			}
+		]
+	},
 	"snow.enemy.em089.Em089ActionTune.EmAttack5002TuneVariation": [
 		{
 			"name": "Variation01",
@@ -478769,24 +479117,27 @@
 			"value": 721064631
 		}
 	],
-	"snow.enemy.em124.Em124Define.IceLVState": [
-		{
-			"name": "IceLVNone",
-			"value": 1
-		},
-		{
-			"name": "IceLV0",
-			"value": 2
-		},
-		{
-			"name": "IceLV1",
-			"value": 4
-		},
-		{
-			"name": "IceLV2",
-			"value": 8
-		}
-	],
+	"snow.enemy.em124.Em124Define.IceLVState": {
+		"flags": true,
+		"values": [
+			{
+				"name": "IceLVNone",
+				"value": 1
+			},
+			{
+				"name": "IceLV0",
+				"value": 2
+			},
+			{
+				"name": "IceLV1",
+				"value": 4
+			},
+			{
+				"name": "IceLV2",
+				"value": 8
+			}
+		]
+	},
 	"snow.enemy.em081.Em081ActionTune.EmAttack5018TuneVariation": [
 		{
 			"name": "Variation01",
@@ -480923,28 +481274,31 @@
 			"value": 7
 		}
 	],
-	"snow.data.DataDef.FilterDecorationLevel": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Lv1",
-			"value": 1
-		},
-		{
-			"name": "Lv2",
-			"value": 2
-		},
-		{
-			"name": "Lv3",
-			"value": 4
-		},
-		{
-			"name": "Lv4",
-			"value": 8
-		}
-	],
+	"snow.data.DataDef.FilterDecorationLevel": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Lv1",
+				"value": 1
+			},
+			{
+				"name": "Lv2",
+				"value": 2
+			},
+			{
+				"name": "Lv3",
+				"value": 4
+			},
+			{
+				"name": "Lv4",
+				"value": 8
+			}
+		]
+	},
 	"via.wwise.StopAllTargetType": [
 		{
 			"name": "StopAllType_GameObject",
@@ -481069,48 +481423,51 @@
 			"value": 65535
 		}
 	],
-	"via.effect.script.GroupFlag": [
-		{
-			"name": "Player",
-			"value": 1
-		},
-		{
-			"name": "Enemy",
-			"value": 2
-		},
-		{
-			"name": "Item",
-			"value": 8
-		},
-		{
-			"name": "Weapon",
-			"value": 4
-		},
-		{
-			"name": "Prop",
-			"value": 16
-		},
-		{
-			"name": "Etc",
-			"value": 32
-		},
-		{
-			"name": "Vfx",
-			"value": 64
-		},
-		{
-			"name": "Camera",
-			"value": 128
-		},
-		{
-			"name": "ActionPoint",
-			"value": 256
-		},
-		{
-			"name": "EventChara",
-			"value": 512
-		}
-	],
+	"via.effect.script.GroupFlag": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Player",
+				"value": 1
+			},
+			{
+				"name": "Enemy",
+				"value": 2
+			},
+			{
+				"name": "Item",
+				"value": 8
+			},
+			{
+				"name": "Weapon",
+				"value": 4
+			},
+			{
+				"name": "Prop",
+				"value": 16
+			},
+			{
+				"name": "Etc",
+				"value": 32
+			},
+			{
+				"name": "Vfx",
+				"value": 64
+			},
+			{
+				"name": "Camera",
+				"value": 128
+			},
+			{
+				"name": "ActionPoint",
+				"value": 256
+			},
+			{
+				"name": "EventChara",
+				"value": 512
+			}
+		]
+	},
 	"snow.enemy.ems038.Ems038Define.ThinkTimerEnum": [
 		{
 			"name": "None",
@@ -484683,56 +485040,59 @@
 			"value": 11
 		}
 	],
-	"via.network.protocol.SendOption": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "Unreliable",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_Low",
-			"value": 0
-		},
-		{
-			"name": "Unreliable_High",
-			"value": 1
-		},
-		{
-			"name": "Reliable",
-			"value": 4
-		},
-		{
-			"name": "ReliableBuffer",
-			"value": 12
-		},
-		{
-			"name": "FastCallback",
-			"value": 16
-		},
-		{
-			"name": "CheckAbsent",
-			"value": 32
-		},
-		{
-			"name": "Tag",
-			"value": 64
-		},
-		{
-			"name": "FastPass",
-			"value": 128
-		},
-		{
-			"name": "CheckNonce",
-			"value": 256
-		},
-		{
-			"name": "SkipReceiveQueue",
-			"value": 512
-		}
-	],
+	"via.network.protocol.SendOption": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "Unreliable",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_Low",
+				"value": 0
+			},
+			{
+				"name": "Unreliable_High",
+				"value": 1
+			},
+			{
+				"name": "Reliable",
+				"value": 4
+			},
+			{
+				"name": "ReliableBuffer",
+				"value": 12
+			},
+			{
+				"name": "FastCallback",
+				"value": 16
+			},
+			{
+				"name": "CheckAbsent",
+				"value": 32
+			},
+			{
+				"name": "Tag",
+				"value": 64
+			},
+			{
+				"name": "FastPass",
+				"value": 128
+			},
+			{
+				"name": "CheckNonce",
+				"value": 256
+			},
+			{
+				"name": "SkipReceiveQueue",
+				"value": 512
+			}
+		]
+	},
 	"snow.enemy.Em133ActionOverWrite.EmAttack5032ActOverWriteVariation": [
 		{
 			"name": "Variation001",
@@ -485193,24 +485553,27 @@
 			"value": 8
 		}
 	],
-	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "UseFirstSelected",
-			"value": 2
-		},
-		{
-			"name": "UseLastSelected",
-			"value": 4
-		},
-		{
-			"name": "AssignToOtherPlayer",
-			"value": 8
-		}
-	],
+	"via.hid.gamePlayer.PlayerOtherDeviceHandlingCaps": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "UseFirstSelected",
+				"value": 2
+			},
+			{
+				"name": "UseLastSelected",
+				"value": 4
+			},
+			{
+				"name": "AssignToOtherPlayer",
+				"value": 8
+			}
+		]
+	},
 	"via.effect.gpgpu.RibbonFollowCS.RibbonFollowResource.RibbonFollowComputeShaderType": [
 		{
 			"name": "EmitCS",
@@ -498396,52 +498759,55 @@
 			"value": 6
 		}
 	],
-	"System.Reflection.ParameterAttributes": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "In",
-			"value": 1
-		},
-		{
-			"name": "Out",
-			"value": 2
-		},
-		{
-			"name": "Lcid",
-			"value": 4
-		},
-		{
-			"name": "Retval",
-			"value": 8
-		},
-		{
-			"name": "Optional",
-			"value": 16
-		},
-		{
-			"name": "HasDefault",
-			"value": 4096
-		},
-		{
-			"name": "HasFieldMarshal",
-			"value": 8192
-		},
-		{
-			"name": "Reserved3",
-			"value": 16384
-		},
-		{
-			"name": "Reserved4",
-			"value": 32768
-		},
-		{
-			"name": "ReservedMask",
-			"value": 61440
-		}
-	],
+	"System.Reflection.ParameterAttributes": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "In",
+				"value": 1
+			},
+			{
+				"name": "Out",
+				"value": 2
+			},
+			{
+				"name": "Lcid",
+				"value": 4
+			},
+			{
+				"name": "Retval",
+				"value": 8
+			},
+			{
+				"name": "Optional",
+				"value": 16
+			},
+			{
+				"name": "HasDefault",
+				"value": 4096
+			},
+			{
+				"name": "HasFieldMarshal",
+				"value": 8192
+			},
+			{
+				"name": "Reserved3",
+				"value": 16384
+			},
+			{
+				"name": "Reserved4",
+				"value": 32768
+			},
+			{
+				"name": "ReservedMask",
+				"value": 61440
+			}
+		]
+	},
 	"snow.enemy.em072.Em072ActionTune.EmAttack5034TuneVariation": [
 		{
 			"name": "Variation01",
@@ -498478,16 +498844,19 @@
 			"value": 0
 		}
 	],
-	"System.StringSplitOptions": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "RemoveEmptyEntries",
-			"value": 1
-		}
-	],
+	"System.StringSplitOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "RemoveEmptyEntries",
+				"value": 1
+			}
+		]
+	},
 	"snow.gui.SnowGuiCommonBehavior.ItemSelectNumWindow.Type": [
 		{
 			"name": "FULL",
@@ -499271,40 +499640,43 @@
 			"value": 65535
 		}
 	],
-	"System.Runtime.CompilerServices.MethodImplOptions": [
-		{
-			"name": "Unmanaged",
-			"value": 4
-		},
-		{
-			"name": "NoInlining",
-			"value": 8
-		},
-		{
-			"name": "ForwardRef",
-			"value": 16
-		},
-		{
-			"name": "Synchronized",
-			"value": 32
-		},
-		{
-			"name": "NoOptimization",
-			"value": 64
-		},
-		{
-			"name": "PreserveSig",
-			"value": 128
-		},
-		{
-			"name": "AggressiveInlining",
-			"value": 256
-		},
-		{
-			"name": "InternalCall",
-			"value": 4096
-		}
-	],
+	"System.Runtime.CompilerServices.MethodImplOptions": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Unmanaged",
+				"value": 4
+			},
+			{
+				"name": "NoInlining",
+				"value": 8
+			},
+			{
+				"name": "ForwardRef",
+				"value": 16
+			},
+			{
+				"name": "Synchronized",
+				"value": 32
+			},
+			{
+				"name": "NoOptimization",
+				"value": 64
+			},
+			{
+				"name": "PreserveSig",
+				"value": 128
+			},
+			{
+				"name": "AggressiveInlining",
+				"value": 256
+			},
+			{
+				"name": "InternalCall",
+				"value": 4096
+			}
+		]
+	},
 	"snow.enemy.em077_00.IgnoreTag": [
 		{
 			"name": "Tag000",
@@ -510031,44 +510403,47 @@
 			"value": 1
 		}
 	],
-	"via.hid.MouseButton": [
-		{
-			"name": "NONE",
-			"value": 0
-		},
-		{
-			"name": "L",
-			"value": 1
-		},
-		{
-			"name": "R",
-			"value": 2
-		},
-		{
-			"name": "C",
-			"value": 4
-		},
-		{
-			"name": "UP",
-			"value": 8
-		},
-		{
-			"name": "DOWN",
-			"value": 16
-		},
-		{
-			"name": "EX0",
-			"value": 32
-		},
-		{
-			"name": "EX1",
-			"value": 64
-		},
-		{
-			"name": "All",
-			"value": 4294967295
-		}
-	],
+	"via.hid.MouseButton": {
+		"flags": true,
+		"values": [
+			{
+				"name": "NONE",
+				"value": 0
+			},
+			{
+				"name": "L",
+				"value": 1
+			},
+			{
+				"name": "R",
+				"value": 2
+			},
+			{
+				"name": "C",
+				"value": 4
+			},
+			{
+				"name": "UP",
+				"value": 8
+			},
+			{
+				"name": "DOWN",
+				"value": 16
+			},
+			{
+				"name": "EX0",
+				"value": 32
+			},
+			{
+				"name": "EX1",
+				"value": 64
+			},
+			{
+				"name": "All",
+				"value": 4294967295
+			}
+		]
+	},
 	"snow.enemy.em027.Em027ActionTune.EmGrapple5002TuneVariation": [
 		{
 			"name": "Variation01",
@@ -515915,44 +516290,47 @@
 			"value": 2
 		}
 	],
-	"snow.enemy.EnemyDef.ActionAttrProg": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "CatchAction",
-			"value": 1
-		},
-		{
-			"name": "CatchThrowAction",
-			"value": 2
-		},
-		{
-			"name": "GrappleFinishAction",
-			"value": 4
-		},
-		{
-			"name": "NoXTurnReset",
-			"value": 64
-		},
-		{
-			"name": "TargetGround",
-			"value": 128
-		},
-		{
-			"name": "ArrangeNoVisible",
-			"value": 256
-		},
-		{
-			"name": "ActSetRemoveRangeSeqTrack",
-			"value": 512
-		},
-		{
-			"name": "NoCBZError",
-			"value": 1024
-		}
-	],
+	"snow.enemy.EnemyDef.ActionAttrProg": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "CatchAction",
+				"value": 1
+			},
+			{
+				"name": "CatchThrowAction",
+				"value": 2
+			},
+			{
+				"name": "GrappleFinishAction",
+				"value": 4
+			},
+			{
+				"name": "NoXTurnReset",
+				"value": 64
+			},
+			{
+				"name": "TargetGround",
+				"value": 128
+			},
+			{
+				"name": "ArrangeNoVisible",
+				"value": 256
+			},
+			{
+				"name": "ActSetRemoveRangeSeqTrack",
+				"value": 512
+			},
+			{
+				"name": "NoCBZError",
+				"value": 1024
+			}
+		]
+	},
 	"snow.enemy.ems003.Ems003_05Define.RangePatternEnum": [
 		{
 			"name": "Pattern000",
@@ -517847,16 +518225,19 @@
 			"value": 5
 		}
 	],
-	"System.Globalization.TimeSpanStyles": [
-		{
-			"name": "None",
-			"value": 0
-		},
-		{
-			"name": "AssumeNegative",
-			"value": 1
-		}
-	],
+	"System.Globalization.TimeSpanStyles": {
+		"flags": true,
+		"values": [
+			{
+				"name": "None",
+				"value": 0
+			},
+			{
+				"name": "AssumeNegative",
+				"value": 1
+			}
+		]
+	},
 	"via.motion.script.FootEffectController.JointPartsType": [
 		{
 			"name": "Foot",
@@ -518169,52 +518550,55 @@
 			"value": 1
 		}
 	],
-	"snow.otomo.OtomoCondition.OtUnique": [
-		{
-			"name": "Anger",
-			"value": 1
-		},
-		{
-			"name": "Matatabi",
-			"value": 2
-		},
-		{
-			"name": "CommandReceived",
-			"value": 4
-		},
-		{
-			"name": "DontMove",
-			"value": 8
-		},
-		{
-			"name": "DogToolChainSickle",
-			"value": 16
-		},
-		{
-			"name": "DogToolIronTusk",
-			"value": 32
-		},
-		{
-			"name": "DogToolBoneTusk",
-			"value": 64
-		},
-		{
-			"name": "DogToolUmbrella",
-			"value": 128
-		},
-		{
-			"name": "DogToolThrowingStar",
-			"value": 256
-		},
-		{
-			"name": "DogToolWire",
-			"value": 512
-		},
-		{
-			"name": "BuffPipe",
-			"value": 1024
-		}
-	],
+	"snow.otomo.OtomoCondition.OtUnique": {
+		"flags": true,
+		"values": [
+			{
+				"name": "Anger",
+				"value": 1
+			},
+			{
+				"name": "Matatabi",
+				"value": 2
+			},
+			{
+				"name": "CommandReceived",
+				"value": 4
+			},
+			{
+				"name": "DontMove",
+				"value": 8
+			},
+			{
+				"name": "DogToolChainSickle",
+				"value": 16
+			},
+			{
+				"name": "DogToolIronTusk",
+				"value": 32
+			},
+			{
+				"name": "DogToolBoneTusk",
+				"value": 64
+			},
+			{
+				"name": "DogToolUmbrella",
+				"value": 128
+			},
+			{
+				"name": "DogToolThrowingStar",
+				"value": 256
+			},
+			{
+				"name": "DogToolWire",
+				"value": 512
+			},
+			{
+				"name": "BuffPipe",
+				"value": 1024
+			}
+		]
+	},
 	"snow.enemy.em077.Em077Define.PartsType": [
 		{
 			"name": "Head",

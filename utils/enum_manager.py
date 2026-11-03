@@ -38,6 +38,24 @@ class EnumDefinitionError(ValueError):
     pass
 
 
+class FlagMembers(list):
+    pass
+
+
+def flag_names(members, value, bits):
+    mask = (1 << bits) - 1
+    rest = value & mask
+    if not rest:
+        return [member["name"] for member in members if not member["value"] & mask][:1], 0
+    names = []
+    for member in sorted(members, key=lambda member: member["value"] & mask, reverse=True):
+        member_bits = member["value"] & mask
+        if member_bits and rest & member_bits == member_bits:
+            names.append(member["name"])
+            rest &= ~member_bits
+    return names[::-1], rest
+
+
 def enum_file_path(game):
     key = game_key(game)
     try:
@@ -53,7 +71,8 @@ def _read_enum_namespace(path, namespace):
             definitions = json.load(stream)
         if not isinstance(definitions, dict):
             raise ValueError("expected an object of enum definitions")
-        return {key: value for key, value in definitions.items() if key.startswith(namespace)}
+        return {key: FlagMembers(value["values"]) if isinstance(value, dict) else value
+                for key, value in definitions.items() if key.startswith(namespace)}
     except (OSError, ValueError) as exc:
         raise EnumDefinitionError(f"Cannot read enum JSON {path}: {exc}") from exc
 

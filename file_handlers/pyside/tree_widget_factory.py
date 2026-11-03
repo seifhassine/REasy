@@ -6,9 +6,10 @@ from file_handlers.pyside.value_widgets import (
     Vec2Input, Vec3Input, Vec4Input, F32Input, S32Input, U32Input, S16Input, U16Input, U64Input, S64Input, S8Input, U8Input,
     GuidInput, OBBInput, AABBInput, AreaInput, Mat4Input, HexBytesInput, StringInput, BoolInput, UserDataInput, RangeInput,
     RangeIInput, ColorInput, Vec3ColorInput, CapsuleInput, Int3Input, Uint3Input, Uint2Input, Int2Input, Int4Input, Int4ColorInput, EnumInput, F64Input, 
-    SizeInput, RectInput
+    SizeInput, RectInput, FlagEnumInput
 )
-lazy from utils.enum_manager import EnumManager
+lazy from file_handlers.rsz.utils.rsz_field_utils import INTEGER_BOUNDS
+lazy from utils.enum_manager import EnumManager, FlagMembers
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors
 
@@ -135,6 +136,8 @@ class TreeWidgetFactory:
         enum_values = EnumManager.instance().get_enum_values(enum_type)
         if not enum_values:
             return data_obj, enum_type, None
+        if isinstance(enum_values, FlagMembers):
+            return data_obj, enum_type, enum_values
 
         enum_value_list = [value["value"] for value in enum_values]
         if data_obj.value in enum_value_list:
@@ -254,13 +257,14 @@ class TreeWidgetFactory:
             TreeWidgetFactory._normalize_enum_data(data_obj)
         )
         if enum_values:
+            flags = isinstance(enum_values, FlagMembers) and type(data_obj).__name__ in INTEGER_BOUNDS
             TreeWidgetFactory._add_input_widget(
                 layout,
                 widget,
                 name_text,
                 min_label_width,
                 data_obj,
-                EnumInput,
+                FlagEnumInput if flags else EnumInput,
                 on_modified,
                 enum_values,
             )

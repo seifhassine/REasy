@@ -1,6 +1,7 @@
 from PySide6.QtWidgets import (QColorDialog, QWidget, QHBoxLayout, QLineEdit,
                               QGridLayout, QLabel, QComboBox, QCheckBox, QSizePolicy,
-                              QTreeView, QApplication, QSlider, QStyle, QInputDialog, QMessageBox)
+                              QTreeView, QApplication, QSlider, QStyle, QInputDialog, QMessageBox,
+                              QMenu)
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Signal, Qt, QRegularExpression, QTimer, QRect, QRectF
 lazy from PySide6.QtGui import (
     QDoubleValidator,
@@ -19,6 +20,8 @@ import os
 import math
 
 lazy from file_handlers.rsz.rsz_data_types import RawBytesData, ResourceData
+lazy from file_handlers.rsz.utils.rsz_field_utils import INTEGER_BOUNDS
+lazy from utils.enum_manager import flag_names
 lazy from file_handlers.pyside.component_selector import ComponentSelectorDialog
 lazy from ui.editor_widgets import set_invalid, tool_button
 lazy from ui.icons import line_icon
@@ -2021,6 +2024,115 @@ class EnumInput(BaseValueWidget):
             self.valueChanged.emit(value)
             self._modified = True 
             self.modified_changed.emit(True)
+
+
+class _FlagMenu(QMenu):
+    def mouseReleaseEvent(self, event):
+        action = self.activeAction()
+        if action is not None and action.isEnabled() and action.isCheckable():
+            action.trigger()
+            return
+        super().mouseReleaseEvent(event)
+
+
+class _FlagComboBox(QComboBox):
+    def __init__(self):
+        super().__init__()
+        self.menu = _FlagMenu(self)
+
+    def showPopup(self):
+        self.menu.setMinimumWidth(self.width())
+        self.menu.popup(self.mapToGlobal(self.rect().bottomLeft()))
+
+
+class FlagEnumInput(BaseValueWidget):
+    valueChanged = Signal(int)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.enum_values, self._member_bits = [], []
+        self.line_edit = QLineEdit()
+        self.line_edit.setFixedWidth(100)
+        self.layout.addWidget(self.line_edit)
+        self.combo_box = _FlagComboBox()
+        self.combo_box.setFixedWidth(150)
+        self.menu = self.combo_box.menu
+        self.layout.addWidget(self.combo_box)
+        self.line_edit.textChanged.connect(self._on_text_changed)
+        self.menu.triggered.connect(self._on_member_triggered)
+
+    def _bounds(self):
+        return INTEGER_BOUNDS[type(self._data).__name__]
+
+    def _bits(self):
+        low, high = self._bounds()
+        return (high - low).bit_length()
+
+    def set_enum_values(self, enum_values):
+        self.enum_values = enum_values
+        self.menu.clear()
+        mask = (1 << self._bits()) - 1 if self._data else -1
+        self._member_bits = [member["value"] & mask for member in enum_values]
+        for member, member_bits in zip(enum_values, self._member_bits):
+            self.menu.addAction(f"{member['name']} ({member['value']})").setCheckable(bool(member_bits))
+        self.update_display()
+
+    def update_display(self):
+        if not self._data:
+            return
+        self.line_edit.blockSignals(True)
+        self.line_edit.setText(str(self._data.value))
+        self.line_edit.blockSignals(False)
+        set_invalid(self.line_edit, False)
+        self._show_members()
+
+    def _show_members(self):
+        bits = self._bits()
+        value = self._data.value & ((1 << bits) - 1)
+        names, rest = flag_names(self.enum_values, value, bits)
+        text = " | ".join(names + ([f"0x{rest:X}"] if rest else [])) or "0"
+        self.combo_box.clear()
+        self.combo_box.addItem(text)
+        self.combo_box.setToolTip(text)
+        for action, member_bits in zip(self.menu.actions(), self._member_bits):
+            action.setChecked(bool(member_bits) and value & member_bits == member_bits)
+
+    def _store(self, value):
+        if self._data.value != value:
+            self._data.value = value
+            self.valueChanged.emit(value)
+            self.mark_modified()
+
+    def _on_text_changed(self, text):
+        if not self._data or not text:
+            return
+        try:
+            value = int(text)
+        except ValueError:
+            set_invalid(self.line_edit, True)
+            return
+        low, high = self._bounds()
+        invalid = not low <= value <= high
+        set_invalid(self.line_edit, invalid)
+        if not invalid:
+            self._store(value)
+            self._show_members()
+
+    def _on_member_triggered(self, action):
+        if not self._data:
+            return
+        member_bits = self._member_bits[self.menu.actions().index(action)]
+        value = self._data.value & ((1 << self._bits()) - 1)
+        if not member_bits:
+            value = 0
+        elif action.isChecked():
+            value |= member_bits
+        else:
+            value &= ~member_bits
+        if value > self._bounds()[1]:
+            value -= 1 << self._bits()
+        self._store(value)
+        self.update_display()
 
 class Mat4Input(BaseValueWidget):
     valueChanged = Signal(list)
