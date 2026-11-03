@@ -1478225,7 +1478225,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "DrawDepthOcclusion",
+				"name": "DrawAABB",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1478234,7 +1478234,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "ForceAlphaTest",
+				"name": "DrawDepthOcclusion",
 				"native": true,
 				"original_type": "",
 				"size": 1,

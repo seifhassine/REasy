@@ -1245671,34 +1245671,34 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v0",
+				"name": "Position",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Vec3",
 				"size": 16,
-				"type": "Data"
+				"type": "Vec3"
 			},
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "Rotation",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Quaternion",
 				"size": 16,
-				"type": "Data"
+				"type": "Quaternion"
 			},
 			{
 				"align": 16,
 				"array": false,
-				"name": "v2",
+				"name": "Scale",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Vec3",
 				"size": 16,
-				"type": "Data"
+				"type": "Vec3"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "ParentJoint",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1245716,7 +1245716,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "AbsoluteScaling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1245725,7 +1245725,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "JointSegmentScale",
 				"native": true,
 				"original_type": "",
 				"size": 1,
