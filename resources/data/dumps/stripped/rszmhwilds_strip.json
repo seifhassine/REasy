@@ -52963,7 +52963,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v2",
+				"name": "Instances",
 				"native": true,
 				"original_type": "via.physics.StaticCompoundShape.Instance",
 				"size": 4,
@@ -221720,7 +221720,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v19",
+				"name": "Materials",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,
@@ -430164,7 +430164,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "TessellationType",
 				"native": true,
 				"original_type": "via.render.ShallowWaterTessellationType",
 				"size": 4,
@@ -430200,7 +430200,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "SimulationGrid",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -430209,7 +430209,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v18",
+				"name": "SimulationPoint",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -430299,7 +430299,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -430362,7 +430362,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v35",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,
@@ -445477,7 +445477,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "VertexLOD",
 				"native": true,
 				"original_type": "via.render.Strands.VertexLod",
 				"size": 4,
@@ -813354,7 +813354,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "HeightField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -883789,7 +883789,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v3",
+				"name": "Transform",
 				"native": true,
 				"original_type": "via.render.CompositeMeshTransformController",
 				"size": 4,
@@ -1277193,7 +1277193,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "Texture",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1902107,7 +1902107,7 @@
 			{
 				"align": 1,
 				"array": true,
-				"name": "v70",
+				"name": "PartsEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1917384,7 +1917384,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v39",
+				"name": "WorldVelocityMultiplier",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917402,7 +1917402,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v41",
+				"name": "WorldInertialForceMultiplier",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917411,7 +1917411,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v42",
+				"name": "StaticFriction",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917420,7 +1917420,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "KineticFriction",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917465,7 +1917465,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "RepulsiveStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917501,7 +1917501,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "InterSmoothingStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917528,7 +1917528,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v55",
+				"name": "TargetFPS",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917609,7 +1917609,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v64",
+				"name": "LinearVelocityDamping",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917618,7 +1917618,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "AngularVelocityDamping",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917627,7 +1917627,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "LinearVelocityEMAWeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917636,7 +1917636,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v67",
+				"name": "AngularVelocityEMAWeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917654,7 +1917654,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v69",
+				"name": "SwingLimit",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917663,7 +1917663,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v70",
+				"name": "SwingLimitStiffness",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917681,7 +1917681,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v72",
+				"name": "TwistLimit",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917690,7 +1917690,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v73",
+				"name": "TwistLimitStiffness",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917699,7 +1917699,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v74",
+				"name": "MaxAcceleration",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917708,7 +1917708,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v75",
+				"name": "MaxLinearSpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1917717,7 +1917717,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v76",
+				"name": "MaxAngularSpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,

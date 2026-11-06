@@ -87729,7 +87729,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v19",
+				"name": "Materials",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,

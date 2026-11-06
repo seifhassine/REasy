@@ -35032,7 +35032,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "DecalReciveMode",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -35050,7 +35050,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v14",
+				"name": "UseGpuOcclusionCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -158566,7 +158566,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "AutoApply",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -498575,7 +498575,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "GridResolution",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -554282,7 +554282,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "ColorBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -554291,7 +554291,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "NormalBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -554300,7 +554300,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "EmissionBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -554309,7 +554309,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v13",
+				"name": "OcclusionFill",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -554327,7 +554327,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "WaterMeshPriority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -647254,7 +647254,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v13",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "",
 				"size": 4,

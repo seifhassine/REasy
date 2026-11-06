@@ -27731,7 +27731,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v2",
+				"name": "Instances",
 				"native": true,
 				"original_type": "via.physics.StaticCompoundShape.Instance",
 				"size": 4,
@@ -84013,7 +84013,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Intensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -119135,7 +119135,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v19",
+				"name": "Materials",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,
@@ -235504,7 +235504,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "TessellationType",
 				"native": true,
 				"original_type": "via.render.ShallowWaterTessellationType",
 				"size": 4,
@@ -235540,7 +235540,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "SimulationGrid",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -235549,7 +235549,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v20",
+				"name": "SimulationPoint",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -235621,7 +235621,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v28",
+				"name": "HeightField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -235648,7 +235648,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v31",
+				"name": "UseCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -235693,7 +235693,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -235711,7 +235711,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v38",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,
@@ -446450,7 +446450,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "TessellationType",
 				"native": true,
 				"original_type": "via.render.ShallowWaterTessellationType",
 				"size": 4,
@@ -446459,7 +446459,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "TessFactor",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -446486,7 +446486,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "SimulationGrid",
 				"native": true,
 				"original_type": "via.Uint2",
 				"size": 8,
@@ -446513,7 +446513,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "AlphaTexture",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -446540,7 +446540,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "VelocityField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -446567,7 +446567,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "HeightField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -446630,7 +446630,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "ProjectionMap",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -446684,7 +446684,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v42",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -446729,7 +446729,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v47",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,
@@ -483643,7 +483643,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v3",
+				"name": "Transform",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -549061,7 +549061,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "Resource",
 				"native": true,
 				"original_type": "via.render.ShellFurResourceHolder",
 				"size": 4,
@@ -549079,7 +549079,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ShellCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -549097,7 +549097,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "ShellType",
 				"native": true,
 				"original_type": "via.render.ShellFurMesh.ShellType",
 				"size": 4,
@@ -549115,7 +549115,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "ShellLodSettings",
 				"native": true,
 				"original_type": "via.render.LodResourceHolder",
 				"size": 4,
@@ -549124,7 +549124,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "SimulationType",
 				"native": true,
 				"original_type": "via.render.ShellFurMesh.SimulationType",
 				"size": 4,
@@ -699295,7 +699295,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "Texture",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -720811,7 +720811,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "OBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -830263,7 +830263,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v5",
+				"name": "Colliders",
 				"native": true,
 				"original_type": "via.physics.Collider",
 				"size": 4,
@@ -896214,7 +896214,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "StartFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -896223,7 +896223,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "EndFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -896241,7 +896241,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -896250,7 +896250,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v8",
+				"name": "Loop",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -896259,7 +896259,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "EnableEvent",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -896268,7 +896268,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "PlaySceneStart",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -948156,7 +948156,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Name",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -948183,7 +948183,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "Draw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -948201,7 +948201,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "ScenePath",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1011830,7 +1011830,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "Mesh",
 				"native": true,
 				"original_type": "via.render.MeshResourceHolder",
 				"size": 4,
@@ -1025207,7 +1025207,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "GridResolution",
 				"native": true,
 				"original_type": "via.Uint2",
 				"size": 8,
@@ -1042717,7 +1042717,7 @@
 			{
 				"align": 1,
 				"array": true,
-				"name": "v74",
+				"name": "PartsEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1093323,7 +1093323,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "Color",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1097326,7 +1097326,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Name",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1105510,7 +1105510,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "ShapeType",
 				"native": true,
 				"original_type": "via.render.Primitive.ShapeType",
 				"size": 4,
@@ -1107012,7 +1107012,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "DrawSelf",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1139598,7 +1139598,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "Mesh",
 				"native": true,
 				"original_type": "via.render.MeshResourceHolder",
 				"size": 4,
@@ -1139607,7 +1139607,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -1215843,7 +1215843,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "RenderTarget",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -1278161,7 +1278161,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "BlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1292406,7 +1292406,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ProjectionShape",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.ProjectionShape",
 				"size": 4,
@@ -1292442,7 +1292442,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "BaseColorMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292451,7 +1292451,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "NormalMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292460,7 +1292460,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "RoughnessMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292469,7 +1292469,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "NormalRoughnessMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292478,7 +1292478,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "EmissiveMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292487,7 +1292487,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "AlphaMaskMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292496,7 +1292496,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "HeightMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -1292559,7 +1292559,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v32",
+				"name": "WholeBlendMode",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.WholeBlendMode",
 				"size": 4,
@@ -1292568,7 +1292568,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "OpacityFlag",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.OpacityFlag",
 				"size": 4,
@@ -1292586,7 +1292586,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v35",
+				"name": "UVOffset",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -1292595,7 +1292595,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "UVScale",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -1292604,7 +1292604,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "NormalUVOffset",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -1292613,7 +1292613,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v38",
+				"name": "NormalUVScale",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -1292622,7 +1292622,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v39",
+				"name": "AlphaMaskRange",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -1292631,7 +1292631,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v40",
+				"name": "AlphaMaskRangeG",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -1292694,7 +1292694,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "BakedOcclusionMap",
 				"native": true,
 				"original_type": "via.render.SparseShadowTreeHolder",
 				"size": 4,
@@ -1292730,7 +1292730,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "CustomMaterial",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -1327325,7 +1327325,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "DstRenderTarget",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -1327334,7 +1327334,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -1376498,7 +1376498,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "JointConstraintsAsset",
 				"native": true,
 				"original_type": "via.motion.JointConstraintsResourceHolder",
 				"size": 4,
@@ -1380048,7 +1380048,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "DrawShadowCast",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1393014,7 +1393014,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "MotionBankAsset",
 				"native": true,
 				"original_type": "via.motion.MotionBankResourceHolder",
 				"size": 4,
@@ -1393032,7 +1393032,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "JointMap",
 				"native": true,
 				"original_type": "via.motion.JointMapResourceHolder",
 				"size": 4,
@@ -1393104,7 +1393104,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v24",
+				"name": "Layer",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1393113,7 +1393113,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v25",
+				"name": "DynamicMotionBank",
 				"native": true,
 				"original_type": "",
 				"size": 4,

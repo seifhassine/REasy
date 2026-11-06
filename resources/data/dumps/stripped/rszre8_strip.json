@@ -48987,7 +48987,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "DecalReciveMode",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -49005,7 +49005,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v13",
+				"name": "UseGpuOcclusionCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -58961,7 +58961,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -58970,7 +58970,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Intensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156753,7 +156753,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "TessFactor",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156762,7 +156762,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "TessAttenuationRadius",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156771,7 +156771,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "TileCount",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -156780,7 +156780,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SimulationGrid",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156789,7 +156789,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v13",
+				"name": "SimulationPoint",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -156816,7 +156816,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "WaterColorBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156825,7 +156825,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "WaterNormalBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156834,7 +156834,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "EmissionBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156879,7 +156879,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v23",
+				"name": "UseCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -156915,7 +156915,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "RenderingPriority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -156933,7 +156933,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "OcclusionFill",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -156942,7 +156942,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v30",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -215430,7 +215430,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "AutoApply",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -298511,7 +298511,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "RenderingMode",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298520,7 +298520,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "RenderingPriority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298529,7 +298529,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "TessFactor",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298538,7 +298538,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "TessAttenuationRadius",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298547,7 +298547,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "TileCount",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -298556,7 +298556,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "SimulationGrid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -298565,7 +298565,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "Color",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298574,7 +298574,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "Fresnel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298682,7 +298682,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v28",
+				"name": "ProjectionColor",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298700,7 +298700,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Refraction",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298718,7 +298718,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v32",
+				"name": "WaterColorBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298727,7 +298727,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "WaterNormalBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298736,7 +298736,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "WaterEmissionBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -298754,7 +298754,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v36",
+				"name": "OcclusionFill",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -298781,7 +298781,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v39",
+				"name": "UseCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -298790,7 +298790,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v40",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -401231,7 +401231,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "RenderOutputID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -590237,7 +590237,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "StartFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -590246,7 +590246,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "EndFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -590264,7 +590264,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -590273,7 +590273,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v8",
+				"name": "Loop",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -590282,7 +590282,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "EnableEvent",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -590291,7 +590291,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "PlaySceneStart",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -590300,7 +590300,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "BindType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -677465,7 +677465,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "GridResolution",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -689293,7 +689293,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "RenderOutputID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -689302,7 +689302,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689338,7 +689338,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "SmallObjectCullingFactor",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -689347,7 +689347,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "DrawDefault",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689356,7 +689356,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "FrustumCulling",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689374,7 +689374,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "Occluder",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689473,7 +689473,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "MaskIgnoreDepthMesh",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689482,7 +689482,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "BeautyMaskFlag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689491,7 +689491,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v22",
+				"name": "ReceiveSSSSSFlag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689509,7 +689509,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "DrawPriorityBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -689518,7 +689518,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "TransparentBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -689527,7 +689527,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "StencilValue",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689536,7 +689536,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v27",
+				"name": "Materials",
 				"native": true,
 				"original_type": "via.render.MaterialParam",
 				"size": 4,
@@ -689554,7 +689554,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "UseStencilValuePriority",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689572,7 +689572,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v31",
+				"name": "DecalReciveMode",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689626,7 +689626,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "LodMode",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -689635,7 +689635,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v38",
+				"name": "LodLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -689653,7 +689653,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v40",
+				"name": "EnableLodEffectiveRange",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689662,7 +689662,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v41",
+				"name": "LodEffectiveRange",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -689725,7 +689725,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v48",
+				"name": "NormalRecalculationEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689734,7 +689734,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v49",
+				"name": "NREdgeExcluded",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -689743,7 +689743,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v50",
+				"name": "UseBlendShapeNormal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -751841,7 +751841,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ColorBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -751850,7 +751850,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "NormalBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -751859,7 +751859,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "EmissionBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -751868,7 +751868,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "OcclusionFill",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -751886,7 +751886,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "WaterMeshPriority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -801726,7 +801726,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "CalcMode",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -801735,7 +801735,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v11",
+				"name": "CorrectUVGapFlag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -801744,7 +801744,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "CorrectDuplicatedVerticesFlag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -852970,7 +852970,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "BaseColorMod",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -852979,7 +852979,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "NormalMod",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -852988,7 +852988,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "EmissiveMod",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -852997,106 +852997,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v20",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v21",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v22",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v23",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v24",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v25",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v26",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v27",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v28",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v29",
-				"native": true,
-				"original_type": "",
-				"size": 8,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v30",
+				"name": "EmissiveIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853105,7 +853006,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v31",
+				"name": "UseSecondAlpha",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -853114,7 +853015,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v32",
+				"name": "WholeBlendMode",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853123,7 +853024,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "OpacityFlag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853132,7 +853033,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "Opacity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853141,7 +853042,79 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v35",
+				"name": "UVOffset",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "UVScale",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NormalUVOffset",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NormalUVScale",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AlphaMaskRange",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "AlphaMaskRangeG",
+				"native": true,
+				"original_type": "",
+				"size": 8,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NormalAngleThreshold",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "FalloffFromTwoSide",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FalloffThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853150,7 +853123,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "ParallaxHeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853159,7 +853132,34 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "PyramidAngle",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PyramidNearClip",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PyramidFarClip",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "Data"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ProjectionShape",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -853204,7 +853204,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v42",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -877072,7 +877072,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v12",
+				"name": "MaterialParam",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -910476,7 +910476,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "RenderOutputID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -910485,7 +910485,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -910494,7 +910494,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "Occluder",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -910512,7 +910512,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "DrawDefault",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -910521,7 +910521,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "DrawShadowCast",
 				"native": true,
 				"original_type": "",
 				"size": 1,

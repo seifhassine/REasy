@@ -41241,7 +41241,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Intensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -112378,7 +112378,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v13",
+				"name": "SimulationPoint",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -112441,7 +112441,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "HeightField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -112513,7 +112513,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v28",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -154551,7 +154551,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "SkeletonResourceHandle",
 				"native": true,
 				"original_type": "via.motion.SkeletonResourceHolder",
 				"size": 4,
@@ -208475,7 +208475,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "AlphaTexture",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -208502,7 +208502,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "VelocityField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -208520,7 +208520,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "HeightField",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -208583,7 +208583,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ProjectionMap",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -208637,7 +208637,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v35",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -330237,7 +330237,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "Texture",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -339510,7 +339510,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "OBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -415706,7 +415706,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "StartFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -415715,7 +415715,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "EndFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -415733,7 +415733,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -415742,7 +415742,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v8",
+				"name": "Loop",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -415751,7 +415751,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "EnableEvent",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -415760,7 +415760,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "PlaySceneStart",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -472123,7 +472123,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "Mesh",
 				"native": true,
 				"original_type": "via.render.MeshResourceHolder",
 				"size": 4,
@@ -477555,7 +477555,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "GridResolution",
 				"native": true,
 				"original_type": "via.Uint2",
 				"size": 8,
@@ -561331,7 +561331,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "RenderTarget",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -561340,7 +561340,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "CalcMode",
 				"native": true,
 				"original_type": "via.render.Wrinkle.CalcMode",
 				"size": 4,
@@ -598375,7 +598375,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "BaseColorMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -598384,7 +598384,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "NormalMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -598393,7 +598393,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "RoughnessMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -598402,7 +598402,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "NormalRoughnessMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -598411,7 +598411,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "EmissiveMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -598420,7 +598420,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "AlphaMaskMap",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -598474,7 +598474,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "WholeBlendMode",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.WholeBlendMode",
 				"size": 4,
@@ -598483,7 +598483,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "OpacityFlag",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.OpacityFlag",
 				"size": 4,
@@ -598501,7 +598501,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "UVOffset",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -598510,7 +598510,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "UVScale",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -598519,7 +598519,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "NormalUVOffset",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -598528,7 +598528,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "NormalUVScale",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -598537,7 +598537,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "AlphaMaskRange",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -598546,7 +598546,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v28",
+				"name": "AlphaMaskRangeG",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -598609,7 +598609,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v35",
+				"name": "ProjectionShape",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.ProjectionShape",
 				"size": 4,
@@ -598654,7 +598654,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v40",
+				"name": "Priority",
 				"native": true,
 				"original_type": "via.render.VolumeDecal.Priority",
 				"size": 4,
@@ -637259,7 +637259,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "Occluder",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -637277,7 +637277,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "DrawDefault",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -637286,7 +637286,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "DrawShadowCast",
 				"native": true,
 				"original_type": "",
 				"size": 1,
