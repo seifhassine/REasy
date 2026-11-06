@@ -1,5 +1,5 @@
 from .base import MeshGameProfile, MeshMainVersion, register_mesh_profile
-from .re_rt_profile import ReRtMeshProfile
+from .re_rt_profile import Re2Re3RtMeshProfile
 
 
 class Re7MeshProfile(MeshGameProfile):
@@ -11,13 +11,12 @@ class Re7MeshProfile(MeshGameProfile):
     default_for_format = True
 
 
-class Re7RtMeshProfile(ReRtMeshProfile):
+class Re7RtMeshProfile(Re2Re3RtMeshProfile):
     game = "RE7RT"
     display_name = "Resident Evil 7 (RT)"
     aliases = ("RE7 RT", "RE7_RT", "RE7_RT_STM", "Resident Evil 7 RT")
     version_pairs = frozenset({(21041600, 220128762)})
     primary_version_pairs = version_pairs
-    default_for_format = False
 
 
 RE7_MESH_PROFILE = register_mesh_profile(Re7MeshProfile())

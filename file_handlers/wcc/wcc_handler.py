@@ -6,7 +6,7 @@ from file_handlers.rsz.rsz_component_clipboard import RszComponentClipboard
 
 
 class WccHandler(RszHandler):
-    """Handler for headless RSZ sound files (.wcc, .wcp, .wcst, .wgs, .wss, .wcsw, .wcss, .wcsa, .wcsf)."""
+    """Handler for headless RSZ files (.wcc and the other kinds the factory routes by extension)."""
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:

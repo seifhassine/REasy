@@ -51,7 +51,7 @@ The interface is available in English, Chinese, Russian and Spanish.
 <details>
 <summary>Game limits</summary>
 
-- **MESH**: view only for RE7, RE7 RT, O2, MH Stories 3, Kunitsu-Gami and one older RE3/Resistance version; DRDR meshes don't open.
+- **MESH**: view only for RE7, O2, MH Stories 3, Kunitsu-Gami and one older RE3/Resistance version; DRDR meshes don't open.
 - **MMTR, SDF**: not RE7 non-RT. Older DD2 and the Onimusha demo: pixel shaders only.
 - **RCOL**: not RE7 non-RT (rcol.2) or MH Wilds rcol.38.
 - **Hair strands**: edit in RE9 and Pragmata, view in RE4.
