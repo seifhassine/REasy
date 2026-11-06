@@ -44,7 +44,7 @@ The interface is available in English, Chinese, Russian and Spanish.
 
 ## Supported files
 
-- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR,  SDFTEX (baked from a mesh), DDS (to TEX), SDF, MESH, TEX, MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, CLIP, TML, UCURVE, GUI, BNK, PCK, WEL, WCC and other headless sound files, hair strands
+- **Edit:** SCN, PFB, USER, UVAR, RCOL, CFIL, MSG, UVS, MDF, MMTR,  SDFTEX (baked from a mesh), DDS (to TEX), SDF, MESH, TEX, MOT, MOTLIST, MOTTREE, MOTBANK, MCAMBANK, CLIP, TML, UCURVE, DLGTML, GUI, BNK, PCK, WEL, WCC and other headless sound files, hair strands
 - **View:** FOL, STMESH, GCF, IFT, OFT, light probes (in SCN scenes)
 - **Other:** PAK through *Tools > PAK Browser*, MOV in your default video player
 
@@ -62,7 +62,7 @@ The interface is available in English, Chinese, Russian and Spanish.
 - **Light probes**: not RE7 non-RT, RE Resistance or DRDR.
 - **STMESH**: RE4, SF6, MH Wilds, DD2, Onimusha, Pragmata.
 - **SDFTEX**: RE4, MH Wilds, DD2, Onimusha, Pragmata, RE9.
-- **CLIP, TML, UCURVE**: tested up to MH Wilds.
+- **CLIP, TML, UCURVE, DLGTML**: tested up to MH Wilds. A dialogue timeline's sequence-track ranges and its properties' key tables and flags follow key edits the way Capcom's tool bakes them (every shipped file reproduced); boxes with no keys, past the timeline's end or never baked, are kept as authored.
 
 </details>
 

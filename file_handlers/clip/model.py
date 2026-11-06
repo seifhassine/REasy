@@ -11,6 +11,7 @@ class ResourceKind(Enum):
     CLIP = "clip"
     TIMELINE = "tml"
     USER_CURVE = "ucurve"
+    DIALOGUE_TIMELINE = "dlgtml"
     MOT_CLIP = "motclip"
 
 
@@ -51,6 +52,7 @@ class Property:
     prev_key_value_set: bool = False
     delayed_execution: bool = False
     array_count_set: bool = False
+    baked: bool = False
     keys: list[Key] = field(default_factory=list)
     extra_keys: dict[int, Key] = field(default_factory=dict)
     speed_points: list[SpeedPoint] = field(default_factory=list)
@@ -110,6 +112,15 @@ class TrackInterval:
 
 
 @dataclass(eq=False, slots=True)
+class SequenceTrackInfo:
+    name: str = ""
+    ranges: list[tuple[float, float]] = field(default_factory=list)
+    children: list[SequenceTrackInfo] = field(default_factory=list)
+    follows: bool = False
+    kept: list[tuple[float, float]] = field(default_factory=list)
+
+
+@dataclass(eq=False, slots=True)
 class Timeline:
     version: int
     kind: ResourceKind = ResourceKind.CLIP
@@ -118,6 +129,7 @@ class Timeline:
     tracks: list[Track] = field(default_factory=list)
     root_order: list[Node] | None = None
     intervals: list[list[TrackInterval]] | None = None
+    sequences: list[SequenceTrackInfo] = field(default_factory=list)
 
     @property
     def roots(self) -> list[Node]:
@@ -143,3 +155,22 @@ def walk_properties(properties: Iterable[Property]) -> Iterator[Property]:
         prop = stack.pop()
         yield prop
         stack.extend(reversed(prop.children))
+
+
+def grouped(groups, children) -> list:
+    out: list = []
+    seen: set[int] = set()
+
+    def visit(group) -> None:
+        group = list(group)
+        for item in group:
+            if id(item) not in seen:
+                seen.add(id(item))
+                out.append(item)
+        for item in group:
+            if members := children(item):
+                visit(members)
+
+    for group in groups:
+        visit(group)
+    return out

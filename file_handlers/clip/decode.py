@@ -21,8 +21,12 @@ from .model import (
     Timeline,
     Track,
     TrackInterval,
+    walk_nodes,
+    walk_properties,
 )
 from .rules import PropertyTypeInfo, control_tables, interpolation, profile, property_type, rules_for
+from .bake import bake_changes
+from .sequences import derived_ranges, kept_boxes, read_sequences, sequence_leaves
 from .values import decode_value, default_value
 
 MAGIC = b"CLIP"
@@ -55,12 +59,16 @@ class _Decoder:
         self.tables: dict[str, list[dict]] = {}
         self.pools: dict[str, tuple[int, int]] = {}
         self._strings: dict[tuple[str, int], str] = {}
+        self.extra_at: int | None = None
 
     def _rules(self):
         return self.profile.rules
 
     def read(self, kind: ResourceKind | None) -> Timeline:
-        self._read_sections()
+        dialogue = kind is ResourceKind.DIALOGUE_TIMELINE
+        if dialogue and "sequence_info" not in self.rules.records:
+            raise ClipFormatError(f"CLIP v{self.profile.version} has no dialogue timeline layout")
+        self._read_sections(dialogue)
         nodes = [self._node(record) for record in self.tables["nodes"]]
         tracks = self._tracks(nodes)
         if "data" in self.tables:
@@ -71,6 +79,8 @@ class _Decoder:
             raise ClipFormatError("The .ucurve file has no data table")
         timeline = Timeline(self.profile.version, kind or ResourceKind.CLIP, self.header["total_frame"],
                             self.header.get("header_guid", bytes(16)), tracks)
+        if dialogue and self.extra_at is not None:
+            timeline.sequences = read_sequences(self.data, self.extra_at, self.base, self.rules.records)
         roots = self._node_refs("roots", nodes)
         held = timeline.roots
         if [id(node) for node in roots] != [id(node) for node in held]:
@@ -78,6 +88,15 @@ class _Decoder:
                 raise ClipFormatError("The root table and the tracks hold different nodes")
             timeline.root_order = roots
         self._link(held, nodes)
+        if dialogue:
+            leaves = list(sequence_leaves(timeline))
+            for info, ranges in derived_ranges(timeline, leaves):
+                kept = kept_boxes(info.ranges, ranges)
+                info.follows, info.kept = kept is not None, kept or []
+            authored = {id(prop) for prop, _changes, _keys in bake_changes(timeline, leaves)}
+            for node in walk_nodes(timeline.roots):
+                for prop in walk_properties(node.properties):
+                    prop.baked = id(prop) not in authored
         return timeline
 
     def _link(self, roots: list[Node], nodes: list[Node]) -> None:
@@ -117,7 +136,7 @@ class _Decoder:
                     prop.children = [properties[child] for child in span]
                     stack.extend(span)
 
-    def _read_sections(self) -> None:
+    def _read_sections(self, dialogue: bool = False) -> None:
         data, header, size = self.data, self.header, len(self.data)
         placed = [(section, self.base + header[section.pointer]) for section in self.rules.sections
                   if not (section.user_curve and header[section.pointer] == 0)]
@@ -125,7 +144,7 @@ class _Decoder:
         for index, (section, start) in enumerate(placed):
             if start != _align(position, section.align) or any(data[position:start]):
                 raise ClipFormatError(f"The {section.table} table is not where the previous table ends")
-            if section.extra:
+            if section.extra or dialogue and section.user_curve:
                 self.extra_at, position = start, size
                 break
             end = placed[index + 1][1] if index + 1 < len(placed) else size
@@ -226,8 +245,8 @@ class _Decoder:
     def _link_property(self, prop: Property, record: dict) -> tuple[int, int] | None:
         info = property_type(prop.type)
         if info is None or not info.owns_keys(self.profile.version):
-            if record.get("key_table", 0) != self._selector(self.rules.container_key_table) or record["speed_count"] \
-                    or record.get("extra_key_flags") or record.get("last_key_flag"):
+            self._key_table(prop, info, record)
+            if record["speed_count"] or record.get("extra_key_flags") or record.get("last_key_flag"):
                 raise ClipFormatError(f"The container property {prop.name!r} holds key data")
             return record["key_index"], record["key_count"]
         table = self._key_table(prop, info, record)
@@ -244,16 +263,14 @@ class _Decoder:
                              for item in self._range(self.tables["speed_points"], record["speed_index"],
                                                      record["speed_count"], f"{prop.name} speed point")]
 
-    def _selector(self, table: str) -> int:
-        return self.rules.key_tables.index(table)
-
-    def _key_table(self, prop: Property, info: PropertyTypeInfo, record: dict) -> str:
+    def _key_table(self, prop: Property, info: PropertyTypeInfo | None, record: dict) -> str:
         rules, version = self.rules, self.profile.version
         tables, selector = rules.key_tables, record.get("key_table", 0)
         table = tables[selector] if selector < len(tables) else f"#{selector}"
         if table not in {rules.key_table(info, version, False), rules.key_table(info, version, True)}:
-            raise ClipFormatError(f"{info.name} keys of {prop.name!r} are in the {table} key table")
-        prop.compact_keys = table != tables[0]
+            raise ClipFormatError(f"{info.name if info else 'Container'} keys of {prop.name!r} are in the {table} "
+                                  "key table")
+        prop.compact_keys = rules.compact_keys and table == rules.compact_key_table
         return table
 
     def _key(self, info: PropertyTypeInfo, record: dict) -> Key:

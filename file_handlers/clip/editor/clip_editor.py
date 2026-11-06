@@ -29,7 +29,7 @@ lazy from ui.icons import line_icon
 
 from .. import edits
 from ..document import ClipDocument
-from ..model import Clip, Key, Node, Property, SpeedPoint, Timeline, Track
+from ..model import Clip, Key, Node, Property, SequenceTrackInfo, SpeedPoint, Timeline, Track
 from ..rules import display_names, property_type
 from .curves import CurveView
 from .inspector import Inspector
@@ -213,7 +213,7 @@ class ClipEditor(QWidget):
     def _selection_changed(self) -> None:
         model, selection = self.tree.model(), QItemSelection()
         for item in self.state.selection:
-            if isinstance(item, (Track, Clip, Node, Property)):
+            if isinstance(item, (Track, Clip, Node, Property, SequenceTrackInfo)):
                 index = model.index_of(item)
                 if index.isValid():
                     selection.select(index, index.siblingAtColumn(1))
@@ -222,7 +222,7 @@ class ClipEditor(QWidget):
         current = self.state.current
         if isinstance(current, (Key, SpeedPoint)):
             current = self.document.owner(current, Property)
-        if isinstance(current, (Track, Clip, Node, Property)):
+        if isinstance(current, (Track, Clip, Node, Property, SequenceTrackInfo)):
             index = model.index_of(current)
             if index.isValid():
                 self.tree.scrollTo(index)

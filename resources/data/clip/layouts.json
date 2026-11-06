@@ -664,7 +664,23 @@
      {"at": 4, "type": "u32", "zero": "data entry count"},
      [8, "u64", "table_0"],
      [16, "u64", "table_1"]
-    ]}
+    ]},
+    "sequence_info": {"size": 40, "fields": [
+     [0, "u32", "root_count"],
+     [4, "u32", "node_count"],
+     [8, "u64", "range_count"],
+     [16, "u64", "node_table"],
+     [24, "u64", "range_table"],
+     [32, "u64", "name_table"]
+    ]},
+    "sequence_node": {"size": 24, "fields": [
+     [0, "u16", "range_count"],
+     [2, "u16", "child_count"],
+     [4, "u32", "name_hash"],
+     [8, "u64", "name"],
+     [16, "u64", "link"]
+    ]},
+    "sequence_range": {"size": 8, "fields": [[0, "f32", "begin"], [4, "f32", "end"]]}
    }
   },
   "v86": {

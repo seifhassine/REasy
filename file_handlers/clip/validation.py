@@ -86,7 +86,32 @@ class _Validator:
             self._add(timeline, "More nodes than the node ID field can number")
         for node in nodes:
             self._node(node)
+        self._sequences()
         return self.issues
+
+    def _sequences(self) -> None:
+        timeline = self.timeline
+        if timeline.sequences and (timeline.kind is not ResourceKind.DIALOGUE_TIMELINE
+                                   or "sequence_node" not in self.records):
+            self._add(timeline, "Only dialogue timelines hold sequence tracks")
+            return
+        seen: set[int] = set()
+        stack = list(timeline.sequences)
+        while stack:
+            info = stack.pop()
+            if id(info) in seen:
+                self._add(info, "The sequence track is listed in two places")
+                continue
+            seen.add(id(info))
+            self._text(info, info.name, "name")
+            if info.ranges and info.children:
+                self._add(info, "A sequence track holds ranges or children, not both")
+            if not (self._fits("sequence_node", "range_count", len(info.ranges))
+                    and self._fits("sequence_node", "child_count", len(info.children))):
+                self._add(info, "More ranges or children than the node's count fields hold")
+            if not all(_f32(value) for pair in info.ranges for value in pair):
+                self._add(info, "A range bound is not a finite 32-bit float")
+            stack += info.children
 
     def _add(self, target, message: str, error: bool = True) -> None:
         self.issues.append(Issue(target, message, error))

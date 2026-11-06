@@ -10,7 +10,7 @@ lazy from ui.editor_widgets import styled_label
 from ui.field_form import Field, FieldPanel
 
 from .. import edits
-from ..model import Clip, Key, Node, Property, SpeedPoint, Timeline, Track
+from ..model import Clip, Key, Node, Property, ResourceKind, SequenceTrackInfo, SpeedPoint, Timeline, Track
 from ..rules import display_names, interpolation, property_type
 from ..values import value_problem
 from .state import EditorState
@@ -44,7 +44,8 @@ class Inspector(FieldPanel):
         if len(keys) > 1:
             return self.tr("{0} keys").format(len(keys))
         names = {Timeline: self.tr("Timeline"), Track: self.tr("Track"), Clip: self.tr("Clip"), Node: self.tr("Node"),
-                 Property: self.tr("Property"), Key: self.tr("Key"), SpeedPoint: self.tr("Speed Point")}
+                 Property: self.tr("Property"), Key: self.tr("Key"), SpeedPoint: self.tr("Speed Point"),
+                 SequenceTrackInfo: self.tr("Sequence Track")}
         return names.get(type(item), "")
 
     def _update_banner(self, item) -> None:
@@ -84,7 +85,30 @@ class Inspector(FieldPanel):
             return self._property_fields(item)
         if isinstance(item, (Key, SpeedPoint)):
             return self._key_fields(item)
+        if isinstance(item, SequenceTrackInfo):
+            return self._sequence_fields(item)
         return self._timeline_fields(item)
+
+    def _sequence_fields(self, info: SequenceTrackInfo) -> list[Field]:
+        document = self.state.document
+        tip = self.tr("A frame range (sequence box) the game reads by name; editing it stops the track following its "
+                      "keys. A box with no keys (past the timeline's end or never baked) is kept as authored.")
+
+        def setter(at: int, side: int) -> Callable[[object], None]:
+            return lambda value: edits.set_fields(document, info, self.tr("Edit Range"), follows=False, ranges=[
+                (begin, end) if index != at else (value, end) if side == 0 else (begin, value)
+                for index, (begin, end) in enumerate(info.ranges)])
+
+        follow = [] if info.children else [Field(
+            self.tr("Follow Keys"), "bool", lambda: info.follows, lambda value: edits.follow_keys(
+                document, info, value), tooltip=self.tr("Recompute the ranges from the keys of the properties this "
+                                                        "track names after each edit, as the authoring tool does."))]
+        return [Field(self.tr("Name"), "text", lambda: info.name, lambda value: edits.rename(document, info, value)),
+                *follow,
+                *(Field((self.tr("Range {0} (no keys)") if info.follows and info.ranges[at] in info.kept else
+                         self.tr("Range {0}")).format(at + 1), "row", lambda: None, tooltip=tip, options={"fields": [
+                    Field("", "float", lambda at=at, side=side: info.ranges[at][side], setter(at, side))
+                    for side in (0, 1)]}) for at in range(len(info.ranges)))]
 
     def _timeline_fields(self, timeline: Timeline) -> list[Field]:
         document = self.state.document
@@ -171,6 +195,14 @@ class Inspector(FieldPanel):
         if self._stored("property", "editor_id"):
             fields.append(Field(self.tr("Editor ID"), "hex", lambda: prop.editor_id, setter("editor_id"),
                                 tooltip=self.tr("The authoring tool's ID; the game does not read it.")))
+        if document.timeline.kind is ResourceKind.DIALOGUE_TIMELINE:
+            fields.append(Field(self.tr("Follow Bake"), "bool", lambda: prop.baked, setter("baked"), tooltip=self.tr(
+                "Recompute the key type, flags and key widths after each edit as the authoring tool bakes them; "
+                "setting one by hand stops following.")))
+
+        def flag_setter(flag: str) -> Callable[[object], None]:
+            return lambda value: edits.set_bake_fields(document, prop, prop, self.tr("Edit Property"), **{flag: value})
+
         if keyed and document.rules.compact_keys and not info.key_storage:
             kinds = display_names("KeyType", document.timeline.version)
             compact = document.rules.key_tables.index(document.rules.compact_key_table)
@@ -181,15 +213,15 @@ class Inspector(FieldPanel):
         for flag in AUTHORED_FLAGS:
             if self._stored("property", flag):
                 fields.append(Field(flag.replace("_", " ").capitalize(), "bool",
-                                    lambda flag=flag: getattr(prop, flag), setter(flag)))
+                                    lambda flag=flag: getattr(prop, flag), flag_setter(flag)))
         engine = [flag for flag in ENGINE_FLAGS if self._stored("property", flag)]
         if engine:
             fields.append(Field(self.tr("Set by the game at load"), "toggle", lambda: self._show_engine,
                                 self._toggle_engine))
             if self._show_engine:
                 fields += [Field(flag.replace("_", " ").capitalize(), "bool", lambda flag=flag: getattr(prop, flag),
-                                 setter(flag), tooltip=self.tr("The game sets this from the property's attributes; "
-                                                               "a set bit forces it on."))
+                                 flag_setter(flag), tooltip=self.tr("The game sets this from the property's "
+                                                                    "attributes; a set bit forces it on."))
                            for flag in engine]
         if keyed:
             fields.append(Field(self.tr("Keys"), "readonly", lambda: len(prop.keys)))
@@ -219,14 +251,19 @@ class Inspector(FieldPanel):
         record = document.rules.records["speed_point"] if isinstance(item, SpeedPoint) else \
             edits.key_record(document, prop, item)
         names = record.names
+
+        def bit(name: str) -> Callable[[object], None]:
+            if not isinstance(item, Key) or prop is None:
+                return setter(name)
+            return lambda value: edits.set_bake_fields(document, item, prop, self.tr("Edit Key"), **{name: value})
+
         if "width" in names:
-            fields.append(Field(self.tr("Width"), "int", lambda: item.width, setter("width"),
+            fields.append(Field(self.tr("Width"), "int", lambda: item.width, bit("width"),
                                 tooltip=self.tr("The frame span RangeV2 keys use.")))
         if "rate" in names:
-            fields.append(Field(self.tr("Rate"), "float", lambda: item.rate, setter("rate")))
+            fields.append(Field(self.tr("Rate"), "float", lambda: item.rate, bit("rate")))
         if "instance_value" in names:
-            fields.append(Field(self.tr("Instance Value"), "bool", lambda: item.instance_value,
-                                setter("instance_value")))
+            fields.append(Field(self.tr("Instance Value"), "bool", lambda: item.instance_value, bit("instance_value")))
         info = interpolation(item.interpolation)
         if info is not None and info.control and item.control is not None:
             width = len(item.control)

@@ -7,8 +7,9 @@ lazy from utils.hex_util import align as _align
 
 from .decode import MAGIC, _F32, _U32, node_hashes
 from .errors import ClipFormatError
-from .model import FLAG_NAMES, Key, Node, Property, ResourceKind, Timeline, walk_nodes
+from .model import FLAG_NAMES, Key, Node, Property, ResourceKind, Timeline, grouped, walk_nodes
 from .rules import control_tables, interpolation, property_type, rules_for
+from .sequences import write_sequences
 from .values import encode_value
 
 
@@ -73,8 +74,9 @@ class _Encoder:
         for name, pool in self.pools.items():
             blobs[name] = bytes(pool.data)
         placement, position = {}, rules.header_size
+        curve = self.timeline.kind is ResourceKind.USER_CURVE
         for section in rules.sections:
-            if section.user_curve and self.timeline.kind is not ResourceKind.USER_CURVE:
+            if section.user_curve and not curve and not self.timeline.sequences:
                 continue
             position = _align(position, section.align)
             placement[section.table] = position
@@ -83,6 +85,9 @@ class _Encoder:
                 size = len(blobs[section.table])
             elif section.record is node_ref:
                 size = 8 * counts[section.table]
+            elif section.user_curve and not curve:
+                blobs[section.table] = write_sequences(self.timeline.sequences, position + offset, rules.records)
+                size = len(blobs[section.table])
             elif section.user_curve:
                 size = section.record.size
             else:
@@ -100,7 +105,7 @@ class _Encoder:
             header[section.pointer] = placement[section.table] + offset if section.table in placement else 0
             if section.count:
                 header[section.count] = counts[section.table]
-            if section.user_curve and section.table in placement:
+            if section.user_curve and curve:
                 blobs[section.table] = section.record.encode({"table_0": position, "table_1": position})
         out = bytearray(position)
         out[:rules.header_size] = rules.header.encode(header)
@@ -154,9 +159,9 @@ class _Encoder:
         self.track_children = [node for track in timeline.tracks for node in track.roots]
         self.clips = [clip for track in timeline.tracks for clip in track.clips]
         self.clip_roots = [node for clip in self.clips for node in clip.nodes]
-        self.nodes = _grouped(([root] for root in self.roots), lambda node: node.children)
+        self.nodes = grouped(([root] for root in self.roots), lambda node: node.children)
         self.node_index = {id(node): index for index, node in enumerate(self.nodes)}
-        self.properties = _grouped((node.properties for node in walk_nodes(self.roots)), lambda prop: prop.children)
+        self.properties = grouped((node.properties for node in walk_nodes(self.roots)), lambda prop: prop.children)
         self.property_index = {id(prop): index for index, prop in enumerate(self.properties)}
         self.clip_index = {id(clip): index for index, clip in enumerate(self.clips)}
         self.key_rows: dict[str, list[tuple[Key, Property]]] = {table: [] for table in rules.key_tables}
@@ -299,22 +304,3 @@ class _Encoder:
         return {"frame": key.frame, "rate": key.rate, "interpolation": key.interpolation, "width": key.width,
                 "instance_value": key.instance_value, "control_index": self.control_index.get(id(key), 0),
                 "value": encode_value(property_type(prop.type).value, key.value, self._intern, self._add_row)}
-
-
-def _grouped(groups, children) -> list:
-    out: list = []
-    seen: set[int] = set()
-
-    def visit(group) -> None:
-        group = list(group)
-        for item in group:
-            if id(item) not in seen:
-                seen.add(id(item))
-                out.append(item)
-        for item in group:
-            if members := children(item):
-                visit(members)
-
-    for group in groups:
-        visit(group)
-    return out

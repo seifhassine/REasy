@@ -83,11 +83,16 @@ class FormatRules:
     extra: dict[str, RecordCodec] | None = None
 
     def key_table(self, info: PropertyTypeInfo | None, version: int, compact: bool) -> str:
-        if info is None or not info.owns_keys(version):
-            return self.container_key_table
-        if self.compact_keys and info.key_storage:
+        if compact:
+            return self.compact_key_table
+        if self.compact_keys and info is not None and info.owns_keys(version) and info.key_storage:
             return info.key_storage
-        return self.compact_key_table if compact else self.key_tables[0]
+        return self.key_tables[0]
+
+    def compact_default(self, info: PropertyTypeInfo | None, version: int) -> bool:
+        if info is None or not info.owns_keys(version):
+            return self.compact_keys and self.container_key_table == self.compact_key_table
+        return self.compact_keys and not info.key_storage
 
     def key_record(self, info: PropertyTypeInfo | None, version: int, compact: bool, last: bool = False) -> RecordCodec:
         return self.tables["last_keys" if last else self.key_table(info, version, compact)]
@@ -171,6 +176,12 @@ def display_names(enum: str, version: int | None = None) -> dict[int, str]:
     for game in _versions()[supported_versions()[-1] if version is None else version]["games"]:
         names.update(_game_enums(game)[enum])
     return dict(sorted(names.items()))
+
+
+@functools.cache
+def dialogue_tracks(version: int, kind: str) -> frozenset[str]:
+    games = _load("dialogue_tracks")["games"]
+    return frozenset(path for game in _versions()[version]["games"] for path in games.get(game, {}).get(kind, ()))
 
 
 @functools.cache

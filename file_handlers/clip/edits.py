@@ -14,7 +14,18 @@ from file_handlers.document_commands import ReplaceContents, SetFields
 
 from .document import ClipDocument
 from .evaluation import NUMERIC_TYPES, sample
-from .model import Clip, Key, Node, Property, SpeedPoint, Track, walk_nodes, walk_properties
+from .model import (
+    Clip,
+    Key,
+    Node,
+    Property,
+    ResourceKind,
+    SequenceTrackInfo,
+    SpeedPoint,
+    Track,
+    walk_nodes,
+    walk_properties,
+)
 from .rules import (
     InterpolationType,
     ValueCodec,
@@ -24,6 +35,7 @@ from .rules import (
     interpolation,
     property_type,
 )
+from .sequences import derived_ranges, kept_boxes
 from .values import coerce, default_value, value_problem
 
 
@@ -120,8 +132,9 @@ def _sync_root_order(document: ClipDocument) -> None:
 def make_property(document: ClipDocument, name: str, kind: int, begin: float, end: float,
                   array_index: int = -1) -> Property:
     info = property_type(kind)
-    prop = Property(name=name, type=kind, begin_frame=begin, end_frame=end, array_index=array_index)
-    prop.compact_keys = document.rules.compact_keys and info is not None and info.owns_keys(document.timeline.version)
+    prop = Property(name=name, type=kind, begin_frame=begin, end_frame=end, array_index=array_index,
+                    baked=document.timeline.kind is ResourceKind.DIALOGUE_TIMELINE)
+    prop.compact_keys = document.rules.compact_default(info, document.timeline.version)
     if stores(document, "property", "editor_id"):
         prop.editor_id = new_editor_id()
     return prop
@@ -164,6 +177,19 @@ def rename(document: ClipDocument, item: object, name: str) -> None:
             item.type_hash == murmur3_hash(item.name.encode("utf-8")):
         values["type_hash"] = murmur3_hash(name.encode("utf-8"))
     set_fields(document, item, "Rename", **values)
+
+
+def follow_keys(document: ClipDocument, info: SequenceTrackInfo, follows: bool) -> None:
+    if not follows:
+        set_fields(document, info, "Follow Keys", follows=False)
+        return
+    derived = dict(derived_ranges(document.timeline)).get(info, [])
+    kept = kept_boxes(info.ranges, derived) or []
+    set_fields(document, info, "Follow Keys", follows=True, kept=kept, ranges=sorted([*derived, *kept]))
+
+
+def set_bake_fields(document: ClipDocument, target: Property | Key, prop: Property, text: str, **values) -> None:
+    document.push(SetFields(document, [(target, values), (prop, {"baked": False})], text))
 
 
 def remove(document: ClipDocument, items: list) -> None:
@@ -384,7 +410,7 @@ def set_key_storage(document: ClipDocument, prop: Property, compact: bool) -> No
     record = document.rules.key_record(property_type(prop.type), document.timeline.version, compact)
     edits = [(key, values) for key in [*prop.keys, *prop.extra_keys.values()]
              if (values := fitted(document, record, key, prop.type))]
-    document.push(SetFields(document, [(prop, {"compact_keys": compact}), *edits], "Key Storage"))
+    document.push(SetFields(document, [(prop, {"compact_keys": compact, "baked": False}), *edits], "Key Storage"))
 
 
 def paste_keys(document: ClipDocument, prop: Property, keys: list[Key], start: float) -> list[Key]:
@@ -411,7 +437,8 @@ def retarget(document: ClipDocument, prop: Property, kind: int) -> None:
     old, new = property_type(prop.type), property_type(kind)
     keyed = new is not None and new.owns_keys(version)
     kept = keyed and old is not None and old.owns_keys(version)
-    compact = prop.compact_keys if kept else rules.compact_keys and keyed
+    compact = prop.compact_keys if kept and not (old.key_storage or new.key_storage) else \
+        rules.compact_default(new, version)
     edits = []
     with document.macro("Change Type"):
         if not kept:
