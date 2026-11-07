@@ -63,6 +63,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"via.dynamics.ShapeCastOption": [
@@ -479,6 +495,10 @@
 		{
 			"name": "OneActionLockonTarget",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "IgnoreSpecialTerrain",
+			"value": 9223372036854775808
 		}
 	],
 	"app.fsm2.enemy.em5802.Em5802MeteoriteDeformAction.Phase": [
@@ -758,6 +778,10 @@
 		}
 	],
 	"app.Em5400.EnumRelayPoint": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "GrounsPenetrateOneRelayPoint",
 			"value": 0
@@ -1054,6 +1078,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -2210,6 +2238,10 @@
 		}
 	],
 	"app.MenuSceneLoader.ResultScene": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Check0",
 			"value": 0
@@ -3611,6 +3643,10 @@
 	],
 	"app.PlayerVergilPL.LevelUpAction": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "YM_ComboB",
 			"value": 0
 		},
@@ -4365,6 +4401,10 @@
 	],
 	"app.Em5501_00.ColliderTypeEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Charge",
 			"value": 0
 		},
@@ -4552,6 +4592,10 @@
 		}
 	],
 	"app.ui3206GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -4784,6 +4828,10 @@
 		}
 	],
 	"app.ui2026GUI.ShopType": [
+		{
+			"name": "Entrance",
+			"value": -1
+		},
 		{
 			"name": "Skill",
 			"value": 0
@@ -5110,6 +5158,10 @@
 		}
 	],
 	"app.ui7004GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -6424,6 +6476,10 @@
 		}
 	],
 	"app.ui8000GUI.WarmUpState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -7803,6 +7859,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -8026,6 +8090,10 @@
 		}
 	],
 	"app.menu.TutorialType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Seals",
 			"value": 0
@@ -8893,6 +8961,10 @@
 	],
 	"app.ui8014GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -9193,6 +9265,10 @@
 	],
 	"app.ui2030GUI.HistoryState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -9216,6 +9292,10 @@
 		}
 	],
 	"app.ui7002GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -9693,6 +9773,10 @@
 	],
 	"app.PlayerDante.WeaponS_Balrog": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Punch",
 			"value": 0
 		},
@@ -9894,6 +9978,10 @@
 		}
 	],
 	"app.ui0002GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -10125,6 +10213,10 @@
 	],
 	"app.WwiseDamageController.AttackStateEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "SlashLow",
 			"value": 0
 		},
@@ -10290,6 +10382,10 @@
 		}
 	],
 	"app.enemy.em5802.Em5802.AppearNoEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "General",
 			"value": 0
@@ -11600,6 +11696,10 @@
 	],
 	"app.ui7105GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -12092,6 +12192,10 @@
 	],
 	"app.ui8000GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -12383,6 +12487,10 @@
 		}
 	],
 	"app.ui3500GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -13252,6 +13360,10 @@
 	],
 	"via.gui.Segment": [
 		{
+			"name": "Keep",
+			"value": -1
+		},
+		{
 			"name": "Segment00",
 			"value": 0
 		},
@@ -13924,6 +14036,10 @@
 	],
 	"app.ui8012GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -13949,6 +14065,10 @@
 		}
 	],
 	"app.MenuSceneLoader.ResultState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Ready",
 			"value": 0
@@ -14141,6 +14261,10 @@
 		}
 	],
 	"app.AttackUserData.AttrPhysicsEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Slash",
 			"value": 0
@@ -14343,6 +14467,10 @@
 		}
 	],
 	"app.PlayerDante.StyleType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "TrickStar",
 			"value": 0
@@ -14780,6 +14908,10 @@
 	],
 	"app.PlayerDante.WeaponS_Cerberus": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Nunchaku",
 			"value": 0
 		},
@@ -14979,6 +15111,10 @@
 		}
 	],
 	"app.fsm2.player.pl0120.Pl0120DemolitionAction.TriggerEvent": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Catch",
 			"value": 0
@@ -15207,6 +15343,10 @@
 	],
 	"app.PlayerVergilPL.WeaponS": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Yamato",
 			"value": 0
 		},
@@ -15220,6 +15360,10 @@
 		}
 	],
 	"app.ui4015GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -15995,6 +16139,10 @@
 		}
 	],
 	"app.Em5400.EnumGroundPenetratePoint": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Point1",
 			"value": 0
@@ -17578,6 +17726,14 @@
 	],
 	"app.PressUserData.WeightEnum": [
 		{
+			"name": "None",
+			"value": -2
+		},
+		{
+			"name": "NoWeight",
+			"value": -1
+		},
+		{
 			"name": "Zero",
 			"value": 0
 		},
@@ -17812,6 +17968,10 @@
 	],
 	"app.CraneGimmick.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Ready",
 			"value": 0
 		},
@@ -18005,6 +18165,10 @@
 		}
 	],
 	"app.ui4016GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -18331,6 +18495,10 @@
 		}
 	],
 	"app.ui2050GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -19042,6 +19210,10 @@
 	],
 	"via.os.SocketError": [
 		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -19327,6 +19499,10 @@
 		}
 	],
 	"app.ui2100GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -20167,6 +20343,10 @@
 	],
 	"app.menu.EquipChangeState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "PL00_L1",
 			"value": 0
 		},
@@ -20444,6 +20624,10 @@
 	],
 	"app.ui2110GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -20680,6 +20864,10 @@
 		{
 			"name": "Max",
 			"value": 4
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.LoginBonusManager.RequestResult": [
@@ -21340,6 +21528,10 @@
 		{
 			"name": "Max",
 			"value": 8
+		},
+		{
+			"name": "Retire",
+			"value": -1
 		}
 	],
 	"via.gui.CircleColorType": [
@@ -22832,6 +23024,10 @@
 	],
 	"app.ui6000GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -23038,6 +23234,10 @@
 			"value": 1073741824
 		},
 		{
+			"name": "DMGACT_WINDU",
+			"value": -2147483648
+		},
+		{
 			"name": "DMGACT_SNACHRELASE",
 			"value": 1
 		},
@@ -23138,6 +23338,10 @@
 		{
 			"name": "Max",
 			"value": 13
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"app.SecretMissionOrbGetManager.DispTypeID": [
@@ -23329,6 +23533,10 @@
 		}
 	],
 	"via.graph.VertexIndex": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "From",
 			"value": 0
@@ -23530,6 +23738,10 @@
 	],
 	"app.Em5500.BGMMode": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -23552,7 +23764,28 @@
 			"value": 1
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"via.effect.detail.FlipType": [
 		{
 			"name": "None",
@@ -25597,6 +25830,10 @@
 	],
 	"app.PlayerID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Nero",
 			"value": 0
 		},
@@ -26603,6 +26840,10 @@
 	],
 	"app.fsm2.player.pl0200.FlashFinish.TriggerType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Finish",
 			"value": 0
 		}
@@ -26664,6 +26905,10 @@
 		}
 	],
 	"app.ui0041GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -26772,6 +27017,10 @@
 		}
 	],
 	"app.HitController.ParryLevelEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Min",
 			"value": 0
@@ -27008,6 +27257,10 @@
 		}
 	],
 	"app.DevilSwordSheathController.Action": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -27515,6 +27768,14 @@
 	],
 	"via.VideoRecordingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -27532,6 +27793,10 @@
 		}
 	],
 	"app.ui2020GUI.ShopType": [
+		{
+			"name": "Entrance",
+			"value": -1
+		},
 		{
 			"name": "Skill",
 			"value": 0
@@ -27866,6 +28131,10 @@
 		}
 	],
 	"app.ui3210GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -28354,6 +28623,10 @@
 		{
 			"name": "TerrainCorrectionFailed",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "NoColliderReq",
+			"value": 9223372036854775808
 		},
 		{
 			"name": "NON",
@@ -29692,6 +29965,10 @@
 	],
 	"app.Enemy.MoveType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Walk",
 			"value": 0
 		},
@@ -29849,6 +30126,10 @@
 		}
 	],
 	"app.menu.InputIgnoreType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Next",
 			"value": 0
@@ -30672,6 +30953,10 @@
 	],
 	"app.ui9500GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -30707,6 +30992,10 @@
 		}
 	],
 	"app.ui7005GUI.Phase": [
+		{
+			"name": "Enter",
+			"value": -1
+		},
 		{
 			"name": "LineUp",
 			"value": 0
@@ -31355,6 +31644,10 @@
 		}
 	],
 	"app.config.KeyLink.ActionID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Melee",
 			"value": 0
@@ -32156,6 +32449,10 @@
 	],
 	"app.fsm2.enemy.em5300.shell.Em5300GroundLaserShellAction.CollisionID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "AttackWind",
 			"value": 10
 		},
@@ -32778,6 +33075,10 @@
 	],
 	"app.WeaponStick.ColliderSwitchType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Wait",
 			"value": 0
 		},
@@ -32913,6 +33214,10 @@
 		}
 	],
 	"app.SoundCallSettingManager._BattleBGM": [
+		{
+			"name": "DEFAULT",
+			"value": -1
+		},
 		{
 			"name": "DevilTrigger",
 			"value": 0
@@ -33374,6 +33679,10 @@
 	],
 	"app.fsm2.player.pl0200.VBookAction.TriggerType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -33622,6 +33931,10 @@
 	],
 	"app.menu.MixerSign": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Cool",
 			"value": 0
 		},
@@ -33784,6 +34097,10 @@
 		{
 			"name": "No8",
 			"value": 256
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.PlayerVergilPL.StormSwordsController.RoutineNo": [
@@ -33971,6 +34288,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -34251,6 +34572,10 @@
 		}
 	],
 	"app.MenuSceneLoader.SceneType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Shop",
 			"value": 0
@@ -34544,6 +34869,10 @@
 	],
 	"app.ui2027GUI.CustomState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -34623,6 +34952,10 @@
 		}
 	],
 	"app.WwiseMissionNoComponent.MissionNo": [
+		{
+			"name": "MissionNo_None",
+			"value": -1
+		},
 		{
 			"name": "MissionNo_00",
 			"value": 0
@@ -35346,6 +35679,10 @@
 	],
 	"app.fsm2.enemy.em5802.Em5802LazerAction.TriggerPhase": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "ShootStart",
 			"value": 0
 		},
@@ -35400,6 +35737,10 @@
 	],
 	"app.Em0400.CollisionID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "DamageBody",
 			"value": 5
 		},
@@ -35447,6 +35788,10 @@
 		}
 	],
 	"app.ui2032GUI.HistoryState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -35692,6 +36037,10 @@
 	],
 	"app.ui2046GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -35763,6 +36112,10 @@
 		}
 	],
 	"app.ui6000GUI.InfoUnit.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -36618,6 +36971,10 @@
 	],
 	"app.PauseSupplier.PauseReadyState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Load",
 			"value": 0
 		},
@@ -37192,6 +37549,10 @@
 	],
 	"app.menu.AnnounceType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "BloodyPalace",
 			"value": 0
 		},
@@ -37219,6 +37580,10 @@
 		}
 	],
 	"app.Em5800ReplayData.ChargeState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -38034,6 +38399,10 @@
 	],
 	"app.enemy.em5800.Em5800.ActionOrderFromShadow": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Order1",
 			"value": 0
 		},
@@ -38550,6 +38919,10 @@
 	],
 	"app.fsm2.player.pl0200.VServantProvokeAction.TriggerPhase": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Summons",
 			"value": 0
 		},
@@ -38674,6 +39047,10 @@
 	],
 	"via.gui.AssetLanguage": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "No0",
 			"value": 0
 		},
@@ -38705,6 +39082,10 @@
 		}
 	],
 	"app.CraneGimmick.Unit.Phase": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Clockwise",
 			"value": 0
@@ -40746,6 +41127,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Em0100PresetParam.SetTypeEnum": [
@@ -40781,6 +41166,10 @@
 		}
 	],
 	"app.ui9100GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -41640,6 +42029,10 @@
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -41681,6 +42074,10 @@
 		}
 	],
 	"app.dlc.ContentsID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Ent001",
 			"value": 0
@@ -42276,6 +42673,10 @@
 	],
 	"app.WwiseDamageController.DamageStatus": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Damage",
 			"value": 0
 		},
@@ -42313,6 +42714,10 @@
 		}
 	],
 	"app.ui3003GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -42663,6 +43068,10 @@
 		}
 	],
 	"app.ui2030GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Load",
 			"value": 0
@@ -43074,6 +43483,10 @@
 	],
 	"app.DevilSwordSheathController.SupportType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Chaser",
 			"value": 0
 		},
@@ -43161,6 +43574,10 @@
 		}
 	],
 	"app.config.Link.ActionID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Melee",
 			"value": 0
@@ -43370,6 +43787,10 @@
 	],
 	"app.BootLoadGUI.PanelType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -43486,7 +43907,28 @@
 			"value": 4
 		}
 	],
-	"app.MasterMaterialLoader.Type": [],
+	"app.MasterMaterialLoader.Type": [
+		{
+			"name": "Init",
+			"value": -1
+		},
+		{
+			"name": "Enemy",
+			"value": -2
+		},
+		{
+			"name": "Player",
+			"value": -3
+		},
+		{
+			"name": "UI",
+			"value": -4
+		},
+		{
+			"name": "SystemShader",
+			"value": -5
+		}
+	],
 	"app.QliphothStepBoxController.StepBoxStates": [
 		{
 			"name": "Close",
@@ -43708,6 +44150,10 @@
 		}
 	],
 	"app.ui2026GUI.CustomState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -44432,6 +44878,10 @@
 		}
 	],
 	"app.PlayerV.TriggerNo": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "PowerUpProvoke",
 			"value": 10
@@ -45198,6 +45648,10 @@
 		}
 	],
 	"app.HitController.ParryResultEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Win",
 			"value": 0
@@ -46284,6 +46738,10 @@
 	],
 	"app.ui3120GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Init",
 			"value": 0
 		},
@@ -46412,6 +46870,10 @@
 	],
 	"app.RuntimeEnvironment.Service": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -46467,6 +46929,10 @@
 		}
 	],
 	"app.ui7006GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -46836,6 +47302,10 @@
 	],
 	"app.AttackUserData.AttackDirEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Front",
 			"value": 0
 		},
@@ -47032,6 +47502,10 @@
 	],
 	"app.ui8007GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -47179,6 +47653,10 @@
 		}
 	],
 	"app.Enemy.ActionEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -51640,6 +52118,10 @@
 	],
 	"app.ui2120GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -51726,6 +52208,10 @@
 	],
 	"app.PlayerDante.WeaponL": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Ebony_Ivory",
 			"value": 0
 		},
@@ -51765,6 +52251,10 @@
 		}
 	],
 	"app.FearParameter.CalcTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "DownStun",
 			"value": 0
@@ -53468,6 +53958,10 @@
 	],
 	"app.ui4010GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -53554,6 +54048,10 @@
 	],
 	"app.ui2052GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -53639,6 +54137,10 @@
 		}
 	],
 	"app.GalleryCostumeSelect.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -53777,6 +54279,10 @@
 		}
 	],
 	"app.AttackUserData.HitEffTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "SlashLow",
 			"value": 0
@@ -54230,6 +54736,10 @@
 	],
 	"app.ui2027GUI.PowerUpState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -54411,6 +54921,10 @@
 		}
 	],
 	"app.Em5400.EnumDistanceFromType": [
+		{
+			"name": "Root",
+			"value": -1
+		},
 		{
 			"name": "RArm",
 			"value": 0
@@ -54631,6 +55145,10 @@
 		}
 	],
 	"app.ui6100GUI.Grid.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Hit",
 			"value": 0
@@ -56489,6 +57007,10 @@
 	],
 	"app.ui8010GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -56662,6 +57184,10 @@
 		}
 	],
 	"app.ui7000GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -57889,6 +58415,10 @@
 	],
 	"app.ui8032GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -58057,6 +58587,10 @@
 	],
 	"app.character.Character.BGMModeEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Blank",
 			"value": 0
 		},
@@ -58115,6 +58649,10 @@
 	],
 	"app.Em5801ReplayData.ChargeState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -58159,6 +58697,14 @@
 		{
 			"name": "None",
 			"value": 0
+		},
+		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
 		},
 		{
 			"name": "Forceword",
@@ -58651,6 +59197,10 @@
 	],
 	"app.ui7105GUI_Vergil.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -58962,6 +59512,10 @@
 		}
 	],
 	"app.MenuManager.GenericWindowState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Open",
 			"value": 0
@@ -59307,6 +59861,10 @@
 	],
 	"app.fsm2.player.pl0100.DanteBalrogKillerBeeAction.TriggerType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -59372,6 +59930,10 @@
 		}
 	],
 	"app.WorkRateSystem.TypePriority": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Lowest",
 			"value": 0
@@ -59986,6 +60548,10 @@
 	],
 	"app.ui0002SelectGUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -60039,6 +60605,10 @@
 		}
 	],
 	"app.WwiseManagerApp.MissionNo": [
+		{
+			"name": "MissionNo_None",
+			"value": -1
+		},
 		{
 			"name": "MissionNo_00",
 			"value": 0
@@ -60945,6 +61515,10 @@
 		}
 	],
 	"app.ui3106GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Open",
 			"value": 0
@@ -62298,6 +62872,10 @@
 	],
 	"app.ConfirmForm.Result": [
 		{
+			"name": "Unselected",
+			"value": -1
+		},
+		{
 			"name": "Decide",
 			"value": 0
 		},
@@ -62612,6 +63190,10 @@
 	],
 	"app.ui8002GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Wait",
 			"value": 0
 		},
@@ -62699,6 +63281,10 @@
 		}
 	],
 	"app.ui8007GUI.StageType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "A",
 			"value": 0
@@ -63000,6 +63586,10 @@
 		]
 	},
 	"app.Enemy.EraseTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "OutOfArea",
 			"value": 0
@@ -63415,6 +64005,10 @@
 	],
 	"app.ui3110GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -63486,6 +64080,10 @@
 		}
 	],
 	"app.ui2027GUI.PowerUpType": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "HP",
 			"value": 0
@@ -63819,6 +64417,10 @@
 		{
 			"name": "YamatoSheath",
 			"value": 3001
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.clr.SystemMethod": [
@@ -64887,6 +65489,10 @@
 		{
 			"name": "MirageEdge",
 			"value": 143
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.motion.IkLeg.Lean": [
@@ -65031,6 +65637,10 @@
 	],
 	"app.ui7005GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -65058,6 +65668,10 @@
 		}
 	],
 	"app.ui2044GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -65088,6 +65702,10 @@
 		}
 	],
 	"app.ui3108GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -65140,6 +65758,10 @@
 		}
 	],
 	"app.PlayerDante.WeaponS": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Rebellion",
 			"value": 0
@@ -67037,6 +67659,10 @@
 	],
 	"app.menu.LoadingSituation": [
 		{
+			"name": "Temporary",
+			"value": -1
+		},
+		{
 			"name": "Standard",
 			"value": 0
 		},
@@ -67202,6 +67828,10 @@
 		}
 	],
 	"app.Enemy.BlownLandTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "FaceUp",
 			"value": 0
@@ -67385,7 +68015,96 @@
 			"value": 2
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -998
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -996
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -995
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -994
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -986
+		},
+		{
+			"name": "LoadZone",
+			"value": -985
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -984
+		},
+		{
+			"name": "EmitZone",
+			"value": -983
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "CullingZone",
+			"value": -981
+		},
+		{
+			"name": "EffectManager",
+			"value": -980
+		},
+		{
+			"name": "EffectContainer",
+			"value": -979
+		}
+	],
 	"app.WeaponDevilSword.Actions": [
 		{
 			"name": "Release",
@@ -67455,6 +68174,10 @@
 		}
 	],
 	"app.AttackUserData.DamageActTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Minimum",
 			"value": 0
@@ -67777,6 +68500,10 @@
 		}
 	],
 	"app.Em5300_00.CollisionID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 5
@@ -68199,6 +68926,10 @@
 	],
 	"app.ui2020GUI.CustomState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Select",
 			"value": 0
 		},
@@ -68315,6 +69046,10 @@
 	],
 	"app.fsm2.player.pl0100.PadInputGunBlend.TriggerPhase": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Check",
 			"value": 0
 		},
@@ -68349,6 +69084,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"app.PlayerV.ConditionallyActions": [
@@ -68789,6 +69552,10 @@
 	],
 	"app.ui2201GUI_Vergil.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -68935,6 +69702,10 @@
 	],
 	"app.Em5600.CombiAttackEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "CombiAttack_0",
 			"value": 0
 		},
@@ -69034,6 +69805,10 @@
 		}
 	],
 	"app.ui2032GUI.NetState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -70321,6 +71096,10 @@
 	],
 	"app.PhotoModeGUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -70528,6 +71307,10 @@
 		}
 	],
 	"app.fsm2.enemy.em5800.Em5800RushApproachRunAction.PhaseType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "TakeDistance",
 			"value": 0
@@ -72039,6 +72822,10 @@
 	],
 	"app.character.CharacterThinkCondition.CheckTypeEnum": [
 		{
+			"name": "NoCheck",
+			"value": -1
+		},
+		{
 			"name": "Check",
 			"value": 0
 		},
@@ -72048,6 +72835,10 @@
 		}
 	],
 	"app.Enemy.AppearNoEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "General0",
 			"value": 0
@@ -72311,6 +73102,10 @@
 	],
 	"app.Em5400.EnumShipOverRoute": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Route1",
 			"value": 0
 		},
@@ -72556,6 +73351,10 @@
 		}
 	],
 	"app.DevilWingID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Closed",
 			"value": 0
@@ -72950,6 +73749,10 @@
 		}
 	],
 	"app.AttackUserData.AttrElementEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Fire",
 			"value": 0
@@ -74569,6 +75372,10 @@
 	],
 	"app.ui3300GUI.CharacterType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Npc",
 			"value": 0
 		},
@@ -75289,6 +76096,10 @@
 	],
 	"app.menu.WindowType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -75418,6 +76229,10 @@
 		}
 	],
 	"app.ui8021GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -75557,6 +76372,10 @@
 	],
 	"app.ui2032GUI.CostumeState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Load",
 			"value": 0
 		},
@@ -75610,6 +76429,10 @@
 		}
 	],
 	"app.ui2030GUI.NetState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -75906,6 +76729,10 @@
 		}
 	],
 	"app.ui0040GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Load",
 			"value": 0
@@ -76819,7 +77646,16 @@
 			"value": 2
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		}
+	],
 	"via.AccountPickerResult": [
 		{
 			"name": "Disabled",
@@ -76987,6 +77823,10 @@
 		}
 	],
 	"app.ui6010GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -77285,6 +78125,10 @@
 		}
 	],
 	"app.RpcChargeState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -77741,6 +78585,14 @@
 		}
 	],
 	"via.network.wrangler.PopulationSample": [
+		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
 		{
 			"name": "Undefined",
 			"value": 0
@@ -78500,6 +79352,14 @@
 	],
 	"via.os.http_client.Error": [
 		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -78519,6 +79379,10 @@
 		}
 	],
 	"app.ui4000GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -79196,6 +80060,10 @@
 	],
 	"app.ui8040GUI.CostumeState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Load",
 			"value": 0
 		},
@@ -79419,6 +80287,10 @@
 		}
 	],
 	"app.RuntimeEnvironment.Platform": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "PS4",
 			"value": 0
@@ -80152,6 +81024,10 @@
 	],
 	"app.Em5400.RegionEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Root",
 			"value": 0
 		},
@@ -80217,6 +81093,10 @@
 		}
 	],
 	"app.MenuSceneLoader.ShopAction": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -80550,6 +81430,10 @@
 		}
 	],
 	"app.ui8020GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -83426,6 +84310,10 @@
 	],
 	"app.ui6100GUI.Wave.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Play",
 			"value": 0
 		},
@@ -83726,6 +84614,10 @@
 	],
 	"app.ui3130GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Wait",
 			"value": 0
 		},
@@ -83765,6 +84657,10 @@
 		}
 	],
 	"app.ui2027GUI.TryState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -83875,6 +84771,10 @@
 		}
 	],
 	"app.menu.ConfirmResult": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Next",
 			"value": 0
@@ -84946,9 +85846,17 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"app.fsm2.player.pl0200.FinishAttackHit.TriggerType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "VergilFinish",
 			"value": 6000
@@ -85289,6 +86197,10 @@
 	],
 	"app.ui4000GUI.GDPRState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Load",
 			"value": 0
 		},
@@ -85573,6 +86485,10 @@
 	],
 	"app.ui3006GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -85634,6 +86550,10 @@
 		}
 	],
 	"app.MissionRatingManager.Rating_Pl0200_Timer.StatusType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -86035,6 +86955,10 @@
 	],
 	"app.ui4000GUI.NetState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Init",
 			"value": 0
 		}
@@ -86122,6 +87046,10 @@
 		}
 	],
 	"app.ui3111GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -86263,9 +87191,17 @@
 		{
 			"name": "Dummy30",
 			"value": 1073741824
+		},
+		{
+			"name": "Dummy31",
+			"value": -2147483648
 		}
 	],
 	"app.fsm2.enemy.em5801.Em5801SkewerAction.TriggerEvent": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Setup",
 			"value": 0
@@ -86380,6 +87316,10 @@
 		}
 	],
 	"app.OptionManager.ResetLanguageState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Check",
 			"value": 0
@@ -94147,6 +95087,10 @@
 	],
 	"app.menu.ArrowClickState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Next",
 			"value": 0
 		},
@@ -94811,6 +95755,10 @@
 	],
 	"app.ui8000GUI.StageType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "A",
 			"value": 0
 		},
@@ -94824,6 +95772,10 @@
 		}
 	],
 	"app.ui3204GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -94924,6 +95876,10 @@
 		}
 	],
 	"app.fsm2.player.pl0800.VergilPLBookAction.TriggerType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -95891,6 +96847,10 @@
 	],
 	"app.AttackUserData.HitSeTypeEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "SlashLow",
 			"value": 0
 		},
@@ -96127,7 +97087,12 @@
 			"value": 7
 		}
 	],
-	"app.Em5200_01.CollisionID": [],
+	"app.Em5200_01.CollisionID": [
+		{
+			"name": "None",
+			"value": -1
+		}
+	],
 	"System.Reflection.MethodAttributes": {
 		"flags": true,
 		"values": [
@@ -96230,6 +97195,10 @@
 		]
 	},
 	"app.ui8040GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -96698,6 +97667,10 @@
 		}
 	],
 	"app.WwiseEPVGameParameter.MissionNo": [
+		{
+			"name": "MissionNo_None",
+			"value": -1
+		},
 		{
 			"name": "MissionNo_00",
 			"value": 0
@@ -100864,6 +101837,10 @@
 	],
 	"app.ui3007GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -101545,6 +102522,10 @@
 		}
 	],
 	"app.ui8002GUI.BonusState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -103214,6 +104195,10 @@
 	],
 	"app.ui8040GUI.MissionState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Loading",
 			"value": 0
 		},
@@ -103279,6 +104264,10 @@
 		}
 	],
 	"app.enemy.em5801.Em5801.AppearNoEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Walk",
 			"value": 0
@@ -103519,6 +104508,10 @@
 		}
 	],
 	"app.fsm2.player.pl0100.wp01_008.DanteDoubleKalinaMegaCascadeAction.Phase": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Fire",
 			"value": 0
@@ -103786,6 +104779,10 @@
 	],
 	"app.ui2020GUI.SkillState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Category",
 			"value": 0
 		},
@@ -104004,6 +105001,10 @@
 	],
 	"app.ui2026GUI.SkillState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Category",
 			"value": 0
 		},
@@ -104203,6 +105204,10 @@
 		}
 	],
 	"app.Em5200_02.CollisionID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 6
@@ -104484,6 +105489,10 @@
 		{
 			"name": "Dummy30",
 			"value": 1073741824
+		},
+		{
+			"name": "Dummy31",
+			"value": -2147483648
 		}
 	],
 	"via.render.HazeCompositorResolution": [
@@ -104641,6 +105650,10 @@
 		}
 	],
 	"app.ui4020GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -105086,6 +106099,10 @@
 	],
 	"app.ui2065GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -105140,7 +106157,12 @@
 			"value": 3
 		}
 	],
-	"app.NetworkRpcPlayer.StylishRank": [],
+	"app.NetworkRpcPlayer.StylishRank": [
+		{
+			"name": "Battle",
+			"value": -2147483648
+		}
+	],
 	"app.ServantController.BattleMode": [
 		{
 			"name": "None",
@@ -105543,6 +106565,10 @@
 		{
 			"name": "All",
 			"value": 127
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.navigation.ObstacleFilterInfo.FilterType": [
@@ -105787,6 +106813,10 @@
 		}
 	],
 	"app.ui8003GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -106127,6 +107157,10 @@
 		}
 	],
 	"app.ui8020GUI.MissionState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Loading",
 			"value": 0
@@ -106542,6 +107576,10 @@
 	],
 	"app.ui7003GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -106745,6 +107783,10 @@
 		}
 	],
 	"app.enemy.em5800.Em5800.AppearNoEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Flying",
 			"value": 0
@@ -107210,6 +108252,10 @@
 	],
 	"app.ui8022GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -107560,6 +108606,10 @@
 	],
 	"app.ui3008GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -107900,6 +108950,10 @@
 	],
 	"app.WeaponID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "BlueRose",
 			"value": 0
 		},
@@ -108146,6 +109200,18 @@
 	],
 	"via.SharePlayControllerMode": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
+		{
 			"name": "WatchingHostPlay",
 			"value": 0
 		},
@@ -108159,6 +109225,10 @@
 		}
 	],
 	"app.menu.Skill": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pl00Start",
 			"value": 100
@@ -109009,6 +110079,10 @@
 		}
 	],
 	"app.Shell.AttackNoticeTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "FastMove",
 			"value": 0
@@ -111974,6 +113048,10 @@
 	],
 	"app.ui7001GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -112009,6 +113087,10 @@
 		}
 	],
 	"app.RuntimeEnvironment.Detail": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "PS4",
 			"value": 0
@@ -112337,6 +113419,10 @@
 		}
 	],
 	"app.ui2027GUI.ShopType": [
+		{
+			"name": "Entrance",
+			"value": -1
+		},
 		{
 			"name": "Skill",
 			"value": 0
@@ -113026,6 +114112,10 @@
 	],
 	"app.ui3101GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Init",
 			"value": 0
 		},
@@ -113043,6 +114133,10 @@
 		}
 	],
 	"app.ui9200GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -113217,6 +114311,10 @@
 		}
 	],
 	"app.ui2032GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Load",
 			"value": 0
@@ -113561,6 +114659,10 @@
 		}
 	],
 	"app.ui2003GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -114310,6 +115412,10 @@
 	],
 	"app.ui8004GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -114857,6 +115963,10 @@
 		}
 	],
 	"app.fsm2.player.pl0200.VTrinityAction.TriggerType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "DTEnd",
 			"value": 10
@@ -115414,6 +116524,10 @@
 	],
 	"app.player.PlayerEventEndActionID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Wait",
 			"value": 0
 		},
@@ -115471,6 +116585,10 @@
 		}
 	],
 	"app.AttackUserData.DamageTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Minimum",
 			"value": 0
@@ -115640,9 +116758,33 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"app.ui2027GUI.SkillState": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Category",
 			"value": 0
@@ -116368,6 +117510,10 @@
 		}
 	],
 	"app.character.Character.MotionBankType": [
+		{
+			"name": "Unused",
+			"value": -1
+		},
 		{
 			"name": "DamageTransS",
 			"value": 90
@@ -117315,6 +118461,10 @@
 	],
 	"app.FlowManager.UnlockState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Login",
 			"value": 0
 		},
@@ -117721,6 +118871,10 @@
 	],
 	"app.ui8020GUI.CostumeState": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Load",
 			"value": 0
 		},
@@ -117827,6 +118981,14 @@
 	],
 	"via.SharePlayConnectionStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Dormant",
 			"value": 0
 		},
@@ -117840,6 +119002,10 @@
 		}
 	],
 	"app.ui1022GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -118601,6 +119767,10 @@
 	],
 	"app.ui3107GUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Open",
 			"value": 0
 		},
@@ -118973,6 +120143,14 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -119713,6 +120891,10 @@
 		}
 	],
 	"app.ui8015GUI.State": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Enter",
 			"value": 0
@@ -120641,6 +121823,10 @@
 	],
 	"app.ui2120NpcGUI.State": [
 		{
+			"name": "Idle",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -120844,6 +122030,10 @@
 		}
 	],
 	"app.menu.Store": [
+		{
+			"name": "Idle",
+			"value": -1
+		},
 		{
 			"name": "Confirm",
 			"value": 0
@@ -121135,7 +122325,16 @@
 			"value": 1
 		}
 	],
-	"app.network.session.NetworkSession.MemberOption": [],
+	"app.network.session.NetworkSession.MemberOption": [
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"via.geometry.BrushType": [
 		{
 			"name": "Additive",

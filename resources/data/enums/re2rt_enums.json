@@ -57,6 +57,10 @@
 	],
 	"app.ropeway.rogue.RogueDefine.ItemDropCategory": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern_00",
 			"value": 0
 		},
@@ -159,6 +163,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"app.ropeway.enemy.em6200.MotionPattern.DirFLRBLR": [
@@ -482,6 +502,10 @@
 	],
 	"app.ropeway.gui.RogueKeyFlagsBehavior.KeyType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "UNICORN",
 			"value": 0
 		},
@@ -567,6 +591,10 @@
 		}
 	],
 	"app.ropeway.ActorDefine.ActorType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PL0000",
 			"value": 0
@@ -1183,6 +1211,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -2420,6 +2452,10 @@
 	],
 	"app.ropeway.gui.RogueCharaSelectBehavior.SubFlow": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DEFAULT",
 			"value": 0
 		},
@@ -2756,6 +2792,10 @@
 	],
 	"app.ropeway.enemy.em0000.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press_Survivor",
 			"value": 0
 		},
@@ -3081,6 +3121,10 @@
 		}
 	],
 	"app.ropeway.RogueObjectSimpleController.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "START",
 			"value": 0
@@ -3799,6 +3843,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.Event.ID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "EV_006_LNNN",
 			"value": 0
@@ -4911,6 +4959,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em9999ColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -6391,6 +6443,10 @@
 		{
 			"name": "Version2",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.gui.BonusBehavior.Mode": [
@@ -7837,6 +7893,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -7985,7 +8049,120 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.standby.LoadPriorityDefine.Priority": [],
+	"app.ropeway.standby.LoadPriorityDefine.Priority": [
+		{
+			"name": "GUI_TITLE",
+			"value": -9030
+		},
+		{
+			"name": "GUI_INGAME",
+			"value": -9020
+		},
+		{
+			"name": "GUI_ITEM",
+			"value": -9000
+		},
+		{
+			"name": "LOCATION_ROOT",
+			"value": -8800
+		},
+		{
+			"name": "LOCATION",
+			"value": -8700
+		},
+		{
+			"name": "LOCATION_SUBFOLDER",
+			"value": -8600
+		},
+		{
+			"name": "GD_LOAD",
+			"value": -8200
+		},
+		{
+			"name": "PLAYER",
+			"value": -7000
+		},
+		{
+			"name": "ASSET_PACKAGE",
+			"value": -6001
+		},
+		{
+			"name": "ENEMY_ACTIVE",
+			"value": -6000
+		},
+		{
+			"name": "MAPSCENE_ADDITIONAL",
+			"value": -5001
+		},
+		{
+			"name": "MAPSCENE_HIGHEST",
+			"value": -5000
+		},
+		{
+			"name": "MAPSCENE_HIGHER_DYNAMIC_STANDARD",
+			"value": -4950
+		},
+		{
+			"name": "MAPSCENE_DYNAMNIC_HIGHEST",
+			"value": -4900
+		},
+		{
+			"name": "TIMELINE_CURRENT_MAP_HIGHER",
+			"value": -4897
+		},
+		{
+			"name": "TIMELINE_CURRENT_MAP",
+			"value": -4895
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_ACTIVE_HIGHEST",
+			"value": -4890
+		},
+		{
+			"name": "MAPSCENE_SCENARIO",
+			"value": -4700
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_ACTIVE_LOWEST",
+			"value": -4501
+		},
+		{
+			"name": "TIMELINE_ACTIVE",
+			"value": -4500
+		},
+		{
+			"name": "MAPSCENE_DYNAMNIC_STANDBY_HIGHEST",
+			"value": -4399
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_STANDBY_LOWEST",
+			"value": -4101
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_LOWEST",
+			"value": -4100
+		},
+		{
+			"name": "MAPSCENE_LOWER_DYNAMIC_STANDARD",
+			"value": -4050
+		},
+		{
+			"name": "MAPSCENE_LOWEST",
+			"value": -4000
+		},
+		{
+			"name": "TIMELINE",
+			"value": -3000
+		},
+		{
+			"name": "LOCATION_BACKLOAD",
+			"value": -2200
+		},
+		{
+			"name": "DEFAULT",
+			"value": -2199
+		}
+	],
 	"app.ropeway.TerrainAnalyzer.Attribute": [
 		{
 			"name": "ASCEND",
@@ -8085,6 +8262,10 @@
 		}
 	],
 	"app.ropeway.enemy.em0000.Em0000DropParts.DelayBreakStatus": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Hang",
 			"value": 0
@@ -15297,6 +15478,14 @@
 	],
 	"app.ropeway.gamemastering.SaveDataManager.SaveDataNumber": [
 		{
+			"name": "SYSTEM_DATA_BEGIN",
+			"value": -1
+		},
+		{
+			"name": "SYSTEM_DATA_END",
+			"value": -1
+		},
+		{
 			"name": "SCENARIO_DATA_BEGIN",
 			"value": 0
 		},
@@ -16423,6 +16612,10 @@
 	],
 	"app.ropeway.enemy.em6000.RequestSetID": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "PRESS",
 			"value": 0
 		},
@@ -16877,6 +17070,10 @@
 	],
 	"app.ropeway.gamemastering.RogueStorageManager.QueryResultTypeAdd": [
 		{
+			"name": "InValid",
+			"value": -1
+		},
+		{
 			"name": "FullCombinedToSingleItem",
 			"value": 0
 		},
@@ -17260,6 +17457,10 @@
 		}
 	],
 	"app.ropeway.gui.GimmickNumberLockGuiBehavior.KeyPositionEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "PosKey7",
 			"value": 0
@@ -19913,6 +20114,10 @@
 	],
 	"via.gui.Segment": [
 		{
+			"name": "Keep",
+			"value": -1
+		},
+		{
 			"name": "Segment00",
 			"value": 0
 		},
@@ -20432,6 +20637,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.Item.Category": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Weapon",
 			"value": 0
@@ -21023,6 +21232,10 @@
 	],
 	"app.ropeway.enemy.em6300.RequestSetID": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "PRESS",
 			"value": 0
 		},
@@ -21609,6 +21822,10 @@
 	],
 	"app.ropeway.GimmickRaccoonFigureManager.RaccoonID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Raccoon_0",
 			"value": 0
 		},
@@ -21910,6 +22127,10 @@
 		}
 	],
 	"app.ropeway.gui.GimmickKeyInputGuiBehavior.KeyType": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "ABC",
 			"value": 0
@@ -23817,6 +24038,10 @@
 	],
 	"app.ropeway.enemy.em6300.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "AttackRightNail",
 			"value": 4
 		},
@@ -24193,7 +24418,24 @@
 			"value": 6
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.PlayerManagePhase": [],
+	"app.ropeway.UpdateOrderGroup.PlayerManagePhase": [
+		{
+			"name": "FASTEST",
+			"value": -51
+		},
+		{
+			"name": "Player",
+			"value": -50
+		},
+		{
+			"name": "Camera",
+			"value": -49
+		},
+		{
+			"name": "LATEST",
+			"value": -48
+		}
+	],
 	"app.ropeway.SoundListenerController.Type": [
 		{
 			"name": "LEON",
@@ -25372,6 +25614,10 @@
 		}
 	],
 	"via.os.SocketError": [
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -27116,6 +27362,10 @@
 	],
 	"app.ropeway.enemy.em5000.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press_Survivor",
 			"value": 0
 		},
@@ -27466,6 +27716,10 @@
 	],
 	"via.render.InputType": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "Static",
 			"value": 0
 		},
@@ -27615,6 +27869,10 @@
 		}
 	],
 	"app.ropeway.enemy.em0000.Em0000DropParts.DropPartsKind": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
 		{
 			"name": "LowerBody",
 			"value": 0
@@ -28995,6 +29253,10 @@
 		{
 			"name": "HumanRetarget",
 			"value": 11
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.gamemastering.MovieManager.PlayingMovie": [
@@ -29713,6 +29975,10 @@
 		}
 	],
 	"app.ropeway.SurvivorColliderTrack.ColliderGroup": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PRESS",
 			"value": 0
@@ -30505,6 +30771,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -30847,7 +31117,28 @@
 			"value": 1
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"via.effect.detail.FlipType": [
 		{
 			"name": "None",
@@ -33574,6 +33865,10 @@
 	],
 	"app.ropeway.rogue.RogueDefine.LotteryResult": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Medal",
 			"value": 0
 		},
@@ -34185,6 +34480,10 @@
 	],
 	"app.ropeway.gui.RogueInventorySlotBehavior.CommandType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Use",
 			"value": 0
 		},
@@ -34753,6 +35052,10 @@
 	],
 	"app.ropeway.gui.MapBehavior.OpenMode": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DIRECT",
 			"value": 0
 		},
@@ -34914,6 +35217,14 @@
 		}
 	],
 	"via.VideoRecordingStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -35187,7 +35498,36 @@
 			"value": 131072
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.ScenePhase": [],
+	"app.ropeway.UpdateOrderGroup.ScenePhase": [
+		{
+			"name": "FASTEST",
+			"value": -86
+		},
+		{
+			"name": "GuiManager",
+			"value": -85
+		},
+		{
+			"name": "Gui",
+			"value": -84
+		},
+		{
+			"name": "CutSceneManager",
+			"value": -83
+		},
+		{
+			"name": "CutScene",
+			"value": -82
+		},
+		{
+			"name": "CutSceneActor",
+			"value": -81
+		},
+		{
+			"name": "LATEST",
+			"value": -80
+		}
+	],
 	"app.ropeway.weapon.shell.ShellDefine.FolderTypeKind": [
 		{
 			"name": "Weapon",
@@ -35638,6 +35978,10 @@
 		}
 	],
 	"app.ropeway.gui.FloatIconParam.FloatIconCollisionType": [
+		{
+			"name": "DEFAULT",
+			"value": -1
+		},
 		{
 			"name": "TYPE_A",
 			"value": 0
@@ -36455,7 +36799,68 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.MapPhase": [],
+	"app.ropeway.UpdateOrderGroup.MapPhase": [
+		{
+			"name": "FASTEST",
+			"value": -80
+		},
+		{
+			"name": "ScenarioController",
+			"value": -79
+		},
+		{
+			"name": "GimmickInteractManager",
+			"value": -78
+		},
+		{
+			"name": "GimmickManager",
+			"value": -77
+		},
+		{
+			"name": "GimmickItemPositions",
+			"value": -76
+		},
+		{
+			"name": "GimmickTrigger",
+			"value": -75
+		},
+		{
+			"name": "GimmickActionPre",
+			"value": -74
+		},
+		{
+			"name": "GimmickActionControl",
+			"value": -73
+		},
+		{
+			"name": "GimmickActionBodyBeforeEnemy",
+			"value": -72
+		},
+		{
+			"name": "GimmickActionBody",
+			"value": -71
+		},
+		{
+			"name": "UiMapGUI",
+			"value": -70
+		},
+		{
+			"name": "FsmStateManager",
+			"value": -69
+		},
+		{
+			"name": "FsmStateControl",
+			"value": -68
+		},
+		{
+			"name": "AfterFsmStateControl",
+			"value": -67
+		},
+		{
+			"name": "LATEST",
+			"value": -66
+		}
+	],
 	"app.ropeway.enemy.em9000.Em9000Think.HandType": [
 		{
 			"name": "Default",
@@ -37391,6 +37796,10 @@
 		}
 	],
 	"app.ropeway.EquipmentDefine.WeaponType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "BareHand",
 			"value": 0
@@ -39536,6 +39945,10 @@
 	],
 	"app.ropeway.gui.RogueInGameShopBehavior.State": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DEFAULT",
 			"value": 0
 		}
@@ -39787,6 +40200,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em7200WallColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Hit0",
 			"value": 0
@@ -40152,6 +40569,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em7200ColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -40730,6 +41151,10 @@
 		}
 	],
 	"app.ropeway.rogue.GimmickRogueRaccoonFigureManager.RaccoonID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Lost_0",
 			"value": 0
@@ -41376,6 +41801,10 @@
 		}
 	],
 	"via.network.MatchmakingRules.DataType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Number",
 			"value": 0
@@ -43091,6 +43520,10 @@
 	],
 	"app.ropeway.BehaviorTreeCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BehaviorTree",
 			"value": 0
 		},
@@ -43644,6 +44077,10 @@
 		{
 			"name": "No8",
 			"value": 256
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.enemy.em5000.fsmv2.action.Em5000FsmAction_SetMotionPattern.SetMethodType": [
@@ -44075,6 +44512,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -45224,6 +45665,18 @@
 	],
 	"via.os.websocket_client.Error": [
 		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -45675,6 +46128,10 @@
 		}
 	],
 	"app.ropeway.implement.userdata.ArmUserData.PartsSetting.AbilitySetting.Calculation": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Multi",
 			"value": 0
@@ -47168,6 +47625,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em7300ColliderTrack.RequestSetID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -47558,6 +48019,10 @@
 	],
 	"app.ropeway.gamemastering.RogueUIMapManager.State": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "INITIALIZE",
 			"value": 0
 		},
@@ -47669,6 +48134,10 @@
 		}
 	],
 	"app.ropeway.RogueActivityLogManager.ActivityLogMode": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "AIM_FADEIN",
 			"value": 0
@@ -47863,6 +48332,10 @@
 		}
 	],
 	"via.gui.AssetLanguage": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0
@@ -48229,6 +48702,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.hid.VibrationOutputMotor": [
@@ -48251,6 +48728,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.fsmv2.FlagControlActionRoot.ActionTiming": [
@@ -48873,6 +49354,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em4100ColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -48920,6 +49405,10 @@
 		}
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -48982,6 +49471,10 @@
 		}
 	],
 	"app.ropeway.enemy.em6100.RequestSetID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "DAMAGE",
 			"value": 0
@@ -50198,6 +50691,10 @@
 	],
 	"app.ropeway.RogueActivityLogManager.ActivityLogType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -50499,6 +50996,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em7300ColliderTrack.DecalGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Decal_AttackBurst_L",
 			"value": 12
@@ -50956,6 +51457,10 @@
 	],
 	"app.ropeway.survivor.player.PlayerFacialController.EmotionStatusMode": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "DAMAGED_CAUTION",
 			"value": 0
 		},
@@ -51270,6 +51775,10 @@
 	],
 	"app.ropeway.gamemastering.RoguePlayerManager.State": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "INITIALIZE",
 			"value": 0
 		},
@@ -51547,6 +52056,10 @@
 		}
 	],
 	"app.ropeway.weapon.generator.OwnerType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Survivor",
 			"value": 0
@@ -52090,6 +52603,10 @@
 	],
 	"app.ropeway.AssetPackagePair.GimmickType": [
 		{
+			"name": "UNSET",
+			"value": -1
+		},
+		{
 			"name": "WINDOW",
 			"value": 0
 		},
@@ -52279,6 +52796,10 @@
 		}
 	],
 	"app.ropeway.NaviMoveSupporter.StopReasonType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Arrival",
 			"value": 0
@@ -53644,6 +54165,10 @@
 	],
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.RogueAnnounceType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "NONE",
 			"value": 0
 		},
@@ -53669,6 +54194,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em7300ColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Attack_SecondArmL",
 			"value": 3
@@ -54321,6 +54850,10 @@
 	},
 	"app.ropeway.RogueGUIMaster.RogueState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "ExtraMenu",
 			"value": 0
 		},
@@ -54713,6 +55246,10 @@
 		}
 	],
 	"app.ropeway.EquipmentDefine.EquipCategory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Main",
 			"value": 0
@@ -55483,6 +56020,10 @@
 		}
 	],
 	"app.ropeway.PlayerDefine.PlayerType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PL0000",
 			"value": 0
@@ -56264,6 +56805,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em7100ColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -56630,6 +57175,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em7000ColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -56705,6 +57254,10 @@
 		}
 	],
 	"app.ropeway.EquipmentDefine.MeleeAttack": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "High",
 			"value": 0
@@ -56837,6 +57390,10 @@
 		}
 	],
 	"via.effect.GroupType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Free",
 			"value": 0
@@ -57910,6 +58467,10 @@
 	],
 	"app.ropeway.gui.DialogBehavior.Priority": [
 		{
+			"name": "LOW",
+			"value": -1000
+		},
+		{
 			"name": "DEFAULT",
 			"value": 0
 		},
@@ -58216,6 +58777,10 @@
 		{
 			"name": "Effect",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.gamemastering.GameMaster.OSType": [
@@ -59123,6 +59688,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.RogueDevelopManager.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "INITIALIZE",
 			"value": 0
@@ -60563,6 +61132,14 @@
 			"value": 0
 		},
 		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
+		},
+		{
 			"name": "Forceword",
 			"value": 2147483647
 		}
@@ -60616,7 +61193,32 @@
 			"value": 4
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.ScreenPhase": [],
+	"app.ropeway.UpdateOrderGroup.ScreenPhase": [
+		{
+			"name": "FASTEST",
+			"value": -91
+		},
+		{
+			"name": "FadeManager",
+			"value": -90
+		},
+		{
+			"name": "FadeController",
+			"value": -89
+		},
+		{
+			"name": "Loading",
+			"value": -88
+		},
+		{
+			"name": "Pause",
+			"value": -87
+		},
+		{
+			"name": "LATEST",
+			"value": -86
+		}
+	],
 	"via.render.AlphaAA.AntialiasingMethod": [
 		{
 			"name": "FXAA",
@@ -61117,6 +61719,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.UIMapManager.MapPartsChangeState": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "RPD_HALL_WEST_SHUTTER",
 			"value": 0
@@ -62249,6 +62855,10 @@
 	],
 	"app.ropeway.survivor.fsmv2.action.SurvivorUpdateWallMaterialAction.Timing": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -62262,6 +62872,10 @@
 		}
 	],
 	"via.hid.KeyboardDisplayKey": [
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
 		{
 			"name": "Unknown",
 			"value": 0
@@ -62725,7 +63339,24 @@
 			"value": 3
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.EnemyManagePhase": [],
+	"app.ropeway.UpdateOrderGroup.EnemyManagePhase": [
+		{
+			"name": "FASTEST",
+			"value": -61
+		},
+		{
+			"name": "Manager",
+			"value": -60
+		},
+		{
+			"name": "AttackInitiative",
+			"value": -59
+		},
+		{
+			"name": "LATEST",
+			"value": -58
+		}
+	],
 	"via.nnfc.nfp.NfpSequence": [
 		{
 			"name": "None",
@@ -65169,6 +65800,10 @@
 	],
 	"app.ropeway.gui.RogueInventorySlotBehavior.ExCombinationType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "StorageToStorage",
 			"value": 0
 		},
@@ -65429,6 +66064,10 @@
 	],
 	"via.render.ShaderLod": [
 		{
+			"name": "ShaderLod_Automatic",
+			"value": -1
+		},
+		{
 			"name": "ShaderLod_0",
 			"value": 0
 		},
@@ -65577,6 +66216,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.ropeway.AttackUserDataToEnemy.Slip": [
@@ -65717,6 +66360,10 @@
 		}
 	],
 	"app.ropeway.gui.NewInventorySlotBehavior.CommandType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Use",
 			"value": 0
@@ -68091,7 +68738,96 @@
 			"value": 2
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -998
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -996
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -995
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -994
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -986
+		},
+		{
+			"name": "LoadZone",
+			"value": -985
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -984
+		},
+		{
+			"name": "EmitZone",
+			"value": -983
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "CullingZone",
+			"value": -981
+		},
+		{
+			"name": "EffectManager",
+			"value": -980
+		},
+		{
+			"name": "EffectContainer",
+			"value": -979
+		}
+	],
 	"via.rebe.RebeWorkingState": [
 		{
 			"name": "Unknown",
@@ -68703,6 +69439,10 @@
 	},
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.State": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DISABLE",
 			"value": 0
 		},
@@ -69073,6 +69813,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"app.ropeway.enemy.em6300.RankParamHash": [
@@ -69217,8 +69985,126 @@
 			"value": 4
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.FreePhase": [],
-	"app.ropeway.UpdateOrderGroup.HeadSystemPhase": [],
+	"app.ropeway.UpdateOrderGroup.FreePhase": [
+		{
+			"name": "FASTEST",
+			"value": -11
+		},
+		{
+			"name": "Before",
+			"value": -10
+		},
+		{
+			"name": "Manager",
+			"value": -9
+		},
+		{
+			"name": "After",
+			"value": -8
+		},
+		{
+			"name": "LATEST",
+			"value": -7
+		}
+	],
+	"app.ropeway.UpdateOrderGroup.HeadSystemPhase": [
+		{
+			"name": "FASTEST",
+			"value": -114
+		},
+		{
+			"name": "MainSceneUpdate",
+			"value": -113
+		},
+		{
+			"name": "SplashScreenManager",
+			"value": -112
+		},
+		{
+			"name": "SceneActivateSystem",
+			"value": -111
+		},
+		{
+			"name": "SceneLoadSystem",
+			"value": -110
+		},
+		{
+			"name": "AfterSceneLoadSystem",
+			"value": -109
+		},
+		{
+			"name": "SceneLoadEventBroker",
+			"value": -108
+		},
+		{
+			"name": "SceneLoadEventReceiver",
+			"value": -107
+		},
+		{
+			"name": "SceneLoadEventReceiverSub",
+			"value": -106
+		},
+		{
+			"name": "SceneLoadEventReceiverSub2",
+			"value": -105
+		},
+		{
+			"name": "CameraDrawManager",
+			"value": -104
+		},
+		{
+			"name": "CameraDrawController",
+			"value": -103
+		},
+		{
+			"name": "HitController",
+			"value": -102
+		},
+		{
+			"name": "HitManager",
+			"value": -101
+		},
+		{
+			"name": "EnemyReaction",
+			"value": -100
+		},
+		{
+			"name": "MainFlowManager",
+			"value": -99
+		},
+		{
+			"name": "GameMastering",
+			"value": -98
+		},
+		{
+			"name": "NetworkService",
+			"value": -97
+		},
+		{
+			"name": "PlayerInput",
+			"value": -96
+		},
+		{
+			"name": "PlayerInputUnit",
+			"value": -95
+		},
+		{
+			"name": "UserService",
+			"value": -94
+		},
+		{
+			"name": "RingBufferControll",
+			"value": -93
+		},
+		{
+			"name": "RingBufferManager",
+			"value": -92
+		},
+		{
+			"name": "LATEST",
+			"value": -91
+		}
+	],
 	"app.ropeway.enemy.em6200.ActionStatus.ID": [
 		{
 			"name": "ACT_IDLE",
@@ -70438,6 +71324,10 @@
 	],
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.SubState": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DISABLE",
 			"value": 0
 		},
@@ -70612,7 +71502,92 @@
 			"value": 3840
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.TailSystemPhase": [],
+	"app.ropeway.UpdateOrderGroup.TailSystemPhase": [
+		{
+			"name": "FASTEST",
+			"value": -31
+		},
+		{
+			"name": "Listener",
+			"value": -30
+		},
+		{
+			"name": "MotionJack",
+			"value": -29
+		},
+		{
+			"name": "Motion",
+			"value": -28
+		},
+		{
+			"name": "SecondaryMotion",
+			"value": -27
+		},
+		{
+			"name": "AfterMotion",
+			"value": -26
+		},
+		{
+			"name": "FixedMotion",
+			"value": -25
+		},
+		{
+			"name": "Shell",
+			"value": -24
+		},
+		{
+			"name": "NoticePointManager",
+			"value": -23
+		},
+		{
+			"name": "NoticePointController",
+			"value": -22
+		},
+		{
+			"name": "NoticePointSelector",
+			"value": -21
+		},
+		{
+			"name": "Effect",
+			"value": -20
+		},
+		{
+			"name": "RestrictClient",
+			"value": -19
+		},
+		{
+			"name": "RestrictManager",
+			"value": -18
+		},
+		{
+			"name": "ObjectUpdateAndDrawManager",
+			"value": -17
+		},
+		{
+			"name": "AfterObjectUpdateAndDrawManager",
+			"value": -16
+		},
+		{
+			"name": "TemporaryObjectsManager",
+			"value": -15
+		},
+		{
+			"name": "TailPrepareInstantiate",
+			"value": -14
+		},
+		{
+			"name": "TailInstantiate",
+			"value": -13
+		},
+		{
+			"name": "Final",
+			"value": -12
+		},
+		{
+			"name": "LATEST",
+			"value": -11
+		}
+	],
 	"via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType": [
 		{
 			"name": "Trans",
@@ -71088,6 +72063,10 @@
 		}
 	],
 	"app.ropeway.rogue.RogueSizeExpandRpTable.ExpandType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "INVENTORY",
 			"value": 0
@@ -71581,6 +72560,10 @@
 	],
 	"app.ropeway.gimmick.action.RogueItemSpawnGimmick.Condition": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "NotBroken",
 			"value": 0
 		},
@@ -71735,7 +72718,40 @@
 			"value": 1
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.EnemyControlPhase": [],
+	"app.ropeway.UpdateOrderGroup.EnemyControlPhase": [
+		{
+			"name": "FASTEST",
+			"value": -58
+		},
+		{
+			"name": "Param",
+			"value": -57
+		},
+		{
+			"name": "Think",
+			"value": -56
+		},
+		{
+			"name": "PreControl",
+			"value": -55
+		},
+		{
+			"name": "Control",
+			"value": -54
+		},
+		{
+			"name": "Sensor",
+			"value": -53
+		},
+		{
+			"name": "PostControl",
+			"value": -52
+		},
+		{
+			"name": "LATEST",
+			"value": -51
+		}
+	],
 	"via.DisplayOrientation": [
 		{
 			"name": "Landscape",
@@ -72828,6 +73844,10 @@
 		{
 			"name": "Hard",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.effect.detail.PtLifeStatus": [
@@ -73265,6 +74285,10 @@
 	],
 	"app.ropeway.gimmick.action.RogueItemSpawnGimmick.SetSituationType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -73655,6 +74679,10 @@
 		}
 	],
 	"app.ropeway.gui.RogueInventorySlotBehavior.ExCombinationStockType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "OneToOne",
 			"value": 0
@@ -74520,6 +75548,10 @@
 		}
 	],
 	"app.ropeway.inventory.SlotType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Blank",
 			"value": 0
@@ -75747,6 +76779,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em7100DecalTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -76579,7 +77615,16 @@
 			"value": 2
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		}
+	],
 	"via.AccountPickerResult": [
 		{
 			"name": "None",
@@ -76922,6 +77967,10 @@
 	],
 	"app.ropeway.gui.RogueGeneralAnnounceBehavior.ObserveType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "NONE",
 			"value": 0
 		},
@@ -77242,6 +78291,10 @@
 		}
 	],
 	"app.ropeway.enemy.em0000.MaterialOption": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "BLOODY_FACE_GAMEOVER",
 			"value": 0
@@ -77579,9 +78632,17 @@
 		{
 			"name": "EV993",
 			"value": 20993
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.enemy.tracks.Em9000ColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -77624,6 +78685,14 @@
 		}
 	],
 	"via.network.wrangler.PopulationSample": [
+		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
 		{
 			"name": "Undefined",
 			"value": 0
@@ -78613,6 +79682,14 @@
 		}
 	],
 	"via.os.http_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -82736,6 +83813,10 @@
 	],
 	"app.ropeway.implement.Melee.Attack": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "High",
 			"value": 0
 		},
@@ -85151,6 +86232,10 @@
 	],
 	"app.ropeway.SurvivorDefine.Accessory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Ac0000",
 			"value": 0
 		},
@@ -85268,6 +86353,10 @@
 		}
 	],
 	"app.ropeway.gui.RogueFlyTextBehavior.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "INIT",
 			"value": 0
@@ -85721,6 +86810,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -85950,6 +87043,10 @@
 	],
 	"app.ropeway.BehaviorTreeActionCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BehaviorTree",
 			"value": 0
 		},
@@ -86154,6 +87251,10 @@
 			{
 				"name": "Unique00",
 				"value": 1073741824
+			},
+			{
+				"name": "Unique01",
+				"value": -2147483648
 			}
 		]
 	},
@@ -87015,6 +88116,10 @@
 		{
 			"name": "MAX",
 			"value": 13
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"app.ropeway.enemy.em3000.Sick.Pattern": [
@@ -87077,6 +88182,10 @@
 		}
 	],
 	"app.ropeway.gui.RogueActivityLogBehavior.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "DISABLE",
 			"value": 0
@@ -87153,6 +88262,10 @@
 		}
 	],
 	"app.ropeway.enemy.EnemyDropPartsBase.DropPartsStatus": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Standby",
 			"value": 0
@@ -87813,6 +88926,10 @@
 		}
 	],
 	"app.ropeway.implement.Arm.Ability": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 0
@@ -88892,6 +90009,10 @@
 		{
 			"name": "S05_0600",
 			"value": 42
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.attribute.RemotePropertyAttribute.SyncMode": [
@@ -89740,6 +90861,10 @@
 	],
 	"via.render.ForceShaderLod": [
 		{
+			"name": "ForceShaderLod_None",
+			"value": -1
+		},
+		{
 			"name": "ForceShaderLod_0",
 			"value": 0
 		},
@@ -89773,6 +90898,10 @@
 		}
 	],
 	"app.ropeway.level.LoadLevelManager.LevelID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "DEBUG_NO_LEVEL",
 			"value": 1
@@ -90353,6 +91482,10 @@
 		}
 	],
 	"app.ropeway.camera.CameraControlType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PLAYER",
 			"value": 0
@@ -92006,6 +93139,10 @@
 		{
 			"name": "NUM",
 			"value": 13
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.OptionManager.ShadowQuality": [
@@ -92566,6 +93703,10 @@
 		}
 	],
 	"app.ropeway.EquipmentDefine.SubWeaponType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -93505,6 +94646,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em6200ColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Sensor_Enemy",
 			"value": 4
 		},
@@ -93600,6 +94745,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.RogueUIMapManager.LostIconType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "RUCKSACK",
 			"value": 0
@@ -94233,6 +95382,10 @@
 		}
 	],
 	"via.landscape.QuadTreeTextureEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Heightmap",
 			"value": 0
@@ -95348,6 +96501,10 @@
 	],
 	"app.ropeway.enemy.em7400.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Damage",
 			"value": 0
 		},
@@ -95691,6 +96848,10 @@
 		}
 	],
 	"app.ropeway.gui.RogueKeyFlagsBehavior.SubState": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "NONE",
 			"value": 0
@@ -98397,6 +99558,10 @@
 		{
 			"name": "Priority_9999",
 			"value": 9999
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.renderer.GUIPrimitiveResource.ShaderType": [
@@ -99565,6 +100730,10 @@
 	],
 	"app.ropeway.gui.RogueCharaSelectBehavior.OpenMode": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "CHARA_SELECT",
 			"value": 0
 		},
@@ -99578,6 +100747,10 @@
 		}
 	],
 	"app.ropeway.gimmick.action.GimmickShutterG2Break.BreakType": [
+		{
+			"name": "Break_None",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -99901,6 +101074,10 @@
 		}
 	],
 	"app.ropeway.SurvivorDefine.SurvivorType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "PL0000",
 			"value": 0
@@ -101164,6 +102341,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.gui.RogueAccessoryBehavior.UpdateState": [
@@ -101320,6 +102501,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"app.ropeway.enemy.common.behaviortree.condition.EmCommonBtCondition_PlayerMove.PlayerMoveType": [
@@ -102653,6 +103838,10 @@
 	],
 	"app.ropeway.gui.RogueKeyFlagsBehavior.State": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "INITIALIZE",
 			"value": 0
 		},
@@ -103425,6 +104614,58 @@
 	],
 	"app.ropeway.UpdateOrderGroup.Phase": [
 		{
+			"name": "FASTEST",
+			"value": -115
+		},
+		{
+			"name": "HeadSystem",
+			"value": -114
+		},
+		{
+			"name": "Screen",
+			"value": -91
+		},
+		{
+			"name": "Scene",
+			"value": -86
+		},
+		{
+			"name": "Map",
+			"value": -80
+		},
+		{
+			"name": "Positioning",
+			"value": -66
+		},
+		{
+			"name": "EnemyManage",
+			"value": -61
+		},
+		{
+			"name": "EnemyControl",
+			"value": -58
+		},
+		{
+			"name": "PlayerManage",
+			"value": -51
+		},
+		{
+			"name": "PlayerControl",
+			"value": -48
+		},
+		{
+			"name": "CameraControl",
+			"value": -41
+		},
+		{
+			"name": "TailSystem",
+			"value": -31
+		},
+		{
+			"name": "Free",
+			"value": -11
+		},
+		{
 			"name": "LATEST",
 			"value": 120
 		}
@@ -103835,7 +105076,40 @@
 			"value": 2
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.PlayerControlPhase": [],
+	"app.ropeway.UpdateOrderGroup.PlayerControlPhase": [
+		{
+			"name": "FASTEST",
+			"value": -48
+		},
+		{
+			"name": "Condition",
+			"value": -47
+		},
+		{
+			"name": "Think",
+			"value": -46
+		},
+		{
+			"name": "Controller",
+			"value": -45
+		},
+		{
+			"name": "Weapon",
+			"value": -44
+		},
+		{
+			"name": "Twist",
+			"value": -43
+		},
+		{
+			"name": "IKFit",
+			"value": -42
+		},
+		{
+			"name": "LATEST",
+			"value": -41
+		}
+	],
 	"app.ropeway.camera.CameraTwirlType": [
 		{
 			"name": "CONSTANT",
@@ -104656,6 +105930,18 @@
 	],
 	"via.SharePlayControllerMode": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
+		{
 			"name": "WatchingHostPlay",
 			"value": 0
 		},
@@ -104683,6 +105969,10 @@
 		}
 	],
 	"app.ropeway.enemy.em3000.RequestSetID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PRESS_SURVIVOR",
 			"value": 0
@@ -105388,6 +106678,10 @@
 		{
 			"name": "EV993",
 			"value": 20993
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.hid.hmd.MorpheusTrackerState.StatusCombination": [
@@ -105802,6 +107096,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em4400ColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -109730,6 +111028,10 @@
 	],
 	"app.ropeway.survivor.player.PlayerFacialController.SituationMode": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "DEAD",
 			"value": 0
 		},
@@ -110068,6 +111370,10 @@
 		{
 			"name": "MAX",
 			"value": 26
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.enemy.em7200.Em7200Think.WallJumpStateEnum": [
@@ -110634,6 +111940,10 @@
 		]
 	},
 	"app.ropeway.AssetPackagePair.ClassType": [
+		{
+			"name": "UNSET",
+			"value": -1
+		},
 		{
 			"name": "PLAYER",
 			"value": 0
@@ -111433,7 +112743,32 @@
 			"value": 10
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.PositioningPhase": [],
+	"app.ropeway.UpdateOrderGroup.PositioningPhase": [
+		{
+			"name": "FASTEST",
+			"value": -66
+		},
+		{
+			"name": "Press",
+			"value": -65
+		},
+		{
+			"name": "GroundFixer",
+			"value": -64
+		},
+		{
+			"name": "TransformInterpolator",
+			"value": -63
+		},
+		{
+			"name": "StayAreaController",
+			"value": -62
+		},
+		{
+			"name": "LATEST",
+			"value": -61
+		}
+	],
 	"via.render.ToneMapping.TemporalAA": [
 		{
 			"name": "Legacy",
@@ -112503,6 +113838,10 @@
 	],
 	"app.ropeway.NpcDefine.NPCType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "PL2000",
 			"value": 2000
 		},
@@ -113486,6 +114825,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.RogueStorageManager.StorageType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "ITEMBOX",
 			"value": 0
@@ -114647,6 +115990,10 @@
 		{
 			"name": "CF938",
 			"value": 10938
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ropeway.enemy.common.tracks.EnemySetGroundStateTrack.STATE": [
@@ -115272,6 +116619,10 @@
 	],
 	"app.ropeway.gimmick.action.RogueItemSpawnGimmick.State": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Initialize",
 			"value": 0
 		},
@@ -115440,6 +116791,10 @@
 	],
 	"app.ropeway.enemy.tracks.Em7000DecalTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -115472,6 +116827,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"app.ropeway.NpcDefine.MoveStateKind": [
@@ -115522,7 +116897,52 @@
 			"value": 6
 		}
 	],
-	"app.ropeway.UpdateOrderGroup.CameraControlPhase": [],
+	"app.ropeway.UpdateOrderGroup.CameraControlPhase": [
+		{
+			"name": "FASTEST",
+			"value": -41
+		},
+		{
+			"name": "Fixed",
+			"value": -40
+		},
+		{
+			"name": "Player",
+			"value": -39
+		},
+		{
+			"name": "Light",
+			"value": -38
+		},
+		{
+			"name": "RailUserCurve",
+			"value": -37
+		},
+		{
+			"name": "FilterParam",
+			"value": -36
+		},
+		{
+			"name": "FilterLayer",
+			"value": -35
+		},
+		{
+			"name": "FilterApply",
+			"value": -34
+		},
+		{
+			"name": "Main",
+			"value": -33
+		},
+		{
+			"name": "Mixer",
+			"value": -32
+		},
+		{
+			"name": "LATEST",
+			"value": -31
+		}
+	],
 	"app.ropeway.enemy.em0000.Em0000FeatherBody.DistanceLevel": [
 		{
 			"name": "LEVEL_0",
@@ -116340,6 +117760,10 @@
 		{
 			"name": "Weapon_BareHand",
 			"value": 1000
+		},
+		{
+			"name": "Outer",
+			"value": -1000
 		}
 	],
 	"app.ropeway.CollisionDefine.AttackShieldingType": [
@@ -116487,6 +117911,10 @@
 	],
 	"app.ropeway.gamemastering.RogueStorageManager.QueryResultTypeExist": [
 		{
+			"name": "InValid",
+			"value": -1
+		},
+		{
 			"name": "ExistAsSingleItem",
 			"value": 0
 		},
@@ -116540,6 +117968,10 @@
 		}
 	],
 	"app.ropeway.GimmickDialLockManager.RecordDialLock": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "ID_00_RPD1F_SAFE",
 			"value": 0
@@ -116687,6 +118119,10 @@
 		{
 			"name": "CheckFlag",
 			"value": 4
+		},
+		{
+			"name": "Unset",
+			"value": -1
 		}
 	],
 	"via.movie.Movie.PlayState": [
@@ -117285,6 +118721,10 @@
 	],
 	"app.ropeway.rogue.RogueDefine.GameMode": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Short",
 			"value": 0
 		},
@@ -117747,6 +119187,14 @@
 	],
 	"via.SharePlayConnectionStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Dormant",
 			"value": 0
 		},
@@ -118074,6 +119522,10 @@
 		}
 	],
 	"app.ropeway.enemy.tracks.Em4000ColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -118661,6 +120113,10 @@
 	],
 	"app.ropeway.EquipmentDefine.WeaponCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Handgun",
 			"value": 0
 		},
@@ -118867,6 +120323,14 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -119595,6 +121059,10 @@
 	],
 	"app.ropeway.camera.CameraTargetType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "OBJECT",
 			"value": 0
 		},
@@ -119747,6 +121215,10 @@
 		]
 	},
 	"app.ropeway.SurvivorDefine.Costume": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Default",
 			"value": 0
@@ -120114,6 +121586,10 @@
 	],
 	"app.ropeway.survivor.player.PlayerFacialController.BreathingMode": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "RUN",
 			"value": 0
 		},
@@ -120476,6 +121952,10 @@
 	],
 	"app.ropeway.gui.RogueCountDownBehavior.CountType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "CountUp",
 			"value": 0
 		},
@@ -120655,6 +122135,10 @@
 		}
 	],
 	"app.ropeway.gamemastering.RogueGimmickManager.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "INITIALIZE",
 			"value": 0

@@ -3,6 +3,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"via.dynamics.ShapeCastOption": [
@@ -273,6 +289,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -4632,6 +4652,14 @@
 		}
 	],
 	"via.GameLiveStreamingStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
 		{
 			"name": "Stop",
 			"value": 0
@@ -11767,6 +11795,10 @@
 	],
 	"via.gui.Segment": [
 		{
+			"name": "Keep",
+			"value": -1
+		},
+		{
 			"name": "Segment00",
 			"value": 0
 		},
@@ -14345,6 +14377,10 @@
 	],
 	"via.os.SocketError": [
 		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -15173,6 +15209,10 @@
 		}
 	],
 	"via.render.InputType": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Static",
 			"value": 0
@@ -16782,6 +16822,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -16978,7 +17022,28 @@
 			"value": 4
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"via.effect.detail.FlipType": [
 		{
 			"name": "None",
@@ -19583,6 +19648,14 @@
 	],
 	"via.VideoRecordingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -21454,6 +21527,10 @@
 	],
 	"via.network.MatchmakingRules.DataType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Number",
 			"value": 0
 		},
@@ -22380,6 +22457,10 @@
 		{
 			"name": "No8",
 			"value": 256
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.physics.PhaseType": [
@@ -22503,6 +22584,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -23001,6 +23086,18 @@
 		}
 	],
 	"via.os.websocket_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -24366,6 +24463,10 @@
 	],
 	"via.gui.AssetLanguage": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "No0",
 			"value": 0
 		},
@@ -24572,6 +24673,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.hid.VibrationOutputMotor": [
@@ -24594,6 +24699,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkLeg.RayCastCallbackID": [
@@ -24911,6 +25020,10 @@
 		}
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -28422,6 +28535,10 @@
 	],
 	"via.effect.GroupType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Free",
 			"value": 0
 		},
@@ -29102,7 +29219,32 @@
 			"value": 3
 		}
 	],
-	"via.relib.light.UpdateOrder": [],
+	"via.relib.light.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -900
+		},
+		{
+			"name": "LightBlinkUserCurve",
+			"value": -899
+		},
+		{
+			"name": "GlobalTimeZoneManager",
+			"value": -898
+		},
+		{
+			"name": "PostControlManager",
+			"value": -897
+		},
+		{
+			"name": "LightControlManager",
+			"value": -896
+		},
+		{
+			"name": "CopyPostProcessParam",
+			"value": -895
+		}
+	],
 	"via.render.StencilValue": [
 		{
 			"name": "Zero",
@@ -30597,6 +30739,14 @@
 		{
 			"name": "None",
 			"value": 0
+		},
+		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
 		},
 		{
 			"name": "Forceword",
@@ -32695,6 +32845,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"System.Reflection.CallingConventions": {
@@ -34286,7 +34440,104 @@
 			"value": 2
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -998
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -996
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -995
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -994
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertAutoIsLanding",
+			"value": -985
+		},
+		{
+			"name": "LoadZone",
+			"value": -984
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -983
+		},
+		{
+			"name": "EmitZone",
+			"value": -982
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -981
+		},
+		{
+			"name": "CullingZone",
+			"value": -980
+		},
+		{
+			"name": "EffectInfoHolder",
+			"value": -979
+		},
+		{
+			"name": "EffectManager",
+			"value": -978
+		},
+		{
+			"name": "EffectContainer",
+			"value": -977
+		}
+	],
 	"via.rebe.RebeWorkingState": [
 		{
 			"name": "Unknown",
@@ -34772,6 +35023,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"via.ScreenShotOverlayImageIndex": [
@@ -37134,6 +37413,10 @@
 	],
 	"app.AchievementManager.StadiaStatsID": [
 		{
+			"name": "v_stat_non",
+			"value": -1
+		},
+		{
 			"name": "v_stat_id0000",
 			"value": 1
 		},
@@ -39120,7 +39403,16 @@
 			"value": 2
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		}
+	],
 	"via.AccountPickerResult": [
 		{
 			"name": "None",
@@ -39462,6 +39754,14 @@
 		}
 	],
 	"via.network.wrangler.PopulationSample": [
+		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
 		{
 			"name": "Undefined",
 			"value": 0
@@ -39850,6 +40150,14 @@
 		}
 	],
 	"via.os.http_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -42870,6 +43178,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -46682,6 +46994,10 @@
 	],
 	"via.landscape.QuadTreeTextureEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Heightmap",
 			"value": 0
 		},
@@ -50405,6 +50721,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.str.SplitSeparatorType": [
@@ -50525,6 +50845,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.navigation.ObstacleFilterInfo.FilterType": [
@@ -52041,6 +52365,18 @@
 		}
 	],
 	"via.SharePlayControllerMode": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
 		{
 			"name": "WatchingHostPlay",
 			"value": 0
@@ -56510,6 +56846,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"via.wwise.EventStatusType": [
@@ -57479,6 +57835,14 @@
 	],
 	"via.SharePlayConnectionStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Dormant",
 			"value": 0
 		},
@@ -57983,6 +58347,14 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -59481,7 +59853,16 @@
 			}
 		]
 	},
-	"via.relib.motion.UpdateOrder": [],
+	"via.relib.motion.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -800
+		},
+		{
+			"name": "MotionHistoryRecorder",
+			"value": -799
+		}
+	],
 	"via.effect.gpgpu.PolygonCS.PolygonResource.PolygonComputeShaderType": [
 		{
 			"name": "InitializeCS",

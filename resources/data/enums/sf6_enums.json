@@ -139,6 +139,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"app.worldtour.WTCrowdManager.NpcInfo.NpcState": [
@@ -291,6 +307,10 @@
 		{
 			"name": "FRAME_SKIP_VARIABLE",
 			"value": 32768
+		},
+		{
+			"name": "MAX",
+			"value": 4294967295
 		}
 	],
 	"app.worldtour.avatar.MoveFlags.ID": [
@@ -916,6 +936,10 @@
 	],
 	"app.battle.ai.learning.Strategy": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Advantage",
 			"value": 0
 		},
@@ -949,6 +973,14 @@
 		}
 	],
 	"app.storage.SaveManager.SaveStartSlots": [
+		{
+			"name": "INVALID",
+			"value": -2
+		},
+		{
+			"name": "SYSTEM",
+			"value": -1
+		},
 		{
 			"name": "LEARNING",
 			"value": 110
@@ -1457,6 +1489,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -2900,6 +2936,10 @@
 	],
 	"FAB.ACT_STYLE": [
 		{
+			"name": "COMMON",
+			"value": -1
+		},
+		{
 			"name": "OWNER",
 			"value": 0
 		},
@@ -3088,6 +3128,10 @@
 		}
 	],
 	"app.gallery.UIFlowGallery.eMode": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Top",
 			"value": 0
@@ -3681,6 +3725,10 @@
 		{
 			"name": "EASY_CMD",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "ASSIST_COMBO",
+			"value": 9223372036854775808
 		}
 	],
 	"app.AppDefine.SpecialItem": [
@@ -4586,6 +4634,10 @@
 	],
 	"app.worldtour.bWTCityFlow.PhaseProcMameStatusGet.eState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Wait",
 			"value": 0
 		},
@@ -5248,6 +5300,10 @@
 	],
 	"app.UIFlowWTMyRoom.eCanSelectTime": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Day",
 			"value": 2
 		},
@@ -5429,6 +5485,10 @@
 		}
 	],
 	"app.UIFlowShop.BuyItemList.NotBuyReason": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Zenny",
 			"value": 0
@@ -5643,6 +5703,10 @@
 		}
 	],
 	"FAB.SLOT": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "COMMON_MODIFY",
 			"value": 0
@@ -5941,6 +6005,10 @@
 		}
 	],
 	"app.UIPartsDetailedMenu.TextInfo.TextOption.eItemCase": [
+		{
+			"name": "_Invalid",
+			"value": -1
+		},
 		{
 			"name": "DisabledBySpMode",
 			"value": 0
@@ -6578,6 +6646,10 @@
 	],
 	"app.UIWidgetPlayerActionGuide.RequestDef": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "OM",
 			"value": 0
 		},
@@ -6650,6 +6722,10 @@
 		}
 	],
 	"BCM.ASSIST_COMBO_RECIPE.ASSIST_COMBO_KIND": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "SIKAKU",
 			"value": 0
@@ -7539,6 +7615,10 @@
 	],
 	"app.UIFlowShop.eCurrencyType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Zeny",
 			"value": 0
 		},
@@ -7749,6 +7829,10 @@
 	],
 	"CharacterAsset.EventID.CHARA": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "HITMARK",
 			"value": 34
 		},
@@ -7942,6 +8026,10 @@
 		}
 	],
 	"app.StandardAI.HashCommandType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Action",
 			"value": 1
@@ -8226,6 +8314,10 @@
 		}
 	],
 	"app.battle.vfx.eOwnerClass": [
+		{
+			"name": "UNKNOWN",
+			"value": -1
+		},
 		{
 			"name": "HUMAN",
 			"value": 0
@@ -8731,6 +8823,10 @@
 				"value": 1073741824
 			},
 			{
+				"name": "RSR",
+				"value": 2147483648
+			},
+			{
 				"name": "LSide",
 				"value": 268435456
 			},
@@ -8741,6 +8837,10 @@
 			{
 				"name": "None",
 				"value": 0
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -9139,6 +9239,10 @@
 	],
 	"app.UIFlowWTMPauseMenu.BattleInfo.eBattleType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Street",
 			"value": 0
 		},
@@ -9172,6 +9276,10 @@
 		}
 	],
 	"app.UIFlowWTMyRoom.eCanBootCity": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Naishaal",
 			"value": 100
@@ -9293,6 +9401,10 @@
 		{
 			"name": "Version2_1",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkMultipleDamageAction.DebugDamageTransition": [
@@ -9529,6 +9641,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eMode": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -9610,6 +9726,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCabinetWait.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -10114,6 +10234,10 @@
 		}
 	],
 	"app.UIFlowAvatarRoomBase.AvatarRoomMode": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "AvatarArcade",
 			"value": 0
@@ -11484,6 +11608,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -11521,6 +11653,10 @@
 		}
 	],
 	"nBattle.ACT_ST.ID": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "FOOTWORK",
 			"value": 0
@@ -12078,6 +12214,10 @@
 		{
 			"name": "KezuDie",
 			"value": 64
+		},
+		{
+			"name": "Gard",
+			"value": 128
 		}
 	],
 	"app.network.api.Enum.AvatarChangeRouteClosedReason": [
@@ -15057,6 +15197,10 @@
 	],
 	"CharacterAsset.EventID.CAMERA": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "CAMERA_FLAG",
 			"value": 55
 		},
@@ -16806,6 +16950,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditValueCamera": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Rotation",
 			"value": 0
 		},
@@ -17090,6 +17238,10 @@
 		}
 	],
 	"app.sound.SoundMotionSequence.ExtensionType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "ActionTarget",
 			"value": 0
@@ -20911,6 +21063,10 @@
 	],
 	"CharacterAsset.EventID.HUD": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "NOTICE",
 			"value": 80
 		},
@@ -21229,6 +21385,10 @@
 	],
 	"app.menu.SelectedFighterCtrl.SubBody": [
 		{
+			"name": "OFF",
+			"value": -1
+		},
+		{
 			"name": "ON",
 			"value": 1
 		}
@@ -21258,6 +21418,10 @@
 		}
 	],
 	"app.worldtour.WTEnvCarDriver.DriverMotId": [
+		{
+			"name": "NONE",
+			"value": 4294967295
+		},
 		{
 			"name": "DRIVE_LOOP",
 			"value": 0
@@ -21350,6 +21514,10 @@
 		}
 	],
 	"app.UIFlowShop.BuyItemList.LineupDef": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Eatin",
 			"value": 0
@@ -22632,6 +22800,10 @@
 	],
 	"app.UIFlowShop.BuyItemList.HowToBuy": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Single",
 			"value": 0
 		},
@@ -23515,6 +23687,14 @@
 			"value": 4611686018427387904
 		},
 		{
+			"name": "AI_PlusFrame_NONE",
+			"value": 9223372036854775808
+		},
+		{
+			"name": "AI_PlusFrame_MASK",
+			"value": 18374686479671623680
+		},
+		{
 			"name": "Opponent_Stand",
 			"value": 1
 		},
@@ -23880,6 +24060,10 @@
 		}
 	],
 	"via.gui.Segment": [
+		{
+			"name": "Keep",
+			"value": -1
+		},
 		{
 			"name": "Segment00",
 			"value": 0
@@ -24816,6 +25000,10 @@
 		{
 			"name": "Opponent_ProximityCrouch",
 			"value": 198
+		},
+		{
+			"name": "Not",
+			"value": 32768
 		}
 	],
 	"app.worldtour.FighterVisualSupporter.VisualMode": [
@@ -24974,6 +25162,10 @@
 		}
 	],
 	"app.SortSubMenu.eGroupItem": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Grid",
 			"value": 0
@@ -25930,6 +26122,10 @@
 		{
 			"name": "NUM",
 			"value": 4
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"app.network.api.Enum.CustomRoomOutsideSpectatingEnterMode": [
@@ -26264,6 +26460,10 @@
 		{
 			"name": "NUM",
 			"value": 11
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.render.ToneMapping.Vignetting": [
@@ -27559,6 +27759,10 @@
 	],
 	"CharacterAsset.EMergeType": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "FRONT_FADE",
 			"value": 0
 		},
@@ -28536,6 +28740,10 @@
 	],
 	"app.esports.EFGModeCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Arcade",
 			"value": 0
 		},
@@ -28609,6 +28817,10 @@
 		}
 	],
 	"app.worldtour.WTBattleDropLock.eRarerity": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "NORMAL",
 			"value": 0
@@ -29675,6 +29887,10 @@
 		}
 	],
 	"app.ECameraMode": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -30796,6 +31012,10 @@
 		}
 	],
 	"app.battle.ai.learning.Tactics": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "AntiLand",
 			"value": 0
@@ -34713,6 +34933,10 @@
 			"value": 2048
 		},
 		{
+			"name": "AND_CHECK",
+			"value": 2147483648
+		},
+		{
 			"name": "BOMB_NOW",
 			"value": 4096
 		},
@@ -35988,6 +36212,10 @@
 	],
 	"via.os.SocketError": [
 		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -36109,6 +36337,10 @@
 		}
 	],
 	"app.UIKeyConfig.LeftGroupItemId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Mode",
 			"value": 0
@@ -36747,6 +36979,30 @@
 		{
 			"name": "CT_118",
 			"value": 118
+		},
+		{
+			"name": "WTM_TEST01",
+			"value": 130
+		},
+		{
+			"name": "WTNPC",
+			"value": 150
+		},
+		{
+			"name": "WTNAMED",
+			"value": 200
+		},
+		{
+			"name": "WTPLAYER",
+			"value": 250
+		},
+		{
+			"name": "RANDOM",
+			"value": 254
+		},
+		{
+			"name": "UNKNOWN",
+			"value": 255
 		}
 	],
 	"app.UIOptionSettingMenu.Flow_ConvertSaveFinding.eFindState": [
@@ -37288,6 +37544,10 @@
 		}
 	],
 	"app.UIFlowWTDeviceEmoteShortCut.eSelectState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Default",
 			"value": 0
@@ -38516,6 +38776,10 @@
 	],
 	"app.gallery.UIFlowGallery.MovieTop.eMovieItem_FG": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "ComicDemo",
 			"value": 0
 		},
@@ -38541,6 +38805,10 @@
 		}
 	],
 	"app.UIWidgetPlayerActionGuide.GuideDef": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Open_TreasureChest",
 			"value": 0
@@ -39180,6 +39448,10 @@
 		}
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.Normal.Param_OnlyDeco.eDecorationItemLayout": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Default",
 			"value": 0
@@ -40466,6 +40738,10 @@
 	],
 	"app.UIFlowShop.DialogUI.eChoice": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Decide",
 			"value": 0
 		},
@@ -40601,6 +40877,10 @@
 		}
 	],
 	"app.UIFlowShop.CheckEquipDialog.Choice": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Looks",
 			"value": 0
@@ -41224,6 +41504,10 @@
 		{
 			"name": "ShallowWaterComputeTess",
 			"value": 6
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.network.api.Enum.MasterStyleExpReason": [
@@ -42130,6 +42414,10 @@
 		{
 			"name": "NONE",
 			"value": 2
+		},
+		{
+			"name": "NEUTRAL",
+			"value": -1
 		},
 		{
 			"name": "FRONT",
@@ -44485,6 +44773,10 @@
 		{
 			"name": "throw_ok",
 			"value": 32
+		},
+		{
+			"name": "cross_up",
+			"value": 128
 		}
 	],
 	"app.worldtour.WTBuffDefine.WTBattleBuffCondition": [
@@ -44526,6 +44818,10 @@
 		}
 	],
 	"app.global.PrefabInstantiateManager.LoadPriority": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "UI",
 			"value": 0
@@ -45628,6 +45924,10 @@
 	],
 	"app.GUIAccessDataManager.OMType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Shop",
 			"value": 0
 		},
@@ -45906,6 +46206,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -46063,6 +46367,10 @@
 		}
 	],
 	"app.UIFlowWTDeviceEmoteShortCut.eGroupList": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "BindList",
 			"value": 0
@@ -46617,6 +46925,10 @@
 			{
 				"name": "_Dummy6",
 				"value": 64
+			},
+			{
+				"name": "_Dummy7",
+				"value": 128
 			}
 		]
 	},
@@ -46780,7 +47092,28 @@
 			"value": 2
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"app.UIPartsRaidTopRewardTierListItem.ProgressStatePattern": [
 		{
 			"name": "Default",
@@ -47551,6 +47884,10 @@
 		}
 	],
 	"app.UIFlowShop.GeneralCategory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Takeout",
 			"value": 0
@@ -51596,6 +51933,10 @@
 	],
 	"CharacterAsset.EventID.SYSTEM": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "Z_FREE",
 			"value": 20
 		},
@@ -51900,6 +52241,10 @@
 		{
 			"name": "NUM",
 			"value": 4
+		},
+		{
+			"name": "NONE",
+			"value": 255
 		}
 	],
 	"app.UIPartsMatchingNewChallengerCustomize.SpinItemIndex": [
@@ -52834,6 +53179,10 @@
 	],
 	"app.UIFlowShop.DialogUI.BuyDialog.BuyParam_Online.eChoice": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Select1",
 			"value": 0
 		},
@@ -52965,6 +53314,10 @@
 		}
 	],
 	"app.SortMenu.ParamBase.eGroupLayout": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FilterItem_OverThree",
 			"value": 0
@@ -53313,6 +53666,10 @@
 		}
 	],
 	"app.Option.ConsoleActionMode": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "GraphicMode",
 			"value": 0
@@ -54448,6 +54805,14 @@
 	],
 	"via.VideoRecordingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -54541,6 +54906,10 @@
 		}
 	],
 	"app.UIFlowMameModeSelect.ParamBase.eChoiceResult": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Decide",
 			"value": 0
@@ -58277,6 +58646,10 @@
 		{
 			"name": "F4_Finish",
 			"value": 68
+		},
+		{
+			"name": "Invalid",
+			"value": 65534
 		}
 	],
 	"app.worldtour.WTNpcSetterData.SetterDataMembers.LevelDispType": [
@@ -58300,6 +58673,10 @@
 		}
 	],
 	"app.OptionManager.eCommandBtnDisptype": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "ActBtn",
 			"value": 0
@@ -58722,6 +59099,10 @@
 		}
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditValueLens": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "AngleOfView",
 			"value": 0
@@ -59177,6 +59558,18 @@
 		{
 			"name": "OK",
 			"value": 1
+		},
+		{
+			"name": "ErrorStoped",
+			"value": 2147483649
+		},
+		{
+			"name": "ErrorDeviceDisconnected",
+			"value": 2147483650
+		},
+		{
+			"name": "ErrorInternal",
+			"value": 2147487744
 		}
 	],
 	"app.battle.ai.learning.RoundSituation": [
@@ -59875,6 +60268,10 @@
 	],
 	"app.UIPartsForceGauge.FORCE_GAUGE_TOP_STATE": [
 		{
+			"name": "INIT",
+			"value": -1
+		},
+		{
 			"name": "GAUGE_00",
 			"value": 0
 		},
@@ -60468,6 +60865,10 @@
 		{
 			"name": "CollectionIndexMask",
 			"value": 1044480
+		},
+		{
+			"name": "BehaviorGroupIndexMask",
+			"value": -1048576
 		}
 	],
 	"app.worldtour.om.WTCityOMSetterZoneGroup.CondParts.eType": [
@@ -60783,6 +61184,10 @@
 		}
 	],
 	"app.gallery.UIFlowGallery.MovieTop.PlayComicDemo.ePlayDemoState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "StartActivate",
 			"value": 0
@@ -61612,6 +62017,10 @@
 	],
 	"app.UIMapWindowBase.ICON_TYPE": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "SHOP_APPAREL",
 			"value": 0
 		},
@@ -61795,6 +62204,10 @@
 		}
 	],
 	"nBattle.PAD_ID": [
+		{
+			"name": "AUTO",
+			"value": -1
+		},
 		{
 			"name": "_1P",
 			"value": 0
@@ -62940,6 +63353,10 @@
 	],
 	"app.ReGameGuideSettings.eDisplayPoint": [
 		{
+			"name": "_Invalid",
+			"value": -1
+		},
+		{
 			"name": "MainMenu",
 			"value": 0
 		},
@@ -63255,6 +63672,10 @@
 		}
 	],
 	"app.SortSubMenu.Param_Master.eTitleMsgPattern": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Master",
 			"value": 0
@@ -64125,6 +64546,10 @@
 		}
 	],
 	"via.network.MatchmakingRules.DataType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Number",
 			"value": 0
@@ -65080,6 +65505,10 @@
 	],
 	"app.SoundCheersBehind.eEmotions": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Delight",
 			"value": 0
 		},
@@ -65171,6 +65600,10 @@
 		}
 	],
 	"app.UIFlowShop.ApparelCategory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Clothes",
 			"value": 0
@@ -65407,6 +65840,10 @@
 		}
 	],
 	"app.SortDefine.eCommonFilterType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "CanDressing",
 			"value": 0
@@ -70098,6 +70535,10 @@
 	],
 	"app.UIPartsCustomRoomErrorTable.MenuElement": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Recover",
 			"value": 0
 		},
@@ -71043,6 +71484,10 @@
 	],
 	"app.gallery.UIFlowGallery.IllustTop.eIllustItem_BH": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Emulator",
 			"value": 0
 		},
@@ -71255,6 +71700,10 @@
 	],
 	"app.gallery.GalleryDefine.eContentCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Emulator",
 			"value": 0
 		},
@@ -71276,6 +71725,10 @@
 		}
 	],
 	"app.InputAssign.Analog.ConfigId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -71608,6 +72061,10 @@
 		}
 	],
 	"app.UIFlowShop.StrengthMaterialList.eRestoreFlow": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Select",
 			"value": 0
@@ -72153,6 +72610,10 @@
 	],
 	"app.UIFlowShop.SelectAccessorySlotDialog.eChoice": [
 		{
+			"name": "_Invalid",
+			"value": -1
+		},
+		{
 			"name": "Slot1",
 			"value": 0
 		},
@@ -72250,6 +72711,10 @@
 		}
 	],
 	"app.bMameMainFlow.eMameMainState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "MainFlow",
 			"value": 0
@@ -73556,6 +74021,10 @@
 	],
 	"app.UIWidget_OnlineBanner.eState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "ONLINE",
 			"value": 0
 		},
@@ -73693,6 +74162,10 @@
 		}
 	],
 	"nBattle.PARTNER_ID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "MAIN",
 			"value": 0
@@ -74082,6 +74555,10 @@
 			{
 				"name": "No8",
 				"value": 256
+			},
+			{
+				"name": "Invalid",
+				"value": 4294967295
 			}
 		]
 	},
@@ -74358,6 +74835,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -74958,6 +75439,14 @@
 	},
 	"app.worldtour.WTNPCManager.NpcMgrNo": [
 		{
+			"name": "ALREADY",
+			"value": -2
+		},
+		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "START_NO",
 			"value": 0
 		}
@@ -75515,6 +76004,10 @@
 	],
 	"CharacterAsset.EventID.WTM": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "WTM_BUFF_EVENT",
 			"value": 68
 		},
@@ -75546,6 +76039,26 @@
 		}
 	],
 	"via.os.websocket_client.Error": [
+		{
+			"name": "TruncatedSend",
+			"value": -5
+		},
+		{
+			"name": "CouldNotSend",
+			"value": -4
+		},
+		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -75704,6 +76217,10 @@
 		}
 	],
 	"app.UICFNFightersProfileTabPlayChildTab6.SelectCotroll": [
+		{
+			"name": "LEFT",
+			"value": -1
+		},
 		{
 			"name": "RIGHT",
 			"value": 1
@@ -75925,6 +76442,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcBattleSetting.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -76534,6 +77055,10 @@
 		{
 			"name": "NUM",
 			"value": 4
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"app.worldtour.avatar.AvatarPlayerDashTurboCheck.CheckType": [
@@ -78742,6 +79267,10 @@
 			{
 				"name": "Render_CustomFilterBeforeTransparent",
 				"value": 4
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -78986,6 +79515,10 @@
 		{
 			"name": "MIRROR",
 			"value": 1
+		},
+		{
+			"name": "UNKNOWN",
+			"value": 255
 		}
 	],
 	"app.worldtour.WTNpcAI.BehaviorTreeParam.AttackPreActionType": [
@@ -79322,6 +79855,10 @@
 		}
 	],
 	"app.GuiDefine.SeType_Cursor": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "SND_DF_UI_VS_MODESELECT_CURSOR_01",
 			"value": 0
@@ -79668,6 +80205,10 @@
 		}
 	],
 	"app.ResultType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Ranked",
 			"value": 0
@@ -80455,6 +80996,10 @@
 	],
 	"app.UIFlowShop.DialogUI.eSingleChoice": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Spin",
 			"value": 0
 		},
@@ -81033,6 +81578,10 @@
 		{
 			"name": "BOMB",
 			"value": 2
+		},
+		{
+			"name": "ALL",
+			"value": -1
 		}
 	],
 	"app.worldtour.om.Om038000.EventNames": [
@@ -81136,6 +81685,10 @@
 		}
 	],
 	"via.gui.AssetLanguage": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0
@@ -81661,6 +82214,10 @@
 	],
 	"app.CostumeMaterialData.ePartsType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Body",
 			"value": 0
 		},
@@ -81859,6 +82416,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.UIFlowRivalAiSelfConstructWaitDialog.Wait.E_State": [
@@ -81985,6 +82546,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkLeg.RayCastCallbackID": [
@@ -82493,6 +83058,10 @@
 		{
 			"name": "MAX",
 			"value": 8
+		},
+		{
+			"name": "FLAG_ALL",
+			"value": 255
 		}
 	],
 	"app.ChainFreezeParamAdjuster.FreezeSelect": [
@@ -83070,6 +83639,10 @@
 	],
 	"app.SortSubMenu.SortSubMenuTextListUserData.eMessageDataType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "InsertId",
 			"value": 0
 		},
@@ -83223,6 +83796,10 @@
 		}
 	],
 	"app.bMameSpectateFlow.eMameMainState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "UIShowFlow",
 			"value": 0
@@ -83817,6 +84394,10 @@
 	],
 	"app.esports.BattleSelectTimelineCtrl.EPlayType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Enter",
 			"value": 0
 		},
@@ -83854,6 +84435,10 @@
 		}
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -83944,6 +84529,10 @@
 		}
 	],
 	"app.InputAssign.Analog.Id": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -89363,6 +89952,10 @@
 	],
 	"app.wpl000_edit.bodyhair_area": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Chest",
 			"value": 20
 		},
@@ -89516,6 +90109,10 @@
 		}
 	],
 	"nBattle.ACT_ID": [
+		{
+			"name": "INVALID_ID",
+			"value": -1
+		},
 		{
 			"name": "BACKSTAGE",
 			"value": 0
@@ -92059,6 +92656,10 @@
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcAvatarBattleJoin.eState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BlockCheck",
 			"value": 0
 		},
@@ -92116,6 +92717,10 @@
 		}
 	],
 	"app.gallery.UIFlowGallery.MovieTop.eMovieItem_HT": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "History",
 			"value": 0
@@ -94314,6 +94919,10 @@
 	],
 	"app.gallery.UIFlowGallery.MovieTop.eMovieItem_BH": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Story",
 			"value": 0
 		},
@@ -94644,6 +95253,10 @@
 	],
 	"app.network.api.Enum.Antenna": [
 		{
+			"name": "Loading",
+			"value": -1
+		},
+		{
 			"name": "Antenna0",
 			"value": 0
 		},
@@ -94686,6 +95299,10 @@
 		{
 			"name": "NONE",
 			"value": 0
+		},
+		{
+			"name": "AUTO",
+			"value": -1
 		}
 	],
 	"app.GraphicsSettings.UpscaleAlgorithm": [
@@ -95303,6 +95920,10 @@
 		}
 	],
 	"app.worldtour.WTEnvCarManager.ObjectInfo.TYPE": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "CAR",
 			"value": 0
@@ -96208,6 +96829,10 @@
 	],
 	"app.AvatarEmoteCtrl.CreateType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Avatar",
 			"value": 0
 		},
@@ -97037,6 +97662,10 @@
 	],
 	"app.bAvatarResultFlow.eFrom": [
 		{
+			"name": "_Invalid",
+			"value": -1
+		},
+		{
 			"name": "ArcadeSpar",
 			"value": 0
 		},
@@ -97424,6 +98053,10 @@
 		}
 	],
 	"app.SortMenu.eGroupItem": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Order",
 			"value": 0
@@ -98354,6 +98987,10 @@
 	],
 	"CharacterAsset.EventID.COMMENTARY": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "INFO_SA",
 			"value": 84
 		},
@@ -98381,6 +99018,10 @@
 		}
 	],
 	"app.UIPartsScrollText.eScrollState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -98684,6 +99325,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcAvatarBattleMake.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "CheckPrivilege",
 			"value": 0
@@ -100697,6 +101342,10 @@
 	],
 	"app.UIFlowShop.SellItemList.eNotSellReason": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -101494,9 +102143,25 @@
 		{
 			"name": "OK",
 			"value": 1
+		},
+		{
+			"name": "ErrorStarted",
+			"value": 2147483649
+		},
+		{
+			"name": "ErrorInvalidType",
+			"value": 2147483650
+		},
+		{
+			"name": "ErrorInternal",
+			"value": 2147487744
 		}
 	],
 	"app.gallery.UIFlowGallery.EmulatorTop.Param.RomCategoryType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Arcade",
 			"value": 0
@@ -102527,6 +103192,10 @@
 	],
 	"app.constant.FlowMap.eID": [
 		{
+			"name": "UNKNOWN",
+			"value": -1
+		},
+		{
 			"name": "ESPORTS",
 			"value": 0
 		},
@@ -102961,6 +103630,10 @@
 	],
 	"via.effect.GroupType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Free",
 			"value": 0
 		},
@@ -103100,6 +103773,14 @@
 		}
 	],
 	"app.worldtour.mg.MiniGame0301Avatar.CommandDirection": [
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "LR",
 			"value": 0
@@ -103310,6 +103991,10 @@
 	],
 	"CharacterAsset.EShotKind": [
 		{
+			"name": "PLAYER",
+			"value": -1
+		},
+		{
 			"name": "NORMAL",
 			"value": 0
 		},
@@ -103463,6 +104148,10 @@
 		}
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditValuePostEffect": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Color",
 			"value": 0
@@ -103891,6 +104580,10 @@
 		}
 	],
 	"app.DailyTournamentTournamentGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "A",
 			"value": 0
@@ -104708,7 +105401,32 @@
 			"value": 140737488355328
 		}
 	],
-	"via.relib.light.UpdateOrder": [],
+	"via.relib.light.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -900
+		},
+		{
+			"name": "LightBlinkUserCurve",
+			"value": -899
+		},
+		{
+			"name": "GlobalTimeZoneManager",
+			"value": -898
+		},
+		{
+			"name": "PostControlManager",
+			"value": -897
+		},
+		{
+			"name": "LightControlManager",
+			"value": -896
+		},
+		{
+			"name": "CopyPostProcessParam",
+			"value": -895
+		}
+	],
 	"via.render.GlobalSparseShadowResolution": [
 		{
 			"name": "GlobalSparseShadowResolution_64",
@@ -104970,6 +105688,10 @@
 			"value": 536870912
 		},
 		{
+			"name": "ExecuteTimingNormal",
+			"value": -2147483648
+		},
+		{
 			"name": "ExecuteTimingPrecede",
 			"value": 1073741824
 		}
@@ -105189,6 +105911,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcAvatarBattleCancel.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -105647,6 +106373,10 @@
 		}
 	],
 	"app.worldtour.WTAreaManager.AreaState": [
+		{
+			"name": "Resident",
+			"value": -1
+		},
 		{
 			"name": "Stay",
 			"value": 0
@@ -106143,6 +106873,10 @@
 		}
 	],
 	"app.UIBattleHud_Notice.eNoticeUIType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "FIRST_ATTACK",
 			"value": 0
@@ -107594,6 +108328,14 @@
 		{
 			"name": "LOD_Lv4",
 			"value": 1073741824
+		},
+		{
+			"name": "LOD_Lv5",
+			"value": 2147483648
+		},
+		{
+			"name": "LOD",
+			"value": 4160749568
 		}
 	],
 	"app.worldtour.npc.EnableReactType": {
@@ -113297,6 +114039,14 @@
 	],
 	"app.FlowMapBase.eLoadPriority": [
 		{
+			"name": "ResidentData",
+			"value": -200
+		},
+		{
+			"name": "Resident",
+			"value": -100
+		},
+		{
 			"name": "Level",
 			"value": 0
 		},
@@ -113603,6 +114353,10 @@
 		{
 			"name": "JUST_PARRY",
 			"value": 726
+		},
+		{
+			"name": "CATCH_HIT_VOICE",
+			"value": -9999
 		}
 	],
 	"app.UIFlowSituationChange.Param.eBGState": [
@@ -113676,6 +114430,10 @@
 		}
 	],
 	"app.training.TrainingCommonFunc.EDummyPriority": [
+		{
+			"name": "Force",
+			"value": -1
+		},
 		{
 			"name": "Highest",
 			"value": 0
@@ -115182,6 +115940,10 @@
 	],
 	"app.worldtour.WTEffectDefinePlayerSytem.WTWetEffectElementId": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Foot",
 			"value": 0
 		},
@@ -115233,6 +115995,10 @@
 		}
 	],
 	"app.gallery.GalleryDefine.eMode": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Top",
 			"value": 0
@@ -116593,6 +117359,14 @@
 		{
 			"name": "blk_low",
 			"value": 16384
+		},
+		{
+			"name": "blk_air",
+			"value": 32768
+		},
+		{
+			"name": "blocking",
+			"value": 57344
 		}
 	],
 	"app.worldtour.avatar.AvatarInputData.OptionFlags": [
@@ -117576,6 +118350,14 @@
 		{
 			"name": "None",
 			"value": 0
+		},
+		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
 		},
 		{
 			"name": "Forceword",
@@ -118898,6 +119680,10 @@
 		{
 			"name": "NUM",
 			"value": 4
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"app.UIFlowCustomRoomInviteTabFriend.SortMenuItem": [
@@ -119280,6 +120066,10 @@
 	],
 	"app.UIFlowWTMPauseMenu.eMenuTab": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BattleInfo",
 			"value": 0
 		},
@@ -119440,6 +120230,10 @@
 	],
 	"app.WorkRateSystem.TypePriority": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Lowest",
 			"value": 0
 		},
@@ -119547,6 +120341,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCabinetReady.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -120319,6 +121117,10 @@
 	],
 	"app.DialogReply": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Yes",
 			"value": 0
 		},
@@ -120621,6 +121423,10 @@
 		{
 			"name": "Unknown",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
 		}
 	],
 	"app.network.api.Enum.OnlineBattleEndClientMyPlayerSide": [
@@ -122208,6 +123014,10 @@
 	],
 	"CharacterAsset.EventID.GIMMICK": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "WALL_BOUND",
 			"value": 85
 		},
@@ -122411,6 +123221,10 @@
 		}
 	],
 	"app.UIFlowShop.DialogUI.eGroupFocus": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Grid",
 			"value": 0
@@ -123320,7 +124134,24 @@
 			"value": 2
 		}
 	],
-	"via.os.TocPtError": [],
+	"via.os.TocPtError": [
+		{
+			"name": "Threshold",
+			"value": 4294901760
+		},
+		{
+			"name": "NotMounted",
+			"value": 4294901761
+		},
+		{
+			"name": "NotFound",
+			"value": 4294901762
+		},
+		{
+			"name": "DRMFailure",
+			"value": 4294901763
+		}
+	],
 	"via.render.BlendShapePriority": [
 		{
 			"name": "blendShapePriority_UpdateBuffer",
@@ -123544,6 +124375,42 @@
 		}
 	],
 	"nBattle.DAMAGE_PRIO": [
+		{
+			"name": "GUARD_STD",
+			"value": -1
+		},
+		{
+			"name": "GUARD_SIT",
+			"value": -1
+		},
+		{
+			"name": "GUARD_JMP",
+			"value": -1
+		},
+		{
+			"name": "GUARD_SHAKY",
+			"value": -1
+		},
+		{
+			"name": "DGUARD",
+			"value": -1
+		},
+		{
+			"name": "DGUARD_SHAKY",
+			"value": -1
+		},
+		{
+			"name": "PARRY",
+			"value": -1
+		},
+		{
+			"name": "BLOCKING_G",
+			"value": -1
+		},
+		{
+			"name": "BLOCKING_A",
+			"value": -1
+		},
 		{
 			"name": "HARMLESS",
 			"value": 0
@@ -124164,6 +125031,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditItem": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Camera",
 			"value": 0
 		},
@@ -124197,6 +125068,10 @@
 		}
 	],
 	"app.gallery.UIFlowGallery.IllustTop.eIllustItem_FG": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Arcade",
 			"value": 0
@@ -124507,6 +125382,10 @@
 	},
 	"via.render.ShaderLod": [
 		{
+			"name": "ShaderLod_Automatic",
+			"value": -1
+		},
+		{
 			"name": "ShaderLod_0",
 			"value": 0
 		},
@@ -124735,6 +125614,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.network.api.Enum.TeamBattleSaType": [
@@ -125225,6 +126108,10 @@
 		}
 	],
 	"app.UdsActivityManager.LaunchMatch": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "FG_RANKED",
 			"value": 0
@@ -126227,6 +127114,10 @@
 	],
 	"app.SoundCheersBehind.eVoiceReq": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "RoundStart",
 			"value": 0
 		},
@@ -126709,6 +127600,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.Normal.ParamBase.eDecorationItemLayout": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -127064,6 +127959,10 @@
 		}
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditValueChara": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "AvatarDisp",
 			"value": 0
@@ -128773,6 +129672,10 @@
 	],
 	"app.UIPartsSpGauge.SP_GAUGE_TOP_STATE": [
 		{
+			"name": "INIT",
+			"value": -1
+		},
+		{
 			"name": "GAUGE_0",
 			"value": 0
 		},
@@ -129014,6 +129917,10 @@
 		{
 			"name": "Right",
 			"value": 1
+		},
+		{
+			"name": "Left",
+			"value": -1
 		}
 	],
 	"app.worldtour.WTExActionData.UseMotionDataType": [
@@ -129027,6 +129934,10 @@
 		}
 	],
 	"app.UIFlowShop.SelectAccessorySlotDialog.eDoOnSelect": [
+		{
+			"name": "_Invalid",
+			"value": -1
+		},
 		{
 			"name": "TryingOn",
 			"value": 0
@@ -129912,6 +130823,10 @@
 	],
 	"CharacterAsset.WorldID.RAW": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "WORLD_NORMAL_BEGIN",
 			"value": 0
 		},
@@ -130151,6 +131066,14 @@
 		}
 	],
 	"app.dev.autoplay.AutoPlayManager.AutoPlayState": [
+		{
+			"name": "Dummy",
+			"value": -2
+		},
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "FlowMediator",
 			"value": 0
@@ -131061,7 +131984,108 @@
 			"value": 3
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -995
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -994
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -985
+		},
+		{
+			"name": "EPVExpertAutoIsLanding",
+			"value": -984
+		},
+		{
+			"name": "LoadZone",
+			"value": -983
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "EmitZone",
+			"value": -981
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "CullingZone",
+			"value": -979
+		},
+		{
+			"name": "EffectInfoHolder",
+			"value": -978
+		},
+		{
+			"name": "EffectManager",
+			"value": -977
+		},
+		{
+			"name": "EffectContainer",
+			"value": -976
+		}
+	],
 	"app.network.api.Enum.ResultRoundPlayersLocalOperationType": [
 		{
 			"name": "EClassic",
@@ -131161,6 +132185,10 @@
 		}
 	],
 	"app.UIFlowOnlineShop.CurrencyType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "FIGHTER_COIN_PAID",
 			"value": 0
@@ -131517,6 +132545,10 @@
 		}
 	],
 	"app.HudDef.ContactUIType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "NPC",
 			"value": 0
@@ -131960,6 +132992,10 @@
 	],
 	"app.worldtour.bWTCityFlow.PhaseProcTrainingBattle.eState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "CreateFighters",
 			"value": 0
 		},
@@ -132030,6 +133066,10 @@
 		{
 			"name": "Quat",
 			"value": 6
+		},
+		{
+			"name": "Multiple",
+			"value": 255
 		}
 	],
 	"app.battle.assets.BattleEventData.ConditionSkillData.ELogicalOperator": [
@@ -132597,6 +133637,14 @@
 	],
 	"CharacterAsset.ActionCombo.ConstCombo": [
 		{
+			"name": "NOT_SPECIFIED",
+			"value": -2
+		},
+		{
+			"name": "USE_DEFAULT",
+			"value": -1
+		},
+		{
 			"name": "IMMEDIATE",
 			"value": 0
 		}
@@ -132656,6 +133704,10 @@
 		}
 	],
 	"app.UILayer": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -132821,6 +133873,10 @@
 	],
 	"app.UIWidgetContactPanel.DISP_STATE": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DETAIL",
 			"value": 0
 		},
@@ -132911,6 +133967,10 @@
 		{
 			"name": "NUM",
 			"value": 1
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"app.network.api.Enum.CustomRoomCreateDriveLinkType": [
@@ -133053,6 +134113,10 @@
 			"value": 8192
 		},
 		{
+			"name": "INFO_SET",
+			"value": 32768
+		},
+		{
 			"name": "EXCLUSIVE_INFO",
 			"value": 32767
 		},
@@ -133145,6 +134209,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"app.network.api.Enum.GeneralReason": [
@@ -133806,6 +134898,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCityStart.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "CabinetLeaveSend",
 			"value": 0
@@ -134847,6 +135943,10 @@
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCabinetJoin.eState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "SendCabinetJoind",
 			"value": 0
 		},
@@ -134906,6 +136006,10 @@
 		}
 	],
 	"nBattle.HIT_ID.NO": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "_0",
 			"value": 0
@@ -135004,6 +136108,10 @@
 		}
 	],
 	"app.InputAssign.Digital.ConfigId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -136915,6 +138023,10 @@
 	],
 	"app.UIFlowShop.SellItemList.eRestoreFlow": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Single",
 			"value": 0
 		},
@@ -137001,6 +138113,10 @@
 		{
 			"name": "Dummy_06",
 			"value": 64
+		},
+		{
+			"name": "Dummy_07",
+			"value": 128
 		}
 	],
 	"app.PerformanceAdapter.TargetAudianceNum": [
@@ -138729,6 +139845,10 @@
 	],
 	"app.UIPartsDeviceBg.LAYOUT": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Chara",
 			"value": 0
 		},
@@ -139543,6 +140663,10 @@
 	],
 	"app.UIMapWindowBase.ICON_PATTERN": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "MAP_ICON",
 			"value": 0
 		},
@@ -139825,6 +140949,10 @@
 		}
 	],
 	"app.CostumeMaterialData.ePartsTypeX": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Parts_00",
 			"value": 4
@@ -141808,6 +142936,10 @@
 	],
 	"CharacterAsset.ECameraFlag": [
 		{
+			"name": "NO_TOUCH",
+			"value": -1
+		},
+		{
 			"name": "DEF",
 			"value": 0
 		},
@@ -142502,6 +143634,10 @@
 	],
 	"CharacterAsset.WorldKey.ConstTime": [
 		{
+			"name": "TO_WORLD_END",
+			"value": -1
+		},
+		{
 			"name": "END_OF_ACTION",
 			"value": 0
 		},
@@ -142596,6 +143732,10 @@
 			{
 				"name": "Extra4",
 				"value": 512
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -142835,6 +143975,10 @@
 		}
 	],
 	"app.ResultController.ResultState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -143087,6 +144231,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcMameStatusGet.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -144284,6 +145432,10 @@
 			{
 				"name": "Last",
 				"value": 16
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -145005,6 +146157,10 @@
 		{
 			"name": "EASY_CMD",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "ASSIST_COMBO",
+			"value": 9223372036854775808
 		}
 	],
 	"app.network.api.Enum.PlayingFieldBattleType": [
@@ -145841,6 +146997,10 @@
 	],
 	"CharacterAsset.WorldID.ID": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "NORMAL_BEGIN",
 			"value": 0
 		},
@@ -146317,6 +147477,10 @@
 	],
 	"app.InputAssign.GuideId": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -146789,6 +147953,10 @@
 	],
 	"CharacterAsset.EHitMarkDir": [
 		{
+			"name": "NOT_SPECIFIED",
+			"value": 255
+		},
+		{
 			"name": "MARK_DIR_0000",
 			"value": 0
 		},
@@ -147144,6 +148312,10 @@
 		}
 	],
 	"app.HudDef.OBJ_KEY_NAME": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "BattleHud_VitalGaugeSingle",
 			"value": 0
@@ -147682,6 +148854,10 @@
 	],
 	"app.UICFNFightersProfileTabPlayChildTab3.SelectCotroll": [
 		{
+			"name": "LEFT",
+			"value": -1
+		},
+		{
 			"name": "RIGHT",
 			"value": 1
 		},
@@ -147741,6 +148917,10 @@
 		}
 	],
 	"CharacterAsset.EventID.RAW": [
+		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
 		{
 			"name": "RAW_DATA",
 			"value": 0
@@ -149402,7 +150582,20 @@
 			"value": 4
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "MeshJointSetting",
+			"value": -1998
+		}
+	],
 	"app.battle.stage.RandomGimmickCondition.EOperatorType": [
 		{
 			"name": "Equal",
@@ -151719,6 +152912,14 @@
 	],
 	"via.network.wrangler.PopulationSample": [
 		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
+		{
 			"name": "Undefined",
 			"value": 0
 		}
@@ -151881,6 +153082,10 @@
 	],
 	"app.UIFlowShop.BuyItemList.DressingUpCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Body",
 			"value": 0
 		}
@@ -151946,6 +153151,10 @@
 		}
 	],
 	"app.SoundCheersBehind.eVoice": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Weak",
 			"value": 0
@@ -152132,6 +153341,10 @@
 		}
 	],
 	"CharacterAsset.EventID.OWNER": [
+		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
 		{
 			"name": "POSITION_WORLD",
 			"value": 1
@@ -152729,6 +153942,10 @@
 		}
 	],
 	"app.GuiManager.TextureLoadManager.ManagerType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Item",
 			"value": 0
@@ -153994,6 +155211,14 @@
 	],
 	"via.os.http_client.Error": [
 		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -154517,6 +155742,10 @@
 		}
 	],
 	"app.ExtShotGmnp010.ShotType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Drum",
 			"value": 0
@@ -155199,6 +156428,10 @@
 		}
 	],
 	"app.worldtour.MiniGame_0100_ResultComment.MissType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "TimeOver",
 			"value": 0
@@ -156883,6 +158116,10 @@
 		}
 	],
 	"app.training.TrainingManager.MenuType": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "MAIN",
 			"value": 0
@@ -159317,6 +160554,10 @@
 		{
 			"name": "Stoped",
 			"value": 1
+		},
+		{
+			"name": "ErrInternal",
+			"value": 2147487744
 		}
 	],
 	"app.network.api.Enum.ApRankingJumpKind": [
@@ -165567,6 +166808,10 @@
 	],
 	"app.training.tf_ReversalSetting.tfReversalData.rType": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "TRIGGER",
 			"value": 0
 		},
@@ -165726,6 +166971,10 @@
 		}
 	],
 	"app.UIFlowShop.ShopMessageData.WarningType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "SellEquipItem",
 			"value": 0
@@ -166644,6 +167893,10 @@
 	],
 	"app.UICityHud_Buff.eShowState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "FadeIn",
 			"value": 0
 		},
@@ -166955,6 +168208,10 @@
 		}
 	],
 	"app.training.ReversalType": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "NORMAL",
 			"value": 0
@@ -167317,6 +168574,10 @@
 	],
 	"app.worldtour.WTMissionHandler.EMainCommandNo": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "CmdRootBattle",
 			"value": 1
 		},
@@ -167411,8 +168672,16 @@
 	],
 	"CharacterAsset.ProjectileData.LifeDef": [
 		{
+			"name": "NOT_SPECIFIED",
+			"value": -1
+		},
+		{
 			"name": "USE_DEFAULT",
 			"value": 0
+		},
+		{
+			"name": "NO_LIMIT",
+			"value": -2
 		},
 		{
 			"name": "IMMEDIATE",
@@ -169187,6 +170456,10 @@
 	],
 	"app.UIFlowShop.BuyItemList.ParamOnline.SubCategoryOnView": [
 		{
+			"name": "_Invalid",
+			"value": -1
+		},
+		{
 			"name": "MultipleGoods",
 			"value": 0
 		},
@@ -170552,6 +171825,10 @@
 	],
 	"app.vfx.VfxGlobalVectorField.ePriority": [
 		{
+			"name": "Low",
+			"value": -10
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		}
@@ -170926,6 +172203,14 @@
 		{
 			"name": "Started",
 			"value": 1
+		},
+		{
+			"name": "ErrorConfigType",
+			"value": 2147483649
+		},
+		{
+			"name": "ErrorInternal",
+			"value": 2147487744
 		}
 	],
 	"app.worldtour.UIFlowWTAvatarCreateColorPopUp.AvatarCreateColorSetType": [
@@ -171574,6 +172859,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -171674,6 +172963,10 @@
 	],
 	"app.worldtour.ColliderControllerBase.ColliderAttackIndexes": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "HEAD",
 			"value": 0
 		},
@@ -171771,7 +173064,136 @@
 			"value": 2
 		}
 	],
-	"via.relib.ReLibUpdateOrder.UpdateOrder": [],
+	"via.relib.ReLibUpdateOrder.UpdateOrder": [
+		{
+			"name": "Effect_Provider",
+			"value": -999
+		},
+		{
+			"name": "Effect_BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "Effect_ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "Effect_EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "Effect_EffectParentChecker",
+			"value": -995
+		},
+		{
+			"name": "Effect_EffectTimelineChecker",
+			"value": -994
+		},
+		{
+			"name": "Effect_EPVStandardCameraFollowerLate",
+			"value": -993
+		},
+		{
+			"name": "Effect_EPVExpertCommon",
+			"value": -992
+		},
+		{
+			"name": "Effect_EPVExpertAuto",
+			"value": -991
+		},
+		{
+			"name": "Effect_EPVExpertDestruction",
+			"value": -990
+		},
+		{
+			"name": "Effect_EPVExpertExplosion",
+			"value": -989
+		},
+		{
+			"name": "Effect_EPVExpertFootLanding",
+			"value": -988
+		},
+		{
+			"name": "Effect_EPVExpertGunSmoke",
+			"value": -987
+		},
+		{
+			"name": "Effect_EPVExpertObjectLanding",
+			"value": -986
+		},
+		{
+			"name": "Effect_EPVExpertMuzzleFlash",
+			"value": -985
+		},
+		{
+			"name": "Effect_EPVExpertAutoIsLanding",
+			"value": -984
+		},
+		{
+			"name": "Effect_LoadZone",
+			"value": -983
+		},
+		{
+			"name": "Effect_EmitZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "Effect_EmitZone",
+			"value": -981
+		},
+		{
+			"name": "Effect_CullingZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "Effect_CullingZone",
+			"value": -979
+		},
+		{
+			"name": "Effect_EffectInfoHolder",
+			"value": -978
+		},
+		{
+			"name": "Effect_EffectManager",
+			"value": -977
+		},
+		{
+			"name": "Effect_EffectContainer",
+			"value": -976
+		},
+		{
+			"name": "Render_MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "Render_MeshJointSetting",
+			"value": -1998
+		},
+		{
+			"name": "Motion_MotionHistoryRecorder",
+			"value": -799
+		},
+		{
+			"name": "Light_LightBlinkUserCurve",
+			"value": -899
+		},
+		{
+			"name": "Light_GlobalTimeZoneManager",
+			"value": -898
+		},
+		{
+			"name": "Light_PostControlManager",
+			"value": -897
+		},
+		{
+			"name": "Light_LightControlManager",
+			"value": -896
+		},
+		{
+			"name": "Light_CopyPostProcessParam",
+			"value": -895
+		}
+	],
 	"via.network.native.NswPresence.Status": [
 		{
 			"name": "Offline",
@@ -172116,6 +173538,10 @@
 		{
 			"name": "PRIO_SPECIAL",
 			"value": 16384
+		},
+		{
+			"name": "PRIO_7",
+			"value": 32768
 		}
 	],
 	"rapidxml.node_type": [
@@ -172217,6 +173643,10 @@
 		}
 	],
 	"app.gallery.UIFlowGallery.IllustTop.eIllustItem_WT": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Master",
 			"value": 0
@@ -172987,9 +174417,73 @@
 		{
 			"name": "FacialRom",
 			"value": 100
+		},
+		{
+			"name": "Edit",
+			"value": -10
+		},
+		{
+			"name": "Emotion",
+			"value": -5
 		}
 	],
 	"app.UpdateOrder": [
+		{
+			"name": "SOUND_BEHAVIOR_UPDATE",
+			"value": -122
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_10",
+			"value": -121
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_20",
+			"value": -120
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_30",
+			"value": -119
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_40",
+			"value": -118
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_50",
+			"value": -117
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_60",
+			"value": -116
+		},
+		{
+			"name": "SOUND_MANAGER_UPDATE_70",
+			"value": -115
+		},
+		{
+			"name": "SAVE",
+			"value": -101
+		},
+		{
+			"name": "TOP",
+			"value": -100
+		},
+		{
+			"name": "BATTLE",
+			"value": -10
+		},
+		{
+			"name": "BATTLE_FAKE",
+			"value": -9
+		},
+		{
+			"name": "SYSTEM",
+			"value": -5
+		},
+		{
+			"name": "PRE_UPDATE",
+			"value": -1
+		},
 		{
 			"name": "DEFAULT",
 			"value": 0
@@ -173219,6 +174713,10 @@
 		]
 	},
 	"Command.Side": [
+		{
+			"name": "UNKNOWN",
+			"value": -1
+		},
 		{
 			"name": "LEFT",
 			"value": 0
@@ -174810,6 +176308,10 @@
 	],
 	"CharacterAsset.LockID.RAW": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "RAW_DATA",
 			"value": 0
 		},
@@ -175363,6 +176865,10 @@
 	],
 	"app.training.UIWidget_TMVirtualController.InputType": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "TYPE_0",
 			"value": 0
 		},
@@ -175632,6 +177138,10 @@
 		}
 	],
 	"app.esports.AracadeBonusStageTimelineCtrl.TimelineEventType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "SceneStart",
 			"value": 0
@@ -176746,6 +178256,10 @@
 		}
 	],
 	"app.UIFlowShop.StrengthMaterialList.eNotStrengthReason": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -178053,6 +179567,10 @@
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
 		{
+			"name": "Ignore",
+			"value": -1
+		},
+		{
 			"name": "AecAgcEnable",
 			"value": 0
 		},
@@ -178527,6 +180045,14 @@
 			"value": 15
 		},
 		{
+			"name": "Button_Num_Mask",
+			"value": 4026531840
+		},
+		{
+			"name": "Button_Mask",
+			"value": 4026531855
+		},
+		{
 			"name": "Button_N",
 			"value": 1
 		},
@@ -178820,6 +180346,10 @@
 		}
 	],
 	"app.worldtour.WTEnvCarDriver.DemoNpcId": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "MAN",
 			"value": 0
@@ -179726,6 +181256,10 @@
 		}
 	],
 	"via.render.ForceShaderLod": [
+		{
+			"name": "ForceShaderLod_None",
+			"value": -1
+		},
 		{
 			"name": "ForceShaderLod_0",
 			"value": 0
@@ -180707,6 +182241,10 @@
 		}
 	],
 	"app.UIFlowWTDeviceEmoteShortCut.eBindItem": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Emote",
 			"value": 0
@@ -181794,6 +183332,10 @@
 	],
 	"app.UIFlowRivalAiServerMenuTop.Param.MenuItem": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "RivalAiBattle",
 			"value": 0
 		},
@@ -182190,6 +183732,10 @@
 		}
 	],
 	"app.UIStartMenu.MenuType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PROFILE",
 			"value": 0
@@ -182666,6 +184212,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eDecorationItemType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Stamp",
 			"value": 0
 		},
@@ -182729,6 +184279,10 @@
 		}
 	],
 	"app.worldtour.WTNpcRouteManager.RouteID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "Route00",
 			"value": 0
@@ -184544,6 +186098,10 @@
 	],
 	"app.UIFlowWTDeviceCustom.Param.eColorType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -184692,6 +186250,10 @@
 		}
 	],
 	"app.UICFNFightersProfileTabPlayChildTab2.SelectCotroll": [
+		{
+			"name": "LEFT",
+			"value": -1
+		},
 		{
 			"name": "RIGHT",
 			"value": 1
@@ -185187,6 +186749,10 @@
 	],
 	"app.PauseType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "NONE",
 			"value": 0
 		},
@@ -185333,6 +186899,10 @@
 		}
 	],
 	"app.battle.vfx.eOwnerHitGroup": [
+		{
+			"name": "UNKNOWN",
+			"value": -1
+		},
 		{
 			"name": "HUMAN",
 			"value": 0
@@ -185924,6 +187494,10 @@
 	],
 	"app.UIFlowDialog.OptionIconType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Lock",
 			"value": 0
 		},
@@ -186388,6 +187962,10 @@
 			{
 				"name": "IsRightWired",
 				"value": 32
+			},
+			{
+				"name": "IsDebugPadConnected",
+				"value": 2147483648
 			}
 		]
 	},
@@ -186562,6 +188140,10 @@
 		}
 	],
 	"via.landscape.QuadTreeTextureEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Heightmap",
 			"value": 0
@@ -188016,6 +189598,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.eEditValueLogo": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Stamp",
 			"value": 0
 		},
@@ -188368,6 +189954,10 @@
 	],
 	"app.SoundCheersBehind.eLifeDiff": [
 		{
+			"name": "BothLifeDiffNone",
+			"value": -1
+		},
+		{
 			"name": "BothLife05PerDownDiff",
 			"value": 20
 		},
@@ -188537,6 +190127,30 @@
 		{
 			"name": "PrevDefault",
 			"value": 127
+		},
+		{
+			"name": "Default",
+			"value": 128
+		},
+		{
+			"name": "ContactCamera",
+			"value": 129
+		},
+		{
+			"name": "ActionCamera",
+			"value": 130
+		},
+		{
+			"name": "BattleCamera",
+			"value": 131
+		},
+		{
+			"name": "MotionCamera",
+			"value": 150
+		},
+		{
+			"name": "Last",
+			"value": 255
 		}
 	],
 	"app.esports.BattleSelectTimelineCtrl.ELightType": [
@@ -188924,6 +190538,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcMameSit.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -190408,6 +192026,10 @@
 		{
 			"name": "Cmd_624624",
 			"value": 17235968
+		},
+		{
+			"name": "Cmd_Mask",
+			"value": 4294901760
 		}
 	],
 	"via.render.SparseShadowTreeResolution": [
@@ -190684,6 +192306,10 @@
 		{
 			"name": "Right",
 			"value": 1
+		},
+		{
+			"name": "Left",
+			"value": -1
 		}
 	],
 	"via.gui.EffectAlphaType": [
@@ -190719,6 +192345,10 @@
 		}
 	],
 	"CharacterAsset.EventID.UNIQUE": [
+		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
 		{
 			"name": "UNIQUE_PARAM",
 			"value": 60
@@ -190773,6 +192403,10 @@
 		}
 	],
 	"CharacterAsset.EActionDir": [
+		{
+			"name": "NEUTRAL",
+			"value": -1
+		},
 		{
 			"name": "FRONT",
 			"value": 0
@@ -191538,6 +193172,10 @@
 	],
 	"app.esports.ResultMenuListData.ItemType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Profile",
 			"value": 0
 		},
@@ -191547,6 +193185,10 @@
 		}
 	],
 	"app.UIFlowUI50000.eExitSoundKeyType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -191563,6 +193205,10 @@
 	"app.UIFlowShop.eCanUseFighterCoinFlag": {
 		"flags": true,
 		"values": [
+			{
+				"name": "Invalid",
+				"value": -1
+			},
 			{
 				"name": "PaidOnly",
 				"value": 1
@@ -192114,6 +193760,10 @@
 		}
 	],
 	"app.PlayerBehavior.LayerNo.ID": [
+		{
+			"name": "DUMMY",
+			"value": -1
+		},
 		{
 			"name": "MAIN_L",
 			"value": 0
@@ -194312,7 +195962,20 @@
 			"value": 8192
 		}
 	],
-	"via.render.FenceState": [],
+	"via.render.FenceState": [
+		{
+			"name": "Invalidate",
+			"value": -1
+		},
+		{
+			"name": "DoNotWait",
+			"value": -2
+		},
+		{
+			"name": "UAVSync",
+			"value": -3
+		}
+	],
 	"app.GuiDefine.eDropLockIconType": [
 		{
 			"name": "INVALID",
@@ -194474,6 +196137,10 @@
 		}
 	],
 	"app.devNpcZoneCheck.MaybeOutRangeType": [
+		{
+			"name": "Other",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -195838,6 +197505,10 @@
 	],
 	"app.UIFlowShop.SellItemList.HowToSell": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Single",
 			"value": 0
 		},
@@ -195865,6 +197536,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCabinetLeave.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -196566,6 +198241,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.network.api.Enum.ProgressEventIsSkip": [
@@ -196858,6 +198537,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.navigation.ObstacleFilterInfo.FilterType": [
@@ -196905,6 +198588,10 @@
 		}
 	],
 	"app.worldtour.WTIMEventHandler.EMainCommandNo": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "CmdContactNotice",
 			"value": 1
@@ -198200,6 +199887,10 @@
 	},
 	"app.UIMouseEventType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "DecideTrigger",
 			"value": 0
 		},
@@ -198684,6 +200375,10 @@
 		}
 	],
 	"app.esports.EFGModeType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "VS_1P2P",
 			"value": 0
@@ -199859,6 +201554,10 @@
 	],
 	"app.helper.hGUI.PLAY_STATE_WTITEM_RARITY": [
 		{
+			"name": "DEFAULT",
+			"value": -1
+		},
+		{
 			"name": "LEGENDARY",
 			"value": 4
 		},
@@ -200274,6 +201973,10 @@
 	],
 	"app.UIChat.Mode": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BattleHub",
 			"value": 0
 		},
@@ -200466,6 +202169,10 @@
 		}
 	],
 	"app.worldtour.AvatarDynamicController.ForceType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MA20401",
 			"value": 204012
@@ -201013,6 +202720,10 @@
 	],
 	"app.gallery.UIFlowGallery.ModeTabParamBase.eModeDef": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BattleHub",
 			"value": 0
 		},
@@ -201307,6 +203018,10 @@
 	],
 	"app.AppEffectManager.eLODCategory": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Base",
 			"value": 0
 		},
@@ -201567,6 +203282,10 @@
 	],
 	"app.InputGuideDataType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "DigitalConfig",
 			"value": 0
 		},
@@ -201592,6 +203311,10 @@
 		}
 	],
 	"CharacterAsset.EventID.SOUND": [
+		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
 		{
 			"name": "SHOT_SOUND_REQ",
 			"value": 83
@@ -201721,6 +203444,10 @@
 		}
 	],
 	"CharacterAsset.EDamageVariation": [
+		{
+			"name": "AUTO",
+			"value": -1
+		},
 		{
 			"name": "TYPE_0",
 			"value": 0
@@ -202847,6 +204574,18 @@
 	],
 	"via.SharePlayControllerMode": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
+		{
 			"name": "WatchingHostPlay",
 			"value": 0
 		},
@@ -203603,6 +205342,10 @@
 		]
 	},
 	"app.SortDefine.eSortType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Get",
 			"value": 0
@@ -204698,6 +206441,10 @@
 		{
 			"name": "RenderToFrameBuffer",
 			"value": 4
+		},
+		{
+			"name": "PopFromEsram",
+			"value": -1
 		}
 	],
 	"app.UIFlowWorldTourContinue.DeleteAlertDialog.StatePattern": [
@@ -205145,6 +206892,18 @@
 		}
 	],
 	"CharacterAsset.EShotStencilType": [
+		{
+			"name": "BG",
+			"value": -3
+		},
+		{
+			"name": "LOWEST",
+			"value": -2
+		},
+		{
+			"name": "LOW",
+			"value": -1
+		},
 		{
 			"name": "NORMAL",
 			"value": 0
@@ -205769,6 +207528,10 @@
 		}
 	],
 	"app.InputAssign.Digital.Id": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -207264,6 +209027,10 @@
 	],
 	"CharacterAsset.EventID.FIELD": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "RUTHLESS_WALL",
 			"value": 54
 		},
@@ -208126,6 +209893,10 @@
 	],
 	"app.SortDefine.eFilterType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "CanDressing",
 			"value": 0
 		},
@@ -208319,6 +210090,10 @@
 		}
 	],
 	"app.UIFlowShop.SellCategory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Equip",
 			"value": 0
@@ -208543,6 +210318,10 @@
 		}
 	],
 	"app.storage.SaveManager.saveTypes": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "SYSTEM",
 			"value": 0
@@ -209720,6 +211499,10 @@
 	],
 	"app.UIFlowShop.WTTopMenu.Choice": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Buy",
 			"value": 0
 		},
@@ -210668,6 +212451,10 @@
 	],
 	"app.worldtour.UIFlowWTDevicePhotoMode.SelectBase.eChoise": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "_0",
 			"value": 0
 		},
@@ -210999,6 +212786,14 @@
 			"value": 31
 		},
 		{
+			"name": "PL_254",
+			"value": 254
+		},
+		{
+			"name": "PL_255",
+			"value": 255
+		},
+		{
 			"name": "PL_032",
 			"value": 32
 		},
@@ -211041,6 +212836,18 @@
 		{
 			"name": "PL_103",
 			"value": 103
+		},
+		{
+			"name": "PL_200",
+			"value": 200
+		},
+		{
+			"name": "PL_252",
+			"value": 252
+		},
+		{
+			"name": "PL_253",
+			"value": 253
 		},
 		{
 			"name": "MAX",
@@ -211990,6 +213797,10 @@
 			"value": 134217728
 		},
 		{
+			"name": "hit_atk",
+			"value": 2147483648
+		},
+		{
 			"name": "blocking_atk",
 			"value": 268435456
 		},
@@ -212039,6 +213850,10 @@
 		}
 	],
 	"app.worldtour.bBattleHubMainFlow.PhaseProcCabinetSit.eState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "CheckWait",
 			"value": 0
@@ -212097,6 +213912,10 @@
 		}
 	],
 	"app.UIFlowShop.ItemListBaseParam.eSortUserDataIndexs": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Buy_Apparel",
 			"value": 0
@@ -214472,6 +216291,10 @@
 	],
 	"CharacterAsset.EventID.SHOT": [
 		{
+			"name": "SET_NO_EVENT",
+			"value": -1
+		},
+		{
 			"name": "ERASE_BY_CATEGORY",
 			"value": 65
 		},
@@ -214637,6 +216460,10 @@
 		}
 	],
 	"app.UIKeyConfig.ListItemId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Edit",
 			"value": 0
@@ -216104,6 +217931,10 @@
 	],
 	"app.UIPartsScrollText.eScrollDirection": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Left",
 			"value": 0
 		},
@@ -216831,6 +218662,10 @@
 		}
 	],
 	"app.GuiRenderTargetWidgetManager.eWidgetType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "AnimTitlePlate1P",
 			"value": 0
@@ -218512,6 +220347,10 @@
 		}
 	],
 	"nAction.ATTR.Type": [
+		{
+			"name": "UNKNOWN",
+			"value": -1
+		},
 		{
 			"name": "BRANCH",
 			"value": 0
@@ -220724,6 +222563,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"app.UIPartsReportDetailDialog.ItemType": [
@@ -221317,6 +223176,10 @@
 		}
 	],
 	"app.EConfigInputType": [
+		{
+			"name": "NOT_SPECIFIED",
+			"value": -1
+		},
 		{
 			"name": "NORMAL",
 			"value": 0
@@ -222915,6 +224778,10 @@
 	],
 	"app.UIFlowShop.ShopMessageData.LineupTitle": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Buy",
 			"value": 0
 		},
@@ -223838,6 +225705,10 @@
 		}
 	],
 	"app.StandardAI.Situation": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Standard",
 			"value": 0
@@ -225158,6 +227029,30 @@
 		{
 			"name": "S_ACC_XYZ",
 			"value": 15
+		},
+		{
+			"name": "V_VEL_X",
+			"value": 2147483648
+		},
+		{
+			"name": "V_VEL_Y",
+			"value": 2147483649
+		},
+		{
+			"name": "V_VEL_Z",
+			"value": 2147483650
+		},
+		{
+			"name": "V_ACC_X",
+			"value": 2147483651
+		},
+		{
+			"name": "V_ACC_Y",
+			"value": 2147483652
+		},
+		{
+			"name": "V_ACC_Z",
+			"value": 2147483653
 		}
 	],
 	"app.worldtour.mg.WTMiniGameFlowMapBase.LoadState": [
@@ -225470,6 +227365,10 @@
 		{
 			"name": "IndividualSection",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": 4294967295
 		}
 	],
 	"app.UIPartsShareSelect.FlagType": [
@@ -225750,6 +227649,14 @@
 		}
 	],
 	"via.SharePlayConnectionStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
 		{
 			"name": "Dormant",
 			"value": 0
@@ -226781,6 +228688,10 @@
 	],
 	"app.training.TrainingManager.SETriggerType": [
 		{
+			"name": "VIEW_IN",
+			"value": 2304641176
+		},
+		{
 			"name": "VIEW_OUT",
 			"value": 593799516
 		},
@@ -226789,20 +228700,64 @@
 			"value": 720273362
 		},
 		{
+			"name": "DECIDE_OPTION",
+			"value": 3314951190
+		},
+		{
+			"name": "CANCEL",
+			"value": 4278971655
+		},
+		{
+			"name": "CURSOR_UD",
+			"value": 4017190658
+		},
+		{
+			"name": "CURSOR_LR",
+			"value": 2745031051
+		},
+		{
+			"name": "CURSOR_TAB",
+			"value": 3991282397
+		},
+		{
 			"name": "COUNT_DOWN_START",
 			"value": 648611932
+		},
+		{
+			"name": "COUNT_DOWN_END",
+			"value": 2742853618
 		},
 		{
 			"name": "ITEM_DELETE",
 			"value": 1384266701
 		},
 		{
+			"name": "WT_VIEW_IN",
+			"value": 3402198489
+		},
+		{
 			"name": "WT_VIEW_OUT",
 			"value": 856573194
 		},
 		{
+			"name": "WT_CURSOR_TAB",
+			"value": 4026027029
+		},
+		{
+			"name": "WT_CURSOR_MOVE",
+			"value": 2527947817
+		},
+		{
 			"name": "WT_DECIDE_MENU",
 			"value": 1103338134
+		},
+		{
+			"name": "WT_DECIDE_RESET",
+			"value": 3997320219
+		},
+		{
+			"name": "WT_DECIDE_END",
+			"value": 2885731300
 		},
 		{
 			"name": "WT_CURSOR_MINI",
@@ -227211,6 +229166,10 @@
 	],
 	"app.worldtour.mg.MiniGame03PatternData.TargetType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "V0301_Bottle_RL_LR",
 			"value": 0
 		},
@@ -227243,6 +229202,14 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -227980,6 +229947,10 @@
 	],
 	"app.UIFlowWTDeviceEmoteShortCut.FadeAnimBase.eFadeState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Out",
 			"value": 0
 		},
@@ -228369,6 +230340,10 @@
 		}
 	],
 	"app.EProjectileState": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "CoreActivate",
 			"value": 0
@@ -229483,6 +231458,10 @@
 			{
 				"name": "EX1",
 				"value": 64
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -229885,7 +231864,16 @@
 			"value": 3
 		}
 	],
-	"via.relib.motion.UpdateOrder": [],
+	"via.relib.motion.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -800
+		},
+		{
+			"name": "MotionHistoryRecorder",
+			"value": -799
+		}
+	],
 	"via.gui.AlphaChannelType": [
 		{
 			"name": "None",
@@ -230529,6 +232517,10 @@
 	],
 	"via.hid.virtualKeyboard.CustomizedDictionaryIndex": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Index0",
 			"value": 0
 		},
@@ -231132,6 +233124,10 @@
 	],
 	"app.UIFlowShop.BuyItemList.ParamApparel.eDispType": [
 		{
+			"name": "_Invalid",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -231510,6 +233506,10 @@
 	],
 	"app.gallery.UIFlowGallery.MovieTop.eMovieItem_WT": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Story",
 			"value": 0
 		},
@@ -231737,6 +233737,10 @@
 		{
 			"name": "SetterNpc",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": 255
 		}
 	],
 	"app.worldtour.UIFlowUI61506.Param.SliderItemType": [
@@ -232139,6 +234143,10 @@
 	],
 	"soundlib.SoundListener.ListenerIndex": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "No0",
 			"value": 0
 		},
@@ -232304,6 +234312,10 @@
 		}
 	],
 	"app.gallery.UIFlowGallery.Top.Param.eFailedBootEmulatorReason": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "NoLogin",
 			"value": 0

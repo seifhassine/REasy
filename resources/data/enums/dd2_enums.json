@@ -161,6 +161,10 @@
 	],
 	"app.RenderingManager.SpeedTreeLODBias": [
 		{
+			"name": "High",
+			"value": -1
+		},
+		{
 			"name": "Middle",
 			"value": 0
 		},
@@ -173,6 +177,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"app.AppEffectDecalBugFix.LifeAnimType": [
@@ -3428,6 +3448,10 @@
 		]
 	},
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -12338,6 +12362,10 @@
 	],
 	"app.CameraDefine.ControlType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Player",
 			"value": 0
 		},
@@ -12579,6 +12607,10 @@
 	],
 	"app.AppraisalSetting.EnemyType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Enemy0",
 			"value": 0
 		},
@@ -12665,6 +12697,10 @@
 	],
 	"app.GUICharaEditStudioController.SceneType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Gui_PLEditStudio",
 			"value": 0
 		},
@@ -12674,6 +12710,10 @@
 		}
 	],
 	"app.SaveSelectLightController.EnvLightType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Type01",
 			"value": 0
@@ -12718,6 +12758,10 @@
 		}
 	],
 	"app.guicharaedit.EndResult": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Back",
 			"value": 0
@@ -12932,6 +12976,10 @@
 		}
 	],
 	"app.UserPadDefine.RequestID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Job01_TuskToss_Charge",
 			"value": 0
@@ -13452,6 +13500,10 @@
 		}
 	],
 	"app.ui030201.ListItemType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "NewGame",
 			"value": 0
@@ -14401,6 +14453,10 @@
 	],
 	"app.EnvironmentSoundController.EnvSoundLoadPhase": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Standby",
 			"value": 0
 		},
@@ -14410,6 +14466,10 @@
 		}
 	],
 	"app.PawnPartyItemInfo.EquipChangeTargetTypeEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Party",
 			"value": 0
@@ -14862,6 +14922,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditBaseHeadTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Basehead_BF_000",
 			"value": 0
@@ -18973,6 +19037,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditFrecklesTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Freckles_000",
 			"value": 0
 		},
@@ -21179,6 +21247,10 @@
 	],
 	"app.ItemDefine.ItemDropId": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Gm82_009",
 			"value": 0
 		},
@@ -22363,6 +22435,14 @@
 		{
 			"name": "Mantle_928",
 			"value": 3550015590
+		},
+		{
+			"name": "Mantle_939",
+			"value": 3056280833
+		},
+		{
+			"name": "Mantle_940",
+			"value": 2829554494
 		},
 		{
 			"name": "Mantle_2000",
@@ -25400,6 +25480,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditFurEyesTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Eye_000",
 			"value": 0
 		},
@@ -25624,6 +25708,10 @@
 		{
 			"name": "Version2_1",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.AppraiseCycleSettingData.NoticeMessageSetting.MessageType": [
@@ -27015,6 +27103,10 @@
 	},
 	"app.Ch227HeightSetting.Relative": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Up",
 			"value": 0
 		},
@@ -27042,6 +27134,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.OptionThumbTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "OptionThumb_000_00",
 			"value": 0
@@ -29212,6 +29308,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -29998,6 +30102,22 @@
 		{
 			"name": "tops_931_wb_m",
 			"value": 1508073099
+		},
+		{
+			"name": "tops_939_wb_f",
+			"value": 3057173332
+		},
+		{
+			"name": "tops_939_wb_m",
+			"value": 3573462790
+		},
+		{
+			"name": "tops_940_wb_f",
+			"value": 4245967431
+		},
+		{
+			"name": "tops_940_wb_m",
+			"value": 1956868693
 		}
 	],
 	"app.HandSyncMotionTrack.AddType": [
@@ -31152,6 +31272,10 @@
 		}
 	],
 	"app.SceneActivateController.Phase": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "RequestActive",
 			"value": 0
@@ -32639,6 +32763,10 @@
 		}
 	],
 	"app.TalkChoicesItemType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "RimCost",
 			"value": 0
@@ -35027,6 +35155,10 @@
 	],
 	"app.GUITextureLoaderDefine.LoaderType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "NPCThumbnail",
 			"value": 0
 		},
@@ -35234,6 +35366,10 @@
 		}
 	],
 	"app.WwiseDamageController.AttackStateEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "SlashLow",
 			"value": 0
@@ -36363,6 +36499,14 @@
 			{
 				"name": "KneesSub3",
 				"value": 4611686018427387904
+			},
+			{
+				"name": "KneesSub4",
+				"value": 9223372036854775808
+			},
+			{
+				"name": "ALL",
+				"value": 17328759584393804863
 			}
 		]
 	},
@@ -38226,6 +38370,10 @@
 	],
 	"app.PrefabInstantiatePhase": [
 		{
+			"name": "Immediate",
+			"value": -1
+		},
+		{
 			"name": "FrameHead",
 			"value": 0
 		},
@@ -39200,6 +39348,18 @@
 		{
 			"name": "tops_909_bd_m",
 			"value": 333008836
+		},
+		{
+			"name": "tops_939_bd_f",
+			"value": 2565819287
+		},
+		{
+			"name": "tops_939_bd_m",
+			"value": 2642457605
+		},
+		{
+			"name": "tops_940_bd_m",
+			"value": 3152332407
 		}
 	],
 	"via.motion.IkLeg2.CastRayEventIdFlags": {
@@ -40308,6 +40468,10 @@
 	],
 	"app.network.INetworkStorage.UserStorageDataType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Timer",
 			"value": 0
 		},
@@ -40713,6 +40877,10 @@
 		}
 	],
 	"app.OccupiedManager.LockType": [
+		{
+			"name": "Unset",
+			"value": -1
+		},
 		{
 			"name": "PauseMenu",
 			"value": 0
@@ -55193,6 +55361,10 @@
 	],
 	"via.gui.Segment": [
 		{
+			"name": "Keep",
+			"value": -1
+		},
+		{
 			"name": "Segment00",
 			"value": 0
 		},
@@ -55512,6 +55684,10 @@
 		}
 	],
 	"app.FormationManager.FormationID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FakeArisenPT",
 			"value": 0
@@ -61799,6 +61975,10 @@
 	],
 	"app.AttackUserData.AttrPhysicsEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Slash",
 			"value": 0
 		},
@@ -61994,6 +62174,10 @@
 		}
 	],
 	"app.GUIAppraisalDefine.EquipSupposeLvRank": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Rank0",
 			"value": 0
@@ -62816,6 +63000,10 @@
 	],
 	"app.Human.MagicBookTypeEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Heal",
 			"value": 0
 		},
@@ -63274,6 +63462,10 @@
 	],
 	"app.UVSequenceResourcePriority": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Priority_1000_000_0",
 			"value": 10000000
 		},
@@ -63649,6 +63841,10 @@
 		}
 	],
 	"app.AISituationTaskState_ObjectCarry.TaskState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "SearchPickup",
 			"value": 0
@@ -64394,6 +64590,10 @@
 	],
 	"app.Job09ActionStartAndLoopMotion.RoutineType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -64867,6 +65067,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditScarTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Scar_000",
 			"value": 0
 		},
@@ -65083,6 +65287,10 @@
 		}
 	],
 	"app.TalkEventShopResult": [
+		{
+			"name": "Failure",
+			"value": -1
+		},
 		{
 			"name": "Success",
 			"value": 1
@@ -66008,6 +66216,10 @@
 		}
 	],
 	"app.DownWingCorrectionUnit.TerrainCheckState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Cast",
 			"value": 0
@@ -67044,6 +67256,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditNoseTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Nose_000",
 			"value": 0
 		},
@@ -67350,6 +67566,10 @@
 		}
 	],
 	"app.Ch27HeightSetting.Relative": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Up",
 			"value": 0
@@ -68104,6 +68324,10 @@
 	],
 	"app.PawnCoopUseGimmickData.GimmickTypeEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "NoUse",
 			"value": 0
 		},
@@ -68117,6 +68341,10 @@
 		}
 	],
 	"app.GUISaveSelectStudioController.SceneType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "SaveSelectStudio",
 			"value": 0
@@ -68776,9 +69004,33 @@
 		{
 			"name": "mantle_928_m",
 			"value": 3474869138
+		},
+		{
+			"name": "mantle_939_f",
+			"value": 104673211
+		},
+		{
+			"name": "mantle_939_m",
+			"value": 4279739339
+		},
+		{
+			"name": "mantle_940_f",
+			"value": 1737016713
+		},
+		{
+			"name": "mantle_940_m",
+			"value": 2017249455
 		}
 	],
 	"app.PressUserData.WeightEnum": [
+		{
+			"name": "None",
+			"value": -2
+		},
+		{
+			"name": "NoWeight",
+			"value": -1
+		},
 		{
 			"name": "Zero",
 			"value": 0
@@ -70784,6 +71036,10 @@
 	},
 	"app.FormationManager.FakeArisenPT.PartyType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "TypeA",
 			"value": 0
 		},
@@ -71691,6 +71947,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditLipTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Lip_001",
 			"value": 0
 		},
@@ -72007,6 +72267,10 @@
 		}
 	],
 	"app.Job09SmokeColorType": [
+		{
+			"name": "Undefined",
+			"value": -1
+		},
 		{
 			"name": "Call",
 			"value": 0
@@ -73052,6 +73316,10 @@
 		}
 	],
 	"via.hid.MobileDeviceOrientation": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Portrait",
 			"value": 0
@@ -74395,6 +74663,10 @@
 		}
 	],
 	"app.AttackUserData.ElementType": [
+		{
+			"name": "NoSet",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -77330,6 +77602,10 @@
 		{
 			"name": "sc040040_c12",
 			"value": 332
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.renderer.detail.PrimitiveGUIMaskMode": [
@@ -78430,6 +78706,10 @@
 		{
 			"name": "PreTransformCSMax",
 			"value": 4
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.BackShopRootController.ShopIdEnum": [
@@ -78491,6 +78771,10 @@
 		}
 	],
 	"app.HitController.DamageInfo.DmgOverThresholdType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "OverThresholdLean",
 			"value": 0
@@ -78657,6 +78941,10 @@
 		}
 	],
 	"app.Job09ActionController.TerrainSmokeCategory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wall",
 			"value": 0
@@ -80012,6 +80300,10 @@
 	},
 	"app.TimelineEventCharacterActor.UnbindActionEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "UnbindAction_00",
 			"value": 0
 		},
@@ -81070,6 +81362,10 @@
 	],
 	"app.FormationManager.FakeArisenPT.FormationType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "DefaultMove",
 			"value": 0
 		}
@@ -82060,6 +82356,22 @@
 		{
 			"name": "pants_925_lg_m",
 			"value": 1338891828
+		},
+		{
+			"name": "pants_939_lg_f",
+			"value": 2741078022
+		},
+		{
+			"name": "pants_939_lg_m",
+			"value": 3981078957
+		},
+		{
+			"name": "pants_940_lg_f",
+			"value": 2299613966
+		},
+		{
+			"name": "pants_940_lg_m",
+			"value": 3902727206
 		}
 	],
 	"app.WwiseInsideCollisionGeneratorApp.PlayControlMode": [
@@ -83100,6 +83412,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditEyelashesTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Eyelash_000",
 			"value": 0
 		},
@@ -83847,6 +84163,10 @@
 	],
 	"app.Ch271CaughtCarry.State": [
 		{
+			"name": "BarrierActive",
+			"value": -1
+		},
+		{
 			"name": "BeamStart",
 			"value": 0
 		},
@@ -84055,6 +84375,10 @@
 		}
 	],
 	"via.graph.VertexIndex": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "From",
 			"value": 0
@@ -84885,7 +85209,28 @@
 			"value": 0
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"via.effect.script.LogId": [
 		{
 			"name": "AnalyzeModuleError",
@@ -85801,6 +86146,10 @@
 		}
 	],
 	"app.ui060502_2.LogSet.ContentsType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Type0",
 			"value": 0
@@ -91716,6 +92065,10 @@
 		{
 			"name": "IsPawnExploreTargetMoveAction",
 			"value": 56
+		},
+		{
+			"name": "IsPawnDontCancelJumpActionPointTask",
+			"value": 57
 		}
 	],
 	"app.WrestleCtrl.ActionExcuteTypeEnum": [
@@ -92051,6 +92404,10 @@
 		}
 	],
 	"app.WorldEnvironmentController.EnvLoadPhase": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Standby",
 			"value": 0
@@ -110344,6 +110701,10 @@
 	],
 	"app.AISituationTaskStates_GimmickInteractSchedule.TaskState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Search_Gimmick",
 			"value": 0
 		},
@@ -110506,6 +110867,10 @@
 		}
 	],
 	"app.GUIResourceManager.ResourceType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Type0",
 			"value": 0
@@ -110849,6 +111214,10 @@
 		{
 			"name": "EnemyFree31",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "EnemyFree32",
+			"value": 9223372036854775808
 		},
 		{
 			"name": "None",
@@ -112218,6 +112587,10 @@
 	],
 	"app.MainFlowResumeClass.ResumeTypeEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "ColdNormal",
 			"value": 1
 		},
@@ -112764,6 +113137,14 @@
 		{
 			"name": "Pants_938",
 			"value": 3896117167
+		},
+		{
+			"name": "Pants_939",
+			"value": 3681696921
+		},
+		{
+			"name": "Pants_940",
+			"value": 1704125751
 		},
 		{
 			"name": "Pants_2000",
@@ -116095,6 +116476,10 @@
 	],
 	"app.ui042001.AnimStateController.Transit": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "MainToEffect",
 			"value": 0
 		},
@@ -116457,6 +116842,14 @@
 		}
 	],
 	"via.VideoRecordingStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -116846,6 +117239,10 @@
 		}
 	],
 	"app.ui01360601.EquipFilterPanel.ControlTarget": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Job",
 			"value": 0
@@ -117476,6 +117873,10 @@
 		{
 			"name": "EnemyFree31",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "EnemyFree32",
+			"value": 9223372036854775808
 		},
 		{
 			"name": "None",
@@ -118494,6 +118895,10 @@
 	],
 	"app.LivActionController.CommandType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Idle",
 			"value": 0
 		},
@@ -118766,6 +119171,10 @@
 	],
 	"app.GUICharaEditCtrl.EditProgress": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "MenuHub",
 			"value": 0
 		},
@@ -119008,6 +119417,10 @@
 	],
 	"app.WingAdjusterUnit.TerrainCheckState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Cast",
 			"value": 0
 		},
@@ -119059,6 +119472,10 @@
 		}
 	],
 	"app.DemoMediator.WorkBase.State": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Loading",
 			"value": 0
@@ -120340,6 +120757,10 @@
 		{
 			"name": "LocomotionOnChara",
 			"value": 5
+		},
+		{
+			"name": "Disable",
+			"value": -1
 		}
 	],
 	"app.Gm83_312.InteractState": [
@@ -124306,6 +124727,10 @@
 	],
 	"app.PawnBattleController.SwitchToWinResults": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "Success",
 			"value": 0
 		},
@@ -125456,6 +125881,10 @@
 	],
 	"app.PawnBattleController.SwitchToNormalResults": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "Success",
 			"value": 0
 		},
@@ -126362,6 +126791,10 @@
 	],
 	"app.ui021601.ListItem.State": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Disp",
 			"value": 0
 		},
@@ -126855,6 +127288,10 @@
 	],
 	"app.GUIAppraisalDefine.AppraiseSkillRank": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Rank0",
 			"value": 0
 		},
@@ -127326,6 +127763,10 @@
 	],
 	"app.NavigationAttributesType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Obstacle",
 			"value": 0
 		},
@@ -127535,6 +127976,10 @@
 		}
 	],
 	"via.network.MatchmakingRules.DataType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Number",
 			"value": 0
@@ -128552,6 +128997,10 @@
 		}
 	],
 	"app.PawnHealItemController.UseItemHealTypeEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "StatusCondition",
 			"value": 0
@@ -131107,6 +131556,10 @@
 	],
 	"app.WeaponElementControllerBase.ElementAssignmentTypeEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Weapon",
 			"value": 0
 		},
@@ -133253,6 +133706,14 @@
 		{
 			"name": "tops_936_am_m_00",
 			"value": 3440096232
+		},
+		{
+			"name": "tops_939_am_m",
+			"value": 2015146097
+		},
+		{
+			"name": "tops_940_am_f",
+			"value": 934793078
 		}
 	],
 	"via.storage.SaveServiceWriteMode": [
@@ -135123,6 +135584,10 @@
 	},
 	"app.Ch227HeightSetting.Absolute": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Low",
 			"value": 0
 		},
@@ -135212,6 +135677,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditHeadTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Head_BF_Style_000",
 			"value": 0
@@ -136460,6 +136929,10 @@
 		}
 	],
 	"app.PhotoColorFilter.FilterType": [
+		{
+			"name": "Default",
+			"value": -1
+		},
 		{
 			"name": "Orange",
 			"value": 0
@@ -138351,6 +138824,10 @@
 	],
 	"app.Ch27HeightSetting.Absolute": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Low",
 			"value": 0
 		},
@@ -138824,6 +139301,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditTattooTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Tattoo_000",
 			"value": 0
@@ -140589,6 +141070,10 @@
 	],
 	"app.PawnManager.PawnID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MainPawn",
 			"value": 0
 		},
@@ -140687,6 +141172,10 @@
 	],
 	"app.FacilityManager.InnAwakeParam.SettingOrder": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Player",
 			"value": 0
 		},
@@ -140715,6 +141204,10 @@
 	],
 	"via.storage.saveService.SaveDataType": [
 		{
+			"name": "Array",
+			"value": -1
+		},
+		{
 			"name": "Int32",
 			"value": 0
 		},
@@ -140740,6 +141233,10 @@
 		}
 	],
 	"app.PawnManager.Gm81_046SideEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Upper",
 			"value": 0
@@ -142688,16 +143185,40 @@
 			"value": 766672989
 		},
 		{
+			"name": "Source_PitchCent",
+			"value": -1648924202
+		},
+		{
+			"name": "Source_PitchInterpolateTimeSec",
+			"value": -993657949
+		},
+		{
 			"name": "Source_PanEnable",
 			"value": 1916531465
+		},
+		{
+			"name": "Source_PanType",
+			"value": -2127483547
+		},
+		{
+			"name": "Source_PanListenerIndex",
+			"value": -1538783516
 		},
 		{
 			"name": "Source_PanPosition",
 			"value": 1458709799
 		},
 		{
+			"name": "Source_PanAngleHorizontal",
+			"value": -518941220
+		},
+		{
 			"name": "Source_PanAngleVertical",
 			"value": 1619337545
+		},
+		{
+			"name": "Source_PanAngleInterpolateTimeSec",
+			"value": -1565809139
 		},
 		{
 			"name": "Source_LpfEnable",
@@ -142712,6 +143233,14 @@
 			"value": 388731729
 		},
 		{
+			"name": "Source_HpfEnable",
+			"value": -881865815
+		},
+		{
+			"name": "Source_HpfFreq",
+			"value": -726899442
+		},
+		{
 			"name": "Source_HpfQ",
 			"value": 1186837195
 		},
@@ -142720,8 +143249,32 @@
 			"value": 1186837196
 		},
 		{
+			"name": "Source_PropagationActive",
+			"value": -30320134
+		},
+		{
 			"name": "Source_PropagationVolumeDb",
 			"value": 2049662019
+		},
+		{
+			"name": "Source_PropagationLpfFreq",
+			"value": -1068135618
+		},
+		{
+			"name": "Source_PropagationLpfQ",
+			"value": -245701400
+		},
+		{
+			"name": "Source_PropagationInterpolateTimeSec",
+			"value": -34588737
+		},
+		{
+			"name": "Source_LoopActive",
+			"value": -2019690341
+		},
+		{
+			"name": "Source_LoopBeginTimeSec",
+			"value": -291791126
 		},
 		{
 			"name": "Source_LoopEndTimeSec",
@@ -142736,8 +143289,28 @@
 			"value": 546201304
 		},
 		{
+			"name": "Source_VoiceLimitFadeOutTimeSec",
+			"value": -2058672522
+		},
+		{
+			"name": "Bus_VolumeDb",
+			"value": -217480076
+		},
+		{
+			"name": "Bus_InteractiveVolumeDb",
+			"value": -624297413
+		},
+		{
 			"name": "Bus_InteractiveVolumeInterpolateTimeSec",
 			"value": 2012793230
+		},
+		{
+			"name": "Bus_SourceSend",
+			"value": -137977282
+		},
+		{
+			"name": "Bus_SourceSendVolumeDb",
+			"value": -1042188976
 		},
 		{
 			"name": "Bus_SourceSendVolumeInterpolateTimeSec",
@@ -142752,6 +143325,10 @@
 			"value": 592378457
 		},
 		{
+			"name": "Bus_PanListenerIndex",
+			"value": -523616608
+		},
+		{
 			"name": "Bus_PanPosition",
 			"value": 55397816
 		},
@@ -142764,8 +143341,20 @@
 			"value": 1096524864
 		},
 		{
+			"name": "Bus_PanAngleInterpolateTimeSec",
+			"value": -1506226262
+		},
+		{
+			"name": "Bus_PropagationActive",
+			"value": -1801600686
+		},
+		{
 			"name": "Bus_PropagationVolumeDb",
 			"value": 1403062656
+		},
+		{
+			"name": "Bus_PropagationLpfFreq",
+			"value": -740598233
 		},
 		{
 			"name": "Bus_PropagationLpfQ",
@@ -142780,6 +143369,18 @@
 			"value": 88519963
 		},
 		{
+			"name": "Bus_Solo",
+			"value": -1379674758
+		},
+		{
+			"name": "Bus_SendPort",
+			"value": -1945784357
+		},
+		{
+			"name": "Bus_SendVibrationPort",
+			"value": -1549717776
+		},
+		{
 			"name": "Effect_Bypass",
 			"value": 1268880365
 		},
@@ -142788,8 +143389,36 @@
 			"value": 424121236
 		},
 		{
+			"name": "Effect_Distortion_MixAmount",
+			"value": -109979300
+		},
+		{
+			"name": "Effect_Distortion_DistType",
+			"value": -1477939175
+		},
+		{
 			"name": "Effect_Distortion_OutputGainDb",
 			"value": 1395715799
+		},
+		{
+			"name": "Effect_MTCompressor_ThresholdDb",
+			"value": -289223745
+		},
+		{
+			"name": "Effect_MTCompressor_Ratio",
+			"value": -783465346
+		},
+		{
+			"name": "Effect_MTCompressor_AttackTimeMSec",
+			"value": -1025135436
+		},
+		{
+			"name": "Effect_MTCompressor_ReleaseTimeMSec",
+			"value": -1509254790
+		},
+		{
+			"name": "Effect_MTEqualizer_SectionEnable",
+			"value": -1593370646
 		},
 		{
 			"name": "Effect_MTEqualizer_FilterType",
@@ -142804,8 +143433,56 @@
 			"value": 2064775098
 		},
 		{
+			"name": "Effect_MTEqualizer_GainDb",
+			"value": -2132942000
+		},
+		{
+			"name": "Effect_MultibandEqualizer_SectionEnable",
+			"value": -1106780115
+		},
+		{
+			"name": "Effect_MultibandEqualizer_FilterType",
+			"value": -228099779
+		},
+		{
+			"name": "Effect_MultibandEqualizer_Freq",
+			"value": -1059137115
+		},
+		{
+			"name": "Effect_MultibandEqualizer_Q",
+			"value": -673559867
+		},
+		{
+			"name": "Effect_MultibandEqualizer_GainDb",
+			"value": -38151961
+		},
+		{
+			"name": "Effect_LowPassFilter_CutoffFreq",
+			"value": -1196809127
+		},
+		{
+			"name": "Effect_LowPassFilter_Q",
+			"value": -1151486807
+		},
+		{
+			"name": "Effect_MTLimiter_ThresholdDb",
+			"value": -2119630908
+		},
+		{
+			"name": "Effect_MTLimiter_OutputGainDb",
+			"value": -1069880450
+		},
+		{
+			"name": "Effect_PicolaPitchShift_MinFreq",
+			"value": -1989463723
+		},
+		{
 			"name": "Effect_PicolaPitchShift_MaxFreq",
 			"value": 127464202
+		},
+		{
+			"name": "Effect_PicolaPitchShift_Cent",
+			"value": -68782148
 		},
 		{
 			"name": "Effect_ConvolutionReverb_DryVolumeRatio",
@@ -142816,12 +143493,20 @@
 			"value": 1035945611
 		},
 		{
+			"name": "Effect_I3DL2Reverb_Room",
+			"value": -1674469922
+		},
+		{
 			"name": "Effect_I3DL2Reverb_RoomHF",
 			"value": 864162877
 		},
 		{
 			"name": "Effect_I3DL2Reverb_RoomRolloffFactor",
 			"value": 863964066
+		},
+		{
+			"name": "Effect_I3DL2Reverb_DecayTime",
+			"value": -269804825
 		},
 		{
 			"name": "Effect_I3DL2Reverb_DecayHFRatio",
@@ -142844,6 +143529,10 @@
 			"value": 519749771
 		},
 		{
+			"name": "Effect_I3DL2Reverb_Diffusion",
+			"value": -318380644
+		},
+		{
 			"name": "Effect_I3DL2Reverb_Density",
 			"value": 78995089
 		},
@@ -142856,12 +143545,24 @@
 			"value": 979589481
 		},
 		{
+			"name": "Effect_SimpleFdnReverb_WetVolumeDb",
+			"value": -2062811865
+		},
+		{
+			"name": "Effect_SimpleFdnReverb_HF",
+			"value": -1413364251
+		},
+		{
 			"name": "Effect_SimpleFdnReverb_ReverbTime",
 			"value": 1784075536
 		},
 		{
 			"name": "Effect_SimpleFdnReverb_PreDelay",
 			"value": 1600734909
+		},
+		{
+			"name": "Effect_SimpleFdnReverb_Density",
+			"value": -1564593946
 		},
 		{
 			"name": "Global_ListenerPositionRotation",
@@ -143625,6 +144326,10 @@
 	],
 	"app.ui040101_00.MenuResult": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "End",
 			"value": 0
 		},
@@ -143704,6 +144409,26 @@
 		}
 	],
 	"via.os.websocket_client.Error": [
+		{
+			"name": "TruncatedSend",
+			"value": -5
+		},
+		{
+			"name": "CouldNotSend",
+			"value": -4
+		},
+		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -144111,6 +144836,10 @@
 	],
 	"app.ui023301.SubSkillAction": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Type0",
 			"value": 0
 		},
@@ -144128,6 +144857,10 @@
 		}
 	],
 	"app.Job04KickWall.RoutineType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -146073,6 +146806,10 @@
 	],
 	"app.EquipmentAbilityMessageDefine.AbilityCategory": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -146460,6 +147197,10 @@
 		}
 	],
 	"app.PawnBattleController.SwitchToBattleResults": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Success",
 			"value": 0
@@ -146960,8 +147701,33 @@
 			"value": 2
 		}
 	],
-	"app.AppEventUpdateOrder.UpdateOrder": [],
+	"app.AppEventUpdateOrder.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -3000
+		},
+		{
+			"name": "AppEventManager",
+			"value": -2999
+		},
+		{
+			"name": "TimelineEventPlayOffsetSetter",
+			"value": -2998
+		},
+		{
+			"name": "AppEventConstraintParent",
+			"value": -2997
+		},
+		{
+			"name": "AppEventFree",
+			"value": -2996
+		}
+	],
 	"app.ValidatedBool": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "False",
 			"value": 0
@@ -148732,6 +149498,18 @@
 		{
 			"name": "pants_936_lg_m_00",
 			"value": 269806095
+		},
+		{
+			"name": "pants_939_lg_m_00",
+			"value": 1248068581
+		},
+		{
+			"name": "pants_939_lg_m_01",
+			"value": 3200910304
+		},
+		{
+			"name": "pants_940_lg_f",
+			"value": 2299613966
 		}
 	],
 	"app.gm59_020.TypeEnum": [
@@ -148803,6 +149581,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditEyeTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Eye_000",
 			"value": 0
@@ -149123,6 +149905,10 @@
 			{
 				"name": "IgnoreMustGenerate",
 				"value": 4
+			},
+			{
+				"name": "All",
+				"value": 18446744073709551615
 			},
 			{
 				"name": "None",
@@ -149651,6 +150437,10 @@
 	],
 	"app.CharaEditEffectController.EffectType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Base",
 			"value": 0
 		},
@@ -149710,6 +150500,10 @@
 		}
 	],
 	"app.MainFlowContinueClass.ContinueTypeEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "ConfirmContinue",
 			"value": 1
@@ -149920,6 +150714,10 @@
 		}
 	],
 	"app.ExtraContentsDialogController.Phase": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -150521,6 +151319,10 @@
 	],
 	"via.hid.MobileViewOrientation": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "LandscapeLeft",
 			"value": 2
 		},
@@ -150860,6 +151662,10 @@
 			{
 				"name": "EnemyFree31",
 				"value": 4611686018427387904
+			},
+			{
+				"name": "EnemyFree32",
+				"value": 9223372036854775808
 			},
 			{
 				"name": "None",
@@ -151507,6 +152313,10 @@
 		}
 	],
 	"via.gui.AssetLanguage": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0
@@ -152743,6 +153553,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Ch253001CarriedItem.RoutineEnum": [
@@ -152879,6 +153693,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkLeg.RayCastCallbackID": [
@@ -154100,6 +154918,10 @@
 	],
 	"app.SaveDataManager.RequestResultType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Success",
 			"value": 0
 		},
@@ -154360,6 +155182,10 @@
 		]
 	},
 	"app.Ch20AreaDetector.AreaDetectInfo.DetectType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "IsInMap",
 			"value": 0
@@ -155258,6 +156084,10 @@
 		{
 			"name": "backpack_500_m",
 			"value": 3751693243
+		},
+		{
+			"name": "backpack_940_f",
+			"value": 590973138
 		}
 	],
 	"via.render.detail.CustomFilterTiming": [
@@ -156097,6 +156927,10 @@
 		}
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -157209,6 +158043,10 @@
 	],
 	"app.DamageUnbalanceL.RoutineType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -157501,6 +158339,10 @@
 		}
 	],
 	"app.WwiseDamageController.DamageStatus": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 0
@@ -158525,6 +159367,10 @@
 	],
 	"app.Job06SpellType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Salamander",
 			"value": 0
 		},
@@ -158723,6 +159569,10 @@
 		}
 	],
 	"app.ui01360601.MainControlPanel.ControlTarget": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Filter",
 			"value": 0
@@ -160086,6 +160936,10 @@
 		}
 	],
 	"app.PawnBattleController.SwitchToEscapeResults": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Success",
 			"value": 0
@@ -161939,6 +162793,10 @@
 	},
 	"app.GUIBase.JobSelectWindowRef.SelectTarget": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "NoneButton",
 			"value": 0
 		},
@@ -163628,6 +164486,10 @@
 	],
 	"app.GUITextureLoaderDefine.LoadingArtTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "LoadingArt_01",
 			"value": 0
 		},
@@ -165145,6 +166007,10 @@
 	],
 	"app.AISituationTaskStates_Battle_qu010030.StateType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -166616,6 +167482,10 @@
 		}
 	],
 	"soundlib.SoundVibrationManager.SideType": [
+		{
+			"name": "LeftSide",
+			"value": -1
+		},
 		{
 			"name": "BothSides",
 			"value": 0
@@ -169669,6 +170539,10 @@
 	],
 	"app.Ch252BodyPartsController.Ch252FreezeRequestCause": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "AfterShootLaser",
 			"value": 0
 		},
@@ -170345,6 +171219,10 @@
 	],
 	"app.AttackUserData.AttackDirEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Front",
 			"value": 0
 		},
@@ -170516,6 +171394,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditSkinTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Skin_BF_Style_000",
 			"value": 0
@@ -171449,6 +172331,10 @@
 		"flags": true,
 		"values": [
 			{
+				"name": "None",
+				"value": -2147483648
+			},
+			{
 				"name": "Wall_0",
 				"value": 1
 			},
@@ -171969,6 +172855,10 @@
 	],
 	"app.AppraisalSetting.FormatType": [
 		{
+			"name": "invalid",
+			"value": -1
+		},
+		{
 			"name": "Type0",
 			"value": 0
 		},
@@ -172210,6 +173100,10 @@
 		}
 	],
 	"app.DemoMediator.SwitchType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Timeline",
 			"value": 0
@@ -175462,6 +176356,10 @@
 		{
 			"name": "ac5612",
 			"value": 5612
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Pawn.SpringJumpType": [
@@ -175653,6 +176551,10 @@
 		}
 	],
 	"via.effect.GroupType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Free",
 			"value": 0
@@ -176507,6 +177409,10 @@
 	],
 	"app.AttackUserData.HitEffTypeEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "SlashLow",
 			"value": 0
 		},
@@ -176604,6 +177510,10 @@
 		}
 	],
 	"app.ui030202.FlowId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -177134,6 +178044,10 @@
 		{
 			"name": "GraphicsFeatures_AmplificationShader",
 			"value": 17179869184
+		},
+		{
+			"name": "GraphicsFeatures_NVAPI_ShaderExecutionReordering",
+			"value": 9223372036854775808
 		}
 	],
 	"app.UniqueIdLinker.LinkedDataUsageCondition": [
@@ -177229,6 +178143,10 @@
 		}
 	],
 	"app.Ch256Rodeo.RoutineNo": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "StandBy",
 			"value": 0
@@ -177328,7 +178246,40 @@
 			"value": 3
 		}
 	],
-	"via.relib.light.UpdateOrder": [],
+	"via.relib.light.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -900
+		},
+		{
+			"name": "EventLightController",
+			"value": -899
+		},
+		{
+			"name": "LightBlinkUserCurve",
+			"value": -898
+		},
+		{
+			"name": "GlobalTimeZoneManager",
+			"value": -897
+		},
+		{
+			"name": "PostControlManager",
+			"value": -896
+		},
+		{
+			"name": "LightControlManager",
+			"value": -895
+		},
+		{
+			"name": "GeometryAOSetting",
+			"value": -894
+		},
+		{
+			"name": "CopyPostProcessParam",
+			"value": -893
+		}
+	],
 	"via.render.GlobalSparseShadowResolution": [
 		{
 			"name": "GlobalSparseShadowResolution_64",
@@ -177609,6 +178560,10 @@
 			"value": 536870912
 		},
 		{
+			"name": "ExecuteTimingNormal",
+			"value": -2147483648
+		},
+		{
 			"name": "ExecuteTimingPrecede",
 			"value": 1073741824
 		}
@@ -177634,6 +178589,10 @@
 		}
 	],
 	"app.ScreenplayIntermediateUserData.EmotionType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Neutral",
 			"value": 0
@@ -177778,6 +178737,10 @@
 		}
 	],
 	"app.GUISceneController.StateID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -184728,6 +185691,10 @@
 	],
 	"app.InterestMarker.RequestAct.RequestActType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Warning",
 			"value": 0
 		},
@@ -186906,6 +187873,10 @@
 	],
 	"app.AppraisalSetting.ParamType": [
 		{
+			"name": "invalid",
+			"value": -1
+		},
+		{
 			"name": "physical",
 			"value": 0
 		},
@@ -187729,6 +188700,10 @@
 	],
 	"app.AppraisalSetting.CrystalSlotType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Type0",
 			"value": 0
 		},
@@ -187774,6 +188749,10 @@
 		}
 	],
 	"app.LivActionLookAtController.TypeOfPositionVector": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Middle_Front",
 			"value": 0
@@ -187972,6 +188951,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditFurPatternTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FurPattern_BF_000",
 			"value": 0
@@ -188218,6 +189201,10 @@
 		}
 	],
 	"app.ExtraContentsDialogManager.SystemMessageType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Mes0000_00",
 			"value": 0
@@ -189768,6 +190755,10 @@
 	},
 	"app.ui042301.ItemType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Skill",
 			"value": 0
 		},
@@ -189781,6 +190772,10 @@
 		}
 	],
 	"app.ui041003.Result": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Yes",
 			"value": 0
@@ -192103,6 +193098,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditFurStyleTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "FurStyle_BF_000",
 			"value": 0
 		},
@@ -192431,6 +193430,14 @@
 		{
 			"name": "None",
 			"value": 0
+		},
+		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
 		},
 		{
 			"name": "Forceword",
@@ -194366,6 +195373,10 @@
 	],
 	"app.FlowLiquidController.Area": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Area_1",
 			"value": 0
 		},
@@ -196044,6 +197055,10 @@
 	],
 	"app.WorkRateSystem.TypePriority": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Lowest",
 			"value": 0
 		},
@@ -196531,6 +197546,10 @@
 		}
 	],
 	"app.ManualMapMaskOffSettingData.Key": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "NRD07",
 			"value": 0
@@ -209612,6 +210631,10 @@
 		{
 			"name": "Unknown",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
 		}
 	],
 	"via.landscape.SplineRuntimePipelineState": [
@@ -209978,6 +211001,10 @@
 	],
 	"app.ContentsEnvironmentController.EnvLoadPhase": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Standby",
 			"value": 0
 		},
@@ -210013,6 +211040,10 @@
 		}
 	],
 	"app.Ch252DropPartsController.Ch252DropPartsType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Head",
 			"value": 0
@@ -211248,6 +212279,10 @@
 			"value": 4611686018427387904
 		},
 		{
+			"name": "Free32",
+			"value": 9223372036854775808
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -211291,6 +212326,10 @@
 		}
 	],
 	"app.Ch227HeightSetting.HeightAssignTypeWrapper.HeightAssignType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Absolute",
 			"value": 0
@@ -212071,6 +213110,14 @@
 			{
 				"name": "WaistAccessory3",
 				"value": 4611686018427387904
+			},
+			{
+				"name": "WaistAccessory4",
+				"value": 9223372036854775808
+			},
+			{
+				"name": "ALL",
+				"value": 17549402948573887495
 			}
 		]
 	},
@@ -216472,6 +217519,22 @@
 		{
 			"name": "tops_936_wb_f_01",
 			"value": 1335155377
+		},
+		{
+			"name": "tops_939_wb_m",
+			"value": 3573462790
+		},
+		{
+			"name": "tops_939_wb_m_01",
+			"value": 325774728
+		},
+		{
+			"name": "tops_940_wb_f",
+			"value": 4245967431
+		},
+		{
+			"name": "tops_940_wb_f_01",
+			"value": 2554642816
 		}
 	],
 	"via.motion.IkHumanLookAtPresetBlendMode": [
@@ -218000,6 +219063,10 @@
 	],
 	"app.AppraiseCycleDefine.EventCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "AllRange",
 			"value": 0
 		},
@@ -219167,6 +220234,10 @@
 	],
 	"via.render.ShaderLod": [
 		{
+			"name": "ShaderLod_Automatic",
+			"value": -1
+		},
+		{
 			"name": "ShaderLod_0",
 			"value": 0
 		},
@@ -219887,6 +220958,10 @@
 		{
 			"name": "cs9900",
 			"value": 9900
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.Entry.Type": [
@@ -220309,6 +221384,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"via.relib.Prohibit.Limit": [
@@ -220531,6 +221610,10 @@
 		]
 	},
 	"app.ui01360601.EquipmentAbilityFilterPanel.ControlTarget": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Grid",
 			"value": 0
@@ -228406,6 +229489,14 @@
 			"value": 10475
 		},
 		{
+			"name": "It010476",
+			"value": 10476
+		},
+		{
+			"name": "It010477",
+			"value": 10477
+		},
+		{
 			"name": "It010500",
 			"value": 10500
 		},
@@ -228704,6 +229795,14 @@
 		{
 			"name": "It010574",
 			"value": 10574
+		},
+		{
+			"name": "It010578",
+			"value": 10578
+		},
+		{
+			"name": "It010579",
+			"value": 10579
 		},
 		{
 			"name": "It010600",
@@ -232228,6 +233327,10 @@
 	],
 	"app.DemoMediator.DemoType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Timeline",
 			"value": 0
 		},
@@ -233866,6 +234969,14 @@
 		{
 			"name": "tops_936_bd_f_01",
 			"value": 414998537
+		},
+		{
+			"name": "tops_939_bd_m",
+			"value": 2642457605
+		},
+		{
+			"name": "tops_940_bd_m",
+			"value": 3152332407
 		}
 	],
 	"System.Globalization.NumberStyles": {
@@ -236097,6 +237208,10 @@
 	],
 	"app.ui070404.EditFlowId": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Head",
 			"value": 0
 		},
@@ -237897,6 +239012,10 @@
 	],
 	"app.decision.tcondition.Ch270FlagCheck.Flags": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "IsBarrierOffByReviveParts",
 			"value": 0
 		},
@@ -237945,6 +239064,14 @@
 		{
 			"name": "HIGH",
 			"value": 1
+		},
+		{
+			"name": "KEEP",
+			"value": -1
+		},
+		{
+			"name": "HARD_KEEP",
+			"value": -11
 		}
 	],
 	"app.charaedit.ch110.MakeupPresetID": [
@@ -238475,6 +239602,10 @@
 				"value": 4611686018427387904
 			},
 			{
+				"name": "EnemyFree32",
+				"value": 9223372036854775808
+			},
+			{
 				"name": "None",
 				"value": 0
 			}
@@ -238495,6 +239626,10 @@
 		}
 	],
 	"app.AISituationTaskStates_GimmickInteractSchedule.GimmickTaskTable.GimmickTask.GimmickTaskData.EndFlowType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "InteractEnd_NextStep",
 			"value": 0
@@ -241912,6 +243047,10 @@
 	],
 	"app.ui023401.RetVal": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Sel0",
 			"value": 0
 		},
@@ -242070,6 +243209,10 @@
 		}
 	],
 	"app.AppraiseCycleDefine.EventPriority": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Lowest",
 			"value": 0
@@ -242823,7 +243966,124 @@
 			"value": 2
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "ObjectEffectManagerDelayAwakeProcessor",
+			"value": -997
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -996
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -995
+		},
+		{
+			"name": "EventEffectManager",
+			"value": -994
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -993
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -992
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -985
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -984
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -983
+		},
+		{
+			"name": "EPVExpertAutoIsLanding",
+			"value": -982
+		},
+		{
+			"name": "LoadZone",
+			"value": -981
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "EmitZone",
+			"value": -979
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -978
+		},
+		{
+			"name": "CullingZone",
+			"value": -977
+		},
+		{
+			"name": "EffectInfoHolder",
+			"value": -976
+		},
+		{
+			"name": "EffectVirtualSkeletonBinder",
+			"value": -975
+		},
+		{
+			"name": "EffectMovement",
+			"value": -974
+		},
+		{
+			"name": "EffectManager",
+			"value": -973
+		},
+		{
+			"name": "EffectContainer",
+			"value": -972
+		}
+	],
 	"app.quest.action.OverrideOxcartScheduleData.TargetType": [
 		{
 			"name": "Driver",
@@ -242952,6 +244212,10 @@
 		}
 	],
 	"app.MainFlowContinueClass.ContinueFlowPhaseEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "SetupDialog",
 			"value": 0
@@ -245046,6 +246310,10 @@
 	],
 	"app.GuiDefine.GUISceneType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Other",
 			"value": 0
 		},
@@ -245407,6 +246675,10 @@
 			{
 				"name": "Interfaces",
 				"value": 8192
+			},
+			{
+				"name": "All",
+				"value": -1
 			}
 		]
 	},
@@ -245527,6 +246799,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"app.EmThkChkCh258002CheckParts.CompareState": [
@@ -247411,6 +248711,10 @@
 	],
 	"app.ui042001.AnimStateController.SubState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Main_In",
 			"value": 0
 		},
@@ -248748,6 +250052,10 @@
 	],
 	"app.Job09RageFregrance.PhaseType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Fregrance_Start",
 			"value": 0
 		},
@@ -248789,6 +250097,10 @@
 		}
 	],
 	"app.Contents0014DungeonManager.Contents0014DungeonType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "RDL_01",
 			"value": 0
@@ -253548,6 +254860,10 @@
 	],
 	"app.UVSequenceResourceKind": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "UVS_ui01c00_000_00_0",
 			"value": 10000000
 		}
@@ -254293,6 +255609,10 @@
 		}
 	],
 	"via.motion.Animation.ExecuteThread": [
+		{
+			"name": "Auto",
+			"value": -1
+		},
 		{
 			"name": "Line0",
 			"value": 0
@@ -261569,6 +262889,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditCheekTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Cheek_001",
 			"value": 0
 		},
@@ -262855,6 +264179,10 @@
 	],
 	"app.ExtraConsumFlowBase.ResultType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Success",
 			"value": 0
 		},
@@ -263839,6 +265167,10 @@
 		{
 			"name": "mv8000",
 			"value": 8000
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"System.Number.ParsingStatus": [
@@ -266935,6 +268267,10 @@
 	],
 	"app.decision.nodetree.NodeID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Root",
 			"value": 0
 		},
@@ -268938,6 +270274,10 @@
 	],
 	"app.ui042001.ResultRerity": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -269147,6 +270487,10 @@
 		}
 	],
 	"app.Ch258000.Ch258000FlightPhase": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "WorldTour",
 			"value": 0
@@ -270172,7 +271516,24 @@
 			"value": 2
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "MaterialParamLink",
+			"value": -1998
+		},
+		{
+			"name": "MeshJointSetting",
+			"value": -1997
+		}
+	],
 	"app.ShapeUserData.HitAngleInfo.AttackObjBasePosType": [
 		{
 			"name": "Root",
@@ -270582,6 +271943,10 @@
 		}
 	],
 	"app.GuiStudioCameraCtrl.DispType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Body",
 			"value": 0
@@ -272297,6 +273662,22 @@
 		{
 			"name": "tops_908_am_m",
 			"value": 1186170569
+		},
+		{
+			"name": "tops_939_am_f",
+			"value": 3583542545
+		},
+		{
+			"name": "tops_939_am_m",
+			"value": 2015146097
+		},
+		{
+			"name": "tops_940_am_f",
+			"value": 934793078
+		},
+		{
+			"name": "tops_940_am_m",
+			"value": 3689234752
 		}
 	],
 	"app.te.condition.CharacterHitPointCondition.CharacterKind": [
@@ -273455,6 +274836,14 @@
 	],
 	"via.network.wrangler.PopulationSample": [
 		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
+		{
 			"name": "Undefined",
 			"value": 0
 		}
@@ -274427,6 +275816,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditFurFaceMaskTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "FaceMask_000",
 			"value": 0
 		},
@@ -274548,6 +275941,62 @@
 		{
 			"name": "NoError",
 			"value": 0
+		},
+		{
+			"name": "AppUnavailable",
+			"value": -1
+		},
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "InvalidRequest",
+			"value": -3
+		},
+		{
+			"name": "DownloadNotFound",
+			"value": -4
+		},
+		{
+			"name": "ApiNotAvailable",
+			"value": -5
+		},
+		{
+			"name": "NetworkError",
+			"value": -6
+		},
+		{
+			"name": "AccessDenied",
+			"value": -7
+		},
+		{
+			"name": "InsufficientStorage",
+			"value": -10
+		},
+		{
+			"name": "PlayStoreNotFound",
+			"value": -11
+		},
+		{
+			"name": "NetworkUnrestricted",
+			"value": -12
+		},
+		{
+			"name": "AppNotOwned",
+			"value": -13
+		},
+		{
+			"name": "InternalError",
+			"value": -100
+		},
+		{
+			"name": "InitializationNeeded",
+			"value": -101
+		},
+		{
+			"name": "InitializationFailed",
+			"value": -102
 		}
 	],
 	"app.NetworkInitSettingDownloader.VersionUpdateStatus": [
@@ -274652,6 +276101,10 @@
 		{
 			"name": "Backpack_002",
 			"value": 2981240346
+		},
+		{
+			"name": "Backpack_003",
+			"value": 4139429094
 		}
 	],
 	"via.motion.detail.IkLizardHipLegSolver.LegIndex": [
@@ -275089,6 +276542,10 @@
 	],
 	"app.LivActionLookAtController.TypeOfVariation": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Stare_RandomSelect",
 			"value": 0
 		},
@@ -275194,6 +276651,10 @@
 		}
 	],
 	"app.KeyBindKeyType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Primary",
 			"value": 0
@@ -276024,6 +277485,14 @@
 		}
 	],
 	"via.os.http_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -277006,6 +278475,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditBeardTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Beard_BM_811",
 			"value": 0
 		},
@@ -277487,6 +278960,10 @@
 		}
 	],
 	"app.GuiDefine.GuiType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Dummy",
 			"value": 0
@@ -278218,6 +279695,26 @@
 	],
 	"app.SentimentRank": [
 		{
+			"name": "None",
+			"value": -501
+		},
+		{
+			"name": "KillMax",
+			"value": -199
+		},
+		{
+			"name": "Kill",
+			"value": -101
+		},
+		{
+			"name": "Hate",
+			"value": -31
+		},
+		{
+			"name": "Normal",
+			"value": -30
+		},
+		{
 			"name": "Like",
 			"value": 100
 		},
@@ -278502,6 +279999,10 @@
 		}
 	],
 	"app.GUICharaEditStudioController.StateID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -279336,6 +280837,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditMuscleTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Muscle_HF_000",
 			"value": 0
@@ -280763,6 +282268,10 @@
 	],
 	"app.JobActionStartLoopEnd.RoutineType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -280956,6 +282465,10 @@
 		}
 	],
 	"app.Ch256StartAndLoopMotion.RoutineType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -286824,6 +288337,10 @@
 	},
 	"app.SoundVoiceManager.VoiceCatalogType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Player",
 			"value": 0
 		},
@@ -289968,6 +291485,10 @@
 	],
 	"app.AutoPauseSystem.Phase": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Setup",
 			"value": 0
 		},
@@ -289995,6 +291516,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditFurForeheadTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Forehead_000",
 			"value": 0
@@ -291059,6 +292584,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditEyeshadowTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Eyeshadow_001",
 			"value": 0
 		},
@@ -291677,6 +293206,10 @@
 	],
 	"app.ui040205.SearchListCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Facility",
 			"value": 0
 		},
@@ -292015,6 +293548,10 @@
 		}
 	],
 	"app.AILocalAreaDefinition": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Situation_TWN01_01_0002",
 			"value": 0
@@ -297547,6 +299084,10 @@
 	],
 	"app.AppraiseCycleEventController.State": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Inactive",
 			"value": 0
 		},
@@ -298957,6 +300498,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditDirtTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "DirtPattern_0",
 			"value": 0
 		},
@@ -299508,6 +301053,10 @@
 			{
 				"name": "GetStorageSpeed",
 				"value": 1073741824
+			},
+			{
+				"name": "GetDisplaySafeAreaRatioRect",
+				"value": -2147483648
 			}
 		]
 	},
@@ -300161,6 +301710,10 @@
 		{
 			"name": "qu051010",
 			"value": 51010
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.ShapeUserData.ShapeFlagEnum": [
@@ -300991,6 +302544,14 @@
 		{
 			"name": "Tops_938",
 			"value": 2365797559
+		},
+		{
+			"name": "Tops_939",
+			"value": 2707105021
+		},
+		{
+			"name": "Tops_940",
+			"value": 1190763303
 		},
 		{
 			"name": "Tops_1000",
@@ -306167,6 +307728,10 @@
 	],
 	"app.FormationManager.NormalStroll.PositionType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "TypeA",
 			"value": 0
 		},
@@ -306205,6 +307770,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -306390,7 +307959,152 @@
 			"value": 1
 		}
 	],
-	"via.relib.ReLibUpdateOrder.UpdateOrder": [],
+	"via.relib.ReLibUpdateOrder.UpdateOrder": [
+		{
+			"name": "Effect_Provider",
+			"value": -999
+		},
+		{
+			"name": "Effect_BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "Effect_ObjectEffectManager",
+			"value": -996
+		},
+		{
+			"name": "Effect_EnvEffectManager",
+			"value": -995
+		},
+		{
+			"name": "Effect_EventEffectManager",
+			"value": -994
+		},
+		{
+			"name": "Effect_EffectParentChecker",
+			"value": -993
+		},
+		{
+			"name": "Effect_EffectTimelineChecker",
+			"value": -992
+		},
+		{
+			"name": "Effect_EPVStandardCameraFollowerLate",
+			"value": -991
+		},
+		{
+			"name": "Effect_EPVExpertCommon",
+			"value": -990
+		},
+		{
+			"name": "Effect_EPVExpertAuto",
+			"value": -989
+		},
+		{
+			"name": "Effect_EPVExpertDestruction",
+			"value": -988
+		},
+		{
+			"name": "Effect_EPVExpertExplosion",
+			"value": -987
+		},
+		{
+			"name": "Effect_EPVExpertFootLanding",
+			"value": -986
+		},
+		{
+			"name": "Effect_EPVExpertGunSmoke",
+			"value": -985
+		},
+		{
+			"name": "Effect_EPVExpertObjectLanding",
+			"value": -984
+		},
+		{
+			"name": "Effect_EPVExpertMuzzleFlash",
+			"value": -983
+		},
+		{
+			"name": "Effect_EPVExpertAutoIsLanding",
+			"value": -982
+		},
+		{
+			"name": "Effect_LoadZone",
+			"value": -981
+		},
+		{
+			"name": "Effect_EmitZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "Effect_EmitZone",
+			"value": -979
+		},
+		{
+			"name": "Effect_CullingZoneGroup",
+			"value": -978
+		},
+		{
+			"name": "Effect_CullingZone",
+			"value": -977
+		},
+		{
+			"name": "Effect_EffectInfoHolder",
+			"value": -976
+		},
+		{
+			"name": "Effect_EffectVirtualSkeletonBinder",
+			"value": -975
+		},
+		{
+			"name": "Effect_EffectMovement",
+			"value": -974
+		},
+		{
+			"name": "Effect_EffectManager",
+			"value": -973
+		},
+		{
+			"name": "Effect_EffectContainer",
+			"value": -972
+		},
+		{
+			"name": "Render_MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "Render_MaterialParamLink",
+			"value": -1998
+		},
+		{
+			"name": "Render_MeshJointSetting",
+			"value": -1997
+		},
+		{
+			"name": "Motion_MotionHistoryRecorder",
+			"value": -799
+		},
+		{
+			"name": "Light_LightBlinkUserCurve",
+			"value": -898
+		},
+		{
+			"name": "Light_GlobalTimeZoneManager",
+			"value": -897
+		},
+		{
+			"name": "Light_PostControlManager",
+			"value": -896
+		},
+		{
+			"name": "Light_LightControlManager",
+			"value": -895
+		},
+		{
+			"name": "Light_CopyPostProcessParam",
+			"value": -893
+		}
+	],
 	"app.WetController.UpdateFlag": [
 		{
 			"name": "None",
@@ -307774,6 +309488,30 @@
 		{
 			"name": "Trace",
 			"value": 0
+		},
+		{
+			"name": "Debug",
+			"value": -1
+		},
+		{
+			"name": "Info",
+			"value": -2
+		},
+		{
+			"name": "Warn",
+			"value": -3
+		},
+		{
+			"name": "Error",
+			"value": -4
+		},
+		{
+			"name": "Fatal",
+			"value": -5
+		},
+		{
+			"name": "None",
+			"value": -6
 		}
 	],
 	"app.Contents0014DungeonManager.SpecialResetFadeState": [
@@ -307795,6 +309533,10 @@
 		}
 	],
 	"app.UserGlobalParamsManager.ParamSlotID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Timer",
 			"value": 0
@@ -308026,6 +309768,10 @@
 		}
 	],
 	"app.FormationManager.FakeArisenPT.PositionType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "TypeA",
 			"value": 0
@@ -308528,6 +310274,10 @@
 		}
 	],
 	"app.FormationManager.NormalStroll.RayCheckType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "UpAndDown",
 			"value": 0
@@ -309348,6 +311098,10 @@
 		}
 	],
 	"app.ScreenplayIntermediateUserData.MouthType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Idle",
 			"value": 0
@@ -313152,6 +314906,10 @@
 	],
 	"app.PawnBattleController.SwitchToReadyResults": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "Success",
 			"value": 0
 		},
@@ -313625,6 +315383,10 @@
 		}
 	],
 	"app.SaveDataManager.ProcessResultType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Success",
 			"value": 0
@@ -315264,6 +317026,10 @@
 	],
 	"app.EnvironmentChecker.Target": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "WallForClimb",
 			"value": 0
 		},
@@ -315857,6 +317623,10 @@
 		}
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
+		{
+			"name": "Ignore",
+			"value": -1
+		},
 		{
 			"name": "AecAgcEnable",
 			"value": 0
@@ -316531,6 +318301,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.CorpseThumbTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "CorpseThumb_ch300000_00",
 			"value": 0
@@ -327071,6 +328845,10 @@
 	],
 	"via.render.ForceShaderLod": [
 		{
+			"name": "ForceShaderLod_None",
+			"value": -1
+		},
+		{
 			"name": "ForceShaderLod_0",
 			"value": 0
 		},
@@ -327923,6 +329701,10 @@
 	],
 	"app.SceneActivateController.StateID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Wait",
 			"value": 0
 		},
@@ -327963,6 +329745,10 @@
 			{
 				"name": "PartyPawn",
 				"value": 4
+			},
+			{
+				"name": "All",
+				"value": 18446744073709551615
 			}
 		]
 	},
@@ -328623,6 +330409,10 @@
 		}
 	],
 	"app.AttackUserData.HitSeTypeEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "SlashLow",
 			"value": 0
@@ -329643,6 +331433,10 @@
 		}
 	],
 	"app.Ch257001WeakPoint.Region": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Head",
 			"value": 0
@@ -330864,11 +332658,19 @@
 			"value": 4611686018427387904
 		},
 		{
+			"name": "EnemyFree32",
+			"value": 9223372036854775808
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
 	],
 	"app.GUITextureLoaderDefine.NPCThumbnailTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "NPCThumb_ch300000_00_00",
 			"value": 0
@@ -338324,6 +340126,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditHairTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -338673,6 +340479,10 @@
 		}
 	],
 	"app.AIAreaDefinition": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Root",
 			"value": 0
@@ -340387,6 +342197,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditEyebrowsTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Eyebrow_000",
 			"value": 0
@@ -344232,6 +346046,10 @@
 	],
 	"via.landscape.QuadTreeTextureEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Heightmap",
 			"value": 0
 		},
@@ -344558,6 +346376,10 @@
 		}
 	],
 	"app.GUICharaEditCtrl.JobMotionType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Battle",
 			"value": 0
@@ -345326,6 +347148,10 @@
 	],
 	"app.AISituationTaskStates_GimmickInteractSchedule.GimmickTaskTable.GimmickTask.GimmickTaskData.ErrorEndFlowType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "NextStep",
 			"value": 0
 		},
@@ -345411,6 +347237,10 @@
 		{
 			"name": "backpack_500_m_01",
 			"value": 2301602547
+		},
+		{
+			"name": "backpack_940_m",
+			"value": 3792646468
 		}
 	],
 	"via.wwiselib.LogId": [
@@ -346878,6 +348708,10 @@
 		}
 	],
 	"app.PrefabInstantiateResult": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Success",
 			"value": 0
@@ -350254,6 +352088,14 @@
 	},
 	"via.render.SparseShadowTreeResolution": [
 		{
+			"name": "SparseShadowTreeResolution_512px",
+			"value": -2
+		},
+		{
+			"name": "SparseShadowTreeResolution_768px",
+			"value": -1
+		},
+		{
 			"name": "SparseShadowTreeResolution_1K",
 			"value": 1
 		},
@@ -350824,6 +352666,14 @@
 		{
 			"name": "pants_925_wl_m",
 			"value": 3787201300
+		},
+		{
+			"name": "pants_940_wl_f",
+			"value": 2926041975
+		},
+		{
+			"name": "pants_940_wl_m",
+			"value": 2223417665
 		}
 	],
 	"app.Job07GravityFieldFinish.ShellType": [
@@ -350881,6 +352731,26 @@
 		}
 	],
 	"app.CharacterBalanceCalculator.BalanceLevelEnum": [
+		{
+			"name": "NegativeLv5",
+			"value": -5
+		},
+		{
+			"name": "NegativeLv4",
+			"value": -4
+		},
+		{
+			"name": "NegativeLv3",
+			"value": -3
+		},
+		{
+			"name": "NegativeLv2",
+			"value": -2
+		},
+		{
+			"name": "NegativeLv1",
+			"value": -1
+		},
 		{
 			"name": "PositiveLv0",
 			"value": 0
@@ -355043,6 +356913,10 @@
 	],
 	"app.UpdateOrderID": [
 		{
+			"name": "Undefined",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -355699,6 +357573,42 @@
 			"value": 163
 		},
 		{
+			"name": "SoundLibBehavior_10",
+			"value": -122
+		},
+		{
+			"name": "SoundLibManager_Free",
+			"value": -121
+		},
+		{
+			"name": "SoundLibManager_10",
+			"value": -120
+		},
+		{
+			"name": "SoundLibManager_20",
+			"value": -119
+		},
+		{
+			"name": "SoundLibManager_30",
+			"value": -118
+		},
+		{
+			"name": "SoundLibManager_40",
+			"value": -117
+		},
+		{
+			"name": "SoundLibManager_50",
+			"value": -116
+		},
+		{
+			"name": "SoundLibManager_60",
+			"value": -115
+		},
+		{
+			"name": "SoundLibManager_70",
+			"value": -114
+		},
+		{
 			"name": "Network_10",
 			"value": 3306
 		},
@@ -355831,6 +357741,10 @@
 	],
 	"app.MainFlowResumeClass.ResumeFlowPhaseEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -355866,6 +357780,10 @@
 		}
 	],
 	"app.NavMeshNodeApplierController.NavMeshNodeApplierType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "WatersurfaceCheck",
 			"value": 0
@@ -356411,6 +358329,10 @@
 	],
 	"app.GuiDefine.MapIconSuspendType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "qu041010",
 			"value": 0
 		}
@@ -356478,6 +358400,10 @@
 		}
 	],
 	"app.AppraisalSetting.SlotType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Type0",
 			"value": 0
@@ -356957,6 +358883,10 @@
 		}
 	],
 	"app.MainFlowContinueClass.DialogStateType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Continue",
 			"value": 0
@@ -357480,6 +359410,10 @@
 		}
 	],
 	"app.decision.nodetree.NodeDecisionSelect": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "TypeA",
 			"value": 0
@@ -358283,7 +360217,20 @@
 			"value": 8192
 		}
 	],
-	"via.render.FenceState": [],
+	"via.render.FenceState": [
+		{
+			"name": "Invalidate",
+			"value": -1
+		},
+		{
+			"name": "DoNotWait",
+			"value": -2
+		},
+		{
+			"name": "UAVSync",
+			"value": -3
+		}
+	],
 	"app.Ch261001.BackGroundType": [
 		{
 			"name": "First",
@@ -359042,6 +360989,10 @@
 		}
 	],
 	"app.Job09TripFregrance.PhaseType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Fregrance_Start",
 			"value": 0
@@ -359863,6 +361814,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditFurCheekTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Cheek_000",
 			"value": 0
@@ -360798,6 +362753,10 @@
 	],
 	"app.AISituationTaskStates_FightNPC.TaskState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "WaitCreateFormation",
 			"value": 0
 		},
@@ -360856,6 +362815,10 @@
 		{
 			"name": "Material",
 			"value": 2
+		},
+		{
+			"name": "All",
+			"value": -1
 		}
 	],
 	"app.StatusConditionMaterialInfo.StepEnum": [
@@ -360980,6 +362943,10 @@
 		{
 			"name": "Max",
 			"value": 6
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.AISituationTaskStateWalkToRimStone.ActionState": [
@@ -361386,6 +363353,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.navigation.ObstacleFilterInfo.FilterType": [
@@ -368860,6 +370831,10 @@
 	],
 	"app.StatusConditionEndActionMotionParam.MotionCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Base",
 			"value": 0
 		},
@@ -369337,6 +371312,10 @@
 		}
 	],
 	"app.AppraiseCycleGlobalBattleObserver.State": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Ready",
 			"value": 0
@@ -370408,6 +372387,26 @@
 	},
 	"app.BehaviorGroupPriority": [
 		{
+			"name": "Free",
+			"value": -100
+		},
+		{
+			"name": "UI",
+			"value": -99
+		},
+		{
+			"name": "Scene",
+			"value": -98
+		},
+		{
+			"name": "TriggerManager_20",
+			"value": -97
+		},
+		{
+			"name": "TriggerManager_20_High",
+			"value": -96
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -370784,11 +372783,19 @@
 			"value": 4611686018427387904
 		},
 		{
+			"name": "TargetFemaleRun",
+			"value": 9223372036854775808
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
 	],
 	"app.GUITextureLoaderDefine.GuiUniqueTexTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "GuiUniqueTex_00_00",
 			"value": 0
@@ -370925,6 +372932,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditBodyHairTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "BodyHair_HM_000",
 			"value": 0
@@ -371901,6 +373912,10 @@
 	],
 	"app.GUIAppraisalDefine.AppraisalItemGruop": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Weapon",
 			"value": 0
 		},
@@ -372554,6 +374569,18 @@
 		}
 	],
 	"app.SentimentChangeValue": [
+		{
+			"name": "KillDown",
+			"value": -50
+		},
+		{
+			"name": "BigDown",
+			"value": -20
+		},
+		{
+			"name": "SmallDown",
+			"value": -5
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -373983,6 +376010,10 @@
 		{
 			"name": "pants_936_wl_m_00",
 			"value": 2260915125
+		},
+		{
+			"name": "pants_940_wl_f",
+			"value": 2926041975
 		}
 	],
 	"via.render.DSRQualityType": [
@@ -384417,6 +386448,18 @@
 	],
 	"via.SharePlayControllerMode": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
+		{
 			"name": "WatchingHostPlay",
 			"value": 0
 		},
@@ -385165,6 +387208,10 @@
 		}
 	],
 	"app.decision.nodetree.OnDemand_Task_StrollingWith.LookAtState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Execute",
 			"value": 0
@@ -385933,6 +387980,10 @@
 		}
 	],
 	"app.AppraisalSetting.BonusType": [
+		{
+			"name": "invalid",
+			"value": -1
+		},
 		{
 			"name": "Ablity",
 			"value": 0
@@ -386794,6 +388845,10 @@
 		{
 			"name": "RenderToFrameBuffer",
 			"value": 4
+		},
+		{
+			"name": "PopFromEsram",
+			"value": -1
 		}
 	],
 	"via.audiorender.WFormatTag": [
@@ -387496,6 +389551,10 @@
 		}
 	],
 	"app.GUIPreviewModelEditor.AppearanceNoHistory.ValueSetType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "BodyShepe",
 			"value": 0
@@ -388753,6 +390812,14 @@
 		{
 			"name": "mantle_928_m_00",
 			"value": 4085178508
+		},
+		{
+			"name": "mantle_939_m",
+			"value": 4279739339
+		},
+		{
+			"name": "mantle_940_m",
+			"value": 2017249455
 		}
 	],
 	"app.EquipParam.ResistEnum": [
@@ -406953,6 +409020,10 @@
 	],
 	"app.PawnNotifyAreaObject.NotifyTypeEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Qu040090WaitPosition",
 			"value": 0
 		}
@@ -407154,6 +409225,10 @@
 		}
 	],
 	"app.GameSystem.SaveSlotType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Auto",
 			"value": 0
@@ -412666,6 +414741,10 @@
 	],
 	"app.AppraiseCycleDefine.VoidEventType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -413656,6 +415735,10 @@
 	],
 	"app.GUITextureLoaderDefine.EditFurFacePatternTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Preset_000",
 			"value": 0
 		},
@@ -414196,6 +416279,14 @@
 	],
 	"app.LookAtDefine.ParameterSets": [
 		{
+			"name": "None",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Eye",
 			"value": 0
 		},
@@ -414330,6 +416421,10 @@
 		}
 	],
 	"app.ScreenplayIntermediateUserData.ReactionType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Greeting",
 			"value": 0
@@ -415362,6 +417457,10 @@
 	],
 	"app.HumanGroundSurfaceTrailController.GroundSurfaceTrailType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "R_Leg",
 			"value": 0
 		},
@@ -416212,6 +418311,10 @@
 		}
 	],
 	"app.CharaEditLightController.EnvLightType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Type01",
 			"value": 0
@@ -419297,6 +421400,10 @@
 	},
 	"app.GUITextureLoaderDefine.EditEyelinerTextureID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Eyeliner_001",
 			"value": 0
 		},
@@ -419496,6 +421603,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.QuestThumbTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "QuestThumb_qu010010",
 			"value": 0
@@ -422356,6 +424467,10 @@
 	],
 	"app.AttackUserData.DamageTypeEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Wind_S",
 			"value": 0
 		},
@@ -422640,6 +424755,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"app.CharacterAvoidController.AvoidTarget": {
@@ -423305,6 +425440,10 @@
 	],
 	"app.DamageActionBase.DmgDir": [
 		{
+			"name": "DmgDirDefault",
+			"value": -1
+		},
+		{
 			"name": "DmgDirFront",
 			"value": 0
 		},
@@ -423520,6 +425659,10 @@
 		}
 	],
 	"app.Ch27HeightSetting.HeightAssignTypeWrapper.HeightAssignType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Absolute",
 			"value": 0
@@ -426042,6 +428185,10 @@
 	],
 	"app.Job07Parameter.MagicBindParamter.AttackAdjustType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "HeavyAttack",
 			"value": 0
 		},
@@ -426507,6 +428654,14 @@
 			{
 				"name": "WaistAccessory3",
 				"value": 4611686018427387904
+			},
+			{
+				"name": "WaistAccessory4",
+				"value": 9223372036854775808
+			},
+			{
+				"name": "ALL",
+				"value": 18446744073709551615
 			}
 		]
 	},
@@ -428120,6 +430275,10 @@
 		}
 	],
 	"app.ui023600.DispType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Point",
 			"value": 0
@@ -429855,6 +432014,14 @@
 	],
 	"via.SharePlayConnectionStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Dormant",
 			"value": 0
 		},
@@ -430227,6 +432394,10 @@
 	],
 	"app.Ch256StartAndLoopExitTimeMotion.RoutineType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -430512,6 +432683,10 @@
 		}
 	],
 	"app.SoundVoiceManager.VoiceInstantiateResults.InstantiateResult": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Success",
 			"value": 0
@@ -431867,6 +434042,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.NPCArtTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "NPCArt_ch300000_00_00",
 			"value": 0
@@ -437855,6 +440034,10 @@
 	},
 	"app.ui070414.WarningType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "CharaType",
 			"value": 0
 		},
@@ -438235,6 +440418,10 @@
 		{
 			"name": "KeyboardMouse",
 			"value": 1
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.Ch271.Ch271ThinkFlag": {
@@ -438296,6 +440483,18 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "InvalidSlot",
+			"value": -129
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -439053,6 +441252,10 @@
 		}
 	],
 	"app.GUITextureLoaderDefine.EditEarsEditTextureID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "EarsEdit_B__Preset_000",
 			"value": 0
@@ -444301,6 +446504,10 @@
 	],
 	"app.WeaponElementControllerBase.WeaponTypeEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "LeftHandWeapon",
 			"value": 0
 		},
@@ -444400,6 +446607,10 @@
 		}
 	],
 	"app.StoreServiceFlowBase.StoreFlowEvent": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "OpenStore",
 			"value": 0
@@ -444660,6 +446871,10 @@
 		}
 	],
 	"app.BootManager.Phase": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "ReadyForBoot",
 			"value": 0
@@ -445065,6 +447280,10 @@
 	],
 	"app.DamageUnbalanceS.RoutineType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Start",
 			"value": 0
 		},
@@ -445103,7 +447322,16 @@
 			"value": 5
 		}
 	],
-	"via.relib.motion.UpdateOrder": [],
+	"via.relib.motion.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -800
+		},
+		{
+			"name": "MotionHistoryRecorder",
+			"value": -799
+		}
+	],
 	"via.gui.AlphaChannelType": [
 		{
 			"name": "None",
@@ -446153,6 +448381,10 @@
 	],
 	"via.hid.virtualKeyboard.CustomizedDictionaryIndex": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Index0",
 			"value": 0
 		},
@@ -446632,6 +448864,10 @@
 		}
 	],
 	"app.GameRecordID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Record_000",
 			"value": 0
@@ -447366,6 +449602,10 @@
 	],
 	"app.DamageActionBase.SwingDir": [
 		{
+			"name": "SwingDir_Default",
+			"value": -1
+		},
+		{
 			"name": "SwingDir_Front",
 			"value": 0
 		},
@@ -448056,6 +450296,10 @@
 	],
 	"app.ui070401.DispType": [
 		{
+			"name": "Hide",
+			"value": -1
+		},
+		{
 			"name": "Both",
 			"value": 0
 		},
@@ -448252,6 +450496,10 @@
 		}
 	],
 	"soundlib.SoundListener.ListenerIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0

@@ -45,6 +45,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"via.dynamics.ShapeCastOption": [
@@ -567,6 +583,10 @@
 	],
 	"offline.camera.CameraTargetType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "OBJECT",
 			"value": 0
 		},
@@ -780,6 +800,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -3315,6 +3339,10 @@
 	],
 	"offline.enemy.tracks.Em9999ColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -4995,6 +5023,10 @@
 	],
 	"offline.enemy.em0000.Em0000DropParts.DropPartsKind": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
 			"name": "LowerBody",
 			"value": 0
 		},
@@ -5060,6 +5092,10 @@
 		}
 	],
 	"offline.EquipmentDefine.WeaponType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "BareHand",
 			"value": 0
@@ -6591,6 +6627,10 @@
 	],
 	"offline.gimmick.action.GimmickChessPuzzle.PieceType": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "BISHOP",
 			"value": 0
 		},
@@ -7032,6 +7072,10 @@
 		}
 	],
 	"offline.escape.enemy.em1000.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 0
@@ -8581,6 +8625,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -9768,6 +9820,10 @@
 		}
 	],
 	"offline.escape.enemy.em3300.ChargeAttackID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "AttackOnly",
 			"value": 0
@@ -11936,6 +11992,10 @@
 	],
 	"offline.SurvivorDefine.Costume": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -12812,6 +12872,10 @@
 	],
 	"offline.AssetPackagePair.ClassType": [
 		{
+			"name": "UNSET",
+			"value": -1
+		},
+		{
 			"name": "PLAYER",
 			"value": 0
 		},
@@ -12977,6 +13041,10 @@
 		}
 	],
 	"via.gui.Segment": [
+		{
+			"name": "Keep",
+			"value": -1
+		},
 		{
 			"name": "Segment00",
 			"value": 0
@@ -14160,6 +14228,10 @@
 	],
 	"offline.gui.DialogBehavior.Priority": [
 		{
+			"name": "LOW",
+			"value": -1000
+		},
+		{
 			"name": "DEFAULT",
 			"value": 0
 		},
@@ -14956,7 +15028,116 @@
 			"value": 7
 		}
 	],
-	"offline.standby.LoadPriorityDefine.Priority": [],
+	"offline.standby.LoadPriorityDefine.Priority": [
+		{
+			"name": "GUI_TITLE",
+			"value": -9030
+		},
+		{
+			"name": "GUI_INGAME",
+			"value": -9020
+		},
+		{
+			"name": "GUI_ITEM",
+			"value": -9000
+		},
+		{
+			"name": "LOCATION_ROOT",
+			"value": -8800
+		},
+		{
+			"name": "LOCATION",
+			"value": -8700
+		},
+		{
+			"name": "LOCATION_SUBFOLDER",
+			"value": -8600
+		},
+		{
+			"name": "GD_LOAD",
+			"value": -8200
+		},
+		{
+			"name": "PLAYER",
+			"value": -7000
+		},
+		{
+			"name": "ENEMY_ACTIVE",
+			"value": -6000
+		},
+		{
+			"name": "MAPSCENE_ADDITIONAL",
+			"value": -5001
+		},
+		{
+			"name": "MAPSCENE_HIGHEST",
+			"value": -5000
+		},
+		{
+			"name": "MAPSCENE_HIGHER_DYNAMIC_STANDARD",
+			"value": -4950
+		},
+		{
+			"name": "MAPSCENE_DYNAMNIC_HIGHEST",
+			"value": -4900
+		},
+		{
+			"name": "TIMELINE_CURRENT_MAP_HIGHER",
+			"value": -4897
+		},
+		{
+			"name": "TIMELINE_CURRENT_MAP",
+			"value": -4895
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_ACTIVE_HIGHEST",
+			"value": -4890
+		},
+		{
+			"name": "MAPSCENE_SCENARIO",
+			"value": -4700
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_ACTIVE_LOWEST",
+			"value": -4501
+		},
+		{
+			"name": "TIMELINE_ACTIVE",
+			"value": -4500
+		},
+		{
+			"name": "MAPSCENE_DYNAMNIC_STANDBY_HIGHEST",
+			"value": -4399
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_STANDBY_LOWEST",
+			"value": -4101
+		},
+		{
+			"name": "MAPSCENE_DYNAMIC_LOWEST",
+			"value": -4100
+		},
+		{
+			"name": "MAPSCENE_LOWER_DYNAMIC_STANDARD",
+			"value": -4050
+		},
+		{
+			"name": "MAPSCENE_LOWEST",
+			"value": -4000
+		},
+		{
+			"name": "TIMELINE",
+			"value": -3000
+		},
+		{
+			"name": "LOCATION_BACKLOAD",
+			"value": -2200
+		},
+		{
+			"name": "DEFAULT",
+			"value": -2199
+		}
+	],
 	"via.motion.IkJacobian.Effector.AttributeType": [
 		{
 			"name": "Position",
@@ -15304,6 +15485,10 @@
 	],
 	"offline.rogue.RogueDefine.ItemDropCategory": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Table",
 			"value": 0
 		},
@@ -15383,6 +15568,10 @@
 		}
 	],
 	"offline.gamemastering.Item.Category": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Weapon",
 			"value": 0
@@ -17146,6 +17335,10 @@
 		}
 	],
 	"offline.escape.enemy.em3400.TurnDirection": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Left60",
 			"value": 0
@@ -18979,6 +19172,10 @@
 	],
 	"via.os.SocketError": [
 		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -20804,7 +21001,40 @@
 			"value": 1
 		}
 	],
-	"offline.UpdateOrderGroup.PlayerControlPhase": [],
+	"offline.UpdateOrderGroup.PlayerControlPhase": [
+		{
+			"name": "FASTEST",
+			"value": -42
+		},
+		{
+			"name": "Condition",
+			"value": -41
+		},
+		{
+			"name": "Think",
+			"value": -40
+		},
+		{
+			"name": "Controller",
+			"value": -39
+		},
+		{
+			"name": "Weapon",
+			"value": -38
+		},
+		{
+			"name": "Twist",
+			"value": -37
+		},
+		{
+			"name": "IKFit",
+			"value": -36
+		},
+		{
+			"name": "LATEST",
+			"value": -35
+		}
+	],
 	"offline.survivor.npc.NpcOrderDefine.MoveCommandKind": [
 		{
 			"name": "SetTransform",
@@ -21899,6 +22129,10 @@
 		{
 			"name": "Max",
 			"value": 4
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"offline.ViewKind": [
@@ -23261,6 +23495,10 @@
 	],
 	"offline.implement.Arm.Ability": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Damage",
 			"value": 0
 		},
@@ -24015,6 +24253,10 @@
 	],
 	"offline.gamemastering.UIMapManager.MapPartsChangeState": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "RPD_HALL_WEST_SHUTTER",
 			"value": 0
 		},
@@ -24469,6 +24711,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -24485,6 +24731,10 @@
 		{
 			"name": "Weapon_BareHand",
 			"value": 1000
+		},
+		{
+			"name": "Outer",
+			"value": -1000
 		}
 	],
 	"offline.CollisionDefine.AttackShieldingType": [
@@ -24991,11 +25241,36 @@
 	],
 	"offline.effect.script.EsGlobalEffectEventTransmitterKind": [
 		{
+			"name": "Test",
+			"value": -1
+		},
+		{
 			"name": "Regular",
 			"value": 0
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"via.effect.detail.FlipType": [
 		{
 			"name": "None",
@@ -25011,6 +25286,10 @@
 		}
 	],
 	"offline.camera.CameraControlType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PLAYER",
 			"value": 0
@@ -25254,7 +25533,32 @@
 			"value": 2
 		}
 	],
-	"offline.UpdateOrderGroup.ScreenPhase": [],
+	"offline.UpdateOrderGroup.ScreenPhase": [
+		{
+			"name": "FASTEST",
+			"value": -87
+		},
+		{
+			"name": "FadeManager",
+			"value": -86
+		},
+		{
+			"name": "FadeController",
+			"value": -85
+		},
+		{
+			"name": "Loading",
+			"value": -84
+		},
+		{
+			"name": "Pause",
+			"value": -83
+		},
+		{
+			"name": "LATEST",
+			"value": -82
+		}
+	],
 	"offline.CameraTwirler.Operation": [
 		{
 			"name": "CONSTANT",
@@ -27649,6 +27953,10 @@
 	],
 	"offline.PlayerDefine.PlayerType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "PL0000",
 			"value": 0
 		},
@@ -28028,6 +28336,10 @@
 		}
 	],
 	"offline.escape.enemy.tracks.Em3400EsColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press_Survivor",
 			"value": 0
@@ -28873,6 +29185,14 @@
 	],
 	"via.VideoRecordingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -29624,6 +29944,10 @@
 	],
 	"offline.inventory.SlotType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Blank",
 			"value": 0
 		},
@@ -29800,6 +30124,10 @@
 		{
 			"name": "MAX",
 			"value": 39
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.landscape.layer.LandformBaseLayer.Priority": [
@@ -30875,6 +31203,10 @@
 	],
 	"offline.escape.enemy.tracks.Em9200EsColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -31074,6 +31406,10 @@
 		}
 	],
 	"offline.escape.enemy.tracks.Em9030EsColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 0
@@ -31358,6 +31694,10 @@
 		}
 	],
 	"offline.BehaviorTreeCategory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "BehaviorTree",
 			"value": 0
@@ -34745,6 +35085,10 @@
 		{
 			"name": "Unique00",
 			"value": 1073741824
+		},
+		{
+			"name": "Unique01",
+			"value": -2147483648
 		}
 	],
 	"via.hid.AudioInManager.AUDIO_IN_TYPE": [
@@ -35149,6 +35493,10 @@
 	],
 	"offline.escape.enemy.tracks.Em9999EsColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -35348,6 +35696,10 @@
 		}
 	],
 	"offline.survivor.player.PlayerFacialController.EmotionStatusMode": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "DAMAGED_CAUTION",
 			"value": 0
@@ -35620,6 +35972,10 @@
 		}
 	],
 	"offline.gui.EsMapBehavior.OpenMode": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "DIRECT",
 			"value": 0
@@ -36445,6 +36801,10 @@
 		{
 			"name": "No8",
 			"value": 256
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.posteffect.SetPostEffectParam.SettingMode": [
@@ -36558,6 +36918,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -37337,6 +37701,18 @@
 	],
 	"via.os.websocket_client.Error": [
 		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -37783,6 +38159,10 @@
 		{
 			"name": "MAX",
 			"value": 13
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"offline.effect.script.EffectSphereHolder.SphereInfo.Status": [
@@ -38319,6 +38699,10 @@
 	],
 	"offline.enemy.tracks.Em4000ColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -38740,6 +39124,10 @@
 		}
 	],
 	"offline.gui.EsInventorySlotBehavior.CommandType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Use",
 			"value": 0
@@ -39359,7 +39747,92 @@
 			"value": 4
 		}
 	],
-	"offline.UpdateOrderGroup.TailSystemPhase": [],
+	"offline.UpdateOrderGroup.TailSystemPhase": [
+		{
+			"name": "FASTEST",
+			"value": -25
+		},
+		{
+			"name": "Listener",
+			"value": -24
+		},
+		{
+			"name": "MotionJack",
+			"value": -23
+		},
+		{
+			"name": "Motion",
+			"value": -22
+		},
+		{
+			"name": "SecondaryMotion",
+			"value": -21
+		},
+		{
+			"name": "AfterMotion",
+			"value": -20
+		},
+		{
+			"name": "FixedMotion",
+			"value": -19
+		},
+		{
+			"name": "Shell",
+			"value": -18
+		},
+		{
+			"name": "NoticePointManager",
+			"value": -17
+		},
+		{
+			"name": "NoticePointController",
+			"value": -16
+		},
+		{
+			"name": "NoticePointSelector",
+			"value": -15
+		},
+		{
+			"name": "Effect",
+			"value": -14
+		},
+		{
+			"name": "RestrictClient",
+			"value": -13
+		},
+		{
+			"name": "RestrictManager",
+			"value": -12
+		},
+		{
+			"name": "ObjectUpdateAndDrawManager",
+			"value": -11
+		},
+		{
+			"name": "AfterObjectUpdateAndDrawManager",
+			"value": -10
+		},
+		{
+			"name": "TemporaryObjectsManager",
+			"value": -9
+		},
+		{
+			"name": "TailPrepareInstantiate",
+			"value": -8
+		},
+		{
+			"name": "TailInstantiate",
+			"value": -7
+		},
+		{
+			"name": "Final",
+			"value": -6
+		},
+		{
+			"name": "LATEST",
+			"value": -5
+		}
+	],
 	"offline.escape.gimmick.action.EsGimmickCarBase.WwiseAccelState": [
 		{
 			"name": "WAS_OFF",
@@ -39542,6 +40015,10 @@
 	],
 	"offline.BehaviorTreeActionCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BehaviorTree",
 			"value": 0
 		},
@@ -39723,6 +40200,10 @@
 		}
 	],
 	"via.gui.AssetLanguage": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0
@@ -40104,6 +40585,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.escape.enemy.em9300.EsEm9300Think.SolutionFirePoint": [
@@ -40209,6 +40694,10 @@
 		}
 	],
 	"offline.escape.enemy.em3300.FeintID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Disturbance",
 			"value": 0
@@ -40688,6 +41177,10 @@
 	],
 	"offline.escape.enemy.tracks.Em9020EsColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "AttackToPlayer",
 			"value": 10
 		},
@@ -41156,6 +41649,10 @@
 		{
 			"name": "S05_0600",
 			"value": 62
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.TypingCondition": [
@@ -41968,6 +42465,10 @@
 		{
 			"name": "Effect",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.fsmv2.EsFPSModeCostumeControl.Mode": [
@@ -43102,6 +43603,10 @@
 	],
 	"offline.fsmv2.EsActorActionBranchControl.BranchActionType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Idle",
 			"value": 0
 		},
@@ -43293,6 +43798,10 @@
 		}
 	],
 	"offline.implement.Melee.Attack": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "High",
 			"value": 0
@@ -43603,6 +44112,10 @@
 		}
 	],
 	"offline.survivor.player.PlayerCondition.NodeCategorys": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Idle",
 			"value": 0
@@ -45755,6 +46268,10 @@
 	],
 	"offline.gui.FloatIconParam.FloatIconCollisionType": [
 		{
+			"name": "DEFAULT",
+			"value": -1
+		},
+		{
 			"name": "TYPE_A",
 			"value": 0
 		},
@@ -46595,6 +47112,10 @@
 		{
 			"name": "EV999",
 			"value": 20999
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.nnfc.NpadId": [
@@ -46758,6 +47279,10 @@
 		}
 	],
 	"offline.SurvivorColliderTrack.ColliderGroup": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PRESS",
 			"value": 0
@@ -47065,6 +47590,10 @@
 	],
 	"offline.EsGimmickBobbingHeadManager.BobbingHeadID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "BobbingHead_00",
 			"value": 0
 		},
@@ -47354,6 +47883,10 @@
 		}
 	],
 	"via.effect.GroupType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Free",
 			"value": 0
@@ -47693,7 +48226,120 @@
 			"value": 2
 		}
 	],
-	"offline.UpdateOrderGroup.HeadSystemPhase": [],
+	"offline.UpdateOrderGroup.HeadSystemPhase": [
+		{
+			"name": "FASTEST",
+			"value": -114
+		},
+		{
+			"name": "MainSceneUpdate",
+			"value": -113
+		},
+		{
+			"name": "SplashScreenManager",
+			"value": -112
+		},
+		{
+			"name": "SceneActivateSystem",
+			"value": -111
+		},
+		{
+			"name": "SceneLoadSystem",
+			"value": -110
+		},
+		{
+			"name": "AfterSceneLoadSystem",
+			"value": -109
+		},
+		{
+			"name": "SceneLoadEventBroker",
+			"value": -108
+		},
+		{
+			"name": "SceneLoadEventReceiver",
+			"value": -107
+		},
+		{
+			"name": "SceneLoadEventReceiverSub",
+			"value": -106
+		},
+		{
+			"name": "SceneLoadEventReceiverSub2",
+			"value": -105
+		},
+		{
+			"name": "CameraDrawManager",
+			"value": -104
+		},
+		{
+			"name": "CameraDrawController",
+			"value": -103
+		},
+		{
+			"name": "HitController",
+			"value": -102
+		},
+		{
+			"name": "HitManager",
+			"value": -101
+		},
+		{
+			"name": "EnemyReaction",
+			"value": -100
+		},
+		{
+			"name": "MainFlowManager",
+			"value": -99
+		},
+		{
+			"name": "GameMastering",
+			"value": -98
+		},
+		{
+			"name": "NetworkService",
+			"value": -97
+		},
+		{
+			"name": "PlayerInput",
+			"value": -96
+		},
+		{
+			"name": "PlayerInputUnit",
+			"value": -95
+		},
+		{
+			"name": "UserService",
+			"value": -94
+		},
+		{
+			"name": "RingBufferControll",
+			"value": -93
+		},
+		{
+			"name": "RingBufferManager",
+			"value": -92
+		},
+		{
+			"name": "EsMotionManagerHelper",
+			"value": -91
+		},
+		{
+			"name": "EsMotionTagManager",
+			"value": -90
+		},
+		{
+			"name": "EsMotionManager",
+			"value": -89
+		},
+		{
+			"name": "EsSlowController",
+			"value": -88
+		},
+		{
+			"name": "LATEST",
+			"value": -87
+		}
+	],
 	"via.landscape.TextureDataFormat": [
 		{
 			"name": "DataFormat_Unknown",
@@ -49334,6 +49980,10 @@
 	],
 	"offline.escape.enemy.em9000.CancelFlagTrack": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "EnableNextComboAttack",
 			"value": 0
 		},
@@ -49536,6 +50186,10 @@
 	],
 	"offline.effect.script.EsRenderTargetTextureManager.RenderTargetContainer.PrefabStatus": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Unloaded",
 			"value": 0
 		},
@@ -49631,6 +50285,10 @@
 		}
 	],
 	"offline.level.LoadLevelManager.LevelID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "DEBUG_NO_LEVEL",
 			"value": 1
@@ -51540,6 +52198,14 @@
 			"value": 0
 		},
 		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
+		},
+		{
 			"name": "Forceword",
 			"value": 2147483647
 		}
@@ -52299,6 +52965,10 @@
 	],
 	"offline.SurvivorDefine.SurvivorType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "PL0000",
 			"value": 0
 		},
@@ -52473,6 +53143,10 @@
 		{
 			"name": "PL9900",
 			"value": 43
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		},
 		{
 			"name": "CARLOS",
@@ -53037,7 +53711,12 @@
 			"value": 4294967295
 		}
 	],
-	"offline.SurvivorDefine.Accessory": [],
+	"offline.SurvivorDefine.Accessory": [
+		{
+			"name": "Invalid",
+			"value": -1
+		}
+	],
 	"offline.implement.Gun.GeneratorType": [
 		{
 			"name": "First",
@@ -53436,7 +54115,28 @@
 			"value": 3
 		}
 	],
-	"offline.UpdateOrderGroup.FreePhase": [],
+	"offline.UpdateOrderGroup.FreePhase": [
+		{
+			"name": "FASTEST",
+			"value": -5
+		},
+		{
+			"name": "Before",
+			"value": -4
+		},
+		{
+			"name": "Manager",
+			"value": -3
+		},
+		{
+			"name": "After",
+			"value": -2
+		},
+		{
+			"name": "LATEST",
+			"value": -1
+		}
+	],
 	"via.render.command.XB1Extention.ExtentionType": [
 		{
 			"name": "ExtentionType_PushToEsram",
@@ -55119,6 +55819,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"System.Reflection.CallingConventions": {
@@ -55662,6 +56366,10 @@
 		{
 			"name": "HumanRetarget",
 			"value": 11
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.enemy.em4000.Em4000Gimmick.AreaTypeEnum": [
@@ -55697,6 +56405,10 @@
 		}
 	],
 	"offline.EquipmentDefine.MeleeAttack": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "High",
 			"value": 0
@@ -57712,7 +58424,52 @@
 			"value": 2
 		}
 	],
-	"offline.UpdateOrderGroup.CameraControlPhase": [],
+	"offline.UpdateOrderGroup.CameraControlPhase": [
+		{
+			"name": "FASTEST",
+			"value": -35
+		},
+		{
+			"name": "Fixed",
+			"value": -34
+		},
+		{
+			"name": "Player",
+			"value": -33
+		},
+		{
+			"name": "Light",
+			"value": -32
+		},
+		{
+			"name": "RailUserCurve",
+			"value": -31
+		},
+		{
+			"name": "FilterParam",
+			"value": -30
+		},
+		{
+			"name": "FilterLayer",
+			"value": -29
+		},
+		{
+			"name": "FilterApply",
+			"value": -28
+		},
+		{
+			"name": "Main",
+			"value": -27
+		},
+		{
+			"name": "Mixer",
+			"value": -26
+		},
+		{
+			"name": "LATEST",
+			"value": -25
+		}
+	],
 	"via.physics.CastRayResult.Result": [
 		{
 			"name": "Success",
@@ -58335,6 +59092,10 @@
 	],
 	"offline.gui.GimmickNumberLockGuiBehavior.KeyPositionEnum": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "PosKey7",
 			"value": 0
 		},
@@ -58607,6 +59368,10 @@
 		]
 	},
 	"offline.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -58974,6 +59739,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"via.ScreenShotOverlayImageIndex": [
@@ -59668,7 +60461,16 @@
 			"value": 3
 		}
 	],
-	"offline.render.UpdateOrder": [],
+	"offline.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		}
+	],
 	"via.motion.IkSpineConformGround.INTERVAL_OPTION": [
 		{
 			"name": "NONE",
@@ -60050,6 +60852,10 @@
 		}
 	],
 	"offline.GimmickDialLockManager.RecordDialLock": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "ID_00_RPD1F_SAFE",
 			"value": 0
@@ -60728,6 +61534,10 @@
 		}
 	],
 	"offline.gamemastering.Event.ID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "EV_006_LNNN",
 			"value": 0
@@ -62014,6 +62824,10 @@
 		}
 	],
 	"offline.weapon.generator.OwnerType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Survivor",
 			"value": 0
@@ -63336,6 +64150,10 @@
 		}
 	],
 	"offline.escape.enemy.em3300.ActDirection": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Front",
 			"value": 0
@@ -65543,6 +66361,10 @@
 		{
 			"name": "Unlimited",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.weapon.shell.BallisticSettingBase.HitTerrain": [
@@ -65679,7 +66501,12 @@
 			"value": 6
 		}
 	],
-	"offline.timeline.TimelineDefine.CF": [],
+	"offline.timeline.TimelineDefine.CF": [
+		{
+			"name": "Invalid",
+			"value": -1
+		}
+	],
 	"offline.escape.EsEnemyEmotioDefine.Order": [
 		{
 			"name": "Random",
@@ -67754,6 +68581,14 @@
 	],
 	"offline.effect.script.EsRenderTargetTextureManager.Resolution": [
 		{
+			"name": "Withheld",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "SuperSmall",
 			"value": 0
 		},
@@ -67851,6 +68686,14 @@
 		}
 	],
 	"via.network.wrangler.PopulationSample": [
+		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
 		{
 			"name": "Undefined",
 			"value": 0
@@ -68479,6 +69322,10 @@
 		}
 	],
 	"offline.escape.enemy.tracks.Em9000EsColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Sensor_Enemy",
 			"value": 4
@@ -69402,6 +70249,14 @@
 	],
 	"via.os.http_client.Error": [
 		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -70271,6 +71126,10 @@
 		}
 	],
 	"offline.enemy.em0000.MaterialOption": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "BLOODY_FACE_GAMEOVER",
 			"value": 0
@@ -71474,6 +72333,10 @@
 		{
 			"name": "Priority_9999",
 			"value": 9999
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.gimmick.action.Trigger.TriggerBootType": [
@@ -71496,6 +72359,10 @@
 		{
 			"name": "CheckFlag",
 			"value": 4
+		},
+		{
+			"name": "Unset",
+			"value": -1
 		}
 	],
 	"offline.gimmick.action.GimmickAction.SuspendTypeBase": [
@@ -71628,6 +72495,10 @@
 		}
 	],
 	"offline.escape.enemy.em0020.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Damage",
 			"value": 0
@@ -74478,6 +75349,10 @@
 	],
 	"offline.enemy.EnemyDropPartsBase.DropPartsStatus": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Standby",
 			"value": 0
 		},
@@ -74926,6 +75801,10 @@
 	],
 	"offline.implement.userdata.ArmUserData.PartsSetting.AbilitySetting.Calculation": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Multi",
 			"value": 0
 		},
@@ -74945,6 +75824,10 @@
 		}
 	],
 	"offline.escape.enemy.tracks.Em3500EsColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -75048,7 +75931,24 @@
 			"value": 3
 		}
 	],
-	"offline.UpdateOrderGroup.PlayerManagePhase": [],
+	"offline.UpdateOrderGroup.PlayerManagePhase": [
+		{
+			"name": "FASTEST",
+			"value": -45
+		},
+		{
+			"name": "Player",
+			"value": -44
+		},
+		{
+			"name": "Camera",
+			"value": -43
+		},
+		{
+			"name": "LATEST",
+			"value": -42
+		}
+	],
 	"offline.escape.EsTimerManager.TaskId": [
 		{
 			"name": "InvalidId",
@@ -75151,7 +76051,44 @@
 			"value": 3
 		}
 	],
-	"offline.UpdateOrderGroup.EnemyControlPhase": [],
+	"offline.UpdateOrderGroup.EnemyControlPhase": [
+		{
+			"name": "FASTEST",
+			"value": -53
+		},
+		{
+			"name": "Param",
+			"value": -52
+		},
+		{
+			"name": "Think",
+			"value": -51
+		},
+		{
+			"name": "PreControl",
+			"value": -50
+		},
+		{
+			"name": "Control",
+			"value": -49
+		},
+		{
+			"name": "Sensor",
+			"value": -48
+		},
+		{
+			"name": "PostControl",
+			"value": -47
+		},
+		{
+			"name": "Last",
+			"value": -46
+		},
+		{
+			"name": "LATEST",
+			"value": -45
+		}
+	],
 	"via.CoreEntry.VrDeviceRequirement": [
 		{
 			"name": "No",
@@ -75942,6 +76879,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -77475,6 +78416,10 @@
 	],
 	"offline.escape.gimmick.action.EsGimmickRailCannonSub.GuiStateIndex": [
 		{
+			"name": "Standby",
+			"value": -1
+		},
+		{
 			"name": "ReadyFirstShoot",
 			"value": 0
 		},
@@ -77994,6 +78939,10 @@
 		}
 	],
 	"offline.AssetPackagePair.GimmickType": [
+		{
+			"name": "UNSET",
+			"value": -1
+		},
 		{
 			"name": "WINDOW",
 			"value": 0
@@ -79821,6 +80770,10 @@
 	],
 	"offline.ActorDefine.ActorType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "PL0000",
 			"value": 0
 		},
@@ -80059,7 +81012,120 @@
 			"value": 7
 		}
 	],
-	"offline.effect.script.UpdateOrder": [],
+	"offline.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -998
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -996
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -995
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -994
+		},
+		{
+			"name": "PostMainCameraEffect",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertCharacterBlood",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -985
+		},
+		{
+			"name": "EPVExpertPartsDamage",
+			"value": -984
+		},
+		{
+			"name": "EPVExpertWeaponLanding",
+			"value": -983
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -982
+		},
+		{
+			"name": "LoadZone",
+			"value": -981
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "EmitZone",
+			"value": -979
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -978
+		},
+		{
+			"name": "CullingZone",
+			"value": -977
+		},
+		{
+			"name": "EventEffectController",
+			"value": -976
+		},
+		{
+			"name": "EventEffectManager",
+			"value": -975
+		},
+		{
+			"name": "EffectManager",
+			"value": -974
+		},
+		{
+			"name": "EffectContainer",
+			"value": -973
+		}
+	],
 	"via.network.wrangler.BlobType": [
 		{
 			"name": "Unknown",
@@ -80245,6 +81311,10 @@
 	},
 	"offline.gui.GimmickKeyInputGuiBehavior.KeyType": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "ABC",
 			"value": 0
 		},
@@ -80320,6 +81390,10 @@
 		}
 	],
 	"offline.escape.enemy.tracks.Em7000EsColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -81018,6 +82092,58 @@
 	],
 	"offline.UpdateOrderGroup.Phase": [
 		{
+			"name": "FASTEST",
+			"value": -115
+		},
+		{
+			"name": "HeadSystem",
+			"value": -114
+		},
+		{
+			"name": "Screen",
+			"value": -87
+		},
+		{
+			"name": "Scene",
+			"value": -82
+		},
+		{
+			"name": "Map",
+			"value": -76
+		},
+		{
+			"name": "Positioning",
+			"value": -62
+		},
+		{
+			"name": "EnemyManage",
+			"value": -57
+		},
+		{
+			"name": "EnemyControl",
+			"value": -53
+		},
+		{
+			"name": "PlayerManage",
+			"value": -45
+		},
+		{
+			"name": "PlayerControl",
+			"value": -42
+		},
+		{
+			"name": "CameraControl",
+			"value": -35
+		},
+		{
+			"name": "TailSystem",
+			"value": -25
+		},
+		{
+			"name": "Free",
+			"value": -5
+		},
+		{
 			"name": "LATEST",
 			"value": 120
 		}
@@ -81239,6 +82365,10 @@
 		}
 	],
 	"offline.escape.enemy.em1000.ParasiteState": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "IDLE",
 			"value": 0
@@ -82052,7 +83182,32 @@
 			"value": 4
 		}
 	],
-	"offline.UpdateOrderGroup.PositioningPhase": [],
+	"offline.UpdateOrderGroup.PositioningPhase": [
+		{
+			"name": "FASTEST",
+			"value": -62
+		},
+		{
+			"name": "Press",
+			"value": -61
+		},
+		{
+			"name": "GroundFixer",
+			"value": -60
+		},
+		{
+			"name": "TransformInterpolator",
+			"value": -59
+		},
+		{
+			"name": "StayAreaController",
+			"value": -58
+		},
+		{
+			"name": "LATEST",
+			"value": -57
+		}
+	],
 	"offline.File.ID": [
 		{
 			"name": "Invalid",
@@ -84123,7 +85278,36 @@
 			"value": 1
 		}
 	],
-	"offline.UpdateOrderGroup.ScenePhase": [],
+	"offline.UpdateOrderGroup.ScenePhase": [
+		{
+			"name": "FASTEST",
+			"value": -82
+		},
+		{
+			"name": "GuiManager",
+			"value": -81
+		},
+		{
+			"name": "Gui",
+			"value": -80
+		},
+		{
+			"name": "CutSceneManager",
+			"value": -79
+		},
+		{
+			"name": "CutScene",
+			"value": -78
+		},
+		{
+			"name": "CutSceneActor",
+			"value": -77
+		},
+		{
+			"name": "LATEST",
+			"value": -76
+		}
+	],
 	"via.motion.ChainType": [
 		{
 			"name": "Chain",
@@ -84230,6 +85414,10 @@
 	],
 	"offline.GimmickRaccoonFigureManager.RaccoonID": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Raccoon_0",
 			"value": 0
 		},
@@ -84333,6 +85521,10 @@
 		}
 	],
 	"offline.EquipmentDefine.SubWeaponType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -84574,6 +85766,10 @@
 	],
 	"offline.survivor.player.PlayerFacialController.SituationMode": [
 		{
+			"name": "NONE",
+			"value": -1
+		},
+		{
 			"name": "DEAD",
 			"value": 0
 		},
@@ -84701,6 +85897,10 @@
 		}
 	],
 	"offline.enemy.em0000.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press_Survivor",
 			"value": 0
@@ -87088,6 +88288,10 @@
 	],
 	"offline.escape.enemy.em3300.IKState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -87914,6 +89118,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.str.SplitSeparatorType": [
@@ -88094,6 +89302,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.navigation.ObstacleFilterInfo.FilterType": [
@@ -89825,6 +91037,10 @@
 	],
 	"offline.EquipmentDefine.WeaponCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Handgun",
 			"value": 0
 		},
@@ -90440,6 +91656,10 @@
 		}
 	],
 	"offline.gamemastering.RecordManager.ShopItemID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "ITEM_00",
 			"value": 0
@@ -92159,6 +93379,10 @@
 		{
 			"name": "EV999",
 			"value": 20999
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"offline.gamemastering.Location.ID": [
@@ -93242,6 +94466,18 @@
 		}
 	],
 	"via.SharePlayControllerMode": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
 		{
 			"name": "WatchingHostPlay",
 			"value": 0
@@ -94755,6 +95991,10 @@
 	],
 	"offline.EsUIShopUserData.ShopCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Weapon",
 			"value": 0
 		},
@@ -94772,6 +96012,10 @@
 		}
 	],
 	"offline.escape.enemy.em9300.CancelFlagTrack": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "EnableNextComboAttack",
 			"value": 0
@@ -95930,6 +97174,10 @@
 		}
 	],
 	"offline.enemy.em3000.RequestSetID": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PRESS_SURVIVOR",
 			"value": 0
@@ -97091,6 +98339,10 @@
 	],
 	"offline.enemy.em0000.Em0000DropParts.DelayBreakStatus": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Hang",
 			"value": 0
 		},
@@ -97530,6 +98782,10 @@
 		}
 	],
 	"offline.survivor.player.PlayerFacialController.BreathingMode": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "RUN",
 			"value": 0
@@ -99125,7 +100381,68 @@
 			"value": 2
 		}
 	],
-	"offline.UpdateOrderGroup.MapPhase": [],
+	"offline.UpdateOrderGroup.MapPhase": [
+		{
+			"name": "FASTEST",
+			"value": -76
+		},
+		{
+			"name": "ScenarioController",
+			"value": -75
+		},
+		{
+			"name": "GimmickInteractManager",
+			"value": -74
+		},
+		{
+			"name": "GimmickManager",
+			"value": -73
+		},
+		{
+			"name": "GimmickItemPositions",
+			"value": -72
+		},
+		{
+			"name": "GimmickTrigger",
+			"value": -71
+		},
+		{
+			"name": "GimmickActionPre",
+			"value": -70
+		},
+		{
+			"name": "GimmickActionControl",
+			"value": -69
+		},
+		{
+			"name": "GimmickActionBodyBeforeEnemy",
+			"value": -68
+		},
+		{
+			"name": "GimmickActionBody",
+			"value": -67
+		},
+		{
+			"name": "UiMapGUI",
+			"value": -66
+		},
+		{
+			"name": "FsmStateManager",
+			"value": -65
+		},
+		{
+			"name": "FsmStateControl",
+			"value": -64
+		},
+		{
+			"name": "AfterFsmStateControl",
+			"value": -63
+		},
+		{
+			"name": "LATEST",
+			"value": -62
+		}
+	],
 	"via.hid.hmd.Morpheus.VrModeStatusCheckTiming": [
 		{
 			"name": "VrTrackerStarted",
@@ -99505,6 +100822,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"offline.enemy.em0000.RoleAction.WindowIn": [
@@ -100346,6 +101683,10 @@
 	],
 	"offline.EquipmentDefine.EquipCategory": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Main",
 			"value": 0
 		},
@@ -100504,6 +101845,10 @@
 	],
 	"offline.escape.gimmick.tracks.EsGimmickColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -100628,6 +101973,10 @@
 	],
 	"offline.escape.enemy.em9200.CancelFlagTrack": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "EnableNextComboAttack",
 			"value": 0
 		},
@@ -100652,8 +102001,16 @@
 	],
 	"offline.gamemastering.SaveDataManager.SaveDataNumber": [
 		{
+			"name": "SYSTEM_DATA_BEGIN",
+			"value": -1
+		},
+		{
 			"name": "SYSTEM_DATA_COUNT",
 			"value": 1
+		},
+		{
+			"name": "SYSTEM_DATA_END",
+			"value": -1
 		},
 		{
 			"name": "SCENARIO_DATA_BEGIN",
@@ -100697,6 +102054,10 @@
 		}
 	],
 	"offline.implement.Gun.Attack": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "High",
 			"value": 0
@@ -101233,6 +102594,14 @@
 		}
 	],
 	"via.SharePlayConnectionStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
 		{
 			"name": "Dormant",
 			"value": 0
@@ -101780,6 +103149,10 @@
 	],
 	"offline.escape.enemy.em3300.TurnDirection": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Left60",
 			"value": 0
 		},
@@ -102030,6 +103403,14 @@
 			"value": 0
 		},
 		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
+		},
+		{
 			"name": "Slot",
 			"value": 1
 		},
@@ -102061,6 +103442,10 @@
 		}
 	],
 	"offline.NpcDefine.NPCType": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "PL0000",
 			"value": 0
@@ -103676,6 +105061,10 @@
 	],
 	"offline.escape.enemy.tracks.Em9300EsColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "ATTACK_SCEARM_L",
 			"value": 10
 		},
@@ -104022,7 +105411,28 @@
 			"value": 2
 		}
 	],
-	"offline.UpdateOrderGroup.EnemyManagePhase": [],
+	"offline.UpdateOrderGroup.EnemyManagePhase": [
+		{
+			"name": "FASTEST",
+			"value": -57
+		},
+		{
+			"name": "Manager",
+			"value": -56
+		},
+		{
+			"name": "AttackInitiative",
+			"value": -55
+		},
+		{
+			"name": "WwiseActivation",
+			"value": -54
+		},
+		{
+			"name": "LATEST",
+			"value": -53
+		}
+	],
 	"via.clr.PropertyFlag": [
 		{
 			"name": "SpecialName",
@@ -104101,6 +105511,10 @@
 	],
 	"offline.escape.enemy.em3400.SwallowDirection": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Front",
 			"value": 0
 		},
@@ -104137,6 +105551,10 @@
 	],
 	"offline.NaviMoveSupporter.StopReasonType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Arrival",
 			"value": 0
 		},
@@ -104170,6 +105588,10 @@
 		}
 	],
 	"offline.escape.enemy.tracks.Em9010EsColliderTrack.ColliderGroup": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Press",
 			"value": 0
@@ -104431,6 +105853,10 @@
 	],
 	"offline.escape.enemy.tracks.Em3300EsColliderTrack.ColliderGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Press",
 			"value": 0
 		},
@@ -104576,6 +106002,10 @@
 		}
 	],
 	"offline.survivor.fsmv2.action.SurvivorUpdateWallMaterialAction.Timing": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0

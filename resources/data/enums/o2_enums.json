@@ -41,6 +41,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"app.MovieLoadType": [
@@ -574,6 +590,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -4097,6 +4117,10 @@
 				"value": 1073741824
 			},
 			{
+				"name": "RSR",
+				"value": 2147483648
+			},
+			{
 				"name": "LSide",
 				"value": 268435456
 			},
@@ -4107,6 +4131,10 @@
 			{
 				"name": "None",
 				"value": 0
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -4256,6 +4284,10 @@
 		{
 			"name": "Version2_1",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkMultipleDamageAction.DebugDamageTransition": [
@@ -5621,6 +5653,14 @@
 		}
 	],
 	"via.GameLiveStreamingStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
 		{
 			"name": "Stop",
 			"value": 0
@@ -9563,6 +9603,10 @@
 	"via.network.LogId": [],
 	"via.gui.Segment": [
 		{
+			"name": "Keep",
+			"value": -1
+		},
+		{
 			"name": "Segment00",
 			"value": 0
 		},
@@ -13497,6 +13541,10 @@
 	],
 	"via.hid.MobileDeviceOrientation": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "Portrait",
 			"value": 0
 		},
@@ -14275,6 +14323,10 @@
 		{
 			"name": "PreTransformCSMax",
 			"value": 4
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.charm.Em2cprg.ENUM_EM2C_R2_ATTACK": [
@@ -15868,6 +15920,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -16134,9 +16190,34 @@
 		{
 			"name": "Draw",
 			"value": 2
+		},
+		{
+			"name": "RestoreSceneInfo",
+			"value": 4294967295
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"app.charm.Pldef.ENUM_PL_ATCK2": [
 		{
 			"name": "PL_ATCK_DAGGER",
@@ -18991,6 +19072,10 @@
 		{
 			"name": "Removed",
 			"value": 1
+		},
+		{
+			"name": "Failed_InvalidCollection",
+			"value": -1
 		}
 	],
 	"via.motion.Ik3dPathSolver.BlendMode": [
@@ -19599,6 +19684,10 @@
 			{
 				"name": "MotionCamera",
 				"value": 2
+			},
+			{
+				"name": "All",
+				"value": 255
 			}
 		]
 	},
@@ -19807,6 +19896,14 @@
 		}
 	],
 	"via.VideoRecordingStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -20482,6 +20579,18 @@
 		{
 			"name": "OK",
 			"value": 1
+		},
+		{
+			"name": "ErrorStoped",
+			"value": 2147483649
+		},
+		{
+			"name": "ErrorDeviceDisconnected",
+			"value": 2147483650
+		},
+		{
+			"name": "ErrorInternal",
+			"value": 2147487744
 		}
 	],
 	"via.render.PipePriority": [
@@ -20636,6 +20745,10 @@
 		{
 			"name": "CollectionIndexMask",
 			"value": 1044480
+		},
+		{
+			"name": "BehaviorGroupIndexMask",
+			"value": -1048576
 		}
 	],
 	"via.render.LDRRadialBlur.LookAtType": [
@@ -21548,6 +21661,10 @@
 		}
 	],
 	"via.network.MatchmakingRules.DataType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Number",
 			"value": 0
@@ -23316,6 +23433,10 @@
 			{
 				"name": "No8",
 				"value": 256
+			},
+			{
+				"name": "Invalid",
+				"value": 4294967295
 			}
 		]
 	},
@@ -23402,6 +23523,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -24080,6 +24205,26 @@
 		}
 	],
 	"via.os.websocket_client.Error": [
+		{
+			"name": "TruncatedSend",
+			"value": -5
+		},
+		{
+			"name": "CouldNotSend",
+			"value": -4
+		},
+		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -27478,6 +27623,10 @@
 	],
 	"via.hid.MobileViewOrientation": [
 		{
+			"name": "Unknown",
+			"value": -1
+		},
+		{
 			"name": "LandscapeLeft",
 			"value": 2
 		},
@@ -27615,6 +27764,10 @@
 		}
 	],
 	"via.gui.AssetLanguage": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0
@@ -27816,6 +27969,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.landscape.DebugShaderType": [
@@ -27852,6 +28009,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkLeg.RayCastCallbackID": [
@@ -28341,6 +28502,10 @@
 		}
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -34346,6 +34511,18 @@
 		{
 			"name": "OK",
 			"value": 1
+		},
+		{
+			"name": "ErrorStarted",
+			"value": 2147483649
+		},
+		{
+			"name": "ErrorInvalidType",
+			"value": 2147483650
+		},
+		{
+			"name": "ErrorInternal",
+			"value": 2147487744
 		}
 	],
 	"via.render.Mesh.BeautyMaskChannel": [
@@ -34851,6 +35028,10 @@
 		}
 	],
 	"via.effect.GroupType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Free",
 			"value": 0
@@ -35556,7 +35737,48 @@
 			"value": 3
 		}
 	],
-	"via.relib.light.UpdateOrder": [],
+	"via.relib.light.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -900
+		},
+		{
+			"name": "EventLightController",
+			"value": -899
+		},
+		{
+			"name": "LightBlinkUserCurve",
+			"value": -898
+		},
+		{
+			"name": "GlobalTimeZoneManager",
+			"value": -897
+		},
+		{
+			"name": "PostControlManager",
+			"value": -896
+		},
+		{
+			"name": "LightControlManager",
+			"value": -895
+		},
+		{
+			"name": "GeometryAOSetting",
+			"value": -894
+		},
+		{
+			"name": "MoonParamOverride",
+			"value": -893
+		},
+		{
+			"name": "CopyPostProcessParam",
+			"value": -892
+		},
+		{
+			"name": "Cloud2Controller",
+			"value": -891
+		}
+	],
 	"via.render.GlobalSparseShadowResolution": [
 		{
 			"name": "GlobalSparseShadowResolution_64",
@@ -35753,6 +35975,10 @@
 		{
 			"name": "Scratch",
 			"value": 536870912
+		},
+		{
+			"name": "ExecuteTimingNormal",
+			"value": -2147483648
 		},
 		{
 			"name": "ExecuteTimingPrecede",
@@ -37490,6 +37716,14 @@
 			"value": 0
 		},
 		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
+		},
+		{
 			"name": "Forceword",
 			"value": 2147483647
 		}
@@ -38641,6 +38875,10 @@
 		{
 			"name": "Unknown",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
 		}
 	],
 	"via.render.FillMode": [
@@ -40201,7 +40439,24 @@
 			"value": 2147483647
 		}
 	],
-	"via.os.TocPtError": [],
+	"via.os.TocPtError": [
+		{
+			"name": "Threshold",
+			"value": 4294901760
+		},
+		{
+			"name": "NotMounted",
+			"value": 4294901761
+		},
+		{
+			"name": "NotFound",
+			"value": 4294901762
+		},
+		{
+			"name": "DRMFailure",
+			"value": 4294901763
+		}
+	],
 	"via.render.BlendShapePriority": [
 		{
 			"name": "blendShapePriority_UpdateBuffer",
@@ -40651,6 +40906,10 @@
 	],
 	"via.render.ShaderLod": [
 		{
+			"name": "ShaderLod_Automatic",
+			"value": -1
+		},
+		{
 			"name": "ShaderLod_0",
 			"value": 0
 		},
@@ -40823,6 +41082,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"System.Reflection.CallingConventions": {
@@ -43275,7 +43538,124 @@
 			"value": 2
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "EventEffectManager",
+			"value": -995
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -994
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -993
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -985
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -984
+		},
+		{
+			"name": "EPVExpertAutoIsLanding",
+			"value": -983
+		},
+		{
+			"name": "LoadZone",
+			"value": -982
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -981
+		},
+		{
+			"name": "EmitZone",
+			"value": -980
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -979
+		},
+		{
+			"name": "CullingZone",
+			"value": -978
+		},
+		{
+			"name": "EffectInfoHolder",
+			"value": -977
+		},
+		{
+			"name": "EffectVirtualSkeletonBinder",
+			"value": -976
+		},
+		{
+			"name": "EffectMovement",
+			"value": -975
+		},
+		{
+			"name": "EffectEvRefVFXManager",
+			"value": -974
+		},
+		{
+			"name": "EffectManager",
+			"value": -973
+		},
+		{
+			"name": "EffectContainer",
+			"value": -972
+		}
+	],
 	"app.charm.Demo05.GUIType": [
 		{
 			"name": "UI_layout_OP",
@@ -43903,6 +44283,10 @@
 			{
 				"name": "Interfaces",
 				"value": 8192
+			},
+			{
+				"name": "All",
+				"value": -1
 			}
 		]
 	},
@@ -44000,6 +44384,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"via.ScreenShotOverlayImageIndex": [
@@ -45656,6 +46068,10 @@
 	],
 	"via.motion.Animation.ExecuteThread": [
 		{
+			"name": "Auto",
+			"value": -1
+		},
+		{
 			"name": "Line0",
 			"value": 0
 		}
@@ -47024,6 +47440,10 @@
 			{
 				"name": "Extra4",
 				"value": 512
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -47822,6 +48242,10 @@
 			{
 				"name": "Last",
 				"value": 16
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -49574,7 +49998,28 @@
 			"value": 2
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "MaterialParamLink",
+			"value": -1998
+		},
+		{
+			"name": "MeshJointSetting",
+			"value": -1997
+		},
+		{
+			"name": "EVRefManager",
+			"value": -1996
+		}
+	],
 	"via.AccountPickerResult": [
 		{
 			"name": "None",
@@ -50025,6 +50470,14 @@
 	],
 	"via.network.wrangler.PopulationSample": [
 		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
+		{
 			"name": "Undefined",
 			"value": 0
 		}
@@ -50091,6 +50544,62 @@
 		{
 			"name": "NoError",
 			"value": 0
+		},
+		{
+			"name": "AppUnavailable",
+			"value": -1
+		},
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "InvalidRequest",
+			"value": -3
+		},
+		{
+			"name": "DownloadNotFound",
+			"value": -4
+		},
+		{
+			"name": "ApiNotAvailable",
+			"value": -5
+		},
+		{
+			"name": "NetworkError",
+			"value": -6
+		},
+		{
+			"name": "AccessDenied",
+			"value": -7
+		},
+		{
+			"name": "InsufficientStorage",
+			"value": -10
+		},
+		{
+			"name": "PlayStoreNotFound",
+			"value": -11
+		},
+		{
+			"name": "NetworkUnrestricted",
+			"value": -12
+		},
+		{
+			"name": "AppNotOwned",
+			"value": -13
+		},
+		{
+			"name": "InternalError",
+			"value": -100
+		},
+		{
+			"name": "InitializationNeeded",
+			"value": -101
+		},
+		{
+			"name": "InitializationFailed",
+			"value": -102
 		}
 	],
 	"app.charm.CharmEm03.ENUM_RNO_DIE": [
@@ -50460,6 +50969,14 @@
 		}
 	],
 	"via.os.http_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -52083,6 +52600,10 @@
 		{
 			"name": "Stoped",
 			"value": 1
+		},
+		{
+			"name": "ErrInternal",
+			"value": 2147487744
 		}
 	],
 	"via.motion.CppSampleTracks.Test": [
@@ -54400,6 +54921,14 @@
 		{
 			"name": "Started",
 			"value": 1
+		},
+		{
+			"name": "ErrorConfigType",
+			"value": 2147483649
+		},
+		{
+			"name": "ErrorInternal",
+			"value": 2147487744
 		}
 	],
 	"via.physics.TriangleVoronoiId": [
@@ -54615,6 +55144,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -54736,7 +55269,156 @@
 			"value": 2
 		}
 	],
-	"via.relib.ReLibUpdateOrder.UpdateOrder": [],
+	"via.relib.ReLibUpdateOrder.UpdateOrder": [
+		{
+			"name": "Effect_Provider",
+			"value": -999
+		},
+		{
+			"name": "Effect_BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "Effect_ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "Effect_EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "Effect_EventEffectManager",
+			"value": -995
+		},
+		{
+			"name": "Effect_EffectParentChecker",
+			"value": -994
+		},
+		{
+			"name": "Effect_EffectTimelineChecker",
+			"value": -993
+		},
+		{
+			"name": "Effect_EPVStandardCameraFollowerLate",
+			"value": -992
+		},
+		{
+			"name": "Effect_EPVExpertCommon",
+			"value": -991
+		},
+		{
+			"name": "Effect_EPVExpertAuto",
+			"value": -990
+		},
+		{
+			"name": "Effect_EPVExpertDestruction",
+			"value": -989
+		},
+		{
+			"name": "Effect_EPVExpertExplosion",
+			"value": -988
+		},
+		{
+			"name": "Effect_EPVExpertFootLanding",
+			"value": -987
+		},
+		{
+			"name": "Effect_EPVExpertGunSmoke",
+			"value": -986
+		},
+		{
+			"name": "Effect_EPVExpertObjectLanding",
+			"value": -985
+		},
+		{
+			"name": "Effect_EPVExpertMuzzleFlash",
+			"value": -984
+		},
+		{
+			"name": "Effect_EPVExpertAutoIsLanding",
+			"value": -983
+		},
+		{
+			"name": "Effect_LoadZone",
+			"value": -982
+		},
+		{
+			"name": "Effect_EmitZoneGroup",
+			"value": -981
+		},
+		{
+			"name": "Effect_EmitZone",
+			"value": -980
+		},
+		{
+			"name": "Effect_CullingZoneGroup",
+			"value": -979
+		},
+		{
+			"name": "Effect_CullingZone",
+			"value": -978
+		},
+		{
+			"name": "Effect_EffectInfoHolder",
+			"value": -977
+		},
+		{
+			"name": "Effect_EffectVirtualSkeletonBinder",
+			"value": -976
+		},
+		{
+			"name": "Effect_EffectMovement",
+			"value": -975
+		},
+		{
+			"name": "Effect_EffectManager",
+			"value": -973
+		},
+		{
+			"name": "Effect_EffectContainer",
+			"value": -972
+		},
+		{
+			"name": "Render_MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "Render_MaterialParamLink",
+			"value": -1998
+		},
+		{
+			"name": "Render_MeshJointSetting",
+			"value": -1997
+		},
+		{
+			"name": "Motion_MotionHistoryRecorder",
+			"value": -799
+		},
+		{
+			"name": "Light_LightBlinkUserCurve",
+			"value": -898
+		},
+		{
+			"name": "Light_Cloud2Controller",
+			"value": -891
+		},
+		{
+			"name": "Light_GlobalTimeZoneManager",
+			"value": -897
+		},
+		{
+			"name": "Light_PostControlManager",
+			"value": -896
+		},
+		{
+			"name": "Light_LightControlManager",
+			"value": -895
+		},
+		{
+			"name": "Light_CopyPostProcessParam",
+			"value": -892
+		}
+	],
 	"app.charm.CharmEm0e.ENUM_DM_DOWN_F": [
 		{
 			"name": "DM_INIT",
@@ -54829,6 +55511,30 @@
 		{
 			"name": "Trace",
 			"value": 0
+		},
+		{
+			"name": "Debug",
+			"value": -1
+		},
+		{
+			"name": "Info",
+			"value": -2
+		},
+		{
+			"name": "Warn",
+			"value": -3
+		},
+		{
+			"name": "Error",
+			"value": -4
+		},
+		{
+			"name": "Fatal",
+			"value": -5
+		},
+		{
+			"name": "None",
+			"value": -6
 		}
 	],
 	"via.effect.lensflare.ResourceType": [
@@ -56394,6 +57100,10 @@
 	],
 	"via.render.RayTracingLod": [
 		{
+			"name": "Automatic",
+			"value": 255
+		},
+		{
 			"name": "LOD_0",
 			"value": 0
 		},
@@ -56532,6 +57242,10 @@
 		{
 			"name": "SEFC_TYPE_MUD",
 			"value": 3
+		},
+		{
+			"name": "SEFC_TYPE_ERROR",
+			"value": 255
 		}
 	],
 	"via.landscape.FoliageDrawAABBType": [
@@ -56769,6 +57483,10 @@
 		}
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
+		{
+			"name": "Ignore",
+			"value": -1
+		},
 		{
 			"name": "AecAgcEnable",
 			"value": 0
@@ -57107,6 +57825,10 @@
 		}
 	],
 	"via.render.ForceShaderLod": [
+		{
+			"name": "ForceShaderLod_None",
+			"value": -1
+		},
 		{
 			"name": "ForceShaderLod_0",
 			"value": 0
@@ -57680,6 +58402,10 @@
 		{
 			"name": "Foreached",
 			"value": 1
+		},
+		{
+			"name": "Failed_InvalidCollection",
+			"value": -1
 		}
 	],
 	"via.network.wrangler.BlobType": [
@@ -58576,6 +59302,10 @@
 			{
 				"name": "IsRightWired",
 				"value": 32
+			},
+			{
+				"name": "IsDebugPadConnected",
+				"value": 2147483648
 			}
 		]
 	},
@@ -58608,6 +59338,10 @@
 		}
 	],
 	"via.landscape.QuadTreeTextureEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Heightmap",
 			"value": 0
@@ -60612,7 +61346,20 @@
 			"value": 8192
 		}
 	],
-	"via.render.FenceState": [],
+	"via.render.FenceState": [
+		{
+			"name": "Invalidate",
+			"value": -1
+		},
+		{
+			"name": "DoNotWait",
+			"value": -2
+		},
+		{
+			"name": "UAVSync",
+			"value": -3
+		}
+	],
 	"app.charm.Em01prg.ENUM_EM01_R2_MOVE": [
 		{
 			"name": "EM01_R2_MOVE_WALK_F",
@@ -61566,6 +62313,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.str.SplitSeparatorType": [
@@ -61688,6 +62439,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.os.websocket_client.Type": [
@@ -63920,6 +64675,18 @@
 	],
 	"via.SharePlayControllerMode": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
+		{
 			"name": "WatchingHostPlay",
 			"value": 0
 		},
@@ -65140,6 +65907,10 @@
 		{
 			"name": "RenderToFrameBuffer",
 			"value": 4
+		},
+		{
+			"name": "PopFromEsram",
+			"value": -1
 		}
 	],
 	"via.hansoft.dev.LogId": [
@@ -67129,6 +67900,10 @@
 			{
 				"name": "MotionCamera",
 				"value": 2
+			},
+			{
+				"name": "All",
+				"value": 255
 			}
 		]
 	},
@@ -69922,6 +70697,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"via.landscape.ProjectFoliageLodComputationStrategy": [
@@ -71212,6 +72007,14 @@
 	],
 	"via.SharePlayConnectionStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Dormant",
 			"value": 0
 		},
@@ -71918,6 +72721,18 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "InvalidSlot",
+			"value": -129
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -73759,6 +74574,10 @@
 			{
 				"name": "EX1",
 				"value": 64
+			},
+			{
+				"name": "All",
+				"value": 4294967295
 			}
 		]
 	},
@@ -73820,7 +74639,16 @@
 			"value": 3
 		}
 	],
-	"via.relib.motion.UpdateOrder": [],
+	"via.relib.motion.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -800
+		},
+		{
+			"name": "MotionHistoryRecorder",
+			"value": -799
+		}
+	],
 	"via.gui.AlphaChannelType": [
 		{
 			"name": "None",
@@ -74044,6 +74872,10 @@
 		}
 	],
 	"via.hid.virtualKeyboard.CustomizedDictionaryIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Index0",
 			"value": 0
@@ -74700,6 +75532,10 @@
 		}
 	],
 	"soundlib.SoundListener.ListenerIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "No0",
 			"value": 0

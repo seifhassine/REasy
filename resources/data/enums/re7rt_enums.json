@@ -95,6 +95,22 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"app.EffectDecal.DecalDirectionEnum": [
@@ -529,6 +545,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -4550,6 +4570,10 @@
 	],
 	"app.Em8000.Action.Em8000Attack.Type": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -4799,6 +4823,10 @@
 		}
 	],
 	"app.CH9Em6400Think.FacialBasicID": [
+		{
+			"name": "NoDefault",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -5823,6 +5851,10 @@
 	],
 	"app.Em8001.Action.Walk.WalkType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -5857,6 +5889,10 @@
 		{
 			"name": "Version2",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkMultipleDamageAction.DebugDamageTransition": [
@@ -6030,6 +6066,10 @@
 		}
 	],
 	"app.Em8000.Em8000AditiveDamageInfo.DamageDirection": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -7617,6 +7657,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -8599,6 +8647,10 @@
 		{
 			"name": "Hard",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.InputListType": [
@@ -16653,6 +16705,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.ResolutionAdjustAnchor": [
@@ -16966,6 +17022,10 @@
 		}
 	],
 	"via.gui.Segment": [
+		{
+			"name": "Keep",
+			"value": -1
+		},
 		{
 			"name": "Segment00",
 			"value": 0
@@ -18269,6 +18329,10 @@
 		{
 			"name": "Pursuit",
 			"value": 4
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"app.CH8HUDControl.AirGauge.OxySoundState": [
@@ -19448,6 +19512,10 @@
 		{
 			"name": "Pursuit",
 			"value": 4
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.fsm.Selector.Attribute": [
@@ -20174,6 +20242,10 @@
 		}
 	],
 	"app.Em3000Think.FacialBasicID": [
+		{
+			"name": "NoDefault",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -22459,6 +22531,10 @@
 	],
 	"via.os.SocketError": [
 		{
+			"name": "Pending",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -23398,6 +23474,10 @@
 		{
 			"name": "Combo",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.audiorender.StateThread": [
@@ -23964,6 +24044,10 @@
 	],
 	"app.Em2000Think.FacialBasicID": [
 		{
+			"name": "NoDefault",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -24212,6 +24296,10 @@
 	],
 	"app.Em8001.Em8001AditiveDamageInfo.DamageDirection": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -24404,6 +24492,10 @@
 	],
 	"app.Em8001.Action.Damage.Type": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "NoDamage",
 			"value": 0
 		},
@@ -24594,6 +24686,10 @@
 		{
 			"name": "SpeedTreeV8BillboardMax",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.PlayerDefine.TouchType": [
@@ -26172,6 +26268,10 @@
 	],
 	"app.Em8001.Define.WeaponGroup.Group": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -27191,6 +27291,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -27649,7 +27753,28 @@
 			"value": 5
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"app.PlayerCamera.RotationInertiaType": [
 		{
 			"name": "None",
@@ -31554,6 +31679,14 @@
 	],
 	"via.VideoRecordingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -32307,6 +32440,10 @@
 		{
 			"name": "Pursuit",
 			"value": 4
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.areamap.test.BasicDistance.Condition": [
@@ -32773,6 +32910,10 @@
 		}
 	],
 	"app.Em8001.Action.DamageDown.Direction": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -36526,6 +36667,10 @@
 	],
 	"via.network.MatchmakingRules.DataType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Number",
 			"value": 0
 		},
@@ -38777,6 +38922,10 @@
 		{
 			"name": "No8",
 			"value": 256
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.physics.PhaseType": [
@@ -39209,6 +39358,10 @@
 	],
 	"via.storage.saveService.SaveDataType": [
 		{
+			"name": "Array",
+			"value": -1
+		},
+		{
 			"name": "Int32",
 			"value": 0
 		},
@@ -39440,6 +39593,10 @@
 		}
 	],
 	"app.MapManager.LegendType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Player",
 			"value": 0
@@ -40092,6 +40249,18 @@
 		}
 	],
 	"via.os.websocket_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -42349,6 +42518,10 @@
 	],
 	"app.Em3102.Em3102Think.FacialBasicID": [
 		{
+			"name": "NoDefault",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -42802,6 +42975,10 @@
 	],
 	"via.gui.AssetLanguage": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "No0",
 			"value": 0
 		},
@@ -43184,6 +43361,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.InteractDetailSearch.SearchEventRotAxis": [
@@ -43220,6 +43401,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkLeg.RayCastCallbackID": [
@@ -43892,6 +44077,10 @@
 		}
 	],
 	"app.Em8000.Action.Em8000ComboAttack.Type": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -45463,6 +45652,10 @@
 	],
 	"app.CH8Em4500.Action.CH8Jump.Jumptype": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		}
@@ -45801,6 +45994,10 @@
 		{
 			"name": "Pursuit",
 			"value": 4
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.render.LDRColorDeficiencySimulation.DeficiencyType": [
@@ -46656,6 +46853,10 @@
 		{
 			"name": "StatsGetCandleFire",
 			"value": 31
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.navigation.map.MapData.MapStructure": [
@@ -46932,6 +47133,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.CH8GameManager.Difficulty": [
@@ -48204,6 +48409,10 @@
 		{
 			"name": "Max",
 			"value": 9301
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"app.Em3000.Action.Damage.Type": [
@@ -51800,6 +52009,10 @@
 	],
 	"via.effect.GroupType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Free",
 			"value": 0
 		},
@@ -51887,6 +52100,10 @@
 		}
 	],
 	"app.TableItemExplanation.Player": [
+		{
+			"name": "Start",
+			"value": -1
+		},
 		{
 			"name": "Enemy",
 			"value": 0
@@ -52013,6 +52230,10 @@
 		}
 	],
 	"app.Em8000.Action.Em8000Damage.Direction": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -55316,6 +55537,10 @@
 		{
 			"name": "Acid",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.AI.AIWanderHelper.EvaluateType": [
@@ -55524,6 +55749,10 @@
 		{
 			"name": "Menu",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.StampController.Type": [
@@ -55616,6 +55845,14 @@
 		{
 			"name": "None",
 			"value": 0
+		},
+		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
 		},
 		{
 			"name": "Forceword",
@@ -55807,6 +56044,10 @@
 		}
 	],
 	"app.Em8001.IK.ProcessBase.TransitionChangeState": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -56993,6 +57234,10 @@
 		{
 			"name": "Unknown",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
 		}
 	],
 	"via.gui.detail.ResolutionAdjust": [
@@ -57784,6 +58029,10 @@
 		}
 	],
 	"app.Em8000.Action.Em8000Damage.Type": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "NoDamage",
 			"value": 0
@@ -60209,6 +60458,10 @@
 	],
 	"app.Em8001.IK.Em8001HandIKController.Type": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -60492,6 +60745,10 @@
 		{
 			"name": "Unknown",
 			"value": 10
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.WaveAnnouncementUIAsset.BonusPanelState": [
@@ -60505,6 +60762,10 @@
 		}
 	],
 	"via.render.ShaderLod": [
+		{
+			"name": "ShaderLod_Automatic",
+			"value": -1
+		},
 		{
 			"name": "ShaderLod_0",
 			"value": 0
@@ -60638,6 +60899,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"app.OptionMenu.DisplayItem": [
@@ -61895,6 +62160,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.userdata.LogicNode.Operation": [
@@ -62330,6 +62599,10 @@
 		}
 	],
 	"app.Em8000.Action.Em8000Damage.DownState": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -63085,6 +63358,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.BlurFilter.BlurType": [
@@ -63929,6 +64206,10 @@
 	],
 	"app.Em8001.Action.Attack.Type": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -64628,6 +64909,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"app.Em2000.Em2000FaceController.PartsNo": [
@@ -64720,6 +65029,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.gui.Material.ParamType": [
@@ -65514,6 +65827,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.render.PQCurve": [
@@ -67450,6 +67767,10 @@
 		{
 			"name": "Force",
 			"value": 500
+		},
+		{
+			"name": "EventMultiDisp",
+			"value": -1
 		}
 	],
 	"app.CH9Em7500.ThinkAppearSet.Type": [
@@ -67822,6 +68143,10 @@
 	],
 	"app.Em8000.Action.Em8000Walk.WalkType": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -68173,6 +68498,10 @@
 		}
 	],
 	"app.Em3001Think.FacialBasicID": [
+		{
+			"name": "NoDefault",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -71109,6 +71438,10 @@
 	],
 	"app.PlayerCamera.FovType": [
 		{
+			"name": "Narrow",
+			"value": -10
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -71204,6 +71537,10 @@
 		}
 	],
 	"app.TableItemExplanation.ItemSlot": [
+		{
+			"name": "Start",
+			"value": -1
+		},
 		{
 			"name": "Slot1",
 			"value": 0
@@ -73115,6 +73452,10 @@
 	],
 	"app.Em3000.IK.Em8000HandIKController.Type": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -73716,6 +74057,14 @@
 		}
 	],
 	"via.network.wrangler.PopulationSample": [
+		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
 		{
 			"name": "Undefined",
 			"value": 0
@@ -74706,6 +75055,14 @@
 		}
 	],
 	"via.os.http_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -77328,6 +77685,10 @@
 	],
 	"app.Em3002Think.FacialBasicID": [
 		{
+			"name": "NoDefault",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -78110,6 +78471,10 @@
 	],
 	"app.Em8001.Define.Facial.FacialBasicID": [
 		{
+			"name": "NoDefault",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -78179,6 +78544,10 @@
 		}
 	],
 	"app.Em8001.IK.Em8001FBIKController.FBIKStatus.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -80163,6 +80532,10 @@
 	],
 	"app.Em8001.Action.DamageDown.Type": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "DownF",
 			"value": 0
 		},
@@ -80486,7 +80859,16 @@
 			}
 		]
 	},
-	"app.CardGameManager.HandItemRemoveRequestType": [],
+	"app.CardGameManager.HandItemRemoveRequestType": [
+		{
+			"name": "RemoveAll",
+			"value": -1
+		},
+		{
+			"name": "RemoveHalf",
+			"value": -2
+		}
+	],
 	"app.Em4200.Goal.EvaluatorID": [
 		{
 			"name": "HasTarget",
@@ -81225,6 +81607,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"app.CH9Em7700.ThinkOrderSet.Type": [
@@ -82420,6 +82806,78 @@
 			"value": 15
 		},
 		{
+			"name": "ENGINE_Sound_Reflection",
+			"value": -120
+		},
+		{
+			"name": "ENGINE_Sound_Behavior",
+			"value": -119
+		},
+		{
+			"name": "EffectSphereCollider",
+			"value": -1500
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -1501
+		},
+		{
+			"name": "EPVExpertCharacterBlood",
+			"value": -1502
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -1503
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -1504
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -1505
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -1506
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -1507
+		},
+		{
+			"name": "EPVExpertPartsDamage",
+			"value": -1508
+		},
+		{
+			"name": "EPVExpertWeaponLanding",
+			"value": -1509
+		},
+		{
+			"name": "VFXLoadZone",
+			"value": -1600
+		},
+		{
+			"name": "VFXCullingZone",
+			"value": -1601
+		},
+		{
+			"name": "VFXCullingZoneGroup",
+			"value": -1602
+		},
+		{
+			"name": "VFXCullingZoneHelper",
+			"value": -1603
+		},
+		{
+			"name": "VFXEmitZone",
+			"value": -1604
+		},
+		{
+			"name": "VFXEmitZoneGroup",
+			"value": -1605
+		},
+		{
 			"name": "MotionDelegateTagManager",
 			"value": 20
 		},
@@ -83024,6 +83482,10 @@
 			"value": 211
 		},
 		{
+			"name": "ENGINE_UI",
+			"value": -128
+		},
+		{
 			"name": "UIManager",
 			"value": 300
 		},
@@ -83112,6 +83574,10 @@
 		{
 			"name": "Unknown",
 			"value": 7
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.IKBase.EffectorRotation": [
@@ -83549,7 +84015,44 @@
 			"value": 2
 		}
 	],
-	"app.CH8SaveManager.SaveSlot": [],
+	"app.CH8SaveManager.SaveSlot": [
+		{
+			"name": "SaveSlotMax",
+			"value": -80
+		},
+		{
+			"name": "SaveSlotMin",
+			"value": -86
+		},
+		{
+			"name": "SystemData",
+			"value": -80
+		},
+		{
+			"name": "GameAutoSaveData",
+			"value": -81
+		},
+		{
+			"name": "GameDataMaxIndex",
+			"value": -81
+		},
+		{
+			"name": "GameDataMinIndex",
+			"value": -86
+		},
+		{
+			"name": "ManualSaveDataMax",
+			"value": -82
+		},
+		{
+			"name": "ManualSaveDataMin",
+			"value": -86
+		},
+		{
+			"name": "RetrySlot",
+			"value": -89
+		}
+	],
 	"via.eq.Function.Type": [
 		{
 			"name": "Sin",
@@ -85836,6 +86339,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Chain.WindParameter.Priority": [
@@ -86349,6 +86856,10 @@
 		}
 	],
 	"via.render.ForceShaderLod": [
+		{
+			"name": "ForceShaderLod_None",
+			"value": -1
+		},
 		{
 			"name": "ForceShaderLod_0",
 			"value": 0
@@ -89621,6 +90132,10 @@
 		}
 	],
 	"via.landscape.QuadTreeTextureEnum": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Heightmap",
 			"value": 0
@@ -93407,6 +93922,10 @@
 		{
 			"name": "DLC2",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.render.ExperimentalRayTrace.VFXResolution": [
@@ -94935,6 +95454,10 @@
 	],
 	"app.Em8000.Em8000Define.WeaponGroup.Group": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -94993,6 +95516,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Em8000.Motion.Em8000MotionID.Tag.Weapon": [
@@ -95261,6 +95788,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"via.navigation.ObstacleFilterInfo.FilterType": [
@@ -95293,6 +95824,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Em8000.Message.CorresponceExistMessageType": [
@@ -96648,6 +97183,10 @@
 	],
 	"app.CarInGarage.Parts": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "LeftDoor",
 			"value": 1
 		},
@@ -96908,6 +97447,10 @@
 		{
 			"name": "Force",
 			"value": 500
+		},
+		{
+			"name": "EventMultiDisp",
+			"value": -1
 		}
 	],
 	"via.hid.camera.PlayStationCameraFormatLevel": [
@@ -98423,6 +98966,18 @@
 		}
 	],
 	"via.SharePlayControllerMode": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
 		{
 			"name": "WatchingHostPlay",
 			"value": 0
@@ -100257,6 +100812,10 @@
 	],
 	"app.CardGameObjectElectricMachine.BetFlip.StopNoDefine": [
 		{
+			"name": "Random",
+			"value": -1
+		},
+		{
 			"name": "NoDisp",
 			"value": 100
 		}
@@ -101211,6 +101770,10 @@
 	],
 	"app.Em8000.Action.Em8000Dead.State": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -101348,6 +101911,10 @@
 		}
 	],
 	"app.Em3000.IK.ProcessBase.TransitionChangeState": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -101722,6 +102289,10 @@
 		}
 	],
 	"app.CH9SM2644Movement.eMotionID": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Idle",
 			"value": 0
@@ -105012,6 +105583,10 @@
 	],
 	"app.Em8000ZoneGroup.Property": [
 		{
+			"name": "INVALID",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -107346,6 +107921,10 @@
 		{
 			"name": "Hard",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Cp7MainMenu.ListElementSub": [
@@ -107420,6 +107999,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"app.EnemyGrappleBase.GrappleStartType": [
@@ -107621,6 +108220,10 @@
 		}
 	],
 	"app.Em3000.IK.Em8000FBIKController.FBIKStatus.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -108121,6 +108724,10 @@
 		}
 	],
 	"app.Em8001.Action.AttackCombo.Type": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -108691,6 +109298,10 @@
 		]
 	},
 	"app.Em3000.Em8000CorpsebagManager.State": [
+		{
+			"name": "INVALID",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -110615,6 +111226,14 @@
 	],
 	"via.SharePlayConnectionStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Dormant",
 			"value": 0
 		},
@@ -110665,6 +111284,10 @@
 		{
 			"name": "BombSet",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"app.Em8940.ThinkOrder": [
@@ -112109,6 +112732,14 @@
 			"value": 0
 		},
 		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
+		},
+		{
 			"name": "Slot",
 			"value": 1
 		},
@@ -113329,6 +113960,10 @@
 		}
 	],
 	"app.PharmacyDictionary.PageMoveTo": [
+		{
+			"name": "Prev",
+			"value": -1
+		},
 		{
 			"name": "Next",
 			"value": 1

@@ -275,9 +275,29 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "NotStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -3
+		},
+		{
+			"name": "UnregisterDeviceFailed",
+			"value": -4
 		}
 	],
 	"snow.enemy.em086.Em086Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Rocket",
 			"value": 0
@@ -2301,6 +2321,10 @@
 	],
 	"snow.enemy.em007.Em007_07Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		},
@@ -2646,6 +2670,10 @@
 		{
 			"name": "Dummy_30",
 			"value": 1073741824
+		},
+		{
+			"name": "Dummy_31",
+			"value": -2147483648
 		}
 	],
 	"snow.otomo.OtomoRequestEquipsData.EquipPack": [
@@ -3284,6 +3312,10 @@
 		}
 	],
 	"snow.quest.QuestCategory": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Village",
 			"value": 0
@@ -4950,6 +4982,10 @@
 		{
 			"name": "Max",
 			"value": 189
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em091.Em091ActionTune.EmAttack029TuneVariation": [
@@ -4959,6 +4995,10 @@
 		}
 	],
 	"via.Country": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "Afghanistan",
 			"value": 4
@@ -6600,6 +6640,10 @@
 	],
 	"snow.hit.DamageFlowOwnerType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Props",
 			"value": 0
 		},
@@ -7907,6 +7951,10 @@
 		}
 	],
 	"snow.gui.fsm.questcounter.GuiQuestCounterMenu.HyakuryuParticipation_TopSelectItem": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Lv",
 			"value": 0
@@ -9408,6 +9456,10 @@
 		}
 	],
 	"snow.enemy.em093.Em093_01Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -10984,6 +11036,10 @@
 	],
 	"snow.gui.fsm.questcounter.GuiQuestCounterMenu.RandomMystery_BoardTopSelectItem": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "LvMin",
 			"value": 0
 		},
@@ -11195,6 +11251,10 @@
 		}
 	],
 	"snow.shell.PlayerShellBase.RandomConvertType": [
+		{
+			"name": "Original",
+			"value": -1
+		},
 		{
 			"name": "Convert00",
 			"value": 0
@@ -13073,6 +13133,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.LobbyMusicType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -24300,6 +24364,10 @@
 	],
 	"snow.enemy.em023.Em023_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -24729,6 +24797,10 @@
 		}
 	],
 	"snow.enemy.em082.Em082_02Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -25196,6 +25268,10 @@
 	],
 	"snow.enemy.em060.Em060_07Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -25245,6 +25321,10 @@
 		}
 	],
 	"snow.quest.MissionDef.MissionType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "PopOre",
 			"value": 0
@@ -25662,6 +25742,10 @@
 	],
 	"snow.enemy.em131.Em131_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -25851,6 +25935,10 @@
 		}
 	],
 	"snow.enemy.em057.Em057_07Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -26106,6 +26194,10 @@
 		]
 	},
 	"snow.enemy.em093.Em093_01Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -26509,6 +26601,10 @@
 	],
 	"snow.enemy.ems051.Ems051_05Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -26807,6 +26903,10 @@
 		{
 			"name": "Max",
 			"value": 17
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.ems027.Ems027Define.EmDamageNo": [
@@ -27169,6 +27269,10 @@
 		{
 			"name": "Zone30",
 			"value": 1073741824
+		},
+		{
+			"name": "Zone31",
+			"value": -2147483648
 		},
 		{
 			"name": "Invalid",
@@ -27891,6 +27995,10 @@
 		}
 	],
 	"snow.stage.StageDef.FishingPointId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FishingPoint00",
 			"value": 0
@@ -28896,6 +29004,10 @@
 		{
 			"name": "OtomoMark",
 			"value": 7
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em077.Em077ActionTune.EmAttack5043TuneVariation": [
@@ -29526,6 +29638,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em094.Em094_00EnemySubUnit.DamageMoguri.Phase": [
@@ -29696,6 +29812,10 @@
 	],
 	"snow.enemy.EmBoss_MovingFloorBase.SummonHuntingMachineNum": [
 		{
+			"name": "NoUsed",
+			"value": -2147483648
+		},
+		{
 			"name": "Cannon",
 			"value": 4
 		},
@@ -29715,6 +29835,10 @@
 		}
 	],
 	"snow.shell.EcShell011.TurnType": [
+		{
+			"name": "Negative",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -29792,6 +29916,10 @@
 		{
 			"name": "PrepArea",
 			"value": 5
+		},
+		{
+			"name": "Undefined",
+			"value": -1
 		}
 	],
 	"snow.gui.OptionManager.Gyroscope_EnabledMachineAimCamera": [
@@ -31618,6 +31746,10 @@
 	],
 	"snow.data.communication.ChatTiming.Timing": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "TrapSet",
 			"value": 0
 		},
@@ -32861,6 +32993,10 @@
 		{
 			"name": "Version2",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.IkMultipleDamageAction.DebugDamageTransition": [
@@ -34702,6 +34838,102 @@
 		{
 			"name": "EffectMain",
 			"value": 800
+		},
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -995
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -994
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -985
+		},
+		{
+			"name": "EPVExpertAutoIsLanding",
+			"value": -984
+		},
+		{
+			"name": "LoadZone",
+			"value": -983
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "EmitZone",
+			"value": -981
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "CullingZone",
+			"value": -979
+		},
+		{
+			"name": "EffectInfoHolder",
+			"value": -978
+		},
+		{
+			"name": "EffectManager",
+			"value": -977
+		},
+		{
+			"name": "EffectContainer",
+			"value": -976
 		}
 	],
 	"snow.shell.Em099_00ShellManager.EmShell000_ID": [
@@ -35114,6 +35346,10 @@
 	],
 	"snow.enemy.ems090.Ems090_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -35210,6 +35446,10 @@
 		{
 			"name": "Max",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em132.Em132ActionTune.EmAttack038TuneVariation": [
@@ -36170,6 +36410,14 @@
 	],
 	"via.GameLiveStreamingStatus": [
 		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
 			"name": "Stop",
 			"value": 0
 		},
@@ -36620,6 +36868,10 @@
 	],
 	"snow.QuestManager.BoostPhaseType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "DefenceStart",
 			"value": 0
 		},
@@ -36673,6 +36925,10 @@
 		}
 	],
 	"snow.sensor.PerceptionCombatStateData.ObjectiveEnemyType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MainBossPriority",
 			"value": 0
@@ -37934,6 +38190,10 @@
 	],
 	"snow.enemy.define.Em132_05.EmergencyFadeState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Request",
 			"value": 0
 		},
@@ -38684,6 +38944,10 @@
 		{
 			"name": "Num",
 			"value": 45
+		},
+		{
+			"name": "Null",
+			"value": -1
 		}
 	],
 	"snow.enemy.ems041.Ems041Define.EmDieNo": [
@@ -39694,6 +39958,10 @@
 	],
 	"snow.enemy.ems005.Ems005_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -40130,6 +40398,10 @@
 	],
 	"snow.enemy.em077.Em077_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -40217,6 +40489,10 @@
 		}
 	],
 	"snow.enemy.em003.Em003_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -40774,6 +41050,10 @@
 		}
 	],
 	"snow.enemy.ems091.Ems091_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -41388,6 +41668,10 @@
 		}
 	],
 	"snow.enemy.em025.Em025Define.BuffType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Vital",
 			"value": 0
@@ -49707,6 +49991,10 @@
 	],
 	"snow.enemy.em072.Em072Define.EffectSettings.EffectID": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "FlyBreathHit",
 			"value": 1
 		},
@@ -49758,6 +50046,10 @@
 		}
 	],
 	"snow.enemy.ems049.Ems049_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -50057,6 +50349,10 @@
 		{
 			"name": "Disappear",
 			"value": 1
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.autoplay.action.AutoPlayTimer.Unit": [
@@ -50397,6 +50693,10 @@
 	],
 	"snow.enemy.em092.Em092_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		},
@@ -50621,6 +50921,10 @@
 		{
 			"name": "QuestIcon09",
 			"value": 9
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.StmOptionDef.StmOtherWindowType": [
@@ -50819,6 +51123,10 @@
 		}
 	],
 	"snow.accessory.AccessoryManager.ForQuest": [
+		{
+			"name": "ItemIdUse",
+			"value": -1
+		},
 		{
 			"name": "Bottle",
 			"value": 0
@@ -51085,6 +51393,10 @@
 		}
 	],
 	"snow.enemy.em025.Em025_08Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -51752,6 +52064,10 @@
 	],
 	"snow.enemy.em108.Em108_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -51771,6 +52087,10 @@
 		}
 	],
 	"snow.enemy.em099.Em099_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -52503,6 +52823,10 @@
 	],
 	"snow.quest.TourPopType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Honey",
 			"value": 0
 		},
@@ -52541,6 +52865,30 @@
 		{
 			"name": "LackMaterialAndMoney",
 			"value": 1
+		},
+		{
+			"name": "LackMaterial",
+			"value": -1
+		},
+		{
+			"name": "LackMoney",
+			"value": -2
+		},
+		{
+			"name": "LackBaseEquipment",
+			"value": -3
+		},
+		{
+			"name": "NoRecipe",
+			"value": -4
+		},
+		{
+			"name": "UnMatched",
+			"value": -5
+		},
+		{
+			"name": "Error",
+			"value": -6
 		}
 	],
 	"snow.enemy.em089.Em089Define.EmDamageNo": [
@@ -52818,6 +53166,10 @@
 		}
 	],
 	"snow.motion.WindFluctuationType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Curve00",
 			"value": 0
@@ -53678,6 +54030,10 @@
 		}
 	],
 	"snow.enemy.em025.Em025_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -55283,6 +55639,10 @@
 	],
 	"snow.enemy.ems025.Ems025_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -55498,6 +55858,10 @@
 		}
 	],
 	"snow.enemy.em037.Em037_02Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -55879,6 +56243,10 @@
 	],
 	"snow.enemy.em086.Em086_08Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -55888,6 +56256,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.HyakuryuBoostType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -56084,6 +56456,10 @@
 		}
 	],
 	"snow.enemy.em100.Em100_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -56573,6 +56949,10 @@
 	],
 	"snow.enemy.em099.Em099_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -56818,6 +57198,10 @@
 	],
 	"snow.eventcut.TradeshipAttachment.TradeshipType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Low",
 			"value": 0
 		},
@@ -56918,6 +57302,10 @@
 	],
 	"snow.enemy.em037.Em037_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -56934,6 +57322,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em124.Em124ActionTune.EmAttack5071TuneVariation": [
@@ -57879,6 +58271,10 @@
 		}
 	],
 	"via.gui.Segment": [
+		{
+			"name": "Keep",
+			"value": -1
+		},
 		{
 			"name": "Segment00",
 			"value": 0
@@ -59685,11 +60081,19 @@
 	],
 	"snow.enemy.em086.Em086_05Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
 	],
 	"snow.enemy.define.Em132_05.WingLR": [
+		{
+			"name": "Invailed",
+			"value": -1
+		},
 		{
 			"name": "L",
 			"value": 0
@@ -60729,6 +61133,14 @@
 	],
 	"snow.enemy.em099.Em099Define.UniqueStance": [
 		{
+			"name": "NoChange",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "FaceUp",
 			"value": 0
 		},
@@ -60910,6 +61322,10 @@
 		}
 	],
 	"snow.player.PlayerDefine.ChatAction": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "C000",
 			"value": 0
@@ -61676,7 +62092,12 @@
 			"value": 30
 		}
 	],
-	"snow.enemy.ems044.Ems044CharacterBase.DisplayOrder": [],
+	"snow.enemy.ems044.Ems044CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -1
+		}
+	],
 	"via.network.native.StadiaStatsValue.ValueType": [
 		{
 			"name": "Int",
@@ -63079,6 +63500,10 @@
 		{
 			"name": "Max",
 			"value": 9
+		},
+		{
+			"name": "Error",
+			"value": -1
 		}
 	],
 	"snow.gui.fsm.itemshop.GuiItemShopFsmManager.ItemShopBuyMenuTabFilterType": [
@@ -63212,6 +63637,10 @@
 		}
 	],
 	"snow.wwise.WwiseMixManager.MixMode": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Nomal",
 			"value": 0
@@ -63632,6 +64061,10 @@
 		}
 	],
 	"snow.enemy.em134.Em134_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -66191,6 +66624,10 @@
 	],
 	"snow.enemy.em061.Em061Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "TwoFoot",
 			"value": 0
 		},
@@ -67387,6 +67824,10 @@
 	],
 	"snow.VillageDefine.VillageAreaNo": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "v01a00",
 			"value": 0
 		},
@@ -67665,6 +68106,10 @@
 	],
 	"snow.camera.CameraVibration.VibrationType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "CommonType00",
 			"value": 0
 		},
@@ -67753,6 +68198,10 @@
 		{
 			"name": "Max",
 			"value": 5
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.data.BulletSlider.ControlDir": [
@@ -68531,6 +68980,10 @@
 	],
 	"snow.wwise.WwiseChangeSpaceWatcher.EnvironmentSpace": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Env01",
 			"value": 0
 		},
@@ -68781,6 +69234,10 @@
 	],
 	"snow.enemy.em025.Em025Define.SneakPeekType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "A",
 			"value": 0
 		},
@@ -68930,6 +69387,10 @@
 	],
 	"snow.enemy.em061.Em061Define.SnowTerrainType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "A",
 			"value": 0
 		},
@@ -68975,6 +69436,10 @@
 		}
 	],
 	"snow.enemy.Em020_RequestChangeFingerModelTracksBase.ChangeFingerType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Left",
 			"value": 10
@@ -69039,6 +69504,10 @@
 		}
 	],
 	"snow.enemy.em089.Em089_05Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -69248,6 +69717,10 @@
 		]
 	},
 	"snow.gui.fsm.smithy.GuiSmithyFsmManager.SmithyWeaponState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "WEAPON_SELECT_MENU",
 			"value": 0
@@ -71165,6 +71638,10 @@
 	],
 	"snow.enemy.ems094.Ems094_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -71342,6 +71819,10 @@
 		}
 	],
 	"snow.stage.StageDef.PostEffectType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Default_24h",
 			"value": 0
@@ -72278,6 +72759,10 @@
 	],
 	"snow.enemy.ems092.Ems092_01Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -72732,6 +73217,10 @@
 		{
 			"name": "NpcControlGuide_Watch",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.Pad.PadState": [
@@ -78862,6 +79351,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em001.Em001ActionTune.EmGrapple004TuneVariation": [
@@ -80609,6 +81102,10 @@
 	],
 	"snow.wwise.WwisePlayerMonitoredParameters.BulletTriggerType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Type1",
 			"value": 0
 		},
@@ -81371,6 +81868,10 @@
 	],
 	"snow.enemy.ems035.Ems035_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -81433,6 +81934,10 @@
 	],
 	"snow.wwise.WwiseMusicManager.LobbySpaceType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Init",
 			"value": 0
 		},
@@ -81480,6 +81985,10 @@
 		}
 	],
 	"via.os.SocketError": [
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -81961,6 +82470,10 @@
 		{
 			"name": "EX_MAX",
 			"value": 9
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		},
 		{
 			"name": "QL_V_LOW_START",
@@ -82744,6 +83257,10 @@
 	],
 	"snow.enemy.em027.Em027_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -82804,6 +83321,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.userdata.CompareNode.Operation": [
@@ -82997,6 +83518,10 @@
 		}
 	],
 	"snow.stage.StageSceneStateController.BoolValue": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "True",
 			"value": 0
@@ -83688,6 +84213,10 @@
 	],
 	"snow.stage.Fg005.Fg005State": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Disabled",
 			"value": 0
 		},
@@ -83895,6 +84424,10 @@
 		}
 	],
 	"snow.enemy.em024.Em024_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -84195,6 +84728,10 @@
 		}
 	],
 	"snow.enemy.em058.Em058_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -85046,6 +85583,10 @@
 	],
 	"snow.gui.fsm.itembox.GuiItemBoxFsmManager.ItemBoxSubMenuChangeItemSelectAfterState": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "ItemChange",
 			"value": 0
 		},
@@ -85294,6 +85835,10 @@
 	],
 	"snow.enemy.ems021.Ems021_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -85512,6 +86057,10 @@
 		{
 			"name": "Horizontal",
 			"value": 1
+		},
+		{
+			"name": "Undefined",
+			"value": -1
 		}
 	],
 	"snow.gui.SnowGuiCommonBehavior.HSVColorWindow.Mode": [
@@ -85563,6 +86112,10 @@
 		}
 	],
 	"snow.enemy.em057.Em057_07Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -85943,6 +86496,10 @@
 		}
 	],
 	"snow.enemy.em019.Em019_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -87064,6 +87621,10 @@
 	],
 	"snow.enemy.em090.Em090_01Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -87186,6 +87747,10 @@
 	],
 	"snow.enemy.em082.Em082_07Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -87297,6 +87862,10 @@
 		}
 	],
 	"snow.enemy.em136.Em136_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -87516,6 +88085,10 @@
 		{
 			"name": "SpeedTreeV8BillboardMax",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"snow.wwise.WwiseEm025_08.FogCount": [
@@ -87949,6 +88522,10 @@
 		}
 	],
 	"snow.enemy.ems016.Ems016_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -88916,6 +89493,10 @@
 		{
 			"name": "Other",
 			"value": 5
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em032.Em032ActionTune.EmMove013TuneVariation": [
@@ -90438,6 +91019,10 @@
 	],
 	"snow.enemy.em082.Em082_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -91119,6 +91704,10 @@
 	],
 	"snow.enemy.em020.Em020_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -91696,6 +92285,10 @@
 		}
 	],
 	"snow.wwise.WwiseChangeSpaceWatcher.ReverbSpace": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Rev01",
 			"value": 0
@@ -92642,6 +93235,10 @@
 	},
 	"snow.enemy.em062.Em062Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "TwoFoots",
 			"value": 0
 		},
@@ -92844,6 +93441,10 @@
 		{
 			"name": "Max",
 			"value": 5
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.Application.RuntimeTargetType": [
@@ -93007,6 +93608,10 @@
 		}
 	],
 	"snow.enemy.em133.Em133Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FourFoot",
 			"value": 0
@@ -93914,7 +94519,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em092.Em092CharacterBase.DisplayOrder": [],
+	"snow.enemy.em092.Em092CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -1
+		}
+	],
 	"snow.envCreature.Ec011.Ec011EffectType": [
 		{
 			"name": "Start",
@@ -94359,6 +94969,10 @@
 		}
 	],
 	"snow.data.DataDef.BGMID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "BGM_01",
 			"value": 0
@@ -94923,6 +95537,10 @@
 		}
 	],
 	"snow.enemy.em089.Em089_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -124512,6 +125130,10 @@
 	],
 	"via.graph.VertexIndex": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "From",
 			"value": 0
 		},
@@ -126059,6 +126681,10 @@
 	],
 	"snow.enemy.em108.Em108Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Ground",
 			"value": 0
 		},
@@ -126125,7 +126751,28 @@
 			"value": 1669021115
 		}
 	],
-	"via.network.protocol.MemberIndex": [],
+	"via.network.protocol.MemberIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
+			"name": "All",
+			"value": -2
+		},
+		{
+			"name": "Other",
+			"value": -3
+		},
+		{
+			"name": "Self",
+			"value": -4
+		},
+		{
+			"name": "Host",
+			"value": -5
+		}
+	],
 	"snow.enemy.em024.Em024ActionTune.EmFly001TuneVariation": [
 		{
 			"name": "Variation01",
@@ -127217,6 +127864,10 @@
 		{
 			"name": "Zone62",
 			"value": 4611686018427387904
+		},
+		{
+			"name": "Zone63",
+			"value": -9223372036854775808
 		},
 		{
 			"name": "Invalid",
@@ -132556,6 +133207,10 @@
 	],
 	"snow.enemy.em004.Em004_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -132961,6 +133616,10 @@
 		}
 	],
 	"snow.enemy.em132.Em132_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -133588,6 +134247,10 @@
 	],
 	"snow.enemy.EnemyDef.RangePattern": [
 		{
+			"name": "Invilid",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -133992,6 +134655,10 @@
 	],
 	"snow.enemy.em095.Em095Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Stand",
 			"value": 0
 		},
@@ -134095,6 +134762,10 @@
 		}
 	],
 	"snow.enemy.em089.Em089_05Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -135706,6 +136377,10 @@
 	],
 	"snow.gui.ChatManager.ChatHyakuryuLvUpDialogType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "AdoptorUnlock",
 			"value": 0
 		},
@@ -135861,6 +136536,10 @@
 		}
 	],
 	"snow.enemy.em097.Em097Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "TwoFoot",
 			"value": 0
@@ -147450,6 +148129,10 @@
 		{
 			"name": "Overwear_Leg_Max",
 			"value": 16703
+		},
+		{
+			"name": "Error",
+			"value": -1
 		}
 	],
 	"snow.gui.postman.HALL_SEARCH_ITEM": [
@@ -147573,6 +148256,10 @@
 		}
 	],
 	"snow.facility.kitchen.MealFunc.FilterType": [
+		{
+			"name": "All",
+			"value": -1
+		},
 		{
 			"name": "Offensive",
 			"value": 0
@@ -147699,6 +148386,14 @@
 		}
 	],
 	"via.VideoRecordingStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "NotSupported",
+			"value": -2
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -148387,6 +149082,10 @@
 		}
 	],
 	"snow.enemy.em100.Em100_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -150566,6 +151265,10 @@
 	],
 	"snow.quest.MissionDef.NPCRewardIcon": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Item",
 			"value": 0
 		},
@@ -150703,6 +151406,10 @@
 		}
 	],
 	"snow.enemy.em095.Em095_01Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -152141,6 +152848,10 @@
 		{
 			"name": "LINKED",
 			"value": 2
+		},
+		{
+			"name": "INVALID",
+			"value": -1
 		}
 	],
 	"snow.enemy.em062.Em062ActionTune.EmAttack018TuneVariation": [
@@ -154163,6 +154874,10 @@
 	],
 	"snow.enemy.em098.Em098_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -154545,6 +155260,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.motion.SubExJointRemapInput.Axis": [
@@ -154562,6 +155281,10 @@
 		}
 	],
 	"snow.stage.StageDef.FishId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Fish00",
 			"value": 0
@@ -155539,6 +156262,10 @@
 	],
 	"snow.wwise.WwiseCullingManager.CullingTrackType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Movement",
 			"value": 0
 		},
@@ -155981,6 +156708,10 @@
 		{
 			"name": "CollectionIndexMask",
 			"value": 1044480
+		},
+		{
+			"name": "BehaviorGroupIndexMask",
+			"value": -1048576
 		}
 	],
 	"snow.enemy.em099.Em099ActionTune.EmAttack083TuneVariation": [
@@ -157374,6 +158105,10 @@
 	],
 	"snow.enemy.define.Em132_05.PowerUpMode": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "EX1",
 			"value": 0
 		},
@@ -158452,6 +159187,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em108.Em108ActionTune.EmMove015TuneVariation": [
@@ -158910,6 +159649,10 @@
 		{
 			"name": "LvMax",
 			"value": 2
+		},
+		{
+			"name": "NoCharge",
+			"value": -1
 		}
 	],
 	"snow.enemy.em002.Em002ActionTune.EmFly004TuneVariation": [
@@ -159390,6 +160133,10 @@
 		}
 	],
 	"snow.npc.owl.OwlActionState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -161596,6 +162343,10 @@
 	],
 	"snow.enemy.ems092.Ems092_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -162084,6 +162835,10 @@
 		}
 	],
 	"snow.enemy.em093.Em093_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -162677,6 +163432,10 @@
 		{
 			"name": "Layer7",
 			"value": 7
+		},
+		{
+			"name": "All",
+			"value": -1
 		}
 	],
 	"snow.enemy.ems021.Ems021Define.EmMoguriNo": [
@@ -162741,6 +163500,10 @@
 		]
 	},
 	"snow.envCreature.BuffType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "ResistDmg",
 			"value": 0
@@ -163966,6 +164729,10 @@
 	],
 	"via.network.MatchmakingRules.DataType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Number",
 			"value": 0
 		},
@@ -164887,6 +165654,10 @@
 	],
 	"snow.enemy.em086.Em086Define.SpearAttackArmState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "LeftArm",
 			"value": 0
 		},
@@ -165368,6 +166139,10 @@
 		}
 	],
 	"snow.enemy.em090.Em090_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -166147,6 +166922,10 @@
 		}
 	],
 	"snow.enemy.em086.Em086_05Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -167982,6 +168761,10 @@
 	],
 	"snow.QuestManager.NpcChatReqType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -168153,6 +168936,10 @@
 		}
 	],
 	"snow.wwise.WwiseChangeSpaceWatcher.SaveEnvState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Tent",
 			"value": 0
@@ -168449,6 +169236,10 @@
 		}
 	],
 	"snow.enemy.em095.Em095_01Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -170258,6 +171049,10 @@
 	],
 	"snow.QuestMapManager.MapNoType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "No00",
 			"value": 0
 		},
@@ -171852,6 +172647,18 @@
 		{
 			"name": "FromSideNeedSellCheck",
 			"value": 1
+		},
+		{
+			"name": "ToSideIsFull",
+			"value": -1
+		},
+		{
+			"name": "ToSideSameIdIsMaxCount",
+			"value": -2
+		},
+		{
+			"name": "Error",
+			"value": -3
 		}
 	],
 	"snow.player.fsm.PlayerFsm2ActionGunLanceCreateFlyFullBurstShell.DamageType": [
@@ -172623,6 +173430,10 @@
 		{
 			"name": "OverMysteryBurst",
 			"value": 1
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.EnemyCombatMonsterParam.CombatMonsterState": [
@@ -172762,6 +173573,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.WwiseMusicElement.CustomMusicPriority": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Zako",
 			"value": 0
@@ -173037,6 +173852,10 @@
 	],
 	"snow.wwise.WwiseMixManager.Mix": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Title",
 			"value": 0
 		},
@@ -173221,6 +174040,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.autoplay.action.AutoAttack.Precision": [
@@ -173238,6 +174061,10 @@
 		}
 	],
 	"snow.stage.StageDef.StageTutorialPhase": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Hyakuryu_Wave1_WaitStartTutorial",
 			"value": 0
@@ -174055,6 +174882,10 @@
 	],
 	"snow.enemy.em096.Em096_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -174320,6 +175151,10 @@
 		}
 	],
 	"snow.enemy.em071.Em071Define.LumPartsUpdateFlagBit": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Awake",
 			"value": 0
@@ -174647,7 +175482,12 @@
 			"value": 7
 		}
 	],
-	"snow.enemy.em135.Em135_00Character.DisplayOrder": [],
+	"snow.enemy.em135.Em135_00Character.DisplayOrder": [
+		{
+			"name": "Unique",
+			"value": -2
+		}
+	],
 	"snow.player.PlayerDefine.PadVibration": [
 		{
 			"name": "Vib03L",
@@ -174975,6 +175815,14 @@
 		}
 	],
 	"snow.enemy.em096.Em096Define.UniqueStance": [
+		{
+			"name": "NoChange",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FaceUp",
 			"value": 0
@@ -175770,6 +176618,10 @@
 		{
 			"name": "No8",
 			"value": 256
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.player.fsm.PlayerFsm2ActionCountTimer.Type": [
@@ -175843,6 +176695,10 @@
 		}
 	],
 	"snow.gui.fsm.itembox.GuiItemBoxFsmManager.ItemBoxSubMenuStateType": [
+		{
+			"name": "Null",
+			"value": -1
+		},
 		{
 			"name": "SUB_ITEMNUMSELECT",
 			"value": 0
@@ -176800,6 +177656,10 @@
 		}
 	],
 	"via.storage.saveService.SaveDataType": [
+		{
+			"name": "Array",
+			"value": -1
+		},
 		{
 			"name": "Int32",
 			"value": 0
@@ -179877,6 +180737,18 @@
 	],
 	"via.os.websocket_client.Error": [
 		{
+			"name": "Unavailable",
+			"value": -3
+		},
+		{
+			"name": "NativeError",
+			"value": -2
+		},
+		{
+			"name": "InvalidParameter",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		}
@@ -180545,6 +181417,10 @@
 	],
 	"snow.player.PlayerDamageDefine.GuardReaction": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "S",
 			"value": 0
 		},
@@ -180802,6 +181678,10 @@
 	],
 	"snow.enemy.em023.Em023_05Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -180813,6 +181693,10 @@
 		}
 	],
 	"snow.enemy.em095.Em095_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -183100,6 +183984,10 @@
 	],
 	"snow.enemy.ems090.Ems090_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -184724,6 +185612,10 @@
 	],
 	"snow.enemy.em071.Em071Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "FourLegged",
 			"value": 0
 		},
@@ -185185,6 +186077,10 @@
 		}
 	],
 	"snow.gui.SnowGuiCommonUtility.PouchMenuCursor.PouchMenuCursorData.NEXT_INDEX_TYPE": [
+		{
+			"name": "NONE",
+			"value": -1
+		},
 		{
 			"name": "UP",
 			"value": 0
@@ -186618,6 +187514,10 @@
 	],
 	"snow.gui.fsm.questcounter.GuiQuestCounterMenu.RandomMystery_CounterTopSelectItem": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Config",
 			"value": 0
 		},
@@ -187382,6 +188282,10 @@
 		}
 	],
 	"snow.enemy.ems013.Ems013_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -188225,6 +189129,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.player.WeaponGimmickGreatSword.DispEvent": [
@@ -188313,6 +189221,10 @@
 	],
 	"snow.enemy.em007.Em007_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		},
@@ -188334,6 +189246,10 @@
 		}
 	],
 	"snow.enemy.em102.Em102_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -190709,6 +191625,10 @@
 	],
 	"snow.enemy.em058.Em058_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -190942,6 +191862,10 @@
 	],
 	"snow.wwise.WwiseMusicManager.QuestSceneType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Init",
 			"value": 0
 		},
@@ -191126,6 +192050,10 @@
 	],
 	"via.gui.AssetLanguage": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "No0",
 			"value": 0
 		},
@@ -191157,6 +192085,10 @@
 		}
 	],
 	"snow.wwise.WwiseEm058.SoundProgressState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -191257,6 +192189,10 @@
 		}
 	],
 	"snow.enemy.em092.Em092Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Slim",
 			"value": 0
@@ -192398,6 +193334,10 @@
 		{
 			"name": "Num",
 			"value": 8
+		},
+		{
+			"name": "Null",
+			"value": -1
 		}
 	],
 	"via.hid.GamePlayerIndex": [
@@ -192468,6 +193408,10 @@
 		{
 			"name": "Max",
 			"value": 16
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.Em098ActionOverWrite.EmAttack006ActOverWriteVariation": [
@@ -192551,6 +193495,10 @@
 		{
 			"name": "All",
 			"value": 128
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.fsm.action.EnemyCalcBlendRatioFromAngle.TargetType": [
@@ -192738,6 +193686,10 @@
 		}
 	],
 	"snow.enemy.ems026.Ems026_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -195159,6 +196111,10 @@
 		{
 			"name": "Dog_Max",
 			"value": 65822
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.EnemyDef.MarionetteFinishShootType": [
@@ -195521,6 +196477,10 @@
 	],
 	"snow.enemy.em024.Em024_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -195613,11 +196573,19 @@
 	],
 	"snow.enemy.em082.Em082_02Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
 	],
 	"snow.enemy.em044.Em044_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -197073,6 +198041,10 @@
 	],
 	"snow.player.fsm.PlayerFsm2ActionCloseGimmickUI.CloseType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Cannon",
 			"value": 0
 		},
@@ -197481,6 +198453,10 @@
 	],
 	"via.effect.script.CreatedEffectContainer.RequestCommand.Command": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -197865,6 +198841,10 @@
 	],
 	"snow.enemy.em082.Em082_07Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -197896,6 +198876,10 @@
 		}
 	],
 	"snow.envCreature.Ec024.SquidLocationType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "UpSquid",
 			"value": 0
@@ -202211,6 +203195,10 @@
 	],
 	"snow.player.IG_Insect.EffectType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Charge",
 			"value": 20
 		},
@@ -202251,7 +203239,12 @@
 			"value": 304
 		}
 	],
-	"snow.enemy.em002.Em002_07Define.MultiPartsDamage": [],
+	"snow.enemy.em002.Em002_07Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		}
+	],
 	"snow.enemy.em020.Em020ActionTune.EmMove5019TuneVariation": [
 		{
 			"name": "Variation01",
@@ -202588,6 +203581,10 @@
 		{
 			"name": "Num",
 			"value": 8
+		},
+		{
+			"name": "Null",
+			"value": -1
 		}
 	],
 	"snow.enemy.em132.Em132ActionTune.EmMove10002TuneVariation": [
@@ -202799,6 +203796,10 @@
 		}
 	],
 	"snow.enemy.em002.Em002_02Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -204397,6 +205398,10 @@
 		{
 			"name": "Max",
 			"value": 10
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em102.Em102ActionTune.EmAttack016TuneVariation": [
@@ -204529,6 +205534,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"via.render.LightVolumeDecal.DecalTextureSize": [
@@ -204990,6 +205999,10 @@
 	],
 	"snow.enemy.em089.Em089_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -205253,6 +206266,10 @@
 		}
 	],
 	"snow.enemy.em072.Em072_08Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -205831,6 +206848,10 @@
 		}
 	],
 	"snow.stage.StageDef.PropsType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "BreakableObj",
 			"value": 0
@@ -207300,6 +208321,10 @@
 	],
 	"snow.enemy.em108.Em108_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -208486,6 +209511,10 @@
 	],
 	"snow.stage.StageDef.HmUnlockElement": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Unlock_Hm00_000",
 			"value": 0
 		},
@@ -208689,6 +209718,10 @@
 		}
 	],
 	"snow.player.Hammer.ImpactPullsShellLv": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Lv1",
 			"value": 0
@@ -209076,6 +210109,10 @@
 		{
 			"name": "Max",
 			"value": 5
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.shell.Em024_00ShellManager.EmShell000_ID": [
@@ -210158,7 +211195,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em089.Em089CharacterBase.DisplayOrder": [],
+	"snow.enemy.em089.Em089CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -10
+		}
+	],
 	"snow.enemy.em081.Em081ActionTune.EmAttack5003TuneVariation": [
 		{
 			"name": "Variation01",
@@ -210190,6 +211232,10 @@
 		}
 	],
 	"snow.enemy.em107.Em107_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -217779,6 +218825,10 @@
 	],
 	"snow.enemy.ems044.Ems044_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -218007,6 +219057,10 @@
 		}
 	],
 	"snow.equip.OtEquipMySetData.MysetEquipType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Weapon",
 			"value": 0
@@ -219567,6 +220621,10 @@
 		}
 	],
 	"snow.enemy.em037.Em037_02Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -222095,6 +223153,10 @@
 	],
 	"snow.enemy.em090.Em090_01Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -222376,6 +223438,10 @@
 		}
 	],
 	"snow.enemy.ems034.Ems034_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -222686,6 +223752,10 @@
 		}
 	],
 	"snow.enemy.em047.Em047_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -223370,6 +224440,10 @@
 		}
 	],
 	"snow.wwise.WwiseChangeSpaceWatcher.MusicSpace": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "VillageEntranceArea",
 			"value": 0
@@ -225624,6 +226698,10 @@
 	],
 	"snow.enemy.ems041.Ems041_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -225653,6 +226731,10 @@
 		}
 	],
 	"snow.enemy.em002.Em002_07Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -226173,6 +227255,10 @@
 		}
 	],
 	"snow.stage.StageDef.StageTimeSituationType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "FightingWindGodOnly",
 			"value": 0
@@ -227115,6 +228201,10 @@
 		}
 	],
 	"snow.enemy.ems040.Ems040_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -228225,6 +229315,10 @@
 		}
 	],
 	"snow.enemy.em136.Em136_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -229780,6 +230874,10 @@
 	],
 	"snow.enemy.define.Em023_05.RockShellType": [
 		{
+			"name": "Normal",
+			"value": -1
+		},
+		{
 			"name": "Water",
 			"value": 0
 		},
@@ -230824,6 +231922,10 @@
 		{
 			"name": "LvBuffCage",
 			"value": 1
+		},
+		{
+			"name": "Error",
+			"value": -1
 		}
 	],
 	"snow.gui.fsm.charamake.GuiCharamakeAirouFsmManager.EyeTypeThumbnailListMenu": [
@@ -231276,6 +232378,10 @@
 	],
 	"snow.enemy.em062.Em062_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -231295,6 +232401,10 @@
 		}
 	],
 	"snow.enemy.em024.Em024_08Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -231323,6 +232433,10 @@
 		}
 	],
 	"via.effect.GroupType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Free",
 			"value": 0
@@ -231501,6 +232615,10 @@
 		}
 	],
 	"snow.enemy.em025.Em025Define.PoisonFogMoveType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "A",
 			"value": 0
@@ -232271,6 +233389,34 @@
 		{
 			"name": "LackMaterialAndMoney",
 			"value": 1
+		},
+		{
+			"name": "LackMaterial",
+			"value": -1
+		},
+		{
+			"name": "LackMoney",
+			"value": -2
+		},
+		{
+			"name": "LackSpace",
+			"value": -3
+		},
+		{
+			"name": "UnMatched",
+			"value": -4
+		},
+		{
+			"name": "HaveSameOverwear",
+			"value": -5
+		},
+		{
+			"name": "NoRecipe",
+			"value": -6
+		},
+		{
+			"name": "Error",
+			"value": -7
 		}
 	],
 	"snow.enemy.em002.Em002ActionTune.EmAttack063TuneVariation": [
@@ -232906,6 +234052,10 @@
 	],
 	"snow.enemy.em072.Em072_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -233245,6 +234395,10 @@
 		}
 	],
 	"snow.enemy.em023.Em023_05Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -234344,7 +235498,32 @@
 			"value": 1
 		}
 	],
-	"via.relib.light.UpdateOrder": [],
+	"via.relib.light.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -900
+		},
+		{
+			"name": "LightBlinkUserCurve",
+			"value": -899
+		},
+		{
+			"name": "GlobalTimeZoneManager",
+			"value": -898
+		},
+		{
+			"name": "PostControlManager",
+			"value": -897
+		},
+		{
+			"name": "LightControlManager",
+			"value": -896
+		},
+		{
+			"name": "CopyPostProcessParam",
+			"value": -895
+		}
+	],
 	"via.render.GlobalSparseShadowResolution": [
 		{
 			"name": "GlobalSparseShadowResolution_64",
@@ -234591,6 +235770,10 @@
 			"value": 536870912
 		},
 		{
+			"name": "ExecuteTimingNormal",
+			"value": -2147483648
+		},
+		{
 			"name": "ExecuteTimingPrecede",
 			"value": 1073741824
 		}
@@ -234763,6 +235946,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.gui.SnowGuiCommonBehavior.EquipCursor.EquipCursorStateType": [
@@ -236709,6 +237896,10 @@
 	],
 	"snow.enemy.em118.Em118GrappleController.EnemyType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Normal",
 			"value": 0
 		},
@@ -236854,6 +238045,10 @@
 		}
 	],
 	"snow.enemy.em023.Em023_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -237048,6 +238243,10 @@
 		}
 	],
 	"snow.enemy.em057.Em057_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -238632,6 +239831,30 @@
 		{
 			"name": "LackMaterialAndMoney",
 			"value": 1
+		},
+		{
+			"name": "LackMaterial",
+			"value": -1
+		},
+		{
+			"name": "LackMoney",
+			"value": -2
+		},
+		{
+			"name": "LackBaseEquipment",
+			"value": -3
+		},
+		{
+			"name": "UnMatched",
+			"value": -4
+		},
+		{
+			"name": "Error",
+			"value": -5
+		},
+		{
+			"name": "SameEquip",
+			"value": -6
 		}
 	],
 	"snow.enemy.em047.Em047_00_Define.PartsGroup": [
@@ -239730,6 +240953,10 @@
 	],
 	"snow.stage.StageDef.VillageFastTravelType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "v01a00_00",
 			"value": 0
 		},
@@ -240113,6 +241340,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.HyakuryuRideType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -240668,6 +241899,10 @@
 	],
 	"snow.camera.CameraVibration.VibrationDataIndex_Player": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "VerticalLow",
 			"value": 0
 		},
@@ -240723,6 +241958,10 @@
 		}
 	],
 	"snow.enemy.em099.Em099_05Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -241039,6 +242278,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.HyakuryuAreaType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -241658,6 +242901,10 @@
 	],
 	"snow.enemy.em135.Em135_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -241803,6 +243050,10 @@
 		}
 	],
 	"snow.stage.StageDef.PhotoFrameId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "PhotoFrame00",
 			"value": 0
@@ -245292,7 +246543,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em061.Em061CharacterBase.DisplayOrder": [],
+	"snow.enemy.em061.Em061CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -1
+		}
+	],
 	"snow.enemy.em098.Em098ActionTune.EmMove003TuneVariation": [
 		{
 			"name": "Variation01",
@@ -245322,6 +246578,10 @@
 		}
 	],
 	"snow.enemy.em133.Em133Define.UniqueStatus": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -245981,6 +247241,10 @@
 	],
 	"snow.enemy.ems006.Ems006_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -246583,6 +247847,10 @@
 	],
 	"snow.enemy.em060.Em060_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -246818,6 +248086,10 @@
 		}
 	],
 	"snow.wwise.WwisePlayerBaseParameters.SpecialEquip": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "C_01",
 			"value": 0
@@ -247814,6 +249086,10 @@
 		}
 	],
 	"snow.enemy.em094.Em094_01Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -249684,6 +250960,14 @@
 			"value": 0
 		},
 		{
+			"name": "Critical",
+			"value": -1
+		},
+		{
+			"name": "NoMemory",
+			"value": -2
+		},
+		{
 			"name": "Forceword",
 			"value": 2147483647
 		}
@@ -249722,6 +251006,10 @@
 		{
 			"name": "LowStm_Dying",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.shell.PlCommonShellManager.PlKunaiShell000_ID": [
@@ -250119,6 +251407,10 @@
 		}
 	],
 	"snow.enemy.em094.Em094_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -250940,6 +252232,10 @@
 	],
 	"snow.enemy.em071.Em071_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -250955,6 +252251,10 @@
 		}
 	],
 	"snow.stage.StageManager.AreaMoveQuest": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Start",
 			"value": 0
@@ -252019,6 +253319,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.HyakuryuPLStatusType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -253862,6 +255166,10 @@
 	],
 	"snow.enemy.em032.Em032_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -253873,6 +255181,10 @@
 		}
 	],
 	"snow.enemy.ems029.Ems029_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -253990,6 +255302,10 @@
 		}
 	],
 	"snow.enemy.em134.Em134_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -254592,6 +255908,10 @@
 	],
 	"snow.enemy.em136.Em136_01Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -254934,6 +256254,10 @@
 			{
 				"name": "EquipSkill_225",
 				"value": 4611686018427387904
+			},
+			{
+				"name": "ResistUp",
+				"value": 9223372036854775808
 			}
 		]
 	},
@@ -255243,6 +256567,10 @@
 		{
 			"name": "Unknown",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
 		}
 	],
 	"snow.shell.Em060_00ShellManager.EmShell010_ReplaceEffectParam_ID": [
@@ -255272,6 +256600,10 @@
 		}
 	],
 	"snow.player.PlayerWeaponCtrl.WeaponFlagOverride": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "WeaponOff",
 			"value": 0
@@ -255598,6 +256930,10 @@
 		}
 	],
 	"snow.enemy.em001.Em001_07Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -256923,6 +258259,10 @@
 	],
 	"snow.enemy.em027.Em027_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -257786,6 +259126,10 @@
 		}
 	],
 	"snow.enemy.em095.Em095_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -259021,6 +260365,10 @@
 		}
 	],
 	"snow.stage.StageDef.ArenaPillarId": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "ArenaPiller00",
 			"value": 0
@@ -262741,6 +264089,10 @@
 	],
 	"snow.enemy.EmBoss_MovingFloorBase.HuntingMachineNum": [
 		{
+			"name": "NoUsed",
+			"value": -2147483648
+		},
+		{
 			"name": "Cannon1",
 			"value": 0
 		},
@@ -262998,6 +264350,10 @@
 		}
 	],
 	"via.render.ShaderLod": [
+		{
+			"name": "ShaderLod_Automatic",
+			"value": -1
+		},
 		{
 			"name": "ShaderLod_0",
 			"value": 0
@@ -263377,6 +264733,10 @@
 		{
 			"name": "Strict",
 			"value": 2
+		},
+		{
+			"name": "Unknown",
+			"value": -1
 		}
 	],
 	"snow.enemy.em132.Em132ActionTune.EmAttack039TuneVariation": [
@@ -264083,7 +265443,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em091.Em091CharacterBase.DisplayOrder": [],
+	"snow.enemy.em091.Em091CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -1
+		}
+	],
 	"snow.enemy.em089.Em089ActionTune.EmAttack10012TuneVariation": [
 		{
 			"name": "Variation01",
@@ -264712,6 +266077,10 @@
 	],
 	"snow.enemy.em004.Em004_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -265076,6 +266445,10 @@
 		{
 			"name": "Max",
 			"value": 30
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em059.Em059ActionTune.EmGrapple008TuneVariation": [
@@ -265191,6 +266564,10 @@
 		}
 	],
 	"snow.gui.GuiHud_TrainingInfo.ActionTipsType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "GreatSword_Default",
 			"value": 0
@@ -265849,6 +267226,10 @@
 		{
 			"name": "Max",
 			"value": 6
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.effect.script.EffectChainMeshAnim.PlayTypeEnum": [
@@ -269255,7 +270636,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em027.Em027CharacterBase.DisplayOrder": [],
+	"snow.enemy.em027.Em027CharacterBase.DisplayOrder": [
+		{
+			"name": "Unique",
+			"value": -99
+		}
+	],
 	"snow.gui.fsm.charamake.GuiCharamakePlayerFsmManager.AdvancedSettingFaceMenu": [
 		{
 			"name": "Hoho_Puff",
@@ -269381,6 +270767,10 @@
 		}
 	],
 	"snow.enemy.ems020.Ems020_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -269837,6 +271227,10 @@
 		}
 	],
 	"snow.enemy.em089.Em089Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -271134,7 +272528,108 @@
 			"value": 1
 		}
 	],
-	"via.effect.script.UpdateOrder": [],
+	"via.effect.script.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -1000
+		},
+		{
+			"name": "Provider",
+			"value": -999
+		},
+		{
+			"name": "BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "EffectParentChecker",
+			"value": -995
+		},
+		{
+			"name": "EffectTimelineChecker",
+			"value": -994
+		},
+		{
+			"name": "EPVStandardCameraFollowerLate",
+			"value": -993
+		},
+		{
+			"name": "EPVExpertCommon",
+			"value": -992
+		},
+		{
+			"name": "EPVExpertAuto",
+			"value": -991
+		},
+		{
+			"name": "EPVExpertDestruction",
+			"value": -990
+		},
+		{
+			"name": "EPVExpertExplosion",
+			"value": -989
+		},
+		{
+			"name": "EPVExpertFootLanding",
+			"value": -988
+		},
+		{
+			"name": "EPVExpertGunSmoke",
+			"value": -987
+		},
+		{
+			"name": "EPVExpertObjectLanding",
+			"value": -986
+		},
+		{
+			"name": "EPVExpertMuzzleFlash",
+			"value": -985
+		},
+		{
+			"name": "EPVExpertAutoIsLanding",
+			"value": -984
+		},
+		{
+			"name": "LoadZone",
+			"value": -983
+		},
+		{
+			"name": "EmitZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "EmitZone",
+			"value": -981
+		},
+		{
+			"name": "CullingZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "CullingZone",
+			"value": -979
+		},
+		{
+			"name": "EffectInfoHolder",
+			"value": -978
+		},
+		{
+			"name": "EffectManager",
+			"value": -977
+		},
+		{
+			"name": "EffectContainer",
+			"value": -976
+		}
+	],
 	"snow.enemy.em093.Em093ActionTune.EmAttack5017TuneVariation": [
 		{
 			"name": "Variation01",
@@ -274078,6 +275573,10 @@
 	],
 	"snow.enemy.em135.Em135Define.Em135SingleLoopEffType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MistPreCombat",
 			"value": 0
 		},
@@ -274155,6 +275654,10 @@
 		}
 	],
 	"snow.gui.fsm.pointshop.GuiPointShopFsmManager.PointShopStateType": [
+		{
+			"name": "WAIT",
+			"value": -1
+		},
 		{
 			"name": "BUY_MENU",
 			"value": 0
@@ -275096,6 +276599,10 @@
 	],
 	"snow.enemy.em059.Em059_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -275182,6 +276689,34 @@
 		{
 			"name": "Success",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "AlreadyStarted",
+			"value": -2
+		},
+		{
+			"name": "InvalidUserIndex",
+			"value": -3
+		},
+		{
+			"name": "InvalidDeviceHandle",
+			"value": -4
+		},
+		{
+			"name": "RegisterDeviceFailed",
+			"value": -5
+		},
+		{
+			"name": "UserMismatched",
+			"value": -6
+		},
+		{
+			"name": "DeviceNotConnected",
+			"value": -7
 		}
 	],
 	"snow.enemy.em071.Em071Define.EmCatchNo": [
@@ -275492,6 +277027,10 @@
 	],
 	"snow.stage.StageDef.PostEffectBlendGroup": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Default",
 			"value": 0
 		},
@@ -275770,6 +277309,10 @@
 		{
 			"name": "Dummy_62",
 			"value": 1073741824
+		},
+		{
+			"name": "Dummy_63",
+			"value": -2147483648
 		}
 	],
 	"snow.enemy.em096.Em096_00_Define.PartsGroup": [
@@ -277537,6 +279080,10 @@
 	],
 	"snow.player.PlayerRestraintDefine.ReleaseThrowType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Upper_F",
 			"value": 0
 		},
@@ -277610,6 +279157,10 @@
 		}
 	],
 	"snow.enemy.em135.Em135_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -278892,6 +280443,10 @@
 	],
 	"snow.enemy.ems003.Ems003_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -279304,6 +280859,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.otomo.SupportCheckEvent": [
@@ -281378,6 +282937,10 @@
 	],
 	"snow.enemy.em090.Em090_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -281781,6 +283344,10 @@
 		}
 	],
 	"snow.enemy.em082.Em082_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -283581,6 +285148,10 @@
 		{
 			"name": "EnvCreature",
 			"value": 5
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em133.Em133ActionTune.EmNormal016TuneVariation": [
@@ -283907,7 +285478,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em118.Em118CharacterBase.DisplayOrder": [],
+	"snow.enemy.em118.Em118CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -1
+		}
+	],
 	"snow.enemy.em032.Em032ActionTune.EmAttack5002TuneVariation": [
 		{
 			"name": "Variation01",
@@ -284075,6 +285651,10 @@
 		}
 	],
 	"snow.enemy.em037.Em037_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -284446,6 +286026,10 @@
 	],
 	"snow.enemy.em118.Em118_05Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -284583,6 +286167,10 @@
 		}
 	],
 	"snow.enemy.ems091.Ems091_05Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -285885,6 +287473,10 @@
 		}
 	],
 	"snow.enemy.em136.Em136_01Define.MultiPartsDamage_01": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -290216,6 +291808,10 @@
 	],
 	"snow.enemy.em001.Em001_02Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -291728,6 +293324,10 @@
 	],
 	"snow.enemy.em001.Em001_02Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -291900,6 +293500,10 @@
 		}
 	],
 	"snow.enemy.em001.Em001_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -292172,6 +293776,10 @@
 		}
 	],
 	"snow.camera.CameraVibration.VibrationDataIndex_Stage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "BigMagnum_Fire",
 			"value": 0
@@ -293566,6 +295174,10 @@
 	"snow.model.GmkPartsDataI_Gla00.Condition": [],
 	"snow.enemy.em132.Em132_05Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -294153,6 +295765,10 @@
 		}
 	],
 	"snow.gui.fsm.startmenu.GuiStartMenuFsmManager.CustomShortCutSubState": [
+		{
+			"name": "Top",
+			"value": -1
+		},
 		{
 			"name": "Item",
 			"value": 0
@@ -295088,6 +296704,10 @@
 	],
 	"snow.VillageMapManager.MapNoType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "No00",
 			"value": 0
 		},
@@ -295524,6 +297144,10 @@
 		{
 			"name": "Num",
 			"value": 99
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.fsm.action.EnemyCalcBlendRatioFromAngle.CalcType": [
@@ -295812,6 +297436,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.Em090ActionOverWrite.EmAttack034ActOverWriteVariation": [
@@ -295935,6 +297563,10 @@
 		}
 	],
 	"snow.Pad.PadVibTypeOption": [
+		{
+			"name": "Default",
+			"value": -1
+		},
 		{
 			"name": "Type1",
 			"value": 0
@@ -296130,6 +297762,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em131.Em131Define.EmRevivalNo": [
@@ -297047,6 +298683,10 @@
 		}
 	],
 	"snow.enemy.em024.Em024_08Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -298196,6 +299836,10 @@
 	],
 	"snow.ai.ServantDefine.Gesture": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "G000",
 			"value": 0
 		},
@@ -299038,6 +300682,10 @@
 	],
 	"snow.enemy.em025.Em025_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		},
@@ -299254,6 +300902,10 @@
 		{
 			"name": "Max",
 			"value": 4
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.ai.AITaskPl_Runaway.MoveType": [
@@ -299320,6 +300972,10 @@
 	],
 	"snow.enemy.em124.Em124_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -299349,6 +301005,10 @@
 		}
 	],
 	"snow.enemy.em133.Em133_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -299514,6 +301174,30 @@
 		{
 			"name": "Possible",
 			"value": 0
+		},
+		{
+			"name": "LackMoney",
+			"value": -2
+		},
+		{
+			"name": "WeaponError",
+			"value": -3
+		},
+		{
+			"name": "LackBaseEquipment",
+			"value": -4
+		},
+		{
+			"name": "UnMatched",
+			"value": -5
+		},
+		{
+			"name": "Error",
+			"value": -6
+		},
+		{
+			"name": "OnlyCustomBuildup",
+			"value": -1
 		}
 	],
 	"snow.gui.QuestUIManager.MapDetailIconTabType": [
@@ -301096,6 +302780,10 @@
 	],
 	"snow.enemy.EmBossCharacterBase.BossPhase": [
 		{
+			"name": "NoUsed",
+			"value": -1
+		},
+		{
 			"name": "Phase1st",
 			"value": 0
 		},
@@ -301793,6 +303481,10 @@
 		}
 	],
 	"snow.enemy.em109.Em109_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -302968,7 +304660,20 @@
 			"value": 3788659381
 		}
 	],
-	"via.relib.render.UpdateOrder": [],
+	"via.relib.render.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -2000
+		},
+		{
+			"name": "MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "MeshJointSetting",
+			"value": -1998
+		}
+	],
 	"snow.enemy.em020.Em020Define.EmMarionetteNo": [
 		{
 			"name": "None",
@@ -303245,6 +304950,10 @@
 		}
 	],
 	"snow.enemy.ems093.Ems093Define.MimicState": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Normal",
 			"value": 0
@@ -303797,6 +305506,10 @@
 		}
 	],
 	"snow.enemy.em019.Em019_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -308050,6 +309763,10 @@
 		{
 			"name": "Max",
 			"value": 4
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.wwise.WwisePlayerBaseParameters.WeaponGimmickId": [
@@ -308587,6 +310304,14 @@
 		}
 	],
 	"via.network.wrangler.PopulationSample": [
+		{
+			"name": "UseProviderPopulationSample",
+			"value": -2
+		},
+		{
+			"name": "UseSystemPopulationSample",
+			"value": -1
+		},
 		{
 			"name": "Undefined",
 			"value": 0
@@ -309160,6 +310885,10 @@
 	],
 	"snow.enemy.em072.Em072_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -309171,6 +310900,10 @@
 		}
 	],
 	"snow.gui.fsm.itemshop.GuiItemShopFsmManager.ItemShopStateType": [
+		{
+			"name": "WAIT",
+			"value": -1
+		},
 		{
 			"name": "TOP_MENU",
 			"value": 0
@@ -309570,6 +311303,10 @@
 		{
 			"name": "EnvCreature",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.gui.GuiHud_Weapon_Bowgun.BowgunSpecialState": [
@@ -309861,6 +311598,10 @@
 		}
 	],
 	"snow.enemy.em071.Em071_05Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -312024,6 +313765,10 @@
 	],
 	"snow.data.PoseSetInfo.PoseSetItemType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "PoseSetItem_000",
 			"value": 0
 		},
@@ -312546,6 +314291,10 @@
 	],
 	"snow.shell.LightBowgunShell011.ExplodeType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Small",
 			"value": 0
 		},
@@ -312773,6 +314522,10 @@
 		}
 	],
 	"snow.enemy.ems038.Ems038_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -313662,6 +315415,10 @@
 	],
 	"snow.enemy.em042.Em042_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		},
@@ -314111,6 +315868,14 @@
 		}
 	],
 	"snow.enemy.SystemDifficultyWaveData.DifficultyWave": [
+		{
+			"name": "LvDown2",
+			"value": -2
+		},
+		{
+			"name": "LvDown1",
+			"value": -1
+		},
 		{
 			"name": "Lv0",
 			"value": 0
@@ -316782,6 +318547,10 @@
 		{
 			"name": "Max",
 			"value": 609
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.AgapanthusClient.Error.RequestCode": [],
@@ -316886,6 +318655,14 @@
 		}
 	],
 	"via.os.http_client.Error": [
+		{
+			"name": "Unavailable",
+			"value": -2
+		},
+		{
+			"name": "Pending",
+			"value": -1
+		},
 		{
 			"name": "None",
 			"value": 0
@@ -327733,6 +329510,10 @@
 			"value": 70300
 		},
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "QN_Hyakuryu_V",
 			"value": 40000
 		},
@@ -329458,6 +331239,10 @@
 		}
 	],
 	"snow.gui.ChatManager.SendTarget": [
+		{
+			"name": "All",
+			"value": -1
+		},
 		{
 			"name": "Index0",
 			"value": 0
@@ -338916,6 +340701,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em132.Em132ActionTune.EmAttack10067TuneVariation": [
@@ -339455,9 +341244,17 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em024.Em024Define.WindLevel": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Level0",
 			"value": 0
@@ -339480,6 +341277,10 @@
 		}
 	],
 	"snow.stage.StageObjectStateController.BoolValue": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "True",
 			"value": 0
@@ -339913,6 +341714,10 @@
 	],
 	"snow.enemy.em002.Em002_02Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -340258,6 +342063,10 @@
 		}
 	],
 	"snow.enemy.em133.Em133_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -341241,6 +343050,10 @@
 		}
 	],
 	"snow.enemy.em092.Em092_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -342686,6 +344499,10 @@
 		{
 			"name": "Max",
 			"value": 6
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.aifsm.EnemySetOutMainRoutine.SetType": [
@@ -344320,6 +346137,10 @@
 	],
 	"snow.enemy.ems042.Ems042_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -345856,6 +347677,10 @@
 	],
 	"snow.wwise.WwiseMusicManager.HyakuryuBattleFlowType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Init",
 			"value": 0
 		},
@@ -346370,6 +348195,10 @@
 		{
 			"name": "Num",
 			"value": 11
+		},
+		{
+			"name": "Invaid",
+			"value": -1
 		}
 	],
 	"snow.enemy.aifsm.Em095_CheckTailDir.CheckType": [
@@ -346401,6 +348230,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.HyakuryuVolumeType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -346871,6 +348704,10 @@
 		}
 	],
 	"snow.enemy.em099.Em099_05Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -347776,6 +349613,10 @@
 		}
 	],
 	"snow.SnowGameManager.StatusType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Min",
 			"value": 0
@@ -350706,6 +352547,14 @@
 		{
 			"name": "OK",
 			"value": 0
+		},
+		{
+			"name": "ToSideIsFull",
+			"value": -1
+		},
+		{
+			"name": "Error",
+			"value": -2
 		}
 	],
 	"snow.stage.huntingMachine.Hm08Base.Hm08State": [
@@ -351263,6 +353112,10 @@
 		}
 	],
 	"snow.enemy.em081.Em081_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -352167,6 +354020,10 @@
 	],
 	"snow.stage.StageDef.AreaNoType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "No00",
 			"value": 0
 		},
@@ -352336,6 +354193,10 @@
 		}
 	],
 	"snow.stage.StageDef.GimmickType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "GmCannon",
 			"value": 0
@@ -353822,6 +355683,10 @@
 	],
 	"snow.hit.HitOwnerType": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Props",
 			"value": 0
 		},
@@ -354346,6 +356211,10 @@
 		{
 			"name": "RootR",
 			"value": 1
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em097.Em097ActionTune.EmAttack072TuneVariation": [
@@ -354793,6 +356662,10 @@
 		}
 	],
 	"snow.otomo.OtomoQuestBase.BetoEffectPhase": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "BeforeModel",
 			"value": 0
@@ -355872,6 +357745,10 @@
 		{
 			"name": "Calibrating",
 			"value": 3
+		},
+		{
+			"name": "ErrorGetResultDataFailed",
+			"value": -1
 		}
 	],
 	"via.render.Stamp.StampBlendMethod": [
@@ -356216,7 +358093,136 @@
 			"value": 2
 		}
 	],
-	"via.relib.ReLibUpdateOrder.UpdateOrder": [],
+	"via.relib.ReLibUpdateOrder.UpdateOrder": [
+		{
+			"name": "Effect_Provider",
+			"value": -999
+		},
+		{
+			"name": "Effect_BloodDecalController",
+			"value": -998
+		},
+		{
+			"name": "Effect_ObjectEffectManager",
+			"value": -997
+		},
+		{
+			"name": "Effect_EnvEffectManager",
+			"value": -996
+		},
+		{
+			"name": "Effect_EffectParentChecker",
+			"value": -995
+		},
+		{
+			"name": "Effect_EffectTimelineChecker",
+			"value": -994
+		},
+		{
+			"name": "Effect_EPVStandardCameraFollowerLate",
+			"value": -993
+		},
+		{
+			"name": "Effect_EPVExpertCommon",
+			"value": -992
+		},
+		{
+			"name": "Effect_EPVExpertAuto",
+			"value": -991
+		},
+		{
+			"name": "Effect_EPVExpertDestruction",
+			"value": -990
+		},
+		{
+			"name": "Effect_EPVExpertExplosion",
+			"value": -989
+		},
+		{
+			"name": "Effect_EPVExpertFootLanding",
+			"value": -988
+		},
+		{
+			"name": "Effect_EPVExpertGunSmoke",
+			"value": -987
+		},
+		{
+			"name": "Effect_EPVExpertObjectLanding",
+			"value": -986
+		},
+		{
+			"name": "Effect_EPVExpertMuzzleFlash",
+			"value": -985
+		},
+		{
+			"name": "Effect_EPVExpertAutoIsLanding",
+			"value": -984
+		},
+		{
+			"name": "Effect_LoadZone",
+			"value": -983
+		},
+		{
+			"name": "Effect_EmitZoneGroup",
+			"value": -982
+		},
+		{
+			"name": "Effect_EmitZone",
+			"value": -981
+		},
+		{
+			"name": "Effect_CullingZoneGroup",
+			"value": -980
+		},
+		{
+			"name": "Effect_CullingZone",
+			"value": -979
+		},
+		{
+			"name": "Effect_EffectInfoHolder",
+			"value": -978
+		},
+		{
+			"name": "Effect_EffectManager",
+			"value": -977
+		},
+		{
+			"name": "Effect_EffectContainer",
+			"value": -976
+		},
+		{
+			"name": "Render_MeshMaterialController",
+			"value": -1999
+		},
+		{
+			"name": "Render_MeshJointSetting",
+			"value": -1998
+		},
+		{
+			"name": "Motion_MotionHistoryRecorder",
+			"value": -799
+		},
+		{
+			"name": "Light_LightBlinkUserCurve",
+			"value": -899
+		},
+		{
+			"name": "Light_GlobalTimeZoneManager",
+			"value": -898
+		},
+		{
+			"name": "Light_PostControlManager",
+			"value": -897
+		},
+		{
+			"name": "Light_LightControlManager",
+			"value": -896
+		},
+		{
+			"name": "Light_CopyPostProcessParam",
+			"value": -895
+		}
+	],
 	"snow.enemy.em042.Em042ActionTune.EmAttack019TuneVariation": [
 		{
 			"name": "Variation01",
@@ -356344,6 +358350,14 @@
 		}
 	],
 	"snow.player.PlayerAttackNameIUDefine.AttackNameID": [
+		{
+			"name": "Null",
+			"value": -2
+		},
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Common_01",
 			"value": 0
@@ -358691,6 +360705,10 @@
 	],
 	"snow.facility.tradeCenter.NegotiationTypes": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Negotiation_000",
 			"value": 0
 		},
@@ -360553,6 +362571,10 @@
 	],
 	"snow.envCreature.BuffId": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "ResistDmg",
 			"value": 0
 		},
@@ -361602,6 +363624,10 @@
 		}
 	],
 	"snow.enemy.ems008.Ems008_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -367793,6 +369819,10 @@
 	],
 	"snow.enemy.em002.Em002_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -370423,6 +372453,10 @@
 			"value": 1073741824
 		},
 		{
+			"name": "Zone31",
+			"value": -2147483648
+		},
+		{
 			"name": "Invalid",
 			"value": 0
 		}
@@ -370703,6 +372737,10 @@
 	],
 	"snow.gui.fsm.startmenu.GuiStartMenuFsmManager.StartMenuEnvItemCageStateType": [
 		{
+			"name": "NULL",
+			"value": -1
+		},
+		{
 			"name": "CONTROL_STATE",
 			"value": 0
 		},
@@ -370960,6 +372998,10 @@
 		}
 	],
 	"snow.player.PlayerDefine.TableAction": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Sit",
 			"value": 0
@@ -372239,6 +374281,10 @@
 	],
 	"snow.stage.StageDef.HuntingMachineId": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Hm00_000",
 			"value": 0
 		},
@@ -372931,6 +374977,10 @@
 		{
 			"name": "Disappear",
 			"value": 1
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.motion.IkMotionData.IkType": [
@@ -374050,6 +376100,10 @@
 		}
 	],
 	"snow.enemy.modules.SystemBlendMotionConnectController.ProcType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "StartMotionWait",
 			"value": 0
@@ -375573,6 +377627,10 @@
 	],
 	"via.hid.camera.PlayStationCameraAttr": [
 		{
+			"name": "Ignore",
+			"value": -1
+		},
+		{
 			"name": "AecAgcEnable",
 			"value": 0
 		},
@@ -376416,6 +378474,10 @@
 		}
 	],
 	"snow.enemy.ems043.Ems043_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -377390,6 +379452,10 @@
 		{
 			"name": "Max",
 			"value": 9
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.stage.StageGridManager.GridEnableRequestState": [
@@ -377610,6 +379676,10 @@
 		{
 			"name": "Max",
 			"value": 24
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em095.Em095ActionTune.EmMove022TuneVariation": [
@@ -378161,6 +380231,10 @@
 		}
 	],
 	"via.render.ForceShaderLod": [
+		{
+			"name": "ForceShaderLod_None",
+			"value": -1
+		},
 		{
 			"name": "ForceShaderLod_0",
 			"value": 0
@@ -378888,6 +380962,10 @@
 	],
 	"snow.player.PlayerDefine.BenchAction": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Sit",
 			"value": 0
 		},
@@ -379439,6 +381517,10 @@
 	],
 	"snow.enemy.ems044.Ems044Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "TwoFoots",
 			"value": 0
 		},
@@ -379580,6 +381662,10 @@
 		}
 	],
 	"snow.enemy.em054.Em054_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -380941,6 +383027,10 @@
 	],
 	"snow.enemy.ems042.Ems042_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -381237,6 +383327,10 @@
 	],
 	"snow.enemy.em091.Em091_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -381381,6 +383475,10 @@
 	],
 	"snow.model.GmkPartsDataL_Swd00.Condition": [],
 	"snow.enemy.ems027.Ems027_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -382561,6 +384659,10 @@
 		}
 	],
 	"snow.wwise.WwisePlayerMonitoredParameters.BulletScrollHitTriggerType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Type1",
 			"value": 0
@@ -388409,6 +390511,10 @@
 	],
 	"snow.enemy.em118.Em118_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -388645,6 +390751,10 @@
 	],
 	"snow.player.fsm.SlashAxeCreateShell000.ShellType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "ElementStabFinishBomb",
 			"value": 0
 		},
@@ -388838,6 +390948,10 @@
 		}
 	],
 	"snow.enemy.ems029.Ems029Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Safe",
 			"value": 0
@@ -390378,6 +392492,10 @@
 		}
 	],
 	"snow.enemy.em096.Em096_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -392551,6 +394669,10 @@
 	],
 	"snow.player.PlayerDefine.PhotoActionType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "P000",
 			"value": 0
 		},
@@ -393847,6 +395969,18 @@
 		{
 			"name": "OK",
 			"value": 0
+		},
+		{
+			"name": "MaxNum",
+			"value": -1
+		},
+		{
+			"name": "Full",
+			"value": -2
+		},
+		{
+			"name": "CanNotTreat",
+			"value": -3
 		}
 	],
 	"snow.enemy.ems005.Ems005Define.EmAttackNo": [
@@ -395372,6 +397506,10 @@
 			"value": 7
 		},
 		{
+			"name": "Undefined",
+			"value": -1
+		},
+		{
 			"name": "All",
 			"value": 0
 		}
@@ -396560,6 +398698,10 @@
 	],
 	"snow.enemy.EmBossCharacterBase.UniqueStance": [
 		{
+			"name": "NoChange",
+			"value": -1
+		},
+		{
 			"name": "FaceUp",
 			"value": 0
 		},
@@ -396713,6 +398855,10 @@
 		}
 	],
 	"snow.enemy.em025.Em025_08Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -398348,6 +400494,10 @@
 	],
 	"snow.enemy.em093.Em093_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -398766,6 +400916,10 @@
 		}
 	],
 	"snow.player.fsm.PlayerFsm2ActionPopSensorCallAccessDialog.DialogType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Access_Pop015_00",
 			"value": 0
@@ -399190,6 +401344,14 @@
 		{
 			"name": "OK",
 			"value": 0
+		},
+		{
+			"name": "CanNotPatturn",
+			"value": -1
+		},
+		{
+			"name": "Error",
+			"value": -2
 		}
 	],
 	"snow.enemy.em133.Em133ActionTune.EmDamage5004TuneVariation": [
@@ -399338,6 +401500,10 @@
 		}
 	],
 	"snow.enemy.ems009.Ems009_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -403131,6 +405297,10 @@
 	],
 	"snow.enemy.ems036.Ems036_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -403822,6 +405992,10 @@
 		}
 	],
 	"snow.enemy.ems014.Ems014_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -405485,6 +407659,10 @@
 	],
 	"snow.wwise.WwisePlayerMonitoredParameters.SoundMapNoType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "No00",
 			"value": 0
 		},
@@ -405856,6 +408034,10 @@
 		}
 	],
 	"snow.enemy.em061.Em061_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -408501,7 +410683,20 @@
 			"value": 8192
 		}
 	],
-	"via.render.FenceState": [],
+	"via.render.FenceState": [
+		{
+			"name": "Invalidate",
+			"value": -1
+		},
+		{
+			"name": "DoNotWait",
+			"value": -2
+		},
+		{
+			"name": "UAVSync",
+			"value": -3
+		}
+	],
 	"snow.enemy.em091.Em091ActionTune.EmAttack027TuneVariation": [
 		{
 			"name": "Variation01",
@@ -409475,6 +411670,10 @@
 		}
 	],
 	"snow.gui.GuiTableActionList.TableActionState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "ChoiseAction",
 			"value": 0
@@ -410576,6 +412775,10 @@
 		}
 	],
 	"snow.DynamicResolutionManager.DYNAMIC_RESOLUTION_LEVEL": [
+		{
+			"name": "LEVEL_INVALID",
+			"value": -1
+		},
 		{
 			"name": "LEVEL_0",
 			"value": 0
@@ -418441,6 +420644,14 @@
 	],
 	"snow.player.PlayerAttackNameIUDefine.Command": [
 		{
+			"name": "Null",
+			"value": -2
+		},
+		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "HN_WeaponControlsMsg_command_01",
 			"value": 0
 		},
@@ -419265,6 +421476,10 @@
 		{
 			"name": "Max",
 			"value": 10
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.data.OtEquipSeriesData.RankTypes": [
@@ -419347,6 +421562,10 @@
 		{
 			"name": "Target3",
 			"value": 3
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.em089.Em089ActionTune.EmAttack10010TuneVariation": [
@@ -420576,6 +422795,10 @@
 		{
 			"name": "WholeBlendMode",
 			"value": 1610612736
+		},
+		{
+			"name": "FalloffFromTwoside",
+			"value": -2147483648
 		}
 	],
 	"snow.enemy.em124.Em124ActionTune.EmMove5009TuneVariation": [
@@ -426332,6 +428555,10 @@
 		{
 			"name": "Max",
 			"value": 1061
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em118.Em118ActionTune.EmMove001TuneVariation": [
@@ -426401,6 +428628,10 @@
 		}
 	],
 	"snow.enemy.EnemyDef.UserIconType": [
+		{
+			"name": "Unknown",
+			"value": -1
+		},
 		{
 			"name": "em001_00",
 			"value": 0
@@ -426939,6 +429170,10 @@
 		}
 	],
 	"snow.enemy.em062.Em062_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -428726,6 +430961,10 @@
 		{
 			"name": "Max",
 			"value": 15
+		},
+		{
+			"name": "Error",
+			"value": -1
 		}
 	],
 	"snow.wwise.WwiseRSCTrigger_Em081.ShapeType": [
@@ -429131,6 +431370,10 @@
 		}
 	],
 	"snow.enemy.em090.Em090Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Dog",
 			"value": 0
@@ -429608,6 +431851,10 @@
 		{
 			"name": "Max",
 			"value": 9
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.ems029.Ems029ActionTune.EmMove010TuneVariation": [
@@ -430423,7 +432670,12 @@
 			"value": 1
 		}
 	],
-	"snow.enemy.em025.Em025CharacterBase.DisplayOrder": [],
+	"snow.enemy.em025.Em025CharacterBase.DisplayOrder": [
+		{
+			"name": "UniqueData",
+			"value": -1
+		}
+	],
 	"via.hid.gamePlayer.PlayerOtherDeviceHandling": [
 		{
 			"name": "UseFirstSelected",
@@ -430553,6 +432805,10 @@
 		}
 	],
 	"snow.enemy.em098.Em098_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -430790,6 +433046,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.hid.mouse.ManipulatorClientDefaultType": [
@@ -430837,6 +433097,10 @@
 		}
 	],
 	"snow.camera.CameraVibration.VibrationDataIndex_Enemy": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Index00",
 			"value": 0
@@ -431883,6 +434147,10 @@
 		}
 	],
 	"snow.stage.props.movingprops.sm813_044.sm813_044Master.State": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Idle",
 			"value": 0
@@ -434734,6 +437002,10 @@
 	],
 	"snow.AlbumSaveService.PhotoFileterState": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -435658,6 +437930,10 @@
 	],
 	"snow.enemy.em003.Em003_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -435681,6 +437957,10 @@
 		}
 	],
 	"snow.enemy.em094.Em094_01Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -435711,6 +437991,10 @@
 		}
 	],
 	"snow.wwise.WwiseChangeSpaceWatcher.VillageSpace": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Village00",
 			"value": 0
@@ -437104,6 +439388,10 @@
 	],
 	"snow.gui.fsm.camp.GuiCampFsmManager.CampMenuStateType": [
 		{
+			"name": "Null",
+			"value": -1
+		},
+		{
 			"name": "ItemBox",
 			"value": 0
 		},
@@ -437259,6 +439547,18 @@
 		}
 	],
 	"via.SharePlayControllerMode": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
+		{
+			"name": "Invalid",
+			"value": -3
+		},
 		{
 			"name": "WatchingHostPlay",
 			"value": 0
@@ -438083,6 +440383,10 @@
 		}
 	],
 	"snow.enemy.em027.Em027_08Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -439463,6 +441767,10 @@
 	],
 	"snow.wwise.WwisePlayerBaseParameters.VoiceType": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "M01",
 			"value": 0
 		},
@@ -439761,6 +442069,10 @@
 		}
 	],
 	"snow.enemy.em057.Em057_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -440604,6 +442916,10 @@
 		{
 			"name": "RenderToFrameBuffer",
 			"value": 4
+		},
+		{
+			"name": "PopFromEsram",
+			"value": -1
 		}
 	],
 	"snow.enemy.em132.Em132ActionTune.EmAttack5052TuneVariation": [
@@ -440715,6 +443031,10 @@
 		}
 	],
 	"snow.wwise.SnowSoundEffectTypeEvent.Owner": [
+		{
+			"name": "Null",
+			"value": -1
+		},
 		{
 			"name": "PLHost",
 			"value": 0
@@ -441985,6 +444305,10 @@
 		}
 	],
 	"snow.enemy.ems040.Ems040Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Ground",
 			"value": 0
@@ -453003,6 +455327,10 @@
 	],
 	"snow.stage.StageDef.HmUnlockUniqueCondition": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Phase_QN10702_Em099_BigMagnum",
 			"value": 0
 		},
@@ -453419,6 +455747,14 @@
 			"value": 1300
 		},
 		{
+			"name": "GroupSoundDefault",
+			"value": -119
+		},
+		{
+			"name": "GroupSoundReflectionBehavior",
+			"value": -120
+		},
+		{
 			"name": "SoundEnd",
 			"value": 1301
 		}
@@ -453458,6 +455794,10 @@
 		}
 	],
 	"snow.enemy.ems039.Ems039_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -454367,6 +456707,10 @@
 	],
 	"snow.enemy.em001.Em001_07Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		}
@@ -455189,6 +457533,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em002.Em002ActionTune.EmAttack7010TuneVariation": [
@@ -455815,6 +458163,18 @@
 	],
 	"snow.data.BulletSlider.SearchTarget": [
 		{
+			"name": "PrevPrevPrev",
+			"value": -3
+		},
+		{
+			"name": "PrevPrev",
+			"value": -2
+		},
+		{
+			"name": "Prev",
+			"value": -1
+		},
+		{
 			"name": "Current",
 			"value": 0
 		},
@@ -456265,6 +458625,10 @@
 	],
 	"snow.enemy.em093.Em093Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Kairyu",
 			"value": 0
 		},
@@ -456357,6 +458721,10 @@
 		{
 			"name": "High_RainStraight",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.AppManager.RESOLUTION_TYPE": [
@@ -457422,6 +459790,10 @@
 	],
 	"snow.enemy.em097.Em097_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -458151,6 +460523,10 @@
 		}
 	],
 	"snow.otomo.OtomoDef.OtomoChatActionID": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Chat_000",
 			"value": 0
@@ -474123,6 +476499,10 @@
 		{
 			"name": "AccessEnd",
 			"value": 6
+		},
+		{
+			"name": "Lost",
+			"value": -1
 		}
 	],
 	"snow.gui.GuiOtomoDetail.OtomoDetailWindowWeaponPageListType": [
@@ -474526,6 +476906,10 @@
 		}
 	],
 	"snow.enemy.em094.Em094_00Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -475009,6 +477393,10 @@
 	],
 	"snow.gui.SnowGuiCommonUtility.Icon.NpcIconFrameState": [
 		{
+			"name": "ICON_L_NONE",
+			"value": -1
+		},
+		{
 			"name": "NID001_MODEL_S",
 			"value": 0
 		},
@@ -475272,6 +477660,10 @@
 		}
 	],
 	"snow.enemy.ems093.Ems093_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -476048,6 +478440,10 @@
 		}
 	],
 	"snow.enemy.em118.Em118_05Define.MultiPartsDamage": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "MultiPartsDamage000",
 			"value": 0
@@ -477229,6 +479625,10 @@
 	],
 	"snow.enemy.em107.Em107_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -477895,6 +480295,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "Invalid",
+			"value": -1
 		}
 	],
 	"snow.enemy.define.Em057_07.MeatType": [
@@ -479618,6 +482022,10 @@
 		{
 			"name": "Max",
 			"value": 3
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"via.gui.SamplerType": [
@@ -481122,6 +483530,10 @@
 	],
 	"snow.enemy.em124.Em124_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -481844,6 +484256,26 @@
 		{
 			"name": "LackMaterialAndMoney",
 			"value": 2
+		},
+		{
+			"name": "LackMaterial",
+			"value": -1
+		},
+		{
+			"name": "LackMoney",
+			"value": -2
+		},
+		{
+			"name": "LackSpace",
+			"value": -3
+		},
+		{
+			"name": "UnMatched",
+			"value": -4
+		},
+		{
+			"name": "Error",
+			"value": -5
 		}
 	],
 	"snow.enemy.em132.Em132ActionTune.EmAttack10028TuneVariation": [
@@ -481984,6 +484416,10 @@
 	],
 	"snow.enemy.em060.Em060Define.UniqueStance": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "TwoFoot",
 			"value": 0
 		},
@@ -482069,6 +484505,10 @@
 		}
 	],
 	"snow.player.PlayerDamageDefine.DamageReaction": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Small_F",
 			"value": 0
@@ -482722,6 +485162,26 @@
 		{
 			"name": "Nothing",
 			"value": 0
+		},
+		{
+			"name": "NotSupported",
+			"value": -1
+		},
+		{
+			"name": "InvalidParam",
+			"value": -2
+		},
+		{
+			"name": "InvalidState",
+			"value": -3
+		},
+		{
+			"name": "NotRunning",
+			"value": -4
+		},
+		{
+			"name": "UnexpectedFatal",
+			"value": -255
 		}
 	],
 	"snow.enemy.em118.Em118ActionTune.EmDamage006TuneVariation": [
@@ -484830,6 +487290,10 @@
 	],
 	"snow.stage.StageDef.RelicId": [
 		{
+			"name": "Invalid",
+			"value": -1
+		},
+		{
 			"name": "Relic00",
 			"value": 0
 		},
@@ -484913,6 +487377,10 @@
 		}
 	],
 	"snow.enemy.ems051.Ems051_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -485212,6 +487680,10 @@
 		}
 	],
 	"snow.enemy.define.Em132_05.FinalBlockMoveState": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Wait",
 			"value": 0
@@ -491187,6 +493659,10 @@
 	],
 	"snow.enemy.EnemyDef.BossScaleTblType": [
 		{
+			"name": "Default",
+			"value": -1
+		},
+		{
 			"name": "None",
 			"value": 0
 		},
@@ -492263,6 +494739,14 @@
 		}
 	],
 	"via.SharePlayConnectionStatus": [
+		{
+			"name": "Disable",
+			"value": -1
+		},
+		{
+			"name": "Failed",
+			"value": -2
+		},
 		{
 			"name": "Dormant",
 			"value": 0
@@ -495632,6 +498116,10 @@
 	],
 	"snow.enemy.em081.Em081_00Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -496248,6 +498736,10 @@
 	],
 	"snow.enemy.em102.Em102_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -496574,6 +499066,10 @@
 	],
 	"snow.enemy.ems007.Ems007_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -496741,6 +499237,10 @@
 		}
 	],
 	"snow.enemy.em071.Em071_00Define.RangePatternEnum": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Pattern000",
 			"value": 0
@@ -496976,6 +499476,14 @@
 		{
 			"name": "Auto",
 			"value": 0
+		},
+		{
+			"name": "SystemMaxOffset",
+			"value": -128
+		},
+		{
+			"name": "System",
+			"value": -1
 		},
 		{
 			"name": "Slot",
@@ -509607,6 +512115,102 @@
 			"value": 800
 		},
 		{
+			"name": "Line08_01",
+			"value": -1000
+		},
+		{
+			"name": "Line08_02",
+			"value": -999
+		},
+		{
+			"name": "Line08_03",
+			"value": -997
+		},
+		{
+			"name": "Line08_04",
+			"value": -996
+		},
+		{
+			"name": "Line08_05",
+			"value": -995
+		},
+		{
+			"name": "Line08_06",
+			"value": -994
+		},
+		{
+			"name": "Line08_07",
+			"value": -993
+		},
+		{
+			"name": "Line08_08",
+			"value": -992
+		},
+		{
+			"name": "Line08_09",
+			"value": -991
+		},
+		{
+			"name": "Line08_10",
+			"value": -990
+		},
+		{
+			"name": "Line08_11",
+			"value": -989
+		},
+		{
+			"name": "Line08_12",
+			"value": -988
+		},
+		{
+			"name": "Line08_13",
+			"value": -987
+		},
+		{
+			"name": "Line08_14",
+			"value": -986
+		},
+		{
+			"name": "Line08_15",
+			"value": -985
+		},
+		{
+			"name": "Line08_16",
+			"value": -984
+		},
+		{
+			"name": "Line08_17",
+			"value": -983
+		},
+		{
+			"name": "Line08_18",
+			"value": -982
+		},
+		{
+			"name": "Line08_19",
+			"value": -981
+		},
+		{
+			"name": "Line08_20",
+			"value": -980
+		},
+		{
+			"name": "Line08_21",
+			"value": -979
+		},
+		{
+			"name": "Line08_22",
+			"value": -978
+		},
+		{
+			"name": "Line08_23",
+			"value": -977
+		},
+		{
+			"name": "Line08_24",
+			"value": -976
+		},
+		{
 			"name": "Line09_00",
 			"value": 900
 		},
@@ -509669,6 +512273,14 @@
 		{
 			"name": "Line13_00",
 			"value": 1300
+		},
+		{
+			"name": "Line13_01",
+			"value": -119
+		},
+		{
+			"name": "Line13_02",
+			"value": -120
 		},
 		{
 			"name": "Line13_03",
@@ -509745,6 +512357,10 @@
 	],
 	"snow.enemy.em072.Em072_08Define.MultiPartsDamage": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "MultiPartsDamage000",
 			"value": 0
 		},
@@ -509772,6 +512388,10 @@
 		}
 	],
 	"snow.wwise.WwiseMusicManager.ResultSceneType": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Init",
 			"value": 0
@@ -510353,6 +512973,10 @@
 	],
 	"snow.gui.GuiManager.OtomoDetailPageType": [
 		{
+			"name": "All",
+			"value": -1
+		},
+		{
 			"name": "Arms",
 			"value": 0
 		},
@@ -510907,7 +513531,16 @@
 			"value": 1372439153
 		}
 	],
-	"via.relib.motion.UpdateOrder": [],
+	"via.relib.motion.UpdateOrder": [
+		{
+			"name": "BaseOrder",
+			"value": -800
+		},
+		{
+			"name": "MotionHistoryRecorder",
+			"value": -799
+		}
+	],
 	"snow.enemy.em027.Em027ActionTune.EmGrapple021TuneVariation": [
 		{
 			"name": "Variation01",
@@ -510947,6 +513580,10 @@
 		}
 	],
 	"snow.enemy.em132.Em132Define.UniqueStance": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Combat",
 			"value": 0
@@ -511660,6 +514297,10 @@
 	],
 	"snow.enemy.em091.Em091_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -511866,6 +514507,10 @@
 		{
 			"name": "Max",
 			"value": 2
+		},
+		{
+			"name": "None",
+			"value": -1
 		}
 	],
 	"snow.enemy.em027.Em027Define.SubType": [
@@ -512369,6 +515014,10 @@
 		}
 	],
 	"via.hid.virtualKeyboard.CustomizedDictionaryIndex": [
+		{
+			"name": "None",
+			"value": -1
+		},
 		{
 			"name": "Index0",
 			"value": 0
@@ -514516,6 +517165,10 @@
 	],
 	"snow.enemy.ems019.Ems019_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		},
@@ -514672,6 +517325,10 @@
 	],
 	"snow.enemy.em132.Em132_00Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -514713,6 +517370,10 @@
 		}
 	],
 	"snow.stage.StageDef.WireLongJumpId": [
+		{
+			"name": "WireLongJump_Default",
+			"value": -1
+		},
 		{
 			"name": "WireLongJump00",
 			"value": 0
@@ -516333,6 +518994,10 @@
 	},
 	"snow.enemy.ems003.Ems003_05Define.RangePatternEnum": [
 		{
+			"name": "None",
+			"value": -1
+		},
+		{
 			"name": "Pattern000",
 			"value": 0
 		}
@@ -516540,6 +519205,18 @@
 		}
 	],
 	"snow.data.ItemSlider.SearchTarget": [
+		{
+			"name": "PrevPrevPrev",
+			"value": -3
+		},
+		{
+			"name": "PrevPrev",
+			"value": -2
+		},
+		{
+			"name": "Prev",
+			"value": -1
+		},
 		{
 			"name": "Current",
 			"value": 0
@@ -517104,6 +519781,10 @@
 		}
 	],
 	"snow.player.fsm.PlayerFsm2ActionOpenGimmickUI.OpenType": [
+		{
+			"name": "Invalid",
+			"value": -1
+		},
 		{
 			"name": "Cannon",
 			"value": 0
@@ -518029,6 +520710,10 @@
 		{
 			"name": "Num",
 			"value": 200
+		},
+		{
+			"name": "None",
+			"value": -1
 		},
 		{
 			"name": "Stamp_MR_Offset",
