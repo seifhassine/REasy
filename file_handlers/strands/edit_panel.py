@@ -66,8 +66,8 @@ def _spin(value: float, tip: str, low: float = 0.0, high: float = 10.0, step: fl
     return spin
 
 
-def _row(*widgets) -> QHBoxLayout:
-    row = QHBoxLayout()
+def _row(*widgets, vertical: bool = False) -> QHBoxLayout | QVBoxLayout:
+    row = QVBoxLayout() if vertical else QHBoxLayout()
     for widget in widgets:
         row.addWidget(widget)
     return row
@@ -164,10 +164,12 @@ class StrandEditPanel(QWidget):
         box = QVBoxLayout(chosen := QGroupBox(self.tr("Strands chosen")))
         self.chosen = plain_label("")
         box.addWidget(self.chosen)
-        box.addLayout(_row(*(_button(text, tip, partial(self._choose, which)) for text, tip, which in (
+        picks = [_button(text, tip, partial(self._choose, which)) for text, tip, which in (
             (self.tr("All"), self.tr("Ctrl+A"), "all"), (self.tr("None"), self.tr("Ctrl+D"), "none"),
             (self.tr("Invert"), self.tr("Ctrl+I"), "invert"),
-            (self.tr("Guides"), self.tr("The guide strands, which drive the others' physics"), "guides")))))
+            (self.tr("Guides"), self.tr("The guide strands, which drive the others' physics"), "guides"))]
+        box.addLayout(_row(*picks[:2]))
+        box.addLayout(_row(*picks[2:]))
         self.group = QSpinBox()
         self.group.setRange(0, 2 ** 31 - 1)
         self.group.setToolTip(self.tr("A groom group of the strands file."))
@@ -208,7 +210,7 @@ class StrandEditPanel(QWidget):
                 (self.tr("Margin (mm)"), (self.margin,), self.tr("Push out of colliders"), self._push_out))
         for row, (label, spins, text, slot) in enumerate(rows):
             grid.addWidget(QLabel(label), row, 0)
-            grid.addLayout(_row(*spins), row, 1)
+            grid.addLayout(_row(*spins, vertical=True), row, 1)
             grid.addWidget(_button(text, "", slot), row, 2)
         self.push = grid.itemAtPosition(2, 2).widget()
         self.push.setToolTip(self.tr("Move the vertices of the strands chosen out of the colliders they collide "

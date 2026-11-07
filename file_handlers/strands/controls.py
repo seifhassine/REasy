@@ -2,7 +2,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 lazy import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, QEvent, Qt, Signal
 from PySide6.QtWidgets import (QCheckBox, QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel,
     QListWidget, QPushButton, QScrollArea, QSizePolicy, QVBoxLayout, QWidget)
 
@@ -138,8 +138,6 @@ class StrandsControls(QScrollArea):
         self.loaded: LoadedSet | None = None
         self._jobs = BackgroundJobs(self)
         self.setWidgetResizable(True)
-        self.setMinimumWidth(285)
-        self.setMaximumWidth(440)
         body = QWidget(self)
         self.setWidget(body)
         layout = QVBoxLayout(body)
@@ -216,6 +214,12 @@ class StrandsControls(QScrollArea):
             self.load_prefab(prefab)
         else:
             self.status.setText(self.tr('Choose the prefab holding the strands.'))
+
+    def eventFilter(self, watched, event) -> bool:
+        if watched is self.widget() and event.type() == QEvent.Resize:
+            self.setMinimumWidth(watched.minimumSizeHint().width() + self.verticalScrollBar().sizeHint().width() +
+                                 2 * self.frameWidth())
+        return super().eventFilter(watched, event)
 
     def _prefab_row(self, layout) -> QComboBox:
         layout.addWidget(styled_label(self.tr('Prefab (PFB)'), heading='section'))
