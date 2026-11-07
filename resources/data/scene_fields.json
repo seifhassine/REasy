@@ -20,7 +20,7 @@
   "absolute scaling": "AbsoluteScaling",
   "joint segment scale": "JointSegmentScale",
   "parts enable": "PartsEnable",
-  "composite transforms": "Transforms",
+  "composite transforms": "Transform",
   "motion layers": "Layer",
   "joint map": "JointMap",
   "layer blend mode": "BlendMode",

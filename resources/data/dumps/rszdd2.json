@@ -5044,7 +5044,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -11000,7 +11000,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v41",
+				"name": "ItemOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -11099,7 +11099,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "DynamicSizeItemScrollAreaSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -11108,7 +11108,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v53",
+				"name": "DynamicSizeItemDefaultSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -15390,7 +15390,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -52662,7 +52662,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Resource",
 				"native": true,
 				"original_type": "via.motion.IkHand2ResourceHolder",
 				"size": 4,
@@ -53511,7 +53511,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -55415,7 +55415,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -56776,7 +56776,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v6",
+				"name": "Position",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -56785,7 +56785,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v7",
+				"name": "Rotation",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -56794,7 +56794,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v8",
+				"name": "Scale",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -56803,7 +56803,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "RegionSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -65104,7 +65104,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -67298,7 +67298,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "Gravity",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -67334,7 +67334,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v5",
+				"name": "BroadPhaseOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -67699,7 +67699,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -86481,7 +86481,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "EditableMesh",
 				"native": true,
 				"original_type": "via.render.EditableMeshResourceHolder",
 				"size": 4,
@@ -89371,7 +89371,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "Asset",
 				"native": true,
 				"original_type": "via.render.WrapDeformerResourceHolder",
 				"size": 4,
@@ -89380,7 +89380,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v16",
+				"name": "SourceGameObjectRef",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -89389,7 +89389,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v17",
+				"name": "TargetGameObjectRef",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -89398,7 +89398,7 @@
 			{
 				"align": 1,
 				"array": true,
-				"name": "v18",
+				"name": "InfluenceSourceParts",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -89407,7 +89407,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "Type",
 				"native": true,
 				"original_type": "via.render.WrapDeformer.WrapDeformerType",
 				"size": 4,
@@ -89416,7 +89416,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "InfluenceNum",
 				"native": true,
 				"original_type": "via.render.WrapDeformer.WrapDeformerInfluenceNum",
 				"size": 4,
@@ -92818,7 +92818,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Frame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -92836,7 +92836,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -92845,7 +92845,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "PlayRange",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -93503,7 +93503,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Name",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -98893,7 +98893,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -100848,7 +100848,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v0",
+				"name": "TargetGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -100866,7 +100866,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v2",
+				"name": "ConstraintJoint",
 				"native": true,
 				"original_type": "via.motion.ConstraintTargetJoint",
 				"size": 4,
@@ -110270,7 +110270,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "Foliage",
 				"native": true,
 				"original_type": "via.ResourceHolder",
 				"size": 4,
@@ -110342,7 +110342,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v23",
+				"name": "TextureStreamingManualPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -110660,7 +110660,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -114129,7 +114129,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -115450,7 +115450,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "MotionCameraBankAsset",
 				"native": true,
 				"original_type": "via.motion.MotionCameraBankResourceHolder",
 				"size": 4,
@@ -129804,7 +129804,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -130326,7 +130326,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v0",
+				"name": "Costs",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -135763,7 +135763,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "LightProbes",
 				"native": true,
 				"original_type": "via.ResourceHolder",
 				"size": 4,
@@ -135772,7 +135772,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Probes",
 				"native": true,
 				"original_type": "via.render.ProbesResourceHolder",
 				"size": 4,
@@ -135817,7 +135817,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Saturate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -135844,7 +135844,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "AmbientColorIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -135853,7 +135853,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "UseHemisphereTechnique",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -135880,7 +135880,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v15",
+				"name": "TopToBottomDirection",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -135889,7 +135889,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v16",
+				"name": "OBBPlacementEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -136150,7 +136150,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v45",
+				"name": "OBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -136159,7 +136159,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v46",
+				"name": "EditOBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -164832,7 +164832,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v28",
+				"name": "Direction",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -164967,7 +164967,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "ShadowBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -168381,7 +168381,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v5",
+				"name": "NormalWindowResolution",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -169321,7 +169321,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "AddRotation(?)",
+				"name": "AxisRotateCoefficient",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -175346,7 +175346,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v0",
+				"name": "LocalPositionA",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -175355,7 +175355,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "LocalPositionB",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -191513,7 +191513,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "Mesh",
 				"native": true,
 				"original_type": "via.speedtree.SpeedTreeMeshResourceHolder",
 				"size": 4,
@@ -191522,7 +191522,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "Material",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -191648,7 +191648,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "VortexelWindSamplePositionOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -198008,7 +198008,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "GIPointCloud",
 				"native": true,
 				"original_type": "via.render.MaterialPointCloudResourceHolder",
 				"size": 4,
@@ -198017,7 +198017,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "ProbeVisibility",
 				"native": true,
 				"original_type": "via.render.ProbeVisibilityResourceHolder",
 				"size": 4,
@@ -198026,7 +198026,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "Probes",
 				"native": true,
 				"original_type": "via.render.ProbesResourceHolder",
 				"size": 4,
@@ -198053,7 +198053,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v7",
+				"name": "OBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -204650,7 +204650,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Asset",
 				"native": true,
 				"original_type": "via.gui.GUIResourceHolder",
 				"size": 4,
@@ -204704,7 +204704,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "RenderTarget",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -207970,7 +207970,7 @@
 			{
 				"align": 8,
 				"array": true,
-				"name": "v2",
+				"name": "TargetGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -207979,7 +207979,7 @@
 			{
 				"align": 8,
 				"array": true,
-				"name": "v3",
+				"name": "SunTargetGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -208024,7 +208024,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "LensDustTexture",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -208105,7 +208105,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "GhostBaseColor",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -213561,7 +213561,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -220380,7 +220380,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "LightProbes",
 				"native": true,
 				"original_type": "via.ResourceHolder",
 				"size": 4,
@@ -220389,7 +220389,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Probes",
 				"native": true,
 				"original_type": "via.render.ProbesResourceHolder",
 				"size": 4,
@@ -220434,7 +220434,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Saturate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -220461,7 +220461,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "AmbientColorIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -220470,7 +220470,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "UseHemisphereTechnique",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -220497,7 +220497,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v15",
+				"name": "TopToBottomDirection",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -220506,7 +220506,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v16",
+				"name": "OBBPlacementEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -220767,7 +220767,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v45",
+				"name": "OBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -220776,7 +220776,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v46",
+				"name": "EditOBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -220803,7 +220803,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "SecondaryLightProbes",
 				"native": true,
 				"original_type": "via.render.LightProbesResourceHolder",
 				"size": 4,
@@ -220812,7 +220812,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "BlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -220821,7 +220821,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "SubLinePrimaryLightProbes",
 				"native": true,
 				"original_type": "via.render.LightProbesResourceHolder",
 				"size": 4,
@@ -220830,7 +220830,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "SubLineSecondaryLightProbes",
 				"native": true,
 				"original_type": "via.render.LightProbesResourceHolder",
 				"size": 4,
@@ -220839,7 +220839,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v53",
+				"name": "SubLineBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -220848,7 +220848,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v54",
+				"name": "CrossOverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -221850,7 +221850,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "HazeFilter",
 				"native": true,
 				"original_type": "via.render.LDRHazeFilter",
 				"size": 4,
@@ -221859,7 +221859,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "LensDistortion",
 				"native": true,
 				"original_type": "via.render.LDRLensDistortion",
 				"size": 4,
@@ -221868,7 +221868,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "FilmGrain",
 				"native": true,
 				"original_type": "via.render.LDRFilmGrain",
 				"size": 4,
@@ -221877,7 +221877,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "ColorCorrect",
 				"native": true,
 				"original_type": "via.render.LDRColorCorrect",
 				"size": 4,
@@ -221886,7 +221886,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "ColorDeficiencySimulation",
 				"native": true,
 				"original_type": "via.render.LDRColorDeficiencySimulation",
 				"size": 4,
@@ -221895,7 +221895,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "ImagePlane",
 				"native": true,
 				"original_type": "via.render.LDRImagePlane",
 				"size": 4,
@@ -221904,7 +221904,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "RadialBlur",
 				"native": true,
 				"original_type": "via.render.LDRRadialBlur",
 				"size": 4,
@@ -235492,7 +235492,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v14",
+				"name": "Vertex",
 				"native": true,
 				"original_type": "via.geometry.Vertex",
 				"size": 4,
@@ -235501,7 +235501,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v15",
+				"name": "Face",
 				"native": true,
 				"original_type": "via.geometry.Face",
 				"size": 4,
@@ -235546,7 +235546,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v20",
+				"name": "TopSize",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -235555,7 +235555,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v21",
+				"name": "BottomSize",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -235663,7 +235663,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "BrushType",
 				"native": true,
 				"original_type": "via.geometry.BrushType",
 				"size": 4,
@@ -235735,7 +235735,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v41",
+				"name": "Colliders",
 				"native": true,
 				"original_type": "via.physics.Collider",
 				"size": 4,
@@ -235744,7 +235744,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v42",
+				"name": "ColliderPreset",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -235753,7 +235753,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "RigidBodyFilterInfo",
 				"native": true,
 				"original_type": "via.dynamics.FilterInfoResourceHolder",
 				"size": 4,
@@ -237808,7 +237808,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v14",
+				"name": "LightGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -237817,7 +237817,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "TextureResource",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -237826,7 +237826,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "TextureResourcePath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -237835,7 +237835,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v17",
+				"name": "TextureLocalPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -237844,7 +237844,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v18",
+				"name": "TextureLocalScale",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -237853,7 +237853,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v19",
+				"name": "TextureTilingNum",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -248809,7 +248809,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "Resource",
 				"native": true,
 				"original_type": "via.render.VertexAttributeResourceHolder",
 				"size": 4,
@@ -248836,7 +248836,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "Uv",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -248854,7 +248854,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "Color",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -248890,7 +248890,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v23",
+				"name": "Sphere",
 				"native": true,
 				"original_type": "via.Sphere",
 				"size": 16,
@@ -248899,7 +248899,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "Point",
 				"native": true,
 				"original_type": "via.Point",
 				"size": 8,
@@ -248908,7 +248908,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "Thickness",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -251665,7 +251665,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "DestinationVector",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -251674,7 +251674,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v2",
+				"name": "CurrentDestination",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -251683,7 +251683,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "FinalDestination",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -254607,7 +254607,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -255059,7 +255059,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v0",
+				"name": "Velocity",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -255068,7 +255068,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "FluidVelocity",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -255077,7 +255077,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v2",
+				"name": "CenterOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -267450,7 +267450,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "HeightTexture",
 				"native": true,
 				"original_type": "via.collisionlib.HeightTextureResourceHolder",
 				"size": 4,
@@ -267459,7 +267459,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "Area",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -267468,7 +267468,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "CollisionFilter",
 				"native": true,
 				"original_type": "via.physics.CollisionFilterResourceHolder",
 				"size": 4,
@@ -270559,7 +270559,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v15",
+				"name": "GameObjectRef",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -272397,7 +272397,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "MotionBankID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -272406,7 +272406,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "MotionID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -277076,7 +277076,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v4",
+				"name": "MovieGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -285069,7 +285069,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "StateValueInternal",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -285132,7 +285132,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "Float2ValueInternal",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -285168,7 +285168,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "ColorValueInternal",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -290365,7 +290365,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -299282,7 +299282,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -301980,7 +301980,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v2",
+				"name": "ProtocolOwner",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -310813,7 +310813,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -319404,7 +319404,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "ResetPoseResource",
 				"native": true,
 				"original_type": "via.dynamics.ClothResetPoseResourceHolder",
 				"size": 4,
@@ -319827,7 +319827,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v61",
+				"name": "InflateOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -319971,7 +319971,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v77",
+				"name": "Resource",
 				"native": true,
 				"original_type": "via.dynamics.GpuClothResourceHolder",
 				"size": 4,
@@ -319980,7 +319980,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v78",
+				"name": "FilterInfoResource",
 				"native": true,
 				"original_type": "via.dynamics.FilterInfoResourceHolder",
 				"size": 4,
@@ -320043,7 +320043,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v85",
+				"name": "Gravity",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -320088,7 +320088,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v90",
+				"name": "DebugPositionOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -322636,7 +322636,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "RaymarchCacheResolution",
 				"native": true,
 				"original_type": "via.render.Cloudscape2.RaymarchCacheResolution",
 				"size": 4,
@@ -322645,7 +322645,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "RaymarchCachePartialDrawFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -322672,7 +322672,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "RaymarchCacheCheckerboardPattern",
 				"native": true,
 				"original_type": "via.render.Cloudscape2.CheckerboardPattern",
 				"size": 4,
@@ -322690,7 +322690,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "WeatherTextureA",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322699,7 +322699,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "WeatherTextureB",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322708,7 +322708,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "WeatherTextureC",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322735,7 +322735,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v18",
+				"name": "WeatherSamplerClamped",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -322780,7 +322780,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "GradientTextureA",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322789,7 +322789,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "GradientTextureB",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322798,7 +322798,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "GradientTextureC",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322879,7 +322879,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "OptionalUserBaseNoise3D",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322888,7 +322888,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v35",
+				"name": "OptionalUserMipmapNoise3D",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -322897,7 +322897,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "OptionalUserDetailNoise3D",
 				"native": true,
 				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
@@ -323275,7 +323275,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v78",
+				"name": "WindDirection",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -323428,7 +323428,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v95",
+				"name": "IBLPartialDrawFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -323437,7 +323437,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v96",
+				"name": "CustomMaterial",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -323446,7 +323446,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v97",
+				"name": "MaterialController",
 				"native": true,
 				"original_type": "via.render.SingleClusterMaterialController",
 				"size": 4,
@@ -324020,7 +324020,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -331768,7 +331768,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -333994,7 +333994,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v9",
+				"name": "DefinedEnterKeys",
 				"native": true,
 				"original_type": "via.hid.KeyboardKey",
 				"size": 4,
@@ -334003,7 +334003,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v10",
+				"name": "DefinedCancelKeys",
 				"native": true,
 				"original_type": "via.hid.KeyboardKey",
 				"size": 4,
@@ -334030,7 +334030,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "EmuButtonThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -334066,7 +334066,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "AsyncUpdateFpsRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -334138,7 +334138,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "NswLowFrequency",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -334147,7 +334147,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "NswHighFrequency",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -334210,7 +334210,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v33",
+				"name": "AutoPlayStopKeys",
 				"native": true,
 				"original_type": "via.hid.KeyboardKey",
 				"size": 4,
@@ -336775,7 +336775,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "VerticalBarPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -336784,7 +336784,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v38",
+				"name": "HorizontalBarPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -336793,7 +336793,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v39",
+				"name": "ItemCount",
 				"native": true,
 				"original_type": "via.Uint2",
 				"size": 8,
@@ -336811,7 +336811,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v41",
+				"name": "SelectedIndex",
 				"native": true,
 				"original_type": "via.Uint2",
 				"size": 8,
@@ -336883,7 +336883,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "FixedCursorOffset",
 				"native": true,
 				"original_type": "via.Point",
 				"size": 8,
@@ -336892,7 +336892,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "FixedCursorScrollAreaSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -336946,7 +336946,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v56",
+				"name": "ScrollAreaSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -337036,7 +337036,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "ItemSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -337045,7 +337045,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v67",
+				"name": "ItemOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -342968,7 +342968,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -346002,7 +346002,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "ClusterName",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -346011,7 +346011,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "ClusterNameFromMesh",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -356523,7 +356523,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "TargetPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -368125,7 +368125,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -368363,7 +368363,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -372922,7 +372922,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v0",
+				"name": "TargetGroundObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -372931,7 +372931,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "AreaAABB",
 				"native": true,
 				"original_type": "via.AABB",
 				"size": 32,
@@ -379609,7 +379609,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v2",
+				"name": "OBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -379618,7 +379618,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "LocalOBB",
 				"native": true,
 				"original_type": "via.OBB",
 				"size": 80,
@@ -379627,7 +379627,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "MeshResource",
 				"native": true,
 				"original_type": "via.render.MeshResourceHolder",
 				"size": 4,
@@ -379654,7 +379654,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "Color",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -379690,7 +379690,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v11",
+				"name": "ReferenceAltitude",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -379717,7 +379717,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "EmissionColor",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -379726,7 +379726,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "CustomMaterial",
 				"native": true,
 				"original_type": "via.render.MeshMaterialResourceHolder",
 				"size": 4,
@@ -379735,7 +379735,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "MaterialController",
 				"native": true,
 				"original_type": "via.render.VolumetricFogMaterialController",
 				"size": 4,
@@ -379744,7 +379744,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "ExpHeightFogProperty",
 				"native": true,
 				"original_type": "via.render.VolumetricFogExpHeightFogProperty",
 				"size": 4,
@@ -383755,7 +383755,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "CheapTileRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -386642,7 +386642,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Blocker",
 				"native": true,
 				"original_type": "via.render.DepthBlockerResourceHolder",
 				"size": 4,
@@ -386651,7 +386651,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "Probes",
 				"native": true,
 				"original_type": "via.render.ProbesResourceHolder",
 				"size": 4,
@@ -404811,7 +404811,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v0",
+				"name": "LocalPositionA",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -404820,7 +404820,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v1",
+				"name": "LocalPositionB",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -407572,7 +407572,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "SafeAreaRatio",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -407599,7 +407599,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "MaskTextureScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -407635,7 +407635,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v41",
+				"name": "TexBlurReductionRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -407896,7 +407896,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v70",
+				"name": "SourceImageScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -408184,7 +408184,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v102",
+				"name": "VariableFloat0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -408193,7 +408193,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v103",
+				"name": "VariableVec0",
 				"native": true,
 				"original_type": "via.Float4",
 				"size": 16,
@@ -408202,7 +408202,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v104",
+				"name": "VariableColor0",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -408229,7 +408229,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v107",
+				"name": "VariableFloat1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -408238,7 +408238,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v108",
+				"name": "VariableVec1",
 				"native": true,
 				"original_type": "via.Float4",
 				"size": 16,
@@ -408247,7 +408247,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v109",
+				"name": "VariableColor1",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -408274,7 +408274,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v112",
+				"name": "VariableFloat2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -408283,7 +408283,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v113",
+				"name": "VariableVec2",
 				"native": true,
 				"original_type": "via.Float4",
 				"size": 16,
@@ -408292,7 +408292,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v114",
+				"name": "VariableColor2",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -408319,7 +408319,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v117",
+				"name": "VariableFloat3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -408328,7 +408328,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v118",
+				"name": "VariableVec3",
 				"native": true,
 				"original_type": "via.Float4",
 				"size": 16,
@@ -408337,7 +408337,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v119",
+				"name": "VariableColor3",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -415430,7 +415430,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -415954,7 +415954,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -421986,7 +421986,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -426143,7 +426143,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "TitleID",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -426152,7 +426152,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "FingerPrint",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -431923,7 +431923,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -445840,7 +445840,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "TargetPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -450995,7 +450995,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -451094,7 +451094,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "ExitFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -451103,7 +451103,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "NextStartFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -451112,7 +451112,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "InterpolationFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -455764,7 +455764,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v20",
+				"name": "WindVelocity",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -457052,7 +457052,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -474505,7 +474505,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -475043,7 +475043,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -487441,7 +487441,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "TargetPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -505973,7 +505973,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -506294,7 +506294,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v18",
+				"name": "TagList",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -506564,7 +506564,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ScreenBrightness",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -510716,7 +510716,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "LuminanceBleedResolution",
 				"native": true,
 				"original_type": "via.effect.LuminanceBleedResolution",
 				"size": 4,
@@ -516370,7 +516370,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -520679,7 +520679,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -531812,7 +531812,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v68",
+				"name": "ShadowMapResolutionQuality",
 				"native": true,
 				"original_type": "via.render.ShadowMapResolutionQuality",
 				"size": 4,
@@ -535861,7 +535861,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Frame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -535879,7 +535879,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -535888,7 +535888,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "PlayRange",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -553490,7 +553490,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -554863,7 +554863,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -564444,7 +564444,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -564543,7 +564543,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "InterpolationFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -567806,7 +567806,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -572280,7 +572280,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -577625,7 +577625,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "CameraDistanceMaxAxis",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -577634,7 +577634,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Priority",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -579445,7 +579445,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -596043,7 +596043,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -596740,7 +596740,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -596758,7 +596758,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "DevMatchMakingRulesetName",
+				"name": "DevMatchmakingRulesetName",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -601625,7 +601625,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -606095,7 +606095,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "OptimizeOutputPass(?)",
+				"name": "OptimizeOutputPass",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -610778,7 +610778,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -620642,7 +620642,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v5",
+				"name": "Boundary",
 				"native": true,
 				"original_type": "via.AABB",
 				"size": 32,
@@ -645945,7 +645945,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -660773,7 +660773,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -668971,7 +668971,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "ContactWorldNameHashs(?)",
+				"name": "ContactWorldNameHashs",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -671522,7 +671522,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -676626,7 +676626,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v4",
+				"name": "MovieGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -686761,7 +686761,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v1",
+				"name": "TargetGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -686779,7 +686779,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v3",
+				"name": "GlobalConstraint",
 				"native": true,
 				"original_type": "via.motion.GlobalConstraintJoint",
 				"size": 4,
@@ -686788,7 +686788,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v4",
+				"name": "SameNameConstraint",
 				"native": true,
 				"original_type": "via.motion.SameNameConstraintJoints",
 				"size": 4,
@@ -704951,7 +704951,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v4",
+				"name": "MovieGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -711271,7 +711271,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -712680,7 +712680,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "Position(?)",
+				"name": "Position",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -712689,7 +712689,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "Normal(?)",
+				"name": "Normal",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -712698,7 +712698,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "Forward(?)",
+				"name": "Forward",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -732631,7 +732631,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -740095,7 +740095,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -773617,7 +773617,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "Transforms",
+				"name": "Transform",
 				"native": true,
 				"original_type": "via.render.CompositeMeshTransformController",
 				"size": 4,
@@ -795632,7 +795632,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -807709,7 +807709,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v6",
+				"name": "TargetOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -810298,7 +810298,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -826595,7 +826595,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "LodRate(?)",
+				"name": "LodRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -826631,7 +826631,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "BoundingLengthScale(?)",
+				"name": "BoundingLengthScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -827036,7 +827036,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v56",
+				"name": "LodSettings",
 				"native": true,
 				"original_type": "via.render.LodResourceHolder",
 				"size": 4,
@@ -844260,7 +844260,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -848094,7 +848094,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -852234,7 +852234,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -855321,7 +855321,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -855465,7 +855465,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "StartFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -862591,7 +862591,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -862690,7 +862690,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "InterpolationFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -877487,7 +877487,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -879610,7 +879610,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -881465,7 +881465,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "StateValueInternal",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -881528,7 +881528,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "Float2ValueInternal",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -881564,7 +881564,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "ColorValueInternal",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -881609,7 +881609,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "Name",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -901764,7 +901764,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v0",
+				"name": "TempNormal",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -911932,7 +911932,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -931298,7 +931298,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -931772,7 +931772,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -932561,7 +932561,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -934931,7 +934931,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -973741,7 +973741,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v3",
+				"name": "TargetPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -976890,7 +976890,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027385,7 +1027385,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1027403,7 +1027403,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "No00_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027412,7 +1027412,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "No01_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027421,7 +1027421,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "No02_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027430,7 +1027430,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "No03_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027439,7 +1027439,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "No04_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027448,7 +1027448,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "No05_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027457,7 +1027457,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "No06_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027466,7 +1027466,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "No07_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027475,7 +1027475,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "No08_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027484,7 +1027484,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "No09_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027493,7 +1027493,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "No10_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027502,7 +1027502,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "No11_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027511,7 +1027511,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "No12_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027520,7 +1027520,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "No13_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027529,7 +1027529,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "No14_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1027538,7 +1027538,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "No15_Parameter",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1029316,7 +1029316,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1031195,18 +1031195,18 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "Effector",
+				"name": "Link",
 				"native": true,
-				"original_type": "via.motion.IkJacobian.Effector",
+				"original_type": "via.motion.IkJacobian.Link",
 				"size": 4,
 				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "Link",
+				"name": "Effector",
 				"native": true,
-				"original_type": "via.motion.IkJacobian.Link",
+				"original_type": "via.motion.IkJacobian.Effector",
 				"size": 4,
 				"type": "Object"
 			},
@@ -1032045,7 +1032045,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1047280,7 +1047280,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1047379,7 +1047379,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "InterpolationFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1051250,7 +1051250,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1079006,7 +1079006,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1079114,7 +1079114,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "InterpolationFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1080821,7 +1080821,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1097889,7 +1097889,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1105632,7 +1105632,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1142117,11 +1142117,11 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "Rotation(?)",
+				"name": "Rotation",
 				"native": true,
-				"original_type": " via.Quaternion",
+				"original_type": "via.Quaternion",
 				"size": 16,
-				"type": " Quaternion"
+				"type": "Quaternion"
 			},
 			{
 				"align": 16,
@@ -1160126,7 +1160126,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "Time",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1170580,7 +1170580,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1177837,7 +1177837,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "SyncInterval",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1177846,7 +1177846,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "WarpDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1177855,7 +1177855,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "SlideDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1177864,7 +1177864,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "ForceSlideDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1177873,7 +1177873,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "SendInhibitTime",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1177882,7 +1177882,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "SendInhibitRadian",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1177891,7 +1177891,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "SendInhibitDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1194658,7 +1194658,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1208848,7 +1208848,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1212319,7 +1212319,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1238910,7 +1238910,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1239054,7 +1239054,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "StartFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1249056,7 +1249056,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1249450,7 +1249450,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1256401,7 +1256401,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v16",
+				"name": "UpperCenterOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1256446,7 +1256446,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v21",
+				"name": "LowerCenterOffset",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1268238,7 +1268238,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1270093,11 +1270093,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "AppendBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
@@ -1272015,7 +1272015,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1273374,7 +1273374,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1273545,7 +1273545,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "ElapsedRateAtFirstFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1305232,7 +1305232,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1305340,7 +1305340,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "InterpolationFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1312442,7 +1312442,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1327575,7 +1327575,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1340599,7 +1340599,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1366631,7 +1366631,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1384196,7 +1384196,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1409661,7 +1409661,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "(?)",
+				"name": "TelemetryRegionName",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1418261,7 +1418261,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1418627,7 +1418627,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v2",
+				"name": "ProtocolOwner",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -1431035,7 +1431035,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1441663,7 +1441663,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1455316,7 +1455316,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "MaterialName7",
+				"name": "MaterialName0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1455325,7 +1455325,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "VariableName7",
+				"name": "VariableName0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1457736,7 +1457736,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "SpeakerAngleLR",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1457745,7 +1457745,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "SpeakerAngleLsRs",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1457754,7 +1457754,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "SpeakerAngleLbRb",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1457763,7 +1457763,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "SpeakerAngleHeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1458492,7 +1458492,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v89",
+				"name": "MovementThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1458519,7 +1458519,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v92",
+				"name": "MaxPathLength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1461622,7 +1461622,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1464396,7 +1464396,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1468075,7 +1468075,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1483711,7 +1483711,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "SaveMountPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1483720,7 +1483720,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "DevSaveMountPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1483765,7 +1483765,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v7",
+				"name": "OverwriteMaxSlotSizeTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483774,7 +1483774,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v8",
+				"name": "TransferringPS4TitleIDTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483783,7 +1483783,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v9",
+				"name": "TransferringPS4FingerprintTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483792,7 +1483792,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v10",
+				"name": "TransferringXB1SCIDTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483801,7 +1483801,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v11",
+				"name": "TransferringXBSSCIDTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483810,7 +1483810,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v12",
+				"name": "TransferringMSGSCIDTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483819,7 +1483819,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v13",
+				"name": "TransferringNSWApplicationIdTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483828,7 +1483828,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v14",
+				"name": "TransferringAndroidApplicationIdTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483837,7 +1483837,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v15",
+				"name": "TransferringNSW2ApplicationIdTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483846,7 +1483846,7 @@
 			{
 				"align": 8,
 				"array": true,
-				"name": "v16",
+				"name": "SaveDataExtendSizeTbl",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -1483909,7 +1483909,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v23",
+				"name": "RedirectLegacyTypeIdTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1483918,7 +1483918,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v24",
+				"name": "RedirectCurrentTypeIdTbl",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1484008,7 +1484008,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "SaveDirAtAppDataEGS",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1491456,7 +1491456,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1492124,7 +1492124,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "(?)",
+				"name": "GssArgsStr",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1497672,7 +1497672,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1502969,7 +1502969,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1516921,7 +1516921,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1518521,7 +1518521,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1539129,7 +1539129,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Resource",
+				"name": "MovieTextureResource",
 				"native": true,
 				"original_type": "via.render.RenderTargetTextureResourceHolder",
 				"size": 4,
@@ -1549989,7 +1549989,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v34",
+				"name": "GyroAxis",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1561018,7 +1561018,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1568014,7 +1568014,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1569066,7 +1569066,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1570465,7 +1570465,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1612060,7 +1612060,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "LocalEditPosition",
+				"name": "EditPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1612069,7 +1612069,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "LocalEditRotation",
+				"name": "EditRotation",
 				"native": true,
 				"original_type": "via.Quaternion",
 				"size": 16,
@@ -1633625,7 +1633625,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1637908,7 +1637908,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1650544,7 +1650544,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1660000,7 +1660000,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1677558,7 +1677558,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1688707,7 +1688707,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1691527,11 +1691527,11 @@
 			{
 				"align": 1,
 				"array": true,
-				"name": "PartsEnableIndices",
+				"name": "PartsEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "U8"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -1704906,7 +1704906,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1719983,7 +1719983,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v2",
+				"name": "ProtocolOwner",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -1730813,7 +1730813,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1743197,7 +1743197,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "SyncInterval",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1743206,7 +1743206,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "WarpDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1743215,7 +1743215,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "SlideDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1743224,7 +1743224,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "ForceSlideDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1743233,7 +1743233,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "SendInhibitTime",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1743242,7 +1743242,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "SendInhibitRadian",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1743251,7 +1743251,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "SendInhibitDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1762457,7 +1762457,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "Source",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1771536,7 +1771536,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ExtSrcMstBusVolumeDb",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772508,7 +1772508,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "(?)",
+				"name": "AsioDriverName",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772526,7 +1772526,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "(?)",
+				"name": "AsioChannelNames",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772643,7 +1772643,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v138",
+				"name": "OutputVolumeDbNSWHDMI",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772652,7 +1772652,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v139",
+				"name": "OutputVolumeDbNSWSpeaker",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772661,7 +1772661,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v140",
+				"name": "OutputVolumeDbNSWExternal",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772670,7 +1772670,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v141",
+				"name": "OutputVolumeDbPS4HDMI",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772679,7 +1772679,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v142",
+				"name": "OutputVolumeDbPS4Headphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772688,7 +1772688,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v143",
+				"name": "OutputVolumeDbPS5HDMI",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772697,7 +1772697,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v144",
+				"name": "OutputVolumeDbPS5Headphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772706,7 +1772706,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v145",
+				"name": "OutputVolumeDbXB1HDMI",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772715,7 +1772715,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v146",
+				"name": "OutputVolumeDbXB1Headphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772724,7 +1772724,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v147",
+				"name": "OutputVolumeDbXBSHDMI",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772733,7 +1772733,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v148",
+				"name": "OutputVolumeDbXBSHeadphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772742,7 +1772742,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v149",
+				"name": "OutputVolumeDbAndroidMain",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772751,7 +1772751,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v150",
+				"name": "OutputVolumeDbAndroidHeadphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772760,7 +1772760,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v151",
+				"name": "OutputVolumeDbiOSMain",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772769,7 +1772769,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v152",
+				"name": "OutputVolumeDbiOSHeadphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772778,7 +1772778,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v153",
+				"name": "OutputVolumeDbMacMain",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1772787,7 +1772787,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v154",
+				"name": "OutputVolumeDbXBSHeadphone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1806317,7 +1806317,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1834517,7 +1834517,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1848273,7 +1848273,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "(?)",
+				"name": "NodeTagList",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1873791,7 +1873791,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1878498,7 +1878498,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "MeshResources",
+				"name": "Resources",
 				"native": true,
 				"original_type": "via.dynamics.RigidBodyMeshResourceHolder",
 				"size": 4,
@@ -1891357,7 +1891357,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "ParentWorldPosition",
+				"name": "ParentPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1891366,7 +1891366,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "ParentWorldRotation",
+				"name": "ParentRotation",
 				"native": true,
 				"original_type": "via.Quaternion",
 				"size": 16,
@@ -1891393,7 +1891393,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "ChildWorldPosition",
+				"name": "ChildPosition",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -1891402,7 +1891402,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "ChildWorldRotation",
+				"name": "ChildRotation",
 				"native": true,
 				"original_type": "via.Quaternion",
 				"size": 16,
@@ -1901607,7 +1901607,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "PSOTelemetryName",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901616,7 +1901616,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "PSOPatchPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901625,7 +1901625,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "PSOWhiteListPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901634,7 +1901634,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "RayTraceMaterialRedirectPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901985,7 +1901985,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v42",
+				"name": "DisableBindlessDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1902147,7 +1902147,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v60",
+				"name": "ShaderTimerPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1902471,7 +1902471,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v96",
+				"name": "RenderTargetTextureScalePC",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1903065,7 +1903065,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v162",
+				"name": "RenderTargetTextureScalePS4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1903335,7 +1903335,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v192",
+				"name": "RenderTargetTextureScalePS4Pro",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1903623,7 +1903623,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v224",
+				"name": "RenderTargetTextureScalePS5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1903938,7 +1903938,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v259",
+				"name": "RenderTargetTextureScalePS5Pro",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1904217,7 +1904217,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v290",
+				"name": "RenderTargetTextureScaleXB1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1904487,7 +1904487,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v320",
+				"name": "RenderTargetTextureScaleXB1X",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1904766,7 +1904766,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v351",
+				"name": "RenderTargetTextureScaleXBSS",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1905054,7 +1905054,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v383",
+				"name": "RenderTargetTextureScaleXBSX",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1905324,7 +1905324,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v413",
+				"name": "RenderTargetTextureScaleSwitch",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1905675,7 +1905675,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v452",
+				"name": "RenderTargetTextureScaleSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1905999,7 +1905999,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v488",
+				"name": "RenderTargetTextureScaleiOS",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1906233,7 +1906233,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v514",
+				"name": "RenderTargetTextureScaleAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1906503,7 +1906503,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v544",
+				"name": "LodMinimumSize",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1906512,7 +1906512,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v545",
+				"name": "LodMaximumSize",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1906521,7 +1906521,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v546",
+				"name": "DefaultShadowLodBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1906620,7 +1906620,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v557",
+				"name": "Gamma",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907043,7 +1907043,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v604",
+				"name": "HazeCompositorBlurRatio",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907052,7 +1907052,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v605",
+				"name": "HazeCompositorDetail",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907061,7 +1907061,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v606",
+				"name": "HazeCompositorIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907070,7 +1907070,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v607",
+				"name": "HazeCompositorLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907115,7 +1907115,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v612",
+				"name": "MinimumShadowBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907124,7 +1907124,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v613",
+				"name": "MinimumShadowDepthBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907133,7 +1907133,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v614",
+				"name": "MinimumShadowSlopeBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907268,7 +1907268,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v629",
+				"name": "DefaultSSSProfilePath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1907457,7 +1907457,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v650",
+				"name": "MeshLodRateHighest",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907466,7 +1907466,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v651",
+				"name": "MeshLodRateHigh",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907475,7 +1907475,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v652",
+				"name": "MeshLodRateStandard",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907484,7 +1907484,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v653",
+				"name": "MeshLodRateLow",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1907493,7 +1907493,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v654",
+				"name": "MeshLodRateLowest",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1914037,7 +1914037,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "BlendInscatteringColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -1919366,7 +1919366,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1947327,7 +1947327,7 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v6",
+				"name": "SlopeRanges",
 				"native": true,
 				"original_type": "via.landscape.SlopeTexture",
 				"size": 4,
@@ -1985700,7 +1985700,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Frame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1985718,7 +1985718,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "PlaySpeed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1985727,7 +1985727,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "PlayRange",
 				"native": true,
 				"original_type": "via.Float2",
 				"size": 8,
@@ -2003357,7 +2003357,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2009061,7 +2009061,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2015981,11 +2015981,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "AppendBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
@@ -2018405,7 +2018405,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2029554,7 +2029554,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2030646,7 +2030646,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v40",
+				"name": "TwoWheelerFakeCenterOfMass",
 				"native": true,
 				"original_type": "via.vec3",
 				"size": 16,
@@ -2038755,7 +2038755,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2058853,7 +2058853,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2062657,7 +2062657,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "DevAcceptSessionIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2081425,7 +2081425,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2081943,7 +2081943,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2083529,7 +2083529,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2095823,7 +2095823,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2100088,7 +2100088,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2110052,7 +2110052,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2126433,7 +2126433,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Size",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -2126442,7 +2126442,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "Name",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2126469,7 +2126469,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "DisplayType",
 				"native": true,
 				"original_type": "via.DisplayType",
 				"size": 4,
@@ -2126478,7 +2126478,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "CustomDisplaySize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -2130441,7 +2130441,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "OutputLimitConfigRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130450,7 +2130450,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "SecondaryOutputLimitConfigRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130567,7 +2130567,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "DisplayMappingEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2130765,7 +2130765,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "GraphScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2130783,7 +2130783,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v50",
+				"name": "AdjustDisplayMinNitsMode",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2130792,7 +2130792,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v51",
+				"name": "AdjustDisplayMaxNitsMode",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2130801,7 +2130801,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v52",
+				"name": "UseSecondaryDisplayMaxNits",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2144256,7 +2144256,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "CullingDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2144445,7 +2144445,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "VfxEVDefaultValue",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2144544,7 +2144544,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v56",
+				"name": "TextureStreamingDistanceThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2144571,7 +2144571,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "DefaultSSRAlphaThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2145516,7 +2145516,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v164",
+				"name": "ParticleDirectLightingCoef",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2145525,7 +2145525,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v165",
+				"name": "ParticleIndirectLightingCoef",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2145561,7 +2145561,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v169",
+				"name": "PerPixelLightmapLowerBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2145570,7 +2145570,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v170",
+				"name": "PerPixelLightmapUpperBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2145606,7 +2145606,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v174",
+				"name": "ParticlePerPixelLightingAtlasVarianceCoef",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2212855,7 +2212855,7 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v18",
+				"name": "NormalWindowResolution",
 				"native": true,
 				"original_type": "via.vec2",
 				"size": 16,
@@ -2213242,7 +2213242,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v61",
+				"name": "AutoRangeCompression",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2213269,7 +2213269,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v64",
+				"name": "RangeCompression",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2213278,7 +2213278,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "RangeCompressionForCommon",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2213800,7 +2213800,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v123",
+				"name": "RenderTargetTextureScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2252319,7 +2252319,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2254562,7 +2254562,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamType(?)",
+				"name": "ParamType",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2261347,7 +2261347,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2261518,7 +2261518,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "ElapsedRateAtFirstFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2261545,7 +2261545,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "PlayMotionFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2263350,7 +2263350,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "AutoRelease",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2270463,7 +2270463,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "JoinedIdStr",
+				"name": "JoinToIdStr",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
