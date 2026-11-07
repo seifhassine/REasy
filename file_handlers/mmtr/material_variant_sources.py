@@ -92,14 +92,19 @@ def make_mdf_source_choice(
     )
 
 
-def _iter_mdf_files(root: str):
+def _is_mdf(path: str, version: int | None) -> bool:
+    found = resource_version_from_path(path, "mdf2")
+    return found is not None and version in (None, found)
+
+
+def _iter_mdf_files(root: str, version: int | None):
     if not root or not os.path.isdir(root):
         return
     for directory, folders, files in os.walk(root):
         folders[:] = [folder for folder in folders if folder != PROJECT_METADATA_FOLDER]
         folders.sort(key=str.casefold)
         for name in sorted(files, key=str.casefold):
-            if resource_version_from_path(name, "mdf2") is None:
+            if not _is_mdf(name, version):
                 continue
             absolute = os.path.join(directory, name)
             relative = os.path.relpath(absolute, root).replace("\\", "/")
@@ -115,6 +120,7 @@ def discover_mdf_consumers(
     pak_loader: Callable[[str], bytes | None] | None = None,
     open_sources: Iterable[MdfVariantSourceChoice] = (),
     progress: Callable[[int, str], None] | None = None,
+    mdf_version: int | None = None,
 ) -> MdfConsumers:
     choices: list[MdfVariantSourceChoice] = []
     unread: list[tuple[str, str]] = []
@@ -144,12 +150,14 @@ def discover_mdf_consumers(
             return None
 
     for source in open_sources:
+        if not _is_mdf(source.path, mdf_version):
+            continue
         report(source.label)
         add(read(source.label, data=source.data, path=source.path, origin=source.origin,
                  relative_path=source.relative_path, owner=source.owner))
 
     for origin, root in (("project", project_dir), ("system", unpacked_dir)):
-        for absolute, relative in _iter_mdf_files(root):
+        for absolute, relative in _iter_mdf_files(root, mdf_version):
             key = _path_key(origin, relative)
             if key in seen:
                 continue
@@ -166,7 +174,7 @@ def discover_mdf_consumers(
             {
                 normalize_resource_path(path)
                 for path in pak_paths
-                if resource_version_from_path(path, "mdf2") is not None
+                if _is_mdf(path, mdf_version)
             },
             key=str.casefold,
         )

@@ -10,7 +10,7 @@ lazy from .legacy_register_flow import destination_count
 lazy from .native_dxbc_precision import operand_precision
 lazy from .profiles.dxbc_recovery import DxbcSemanticIr, _output_register
 lazy from .surface_flow import (
-    TEXEL_TYPES, FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field,
+    TEXEL_TYPES, FlowStore, FlowValue, NativeFlow, buffer_element, buffer_word_types, constant_field,
     declared_component_types, structured_element,
 )
 
@@ -273,7 +273,8 @@ def dxbc_flow(ir: DxbcSemanticIr, contract) -> NativeFlow:
             value = read(state, instruction.operands[-1], component)
             stores.append(FlowStore(semantic, word // 4, word % 4, value if isinstance(value, int) else None,
                                     "" if isinstance(value, int) else value[1], (position, "store", first), scope))
-            buffer_scalars.setdefault((scope, semantic, word // 4), []).append(scalar_of(value))
+            if scope == "buffer":
+                buffer_scalars.setdefault((scope, semantic, word // 4, word % 4), []).append(scalar_of(value))
         if scope == "typed":
             typed[semantic] = TEXEL_TYPES.get(resource.return_type, "float32")
 
@@ -415,8 +416,8 @@ def dxbc_flow(ir: DxbcSemanticIr, contract) -> NativeFlow:
                                   signature, scalar, origin)
                         for kind, operands, controls, signature, scalar, origin in values)
     component_types.update({("read", name, 0): kind for name, kind in read_types.items()})
-    component_types.update({key: typed[key[1]] if key[0] == "typed" else buffer_component_type(scalars)
-                            for key, scalars in buffer_scalars.items()})
+    component_types.update({("typed", semantic, 0): kind for semantic, kind in typed.items()})
+    component_types.update(buffer_word_types(buffer_scalars))
     return NativeFlow(stage, flow_values, (*stores, *texture_reads), tuple(discards), component_types, reads,
                       tuple(exits))
 

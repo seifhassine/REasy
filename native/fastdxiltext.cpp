@@ -560,6 +560,35 @@ PyObject *scalar_kind(const char *type) {
     return name == "i1" ? made.bool_ : made.integer;
 }
 
+const char *defined_scalar(V body, V opcode) {
+    if (same(opcode, "call")) {
+        Call callee = call_search(body);
+        return callee.found() ? scalar_search(body, 4, callee.start) : nullptr;
+    }
+    if (same(opcode, "phi")) return scalar_search(body, 0, body.size());
+    if (same(opcode, "fcmp") || same(opcode, "icmp")) return "i1";
+    V text = body;
+    size_t to = find(body, " to ");
+    if (to != NPOS) text = body.substr(to + 4);
+    if (same(opcode, "select")) {
+        size_t comma = find_char(body, ',');
+        if (comma == NPOS) raise_index();
+        text = body.substr(comma + 1);
+    } else if (same(opcode, "extractvalue")) {
+        text = V();
+        for (size_t p = find_char(body, '.'); p != NPOS; p = find_char(body, '.', p + 1)) {
+            size_t q = p + 1;
+            if (q >= body.size() || (body[q] != 'f' && body[q] != 'i')) continue;
+            size_t end = q + 1;
+            while (end < body.size() && decimal(body[end])) ++end;
+            if (end == q + 1 || (end < body.size() && word(body[end]))) continue;
+            text = body[q] == 'i' ? V(U"i32") : body.substr(q + 1, end - q - 1) == V(U"16") ? V(U"half") : V(U"float");
+            break;
+        }
+    }
+    return scalar_search(text, 0, text.size());
+}
+
 const char *const ARGUMENT_TYPES[] = {"i1", "i8", "i16", "i32", "i64", "half", "float", "double"};
 void literal_arguments(V text, size_t low, std::vector<Span> &values) {
     values.clear();
@@ -1388,7 +1417,7 @@ PyObject *flow(PyObject *lines_object, Py_ssize_t begin, PyObject *statements_ob
                     sample = {texture, site(), float_texel};
                 }
             }
-            const char *scalar = scalar_search(body, 4, callee.start);
+            const char *scalar = defined_scalar(body, opcode);
             Kind kind = access.get(name, EFFECT) == READNONE && !arguments.empty() ? PURE : SOURCE;
             size_t family_size = kind == PURE ? literal.size() : std::min<size_t>(literal.size(), 1);
             key.clear();
@@ -1428,34 +1457,14 @@ PyObject *flow(PyObject *lines_object, Py_ssize_t begin, PyObject *statements_ob
                 for (size_t item : between)
                     if (const V *condition = control.condition(control.blocks[item])) pool.push_back(*condition);
             }
-            const char *scalar = scalar_search(body, 0, body.size());
+            const char *scalar = defined_scalar(body, opcode);
             pending.push_back({values.size(), JOIN, start, operand_count, start + operand_count,
                                pool.size() - start - operand_count, body});
             values.push_back({JOIN, empty_tuple.get(), scalar_kind(scalar), has_result, result, false});
         } else if (has_result) {
             bodies.at(result) = body;
             operands_of(body, types, owned, arguments);
-            V scalar_text = body;
-            size_t to = find(body, " to ");
-            if (to != NPOS) scalar_text = body.substr(to + 4);
-            if (same(opcode, "select")) {
-                size_t comma = find_char(body, ',');
-                if (comma == NPOS) raise_index();
-                scalar_text = body.substr(comma + 1);
-            } else if (same(opcode, "extractvalue")) {
-                scalar_text = V();
-                for (size_t p = find_char(body, '.'); p != NPOS; p = find_char(body, '.', p + 1)) {
-                    size_t q = p + 1;
-                    if (q >= body.size() || (body[q] != 'f' && body[q] != 'i')) continue;
-                    size_t end = q + 1;
-                    while (end < body.size() && decimal(body[end])) ++end;
-                    if (end == q + 1 || (end < body.size() && word(body[end]))) continue;
-                    scalar_text = body[q] == 'f' ? V(U"float") : V(U"i32");
-                    break;
-                }
-            }
-            bool compare = same(opcode, "fcmp") || same(opcode, "icmp");
-            const char *scalar = compare ? "i1" : scalar_search(scalar_text, 0, scalar_text.size());
+            const char *scalar = defined_scalar(body, opcode);
             if (same(opcode, "alloca") || same(opcode, "getelementptr")) {
                 const V *base = nullptr;
                 for (const V &item : arguments) if (roots.count(item)) { base = &item; break; }
@@ -1630,8 +1639,11 @@ PyObject *material_sites(PyObject *lines_object, PyObject *statements_object, Py
     Ref uav(check(PyLong_FromLong(1 << 12)));
     const char *prefix = "@dx.op.annotateHandle(i32 216, %dx.types.Handle ";
     const char *properties = ", %dx.types.ResourceProperties { i32 ";
+    const char *legacy = "@dx.op.createHandle(i32 57, i8 ";
     for (const auto &item : bodies.items) {
         V body = item.second;
+        if (size_t p = find(body, legacy); p != NPOS && !at(body, p + std::char_traits<char>::length(legacy), "1,"))
+            read_only.insert(item.first);
         for (size_t p = find(body, prefix); p != NPOS; p = find(body, prefix, p + 1)) {
             size_t q = p + std::char_traits<char>::length(prefix), comma = find_char(body, ',', q);
             if (comma == NPOS || comma == q || !at(body, comma, properties)) continue;
@@ -4640,11 +4652,35 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
     }
     Numbered<std::vector<V>> carrier, native, prelude, replaced;
     Numbered<std::vector<std::pair<long long, V>>> stored;
-    VMap<V> renamed;
+    VMap<V> renamed, natives;
     std::vector<Ref> held;
     std::vector<PlanSite> pending;
     size_t serial = 0;
     auto fresh = [&]() { return numbered_name("%reasy.surface.", ++serial, arena); };
+    auto half = [&](V name) {
+        auto found = defining.find(name);
+        if (found == defining.end()) return false;
+        V line = lines[found->second];
+        V body = strip(line.substr(value_match(line).end));
+        size_t space = find_char(body, ' ');
+        const char *type = defined_scalar(body, space == NPOS ? body : body.substr(0, space));
+        return type && std::string_view(type) == "half";
+    };
+    auto converted = [&](V value, const char *operation, const char *from, const char *to, std::vector<V> &code) {
+        V name = fresh();
+        S line(U"  ");
+        line += name;
+        append_literal(line, " = ");
+        append_literal(line, operation);
+        line.push_back(' ');
+        append_literal(line, from);
+        line.push_back(' ');
+        line += value;
+        append_literal(line, " to ");
+        append_literal(line, to);
+        code.push_back(kept(arena, line));
+        return name;
+    };
     std::unique_ptr<Spans> own_spans;
     auto spans = [&]() -> const Spans & {
         if (carrier_spans) return *carrier_spans;
@@ -4789,8 +4825,26 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
                     if (same(item, discarded)) item = recorded;
             }
             Ref address_object(attribute(site, "material_address"));
+            // A site storing the channel computes only the components it stores.
+            std::vector<bool> wanted;
+            if (truth(site_stores.get())) {
+                wanted.assign(static_cast<size_t>(width), false);
+                Ref iterator(check(PyObject_GetIter(site_stores.get())));
+                while (PyObject *item = PyIter_Next(iterator.get())) {
+                    Ref owned(item);
+                    Ref parts(unpacked(item, 3));
+                    long long component = plan_integer(PyTuple_GET_ITEM(parts.get(), 1));
+                    if (component >= 0 && component < width) wanted[static_cast<size_t>(component)] = true;
+                }
+                if (PyErr_Occurred()) throw Fail();
+            }
             std::vector<V> code, results;
+            VMap<V> widened;
             for (long long component = 0; component < width; ++component) {
+                if (!wanted.empty() && !wanted[static_cast<size_t>(component)]) {
+                    results.emplace_back();
+                    continue;
+                }
                 S helper = edit_name;
                 helper.push_back('_');
                 for (char c : std::to_string(component)) helper.push_back(static_cast<U>(c));
@@ -4836,13 +4890,39 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
                 HelperBody helper_parts;
                 bool inline_helper = helper_body(carrier_lines, spans(), parts.callee, helper_parts);
                 std::vector<V> needed = inputs;
+                VSet used;
                 if (inline_helper) {
-                    VSet used;
                     for (V line : helper_parts.body) ssa_each(line, [&](size_t s, size_t e) { used.insert(line.substr(s, e - s)); });
                     ssa_each(helper_parts.returned, [&](size_t s, size_t e) { used.insert(helper_parts.returned.substr(s, e - s)); });
                     needed.clear();
                     for (size_t index = 0; index < helper_parts.parameters.size() && index < inputs.size(); ++index)
                         if (used.count(helper_parts.parameters[index])) needed.push_back(inputs[index]);
+                }
+                for (size_t index = 0; index < site_arguments.size(); ++index) {
+                    size_t parameter = inputs.size() + address.size() + index;
+                    if (inline_helper && (parameter >= helper_parts.parameters.size()
+                                          || !used.count(helper_parts.parameters[parameter])))
+                        continue;
+                    if (index < tapped.size() && half(site_arguments[index])) {
+                        auto [found, added] = widened.try_emplace(site_arguments[index]);
+                        if (added) {
+                            found->second = converted(site_arguments[index], "fpext", "half", "float", code);
+                            natives[found->second] = site_arguments[index];
+                        }
+                        S text(tapped[index].substr(0, tapped[index].rfind(U' ') + 1));
+                        text += found->second;
+                        tapped[index] = kept(arena, text);
+                    }
+                    auto defined = defining.find(site_arguments[index]);
+                    if (defined == defining.end() || static_cast<long long>(defined->second) < anchor) continue;
+                    // Later in the site's own block (no terminator between): computed after the site.
+                    bool later = true;
+                    for (size_t line = static_cast<size_t>(anchor); line < defined->second && later; ++line) {
+                        V stripped = strip(lines[line]);
+                        later = !(starts(stripped, "br ") || starts(stripped, "switch ") || starts(stripped, "ret ")
+                                  || same(stripped, "unreachable"));
+                    }
+                    if (later) raise_graph("An edit reads a value the shader computes after it stores the edited channel.");
                 }
                 std::vector<V> roots;
                 for (V argument : needed) ssa_each(argument, [&](size_t s, size_t e) { roots.push_back(argument.substr(s, e - s)); });
@@ -4970,7 +5050,13 @@ void surface_plan(std::vector<V> &result, Ordered<std::vector<V>> &markers, cons
             while (PyObject *name = PyIter_Next(iterator.get())) {
                 Ref owned(name);
                 if (index >= item.results.size()) break;
-                mapping[python_text(name)] = item.results[index++];
+                V frontier = python_text(name), value = item.results[index++];
+                if (half(frontier)) {
+                    auto known = natives.find(value);
+                    value = known != natives.end() ? known->second
+                                                   : converted(value, "fptrunc", "float", "half", native.at(item.anchor));
+                }
+                mapping[frontier] = value;
             }
             if (PyErr_Occurred()) throw Fail();
         }

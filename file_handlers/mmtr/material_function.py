@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from contextvars import ContextVar
 from dataclasses import dataclass, replace
 import hashlib
 import json
@@ -8,6 +9,8 @@ import re
 from pathlib import Path
 from typing import Any, Iterable
 from uuid import uuid4
+
+import fastgraph
 
 from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES, is_float_type, value_width
 from file_handlers.sdf.shader_graph_texture import TEXTURE_OBJECT_TYPES, WRITABLE_TEXTURE_OBJECT_TYPES
@@ -29,8 +32,13 @@ from file_handlers.sdf.shader_graph import (
     node_title,
     shader_value_literal,
 )
+from file_handlers.sdf.graph_snapshot import (IMMUTABLE_JSON, checked_graph_snapshot, compiler_graph_copy,
+                                              freeze_properties, immutable_property_validation, thaw_graph)
+from file_handlers.sdf.shader_graph_execution import EXECUTION_KINDS, EXECUTION_TYPE
+from file_handlers.sdf.shader_graph_resource import is_resource_type, resource_array_parts
 
-from .material_region_read import REGION_ASSET_FIELDS
+from .material_region_read import (REGION_ASSET_FIELDS, read_region, region_content_hash, region_derived_cache,
+                                   region_read_session)
 
 
 MATERIAL_FUNCTION_SCHEMA = "reasy.material-function"
@@ -58,6 +66,9 @@ class MaterialFunctionError(ShaderGraphError):
     pass
 
 
+_known_pins = ContextVar("material_function_known_pins", default=None)
+
+
 @dataclass(frozen=True, slots=True)
 class MaterialFunctionPin:
     pin_id: str
@@ -72,7 +83,6 @@ class MaterialFunctionPin:
         if not str(self.name).strip() or len(str(self.name)) > 128:
             raise MaterialFunctionError("material-function pin names are invalid")
         try:
-            from file_handlers.sdf.shader_graph_resource import resource_array_parts, is_resource_type
             supported = self.value_type in FUNCTION_VALUE_TYPES or is_resource_type(self.value_type) or resource_array_parts(self.value_type) is not None
         except ValueError as exc:
             raise MaterialFunctionError(str(exc)) from exc
@@ -165,7 +175,6 @@ class MaterialFunctionAsset:
 
     @property
     def content_hash(self) -> str:
-        from .material_region_read import region_content_hash
         return region_content_hash(self, self.to_dict)
 
     def to_json(self) -> str:
@@ -177,7 +186,6 @@ class MaterialFunctionAsset:
 
     @classmethod
     def from_dict(cls, value: object) -> "MaterialFunctionAsset":
-        from .material_region_read import region_read_session
         with region_read_session():
             if (
                 not isinstance(value, dict)
@@ -237,44 +245,16 @@ class _CompilerFunctionPublication:
 
 
 def _matches_compiler_graph(graph, document):
-    from file_handlers.sdf.graph_snapshot import IMMUTABLE_JSON
-    property_types = (dict, *IMMUTABLE_JSON)
-    if (set(document) != {'stage', 'contract_fingerprint', 'nodes', 'links'}
-            or type(graph) is not ShaderGraph or type(graph.nodes) is not list or type(graph.links) is not list
-            or type(graph.stage) is not str or type(graph.contract_fingerprint) is not str
-            or graph.stage != document['stage']
-            or graph.contract_fingerprint != document['contract_fingerprint']
-            or len(graph.nodes) != len(document['nodes'])
-            or len(graph.links) != len(document['links'])):
-        return False
-    for node, declared in zip(graph.nodes, document['nodes']):
-        properties = node.properties
-        expected = declared['properties']
-        if (set(declared) != {'id', 'kind', 'position', 'properties'}
-                or type(node) is not ShaderGraphNode or type(node.node_id) is not str or type(node.kind) is not str
-                or node.node_id != declared['id']
-                or node.kind != declared['kind']
-                or node.x is not declared['position'][0] or node.y is not declared['position'][1]
-                or type(properties) not in property_types
-                or not isinstance(properties, dict) or tuple(properties) != tuple(expected)
-                or any(value is not expected[key] for key, value in properties.items())):
-            return False
-    return all(set(row) == {'source', 'target'} and type(link) is ShaderGraphLink
-               and all(type(value) is str for value in (link.source_node, link.source_pin, link.target_node, link.target_pin))
-               and link.source_node == row['source'][0] and link.source_pin == row['source'][1]
-               and link.target_node == row['target'][0] and link.target_pin == row['target'][1]
-               for link, row in zip(graph.links, document['links']))
+    return fastgraph.matches_graph(graph, document,
+                                   (ShaderGraph, ShaderGraphNode, ShaderGraphLink, (dict, *IMMUTABLE_JSON)))
 
 
 def _compiler_function_asset(function_id, name, category, description, inputs,
-                             outputs, graph, source_profile="", *, reuse=None):
-    from .material_region_read import region_derived_cache
+                             outputs, graph, source_profile="", *, reuse=None, pins=None):
     cache = region_derived_cache('compiler_function_snapshots')
     if cache is None:
         return MaterialFunctionAsset(function_id, name, category, description,
             inputs, outputs, graph, source_profile)
-    from file_handlers.sdf.graph_snapshot import checked_graph_snapshot, freeze_properties
-    from file_handlers.sdf.shader_graph import immutable_property_validation
     canonical = (all(type(value) is str for value in
         (function_id, name, category, description, source_profile))
         and type(inputs) is tuple and type(outputs) is tuple
@@ -292,7 +272,7 @@ def _compiler_function_asset(function_id, name, category, description, inputs,
                 and len(inputs) == len(asset.inputs) and len(outputs) == len(asset.outputs)
                 and all(left is right for left, right in zip((*inputs, *outputs), (*asset.inputs, *asset.outputs)))
                 and _matches_compiler_graph(asset.graph, reuse['graph'])
-                and _matches_compiler_graph(graph, reuse['graph'])):
+                and (graph is asset.graph or _matches_compiler_graph(graph, reuse['graph']))):
             return _CompilerFunctionPublication(reuse)
     checked = checked_graph_snapshot(graph) if canonical else None
     with immutable_property_validation():
@@ -317,10 +297,23 @@ def _compiler_function_asset(function_id, name, category, description, inputs,
                 pin_cache[key] = result
             return result
 
-        asset = MaterialFunctionAsset(function_id, name, category, description,
-            tuple(checked_pin(pin, declaration) for pin, declaration in zip(inputs, document['inputs'])),
-            tuple(checked_pin(pin, declaration) for pin, declaration in zip(outputs, document['outputs'])),
-            checked.graph_for(document['graph']), source_profile)
+        recorded = region_derived_cache('compiler_function_graph_pins')
+        if pins is None:
+            published = previous[1].graph if previous is not None and previous[0] is reuse else None
+            kept = recorded.get(id(published)) if published is not None else None
+            owned = ({node.node_id: node for node in published.nodes}
+                     if kept is not None and kept[0] is published else {})
+            pins = {node.node_id: kept[1][node.node_id] for node in graph.nodes
+                    if owned.get(node.node_id) is node and node.node_id in kept[1]}
+        token = _known_pins.set((checked.graph, pins))
+        try:
+            asset = MaterialFunctionAsset(function_id, name, category, description,
+                tuple(checked_pin(pin, declaration) for pin, declaration in zip(inputs, document['inputs'])),
+                tuple(checked_pin(pin, declaration) for pin, declaration in zip(outputs, document['outputs'])),
+                checked.graph_for(document['graph']), source_profile)
+        finally:
+            _known_pins.reset(token)
+        recorded[id(asset.graph)] = asset.graph, pins
     cache[id(document)] = document, asset
     return _CompilerFunctionPublication(document)
 
@@ -332,7 +325,6 @@ def _compiler_function_document(asset):
 
 
 def _matches_compiler_function(asset, document):
-    from file_handlers.sdf.graph_snapshot import IMMUTABLE_JSON
     metadata = (('id', 'function_id'), ('name', 'name'), ('category', 'category'),
                 ('description', 'description'), ('source_profile', 'source_profile'))
     if (type(asset) is not MaterialFunctionAsset or not isinstance(document, dict)
@@ -359,7 +351,6 @@ def _matches_compiler_function(asset, document):
 
 
 def _read_compiler_function(document):
-    from .material_region_read import region_derived_cache
     cache = region_derived_cache('compiler_function_snapshots')
     snapshot = cache.get(id(document)) if cache is not None else None
     if snapshot is not None and snapshot[0] is document:
@@ -413,7 +404,6 @@ def discover_material_functions(
 def material_function_from_node(node: ShaderGraphNode) -> MaterialFunctionAsset:
     if node.kind != "material_function":
         raise MaterialFunctionError("node is not a material function")
-    from .material_region_read import read_region
     return read_region('material_function', node.properties)
 
 
@@ -430,7 +420,6 @@ def _parse_function_snapshot(properties):
 def validate_material_function(
     asset: MaterialFunctionAsset,
 ) -> tuple[ShaderGraphDiagnostic, ...]:
-    from .material_region_read import region_read_session
     with region_read_session():
         return _validate_material_function(asset)
 
@@ -460,139 +449,11 @@ def _validate_material_function(asset: MaterialFunctionAsset) -> tuple[ShaderGra
                 "error", "function-size", "The material function is too large."
             )
         )
-    for node in graph.nodes:
-        if _outside_function(node):
-            issues.append(
-                ShaderGraphDiagnostic(
-                    "error",
-                    "function-node",
-                    f"{node_title(node)} must remain outside a reusable function.",
-                    node.node_id,
-                )
-            )
-    inputs = {
-        str(node.properties.get("pin_id", "")): node
-        for node in graph.nodes
-        if node.kind == "function_input"
-    }
-    outputs = {
-        str(node.properties.get("pin_id", "")): node
-        for node in graph.nodes
-        if node.kind == "function_output"
-    }
-    expected_inputs = {pin.pin_id for pin in asset.inputs}
-    expected_outputs = {pin.pin_id for pin in asset.outputs}
-    if (set(inputs) != expected_inputs or set(outputs) != expected_outputs
-            or len(inputs) != sum(n.kind == "function_input" for n in graph.nodes)
-            or len(outputs) != sum(n.kind == "function_output" for n in graph.nodes)):
-        issues.append(
-            ShaderGraphDiagnostic(
-                "error",
-                "function-interface",
-                "Function input/output nodes do not match the published interface.",
-            )
-        )
-    for ports, nodes in ((asset.inputs, inputs), (asset.outputs, outputs)):
-        for port in ports:
-            node = nodes.get(port.pin_id)
-            if node is not None and node.properties.get("value_type") != port.value_type:
-                issues.append(ShaderGraphDiagnostic("error", "function-interface",
-                    f"{port.name}'s node type differs from its published type.", node.node_id))
-    for node in graph.nodes:
-        issues.extend(node_property_diagnostics(node))
-    node_map = {node.node_id: node for node in graph.nodes}
-    if len(node_map) != len(graph.nodes):
-        issues.append(
-            ShaderGraphDiagnostic("error", "function-nodes", "Function node IDs are not unique.")
-        )
-    adjacency = {node_id: set() for node_id in node_map}
-    ports, indexed_ports = {}, {}
-    def pins(node):
-        identity = id(node)
-        if identity not in ports:
-            ports[identity] = node_pins(node, None)
-        return ports[identity]
-    def lookup_pin(node, direction, name):
-        identity = id(node)
-        if identity not in indexed_ports:
-            indexed = indexed_ports[identity] = {}
-            for candidate in pins(node):
-                if type(candidate.direction) is not str or type(candidate.name) is not str:
-                    indexed_ports[identity] = None
-                    break
-                indexed.setdefault((candidate.direction, candidate.name), candidate)
-        indexed = indexed_ports[identity]
-        if indexed is None or type(name) is not str:
-            return next((candidate for candidate in pins(node)
-                         if candidate.direction == direction and candidate.name == name), None)
-        return indexed.get((direction, name))
-    incoming: set[tuple[str, str]] = set()
-    for link in graph.links:
-        source = node_map.get(link.source_node)
-        target = node_map.get(link.target_node)
-        if source is None or target is None:
-            issues.append(
-                ShaderGraphDiagnostic("error", "function-link", "Function has a dangling connection.")
-            )
-            continue
-        source_pin = lookup_pin(source, "output", link.source_pin)
-        target_pin = lookup_pin(target, "input", link.target_pin)
-        if source_pin is None or target_pin is None:
-            issues.append(
-                ShaderGraphDiagnostic("error", "function-pin", "Function connection uses a missing pin.")
-            )
-            continue
-        key = (target.node_id, target_pin.name)
-        if key in incoming:
-            issues.append(
-                ShaderGraphDiagnostic("error", "function-input", "A function input has multiple connections.")
-            )
-        incoming.add(key)
-        if not connection_compatible(source_pin.value_type, target_pin.value_type):
-            issues.append(
-                ShaderGraphDiagnostic(
-                    "error",
-                    "function-type",
-                    f"{source_pin.value_type} cannot connect to {target_pin.value_type}.",
-                    target.node_id,
-                )
-            )
-        adjacency[source.node_id].add(target.node_id)
-    indegree = dict.fromkeys(adjacency, 0)
-    for targets in adjacency.values():
-        for target in targets:
-            indegree[target] += 1
-    pending = [node_id for node_id, count in indegree.items() if count == 0]
-    visited = 0
-    while pending:
-        node_id = pending.pop()
-        visited += 1
-        for target in adjacency[node_id]:
-            indegree[target] -= 1
-            if indegree[target] == 0:
-                pending.append(target)
-    if visited != len(adjacency):
-        issues.append(
-            ShaderGraphDiagnostic("error", "function-cycle", "Material functions cannot contain loops.")
-        )
-    live = {node.node_id for node in outputs.values()}
-    reverse = {key: set() for key in node_map}
-    for source, targets in adjacency.items():
-        for target in targets:
-            reverse[target].add(source)
-    pending = list(live)
-    while pending:
-        for source in reverse[pending.pop()] - live:
-            live.add(source)
-            pending.append(source)
-    for identity in live:
-        node = node_map[identity]
-        for pin in pins(node):
-            if pin.direction == "input" and pin.required and (identity, pin.name) not in incoming:
-                issues.append(ShaderGraphDiagnostic("error", "function-input",
-                    f"{node_title(node)} needs {pin.label}.", identity))
-    from file_handlers.sdf.shader_graph_execution import execution_diagnostics
-    issues.extend(execution_diagnostics(graph, pins))
+    known = _known_pins.get()
+    issues.extend(fastgraph.function_diagnostics(graph.nodes, graph.links, asset.inputs, asset.outputs,
+        known[1] if known is not None and known[0] is graph else {}, (
+        _OUTSIDE_FUNCTION_KINDS, node_title, node_property_diagnostics, connection_compatible, ShaderGraphDiagnostic,
+        node_pins, (EXECUTION_KINDS, EXECUTION_TYPE, ShaderGraphDiagnostic))))
     return tuple(issues)
 
 
@@ -752,6 +613,7 @@ def _splice_function(
     graph.links[:] = new_links
     if len(graph.nodes) > MAX_GRAPH_NODES or len(graph.links) > MAX_GRAPH_LINKS:
         raise MaterialFunctionError("expanded material graph exceeds its safety limit")
+    return mapping
 
 
 def _has_function_calls(graph, stack, source_profile):
@@ -783,7 +645,6 @@ def _expand_graph(
     source_profile: str | None = None,
     live_only: bool = False,
 ) -> ShaderGraph:
-    from file_handlers.sdf.graph_snapshot import compiler_graph_copy
     from .material_branch import branch_arms, branch_properties
     from .material_loop import loop_body, loop_properties
     result = compiler_graph_copy(graph)
@@ -834,19 +695,17 @@ def _inline_function(graph, instance, asset, stack=(), source_profile=None, live
         raise MaterialFunctionError(f"recursive or excessively nested material function: {asset.name}")
     expanded = _expand_graph(asset.graph, (*stack, asset.function_id), source_profile, live_only)
     expanded = replace(asset, graph=ShaderGraph.from_dict(expanded.to_dict())).graph
-    _splice_function(graph, instance, asset, expanded)
+    return _splice_function(graph, instance, asset, expanded)
 
 
 def _expand_material_functions_for_compilation(
     graph: ShaderGraph, *, source_profile: str | None = None, live_only=False,
 ) -> ShaderGraph:
-    from .material_region_read import region_read_session
     with region_read_session():
         return _expand_graph(graph, (), source_profile, live_only)
 
 
 def expand_material_functions(graph: ShaderGraph, *, source_profile: str | None = None, live_only=False) -> ShaderGraph:
-    from file_handlers.sdf.graph_snapshot import thaw_graph
     return thaw_graph(_expand_material_functions_for_compilation(
         graph, source_profile=source_profile, live_only=live_only))
 

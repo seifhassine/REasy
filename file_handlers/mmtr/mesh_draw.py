@@ -8,6 +8,7 @@ lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.mesh.mesh_file import VertexBufferType
 from file_handlers.sdf.dxbc import PRIMITIVE_TOPOLOGY_NAMES
+lazy from file_handlers.sfur.shell_fur import SHELLS
 from file_handlers.tex.dxgi import DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R32_UINT
 
 lazy from .material_preview import MaterialPreviewError
@@ -50,7 +51,8 @@ class _InstanceSlot:
 
 
 def submesh_geometry(program, vertex, buffer: MeshBuffer, submesh: SubmeshRange,
-                     destination: Destination | None = None, instance: Mapping[str, bytes] | None = None) -> dict:
+                     destination: Destination | None = None, instance: Mapping[str, bytes] | None = None,
+                     shells: Mapping[tuple[str, int], tuple[int, int]] | None = None) -> dict:
     layout = program.input_layout
     if layout is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP("MaterialPreview", "The program has no vertex input layout."))
@@ -73,7 +75,15 @@ def submesh_geometry(program, vertex, buffer: MeshBuffer, submesh: SubmeshRange,
                              element.aligned_byte_offset, 1, 1))
             continue
         slot = element.input_slot
-        if destination is not None:
+        if shells is not None:
+            view = shells.get((element.semantic.upper(), element.semantic_index))
+            if view is None:
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "The shell program reads {semantic}{index}, which no capture shows the shell "
+                                       "buffer holding."),
+                    {"semantic": element.semantic, "index": element.semantic_index})
+            slot = (SHELLS, *view)
+        elif destination is not None:
             slot = (destination_view(destination, element.semantic, element.semantic_index)
                     or _ROUTE_STREAMS.get((element.semantic, element.semantic_index)))
             if slot is None:
@@ -98,7 +108,7 @@ def submesh_geometry(program, vertex, buffer: MeshBuffer, submesh: SubmeshRange,
             data = bytes(instance[slot.name])
             return data, len(data)
         if isinstance(slot, tuple):
-            return None, *slot
+            return slot if len(slot) == 3 else (None, *slot)
         if slot in streams:
             return streams[slot]
         reach = max(row[4] for row in elements if row[3] == index)
@@ -111,7 +121,14 @@ def submesh_geometry(program, vertex, buffer: MeshBuffer, submesh: SubmeshRange,
             "draw": (count, 1, 0, submesh.base_vertex, 0)}
 
 
-def program_states(program, targets: int, stencil_reference: int) -> dict:
+def input_elements(program) -> list[tuple]:
+    return [(element.semantic, element.semantic_index, element.dxgi_format_id, element.input_slot,
+             element.aligned_byte_offset, int(element.per_instance), element.instance_step_rate)
+            for element in program.input_layout.elements]
+
+
+def program_states(program, targets: int, stencil_reference: int,
+                   depth_bounds: tuple[float, float] | None = None) -> dict:
     raster, depth, blend = program.rasterizer_state, program.depth_stencil_state, program.blend_state
     if None in (raster, depth, blend):
         raise MaterialPreviewError(QT_TRANSLATE_NOOP("MaterialPreview", "The program has no fixed-function states."))
@@ -119,10 +136,12 @@ def program_states(program, targets: int, stencil_reference: int) -> dict:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The program draws the primitive topology {topology}, which the preview device does "
                                "not."), {"topology": program.primitive_topology})
-    if raster.conservative_rasterization or depth.depth_bounds_test_enable:
+    if raster.conservative_rasterization:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-            "MaterialPreview", "The program rasterizes conservatively or tests depth bounds, which the preview "
-                               "device does not."))
+            "MaterialPreview", "The program rasterizes conservatively, which the preview device does not."))
+    if depth.depth_bounds_test_enable and depth_bounds is None:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The program tests depth bounds, and its draw gives no range."))
     if len(blend.render_targets) < targets:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The program blends {count} render targets, not {targets}."),
@@ -141,5 +160,6 @@ def program_states(program, targets: int, stencil_reference: int) -> dict:
             "blend": (int(blend.alpha_to_coverage_enable), int(blend.independent_blend_enable),
                       [(int(item.blend_enable), item.source_blend_id, item.destination_blend_id,
                         item.blend_operation_id, item.source_alpha_blend_id, item.destination_alpha_blend_id,
-                        item.alpha_blend_operation_id, item.write_mask) for item in blend.render_targets[:targets]])}
+                        item.alpha_blend_operation_id, item.write_mask) for item in blend.render_targets[:targets]]),
+            **({"depth_bounds": tuple(map(float, depth_bounds))} if depth.depth_bounds_test_enable else {})}
 

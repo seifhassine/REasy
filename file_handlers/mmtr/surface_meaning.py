@@ -56,7 +56,6 @@ class SurfaceOutputCatalog:
     formats: tuple[TargetFormat, ...] = ()
     # Pass purpose -> depth target format (``via.render.TextureFormat``).
     depth_formats: Mapping[str, int] = field(default_factory=dict)
-    source: Mapping = field(default_factory=dict)
     engine_textures: tuple[EngineTexture, ...] = ()
 
     def engine_texture(self, purpose: str, name: str) -> str | None:
@@ -84,7 +83,6 @@ def catalog_to_dict(catalog: SurfaceOutputCatalog) -> dict:
         "depth_formats": dict(catalog.depth_formats),
         "engine_textures": [{"purpose": item.purpose, "name": item.name, "file": item.file}
                             for item in catalog.engine_textures],
-        "source": dict(catalog.source),
     }
 
 
@@ -105,7 +103,6 @@ def catalog_from_dict(data: Mapping) -> SurfaceOutputCatalog:
         tuple(TargetFormat(str(item["purpose"]), int(item["target"]), bool(item["blending"]), int(item["format"]),
                            bool(item["over_unblended"])) for item in data["formats"]),
         {str(purpose): int(value) for purpose, value in data["depth_formats"].items()},
-        dict(data.get("source", {})),
         tuple(EngineTexture(str(item["purpose"]), str(item["name"]), str(item["file"]))
               for item in data["engine_textures"]),
     )

@@ -2,15 +2,6 @@
  "format": 1,
  "game": "MHWS",
  "resource_version": 240906211,
- "source": {
-  "captures": [
-   "MonsterHunterWilds_frame21612.rdc",
-   "MonsterHunterWilds_frame64816.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  }
- },
  "states": {
   "AutomaticBorder": {
    "filter": 85,

@@ -1,0 +1,62 @@
+{
+  "ONIMUSHAWOTS": {
+    "managers": {
+      "ace.model_parts_manager.ModelPartsManager2": "parts",
+      "ace.model_parts_manager.ModelPartsManager2ViaMesh": "parts",
+      "ace.model_material_manager.ModelMaterialManager": "materials",
+      "ace.model_material_manager.ModelMaterialManagerViaMesh": "materials"
+    },
+    "holders": "_Holders", "id": "_Id", "data": "_Data",
+    "parts": {"conditions": "_Conditions", "id": "_ConditionId", "change": "_ChangeType", "groups": "_GroupConditions",
+              "hidden": "_OptionFlagAllInvisible", "sets": "_SetIds",
+              "definitions": ["_PartsGroupDefinitions", "_PartsInfos"], "part": "_PartsNo", "group": "_GroupId",
+              "set": "_PartsSetId"},
+    "materials": {
+      "conditions": "_Conditions", "condition": "_ConditionId", "parameters": "_MaterialParameters",
+      "enable": "_Enable", "materials": "_MaterialNameHashList", "variable": "_ParameterNameHash",
+      "channel": "_ParameterChannel", "frames": ["_BeforeInterpolationInfo", "_Frame"], "type": "_VariableType",
+      "enum": "ace.model_material_manager.VARIABLE_TYPE",
+      "types": {"FLOAT": "scalar", "BOOL": "scalar", "FLOAT4": "vector", "COLOR": "vector", "TEXTURE": "texture"},
+      "value": "_Value",
+      "values": {
+        "ace.model_material_manager.cValueFloat": "_Value",
+        "ace.model_material_manager.cValueBool": "_Value",
+        "ace.model_material_manager.cValueFloat4": "_Value",
+        "ace.model_material_manager.cValueColor": "_Value",
+        "ace.model_material_manager.cValueTexture": "_Value",
+        "app.model_material_manager.cValueFloatPreset": {"list": "_FloatPresets"},
+        "app.model_material_manager.cValueFloat4Preset": {"list": "_Float4Presets"},
+        "app.model_material_manager.cValueColorPreset": {"list": "_ColorPresets", "divisor": 255.0},
+        "app.model_material_manager.cValueTexturePreset": {"list": "_TexturePresets"}
+      },
+      "preset": {"resource": "_Value", "data": "<PresetData>k__BackingField", "index": "<Index>k__BackingField",
+                 "value": "<Value>k__BackingField"}
+    }
+  },
+  "MHWILDS": {
+    "managers": {
+      "ace.model_parts_manager.ModelPartsManager2": "parts",
+      "ace.model_material_manager.ModelMaterialManager": "materials"
+    },
+    "holders": "_Holders", "id": "_Id", "data": "_Data",
+    "parts": {"conditions": "_Conditions", "id": "_ConditionId", "change": "_ChangeType", "groups": "_GroupConditions",
+              "hidden": "_OptionFlagAllInvisible", "sets": "_SetIds",
+              "definitions": ["_PartsGroupDefinitions", "_PartsInfos"], "part": "_PartsNo", "group": "_GroupId",
+              "set": "_PartsSetId"},
+    "materials": {
+      "conditions": "_Conditions", "condition": "_ConditionId", "parameters": "_MaterialParameters",
+      "enable": "_Enable", "materials": "_MaterialNameHashList", "variable": "_ParameterNameHash",
+      "channel": "_ParameterChannel", "frames": ["_BeforeInterpolationInfo", "_Frame"], "type": "_VariableType",
+      "enum": "ace.model_material_manager.VARIABLE_TYPE",
+      "types": {"FLOAT": "scalar", "BOOL": "scalar", "FLOAT4": "vector", "COLOR": "vector", "TEXTURE": "texture"},
+      "value": "_Value",
+      "values": {
+        "ace.model_material_manager.cValueFloat": "_Value",
+        "ace.model_material_manager.cValueBool": "_Value",
+        "ace.model_material_manager.cValueFloat4": "_Value",
+        "ace.model_material_manager.cValueColor": "_Value",
+        "ace.model_material_manager.cValueTexture": "_Value"
+      }
+    }
+  }
+}

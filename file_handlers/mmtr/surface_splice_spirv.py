@@ -1,15 +1,18 @@
 """See docs/internals/surface-splicing.md."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from functools import lru_cache
 
 lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from file_handlers.sdf.shader_graph_math import value_width
 lazy from file_handlers.sdf.spirv import SpirvError
+lazy from file_handlers.sdf.spirv_ir import grammar
 
 lazy from .spirv_control_flow import spirv_cfg
-lazy from .surface_flow import NativeFlow
+lazy from .surface_flow import NativeFlow, store_visits
 lazy from .surface_flow_dxil import _dominators
+lazy from .surface_flow_spirv import _MIXING, _PURE_CLASSES
 
 
 _OP_VARIABLE, _OP_LOAD, _OP_STORE, _OP_FUNCTION_PARAMETER, _OP_LABEL = 59, 61, 62, 55, 248
@@ -24,6 +27,9 @@ _STORED = {_OP_STORE: 1, 99: 2}  # 99: OpImageWrite
 _ENDS = 0
 _DEBUG_LINES = {8, 317}
 _RECORDED, _FALSE, _ZERO = "recorded", "false", "zero"
+# A helper argument the shader computes after the site; a helper using it is refused.
+_LATE = "late"
+_LATE_READ = "An edit reads a value the shader computes after it stores the edited channel."
 _FRAME = {_OP_FUNCTION, _OP_FUNCTION_PARAMETER, _OP_FUNCTION_END}
 # Results that can't move elsewhere in the native program.
 _PLACED = {_OP_CALL, _OP_PHI, _OP_LABEL, _OP_VARIABLE}
@@ -43,6 +49,7 @@ class SpirvSurfaceSite:
     # the lane each component replaces.
     read: int | None = None
     lanes: tuple[int, ...] = ()
+    material_address: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,7 +59,6 @@ class SpirvSurfaceEdit:
     expression: str
     taps: tuple[tuple[str, str], ...]
     sites: tuple[SpirvSurfaceSite, ...]
-    # The shared carrier reads this; SPIR-V passes never hand the material record to a channel edit.
     material: bool = False
     # A Discard edit: each own discard (instruction index, block, merge block or None for a demote, 0 at program end),
     # and whether the edit reads them.
@@ -60,12 +66,83 @@ class SpirvSurfaceEdit:
     records: bool = False
     # An added value: its output (semantic, index).
     output: tuple = ()
+    address: str = ""
+    statements: tuple[str, ...] = ()
 
 
 def _after_phis(rows, index: int) -> int:
     while rows[index].opcode == _OP_PHI:
         index += 1
     return index
+
+
+def _site_position(rows, site: SpirvSurfaceSite) -> int:
+    if site.exit is not None:
+        return site.exit
+    if site.read is not None:
+        return _after_phis(rows, site.read + 1)
+    return min(index for index, _lane, _component in site.stores)
+
+
+def _material_addresses(ir, elements):
+    rows = ir.instructions
+    positions = {row.result: index for index, row in enumerate(rows) if row.result is not None}
+    functions = _functions(ir)
+    first = functions[0][0][0] if functions else len(rows)
+    dominance, keys = {}, {}
+    variables = {row.result: row.values[2] for row in rows if row.opcode == _OP_VARIABLE}
+    blocks_decorated = {row.values[0] for row in rows if row.opcode == 71 and row.values[1] == 2}  # Block
+
+    def key(identifier):
+        """``identifier``'s computation, equal for equal computations of read-only inputs."""
+        if identifier not in keys:
+            row = rows[positions[identifier]] if identifier in positions else None
+            if row is None or positions[identifier] < first or row.opcode in _PLACED | {_OP_FUNCTION_PARAMETER}:
+                keys[identifier] = ("id", identifier)
+            else:
+                root = row.values[2] if row.opcode == _OP_LOAD else None
+                while root in positions and rows[positions[root]].opcode in _OP_ACCESS_CHAINS | {_OP_COPY}:
+                    root = rows[positions[root]].values[2]
+                storage = variables.get(root)
+                pointee = rows[positions[rows[positions[root]].type_id]].values[2] if storage is not None else None
+                # Inputs, constants and constant buffers; a pass may write other memory.
+                read_only = storage in {0, 1, 9} or storage == 2 and pointee in blocks_decorated
+                if row.opcode == _OP_LOAD and not read_only:
+                    keys[identifier] = ("id", identifier)
+                else:
+                    keys[identifier] = (row.opcode, row.type_id, tuple(
+                        key(item.value) if item.is_id else item.value
+                        for item in row.operands if item.kind not in {"IdResult", "IdResultType"}))
+        return keys[identifier]
+
+    def address(position) -> int:
+        function = next(items for items in functions if items[0][0] <= position <= items[-1][0])
+        start, end = function[0][0], function[-1][0]
+        if start not in dominance:
+            blocks, successors, _conditions, _merges = spirv_cfg(row for _position, row in function)
+            labels, current = {}, None
+            for index, row in function:
+                current = row.result if row.opcode == _OP_LABEL else current
+                labels[index] = current
+            dominance[start] = labels, _dominators(blocks, successors)
+        labels, dominators = dominance[start]
+
+        def available(identifier) -> bool:
+            defined = positions[identifier]
+            if defined < first or rows[defined].opcode == _OP_FUNCTION_PARAMETER and start <= defined <= end:
+                return True
+            if not start <= defined <= end:
+                return False
+            block = labels[position]
+            return labels[defined] in dominators[block] and (labels[defined] != block or defined < position)
+        candidates = {key(element): element for _read, element in elements if available(element)}
+        if len(candidates) != 1:
+            raise ShaderGraphError(
+                "This pass reads several material records where the channel is stored." if candidates else
+                "This pass does not read the drawn material's values where the channel is stored, so the edit "
+                "cannot use them here. Use Drawing For to leave this pass out of the edit.")
+        return next(iter(candidates.values()))
+    return address
 
 
 def _construct_exit(ir, index: int) -> int:
@@ -92,7 +169,9 @@ def _functions(ir):
     return rows
 
 
-def spirv_surface_plan(ir, flow: NativeFlow, edits) -> tuple[SpirvSurfaceEdit, ...]:
+def spirv_surface_plan(ir, flow: NativeFlow, edits, elements=()) -> tuple[SpirvSurfaceEdit, ...]:
+    """``elements``: for edits reading the material, each native read of the copy per drawn instance as (instruction
+    index, element index ID)."""
     def lane(store):
         if store.site[2] is None:
             raise ShaderGraphError("A channel is stored through a computed index and cannot be edited.")
@@ -107,7 +186,7 @@ def spirv_surface_plan(ir, flow: NativeFlow, edits) -> tuple[SpirvSurfaceEdit, .
         return next(index for index, row in enumerate(ir.instructions) if row.result == identifier), tuple(
             lane for _identifier, lane in origins)
 
-    def tap_arguments(tap, block, read=None) -> list[tuple[int, int]]:
+    def tap_arguments(tap, block, read=None, visit=(0, 1)) -> list[tuple[int, int]]:
         if tap.split.channel.scope == "position":
             if read != position_site(tap.split)[0]:
                 raise ShaderGraphError("The projected position can only be read where it is changed.")
@@ -124,17 +203,23 @@ def spirv_surface_plan(ir, flow: NativeFlow, edits) -> tuple[SpirvSurfaceEdit, .
             if any(store.site[1] != block for store in tap.split.stores):
                 raise ShaderGraphError("An edit reads a channel the shader stores in another place.")
             return [flow.values[item].origin for item in tap.split.frontier]
-        stores = sorted((store for store in tap.split.stores if store.site[1] == block), key=lambda item: item.lane)
-        if len(stores) != len(tap.split.channel.lanes):
+        # The edit's visit of its block (index, count) reads the tap's visit of that index, or its only one.
+        found = store_visits(store for store in tap.split.stores if store.site[1] == block)
+        if len(found) == visit[1] > 1:
+            found = [found[visit[0]]]
+        if len(found) != 1 or len(found[0]) != len(tap.split.channel.lanes):
             raise ShaderGraphError("An edit reads a channel that is not stored where the edited channel is.")
-        return [(_stored_value(ir.instructions[store.site[0]]), lane(store)) for store in stores]
+        stores = sorted(found[0], key=lambda item: item.lane)
+        # A stored lane is its value as computed; the object stored may be routed from it right before its store.
+        return [flow.values[store.value].origin if store.value is not None
+                else (_stored_value(ir.instructions[store.site[0]]), lane(store)) for store in stores]
 
     result = []
     for index, edit in enumerate(edits):
         taps = tuple((tap.name, tap.value_type) for tap in edit.taps)
 
-        def arguments(block, read=None, edit=edit):
-            return tuple(argument for tap in edit.taps for argument in tap_arguments(tap, block, read))
+        def arguments(block, read=None, visit=(0, 1), edit=edit):
+            return tuple(argument for tap in edit.taps for argument in tap_arguments(tap, block, read, visit))
 
         def exit_sites(exits):
             return tuple(SpirvSurfaceSite((), arguments(block), exit=position) for position, block, _lane in exits)
@@ -172,18 +257,40 @@ def spirv_surface_plan(ir, flow: NativeFlow, edits) -> tuple[SpirvSurfaceEdit, .
             raise ShaderGraphError("A packed channel must be stored in one place to change it before packing.")
         sites = []
         for block, stores in blocks.items():
+            if edit.form == "stored":
+                # A lane stored again in its block (a geometry shader's next vertex) starts another visit with its own
+                # taps; each store's lanes are computed right before it.
+                visits = store_visits(stores)
+                for number, visit in enumerate(visits):
+                    tapped = arguments(block, visit=(number, len(visits)))
+                    placed = [(store.site[0], lane(store), edit.split.channel.lanes.index(store.lane))
+                              for store in visit]
+                    sites.extend(SpirvSurfaceSite(tuple(item for item in placed if item[0] == index), tapped)
+                                 for index in sorted({item[0] for item in placed}))
+                continue
             stores.sort(key=lambda item: item.lane)
             tapped = arguments(block)
-            frontier = () if edit.form == "stored" else tuple(flow.values[item].origin for item in edit.split.frontier)
-            sites.append(SpirvSurfaceSite(tuple((store.site[0], lane(store), component)
-                                                for component, store in enumerate(stores)), tapped, frontier))
+            placed = [(store.site[0], lane(store), component) for component, store in enumerate(stores)]
+            sites.append(SpirvSurfaceSite(tuple(placed), tapped,
+                                          tuple(flow.values[item].origin for item in edit.split.frontier)))
         result.append(SpirvSurfaceEdit(f"REasySurface_{index}", edit.value_type, edit.expression, taps, tuple(sites),
                                        edit.material))
+    result = [replace(item, statements=edit.statements) for item, edit in zip(result, edits)]
+    if any(edit.material for edit in result):
+        address = _material_addresses(ir, elements)
+        result = [replace(edit, sites=tuple(
+            replace(site, material_address=address(_site_position(ir.instructions, site))) for site in edit.sites))
+            if edit.material else edit for edit in result]
     return tuple(result)
 
 
 def _stored_value(row) -> int:
     return row.values[_STORED[row.opcode]]
+
+
+@lru_cache(None)
+def _core() -> dict:
+    return grammar()[0]
 
 
 class _NotInlined(Exception):
@@ -249,9 +356,7 @@ class SpirvSurfaceSplice:
                 if f"{edit.name}_{component}" not in self.helpers:
                     raise SpirvError(f"Compiled Vulkan carrier omitted surface helper {edit.name}_{component}")
             for site in edit.sites:
-                key = (site.exit if site.exit is not None else _after_phis(ir.instructions, site.read + 1)
-                       if site.read is not None else min(index for index, _lane, _component in site.stores))
-                self.sites.setdefault(key, []).append((edit, site))
+                self.sites.setdefault(_site_position(ir.instructions, site), []).append((edit, site))
         self.positions = {row.result: index for index, row in enumerate(ir.instructions) if row.result is not None}
         self.stored: dict[int, list] = {}
         self.extracts: dict = {}
@@ -322,7 +427,8 @@ class SpirvSurfaceSplice:
         arguments = []
         for parameter, value in zip(parameters, [(item, ()) for item in inputs] + list(taps)):
             pointer = self.native.definitions[self.linker.ids[parameter.type_id]]
-            arguments.append(self.convert(value, pointer.values[2] if pointer.opcode == 32 else pointer.result))
+            arguments.append(value if value == _LATE else
+                             self.convert(value, pointer.values[2] if pointer.opcode == 32 else pointer.result))
         pending, emit = [], self.emit
         self.emit = pending.append
         extracts = dict(self.extracts)
@@ -336,6 +442,8 @@ class SpirvSurfaceSplice:
             self.emit(row)
         if value is not None:
             return value
+        if _LATE in arguments:
+            raise ShaderGraphError(_LATE_READ)
         values = []
         for parameter, argument in zip(parameters, arguments):
             parameter_type = self.linker.ids[parameter.type_id]
@@ -360,6 +468,8 @@ class SpirvSurfaceSplice:
 
         def operand(identifier):
             if identifier in values:
+                if _LATE in values[identifier]:
+                    raise ShaderGraphError(_LATE_READ)
                 return self.materialize(values[identifier], self.linker.ids[carrier[identifier].type_id])
             if identifier in pointers or identifier not in self.linker.ids:
                 raise _NotInlined
@@ -398,6 +508,8 @@ class SpirvSurfaceSplice:
                 result = self.symbolic(row.values[0], values, operand)
                 if len(result) != 1:
                     raise _NotInlined
+                if result[0] == _LATE:
+                    raise ShaderGraphError(_LATE_READ)
                 return result[0]
             elif code == _OP_CONSTRUCT:
                 values[row.result] = [*self.symbolic(item, values, operand) for item in row.values[2:]]
@@ -418,6 +530,9 @@ class SpirvSurfaceSplice:
                 values[row.result] = self.symbolic(row.values[2], values, operand)
             elif row.result is None or row.type_id is None or code in _PLACED:
                 raise _NotInlined
+            elif any(item.is_id and item.kind not in {"IdResult", "IdResultType"}
+                     and _LATE in values.get(item.value, ()) for item in row.operands):
+                values[row.result] = self.lanes_apart(row, values, operand)
             else:
                 mapped = row.remap({item.value: operand(item.value) for item in row.operands
                                     if item.is_id and item.kind not in {"IdResult", "IdResultType"}})
@@ -440,6 +555,35 @@ class SpirvSurfaceSplice:
             return values[identifier]
         return self.atoms(operand(identifier))
 
+    def lanes_apart(self, row, values, operand) -> list:
+        """A lane reading a late value is late too and refuses only if the edit's value uses it: the carrier computes on
+        whole vectors, but a store site takes only its own lanes."""
+        entry = _core().get(row.opcode, {})
+        scalars = self.native.children(self.linker.ids[row.type_id])
+        if entry.get("class") not in _PURE_CLASSES or entry.get("opname") in _MIXING or not scalars:
+            raise ShaderGraphError(_LATE_READ)
+        sources = []
+        for item in row.operands:
+            if item.kind in {"IdResult", "IdResultType"}:
+                continue
+            if not item.is_id:
+                sources.append((False, item.value))
+                continue
+            atoms = self.symbolic(item.value, values, operand)
+            if len(atoms) != len(scalars):
+                raise ShaderGraphError(_LATE_READ)
+            sources.append((True, atoms))
+        result = []
+        for lane, scalar in enumerate(scalars):
+            if any(lanes and source[lane] == _LATE for lanes, source in sources):
+                result.append(_LATE)
+                continue
+            arguments = [self.materialize([source[lane]],
+                                          self.native.at(self.type_of(source[lane][0]), source[lane][1]))
+                         if lanes else source for lanes, source in sources]
+            result.append(self.atom(self.instruction(row.opcode, scalar, *arguments), 0))
+        return result
+
     def before(self, index):
         if self.rows[index].opcode == _OP_LABEL:
             self.block = self.rows[index].result
@@ -447,12 +591,18 @@ class SpirvSurfaceSplice:
         if ending is not None and ending[2] == _ENDS and ending[0].records:
             self.emit(self.builder.instruction(_OP_STORE, self.recorded(), self.linker.boolean(True)))
         for edit, site in self.sites.get(index, ()):
-            if any(self.positions[identifier] > index for identifier, _lane in (*site.arguments, *site.frontier)
-                   if identifier not in {_RECORDED, _FALSE, _ZERO}):
-                raise ShaderGraphError("An edit reads a value the shader computes after it stores the edited channel.")
+            if any(self.positions[identifier] > index for identifier, _lane in site.frontier):
+                raise ShaderGraphError(_LATE_READ)
             inputs = self.input_values()
-            taps = [self.argument(identifier, lane, site) for identifier, lane in site.arguments]
+            if edit.material:
+                inputs = [*inputs, site.material_address]
+            taps = [_LATE if identifier not in {_RECORDED, _FALSE, _ZERO} and self.positions[identifier] > index
+                    else self.argument(identifier, lane, site) for identifier, lane in site.arguments]
+            # A site storing the channel computes only the components it stores.
+            needed = {component for _store, _lane, component in site.stores} \
+                if site.stores and not site.frontier else None
             results = [self.helper_value(f"{edit.name}_{component}", inputs, taps)
+                       if needed is None or component in needed else None
                        for component in range(value_width(edit.value_type))]
             if edit.output:
                 variable, vector = self.outputs[edit.output]

@@ -1,0 +1,48 @@
+{
+ "format": 2,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "component": {
+  "type": "via.render.WaterMesh",
+  "mesh": "Mesh",
+  "material": "Material",
+  "priority": "WaterMeshPriority",
+  "occlusion": "OcclusionFill"
+ },
+ "drawn": {
+  "lod": 0,
+  "group": 0,
+  "material": 0
+ },
+ "programs": {
+  "plain": "WaterSurfaceDeferred{core}",
+  "occlusion": "WaterSurfaceDeferred{core}WzOccCMGB"
+ },
+ "constants": {
+  "buffer": "cbWaterSurfaceDeferred",
+  "fields": {
+   "gWaterSurfaceBlendColor": "ColorBlend",
+   "gWaterSurfaceBlendNormal": "NormalBlend",
+   "gWaterSurfaceBlendEmission": "EmissionBlend"
+  }
+ },
+ "phase": "blending",
+ "segment": 43,
+ "targets": {
+  "plain": [
+   ["phase", 0],
+   ["phase", 1],
+   ["phase", 2]
+  ],
+  "occlusion": [
+   ["phase", 0],
+   ["phase", 1],
+   ["phase", 2],
+   ["gbuffer", 3],
+   ["gbuffer", 0]
+  ]
+ },
+ "depth_read": "gReadDepth",
+ "blend_factor": [0.5, 0.5, 0.5, 0.5],
+ "controller": "via.render.WaterMaterialController"
+}

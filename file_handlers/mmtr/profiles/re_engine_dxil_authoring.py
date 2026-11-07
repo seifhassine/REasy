@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from .constant_words import ConstantWord, constant_word, word_tag, override_word, dynamic_word, OVERRIDE_PATTERN, normalize_word_expressions
+from .constant_words import (ConstantWord, word_tag, override_word, dynamic_word, OVERRIDE_PATTERN,
+                             normalize_word_expressions)
 
 from dataclasses import dataclass, replace
 import pickle
@@ -22,6 +23,7 @@ from file_handlers.sdf.shader_graph import (
     ShaderContract,
     ShaderContractBuffer,
     ShaderContractResource,
+    ShaderContractVariable,
     ShaderGraphError,
     ShaderSignatureField,
     validate_shader_contract,
@@ -30,6 +32,8 @@ from file_handlers.sdf.shader_graph import (
     HLSL_RESERVED_WORDS, _hlsl_variable_parts, _identifier, mask_components, signature_declaration, signature_member,
 )
 
+lazy from file_handlers.sdf.dxil_structured_views import coalesce_constant_views
+lazy from file_handlers.sdf.shader_graph_constant_buffer import constant_view_overrides
 lazy from file_handlers.sdf.shader_graph_texture import texture_coordinate_width
 lazy from file_handlers.sdf.hlsl_contract import (resource_identifier, resource_declaration as _resource_declaration, contract_structures as _contract_structures, contract_cbuffer as _contract_cbuffer)
 from .re_engine_dxil_recovery import LLVM_NAME, ReEngineDxilSemanticIr
@@ -62,6 +66,9 @@ _DXIL_OPTIMIZER_PASSES = (
     "-hlsl-dxilfinalize", "-hlsl-dxilemit",
 )
 _DXIL_BUILD_CONFIGURATION = ("material-dxil-v1", "REasyShaderGraph.hlsl", "-Ges", "-O3", "-WX", "-Qstrip_debug")
+# Entry shader-flag bits DXC's validator does not compare with the shader's use: skip optimization, no math
+# refactoring, early depth, all resources bound, level-9 comparison filtering, ROVs, native low precision, reserved.
+_UNCOLLECTED_SHADER_FLAGS = sum(1 << bit for bit in (0, 1, 3, 8, 14, 18, 23, 36))
 _NATIVE_BUILD_CACHE = NativeBuildCache()
 _NATIVE_ACTIVITY = {"compile": 0, "validate": 0}
 _LAST_NATIVE_BATCH = {}
@@ -81,7 +88,7 @@ def _native_pipeline_functions():
             enrich_dxil_shader, parse_dxbc, ShaderContract.from_shader.__func__,
             implementation_contract, complete_typed_resources,
             validate_shader_contract, _merge_entry, _attach_reflection,
-            _constant_extracts, _execute_dxil_job,
+            _constant_extracts, _collected_flags_cleared, _execute_dxil_job,
             _prepare_dxil_job, _entry_name, _dxil_job_key, stage_input_library,
             DxilEntryMetadata.parse.__func__, DxilEntryMetadata._properties,
             DxilEntryMetadata.input_interpolation, DxilEntryMetadata.output_interpolation,
@@ -318,6 +325,16 @@ def _structured_sink_member(layout: ShaderContractBuffer | None, stride: int) ->
     return path, scalar[1]
 
 
+def _instance_words(resource: ShaderContractResource) -> ShaderContractBuffer:
+    stride = int(resource.sample_count)
+    if stride <= 0 or stride % 16:
+        raise ShaderGraphError(f"{resource.name} has no whole-register element stride.")
+    # The length goes in the declaration: an array_length of 1 declares no array, and a one-register element is one.
+    words = ShaderContractVariable("words", 0, stride, f"uint4[{stride // 16}]", "uint4")
+    return ShaderContractBuffer(resource.name, stride, resource.bind_point, resource.bind_count, (words,),
+                                resource.register_space)
+
+
 def _touch_resource(resource: ShaderContractResource) -> list[str]:
     value = _resource_object(resource)
     if resource.input_type == "raytracing-acceleration-structure":
@@ -371,9 +388,14 @@ def _carrier_source(
     touch_contract: bool = True,
     retained_resources: frozenset[str] = frozenset(),
     surface_plan: tuple = (),
+    material_instances: str = "",
 ) -> str:
     if contract.stage not in {"pixel", "vertex", "compute"}:
         raise ShaderGraphError(f"Material DXIL carrier does not yet support {contract.stage} shaders.")
+    reads_material = bool(material_expressions) or any(edit.material or edit.address for edit in surface_plan)
+    # A retained copy per drawn instance is read as its words too (Vulkan passes relocate their reads to them).
+    instances = (contract.resource(material_instances)
+                 if material_instances and (reads_material or material_instances in retained_resources) else None)
     lines = [
         "// Canonical REasy material-contract carrier.",
         "// Every declaration is generated from the semantic SDF/DXIL contract.",
@@ -403,6 +425,9 @@ def _carrier_source(
 
     resources = [item for item in contract.resources if item.input_type != "constant-buffer"]
     declared: set[str] = set()
+    # REasy's code reads a structured buffer's records as uint slots, so one it indexes is declared that way.
+    generated = "\n".join((*scalar_expressions.values(), *(material_expressions or {}).values(), helpers,
+                           *(text for edit in surface_plan for text in (*edit.statements, edit.expression))))
     for resource in resources:
         identifier = resource_identifier(resource)
         if identifier in declared:
@@ -410,23 +435,36 @@ def _carrier_source(
                 f"Resources collide on canonical HLSL name {identifier}."
             )
         declared.add(identifier)
-        structured_layout = next((b for b in contract.structured_buffers if b.name == resource.name), None)
+        structured_layout = None if re.search(rf"(?<!\w){re.escape(identifier)}\s*\[", generated) else next(
+            (b for b in contract.structured_buffers if b.name == resource.name), None)
+        if resource is instances and resource.input_type == "structured-buffer":
+            structured_layout = _instance_words(resource)
         lines.extend((_resource_declaration(resource, structured_layout), ""))
         if touch_contract or resource.name in retained_resources:
             touches.extend(_touch_resource(resource))
 
-    if material_expressions or any(edit.material for edit in surface_plan):
+    if reads_material:
         shared = next((r for r in contract.resources if r.name == "BindlessBuffer"), None)
         table = next((r for r in contract.resources if r.name == "BindlessConstantBufferViewTbl"), None)
-        if table is not None:
+        if instances is not None:
+            if table is not None or shared is not None:
+                raise ShaderGraphError("This pass reads the material both per instance and from its record.")
+            # The address is the element's index; the pass's contract sizes a raw copy's elements.
+            layout = contract.structured_buffer(instances.name)
+            if instances.input_type != "structured-buffer" and (layout is None or layout.byte_size <= 0):
+                raise ShaderGraphError("The pass's copy of the material per drawn instance has no element size.")
+            element = (f"{resource_identifier(instances)}[address].words[byteOffset >> 4][(byteOffset >> 2) & 3u]"
+                       if instances.input_type == "structured-buffer" else
+                       f"{resource_identifier(instances)}.Load(address * {layout.byte_size}u + byteOffset)")
+            word = (f"    return {element};",)
+        elif table is not None:
             if material_buffer_size <= 0 or material_buffer_size % 16:
                 raise ShaderGraphError("Material constant-buffer size is not register aligned.")
-            lines.extend((
-                f"struct REasyMaterialWords {{ uint4 words[{material_buffer_size // 16}]; }};",
-                "float REasyMaterialLoad(uint address, uint byteOffset)", "{",
+            lines.extend((f"struct REasyMaterialWords {{ uint4 words[{material_buffer_size // 16}]; }};", ""))
+            word = (
                 "    ConstantBuffer<REasyMaterialWords> material = ResourceDescriptorHeap[NonUniformResourceIndex(address)];",
-                "    return asfloat(material.words[byteOffset >> 4][(byteOffset >> 2) & 3u]);", "}", "",
-            ))
+                "    return material.words[byteOffset >> 4][(byteOffset >> 2) & 3u];",
+            )
         elif shared is not None and shared.input_type == "structured-buffer" and shared.sample_count in (16, 256):
             shared_layout = next((b for b in contract.structured_buffers if b.name == shared.name), None)
             field_name = "slot0"
@@ -441,13 +479,13 @@ def _carrier_source(
                 if shared.sample_count == 256 else
                 f"{resource_identifier(shared)}[address + (byteOffset >> 4)].{field_name}[(byteOffset >> 2) & 3u]"
             )
-            lines.extend((
-                "float REasyMaterialLoad(uint address, uint byteOffset)", "{",
-                f"    return asfloat({load_expression});",
-                "}", "",
-            ))
+            word = (f"    return {load_expression};",)
         else:
             raise ShaderGraphError("Material parameter overrides have no native storage backend.")
+        # A descriptor index is read as the word itself, so its heap read takes the record's load directly.
+        lines.extend(("uint REasyMaterialWord(uint address, uint byteOffset)", "{", *word, "}", "",
+                      "float REasyMaterialLoad(uint address, uint byteOffset)", "{",
+                      "    return asfloat(REasyMaterialWord(address, byteOffset));", "}", ""))
 
     input_ids = {
         field.key: signature_member("in", field)
@@ -837,12 +875,13 @@ def _apply_constant_overrides(
     return final
 
 
-def _apply_material_overrides(entry, carrier_entry, contract, expressions, entry_metadata):
+def _apply_material_overrides(entry, carrier_entry, contract, expressions, entry_metadata, instances=""):
     if not expressions:
         return entry
     additions: dict[int, list[str]] = {}
     replacements = {}
-    for index, access in enumerate(material_record_accesses(entry, contract, entry_metadata=entry_metadata)):
+    for index, access in enumerate(material_record_accesses(entry, contract, entry_metadata=entry_metadata,
+                                                            instances=instances)):
         reads = [word for word in access.words if word.byte_offset in expressions]
         if not reads:
             continue
@@ -890,19 +929,42 @@ def _merge_entry(
     native_metadata: DxilEntryMetadata | None = None,
     carrier_metadata: DxilEntryMetadata | None = None,
     surface_plan: tuple = (),
+    material_instances: str = "",
 ) -> str:
-    steps = None
-    if scalar_expressions or material_expressions or any(
-            source != target for source, target in material_word_offsets.items()):
-        def steps(body, carrier_entry, metadata):
-            body = _apply_constant_overrides(body, carrier_entry, candidate_contract, scalar_expressions)
-            body = _apply_material_overrides(body, carrier_entry, candidate_contract, material_expressions, metadata)
-            return relocate_material_record_words(body, candidate_contract, dict(material_word_offsets),
-                                                  entry_metadata=metadata)
+    def overridden(body, carrier_entry, metadata):
+        body = _apply_constant_overrides(body, carrier_entry, candidate_contract, scalar_expressions)
+        body = _apply_material_overrides(body, carrier_entry, candidate_contract, material_expressions, metadata,
+                                         material_instances)
+        return relocate_material_record_words(body, candidate_contract, dict(material_word_offsets),
+                                              entry_metadata=metadata)
+    steps = overridden if scalar_expressions or material_expressions or any(
+        source != target for source, target in material_word_offsets.items()) else None
+    # Carrier code the surface plan splices into the native entry keeps its instruction metadata (the alias scopes DXC
+    # gives an inlined helper's returned resource, branch and loop hints), which names the carrier's own metadata, kept
+    # in the merged module; the merge reads every reference in the entry as the native module's, so those are hidden.
+    carrier = re.sub(r"(, ![A-Za-z][\w.]* )!(\d+)", r"\1!reasy.carrier.\2", carrier)
     return fastdxiltext.merge_entry(
         original, carrier, entry_point, native_metadata, carrier_metadata, indexed_reads, source_contract,
         candidate_contract, texture_overrides, surface_plan, steps,
-        (DxilEntryMetadata.parse, carrier_input_rows, value_width, DXIL_RESOURCE_CLASSES, DXIL_RESOURCE_CLASS_NUMBERS))
+        (DxilEntryMetadata.parse, carrier_input_rows, value_width, DXIL_RESOURCE_CLASSES, DXIL_RESOURCE_CLASS_NUMBERS),
+    ).replace("!reasy.carrier.", "!")
+
+
+def _collected_flags_cleared(assembly: str) -> str:
+    """-hlsl-dxilfinalize only adds to the flags it loads, so a use an edit removes (a pass's only descriptor-heap read)
+    would keep a flag the validator refuses."""
+    entry = DxilEntryMetadata.parse(assembly.splitlines())
+    flags = entry.shader_flags()
+    if not flags & ~_UNCOLLECTED_SHADER_FLAGS:
+        return assembly
+    node = entry.operands[4]
+    properties = list(entry.definitions[node])
+    properties[properties[::2].index("i32 0") * 2 + 1] = f"i64 {flags & _UNCOLLECTED_SHADER_FLAGS}"
+    rewritten, count = re.subn(rf"^{re.escape(node)} = !\{{[^\n]*\}}$", f"{node} = !{{{', '.join(properties)}}}",
+                               assembly, count=1, flags=re.MULTILINE)
+    if count != 1:
+        raise ShaderGraphError("DXIL entry properties are invalid.")
+    return rewritten
 
 
 def _attach_reflection(assembly: str, carrier: bytes, *, prepared: _PreparedCarrier | None = None) -> str:
@@ -929,6 +991,7 @@ class _NativeDxilJob:
     optimizer_passes: tuple
     configuration: tuple
     surface_plan: tuple = ()
+    material_instances: str = ""
 
 
 def _dxil_job_key(runtime, job):
@@ -937,7 +1000,7 @@ def _dxil_job_key(runtime, job):
         job.expressions, job.texture_overrides, job.material_expressions,
         job.material_word_offsets, job.indexed_reads, job.entry_point,
         job.material_buffer_size, job.carrier_arguments, job.optimizer_passes,
-        job.configuration, job.surface_plan)
+        job.configuration, job.surface_plan, job.material_instances)
 
 
 def _prepare_dxil_job(
@@ -952,6 +1015,7 @@ def _prepare_dxil_job(
     material_buffer_size: int = 0,
     material_word_offsets: Mapping[int, int] | None = None,
     surface_plan: tuple = (),
+    material_instances: str = "",
 ):
     expressions = normalize_word_expressions(scalar_expressions)
     texture_overrides = dict(texture_binding_overrides or {})
@@ -998,7 +1062,7 @@ def _prepare_dxil_job(
     thread_group_size = native_metadata.thread_group_size()
     source = per_build("carrier_sources", (
         carrier_contract, entry_point, tuple(expressions.items()), helpers, tuple(material_expressions.items()),
-        material_buffer_size, thread_group_size, tuple(surface_plan),
+        material_buffer_size, thread_group_size, tuple(surface_plan), material_instances,
     ), lambda: _carrier_source(
         carrier_contract,
         entry_point=entry_point,
@@ -1008,6 +1072,7 @@ def _prepare_dxil_job(
         material_buffer_size=material_buffer_size,
         thread_group_size=thread_group_size,
         surface_plan=tuple(surface_plan),
+        material_instances=material_instances,
     ))
     passes = list(_DXIL_OPTIMIZER_PASSES)
     if surface_plan:
@@ -1024,6 +1089,7 @@ def _prepare_dxil_job(
         tuple(material_expressions.items()), tuple(material_word_offsets.items()),
         tuple(indexed_reads), entry_point, material_buffer_size,
         tuple(_CARRIER_ARGUMENTS), tuple(passes), tuple(_DXIL_BUILD_CONFIGURATION), tuple(surface_plan),
+        material_instances,
     )
     runtime = _native_build_runtime()
     return job, _dxil_job_key(runtime, job), runtime
@@ -1043,8 +1109,11 @@ def _execute_dxil_job(job: _NativeDxilJob) -> ReEngineDxilBuild:
     except ValueError as exc:
         raise ShaderGraphError(f"DXC could not build the native material contract: {exc}") from exc
     reflected_carrier = prepared.contract
+    views = constant_view_overrides(job.source)
     carrier_report = validate_shader_contract(
-        replace(job.carrier_contract, inputs=reflected_carrier.inputs, outputs=reflected_carrier.outputs), reflected_carrier,
+        replace(job.carrier_contract, inputs=reflected_carrier.inputs, outputs=reflected_carrier.outputs),
+        replace(reflected_carrier, resources=tuple(item for item in reflected_carrier.resources if not (
+            item.register_class == "b" and (item.register_space, item.bind_point) in views))),
     )
     if not carrier_report.compatible:
         raise ShaderGraphError(
@@ -1065,11 +1134,13 @@ def _execute_dxil_job(job: _NativeDxilJob) -> ReEngineDxilBuild:
         native_metadata=native_metadata,
         carrier_metadata=prepared.metadata,
         surface_plan=job.surface_plan,
+        material_instances=job.material_instances,
     )
     try:
-        merged = fastdxiltext.always_inline(merged)
+        merged = _collected_flags_cleared(fastdxiltext.always_inline(merged))
         bitcode = optimize_dxil(merged, job.optimizer_passes)
-        rebuilt = assemble_dxil(_attach_reflection(disassemble_dxil(bitcode), carrier_result.bytecode, prepared=prepared)).bytecode
+        rebuilt = assemble_dxil(coalesce_constant_views(_attach_reflection(
+            disassemble_dxil(bitcode), carrier_result.bytecode, prepared=prepared), views)).bytecode
         _NATIVE_ACTIVITY["validate"] += 1
         rebuilt = validate_dxil(rebuilt)
         shader = enrich_dxil_shader(parse_dxbc(rebuilt), rebuilt)
@@ -1099,6 +1170,7 @@ def rebuild_re_engine_dxil(
     material_word_offsets: Mapping[int, int] | None = None,
     constant_view_overrides: Mapping[tuple[int, int], tuple[int, int]] | None = None,
     surface_plan: tuple = (),
+    material_instances: str = "",
 ) -> ReEngineDxilBuild:
     overrides = dict(texture_binding_overrides or {})
     overrides.update({('b', *view): target for view, target in (constant_view_overrides or {}).items()})
@@ -1107,6 +1179,7 @@ def rebuild_re_engine_dxil(
         texture_binding_overrides=overrides, helpers=helpers,
         material_expressions=material_expressions, material_buffer_size=material_buffer_size,
         material_word_offsets=material_word_offsets, surface_plan=surface_plan,
+        material_instances=material_instances,
     )
     cached = _NATIVE_BUILD_CACHE.get(cache_key)
     if cached is not None:

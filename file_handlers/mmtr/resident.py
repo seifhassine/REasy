@@ -27,8 +27,13 @@ _runtime = Lock()
 _runtime_ready = _runtime_offered = False
 
 
+def view_packing(kind: int, dimension: int, entry: tuple) -> int:
+    if kind == RANGE_CBV:
+        return 1
+    return (entry[2] or 4) if kind == RANGE_SRV and dimension == BUFFER else 0
+
+
 def _inflate() -> None:
-    """Lets the native device inflate GDeflate streams, once."""
     global _inflates
     with _inflating:
         if not _inflates:
@@ -227,11 +232,8 @@ class Resident:
             return item if held is item[-1] else (*item[:-1], held)
 
         def entries(kind: int, dimension: int, items: Sequence[tuple]) -> tuple:
-            if kind == RANGE_CBV:
-                return tuple(kept_entry(item, 1) for item in items)
-            if kind == RANGE_SRV and dimension == BUFFER:
-                # A buffer view's elements are its stride apart, or 4 bytes for a raw view.
-                return tuple(kept_entry(item, item[2] or 4) for item in items)
+            if kind == RANGE_CBV or kind == RANGE_SRV and dimension == BUFFER:
+                return tuple(kept_entry(item, view_packing(kind, dimension, item)) for item in items)
             if kind == RANGE_SRV:
                 return tuple(self.read(dimension, item) if len(item) == 7 else item for item in items)
             return tuple(items)
@@ -282,4 +284,5 @@ class Resident:
         return self.scene.run(steps, list(read))
 
 
-__all__ = ["DEPTH_STENCIL", "RENDER_TARGET", "Resident", "TEXTURE_2D", "TEXTURE_3D", "UNORDERED_ACCESS", "warm_up"]
+__all__ = ["DEPTH_STENCIL", "RENDER_TARGET", "Resident", "TEXTURE_2D", "TEXTURE_3D", "UNORDERED_ACCESS", "view_packing",
+           "warm_up"]

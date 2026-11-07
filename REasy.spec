@@ -8,7 +8,8 @@ datas = [('file_handlers/mesh/blender/reasy_blender.py', 'file_handlers/mesh/ble
 binaries = [('.cache/gdeflate/libGDeflate.dll', 'tools/runtimes/win-x64/native'), ('.cache/msvc/msvcp140.dll', '.'),
             ('.cache/dxc/dxcompiler.dll', '.')]
 hiddenimports = ['fast_pakresolve', 'fast_path_search', 'fast_string_scan', 'fastmesh', 'fastsdftex',
-                 'fastmatpreview', 'fastdxil', 'fastdxiltext', 'fastsurface', 'fastkey', 'texture2ddecoder']
+                 'fastmatpreview', 'fastdxil', 'fastdxiltext', 'fastsurface', 'fastgraph', 'fastjcns', 'fastkey',
+                 'texture2ddecoder']
 hiddenimports += collect_submodules('file_handlers')
 texture_datas, texture_binaries, texture_imports = collect_all('texture2ddecoder')
 datas += texture_datas

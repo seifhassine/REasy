@@ -8,12 +8,14 @@ lazy import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
+from file_handlers.engine_math import engine_sorted
 
+lazy from file_handlers.mdf.mdf_file import material_shading_types
 lazy from file_handlers.sdf.models import program_names
 
 lazy from .material_preview import MaterialPreviewError, gbuffer_route
 
-CATALOG_FORMAT = 2
+CATALOG_FORMAT = 6
 CATALOG_DIRECTORY = "resources/data/pretransform"
 # Part of the game's G-buffer program names for this route (``pass_choice``).
 ROUTE = "DeferredPreTransform"
@@ -37,7 +39,9 @@ _POSITION_SIZE, _NORMAL_SIZE, _WHITE_SIZE = 12, 8, 4
 VERTEX_SUM = "vertex_sum"
 BLEND_PLACES = (VERTEX_SUM,)
 # By compression type: delta bytes per vertex with normal-recalculation data (four more without), and the lanes' steps.
-_BLEND_FORMS = {0: (4, (2047, 1023, 2047)), 1: (8, (2047, 1023, 2047)), 3: (3, (255, 255, 255))}
+# Type 2 holds float deltas; its programs read no steps, which the game fills as for types 0 and 1.
+_BLEND_FORMS = {0: (4, (2047, 1023, 2047)), 1: (8, (2047, 1023, 2047)), 2: (16, (2047, 1023, 2047)),
+                3: (3, (255, 255, 255))}
 
 
 class PreTransformCatalogError(ValueError):
@@ -46,7 +50,7 @@ class PreTransformCatalogError(ValueError):
 
 @dataclass(frozen=True, slots=True)
 class SystemProgram:
-    file: str
+    file: str | None
     name: str
 
 
@@ -71,7 +75,6 @@ class PreTransformCatalog:
     system_skins_blend: bool | None
     system_skinning: Mapping[str, SystemProgram]
     system_blend: Mapping[str, SystemProgram]
-    source: Mapping = field(default_factory=dict)
     # None refuses a target the file gives no place.
     blend_place: str | None = None
     # Whether a boneless mesh runs the master's ``Static`` program matching the ``Skinning`` one.
@@ -81,11 +84,22 @@ class PreTransformCatalog:
     still_without_blend: bool | None = None
     # How masters skin a copied LOD: one dispatch (True) or one per submesh (False); None when no capture tells.
     copied_skin_whole: bool | None = None
+    blend_by_normals: bool = False
+    blend_normals: Mapping[int, SystemProgram] = field(default_factory=dict)
+    blend_still_normals: SystemProgram | None = None
+    blend_first_lod_only: bool = False
+    blend_writing_normals: Mapping[int, SystemProgram] = field(default_factory=dict)
+    blend_vertex_normal_read: bool = False
+    unblended_lods_deformed: bool = False
+    shading: frozenset[str] | None = None
+    shading_by_setting: frozenset[str] = frozenset()
+    decal_no_pre_transform: bool | None = None
 
     def files(self) -> tuple[str, ...]:
-        programs = (*self.blend.values(), self.blend_still, self.calculate, self.write, self.write_excluding_edge,
+        programs = (*self.blend.values(), self.blend_still, *self.blend_normals.values(), self.blend_still_normals,
+                    *self.blend_writing_normals.values(), self.calculate, self.write, self.write_excluding_edge,
                     *self.system_skinning.values(), *self.system_blend.values())
-        return tuple(dict.fromkeys(program.file for program in programs if program is not None))
+        return tuple(dict.fromkeys(program.file for program in programs if program is not None and program.file))
 
 
 def _program_to_dict(program: SystemProgram | None) -> dict | None:
@@ -93,7 +107,7 @@ def _program_to_dict(program: SystemProgram | None) -> dict | None:
 
 
 def _program_from_dict(data: Mapping | None) -> SystemProgram | None:
-    return None if data is None else SystemProgram(str(data["file"]), str(data["program"]))
+    return None if data is None else SystemProgram(data["file"] and str(data["file"]), str(data["program"]))
 
 
 def catalog_to_dict(catalog: PreTransformCatalog) -> dict:
@@ -111,7 +125,18 @@ def catalog_to_dict(catalog: PreTransformCatalog) -> dict:
             "system_blend": {key: _program_to_dict(program) for key, program in sorted(catalog.system_blend.items())},
             "blend_place": catalog.blend_place, "static_like_skinning": catalog.static_like_skinning,
             "still_without_blend": catalog.still_without_blend, "copied_skin_whole": catalog.copied_skin_whole,
-            "source": dict(catalog.source)}
+            "blend_by_normals": catalog.blend_by_normals,
+            "blend_normals": {str(kind): _program_to_dict(program)
+                              for kind, program in sorted(catalog.blend_normals.items())},
+            "blend_still_normals": _program_to_dict(catalog.blend_still_normals),
+            "blend_first_lod_only": catalog.blend_first_lod_only,
+            "blend_writing_normals": {str(kind): _program_to_dict(program)
+                                      for kind, program in sorted(catalog.blend_writing_normals.items())},
+            "blend_vertex_normal_read": catalog.blend_vertex_normal_read,
+            "unblended_lods_deformed": catalog.unblended_lods_deformed,
+            "shading": None if catalog.shading is None else sorted(catalog.shading),
+            "shading_by_setting": sorted(catalog.shading_by_setting),
+            "decal_no_pre_transform": catalog.decal_no_pre_transform}
 
 
 def _flag(value) -> bool | None:
@@ -122,8 +147,10 @@ def catalog_from_dict(data: Mapping) -> PreTransformCatalog:
     if data.get("format") != CATALOG_FORMAT:
         raise PreTransformCatalogError(f"pre-transform catalog format {data.get('format')!r} is not {CATALOG_FORMAT}")
     blend = {int(kind): _program_from_dict(program) for kind, program in data["blend"].items()}
+    blend_normals = {int(kind): _program_from_dict(program) for kind, program in data["blend_normals"].items()}
+    writing = {int(kind): _program_from_dict(program) for kind, program in data["blend_writing_normals"].items()}
     system_blend = {str(key): _program_from_dict(program) for key, program in data["system_blend"].items()}
-    kinds = {*blend, *(int(key.split(" ", 1)[0]) for key in system_blend)}
+    kinds = {*blend, *blend_normals, *writing, *(int(key.split(" ", 1)[0]) for key in system_blend)}
     if not kinds <= _BLEND_FORMS.keys():
         raise PreTransformCatalogError(f"no capture shows the blend-shape compression types {sorted(kinds)}")
     if data["blend_place"] not in (None, *BLEND_PLACES):
@@ -135,8 +162,12 @@ def catalog_from_dict(data: Mapping) -> PreTransformCatalog:
         _program_from_dict(data["write_excluding_edge"]), bool(data["write_by_submesh"]),
         frozenset(map(str, data["skinning"])), _flag(data["skin_by_range"]), _flag(data["system_skins_blend"]),
         {str(key): _program_from_dict(program) for key, program in data["system_skinning"].items()}, system_blend,
-        dict(data.get("source", {})), data["blend_place"], bool(data["static_like_skinning"]),
-        _flag(data["still_without_blend"]), _flag(data["copied_skin_whole"]))
+        data["blend_place"], bool(data["static_like_skinning"]),
+        _flag(data["still_without_blend"]), _flag(data["copied_skin_whole"]), bool(data["blend_by_normals"]),
+        blend_normals, _program_from_dict(data["blend_still_normals"]), bool(data["blend_first_lod_only"]), writing,
+        bool(data["blend_vertex_normal_read"]), bool(data["unblended_lods_deformed"]),
+        None if data["shading"] is None else frozenset(map(str, data["shading"])),
+        frozenset(map(str, data["shading_by_setting"])), _flag(data["decal_no_pre_transform"]))
 
 
 pretransform_catalog_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, PreTransformCatalogError,
@@ -182,6 +213,10 @@ class BlendShapes:
     ranged: bool
 
     @property
+    def holds_normals(self) -> bool:
+        return self.stride > _BLEND_FORMS[self.compression][0]
+
+    @property
     def channel_count(self) -> int:
         return max((target.channel_location + target.channel_count for target in self.targets), default=0)
 
@@ -207,6 +242,7 @@ class ChainLevel:
     normals: NormalRecalculation | None
     mesh_recalculates: bool | None = None
     copied: bool = False
+    system: bool = False
 
     @property
     def recalculates(self) -> bool:
@@ -219,6 +255,10 @@ class ChainLevel:
     @property
     def skinned(self) -> bool:
         return _WEIGHTS in self.streams
+
+    @property
+    def coloured(self) -> bool:
+        return _COLOUR in self.streams
 
     @property
     def position_offset(self) -> int:
@@ -268,6 +308,7 @@ class Deformation:
     edge_excluded: bool = False
     weights: np.ndarray | None = None
     unskinned: frozenset[int] = frozenset()
+    blend_normal: bool = True
 
     @property
     def destination(self) -> Destination:
@@ -279,7 +320,7 @@ class Deformation:
 
     def steps(self) -> list[ChainStep]:
         return chain_steps(self.level, self.catalog, self.destination, self.enabled, self.edge_excluded,
-                           self.unskinned)
+                           self.unskinned, self.blend_normal)
 
 
 def destination_view(destination: Destination, semantic: str, index: int) -> tuple[int, int] | None:
@@ -299,13 +340,15 @@ class ChainStep:
     buffers: Mapping[str, str]
     groups: int
     target: BlendTarget | None = None
+    constant_buffers: frozenset[str] = frozenset()
 
 
 def refusal(text: str, **values) -> MaterialPreviewError:
     return MaterialPreviewError(text, values)
 
 
-def chain_level(mesh, level: int, catalog: PreTransformCatalog, deformed_only: bool = True) -> ChainLevel | None:
+def chain_level(mesh, level: int, catalog: PreTransformCatalog, deformed_only: bool = True,
+                real_time_lod: bool = False, recalculates: bool = True) -> ChainLevel | None:
     from file_handlers.mesh.normal_recalc import legacy_normal_recalc_words
 
     lods = mesh.meshes[0].lods
@@ -324,11 +367,25 @@ def chain_level(mesh, level: int, catalog: PreTransformCatalog, deformed_only: b
     own = None if data is None else next((item for item in data.lods if item.lod_index == level), None)
     # The oldest files hold one block of words for the whole mesh, used for the first LOD.
     legacy = data is not None and not data.lods and bool(mesh.header.normal_recalc_offset) and level == 0
+    blended = mesh.blend_shape_data is not None and bool(mesh.blend_shape_data.bodies)
+    if not (recalculates or blended) and deformed_only:
+        # Normal recalculation off leaves a mesh without blend shapes undeformed; one with them still runs the normal
+        # passes.
+        return None
+    # Past the first LOD the renderer applies the LOD's own blend shapes only with the setting on and several LODs
+    # holding them.
+    real_time = (real_time_lod and body is not None
+                 and len({item.lod_index for item in mesh.blend_shape_data.bodies}) > 1)
+    unblended = bool(level) and blended and catalog.blend_first_lod_only and not real_time
+    undeformed = unblended and not catalog.unblended_lods_deformed
+    if unblended:
+        body = None
+    if undeformed:
+        own = None
     if body is None and own is None and not legacy and deformed_only:
         return None
     copied = False
-    if body is None and mesh.blend_shape_data is not None and mesh.blend_shape_data.bodies \
-            and catalog.system_skins_blend is False:
+    if body is None and blended and not undeformed and catalog.system_skins_blend is False:
         if catalog.still_without_blend is None:
             raise refusal(QT_TRANSLATE_NOOP(
                 "MaterialPreview", "No capture shows how the renderer deforms a LOD without blend shapes when "
@@ -409,7 +466,8 @@ def chain_level(mesh, level: int, catalog: PreTransformCatalog, deformed_only: b
     streams = {int(item.type): (int(item.offset), int(item.size)) for item in payload.buffer_headers}
     return ChainLevel(source, streams, end if first_alone else int(payload.vertex_count),
                       parts[0].first, min(item.first_index for item in parts), parts, blend, normals,
-                      normals is not None or bool(mesh.header.normal_recalc_offset), copied)
+                      normals is not None or bool(mesh.header.normal_recalc_offset), copied,
+                      blend is not None and bool(catalog.system_skins_blend))
 
 
 def _stream(level: ChainLevel, kind: int, first: int, missing: int | None = None) -> int | None:
@@ -440,6 +498,10 @@ def _skinning(level: ChainLevel, destination: Destination, first: int, count: in
             "cDstVertexTexcoord2ByteOffset": _stream(level, _UV1, first, _UV0),
             "cDstVertexTexcoord3ByteOffset": _stream(level, _UV2, first, _UV0),
             "cBuildPrev": 0}
+
+
+def span_constants(level: ChainLevel, destination: Destination, first: int, count: int) -> dict[str, np.ndarray]:
+    return _words(_skinning(level, destination, first, count, False))
 
 
 def _still(level: ChainLevel, destination: Destination, first: int, count: int) -> dict:
@@ -522,9 +584,21 @@ def skinning_program_name(skinned: bool, blended: bool, with_normals: bool) -> s
             f"{'WithNorm' if with_normals else ''}CS")
 
 
-def masters_skinning_program(level: ChainLevel, edge_excluded: bool) -> str:
+def masters_skinning_program(level: ChainLevel, edge_excluded: bool) -> str | None:
+    if level.system:
+        return None
     return skinning_program_name(level.skinned, level.blend is not None or level.copied,
                                  level.normals is None or edge_excluded)
+
+
+def pre_transformed(catalog: PreTransformCatalog, shading_type: int) -> bool:
+    name = material_shading_types(catalog.game).get(shading_type)
+    if catalog.shading is None or name in catalog.shading:
+        return True
+    if name in catalog.shading_by_setting and catalog.decal_no_pre_transform is None:
+        raise refusal(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "No capture shows whether the renderer pre-transforms {kind} materials."), kind=name)
+    return name in catalog.shading_by_setting and not catalog.decal_no_pre_transform
 
 
 def deformed_route(document, shader_target: int, route: str, program: str | None, skinned: bool) -> str:
@@ -556,7 +630,7 @@ def _groups(level: ChainLevel) -> list[tuple[int, int, int]]:
 
 
 def chain_steps(level: ChainLevel, catalog: PreTransformCatalog, destination: Destination, enabled: Collection[int],
-                edge_excluded: bool, unskinned: Collection[int] = ()) -> list[ChainStep]:
+                edge_excluded: bool, unskinned: Collection[int] = (), blend_normal: bool = True) -> list[ChainStep]:
     blend, normals = level.blend, level.normals
     drawn = [item for item in level.submeshes if item.group in enabled]
     steps = []
@@ -570,6 +644,7 @@ def chain_steps(level: ChainLevel, catalog: PreTransformCatalog, destination: De
             what=what)
     spans = [(item.first, item.count, item.material) for item in drawn]
     with_normals = normals is None or edge_excluded
+    writing = catalog.blend_by_normals and (with_normals or catalog.blend_vertex_normal_read)
     if blend is not None and catalog.system_skins_blend is None:
         raise unseen("blend shapes")
     if blend is not None and catalog.system_skins_blend:
@@ -579,14 +654,16 @@ def chain_steps(level: ChainLevel, catalog: PreTransformCatalog, destination: De
         blend_key = system_blend_key(blend.compression, system_variant(level.streams, False),
                                      system_blend_normals(level.recalculates, edge_excluded))
 
-        def system(programs: Mapping[str, SystemProgram], key: str) -> SystemProgram:
+        def system(programs: Mapping[str, SystemProgram], key: str, material: int) -> tuple:
             if key not in programs:
                 raise unseen(f"blend shapes, the system skinning {variant}")
-            return programs[key]
+            # One held by masters (RE8) runs from the master of the group's first submesh.
+            program = programs[key]
+            return (program, None) if program.file else (program.name, material)
 
-        def stretch(first: int, end: int) -> None:
+        def stretch(first: int, end: int, material: int) -> None:
             for start, stop in _group_runs(level.submeshes, first, end):
-                steps.append(ChainStep(system(catalog.system_skinning, variant), None,
+                steps.append(ChainStep(*system(catalog.system_skinning, variant, material),
                                        _words(_skinning(level, destination, start, stop - start, False)),
                                        {"InputByteBuffer": SOURCE, "bDestPosVB": DESTINATION}, groups(stop - start)))
         ranges = sorted(((target, item) for target in blend.targets for item in target.ranges),
@@ -598,23 +675,29 @@ def chain_steps(level: ChainLevel, catalog: PreTransformCatalog, destination: De
                 held = held or bool(inside)
                 place = max(place, end)
                 continue
+            material = next(item.material for item in level.submeshes if item.first + item.count > first)
             for target, item in [] if held else inside:
                 if item.first < place:
                     raise unseen("overlapping blend-shape ranges")
-                stretch(place, item.first)
-                steps.append(ChainStep(system(catalog.system_blend, blend_key), None,
+                stretch(place, item.first, material)
+                steps.append(ChainStep(*system(catalog.system_blend, blend_key, material),
                                        _words(_blend(level, destination, target, item)),
                                        {"InputByteBuffer": SOURCE, "bWeightList": WEIGHTS,
                                         "bDestPosVB": DESTINATION}, groups(item.count), target))
                 place = item.first + item.count
             if place > level.end:
                 raise unseen("blend-shape ranges past the LOD")
-            stretch(place, end)
+            stretch(place, end, material)
             place = max(place, end)
         spans = []
     elif blend is not None:
-        program = catalog.blend.get(blend.compression)
-        if program is None or catalog.blend_still is None:
+        program, still_program = catalog.blend.get(blend.compression), catalog.blend_still
+        if catalog.blend_by_normals and blend.holds_normals and blend_normal:
+            program, still_program = catalog.blend_normals.get(blend.compression), catalog.blend_still_normals
+        elif writing:
+            program = catalog.blend_writing_normals.get(blend.compression)
+            still_program = catalog.blend_still_normals
+        if program is None or still_program is None:
             raise unseen("blend shapes")
         still = [(item.first, item.count) for item in blend.still]
         if not blend.ranged:
@@ -641,14 +724,15 @@ def chain_steps(level: ChainLevel, catalog: PreTransformCatalog, destination: De
                                         "OutputByteBuffer": DESTINATION, "bDestPosVB": DESTINATION},
                                        groups(item.count), target))
         for first, count in still:
-            steps.append(ChainStep(catalog.blend_still, None, _words(_still(level, destination, first, count)),
+            steps.append(ChainStep(still_program, None, _words(_still(level, destination, first, count)),
                                    {"InputByteBuffer": SOURCE, "OutputByteBuffer": DESTINATION,
                                     "bDestPosVB": DESTINATION}, groups(count)))
     elif level.copied:
-        if catalog.blend_still is None:
+        still_program = catalog.blend_still_normals if writing else catalog.blend_still
+        if still_program is None:
             raise unseen("blend shapes")
         count = level.end - level.base
-        steps.append(ChainStep(catalog.blend_still, None, _words(_still(level, destination, level.base, count)),
+        steps.append(ChainStep(still_program, None, _words(_still(level, destination, level.base, count)),
                                {"InputByteBuffer": SOURCE, "OutputByteBuffer": DESTINATION,
                                 "bDestPosVB": DESTINATION}, groups(count)))
         if catalog.copied_skin_whole is None:
@@ -698,8 +782,7 @@ def constant_buffer(layout, constants: Mapping[str, np.ndarray]) -> bytes:
 
 def used_channels(target: BlendTarget, weights: Sequence[float]) -> np.ndarray:
     channels = np.arange(target.channel_location, target.channel_location + target.channel_count)
-    held = np.asarray(weights, np.float32)[channels]
-    return channels[held > 0][np.argsort(-held[held > 0], kind="stable")]
+    return channels[np.asarray(weights, np.float32)[channels] > 0]
 
 
 def blend_weights(blend: BlendShapes, weights: Sequence[float]) -> np.ndarray:
@@ -717,11 +800,8 @@ def weight_list(blend: BlendShapes, weights: Sequence[float]) -> bytes:
     pairs = np.zeros(max(blend.channel_count, 1), np.dtype([("weight", "<f4"), ("channel", "<u4")]))
     pairs["channel"][:blend.channel_count] = np.arange(blend.channel_count)
     for target in blend.targets:
-        used = used_channels(target, held)
-        rest = np.setdiff1d(np.arange(target.channel_location, target.channel_location + target.channel_count), used)
         place = slice(target.channel_location, target.channel_location + target.channel_count)
-        pairs["channel"][place] = np.concatenate([used, rest])
-        pairs["weight"][place] = np.concatenate([held[used], np.zeros(len(rest), np.float32)])
+        pairs[place] = engine_sorted(list(zip(held[place].tolist(), range(place.start, place.stop))))
     return pairs.tobytes()
 
 
@@ -732,6 +812,6 @@ __all__ = [
     "THREADS", "VERTEX_WORDS", "WEIGHTS", "blend_weights", "catalog_file_name", "catalog_from_dict", "catalog_to_dict",
     "chain_level", "chain_steps", "constant_buffer", "deformed_route", "destination_view", "masters_skinning_program",
     "pretransform_catalog_for",
-    "skinning_program_name", "system_blend_key", "system_blend_normals", "system_variant", "used_channels",
-    "VERTEX_SUM", "weight_list",
+    "skinning_program_name", "span_constants", "system_blend_key", "system_blend_normals", "system_variant",
+    "used_channels", "VERTEX_SUM", "weight_list",
 ]

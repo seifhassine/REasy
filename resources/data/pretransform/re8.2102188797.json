@@ -1,0 +1,77 @@
+{
+ "format": 6,
+ "game": "RE8",
+ "resource_version": 2102188797,
+ "target": 3,
+ "source_holds_indices": false,
+ "destination_holds_buffer": false,
+ "blend": {},
+ "blend_still": null,
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormal"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalExcludingEdge"
+ },
+ "write_by_submesh": false,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningWithNormCS",
+  "PreTransformStaticCS"
+ ],
+ "skin_by_range": null,
+ "system_skins_blend": true,
+ "system_skinning": {
+  "8w": {
+   "file": null,
+   "program": "CSSkinningWithTan8w"
+  },
+  "WithNorm 8w": {
+   "file": null,
+   "program": "CSSkinningWithNorm8w"
+  }
+ },
+ "system_blend": {
+  "0 8w": {
+   "file": null,
+   "program": "CSBlendShapeLight8w"
+  },
+  "0 WithNormR 8w": {
+   "file": null,
+   "program": "CSBlendShapeWithNormRLight8w"
+  },
+  "0 WithNormW 8w": {
+   "file": null,
+   "program": "CSBlendShapeWithNormWLight8w"
+  },
+  "1 8w": {
+   "file": null,
+   "program": "CSBlendShapeStandard8w"
+  }
+ },
+ "blend_place": null,
+ "static_like_skinning": false,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "Standard",
+  "Transparent"
+ ],
+ "shading_by_setting": [],
+ "decal_no_pre_transform": null
+}

@@ -2,14 +2,14 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 lazy import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
-lazy from file_handlers.mesh.lod_settings import THRESHOLD_FAMILIES, THRESHOLD_GATES, half_bits
-lazy from utils.resource_file_utils import resource_path_with_version
+lazy from file_handlers.engine_math import half_bits
+lazy from file_handlers.mesh.lod_settings import THRESHOLD_FAMILIES, THRESHOLD_GATES, lod_settings_file
 
 lazy from .material_preview import MaterialPreviewError
 from .mesh_draw import SubmeshRange
@@ -81,7 +81,7 @@ class MeshletLodRule:
     base_fov: bool
 
     def file(self) -> str:
-        return resource_path_with_version(self.lod_settings, "lod", self.lod_settings_version)
+        return lod_settings_file(self.lod_settings, self.lod_settings_version)
 
 
 def _lod_rule(data: Mapping) -> MeshletLodRule:
@@ -113,7 +113,6 @@ class MeshletCatalog:
     table_tag: int
     instance: Mapping[str, int]
     lods: MeshletLodRule
-    source: Mapping = field(default_factory=dict)
     deferred: DeferredTexturing | None = None
     transform: MeshletTransform | None = None
     skinning: MeshletSkinning | None = None
@@ -144,7 +143,7 @@ def catalog_from_dict(data: Mapping) -> MeshletCatalog:
         str(data["game"]), int(data["resource_version"]), str(data["raster"]), str(data["shade"]),
         None if data["forward"] is None else str(data["forward"]), SystemProgram(str(programs["file"]), str(programs["program"])), int(programs["target"]),
         int(data["vertices"]), int(data["tile_vertices"]), int(data["visibility_format"]), formats,
-        int(data["table_tag"]), frozendict(instance), _lod_rule(data["lods"]), dict(data.get("source", {})),
+        int(data["table_tag"]), frozendict(instance), _lod_rule(data["lods"]),
         None if deferred is None else deferred_from_dict(deferred),
         None if transform is None else MeshletTransform(str(transform["program"]),
                                                         frozenset(map(str, transform["reads"]))),
@@ -319,7 +318,6 @@ def check_shader_ids(count: int) -> None:
 
 
 def check_transform_ids(count: int, catalog: MeshletCatalog) -> None:
-    """``count`` transform IDs are taken."""
     if count >= (0 if catalog.deferred is None else catalog.deferred.transform_ids):
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The scene draws more meshlet materials transforming their triangles than the "
@@ -583,10 +581,6 @@ def extended_blocks(start: int, blocks: Sequence[bytes | None]) -> tuple[bytes, 
     return data.take_bytes(), offsets
 
 
-def receives_decals(mode: int, skinned: bool) -> bool:
-    return mode == 1 or mode != 2 and not skinned
-
-
 def instance_records(catalog: MeshletCatalog, worlds: np.ndarray, geometry: Sequence[int], tables: Sequence[int],
                      decals: Sequence[bool], extended: Sequence[int] | None = None,
                      skinning: Sequence[int] | None = None) -> bytes:
@@ -666,5 +660,5 @@ __all__ = ["CATALOG_DIRECTORY", "CATALOG_FORMAT", "Cluster", "DECAL_RECEIVE_BIT"
            "catalog_from_dict", "check_clusters", "check_culled", "check_shader_ids", "check_transform_ids",
            "culled_meshlets", "extended_blocks", "instance_records", "material_culling_size", "material_tables",
            "material_views", "meshlet_catalog_for", "meshlet_lods", "meshlet_programs", "meshlet_runs",
-           "named_meshlet_programs", "receives_decals", "record_handles", "replace_table", "root_constant", "run_range",
+           "named_meshlet_programs", "record_handles", "replace_table", "root_constant", "run_range",
            "skinning_records", "special_offsets"]

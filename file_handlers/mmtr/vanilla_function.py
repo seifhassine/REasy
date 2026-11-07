@@ -4,17 +4,19 @@ from dataclasses import dataclass, replace
 from copy import deepcopy
 from contextlib import contextmanager
 from contextvars import ContextVar
+from difflib import SequenceMatcher
 from functools import partial
 import gc
 import hashlib
-import json
 import math
 import re
 import struct
 
+import fastgraph
+
 lazy from file_handlers.sdf.aggregate_values import constant_value_fields
 from file_handlers.sdf.shader_graph import (
-    MAX_GRAPH_LINKS, ShaderContract, ShaderGraph, ShaderGraphError, ShaderGraphLink,
+    MAX_GRAPH_LINKS, ShaderContract, ShaderGraph, ShaderGraphError, ShaderGraphLink, ShaderGraphNode, node_pins,
 )
 lazy from file_handlers.sdf.shader_graph_layout import arrange_shader_graph
 lazy from file_handlers.sdf.shader_graph_math import (
@@ -25,14 +27,17 @@ lazy from file_handlers.sdf.shader_graph_texture import (
 )
 lazy from file_handlers.sdf.shader_graph_buffer import BufferRead
 lazy from file_handlers.sdf.dxil_metadata import native_float_literal
-lazy from file_handlers.sdf.graph_snapshot import IMMUTABLE_JSON
+lazy from file_handlers.sdf.graph_snapshot import IMMUTABLE_JSON, thaw_graph
 lazy from file_handlers.sdf.shader_graph_precision import PRECISION_OPERATIONS
-from .native_local_memory import split
+from .native_local_memory import LocalValueState, split
 from .material_function import (
     MaterialFunctionAsset, MaterialFunctionError, MaterialFunctionPin,
-    _compiler_function_asset,
+    _compiler_function_asset, _compiler_function_document, _known_pins,
 )
 lazy from .material_function import _inline_function
+lazy from .material_branch import branch_properties
+lazy from .material_loop import loop_properties
+lazy from .material_region_read import REGION_ASSET_FIELDS, region_derived_cache, region_read_session
 from .profiles.dxbc_recovery import DxbcSemanticIr
 lazy from .profiles.dxbc_recovery import _output_register
 from .profiles.re_engine_dxil_recovery import ReEngineDxilSemanticIr
@@ -53,8 +58,23 @@ lazy from .profiles.dxbc_stages import pixel_signature_interpolation
 lazy from .vanilla_control_flow import structured_dxil_records
 
 
+_INTEGER_ARITHMETIC = frozenset(('add', 'sub', 'mul', 'udiv', 'sdiv', 'urem', 'srem', 'and', 'or', 'xor', 'shl', 'lshr',
+                                 'ashr'))
+_CONVERSIONS = frozenset(('uitofp', 'sitofp', 'fptoui', 'fptosi', 'bitcast', 'zext', 'sext', 'trunc'))
+
+
 class VanillaFunctionError(MaterialFunctionError):
     pass
+
+
+class _TracedValues(LocalValueState):
+    def __init__(self, values=(), origins=None, **kwargs):
+        super().__init__(values, **kwargs)
+        self.origins = values.origins if isinstance(values, _TracedValues) else origins
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        self.origins[key] = value
 
 
 @dataclass(slots=True)
@@ -66,7 +86,8 @@ _RECOVERY_ALLOCATION = ContextVar("mmtr_recovery_allocation", default=None)
 
 
 @contextmanager
-def _recovery_allocation_batch(ir):
+def _recovery_allocation_batch(ir=None):
+    """``ir``: the IR recovered, if the batch is one recovery; any other batch is collected when it ends."""
     needs_collection = type(ir) is not DxbcSemanticIr and type(ir) is not ReEngineDxilSemanticIr
     enabled = gc.isenabled()
     if not enabled:
@@ -95,7 +116,8 @@ def _writable(resource):
 
 
 class _RecoveryGraph(ShaderGraph):
-    __slots__ = ("_connected_targets", "_nodes_by_id", "_node_positions", "_incoming_links")
+    __slots__ = ("_connected_targets", "_nodes_by_id", "_node_positions", "_incoming_links", "_link_clocks",
+                 "_dropped_links")
 
     def node(self, node_id):
         indexed = getattr(self, "_nodes_by_id", None)
@@ -107,6 +129,8 @@ class _RecoveryGraph(ShaderGraph):
                 positions.setdefault(node.node_id, position)
             self._nodes_by_id = indexed
             self._node_positions = positions
+            self._link_clocks = dict.fromkeys(positions, 0)
+            self._dropped_links = 0
         return indexed.get(node_id)
 
     def nodes_since(self, start):
@@ -116,6 +140,7 @@ class _RecoveryGraph(ShaderGraph):
         node = super().add_node(*args, **kwargs)
         self._nodes_by_id[node.node_id] = node
         self._node_positions[node.node_id] = len(self.nodes) - 1
+        self._link_clocks[node.node_id] = len(self.links) + self._dropped_links
         return node
 
     def append_node(self, node):
@@ -124,6 +149,7 @@ class _RecoveryGraph(ShaderGraph):
         if indexed is not None:
             indexed.setdefault(node.node_id, node)
             self._node_positions.setdefault(node.node_id, len(self.nodes) - 1)
+            self._link_clocks.setdefault(node.node_id, len(self.links) + self._dropped_links)
 
     def discard_nodes(self, identities):
         self.node(None)  # Initialize both indices for pre-populated graphs.
@@ -148,41 +174,24 @@ class _RecoveryGraph(ShaderGraph):
         return table
 
     def discard_links(self, identities):
-        table = getattr(self, '_incoming_links', None)
-        kept = []
-        for link in self.links:
-            if link.source_node in identities or link.target_node in identities:
-                if table is not None:
-                    table.pop((link.target_node, link.target_pin), None)
-            else:
-                kept.append(link)
-        self.links[:] = kept
+        self.node(None)
+        clocks = self._link_clocks
+        start = min((clocks.get(identity, 0) for identity in identities), default=len(self.links) + self._dropped_links)
+        self._dropped_links += fastgraph.discard_links(self.links, identities, getattr(self, '_incoming_links', None),
+                                                       max(start - self._dropped_links, 0))
 
     def keep_nodes(self, identities):
         self.discard_nodes({node.node_id for node in self.nodes} - identities)
 
     def connect(self, source_node, source_pin, target_node, target_pin):
-        if len(self.links) >= MAX_GRAPH_LINKS:
-            raise ShaderGraphError(f"shader graph is limited to {MAX_GRAPH_LINKS} links")
-        if source_node == target_node:
-            raise ShaderGraphError("a node cannot connect to itself")
-        targets = getattr(self, "_connected_targets", None)
-        if targets is None:
-            targets = {(link.target_node, link.target_pin) for link in self.links}
-            self._connected_targets = targets
-        key = target_node, target_pin
-        if key in targets:
-            link = super().connect(source_node, source_pin, target_node, target_pin)
-            table = getattr(self, '_incoming_links', None)
-            if table is not None:
-                table[(link.target_node, link.target_pin)] = link
-            return link
-        link = ShaderGraphLink(str(source_node), str(source_pin), str(target_node), str(target_pin))
-        targets.add((link.target_node, link.target_pin))
-        self.links.append(link)
-        table = getattr(self, '_incoming_links', None)
-        if table is not None:
-            table[(link.target_node, link.target_pin)] = link
+        return fastgraph.connect_link(self, source_node, source_pin, target_node, target_pin, MAX_GRAPH_LINKS,
+                                      ShaderGraphLink, ShaderGraphError, _RecoveryGraph._reconnect)
+
+    def _reconnect(self, *ends):
+        self.node(None)
+        count = len(self.links)
+        link = ShaderGraph.connect(self, *ends)
+        self._dropped_links += count + 1 - len(self.links)
         return link
 
     def publish(self):
@@ -190,41 +199,45 @@ class _RecoveryGraph(ShaderGraph):
 
 
 def _recovery_graph_digest(graph):
-    from .material_region_read import REGION_ASSET_FIELDS, region_derived_cache
     entries = region_derived_cache("recovery_graph_hashes")
     if entries is None:
         entries = {}
+    graphs = region_derived_cache("recovery_graph_digests") or {}
 
     def digest(document, domain):
-        encoded = json.dumps(document, sort_keys=True, separators=(",", ":")).encode()
-        return hashlib.sha256(domain + encoded).hexdigest()
+        return hashlib.sha256(domain + fastgraph.canonical_json(document)).hexdigest()
 
-    def graph_digest(document, read_asset):
-        result = dict(document)
-        nodes = []
-        for node in document["nodes"]:
-            names = REGION_ASSET_FIELDS.get(node["kind"])
-            if names:
-                properties = dict(node["properties"])
-                for name in names:
-                    properties[name] = {"recovered_asset_digest": read_asset(read_asset, properties[name])}
-                node = {**node, "properties": properties}
-            nodes.append(node)
-        result["nodes"] = nodes
-        return digest(result, b"reasy.recovered.graph.v2\0")
+    def graph_digest(graph, read_asset):
+        return hashlib.sha256(b"reasy.recovered.graph.v2\0" + fastgraph.graph_json(
+            graph, REGION_ASSET_FIELDS, lambda document: read_asset(read_asset, document))).hexdigest()
 
     def asset_digest(recurse, document):
         key = id(document)
         cached = entries.get(key)
         if cached is not None:
             return cached[1]
-        result = digest({**document, "graph": {"recovered_graph_digest": graph_digest(document["graph"], recurse)}},
-                        b"reasy.recovered.asset.v2\0")
+        known = graphs.get(id(document["graph"]))
+        result = digest({**document, "graph": {"recovered_graph_digest": known[1] if known else graph_digest(
+            document["graph"], recurse)}}, b"reasy.recovered.asset.v2\0")
         if isinstance(document, IMMUTABLE_JSON):
             entries[key] = document, result
         return result
 
-    return graph_digest(graph.to_dict(), asset_digest)
+    return graph_digest(graph, asset_digest)
+
+
+def _region_asset(prefix, graph, ports, name, description, inputs, outputs):
+    known = {node.node_id: ports[node.node_id] if node.node_id in ports else node_pins(node, None)
+             for node in graph.nodes}
+    arrange_shader_graph(graph, pins=known)
+    digest = _recovery_graph_digest(graph)
+    publication = _compiler_function_asset(prefix + digest, name, "Control Flow", description, inputs, outputs,
+                                           graph.publish(), pins=known)
+    graphs = region_derived_cache("recovery_graph_digests")
+    if graphs is not None:
+        published = _compiler_function_document(publication)["graph"]
+        graphs[id(published)] = published, digest
+    return publication
 
 
 @dataclass(frozen=True)
@@ -271,41 +284,8 @@ class _HeapIndex:
 
 
 def _copy_region_value(value, graph, nodes, links, region, copied, capture, ports, shared=()):
-    from file_handlers.sdf.shader_graph import node_pins
-    def pins(identity):
-        if identity not in ports:
-            ports[identity] = node_pins(nodes[identity], None)
-        return ports[identity]
-    def external(value):
-        if nodes[value.node].kind in {'constant', 'unassigned_value'}:
-            if value.node not in copied:
-                copied.add(value.node)
-                graph.append_node(deepcopy(nodes[value.node]))
-            return value.node,value.pin
-        return capture(value)
-    if value.node not in region:
-        return external(value)
-    pending = [value.node]
-    while pending:
-        identity = pending.pop()
-        if identity in copied:
-            continue
-        copied.add(identity)
-        node = nodes[identity]
-        graph.append_node(deepcopy(node) if identity in shared else replace(node))
-        for pin in pins(identity):
-            link = links.get((identity, pin.name)) if pin.direction == 'input' else None
-            if link is None:
-                continue
-            if link.source_node in region:
-                source = link.source_node, link.source_pin
-                pending.append(link.source_node)
-            else:
-                source_type = next(p.value_type for p in pins(link.source_node)
-                                   if p.direction == 'output' and p.name == link.source_pin)
-                source = external(_Value(link.source_node, link.source_pin, source_type))
-            graph.connect(*source, identity, pin.name)
-    return value.node, value.pin
+    return fastgraph.copy_region_value(value, graph, nodes, links, region, copied, capture, ports, shared,
+                                       (node_pins, deepcopy, replace, _Value, ShaderGraphNode))
 
 
 @dataclass(frozen=True)
@@ -316,15 +296,14 @@ class RecoveredBehavior:
     execution_output: str = ''
     patch_output_count: int = 0
     patch_execution_output: str = ''
+    origins: tuple = ()
 
     def bind(self, contract: ShaderContract) -> ShaderGraph:
-        from .material_region_read import region_read_session
-        from file_handlers.sdf.graph_snapshot import thaw_graph
         with region_read_session():
             graph = self._bind(contract)
         return thaw_graph(graph)
 
-    def _bind(self, contract: ShaderContract) -> ShaderGraph:
+    def _bind(self, contract: ShaderContract, origins: dict | None = None) -> ShaderGraph:
         graph = ShaderGraph(contract.stage, contract.fingerprint)
         instance = graph.add_node("material_function", node_id="behavior")
         for pin_id, key in self.dependencies:
@@ -392,7 +371,10 @@ class RecoveredBehavior:
             graph.connect(instance.node_id, self.execution_output, output.node_id, 'execution')
         if self.patch_execution_output:
             graph.connect(instance.node_id, self.patch_execution_output, output.node_id, 'patch_execution')
-        _inline_function(graph, instance, self.function)
+        renamed = _inline_function(graph, instance, self.function)
+        if origins is not None:
+            origins.update((key, _Value(renamed.get(value.node, value.node), value.pin, value.value_type))
+                           for key, value in self.origins)
         arrange_shader_graph(graph, contract)
         return graph
 
@@ -403,8 +385,10 @@ class _Builder:
         self.graph = _RecoveryGraph("material_function", "")
         self.inputs: dict[tuple, tuple[MaterialFunctionPin, _Value]] = {}
         self.values: dict[tuple, _Value] = {}
+        self.origins: dict = {}
         self.clips: list[_Value] = []
         self.ordered_nodes: set[str] = set()
+        self.ports = {}
         self._next_node = 0
         self.precise_math = False
         self.execution = None
@@ -528,7 +512,6 @@ class _Builder:
         return self.inputs[key][1]
 
     def merge_branch(self, condition, true_nodes, false_nodes, true_values, false_values, *, clips=((), ()), executions=()):
-        from .material_branch import branch_properties
         if len(true_values) != len(false_values):
             raise VanillaFunctionError("Conditional results have different shapes.")
         regions = [set(true_nodes), set(false_nodes)]
@@ -582,7 +565,7 @@ class _Builder:
             return results([])
         links = self.graph.incoming_links()
         captures = {}
-        ports = {}
+        ports = self.ports
         shared_nodes = regions[0] & regions[1]
 
         def capture(value):
@@ -618,10 +601,8 @@ class _Builder:
             for value, pin in captures.items():
                 graph.add_node("function_input", node_id=f"branch_{pin.pin_id}", properties=dict(
                     pin_id=pin.pin_id, display_name=pin.name, value_type=pin.value_type))
-            arrange_shader_graph(graph)
-            digest = _recovery_graph_digest(graph)
-            arms.append(_compiler_function_asset("region." + digest, label, "Control Flow", "Editable conditional calculations.",
-                                              tuple(captures.values()), output_pins, graph.publish()))
+            arms.append(_region_asset("region.", graph, ports, label, "Editable conditional calculations.",
+                                      tuple(captures.values()), output_pins))
         self.graph.discard_nodes(removed)
         self.graph.discard_links(removed)
         self.values = {key: value for key, value in self.values.items() if value.node not in removed}
@@ -650,7 +631,6 @@ class _Builder:
         return self.values[key]
 
     def merge_loop(self, frame, continuation, updates, exports):
-        from .material_loop import loop_properties
         if frame.get('execution_state'):
             updates = [*updates, self.execution]
             exports = {**exports, '__execution__': self.execution}
@@ -661,7 +641,7 @@ class _Builder:
                   and (nodes[identity].kind != 'function_input' or identity in placeholders)}
         links = self.graph.incoming_links()
         graph = _RecoveryGraph('material_function', '')
-        ports = {}
+        ports = self.ports
         inputs, external, state_pairs = [], {}, []
         for i, (name, initial, placeholder) in enumerate(frame['states']):
             pin = MaterialFunctionPin(f'state_{i}', f'State {i + 1}', initial.value_type)
@@ -675,7 +655,8 @@ class _Builder:
             if value not in captures:
                 pin = MaterialFunctionPin(f'capture_{len(captures)}', f'Input {len(captures) + 1}', value.value_type)
                 inputs.append(pin)
-                node = graph.add_node('function_input', properties=dict(pin_id=pin.pin_id, display_name=pin.name, value_type=pin.value_type))
+                node = graph.add_node('function_input', node_id=f'loop_{pin.pin_id}', properties=dict(
+                    pin_id=pin.pin_id, display_name=pin.name, value_type=pin.value_type))
                 captures[value] = (node.node_id, 'value')
                 external[pin.pin_id] = value
             return captures[value]
@@ -691,13 +672,13 @@ class _Builder:
         for identity, label, value in results:
             outputs.append(MaterialFunctionPin(identity, label, value.value_type, False))
             source = _copy_region_value(value, graph, nodes, links, region, copied, capture, ports)
-            output = graph.add_node('function_output', properties=dict(pin_id=identity, display_name=label, value_type=value.value_type))
+            output = graph.add_node('function_output', node_id=f'loop_{identity}',
+                                    properties=dict(pin_id=identity, display_name=label, value_type=value.value_type))
             graph.connect(*source, output.node_id, 'value')
-        arrange_shader_graph(graph)
         if (region & self.ordered_nodes) - copied:
             raise VanillaFunctionError('A repeat region needs explicit ownership of its unused executions.')
-        digest = _recovery_graph_digest(graph)
-        body = _compiler_function_asset('repeat.' + digest, 'Repeat Step', 'Control Flow', 'Editable calculations for one iteration.', tuple(inputs), tuple(outputs), graph.publish())
+        body = _region_asset('repeat.', graph, ports, 'Repeat Step', 'Editable calculations for one iteration.',
+                             tuple(inputs), tuple(outputs))
         self.graph.discard_nodes(region)
         self.graph.discard_links(region)
         self.values = dict(frame['cache'])
@@ -1288,15 +1269,23 @@ class _Builder:
             if self.ordered_nodes - reachable:
                 raise VanillaFunctionError('Region specialization discarded an ordered execution node.')
         inputs = tuple(pin for pin, value in self.inputs.values() if value.node in reachable)
-        arrange_shader_graph(self.graph)
+        known = {node.node_id: node_pins(node, None) for node in self.graph.nodes}
+        arrange_shader_graph(self.graph, pins=known)
         digest = _recovery_graph_digest(self.graph)
-        function = MaterialFunctionAsset(
-            "vanilla." + digest, name, "Recovered Vanilla Behaviors",
-            "Editable native calculations. Inputs are explicit value dependencies; output semantic names do not imply surface-channel meanings.",
-            inputs, tuple(pins), self.graph.publish() if isinstance(self.graph, _RecoveryGraph) else self.graph,
-        )
+        graph = self.graph.publish() if isinstance(self.graph, _RecoveryGraph) else self.graph
+        token = _known_pins.set((graph, known))
+        try:
+            function = MaterialFunctionAsset(
+                "vanilla." + digest, name, "Recovered Vanilla Behaviors",
+                "Editable native calculations. Inputs are explicit value dependencies; output semantic names do not "
+                "imply surface-channel meanings.",
+                inputs, tuple(pins), graph,
+            )
+        finally:
+            _known_pins.reset(token)
         return RecoveredBehavior(function, tuple((pin.pin_id, key)
-            for key, (pin, value) in self.inputs.items() if value.node in reachable), clip_pin, execution_pin)
+            for key, (pin, value) in self.inputs.items() if value.node in reachable), clip_pin, execution_pin,
+            origins=tuple((key, value) for key, value in self.origins.items() if isinstance(value, _Value)))
 
 
 def _float_literal(text):
@@ -1323,7 +1312,12 @@ def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name=
         raise VanillaFunctionError('Per-instruction precise masks require the native refactoring-allowed flag.')
     source_ir = joined_complementary_branches(lowered_switches(lower_indexable_temps(ir)))
     loop_origins = {}
+    native = ir.instructions
     ir = normalized_loop_exits(source_ir, loop_origins=loop_origins)
+    # Origins name the native instructions; the rewrites add, drop and change control flow and indexed registers.
+    native_index = range(len(native)) if ir.instructions == native else {
+        index + offset: start + offset for start, index, size in SequenceMatcher(
+            None, native, ir.instructions, autojunk=False).get_matching_blocks() for offset in range(size)}
     if ir.stage == "ps":
         modes = pixel_signature_interpolation(contract.inputs, ir.input_interpolation)
         for field in contract.inputs:
@@ -1393,6 +1387,8 @@ def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name=
             if strict or 'xyzw'[key[1]] in instruction.precise_mask:
                 result = builder.precise(result)
             registers[key] = result
+            if instruction_index in native_index:
+                builder.origins[native_index[instruction_index], *key] = result
 
     def read_as(operand, lane, domain):
         return word_value(builder, read(operand, lane, domain), domain)
@@ -1687,6 +1683,9 @@ def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name=
                 exports = {key: value for key, value in registers.items() if key in exit_live and key in written_registers}
                 invariants = {key:value for key,value in registers.items() if key in exit_live and key not in written_registers}
                 registers = {**invariants,**builder.merge_loop(loop, loop['continuation'], updates, exports)}
+            if instruction_index in native_index:
+                builder.origins.update(((native_index[instruction_index], *key), value)
+                                       for key, value in registers.items())
             continue
         if opcode in {"discard_nz", "discard_z"} and len(operands) == 1 and not saturate:
             if loops and builder.execution is None:
@@ -2061,7 +2060,6 @@ def recover_dxbc_function(ir: DxbcSemanticIr, contract: ShaderContract, *, name=
 
 
 def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, *, name="Vanilla Behavior", _hull_phase=None):
-    from .native_local_memory import LocalValueState
     function_name = name
     metadata = DxilEntryMetadata.parse(ir.to_assembly().splitlines())
     if metadata.stage == 'hull' and _hull_phase is None:
@@ -2114,7 +2112,7 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
     by_id = {(resource.register_class, resource.resource_id): resource for resource in contract.resources}
     by_binding = {(resource.register_class, resource.register_space, resource.bind_point): resource for resource in contract.resources}
     handles, loads, samples, outputs = {}, {}, {}, {}
-    values = LocalValueState()
+    values = _TracedValues(origins=builder.origins)
     written_outputs = set()
     ended = False
     branches = []
@@ -2348,7 +2346,7 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             local_arrays.pointers = frame['pointers']
             continue
         body = record.text.split("=", 1)[1].strip() if record.result else record.text
-        annotation = re.search(r', !dx\.precise (!\d+)(?=,|$)', body)
+        annotation = '!dx.precise' in body and re.search(r', !dx\.precise (!\d+)(?=,|$)', body)
         if annotation:
             operands = metadata.definitions.get(annotation[1])
             if operands not in {('i32 0',), ('i32 1',)} or not record.result:
@@ -2367,7 +2365,9 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             raise VanillaFunctionError("Instructions after a return need control-flow recovery.")
         if shared_memory.apply(record, body, values) or local_arrays.apply(record, body, values):
             continue
-        arithmetic = re.fullmatch(r"(fadd|fsub|fmul|fdiv|frem)(?: (?:fast|nnan|ninf|nsz|arcp|contract|afn|reassoc))* (float|half) ([^,]+), (.+)", body)
+        arithmetic = record.opcode in {'fadd', 'fsub', 'fmul', 'fdiv', 'frem'} and re.fullmatch(
+            r"(fadd|fsub|fmul|fdiv|frem)(?: (?:fast|nnan|ninf|nsz|arcp|contract|afn|reassoc))* (float|half) ([^,]+), "
+            r"(.+)", body)
         if arithmetic:
             kind = {"fadd": "add", "fsub": "subtract", "fmul": "multiply", "fdiv": "divide", 'frem': 'float_remainder'}[arithmetic[1]]
             domain = half_type if arithmetic[2] == 'half' else 'float'
@@ -2377,7 +2377,9 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             if precise:
                 pending_precise = record.result
             continue
-        arithmetic = re.fullmatch(r'(add|sub|mul|udiv|sdiv|urem|srem|and|or|xor|shl|lshr|ashr)(?: (?:nuw|nsw|exact))* (i64|i32|i16|i8|i1) ([^,]+), (.+)', body)
+        arithmetic = record.opcode in _INTEGER_ARITHMETIC and re.fullmatch(
+            r'(add|sub|mul|udiv|sdiv|urem|srem|and|or|xor|shl|lshr|ashr)(?: (?:nuw|nsw|exact))* (i64|i32|i16|i8|i1) '
+            r'([^,]+), (.+)', body)
         if arithmetic:
             opcode, native_type, a, b = arithmetic.groups()
             if native_type == 'i1':
@@ -2396,7 +2398,8 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
                     result = builder.operation('bit_and', a=builder.convert(result, 'uint', bits=True), b=builder.integer((1 << bits) - 1))
             values[record.result] = result
             continue
-        integer_comparison = re.fullmatch(r'icmp (eq|ne|[su](?:lt|le|gt|ge)) (i64|i32|i16|i8|i1) ([^,]+), (.+)', body)
+        integer_comparison = record.opcode == 'icmp' and re.fullmatch(
+            r'icmp (eq|ne|[su](?:lt|le|gt|ge)) (i64|i32|i16|i8|i1) ([^,]+), (.+)', body)
         if integer_comparison:
             predicate, native_type, a, b = integer_comparison.groups()
             value_type = 'bool' if native_type == 'i1' else 'int' if predicate.startswith('s') else 'uint'
@@ -2405,7 +2408,8 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
                 integer_value(text, int(native_type[1:]), signed=value_type == 'int') for text in (a, b))
             values[record.result] = builder.compare(relation, *operands)
             continue
-        float_conversion = re.fullmatch(r'(fptrunc|fpext) (float|half) (.+) to (float|half)', body)
+        float_conversion = record.opcode in {'fptrunc', 'fpext'} and re.fullmatch(
+            r'(fptrunc|fpext) (float|half) (.+) to (float|half)', body)
         if float_conversion:
             opcode, source, argument, target = float_conversion.groups()
             if (opcode, source, target) not in {('fptrunc', 'float', 'half'), ('fpext', 'half', 'float')}:
@@ -2413,7 +2417,9 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             values[record.result] = builder.convert(value(argument, half_type if source == 'half' else 'float'),
                                                     half_type if target == 'half' else 'float')
             continue
-        conversion = re.fullmatch(r'(uitofp|sitofp|fptoui|fptosi|bitcast|zext|sext|trunc) (float|i64|i32|i16|i8|i1) (.+) to (float|i64|i32|i16|i8|i1)', body)
+        conversion = record.opcode in _CONVERSIONS and re.fullmatch(
+            r'(uitofp|sitofp|fptoui|fptosi|bitcast|zext|sext|trunc) (float|i64|i32|i16|i8|i1) (.+) to '
+            r'(float|i64|i32|i16|i8|i1)', body)
         if conversion:
             opcode, source_type, argument, target_type = conversion.groups()
             source_bits = int(source_type[1:]) if source_type.startswith('i') else 32
@@ -2435,7 +2441,9 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
                 result = builder.operation('bit_and', a=builder.convert(result, 'uint', bits=True), b=builder.integer((1 << target_bits) - 1))
             values[record.result] = result
             continue
-        comparison = re.fullmatch(r"fcmp(?: (?:fast|nnan|ninf|nsz|arcp|contract|afn|reassoc))* ([ou])(eq|ne|lt|le|gt|ge) (float|half) ([^,]+), (.+)", body)
+        comparison = record.opcode == 'fcmp' and re.fullmatch(
+            r"fcmp(?: (?:fast|nnan|ninf|nsz|arcp|contract|afn|reassoc))* ([ou])(eq|ne|lt|le|gt|ge) (float|half) "
+            r"([^,]+), (.+)", body)
         if comparison:
             relation = {"eq": "equal", "ne": "not_equal", "lt": "less", "le": "less_equal", "gt": "greater", "ge": "greater_equal"}[comparison[2]]
             domain = half_type if comparison[3] == 'half' else 'float'
@@ -2445,14 +2453,16 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             if precise:
                 pending_precise = record.result
             continue
-        selection = re.fullmatch(r"select i1 ([^,]+), (float|half|i64|i32|i16|i8|i1) ([^,]+), \2 (.+)", body)
+        selection = record.opcode == 'select' and re.fullmatch(
+            r"select i1 ([^,]+), (float|half|i64|i32|i16|i8|i1) ([^,]+), \2 (.+)", body)
         if selection:
             value_type = {'float':'float', 'half':half_type, 'i64':'uint64_t', 'i32':'uint', 'i16':'uint', 'i8':'uint', 'i1':'bool'}[selection[2]]
             operands = tuple(integer_value(text, int(selection[2][1:])) if selection[2] in {'i8', 'i16'} else value(text, value_type)
                              for text in (selection[3], selection[4]))
             values[record.result] = builder.select(value(selection[1], 'bool'), *operands)
             continue
-        extraction = re.fullmatch(r'extractvalue %dx\.types\.(twoi32|i32c) (%[-\w.$]+), ([01])',body)
+        extraction = record.opcode == 'extractvalue' and re.fullmatch(
+            r'extractvalue %dx\.types\.(twoi32|i32c) (%[-\w.$]+), ([01])', body)
         if extraction:
             pair = samples.get(extraction[2])
             if not isinstance(pair,_LoadedWords) or len(pair.words)!=2:
@@ -2460,7 +2470,8 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             domain = 'bool' if extraction[1]=='i32c' and extraction[3]=='1' else 'uint'
             values[record.result] = builder.convert(pair.words[int(extraction[3])],domain,bits=True)
             continue
-        extraction = re.fullmatch(r"extractvalue %dx\.types\.CBufRet\.(f32|i32) (%[-\w.$]+), ([0-3])", body)
+        extraction = record.opcode == 'extractvalue' and re.fullmatch(
+            r"extractvalue %dx\.types\.CBufRet\.(f32|i32) (%[-\w.$]+), ([0-3])", body)
         if extraction:
             if extraction[2] not in loads:
                 raise VanillaFunctionError("A native constant result has no declared load.")
@@ -2468,18 +2479,21 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
             values[record.result] = builder.convert(buffer_word(handle, row, int(extraction[3])),
                 'float' if extraction[1] == 'f32' else 'uint', bits=True)
             continue
-        extraction = re.fullmatch(r'extractvalue %dx\.types\.Dimensions (%[-\w.$]+), ([0-3])', body)
+        extraction = record.opcode == 'extractvalue' and re.fullmatch(
+            r'extractvalue %dx\.types\.Dimensions (%[-\w.$]+), ([0-3])', body)
         if extraction:
             queried = samples.get(extraction[1])
             if not isinstance(queried, _LoadedWords) or queried.words[int(extraction[2])] is None:
                 raise VanillaFunctionError('A dimension query reads an undeclared result lane.')
             values[record.result] = queried.words[int(extraction[2])]
             continue
-        extraction = re.fullmatch(r'extractvalue %dx\.types\.fouri32 (%[-\w.$]+), ([0-3])', body)
+        extraction = record.opcode == 'extractvalue' and re.fullmatch(
+            r'extractvalue %dx\.types\.fouri32 (%[-\w.$]+), ([0-3])', body)
         if extraction:
             values[record.result] = builder.scalar(value(extraction[1], 'uint4'), int(extraction[2]))
             continue
-        extraction = re.fullmatch(r"extractvalue %dx\.types\.ResRet\.(f32|i32) (%[-\w.$]+), ([0-3])", body)
+        extraction = record.opcode == 'extractvalue' and re.fullmatch(
+            r"extractvalue %dx\.types\.ResRet\.(f32|i32) (%[-\w.$]+), ([0-3])", body)
         if extraction:
             if extraction[2] not in samples:
                 raise VanillaFunctionError("The resource result has no recovered sample.")
@@ -2504,7 +2518,7 @@ def recover_dxil_function(ir: ReEngineDxilSemanticIr, contract: ShaderContract, 
                 component = builder.scalar(sampled, lane)
             values[record.result] = builder.convert(component, 'float' if extraction[1] == 'f32' else 'uint', bits=True)
             continue
-        call = re.fullmatch(r"call .+ @dx\.op\.([\w.]+)\((.*)\)", body)
+        call = re.fullmatch(r"call .+ @dx\.op\.([\w.]+)\((.*)\)", body) if record.opcode == 'call' else None
         if call is None:
             raise VanillaFunctionError(f"{record.opcode} needs an additional editable behavior operation.")
         operation, arguments = call[1], split(call[2])
@@ -2955,8 +2969,6 @@ def _recover_behavior(ir, contract, name):
 
 
 def recover_vanilla_behavior(ir, contract, *, name="Vanilla Behavior"):
-    from .material_region_read import region_read_session
-    from file_handlers.sdf.graph_snapshot import thaw_graph
     with _recovery_allocation_batch(ir):
         with region_read_session(reuse_content=False):
             result = _recover_behavior(ir, contract, name)
@@ -2965,19 +2977,19 @@ def recover_vanilla_behavior(ir, contract, *, name="Vanilla Behavior"):
 
 
 @contextmanager
-def _recover_vanilla_graph_snapshot(ir, contract, *, name="Vanilla Behavior"):
-    from .material_region_read import region_read_session
-    from file_handlers.sdf.graph_snapshot import thaw_graph
+def _recover_vanilla_graph_snapshot(ir, contract, *, name="Vanilla Behavior", origins=None, thaw=True):
+    """``origins``: a dict to receive each IR value's graph value, keyed by the surface flow's origin. ``thaw``: make
+    the graph's properties plain on leaving, for callers that keep and edit it."""
     with _recovery_allocation_batch(ir):
         graph = None
         try:
             with region_read_session(reuse_content=False):
                 result = _recover_behavior(ir, contract, name)
-                graph = result._bind(contract)
+                graph = result._bind(contract, origins)
                 del result
                 yield graph
         finally:
-            if graph is not None:
+            if graph is not None and thaw:
                 thaw_graph(graph)
 
 

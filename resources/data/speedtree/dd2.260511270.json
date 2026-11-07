@@ -1,5 +1,5 @@
 {
- "format": 3,
+ "format": 4,
  "game": "DD2",
  "resource_version": 260511270,
  "programs": {
@@ -41,21 +41,20 @@
    [
     "A",
     [
-     1,
-     25
+     1
     ]
    ],
    [
     "TS",
     [
-     0,
-     8
+     0
     ]
    ]
   ],
   "kinds_taking_material_markers": [
    "Tree"
-  ]
+  ],
+  "kinds_ignoring_material_markers": []
  },
  "placements": {
   "foliage": {
@@ -519,14 +518,5 @@
    ],
    "billboard_wind_noise_scale": 0.10000000149011612
   }
- },
- "source": {
-  "executable": "DD2_dump.exe",
-  "table": "0x7ff78def78f0",
-  "capture": "DD2_frame18254",
-  "event": 9573,
-  "programs": "DD2_dump.exe MeshMaterialSpeedTree (setup 0x7ff7897433a0, update 0x7ff78a0e7b40) for the names; batch types and material flag bits from DD2_frame8682 and DD2_frame10897 (plans/stmesh-support.md)",
-  "buffers": "SpeedTreeV8_VS and SpeedTreeV8_DepthWritePS of DD2_frame18254 (file_handlers/stmesh/lit.py)",
-  "billboard_cross_fade": "SpeedTreeV8MeshConstant word 1 bound by every billboard draw of DD2_frame8682 (TIGHT 0x13b64, LOOSE 0x13a48; every billboard mesh of the game has 8 side views)"
  }
 }

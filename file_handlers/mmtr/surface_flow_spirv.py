@@ -11,7 +11,7 @@ lazy from file_handlers.sdf.spirv_ir import SpirvSemanticIr, grammar
 lazy from .native_loop_flow import reachable_blocks
 lazy from .profiles.re_engine_spirv_authoring import _Module
 lazy from .spirv_control_flow import spirv_cfg
-lazy from .surface_flow import FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field
+lazy from .surface_flow import FlowStore, FlowValue, NativeFlow, buffer_element, buffer_word_types, constant_field
 lazy from .surface_flow_dxil import _dominators
 
 
@@ -87,8 +87,9 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
     deferred_loads: list[tuple[int, int]] = []
     stores, discards, exits = [], [], []
     texture_reads, read_types = [], {}
-    resource_stores, resource_scalars = [], {}
+    resource_stores, resource_scalars, buffer_words = [], {}, {}
     descriptors = {item.variable_id: item.name for item in native.descriptors}
+    invocations = {item.variable_id for item in native.inputs if item.built_in == 8}  # InvocationId
 
     def texture_of(identifier):
         row = definitions.get(identifier)
@@ -251,12 +252,16 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
                     element, lane = divmod(first + position, 4)
                     resource_stores.append(_flow_store(semantic, element, lane, value,
                                                        (start + step, current, position), "buffer"))
-                    resource_scalars.setdefault(("buffer", semantic, element), []).append(scalar)
+                    buffer_words.setdefault(("buffer", semantic, element, lane), []).append(scalar)
             elif root in output_rows:
                 scope = "patch" if root in patch_ids else "output"
                 constant_path = [module.constant(item) for item in path]
                 fields = output_rows[root]
                 variable_type = module.pointee(root)
+                index = definitions.get(path[0]) if path else None
+                if (native.stage == "hull" and scope == "output" and index is not None
+                        and index.opcode == names["OpLoad"] and index.values[2] in invocations):
+                    constant_path, variable_type = constant_path[1:], definitions[variable_type].values[1]
                 if None in constant_path:
                     # A dynamically indexed store may reach any lane, so those lanes keep only their stored value.
                     index_lanes = [*operand_lanes(item) for item in path]
@@ -361,9 +366,8 @@ def spirv_flow(ir: SpirvSemanticIr, contract) -> NativeFlow:
     flow_stores.extend(FlowStore(texture, 0, lane, value, "", site, "read") for texture, lane, value, site in texture_reads)
     component_types.update({("read", texture, 0): kind for texture, kind in read_types.items()})
     flow_stores.extend(resource_stores)
-    component_types.update({key: _TEXEL_TYPES[kinds[0]] if key[0] == "typed" else
-                            buffer_component_type(kinds)
-                            for key, kinds in resource_scalars.items()})
+    component_types.update({key: _TEXEL_TYPES[kinds[0]] for key, kinds in resource_scalars.items()})
+    component_types.update(buffer_word_types(buffer_words))
     flow_discards = tuple(FlowStore("discard", 0, 0, value, "", site, "discard") for value, site in discards)
     return NativeFlow(native.stage, tuple(values), tuple(flow_stores), flow_discards, component_types,
                       exits=tuple(exits))

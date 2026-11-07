@@ -2,15 +2,6 @@
  "format": 1,
  "game": "DMC5",
  "resource_version": 1808168797,
- "source": {
-  "captures": [
-   "dmc5.rdc",
-   "cap.rdc"
-  ],
-  "several_states": {
-   "primSampler": 3
-  }
- },
  "states": {
   "AutomaticWrap": {
    "filter": 85,

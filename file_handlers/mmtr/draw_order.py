@@ -2,11 +2,11 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
 
-CATALOG_FORMAT = 2
+CATALOG_FORMAT = 3
 CATALOG_DIRECTORY = "resources/data/draw_order"
 SORTED_ORDERS = {"nearest_part": False, "farthest_object_depth": True}
 ORDERS = ("objects", *SORTED_ORDERS)
@@ -22,7 +22,7 @@ class DrawOrder:
     resource_version: int
     unblended: str
     blended: str
-    source: Mapping = field(default_factory=dict)
+    bias: str | None = None
 
 
 def catalog_from_dict(data: Mapping) -> DrawOrder:
@@ -32,8 +32,9 @@ def catalog_from_dict(data: Mapping) -> DrawOrder:
     for order in (unblended, blended):
         if order not in ORDERS:
             raise DrawOrderError(f"order {order!r} is none of {', '.join(ORDERS)}")
+    bias = data["bias"]
     return DrawOrder(str(data["game"]), int(data["resource_version"]), unblended, blended,
-                     dict(data.get("source", {})))
+                     None if bias is None else str(bias))
 
 
 draw_order_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, DrawOrderError, "draw order", (AttributeError,))

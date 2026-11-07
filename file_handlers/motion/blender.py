@@ -12,6 +12,7 @@ lazy from file_handlers.mesh.blender.package import AXES, load_package, save_pac
 lazy from file_handlers.mesh.blender.runner import run_script, temporary_directory
 
 from .keys import full_track
+from .layers import posed as layer_posed
 from .model import Motion, Track
 from .pose import TRANSFORMS, MotionSampler, Rig
 from .retarget import Retarget, bones_of
@@ -61,7 +62,7 @@ def _decompose(matrices: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray
     return matrices[..., :3, 3], _rotation(axes), scales
 
 
-def action_package(rig: Rig, motions: list[Motion], title: str) -> tuple[dict, dict]:
+def action_package(rig: Rig, motions: list[Motion], title: str, add: bool = False) -> tuple[dict, dict]:
     axes = _axes()
     world = axes @ rig.models(rig.base_locals).astype(np.float64) @ axes.T
     arrays = {"bones.matrix": world.reshape(-1, 16),
@@ -73,7 +74,7 @@ def action_package(rig: Rig, motions: list[Motion], title: str) -> tuple[dict, d
         binding = rig.bind(sampler.hashes)
         frames = np.arange(int(math.floor(max(motion.end_frame, 0.0))) + 1)
         samples = [sampler.sample(float(frame)) for frame in frames]
-        posed = [rig.posed(sample, binding) for sample in samples]
+        posed = [layer_posed(rig, sample, binding, add) for sample in samples]
         spec = {"name": motion.name, "fps": motion.fps or 60}
         for component, name in enumerate(TRANSFORMS):
             keyed = np.zeros(len(rig.hashes), bool)
@@ -98,8 +99,8 @@ def action_package(rig: Rig, motions: list[Motion], title: str) -> tuple[dict, d
     return manifest, arrays
 
 
-def export_blend(blender, rig: Rig, motions: list[Motion], output, title: str) -> None:
-    manifest, arrays = action_package(rig, motions, title)
+def export_blend(blender, rig: Rig, motions: list[Motion], output, title: str, add: bool = False) -> None:
+    manifest, arrays = action_package(rig, motions, title, add)
     with temporary_directory() as folder:
         save_package(folder, manifest, arrays)
         run_script(blender, "motion_export", folder, Path(output))
@@ -161,9 +162,7 @@ def action_bones(manifest: dict) -> list:
 
 
 def action_tracks(manifest: dict, arrays: dict, number: int, rig: Rig, motion: Motion,
-                  pairs=None) -> tuple[dict, float]:
-    """Tracks by joint name hash and transform, and the end frame; ``pairs`` of bone and joint names map the
-    armature onto the rig (else equal names)."""
+                  pairs=None, add: bool = False) -> tuple[dict, float]:
     action, names = manifest["actions"][number], manifest["names"]
     axes = _axes()
     space = axes.T @ np.reshape(manifest["turn"], (4, 4))
@@ -197,6 +196,9 @@ def action_tracks(manifest: dict, arrays: dict, number: int, rig: Rig, motion: M
                 mask = keyed[rows, component]
                 values[component][:, rows[mask]] = part[:, mask]
         world[:, level] = above @ _compose(*(value[:, level] for value in values))
+    if add:
+        base = [part.astype(np.float64) for part in rig.base]
+        values = [values[0] - base[0], _product(_inverse(base[1]), values[1]), values[2] - base[2] + 1.0]
     rotations = values[1]
     flips = np.cumsum(np.sum(rotations[1:] * rotations[:-1], -1) < 0, axis=0) % 2
     rotations[1:] *= np.where(flips, -1.0, 1.0)[..., None]

@@ -1,0 +1,30 @@
+{
+ "format": 2,
+ "game": "re3",
+ "resource_version": 1905100741,
+ "path": "objectroot/system/sssprofile/sssprofile.sss",
+ "file": {
+  "magic": 5460819,
+  "version": 336596992,
+  "record": 32,
+  "most": 16,
+  "clamp": null
+ },
+ "records": {},
+ "bake": {
+  "slots": 16,
+  "slot": 152,
+  "half": 4,
+  "fills": [],
+  "falloff": [0, 1, 2],
+  "mix": [3, 4, 5],
+  "width": 6,
+  "ratio": 7,
+  "falloff_min": null,
+  "range": 2.0,
+  "exponent": 2.0,
+  "area": 0.5,
+  "variance": 2.0,
+  "norm": 6.2831855
+ }
+}

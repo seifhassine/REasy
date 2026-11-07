@@ -7,11 +7,13 @@ from dataclasses import dataclass, replace
 lazy import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-from file_handlers.sdf.contracts import shader_contract_for_program
+from file_handlers.sdf.contracts import program_contracts, shader_contract_for_program
 lazy from file_handlers.sdf.models import program_names
 lazy from file_handlers.sdf.sdf_file import parse_sdf_to_draw
 
-lazy from .material_preview import RANGE_CBV, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, MaterialPreviewError
+lazy from .material_preview import (
+    RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, SHADER_VISIBILITY, VIEW_DIMENSIONS, MaterialPreviewError,
+)
 lazy from .pretransform import (
     ACCUMULATOR, CHAIN_BUFFERS, DESTINATION, INDEX_WORDS, SOURCE, THREADS, VERTEX_WORDS, WEIGHTS, ChainStep,
     Deformation, SystemProgram, constant_buffer, used_channels, weight_list,
@@ -90,6 +92,14 @@ class SystemPrograms:
             self._programs[target, system] = (bytes(program.shader("compute").payload), contract)
         return self._programs[target, system]
 
+    def graphics(self, target: int, system: SystemProgram) -> tuple[object, dict]:
+        program = self.program(target, system)
+        if program is None:
+            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                "MaterialPreview", "The game's shader file {path} has no program {name}."),
+                {"path": system.file, "name": system.name})
+        return program, program_contracts(self.profile.sdf_profile, program)
+
 
 class ChainPasses:
     def __init__(self, device: Resident, profile, load_file: Callable[[str], bytes | None],
@@ -108,27 +118,45 @@ class ChainPasses:
             return dict(step.constants)
         return {**step.constants, "cUsingChannelCount": np.array([len(used_channels(step.target, weights))], "<u4")}
 
-    def _dispatch(self, deformed: _Deformed, step: ChainStep) -> int:
-        deformation, held, scene = deformed.deformation, deformed.held, self.device.scene
+    def constants(self, owner: int, step: ChainStep) -> dict[str, np.ndarray]:
+        return self._constants(step, self._objects[owner].deformation.weights)
+
+    def _constant_buffer(self, deformed: _Deformed, layout, step: ChainStep) -> int:
+        data = constant_buffer(layout, self._constants(step, deformed.deformation.weights))
+        if step.target is None:
+            return self.device.buffer(data)
+        bound = self.device.scene.buffer(data, 0)
+        deformed.blends.append((bound, layout, step))
+        return bound
+
+    def step_buffer(self, owner: int, layout, step: ChainStep) -> int:
+        return self._constant_buffer(self._objects[owner], layout, step)
+
+    def _dispatch(self, deformed: _Deformed, step: ChainStep, held: Mapping[str, int] | None = None,
+                  texture: Callable[[object], tuple | None] | None = None,
+                  sampler: Callable[[str], tuple] | None = None) -> int:
+        deformation, scene = deformed.deformation, self.device.scene
+        held = deformed.held if held is None else held
         shader, contract = self._program(deformation.catalog.target, step.program)
         visibility, tables = SHADER_VISIBILITY["compute"], []
         for resource in contract.resources:
             name, place = resource.name, (resource.bind_point, resource.register_space, resource.bind_count)
             kind = step.buffers.get(name)
-            if resource.register_class == "b" and name in CHAIN_BUFFERS:
-                layout = contract.buffer(name)
-                data = constant_buffer(layout, self._constants(step, deformation.weights))
-                if step.target is None:
-                    bound = self.device.buffer(data)
-                else:
-                    bound = scene.buffer(data, 0)
-                    deformed.blends.append((bound, layout, step))
+            if resource.register_class == "b" and (name in CHAIN_BUFFERS or name in step.constant_buffers):
+                bound = self._constant_buffer(deformed, contract.buffer(name), step)
                 tables.append((RANGE_CBV, *place, 0, visibility, ((0, bound),)))
             elif resource.register_class == "t" and kind in held and resource.input_type in _READ:
                 stride = contract.structured_buffer(name).byte_size if _READ[resource.input_type] else 0
                 tables.append((RANGE_SRV, *place, BUFFER, visibility, ((0, 0, stride, held[kind]),)))
             elif resource.register_class == "u":
                 tables.append((RANGE_UAV, *place, BUFFER, visibility, (written_entry(resource, step, held),)))
+            elif resource.register_class == "t" and resource.input_type == "texture" and texture is not None \
+                    and (entry := texture(resource)) is not None:
+                tables.append((RANGE_SRV, *place, VIEW_DIMENSIONS[resource.dimension], visibility, (entry,)))
+            elif resource.register_class == "s" and sampler is not None:
+                state = sampler(name)
+                tables.append((RANGE_SAMPLER, *place, 0, visibility,
+                               tuple((slot, *state) for slot in range(max(1, resource.bind_count)))))
             elif kind is None and (bound := deformed.engine(contract, resource)) is not None:
                 if resource.register_class == "b":
                     tables.append((RANGE_CBV, *place, 0, visibility, ((0, bound),)))
@@ -176,12 +204,19 @@ class ChainPasses:
             zeros = bytes(deformation.destination.accumulator_size)
             deformed.steps.append(self.device.copy(held[ACCUMULATOR], self.device.buffer(zeros)))
         for step in deformation.steps():
-            if step.material is not None and level.blend is not None and deformed.skinning is None:
+            if step.material is not None and level.blend is not None and not level.system and deformed.skinning is None:
                 deformed.skinning = len(deformed.steps)
             deformed.steps.append(self._dispatch(deformed, step) if step.material is None else skin(step, held))
 
+    def system(self, owner: int, step: ChainStep, held: Mapping[str, int], texture: Callable[[object], tuple | None],
+               sampler: Callable[[str], tuple]) -> int:
+        return self._dispatch(self._objects[owner], step, held, texture, sampler)
+
     def destination(self, owner: int) -> int:
         return self._objects[owner].held[DESTINATION]
+
+    def held(self, owner: int) -> Mapping[str, int]:
+        return self._objects[owner].held
 
     def keep_morphed(self, owner: int) -> int:
         """The returned buffer holds the blend-shaped, unskinned positions from the next run on."""
@@ -191,7 +226,6 @@ class ChainPasses:
         return deformed.morphed
 
     def _copy_morphed(self, deformed: _Deformed) -> None:
-        """The step copying the blend-shaped positions out before skinning, into ``morphed`` (made once)."""
         if deformed.skinning is None:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                 "MaterialPreview", "The renderer's passes leave no blend-shaped positions before skinning this "

@@ -1,447 +1,8 @@
 {
- "format": 6,
+ "format": 7,
  "game": "DD2",
  "resource_version": 260511270,
  "master_target": 2,
- "source": {
-  "sdf_files": 141,
-  "ocio_configurations": 3,
-  "captures": [
-   {
-    "capture": "spawn_prison_startarea.rdc",
-    "events": [
-     28234,
-     28275,
-     28466,
-     40280,
-     40285,
-     40297,
-     40310,
-     40514,
-     40540,
-     40545,
-     40550,
-     40555,
-     40561,
-     40565,
-     40569,
-     40573,
-     43095,
-     43119
-    ],
-    "programs": {
-     "28234": [
-      "GBufferEmissiveDecode",
-      "GBufferEmissiveDecode"
-     ],
-     "28275": [
-      "GBufferEmissiveDecodeIgnoreDepthEmissive",
-      "GBufferEmissiveDecodeIgnoreDepthEmissive"
-     ],
-     "28466": [
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam"
-     ],
-     "40280": [
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask",
-      "DeferredLightFastShadowSingleWithSSSSSMask"
-     ],
-     "40285": [
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask",
-      "DeferredLightFastShadowWithSSSSSMask"
-     ],
-     "40297": [
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask"
-     ],
-     "40310": [
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask"
-     ],
-     "40514": [
-      "DownsampleSPD",
-      "DownsampleSPD"
-     ],
-     "40540": [
-      "BlurHorizontal",
-      "BlurHorizontal"
-     ],
-     "40545": [
-      "BlurHorizontal",
-      "BlurHorizontal"
-     ],
-     "40550": [
-      "BlurHorizontal",
-      "BlurHorizontal"
-     ],
-     "40555": [
-      "BlurHorizontal",
-      "BlurHorizontal"
-     ],
-     "40561": [
-      "BlurVertical",
-      "BlurVertical"
-     ],
-     "40565": [
-      "BlurVertical",
-      "BlurVertical"
-     ],
-     "40569": [
-      "BlurVertical",
-      "BlurVertical"
-     ],
-     "40573": [
-      "BlurVertical",
-      "BlurVertical"
-     ],
-     "43095": [
-      "LDRPostProcessWithExposureC4L",
-      "LDRPostProcessWithExposureC4L"
-     ],
-     "43119": [
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT"
-     ]
-    },
-    "files": {
-     "40280 LightCullingVolumeSRV": [],
-     "40280 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "40280 StaticShadowMapSRV": [],
-     "40280 ShadowMapSRV": [],
-     "40280 IESLightTableSRV": [],
-     "40280 AtmosphereTransmittanceCopiedTexture": [],
-     "40280 SDFShadowTexture": [],
-     "40280 GIDSRV": [],
-     "40285 LightCullingVolumeSRV": [],
-     "40285 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "40285 StaticShadowMapSRV": [],
-     "40285 ShadowMapSRV": [],
-     "40285 IESLightTableSRV": [],
-     "40285 AtmosphereTransmittanceCopiedTexture": [],
-     "40285 SDFShadowTexture": [],
-     "40285 GIDSRV": [],
-     "43095 tFilterTempMap1": [
-      "systems/rendering/nullwhite.tex"
-     ],
-     "43095 tVolumeMap": [
-      "systems/rendering/volumenoise_lin.tex"
-     ],
-     "43095 HazeNoiseResult": [],
-     "43095 tTextureMap0": [],
-     "43095 tTextureMap1": [],
-     "43095 tTextureMap2": [
-      "systems/rendering/colorcubelinear.tex"
-     ],
-     "43095 ImagePlameBase": [
-      "systems/rendering/nullwhite.tex"
-     ],
-     "43095 ImagePlameAlpha": [
-      "systems/rendering/nullwhite.tex"
-     ],
-     "43119 SrcLUT": []
-    },
-    "heap_reads": [],
-    "moves": [
-     [
-      40388,
-      159190,
-      ""
-     ],
-     [
-      42500,
-      159190,
-      ""
-     ],
-     [
-      42504,
-      159190,
-      ""
-     ],
-     [
-      42508,
-      159190,
-      ""
-     ],
-     [
-      42512,
-      159190,
-      ""
-     ],
-     [
-      42516,
-      159190,
-      ""
-     ],
-     [
-      42533,
-      159190,
-      ""
-     ],
-     [
-      42539,
-      159190,
-      ""
-     ],
-     [
-      42543,
-      159190,
-      ""
-     ],
-     [
-      42552,
-      159190,
-      ""
-     ],
-     [
-      42560,
-      159190,
-      ""
-     ],
-     [
-      42564,
-      159190,
-      ""
-     ],
-     [
-      42573,
-      159190,
-      ""
-     ],
-     [
-      42581,
-      159190,
-      ""
-     ],
-     [
-      42596,
-      159190,
-      ""
-     ],
-     [
-      42600,
-      159190,
-      ""
-     ],
-     [
-      42604,
-      159190,
-      ""
-     ],
-     [
-      42608,
-      159190,
-      ""
-     ],
-     [
-      42612,
-      159190,
-      ""
-     ],
-     [
-      42616,
-      159190,
-      ""
-     ],
-     [
-      42620,
-      159190,
-      ""
-     ],
-     [
-      42624,
-      159190,
-      ""
-     ],
-     [
-      42628,
-      159190,
-      ""
-     ],
-     [
-      42632,
-      159190,
-      ""
-     ],
-     [
-      42636,
-      159190,
-      ""
-     ],
-     [
-      42640,
-      159190,
-      ""
-     ],
-     [
-      42644,
-      159190,
-      ""
-     ],
-     [
-      42648,
-      159190,
-      ""
-     ],
-     [
-      42786,
-      159191,
-      ""
-     ],
-     [
-      42822,
-      159190,
-      ""
-     ],
-     [
-      43106,
-      159190,
-      ""
-     ]
-    ],
-    "ambiguous": [],
-    "bakes": [
-     {
-      "capture": "DD2_frame2.rdc",
-      "event": 204,
-      "programs": {
-       "204": [
-        "OCIOTransformBakeWithSDRBrightnessOption",
-        "OCIOTransformBakeWithSDRBrightnessOption"
-       ]
-      },
-      "files": {
-       "204 OCIO_lut1d_0": [],
-       "204 OCIO_lut3d_1": []
-      },
-      "heap_reads": []
-     }
-    ],
-    "phases": {
-     "blending": [
-      28267
-     ],
-     "forward": [
-      40592,
-      40605,
-      40624,
-      40639,
-      40736,
-      41221,
-      41229,
-      41234,
-      41300,
-      41308,
-      41313,
-      41358,
-      41363,
-      41371,
-      41378,
-      41386,
-      41396,
-      41434,
-      41472,
-      41482,
-      41524,
-      41529,
-      41537,
-      41626,
-      41634,
-      41746,
-      41788,
-      41793,
-      41811,
-      41838,
-      41870,
-      41878,
-      41883,
-      41938,
-      41949,
-      41957,
-      41965,
-      41970,
-      42037,
-      42084,
-      42089,
-      42097,
-      42105,
-      42113,
-      42121,
-      42126,
-      42164,
-      42172,
-      42182,
-      42192,
-      42200,
-      42205,
-      42213,
-      42220
-     ]
-    }
-   }
-  ]
- },
  "passes": [
   {
    "role": "display",
@@ -842,8 +403,8 @@
      "stage": "pixel",
      "name": "SSSProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "92c354bec5be9b9edd41c497a5b8394db2452056390fbe7c2a2bb64b7e8cb969"
+      "kind": "profiles",
+      "value": "config/rendering/tower_sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1090,8 +651,8 @@
      "stage": "pixel",
      "name": "SSSProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "92c354bec5be9b9edd41c497a5b8394db2452056390fbe7c2a2bb64b7e8cb969"
+      "kind": "profiles",
+      "value": "config/rendering/tower_sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1276,8 +837,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "ad09934009378c48feea9d39a5d975295ed5224dccb8424c06c39d122b4f807d"
+      "kind": "kernels",
+      "value": "config/rendering/tower_sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1391,8 +952,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "ad09934009378c48feea9d39a5d975295ed5224dccb8424c06c39d122b4f807d"
+      "kind": "kernels",
+      "value": "config/rendering/tower_sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -2269,7 +1830,7 @@
    "purpose": "blending",
    "masters": [],
    "after": 1,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -2315,7 +1876,7 @@
    "purpose": "forward",
    "masters": [],
    "after": 16,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -2426,8 +1987,5 @@
    }
   }
  ],
- "buffers": {
-  "92c354bec5be9b9edd41c497a5b8394db2452056390fbe7c2a2bb64b7e8cb969": "eNpjYGiwX7hggd3BAw42/YdKbc+e8bE7e+YMmD9rpqQdA1AegUEAmQ0BKdMdbRC8Bvv///5B9R1waGxgsL944QLY3LS0NHtyzKO2+27eiLADmgkSc/j6pQTJvJl2A+2+6dPE7A/st7d/8zobFH7216+F2X/+VGT/43u5PTnum9DPb3/1SghUjYPDxw8F9n//1ID5ILfiMg/kB0h8ofsXAbiuK9vg4+NyHy4wat6oeaPmjZo3at6oeaPm0cc8AEWN8z4=",
-  "ad09934009378c48feea9d39a5d975295ed5224dccb8424c06c39d122b4f807d": "eNrLTOyzXcwWb3fpf709AxBs2JBku9YtxQrE7j9UuvfFTw67CxyutiB+gS3X3tcPhO1UJryzhcrvWfyAzU6eL93uMtNO0wmHSncvAvJVgPwM5p2mnYdKrd8C1WtC1fccKrV5CTTvIsI8WzT7bBlYGMDgh4Ck7WKhMNvLVeJgtZU/ZtgWGu+32fJqDpB/4ICntYPdZB51u5n5DnYMDBEHrp0Qtnsga2PHO00IyD+wn3v3DNtJkVds/bWng9TvQ+Pboam3RzPPAc0+hw8zGITvMDIwZA628IKC1+L+todbnO1qWarA7nooGmHbr+xhBpU+EPVYxk5JWNsGwp2wf9MTHTs3j0+28Y4nWIEC+3/PO2O7z7jXLqzAHqRmHxrfDk29PZp59mj2OfwHAiAtMNjCS2AxJB6/TPlgKzHxnO3J2DVgtdMXrrFuXixunbmByRqUfv4seGGz8xu77YfOTqB8xH7WLXZ2H9QT7Tq50kDpZd+UtUl2fdfd7Dz5NED8vWh8WzT1dmjm2aPZZw+LR7F1jnZ1jVx2uZGvwe46UHbLqvM/n1WP7klTYLAeCL7LZfOTv9OaPSsCGPY39vu9nWC7Zp+xXVpDONAeh/3H1JfZ9Yo02lkpJYD4+9D4dmjq7dHMs0ezz4EBDhrsERgViG+/uAOZ//Nt9g40+e3IfKntF7ch84W3XzRD5ottv2iOZp4FmnkWg9ZdLIPTXRt2QdL9aDwS5y5Y+TUY3QVx22g8jrpr1F2j7hp116i7Rt016i7y3CURZnz71mi7cES4i+u68h5k/uvAHbvR5NH5u5D5bNeVrdDkrZH5bwJ3WKPJ2zAMcgAAwbhgJQ=="
- }
+ "buffers": {}
 }

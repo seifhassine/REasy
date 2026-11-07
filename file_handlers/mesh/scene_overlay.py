@@ -27,6 +27,7 @@ class SceneOverlay:
         self._numbers: list[int] = []
         self._objects: dict[int, int] = {}
         self._groups: dict[tuple, int] = {}
+        self._batches: list[tuple[int, ...]] = []
         self._firsts: list[int] = []
         # Each mesh's first batch number.
         self._offsets: list[int] = []
@@ -68,6 +69,7 @@ class SceneOverlay:
             self._groups[group] = len(self._groups)
             self._firsts.append(first)
             vertices, batches, solid = group
+            self._batches.append(tuple(batch for batch, _cull in batches))
             of, drawn = meshes[vertices], meshes[self._meshes[first]]
             made.append(OverlayGeometry(
                 placements[vertices].shape.positions,
@@ -87,7 +89,7 @@ class SceneOverlay:
             if self._scene is not None and self._scene.device is overlay.device:
                 self._scene.release()
             self._key, self._scene, self._meshes, self._numbers, self._objects = key, None, [], [], {}
-            self._groups, self._firsts, self._unfaced = {}, [], {}
+            self._groups, self._batches, self._firsts, self._unfaced = {}, [], [], {}
             self._offsets = np.cumsum([0, *(len(geometry.batches) for geometry in meshes)]).tolist()
             self._given = ([], np.zeros((0, 3, 4)), [])
             self._hidden_parts = hidden_parts
@@ -170,15 +172,18 @@ class SceneOverlay:
                     [meshes[mesh].key in hidden for mesh in self._meshes], bool)
             self._scene.hide(self._hiding[3])
             objects = self._objects
+            hovered, parts = objects.get(scene_shown.hovered), scene_shown.hovered_parts
+            if hovered is not None and parts is not None:
+                parts = frozenset(part for part, batch in enumerate(self._batches[self._numbers[hovered]])
+                                  if batch in parts)
             scene, scene_shown = self._scene, replace(
-                scene_shown, hovered=objects.get(scene_shown.hovered),
+                scene_shown, hovered=hovered, hovered_parts=parts,
                 selected=frozenset(objects[mesh] for mesh in scene_shown.selected if mesh in objects))
         self._pickable = None if scene_shown is None else self._pickable or ScenePickable(
             tuple(self._meshes), self._culls, *self._scene.boxes())
         return overlay.steps(shown, overlays.background, camera, overlays.overlay_marks(), scene, scene_shown)
 
     def pickable(self) -> ScenePickable | None:
-        """What the last steps drew of the scene, None if none."""
         return self._pickable
 
 

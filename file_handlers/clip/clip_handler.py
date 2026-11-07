@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from file_handlers.base_handler import BaseFileHandler
+from file_handlers.base_handler import DocumentHandler
 
 from .decode import MAGIC
 from .model import ResourceKind
@@ -13,7 +13,7 @@ def resource_kind(path: str) -> ResourceKind | None:
     return next((kind for kind in ResourceKind if f".{kind.value}." in name or name.endswith(f".{kind.value}")), None)
 
 
-class ClipHandler(BaseFileHandler):
+class ClipHandler(DocumentHandler):
     def __init__(self):
         super().__init__()
         self.document: ClipDocument | None = None
@@ -26,16 +26,7 @@ class ClipHandler(BaseFileHandler):
         self.document = ClipDocument.read(data, resource_kind(self.filepath), self)
         self.modified = False
 
-    def rebuild(self) -> bytes:
-        data = self.document.write()
-        self.document.mark_saved()
-        self.modified = False
-        return data
-
     def create_viewer(self):
         editor = ClipEditor(self.document)
         editor.modified_changed.connect(self._set_modified)
         return editor
-
-    def _set_modified(self, modified: bool) -> None:
-        self.modified = modified

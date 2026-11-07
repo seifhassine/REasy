@@ -2,15 +2,28 @@
  "format": 1,
  "game": "PRAGMATA",
  "resource_version": 251112995,
- "source": {
-  "captures": [
-   "PRAGMATA_frame15320.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  }
- },
  "states": {
+  "AutomaticClamp": {
+   "filter": 85,
+   "address": [
+    3,
+    3,
+    3
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 16,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
   "AutomaticWrap": {
    "filter": 85,
    "address": [

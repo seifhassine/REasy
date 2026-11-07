@@ -6,7 +6,8 @@ from collections.abc import Sequence
 import numpy as np
 
 lazy from .clsp_file import ShapeKind
-lazy from .placement import pairwise, point, row_lengths
+lazy from file_handlers.engine_math import row_lengths, transform_product
+lazy from .placement import point
 
 F = np.float32
 
@@ -25,7 +26,7 @@ def placed(kind: ShapeKind, world: Sequence, local: Sequence, matrix: Sequence |
             out[:19] = np.asarray(world, F)[:19]
         else:
             coord, extent = local
-            out[:16] = pairwise(np.asarray(coord, F).reshape(4, 4), m).ravel()
+            out[:16] = transform_product(np.asarray(coord, F).reshape(4, 4), m).ravel()
             out[16:19] = np.asarray(extent, F)[:3] * row_lengths(m)
         return out
     if kind not in (ShapeKind.SPHERE, ShapeKind.CAPSULE):

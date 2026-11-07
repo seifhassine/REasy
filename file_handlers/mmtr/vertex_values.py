@@ -11,7 +11,7 @@ from file_handlers.sdf.shader_graph import (
 
 lazy from .profiles.renderer_inputs import (
     WHERE_AVAILABLE_KIND, add_engine_buffers, add_engine_resources, engine_input_nodes, engine_inputs_available,
-    graph_renderer_buffers, graph_renderer_resources,
+    graph_renderer_buffers, graph_renderer_resources, graph_resource_declarations,
 )
 lazy from .material_region_read import per_build_of
 lazy from .surface_data import program_surface_data, program_vertex_inputs, surface_data_keys
@@ -157,9 +157,11 @@ def upstream(graph, links, roots, *, through_per_vertex: bool, provides=None):
 
 
 def where_available_input(graph, links, node, through_per_vertex: bool, provides) -> str:
+    """``provides(producers, per-vertex nodes, the value link)``."""
     value = links.get((node.node_id, "value"))
     return "value" if provides(*upstream(graph, links, [value.source_node] if value else [],
-                                         through_per_vertex=through_per_vertex, provides=provides)) else "otherwise"
+                                         through_per_vertex=through_per_vertex, provides=provides),
+                               value) else "otherwise"
 
 
 def _pixel_reads(graph, roots) -> tuple[dict, list, set]:
@@ -187,9 +189,10 @@ def vertex_value_plan(document, profile, graph, target_index: int, program_index
     stage = _VertexStage(int(target_index), int(program_index))
     contract = profile.shader_contract(document, program, "vertex")
     contract = add_engine_buffers(document, contract, stage, graph_renderer_buffers(graph))
-    contract = add_engine_resources(document, contract, stage, graph_renderer_resources(graph))
+    contract = add_engine_resources(document, contract, stage, graph_renderer_resources(graph),
+                                    graph_resource_declarations(graph))
 
-    def provides(producers, _per_vertex):
+    def provides(producers, _per_vertex, _value=None):
         return (engine_inputs_available(contract, [*engine_input_nodes(producer) for producer in producers])
                 and {*surface_data_keys(producer) for producer in producers} <= inputs)
 
@@ -251,8 +254,8 @@ def per_vertex_value(semantics, node) -> VertexValue:
     if value is not None:
         return value
     reason = dict(semantics.vertex_value_refusals).get(source, "")
-    raise ShaderGraphError(f"{semantics.name} cannot compute this value per vertex. {reason} Use Where Available or "
-                           "Drawing For for the passes that cannot.".replace("  ", " "))
+    raise ShaderGraphError(f"{semantics.name} cannot compute this value per vertex. {reason} Use Where Available for "
+                           "the passes that cannot.".replace("  ", " "))
 
 
 __all__ = [

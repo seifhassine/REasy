@@ -2,12 +2,6 @@
  "format": 1,
  "game": "RE3RT",
  "resource_version": 2109101635,
- "source": {
-  "captures": [
-   "cap.rdc"
-  ],
-  "several_states": {}
- },
  "states": {
   "AutomaticWrap": {
    "filter": 85,

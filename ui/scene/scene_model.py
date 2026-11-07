@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 lazy import numpy as np
+
+lazy from file_handlers.mmtr.draw_rules import MESH_DECAL_RECEIVE
 
 
 @dataclass(slots=True)
@@ -42,9 +45,12 @@ class SceneDrawMesh:
     bounds_maximum: np.ndarray | None = None
     # Whether the recalculated normals leave the edges' out (``via.render.Mesh``'s ``NREdgeExcluded``).
     edge_excluded: bool = False
-    # ``via.render.Mesh``'s ``DecalReciveMode``; 0 is its default.
-    decal_receive_mode: int = 0
+    decal_receive: tuple[str, str | None] = MESH_DECAL_RECEIVE
     # ``via.render.Mesh``'s ``TransparentBias``; 0 is its default.
     transparent_bias: float = 0.0
     # One of ``stmesh_file.PLACEMENTS``.
     speedtree_placement: str | None = None
+    blend_normal: bool = True
+    chain_flags: tuple[bool, bool] = (True, False)
+    draw_state: Mapping[str, object] | None = None
+    lod_parent_mesh: bool = False

@@ -59,6 +59,12 @@ def set_fields(document: ClipDocument, target: object, text: str, merge_key=None
     document.push(SetFields(document, edits, text, merge_key))
 
 
+def set_keys(document: ClipDocument, moves: list[tuple[Key, float, object]], text: str, merge_key=None) -> None:
+    edits = [(key, {"frame": frame, "value": value}) for key, frame, value in moves]
+    edits += _in_frame_order(document, [key for key, _, _ in moves], {id(key): frame for key, frame, _ in moves})
+    document.push(SetFields(document, edits, text, merge_key))
+
+
 def _in_frame_order(document: ClipDocument, moved: list, frames: dict[int, float]) -> list[tuple[object, dict]]:
     lists = {}
     for item in moved:

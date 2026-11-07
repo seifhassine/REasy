@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 6,
  "game": "DD2",
  "resource_version": 260511270,
  "target": 2,
@@ -37,31 +37,30 @@
  "static_like_skinning": true,
  "still_without_blend": null,
  "copied_skin_whole": null,
- "source": {
-  "captures": [
-   {
-    "capture": "DD2_frame18254.rdc",
-    "draws": []
-   },
-   {
-    "capture": "DD2_frame6935.rdc",
-    "draws": []
-   },
-   {
-    "capture": "DD2_frame226100.rdc",
-    "draws": [
-     11370,
-     11421
-    ]
-   },
-   {
-    "capture": "DD2_frame227197.rdc",
-    "draws": [
-     12054,
-     12121
-    ]
-   }
-  ],
-  "executable": "DD2_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
- }
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "ShellFurMaterial",
+  "Standard",
+  "Transparent",
+  "TransparentStencil"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalStencil",
+  "DecalWithMetallic",
+  "Eyeball",
+  "EyeballPostProcess",
+  "SeparateAlphaDecal",
+  "VolumeDecal"
+ ],
+ "decal_no_pre_transform": false
 }

@@ -1,0 +1,78 @@
+{
+ "format": 3,
+ "game": "SF6",
+ "resource_version": 250109895,
+ "material_flags": {
+  "masked": {
+   "ForcedAlphaTestEnable": "AlphaMaskUsed",
+   "ForcedAlphaTestEnableShadow": "AlphaMaskUsed"
+  },
+  "derived": {
+   "AlphaTestEnable": [
+    "BaseAlphaTestEnable",
+    "ForcedAlphaTestEnable"
+   ],
+   "TwoSideEnable": [
+    "BaseTwoSideEnable",
+    "ForcedTwoSideEnable"
+   ]
+  }
+ },
+ "program_markers": [
+  [
+   "A",
+   "AlphaTestEnable"
+  ],
+  [
+   "TS",
+   "TwoSideEnable"
+  ]
+ ],
+ "decal_receive": {
+  "via.render.Mesh": {
+   "field": "DecalReciveMode",
+   "enum": "via.render.DecalReciveMode",
+   "Enable": "always",
+   "Disable": "never",
+   "otherwise": "unskinned"
+  },
+  "via.render.CompositeMesh": {
+   "otherwise": "always"
+  },
+  "via.landscape.Foliage": {
+   "field": "DecalReciveMode",
+   "enum": "via.landscape.DecalReciveMode",
+   "Enable": "always",
+   "otherwise": "never"
+  },
+  "via.speedtree.SpeedTreeV8": {
+   "otherwise": "never"
+  }
+ },
+ "stencil": {
+  "via.render.Mesh": [
+   {
+    "material": "SSSProfileUsed",
+    "bits": 2
+   }
+  ]
+ },
+ "component": {
+  "via.render.Mesh": {}
+ },
+ "material_params": {
+  "via.render.Mesh": {
+   "list": "Materials",
+   "material": "MaterialName",
+   "variable": "VariableName",
+   "scalar": "ValueF",
+   "vector": "ValueF4",
+   "texture": null,
+   "buffer": null,
+   "scalar_components": 1,
+   "vector_components": 4,
+   "locked_kept": true,
+   "own": false
+  }
+ }
+}

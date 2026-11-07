@@ -1,0 +1,54 @@
+{
+ "format": 3,
+ "game": "RE3",
+ "resource_version": 1905100741,
+ "material_flags": {
+  "masked": {
+   "ForcedAlphaTestEnable": "AlphaMaskUsed",
+   "ForcedAlphaTestEnableShadow": "AlphaMaskUsed"
+  },
+  "derived": {
+   "AlphaTestEnable": [
+    "BaseAlphaTestEnable",
+    "ForcedAlphaTestEnable"
+   ]
+  }
+ },
+ "program_markers": [
+  [
+   "A",
+   "AlphaTestEnable"
+  ],
+  [
+   "TS",
+   "BaseTwoSideEnable"
+  ]
+ ],
+ "decal_receive": {
+  "via.render.Mesh": {
+   "field": "DecalReciveMode",
+   "enum": "via.render.DecalReciveMode",
+   "Enable": "always",
+   "Disable": "never",
+   "otherwise": "unskinned"
+  },
+  "via.render.CompositeMesh": {
+   "otherwise": "always"
+  },
+  "via.landscape.Foliage": {
+   "field": "DecalReciveMode",
+   "enum": "via.landscape.DecalReciveMode",
+   "Enable": "always",
+   "otherwise": "never"
+  },
+  "via.speedtree.SpeedTreeV8": {
+   "otherwise": "never"
+  }
+ },
+ "stencil": {
+  "via.render.Mesh": []
+ },
+ "component": {
+  "via.render.Mesh": {}
+ }
+}

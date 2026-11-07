@@ -1,0 +1,22 @@
+{
+ "format": 1,
+ "game": "re4",
+ "resource_version": 221007879,
+ "buffer": "EnvironmentInfo",
+ "time": "timeMillisecond",
+ "day": 86400000,
+ "scale": 1.0,
+ "frame": "frameCount",
+ "odd": "isOddFrame",
+ "parameters": "userGlobalParams",
+ "timers": [
+  {"word": 4, "per_second": 1000.0, "period": 120000.0},
+  {"word": 6, "per_second": 1000.0, "period": 120000.0},
+  {"word": 7, "per_second": 1.0, "period": 1.0},
+  {"word": 8, "per_second": null, "period": 1024}
+ ],
+ "mirrors": {
+  "reserveEnvironmentInfo3": 6,
+  "reserveEnvironmentInfo4": 7
+ }
+}

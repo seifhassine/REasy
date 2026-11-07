@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 6,
  "game": "SF6",
  "resource_version": 250109895,
  "target": 2,
@@ -43,33 +43,26 @@
  "static_like_skinning": true,
  "still_without_blend": null,
  "copied_skin_whole": null,
- "source": {
-  "captures": [
-   {
-    "capture": "cap.rdc",
-    "draws": [
-     18589,
-     18596,
-     18648,
-     18689,
-     18745,
-     18816,
-     18837,
-     19193,
-     19220,
-     19271
-    ]
-   },
-   {
-    "capture": "resultscreen.rdc",
-    "draws": [
-     5221,
-     5229,
-     5259,
-     5285
-    ]
-   }
-  ],
-  "executable": "StreetFighter6_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
- }
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "ShellFurMaterial",
+  "Standard",
+  "Transparent"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalWithMetallic",
+  "SeparateAlphaDecal",
+  "VolumeDecal"
+ ],
+ "decal_no_pre_transform": false
 }

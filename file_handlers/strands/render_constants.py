@@ -1,13 +1,13 @@
 """See docs/internals/strands-rendering.md, Render constants."""
 from __future__ import annotations
 
-import ctypes
 import itertools
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 
 import numpy as np
 
+lazy from file_handlers.engine_math import crt
 lazy from file_handlers.mmtr.engine_buffers import engine_inverse
 
 lazy from .chain_catalog import RenderSection
@@ -24,9 +24,6 @@ _LEAST_SPREAD, _LEAST_RATE, _LEAST_STEP = F(0.009999999776482582), F(0.009999999
 _DEPTH_WRITE = F(0.949999988079071)
 SQUARE, LINEAR, TWENTIETH = F(0.8119999766349792), F(0.7260000109672546), F(3.700000047683716)
 FOUR_PI = F(12.566370964050293)
-# The fillers' logarithm: the C runtime's ``logf``.
-LOGF = ctypes.CDLL("ucrtbase").logf
-LOGF.restype, LOGF.argtypes = ctypes.c_float, (ctypes.c_float,)
 # Eumelanin and pheomelanin absorption per RGB channel.
 LEAST_THROUGH = F(9.999999747378752e-05)
 EUMELANIN, PHEOMELANIN = np.array((0.506, 0.841, 1.653), F), np.array((0.343, 0.733, 1.924), F)
@@ -62,7 +59,7 @@ class DrawFrame:
 
 def _absorption(melanin, redness) -> np.ndarray:
     through = F(1) - melanin
-    length = -F(LOGF(LEAST_THROUGH if LEAST_THROUGH > through else through))
+    length = -F(crt("logf")(LEAST_THROUGH if LEAST_THROUGH > through else through))
     return (F(1) - redness) * length * EUMELANIN + redness * length * PHEOMELANIN
 
 

@@ -1,20 +1,12 @@
 {
- "format": 2,
+ "format": 6,
  "game": "ONIMUSHAWOTS",
  "resource_version": 260605155,
  "target": 1,
  "source_holds_indices": true,
  "destination_holds_buffer": true,
- "blend": {
-  "3": {
-   "file": "systems/shader/computeblendshape.sdf",
-   "program": "BlendShapeWriteNormalTangentLightest"
-  }
- },
- "blend_still": {
-  "file": "systems/shader/computeblendshape.sdf",
-  "program": "BlendShapeNoneWriteNormalTangent"
- },
+ "blend": {},
+ "blend_still": null,
  "calculate": {
   "file": "systems/shader/computeskinning.sdf",
   "program": "CSCalculateNormal"
@@ -29,10 +21,14 @@
  },
  "write_by_submesh": true,
  "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningInstanceIDVFXCS",
   "PreTransformSkinningOptionalBufferCS",
   "PreTransformSkinningOptionalBufferVFXCS",
   "PreTransformSkinningOptionalBufferWithNormCS",
-  "PreTransformSkinningOptionalBufferWithNormVFXCS"
+  "PreTransformSkinningOptionalBufferWithNormVFXCS",
+  "PreTransformSkinningVFXCS"
  ],
  "skin_by_range": false,
  "system_skins_blend": false,
@@ -42,22 +38,51 @@
  "static_like_skinning": true,
  "still_without_blend": true,
  "copied_skin_whole": false,
- "source": {
-  "captures": [
-   {
-    "capture": "wots_frame136485.rdc",
-    "draws": [
-     19372
-    ]
-   },
-   {
-    "capture": "wots_frame25731.rdc",
-    "draws": [
-     7601,
-     7679
-    ]
-   }
-  ],
-  "executable": "OnimushaWotS_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
- }
+ "blend_by_normals": true,
+ "blend_normals": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteBlendShapeNormalTangentLight"
+  }
+ },
+ "blend_still_normals": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "blend_first_lod_only": true,
+ "blend_writing_normals": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentLight"
+  },
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentStandard"
+  },
+  "3": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentLightest"
+  }
+ },
+ "blend_vertex_normal_read": true,
+ "unblended_lods_deformed": true,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "ShellFurMaterial",
+  "Standard",
+  "Transparent",
+  "TransparentStencil"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalStencil",
+  "DecalWithMetallic",
+  "Eyeball",
+  "EyeballPostProcess",
+  "SeparateAlphaDecal",
+  "VolumeDecal"
+ ],
+ "decal_no_pre_transform": false
 }

@@ -6,6 +6,8 @@ import functools
 from dataclasses import dataclass
 
 lazy from file_handlers.layout_codec import RecordCodec, game_enums, load_table, merged
+lazy from utils.enum_manager import game_enum_definitions
+lazy from utils.game_keys import game_key
 
 from .errors import MotionFormatError
 
@@ -90,6 +92,9 @@ class ListProfile:
     header: RecordCodec
     records: dict[str, RecordCodec]
     override_base: str
+    source_key: str
+    reverse: bool
+    row_sequences: str
 
 
 @functools.cache
@@ -104,9 +109,64 @@ def list_profile(version: int) -> ListProfile:
         raise MotionFormatError(f"MOTLIST version {version} is not supported "
                                 f"(supported: {', '.join(map(str, sorted(list_versions())))})")
     data = merged(_load("layouts")["motlist"], entry["layout"], _DEEP)
+    rules = data["rules"]
     return ListProfile(version, entry["mot"], _codec("MOTLIST header", data["header"]),
                        {name: _codec(name, spec) for name, spec in data["records"].items()},
-                       data["rules"]["override_base"])
+                       rules["override_base"], rules["source_key"], rules["reverse"], rules["row_sequences"])
+
+
+@functools.cache
+def pack_profile(version: int) -> tuple[int, RecordCodec]:
+    entry = _load("versions")["motpack"].get(str(version))
+    if entry is None:
+        raise MotionFormatError(f"MOTPACK version {version} is not supported "
+                                f"(supported: {', '.join(sorted(_load('versions')['motpack'], key=int))})")
+    return entry["mot"], _codec("MOTPACK header", _load("layouts")["motpack"]["header"])
+
+
+@functools.cache
+def jmap_layout(version: int) -> tuple[int, int, RecordCodec] | None:
+    entry = _load("versions")["jmap"].get(str(version), {})
+    return None if "groups" not in entry else (entry["groups"], entry["count"],
+                                               _codec("JMAP mask group", _load("layouts")["jmap"]["group"]))
+
+
+def controller_rules() -> dict:
+    return {kind: rule for kind, rule in _load("controllers").items() if kind != "format"}
+
+
+@functools.cache
+def sequence_track_rules(game: str) -> dict:
+    def indexed(value):
+        return {key: indexed(item) for key, item in (enumerate(value) if isinstance(value, list) else value.items())} \
+            if isinstance(value, (list, dict)) else value
+
+    found = _load("sequence_tracks")["games"].get(game_key(game), {})
+    return found and {**found, "classes": {kind: rule | {"defaults": indexed(rule["defaults"])} | ({"enums": {field: {
+        item["name"]: item["value"] for item in game_enum_definitions(game)[enum]}
+        for field, enum in rule["enums"].items()}} if "enums" in rule else {})
+        for kind, rule in found["classes"].items()}}
+
+
+def jmap_properties(version: int) -> tuple[int, RecordCodec] | None:
+    entry = _load("versions")["jmap"].get(str(version), {})
+    return None if "properties" not in entry else (
+        entry["properties"], _codec("JMAP property joint", _load("layouts")["jmap"][entry["property"]]))
+
+
+def joint_attributes(game: str) -> dict[str, int]:
+    return {name: value for value, name in _game_enums(game)["JointAttr"].items()}
+
+
+def jmap_extras(version: int) -> tuple[int, int, RecordCodec] | None:
+    entry = _load("versions")["jmap"].get(str(version))
+    return None if entry is None else (entry["extras"], entry["type"],
+                                       _codec("JMAP extra joint", _load("layouts")["jmap"][entry["extra"]]))
+
+
+def jmap_mirror(version: int) -> tuple[int, int] | None:
+    entry = _load("versions")["jmap"].get(str(version), {})
+    return None if "mirror" not in entry else (entry["mirror"], entry["mirror_record"])
 
 
 @functools.cache
@@ -188,6 +248,11 @@ def _game_enums(game: str) -> dict[str, dict[int, str]]:
     return game_enums(_load("versions")["enums"], game)
 
 
+def layer_enums(game: str) -> tuple[dict[int, str], dict[int, str]]:
+    enums = _game_enums(game)
+    return enums["BlendMode"], enums["JointMaskMode"]
+
+
 @functools.cache
 def display_names(enum: str) -> dict[int, str]:
     """The newest version's games know every value."""
@@ -222,3 +287,35 @@ def tree_rules(version: int) -> TreeRules:
 @functools.cache
 def tree_param_kinds() -> dict[int, str]:
     return {int(code): kind for code, kind in _load("layouts")["tree_params"].items()}
+
+
+@functools.cache
+def tree_param_names() -> dict[int, str]:
+    """MotTree parameter names by key (murmur3 of the name's bytes); an ExtraData parameter's key is its size."""
+    return {int(key): name for key, name in _load("layouts")["tree_param_names"].items()}
+
+
+@functools.cache
+def tree_classes(version: int) -> dict[str, dict]:
+    return _load("tree_classes").get(str(version), {})
+
+
+@functools.cache
+def rotation_offset_head(version: int) -> RecordCodec | None:
+    """A RotationGlobalOffsetNode blob's head in trees of ``version``, its chain's weights following it (RE4's build
+    reads no root joint); None: no build of that version holds the node."""
+    data = _load("layouts")["rotation_offset"]
+    name = data["versions"].get(str(version))
+    return None if name is None else _codec("Rotation offset", data["heads"][name])
+
+
+@functools.cache
+def pose_blend_head() -> RecordCodec:
+    return _codec("Pose blend", _load("layouts")["pose_blend"])
+
+
+@functools.cache
+def joint_pose_layout() -> tuple[dict[str, RecordCodec], dict[str, tuple], frozenset[str]]:
+    data = _load("layouts")["joint_pose"]
+    return ({name: _codec(f"Joint pose {name}", data[name]) for name in ("data", "pose", "frame", "table")},
+            {name: tuple(spec) for name, spec in data["rotations"].items()}, frozenset(data["table_calcs"]))

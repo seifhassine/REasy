@@ -50,12 +50,10 @@ class SamplerCatalog:
     game: str
     resource_version: int
     states: Mapping[str, SamplerState]
-    source: Mapping[str, object]
 
 
 def catalog_to_dict(catalog: SamplerCatalog) -> dict:
     return {"format": CATALOG_FORMAT, "game": catalog.game, "resource_version": catalog.resource_version,
-            "source": dict(catalog.source),
             "states": {name: state_to_dict(state) for name, state in sorted(catalog.states.items())}}
 
 
@@ -63,8 +61,7 @@ def catalog_from_dict(data: Mapping) -> SamplerCatalog:
     if data.get("format") != CATALOG_FORMAT:
         raise SamplerCatalogError(f"sampler catalog format {data.get('format')!r} is not {CATALOG_FORMAT}")
     return SamplerCatalog(str(data["game"]), int(data["resource_version"]),
-                          {str(name): state_from_dict(state) for name, state in data["states"].items()},
-                          dict(data["source"]))
+                          {str(name): state_from_dict(state) for name, state in data["states"].items()})
 
 
 sampler_catalog_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, SamplerCatalogError, "sampler")

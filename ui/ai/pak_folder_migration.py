@@ -254,7 +254,7 @@ def _output_relative(relative: Path, latest_path: str) -> Path:
     return relative.with_name(latest_parts[-1])
 
 
-def _create_staging(output: Path) -> Path:
+def create_staging(output: Path) -> Path:
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
         return Path(
@@ -428,7 +428,7 @@ def update_mod_folder_from_paks_steps(
         )
     output = _output_folder(mod_root, output_folder)
 
-    staging = _create_staging(output)
+    staging = create_staging(output)
     format_item_ids = {id(item) for item in format_items}
     copied = updated = changes = skipped = 0
     source_only = destination_only = incompatible = 0

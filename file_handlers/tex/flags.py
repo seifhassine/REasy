@@ -20,13 +20,18 @@ TYPE_SHIFT = 7
 TYPE_MASK = 0x1F
 FIXED_MIP_NUM = 1 << 12
 STREAMING_MIPS_SHIFT = 13
-STREAMING_MIPS_MASK = 0x7
-FIELD_18_23_SHIFT = 18
-FIELD_18_23_MASK = 0x3F
+# The widest streaming mip field a loader reads (bits 13-17; docs/internals/tex-flags.md).
+STREAMING_MIPS_WIDEST = 0x1F
+RANGE_COMPRESSION_EXP_SHIFT = 18
+RANGE_COMPRESSION_EXP_MASK = 0x3F
 REFILTERED_NORMAL = 1 << 24
-OPAQUE_FLAG = 1 << 25
+HIGH_PRIORITY_LOAD_STREAMING = 1 << 25
 
-RESERVED_BITS = (1 << 16) | (1 << 17) | (0x3F << 26)
+RESERVED_HIGH_BITS = 0x3F << 26
+
+
+def streaming_mips_mask(profile: TexCookProfile) -> int:
+    return (1 << profile.streaming_mip_bits) - 1
 
 
 @dataclass(frozen=True, slots=True)
@@ -55,14 +60,17 @@ class TexFlags:
     streaming_mips: int
     refiltered_normal: bool
     ev: int
-    field_18_23: int
-    opaque_flag: bool
+    range_compression_exp: int
+    high_priority_load_streaming: bool
+    # Bits no loader of the cook reads (past its streaming mip field, and 26-31).
+    reserved_bits_set: int
 
     @classmethod
     def decode(cls, raw: int, version: int) -> "TexFlags":
         cook = tex_profile(version)
         index = (raw >> TYPE_SHIFT) & TYPE_MASK
         name = texture_type_name(cook, index)
+        mips = streaming_mips_mask(cook)
         return cls(
             raw=raw,
             resident=bool(raw & RESIDENT),
@@ -70,20 +78,17 @@ class TexFlags:
             type_name=name,
             linear_type=name is not None and name in texture_linear_types(cook),
             fixed_mip_num=bool(raw & FIXED_MIP_NUM),
-            streaming_mips=(raw >> STREAMING_MIPS_SHIFT) & STREAMING_MIPS_MASK,
+            streaming_mips=(raw >> STREAMING_MIPS_SHIFT) & mips,
             refiltered_normal=bool(raw & REFILTERED_NORMAL),
             ev=(raw >> EV_SHIFT) & EV_MASK,
-            field_18_23=(raw >> FIELD_18_23_SHIFT) & FIELD_18_23_MASK,
-            opaque_flag=bool(raw & OPAQUE_FLAG),
+            range_compression_exp=(raw >> RANGE_COMPRESSION_EXP_SHIFT) & RANGE_COMPRESSION_EXP_MASK,
+            high_priority_load_streaming=bool(raw & HIGH_PRIORITY_LOAD_STREAMING),
+            reserved_bits_set=raw & ((STREAMING_MIPS_WIDEST & ~mips) << STREAMING_MIPS_SHIFT | RESERVED_HIGH_BITS),
         )
 
     @property
     def type_label(self) -> str:
         return self.type_name if self.type_name is not None else f"type index {self.texture_type}"
-
-    @property
-    def reserved_bits_set(self) -> int:
-        return self.raw & RESERVED_BITS
 
     @property
     def bit_12_matches_type(self) -> bool:
@@ -99,12 +104,15 @@ class TexFlags:
                 TexSetting("texture_type", CHOICE, self.texture_type, TYPE_MASK, type_choices(profile))
             )
         if profile.streaming_mips:
-            settings.append(TexSetting("streaming_mips", NUMBER, self.streaming_mips, STREAMING_MIPS_MASK))
+            settings.append(
+                TexSetting("streaming_mips", NUMBER, self.streaming_mips, streaming_mips_mask(profile)))
         if profile.refiltered_normal:
             settings.append(TexSetting("refiltered_normal", SWITCH, int(self.refiltered_normal)))
-        if profile.unnamed_fields:
-            settings.append(TexSetting("field_18_23", NUMBER, self.field_18_23, FIELD_18_23_MASK))
-            settings.append(TexSetting("opaque_flag", SWITCH, int(self.opaque_flag)))
+        if profile.range_compression_exp:
+            settings.append(TexSetting("range_compression_exp", NUMBER, self.range_compression_exp,
+                                       RANGE_COMPRESSION_EXP_MASK))
+        if profile.high_priority_load_streaming:
+            settings.append(TexSetting("high_priority_load_streaming", SWITCH, int(self.high_priority_load_streaming)))
         return settings
 
     def encode(self, profile: TexCookProfile, **changes: int) -> int:
@@ -113,21 +121,21 @@ class TexFlags:
         texture_type = changes.get("texture_type", self.texture_type)
         streaming_mips = changes.get("streaming_mips", self.streaming_mips)
         refiltered_normal = changes.get("refiltered_normal", self.refiltered_normal)
-        field_18_23 = changes.get("field_18_23", self.field_18_23)
-        opaque_flag = changes.get("opaque_flag", self.opaque_flag)
+        range_compression_exp = changes.get("range_compression_exp", self.range_compression_exp)
+        high_priority_load_streaming = changes.get("high_priority_load_streaming", self.high_priority_load_streaming)
         word = (
             (1 if resident else 0)
             | (ev << EV_SHIFT)
             | (texture_type << TYPE_SHIFT)
-            | ((streaming_mips & STREAMING_MIPS_MASK) << STREAMING_MIPS_SHIFT)
-            | (field_18_23 << FIELD_18_23_SHIFT)
+            | ((streaming_mips & streaming_mips_mask(profile)) << STREAMING_MIPS_SHIFT)
+            | (range_compression_exp << RANGE_COMPRESSION_EXP_SHIFT)
         )
         name = texture_type_name(profile, texture_type) if profile.type_field_used else None
         if name is not None and name in texture_linear_types(profile):
             word |= FIXED_MIP_NUM
         if refiltered_normal:
             word |= REFILTERED_NORMAL
-        if opaque_flag:
-            word |= OPAQUE_FLAG
+        if high_priority_load_streaming:
+            word |= HIGH_PRIORITY_LOAD_STREAMING
         return word
 

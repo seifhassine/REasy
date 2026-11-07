@@ -2,24 +2,6 @@
  "format": 1,
  "game": "DD2",
  "resource_version": 260511270,
- "source": {
-  "captures": [
-   "DD2_frame227197.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  },
-  "kept_from_earlier_captures": {
-   "captures": [
-    "main_menu_scene.rdc",
-    "spawn_prison_startarea.rdc"
-   ],
-   "states": [
-    "glyphSampler",
-    "sampler0"
-   ]
-  }
- },
  "states": {
   "AutomaticClamp": {
    "filter": 85,

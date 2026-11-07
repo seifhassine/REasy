@@ -2197,6 +2197,79 @@ done:
     return result;
 }
 
+/* ``small_culled(boxes, factors, view_projection, threshold, bound, half_width, half_height)``: of world boxes
+ * (float32 n x 2 x 3) placed as their renderers place them, bytes, 1 where the renderer leaves the object out as small
+ * on screen: by its ``factors`` (float32 n; NaN for the instancers' test) as ``scene_lods.LodRules.culled`` takes the
+ * test, numpy's single-precision arithmetic element by element (the corners through ``view_projection``, float32 4 x 4
+ * for row vectors, as numpy's matmul sums them: x m0, then y m1 and z m2 fused, then m3). */
+static PyObject* small_culled(PyObject* self, PyObject* args) {
+    Py_buffer boxes = {0}, factors = {0}, matrix = {0};
+    double threshold_given, bound_given, half_width, half_height;
+    PyObject* result = NULL;
+    if (!PyArg_ParseTuple(args, "y*y*y*dddd", &boxes, &factors, &matrix, &threshold_given, &bound_given, &half_width,
+                          &half_height))
+        return NULL;
+    const Py_ssize_t count = factors.len / (Py_ssize_t)sizeof(float);
+    if (factors.len != count * (Py_ssize_t)sizeof(float) || boxes.len != count * (Py_ssize_t)(6 * sizeof(float))
+        || matrix.len != 16 * (Py_ssize_t)sizeof(float)) {
+        PyErr_SetString(PyExc_ValueError, "small_culled needs float32 n x 2 x 3 boxes, n factors and a 4 x 4 matrix");
+        goto done;
+    }
+    result = PyBytes_FromStringAndSize(NULL, count);
+    if (!result)
+        goto done;
+    const float* box = (const float*)boxes.buf;
+    const float* factor = (const float*)factors.buf;
+    const float* m = (const float*)matrix.buf;
+    unsigned char* out = (unsigned char*)PyBytes_AS_STRING(result);
+    const float threshold = (float)threshold_given, bound = (float)bound_given;
+    const float halves[2] = {(float)half_width, (float)half_height};
+    for (Py_ssize_t n = 0; n < count; ++n, box += 6) {
+        /* By axis (x, y): numpy's max and min (NaN if any is), and fmax.reduce and fmin.reduce (NaN only if all are). */
+        float most[2] = {0.0f, 0.0f}, least[2] = {0.0f, 0.0f}, high[2] = {NAN, NAN}, low[2] = {NAN, NAN};
+        int nan[2] = {0, 0};
+        for (int corner = 0; corner < 8; ++corner) {
+            const float p[3] = {box[(corner & 4) ? 3 : 0], box[(corner & 2) ? 4 : 1], box[(corner & 1) ? 5 : 2]};
+            float c[4];
+            for (int j = 0; j < 4; ++j)
+                c[j] = fmaf(p[2], m[8 + j], fmaf(p[1], m[4 + j], p[0] * m[j])) + m[12 + j];
+            for (int axis = 0; axis < 2; ++axis) {
+                const float v = c[axis] / c[3];
+                if (isnan(v)) {
+                    nan[axis] = 1;
+                    continue;
+                }
+                if (corner == 0 || v > most[axis]) most[axis] = v;
+                if (corner == 0 || v < least[axis]) least[axis] = v;
+                if (isnan(high[axis]) || v > high[axis]) high[axis] = v;
+                if (isnan(low[axis]) || v < low[axis]) low[axis] = v;
+            }
+        }
+        const float width = nan[0] ? NAN : most[0] - least[0];
+        const float height = nan[1] ? NAN : most[1] - least[1];
+        if (isnan(factor[n])) {
+            float lows[2], highs[2];
+            int crosses = 0;
+            for (int axis = 0; axis < 2; ++axis) {
+                lows[axis] = isnan(low[axis]) ? bound : (low[axis] < bound ? low[axis] : bound);
+                highs[axis] = isnan(high[axis]) ? -bound : (high[axis] > -bound ? high[axis] : -bound);
+                crosses |= rintf(halves[axis] * highs[axis]) != rintf(halves[axis] * lows[axis]);
+            }
+            const float spread = highs[0] - lows[0], other = highs[1] - lows[1];
+            const float widest = isnan(spread) ? other : isnan(other) ? spread : (spread > other ? spread : other);
+            out[n] = !(crosses && (widest > threshold || isnan(spread)));
+        } else {
+            const float spans = height <= width ? width : height;
+            out[n] = !(threshold * factor[n] <= spans || isnan(width));
+        }
+    }
+done:
+    PyBuffer_Release(&boxes);
+    PyBuffer_Release(&factors);
+    PyBuffer_Release(&matrix);
+    return result;
+}
+
 /* SSE lanes, each operation lane by lane in single precision. */
 typedef struct { float v[4]; } Lanes;
 
@@ -2308,6 +2381,53 @@ static PyObject* engine_inverse(PyObject* self, PyObject* args) {
                 out[4 * row + i] = minors[row]->v[i] * scale;
     }
     return PyBytes_FromStringAndSize((const char*)out, sizeof(out));
+}
+
+/* ``count`` numbers of a sequence as float32, rounded as numpy rounds them. */
+static int float32s(PyObject* given, float* out, Py_ssize_t count) {
+    PyObject* fast = PySequence_Fast(given, "expected a sequence of numbers");
+    if (!fast)
+        return 0;
+    int done = PySequence_Fast_GET_SIZE(fast) == count;
+    if (!done)
+        PyErr_Format(PyExc_ValueError, "expected %zd numbers", count);
+    for (Py_ssize_t i = 0; done && i < count; ++i) {
+        double value = PyFloat_AsDouble(PySequence_Fast_GET_ITEM(fast, i));
+        done = !(value == -1.0 && PyErr_Occurred());
+        out[i] = (float)value;
+    }
+    Py_DECREF(fast);
+    return done;
+}
+
+/* ``make_trs(position, rotation, scale)``: engine_math.make_trs_matrix's float32 4 x 4 rows, as a bytearray. */
+static PyObject* make_trs(PyObject* self, PyObject* args) {
+    PyObject *position, *rotation, *scale;
+    float p[3], q[4], s[3];
+    if (!PyArg_ParseTuple(args, "OOO", &position, &rotation, &scale) || !float32s(position, p, 3)
+        || !float32s(rotation, q, 4) || !float32s(scale, s, 3))
+        return NULL;
+    const float x = q[0], y = q[1], z = q[2], w = q[3];
+    const float x2 = x * 2.0f, y2 = y * 2.0f, z2 = z * 2.0f;
+    const float xx = x2 * x, yy = y2 * y, zz = z2 * z, xy = y2 * x, xz = z2 * x, yz = z2 * y;
+    const float wx = x2 * w, wy = y2 * w, wz = z2 * w;
+    const float m[16] = {(1.0f - (zz + yy)) * s[0], (xy - wz) * s[1], (xz + wy) * s[2], p[0],
+                         (xy + wz) * s[0], (1.0f - (zz + xx)) * s[1], (yz - wx) * s[2], p[1],
+                         (xz - wy) * s[0], (yz + wx) * s[1], (1.0f - (yy + xx)) * s[2], p[2],
+                         0.0f, 0.0f, 0.0f, 1.0f};
+    return PyByteArray_FromStringAndSize((const char*)m, sizeof(m));
+}
+
+/* ``quaternion_product(local, parent)``: engine_math.quaternion_product's float32 product, as four floats. */
+static PyObject* quaternion_product(PyObject* self, PyObject* args) {
+    PyObject *local, *parent;
+    float a[4], b[4];
+    if (!PyArg_ParseTuple(args, "OO", &local, &parent) || !float32s(local, a, 4) || !float32s(parent, b, 4))
+        return NULL;
+    const float ax = a[0], ay = a[1], az = a[2], aw = a[3], bx = b[0], by = b[1], bz = b[2], bw = b[3];
+    const float x = ((bw * ax + aw * bx) + az * by) - ay * bz, y = ((ay * bw + aw * by) + ax * bz) - az * bx;
+    const float z = ((az * bw + aw * bz) + ay * bx) - ax * by, w = ((aw * bw - ax * bx) - ay * by) - az * bz;
+    return Py_BuildValue("(dddd)", (double)x, (double)y, (double)z, (double)w);
 }
 
 /* ``edges_of(positions, triangles)``: as uint32, each vertex's first vertex at its position (float32 x, y, z, bit for
@@ -2426,7 +2546,10 @@ static PyMethodDef methods[] = {
     {"boxes_rects", boxes_rects, METH_VARARGS, "Each world box's extent on screen"},
     {"ray_pick", ray_pick, METH_VARARGS, "The nearest triangle a ray meets"},
     {"engine_inverse", engine_inverse, METH_VARARGS, "The engine's single-precision 4 x 4 inverse"},
+    {"make_trs", make_trs, METH_VARARGS, "The engine's makeTRS matrix"},
+    {"quaternion_product", quaternion_product, METH_VARARGS, "A rotation under its parent's, as the engine chains them"},
     {"stream_levels", stream_levels, METH_VARARGS, "Objects' distances and LODs from an eye"},
+    {"small_culled", small_culled, METH_VARARGS, "Whether each placed box is left out as small on screen"},
     {"rects_meet", rects_meet, METH_VARARGS, "Whether each rect meets any of others"},
     {"moved_rows", moved_rows, METH_VARARGS, "The rows of a sequence holding other objects than another"},
     {"edges_of", edges_of, METH_VARARGS, "Each vertex's first at its position, and the edges of triangles"},

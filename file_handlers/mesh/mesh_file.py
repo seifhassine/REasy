@@ -7,7 +7,6 @@ from dataclasses import dataclass, field, fields, replace
 from enum import Enum, IntEnum
 from importlib import import_module
 from typing import (
-    TYPE_CHECKING,
     Callable,
     Dict,
     Iterable,
@@ -1124,8 +1123,8 @@ class StreamingBufferHeader:
     shadow_mesh_index_buffer_offset: int
     occluder_mesh_index_buffer_offset: int
     blend_shape_offset: int
-    buffer_index_unkn: int
-    unknown_struct: int
+    additional_vertex_weights_size: int
+    reserved: int
     buffer_index: int
     vertex_elements: List[MeshBufferItemHeader]
     extra_vertex_elements: List[MeshBufferItemHeader]
@@ -1152,20 +1151,12 @@ class StreamingBufferHeader:
         return self.shapekey_weight_buffer_offset
 
     @property
-    def additional_vertex_weights_size(self) -> int:
-        return self.buffer_index_unkn
-
-    @property
     def blend_shape_vertex_buffer_offset(self) -> int:
         return self.blend_shape_offset & 0xFFFFFFFF
 
     @property
     def chunk(self) -> int:
         return self.buffer_index
-
-    @property
-    def reserved(self) -> int:
-        return self.unknown_struct
 
 
 def _streaming_alias_layout_signature(
@@ -1180,8 +1171,8 @@ def _streaming_alias_layout_signature(
         int(header.shadow_mesh_index_buffer_offset),
         int(header.occluder_mesh_index_buffer_offset),
         int(header.blend_shape_offset),
-        int(header.buffer_index_unkn),
-        int(header.unknown_struct),
+        int(header.additional_vertex_weights_size),
+        int(header.reserved),
         int(header.normal_recalc_local_index_buffer_offset),
         int(header.normal_recalc_redirected_list_offset),
         int(header.wilds_reserved),
@@ -1211,7 +1202,8 @@ def _read_element_headers(
             try:
                 element_type = VertexBufferType(raw_type)
             except ValueError:
-                element_type = raw_type
+                # createGeometryState keeps eight input slots.
+                raise ValueError(f"vertex element type {raw_type} is not one of the engine's input slots") from None
             items.append(MeshBufferItemHeader(element_type, h.read_uint16(), h.read_uint32()))
     return items[:main_count], items[main_count:]
 
@@ -1248,8 +1240,6 @@ class MeshBuffer:
         self.additional_vertex_weights_size = 0
         self.chunk = 0
         self.reserved = 0
-        self.buffer_index_unkn = 0
-        self.unknown_struct = 0
         self.shadow_mesh_index_buffer_offset = 0
         self.occluder_mesh_index_buffer_offset = 0
         self.buffer_index = 0
@@ -1368,22 +1358,21 @@ class MeshBuffer:
                 blend_shape_offset = h.read_int32()
                 wilds_reserved = h.read_int32()
                 buffer_index = h.read_int32()
-                buffer_index_unkn = 0
-                unknown_struct = 0
+                additional_vertex_weights_size = reserved = 0
             else:
                 blend_shape_offset = h.read_int32()
-                buffer_index_unkn = h.read_uint32()
+                additional_vertex_weights_size = h.read_uint32()
                 buffer_index = h.read_uint32()
-                unknown_struct = h.read_uint64()
+                reserved = h.read_uint64()
             if self.profile.streaming_buffer_tail_is_corpus_zero and (
-                buffer_index_unkn or unknown_struct
+                additional_vertex_weights_size or reserved
             ):
                 raise ValueError(
                     f"{self.profile.display_name} streaming buffer "
                     f"{entry_index} reserved tail must be zero"
                 )
             if self.profile.supports_additional_vertex_weights and (
-                shapekey_weight_buffer_offset or buffer_index_unkn
+                shapekey_weight_buffer_offset or additional_vertex_weights_size
                 or (self.profile.additional_vertex_weights_size_in_modern_tail
                     and wilds_reserved)
             ):
@@ -1429,8 +1418,8 @@ class MeshBuffer:
                 shadow_mesh_index_buffer_offset=shadow_mesh_index_buffer_offset,
                 occluder_mesh_index_buffer_offset=occluder_mesh_index_buffer_offset,
                 blend_shape_offset=blend_shape_offset,
-                buffer_index_unkn=buffer_index_unkn,
-                unknown_struct=unknown_struct,
+                additional_vertex_weights_size=additional_vertex_weights_size,
+                reserved=reserved,
                 buffer_index=buffer_index,
                 vertex_elements=vertex_elements,
                 extra_vertex_elements=extra_vertex_elements,
@@ -1632,24 +1621,22 @@ class MeshBuffer:
                 self.buffer_index = h.read_int32()
             else:
                 self._read_blend_shape_offset(h)
-                self.buffer_index_unkn = h.read_uint32()
+                self.additional_vertex_weights_size = h.read_uint32()
                 self.buffer_index = h.read_uint32()
-                self.unknown_struct = h.read_uint64()
+                self.reserved = h.read_uint64()
         else:
             self.shadow_mesh_index_buffer_offset = h.read_uint32()
             self.occluder_mesh_index_buffer_offset = h.read_uint32()
             self._read_blend_shape_offset(h)
 
         if self.profile.buffer_layout is MeshBufferLayout.DD2:
-            self.additional_vertex_weights_size = self.buffer_index_unkn
             self.chunk = self.buffer_index
-            self.reserved = self.unknown_struct
 
         if self.profile.resident_buffer_tail_is_corpus_zero and any(
             (
-                self.buffer_index_unkn,
+                self.additional_vertex_weights_size,
                 self.buffer_index,
-                self.unknown_struct,
+                self.reserved,
             )
         ):
             raise ValueError(
@@ -1974,7 +1961,6 @@ class MeshData(_MeshBufferOwned):
         _init_lod_layout_fields(self)
         self.skin_weight_flags = 0
         self.integer_faces = 0
-        self.shared_lod_bits = 0
         self.aabb_min_padding = 0
         self.chunk = 0
         self.aabb_max_padding = 0
@@ -1997,7 +1983,6 @@ class MeshData(_MeshBufferOwned):
         lod_count = _read_lod_layout_header(self, h)
         self.skin_weight_flags = self.skin_weight_runtime_ignored_tag
         self.integer_faces = int(self.has_32bit_index_buffer)
-        self.shared_lod_bits = self.reserve
         self.buffer.has_32bit_indices = self.has_32bit_index_buffer
         if self.profile.mesh_data_has_legacy_unknown:
             self.ukn1 = h.read_int64()
@@ -2207,7 +2192,7 @@ class ShadowMeshData(_SecondaryGeometry):
         targets = self.lod_offsets if read_all_lods else self.lod_offsets[:1]
         offsets: Dict[int, int] = {}
         lods_by_offset: Dict[int, MeshLOD] = {}
-        for lod_index, lod_offset in enumerate(targets):
+        for lod_offset in targets:
             if lod_offset <= 0:
                 continue
             lod = lods_by_offset.get(lod_offset)
@@ -3027,7 +3012,7 @@ class MPLYParser:
                       ) -> Tuple[List["MPLYChunk"], Optional[ValueError], Optional[dict]]:
         """The chunks of ``spans`` as far as the first that fails to decode, that failure, and with ``joined`` the
         payload's fields when all decode."""
-        count, failure, ints, floats, planes, fields = self._decoded(spans, planes=True, joined=joined)
+        count, failure, ints, _, planes, fields = self._decoded(spans, planes=True, joined=joined)
         rows = np.frombuffer(ints, np.int64).reshape(count, _C_FIELDS)
         plane = {name: np.frombuffer(data, np.int64 if name in _NATIVE_INTEGER_PLANES else np.float64)
                  for name, data in planes.items()}
@@ -3331,7 +3316,7 @@ class MPLYParser:
                     f"MPLY LOD {lod_index}: {len(chunk_offsets)} chunks, "
                     f"{len(lod_cluster_headers)} cluster headers"
                 )
-            for chunk_index, (chunk_offset, cluster_header) in enumerate(
+            for chunk_index, (_, cluster_header) in enumerate(
                 zip(chunk_offsets, lod_cluster_headers)
             ):
                 start, end = self._chunk_span(blob_base, chunk_offsets, chunk_index, lod_region_ends[lod_index],
@@ -4240,7 +4225,7 @@ class MeshFile:
         if self.meshes:
             if self.header.profile.legacy_reserved_storage_is_corpus_zero:
                 if any(
-                    mesh.shared_lod_bits or mesh.ukn1
+                    mesh.reserve or mesh.ukn1
                     for mesh in self.meshes
                 ):
                     self.note(
@@ -4261,12 +4246,6 @@ class MeshFile:
                         "vertex-format byte is nonzero.",
                     )
             else:
-                self.note(
-                    "main_mesh",
-                    "shared_lod_bits",
-                    "sharedLodBits is preserved as a bit mask; individual bit "
-                    "assignments are not established by MESH.bt.",
-                )
                 self.note(
                     "lod",
                     "vertex_format",
@@ -5086,36 +5065,6 @@ class MeshFile:
             for message in self.blend_shape_data.unresolved_semantics:
                 self.note("blend_shapes", "payload", message)
 
-        if self.mesh_buffer is not None:
-            is_dd2_buffer = (
-                self.mesh_buffer.profile.buffer_layout is MeshBufferLayout.DD2
-            )
-            if self.mesh_buffer.buffer_index_unkn and not is_dd2_buffer:
-                self.note(
-                    "mesh_buffer",
-                    "buffer_index_unkn",
-                    "The dword immediately before bufferIndex is preserved; "
-                    "its semantic role is unknown.",
-                )
-            if self.mesh_buffer.unknown_struct and not is_dd2_buffer:
-                self.note(
-                    "mesh_buffer",
-                    "unknown_struct",
-                    "The trailing modern-buffer int64 is preserved; its semantic "
-                    "role is unknown.",
-                )
-            unknown_types = {
-                stream.type
-                for payload in self.mesh_buffer.buffer_payloads.values()
-                for stream in payload.attribute_streams
-                if stream.type not in {int(item) for item in VertexBufferType}
-            }
-            for raw_type in sorted(unknown_types):
-                self.note(
-                    "mesh_buffer",
-                    f"vertex_attribute_{raw_type}",
-                    "Unknown vertex attribute bytes are preserved verbatim.",
-                )
         if self.load_mode is MeshLoadMode.FULL:
             self.assert_runtime_contract()
         self._note_structural_semantics()

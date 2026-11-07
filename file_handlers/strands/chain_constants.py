@@ -8,7 +8,8 @@ from dataclasses import dataclass
 import numpy as np
 
 from file_handlers.clsp.clsp_file import EVERY_TAG, CollisionShape, ShapeKind
-lazy from file_handlers.clsp.placement import pairwise, point, row_lengths
+lazy from file_handlers.clsp.placement import point
+lazy from file_handlers.engine_math import mathex_rotation, quaternion_product, row_lengths, transform_product
 lazy from file_handlers.clsp.wrappers import placed
 lazy from file_handlers.mmtr.engine_buffers import engine_inverse
 
@@ -78,6 +79,8 @@ class SetFrame:
     dry_out: bool
     wind: Sequence[float] | None = None
     turn: np.ndarray | None = None
+    # What game code (StrandsController) set the dynamics' Gravity to, of their own.
+    gravity: Callable[[Sequence[float]], Sequence[float]] | None = None
 
 
 def _cells(low: np.ndarray, high: np.ndarray, width: F) -> list[int]:
@@ -92,31 +95,6 @@ def _radians(value) -> F:
     return F(value) * _PER_DEGREE * _PI
 
 
-def matrix_rotation(matrix: np.ndarray) -> np.ndarray:
-    """Quaternion as (x, y, z, w)."""
-    rows = []
-    for row in matrix[:3]:
-        a, b, c, d = row
-        length = np.sqrt(F(F(F(a * a + b * b) + c * c) + d * d))
-        rows.append(row[:3] * (F(1) if length < _TINY else F(1) / length))
-    r = rows
-    a, b, c = r[0][0], r[1][1], r[2][2]
-    if F(F(a + b) + c) > 0:
-        k = F(.5) / np.sqrt(F(F(F(a + b) + c) + F(1)))
-        return np.array([(r[1][2] - r[2][1]) * k, (r[2][0] - r[0][2]) * k, (r[0][1] - r[1][0]) * k, F(.25) / k], F)
-    if b < a and c < a:
-        d = np.sqrt(F(F(F(a + F(1)) - b) - c))
-        d = d + d
-        return np.array([d * F(.25), (r[0][1] + r[1][0]) / d, (r[2][0] + r[0][2]) / d, (r[1][2] - r[2][1]) / d], F)
-    if b > c:
-        d = np.sqrt(F(F(F(b + F(1)) - a) - c))
-        d = d + d
-        return np.array([(r[0][1] + r[1][0]) / d, d * F(.25), (r[1][2] + r[2][1]) / d, (r[2][0] - r[0][2]) / d], F)
-    d = np.sqrt(F(F(F(c + F(1)) - a) - b))
-    d = d + d
-    return np.array([(r[2][0] + r[0][2]) / d, (r[1][2] + r[2][1]) / d, d * F(.25), (r[0][1] - r[1][0]) / d], F)
-
-
 def _times(matrix: np.ndarray, parent: np.ndarray) -> np.ndarray:
     """In the engines' summation order."""
     out = np.empty((4, 4), F)
@@ -127,19 +105,11 @@ def _times(matrix: np.ndarray, parent: np.ndarray) -> np.ndarray:
     return out
 
 
-def _product(a: Sequence, b: Sequence) -> np.ndarray:
-    """The engines' quaternion product b * a, in their summation order."""
-    ax, ay, az, aw = a
-    bx, by, bz, bw = b
-    return np.array([((bw * ax + aw * bx) + by * az) + -bz * ay, ((bw * ay + aw * by) + bz * ax) + -bx * az,
-                     ((bw * az + aw * bz) + bx * ay) + -by * ax, ((bw * aw + ax * -bx) + -by * ay) + -bz * az], F)
-
-
 def _unrotate(position: np.ndarray, quaternion: np.ndarray) -> np.ndarray:
     x, y, z, w = quaternion
     size = ((x * x + y * y) + z * z) + w * w
     inverse = np.array([-x, -y, -z, w], F) * (F(1) / size) if size > 0 else np.array([0, 0, 0, 1], F)
-    return _product(_product(inverse, [*position, F(0)]), quaternion)[:3]
+    return np.array(quaternion_product(quaternion_product(inverse, (*position, F(0))), quaternion), F)[:3]
 
 
 def _slot(kind: ShapeKind, v: np.ndarray, inverse: np.ndarray, quaternion: np.ndarray | None,
@@ -156,10 +126,10 @@ def _slot(kind: ShapeKind, v: np.ndarray, inverse: np.ndarray, quaternion: np.nd
         return [(0, [*local(v[0:3]), v[3], *local(v[4:7]), v[7]])]
     if kind == ShapeKind.BOX:
         world = v[:16].reshape(4, 4)
-        held = pairwise(world, inverse)
-        turn, centre = matrix_rotation(held), held[3, :3]
+        held = transform_product(world, inverse)
+        turn, centre = np.array(mathex_rotation(held), F), held[3, :3]
         if quaternion is not None:
-            turn, centre = _product(turn, quaternion), _unrotate(centre, quaternion)
+            turn, centre = np.array(quaternion_product(turn, quaternion), F), _unrotate(centre, quaternion)
         return [(0, [*centre]), (16, [*turn, *(v[16:19] if own else row_lengths(world) * v[16:19])])]
     n = v[0:3]
     turned = (n[0] * inverse[0, :3] + n[1] * inverse[1, :3]) + n[2] * inverse[2, :3]
@@ -172,7 +142,7 @@ def _slot(kind: ShapeKind, v: np.ndarray, inverse: np.ndarray, quaternion: np.nd
 
 def _rest(matrices: Sequence, parents: Sequence[int], joint: int) -> np.ndarray:
     m = np.asarray(matrices[joint], F).reshape(4, 4)
-    x, y, z, w = matrix_rotation(m)
+    x, y, z, w = np.array(mathex_rotation(m), F)
     x2, y2, z2, one = x + x, y + y, z + z, F(1)
     xx, yy, zz, xy, xz, yz, wx, wy, wz = x * x2, y * y2, z * z2, x * y2, x * z2, y * z2, w * x2, w * y2, w * z2
     own = np.array([[(one - yy) - zz, xy + wz, xz - wy, 0], [xy - wz, (one - xx) - zz, yz + wx, 0],
@@ -263,6 +233,9 @@ class PhysicsConstants(ConstantBlocks):
             air = np.array(made["strandAirVelocity"], F)
             air[:3] += np.asarray(frame.wind, F)[:3]
             made["strandAirVelocity"] = air
+        if frame.gravity is not None:
+            made["strandGravity"] = np.array([*frame.gravity(made["strandGravity"][:3]),
+                                              *made["strandGravity"][3:]], F)
         if frame.turn is not None:
             gravity = np.array(made["strandGravity"], np.float64)
             gravity[:3] = np.asarray(frame.turn, np.float64) @ gravity[:3]
@@ -379,7 +352,8 @@ class PhysicsConstants(ConstantBlocks):
         ring = self._read("boundingBoxOffset", "<u4").tolist()
         return {
             "strandPrevWM": before, "strandPrevInvWM": self._read("strandInvWM"), "strandWM": origin,
-            "strandInvWM": engine_inverse(origin), "worldQuaternion": matrix_rotation(origin), "worldVelocity": speed,
+            "strandInvWM": engine_inverse(origin), "worldQuaternion": np.array(mathex_rotation(origin), F),
+            "worldVelocity": speed,
             "worldAcceleration": [value * inertia if inertia is not None else F(0) for value in gain],
             "boundingBoxOffset": [ring[1], ring[2], ring[0], ring[3]],
         }

@@ -54,11 +54,11 @@ class OverlayGeometry:
 
 @dataclass(frozen=True, slots=True)
 class SceneShown:
-    """``outline`` is a width, 0 for none. Without ``filled``, marks test against the seen triangles' depth."""
     edges: str = NO_EDGES
     edge_width: float = 1.5
     edge_colour: tuple[int, int, int, int] = (51, 255, 77, 255)
     hovered: int | None = None
+    hovered_parts: frozenset[int] | None = None
     selected: frozenset[int] = frozenset()
     hover_colour: tuple[int, int, int, int] = (13, 255, 64, 97)
     selection_colour: tuple[int, int, int, int] = (255, 219, 46, 56)
@@ -199,6 +199,8 @@ uint main() : SV_Target
 """
 # Greater is nearer; of equal depths the first drawn stays.
 _NEAREST = (1, 1, 5, 0, 0xFF, 0xFF, (1, 1, 1, 8), (1, 1, 1, 8), 0)
+# Greater or equal passes; the depth stays.
+_AS_NEAR = (1, 0, 7, 0, 0xFF, 0xFF, (1, 1, 1, 8), (1, 1, 1, 8), 0)
 _EDGE_SHAPE = """
 struct Shape
 {
@@ -274,12 +276,14 @@ void main(uint3 id : SV_DispatchThreadID)
 _TINT = PIXEL_RULES + f"""
 Texture2D<uint> seen_object : register(t0);
 StructuredBuffer<uint> flags : register(t1);
+Texture2D<uint> hovered : register(t2);
 RWTexture2D<uint> image : register(u0);
 
 cbuffer Tint : register(b0)
 {{
     uint selection_colour;
     uint hover_colour;
+    uint parts_hovered;
 }};
 
 [numthreads({_GROUP}, {_GROUP}, 1)]
@@ -295,7 +299,7 @@ void main(uint3 id : SV_DispatchThreadID)
     uint flag = flags[held - 1u], texel = image[id.xy];
     if ((flag & {_SELECTED}u) != 0u)
         texel = blended(selection_colour, texel);
-    if ((flag & {_HOVERED}u) != 0u)
+    if ((flag & {_HOVERED}u) != 0u || parts_hovered != 0u && hovered[id.xy] != 0u)
         texel = blended(hover_colour, texel);
     image[id.xy] = texel;
 }}
@@ -454,10 +458,10 @@ class OverlayScene:
         self._seen = [self.device.texture(DXGI_FORMAT_R32_TYPELESS if index == 0 else DXGI_FORMAT_R32_UINT, self.size,
                                           UNORDERED_ACCESS) for index in range(3)]
         self.seen_depth = (DXGI_FORMAT_R32_FLOAT, self._seen[0])
-        # The objects the device finds nearest, its depth, and the selected objects' cover.
         self._ids = self.device.texture(DXGI_FORMAT_R32_UINT, self.size, RENDER_TARGET)
         self._ids_depth = self.device.texture(DXGI_FORMAT_D32_FLOAT, self.size, DEPTH_STENCIL)
         self._mask = self.device.texture(DXGI_FORMAT_R32_UINT, self.size, RENDER_TARGET)
+        self._hovered = self.device.texture(DXGI_FORMAT_R32_UINT, self.size, RENDER_TARGET)
         self._unwritten = self.device.texture(DXGI_FORMAT_R8_UNORM, self.size, RENDER_TARGET)
         self._view: int | None = None
         self._image: int | None = None
@@ -466,7 +470,7 @@ class OverlayScene:
 
     def _moved(self) -> None:
         """What frames drew of the objects as they were."""
-        self._seen_for = self._ids_for = self._masked = self._culled = None
+        self._seen_for = self._ids_for = self._masked = self._culled = self._hovered_for = None
 
     def add(self, geometries: Sequence[OverlayGeometry], objects: Sequence[int]) -> None:
         """More geometries, and objects of the scene's geometries numbered on from its others, whose steps stay."""
@@ -481,7 +485,6 @@ class OverlayScene:
             room = max(2 * len(self._objects), 1)
             self._flags = [self.device.scene.buffer(bytes(4 * room), 0), b"", room]
             self._steps.pop(("tint",), None)
-        self._boxes = None
         self._moved()
 
     def hide(self, hidden: np.ndarray) -> None:
@@ -505,13 +508,13 @@ class OverlayScene:
             self._objects[number] = self._object(number, geometry)
             self.place(number, self._worlds[number])
         self._steps = {key: step for key, step in self._steps.items()
-                       if key[0] not in ("seen", "ids", "mask", "edges") or key[1] not in objects}
+                       if key[0] not in ("seen", "ids", "mask", "edges", "hovered") or key[1] not in objects}
         self.device.release(old)
         self._boxes = None
         self._moved()
 
     def resize(self, size: Sequence[int]) -> None:
-        old = [*self._seen, self._ids, self._ids_depth, self._mask, self._unwritten]
+        old = [*self._seen, self._ids, self._ids_depth, self._mask, self._hovered, self._unwritten]
         self.size = tuple(size)
         self._screen()
         self.device.release(old)
@@ -524,8 +527,8 @@ class OverlayScene:
             *(resource for held in self._geometries
               for resource in (held.indices, *(held.edges[::2] if held.edges and held.edges[1] else ()))),
             *(resource for item in self._objects for resource in (item.placed[0], item.palette, item.edges[0])),
-            *self._seen, self._ids, self._ids_depth, self._mask, self._unwritten, self._flags[0], self._tint[0],
-            self._outline[0]])
+            *self._seen, self._ids, self._ids_depth, self._mask, self._hovered, self._unwritten, self._flags[0],
+            self._tint[0], self._outline[0]])
 
     def _held(self, geometry: OverlayGeometry) -> _Held:
         positions = np.ascontiguousarray(geometry.positions, "<f4").reshape(-1, 3)
@@ -592,7 +595,7 @@ class OverlayScene:
         rows = _rows(world)[0]
         if _rewrite(self.device.scene, self._objects[placed].placed, self._placed(placed, rows)):
             self._worlds[placed] = rows
-            if self._boxes is not None and self._boxes[3] is not None:
+            if self._boxes is not None and self._boxes[3] is not None and placed < len(self._boxes[3]):
                 centre, extent, _skinned, boxes = self._boxes
                 boxes[placed] = _placed_boxes(rows[None], centre[placed:placed + 1], extent[placed:placed + 1])[0]
             self._moved()
@@ -638,9 +641,8 @@ class OverlayScene:
                 "size": (width, height), "viewport": (-8192.0, -8192.0, 16384.0, 16384.0, 0.0, 1.0),
                 "scissor": (0, 0, width, height), "targets": [(DXGI_FORMAT_R8_UNORM, self._unwritten)], "depth": None}
 
-    def _rasterized_job(self, item: _Object, pixel: bytes, run: tuple, targets: list, depth: bool,
+    def _rasterized_job(self, item: _Object, pixel: bytes, run: tuple, targets: list, depth: tuple | None,
                         uncut: bool = False) -> dict:
-        """A run of the object's triangles, or all of them ``uncut`` by culling, the device rasterizing."""
         constants, first, count, (cull, counter_clockwise) = run
         width, height = self.size
         held = item.geometry
@@ -653,10 +655,10 @@ class OverlayScene:
                 "indices": held.indices, "index_format": DXGI_FORMAT_R32_UINT, "topology": _TRIANGLE_LIST,
                 "draw": (3 * count, 1, 3 * first, 0, 0),
                 "rasterizer": (3, CULL_NONE if uncut else cull, counter_clockwise, 0, 0.0, 0.0, 1),
-                "depth_stencil": _NEAREST if depth else _NO_DEPTH_STENCIL, "blend": (0, 0, [_UNBLENDED] * len(targets)),
+                "depth_stencil": depth or _NO_DEPTH_STENCIL, "blend": (0, 0, [_UNBLENDED] * len(targets)),
                 "tables": tables, "heap": [], "size": (width, height),
                 "viewport": (0.0, 0.0, float(width), float(height), 0.0, 1.0), "scissor": (0, 0, width, height),
-                "targets": targets, "depth": (DXGI_FORMAT_D32_FLOAT, self._ids_depth) if depth else None}
+                "targets": targets, "depth": None if depth is None else (DXGI_FORMAT_D32_FLOAT, self._ids_depth)}
 
     def _id_steps(self, numbers: np.ndarray) -> list[int]:
         scene = self.device.scene
@@ -667,7 +669,7 @@ class OverlayScene:
             if ("ids", number) not in self._steps:
                 item = self._objects[number]
                 self._steps["ids", number] = [scene.draw(self._rasterized_job(
-                    item, _compiled(_IDS_PIXEL, "ps_5_0"), run, targets, True)) for run in item.geometry.runs]
+                    item, _compiled(_IDS_PIXEL, "ps_5_0"), run, targets, _NEAREST)) for run in item.geometry.runs]
             steps += self._steps["ids", number]
         return steps
 
@@ -686,11 +688,17 @@ class OverlayScene:
         return self._boxes[0], self._boxes[1]
 
     def _placed_boxes(self) -> np.ndarray:
-        """Each object's placed box, in the world."""
-        if self._boxes is None:
-            boxes = np.array([item.geometry.box for item in self._objects]).reshape(-1, 2, 3)
-            self._boxes = ((boxes[:, 0] + boxes[:, 1]) / 2, (boxes[:, 1] - boxes[:, 0]) / 2,
-                           np.array([item.palette is not None for item in self._objects], bool), None)
+        held = 0 if self._boxes is None else len(self._boxes[0])
+        if held < len(self._objects):
+            added = self._objects[held:]
+            boxes = np.array([item.geometry.box for item in added]).reshape(-1, 2, 3)
+            made = ((boxes[:, 0] + boxes[:, 1]) / 2, (boxes[:, 1] - boxes[:, 0]) / 2,
+                    np.array([item.palette is not None for item in added], bool))
+            placed = None if self._boxes is None or self._boxes[3] is None else np.concatenate(
+                [self._boxes[3], _placed_boxes(self._worlds[held:], *made[:2])])
+            if self._boxes is not None:
+                made = tuple(np.concatenate([old, new]) for old, new in zip(self._boxes[:3], made))
+            self._boxes = (*made, placed)
         centre, extent, skinned, placed = self._boxes
         if placed is None:
             placed = _placed_boxes(self._worlds, centre, extent)
@@ -747,7 +755,21 @@ class OverlayScene:
                 steps.append(self._made(("mask", number), lambda item=item: scene.draw(self._rasterized_job(
                     item, _compiled(_MASK_PIXEL, "ps_5_0"),
                     (self._uncut, 0, sum(map(len, item.geometry.triangles)), (CULL_NONE, 0)),
-                    [(DXGI_FORMAT_R32_UINT, self._mask)], False, uncut=True))))
+                    [(DXGI_FORMAT_R32_UINT, self._mask)], None, uncut=True))))
+        return steps
+
+    def _hover_steps(self, number: int, parts: frozenset[int]) -> list[int]:
+        scene, held = self.device.scene, self._objects[number].geometry
+        steps = [self._made(("clear", self._hovered), lambda: scene.clear(DXGI_FORMAT_R32_UINT, self._hovered))]
+        first = 0
+        for part, triangles in enumerate(() if number < len(self._hidden) and self._hidden[number] else held.triangles):
+            if part in parts and len(triangles):
+                constants, _start, _count, state = next(run for run in held.runs if run[1] <= first < run[1] + run[2])
+                steps.append(self._made(("hovered", number, part), lambda run=(constants, first, len(triangles), state):
+                                        scene.draw(self._rasterized_job(
+                                            self._objects[number], _compiled(_MASK_PIXEL, "ps_5_0"), run,
+                                            [(DXGI_FORMAT_R32_UINT, self._hovered)], _AS_NEAR))))
+            first += len(triangles)
         return steps
 
     def _edge_steps(self, shown: SceneShown, numbers: np.ndarray) -> list[int]:
@@ -786,23 +808,30 @@ class OverlayScene:
             # objects, those are drawn again only once others are wanted.
             asked = tuple(sorted({*shown.selected, *(() if shown.hovered is None else (shown.hovered,))}))
             held = self._ids_for if self._ids_for is not None and self._ids_for[0] == camera else None
+            redrawn = False
             if held is None or asked != held[2]:
                 drawn = self._under(seen_from, self._in_view(seen_from, camera), asked)
                 if held is not None:
                     drawn = np.union1d(held[1], drawn)
                 if held is None or len(drawn) != len(held[1]):
                     steps += self._id_steps(drawn)
+                    redrawn = True
                 self._ids_for = camera, drawn, asked
+            parts = None if shown.hovered is None else shown.hovered_parts
             flags = np.zeros(self._flags[2], "<u4")
             flags[sorted(shown.selected)] |= _SELECTED
-            if shown.hovered is not None:
+            if shown.hovered is not None and parts is None:
                 flags[shown.hovered] |= _HOVERED
+            if parts is not None and (redrawn or self._hovered_for != (camera, shown.hovered, parts)):
+                steps += self._hover_steps(shown.hovered, parts)
+                self._hovered_for = camera, shown.hovered, parts
             _rewrite(self.device.scene, self._flags, flags.tobytes())
-            _rewrite(self.device.scene, self._tint,
-                     struct.pack("<2I8x", packed(shown.selection_colour), packed(shown.hover_colour)))
+            _rewrite(self.device.scene, self._tint, struct.pack(
+                "<3I4x", packed(shown.selection_colour), packed(shown.hover_colour), int(parts is not None)))
             steps.append(self._made(("tint",), lambda: self._dispatch(_TINT, [
                 (RANGE_SRV, 0, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self._ids),)),
                 (RANGE_SRV, 1, 0, 1, BUFFER, 0, ((0, 0, 4, self._flags[0]),)),
+                (RANGE_SRV, 2, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self._hovered),)),
                 (RANGE_UAV, 0, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self._image),)),
                 (RANGE_CBV, 0, 0, 1, 0, 0, ((0, self._tint[0]),))])))
         if shown.edges:

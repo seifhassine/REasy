@@ -2,12 +2,6 @@
  "format": 1,
  "game": "RE3",
  "resource_version": 1905100741,
- "source": {
-  "captures": [
-   "cap.rdc"
-  ],
-  "several_states": {}
- },
  "states": {
   "AutomaticWrap": {
    "filter": 85,

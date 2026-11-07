@@ -49,5 +49,19 @@ if os.name == 'nt':
             extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
         )
     )
+    ext_modules.append(
+        Extension(
+            'fastgraph',
+            sources=['native/fastgraph.cpp'],
+            extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
+        )
+    )
+    ext_modules.append(
+        Extension(
+            'fastjcns',
+            sources=['native/fastjcns.cpp'],
+            extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
+        )
+    )
 
 setup(name='reasy-native', version='0.1.0', ext_modules=ext_modules)

@@ -1,179 +1,8 @@
 {
- "format": 6,
+ "format": 7,
  "game": "RE8",
  "resource_version": 2102188797,
  "master_target": 3,
- "source": {
-  "sdf_files": 65,
-  "ocio_configurations": 0,
-  "captures": [
-   {
-    "capture": "cap.rdc",
-    "events": [
-     8643,
-     8891,
-     8896,
-     8918,
-     8939,
-     8945,
-     8973,
-     8979,
-     8983,
-     8987,
-     8991,
-     8997,
-     9001,
-     9005,
-     9009,
-     9603,
-     9937
-    ],
-    "programs": {
-     "8643": [
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam"
-     ],
-     "8891": [
-      "DeferredLightSingleIndirectCombineWithSSSSSMask",
-      "DeferredLightSingleIndirectCombineWithSSSSSMask"
-     ],
-     "8896": [
-      "DeferredLightWithSSSSSMask",
-      "DeferredLightWithSSSSSMask"
-     ],
-     "8918": [
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask"
-     ],
-     "8939": [
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask"
-     ],
-     "8945": [
-      "IntegrateDiffuseTestRenderWithSSSSSMask",
-      "IntegrateDiffuseTestRenderWithSSSSSMask",
-      "IntegrateDiffuseTestRenderWithSSSSSMask",
-      "IntegrateDiffuseTestRenderWithSSSSSMask",
-      "IntegrateDiffuseTestRenderWithSSSSSMask",
-      "IntegrateDiffuseTestRenderWithSSSSSMask",
-      "IntegrateDiffuseTestRenderWithSSSSSMask"
-     ],
-     "8973": [
-      "DownsampleSPD"
-     ],
-     "8979": [
-      "BlurHorizontal"
-     ],
-     "8983": [
-      "BlurHorizontal"
-     ],
-     "8987": [
-      "BlurHorizontal"
-     ],
-     "8991": [
-      "BlurHorizontal"
-     ],
-     "8997": [
-      "BlurVertical"
-     ],
-     "9001": [
-      "BlurVertical"
-     ],
-     "9005": [
-      "BlurVertical"
-     ],
-     "9009": [
-      "BlurVertical"
-     ],
-     "9603": [
-      "LwLDRPostProcessWithToneMapC4L3Section"
-     ],
-     "9937": [
-      "ScreenOutputSRGB"
-     ]
-    },
-    "files": {
-     "8891 BlueNoise16": [
-      "systems/rendering/bluenoise16x16.tex"
-     ],
-     "8891 LightCullingVolumeSRV": [],
-     "8891 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "8891 StaticShadowMapSRV": [],
-     "8891 ShadowMapSRV": [],
-     "8891 IESLightTableSRV": [],
-     "8891 GIDSRV": [],
-     "8891 GISSRV": [],
-     "8896 BlueNoise16": [
-      "systems/rendering/bluenoise16x16.tex"
-     ],
-     "8896 LightCullingVolumeSRV": [],
-     "8896 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "8896 StaticShadowMapSRV": [],
-     "8896 ShadowMapSRV": [],
-     "8896 IESLightTableSRV": [],
-     "8896 GIDSRV": [],
-     "8945 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "8945 GISSRV": [],
-     "9603 tTextureMap0": [],
-     "9603 tTextureMap1": [],
-     "9603 tTextureMap2": []
-    },
-    "heap_reads": [],
-    "moves": [
-     [
-      9397,
-      352101,
-      ""
-     ],
-     [
-      9452,
-      352100,
-      ""
-     ],
-     [
-      9625,
-      352100,
-      ""
-     ],
-     [
-      9632,
-      352101,
-      ""
-     ],
-     [
-      9637,
-      352100,
-      ""
-     ]
-    ],
-    "ambiguous": [],
-    "bakes": [],
-    "phases": {
-     "forward": [
-      9070
-     ]
-    }
-   }
-  ]
- },
  "passes": [
   {
    "role": "subsurface_param",
@@ -700,8 +529,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "cbe11700c90b75671fb45780a30fc1fdcb6d20c976ff9cfcbea91bd88499e59e"
+      "kind": "kernels",
+      "value": "nobody/sss_profiles.sss"
      },
      "view_format": 0,
      "levels": []
@@ -809,8 +638,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "cbe11700c90b75671fb45780a30fc1fdcb6d20c976ff9cfcbea91bd88499e59e"
+      "kind": "kernels",
+      "value": "nobody/sss_profiles.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1583,7 +1412,7 @@
    "purpose": "forward",
    "masters": [],
    "after": 14,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -1677,7 +1506,5 @@
    }
   }
  ],
- "buffers": {
-  "cbe11700c90b75671fb45780a30fc1fdcb6d20c976ff9cfcbea91bd88499e59e": "eNrtk29IE3EYx68UNWHglCBDMzMtY9IbS9fd82wQYcVAw0ASFTVaYVpa2TIttzCxKCH/rTOirDQwIWkRlrszSqI/58IyFpTiK6cuwlCSsH/P7WbBvQ96se+r+/ye732/z/3gSooaYW6hDd/8qjUwpN7eYjg6NK2XnyXJJEx/C0Nv90tOZrN5wukdj8IXxZXgnztvjofgzpkG1Ac93PRKMvV3+plVmJ0i/zO/3yWZuEnKm/Hn7TVPcPepz/K3z+eTVRmVBGGeFphq/ug7O7ShBh6dm2YvVw7r2/nogcIGDh/sGYJy1yDnknrEq59isFnIxfiePKS5OFvdCdbQSCzQZcssLHIhsZ2PhmvkbyV/guJHOc9BeQco77XUg2XU10d9dqXPsLjX1ysXwWI6ht2OApS5OD8DDndHse9WMXoIdwu70lei9fkKaF+mgbPeCsFu0eD3kVII2ReDNHc+0QbhqPYS9o1lIRvu7h8kHiPuV5htIf88+ZeS3xju5uS8OsrroDybtwLM1HeE+txK35/7ur65F3Z4tmNGc75vr8atGjj5M5adChbT23lejCz6AMknEiAtZZjuSyc2bYvFuK56SJj3AM2F3DuJeKuiDe+ettF98E6ZbxPfI7bzPCf7V5M/UfGDlvKSKC+V8l5LOrxAfVXU51H6cHEv7alyzDl+ENezLt9ZliORM9Vt5NJtji0MYxVDF3SQdyMFMkeD6VsixJq2eHjbFQfBkyXEVuHLeAvG/2hFW+luet/qVDGn8oMqD1V9//1en5evgzWeM3A+QuM7qyqrhqdhOdzaDCaNYYyPO2pZNM8xWFVtpX/o/cD++licHc3EmJFk8hsHREsXZActwdSmWplFFaPKb1DlGVR9RiaggAIKKKB/ot/XCYLD"
- }
+ "buffers": {}
 }

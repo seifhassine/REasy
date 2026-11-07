@@ -1,14 +1,22 @@
 {
- "format": 2,
+ "format": 6,
  "game": "RE4",
  "resource_version": 221007879,
  "target": 2,
  "source_holds_indices": true,
  "destination_holds_buffer": false,
  "blend": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteTangentLight"
+  },
   "1": {
    "file": "systems/shader/computeblendshape.sdf",
    "program": "BlendShapeWriteTangentStandard"
+  },
+  "2": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteTangentQuality"
   }
  },
  "blend_still": {
@@ -23,40 +31,87 @@
   "file": "systems/shader/computeskinning.sdf",
   "program": "CSWriteNormal"
  },
- "write_excluding_edge": null,
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalExcludingEdge"
+ },
  "write_by_submesh": false,
  "skinning": [
   "PreTransformSkinningCS",
   "PreTransformSkinningInstanceIDCS",
   "PreTransformSkinningInstanceIDVFXCS",
+  "PreTransformSkinningInstanceIDWithNormCS",
+  "PreTransformSkinningInstanceIDWithNormVFXCS",
   "PreTransformSkinningOptionalBufferCS",
   "PreTransformSkinningOptionalBufferVFXCS",
-  "PreTransformSkinningVFXCS"
+  "PreTransformSkinningOptionalBufferWithNormCS",
+  "PreTransformSkinningOptionalBufferWithNormVFXCS",
+  "PreTransformSkinningVFXCS",
+  "PreTransformSkinningWithNormCS",
+  "PreTransformSkinningWithNormVFXCS",
+  "PreTransformStaticCS",
+  "PreTransformStaticOptionalBufferCS",
+  "PreTransformStaticOptionalBufferWithNormCS",
+  "PreTransformStaticVFXCS",
+  "PreTransformStaticWithNormCS"
  ],
  "skin_by_range": false,
  "system_skins_blend": false,
  "system_skinning": {},
  "system_blend": {},
  "blend_place": null,
- "static_like_skinning": false,
+ "static_like_skinning": true,
  "still_without_blend": null,
  "copied_skin_whole": null,
- "source": {
-  "captures": [
-   {
-    "capture": "re4_frame24212.rdc",
-    "draws": [
-     4475
-    ]
-   },
-   {
-    "capture": "re4_frame165489.rdc",
-    "draws": [
-     5206,
-     6835,
-     6958
-    ]
-   }
-  ]
- }
+ "blend_by_normals": true,
+ "blend_normals": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteBlendShapeNormalTangentLight"
+  },
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteBlendShapeNormalTangentStandard"
+  },
+  "2": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteBlendShapeNormalTangentQuality"
+  }
+ },
+ "blend_still_normals": {
+  "file": "systems/shader/computeblendshape.sdf",
+  "program": "BlendShapeNoneWriteNormalTangent"
+ },
+ "blend_first_lod_only": true,
+ "blend_writing_normals": {
+  "0": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentLight"
+  },
+  "1": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentStandard"
+  },
+  "2": {
+   "file": "systems/shader/computeblendshape.sdf",
+   "program": "BlendShapeWriteNormalTangentQuality"
+  }
+ },
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "ShellFurMaterial",
+  "Standard",
+  "Transparent"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalWithMetallic",
+  "SeparateAlphaDecal",
+  "VolumeDecal"
+ ],
+ "decal_no_pre_transform": false
 }

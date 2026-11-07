@@ -44,11 +44,11 @@ register_shader_graph_node_extension(ShaderGraphNodeExtension(
 ))
 
 
-def drawing_for(node, purpose: str) -> bool:
-    purposes = node.properties.get("purposes", ())
+def drawing_for(node, purpose: str, target: int = -1, program: str = "") -> bool:
+    purposes, programs = node.properties.get("purposes", ()), node.properties.get("programs", ())
     if not isinstance(purposes, (list, tuple)) or any(item not in PURPOSES for item in purposes):
         raise ShaderGraphError("Drawing For names an unknown purpose.")
-    return purpose in purposes
+    return purpose in purposes and (not programs or [target, program] in [list(item) for item in programs])
 
 
 def graph_draws_for(graph) -> bool:

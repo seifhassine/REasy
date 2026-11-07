@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from copy import deepcopy
+from dataclasses import dataclass, field, replace
 from functools import lru_cache
 import hashlib
 from pathlib import Path
@@ -31,6 +32,7 @@ lazy from file_handlers.sdf.spirv_tools import validate_spirv
 from file_handlers.sdf.shader_graph import (
     ShaderContract,
     ShaderContractBuffer,
+    ShaderContractResource,
     ShaderContractVariable,
     ShaderGraph,
     ShaderGraphError,
@@ -44,12 +46,17 @@ from file_handlers.sdf.shader_graph import (
 lazy from file_handlers.sdf.hlsl_contract import resource_identifier
 lazy from file_handlers.sdf.shader_contract_storage import contract_from_storage, contract_to_storage
 from ..native_build_cache import NativeBuildCache, native_build_key
+lazy from ..engine_inputs import MATERIAL_TEXTURES, engine_input_catalog_for
+lazy from ..material_region_read import per_build, per_build_of, region_derived_cache
 lazy from ..models import BINDLESS_PARAMETER_STORAGES, MmtrMaterialInterface, MmtrProgramSemantics, MmtrResourceContract
-from ..pass_purpose import graph_draws_for, pass_purpose
-from ..surface_data import graph_reads_surface_data, program_surface_data, program_vertex_inputs
+from ..pass_purpose import DRAWING_FOR_KIND, drawing_for, graph_draws_for, pass_purpose
+from ..surface_data import (
+    add_generated_values, generated_data, graph_reads_surface_data, program_surface_data, program_vertex_inputs,
+    surface_data_keys,
+)
 lazy from ..surface_data import surface_data_value
 lazy from ..surface_meaning import catalog_fingerprint, pixel_shader_digest, surface_output_catalog_for
-from ..vertex_values import PER_VERTEX_KIND, add_vertex_values, vertex_value_plan
+from ..vertex_values import PER_VERTEX_KIND, add_vertex_values, upstream, vertex_value_plan
 from .base import bound_texture_names, same_mmtr_profile
 from .dxbc_recovery import (
     DxbcSemanticIr,
@@ -59,19 +66,28 @@ from .dxbc_recovery import (
     validate_recovered_dxbc_shader_bytecode,
 )
 from .material_graph_expression import (
+    PastInstanceCopy,
+    SurfacePass,
+    _edit_reads,
+    edit_expression,
     recovered_graph_expression,
     recovered_master_pins,
+    surface_pass,
 )
 from file_handlers.sdf.shader_graph_math import value_width
 from .re_engine_dxil_authoring import NativeDxilBatch
 from .re_engine_dxil_recovery import ReEngineDxilSemanticIr, recover_re_engine_dxil_ir
 from . import re_engine_dxil_recovery as _dxil_recovery
-from .re_engine_bindless_material import material_record_accesses, material_texture_accesses
-lazy from .re_engine_spirv_authoring import rebuild_spirv, spirv_uniform_reads
+from .re_engine_bindless_material import (
+    material_record_accesses, material_texture_accesses, record_address_inputs, record_address_source,
+)
+lazy from .re_engine_spirv_authoring import (rebuild_spirv, spirv_instance_elements, spirv_instance_reads,
+                                             spirv_uniform_reads)
 lazy from .dxbc_stages import with_pixel_interpolation
 from .renderer_inputs import (
-    RENDERER_VALUE_KIND, add_engine_buffers, add_engine_resources, graph_renderer_buffers, graph_renderer_resources,
-    renderer_buffer, renderer_input_pins, renderer_only,
+    RENDERER_RESOURCE_KIND, RENDERER_VALUE_KIND, add_engine_buffers, add_engine_resources, engine_buffer_layout,
+    engine_input_nodes, graph_renderer_buffers, graph_renderer_resources, graph_resource_declarations,
+    record_resources, renderer_buffer, renderer_input_pins, renderer_only,
 )
 lazy from .constant_words import ConstantWord, constant_word, word_parts
 lazy from file_handlers.sdf.aggregate_values import aggregate_projection
@@ -79,12 +95,14 @@ lazy from ..material_family import distinct_members, seed_material_family
 lazy from ..material_project import MaterialTextureDefinition, _TEXTURE_CONTRACT_DIMENSIONS, material_resource_dimension
 lazy from ..surface_flow import ChannelSplit, SurfaceChannel
 lazy from ..surface_outputs import (
-    SURFACE_OUTPUTS_VERSION, SurfaceEdit, SurfaceTap, channel_for_pin, channel_pin_name, material_texture_names,
-    named_texture_reads, native_program_channels, native_program_surface, output_pin_records,
-    prefetch_native_program_surfaces, prefetch_program_flows, program_flow, reach_records,
+    SURFACE_OUTPUTS_VERSION, SurfaceEdit, SurfaceTap, added_target, added_target_field, channel_for_pin,
+    covering_pins, material_texture_names, named_texture_reads, native_program_surface, output_pin_records,
+    prefetch_native_program_surfaces, prefetch_program_flows, program_flow, reach_records, route_name,
+    unwritten_targets,
 )
 lazy from ..surface_splice_dxbc import splice_dxbc_surface
 lazy from ..surface_splice_dxil import dxil_surface_plan
+lazy from ..surface_flow_dxil import material_records
 lazy from ..worker_pool import MIN_JOBS, parallel_map, shared_workers, start_workers, submit
 lazy from ..surface_splice_spirv import spirv_surface_plan
 lazy from ..vertex_values import VALUE_SEMANTIC
@@ -94,6 +112,7 @@ lazy from .renderer_inputs import renderer_field_expression, renderer_fields
 RE_ENGINE_RECOVERED_MASTER_KIND = "re_engine_recovered_master_material"
 SEMANTIC_BUNDLE_VERSION = 4
 _MODEL_PREFIX = "re_engine.recovered_master."
+_MATERIAL_SAMPLERS = ("AutomaticWrap", "BilinearWrap", "TrilinearWrap", "BilinearClamp")
 _DXIL_PROGRAM_CACHE = NativeBuildCache(max_entries=2048, max_bytes=64 * 1024 * 1024)
 _SURFACE_RECIPES = BoundedCache()
 _SURFACE_RECIPE_BYTES = 128 * 1024 * 1024
@@ -169,6 +188,7 @@ class _DxilProduct:
     target: str = "ps_6_0"
     material_word_offsets: Mapping[int, int] | None = None
     surface_plan: tuple = ()
+    material_instances: str = ""
 
     def rebuild_options(self) -> dict[str, object]:
         return {
@@ -179,6 +199,7 @@ class _DxilProduct:
             "material_buffer_size": self.material_buffer_size,
             "material_word_offsets": self.material_word_offsets,
             "surface_plan": self.surface_plan,
+            "material_instances": self.material_instances,
         }
 
 
@@ -194,6 +215,8 @@ class _SpirvProduct:
     helpers: str = ""
     renamed_members: tuple[tuple[str, str], ...] = ()
     surface_plan: tuple = ()
+    material_expressions: Mapping[int, str] = field(default_factory=dict)
+    material_instances: str = ""
 
     @property
     def source(self) -> str:
@@ -544,6 +567,13 @@ def _spirv_candidate_contract(
                 raise ShaderGraphError(
                     f"SPIR-V structured buffer {resource.name} repeats an element field."
                 )
+            if set(native_members) == {"words"}:
+                words = native_members["words"]
+                if (int(words.byte_offset) != 0 or words.value_type != "uint4" or words.members
+                        or int(words.array_count) * 16 != int(buffer.byte_size)):
+                    raise ShaderGraphError(f"SPIR-V structured buffer {resource.name} changed its word carrier.")
+                used_structured_buffers.append(buffer)
+                continue
             physical_slots = all(
                 re.fullmatch(r"slot\d+", name) is not None
                 for name in native_members
@@ -606,7 +636,8 @@ def _compile_spirv_product(product: _SpirvProduct) -> _NativeCompileResult:
         product.ir, product.source_contract, product.logical_contract,
         scalar_expressions=product.scalar_expressions, texture_overrides=product.texture_overrides,
         helpers=product.helpers, assignments=assignments, renamed_members=dict(product.renamed_members),
-        surface_plan=product.surface_plan,
+        surface_plan=product.surface_plan, material_expressions=product.material_expressions,
+        material_instances=product.material_instances,
     )
     reflected = reflect_spirv(bytecode, entry_point=product.entry_point)
     assignments = _spirv_binding_plan(
@@ -777,21 +808,49 @@ def _expose_descriptor_inputs(document, project, profile):
     return changed
 
 
-def _surface_sources(document, profile, routes) -> list[tuple[str, object, list]]:
+def _route_keys(routes) -> set:
+    return {(int(route["target"]), int(route["program"]), str(route["role"])) for route in routes}
+
+
+def _bound_elsewhere(document, profile, native, target, index, role) -> frozenset:
+    program = document.sdf.targets[target].programs[index]
+    storage = document.material_interface.parameter_storage
+    if (target, index, role) in native or storage not in {"explicit-constant-buffer", *BINDLESS_PARAMETER_STORAGES}:
+        return frozenset()
+    shader, catalog = program.shader(role), engine_input_catalog_for(document.profile)
+    if storage in BINDLESS_PARAMETER_STORAGES:
+        record = catalog.pass_record(shader.binary_format, program.name, role, target) if catalog is not None else None
+        inputs = {(field.semantic_name.casefold(), field.semantic_index)
+                  for field in profile.shader_contract(document, program, role).inputs} if record else set()
+        return (frozenset({catalog.resources[record[1]].name})
+                if record is not None and record_address_inputs(record[0], {"input"}) <= inputs
+                and catalog.resources[record[1]].resource.sample_count != 256 else frozenset())
+    names = catalog.pass_material(shader.binary_format, program.name, role) if catalog is not None else frozenset()
+    if shader.binary_format == "spirv-module" or profile.user_buffer_name not in names:
+        return frozenset()
+    return names & {profile.user_buffer_name, MATERIAL_TEXTURES}
+
+
+def _surface_sources(document, profile, routes) -> list[tuple[str, tuple, object, list, set]]:
     if document.material_family is None:
-        return [("", document, [*routes, *_surface_route_table(document, profile)])]
-    return [(f"LOD {', '.join(map(str, lods))} · ", member,
-             [*_bundle(member, profile, recover_programs=False)[1], *_surface_route_table(member, profile)])
-            for lods, member in distinct_members(document.material_family)]
+        return [("", (), document, [*routes, *_surface_route_table(document, profile)], _route_keys(routes))]
+    result = []
+    for lods, member in distinct_members(document.material_family):
+        material = _bundle(member, profile, recover_programs=False)[1]
+        result.append((f"LOD {', '.join(map(str, lods))} · ", tuple(lods), member,
+                       [*material, *_surface_route_table(member, profile)], _route_keys(material)))
+    return result
 
 
-def _surface_outputs(document, profile, routes) -> tuple[list, list, list, str]:
+def _surface_outputs(document, profile, routes, stored=()) -> tuple[list, list, list, str]:
+    stored = {str(item.get("source_sha256", "")): item for item in stored if isinstance(item, dict)}
     catalog = surface_output_catalog_for(document.profile)
     entries, errors = [], []
     sources = _surface_sources(document, profile, routes)
     prefetch_native_program_surfaces(profile, [(member, int(route["target"]), int(route["program"]), str(route["role"]))
-                                               for _prefix, member, member_routes in sources for route in member_routes])
-    for prefix, member, member_routes in sources:
+                                               for _prefix, _lods, member, member_routes, _material in sources
+                                               for route in member_routes])
+    for prefix, lods, member, member_routes, material in sources:
         for route in member_routes:
             target, index, role = int(route["target"]), int(route["program"]), str(route["role"])
             program = member.sdf.targets[target].programs[index]
@@ -799,17 +858,112 @@ def _surface_outputs(document, profile, routes) -> tuple[list, list, list, str]:
             pixel = program.shader("pixel")
             shader = pixel_shader_digest(pixel) if pixel is not None and pixel.present else ""
             try:
-                entries.append((name, pass_purpose(member, profile, target, index), shader,
-                                *native_program_surface(member, profile, target, index, role)))
+                channels, reach = native_program_surface(member, profile, target, index, role)
+                if role == "pixel":
+                    digest = str(route.get("source_sha256", ""))
+                    original = stored.get(digest) if member is document else None
+                    contract = _stored_contract(original.get("semantic_contract"), digest) if original else None
+                    channels = (*channels, *unwritten_targets(member, profile, target, index, contract))
+                names = (tuple(route_name(target, index, role, lod) for lod in lods)
+                         or (route_name(target, index, role),))
+                entries.append((name, pass_purpose(member, profile, target, index), shader, channels, reach, names,
+                                (target, index, role) in material
+                                or bool(_bound_elsewhere(member, profile, material, target, index, role))))
             except ShaderGraphError as exc:
                 errors.append({"pass": name, "role": role, "target": target, "reason": str(exc)})
-    return (output_pin_records(((name, purpose, shader, channels) for name, purpose, shader, channels, _reach
-                                in entries), catalog),
-            errors, reach_records([(name, channels, reach) for name, _purpose, _shader, channels, reach in entries],
-                                  document.material_interface.parameters), catalog_fingerprint(catalog))
+    return (output_pin_records(((name, purpose, shader, channels, names, reads)
+                                for name, purpose, shader, channels, _reach, names, reads in entries), catalog),
+            errors, reach_records([(name, purpose, shader, channels, reach)
+                                   for name, purpose, shader, channels, reach, _names, _reads in entries],
+                                  document.material_interface.parameters, catalog), catalog_fingerprint(catalog))
+
+
+def _carried_channel_links(graph, master, surface, old_records, records) -> None:
+    moved = {}
+    for record in old_records:
+        if isinstance(record, dict) and "channel" in record:
+            found = covering_pins(record, records)
+            if [str(item["pin"]) for item in found] != [str(record["pin"])]:
+                moved[str(record["pin"])] = found
+    if not moved:
+        return
+    routes = {str(record["pin"]): set(record.get("routes", ())) for record in records}
+
+    def taken(source_pin, pin):
+        wanted = routes.get(pin, set())
+        return max(moved[source_pin], default=None,
+                   key=lambda item: (wanted <= routes[str(item["pin"])], len(wanted & routes[str(item["pin"])])))
+
+    for link in [link for link in graph.links if link.target_node == surface.node_id and (
+            link.target_pin in moved or link.source_node == master.node_id and link.source_pin in moved)]:
+        graph.links.remove(link)
+        if link.source_node == master.node_id and link.source_pin == link.target_pin:
+            continue
+        for pin in ([str(item["pin"]) for item in moved[link.target_pin]] if link.target_pin in moved
+                    else [link.target_pin]):
+            if any(other.target_node == surface.node_id and other.target_pin == pin for other in graph.links):
+                continue
+            source_pin = link.source_pin
+            if link.source_node == master.node_id and source_pin in moved:
+                item = taken(source_pin, pin)
+                if item is None:
+                    continue
+                source_pin = str(item["pin"])
+            graph.connect(link.source_node, source_pin, surface.node_id, pin)
+    shown = master.properties.get("shown_channels")
+    if isinstance(shown, list):
+        master.properties["shown_channels"] = list(dict.fromkeys(
+            str(item["pin"]) for pin in shown for item in (moved[pin] if pin in moved else ({"pin": pin},))))
+    reads = [link for link in graph.links if link.source_node == master.node_id and link.source_pin in moved
+             and link.target_node != surface.node_id]
+    if not reads:
+        return
+    groups: dict[tuple, list] = {}
+    for edit in [link for link in graph.links if link.target_node == surface.node_id
+                 and link.target_pin.startswith("channel_") and link.source_node != master.node_id]:
+        behind = graph.upstream_nodes([edit.source_node])
+        chosen = tuple((index, str(item["pin"])) for index, read in enumerate(reads) if read.target_node in behind
+                       for item in (taken(read.source_pin, edit.target_pin),) if item is not None)
+        groups.setdefault(chosen, []).append(edit)
+    downstream = {}
+    for link in graph.links:
+        downstream.setdefault(link.source_node, set()).add(link.target_node)
+    after, pending = set(), [read.target_node for read in reads]
+    while pending:
+        node_id = pending.pop()
+        if node_id not in after and node_id != surface.node_id:
+            after.add(node_id)
+            pending.extend(downstream.get(node_id, ()))
+    chosen_groups = [(dict(chosen), edits) for chosen, edits in groups.items() if chosen]
+    for offset, (chosen, edits) in enumerate(chosen_groups[1:], start=1):
+        copied = graph.upstream_nodes([edit.source_node for edit in edits]) & after
+        copies = {}
+        for node_id in sorted(copied):
+            node = graph.node(node_id)
+            copies[node_id] = graph.add_node(node.kind, x=node.x + 40.0 * offset, y=node.y + 40.0 * offset,
+                                             properties=deepcopy(node.properties)).node_id
+        for link in [link for link in graph.links if link.target_node in copies]:
+            read = next((index for index, item in enumerate(reads) if item is link), None)
+            if read is not None:
+                graph.connect(master.node_id, chosen.get(read, link.source_pin), copies[link.target_node],
+                              link.target_pin)
+            else:
+                graph.connect(copies.get(link.source_node, link.source_node), link.source_pin,
+                              copies[link.target_node], link.target_pin)
+        for edit in edits:
+            if edit.source_node in copies:
+                graph.connect(copies[edit.source_node], edit.source_pin, surface.node_id, edit.target_pin)
+    first = chosen_groups[0][0] if chosen_groups else {}
+    for index, read in enumerate(reads):
+        pin = first.get(index) or next((str(item["pin"]) for item in moved[read.source_pin]), None)
+        if read in graph.links:
+            graph.links.remove(read)
+        if pin is not None:
+            graph.connect(master.node_id, pin, read.target_node, read.target_pin)
 
 
 def _connect_surface_outputs(graph, master, surface, records, errors, reach, meaning) -> bool:
+    _carried_channel_links(graph, master, surface, master.properties.get("output_pins", ()), records)
     names = {str(record["pin"]) for record in records}
     stale = [link for link in graph.links
              if (link.source_node == master.node_id and link.source_pin.startswith("channel_")
@@ -821,8 +975,8 @@ def _connect_surface_outputs(graph, master, surface, records, errors, reach, mea
     wired = {link.target_pin for link in graph.links if link.target_node == surface.node_id}
     master.properties.update(output_pins=records, output_errors=errors, reach=reach,
                              surface_outputs_version=SURFACE_OUTPUTS_VERSION, surface_meaning=meaning)
-    surface.properties["channel_pins"] = [{key: value for key, value in record.items() if key != "passes"}
-                                          for record in records]
+    surface.properties["channel_pins"] = [{key: value for key, value in record.items()
+                                           if key not in ("passes", "routes")} for record in records]
     for record in records:
         if record["form"] == "value" and record["pin"] not in wired:
             graph.connect(master.node_id, str(record["pin"]), surface.node_id, str(record["pin"]))
@@ -834,7 +988,6 @@ def _surface(project):
 
 
 def _edited_channels(project) -> tuple[tuple[dict, object], ...]:
-    from ..material_region_read import per_build_of
     return per_build_of("edited_channels", (project.graph,), None, lambda: tuple(_find_edited_channels(project)))
 
 
@@ -852,13 +1005,26 @@ def _find_edited_channels(project) -> list[tuple[dict, object]]:
     return edited
 
 
+def _listed_pins(project, target_index: int, program_index: int, role: str) -> frozenset:
+    master = _master(project)
+
+    def index():
+        found: dict[str, set] = {}
+        for record in master.properties.get("output_pins", ()):
+            for name in record.get("routes", ()):
+                found.setdefault(str(name), set()).add(str(record["pin"]))
+        return found
+    found = per_build_of("listed_pins", (master,), None, index)
+    lod = master.properties.get("shader_lod")
+    return frozenset((*found.get(route_name(target_index, program_index, role), ()),
+                      *(found.get(route_name(target_index, program_index, role, lod), ()) if lod is not None else ())))
+
+
 def _reads_vertex_data(graph) -> bool:
     return graph_reads_surface_data(graph) or any(node.kind == PER_VERTEX_KIND for node in graph.nodes)
 
 
 def _vertex_values(project, document, profile, target_index: int, program_index: int) -> tuple[tuple, tuple]:
-    from ..material_region_read import per_build
-
     return per_build("vertex_values", (id(document), id(project.graph), target_index, program_index),
                      lambda: _plan_vertex_values(project, document, profile, target_index, program_index))
 
@@ -871,13 +1037,8 @@ def _plan_vertex_values(project, document, profile, target_index: int, program_i
     pixel = program.shader("pixel")
     if pixel is None or not pixel.present:
         return (), ()
-    edited = _edited_channels(project)
-    if edited:
-        try:
-            channels = native_program_channels(document, profile, target_index, program_index, "pixel")
-        except ShaderGraphError:
-            channels = ()  # The master reports it among its unreadable outputs; it has no pin to edit.
-        edited = [link for record, link in edited if channel_for_pin(channels, record) is not None]
+    listed = _listed_pins(project, target_index, program_index, "pixel")
+    edited = [link for record, link in _edited_channels(project) if str(record["pin"]) in listed]
     return vertex_value_plan(document, profile, graph, target_index, program_index,
                              [link.source_node for link in edited])
 
@@ -892,17 +1053,18 @@ def _vertex_value_routes(project, document, profile, routes) -> tuple[tuple[int,
     return tuple(result)
 
 
-def _edited_surface_routes(project, document, profile) -> tuple[tuple[int, int, str], ...]:
-    edited = {record["pin"] for record, _link in _edited_channels(project)}
-    result = []
-    for route in _surface_route_table(document, profile) if edited else ():
-        key = (int(route["target"]), int(route["program"]), str(route["role"]))
-        try:
-            channels = native_program_channels(document, profile, *key)
-        except ShaderGraphError:
-            continue  # The master reports it among its unreadable outputs; it has no pin to edit.
-        if any(channel_pin_name(split.channel, form) in edited for split in channels for form in ("value", "stored")):
-            result.append(key)
+def _edited_surface_routes(project) -> tuple[tuple[int, int, str], ...]:
+    master = _master(project)
+    lod = master.properties.get("shader_lod")
+    records = {str(record["pin"]): record for record in master.properties.get("output_pins", ())}
+    result = {}
+    for record, _link in _edited_channels(project):
+        for name in records.get(str(record["pin"]), {}).get("routes", ()):
+            route, _, member = str(name).partition("@")
+            if member and (lod is None or int(member) != int(lod)):
+                continue
+            target, program, role = route.split(":")
+            result[(int(target), int(program), role)] = None
     return tuple(result)
 
 
@@ -916,7 +1078,7 @@ def _upgrade_surface_outputs(document, project, profile) -> bool:
     if surface is None:
         raise ShaderGraphError("Recovered material has no surface to receive its outputs.")
     _connect_surface_outputs(project.graph, master, surface, *_surface_outputs(
-        document, profile, master.properties.get("program_routes", [])))
+        document, profile, master.properties.get("program_routes", []), master.properties.get("semantic_programs", ())))
     return True
 
 
@@ -1126,7 +1288,6 @@ def _recover_dxil_recipe(bytecode, recovered=None):
 
 
 def _program_ir(kind, storage):
-    from ..material_region_read import per_build
     if type(storage) is not str:
         return _read_program_ir(kind, storage)
     return per_build("program_irs", (kind, storage), lambda: _read_program_ir(kind, storage))
@@ -1157,8 +1318,6 @@ def _other_program_ir(kind, storage):
 
 
 def _program_reference(project, semantics, document=None):
-    from ..material_region_read import region_derived_cache
-
     master = _master(project)
     programs = master.properties.get("semantic_programs", [])
     routes = master.properties.get("program_routes", [])
@@ -1210,17 +1369,25 @@ def _program(project, semantics, document, profile) -> _RecoveredProgram:
     )
 
 
+def _original_contract(project, semantics, document) -> ShaderContract | None:
+    digest, item, _format = _program_reference(project, semantics, document)
+    return _stored_contract(item.get("semantic_contract"), digest) if item is not None else None
+
+
 def _stored_contract(text, digest: str) -> ShaderContract:
     """A stored program's contract, read once per build."""
-    from ..material_region_read import per_build
     if type(text) is not str:
         return contract_from_storage(text, digest)
     return per_build("stored_contracts", (text, digest), lambda: contract_from_storage(text, digest))
 
 
 def _program_key(digest: str, binary_format: str, semantics: MmtrProgramSemantics) -> str:
-    # Equal shaders of passes that draw for different purposes or are handed different data build differently.
-    key = digest + ":" + binary_format + repr((semantics.purpose, semantics.surface_data, semantics.vertex_values))
+    # Equal shaders of passes that draw for different purposes, that Drawing For names apart or that are handed
+    # different data build differently.
+    key = digest + ":" + binary_format + repr((semantics.purpose, semantics.drawn_for, semantics.surface_data,
+                                               semantics.vertex_values, semantics.added_outputs))
+    if semantics.material_bound_elsewhere:
+        key += repr((sorted(semantics.material_bound_elsewhere), semantics.name))
     if binary_format == "spirv-module":
         descriptor = semantics.descriptor
         # Normalised: the build and the shader key reach these values in different types.
@@ -1333,12 +1500,12 @@ def _dxil_reads(ir: ReEngineDxilSemanticIr | _ValidatedDxilAssembly, contract, b
     }
 
 
-def _dxil_material_accesses(assembly, contract):
-    key = native_build_key((material_record_accesses,), "material-words", assembly, contract)
+def _dxil_material_accesses(assembly, contract, instances=""):
+    key = native_build_key((material_record_accesses,), "material-words", assembly, contract, instances)
     cached = _DXIL_INPUT_ANALYSIS_CACHE.get(key)
     if cached is not None:
         return cached
-    result = material_record_accesses(assembly.splitlines(), contract)
+    result = material_record_accesses(assembly.splitlines(), contract, instances=instances)
     _DXIL_INPUT_ANALYSIS_CACHE.put(key, result)
     return result
 
@@ -1353,6 +1520,31 @@ def _dxil_texture_accesses(assembly, contract, accesses):
     return result
 
 
+def _reads_instance_copy(profile, contract, ir_kind: str) -> bool:
+    return (ir_kind in {"dxil", "spirv"} and bool(profile.instanced_material_buffer)
+            and contract.buffer(profile.user_buffer_name) is None
+            and contract.resource(profile.instanced_material_buffer) is not None)
+
+
+def _copy_element(profile, recovered, program) -> tuple[int, bool] | None:
+    contract = recovered.contract
+    resource = contract.resource(profile.instanced_material_buffer) if profile.instanced_material_buffer else None
+    if resource is None or contract.buffer(profile.user_buffer_name) is not None:
+        return None
+    if resource.input_type == "structured-buffer":
+        size = int(resource.sample_count)
+    else:
+        accesses = _dxil_material_accesses(recovered.ir.to_assembly(), contract, profile.instanced_material_buffer)
+        sizes = {access.constant_buffer_size for access in accesses if access.storage == "instance-raw-buffer"} - {0}
+        if len(sizes) > 1:
+            raise ShaderGraphError("A pass reads the material's instance copy at two element sizes.")
+        size = sizes.pop() if sizes else 0
+    names = set(profile.effect_sized_copy_inputs)
+    fixed = any(item.name in names for group in (program.constant_buffers, program.shader_resources,
+                                                 program.optional_resources) for item in group)
+    return size, fixed
+
+
 def _renderer_word_bits(expression, value_type):
     if value_type.startswith(("int", "uint")):
         return f"asfloat({expression})"
@@ -1362,11 +1554,10 @@ def _renderer_word_bits(expression, value_type):
 
 
 def _bindless_texture_resolver(profile, master, contract, recovered, descriptor_layout, source_descriptor_layout,
-                               helper_sources: dict):
-    """The resolver adds its helper to ``helper_sources``."""
+                               helper_sources: dict, given=False):
     native: dict[str, object] = {}
 
-    def texture_object(definition):
+    def texture_object(definition, check=False):
         if descriptor_layout is None:
             raise ShaderGraphError("Bindless texture sampling needs an exact MDF descriptor layout.")
         words = descriptor_layout.word_offsets(master.properties.get("shader_lod"))
@@ -1386,21 +1577,33 @@ def _bindless_texture_resolver(profile, master, contract, recovered, descriptor_
                 if use.dimension == _TEXTURE_CONTRACT_DIMENSIONS[definition.dimension]]
         exact = [use for use in uses if source_offset is not None
                  and use.byte_offset == source_offset + profile.material_record_prefix_size]
-        bindings = {use.resource for use in (exact or uses)}
+        arrays = {item for item in contract.resources if item.register_class == "t" and item.register_space
+                  and item.bind_count != 1 and item.dimension == _TEXTURE_CONTRACT_DIMENSIONS[definition.dimension]}
+        bindings = {use.resource for use in (exact or uses)} if uses else arrays or {None}
+        if not native["uses"] and (not given or not bindings):
+            raise ShaderGraphError(f"This pass samples none of the material's textures, so the edit cannot sample "
+                                   f"{definition.name} here. Use Where Available to give this pass another value.")
+        if not native["uses"] and not any(map(contract.resource, _MATERIAL_SAMPLERS)):
+            raise ShaderGraphError(f"This pass has no sampler to sample {definition.name} with. Use Where Available to "
+                                   "give this pass another value.")
         if len(bindings) != 1:
             raise ShaderGraphError(f"{definition.name} has no unambiguous native material descriptor binding.")
         binding = next(iter(bindings))
         if binding is None:
             if (contract.model_major, contract.model_minor) < (6, 6):
-                raise ShaderGraphError("Native descriptor-heap sampling needs Shader Model 6.6.")
+                raise ShaderGraphError(f"This pass declares no {_TEXTURE_CONTRACT_DIMENSIONS[definition.dimension]} "
+                                       f"table to sample {definition.name} from, and descriptor-heap sampling needs "
+                                       "Shader Model 6.6.")
             texture = "ResourceDescriptorHeap[NonUniformResourceIndex(descriptor)]"
         else:
             if binding.bind_count == 1 or binding.return_type not in {"float", "unorm", "snorm"}:
                 raise ShaderGraphError(f"{definition.name} needs a float texture descriptor array.")
             texture = f"{resource_identifier(binding)}[NonUniformResourceIndex(descriptor)]"
+        if check:
+            return ""
         helper_sources.setdefault(name, (
             f"{object_type} {name}(uint address)\n{{\n"
-            f"    uint descriptor = asuint(REasyMaterialLoad(address, {offset}u));\n"
+            f"    uint descriptor = REasyMaterialWord(address, {offset}u);\n"
             f"    {object_type} texture = {texture};\n"
             "    return texture;\n}"
         ))
@@ -1440,13 +1643,22 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
         contract.resource(profile.instanced_material_buffer)
         if buffer is None and profile.instanced_material_buffer and recovered.ir_kind == "dxbc-sm5" else None
     )
-    dynamic = (
-        master.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES
-        and buffer is None
-    )
-    native_assembly = recovered.ir.to_assembly() if dynamic and parameter_edits and recovered.ir_kind == "dxil" else ""
-    material_accesses = _dxil_material_accesses(native_assembly, recovered.contract) if native_assembly else ()
+    instanced = _reads_instance_copy(profile, contract, recovered.ir_kind)
+    bindless = (master.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES and buffer is None
+                and instances is None)
+    # DXIL reads the copy per drawn instance like a record; its textures stay bound by name.
+    dynamic = bindless or instanced
+    native_assembly = (recovered.ir.to_assembly() if dynamic and (parameter_edits or instanced)
+                       and recovered.ir_kind == "dxil" else "")
+    material_accesses = (_dxil_material_accesses(native_assembly, recovered.contract, profile.instanced_material_buffer)
+                         if native_assembly else ())
     material_reads = {word.byte_offset for access in material_accesses for word in access.words}
+    if instanced and parameter_edits and recovered.ir_kind == "spirv":
+        # None: an offset is computed at run time, so any word may be read.
+        try:
+            material_reads = spirv_instance_reads(recovered.ir, profile.instanced_material_buffer)
+        except SpirvError as exc:
+            raise ShaderGraphError(str(exc)) from exc
     reads = None
     if instances is not None and parameter_edits:
         reads = _dxbc_structured_reads(recovered.ir, instances.bind_point)
@@ -1458,7 +1670,8 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
     textures: dict[tuple[int, int], tuple[int, int]] = {}
     helper_sources: dict[str, str] = {}
     texture_object = _bindless_texture_resolver(profile, master, contract, recovered, descriptor_layout,
-                                                source_descriptor_layout, helper_sources)
+                                                source_descriptor_layout, helper_sources, semantics is not None
+                                                and MATERIAL_TEXTURES in semantics.material_bound_elsewhere)
 
     for value, link, source in pending:
         pin = str(value.get("pin", ""))
@@ -1473,14 +1686,14 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
             if input_buffer is None and not input_dynamic and input_instances is None:
                 continue
             if kind == "renderer_value" and "value_layout" in value:
-                for index, field in enumerate(renderer_fields(value)):
-                    if input_reads is not None and not set(field.offsets) & input_reads:
+                for index, entry in enumerate(renderer_fields(value)):
+                    if input_reads is not None and not set(entry.offsets) & input_reads:
                         continue
                     producer, socket, projection = aggregate_projection(project.graph, source, link.source_pin, index, incoming)
                     if producer.kind == RENDERER_VALUE_KIND and projection is not None:
                         original = renderer_fields(producer.properties)[projection]
                         if (renderer_buffer(contract, producer.properties) == input_buffer
-                                and original.offsets == field.offsets and original.value_type == field.value_type):
+                                and original.offsets == entry.offsets and original.value_type == entry.value_type):
                             continue
                         expression = renderer_field_expression(contract, producer.properties, original)
                         actual_type = original.value_type
@@ -1491,17 +1704,19 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
                         if projection is not None:
                             if actual_type != value["value_type"]:
                                 raise ShaderGraphError("Renderer aggregate connection changes its logical type")
-                            expression, actual_type = f"({expression}).field{projection}", field.value_type
-                    if actual_type != field.value_type:
-                        raise ShaderGraphError(f"Renderer field {field.path} expects {field.value_type}, not {actual_type}")
-                    for component, offset in enumerate(field.offsets):
+                            expression, actual_type = f"({expression}).field{projection}", entry.value_type
+                    if actual_type != entry.value_type:
+                        raise ShaderGraphError(
+                            f"Renderer field {entry.path} expects {entry.value_type}, not {actual_type}")
+                    for component, offset in enumerate(entry.offsets):
                         if input_reads is not None and offset not in input_reads:
                             continue
-                        scalar = expression if len(field.offsets) == 1 else f"({expression}).{'xyzw'[component]}"
-                        expressions[constant_word(input_buffer.bind_point, offset, input_buffer.register_space)] = _renderer_word_bits(scalar, field.value_type)
+                        scalar = expression if len(entry.offsets) == 1 else f"({expression}).{'xyzw'[component]}"
+                        expressions[constant_word(input_buffer.bind_point, offset, input_buffer.register_space)] = (
+                            _renderer_word_bits(scalar, entry.value_type))
                 continue
             byte_offset = int(value.get("source_byte_offset", -1))
-            if input_dynamic:
+            if input_dynamic and not instanced:  # The copy per drawn instance holds no record prefix.
                 byte_offset += profile.material_record_prefix_size
             if input_instances is not None:
                 # The instance element packs members tightly, so address them by name.
@@ -1525,7 +1740,8 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
                           f".{'xyzw'[component]}" if value_width(value_type) > 1 else "")
                          for component in range(value_width(value_type))]
             active = {offset for offset, _type, _path in words
-                      if (offset in material_reads if input_dynamic else input_reads is None or offset in input_reads)}
+                      if (material_reads is None or offset in material_reads if input_dynamic
+                          else input_reads is None or offset in input_reads)}
             if not active:
                 continue
             result = recovered_graph_expression(
@@ -1538,7 +1754,7 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
                 incoming,
                 set(),
                 helper_sources,
-                texture_resolver=texture_object if input_dynamic else None,
+                texture_resolver=texture_object if input_dynamic and not instanced else None,
             )
             expression = result.value
             if result.value_type != value_type:
@@ -1586,6 +1802,15 @@ def _overrides(profile, project, contract, semantics, recovered: _RecoveredProgr
                 int(target.register_space),
                 int(target.bind_point),
             )
+    if instanced and recovered.ir_kind == "dxil":
+        # A copy whose elements change size (a mesh effect's grown material) is read at the new stride throughout.
+        # Vulkan passes read all of a changed copy from the carrier's (rebuild_spirv).
+        size = contract.structured_buffer(profile.instanced_material_buffer).byte_size
+        for access in material_accesses:
+            if access.storage.startswith("instance") and access.constant_buffer_size not in (0, size):
+                for word in access.words:
+                    material_expressions.setdefault(
+                        word.byte_offset, f"REasyMaterialLoad(REasyMaterialAddress, {word.byte_offset}u)")
     return expressions, structured, textures, "\n\n".join(helper_sources.values()), material_expressions
 
 
@@ -1604,6 +1829,7 @@ def _added_values(profile, project, contract, semantics, helpers: dict, texture_
     edits = []
     for value in semantics.vertex_values:
         kind, identity = value.source.split(":", 1)
+        statements = ()
         if kind == "datum":
             expression = surface_data_value(semantics, contract, {"datum": identity, "value_type": value.value_type})
         else:
@@ -1611,21 +1837,20 @@ def _added_values(profile, project, contract, semantics, helpers: dict, texture_
             source = project.graph.node(link.source_node) if link is not None else None
             if source is None:
                 raise ShaderGraphError("Computed per Vertex needs a Value.")
-            expression = _coerced(recovered_graph_expression(
-                profile, project, contract, semantics, source, link.source_pin, incoming, set(), helpers,
-                texture_resolver=texture_resolver), value.value_type, "Computed per Vertex")
+            statements, computed = edit_expression(
+                profile, project, contract, semantics, source, link.source_pin, incoming, helpers,
+                f"REasyVertexValue{value.index}", texture_resolver=texture_resolver)
+            expression = _coerced(computed, value.value_type, "Computed per Vertex")
         stored = f"{value.scalar}4"
         channel = SurfaceChannel("vertex", "added", VALUE_SEMANTIC.casefold(), value.index, (0, 1, 2, 3), stored, stored)
         edits.append(SurfaceEdit(ChannelSplit(channel, ()), "stored", value.stored_expression(expression), stored,
-                                 material=re.search(r"\bREasyMaterialAddress\b", expression) is not None))
+                                 material=re.search(r"\bREasyMaterialAddress\b",
+                                                    " ".join((*statements, expression))) is not None,
+                                 statements=statements))
     return edits
 
 
-def _prefetch_program_flows(project) -> None:
-    """A build edits channels pass by pass; its stored DXIL programs' flows are started at once in worker processes,
-    in the order of the passes that read them."""
-    from ..material_region_read import region_derived_cache
-
+def _prefetch_program_flows(project, instances: str, prefix: int) -> None:
     started = region_derived_cache("program_flow_prefetch")
     if started is None or started:
         return
@@ -1637,24 +1862,26 @@ def _prefetch_program_flows(project) -> None:
     programs = sorted((item for item in master.properties.get("semantic_programs", ()) if item.get("ir_kind") == "dxil"),
                       key=lambda item: first.get(str(item.get("source_sha256", "")), len(first)))
     prefetch_program_flows(
-        (_program_ir("dxil", item.get("semantic_ir")).to_assembly(),
-         _stored_contract(item.get("semantic_contract"), str(item.get("source_sha256", ""))))
-        for item in programs)
+        ((_program_ir("dxil", item.get("semantic_ir")).to_assembly(),
+          _stored_contract(item.get("semantic_contract"), str(item.get("source_sha256", ""))))
+         for item in programs), instances, prefix)
 
 
 def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredProgram, helpers: dict,
                    texture_resolver=None):
     master = _master(project)
-    edited = _edited_channels(project)
+    listed = _listed_pins(project, semantics.target_index, semantics.program_index, semantics.shader_role)
+    edited = [(record, link) for record, link in _edited_channels(project) if str(record["pin"]) in listed]
     added = (_added_values(profile, project, contract, semantics, helpers, texture_resolver)
              if semantics.shader_role == "vertex" else [])
     if not (edited or added):
         return (), None
     incoming = {(link.target_node, link.target_pin): link for link in project.graph.links}
-    _prefetch_program_flows(project)
+    _prefetch_program_flows(project, profile.instanced_material_buffer, profile.material_record_prefix_size)
     flow, channels = program_flow(recovered.ir_kind, recovered.ir, recovered.contract)
     if recovered.ir_kind == "dxil":
-        from ..material_region_read import per_build
+        key = (recovered.ir.to_assembly(), recovered.contract.fingerprint, profile.instanced_material_buffer,
+               profile.material_record_prefix_size)
 
         def named():
             layouts = tuple(MaterialDescriptorLayout.from_dict(item)
@@ -1662,13 +1889,29 @@ def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredP
             return named_texture_reads(channels, material_texture_names(
                 layouts, master.properties.get("shader_lod"), profile.material_record_prefix_size))
         channels = per_build("named_channels", (id(channels), id(master)), named)
+    channels = (*channels, *(added_target(index, value_type) for index, value_type in semantics.added_outputs))
     outputs = {record["pin"]: (index, record) for index, record in enumerate(master.properties.get("output_pins", ()))}
-    # Only a bindless DXIL pass hands the drawn material's record address to the code that stores a channel.
-    material_readable = (recovered.ir_kind == "dxil" and contract.buffer(profile.user_buffer_name) is None
-                         and master.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES)
+    # Only a bindless DXIL pass reading the record or given it, or a pass reading the copy per drawn instance, hands the
+    # drawn material's record (or element) to the code that stores a channel.
+    material_readable = contract.buffer(profile.user_buffer_name) is None and (
+        _reads_instance_copy(profile, contract, recovered.ir_kind)
+        or recovered.ir_kind == "dxil" and master.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES
+        and bool(semantics.material_bound_elsewhere or per_build(
+            "material_records", key, lambda: material_records(key[0], recovered.contract, *key[2:]))))
     if any(edit.material for edit in added) and not material_readable:
         raise ShaderGraphError("Computed per Vertex uses material values this pass's vertex shader cannot read. "
                                "Use Drawing For to leave this pass out of the edit.")
+    # A route reading none of the material reads none of its values unless the game binds it in that pass elsewhere;
+    # a material route's own reads decide what it can.
+    reads_material = (semantics.target_index, semantics.program_index, semantics.shader_role) in per_build_of(
+        "material_routes", (master,), None, lambda: _route_keys(master.properties.get("program_routes", ()))
+    ) or bool(semantics.material_bound_elsewhere)
+
+    def lacking_channel(pin) -> str:
+        if pin in listed and pin in outputs and channel_for_pin(channels, outputs[pin][1]) is not None:
+            return ""
+        return str(outputs[pin][1]["label"]) if pin in outputs else str(pin)
+
     edits, forms = list(added), {}
     for record, link in edited:
         split = channel_for_pin(channels, record)
@@ -1681,12 +1924,15 @@ def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredP
 
         def resolve(pin):
             index, tap_record = outputs[pin]
-            tap_split = channel_for_pin(channels, tap_record)
+            tap_split = channel_for_pin(channels, tap_record) if pin in listed else None
             if tap_split is None:
                 raise ShaderGraphError(f"{tap_record['label']} is not produced in every pass that produces "
-                                       f"{record['label']}. Use Drawing For to leave this pass out of the edit.")
+                                       f"{record['label']}. Use Where Available to give those passes another value.")
             if tap_split.channel.scope == "discard" and split.channel.scope != "discard":
                 raise ShaderGraphError(f"{record['label']} reads Discard; only the Discard input can.")
+            if tap_split.channel.scope == "added" and tap_split != split:
+                raise ShaderGraphError(f"{record['label']} reads {tap_record['label']}, which no shader of this pass "
+                                       "writes.")
             tap_form = "value" if tap_split.channel.packed and tap_record["form"] == "value" else "stored"
             return taps.setdefault(pin, SurfaceTap(f"REasySurfaceTap_{index}", tap_split, tap_form,
                                                    str(tap_record["value_type"]))).name
@@ -1695,17 +1941,23 @@ def _surface_edits(profile, project, contract, semantics, recovered: _RecoveredP
         if source is None:
             raise ShaderGraphError("Recovered material connection is dangling.")
         value_type = str(record["value_type"])
-        expression = _coerced(recovered_graph_expression(
-            profile, project, contract, semantics, source, link.source_pin, incoming, set(), helpers,
-            texture_resolver=texture_resolver, channel_resolver=resolve), value_type, record["label"])
+        with surface_pass(SurfacePass(str(record["label"]), reads_material, material_readable,
+                                      outputs.get(record["pin"], (0, {}))[1].get("material_routes") == 0,
+                                      lacking_channel)):
+            statements, value = edit_expression(
+                profile, project, contract, semantics, source, link.source_pin, incoming, helpers,
+                f"REasyEdit{len(edits)}", texture_resolver=texture_resolver, channel_resolver=resolve)
+            expression = _coerced(value, value_type, record["label"])
         own = taps.get(record["pin"])
         if own is not None and expression == own.name and own.split == split and own.form == form:
             continue
-        material = re.search(r"\bREasyMaterialAddress\b", expression) is not None
+        if own is not None and split.channel.scope == "added":
+            raise ShaderGraphError(f"{record['label']} reads itself, and no shader of this pass writes it.")
+        material = re.search(r"\bREasyMaterialAddress\b", " ".join((*statements, expression))) is not None
         if material and not material_readable:
             raise ShaderGraphError(f"{record['label']} uses material values this pass cannot read. "
-                                   "Use Drawing For to leave this pass out of the edit.")
-        edits.append(SurfaceEdit(split, form, expression, value_type, tuple(taps.values()), material))
+                                   "Use Where Available to give this pass another value.")
+        edits.append(SurfaceEdit(split, form, expression, value_type, tuple(taps.values()), material, statements))
     return tuple(edits), flow
 
 
@@ -1782,9 +2034,18 @@ def _validate_fixed_descriptor_interface(project):
 class ReEngineShaderGraphProfile:
     profile_id: str
     user_buffer_name: str = "UserMaterial"
-    # Structured per-instance copy of UserMaterial read by instanced DXBC passes.
+    # The copy of UserMaterial per drawn instance that the game's effects fill, read by instanced passes (a structured
+    # buffer, or a raw one at the instance times UserMaterial's size); builds rebuild those passes.
     instanced_material_buffer: str = ""
+    # Inputs only primitive effects (billboards, polygons, ribbons) bind. Their files record the size of the copy per
+    # instance, so passes binding one keep the element their shader reads; mesh effects copy the whole material
+    # (docs/internals/engine-input-catalog.md).
+    effect_sized_copy_inputs: tuple[str, ...] = ("PrimitiveMaterialConstant", "PrimitiveMaterialTex",
+                                                 "ExtendParticleVertexBuffer", "ExtendParticleVertexConstant")
     material_instance_resource_names: tuple[str, ...] = ()
+    # Inputs passes read the material through that REasy cannot rebuild yet (apart from ``instanced_material_buffer``):
+    # a build leaves such passes as they are (``MaterialAuthoringCoverage.stale_passes``).
+    unrebuilt_material_resources: tuple[str, ...] = ("UserMaterialInstances",)
     # Runtime arena/CBV prefix, not part of the named UserMaterial/MDF buffer.
     material_record_prefix_size: int = 0
     authoring_roles: tuple[str, ...] = STAGE_KEYS
@@ -1831,20 +2092,28 @@ class ReEngineShaderGraphProfile:
         return str(definition.source_name or definition.name)
 
     def material_parameter_storage_expression(self, project, definition, contract) -> str | None:
-        if (
-            _is_project(project, self.profile_id)
-            and _master(project).properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES
-            and contract.buffer(self.user_buffer_name) is None
-        ):
-            if definition.source_byte_offset is None:
-                raise ShaderGraphError("A bindless material parameter needs its MDF field offset.")
-            width = value_width(definition.value_type)
-            parts = [
-                f"REasyMaterialLoad(REasyMaterialAddress, {self.material_record_prefix_size + int(definition.source_byte_offset) + i * 4}u)"
-                for i in range(width)
-            ]
-            return parts[0] if width == 1 else f"{definition.value_type}({', '.join(parts)})"
-        return None
+        if not _is_project(project, self.profile_id) or contract.buffer(self.user_buffer_name) is not None:
+            return None
+        instances = contract.resource(self.instanced_material_buffer) if self.instanced_material_buffer else None
+        if instances is not None and contract.model_major < 6:
+            return None  # DXBC reads its structured element through the generator.
+        storage = _master(project).properties.get("parameter_storage")
+        if instances is None and storage not in BINDLESS_PARAMETER_STORAGES:
+            return None
+        width = value_width(definition.value_type)
+        # The copy per drawn instance holds the values alone, without the record's prefix.
+        prefix = 0 if instances is not None else self.material_record_prefix_size
+        start = prefix + int(definition.source_byte_offset) if definition.source_byte_offset is not None else None
+        if instances is not None:
+            element = contract.structured_buffer(instances.name)
+            if element is None:
+                raise ShaderGraphError("The pass's copy of the material per drawn instance has no element size.")
+            if start is None or start + width * 4 > element.byte_size:
+                raise PastInstanceCopy(definition.name)
+        if start is None:
+            raise ShaderGraphError("A bindless material parameter needs its MDF field offset.")
+        parts = [f"REasyMaterialLoad(REasyMaterialAddress, {start + i * 4}u)" for i in range(width)]
+        return parts[0] if width == 1 else f"{definition.value_type}({', '.join(parts)})"
 
     def editable_textures(self, document):
         cached = document._material_texture_contracts_cache.get(self.profile_id)
@@ -1886,7 +2155,7 @@ class ReEngineShaderGraphProfile:
 
     @staticmethod
     def material_sampler(contract: ShaderContract) -> str:
-        for name in ("AutomaticWrap", "BilinearWrap", "TrilinearWrap", "BilinearClamp"):
+        for name in _MATERIAL_SAMPLERS:
             resource = contract.resource(name)
             if resource is not None and resource.input_type == "sampler" and not (resource.flags & 0x2):
                 return resource.name
@@ -2068,11 +2337,10 @@ class ReEngineShaderGraphProfile:
             )
             dynamic = (
                 bool(document.material_interface.parameters or document.material_interface.descriptor_layouts)
-                and any(
-                    item.name in self.material_instance_resource_names
-                    or item.name == self.instanced_material_buffer
-                    for item in program.shader_resources
-                )
+                and (any(item.name in self.material_instance_resource_names for item in program.shader_resources)
+                     # Vulkan passes list their storage buffers as optional resources.
+                     or any(item.name == self.instanced_material_buffer
+                            for item in (*program.shader_resources, *program.optional_resources)))
             )
             if not outer_material and not dynamic and not renderer:
                 continue
@@ -2083,9 +2351,10 @@ class ReEngineShaderGraphProfile:
                     contract = self.shader_contract(document, program, shader.role)
                 except ValueError:
                     continue
+                instanced = self.instanced_material_buffer
                 if renderer or any(item.name.casefold() in user_names for item in contract.constant_buffers) or any(
                     item.name.casefold() in names or (dynamic and (
-                        item.name in self.material_instance_resource_names or item.name == self.instanced_material_buffer))
+                        item.name in self.material_instance_resource_names or instanced and item.name == instanced))
                     for item in contract.resources
                 ):
                     result.append((semantics.target_index, semantics.program_index, shader.role))
@@ -2141,7 +2410,8 @@ class ReEngineShaderGraphProfile:
             result.append(key)
         if not result or len(result) != len(set(result)):
             raise ShaderGraphError("Recovered material route table is empty or ambiguous.")
-        result.extend(_edited_surface_routes(project, document, self))
+        material = set(result)
+        result.extend(route for route in _edited_surface_routes(project) if route not in material)
         return (*result, *_vertex_value_routes(project, document, self, result))
 
     def material_project_owns_contract(self, project) -> bool:
@@ -2154,7 +2424,6 @@ class ReEngineShaderGraphProfile:
         return _program_key(digest, binary_format, self._pass_semantics(project, document, semantics))
 
     def _pass_semantics(self, project, document, semantics):
-        from ..material_region_read import per_build_of
         return per_build_of("pass_semantics", (self, project, document, semantics), None,
                             lambda: self._derived_semantics(project, document, semantics))
 
@@ -2163,14 +2432,63 @@ class ReEngineShaderGraphProfile:
         changes = {}
         if graph_draws_for(project.graph):
             changes["purpose"] = pass_purpose(document, self, target, program)
+            changes["drawn_for"] = tuple(node.node_id for node in project.graph.nodes if node.kind == DRAWING_FOR_KIND
+                                         and node.properties.get("programs")
+                                         and drawing_for(node, changes["purpose"], target, semantics.name))
         if semantics.shader_role in {"vertex", "pixel"}:
             changes["vertex_values"], changes["vertex_value_refusals"] = _vertex_values(
                 project, document, self, target, program)
+        if semantics.shader_role == "pixel":
+            listed = _listed_pins(project, target, program, "pixel")
+            added = {record["channel"] for record, _link in _edited_channels(project)
+                     if str(record["pin"]) in listed and str(record["channel"]).startswith("pixel:added:")}
+            if added:
+                changes["added_outputs"] = tuple(
+                    (split.channel.semantic_index, split.channel.value_type)
+                    for split in unwritten_targets(document, self, target, program,
+                                                   _original_contract(project, semantics, document))
+                    if split.channel.key in added)
+        incoming = per_build_of("graph_incoming", (project.graph,), None, lambda: {
+            (link.target_node, link.target_pin): link for link in project.graph.links})
+
+        def edit_reads(*keep, links=None):
+            if links is None:
+                listed = _listed_pins(project, target, program, semantics.shader_role)
+                links = [link for record, link in _edited_channels(project) if str(record["pin"]) in listed]
+            return [item for link in links
+                    for item in _edit_reads(project.graph, incoming, link, None, semantics.shader_role != "pixel",
+                                            changes.get("purpose", ""), (target, semantics.name), *keep)[0]]
+
+        if graph_renderer_buffers(project.graph) or graph_renderer_resources(project.graph):
+            master_id = _master(project).node_id
+            read = [*edit_reads(lambda node: True), *edit_reads(lambda node: True, links=[
+                link for (node, _pin), link in incoming.items() if node == master_id])]
+            if semantics.shader_role == "vertex":
+                read += upstream(project.graph, incoming, [value.source.removeprefix("node:") for value in changes[
+                    "vertex_values"] if value.source.startswith("node:")], through_per_vertex=True)[0]
+            found = [item for node in read for item in engine_input_nodes(node)]
+            changes["engine_inputs"] = tuple(
+                tuple(sorted({str(properties.get(key, "")) for kind, properties in found if kind in wanted} - {""}))
+                for wanted, key in (((RENDERER_VALUE_KIND, RENDERER_RESOURCE_KIND), "source_buffer"),
+                                    ((RENDERER_RESOURCE_KIND,), "source_resource")))
+
         if graph_reads_surface_data(project.graph):
             if semantics.shader_role == "pixel":
-                changes["surface_data"] = program_surface_data(document, self, target, program)
+                data = program_surface_data(document, self, target, program)
+                spirv = document.sdf.targets[target].programs[program].shader("pixel").spirv is not None
+                changes["surface_data"] = data if spirv else (*data, *generated_data(edit_reads(surface_data_keys),
+                                                                                     data))
             elif semantics.shader_role == "vertex":
                 changes["surface_data"] = program_vertex_inputs(document, self, target, program)
+        master = _master(project)
+        native = per_build_of("material_routes", (master,), None,
+                              lambda: _route_keys(master.properties.get("program_routes", ())))
+        if bound := _bound_elsewhere(document, self, native, target, program, semantics.shader_role):
+            reads = edit_reads()
+            if reads:
+                changes["material_bound_elsewhere"] = bound | (
+                    {MATERIAL_TEXTURES} if document.material_interface.parameter_storage in BINDLESS_PARAMETER_STORAGES
+                    and any(item.kind == "material_texture" for item in reads) else set())
         return replace(semantics, **changes) if changes else semantics
 
     def generate_recovered_material_shader_source(
@@ -2187,9 +2505,14 @@ class ReEngineShaderGraphProfile:
         material_word_offsets = {}
         descriptor_layout = None
         source_descriptor_layout = None
-        if bindless:
-            from ..material_region_read import per_build, per_build_of
-
+        program = document.sdf.targets[semantics.target_index].programs[semantics.program_index]
+        element = (_copy_element(self, recovered, program) if recovered.ir_kind in {"dxil", "dxbc-sm5", "spirv"}
+                   else None)
+        # A raw copy per drawn instance has no layout of its own: its passes place the parameters as UserMaterial does.
+        raw_copy = element is not None and recovered.contract.resource(
+            self.instanced_material_buffer).input_type != "structured-buffer"
+        bound = semantics.material_bound_elsewhere
+        if bindless or raw_copy or bound:
             original = {
                 str(pin.get("source_id")): pin
                 for pin in master.properties.get("input_pins", [])
@@ -2197,7 +2520,7 @@ class ReEngineShaderGraphProfile:
             }
             sizes = master.properties.get("parameter_buffer_sizes", [])
             if len(sizes) != 1:
-                raise ShaderGraphError("Bindless material allocation needs one exact MDF size.")
+                raise ShaderGraphError("Material parameter allocation needs one exact MDF size.")
             native_buffer = recovered.contract.buffer(self.user_buffer_name)
             bind_point = native_buffer.bind_point if native_buffer else 0
 
@@ -2210,29 +2533,41 @@ class ReEngineShaderGraphProfile:
                           for pin in original.values()),
                 )
             semantic_buffer = per_build_of("semantic_material_buffers", (self, master), bind_point, material_buffer)
+        if bindless or raw_copy:
             adjusted, layout = _augmented_contract(
                 project, recovered.contract, self, document, semantics.shader_role, material_buffer=semantic_buffer,
                 augment_textures=native_buffer is not None or any(
                     recovered.contract.resource(pin["source_name"]) is not None
                     for pin in master.properties.get("input_pins", ()) if pin.get("input_kind") == "texture"
                 ),
+                instance_element=element,
             )
-            if self.material_interface_editing_supported(document, project):
+            if bindless and self.material_interface_editing_supported(document, project):
                 source_descriptor_layout, descriptor_layout, material_word_offsets = _descriptor_plan(project, layout)
                 prefix = self.material_record_prefix_size
                 material_word_offsets = {source + prefix: target + prefix for source, target in material_word_offsets.items()}
-            else:
+            elif bindless:
                 _validate_fixed_descriptor_interface(project)
-
+        else:
+            adjusted, layout = _augmented_contract(
+                project, add_engine_buffers(document, recovered.contract, semantics, (), (semantic_buffer,))
+                if bound else recovered.contract, self, document, semantics.shader_role,
+                augment_textures=MATERIAL_TEXTURES in bound if bound else recovered.ir_kind != "spirv"
+                or bool(recovered.contract.resources), instance_element=element)
+        record_address = ""
+        if bindless and bound:
+            adjusted, record_address = self._engine_record_inputs(document, semantics, master, program, adjusted, bound)
+        if bindless or element is not None and recovered.ir_kind in {"dxil", "spirv"}:
             def placed():
                 by_name = {v.name: v for v in layout.variables}
                 return tuple(replace(p, source_byte_offset=by_name[p.name].byte_offset) for p in project.parameters)
             project = replace(project, parameters=list(per_build("placed_parameters", (id(project), layout), placed)))
-        else:
-            adjusted, layout = _augmented_contract(project, recovered.contract, self, document, semantics.shader_role)
-        adjusted = add_engine_buffers(document, adjusted, semantics, graph_renderer_buffers(project.graph))
-        adjusted = add_engine_resources(document, adjusted, semantics, graph_renderer_resources(project.graph))
+        buffers, resources = semantics.engine_inputs
+        adjusted = add_engine_resources(document, add_engine_buffers(document, adjusted, semantics, buffers), semantics,
+                                        resources, graph_resource_declarations(project.graph))
         adjusted = add_vertex_values(document, self, adjusted, semantics)
+        if semantics.shader_role == "pixel":
+            adjusted = add_generated_values(adjusted, semantics.surface_data)
         expressions, structured, textures, helpers, material_expressions = _overrides(
             self,
             project,
@@ -2253,12 +2588,15 @@ class ReEngineShaderGraphProfile:
             edits, flow = _surface_edits(self, project, adjusted, semantics, recovered, surface_helpers)
             surface_plan = ()
             if edits:
-                surface_plan = spirv_surface_plan(recovered.ir, flow, edits)
+                elements = (spirv_instance_elements(recovered.ir, self.instanced_material_buffer)
+                            if any(edit.material for edit in edits) else ())
+                surface_plan = spirv_surface_plan(recovered.ir, flow, edits, elements)
                 helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
             product = _SpirvProduct(recovered.ir, recovered.contract, adjusted,
                                     _native_spirv(route.shader(semantics.shader_role)),
                                     _outer_resource_kinds(route, semantics.shader_role),
-                                    expressions, textures, helpers, renamed, surface_plan)
+                                    expressions, textures, helpers, renamed, surface_plan, material_expressions,
+                                    self.instanced_material_buffer)
             return product, adjusted, layout, semantic_key
         if recovered.ir_kind == "dxbc-sm5":
             texture_slots = {
@@ -2274,21 +2612,28 @@ class ReEngineShaderGraphProfile:
                 helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
             generated = generate_recovered_dxbc_shader(
                 ir, adjusted, constant_overrides=expressions, structured_overrides=structured,
-                texture_binding_overrides=texture_slots, additional_helpers=helpers,
-                semantic_buffer_names=frozenset((self.user_buffer_name,)), instruction_hooks=hooks,
+                texture_binding_overrides=texture_slots, additional_helpers=helpers, instruction_hooks=hooks,
             )
             return generated, adjusted, layout, semantic_key
         if recovered.binary_format == "spirv-module":
             raise ShaderGraphError("Legacy Vulkan project needs native semantic recovery before rebuilding.")
         surface_helpers: dict = {}
+        # A pass reading the material per drawn instance binds its textures by name.
         edits, flow = _surface_edits(self, project, adjusted, semantics, recovered, surface_helpers,
-                                     texture_resolver=_bindless_texture_resolver(
-                                         self, master, adjusted, recovered, descriptor_layout,
-                                         source_descriptor_layout, surface_helpers))
+                                     texture_resolver=None if _reads_instance_copy(self, adjusted, recovered.ir_kind)
+                                     else _bindless_texture_resolver(self, master, adjusted, recovered,
+                                                                     descriptor_layout, source_descriptor_layout,
+                                                                     surface_helpers, MATERIAL_TEXTURES in bound))
         surface_plan = ()
         if edits:
-            surface_plan = dxil_surface_plan(flow, edits, recovered.ir.to_assembly(), recovered.contract)
+            surface_plan = dxil_surface_plan(flow, edits, recovered.ir.to_assembly(), recovered.contract,
+                                             self.instanced_material_buffer, self.material_record_prefix_size,
+                                             record_address)
             helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
+            added = tuple(added_target_field(edit.split.channel) for edit in edits
+                          if edit.split.channel.scope == "added" and edit.split.channel.stage == "pixel")
+            if added:
+                adjusted = replace(adjusted, outputs=(*adjusted.outputs, *added))
         product = _DxilProduct(
             recovered.ir,
             recovered.contract,
@@ -2299,12 +2644,60 @@ class ReEngineShaderGraphProfile:
             ((descriptor_layout.allocation_size(master.properties.get("shader_lod"))
               if descriptor_layout is not None else layout.byte_size)
              + self.material_record_prefix_size)
-            if material_expressions or any(edit.material for edit in surface_plan) else 0,
+            if material_expressions or any(edit.material or edit.address for edit in surface_plan) else 0,
             target=adjusted.target,
             material_word_offsets=material_word_offsets,
             surface_plan=surface_plan,
+            material_instances=self.instanced_material_buffer,
         )
         return product, adjusted, layout, semantic_key
+
+    def _engine_record_inputs(self, document, semantics, master, program, adjusted: ShaderContract,
+                              bound) -> tuple[ShaderContract, str]:
+        catalog = engine_input_catalog_for(document.profile)
+        record = catalog.pass_record(program.shader(semantics.shader_role).binary_format, program.name,
+                                     semantics.shader_role, semantics.target_index)
+        target = document.sdf.targets[semantics.target_index]
+        readers = per_build_of("target_readers", (master, target), None, lambda: tuple(
+            self.shader_contract(document, target.programs[int(route["program"])], str(route["role"]))
+            for route in master.properties.get("program_routes", ()) if int(route["target"]) == target.index))
+        names = record_address_inputs(record[0], {"cb"})
+        adjusted = add_engine_resources(document, add_engine_buffers(document, adjusted, semantics, names, [
+            found for name in sorted(names) if adjusted.buffer(name) is None
+            and engine_buffer_layout(document, program, semantics.shader_role, name)[0] is None
+            and (found := next(filter(None, (reader.buffer(name) for reader in readers)), None))]), semantics,
+            record_resources(document, program, semantics.shader_role, semantics.target_index))
+        storage = catalog.resources[record[1]].name
+        found = next(filter(None, (reader.structured_buffer(storage) for reader in readers)), None)
+        if found is not None and adjusted.structured_buffer(storage) is None:
+            adjusted = replace(adjusted, structured_buffers=(*adjusted.structured_buffers, found))
+        record_address = record_address_source(record[0], adjusted)
+        if MATERIAL_TEXTURES in bound:
+            implicit = {(name, kind): (slot, space) for role, name, kind, slot, space
+                        in document.profile.sdf_profile.implicit_resource_bindings
+                        if role == semantics.shader_role}
+            name = next((name for name in _MATERIAL_SAMPLERS if (name, "s") in implicit), None)
+            added, rows = [], catalog.sampler_stages.get(semantics.target_index, {}).get(
+                semantics.shader_role, frozenset())
+            if not rows.isdisjoint(_MATERIAL_SAMPLERS):
+                for sampler in _MATERIAL_SAMPLERS:
+                    if sampler in rows:
+                        adjusted = add_engine_resources(document, adjusted, semantics, (sampler,))
+                    if adjusted.resource(sampler) is not None:
+                        break
+            elif name is not None and not any(map(adjusted.resource, _MATERIAL_SAMPLERS)):
+                added.append(ShaderContractResource(name, "sampler", "unknown", "unknown", 0,
+                                                    implicit[name, "s"][0], 1, 0, implicit[name, "s"][1]))
+            added += [item for item in per_build_of("texture_arrays", (master, target), None, lambda: {
+                item.name: item for reader in readers for item in reader.resources
+                if item.register_class == "t" and item.register_space and item.bind_count != 1
+                and item.dimension in _TEXTURE_CONTRACT_DIMENSIONS.values()}).values()
+                if (item.name, "t") in implicit and adjusted.resource(item.name) is None]
+            for item in added:
+                adjusted = replace(adjusted, resources=(*adjusted.resources, replace(item, resource_id=1 + max(
+                    (other.resource_id for other in adjusted.resources
+                     if other.register_class == item.register_class), default=-1))))
+        return adjusted, record_address
 
     def material_shader_batch(self, project):
         if _is_project(project, self.profile_id) and _edited_channels(project):

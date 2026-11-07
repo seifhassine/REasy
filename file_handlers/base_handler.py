@@ -3,8 +3,7 @@ lazy from utils.type_registry import TypeRegistry
 from PySide6.QtCore import QObject, Signal
 
 class BaseFileHandler(QObject):
-    """Base class for file handlers with common functionality"""
-    modified_changed = Signal(bool)  # Add signal for modification state
+    modified_changed = Signal(bool)
     
     def __init__(self):
         super().__init__()
@@ -27,7 +26,6 @@ class BaseFileHandler(QObject):
             self.modified_changed.emit(value)
 
     def init_type_registry(self, json_path=""):
-        """Initialize type registry from settings"""
         if not json_path and self.app and hasattr(self.app, 'settings'):
             json_path = self.app.settings.get('rcol_json_path', '')
         self.type_registry = TypeRegistry(json_path)
@@ -40,37 +38,41 @@ class BaseFileHandler(QObject):
         return False
 
     def open_externally(self, filename=None, data=None, pak_source_path=None) -> bool:
-        """Open this format with the OS default app instead of an editor tab."""
         return False
 
     def create_viewer(self):
-        """Create and return a viewer instance - override in subclasses"""
         raise NotImplementedError()
 
     def read(self, data: bytes):
-        """Read file data - override in subclasses"""
         raise NotImplementedError()
 
     def rebuild(self) -> bytes:
-        """Rebuild file data - override in subclasses"""
         raise NotImplementedError()
 
-# Change FileHandler to inherit only from BaseFileHandler
+
+class DocumentHandler(BaseFileHandler):
+    def rebuild(self) -> bytes:
+        data = self.document.write()
+        self.document.mark_saved()
+        self.modified = False
+        return data
+
+    def _set_modified(self, modified: bool) -> None:
+        self.modified = modified
+
+
 class FileHandler(BaseFileHandler):
     @classmethod
     @abstractmethod
     def can_handle(cls, data: bytes) -> bool:
-        """Return True if this handler can parse the given data."""
         pass
 
     @abstractmethod
     def read(self, data: bytes):
-        """Parse the raw data into internal structures."""
         pass
 
     @abstractmethod
     def rebuild(self) -> bytes:
-        """Rebuild the file and return its raw data."""
         pass
 
 

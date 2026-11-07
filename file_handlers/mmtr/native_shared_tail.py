@@ -64,16 +64,37 @@ def _escaping_scalar_type(record, types=None):
     return domain
 
 
-def _contained_lifetimes(blocks, prefix, head, types):
-    local_rows = [*blocks[label] for label in prefix - {head}]
-    if any(row.opcode == 'alloca' for row in local_rows):
+def _mentions(blocks):
+    users, mentioned, definitions, allocas, lifetimes = {}, {}, {}, {}, {}
+
+    def index(node):
+        for value in mentioned.pop(node, ()):
+            users[value].discard(node)
+        found = mentioned[node] = {value for record in blocks[node] for value in
+                                   _LOCAL.findall(record.text.partition('=')[2] if record.result else record.text)}
+        for value in found:
+            users.setdefault(value, set()).add(node)
+        definitions.update((record.result, record) for record in blocks[node] if record.result)
+        allocas[node] = any(record.opcode == 'alloca' for record in blocks[node])
+        lifetimes[node] = [record for record in blocks[node] if '@llvm.lifetime.' in record.text]
+
+    def indexed():
+        if not mentioned:
+            for node in blocks:
+                index(node)
+        return users, definitions, allocas, lifetimes
+    return index, indexed
+
+
+def _contained_lifetimes(blocks, prefix, head, types, indexed):
+    users, definitions, allocas, lifetime_rows = indexed()
+    local = prefix - {head}
+    if any(allocas[label] for label in local):
         return False
-    lifetimes = [row for row in local_rows if '@llvm.lifetime.' in row.text]
+    lifetimes = [row for label in local for row in lifetime_rows[label]]
     if not lifetimes:
         return True
     from .native_local_memory import _LIFETIME, split
-    rows = [(label, row) for label, records in blocks.items() for row in records]
-    definitions = {row.result: row for _, row in rows if row.result}
 
     def pointer_source(row):
         body = row.text.partition('=')[2].strip()
@@ -102,38 +123,41 @@ def _contained_lifetimes(blocks, prefix, head, types):
         else:
             return False
 
-    sources = {row.result: pointer_source(row) for _, row in rows
-               if row.result and row.opcode in {'bitcast', 'getelementptr'}}
-    pointers = set(allocations)
-    changed = True
-    while changed:
-        changed = False
-        for name, source in sources.items():
-            if name not in pointers and source in pointers:
-                pointers.add(name)
-                changed = True
-    for label, row in rows:
-        body = row.text.partition('=')[2] if row.result else row.text
-        if not pointers.intersection(_LOCAL.findall(body)):
-            continue
-        if row.result in pointers and sources.get(row.result) in pointers:
-            continue
-        if label not in prefix:
-            return False
-        if row.opcode in {'load', 'store'}:
-            parts = split(body.strip().removeprefix(row.opcode + ' '))
-            address = re.fullmatch(r'(?:float|half|i32|i16|i8|i1)\* (%' + LABEL + r')', parts[1]) if len(parts) >= 2 else None
-            scalar = re.fullmatch(r'(?:float|half|i32|i16|i8|i1)' + (r' .+' if row.opcode == 'store' else ''), parts[0]) if parts else None
-            if address and scalar and address[1] in pointers and not pointers.intersection(_LOCAL.findall(parts[0])):
+    pointers, pending = set(allocations), list(allocations)
+    while pending:
+        source = pending.pop()
+        for label in users.get(source, ()):
+            for row in blocks[label]:
+                if row.result and row.result not in pointers and pointer_source(row) == source:
+                    pointers.add(row.result)
+                    pending.append(row.result)
+    for label in {label for name in pointers for label in users.get(name, ())}:
+        for row in blocks[label]:
+            body = row.text.partition('=')[2] if row.result else row.text
+            if not pointers.intersection(_LOCAL.findall(body)):
                 continue
-        if row.opcode == 'call' and _LIFETIME.fullmatch(body):
-            continue
-        return False
+            if row.result in pointers and pointer_source(row) in pointers:
+                continue
+            if label not in prefix:
+                return False
+            if row.opcode in {'load', 'store'}:
+                parts = split(body.strip().removeprefix(row.opcode + ' '))
+                address = (re.fullmatch(r'(?:float|half|i32|i16|i8|i1)\* (%' + LABEL + r')', parts[1])
+                           if len(parts) >= 2 else None)
+                scalar = (re.fullmatch(r'(?:float|half|i32|i16|i8|i1)' + (r' .+' if row.opcode == 'store' else ''),
+                                       parts[0]) if parts else None)
+                if (address and scalar and address[1] in pointers
+                        and not pointers.intersection(_LOCAL.findall(parts[0]))):
+                    continue
+            if row.opcode == 'call' and _LIFETIME.fullmatch(body):
+                continue
+            return False
     return True
 
 
 def normalize_shared_tails(blocks, successors, conditions, edge_origins, loops, context, *, types=None):
     fresh = fresh_namer(blocks)
+    index, indexed = _mentions(blocks)
 
     def candidates():
         found = []
@@ -174,7 +198,7 @@ def normalize_shared_tails(blocks, successors, conditions, edge_origins, loops, 
                     if any(predecessors[node] - prefix for node in prefix - {head}):
                         continue
                     full_prefix = expanded(prefix)
-                    if not _contained_lifetimes(blocks, full_prefix, head, types):
+                    if not _contained_lifetimes(blocks, full_prefix, head, types, indexed):
                         continue
                     exits = {(children[node]['latch'] if node in children else node, target)
                              for node in prefix for target in edges[node] if target not in prefix}
@@ -191,13 +215,12 @@ def normalize_shared_tails(blocks, successors, conditions, edge_origins, loops, 
         choices = candidates()
         if not choices:
             break
+        users = indexed()[0]
         _, _, dominators = flow_loops(blocks, successors)
         changed = False
         for _, head, tail, join, prefix, exits in choices:
             definitions = {r.result: (node, r) for node in prefix - {head} for r in blocks[node] if r.result}
-            used = {value for node, rows in blocks.items() if node not in prefix for record in rows
-                    for value in _LOCAL.findall(record.text.partition('=')[2] if record.result else record.text)}
-            escaping = sorted(used & definitions.keys())
+            escaping = sorted(name for name in definitions if users.get(name, set()) - prefix)
             if set(escaping) & (types or {}).keys():
                 continue
             try:
@@ -233,13 +256,15 @@ def normalize_shared_tails(blocks, successors, conditions, edge_origins, loops, 
 
             renames = {name: joined(domains[name], {edge: name for edge in exits
                            if definitions[name][0] in dominators[edge[0]]}, 'reasy_tail_export') for name in escaping}
+            affected = set(rewritten).union(*(users.get(name, ()) for name in renames))
             for node in tuple(blocks):
                 if node in rewritten:
                     blocks[node] = rewritten[node]
                 if node not in prefix and renames:
-                    blocks[node] = [DxilSemanticRecord(record.kind,
-                        _LOCAL.sub(lambda match: renames.get(match[0], match[0]), record.text), record.opcode, record.result)
-                        for record in blocks[node]]
+                    if node in affected:
+                        blocks[node] = [DxilSemanticRecord(record.kind,
+                            _LOCAL.sub(lambda match: renames.get(match[0], match[0]), record.text), record.opcode,
+                            record.result) for record in blocks[node]]
                     if isinstance(conditions.get(node), str):
                         conditions[node] = renames.get(conditions[node], conditions[node])
                     elif node in conditions:
@@ -257,6 +282,8 @@ def normalize_shared_tails(blocks, successors, conditions, edge_origins, loops, 
             for loop in loops.values():
                 if head in loop['members']:
                     loop['members'].update((boundary, *bridges.values()))
+            for node in (*affected, *bridges.values(), boundary):
+                index(node)
             context.cache_clear()
             changed = True
             break

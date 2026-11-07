@@ -1,5 +1,7 @@
 from contextvars import ContextVar
 
+import fastgraph
+
 from file_handlers.sdf.shader_graph import generate_graph_function, GeneratedGraphFunction, ShaderNodeEvaluation
 from file_handlers.sdf.shader_graph_math import NUMERIC_VALUE_TYPES
 from file_handlers.sdf.shader_graph_resource import object_declaration
@@ -98,21 +100,19 @@ def region_helpers(asset, name, result_type, contract):
 
 
 def inline_region(node, contract, incoming, prefix, *, unassigned_inputs=()):
+    from .material_branch import branch_arms
+    from .material_loop import loop_body
     if node.kind == 'branch':
-        from .material_branch import branch_arms
         assets = branch_arms(node)
         continuation = None
     else:
-        from .material_loop import loop_body
         asset, _, continuation = loop_body(node)
         assets = (asset,)
     result_type, result = prefix + 'Result', prefix + 'Value'
     arguments = {pin.pin_id: incoming(pin.pin_id, pin.value_type) for pin in assets[0].inputs}
-    from .region_dependencies import _Region
-    dependencies = _Region(node)
-    states = dependencies.states
-    aliases = {pin.pin_id: arguments[source] for pin in assets[0].outputs
-               if pin.pin_id != continuation and (source := dependencies.alias_input(pin.pin_id)) is not None}
+    passing = [pin for pin in assets[0].outputs if pin.pin_id != continuation]
+    states, sources = fastgraph.region_passthroughs(node, [pin.pin_id for pin in passing], branch_arms, loop_body)
+    aliases = {pin.pin_id: arguments[source] for pin, source in zip(passing, sources) if source is not None}
     selected = tuple(pin for pin in assets[0].outputs if pin.pin_id not in aliases)
     fields = {pin.pin_id: f'field{i}' for i, pin in enumerate(selected)}
     if not selected:

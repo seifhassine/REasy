@@ -397,8 +397,7 @@ RE4_SDF_PROFILE = _profile(
     stage_slots={
         "pixel": "TrilinearClamp PointClamp PointBorder TrilinearWrap PointWrap BilinearBorder",
         "vertex": "bindlessTexture3D TrilinearWrap",
-        # TrilinearClamp: strand.sdf's fine rasters (fineRaster*, preTransformedFineRaster*).
-        "compute": "bindlessTexture3D LinearCompare PointWrap TrilinearClamp",
+        "compute": "bindlessTexture3D LinearCompare PointClamp PointWrap TrilinearClamp",
         "domain": "PointWrap",
     },
     meshlet_stages="mesh",

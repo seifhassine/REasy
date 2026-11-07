@@ -1,20 +1,12 @@
-lazy from utils.app_paths import application_root
-from utils.registry_manager import RegistryManager
-lazy import ui.project_manager.rsz_jsons as rsz_jsons
+lazy from file_handlers.rsz.game_registry import default_rsz_json_path, game_type_registry
 lazy from file_handlers.rsz.rsz_file import RszFile
 lazy from file_handlers.rsz.scn_scene_graph import ScnSceneGraphBuilder
 
 
 def _registry(handler, game):
-    registry = getattr(handler, 'type_registry', None)
-    if registry:
-        return registry
-    # Settings and mesh profiles spell the game differently ("Pragmata", "PRAGMATA").
-    named = next((name for name in rsz_jsons.DEFAULT_RSZ_JSONS if name.casefold() == game.casefold()), game)
-    path = rsz_jsons.find_default_rsz_json_path(named, application_root())
-    registry = RegistryManager.instance().get_registry(str(path)) if path else None
+    registry = getattr(handler, 'type_registry', None) or game_type_registry(game)
     if registry is None:
-        raise ValueError(f'Could not load {game} type registry: {path or "no RSZ dump found"}')
+        raise ValueError(f'Could not load {game} type registry: {default_rsz_json_path(game) or "no RSZ dump found"}')
     return registry
 
 

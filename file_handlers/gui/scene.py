@@ -1,5 +1,3 @@
-"""Dependency-aware semantic scene expansion for GUI editing."""
-
 from __future__ import annotations
 
 import copy
@@ -9,6 +7,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Iterator
 
+lazy from file_handlers.clip.model import walk_nodes
 lazy from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
 
 lazy from .codec import parse_gui
@@ -23,7 +22,6 @@ lazy from .model import (
     GuiProperty,
     GuiSymbol,
     apply_property,
-    iter_clip_nodes,
     resolve_properties,
 )
 lazy from .profiles import GuiFormatProfile, gui_profile
@@ -476,8 +474,6 @@ def _clone_symbol(
     used_objects: set[uuid.UUID],
     used_animations: set[uuid.UUID],
 ) -> tuple[GuiSymbol, dict[int, object], list[GuiAnimation]]:
-    """Deep-copy one definition and give every newly owned identity a fresh GUID."""
-
     memo: dict[int, object] = {}
     clone = copy.deepcopy(source, memo)
     clone.guid = _fresh_guid(namespace, used_symbols, f"{seed}:symbol")
@@ -516,9 +512,11 @@ def _clone_symbol(
         guid_map[old] = replacement
         cloned.guid = new_guid
     for animation in cloned_animations:
-        for clip_node in iter_clip_nodes(animation.clip.root):
-            clip_node.root_guid = guid_map.get(clip_node.root_guid, clip_node.root_guid)
-            clip_node.extra_guid = guid_map.get(clip_node.extra_guid, clip_node.extra_guid)
+        clip = animation.clip
+        clip.header_guid = guid_map.get(clip.header_guid, clip.header_guid)
+        for clip_node in walk_nodes(clip.roots):
+            clip_node.node_id = guid_map.get(clip_node.node_id, clip_node.node_id)
+            clip_node.guid = guid_map.get(clip_node.guid, clip_node.guid)
     return clone, memo, extra_animations
 
 

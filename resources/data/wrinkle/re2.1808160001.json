@@ -68,36 +68,5 @@
   "spread": "CorrectDuplicatedVerticesFlag",
   "proxy": "via.render.ComputeSkinning",
   "mesh": "Mesh"
- },
- "source": {
-  "captures": [
-   {
-    "capture": "faces.rdc",
-    "frames": [
-     {
-      "skinning": 354,
-      "area": 895,
-      "gather": 942,
-      "draw": 1080,
-      "spread": 964
-     },
-     {
-      "skinning": 359,
-      "area": 900,
-      "gather": 947,
-      "draw": 1091,
-      "spread": 969
-     },
-     {
-      "skinning": 364,
-      "area": 905,
-      "gather": 952,
-      "draw": 1102,
-      "spread": 974
-     }
-    ]
-   }
-  ],
-  "executable": "re2_dump.exe: via.render.Wrinkle drawImplement 0x7ff627a5d3a0, drawWrinkle 0x7ff627a5d6d0 (the setup on the first frame drawn, the frame's passes and their constants), createBuffers 0x7ff627a5c200, the fields' getters (README \"Wrinkle passes\"); faces.rdc's rest areas and duplicate lists reproduced bit for bit by these programs (scratch stage136)"
  }
 }

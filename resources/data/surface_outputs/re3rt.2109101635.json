@@ -133,50 +133,5 @@
    "name": "BlueNoise16",
    "file": "systems/rendering/bluenoise16x16.tex"
   }
- ],
- "source": {
-  "mmtr_files": 115,
-  "passes": {
-   "colour": 14515,
-   "depth": 18110,
-   "depth-prepass": 18300,
-   "forward": 61760,
-   "gbuffer": 69925,
-   "other": 6120,
-   "pick": 4080,
-   "shadow": 19250,
-   "stencil": 17080
-  },
-  "passes_beyond_slots": 0,
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "api": "D3D12",
-    "draws": {
-     "forward": 3,
-     "gbuffer": 582
-    },
-    "shaders": {
-     "forward": 3,
-     "gbuffer": 20
-    },
-    "gbuffers": 2,
-    "engine_texture_draws": {
-     "gbuffer": 582,
-     "depth-prepass": 64
-    }
-   }
-  ],
-  "several_slots": [],
-  "several_slots_by_shader": [],
-  "several_formats": [],
-  "other_engine_textures": [
-   {
-    "purpose": "gbuffer",
-    "name": "ReadonlyDepth",
-    "files": [],
-    "other_contents": true
-   }
-  ]
- }
+ ]
 }

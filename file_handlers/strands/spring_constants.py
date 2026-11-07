@@ -14,7 +14,8 @@ lazy from file_handlers.mmtr.engine_buffers import engine_inverse
 lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
 
 lazy from .chain_catalog import ConstantSources
-from .chain_constants import ConstantBlocks, matrix_rotation
+lazy from file_handlers.engine_math import mathex_rotation
+from .chain_constants import ConstantBlocks
 lazy from .strands_file import StrandsFile
 
 F = np.float32
@@ -117,7 +118,7 @@ class SpringConstants(ConstantBlocks):
         inverse = engine_inverse(origin)
         ring = self._read("boundingBoxOffset", "<u4").tolist()
         made |= {"strandPrevWM": before, "strandPrevInvWM": engine_inverse(before), "strandWM": origin,
-                 "strandInvWM": inverse, "worldQuaternion": matrix_rotation(origin),
+                 "strandInvWM": inverse, "worldQuaternion": mathex_rotation(origin),
                  "boundingBoxOffset": [ring[1], ring[2], ring[3], ring[0]]}
         made |= self._capsules(values["own_capsules"], frame, origin, inverse.reshape(4, 4))
         for name, value in made.items():

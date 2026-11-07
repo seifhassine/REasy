@@ -1,0 +1,63 @@
+{
+ "format": 1,
+ "size": 64,
+ "enums": {
+  "Dimension": "via.render.RtvDimension",
+  "Format": "via.render.TextureFormat",
+  "UsageType": "via.render.UsageType",
+  "ResolutionType": "via.render.RenderTargetTextureResource.ResolutionType",
+  "ImageQualityRateRecieveSetting": "via.render.RenderTargetTextureResource.ImageQualityRateRecieveSetting"
+ },
+ "flags": ["TextureCube", "MipChain", "RenderTargetView", "UnorderedAccessView"],
+ "versions": {
+  "4": [
+   {"at": 0, "type": "u32", "const": 1480938578, "what": "the magic"},
+   {"at": 4, "type": "u32", "const": 4, "what": "the version"},
+   [8, "u32", "Dimension"],
+   [12, "u32", "Format"],
+   [16, "u32", "Width"],
+   [20, "u32", "Height"],
+   [24, "u32", "ArraySizeOrDepth"],
+   [28, "u32", "TextureCube"],
+   [32, "u32", "MipChain"],
+   [36, "u32", "RenderTargetView"],
+   [40, "u32", "UnorderedAccessView"],
+   [44, "u32", "UsageType"]
+  ],
+  "5": [
+   {"at": 0, "type": "u32", "const": 1480938578, "what": "the magic"},
+   {"at": 4, "type": "u32", "const": 5, "what": "the version"},
+   [8, "u32", "Dimension"],
+   [12, "u32", "Format"],
+   [16, "u32", "Width"],
+   [20, "u32", "Height"],
+   [24, "u32", "ArraySizeOrDepth"],
+   [28, "u32", "TextureCube"],
+   [32, "u32", "MipChain"],
+   [36, "u32", "RenderTargetView"],
+   [40, "u32", "UnorderedAccessView"],
+   [44, "u32", "UsageType"],
+   [48, "u32", "ResolutionType"],
+   [52, "f32", "WidthRate"],
+   [56, "f32", "HeightRate"]
+  ],
+  "6": [
+   {"at": 0, "type": "u32", "const": 1480938578, "what": "the magic"},
+   {"at": 4, "type": "u32", "const": 6, "what": "the version"},
+   [8, "u32", "Dimension"],
+   [12, "u32", "Format"],
+   [16, "u32", "Width"],
+   [20, "u32", "Height"],
+   [24, "u32", "ArraySizeOrDepth"],
+   [28, "u32", "TextureCube"],
+   [32, "u32", "MipChain"],
+   [36, "u32", "RenderTargetView"],
+   [40, "u32", "UnorderedAccessView"],
+   [44, "u32", "UsageType"],
+   [48, "u32", "ResolutionType"],
+   [52, "u32", "ImageQualityRateRecieveSetting"],
+   [56, "f32", "WidthRate"],
+   [60, "f32", "HeightRate"]
+  ]
+ }
+}

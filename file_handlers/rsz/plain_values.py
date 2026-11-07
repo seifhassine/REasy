@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Container, Mapping
 
 lazy from .rsz_data_types import (AABBData, AreaData, ArrayData, CapsuleData, ColorData, ConeData, CylinderData,
                              LineSegmentData, Mat4Data, OBBData, ObjectData, RangeData, RangeIData, RawBytesData,
-                             RectData, SizeData, SphereData, StructData, UserDataData, _GuidBytesData)
+                             RectData, SizeData, SphereData, StructData, UserDataData, _GuidBytesData, _ValueData)
 
 
-def plain_fields(document, component) -> dict:
+def plain_fields(document, component, names: Container[str] | None = None) -> dict:
     instance = document.rsz_file.parsed_elements.__getitem__
-    return {name: plain_value(value, instance) for name, value in component.fields.items()}
+    return {name: plain_value(value, instance) for name, value in component.fields.items()
+            if names is None or name in names}
 
 
 def plain_value(data, instance: Callable[[int], Mapping[str, object]] | None = None):
@@ -17,6 +18,8 @@ def plain_value(data, instance: Callable[[int], Mapping[str, object]] | None = N
         return data
     if isinstance(data, str):
         return data.rstrip("\0")
+    if isinstance(data, _ValueData):
+        return plain_value(data.value)
     if isinstance(data, ArrayData):
         return [plain_value(item, instance) for item in data.values]
     if isinstance(data, StructData):
@@ -55,9 +58,27 @@ def plain_value(data, instance: Callable[[int], Mapping[str, object]] | None = N
         return data.raw_bytes
     if hasattr(data, "x"):
         return tuple(getattr(data, axis) for axis in "xyzw" if hasattr(data, axis))
-    if hasattr(data, "value"):
-        return plain_value(data.value)
     raise TypeError(f"an RSZ field of {type(data).__name__} has no plain value")
 
 
-__all__ = ["plain_fields", "plain_value"]
+def root_fields(rsz) -> dict | None:
+    return {name: plain_value(value, rsz.parsed_elements.__getitem__) for name, value in rsz.parsed_elements[
+        rsz.object_table[0]].items()} if rsz.object_table else None
+
+
+def typed_fields(rsz, type_name: str) -> dict:
+    registry = rsz.type_registry
+    return next(({name: plain_value(value, rsz.parsed_elements.__getitem__) for name, value in fields.items()}
+                 for index, fields in rsz.parsed_elements.items()
+                 if (registry.get_type_info(rsz.instance_infos[index].type_id) or {}).get("name") == type_name), {})
+
+
+def user_path(rsz, value) -> str:
+    if isinstance(value, UserDataData) and value.string:
+        return value.string.rstrip("\0")
+    instance = int(getattr(value, "value", 0 if value is None else value) or 0)
+    return next((text.rstrip("\0") for info, text in rsz._rsz_userdata_str_map.items()
+                 if info.instance_id == instance), "") if instance and rsz is not None else ""
+
+
+__all__ = ["plain_fields", "plain_value", "root_fields", "typed_fields", "user_path"]

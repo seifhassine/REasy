@@ -16,7 +16,7 @@ lazy from file_handlers.mdf.material_layout import MaterialDescriptorLayout
 lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from file_handlers.tex.qt_image_utils import parse_tex_bytes
 lazy from file_handlers.tex.texture_quality import mip_for_largest_side
-from utils.resource_file_utils import ResourceLocation, resource_version_from_path
+from utils.resource_file_utils import ResourceLocation, resource_key, resource_version_from_path
 
 lazy from .profiles.re_engine_bindless_material import HeapIndices
 lazy from .profiles.re_engine_dxil_recovery import recover_re_engine_dxil_ir
@@ -63,6 +63,12 @@ class MaterialPreviewError(TranslatedError):
     context = "MaterialPreview"
 
 
+def missing_texture(path: str) -> MaterialPreviewError:
+    return MaterialPreviewError(QT_TRANSLATE_NOOP(
+        "MaterialPreview", "The game's texture {path} was not found, or is not the shape the pass reads."),
+        {"path": path})
+
+
 class Following(NamedTuple):
     """Equal ``key``s share one buffer."""
     key: Hashable
@@ -78,15 +84,18 @@ class PreviewMaterial:
     shader_lod: int | None = None
     buffers: Mapping[str, str] = field(default_factory=dict)
     animated: Callable[[], tuple[tuple[int, tuple[float, ...]], ...]] | None = field(default=None, compare=False)
+    shading_type: int = 0
+    flag_version: int = 0
 
     @classmethod
-    def from_mdf(cls, material) -> "PreviewMaterial":
+    def from_mdf(cls, material, version: int) -> "PreviewMaterial":
         values = tuple((int(field.param_rel_offset), tuple(float(item) for item in field.parameter[:max(
             1, int(field.component_count))])) for field in material.parameters)
         return cls(MaterialDescriptorLayout.from_material(material), values,
                    {str(texture.tex_type): str(texture.tex_path) for texture in material.textures},
                    int(material.header.material_flags),
-                   buffers={str(name.name): str(data.name) for name, data in material.gpu_buffers})
+                   buffers={str(name.name): str(data.name) for name, data in material.gpu_buffers},
+                   shading_type=int(material.header.shader_type), flag_version=int(version))
 
     def record(self) -> bytearray:
         result = bytearray(self.layout.allocation_size(self.shader_lod))
@@ -241,13 +250,6 @@ def same_texels(one: bytes | TexelRows, other: bytes | TexelRows) -> bool:
 
 
 class TextureReads:
-    """A scene's decoded textures, by the file a loader gives for a path and by the file's bytes, so files of the same
-    bytes are one texture. Once their bytes are released, a file asked for again is read no more: it is the texture
-    the device holds. Given ``upload`` (``Resident.read``), each goes to the device as it is first read, and its
-    texels and file are let go of then, the loader's too by ``forget(load, path)``. A streamed texture is read from
-    the last mip whose smaller side spans the texels ``side(path)`` gives (None: from the first); ``refine`` reads
-    it again from finer mips once ``side`` gives more, on streaming threads, ``refill(texture, dimension, texels)``
-    making its device texture anew."""
     __slots__ = ("files", "contents", "upload", "forget", "side", "refill", "streamed", "refining")
 
     def __init__(self, upload: Callable[[int, tuple], tuple] | None = None,
@@ -313,7 +315,6 @@ class TextureReads:
         return _texture_texels(data, dimension, None, smallest, side) if data else None
 
     def stop(self) -> None:
-        """Lets go of the reads under way."""
         for _wanted, read in self.refining.values():
             read.cancel()
         self.refining.clear()
@@ -329,7 +330,6 @@ class TextureReads:
         return content, self.contents[key]
 
     def _uploaded(self, found: tuple, dimension: str) -> int | None:
-        """The device texture."""
         try:
             texture = self.upload(VIEW_DIMENSIONS[dimension], (0, *found))[2]
         except (RuntimeError, ValueError):
@@ -340,22 +340,44 @@ class TextureReads:
 
 
 class BufferReads:
-    """A scene's GPU buffer files, by the file a loader gives for a path: each goes to the device (``upload``, its
-    buffer id kept) as it is first read, and the loader lets go of the file (``forget(load, path)``)."""
-    __slots__ = ("files", "upload", "forget")
+    __slots__ = ("files", "upload", "forget", "write", "written", "kept")
 
-    def __init__(self, upload: Callable[[bytes], int], forget: Callable[[Callable, str], None] | None = None):
+    def __init__(self, upload: Callable[[bytes], int], forget: Callable[[Callable, str], None] | None = None,
+                 write: Callable[[int, bytes], None] | None = None):
         self.files: dict[tuple, int | None] = {}
-        self.upload, self.forget = upload, forget
+        self.upload, self.forget, self.write = upload, forget, write
+        self.written: Mapping[str, Mapping[int, float]] = {}
+        self.kept: dict[tuple, bytes] = {}
 
     def buffer(self, load: Callable[[str], bytes | None], path: str) -> int | None:
         key = (load, path)
         if key not in self.files:
             data = load(path)
+            if data is not None and (floats := self.written.get(resource_key(path))):
+                data = written_floats(self.kept.setdefault(key, bytes(data)), floats)
             self.files[key] = None if data is None else self.upload(data)
             if data is not None and self.forget is not None:
                 self.forget(load, path)
         return self.files[key]
+
+    def rewrite(self, written: Mapping[str, Mapping[int, float]]) -> None:
+        if written == self.written:
+            return
+        before, self.written = self.written, written
+        for (load, path), held in self.files.items():
+            name = resource_key(path)
+            if held is not None and before.get(name) != written.get(name):
+                if (load, path) not in self.kept:
+                    self.kept[load, path] = bytes(load(path))
+                self.write(held, written_floats(self.kept[load, path], written.get(name, {})))
+
+
+def written_floats(data: bytes, floats: Mapping[int, float]) -> bytes:
+    data = bytearray(data)
+    for index, value in floats.items():
+        if 4 * index + 4 <= len(data):
+            struct.pack_into("<f", data, 4 * index, value)
+    return bytes(data)
 
 
 def _texture_entry(index: int, path: str, load: Callable[[str], bytes | None], dimension: str,
@@ -509,8 +531,6 @@ def gpu_buffer_contents(path: str, data: bytes) -> bytes:
 
 @dataclass(frozen=True, slots=True)
 class GpuBufferLocation(ResourceLocation):
-    """A ``.gpbf`` found, of a version the preview reads, read as the buffer it holds."""
-
     @classmethod
     def of(cls, found: ResourceLocation) -> GpuBufferLocation:
         _gpu_buffer_header(found.path)
@@ -577,7 +597,10 @@ def material_record(document, stages: Sequence[tuple[str, object, bytes]], mater
              material.layout.word_offsets(material.shader_lod).items()}
     slots = {offset: name for (kind, offset), name in words.items() if kind == "texture"}
     missing, loaded = [], {}
-    pixel_read = {slots.get(read.byte_offset) for stage, found in reads if stage == "pixel" for read in found.textures}
+    pixel_read = {
+        slots.get(read.byte_offset) for stage, found in reads if stage == "pixel" for read in found.textures} | {
+        resource.name for stage, contract, _shader in stages if stage == "pixel" for resource in contract.resources
+        if resource.register_class == "t" and resource.name in material.textures}
     addressed = {slots.get(read.byte_offset) for _stage, found in reads for read in found.textures if read.addressed}
 
     def texture(index: int, name: str, dimension: str) -> tuple | None:
@@ -810,4 +833,4 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
 
 __all__ = ["BufferReads", "Following", "GpuBufferLocation", "MaterialPreviewError", "MaterialRecord", "PreviewMaterial",
            "SharedMaterials", "TexelRows", "TextureReads", "bound_record_size", "gbuffer_route", "gpu_buffer_contents",
-           "material_record", "same_texels", "shader_bindings", "texel_sample"]
+           "material_record", "missing_texture", "same_texels", "shader_bindings", "texel_sample"]

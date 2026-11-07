@@ -8,10 +8,15 @@ from file_handlers.build_catalog import catalog_file_name, catalog_reader
 
 CATALOG_FORMAT = 1
 CATALOG_DIRECTORY = "resources/data/frame_constants"
+FRUSTUM = "frustum"
 
 
 class FrameConstantError(ValueError):
     pass
+
+
+class Derived(str):
+    __slots__ = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,12 +25,16 @@ class FrameConstants:
     resource_version: int
     # One value per 32-bit word, typed as the field is declared.
     scene: Mapping[str, tuple[float | int, ...]]
-    source: Mapping = field(default_factory=dict)
+    derived: Mapping[str, str] = field(default_factory=dict)
+
+    def fields(self) -> dict:
+        return {**self.scene, **{name: Derived(rule) for name, rule in self.derived.items()}}
 
 
 def catalog_to_dict(catalog: FrameConstants) -> dict:
     return {"format": CATALOG_FORMAT, "game": catalog.game, "resource_version": catalog.resource_version,
-            "scene": {name: list(values) for name, values in catalog.scene.items()}, "source": dict(catalog.source)}
+            "scene": {name: list(values) for name, values in catalog.scene.items()},
+            "derived": dict(catalog.derived)}
 
 
 def catalog_from_dict(data: Mapping) -> FrameConstants:
@@ -35,12 +44,15 @@ def catalog_from_dict(data: Mapping) -> FrameConstants:
     if any(not values or not all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in values)
            for values in scene.values()):
         raise FrameConstantError("every field of a frame constant catalog holds one number or more")
-    return FrameConstants(str(data["game"]), int(data["resource_version"]), scene, dict(data.get("source", {})))
+    derived = {str(name): str(rule) for name, rule in data.get("derived", {}).items()}
+    if any(rule != FRUSTUM for rule in derived.values()) or derived.keys() & scene.keys():
+        raise FrameConstantError(f"a derived field of a frame constant catalog follows {FRUSTUM!r} and holds no values")
+    return FrameConstants(str(data["game"]), int(data["resource_version"]), scene, derived)
 
 
 frame_constants_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, FrameConstantError,
                                      "frame constant", (AttributeError,))
 
 
-__all__ = ["CATALOG_DIRECTORY", "CATALOG_FORMAT", "FrameConstantError", "FrameConstants", "catalog_file_name",
-           "catalog_from_dict", "catalog_to_dict", "frame_constants_for"]
+__all__ = ["CATALOG_DIRECTORY", "CATALOG_FORMAT", "FRUSTUM", "Derived", "FrameConstantError", "FrameConstants",
+           "catalog_file_name", "catalog_from_dict", "catalog_to_dict", "frame_constants_for"]

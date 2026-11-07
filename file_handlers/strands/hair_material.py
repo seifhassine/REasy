@@ -2,15 +2,17 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping
 
-from ..mmtr.material_preview import VIEW_DIMENSIONS, PreviewMaterial, _texture_texels
+from ..mmtr.material_preview import VIEW_DIMENSIONS, BufferReads, PreviewMaterial, _texture_texels
 lazy from ..mmtr.resident import Resident
 
 MATERIAL = "material."
 
 
 def material_given(device: Resident, bindings: Mapping[str, str], resources: Iterable, material: PreviewMaterial,
-                   load: Callable[[str], bytes | None]) -> tuple[dict[str, tuple[int, int] | int | None], list[str]]:
-    """``.rtex`` textures bind null views."""
+                   load: Callable[[str], bytes | None], buffers: BufferReads | None = None
+                   ) -> tuple[dict[str, tuple[int, int] | int | None], list[str]]:
+    """``.rtex`` textures bind null views; with ``buffers``, GPU buffer files bind its buffers (game code can write
+    them), else shared ones."""
     given, unbound = {}, []
     for resource in resources:
         slot = bindings.get(resource.name, "")
@@ -26,7 +28,7 @@ def material_given(device: Resident, bindings: Mapping[str, str], resources: Ite
                 _index, form, made = device.read(VIEW_DIMENSIONS[resource.dimension], (0, *texels))
                 held = (form, made)
         elif data:
-            held = device.buffer(data)
+            held = device.buffer(data) if buffers is None else buffers.buffer(load, path)
         given[slot] = held
         if held is None:
             unbound.append(resource.name)

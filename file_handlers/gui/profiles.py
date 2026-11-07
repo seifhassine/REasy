@@ -1,15 +1,7 @@
-"""Version profiles for RE Engine GUIR resources.
-
-The outer GUI version and the embedded compact-CLIP version are dispatched
-together. Unsupported versions fail closed
-"""
-
 from __future__ import annotations
 
 import struct
 from dataclasses import dataclass
-
-lazy from file_handlers.motion.profiles import MotionFormatProfile
 
 lazy from .adapter import GuiFormatAdapter
 
@@ -20,7 +12,6 @@ class GuiFormatProfile:
     version: int
     adapter: GuiFormatAdapter
     runtime_target: str
-    motion: MotionFormatProfile
     default_uvs_version: int
     default_tex_version: int
     default_mesh_version: int
@@ -36,8 +27,6 @@ GUI_PROFILES: dict[int, GuiFormatProfile] = {}
 
 
 def register_gui_profile(profile: GuiFormatProfile) -> None:
-    """Register one exact serialized version; duplicate claims are errors."""
-
     version = int(profile.version)
     if version in GUI_PROFILES:
         raise ValueError(f"GUIR version {version} is already registered")

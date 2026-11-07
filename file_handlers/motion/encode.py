@@ -13,13 +13,14 @@ lazy from .tree import write_tree
 
 from .decode import TRANSFORMS, _FRAME_FORMATS, _POSE_FIELDS, _flag, _kind, _primitive
 from .errors import MotionFormatError
-from .model import AppendData, Motion, MotionList, MotionTree, ReferencePath, Sequence, Skeleton, Track
+from .model import AppendData, Motion, MotionList, MotionPack, MotionTree, ReferencePath, Sequence, Skeleton, Track
 from .rules import (
     MotProfile,
     encoding,
     frame_types,
     list_profile,
     mot_profile,
+    pack_profile,
     pose_flags,
     solver_codes,
 )
@@ -32,11 +33,26 @@ def write_motlist(motion_list: MotionList) -> bytes:
     return _ListWriter(motion_list).write()
 
 
-def write_file(root: Motion | MotionList | MotionTree) -> bytes:
+def write_motpack(pack: MotionPack) -> bytes:
+    header = pack_profile(pack.version)[1]
+    out, count = _Writer({}, header.size), len(pack.entries)
+    if any(a.motion_id >= b.motion_id for a, b in zip(pack.entries, pack.entries[1:])):
+        raise MotionFormatError("MOTPACK motion IDs must ascend: the game finds them by binary search")
+    table = out._pointer_table(count)
+    ids = out._put(struct.pack(f"<{count}I", *(entry.motion_id for entry in pack.entries)))
+    out._fill_pointers(table, [out._put(write_mot(entry.item, embedded=True, list_owner=not index), 16)
+                               for index, entry in enumerate(pack.entries)])
+    out._set(0, header.encode({"version": pack.version, "motions": table, "ids": ids, "count": count}))
+    return bytes(out.out)
+
+
+def write_file(root: Motion | MotionList | MotionTree | MotionPack) -> bytes:
     if isinstance(root, MotionList):
         return write_motlist(root)
     if isinstance(root, MotionTree):
         return write_tree(root)
+    if isinstance(root, MotionPack):
+        return write_motpack(root)
     return write_mot(root)
 
 
@@ -128,7 +144,6 @@ class _MotWriter(_Writer):
             if block != "skeleton":
                 logical_end = len(self.out)
         if self.embedded:
-            self._pad(16)
             owner = motion.skeleton is not None or self.list_owner
         else:
             owner = motion.gpu is not None

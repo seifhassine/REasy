@@ -13,33 +13,39 @@ lazy import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 lazy from file_handlers.ocioc import OCIOC_MAGIC, OciocTexture, parse_ocioc
-from file_handlers.sdf.contracts import shader_contract_for_program
+from file_handlers.sdf.contracts import program_contracts
 lazy from file_handlers.sdf.models import program_names
 from file_handlers.sdf.sdf_file import parse_sdf_to_draw
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
 lazy from file_handlers.tex.dxgi import DXGI_FORMAT_R32_UINT
+lazy from file_handlers.tex.qt_image_utils import parse_tex_bytes
 
-from .engine_buffers import FRAME_BUFFERS, Camera, _laid_out, camera_key, frame_values, scene_values, with_words
+lazy from .view_fields import camera_settings, effects_on, texture_size_words, view_field_catalog_for, view_field_words
+from .engine_buffers import FRAME_BUFFERS, Camera, camera_key, frame_values, laid_out, scene_values, with_words
+lazy from .frame_clock import clock_words, follows_clock
 lazy from .material_preview import (
     RANGE_CBV, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, _UAV_DIMENSIONS, VIEW_DIMENSIONS, SHADER_VISIBILITY,
     MaterialPreviewError, _texture_entry,
 )
 from .mesh_draw import program_states
-from .mesh_render import DEPTH_VIEWS, PHASES, MeshScene
+from .mesh_render import DEPTH_VIEWS, PHASE_DEPTHS, PHASES, MeshScene
 lazy from .pass_choice import MESH_PROGRAMS
 lazy from .profiles.base import mmtr_profile_for_game
+lazy from .sss_profiles import baked_kernels, packed_profiles, sss_profile_catalog_for
 lazy from .resident import DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS
 from .sampler_states import sampler_catalog_for
 from .shown_image import shown_step
 
-CATALOG_FORMAT = 6
+CATALOG_FORMAT = 7
 CATALOG_DIRECTORY = "resources/data/light_passes"
 ROLES = ("emissive_decode", "subsurface_param", "deferred_light", "subsurface_blur", "diffuse_integrate", "solid_blur",
          "local_exposure", "tonemap", "copy", "display")
-SOURCES = ("gbuffer", "depth", "output", "made", "history", "file", "ocio", "buffer", "derived", "copy", "phase",
-           "none")
+SOURCES = ("gbuffer", "depth", "output", "made", "history", "file", "ocio", "buffer", "profiles", "kernels", "derived",
+           "copy", "phase", "none")
+_PROFILE_BUFFERS = ("profiles", "kernels")
 DERIVED_READ = QT_TRANSLATE_NOOP("MaterialPreview", "The pass reads {name}, which the renderer makes from the lit "
                                                       "image by passes REasy does not run.")
+TARGET_KINDS = ("phase", "gbuffer")
 
 
 class LightPassCatalogError(ValueError):
@@ -112,15 +118,13 @@ class LightPass:
 
 @dataclass(frozen=True, slots=True)
 class MeshPhase:
-    """``purpose`` is one of ``mesh_render.PHASES`` or a master's own pass; only parts whose masters match ``masters``
-    draw it."""
     purpose: str
     after: int
     targets: tuple[PassOutput, ...]
     reads: tuple[PassRead, ...]
     constants: Mapping[str, Mapping[str, tuple[int, ...]]]
     masters: tuple[tuple[str, ...], ...] = ()
-    depth: bool = True
+    depth: str = "shown"
 
     @property
     def key(self) -> tuple[str, tuple[tuple[str, ...], ...]]:
@@ -140,7 +144,6 @@ class LightPassCatalog:
     passes: tuple[LightPass, ...]
     # Keyed by SHA-256.
     buffers: Mapping[str, bytes]
-    source: Mapping[str, object]
     # In frame order.
     phases: tuple[MeshPhase, ...] = ()
 
@@ -177,7 +180,7 @@ def _constants_to_dict(constants: Mapping[str, Mapping[str, tuple[int, ...]]]) -
 def catalog_to_dict(catalog: LightPassCatalog) -> dict:
     return {
         "format": CATALOG_FORMAT, "game": catalog.game, "resource_version": catalog.resource_version,
-        "master_target": catalog.master_target, "source": dict(catalog.source),
+        "master_target": catalog.master_target,
         "passes": [{
             "role": item.role, "name": item.name, "file": item.file, "target": item.target, "kind": item.kind,
             "count": list(item.count), "tile": list(item.tile),
@@ -225,10 +228,12 @@ def _constants_from_dict(constants: Mapping) -> dict[str, dict[str, tuple[int, .
 
 
 def _phase_from_dict(item: Mapping, passes: list[LightPass]) -> MeshPhase:
-    purpose, after = str(item["purpose"]), int(item["after"])
+    purpose, after, depth = str(item["purpose"]), int(item["after"]), str(item["depth"])
     masters = tuple(tuple(str(name) for name in names) for names in item["masters"])
+    if depth not in PHASE_DEPTHS:
+        raise LightPassCatalogError(f"a {purpose!r} phase tests the depth {depth!r}")
     if purpose in PHASES:
-        wrong = bool(masters) or not item["depth"]
+        wrong = bool(masters) or depth != "shown"
     else:
         wrong = purpose not in MESH_PROGRAMS or not masters or len(set(masters)) != len(masters) or any(
             purpose not in names or list(names) != sorted(set(names) & set(MESH_PROGRAMS)) for names in masters)
@@ -238,7 +243,7 @@ def _phase_from_dict(item: Mapping, passes: list[LightPass]) -> MeshPhase:
         raise LightPassCatalogError(f"a {purpose!r} phase draws after pass {after} of {len(passes)}")
     phase = MeshPhase(purpose, after, tuple(_output_from_dict(output, purpose) for output in item["targets"]),
                       tuple(_read_from_dict(read) for read in item["reads"]), _constants_from_dict(item["constants"]),
-                      masters, bool(item["depth"]))
+                      masters, depth)
     if [output.key for output in phase.targets] != [f"target {slot}" for slot in range(len(phase.targets))]:
         raise LightPassCatalogError(f"the {purpose} phase binds render targets out of order: "
                                     f"{[output.key for output in phase.targets]}")
@@ -332,8 +337,7 @@ def catalog_from_dict(data: Mapping) -> LightPassCatalog:
     _check_own_textures(phases, passes)
     return LightPassCatalog(str(data["game"]), int(data["resource_version"]), int(data["master_target"]),
                             tuple(passes), {str(digest): zlib.decompress(base64.b64decode(blob))
-                                            for digest, blob in data["buffers"].items()},
-                            dict(data["source"]), phases)
+                                            for digest, blob in data["buffers"].items()}, phases)
 
 
 light_pass_catalog_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, LightPassCatalogError,
@@ -366,6 +370,14 @@ def derived_read(phase: MeshPhase, names: Iterable[str]) -> str | None:
     return next((name for name in names if name in derived), None)
 
 
+def added_targets(data: Mapping, error: type[ValueError]) -> dict[bool, tuple[tuple[str, int], ...]]:
+    targets = {occlusion: tuple((str(kind), int(number)) for kind, number in data[name])
+               for occlusion, name in ((False, "plain"), (True, "occlusion"))}
+    if any(kind not in TARGET_KINDS for listed in targets.values() for kind, _number in listed):
+        raise error(f"a target comes from another place than {', '.join(TARGET_KINDS)}")
+    return targets
+
+
 def _same_depth(resource, size: tuple[int, int, int]) -> None:
     if resource.dimension not in _DIMENSIONS[size[2] > 1]:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
@@ -373,10 +385,14 @@ def _same_depth(resource, size: tuple[int, int, int]) -> None:
             {"depth": size[2], "kind": resource.dimension})
 
 
-def light_pass_files(catalog: LightPassCatalog) -> tuple[str, ...]:
+def light_pass_files(catalog: LightPassCatalog, profile) -> tuple[str, ...]:
+    fields = view_field_catalog_for(profile)
+    reads = [read.source for item in (*catalog.passes, *catalog.phases) for read in item.reads]
+    profiles = sss_profile_catalog_for(profile) if any(source.kind in _PROFILE_BUFFERS for source in reads) else None
     return tuple(dict.fromkeys([item.file for item in catalog.passes] + [
-        read.source.value for item in (*catalog.passes, *catalog.phases) for read in item.reads
-        if read.source.kind == "file"]))
+        source.value for source in reads if source.kind == "file" or source.kind in _PROFILE_BUFFERS] + (
+        [] if profiles is None or profiles.config is None else [profiles.config.path]) + (
+        [] if fields is None else [fields.scene])))
 
 
 def _engine_values(name: str, camera: Camera, light: Light, size: tuple[int, int]) -> dict[str, np.ndarray]:
@@ -404,7 +420,7 @@ def _follows(name: str, camera: Camera, light: Light, size: tuple[int, int]) -> 
 
 def _constant_buffer(name: str, layout, camera: Camera, light: Light,
                      captured: Mapping[str, tuple[int, ...]], size: tuple[int, int]) -> bytes:
-    data = _laid_out(layout, _engine_values(name, camera, light, size), True)
+    data = laid_out(layout, _engine_values(name, camera, light, size), True)
     words_of = dict(captured)
     if name in _LIGHT_BUFFERS:
         words_of.update(DL_Enable=(_ALL_BITS,), DL_TextureBindlessIndex=(_ALL_BITS,))
@@ -413,13 +429,44 @@ def _constant_buffer(name: str, layout, camera: Camera, light: Light,
 
 def captured_constants(catalog: LightPassCatalog) -> dict[str, dict[str, tuple[int, ...]]]:
     found: dict[str, set] = {}
-    for item in (*catalog.passes, *catalog.phases):
+    for item in (*catalog.passes, *(phase for phase in catalog.phases if phase.depth != "own")):
         for name, fields in item.constants.items():
             if fields:
                 found.setdefault(name, set()).add(frozendict(fields))
     if any(len(kinds) > 1 for kinds in found.values()):
         raise ValueError(f"the catalog's passes capture {sorted(n for n, k in found.items() if len(k) > 1)} differently")
     return {name: dict(*kinds) for name, kinds in found.items()}
+
+
+def derived_constants(profile, load_file: Callable[[str], bytes | None]) -> dict[str, dict[str, tuple[int, ...]]]:
+    catalog = view_field_catalog_for(profile)
+    if catalog is None:
+        return {}
+    data = load_file(catalog.scene)
+    settings = None if data is None else camera_settings(data, catalog, str(profile.game))
+    if settings is None:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The game's camera scene {path} was not found, or does not hold one each of "
+                               "{components}."), {"path": catalog.scene, "components": ", ".join(catalog.components)})
+    effects = effects_on(settings, catalog)
+    if effects:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The game's main camera turns on tonemap effects ({effects}), whose conditions and "
+                               "buffers REasy does not compute."), {"effects": ", ".join(effects)})
+    return view_field_words(settings, catalog)
+
+
+def _with_derived(captured: Mapping[str, Mapping[str, tuple[int, ...]]],
+                  derived: Mapping[str, Mapping[str, tuple[int, ...]]]) -> dict[str, dict[str, tuple[int, ...]]]:
+    found = {name: dict(fields) for name, fields in captured.items()}
+    for name, fields in derived.items():
+        found[name] = {**found.get(name, {}), **fields}
+    return found
+
+
+def view_constants(catalog: LightPassCatalog, profile,
+                   load_file: Callable[[str], bytes | None]) -> dict[str, dict[str, tuple[int, ...]]]:
+    return _with_derived(captured_constants(catalog), derived_constants(profile, load_file))
 
 
 class LightPasses:
@@ -434,6 +481,7 @@ class LightPasses:
         if scene.phases != {phase.key for phase in catalog.phases}:
             raise ValueError(f"the scene leaves out the phases {sorted(scene.phases)}, not the catalog's")
         self.scene, self.device, self.catalog, self.samplers = scene, scene.device, catalog, samplers
+        self._fields, self._derived = view_field_catalog_for(profile), derived_constants(profile, load_file)
         self.light: Light | None = None
         self.programs = []
         documents = {}
@@ -451,9 +499,7 @@ class LightPasses:
                     "MaterialPreview", "The game's shader file {path} has {count} programs named {name}."),
                     {"path": item.file, "count": len(found), "name": item.name})
             program = target.programs[found[0]]
-            self.programs.append((program, {
-                shader.role: shader_contract_for_program(profile.sdf_profile, program, shader.role)
-                for shader in program.shaders if shader.present}))
+            self.programs.append((program, program_contracts(profile.sdf_profile, program)))
         self.lookups = {item.file: documents[item.file].lookups for item in catalog.passes}
         sources = [source for item in (*catalog.passes, *catalog.phases) for read in item.reads
                    for source in (read.source, *read.levels)]
@@ -484,6 +530,7 @@ class LightPasses:
         self._phase_reads: dict[int, tuple] = {}
         self._shown: dict[tuple, tuple[int, int]] = {}
         self._zeros: dict[str, int] = {}
+        self._unwritten = True
 
     def resize(self) -> None:
         """Call after ``MeshScene.resize``."""
@@ -601,20 +648,42 @@ class LightPasses:
             return contract.structured_buffer(resource.name).byte_size
         return 0
 
+    def profiles(self, source: Source) -> bytes:
+        catalog, data = sss_profile_catalog_for(self.scene.profile), self.scene.load_file(source.value)
+        make = packed_profiles if source.kind == "profiles" else baked_kernels
+        config = None if catalog is None or catalog.config is None else self.scene.load_file(catalog.config.path)
+        made = None if catalog is None or data is None else make(data, catalog, config)
+        if made is None:
+            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                "MaterialPreview", "The game's subsurface profiles {path} were not found, or are not the shape the "
+                                   "renderer reads."), {"path": source.value})
+        return made
+
     def entry(self, read: PassRead, resource, contract, at: tuple[int, int], depth: int, before: list[int],
               file: str = "") -> tuple | None:
         source = read.source
         if source.kind == "none":
             return None
         if resource.input_type in _BUFFERS:
-            held = self.device.buffer(self.catalog.buffers[source.value]) if source.kind == "buffer" \
-                else self.contents(source, at)
+            if source.kind == "buffer":
+                held = self.device.buffer(self.catalog.buffers[source.value])
+            elif source.kind in _PROFILE_BUFFERS:
+                held = self.device.buffer(self.profiles(source))
+            else:
+                held = self.contents(source, at)
             return 0, 0, self.stride(resource, contract), held
-        if source.kind == "buffer":
+        if source.kind == "buffer" or source.kind in _PROFILE_BUFFERS:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                 "MaterialPreview", "The light pass reads {name} as a {kind}."),
                 {"name": resource.name, "kind": resource.input_type})
         if source.kind == "file":
+            made = self.scene.made_texture(source.value)
+            if made is not None:
+                if made[0] != resource.dimension:
+                    raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                        "MaterialPreview", "The light pass reads the render texture {path} as a {kind}."),
+                        {"path": source.value, "kind": resource.dimension})
+                return 0, made[1], made[2]
             entry = _texture_entry(0, source.value, self.scene.load_file, resource.dimension, self.scene.read_textures)
             if entry is None:
                 raise MaterialPreviewError(QT_TRANSLATE_NOOP(
@@ -652,7 +721,7 @@ class LightPasses:
                 if key not in self._mips:
                     self._mips[key] = self.device.scene.texture(form, *size, len(sources), TEXTURE_2D, 0, None)
                 held = self._mips[key]
-                before += [self.device.copy(held, level, mip, 0) for mip, level in enumerate(found)]
+                before.extend([self.device.copy(held, level, mip, 0) for mip, level in enumerate(found)])
             entry = (0, form, held)
         _same_depth(resource, size)
         return entry
@@ -772,18 +841,9 @@ class LightPasses:
             return self._phase_steps[number]
         phase = self.catalog.phases[number]
         at = (phase.after, number)
-        before: list[int] = []
-        targets = []
-        for output in phase.targets:
-            if output.initial.kind == "copy":
-                key = f"{number}.{output.key}"
-                if key not in self._own:
-                    self._own[key] = self.device.texture(output.format, self.scene.size, RENDER_TARGET)
-                own = self._own[key]
-                before.append(self.device.copy(own, self.contents(output.initial, at)))
-                targets.append((output.format, own))
-            else:
-                targets.append((output.format, self.contents(output.initial, at)))
+        targets = self.phase_targets(number)
+        before = [self.device.copy(texture, self.contents(output.initial, at))
+                  for output, (_form, texture) in zip(phase.targets, targets) if output.initial.kind == "copy"]
         if number not in self._phase_reads:
             self._phase_reads[number] = self._reads(number, phase, at, targets)
         texture, constant_buffer, copies = self._phase_reads[number]
@@ -792,6 +852,39 @@ class LightPasses:
         self._phase_steps[number] = before + copies + unblended, blended
         return self._phase_steps[number]
 
+    def phase_targets(self, number: int) -> list[tuple[int, int]]:
+        phase = self.catalog.phases[number]
+        targets = []
+        for output in phase.targets:
+            if output.initial.kind == "copy":
+                key = f"{number}.{output.key}"
+                if key not in self._own:
+                    self._own[key] = self.device.texture(output.format, self.scene.size, RENDER_TARGET)
+                targets.append((output.format, self._own[key]))
+            else:
+                targets.append((output.format, self.contents(output.initial, (phase.after, number))))
+        return targets
+
+    def purpose_phase(self, purpose: str, absent: str) -> int:
+        number = next((number for number, phase in enumerate(self.catalog.phases) if phase.purpose == purpose), None)
+        if number is None:
+            raise MaterialPreviewError(absent, {"phase": purpose})
+        return number
+
+    def check_bound(self, listed: Iterable[tuple[str, int]]) -> None:
+        missing = sorted({target for kind, target in listed
+                          if kind == "gbuffer" and target not in self.scene.target_formats})
+        if missing:
+            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                "MaterialPreview", "REasy's catalog of this game build records no G-buffer target {target}."),
+                {"target": missing[0]})
+
+    def bound_targets(self, number: int, listed: Iterable[tuple[str, int]]) -> list[tuple[int, int]]:
+        scene = self.scene
+        found = {"phase": self.phase_targets(number),
+                 "gbuffer": {target: (form, scene.targets[target]) for target, form in scene.target_formats.items()}}
+        return [found[kind][target] for kind, target in listed]
+
     def _reads(self, number: int, phase: MeshPhase, at: tuple[int, int], targets: list[tuple]) -> tuple:
         """What phase ``number``'s parts read through, made once with its textures, so the jobs made of them are kept;
         and the copies those reads need run first, gathered as the reads are taken and run by every making of the
@@ -799,6 +892,8 @@ class LightPasses:
         reads = {read.name: read for read in phase.reads}
         onto = {texture for _form, texture in targets if texture is not None}
         copies: list[int] = []
+        # A phase testing a depth of its own draws another view.
+        constants = phase.constants if phase.depth == "own" else _with_derived(phase.constants, self._derived)
 
         def texture(name: str, resource, depth: int) -> tuple | None:
             read = reads.get(name)
@@ -816,9 +911,9 @@ class LightPasses:
             return entry
 
         def constant_buffer(name: str, layout) -> bytes | None:
-            if name not in _ENGINE_BUFFERS and name not in phase.constants:
+            if name not in _ENGINE_BUFFERS and name not in constants:
                 return None
-            return _constant_buffer(name, layout, self.scene.camera, self.light, phase.constants.get(name, {}),
+            return _constant_buffer(name, layout, self.scene.camera, self.light, constants.get(name, {}),
                                     self.scene.size)
         return texture, constant_buffer, copies
 
@@ -835,24 +930,40 @@ class LightPasses:
         if inside:
             self._phase_steps.pop(at[1], None)
 
-    def _captured(self, name: str) -> dict:
-        return captured_constants(self.catalog).get(name, {})
+    def _view(self, name: str) -> dict:
+        return {**captured_constants(self.catalog).get(name, {}), **self._derived.get(name, {})}
 
     def gives(self, name: str) -> bool:
-        return name in _ENGINE_BUFFERS or bool(self._captured(name))
+        return name in _ENGINE_BUFFERS or bool(self._view(name)) or follows_clock(self.scene.clock, name)
 
     def engine_block(self, name: str, layout) -> bytes:
-        captured = self._captured(name)
-        return _constant_buffer(name, layout, self.scene.camera, self.light, captured, self.scene.size)
+        fields = {**self._view(name), **clock_words(self.scene.clock, name, layout)}
+        return _constant_buffer(name, layout, self.scene.camera, self.light, fields, self.scene.size)
 
     def _constants(self, key: tuple, item: LightPass, name: str, layout) -> bytes:
         size = self.extent(item)[:2]
-        follows = _follows(name, self.scene.camera, self.light, size)
+        clock = self.scene.clock if follows_clock(self.scene.clock, name) else None
+        follows = _follows(name, self.scene.camera, self.light, size), None if clock is None else clock.key()
         made = self._made_constants.get(key)
         if made is None or made[0] != follows:
+            fields = {**item.constants.get(name, {}), **self._derived.get(name, {}), **self._texture_sized(item, name),
+                      **clock_words(clock, name, layout)}
             made = self._made_constants[key] = follows, _constant_buffer(
-                name, layout, self.scene.camera, self.light, item.constants.get(name, {}), size)
+                name, layout, self.scene.camera, self.light, fields, size)
         return made[1]
+
+    def _texture_sized(self, item: LightPass, name: str) -> dict[str, tuple[int]]:
+        sized = None if self._fields is None else self._fields.texture_sizes.get(name)
+        if sized is None:
+            return {}
+        read = next((read for read in item.reads if read.name == sized.texture), None)
+        data = None if read is None or read.source.kind != "file" else self.scene.load_file(read.source.value)
+        tex = None if data is None else parse_tex_bytes(data)
+        if tex is None:
+            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                "MaterialPreview", "The pass sizes {name} by its texture {texture}, which is not a game file read."),
+                {"name": name, "texture": sized.texture})
+        return texture_size_words(int(tex.header.width), sized)
 
     def _added_steps(self, key: tuple[int, int, bool]) -> list[int]:
         return [*steps() for steps in self._added.get(key, ())]
@@ -887,15 +998,18 @@ class LightPasses:
 
     def drawn(self, light: Light, after: Callable[[int], list[int]]) -> None:
         self.light = light
+        # The frame's passes read history no frame left, zeros: no frame of the game's.
+        self.from_zeros = self.carries and self._unwritten
         scene, pending = self.scene, self.device.pending
         scene.begin()
-        pending += scene.gbuffer()
-        pending += [*steps() for steps in self._starting]
+        pending.extend(scene.gbuffer())
+        pending.extend([*steps() for steps in self._starting])
         self._frame()
         step, texture = self._shown_image()
-        pending += [step, *after(texture)]
-        pending += [self.device.copy(self.contents(Source("history", value), self.end), self.outputs[value])
-                    for value in self._carried]
+        pending.extend([step, *after(texture)])
+        pending.extend([self.device.copy(self.contents(Source("history", value), self.end), self.outputs[value])
+                        for value in self._carried])
+        self._unwritten = False
         scene.finish()
 
 
@@ -923,7 +1037,7 @@ def _failed(item: LightPass, exc: RuntimeError) -> MaterialPreviewError:
 __all__ = [
     "BufferShape", "CATALOG_DIRECTORY", "DERIVED_READ", "IMAGE_SIZE_FIELDS", "Indirect", "Light", "LightPass",
     "LightPassCatalog", "LightPassCatalogError", "LightPasses", "MeshPhase", "PassOutput", "PassRead",
-    "ROLES", "SOURCES", "Source", "captured_constants", "catalog_file_name", "catalog_from_dict", "catalog_to_dict",
-    "derived_read",
-    "image_size", "light_pass_catalog_for", "light_pass_files", "phase_label",
+    "ROLES", "SOURCES", "Source", "TARGET_KINDS", "added_targets", "captured_constants", "catalog_file_name",
+    "catalog_from_dict", "catalog_to_dict", "derived_constants", "derived_read", "image_size", "light_pass_catalog_for",
+    "light_pass_files", "phase_label", "view_constants",
 ]

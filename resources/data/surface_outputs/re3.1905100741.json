@@ -124,50 +124,5 @@
   "gbuffer": 20,
   "forward": 20
  },
- "engine_textures": [],
- "source": {
-  "mmtr_files": 112,
-  "passes": {
-   "colour": 8028,
-   "depth": 11416,
-   "depth-prepass": 11584,
-   "forward": 21312,
-   "gbuffer": 25412,
-   "other": 4176,
-   "pick": 3168,
-   "shadow": 9600,
-   "stencil": 10592
-  },
-  "passes_beyond_slots": 0,
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "api": "D3D12",
-    "draws": {
-     "forward": 3,
-     "gbuffer": 751
-    },
-    "shaders": {
-     "forward": 3,
-     "gbuffer": 17
-    },
-    "gbuffers": 1,
-    "engine_texture_draws": {
-     "gbuffer": 751,
-     "depth-prepass": 73
-    }
-   }
-  ],
-  "several_slots": [],
-  "several_slots_by_shader": [],
-  "several_formats": [],
-  "other_engine_textures": [
-   {
-    "purpose": "gbuffer",
-    "name": "ReadonlyDepth",
-    "files": [],
-    "other_contents": true
-   }
-  ]
- }
+ "engine_textures": []
 }

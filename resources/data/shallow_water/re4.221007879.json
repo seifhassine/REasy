@@ -1,0 +1,371 @@
+{
+ "format": 4,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "shading_type": "Water",
+ "drawn_material": 0,
+ "phase": "blending",
+ "segments": {
+  "0": 43
+ },
+ "segment": 46,
+ "targets": {
+  "plain": [
+   [
+    "phase",
+    0
+   ],
+   [
+    "phase",
+    1
+   ],
+   [
+    "phase",
+    2
+   ]
+  ],
+  "occlusion": [
+   [
+    "phase",
+    0
+   ],
+   [
+    "phase",
+    1
+   ],
+   [
+    "phase",
+    2
+   ],
+   [
+    "gbuffer",
+    3
+   ],
+   [
+    "gbuffer",
+    0
+   ]
+  ]
+ },
+ "depth_read": "gReadDepth",
+ "blend_factor": [
+  0.5,
+  0.5,
+  0.5,
+  0.5
+ ],
+ "simulation": {
+  "height": {
+   "read": "gEtaSRV",
+   "format": 54,
+   "texel_bytes": 2
+  },
+  "velocity": {
+   "read": "gBufferSRV",
+   "format": 34,
+   "texel_bytes": 4
+  }
+ },
+ "alpha": {
+  "read": "gAlphaTexture",
+  "texture": "systems/rendering/NullBlack.tex"
+ },
+ "culling": {
+  "file": "systems/shader/gridFluid2D.sdf",
+  "target": 0,
+  "program": "ShallowWaterPrecomputeCulling",
+  "threads": 64,
+  "indices": "gIndexBuffer",
+  "arguments": "gIndexCounter",
+  "initial_arguments": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ]
+ },
+ "components": {
+  "partial": {
+   "type": "via.render.PartialShallowWater",
+   "fields": {
+    "material": "Material",
+    "point": "SimulationPoint",
+    "tiles": "TileCount",
+    "grid": "SimulationGrid",
+    "tessellation": "TessFactor",
+    "attenuation": "TessAttenuationRadius",
+    "priority": "RenderingPriority",
+    "occlusion": "OcclusionFill",
+    "colour_blend": "WaterColorBlend",
+    "normal_blend": "WaterNormalBlend",
+    "emission_blend": "EmissionBlend"
+   },
+   "required": {
+    "TessellationType": 0,
+    "UseCulling": true,
+    "HeightField": ""
+   },
+   "programs": {
+    "surface": {
+     "plain": "AHeightFieldGBufferBlendDepthOnePassPartial",
+     "occlusion": "AHeightFieldGBufferBlendDepthOnePassPartialWzOccCMGB"
+    },
+    "cheap_tile": {
+     "plain": "AHeightFieldGBufferBlendDepthOnePassCheapTile",
+     "occlusion": "AHeightFieldGBufferBlendDepthOnePassCheapTileWzOccCMGB"
+    }
+   },
+   "constants": {
+    "surface": {
+     "buffer": "cbHeightField",
+     "fields": {
+      "drawn": "gWorldMatrix",
+      "tessellation": "gTessFactor",
+      "tessellation_inverse": "gTessFactorInv",
+      "tiles": "gTileCount",
+      "tiles_inverse": "gTileCountInv",
+      "colour_blend": "gWaterColorBlend",
+      "normal_blend": "gWaterNormalBlend",
+      "tile_size": "gTileSize",
+      "emission_blend": "gWaterEmissionBlend",
+      "axis_x": "gTileAxisX",
+      "attenuation": "gTessAttenuation",
+      "axis_z": "gTileAxisZ",
+      "camera": "gCameraPosition"
+     },
+     "fixed": {
+      "gFresnel": [
+       1.0
+      ],
+      "gShininess": [
+       1.0
+      ],
+      "gWaterColor": [
+       0.0,
+       0.0,
+       0.0,
+       0.0
+      ],
+      "gProjectionColor": [
+       1.0,
+       1.0,
+       1.0
+      ],
+      "gRefractionScale": [
+       0.5
+      ]
+     },
+     "unwritten": [
+      "gCulling",
+      "__"
+     ]
+    },
+    "partial": {
+     "buffer": "cbHeightFieldPartial",
+     "fields": {
+      "world": "gCheapTileWorldMatrix",
+      "uv_offset": "gHeightFieldUVOffset",
+      "uv_scale": "gHeightFieldUVScale",
+      "uv_diff": "gHeightFieldUVDiff",
+      "uv_scale_inverse": "gHeightFieldUVScaleInv"
+     },
+     "fixed": {},
+     "unwritten": []
+    }
+   },
+   "point": {
+    "position": [
+     0.0,
+     0.0,
+     0.0
+    ],
+    "scale": [
+     1.0,
+     1.0,
+     1.0
+    ]
+   },
+   "cheap_tile": {
+    "elements": [
+     [
+      "POSITION",
+      0,
+      6,
+      0
+     ],
+     [
+      "TEXCOORD",
+      0,
+      16,
+      12
+     ]
+    ],
+    "stride": 20,
+    "indices": [
+     0,
+     1,
+     5,
+     0,
+     5,
+     4,
+     1,
+     2,
+     6,
+     1,
+     6,
+     5,
+     2,
+     3,
+     7,
+     2,
+     7,
+     6,
+     4,
+     5,
+     9,
+     4,
+     9,
+     8,
+     6,
+     7,
+     11,
+     6,
+     11,
+     10,
+     8,
+     9,
+     13,
+     8,
+     13,
+     12,
+     9,
+     10,
+     14,
+     9,
+     14,
+     13,
+     10,
+     11,
+     15,
+     10,
+     15,
+     14
+    ]
+   }
+  },
+  "full": {
+   "type": "via.render.ShallowWater",
+   "fields": {
+    "material": "Material",
+    "tiles": "TileCount",
+    "grid": "SimulationGrid",
+    "tessellation": "TessFactor",
+    "attenuation": "TessAttenuationRadius",
+    "priority": "RenderingPriority",
+    "occlusion": "OcclusionFill",
+    "colour_blend": "WaterColorBlend",
+    "normal_blend": "WaterNormalBlend",
+    "emission_blend": "WaterEmissionBlend",
+    "fresnel": "Fresnel",
+    "refraction": "Refraction",
+    "colour": "Color",
+    "projection_colour": "ProjectionColor",
+    "alpha": "AlphaTexture"
+   },
+   "required": {
+    "RenderingMode": 4,
+    "TessellationType": 0,
+    "UseCulling": true,
+    "HeightField": "",
+    "VelocityField": "",
+    "ProjectionMap": ""
+   },
+   "programs": {
+    "surface": {
+     "plain": "AHeightFieldGBufferBlendDepthOnePass",
+     "occlusion": "AHeightFieldGBufferBlendDepthOnePassWzOccCMGB"
+    }
+   },
+   "constants": {
+    "surface": {
+     "buffer": "cbHeightField",
+     "fields": {
+      "drawn": "gWorldMatrix",
+      "tessellation": "gTessFactor",
+      "tessellation_inverse": "gTessFactorInv",
+      "tiles": "gTileCount",
+      "tiles_inverse": "gTileCountInv",
+      "colour_blend": "gWaterColorBlend",
+      "normal_blend": "gWaterNormalBlend",
+      "tile_size": "gTileSize",
+      "emission_blend": "gWaterEmissionBlend",
+      "axis_x": "gTileAxisX",
+      "attenuation": "gTessAttenuation",
+      "axis_z": "gTileAxisZ",
+      "camera": "gCameraPosition",
+      "fresnel": "gFresnel",
+      "refraction": "gRefractionScale",
+      "colour": "gWaterColor",
+      "projection_colour": "gProjectionColor"
+     },
+     "fixed": {
+      "gShininess": [
+       1.0
+      ]
+     },
+     "unwritten": [
+      "gCulling",
+      "__"
+     ]
+    }
+   }
+  }
+ },
+ "controllers": {
+  "chainsaw.PartialShallowWaterController": {
+   "water": "via.render.PartialShallowWater",
+   "when": "Update",
+   "list": "MaterialParam",
+   "entry": {
+    "material": "MaterialName",
+    "variable": "VariableName",
+    "vector": "ValueF4"
+   },
+   "material": "lambert1",
+   "fluid": {
+    "type": "via.render.GridFluid2Dv2",
+    "resolution": "GridResolution"
+   },
+   "writes": {
+    "Fluid_Position": [
+     [
+      "density",
+      0
+     ],
+     [
+      "density",
+      1
+     ],
+     [
+      "density",
+      2
+     ],
+     0.0
+    ],
+    "Fluid_Size": [
+     [
+      "point scale",
+      0
+     ],
+     [
+      "point scale",
+      2
+     ],
+     1.0,
+     0.0
+    ]
+   }
+  }
+ }
+}

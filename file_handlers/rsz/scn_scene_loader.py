@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -17,7 +18,12 @@ from .scn_scene_graph import (
     ScnSceneGraphBuilder,
     normalize_scene_path,
 )
-lazy from .scn_document_store import ScnDocumentStore, scoped_document_path
+lazy from .scene_startup import startup_draw_requests
+lazy from file_handlers.rsz.rsz_file import RszFile
+lazy from .scn_document_store import ScnDocument, ScnDocumentStore, scoped_document_path
+lazy from .campaign_state import CampaignChoice, CampaignChoices, choice_names
+lazy from .spawn_rules import spawner_file
+lazy from .spawned_parts import repicked
 
 
 @dataclass(slots=True)
@@ -49,7 +55,7 @@ def scn_identity_keys(path: str) -> set[str]:
 
 
 def holds_scene(rsz_file) -> bool:
-    return bool(getattr(rsz_file, "is_scn", False) or getattr(rsz_file, "is_pfb", False))
+    return bool(getattr(rsz_file, "is_scn", False) or getattr(rsz_file, "is_pfb", False)) or spawner_file(rsz_file)
 
 
 def scn_source_identity_keys(source: ScnSceneSource) -> set[str]:
@@ -88,33 +94,75 @@ class ScnSceneLoader:
         self._source_by_document: dict[str, ScnSceneSource] = {}
         self._source_by_graph: dict[int, ScnSceneSource] = {}
         self._building_source: ScnSceneSource | None = None
+        self.user_documents: dict[str, ScnDocument] = {}
+        self.user_reads: dict = {}
 
     def source_for_graph(self, graph: ScnSceneGraph) -> ScnSceneSource | None:
         return self._source_by_graph.get(id(graph))
+
+    def _builder(self, source: ScnSceneSource, **options) -> ScnSceneGraphBuilder:
+        handler = source.handler
+        return ScnSceneGraphBuilder(
+            getattr(handler, "type_registry", None), resource_resolver=self.resolve_resource,
+            game_version=self._game_version(source), user_reads=self.user_reads,
+            user_files={key: document.rsz_file for key, document in self.user_documents.items()}, **options)
+
+    @staticmethod
+    def _game_version(source: ScnSceneSource | None) -> str:
+        return str(getattr(source, "game_version", "") or getattr(getattr(source, "handler", None), "game_version", "")
+                   or "")
+
+    def user_document(self, graph: ScnSceneGraph, path: str) -> ScnDocument | None:
+        key = normalize_scene_path(path)
+        if key not in self.user_documents:
+            source = self.source_for_graph(graph)
+            resolved = self.resolve_resource_for_source(source, path)
+            if resolved is None or resolved.data is None:
+                return None
+            rsz = RszFile()
+            rsz.filepath, rsz.type_registry = path, getattr(getattr(source, "handler", None), "type_registry", None)
+            rsz.game_version = self._game_version(source)
+            rsz.read(resolved.data)
+            context = self.resource_context_for_source(source)
+            project = str(getattr(context, "project_dir", "") or "")
+            resource = resolved.path if context is None else self._project_resource_path(
+                resolved.path, project, context.unpacked_dir, context.path_prefix)
+            self.user_documents[key] = ScnDocument(key, resource, project, rsz)
+        return self.user_documents[key]
+
+    def campaign_choices(self, graph: ScnSceneGraph) -> CampaignChoices | None:
+        source, document = self.source_for_graph(graph), graph.documents.get(graph.root_document_id)
+        if source is None or document is None:
+            return None
+        builder = self._builder(source)
+        catalog = builder.campaign_catalog(str(document.source_path), document.document_id)
+        return None if catalog is None else choice_names(catalog, startup_draw_requests(builder.game_version))
+
+    def variation_states(self, graph: ScnSceneGraph,
+                         variations: Mapping[str, int]) -> tuple[ScnSceneGraph, dict[str, Mapping]]:
+        return repicked(self._builder(self.source_for_graph(graph), variations=variations), graph)
 
     def build_graphs(
         self,
         sources: list[ScnSceneSource],
         *,
         max_depth: int = 8,
-        skip_document_ids: set[str] | None = None,
+        kept: Sequence[ScnSceneGraph] = (),
+        campaign: CampaignChoice | None = None,
+        variations: Mapping[str, int] | None = None,
+        choices: Mapping[str, int] | None = None,
     ) -> list[ScnSceneGraph]:
         valid_sources = [source for source in sources if getattr(source.handler, "rsz_file", None) is not None]
-        self._source_by_document.clear()
-        self._source_by_graph.clear()
+        self.keep(kept)
         if not valid_sources:
             return []
 
         graphs: list[ScnSceneGraph] = []
-        seen_document_ids = set(skip_document_ids or ())
+        seen_document_ids = {document_id for graph in kept for document_id in graph.documents}
         for source in valid_sources:
             handler = source.handler
-            builder = ScnSceneGraphBuilder(
-                getattr(handler, "type_registry", None),
-                resource_resolver=self.resolve_resource,
-                game_version=str(getattr(source, "game_version", "") or getattr(handler, "game_version", "") or ""),
-                max_depth=max_depth,
-            )
+            builder = self._builder(source, max_depth=max_depth, campaign=campaign, variations=variations,
+                                    choices=choices)
             root_path = scoped_document_path(source.project_dir, str(source.path or getattr(handler, "filepath", "") or getattr(handler.rsz_file, "filepath", "") or ""))
             document = self.document_store.attach_source(source, handler.rsz_file, handler)
             self._source_by_document[document.document_id] = source
@@ -130,6 +178,13 @@ class ScnSceneLoader:
                 self._source_by_document[document_id] = source
             seen_document_ids.update(graph.documents)
         return graphs
+
+    def keep(self, graphs: Sequence[ScnSceneGraph]) -> None:
+        sources = [(graph, self._source_by_graph[id(graph)]) for graph in graphs]
+        self.user_reads.clear()
+        self._source_by_graph = {id(graph): source for graph, source in sources}
+        self._source_by_document = {document_id: source for graph, source in sources
+                                    for document_id in graph.documents}
 
     @staticmethod
     def _suppress_seen_documents(graph: ScnSceneGraph, seen_document_ids: set[str]) -> None:
@@ -191,7 +246,7 @@ class ScnSceneLoader:
             path,
             data,
             getattr(handler, "type_registry", None),
-            str(getattr(source, "game_version", "") or getattr(handler, "game_version", "") or ""),
+            self._game_version(source),
         )
         self._source_by_document[doc.document_id] = source
         return ScnResolvedResource(path=scoped_document_path(doc.project_dir, doc.resource_path), rsz_file=doc.rsz_file)

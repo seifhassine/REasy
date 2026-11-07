@@ -1,0 +1,72 @@
+{
+ "format": 1,
+ "game": "RE3",
+ "resource_version": 1905100741,
+ "target": 0,
+ "programs": {
+  "reform": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_ReformIB"
+  },
+  "fill": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_FillSurplusVB"
+  },
+  "number": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_RegistVertexID"
+  },
+  "sort": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_SortVertex"
+  },
+  "rank": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_SortRefIndex"
+  },
+  "duplicates": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_FindDuplicatedVertex"
+  },
+  "rest": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_PrimAreaRest"
+  },
+  "area": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_PrimAreaSkin8w"
+  },
+  "clear": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_ClearVertAreaSkin"
+  },
+  "gather": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_VertAreaSkin"
+  },
+  "spread": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_ProbagateDupVertex"
+  },
+  "draw": {
+   "file": "systems/shader/cgexpressions/cgexpressions.sdf",
+   "program": "Wrinkle_DrawAreaToTexture2"
+  }
+ },
+ "skinning": {
+  "8w": {
+   "file": "systems/shader/computeskinning.sdf",
+   "program": "CSSkinning8w"
+  }
+ },
+ "duplicate_slots": 6,
+ "component": {
+  "type": "via.render.Wrinkle",
+  "render_target": "RenderTarget",
+  "calc_mode": "CalcMode",
+  "uv_gap": "CorrectUVGapFlag",
+  "spread": "CorrectDuplicatedVerticesFlag",
+  "proxy": "via.render.ComputeSkinning",
+  "mesh": "Mesh"
+ }
+}

@@ -211,7 +211,7 @@ class MdfViewer(QWidget):
 		self.bake_texture_spin.setRange(0, 2147483647)
 		self.bake_texture_spin.valueChanged.connect(self._on_bake_texture_changed)
 		ov.addWidget(self.bake_texture_spin, 3, 1)
-		self.ukn_label = styled_label("Unknown 64", tone="muted")
+		self.ukn_label = styled_label(self.tr("Material flags 2"), tone="muted")
 		ov.addWidget(self.ukn_label, 3, 2)
 		self.ukn_edit = QLineEdit()
 		self.ukn_edit.setPlaceholderText("0 (or 0x...)" )
@@ -484,12 +484,12 @@ class MdfViewer(QWidget):
 				return
 		value = max(0, min(value, 0xFFFFFFFFFFFFFFFF))
 		header = m.materials[i].header
-		current_value = header.ukn_re7 if self._current_file_version() == 6 else header.ukn
+		current_value = header.ukn_re7 if self._current_file_version() == 6 else header.material_flags2
 		if current_value != value:
 			if self._current_file_version() == 6:
 				header.ukn_re7 = value
 			else:
-				header.ukn = value
+				header.material_flags2 = value
 			self.modified = True
 
 	def _selected_header(self):
@@ -850,8 +850,8 @@ class MdfViewer(QWidget):
 				self.ukn_edit.setText(str(md.header.ukn_re7))
 				self.ukn_label.setText(self.tr("Unknown RE7 64"))
 			else:
-				self.ukn_edit.setText(str(md.header.ukn))
-				self.ukn_label.setText(self.tr("Unknown 64"))
+				self.ukn_edit.setText(str(md.header.material_flags2))
+				self.ukn_label.setText(self.tr("Material flags 2"))
 			self.ukn_label.setVisible(True)
 			self.ukn_edit.setVisible(True)
 		else:

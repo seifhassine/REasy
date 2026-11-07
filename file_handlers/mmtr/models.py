@@ -59,6 +59,10 @@ class MmtrProgramSemantics:
     # ``vertex_value_refusals`` holds (source, reason) pairs.
     vertex_values: tuple = ()
     vertex_value_refusals: tuple = ()
+    added_outputs: tuple = ()
+    material_bound_elsewhere: frozenset = frozenset()
+    drawn_for: tuple = ()
+    engine_inputs: tuple = ((), ())
 
 
 @dataclass(frozen=True, slots=True)

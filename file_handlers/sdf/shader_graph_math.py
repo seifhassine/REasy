@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 
 FLOAT_BASE_TYPES = ('float', 'min16float', 'min10float', 'half')
@@ -84,6 +86,7 @@ def numeric_type_label(value_type):
     return label + (' ' + suffix if suffix else '')
 
 
+@lru_cache(maxsize=None)
 def operation_value_types(kind):
     if kind == 'multiply_high':
         return tuple(base+suffix for base in ('int','uint') for suffix in ('','2','3','4'))

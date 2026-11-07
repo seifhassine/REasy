@@ -4,7 +4,7 @@ from __future__ import annotations
 import base64
 import zlib
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
 
@@ -147,7 +147,6 @@ class StrandCatalog:
     placement: PlacementSection
     skinning: SkinningSection | None
     states: Mapping[str, int]
-    source: Mapping = field(default_factory=dict)
 
     def program(self, step: str, variant: str) -> str:
         return _program(self.steps, step, variant)
@@ -217,7 +216,7 @@ def catalog_to_dict(catalog: StrandCatalog) -> dict:
                 "program": catalog.skinning.program, "buffers": dict(catalog.skinning.buffers),
                 "constants": dict(catalog.skinning.constants),
                 "plain": {str(code): name for code, name in sorted(catalog.skinning.plain.items())}},
-            "states": dict(catalog.states), "source": dict(catalog.source)}
+            "states": dict(catalog.states)}
 
 
 def catalog_from_dict(data: Mapping) -> StrandCatalog:
@@ -277,7 +276,7 @@ def catalog_from_dict(data: Mapping) -> StrandCatalog:
     states = {name: int(data["states"][name]) for name in STATES}
     return StrandCatalog(str(data["game"]), int(data["resource_version"]), str(data["file"]), int(data["target"]),
                          _generation(data["generation"], PHYSICS_GENERATIONS), _steps_from_dict(data["steps"]),
-                         constants, render, lod, placement, skinning, states, dict(data.get("source", {})))
+                         constants, render, lod, placement, skinning, states)
 
 
 def _generation(value, known: tuple[str, ...]) -> str:

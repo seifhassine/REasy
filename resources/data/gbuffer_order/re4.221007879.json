@@ -1,0 +1,318 @@
+{
+ "format": 8,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "renderer": {
+  "ForceZPrepass": false,
+  "PartialZPrepass": true,
+  "PartialZPrepassRange": 1000.0,
+  "AlphaTestZPrepassFirst": false,
+  "ZPrepassDisable": false,
+  "BoundingLengthScale": 0.01,
+  "UseGpuOcclusionCulling": true,
+  "UseInstancingDraw": true,
+  "UseInstancingCount": 2,
+  "ShaderLodGlobalValue": 0
+ },
+ "distance_scale": 100.0,
+ "cleared": {
+  "0": [
+   0.0,
+   0.0,
+   0.0,
+   0.0
+  ]
+ },
+ "draw_types": {
+  "forward": [
+   15
+  ],
+  "transparent": [
+   5,
+   7,
+   14,
+   18,
+   21,
+   30
+  ],
+  "decal": [
+   1,
+   2,
+   3,
+   4
+  ]
+ },
+ "skipped_shading_types": {
+  "gbuffer": [
+   7,
+   8,
+   11,
+   12,
+   13,
+   17,
+   18,
+   19,
+   20,
+   30
+  ],
+  "prepass": [
+   1,
+   2,
+   3,
+   4,
+   7,
+   8,
+   11,
+   12,
+   13,
+   17,
+   18,
+   19,
+   20,
+   30
+  ]
+ },
+ "segments": {
+  "solid": [
+   11,
+   12
+  ],
+  "solid_emissive": [
+   28,
+   29
+  ],
+  "alpha_test": [
+   15,
+   14
+  ],
+  "alpha_test_emissive": [
+   32,
+   31
+  ],
+  "decal": [
+   35,
+   35
+  ],
+  "stencil_priority": 16
+ },
+ "prepass": {
+  "first": {
+   "solid": [
+    5,
+    6
+   ],
+   "alpha_test": [
+    8,
+    7
+   ],
+   "forward": [
+    5,
+    6
+   ]
+  },
+  "other": 13,
+  "other_types": [
+   "alpha_test",
+   "forward"
+  ]
+ },
+ "material_flags": {
+  "alpha_test": "AlphaTestEnable",
+  "two_side": "TwoSideEnable",
+  "emissive": "EmissiveUsed",
+  "rough_transparent": "RoughTransparentEnable",
+  "stencil_priority": "EnableStencilPriority",
+  "pixel_depth_offset": "PixelDepthOffsetUsed"
+ },
+ "instance_key": {
+  "apart": [
+   "IgnoreDepth",
+   "IgnoreDepthTransparentCorrection",
+   "ViewSpaceScaling",
+   "MaskIgnoreDepthMesh",
+   "DrawPriorityBias",
+   "TransparentBias",
+   "PartsCaching",
+   "Materials"
+  ],
+  "fields": [
+   {
+    "field": "ForceAlphaTest"
+   },
+   {
+    "field": "BeautyMaskChannel",
+    "when": "BeautyMaskFlag"
+   },
+   {
+    "field": "BeautyMaskFlag"
+   },
+   {
+    "field": "Occluder"
+   },
+   {
+    "field": "DrawLaterOccluder",
+    "when": "Occluder"
+   },
+   {
+    "field": "UseStencilValuePriority"
+   },
+   {
+    "field": "StencilValue"
+   },
+   {
+    "field": "ShaderLod",
+    "unset": -1,
+    "renderer": "ShaderLodGlobalValue",
+    "mask": 7
+   }
+  ]
+ },
+ "instancer": {
+  "components": [
+   "via.render.CompositeMesh",
+   "via.landscape.Foliage"
+  ],
+  "draw_types": {
+   "solid": [
+    0,
+    10,
+    23
+   ],
+   "decal": [
+    1,
+    2,
+    3,
+    4
+   ]
+  },
+  "two_side": [
+   "BaseTwoSideEnable",
+   "TwoSideEnable"
+  ],
+  "emissive": "EmissiveUsed",
+  "alpha_test": "AlphaTestEnable",
+  "segments": {
+   "solid": [
+    11,
+    12
+   ],
+   "solid_emissive": [
+    28,
+    29
+   ],
+   "alpha_test": [
+    15,
+    14
+   ],
+   "alpha_test_emissive": [
+    32,
+    31
+   ],
+   "decal": [
+    35,
+    35
+   ]
+  },
+  "prepass": {
+   "alpha_test": [
+    8,
+    7
+   ]
+  }
+ },
+ "batches": {
+  "components": [
+   "via.speedtree.SpeedTreeV8"
+  ],
+  "shading_types": [
+   10
+  ],
+  "segments": {
+   "BRANCH": 11,
+   "LEAF_TWO_SIDE": 14,
+   "LEAF": 15,
+   "BILLBOARDS": 15,
+   "GRASS": 14,
+   "BRANCH_TWO_SIDE": 12,
+   "FACING_LEAF": 15,
+   "FACING_LEAF_TWO_SIDE": 14
+  },
+  "prepass": {
+   "BRANCH": 5,
+   "LEAF_TWO_SIDE": 7,
+   "LEAF": 8,
+   "BILLBOARDS": 8,
+   "GRASS": 8,
+   "BRANCH_TWO_SIDE": 6,
+   "FACING_LEAF": 8,
+   "FACING_LEAF_TWO_SIDE": 7
+  },
+  "prepass_when": {
+   "BRANCH": "AlphaTestEnable",
+   "BRANCH_TWO_SIDE": "AlphaTestEnable"
+  }
+ },
+ "ignore_depth": {
+  "field": "IgnoreDepth",
+  "segments": [
+   36,
+   38,
+   48,
+   50
+  ],
+  "stamped": [
+   14
+  ],
+  "program": "DepthWrite"
+ },
+ "transparent_layer": [
+  "transparent"
+ ],
+ "shell_fur": {
+  "components": [
+   "via.render.ShellFurMesh"
+  ],
+  "shading_types": [
+   0,
+   10,
+   23
+  ],
+  "two_side": [
+   "BaseTwoSideEnable",
+   "TwoSideEnable"
+  ],
+  "alpha_test": [
+   "BaseAlphaTestEnable",
+   "AlphaTestEnable"
+  ],
+  "emissive": "EmissiveUsed",
+  "segments": {
+   "solid": [
+    11,
+    12
+   ],
+   "solid_emissive": [
+    28,
+    29
+   ],
+   "alpha_test": [
+    15,
+    14
+   ],
+   "alpha_test_emissive": [
+    32,
+    31
+   ]
+  },
+  "prepass": {
+   "solid": [
+    5,
+    6
+   ],
+   "alpha_test": [
+    8,
+    7
+   ]
+  }
+ }
+}

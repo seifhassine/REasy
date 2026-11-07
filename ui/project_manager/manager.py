@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import weakref
+from functools import partial
 from pathlib import Path
 from time import monotonic
 from urllib.parse import quote, unquote
@@ -38,7 +39,7 @@ lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
 lazy from ui.styles import current_colors, set_style_role
 lazy from utils.app_paths import PROJECT_CONFIG_NAME, PROJECT_METADATA_FOLDER, application_root
-lazy from utils.resource_file_utils import resource_key
+lazy from utils.resource_file_utils import resource_context_for_app, resource_key
 
 lazy from .bookmark_panel import BookmarksPanel
 lazy from .bookmarks import (
@@ -49,6 +50,7 @@ lazy from .bookmarks import (
     project_bookmarks_path,
     resolve_filesystem_target,
 )
+lazy from .catalogue_panel import CataloguePanel
 lazy from .constants import PROJECTS_ROOT
 lazy from .delegate import _ActionsDelegate, _PakActionsDelegate
 lazy from .dock_chrome import DockTitleBar, SideTab
@@ -453,6 +455,10 @@ class ProjectManager(QDockWidget):
         self.bookmarks.open_requested.connect(self._open_bookmark)
         lay.addWidget(self.bookmarks)
         self.bookmarks.hide()
+        self.catalogue = CataloguePanel(lambda: weak_self()._catalogue_context(), c)
+        self.catalogue.open_requested.connect(self._open_catalogue_entry)
+        lay.addWidget(self.catalogue)
+        self.catalogue.hide()
 
         for b in (self.btn_conf, self.btn_zip, self.btn_pak, self.btn_export):
             b.setEnabled(False)
@@ -870,6 +876,7 @@ class ProjectManager(QDockWidget):
         self.tree_proj.setVisible(tab == "proj")
         self.tree_pak.setVisible(tab == "pak")
         self.bookmarks.setVisible(tab == "bm")
+        self.catalogue.setVisible(tab == "cat")
         self._update_tab_controls_state()
         self._update_path_label()
         self._update_placeholders()
@@ -927,7 +934,7 @@ class ProjectManager(QDockWidget):
     def _update_tab_controls_state(self):
         on_pak = (self._active_tab == "pak")
         on_proj = (self._active_tab == "proj")
-        self.view_toolbar.setVisible(self._active_tab != "bm")
+        self.view_toolbar.setVisible(self._active_tab not in ("bm", "cat"))
         for w in (self.btn_scan_paks, self.btn_load_list, self.pak_list_caption, self.pak_list_label,
                   self.pak_filter_edit):
             w.setVisible(on_pak)
@@ -1144,6 +1151,7 @@ class ProjectManager(QDockWidget):
             self.tree_pak.setEnabled(True)
             self._update_tab_controls_state()
             self.bookmarks.refresh()
+            self.catalogue.sources_changed()
             self._hide_loading_overlay(ticket)
             self._update_placeholders()
             self.restore_view_state(self._project_views.pop(self._path_key(proj_dir), None))
@@ -1492,6 +1500,10 @@ class ProjectManager(QDockWidget):
             self._open_pak_path_in_editor(path)
 
     def _open_pak_path_in_editor(self, path: str):
+        return self._open_pak_tab(path) is not False
+
+    def _open_pak_tab(self, path: str):
+        """The tab a PAK path opens in (None: opened elsewhere); False when it is not opened."""
         if not self.tree_pak.isEnabled() or not self._pak_selected_paks:
             return False
         try:
@@ -1517,7 +1529,7 @@ class ProjectManager(QDockWidget):
             tab = self.app_win.add_tab(name, data, pak_source_path=path, pak_project_dir=self.project_dir)
             if tab:
                 self.app_win.attach_pak_source_tab(tab, path, self.project_dir)
-            return True
+            return tab
         except Exception as e:
             QMessageBox.critical(self, self.tr("Open failed"), str(e))
             return False
@@ -1762,9 +1774,23 @@ class ProjectManager(QDockWidget):
                 with open(path, "rb") as f:
                     data = f.read()
                 project_dir = self.project_dir if self.project_dir and self._path_key(path).startswith(self._path_key(self.project_dir) + os.sep) else None
-                self.app_win.add_tab(path, data, pak_project_dir=project_dir)
+                return self.app_win.add_tab(path, data, pak_project_dir=project_dir)
             except Exception as e:
                 QMessageBox.critical(self, self.tr("Open failed"), str(e))
+        return None
+
+    def _catalogue_context(self) -> tuple[str, object]:
+        context = resource_context_for_app(self.app_win, game=self.current_game or "")
+        return context.game, partial(context.resolve, allow_selection_dialog=False)
+
+    def _open_catalogue_entry(self, path: str, instance, picks) -> None:
+        location = resource_context_for_app(self.app_win, game=self.current_game or "").locate(path)
+        if location is None:
+            QMessageBox.information(self, self.tr("Catalogue"), self.tr("Path not found: {path}").format(path=path))
+            return
+        tab = self._open_in_editor(location.path) if location.pak is None else self._open_pak_tab(location.path)
+        if hasattr(viewer := getattr(tab, "viewer", None), "show_spawned"):
+            viewer.show_spawned(instance, picks)
 
     def _on_double(self, idx, in_project):
         if self._index_is_dir(idx):

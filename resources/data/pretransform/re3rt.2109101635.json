@@ -1,0 +1,56 @@
+{
+ "format": 6,
+ "game": "RE3RT",
+ "resource_version": 2109101635,
+ "target": 3,
+ "source_holds_indices": false,
+ "destination_holds_buffer": false,
+ "blend": {},
+ "blend_still": null,
+ "calculate": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSCalculateNormal"
+ },
+ "write": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormal"
+ },
+ "write_excluding_edge": {
+  "file": "systems/shader/computeskinning.sdf",
+  "program": "CSWriteNormalExcludingEdge"
+ },
+ "write_by_submesh": false,
+ "skinning": [
+  "PreTransformSkinningCS",
+  "PreTransformSkinningInstanceIDCS",
+  "PreTransformSkinningInstanceIDWithNormCS",
+  "PreTransformSkinningWithNormCS"
+ ],
+ "skin_by_range": false,
+ "system_skins_blend": null,
+ "system_skinning": {},
+ "system_blend": {},
+ "blend_place": null,
+ "static_like_skinning": true,
+ "still_without_blend": null,
+ "copied_skin_whole": null,
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "Standard",
+  "Transparent"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalWithMetallic"
+ ],
+ "decal_no_pre_transform": true
+}

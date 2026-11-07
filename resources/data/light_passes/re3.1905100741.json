@@ -1,176 +1,8 @@
 {
- "format": 6,
+ "format": 7,
  "game": "RE3",
  "resource_version": 1905100741,
  "master_target": 0,
- "source": {
-  "sdf_files": 40,
-  "ocio_configurations": 0,
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "events": [
-     13019,
-     14543,
-     14577,
-     14591,
-     15271,
-     15307
-    ],
-    "programs": {
-     "13019": [
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam"
-     ],
-     "14543": [
-      "DeferredLight",
-      "DeferredLight",
-      "DeferredLight"
-     ],
-     "14577": [
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2"
-     ],
-     "14591": [
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2"
-     ],
-     "15271": [
-      "LDRPostProcessWithTonemapC4L3Section",
-      "LDRPostProcessWithTonemapC4L3Section",
-      "LDRPostProcessWithTonemapC4L3Section"
-     ],
-     "15307": [
-      "ScreenOutputSRGB",
-      "ScreenOutputSRGB",
-      "ScreenOutputSRGB"
-     ]
-    },
-    "files": {
-     "14543 LightCullingVolumeSRV": [],
-     "14543 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "14543 ShadowMapSRV": [],
-     "14543 StaticShadowMapSRV": [],
-     "14543 IESLightTableSRV": [],
-     "14543 GIDSRV": [],
-     "15271 tTextureMap0": [],
-     "15271 tTextureMap1": [],
-     "15271 tTextureMap2": [
-      "systems/rendering/colorcubelinear.tex"
-     ],
-     "15271 ImagePlameBase": [
-      "systems/rendering/nullwhite.tex"
-     ],
-     "15271 ImagePlameAlpha": [
-      "systems/rendering/nullwhite.tex"
-     ]
-    },
-    "heap_reads": [],
-    "moves": [
-     [
-      12935,
-      38480,
-      ""
-     ],
-     [
-      12944,
-      38480,
-      ""
-     ],
-     [
-      12953,
-      38480,
-      ""
-     ],
-     [
-      12968,
-      38480,
-      ""
-     ],
-     [
-      12975,
-      38480,
-      ""
-     ],
-     [
-      12982,
-      38480,
-      ""
-     ],
-     [
-      14696,
-      8790,
-      ""
-     ],
-     [
-      15120,
-      38477,
-      ""
-     ],
-     [
-      15286,
-      38477,
-      ""
-     ],
-     [
-      15292,
-      8790,
-      ""
-     ]
-    ],
-    "ambiguous": [],
-    "bakes": [],
-    "phases": {
-     "forward": [
-      14755,
-      14776,
-      14787
-     ]
-    }
-   }
-  ]
- },
  "passes": [
   {
    "role": "subsurface_param",
@@ -463,8 +295,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "ea4f08e68c6736d161e284ac94d26a79b3eb8e1fdfe605bd200841891eac880f"
+      "kind": "kernels",
+      "value": "objectroot/system/sssprofile/sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -572,8 +404,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "ea4f08e68c6736d161e284ac94d26a79b3eb8e1fdfe605bd200841891eac880f"
+      "kind": "kernels",
+      "value": "objectroot/system/sssprofile/sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -799,7 +631,7 @@
    "purpose": "forward",
    "masters": [],
    "after": 3,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -866,7 +698,5 @@
    }
   }
  ],
- "buffers": {
-  "ea4f08e68c6736d161e284ac94d26a79b3eb8e1fdfe605bd200841891eac880f": "eNrLSuyz/fJ7mt2l//X2DECwYUOSbfHZV5Yg9pkzPntf/eSwe73qlA2In5b2bM/rB8J2J5NKbaHyexY/YLPz+tBhZ8m80/T0GZ/dS6F8awjf+iVQ/TGo+nNnfGxeAM37ADUvOe2ZzRagfeUI+8DqQOBkspit1HU3u/NQdx1fMN/2WbM4WN2smZL7Oyc72HEeXmYDMXfNPvfDgnaf++bZQuX3rZaYZhutPseOZdNxUyB/L4xfCuRPnylp6wFU/wWh3g5kHjPUvPNn1tgdA9r3FGEf2A0LgDgLb3idQQuvtL2o4XUGLbzOoIXXGbTwOoMWXmm2qOF1xrbj9bEvXExAd02pt305t8H233Y3sN7S3f9tblzeaLMhKB3IP7A/bN8f296FonabNZTsGBgi9s8Rd7Er+Wtm9/KRBpB/YF+D3W9b0X8/bQsnHgGp34vGt0VTb4dmnj2affaweBx11/Bw1yjADlbyMzAwjgbDKBgFo4AMAAC7Za61"
- }
+ "buffers": {}
 }

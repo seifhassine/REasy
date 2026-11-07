@@ -124,7 +124,8 @@ def _plain_graph_document(graph, *, checked_sealed=None):
         for item in value.values() if kind in (dict, _Object) else value:
             if type(item) not in scalars:
                 pending.append((item, None))
-    from file_handlers.sdf.shader_graph import _json_properties, immutable_property_validation
+    from file_handlers.sdf.graph_snapshot import immutable_property_validation
+    from file_handlers.sdf.shader_graph import _json_properties
     with immutable_property_validation():
         if not _json_properties(document):
             return None

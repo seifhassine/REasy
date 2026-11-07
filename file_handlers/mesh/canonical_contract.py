@@ -448,10 +448,7 @@ def assert_mesh_canonical_storage(mesh: object) -> None:
     for mesh_data in mesh.meshes:
         _require(not int(mesh_data.reserve), "MeshData reserve must be zero")
         if mesh.profile.legacy_reserved_storage_is_corpus_zero:
-            _require(
-                not int(mesh_data.shared_lod_bits) and not int(mesh_data.ukn1),
-                "legacy MeshData reserved storage must be zero",
-            )
+            _require(not int(mesh_data.ukn1), "legacy MeshData reserved storage must be zero")
         for lod in mesh_data.lods:
             _require(not int(lod.reserve), "MeshLOD reserve must be zero")
             if mesh.profile.legacy_reserved_storage_is_corpus_zero:

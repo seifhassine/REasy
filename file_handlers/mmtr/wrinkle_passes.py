@@ -47,6 +47,7 @@ class WrinklePasses:
         self.device, self.programs, self.catalog = device, programs, catalog
         self._setups: dict[int, _Setup] = {}
         self._objects: dict[int, _Object] = {}
+        self._handed: list[_Setup] = []
 
     def _program(self, step: WrinkleStep) -> tuple[object, dict[str, object]]:
         program = self.programs.program(self.catalog.target, step.program)
@@ -193,8 +194,15 @@ class WrinklePasses:
     def steps(self, owner: int) -> list[int]:
         found = self._objects[owner]
         setup = [] if found.setup.ran else found.setup.steps
+        if setup:
+            self._handed.append(found.setup)
         found.setup.ran = True
         return [*setup, *found.steps]
+
+    def handed(self, ran: bool) -> None:
+        for setup in self._handed:
+            setup.ran = ran
+        self._handed.clear()
 
 
 def _undeclared(step: WrinkleStep, name: str) -> MaterialPreviewError:

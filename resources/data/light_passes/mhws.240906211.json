@@ -1,281 +1,8 @@
 {
- "format": 6,
+ "format": 7,
  "game": "MHWS",
  "resource_version": 240906211,
  "master_target": 2,
- "source": {
-  "sdf_files": 127,
-  "ocio_configurations": 8,
-  "captures": [
-   {
-    "capture": "MonsterHunterWilds_frame22611.rdc",
-    "events": [
-     11572,
-     11913,
-     18284,
-     18289,
-     18319,
-     18332,
-     19109,
-     19121,
-     19134
-    ],
-    "programs": {
-     "11572": [
-      "GBufferEmissiveDecode",
-      "GBufferEmissiveDecode"
-     ],
-     "11913": [
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam"
-     ],
-     "18284": [
-      "DeferredLightSingleWithSSSSSMask",
-      "DeferredLightSingleWithSSSSSMask"
-     ],
-     "18289": [
-      "DeferredLightWithSSSSSMask",
-      "DeferredLightWithSSSSSMask"
-     ],
-     "18319": [
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask"
-     ],
-     "18332": [
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask"
-     ],
-     "19109": [
-      "LwLDRPostProcessWithToneMapC4L3Section",
-      "LwLDRPostProcessWithToneMapC4L3Section"
-     ],
-     "19121": [
-      "Copy",
-      "Copy"
-     ],
-     "19134": [
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT",
-      "OCIOTransformWithBakeLUT"
-     ]
-    },
-    "files": {
-     "18284 BlueNoise32": [
-      "systems/rendering/bluenoise.tex"
-     ],
-     "18284 BlueNoise16": [
-      "systems/rendering/bluenoise16x16.tex"
-     ],
-     "18284 LightCullingVolumeSRV": [],
-     "18284 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "18284 StaticShadowMapSRV": [],
-     "18284 ShadowMapSRV": [],
-     "18284 LTC1": [
-      "systems/rendering/ltc1.tex"
-     ],
-     "18284 LTC2": [
-      "systems/rendering/ltc2.tex"
-     ],
-     "18284 IESLightTableSRV": [],
-     "18284 AtmosphereTransmittanceCopiedTexture": [],
-     "18284 SDFShadowTexture": [],
-     "18284 GIDSRV": [],
-     "18289 BlueNoise32": [
-      "systems/rendering/bluenoise.tex"
-     ],
-     "18289 BlueNoise16": [
-      "systems/rendering/bluenoise16x16.tex"
-     ],
-     "18289 LightCullingVolumeSRV": [],
-     "18289 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "18289 StaticShadowMapSRV": [],
-     "18289 ShadowMapSRV": [],
-     "18289 LTC1": [
-      "systems/rendering/ltc1.tex"
-     ],
-     "18289 LTC2": [
-      "systems/rendering/ltc2.tex"
-     ],
-     "18289 IESLightTableSRV": [],
-     "18289 AtmosphereTransmittanceCopiedTexture": [],
-     "18289 SDFShadowTexture": [],
-     "18289 GIDSRV": [],
-     "19109 tTextureMap0": [],
-     "19109 tTextureMap1": [],
-     "19109 tTextureMap2": [],
-     "19134 SrcLUT": []
-    },
-    "heap_reads": [],
-    "moves": [
-     [
-      11722,
-      433770,
-      ""
-     ],
-     [
-      11728,
-      433770,
-      ""
-     ],
-     [
-      11734,
-      433770,
-      ""
-     ],
-     [
-      11740,
-      433770,
-      ""
-     ],
-     [
-      11746,
-      433770,
-      ""
-     ],
-     [
-      11761,
-      433770,
-      ""
-     ],
-     [
-      11764,
-      433770,
-      ""
-     ],
-     [
-      11767,
-      433770,
-      ""
-     ],
-     [
-      11770,
-      433770,
-      ""
-     ],
-     [
-      11773,
-      433770,
-      ""
-     ],
-     [
-      11776,
-      433770,
-      ""
-     ],
-     [
-      11779,
-      433770,
-      ""
-     ],
-     [
-      18393,
-      433765,
-      ""
-     ],
-     [
-      18550,
-      433765,
-      ""
-     ],
-     [
-      19444,
-      45704,
-      ""
-     ]
-    ],
-    "ambiguous": [],
-    "bakes": [
-     {
-      "capture": "MonsterHunterWilds_frame2.rdc",
-      "event": 166,
-      "programs": {
-       "166": [
-        "OCIOTransformBakeWithSDRBrightnessOption",
-        "OCIOTransformBakeWithSDRBrightnessOption",
-        "OCIOTransformBakeWithSDRBrightnessOption",
-        "OCIOTransformBakeWithSDRBrightnessOption"
-       ]
-      },
-      "files": {
-       "166 OCIO_lut1d_0": [],
-       "166 OCIO_lut3d_1": []
-      },
-      "heap_reads": []
-     }
-    ],
-    "phases": {
-     "blending": [
-      11632,
-      11639,
-      11646,
-      11653,
-      11663,
-      11671,
-      11678,
-      11686,
-      11694,
-      11703
-     ],
-     "forward": [
-      18662,
-      18668,
-      18687,
-      18705,
-      18711,
-      18743,
-      18752
-     ]
-    }
-   }
-  ]
- },
  "passes": [
   {
    "role": "display",
@@ -709,8 +436,8 @@
      "stage": "pixel",
      "name": "SSSProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "0685b00a60b201ecbc61a5df5838bb5aecb5910249e10db1e0f09f4a868abf72"
+      "kind": "profiles",
+      "value": "mastermaterial/sss_profile/base_char_sss_prof_001.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1017,8 +744,8 @@
      "stage": "pixel",
      "name": "SSSProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "0685b00a60b201ecbc61a5df5838bb5aecb5910249e10db1e0f09f4a868abf72"
+      "kind": "profiles",
+      "value": "mastermaterial/sss_profile/base_char_sss_prof_001.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1163,8 +890,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "57183003b8b0e28620f53653c1f63419a84acce98c73be5a60296e36c84925eb"
+      "kind": "kernels",
+      "value": "mastermaterial/sss_profile/base_char_sss_prof_001.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1278,8 +1005,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "57183003b8b0e28620f53653c1f63419a84acce98c73be5a60296e36c84925eb"
+      "kind": "kernels",
+      "value": "mastermaterial/sss_profile/base_char_sss_prof_001.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1654,7 +1381,7 @@
    "purpose": "blending",
    "masters": [],
    "after": 1,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -1712,7 +1439,7 @@
    "purpose": "forward",
    "masters": [],
    "after": 6,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -1801,8 +1528,5 @@
    }
   }
  ],
- "buffers": {
-  "0685b00a60b201ecbc61a5df5838bb5aecb5910249e10db1e0f09f4a868abf72": "eNpjYGiwv3jhgi0IMxAFGuwhmAGIHeyxyVPbPCQ1JJm3pKCW5ubNmilpf/iQE8nmnT3jYwfCTGiyjQ0N1jBMovuwAmqbRzqgr/tGzRs1j5T0DAA6aGrL",
-  "57183003b8b0e28620f53653c1f63419a84acce98c73be5a60296e36c84925eb": "eNpbYDLDVutXvV2dvLY9AxAECsvYTMptlWEAg4b9h93226ZFzjKB8AX2ny6Jtvv/TNZWokZMAyi/r1pS1K7HZY0dy0FNOyB/LxrfFk29HZp59mj22TNAwQKgu9SB7qqBussfqG4TXJ3Cwf1Ac3Lh5mw5cBJqjzXYHoUDVUB3dAPdwQZ2h8J+NL49mnoHNPMc0OxzhLlr286FtjAM4tfy9FjBMAPDgf3+/sttYZiBIWL/8wkpdjAMlN/3ykHODoaB/L1ofFs09XZo5tmj2QcPr+1A98AwiF8HlIdhUHj5AfXDMCi8UO1ROPAGaD8Mg8ILjW+Ppt4BzTwHNPvg4bXu0DNbaYaTcHd9PP/A+sreXGuIugUHTzAK2Nq2y0HNMTl4SsvR7tbCBKg9Cw5MlY2yizrqCHXHgv1ofHs09Q5o5jmi2Qd3FyStwTAqEN9+cQcy/+fb7B1o8tuR+VLbL25D5gtvv2iGzBfbftEczTwLNPMsBr+7DvxHYFQ+13XlPcj814E7dqPJo/N3IfPZritboclbI/PfBO6wRpO3YRgFo2AUjIIhDgCy9FgI"
- }
+ "buffers": {}
 }

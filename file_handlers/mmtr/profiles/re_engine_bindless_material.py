@@ -7,6 +7,9 @@ import operator
 import re
 
 from file_handlers.sdf.shader_graph import ShaderContract, ShaderContractResource, ShaderGraphError
+lazy from file_handlers.sdf.shader_graph import _identifier, mask_components, signature_member
+lazy from file_handlers.sdf.hlsl_contract import resource_identifier
+lazy from .renderer_inputs import recovered_structured_word
 lazy from ..native_resource import DXIL_RESOURCE_CLASSES, DXIL_TEXTURE_KINDS
 lazy from .re_engine_dxil_signatures import DxilEntryMetadata
 lazy from ..native_loop_flow import predecessor_map
@@ -117,16 +120,194 @@ def material_record_accesses(
     *,
     entry_metadata: DxilEntryMetadata | None = None,
     _texture_candidates: list[tuple[str, str]] | None = None,
+    instances: str = "",
 ) -> tuple[BindlessMaterialAccess, ...]:
     if entry_metadata is None and _texture_candidates is None:
-        return _shader_record_accesses("\n".join(lines), contract)
-    return _record_accesses(lines, contract, entry_metadata=entry_metadata, _texture_candidates=_texture_candidates)
+        return _shader_record_accesses("\n".join(lines), contract, instances)
+    accesses = _record_accesses(lines, contract, entry_metadata=entry_metadata, _texture_candidates=_texture_candidates)
+    return (*accesses, *_instance_accesses(lines, contract, instances)) if instances else accesses
 
 
 @lru_cache(maxsize=8)
-def _shader_record_accesses(assembly: str, contract: ShaderContract) -> tuple[BindlessMaterialAccess, ...]:
+def _shader_record_accesses(assembly: str, contract: ShaderContract,
+                            instances: str = "") -> tuple[BindlessMaterialAccess, ...]:
     """A shader's readers ask in turn: its flow, then its reach."""
-    return _record_accesses(assembly.split("\n"), contract)
+    lines = assembly.split("\n")
+    accesses = _record_accesses(lines, contract)
+    return (*accesses, *_instance_accesses(lines, contract, instances)) if instances else accesses
+
+
+_ADDRESS_STEP = re.compile(rf"(add|or|shl|mul)(?: nuw| nsw| disjoint)* i32 ({_OPERAND}), ({_OPERAND})$")
+_LITERAL = re.compile(r"-?\d+")
+_USE = re.compile(_VALUE)
+
+
+def _instance_accesses(lines: list[str], contract: ShaderContract, name: str) -> tuple[BindlessMaterialAccess, ...]:
+    resource = contract.resource(name) if name else None
+    if resource is None or resource.input_type not in {"structured-buffer", "byte-address-buffer"}:
+        return ()
+    structured = resource.input_type == "structured-buffer"
+    by_id = {(r.register_class, r.resource_id): r for r in contract.resources}
+    by_binding = {(r.register_class, r.register_space, r.bind_point): r for r in contract.resources}
+    handles, steps, loads, reads, used = set(), {}, {}, [], set()
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        assignment = _ASSIGN.match(stripped) if stripped.startswith("%") else None
+        used.update(_USE.findall(assignment["body"] if assignment else stripped))
+        if assignment is None:
+            continue
+        value, body = assignment.group("result", "body")
+        if "@dx.op." in body:
+            if (bound := bound_resource(body, by_id, by_binding)) is not None:
+                if bound.name == name:
+                    handles.add(value)
+            elif "@dx.op.annotateHandle(" in body:
+                if (match := _ANNOTATE.search(body)) and match[1] in handles:
+                    handles.add(value)
+            elif (match := _RAW_LOAD.search(body)) and match[2] in handles:
+                loads[value] = (*_instance_element(match[3].strip(), match[4].strip(), structured, steps), index)
+        elif body.startswith("extractvalue "):
+            if (match := _EXTRACT.fullmatch(body)) and match[2] in loads:
+                element, offset, size, load_line = loads[match[2]]
+                reads.append((element, size, MaterialWordRead(offset + 4 * int(match[3]), value, match[1], index,
+                                                              load_line)))
+        elif match := _ADDRESS_STEP.fullmatch(body):
+            steps[value] = match.group(1, 2, 3)
+    # A rebuilt pass keeps the native reads it replaced, unused; they are no reads.
+    words, sizes = {}, {}
+    for element, size, word in reads:
+        if word.value not in used:
+            continue
+        if sizes.setdefault(element, size) != size:
+            raise ShaderGraphError("A pass reads the material's instance copy at two element sizes.")
+        words.setdefault(element, []).append(word)
+    storage = "instance-structured-buffer" if structured else "instance-raw-buffer"
+    return tuple(BindlessMaterialAccess(storage, name, element, tuple(read),
+                                        int(resource.sample_count) if structured else sizes[element])
+                 for element, read in words.items())
+
+
+def _instance_element(address: str, element_offset: str, structured: bool, steps) -> tuple[str, int, int]:
+    if structured:
+        if not _LITERAL.fullmatch(element_offset):
+            raise ShaderGraphError("A pass reads the material's instance copy at a nonconstant offset.")
+        return address, int(element_offset), 0
+    if _LITERAL.fullmatch(address):
+        return "0", int(address), 0
+    offset = 0
+    while (step := steps.get(address)) is not None and step[0] in ("add", "or"):
+        operation, left, right = step
+        if _LITERAL.fullmatch(left):
+            left, right = right, left
+        if not _LITERAL.fullmatch(right) or operation == "or" and not 0 <= int(right) < _aligned_to(left, steps):
+            break
+        offset, address = offset + int(right), left
+    step = steps.get(address)
+    if step is not None and step[0] == "shl" and _LITERAL.fullmatch(step[2]) and 0 <= int(step[2]) < 31:
+        return step[1], offset, 1 << int(step[2])
+    if step is not None and step[0] == "mul":
+        index, scale = (step[1], step[2]) if _LITERAL.fullmatch(step[2]) else (step[2], step[1])
+        if _LITERAL.fullmatch(scale) and not _LITERAL.fullmatch(index) and int(scale) > 0:
+            return index, offset, int(scale)
+    raise ShaderGraphError("A pass reads the material's instance copy at an address not scaled from an instance.")
+
+
+_LIFTED = re.compile(
+    rf"(add|sub|and|or|xor|shl|lshr|mul)(?: nuw| nsw| exact| disjoint)* i32 ({_OPERAND}), ({_OPERAND})$")
+_INPUT = re.compile(r"@dx\.op\.loadInput\.(?:i32|f32)\(i32 4, i32 (\d+), i32 (\d+), i8 (\d+), i32 undef\)")
+_TO_UINT = re.compile(rf"fptoui float ({_VALUE}) to i32$")
+_BITS = re.compile(rf"bitcast (?:i32|float) ({_VALUE}) to (?:i32|float)$")
+_SYMBOLS = {"add": "+", "sub": "-", "and": "&", "or": "|", "xor": "^", "shl": "<<", "lshr": ">>", "mul": "*"}
+
+
+def record_address_form(lines: list[str], contract: ShaderContract, value: str):
+    definitions = {match["result"]: match["body"] for line in lines
+                   if (stripped := line.strip()).startswith("%") and (match := _ASSIGN.match(stripped))}
+    rows = {row: key for key, row in DxilEntryMetadata.parse(lines).input_rows().items()}
+    by_id = {(r.register_class, r.resource_id): r for r in contract.resources}
+    by_binding = {(r.register_class, r.register_space, r.bind_point): r for r in contract.resources}
+
+    def resource(handle):
+        body = definitions.get(handle, "")
+        annotated = _ANNOTATE.search(body)
+        return resource(annotated[1]) if annotated else bound_resource(body, by_id, by_binding)
+
+    def lift(operand):
+        if _LITERAL.fullmatch(operand := operand.strip()):
+            return int(operand) & _U32
+        body = definitions.get(operand, "")
+        if match := _LIFTED.fullmatch(body):
+            operands = [lift(match[2]), lift(match[3])]
+            if match[1] in {"add", "and", "or", "xor", "mul"}:
+                operands.sort(key=repr)
+            return None if None in operands else (match[1], *operands)
+        if match := _BITS.fullmatch(body):
+            return lift(match[1])
+        if match := _TO_UINT.fullmatch(body):
+            return None if (inner := lift(match[1])) is None else ("fptoui", inner)
+        if (match := _INPUT.search(body)) and (key := rows.get((int(match[1]), int(match[2])))):
+            return ("input", key, int(match[3]))
+        match = _EXTRACT.fullmatch(body)
+        source = definitions.get(match[2], "") if match else ""
+        if (load := _CB_LOAD.search(source)) and _LITERAL.fullmatch(load[3]) and (found := resource(load[2])):
+            return ("cb", found.name, int(load[3]) * 16 + int(match[3]) * 4)
+        load = _RAW_LOAD.search(source)
+        found = resource(load[2]) if load else None
+        if found is None or (index := lift(load[3])) is None:
+            return None
+        if found.input_type == "byte-address-buffer":
+            return ("raw", found.name, ("add", *sorted((index, 4 * int(match[3])), key=repr)) if int(match[3])
+                    else index)
+        if found.input_type == "structured-buffer" and _LITERAL.fullmatch(load[4].strip()):
+            return ("element", found.name, index, int(load[4]) + 4 * int(match[3]))
+        return None
+    return lift(value)
+
+
+def record_address_inputs(form, kinds) -> frozenset:
+    if not isinstance(form, tuple):
+        return frozenset()
+    found = {form[1]} if form[0] in kinds else set()
+    return frozenset(found).union(*(record_address_inputs(item, kinds) for item in form[1:] if form[0] != "input"))
+
+
+def record_address_source(form, contract: ShaderContract) -> str:
+    if not isinstance(form, tuple):
+        return f"{form}u"
+    if form[0] in _SYMBOLS:
+        return (f"({record_address_source(form[1], contract)} {_SYMBOLS[form[0]]} "
+                f"{record_address_source(form[2], contract)})")
+    if form[0] == "fptoui":
+        return f"uint(asfloat({record_address_source(form[1], contract)}))"
+    if form[0] == "input":
+        field = next(f for f in contract.inputs if (f.semantic_name.casefold(), f.semantic_index) == form[1])
+        return f"asuint(REasyIn_{signature_member('in', field)}_{mask_components(field.mask)[form[2]]})"
+    found = contract.buffer(form[1]) if form[0] == "cb" else contract.resource(form[1])
+    layout = found if form[0] == "cb" else contract.structured_buffer(form[1]) if form[0] == "element" else None
+    offset = form[2] if form[0] == "cb" else form[-1]
+    variable = next((v for v in layout.variables if v.byte_offset == offset and v.byte_size == 4 and v.array_length == 1
+                     and not v.members), None) if layout is not None else None
+    if found is None or form[0] == "cb" and variable is None:
+        raise ShaderGraphError(f"This pass cannot read {form[1]}, where the game finds the material's record.")
+    if form[0] == "raw":
+        return f"{resource_identifier(found)}.Load({record_address_source(form[2], contract)})"
+    index = record_address_source(form[2], contract)
+    if layout is None:
+        return recovered_structured_word(resource_identifier(found), found.sample_count, index, offset)
+    if variable is None:
+        raise ShaderGraphError(f"This pass declares {form[1]} without the word the game finds the record from.")
+    word = variable.name if form[0] == "cb" else f"{resource_identifier(found)}[{index}].{_identifier(variable.name)}"
+    return f"asuint({word})" if variable.graph_type == "float" else f"uint({word})"
+
+
+def _aligned_to(value: str, steps) -> int:
+    step = steps.get(value)
+    if step is not None and step[0] == "shl" and _LITERAL.fullmatch(step[2]):
+        return 1 << min(int(step[2]), 31)
+    if step is not None and step[0] == "mul":
+        scale = int(step[2]) if _LITERAL.fullmatch(step[2]) else int(step[1]) if _LITERAL.fullmatch(step[1]) else 1
+        return scale & -scale if scale else 1
+    return 1
 
 
 def _record_accesses(
@@ -566,4 +747,7 @@ def relocate_material_record_words(
     return [*replacements.get(index, (line,)) for index, line in enumerate(lines)]
 
 
-__all__ = ["BindlessMaterialAccess", "EngineHeapHandle", "HeapIndices", "MaterialWordRead", "MaterialTextureAccess", "bound_resource", "engine_heap_handles", "material_buffer_reads", "material_record_accesses", "material_input_accesses", "material_texture_accesses", "relocate_material_record_words", "texture_handles"]
+__all__ = ["BindlessMaterialAccess", "EngineHeapHandle", "HeapIndices", "MaterialWordRead", "MaterialTextureAccess",
+           "bound_resource", "engine_heap_handles", "material_buffer_reads", "material_record_accesses",
+           "material_input_accesses", "material_texture_accesses", "record_address_form", "record_address_inputs",
+           "record_address_source", "relocate_material_record_words", "texture_handles"]

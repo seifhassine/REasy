@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import copy
-import struct
 import time
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -11,13 +10,14 @@ from functools import partial
 import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP, QObject, Qt, Signal
 
+lazy from file_handlers.mmtr.draw_rules import MESH_DECAL_RECEIVE, drawing_rules, program_flags, with_textures
 from file_handlers.mmtr.engine_buffers import Camera, Placement, scene_values
-from file_handlers.mmtr.light_passes import LightPasses, captured_constants, light_pass_catalog_for, parsed_pass_file
+from file_handlers.mmtr.light_passes import LightPasses, light_pass_catalog_for, parsed_pass_file, view_constants
 from file_handlers.mmtr.material_preview import MaterialPreviewError, gbuffer_route
 from file_handlers.mmtr.mesh_draw import MeshBuffer, SubmeshRange
 from file_handlers.mmtr.mesh_render import (
     DEPTH_VIEWS, MeshBounds, MeshObject, MeshPart, MeshScene, ObjectBox, PartError, boxes_seen,
-    mesh_bounds, object_box, uv_density, world_boxes,
+    mesh_bounds, object_box, skinned_box, uv_density, world_boxes,
 )
 from file_handlers.mmtr.meshlets import (
     ROUTE as MESHLET_ROUTE, LodTable, MeshletBuffer, MeshletLodRule, MeshletLods, blob_halves, blob_lods,
@@ -33,9 +33,17 @@ from file_handlers.mmtr.pretransform import (
 )
 from file_handlers.mmtr.pretransform_passes import SystemPrograms
 from file_handlers.mmtr.profiles import mmtr_profile_for_game
+lazy from file_handlers.mmtr.shallow_water import shallow_water_catalog_for
 lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
-from file_handlers.mmtr.wrinkle import WrinkleObject, mesh_joints, wrinkle_catalog_for, wrinkle_object, wrinkle_proxy
-lazy from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers
+lazy from file_handlers.mmtr.user_render_targets import UserRenderTarget
+lazy from file_handlers.mmtr.volume_decals import volume_decal_catalog_for
+lazy from file_handlers.mmtr.water_meshes import WaterMeshDraws, water_mesh_catalog_for
+from file_handlers.mmtr.wrinkle import WrinkleObject, wrinkle_catalog_for
+lazy from file_handlers.sfur.scene import gather_shell_furs
+lazy from file_handlers.sfur.shell_fur import ShellFurObject, shell_fur_catalog_for
+lazy from file_handlers.stmesh.lit import (
+    SpeedTreeLevels, drawn_chunks, drawn_cluster, engine_buffers as stmesh_engine_buffers, speedtree_levels,
+)
 lazy from file_handlers.stmesh.stmesh_file import FLAG_BILLBOARD_LOD
 lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
 from file_handlers.strands.chain_frame import Stepped
@@ -45,18 +53,25 @@ from file_handlers.tex.texture_quality import texture_quality_profile
 lazy from ui.scene.mesh_scene import mesh_lod_parts, meshlet_part_runs
 from ui.scene.scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneView, moved_placements
 from utils.native_build import ensure_fastmesh
-from utils.resource_file_utils import PrefetchedFiles, held_folder_lookups, resource_version_from_path
+from utils.resource_file_utils import PrefetchedFiles, held_folder_lookups
 
-lazy from .lod_settings import LodSettings, LodSettingsError, meshlet_thresholds, read_lod_settings
+lazy from .lod_settings import (
+    ClassicLevels, LodSettings, LodSettingsError, meshlet_thresholds, read_lod_settings,
+)
 from .lit_preview import (
     DEFAULT_INTENSITY, NO_LIGHT_PASSES, UNKNOWN_SKINNING, GameLighting, LitDrawer, LitOverlays, LitPart, bind_part,
-    camera_light, deformed, level_bounds, pass_files, scene_file, stencil_reference, submesh_groups,
+    bound_master, camera_light, deformed, level_bounds, pass_files, scene_file, session_materials, submesh_groups,
 )
 from .material_resolver import MeshMaterialResolver
-from .mesh_file import MeshFile
+lazy from .scene_decals import VolumeDecalDraws, gather_decals
+lazy from .scene_primitives import PrimitiveDraws, gather_primitives
 lazy from .scene_overlay import SceneOverlay
 lazy from .scene_pick import ScenePickable
+lazy from .scene_render_targets import gather_render_targets
+lazy from .scene_shallow_water import ShallowWaterDraws, gather_shallow_waters
+lazy from .scene_wrinkles import gather_wrinkles
 from .material_shader_preview import preview_material
+from .scene_lods import LodRules, OwnerLods, SceneLitPreviewLods, ShellPicks
 from .scene_textures import SceneTexturesPreview
 
 _UNMORPHED = QT_TRANSLATE_NOOP(
@@ -69,16 +84,14 @@ _GRAVITY_GAIN = 2.0
 _AHEAD = 1.25
 # Seconds a still frame spends adding objects not added yet.
 _FILL = 0.016
-
 _fastmesh = ensure_fastmesh()
 
 
 @dataclass(frozen=True, slots=True, eq=False)
 class SceneLitMesh:
-    """``groups`` maps each submesh to its mesh group."""
     skinned: bool
     bones: int
-    stencil_reference: int
+    materials: tuple[tuple[int, int], ...]
     bounds: MeshBounds | None
     level: ChainLevel | None
     groups: Mapping[int, int]
@@ -104,11 +117,6 @@ class SceneLitPart:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class SceneLitLevels:
-    """A SpeedTree mesh's LODs after its first, drawn by the camera's distance. A vertex-stream mesh's from its file's
-    ``LodProfile``: each 3D LOD over an even share of ``start`` to ``end`` and the last 3D LOD from there, the
-    billboard LOD (the last, if the file has one) from ``billboard`` (inf without), and none past ``cull``. A meshlet
-    mesh's (``meshlet``, its blob's) the one instance culling picks by ``rule`` (docs/internals/meshlets.md, LODs).
-    Instances share them."""
     lods: tuple[tuple[SceneLitMesh, tuple[LitPart, ...]], ...]
     start: float
     end: float
@@ -116,6 +124,8 @@ class SceneLitLevels:
     cull: float
     rule: MeshletLodRule | None = None
     meshlet: MeshletLods | None = None
+    speedtree: SpeedTreeLevels | None = None
+    classic: ClassicLevels | None = None
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -128,20 +138,33 @@ class SceneLitLods:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class SceneLitObject:
-    """``edge_excluded``, ``decal_receive_mode`` and ``transparent_bias`` are the component's ``NREdgeExcluded``,
-    ``DecalReciveMode`` and ``TransparentBias``; ``levels`` its SpeedTree mesh's other LODs, drawn by distance, and
-    ``lods`` its meshlet ``.mesh``'s."""
     mesh: int
     of: SceneLitMesh
     parts: tuple[SceneLitPart, ...]
     batches: tuple[tuple[int | None, int], ...]
     edge_excluded: bool = False
-    decal_receive_mode: int = 0
+    decal_receive: tuple[str, str | None] = MESH_DECAL_RECEIVE
     transparent_bias: float = 0.0
     wrinkle: WrinkleObject | None = None
     levels: SceneLitLevels | None = None
     lods: SceneLitLods | None = None
+    blend_normal: bool = True
+    draw_state: Mapping[str, object] | None = None
+    lod_parent_mesh: bool = False
+    shell_fur: ShellFurObject | None = None
 
+
+def _bone_boxed(of: SceneLitMesh) -> bool:
+    return of.box is not None and of.box.joints is not None and of.box.bones is not None
+
+
+def _skinned_world_box(of: SceneLitMesh, placement: ScenePlacement) -> np.ndarray:
+    if placement.pose is None or placement.pose.bones is None:
+        return skinned_box(of.box.joints, placement.world)
+    bones = _placement(of, placement).bones[:len(of.box.bones)]
+    corners = np.einsum("rij,rkj->rki", bones[..., :3], of.box.bones[:len(bones)]) + bones[:, None, :, 3]
+    corners = corners.reshape(-1, 3).astype(np.float32)
+    return np.array([corners.min(axis=0), corners.max(axis=0)], np.float32)
 
 
 def _program(item: SceneLitObject) -> str | None:
@@ -182,6 +205,16 @@ class SceneLitContent:
     values: MaterialValues = field(default_factory=MaterialValues)
     wrinkles_refused: str = ""
     lods_refused: str = ""
+    decals: tuple = ()
+    decals_refused: str = ""
+    shell_fur_refused: str = ""
+    render_targets: tuple[UserRenderTarget, ...] = ()
+    render_targets_refused: str = ""
+    primitives: tuple = ()
+    primitives_refused: str = ""
+    shallow_waters: tuple = ()
+    shallow_waters_refused: str = ""
+    decal_values: MaterialValues = field(default_factory=MaterialValues)
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +228,10 @@ class SceneLitFrame:
     stepped: Stepped | None = field(default=None, kw_only=True)
     # Why objects of meshlet LODs draw their first at every distance.
     lods_refused: str = field(default="", kw_only=True)
+    render_targets_refused: str = field(default="", kw_only=True)
+    shallow_waters_refused: str = field(default="", kw_only=True)
+    # A drawn program reads the frame clock: the next frames differ.
+    clocked: bool = field(default=False, kw_only=True)
 
 
 def _placement(of: SceneLitMesh, placement: ScenePlacement) -> Placement:
@@ -249,20 +286,18 @@ class _Held:
     # Each owner's LOD of its object, and the entry it was added by.
     levels: list[int]
     entries: list[_Entry]
+    lods: OwnerLods = field(default_factory=OwnerLods)
 
 
 class _Streams:
-    """Which objects of a content a scene holds, at which LOD. One drawn whatever the view (deformed, skinned,
-    wrinkled, unbounded, or of a scene with strands) is added when the scene is made; another the first time it is
-    near the view, at the LOD its distance from the eye calls for (``SceneLitLevels``). Frames hide the LODs not
-    called for."""
-
     def __init__(self, content: SceneLitContent, placements: tuple[ScenePlacement, ...],
                  held: _Streams | None = None):
         objects = content.objects
         lazy = [] if content.strands is not None else [
             number for number, item in enumerate(objects)
-            if item.of.bounds is not None and item.of.level is None and not item.of.skinned and item.wrinkle is None]
+            if item.of.bounds is not None and item.of.level is None and (not item.of.skinned or _bone_boxed(item.of))
+            and item.wrinkle is None]
+        self._skinned = np.array([row for row, number in enumerate(lazy) if objects[number].of.skinned], np.int64)
         self.always = sorted(set(range(len(objects))) - set(lazy))
         self.lazy = np.array(lazy, np.int64)
         self._meshes = np.array([objects[number].mesh for number in lazy], np.int64)
@@ -282,6 +317,7 @@ class _Streams:
         self._meshlets = [levels[row].meshlet for row in self.picked.tolist()]
         self._rule = levels[self.picked[0]].rule if len(self.picked) else None
         self._table: LodTable | None = None
+        self.rules = LodRules(content, lazy, levels)
         # By object and LOD: added, or refused.
         self.tried = np.zeros((len(lazy), int(self.count.max(initial=1))), bool)
         if held is not None and len(held.lazy):
@@ -295,9 +331,12 @@ class _Streams:
         # The look, marks and meshes hidden ``wanted`` answered last, and its answer.
         self._wanted: tuple | None = None
         self._marks = 0
+        self.shells = ShellPicks(content, self.lazy)
+        self._shells_hid: tuple | None = None
         self.place(content, placements)
 
     def place(self, content: SceneLitContent, placements: tuple[ScenePlacement, ...]) -> None:
+        self.shells.place(content, placements)
         held = self._placed
         if held is not None and held[0] is placements:
             return
@@ -310,6 +349,11 @@ class _Streams:
         if lazy:
             origins[rows] = worlds[:, :, 3]
             boxes[rows] = world_boxes(worlds[:, None], [objects[number].of.bounds for number in lazy])
+        skinned = {row: _skinned_world_box(objects[self.lazy[row]].of, placements[objects[self.lazy[row]].mesh])
+                   for row in self._skinned[moved[self._skinned]].tolist()}
+        for row, box in skinned.items():
+            boxes[row] = box
+        self.rules.place(moved, rows, worlds, skinned)
         self._placed = placements, origins, boxes
         if self._meshlets:
             picked = np.flatnonzero(moved[self.picked])
@@ -321,8 +365,7 @@ class _Streams:
         if lazy:
             self._looked = None
 
-    def _look(self, camera: Camera) -> tuple:
-        """Of the objects added near the view: whether each is near it, its LOD (-1: none) and its distance."""
+    def look(self, camera: Camera) -> tuple:
         key = np.asarray(camera.view, np.float64).tobytes(), camera.scale, camera.size, camera.orthographic
         if self._looked is None or self._looked[0] != key:
             _placements, origins, boxes = self._placed
@@ -335,31 +378,50 @@ class _Streams:
                 matrix = scene_values(replace(camera, jitter=(0.0, 0.0), previous=None))["viewProjMat"]
                 level[self.picked] = meshlet_lods(self._rule, self._table, matrix, -view[:, :3].T @ view[:, 3],
                                                   camera.scale[0], camera.size)[0]
+            transition = np.ones(len(level), np.float32)
+            self.rules.pick(camera, view, level, transition)
             ahead = replace(camera, scale=(camera.scale[0] / _AHEAD, camera.scale[1] / _AHEAD))
             seen = boxes_seen(boxes, view_projection(ahead))
-            self._looked = key, seen, level, distance
+            self._looked = key, seen, level, distance, transition
         return self._looked
+
+    def culled(self, camera: Camera) -> np.ndarray | None:
+        return self.rules.culled(camera)
+
+    def transitions(self, camera: Camera) -> np.ndarray:
+        return self.look(camera)[4]
 
     def wanted(self, camera: Camera, hidden: np.ndarray | None) -> list[tuple[int, int]]:
         """(object, LOD) of the objects drawn whatever the view not added yet, then of those near the view not added
         yet at the LOD they are drawn at; none of meshes ``hidden`` (by object, None: none). Not to be changed."""
-        looked = self._look(camera)
+        looked = self.look(camera)
         held = self._wanted
         if held is not None and held[0] is looked and held[1] == self._marks and held[2] is hidden:
             return held[3]
-        _key, seen, level, _distance = looked
+        _key, seen, level, _distance, _transition = looked
         rows = np.flatnonzero(seen & (level >= 0))
         rows = rows[~self.tried[rows, level[rows]]]
         if hidden is not None:
             rows = rows[~hidden[self.lazy[rows]]]
         found = [(number, 0) for number in sorted(self.pending) if hidden is None or not hidden[number]] + list(
             zip(self.lazy[rows].tolist(), level[rows].tolist()))
+        if len(self.shells.numbers):
+            shown = self.shells.look(camera)[0]
+            rows = self.index[self.shells.numbers]
+            kept = rows >= 0
+            rows, shown = rows[kept], shown[kept]
+            kept = seen[rows] & (shown < self.count[rows])
+            rows, shown = rows[kept], shown[kept]
+            kept = ~self.tried[rows, shown]
+            if hidden is not None:
+                kept &= ~hidden[self.lazy[rows]]
+            found += [unit for unit in zip(self.lazy[rows[kept]].tolist(), shown[kept].tolist()) if unit not in found]
         self._wanted = looked, self._marks, hidden, found
         return found
 
     def nearest(self, camera: Camera, hidden: np.ndarray | None):
         """(object, LOD) of the objects not added yet, nearest the eye first."""
-        _key, _seen, level, distance = self._look(camera)
+        _key, _seen, level, distance, _transition = self.look(camera)
         lod = np.maximum(level, 0)
         rows = np.flatnonzero(~self.tried[np.arange(len(lod)), lod])
         if hidden is not None:
@@ -369,7 +431,7 @@ class _Streams:
 
     def rest(self, camera: Camera, hidden: np.ndarray | None) -> list[tuple[int, int]]:
         """(object, LOD) of every LOD not added yet, nearest the eye first, the LOD drawn there before the others."""
-        _key, _seen, level, distance = self._look(camera)
+        _key, _seen, level, distance, _transition = self.look(camera)
         rows, lods = np.nonzero(~self.tried & (np.arange(self.tried.shape[1]) < self.count[:, None]))
         if hidden is not None:
             kept = ~hidden[self.lazy[rows]]
@@ -393,30 +455,43 @@ class _Streams:
         return self._owned[2:]
 
     def hidden(self, camera: Camera, held: _Held) -> np.ndarray:
-        """Of the owners: those of LODs their object is not drawn at."""
-        looked = self._look(camera)
-        if self._hid is None or self._hid[0] is not looked or self._hid[1] != len(held.owners):
+        looked, culled = self.look(camera), self.culled(camera)
+        if self._hid is None or self._hid[0] is not looked or self._hid[1] != len(held.owners) \
+                or self._hid[3] is not culled:
             _owners, rows, levels = self.owned(held)
             lazy = rows >= 0
             hidden = np.zeros(len(rows), bool)
             hidden[lazy] = looked[2][rows[lazy]] != levels[lazy]
-            self._hid = looked, len(held.owners), hidden
+            if culled is not None:
+                hidden[lazy] |= culled[rows[lazy]]
+            self._hid = looked, len(held.owners), hidden, culled
         return self._hid[2]
+
+    def shells_hidden(self, camera: Camera, held: _Held) -> np.ndarray | None:
+        if not len(self.shells.numbers):
+            return None
+        shown = self.shells.look(camera)[0]
+        if self._shells_hid is None or self._shells_hid[0] is not shown or self._shells_hid[1] != len(held.owners):
+            owners, _rows, levels = self.owned(held)
+            rows = self.shells.rows[owners]
+            hidden = np.ones(len(owners), bool)
+            hidden[rows >= 0] = shown[rows[rows >= 0]] != levels[rows >= 0]
+            self._shells_hid = shown, len(held.owners), hidden
+        return self._shells_hid[2]
 
 
 def _strand_image(strands: StrandView, mesh: MeshScene, content: SceneLitContent,
                   placements: tuple[ScenePlacement, ...], rate: float, wind: np.ndarray | None,
-                  turn: np.ndarray | None) -> None:
+                  turn: np.ndarray | None, written: Mapping, gravity: Callable | None) -> None:
     placement = placements[content.objects[content.strands_object].mesh]
     world = np.eye(4)
     world[:3] = placement.world
-    strands.image(mesh, rate, world.T, None if placement.pose is None else placement.pose.joints, wind, turn)
+    strands.image(mesh, rate, world.T, None if placement.pose is None else placement.pose.joints, wind, turn,
+                  written, gravity)
 
 
 def _same_look(one: tuple | None, other: tuple | None) -> bool:
-    """Of ``SceneLitDrawer._looking``: the same camera, placements, streams and meshes hidden."""
-    return one is not None and other is not None and one[0] == other[0] and one[1] is other[1] \
-        and one[2] is other[2] and one[3] == other[3]
+    return one is not None and other is not None and one[0] == other[0] and one[1] is other[1] and one[2] == other[2]
 
 
 def _grows(drawn: tuple, key: tuple, content: SceneLitContent, start: int) -> bool:
@@ -443,10 +518,12 @@ def _retired(mesh: MeshScene, entries: list[_Entry], error: PartError, failures:
 
 def _same(item: SceneLitObject, old: SceneLitObject) -> SceneLitObject:
     """``old`` when ``item`` draws as it does, so the drawer keeps what it made of it."""
-    if (item.mesh, item.batches, item.edge_excluded, item.decal_receive_mode, item.transparent_bias) != (
-            old.mesh, old.batches, old.edge_excluded, old.decal_receive_mode, old.transparent_bias) \
+    if (item.mesh, item.batches, item.edge_excluded, item.decal_receive, item.transparent_bias, item.blend_normal,
+            item.draw_state, item.lod_parent_mesh) != (old.mesh, old.batches, old.edge_excluded, old.decal_receive,
+                                                       old.transparent_bias, old.blend_normal, old.draw_state,
+                                                       old.lod_parent_mesh) \
             or item.of is not old.of or item.wrinkle is not old.wrinkle or item.levels is not old.levels \
-            or item.lods is not old.lods or len(item.parts) != len(old.parts):
+            or item.lods is not old.lods or item.shell_fur != old.shell_fur or len(item.parts) != len(old.parts):
         return item
     if all(new.number == was.number and new.piece == was.piece and new.part is was.part
            for new, was in zip(item.parts, old.parts)):
@@ -549,9 +626,13 @@ class SceneLitDrawer(LitDrawer):
         self._wind = np.zeros(3)
         self._eye: np.ndarray | None = None
         self._rate: float | None = None
+        self._buffers: Mapping = frozendict()
+        self._gravity: Callable | None = None
         self._streams: _Streams | None = None
         # Why objects of the scene drawn draw their first meshlet LOD at every distance (``_Entry.lods_refused``).
         self._lods_refused: dict[str, None] = {}
+        self._render_targets_refused = ""
+        self._shallow_waters_refused = ""
         # The content and the keys of its meshlet meshes; those of meshes whose deformation was refused.
         self._meshlet_keys: tuple[SceneLitContent, set[str]] | None = None
         self._undeformed: set[str] = set()
@@ -592,10 +673,14 @@ class SceneLitDrawer(LitDrawer):
                 [content.meshes[item.mesh].key in view.hidden for item in content.objects], bool)
         return self._hiding[2]
 
-    def _hidden(self, content: SceneLitContent, view: SceneView, camera: Camera) -> np.ndarray:
-        """Of the owners: those of LODs their object is not drawn at, and those of meshes hidden."""
+    def _hidden(self, content: SceneLitContent, view: SceneView,
+                camera: Camera) -> tuple[np.ndarray, np.ndarray | None]:
         hidden, objects = self._streams.hidden(camera, self._held), self._hidden_objects(content, view)
-        return hidden if objects is None else hidden | objects[self._streams.owned(self._held)[0]]
+        shells = self._streams.shells_hidden(camera, self._held)
+        if objects is None:
+            return hidden, shells
+        owned = objects[self._streams.owned(self._held)[0]]
+        return hidden | owned, None if shells is None else shells | owned
 
     def _scene_cull(self, number: int) -> tuple[int, bool] | None:
         """None while no LOD 0 of the batch's object is added."""
@@ -665,7 +750,7 @@ class SceneLitDrawer(LitDrawer):
         try:
             deformation, skins = deformed(content.game, item.of.level, item.of.groups, visible, held,
                                           self._morphs[self._held.entries[owner].number][1],
-                                          edge_excluded=item.edge_excluded)
+                                          edge_excluded=item.edge_excluded, blend_normal=item.blend_normal)
         except MaterialPreviewError:
             self._undeformed.add(name)
             raise
@@ -691,13 +776,12 @@ class SceneLitDrawer(LitDrawer):
         self._failures_shown = failures, view.hidden_parts, shown
         return shown
 
-    def _stands(self, drawn: tuple, content: SceneLitContent, view: SceneView,
-                placements: tuple[ScenePlacement, ...]) -> bool:
+    def _stands(self, drawn: tuple, view: SceneView, placements: tuple[ScenePlacement, ...]) -> bool:
         """Whether the scene's image the last frame drew is what drawing it again would show: averaged in full, or of
         the same view (material values move it), placements and objects, drawn ``FRAMES`` times running where passes
         carry outputs on."""
         mesh, passes, _overlay, strands = drawn
-        if strands is not None or mesh.streaming or mesh.refills != self._refills:
+        if strands is not None or mesh.streaming or mesh.refills != self._refills or mesh.clocked:
             return False
         if self._still is not None:
             return self._settled
@@ -724,7 +808,7 @@ class SceneLitDrawer(LitDrawer):
             self._streamed_in(mesh)
             steps = []
             if averaged and overlays.filled:
-                steps, shown = self._average(overlay, shown, overlays.background,
+                steps, shown = self._average(overlay, shown, overlays.background, passes,
                                              None if strands is None else strands.chain.drawn_opacity)
             return steps + self._scenes.steps(overlay, shown, overlays, camera, content.meshes, meshes, placements,
                                               view.hidden_parts, view.hidden)
@@ -732,16 +816,18 @@ class SceneLitDrawer(LitDrawer):
             mesh.device.pending += after(None, averaged=False)
             mesh.device.flush()
         else:
+            mesh.read_buffers.rewrite(self._buffers)
             if strands is not None:
                 _strand_image(strands, mesh, content, placements, self._rate, self._blow(camera, self._rate),
-                              self._fall(camera))
+                              self._fall(camera), self._buffers, self._gravity)
             passes.drawn(light, after)
 
     def draw(self, content: SceneLitContent, view: SceneView, placements: tuple[ScenePlacement, ...],
-             overlays: LitOverlays, rate: float, materials: Mapping[str, Mapping[str, float]] = frozendict()
-             ) -> SceneLitFrame:
-        content.values.now = materials
-        self._rate = rate
+             overlays: LitOverlays, rate: float, materials: Mapping[str, Mapping[str, float]] = frozendict(),
+             decals: Mapping[str, Mapping[str, tuple[float, ...]]] = frozendict(), buffers: Mapping = frozendict(),
+             gravity: Callable | None = None) -> SceneLitFrame:
+        content.values.now, content.decal_values.now = materials, decals
+        self._rate, self._buffers, self._gravity = rate, buffers, gravity
         kept = None
         if content is not self._scene:
             kept = self._kept(content)
@@ -759,6 +845,7 @@ class SceneLitDrawer(LitDrawer):
             return SceneLitFrame(view, False, {}, ())
         profile = mmtr_profile_for_game(content.game)
         catalog = light_pass_catalog_for(profile)
+        self._ticked(profile, 1.0 / rate)
         if self._bound is None:
             self._materials, self._bound, self._contexts, self._context_numbers = {}, {}, {}, {}
             self._bind(content, profile, catalog, 0)
@@ -778,8 +865,7 @@ class SceneLitDrawer(LitDrawer):
         framed = replace(view, content=0, motion=0, hidden=frozenset(), hidden_parts=frozenset())
         drawn_by = self._antialias(camera, (view, placements), view.antialiased, framed)
         nearer = not made and self._drawn[1] is not None and self._nearer(content, view, placements, camera)
-        filled = None if made or grows or nearer or self._drawn[1] is None else self._fill(content, view, placements,
-                                                                                           camera)
+        filled = None if made or grows or nearer or self._drawn[1] is None else self._fill(content, view, camera)
         if grows or nearer or filled:
             started = time.perf_counter()
             failures = self._grow(self._drawn[1], content, view, placements, overlays, refused,
@@ -815,7 +901,7 @@ class SceneLitDrawer(LitDrawer):
                 content.files.release()
         elif not (grows or nearer or filled):
             _key, drawn, failures = self._drawn
-            if drawn is not None and overlays.filled and self._stands(drawn, content, view, placements):
+            if drawn is not None and overlays.filled and self._stands(drawn, view, placements):
                 self._overlaid(drawn, content, view, placements, overlays, camera)
             elif drawn is not None:
                 mesh = drawn[0]
@@ -823,23 +909,26 @@ class SceneLitDrawer(LitDrawer):
                     self._resize(drawn, view.size)
                 mesh.camera = drawn_by
                 self._place(mesh, content, placements)
-                mesh.hide(self._hidden(content, view, camera))
+                mesh.hide(*self._hidden(content, view, camera))
+                self._held.lods.give(mesh, self._streams, self._held, camera)
                 try:
                     self._frame(drawn, content, view, placements, overlays, camera,
                                 camera_light(camera, DEFAULT_INTENSITY))
                 except (PartError, MaterialPreviewError):
                     # Refused once deformed for other mesh groups: made again, as a scene of these shown is.
                     self._leave()
-                    return self.draw(content, view, placements, overlays, rate, materials)
+                    return self.draw(content, view, placements, overlays, rate, materials, decals, buffers, gravity)
         failures = self._shown_failures(content, view, failures)
         if drawn is None:
             return SceneLitFrame(view, False, failures, ())
-        self._looked = self._looking(view, placements, camera)
+        self._looked = self._looking(view, camera)
         return SceneLitFrame(view, True, failures, drawn[0].missing_textures, pickable=self._scenes.pickable(),
                              settling=self._settling or drawn[0].streaming
                              or not _same_look(self._filled, self._looked),
                              stepped=None if drawn[3] is None else drawn[3].chain.stepped,
-                             lods_refused="; ".join(self._lods_refused))
+                             lods_refused="; ".join(self._lods_refused),
+                             render_targets_refused=self._render_targets_refused,
+                             shallow_waters_refused=self._shallow_waters_refused, clocked=drawn[0].clocked)
 
     def _bind(self, content: SceneLitContent, profile, catalog, start: int) -> None:
         """Binds the parts of the objects from ``start`` not bound yet."""
@@ -866,7 +955,7 @@ class SceneLitDrawer(LitDrawer):
                                          item.of.skinned)
                     skin = MeshPart(document, part.material, part.buffer, part.submesh,
                                     own if own != route else part.route, part.meshlet_programs, part.texel_density,
-                                    part.level)
+                                    part.level, part.batch)
                 bound[id(part), program] = skin, refusal
 
     def _context_number(self, context) -> int:
@@ -917,7 +1006,7 @@ class SceneLitDrawer(LitDrawer):
         """Adds the objects from ``start`` (None: none) and those come near the view (or ``units``) to the scene drawn,
         and draws its frame. Their parts refused once they are added are retired; None when a part drawn before is
         refused: the scene is made again."""
-        mesh, passes, _overlay, _strands = drawn
+        mesh, passes, _overlay, strands = drawn
         streams = self._streams
         if start is not None:
             streams = self._streams = _Streams(content, placements, streams)
@@ -947,21 +1036,26 @@ class SceneLitDrawer(LitDrawer):
         held.weights += [None if entry.deformation is None else entry.deformation.weights for entry in entries]
         held.levels += [entry.level for entry in entries]
         held.entries += entries
+        held.lods.add(entries)
         self._faces.update((number, mesh.faces(owner, part)) for owner, entry in enumerate(entries, owners)
                            if not entry.level for number, part in entry.parts)
         passes.added()
-        mesh.hide(self._hidden(content, view, camera))
+        mesh.hide(*self._hidden(content, view, camera))
         if mesh.size != tuple(view.size):
             self._resize(drawn, view.size)
         mesh.camera = drawn_by
         self._place(mesh, content, placements)
+        self._held.lods.give(mesh, self._streams, self._held, camera)
         while True:
+            averaged = self._averaged, self._refills
             try:
                 self._frame(drawn, content, view, placements, overlays, camera,
                             camera_light(camera, DEFAULT_INTENSITY))
             except PartError as exc:
-                if not _retired(mesh, entries, exc, failures):
+                if strands is not None or not _retired(mesh, entries, exc, failures):
                     return None
+                # The frame retired never ran: its frame of the average is drawn again.
+                self._averaged, self._refills = averaged
                 passes.added()
                 continue
             except MaterialPreviewError:
@@ -970,11 +1064,10 @@ class SceneLitDrawer(LitDrawer):
             self._told_lods(entries)
             return failures
 
-    def _fill(self, content: SceneLitContent, view: SceneView, placements: tuple[ScenePlacement, ...],
-              camera: Camera) -> list[tuple[int, int]] | None:
+    def _fill(self, content: SceneLitContent, view: SceneView, camera: Camera) -> list[tuple[int, int]] | None:
         """While the view stays, the LODs of objects not added yet, nearest first: once all are, moving adds none, as
         with a scene made of every object."""
-        looked = self._looking(view, placements, camera)
+        looked = self._looking(view, camera)
         if not _same_look(looked, self._looked) or _same_look(looked, self._filled):
             return None
         units = self._streams.rest(camera, self._hidden_objects(content, view))[:self._fills]
@@ -982,8 +1075,8 @@ class SceneLitDrawer(LitDrawer):
             self._filled = looked
         return units or None
 
-    def _looking(self, view: SceneView, placements: tuple[ScenePlacement, ...], camera: Camera) -> tuple:
-        return self._streams._look(camera)[0], placements, self._streams, view.hidden
+    def _looking(self, view: SceneView, camera: Camera) -> tuple:
+        return self._streams.look(camera)[0], self._streams, view.hidden
 
     def _nearer(self, content: SceneLitContent, view: SceneView, placements: tuple[ScenePlacement, ...],
                 camera: Camera) -> bool:
@@ -1026,7 +1119,8 @@ class SceneLitDrawer(LitDrawer):
                         if self._bound[id(spot.part), _program(item)][0] is not None}
                 try:
                     deformation, skins = deformed(content.game, item.of.level, item.of.groups, visible, held,
-                                                  self._morphs[number][1], edge_excluded=item.edge_excluded)
+                                                  self._morphs[number][1], edge_excluded=item.edge_excluded,
+                                                  blend_normal=item.blend_normal)
                 except MaterialPreviewError as exc:
                     failures.update((part_number, exc) for part_number, _part in parts)
                     self._undeformed.add(name)
@@ -1049,21 +1143,30 @@ class SceneLitDrawer(LitDrawer):
 
     @staticmethod
     def _mesh_objects(content: SceneLitContent, entries: list[_Entry], alone: bool) -> list[MeshObject]:
-        objects = []
+        objects, rules = [], drawing_rules(mmtr_profile_for_game(content.game))
         for entry in entries:
             shown, of = content.objects[entry.number], entry.of
             # The first LOD's parts first: an object's meshlet groups are numbered by their first part.
             drawn = [] if alone else [*(part for _number, part in entry.parts), *entry.coarser]
             skins = tuple(part for part in entry.skins if all(part is not item for item in drawn))
-            objects.append(MeshObject(tuple(drawn), entry.placement, of.skinned, of.stencil_reference, of.bounds,
-                                      entry.deformation, skins, of.engine, shown.decal_receive_mode, of.box,
-                                      shown.transparent_bias, shown.wrinkle, None if alone else entry.lods))
+            stencil = rules.stencil_reference(shown.decal_receive[0], shown.draw_state, of.materials)
+            shells = shown.shell_fur
+            if shells is not None and shells.program is not None:
+                # Shells are made over the destination of a deformed object's first LOD.
+                shells = shells if entry.deformation is not None and not entry.level else None
+            elif shells is not None:
+                shells = shells.at(entry.level)
+            objects.append(MeshObject(tuple(drawn), entry.placement, of.skinned, stencil, of.bounds,
+                                      entry.deformation, skins, of.engine, shown.decal_receive, of.box,
+                                      shown.transparent_bias, shown.wrinkle, None if alone else entry.lods,
+                                      shown.draw_state, shells))
         return objects
 
     def _build(self, content: SceneLitContent, view: SceneView, placements: tuple[ScenePlacement, ...],
                overlays: LitOverlays, profile, catalog, refused: Mapping[int, Exception], drawn_by: Camera) -> tuple:
         failures: dict[int, Exception] = {}
         self._lods_refused = {}
+        self._render_targets_refused = self._shallow_waters_refused = ""
         camera = view.camera()
         streams = self._streams = _Streams(content, placements)
         hidden = self._hidden_objects(content, view)
@@ -1092,8 +1195,16 @@ class SceneLitDrawer(LitDrawer):
                 mesh = MeshScene(objects, content.files.get, drawn_by, shader_target=catalog.master_target,
                                  hardware=True, phases={phase.key for phase in catalog.phases},
                                  pass_file=lambda path, data: pass_file(path, data).document,
-                                 captured=captured_constants(catalog), forget_file=content.files.forget)
+                                 captured=view_constants(catalog, profile, content.files.get),
+                                 forget_file=content.files.forget, clock=self._clock, prefetch=content.files.prefetch)
+                if not alone:
+                    self._user_render_targets(mesh, content, profile)
+                if not alone and content.primitives:
+                    PrimitiveDraws(mesh, content.primitives, SystemPrograms(profile, partial(scene_file, content)))
                 passes = LightPasses(mesh, pass_file=pass_file)
+                for _segment, draw in sorted([] if alone else self._phase_draws(mesh, passes, content, profile),
+                                             key=lambda item: item[0]):
+                    draw()
                 owner = next((owner for owner, entry in enumerate(entries)
                               if entry.number == content.strands_object), None)
                 strands = None if content.strands is None or owner is None else StrandView(
@@ -1107,11 +1218,14 @@ class SceneLitDrawer(LitDrawer):
                     [placement.pose for placement in given],
                     [None if entry.deformation is None else entry.deformation.weights for entry in entries],
                     [entry.level for entry in entries], list(entries))
+                self._held.lods.add(entries)
                 self._faces = {number: mesh.faces(owner, part) for owner, entry in enumerate(entries)
                                if not entry.level for number, part in entry.parts}
-                mesh.hide(self._hidden(content, view, camera))
+                mesh.hide(*self._hidden(content, view, camera))
+                self._held.lods.give(mesh, self._streams, self._held, camera)
                 drawn = mesh, passes, overlay, strands
                 while True:
+                    averaged = self._averaged, self._refills
                     try:
                         self._frame(drawn, content, view, placements, overlays, camera, light)
                         break
@@ -1120,6 +1234,7 @@ class SceneLitDrawer(LitDrawer):
                         # leaves them out; a scene with strands is made again.
                         if strands is not None or not _retired(mesh, entries, exc, failures):
                             raise
+                        self._averaged, self._refills = averaged
                         passes.added()
             except PartError as exc:
                 if mesh is not None:
@@ -1130,6 +1245,63 @@ class SceneLitDrawer(LitDrawer):
             self._told_lods(entries)
             return drawn, failures
         return None, failures
+
+    def _phase_draws(self, mesh: MeshScene, passes: LightPasses, content: SceneLitContent,
+                     profile) -> list[tuple[int, Callable[[], object]]]:
+        draws = []
+        water = water_mesh_catalog_for(profile)
+        if water is not None and any(item.decal_receive[0] == water.component for item in content.objects):
+            draws.append((water.segment, partial(WaterMeshDraws, passes, water)))
+        shallow = self._shallow_waters(content, profile)
+        for segment in dict.fromkeys(item[0].segment for item in shallow):
+            draws.append((segment, partial(self._shallow_draws, passes, profile, content,
+                                           [item for item in shallow if item[0].segment == segment])))
+        decals = [decal for decal in content.decals
+                  if all(mesh.made_texture(path) is not None for path in decal.render_textures)]
+        if len(decals) < len(content.decals):
+            self._render_targets_refused = "; ".join(filter(None, (
+                self._render_targets_refused, str(MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "{count} volume decals read a render texture that is not drawn."),
+                    {"count": len(content.decals) - len(decals)})))))
+        if decals:
+            draws.append((volume_decal_catalog_for(profile).segment, lambda: VolumeDecalDraws(
+                passes, decals, SystemPrograms(profile, partial(scene_file, content)), content.decal_values)))
+        return draws
+
+    def _shallow_waters(self, content: SceneLitContent, profile) -> list[tuple]:
+        bound, refused = [], []
+        for water in content.shallow_waters:
+            try:
+                bound.append((water, bound_master(content.game, content.masters, water.mmtr_path, water.context,
+                                                  profile, self._lease)))
+            except (MaterialPreviewError, ValueError, FileNotFoundError) as exc:
+                refused.append(str(exc))
+        self._refuse_shallow(refused)
+        return bound
+
+    def _shallow_draws(self, passes: LightPasses, profile, content: SceneLitContent, waters: list[tuple]) -> None:
+        if not waters:
+            return
+        refused = []
+        try:
+            ShallowWaterDraws(passes, shallow_water_catalog_for(profile), waters,
+                              SystemPrograms(profile, partial(scene_file, content)), refused.append)
+        except MaterialPreviewError as exc:
+            refused.append(str(exc))
+        self._refuse_shallow(refused)
+
+    def _refuse_shallow(self, refused: list[str]) -> None:
+        self._shallow_waters_refused = "; ".join(dict.fromkeys(filter(None, (self._shallow_waters_refused, *refused))))
+
+    def _user_render_targets(self, mesh: MeshScene, content: SceneLitContent, profile) -> None:
+        refused = []
+        for target in content.render_targets:
+            try:
+                mesh.user_render_target(bound_master(content.game, content.masters, target.mmtr_path, target.context,
+                                                     profile, self._lease), target)
+            except (MaterialPreviewError, ValueError, FileNotFoundError) as exc:
+                refused.append(str(exc))
+        self._render_targets_refused = "; ".join(dict.fromkeys(refused))
 
     def _place(self, mesh: MeshScene, content: SceneLitContent, placements: tuple[ScenePlacement, ...]) -> None:
         held = self._held
@@ -1186,7 +1358,8 @@ def _read_stmesh_lod(handler, lod: int) -> _Lod | str:
     return _Lod(tuple(drawn), None, {}, {}, bounds)
 
 
-def _read_lod(mesh, lod: int, chains, skinned: bool, read: _MeshRead) -> _Lod:
+def _read_lod(mesh, lod: int, chains, skinned: bool, read: _MeshRead,
+              chain_flags: tuple[bool, bool] = (True, False)) -> _Lod:
     parts = mesh_lod_parts(mesh, lod)
     payloads = mesh.mesh_buffer.buffer_payloads
     for _group, submesh in parts:
@@ -1194,7 +1367,8 @@ def _read_lod(mesh, lod: int, chains, skinned: bool, read: _MeshRead) -> _Lod:
             read.buffers[submesh.buffer_index] = (MeshletBuffer.from_mesh(mesh)
                                                   or MeshBuffer.from_payload(payloads[submesh.buffer_index]))
     # The game deforms LODs with blend shapes or normal-recalc data before drawing them.
-    level = chain_level(mesh, lod, chains) if chains is not None and parts else None
+    level = chain_level(mesh, lod, chains, real_time_lod=chain_flags[1], recalculates=chain_flags[0]) \
+        if chains is not None and parts else None
     groups = {} if level is None else dict(enumerate(submesh_groups(level, (submesh for _group, submesh in parts))))
     body = None if mesh.blend_shape_data is None else next(
         (item for item in mesh.blend_shape_data.bodies if item.lod_index == lod), None)
@@ -1234,6 +1408,34 @@ class _Gathered:
     meshlet_lods: SceneLitLods | None = None
     meshlet_lods_made: bool = False
     lods_refused: str = ""
+    lists: tuple[str, Mapping[str, tuple]] | None = None
+    textures: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
+    surfaces: dict[str, object] = field(default_factory=dict)
+
+
+def _speedtree_rule(group: _Gathered):
+    profile = mmtr_profile_for_game(group.game)
+    catalog = None if profile is None else speedtree_catalog_for(profile)
+    if catalog is None:
+        return None
+    placement = catalog.viewed if group.placement is None else catalog.placements.get(group.placement)
+    return None if placement is None else placement.lod
+
+
+def _object_lists(component: str, fields: Mapping[str, object] | None) -> tuple[str, Mapping[str, tuple]] | None:
+    lists = frozendict({key: value for key, value in (fields or {}).items() if isinstance(value, tuple)})
+    return (component, lists) if lists else None
+
+
+def _surface(session, group: _Gathered, name: str):
+    surface = session.profiles.get(name)
+    if surface is None or group.lists is None and name not in group.textures:
+        return surface
+    if name not in group.surfaces:
+        if group.lists is not None:
+            surface = drawing_rules(mmtr_profile_for_game(group.game)).overridden(surface, *group.lists)
+        group.surfaces[name] = with_textures(surface, group.textures.get(name, {}))
+    return group.surfaces[name]
 
 
 def _first_densities(group: _Gathered) -> dict[str, float]:
@@ -1252,7 +1454,7 @@ def _meshlet_blob(lod: _Lod | None) -> bytes | None:
     return lod.submeshes[0][1].blob
 
 
-class SceneLitPreview(GameLighting, SceneTexturesPreview):
+class SceneLitPreview(SceneLitPreviewLods, GameLighting, SceneTexturesPreview):
     _game = True
 
     def __init__(self, viewport, materials, parent=None):
@@ -1262,7 +1464,7 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         self._kept: dict[tuple, tuple[tuple, _Gathered]] = {}
         self._passes: dict[tuple, dict[str, bytes]] = {}
         self._previous: SceneLitContent | None = None
-        self._values = MaterialValues()
+        self._values, self._decal_values = MaterialValues(), MaterialValues()
         # By (game, resource scope): the LodSettings file it finds, or why it can't; by the bytes found: their reading.
         self._lod_settings: dict[tuple | bytes, LodSettings | str] = {}
         self.set_limit(viewport.fps_limit)
@@ -1285,7 +1487,16 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
             self._viewport.set_strands_stepped(None if isinstance(result, Exception) else result.stepped)
 
     def _stepping(self) -> bool:
-        return self._active and self._scene is not None and self._scene.strands is not None
+        running = self._viewport.time_running
+        return self._active and self._scene is not None and (
+            self._scene.strands is not None
+            or isinstance(self._frame, SceneLitFrame) and self._frame.clocked
+            or running is not None and running())
+
+    def _stepped_by(self, seconds: float) -> None:
+        if self._viewport.time_step is not None:
+            self._viewport.time_step(seconds)
+        self._viewport.step_frame(seconds)
 
     def status(self) -> list[str]:
         refused = "" if self._scene is None else self._scene.strands_refused
@@ -1293,15 +1504,30 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         lods = "; ".join(dict.fromkeys(filter(None, (
             "" if self._scene is None else self._scene.lods_refused,
             "" if self._frame is None else self._frame.lods_refused))))
+        decals = "" if self._scene is None else self._scene.decals_refused
+        primitives = "" if self._scene is None else self._scene.primitives_refused
+        shells = "" if self._scene is None else self._scene.shell_fur_refused
+        targets = "; ".join(dict.fromkeys(filter(None, (
+            "" if self._scene is None else self._scene.render_targets_refused,
+            "" if self._frame is None else self._frame.render_targets_refused))))
+        shallow = "; ".join(dict.fromkeys(filter(None, (
+            "" if self._scene is None else self._scene.shallow_waters_refused,
+            "" if self._frame is None else self._frame.shallow_waters_refused))))
         return (super().status() + ([self.tr("Strands not drawn: {reason}").format(reason=refused)] if refused else [])
                 + ([self.tr("Wrinkles not drawn: {reason}").format(reason=wrinkles)] if wrinkles else [])
-                + ([self.tr("LODs not drawn: {reason}").format(reason=lods)] if lods else []))
+                + ([self.tr("LODs not drawn: {reason}").format(reason=lods)] if lods else [])
+                + ([self.tr("Volume decals not drawn: {reason}").format(reason=decals)] if decals else [])
+                + ([self.tr("Primitive shapes not drawn: {reason}").format(reason=primitives)] if primitives else [])
+                + ([self.tr("Shell fur not drawn: {reason}").format(reason=shells)] if shells else [])
+                + ([self.tr("Render targets not drawn: {reason}").format(reason=targets)] if targets else [])
+                + ([self.tr("Shallow water not drawn: {reason}").format(reason=shallow)] if shallow else []))
 
     def _make_drawer(self) -> SceneLitDrawer:
         return SceneLitDrawer()
 
     def _request(self) -> tuple:
-        return (*super()._request(), self.step_rate, self._viewport.device_materials())
+        return (*super()._request(), self.step_rate, self._viewport.device_materials(), self._viewport.device_decals(),
+                self._viewport.device_buffers(), self._viewport.device_strands_gravity())
 
     def _gather(self) -> SceneLitContent:
         with held_folder_lookups():
@@ -1343,9 +1569,10 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
                     self._labels.append(name or mesh.key)
                     self._failures[index] = self.tr("No MDF material.")
                     continue
-                grouped = (session, mesh.speedtree_placement)
+                grouped = (session, mesh.speedtree_placement, _object_lists(mesh.decal_receive[0], mesh.draw_state),
+                           mesh.chain_flags)
                 if grouped not in gathered:
-                    gathered[grouped] = self._group(session, mesh.speedtree_placement, wanted.get(session, set()),
+                    gathered[grouped] = self._group(grouped, wanted.get(session, set()),
                                                     scopes, read, streaming, animated)
                 group = gathered[grouped]
                 self._labels.append(group.names.get(name, name))
@@ -1373,13 +1600,20 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
                     if not lod:
                         if id(group) not in coarser:
                             coarser[id(group)] = (
-                                self._levels(grouped[0], group, masters, files, merged, streaming, values, animated),
+                                self._levels(grouped[0], group, masters, files, merged, streaming, values, animated,
+                                             read),
                                 self._meshlet_lods(grouped[0], group, read, masters, files, merged, streaming, values,
                                                    animated))
                         levels, lods = coarser[id(group)]
+                        if levels is not None and levels.classic is not None:
+                            refused = self._classic_refused(group, mesh, levels.classic)
+                            if refused is not None:
+                                levels = None
+                                group.lods_refused = group.lods_refused or refused
                     objects.append(SceneLitObject(mesh_number, group.meshes[lod], tuple(parts), tuple(batches),
-                                                  mesh.edge_excluded, mesh.decal_receive_mode, mesh.transparent_bias,
-                                                  levels=levels, lods=lods))
+                                                  mesh.edge_excluded, mesh.decal_receive, mesh.transparent_bias,
+                                                  levels=levels, lods=lods, blend_normal=mesh.blend_normal,
+                                                  draw_state=mesh.draw_state, lod_parent_mesh=mesh.lod_parent_mesh))
                     sources.append((grouped, lod))
         self._read = read
         self._kept = {key: kept for key, kept in self._kept.items() if key in gathered}
@@ -1391,35 +1625,52 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
             return SceneLitContent(number, "", meshes, (), {}, {})
         profile = mmtr_profile_for_game(first.game)
         chains = pretransform_catalog_for(profile)
-        wrinkled, wrinkles_refused = self._gather_wrinkles(objects, sources, meshes, gathered, read, profile, files)
+        wrinkled, wrinkles_refused = gather_wrinkles(self._viewport.device_components("wrinkles"), objects, sources,
+                                                     meshes, gathered, read, profile, files)
+        shell_fur_refused = gather_shell_furs(self._viewport.device_components("shell_furs"), objects, sources, meshes,
+                                              gathered, read, profile, files, self._lod_settings_for, streaming)
         previous = self._previous if self._previous is not None and self._previous.game == first.game else None
         if previous is not None:
             objects = [_same(item, previous.objects[number]) if number < len(previous.objects) else item
                        for number, item in enumerate(objects)]
+        furred = any(item.shell_fur is not None for item in objects)
         passes = (first.game, any(item.of.level is not None for item in objects),
-                  any(item.of.meshlets for item in objects), wrinkled)
+                  any(item.of.meshlets for item in objects), wrinkled, furred)
         if passes not in self._passes:
             self._passes[passes] = pass_files(profile, light_pass_catalog_for(profile),
                                               chains if passes[1] else None, first.resolve,
                                               meshlet_catalog_for(profile) if passes[2] else None,
-                                              wrinkle_catalog_for(profile) if wrinkled else None)
+                                              wrinkle_catalog_for(profile) if wrinkled else None,
+                                              shell_fur_catalog_for(profile) if furred else None)
         drawn = dict(self._passes[passes])
         drawn.update(files)
         strands, owner, refused, told = None, None, "", self._viewport.device_strands()
         if told is not None:
             key, handler, shown, edited = told
-            owner = next((number for number, (item, ((session, _placement), _lod))
-                          in enumerate(zip(objects, sources))
-                          if meshes[item.mesh].key == key and session.handler is handler), None)
+            owner = next((number for number, (item, (grouped, _lod)) in enumerate(zip(objects, sources))
+                          if meshes[item.mesh].key == key and grouped[0].handler is handler), None)
             if owner is None:
                 refused = self.tr("The mesh they are over is not drawn.")
             else:
-                (session, placement), lod = sources[owner]
+                grouped, lod = sources[owner]
                 # Strands need the whole mesh file (bone boxes, mesh groups).
                 strands, refused = self._gather_strands(handler, read[id(handler)][2].mesh, first.game, profile,
                                                         shown, lod, objects[owner].of.level,
-                                                        gathered[session, placement].resolve, masters, drawn,
+                                                        gathered[grouped].resolve, masters, drawn,
                                                         edited)
+        decals, decals_refused = gather_decals(self._viewport.device_components("decals"), profile, drawn,
+                                               first.resolve, self._viewport.device_decals().keys())
+        primitives, primitives_refused = gather_primitives(self._viewport.device_components("primitives"), profile,
+                                                           drawn, first.resolve)
+        first_handler = next(grouped[0].handler for grouped, group in gathered.items() if group is first)
+
+        def gather_surface(surface, resolve) -> str:
+            return self._gather_surface(first_handler, surface, resolve, masters, drawn, streaming, first.cache)
+        render_targets, render_targets_refused = gather_render_targets(
+            self._viewport.device_components("render_targets"), profile, gather_surface)
+        shallow_waters, shallow_waters_refused = gather_shallow_waters(
+            self._viewport.device_components("shallow_waters"), profile, drawn,
+            lambda path: self._located(first_handler, path, False, first.cache), gather_surface)
         if previous is not None and previous.files.holds(drawn):
             previous.files.add(drawn)
             prefetched = previous.files
@@ -1427,78 +1678,33 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
             prefetched = PrefetchedFiles(drawn)
         lods_refused = "; ".join(dict.fromkeys(group.lods_refused for group in gathered.values() if group.lods_refused))
         self._previous = SceneLitContent(number, first.game, meshes, tuple(objects), masters, prefetched, strands,
-                                         owner, refused, values, wrinkles_refused, lods_refused)
+                                         owner, refused, values, wrinkles_refused, lods_refused, decals,
+                                         decals_refused, shell_fur_refused, render_targets, render_targets_refused,
+                                         primitives, primitives_refused, shallow_waters, shallow_waters_refused,
+                                         self._decal_values)
         return self._previous
 
-    def _gather_wrinkles(self, objects: list[SceneLitObject], sources: list, meshes, gathered: dict, read: dict,
-                         profile, files: dict) -> tuple[bool, str]:
-        told = {item.key: item for item in self._viewport.device_wrinkles()}
-        catalog = wrinkle_catalog_for(profile) if told else None
-        chains = pretransform_catalog_for(profile) if told else None
-        refused, proxies = [], {}
-        for number, item in enumerate(objects):
-            wrinkle = told.get(meshes[item.mesh].key)
-            if wrinkle is None:
-                continue
-            (session, placement), _lod = sources[number]
-            resolve = gathered[session, placement].resolve
-            try:
-                if wrinkle.refused:
-                    raise MaterialPreviewError(wrinkle.refused)
-                if catalog is None or chains is None:
-                    raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                        "MaterialPreview", "REasy has no catalog of the wrinkle passes of this game build."))
-                if not item.of.skinned or id(session.handler) not in read:
-                    raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                        "MaterialPreview", "The wrinkle passes skin their proxy by the bones of a skinned mesh."))
-                if wrinkle.proxy not in proxies:
-                    proxies[wrinkle.proxy] = self._wrinkle_proxy(resolve, wrinkle.proxy, chains)
-                target = resolve(wrinkle.render_target)
-                if target is None:
-                    raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                        "MaterialPreview", "The render texture file {path} was not found."),
-                        {"path": wrinkle.render_target})
-                files[wrinkle.render_target] = target[1]
-                joints, binds = mesh_joints(read[id(session.handler)][2].mesh)
-                objects[number] = replace(item, wrinkle=wrinkle_object(
-                    proxies[wrinkle.proxy], joints, binds, wrinkle.render_target, wrinkle.spread))
-            except MaterialPreviewError as exc:
-                refused.append(str(exc))
-        return any(item.wrinkle is not None for item in objects), "; ".join(dict.fromkeys(refused))
-
-    @staticmethod
-    def _wrinkle_proxy(resolve, path: str, chains):
-        found = resolve(path)
-        if found is None:
-            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                "MaterialPreview", "The wrinkle proxy mesh {path} was not found."), {"path": path})
-        mesh = MeshFile()
-        try:
-            mesh.read(found[1], file_version=resource_version_from_path(found[0], "mesh"))
-        except (ValueError, IndexError, struct.error) as exc:
-            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                "MaterialPreview", "The wrinkle proxy mesh {path} could not be read: {reason}"),
-                {"path": path, "reason": str(exc)}) from exc
-        return wrinkle_proxy(mesh, chains)
-
-    def _group(self, session, placement: str | None, lods: set[int], scopes: dict[tuple, dict],
+    def _group(self, grouped: tuple, lods: set[int], scopes: dict[tuple, dict],
                read: dict[int, tuple[object, object, _MeshRead]], streaming: bool, animated) -> _Gathered:
-        """The session's meshes and parts as gathered before, while its mesh file and materials, which of them are
-        animated and the texture quality are the same: the drawer keeps what it bound of them."""
-        state = (session.profiles, session.handler.mesh, streaming, frozenset(animated & session.profiles.keys()))
-        kept = self._kept.get((session, placement))
+        session, placement, lists, chain_flags = grouped
+        textures = {name: slots for name, slots in self._viewport.device_textures().items() if name in session.profiles}
+        state = (session.profiles, session.handler.mesh, streaming, frozenset(animated & session.profiles.keys()),
+                 textures)
+        kept = self._kept.get(grouped)
         if kept is not None and kept[0][0] is state[0] and kept[0][1] is state[1] and kept[0][2:] == state[2:] \
                 and lods <= kept[1].meshes.keys():
             group = kept[1]
             if id(session.handler) in self._read:
                 read[id(session.handler)] = self._read[id(session.handler)]
             return group
-        group = self._session_gathered(session, placement, lods, scopes, read)
-        self._kept[session, placement] = state, group
+        group = self._session_gathered(session, placement, lods, scopes, read, chain_flags)
+        group.lists, group.textures = lists, textures
+        self._kept[grouped] = state, group
         return group
 
     def _session_gathered(self, session, placement: str | None, lods: set[int], scopes: dict[tuple, dict],
-                          read: dict[int, tuple[object, object, _MeshRead]]) -> _Gathered:
+                          read: dict[int, tuple[object, object, _MeshRead]],
+                          chain_flags: tuple[bool, bool] = (True, False)) -> _Gathered:
         handler = session.handler
         game = MeshMaterialResolver.material_profile(handler).game
         cache = scopes.setdefault(MeshMaterialResolver.resource_scope(handler), {})
@@ -1512,11 +1718,11 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         elif isinstance(handler, StmeshHandler):
             engine = frozendict(stmesh_engine_buffers(handler.stmesh, speedtree_catalog_for(profile),
                                                       placement))
-            stencil = stencil_reference(session)
+            materials = session_materials(session)
             for lod in lods:
                 held = _read_stmesh_lod(handler, lod)
                 group.meshes[lod] = held if isinstance(held, str) else SceneLitMesh(
-                    False, 1, stencil, held.bounds, None, {}, {}, handler.stmesh.meshlets is not None, engine)
+                    False, 1, materials, held.bounds, None, {}, {}, handler.stmesh.meshlets is not None, engine)
                 if not isinstance(held, str):
                     group.lods[lod] = held
         elif flags is None:
@@ -1532,11 +1738,16 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
             # A meshlet mesh's object holds every LOD (``_meshlet_lods``); they share the LOD's buffer.
             if blob is not None and len(blob) > 12 and blob[12] > 1:
                 self._read_whole(handler, set(range(blob[12])), chains, skinned, read)
-            stencil = stencil_reference(session)
+            materials = session_materials(session)
             for lod in lods:
                 held = whole.lods[lod]
+                if not isinstance(held, str) and chain_flags != (True, False):
+                    try:
+                        held = _read_lod(whole.mesh, lod, chains, skinned, whole, chain_flags)
+                    except MaterialPreviewError as exc:
+                        held = str(exc)
                 group.meshes[lod] = held if isinstance(held, str) else SceneLitMesh(
-                    bool(flags.is_skinning), whole.bones, stencil, held.bounds, held.level, held.groups,
+                    bool(flags.is_skinning), whole.bones, materials, held.bounds, held.level, held.groups,
                     held.channels, any(isinstance(buffer, MeshletBuffer) for _range, buffer in held.submeshes),
                     box=object_box(whole.mesh))
                 if not isinstance(held, str):
@@ -1586,7 +1797,7 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         """The part of ``count`` submeshes from (LOD, number) the group's mesh draws with the material ``name``, or
         why it can't be drawn."""
         lod, number = submesh
-        surface = session.profiles.get(name)
+        surface = _surface(session, group, name)
         if surface is None or surface.instance_context is None:
             return self.tr("No MDF material.")
         if name not in group.unusable:
@@ -1604,25 +1815,27 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         piece = (lod, number, count)
         if piece not in group.parts:
             ranged, buffer = _run(group.lods[lod].submeshes[number:number + count])
-            route = programs = None
+            route = programs = batch = None
             handler = session.handler
             if isinstance(handler, StmeshHandler):
-                speedtree = speedtree_catalog_for(mmtr_profile_for_game(group.game))
+                profile = mmtr_profile_for_game(group.game)
+                speedtree = speedtree_catalog_for(profile)
                 viewed = mesh_lod_parts(handler.mesh, lod)[number][1]
                 try:
+                    flags = program_flags(profile, surface)
                     if handler.stmesh.meshlets is not None:
-                        _buffer, _range, programs = drawn_chunks(handler, lod, viewed, int(surface.material_flags),
-                                                                 speedtree, group.placement)
+                        _buffer, _range, programs = drawn_chunks(handler, lod, viewed, flags, speedtree,
+                                                                 group.placement)
                     else:
-                        _draw, route = drawn_cluster(handler, lod, viewed, int(surface.material_flags), speedtree,
-                                                     group.placement)
+                        draw, route = drawn_cluster(handler, lod, viewed, flags, speedtree, group.placement)
+                        batch = int(draw.batch)
                 except (MaterialPreviewError, PassChoiceError) as exc:
                     return str(exc)
             # The shown mesh's triangles of the part: the meshes of a group share them.
             group.parts[piece] = LitPart(number, name, surface.mmtr_path, surface.instance_context,
                                          preview_material(surface, None if values is None else
                                                           partial(values.of, name), group.cache),
-                                         buffer, ranged, route, programs, density(), lod)
+                                         buffer, ranged, route, programs, density(), lod, batch)
         return group.parts[piece]
 
     def _coarser_parts(self, session, group: _Gathered, pieces: Sequence[tuple[int, int, int, str]], masters: dict,
@@ -1642,12 +1855,11 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         return parts
 
     def _levels(self, session, group: _Gathered, masters: dict, files: dict, merged: set, streaming: bool,
-                values: MaterialValues, animated) -> SceneLitLevels | None:
-        """A SpeedTree mesh's LODs after its first, read once a group; None for another mesh, a mesh of one LOD, or,
-        telling why in ``group.lods_refused``, one whose other LODs can't be drawn."""
+                values: MaterialValues, animated,
+                read: dict[int, tuple[object, object, _MeshRead]]) -> SceneLitLevels | None:
         if not group.levels_made:
             group.levels_made = True
-            group.level_pieces = self._level_pieces(session, group)
+            group.level_pieces = self._level_pieces(session, group, read)
         held = group.level_pieces
         group.lods_refused = held if isinstance(held, str) else ""
         if held is None or isinstance(held, str):
@@ -1666,11 +1878,14 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
                                                 for lod, held in lods.items()), *distances)
         return group.levels
 
-    def _level_pieces(self, session, group: _Gathered) -> tuple[dict, tuple, tuple] | str | None:
+    def _level_pieces(self, session, group: _Gathered,
+                      read: dict[int, tuple[object, object, _MeshRead]]) -> tuple[dict, tuple, tuple] | str | None:
         """The bounds of each LOD after the first, its parts as ``_coarser_parts`` takes them, and the distances, or
         why they can't be drawn. A meshlet mesh's LOD is the one instance culling picks from its blob's distances."""
         handler = session.handler
-        if not isinstance(handler, StmeshHandler) or handler.stmesh.lod_count < 2 or 0 not in group.lods:
+        if not isinstance(handler, StmeshHandler):
+            return self._classic_pieces(session, group, read)
+        if handler.stmesh.lod_count < 2 or 0 not in group.lods:
             return None
         if handler.stmesh.meshlets is None:
             if not handler.stmesh.lod_profile.lod_is_present:
@@ -1682,6 +1897,9 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
             cull = profile.billboard_cull_distance if profile.billboard_cull_distance > 0 else np.inf
             distances = (profile.high_detail_3d_distance, profile.low_detail_3d_distance, float(billboard),
                          float(cull))
+            rule = _speedtree_rule(group)
+            if rule is not None:
+                distances = (*distances, None, None, speedtree_levels(handler.stmesh, rule))
         else:
             blob, catalog = _meshlet_blob(group.lods[0]), meshlet_catalog_for(mmtr_profile_for_game(group.game))
             if blob is None or catalog is None:
@@ -1788,12 +2006,10 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
                                "{lod}.").format(count=lods.count, lod=lod)
         return lods, tuple(pieces)
 
-    def _lod_settings_for(self, session, group: _Gathered, rule: MeshletLodRule) -> LodSettings | str:
-        """The build's LodSettings file as the group's resource scope finds it, or why it can't: looked for once a
-        scope, through its first group's resolver, and read once for the bytes found."""
-        scope = group.game, MeshMaterialResolver.resource_scope(session.handler)
+    def _lod_settings_for(self, session, group: _Gathered, rule, path: str | None = None) -> LodSettings | str:
+        path = path or rule.file()
+        scope = group.game, MeshMaterialResolver.resource_scope(session.handler), path
         if scope not in self._lod_settings:
-            path = rule.file()
             found = group.resolve(path)
             if found is None:
                 self._lod_settings[scope] = self.tr("The LOD settings file {path} was not found.").format(path=path)
@@ -1813,6 +2029,12 @@ class SceneLitPreview(GameLighting, SceneTexturesPreview):
         if key not in self._densities:
             self._densities[key] = uv_density(positions, uv_sets, indices)
         return self._densities[key]
+
+    def _gather_surface(self, handler, surface, resolve, masters: dict, files: dict, streaming: bool,
+                        cache: dict) -> str:
+        more_masters, more_files = {}, {}
+        return self._gather_drawn(handler, surface, resolve, more_masters, more_files, streaming, cache) \
+            or self._merged(masters, more_masters, files, more_files)
 
     def _merged(self, masters: dict, more_masters: dict, files: dict, more_files: dict) -> str:
         for held, more in ((masters, more_masters), (files, more_files)):

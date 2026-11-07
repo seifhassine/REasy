@@ -38,8 +38,8 @@ def node_hashes(node: Node) -> tuple[int, int]:
     return node.name_hashes or (murmur3_hash(node.name.encode("utf-8")), murmur3_hash(node.name.encode("utf-16-le")))
 
 
-def read_timeline(data: bytes, kind: ResourceKind | None = None) -> Timeline:
-    return _Decoder(data).read(kind)
+def read_timeline(data: bytes, kind: ResourceKind | None = None, start: int = 0) -> Timeline:
+    return _Decoder(data, start).read(kind)
 
 
 def read_motclip(data: bytes, start: int, base: int) -> tuple[Timeline, int]:
@@ -47,6 +47,8 @@ def read_motclip(data: bytes, start: int, base: int) -> tuple[Timeline, int]:
 
 
 class _Decoder:
+    embedded = False
+
     def __init__(self, data: bytes, start: int = 0, base: int = 0):
         if len(data) < start + 8 or data[start:start + 4] != MAGIC:
             raise ClipFormatError("Not a CLIP file")
@@ -60,6 +62,7 @@ class _Decoder:
         self.pools: dict[str, tuple[int, int]] = {}
         self._strings: dict[tuple[str, int], str] = {}
         self.extra_at: int | None = None
+        self.open: tuple[str, int] | None = None
 
     def _rules(self):
         return self.profile.rules
@@ -139,13 +142,16 @@ class _Decoder:
     def _read_sections(self, dialogue: bool = False) -> None:
         data, header, size = self.data, self.header, len(self.data)
         placed = [(section, self.base + header[section.pointer]) for section in self.rules.sections
-                  if not (section.user_curve and header[section.pointer] == 0)]
+                  if header[section.pointer] or not (section.user_curve or section.extra)]
         position = self.start + self.rules.header_size
         for index, (section, start) in enumerate(placed):
             if start != _align(position, section.align) or any(data[position:start]):
                 raise ClipFormatError(f"The {section.table} table is not where the previous table ends")
             if section.extra or dialogue and section.user_curve:
                 self.extra_at, position = start, size
+                break
+            if self.embedded and index + 1 == len(placed):
+                self.open, self.tables[section.table], position = (section.table, start), [], size
                 break
             end = placed[index + 1][1] if index + 1 < len(placed) else size
             if end < start or end > size:
@@ -280,7 +286,11 @@ class _Decoder:
                    bool(record.get("instance_value", 0)), self._control("key", record))
 
     def _row(self, table: str, index: int) -> object:
-        row = self._range(self.tables[table], index, 1, f"{table} row")[0]
+        rows = self.tables[table]
+        if self.open and self.open[0] == table and index >= len(rows):
+            record = self.rules.tables[table]
+            rows += record.decode_table(self.data, self.open[1] + len(rows) * record.size, index + 1 - len(rows))
+        row = self._range(rows, index, 1, f"{table} row")[0]
         return row["value"] if table == "path_points" else (self._string("c8", row["type"]),
                                                             self._string("c16", row["path"]))
 
@@ -322,6 +332,8 @@ class _Decoder:
 
 
 class _MotClipDecoder(_Decoder):
+    embedded = True
+
     def _rules(self):
         return rules_for(self.profile.version, ResourceKind.MOT_CLIP)
 
@@ -335,6 +347,9 @@ class _MotClipDecoder(_Decoder):
         timeline = Timeline(self.profile.version, ResourceKind.MOT_CLIP, self.header["total_frame"],
                             self.header.get("header_guid", bytes(16)), [], [root])
         self._link([root], nodes)
+        if self.extra_at is None:
+            table, start = self.open
+            return timeline, start + len(self.tables[table]) * self.rules.tables[table].size
         head = extra["header"].decode(self.data, self.extra_at)
         end = self.extra_at + extra["header"].size
         timeline.intervals = []

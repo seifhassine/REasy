@@ -1,7 +1,3 @@
-"""DMC5 GUIR resource/dependency profile."""
-
-from file_handlers.motion.profiles import DMC5_PROFILE
-
 from ..profiles import GuiFormatProfile
 from .adapter import DMC5_GUI_ADAPTER
 
@@ -11,7 +7,6 @@ DMC5_GUI_PROFILE = GuiFormatProfile(
     version=DMC5_GUI_ADAPTER.version,
     adapter=DMC5_GUI_ADAPTER,
     runtime_target="stm",
-    motion=DMC5_PROFILE,
     default_uvs_version=7,
     default_tex_version=11,
     default_mesh_version=1808282334,

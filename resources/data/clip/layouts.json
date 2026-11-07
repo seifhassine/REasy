@@ -651,7 +651,7 @@
     ]},
     "compact_key": {"size": 16, "fields": [
      [0, "f32", "frame"],
-     {"at": 4, "type": "u32", "bits": [[0, 8, "interpolation"], [9, 16, "width"]]},
+     {"at": 4, "type": "u32", "bits": [[0, 8, "interpolation"], [8, 1, "instance_value"], [9, 16, "width"]]},
      [8, "u64", "value"]
     ]},
     "speed_point": {"size": 24, "fields": [[0, "f32", "frame"], [4, "f32", "rate"], [8, "u32", "interpolation"], [16, "u64", "control_index"]]},

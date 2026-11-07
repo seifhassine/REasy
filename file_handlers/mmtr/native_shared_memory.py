@@ -47,14 +47,16 @@ class SharedMemory:
         return pointer
 
     def apply(self, record, body, values):
-        if match := re.fullmatch(r'call (%[-\w.$]+)\* @dx\.op\.getMeshPayload\.[^(]+\(i32 170\)(?: #\d+)?',body):
+        if record.opcode == 'call' and (match := re.fullmatch(
+                r'call (%[-\w.$]+)\* @dx\.op\.getMeshPayload\.[^(]+\(i32 170\)(?: #\d+)?', body)):
             layout = native_storage_type(match[1],self.metadata.storage_types)
             execution = self.builder.contract.mesh_execution
             if self.metadata.stage != 'mesh' or execution is None or execution.payload_layout != layout:
                 raise ShaderGraphError('Incoming mesh payload differs from its declared stage linkage.')
             self.pointers[record.result] = SharedPointer(dict(id='payload',scope='payload',layout=layout.to_data()),layout)
             return True
-        if match := re.fullmatch(r'call void @dx\.op\.dispatchMesh\.[^(]+\((.+)\)(?: #\d+)?',body):
+        if record.opcode == 'call' and (
+                match := re.fullmatch(r'call void @dx\.op\.dispatchMesh\.[^(]+\((.+)\)(?: #\d+)?', body)):
             parts = split(match[1])
             if len(parts)!=5 or parts[0]!='i32 173' or any(not part.startswith('i32 ') for part in parts[1:4]):
                 raise ShaderGraphError('Invalid amplification dispatch arguments.')

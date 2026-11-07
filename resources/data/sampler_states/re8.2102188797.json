@@ -2,12 +2,6 @@
  "format": 1,
  "game": "RE8",
  "resource_version": 2102188797,
- "source": {
-  "captures": [
-   "cap.rdc"
-  ],
-  "several_states": {}
- },
  "states": {
   "AutomaticWrap": {
    "filter": 21,

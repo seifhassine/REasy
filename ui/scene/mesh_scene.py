@@ -87,6 +87,13 @@ def mesh_lod_parts(
     return parts
 
 
+def group_submesh_numbers(mesh, group: int, lod_index: int = 0) -> range:
+    lods = mesh.meshes[0].lods if mesh.meshes else ()
+    groups = lods[lod_index].mesh_groups if 0 <= lod_index < len(lods) else ()
+    start = sum(len(item.submeshes) for item in groups[:group])
+    return range(start, start + (len(groups[group].submeshes) if 0 <= group < len(groups) else 0))
+
+
 def meshlet_part_runs(mesh, lod_index: int = 0) -> list[int] | None:
     """The lengths of the runs of the main geometry's ``mesh_lod_parts`` a scene draws as one part (``meshlet_runs``);
     None for a mesh of no meshlets."""

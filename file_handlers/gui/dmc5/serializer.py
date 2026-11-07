@@ -1,11 +1,8 @@
-"""Native-canonical serializer for semantic GUIR documents."""
-
 from __future__ import annotations
 
 import struct
 
-from file_handlers.motion.mot_clip.model import ClipInterpolation
-lazy from file_handlers.motion.mot_clip.writer import CompactMotClipV27Writer
+lazy from file_handlers.clip.encode import write_motclip
 
 lazy from ..errors import GuiFormatError, GuiWriteError
 lazy from ..model import GUI_MAGIC, GuiDocument, GuiNineSlice, GuiProperty, GuiTextureSet
@@ -15,11 +12,6 @@ lazy from .property_codec import (
     DMC5_GUI_NATIVE_POOL_ORDER,
     dmc5_native_gui_value_pool,
     encode_dmc5_gui_value,
-)
-
-
-ASCII_EVENT_MODES = frozenset(
-    {ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT}
 )
 
 
@@ -83,15 +75,12 @@ class _Builder:
 
 
 class Dmc5GuiSerializer:
-    """Build DMC5's deterministic native layout from semantic relationships."""
-
     def __init__(self, profile: GuiFormatProfile) -> None:
         try:
             DMC5_GUI_ADAPTER.require_profile(profile, "GUI serializer")
         except GuiFormatError as exc:
             raise GuiWriteError(str(exc)) from exc
         self.profile = profile
-        self.clip_writer = CompactMotClipV27Writer(profile.motion)
 
     def build(self, document: GuiDocument) -> bytes:
         if document.version != self.profile.version:
@@ -153,12 +142,7 @@ class Dmc5GuiSerializer:
         animation_offsets: dict[int, int] = {}
         for animation in animations:
             try:
-                payload = self.clip_writer.build(
-                    animation.clip,
-                    origin_offset=0,
-                    include_extra_ranges=False,
-                    ascii_value_interpolations=ASCII_EVENT_MODES,
-                )
+                payload = write_motclip(animation.clip, 0)
             except Exception as exc:
                 raise GuiWriteError(
                     f"animation {animation.name!r} cannot be serialized: {exc}"

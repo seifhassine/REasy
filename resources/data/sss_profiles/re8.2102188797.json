@@ -1,0 +1,35 @@
+{
+ "format": 2,
+ "game": "re8",
+ "resource_version": 2102188797,
+ "path": "nobody/sss_profiles.sss",
+ "file": {
+  "magic": 5460819,
+  "version": 336596992,
+  "record": 40,
+  "most": 16,
+  "clamp": {
+   "words": [8, 9],
+   "least": -0.999,
+   "most": 0.999,
+   "unordered": -0.999
+  }
+ },
+ "records": {},
+ "bake": {
+  "slots": 16,
+  "slot": 152,
+  "half": 4,
+  "fills": [],
+  "falloff": [0, 1, 2],
+  "mix": [3, 4, 5],
+  "width": 6,
+  "ratio": 7,
+  "falloff_min": null,
+  "range": 2.0,
+  "exponent": 2.0,
+  "area": 0.5,
+  "variance": 2.0,
+  "norm": 6.2831855
+ }
+}

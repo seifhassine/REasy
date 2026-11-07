@@ -127,8 +127,11 @@ class ChannelPanel(QWidget):
                 groups[name].setFlags(Qt.ItemFlag.ItemIsEnabled)
                 groups[name].setExpanded(name == "pixel")
             pin = str(record["pin"])
+            no_material = record.get("material_routes") == 0
+            count = str(len(record.get("passes", ())))
             item = QTreeWidgetItem(groups[name], (str(record["label"]), str(record["value_type"]),
-                                                  str(len(record.get("passes", ())))))
+                                                  self.tr("{count} (no material)").format(count=count) if no_material
+                                                  else count))
             item.setText(3, " · ".join(
                 self.tr("{purpose}: {count}").format(purpose=purpose_title(purpose), count=count)
                 for purpose, count in record.get("purposes", {}).items()))
@@ -137,10 +140,15 @@ class ChannelPanel(QWidget):
                           | (Qt.ItemFlag.ItemIsUserCheckable if pin not in edited else Qt.ItemFlag.NoItemFlags))
             item.setCheckState(0, Qt.CheckState.Checked if pin in shown | edited else Qt.CheckState.Unchecked)
             reach = reached_by(self.master, pin)
-            tips = [self.tr("Written by: {passes}").format(passes=", ".join(record.get("passes", ())[:12])
-                                                           + (" …" if len(record.get("passes", ())) > 12 else ""))]
+            passes = ", ".join(record.get("passes", ())[:12]) + (" …" if len(record.get("passes", ())) > 12 else "")
+            added = str(record["channel"]).split(":", 2)[1] == "added"
+            tips = [(self.tr("These passes bind this target but their shaders don't write it; a value wired here "
+                             "adds it: {passes}") if added else self.tr("Written by: {passes}")).format(passes=passes)]
             if pin in edited:
                 tips.insert(0, self.tr("Changed by this graph."))
+            if no_material:
+                tips.append(self.tr("None of these passes reads the material: constants and engine inputs reach them, "
+                                    "material parameters and textures don't."))
             for purpose, meaning in record.get("meanings", {}).items():
                 if meaning["slot"]:
                     text = (self.tr("In {purpose} passes this is the engine's G-buffer slot {slot}; other passes in "

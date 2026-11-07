@@ -2,13 +2,6 @@
  "format": 1,
  "game": "RE9",
  "resource_version": 251112994,
- "source": {
-  "captures": [
-   "re9_frame6202.rdc",
-   "re9_frame6820.rdc"
-  ],
-  "several_states": {}
- },
  "states": {
   "AutomaticBorder": {
    "filter": 85,

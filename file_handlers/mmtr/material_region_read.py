@@ -5,7 +5,8 @@ from functools import lru_cache
 import hashlib
 import json
 
-from file_handlers.sdf.shader_graph import ShaderGraphError, immutable_property_validation
+from file_handlers.sdf.graph_snapshot import immutable_property_validation
+from file_handlers.sdf.shader_graph import ShaderGraphError
 
 
 _validated = ContextVar('validated_material_regions', default=None)

@@ -101,6 +101,7 @@ from .material_function import (
     FUNCTION_VALUE_TYPES,
 )
 lazy from .material_channels import ChannelPanel, channel_nodes, reach_summary, visible_channel_pins
+lazy from .engine_inputs import MATERIAL_TEXTURES, engine_input_catalog_for
 lazy from .pass_purpose import PURPOSES, VISIBLE, pass_purpose, purpose_title, DRAWING_FOR_KIND
 lazy from .surface_data import MATERIAL_COORDINATES, SURFACE_DATA_KIND, document_surface_data
 lazy from .material_variant import material_project_sidecar_path
@@ -108,6 +109,7 @@ from .material_usage import InputUsage, material_input_usage
 lazy from .profiles.base import same_mmtr_profile
 lazy from . import material_implementation
 lazy from .material_function_editor import MaterialFunctionDialog, new_material_function, MaterialBranchDialog
+lazy from .effect_lift_dialog import EffectFromMaterialDialog
 lazy from .material_projection import insert_planar, insert_tiling_offset, insert_triplanar
 lazy from .native_build_cache import fresh_native_build_cache
 lazy from .profiles import re_engine_dxil_authoring
@@ -263,6 +265,7 @@ class MmtrMaterialEditor(QWidget):
         super().__init__(parent)
         self.source_path = ""
         self.project_dir = ""
+        self.resource_loader = None
         self._document = None
         self._engine_inputs = None
         self._surface_data = None
@@ -326,6 +329,11 @@ class MmtrMaterialEditor(QWidget):
         set_style_role(self.provenance_note, banner="warning")
         self.provenance_note.hide()
         body.addWidget(self.provenance_note)
+        self.stale_note = QLabel()
+        self.stale_note.setWordWrap(True)
+        set_style_role(self.stale_note, banner="warning")
+        self.stale_note.hide()
+        body.addWidget(self.stale_note)
 
         def action(label, callback):
             value = QAction(label, self)
@@ -336,6 +344,7 @@ class MmtrMaterialEditor(QWidget):
         self.save_action = action(self.tr("Save Graph…"), self._save_project)
         self.add_parameter_action = action(self.tr("Parameter…"), self._add_parameter)
         self.add_texture_action = action(self.tr("Texture…"), self._add_texture)
+        self.add_effect_action = action(self.tr("Effect from Material…"), self._add_effect_from_material)
         self.import_function_action = action(self.tr("Import Function…"), self._import_material_function)
         self.new_function_action = action(self.tr("New Function…"), self._new_material_function)
         self.insert_function_action = action(self.tr("Insert New Function on Wire…"), self._new_material_function)
@@ -362,7 +371,7 @@ class MmtrMaterialEditor(QWidget):
 
         self.graph_menu = menu_button(self.tr("Graph"), (self.open_action, self.save_action))
         self.add_menu = menu_button(self.tr("Add"), (self.add_parameter_action, self.add_texture_action, None,
-            self.new_function_action, self.import_function_action))
+            self.add_effect_action, None, self.new_function_action, self.import_function_action))
         selection_menu = menu_button(self.tr("Selection"), (self.edit_function_action, self.extract_function_action,
             self.insert_function_action, None, self.delete_node_action, self.remove_input_action))
         self.fit_button = strip_button(QPushButton(self.tr("Fit Graph")), "fit")
@@ -571,6 +580,13 @@ class MmtrMaterialEditor(QWidget):
             self.provenance_note.setText(unreadable_sidecar)
             set_style_role(self.provenance_note, banner="danger")
             self.provenance_note.show()
+        stale, stale_details = self._stale_passes()
+        self.stale_note.setText(self.tr(
+            "{count} passes read this material through inputs REasy cannot rebuild yet: builds leave those reads as "
+            "they are. Hover for which."
+        ).format(count=stale) if stale else "")
+        self.stale_note.setToolTip(stale_details)
+        self.stale_note.setVisible(bool(stale))
         if self._contract is None:
             self.profile_badge.setToolTip(self._unavailable_interface_note())
         elif self._coverage.complete:
@@ -959,7 +975,7 @@ class MmtrMaterialEditor(QWidget):
                 item.setData(0, Qt.ItemDataRole.UserRole, (SURFACE_DATA_KIND, {
                     "datum": offer.key, "label": offer.label, "value_type": offer.value_type}))
                 tooltip = self.tr("{label} ({type})\nRead where the pass hands it to the pixel shader:\n"
-                                  "{works}\nUse Where Available or Drawing For for the others.").format(
+                                  "{works}\nUse Where Available for the others.").format(
                     label=offer.label, type=offer.value_type, works=self._works_on(offer))
                 if offer.carried:
                     tooltip += "\n" + self.tr(
@@ -1017,7 +1033,7 @@ class MmtrMaterialEditor(QWidget):
                 engine_input = availability[value["pin"]]
                 group.setToolTip(0, self.tr(
                     "{label} ({type})\nUsable where its shader binds it or the game binds it in the pass:\n{works}\n"
-                    "Use Where Available or Drawing For for the others."
+                    "Use Where Available for the others."
                 ).format(label=value["label"], type=value_type, works=self._works_on(engine_input))
                     + "\n" + self._engine_input_materials_note(engine_input))
                 categories[category_name].addChild(group)
@@ -1082,8 +1098,8 @@ class MmtrMaterialEditor(QWidget):
         available = QTreeWidgetItem(control_flow, [self.tr("Where Available")])
         available.setData(0, Qt.ItemDataRole.UserRole, (WHERE_AVAILABLE_KIND, {"value_type": "float4"}))
         available.setToolTip(0, self.tr(
-            "Uses Value in the rendering passes that provide every engine input and surface data it reads, and "
-            "Otherwise in the rest."
+            "Uses Value in the rendering passes that provide every engine input, surface data and material "
+            "parameter it reads, and Otherwise in the rest."
         ))
         per_vertex = QTreeWidgetItem(control_flow, [self.tr("Computed per Vertex")])
         per_vertex.setData(0, Qt.ItemDataRole.UserRole, (PER_VERTEX_KIND, {"value_type": "float3"}))
@@ -1343,8 +1359,6 @@ class MmtrMaterialEditor(QWidget):
                 default=_default_for_type(value_type),
                 role="custom",
                 group=dialog.group.text().strip() or "Material",
-                minimum=0.0 if value_type == "float" else None,
-                maximum=1.0 if value_type == "float" else None,
             )
             if any(item.name.casefold() == definition.name.casefold() for item in self._project.parameters):
                 raise MaterialProjectError(f"A parameter named {definition.name!r} already exists.")
@@ -1378,6 +1392,17 @@ class MmtrMaterialEditor(QWidget):
             QMessageBox.warning(self, self.tr("Texture not added"), str(exc))
             return
         self._add_input(self._project.textures, definition, "material_texture", "texture_id")
+
+    def _add_effect_from_material(self) -> None:
+        if self._project is None or self._document is None or not self._can_edit_interface():
+            return
+        dialog = EffectFromMaterialDialog(self._project, self._document, self.resource_loader, self)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        node = self._project.graph.node(dialog.function_node) if accepted else None
+        dialog.deleteLater()
+        if node is not None:
+            self._populate_palette()
+            self._select_new_node(node)
 
     def _add_input(self, definitions: list, definition, kind: str, key: str) -> None:
         definitions.append(definition)
@@ -1739,6 +1764,12 @@ class MmtrMaterialEditor(QWidget):
                     n, "purposes", sorted(({*n.properties.get("purposes", ())} | {item}) if checked
                                           else {*n.properties.get("purposes", ())} - {item})))
                 self.properties.addRow(box)
+            if programs := node.properties.get("programs", ()):
+                listed = QLabel(self.tr("And only in the {count} passes its tooltip lists, the ones a lifted effect "
+                                        "came from.").format(count=len(programs)))
+                listed.setWordWrap(True)
+                listed.setToolTip("\n".join(f"{name} · target {target}" for target, name in programs))
+                self.properties.addRow(listed)
         elif node.kind == "code":
             _code_properties(self.properties, node, lambda inputs, outputs, body, n=node: self._set_code(
                 n, inputs, outputs, body))
@@ -1767,8 +1798,8 @@ class MmtrMaterialEditor(QWidget):
                 lambda _index, n=node, c=control: self._set_node_property(n, "value_type", c.currentData()))
             self.properties.addRow(QCoreApplication.translate("SdfShaderGraphEditor", "Value type"), control)
             description = QLabel(self.tr(
-                "Uses Value in the rendering passes that provide every engine input and surface data it reads, and "
-                "Otherwise in the rest."
+                "Uses Value in the rendering passes that provide every engine input, surface data and material "
+                "parameter it reads, and Otherwise in the rest."
             ))
             description.setWordWrap(True)
             self.properties.addRow(description)
@@ -2253,9 +2284,77 @@ class MmtrMaterialEditor(QWidget):
             for item in member.replacements if item.diagnostics))
         if diagnostics:
             message += self.tr(" Compiler advisories — hover for details.")
+        stale, stale_details = self._stale_passes()
+        if stale:
+            message += self.tr(" {count} passes keep reading it as before through inputs REasy cannot rebuild — hover "
+                               "for which.").format(count=stale)
+            diagnostics.insert(0, stale_details)
+        fallbacks, gaps, fallback_details = self._fallback_passes(build)
+        if fallbacks:
+            message += (self.tr(" Where Available gives {count} passes its Otherwise input; {gaps} of them lack "
+                                "material inputs the game's other masters read there, which REasy cannot give yet — "
+                                "hover for which.") if gaps else
+                        self.tr(" Where Available gives {count} passes its Otherwise input — hover for which.")).format(
+                count=fallbacks, gaps=gaps)
+            diagnostics.insert(0, fallback_details)
         self._set_build_status(
             message, ready=True, warning=bool(diagnostics), details="\n\n".join(diagnostics),
         )
+
+    def _fallback_passes(self, build) -> tuple[int, int, str]:
+        members = build.family_builds or (build,)
+        if not any(member.fallbacks for member in members):
+            return 0, 0, ""
+        family = self._document.material_family
+        nodes = {node.node_id: node for node in self._project.graph.nodes}
+        catalog = engine_input_catalog_for(self._document.profile)
+        parameters = {item.name for item in self._project.parameters}
+        textures = {item.name for item in self._project.textures}
+        groups: dict[tuple[str, tuple[str, ...], tuple[str, ...]], list[str]] = {}
+        count = gaps = 0
+        for lod, member in enumerate(members):
+            source = family.members[lod] if family is not None else self._document
+            count += len(member.fallbacks)
+            for (target, program, role), notes in member.fallbacks:
+                found = source.sdf.targets[target].programs[program]
+                key = (found.shader(role).binary_format, found.name, role)
+                read = catalog.pass_material(*key) if catalog is not None else frozenset()
+                stored = bool(read - {MATERIAL_TEXTURES}) or catalog is not None and catalog.pass_record(
+                    *key, target) is not None
+                lacking = False
+                for node_id, missing in notes:
+                    unsupplied = tuple(name for name in missing if name in parameters and stored
+                                       or name in textures and MATERIAL_TEXTURES in read)
+                    lacking |= bool(unsupplied)
+                    groups.setdefault((node_id, missing, unsupplied), []).append(f"{found.name} ({role})")
+                gaps += lacking
+        lines = [self.tr("{node}: Otherwise in {count} passes lacking {inputs}, e.g. {examples}").format(
+            node=node_title(nodes[node_id]) if node_id in nodes else node_id, inputs=", ".join(missing),
+            count=len(passes), examples="; ".join(passes[:4])) + (self.tr(
+                " — the game's other masters read {inputs} in these passes; REasy cannot give that yet").format(
+                inputs=", ".join(unsupplied)) if unsupplied else "")
+            for (node_id, missing, unsupplied), passes in groups.items()]
+        return count, gaps, "\n".join(lines)
+
+    def _stale_passes(self) -> tuple[int, str]:
+        coverage, document = self._coverage, self._document
+        if coverage is None or document is None or not coverage.stale_records:
+            return 0, ""
+        profile = document.profile.shader_graph_profile
+        unrebuilt = set(profile.unrebuilt_material_resources)
+        source = document.material_family.members[0] if document.material_family is not None else document
+        groups: dict[str, list[str]] = {}
+        for (target, program, role), reads in coverage.stale_passes:
+            names = [name for name in reads if name in unrebuilt]
+            group = names[0] if names else self.tr("Stages this game's profile does not rebuild")
+            name = source.sdf.targets[target].programs[program].name
+            groups.setdefault(group, []).append(f"{name} ({role}: {', '.join(reads)})")
+        lines = [self.tr("{group}: {count} passes, e.g. {examples}").format(
+            group=group, count=len(passes), examples="; ".join(passes[:4])) for group, passes in groups.items()]
+        others = coverage.stale_records - len(coverage.stale_passes)
+        if others:
+            lines.append(self.tr("Other shader LODs: {count} passes").format(count=others))
+        return coverage.stale_records, "\n".join(lines)
 
     def material_save_payload(self):
         if self._contract is None or self._project is None:

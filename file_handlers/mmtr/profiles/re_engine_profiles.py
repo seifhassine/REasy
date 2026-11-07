@@ -69,6 +69,7 @@ def classify_re_engine_mmtr_program(name: str) -> MmtrNameSemantics:
     with_normals = "withnorm" in lowered
 
     families = (
+        ("gui-mesh", "_guimesh", ""),
         ("pre-transform-compute", "pretransform", "cs"),
         ("deferred-gbuffer", "deferred", ""),
         ("shadow", "shadow", ""),
@@ -201,7 +202,7 @@ def classify_re_engine_mmtr_document(
         return "surface master material"
     if families & {"forward", "water", "height-field"}:
         return "forward / specialized surface master material"
-    if "gui" in families:
+    if families & {"gui", "gui-mesh"}:
         return "GUI master material"
     if families <= {"compute", "pre-transform-compute", "named-engine-pass"}:
         return "renderer compute master material"
@@ -215,10 +216,12 @@ def _profile(
     aliases: tuple[str, ...],
     sdf_profile,
     current_resource_version: int | None = None,
+    mdf_resource_version: int | None = None,
     bindless_materials: bool = False,
     material_record_prefix_size: int = 0,
     full_authoring: bool = True,
     shader_graph_id: str = "",
+    instanced_material_buffer: str = "",
 ) -> MmtrGameProfile:
     return register_mmtr_profile(
         MmtrGameProfile(
@@ -235,11 +238,13 @@ def _profile(
             shader_graph_profile=re_engine_shader_graph_profile(
                 shader_graph_id or game,
                 bindless_materials=bindless_materials,
+                instanced_material_buffer=instanced_material_buffer,
                 material_record_prefix_size=material_record_prefix_size,
                 full_authoring=full_authoring,
             ),
             default_for_version=True,
             current_resource_version=current_resource_version,
+            mdf_resource_version=mdf_resource_version,
         )
     )
 
@@ -249,12 +254,16 @@ RE2_MMTR_PROFILE = _profile(
     display_name="Resident Evil 2 Master Material",
     aliases=("Resident Evil 2 / Biohazard RE:2",),
     sdf_profile=RE2_SDF_PROFILE,
+    mdf_resource_version=10,
+    instanced_material_buffer="UserMaterialInstances",
 )
 RE3_MMTR_PROFILE = _profile(
     game="RE3",
     display_name="Resident Evil 3 Master Material",
     aliases=(),
     sdf_profile=RE3_SDF_PROFILE,
+    mdf_resource_version=13,
+    instanced_material_buffer="UserMaterialInstances",
 )
 RE_RT_MMTR_PROFILE = _profile(
     game="RE2RT",
@@ -262,44 +271,55 @@ RE_RT_MMTR_PROFILE = _profile(
     # Earlier names, from when RE3 RT shared this profile.
     aliases=("RE2_RE3_RT", "RE_RT", "RE2 / RE3 RT", "Resident Evil 2 / 3 Ray Tracing Master Material"),
     sdf_profile=RE_RT_SDF_PROFILE,
+    mdf_resource_version=21,
     # Shared with the RE3 RT variant and recorded in saved material projects.
     shader_graph_id="RE2_RE3_RT",
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 RE8_MMTR_PROFILE = _profile(
     game="RE8",
     display_name="Resident Evil Village Master Material",
     aliases=("Resident Evil 8", "Resident Evil Village / Biohazard Village"),
     sdf_profile=RE8_SDF_PROFILE,
+    mdf_resource_version=19,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 MHRISE_MMTR_PROFILE = _profile(
     game="MHRISE",
     display_name="Monster Hunter Rise Master Material",
     aliases=("MHR", "MonsterHunterRise"),
     sdf_profile=MHRISE_SDF_PROFILE,
+    mdf_resource_version=23,
 )
 RE4_MMTR_PROFILE = _profile(
     game="RE4",
     display_name="Resident Evil 4 Master Material",
     aliases=("Resident Evil 4 Remake",),
     sdf_profile=RE4_SDF_PROFILE,
+    mdf_resource_version=32,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 SF6_MMTR_PROFILE = _profile(
     game="SF6",
     display_name="Street Fighter 6 Master Material",
     aliases=("StreetFighter6",),
     sdf_profile=SF6_SDF_PROFILE,
+    mdf_resource_version=31,
     current_resource_version=250109895,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 DD2_MMTR_PROFILE = _profile(
     game="DD2",
     display_name="Dragon's Dogma 2 Master Material",
     aliases=("Dragons Dogma 2",),
     sdf_profile=DD2_SDF_PROFILE,
+    mdf_resource_version=51,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 DD2_OLD_MMTR_PROFILE = _profile(
     game="DD2OLD",
@@ -313,31 +333,39 @@ MHWS_MMTR_PROFILE = _profile(
     display_name="Monster Hunter Wilds Master Material",
     aliases=("MHWILDS", "MonsterHunterWilds"),
     sdf_profile=MHWS_SDF_PROFILE,
+    mdf_resource_version=45,
     # The version the game's executable registers.
     current_resource_version=240906211,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 RE9_MMTR_PROFILE = _profile(
     game="RE9",
     display_name="Resident Evil Requiem Master Material",
     aliases=("Resident Evil 9",),
     sdf_profile=RE9_SDF_PROFILE,
+    mdf_resource_version=51,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 PRAGMATA_MMTR_PROFILE = _profile(
     game="PRAGMATA",
     display_name="Pragmata Retail Master Material",
     aliases=(),
     sdf_profile=PRAGMATA_SDF_PROFILE,
+    mdf_resource_version=51,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 ONIMUSHA_WOTS_MMTR_PROFILE = _profile(
     game="ONIMUSHAWOTS",
     display_name="Onimusha: Way of the Sword Master Material",
     aliases=("WOTS", "OnimushaWotS"),
     sdf_profile=ONIMUSHA_WOTS_SDF_PROFILE,
+    mdf_resource_version=51,
     bindless_materials=True,
     material_record_prefix_size=16,
+    instanced_material_buffer="UserMaterialInstances",
 )
 ONIMUSHA_WOTS_DEMO_MMTR_PROFILE = _profile(
     game="ONIMUSHAWOTSDEMO",
@@ -352,27 +380,34 @@ KUNITSUGAMI_MMTR_PROFILE = _profile(
     display_name="Kunitsu-Gami Master Material",
     aliases=KUNITSUGAMI_SDF_PROFILE.aliases,
     sdf_profile=KUNITSUGAMI_SDF_PROFILE,
+    mdf_resource_version=40,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 DRDR_MMTR_PROFILE = _profile(
     game="DRDR",
     display_name="Dead Rising Deluxe Remaster Master Material",
     aliases=DRDR_SDF_PROFILE.aliases,
     sdf_profile=DRDR_SDF_PROFILE,
+    mdf_resource_version=40,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 RE7RT_MMTR_PROFILE = _profile(
     game="RE7RT",
     display_name="Resident Evil 7 Ray Tracing Master Material",
     aliases=RE7RT_SDF_PROFILE.aliases,
     sdf_profile=RE7RT_SDF_PROFILE,
+    mdf_resource_version=21,
     bindless_materials=True,
+    instanced_material_buffer="UserMaterialInstances",
 )
 MHST3_MMTR_PROFILE = _profile(
     game="MHST3",
     display_name="Monster Hunter Stories 3 Master Material",
     aliases=MHST3_SDF_PROFILE.aliases,
     sdf_profile=MHST3_SDF_PROFILE,
+    mdf_resource_version=49,
     bindless_materials=True,
 )
 O2_MMTR_PROFILE = _profile(
@@ -380,19 +415,22 @@ O2_MMTR_PROFILE = _profile(
     display_name="Onimusha 2 Master Material",
     aliases=O2_SDF_PROFILE.aliases,
     sdf_profile=O2_SDF_PROFILE,
+    mdf_resource_version=46,
     bindless_materials=True,
 )
 
 
-def _enum_variant(base, sdf_profile):
+def _enum_variant(base, sdf_profile, **changes):
     return register_mmtr_profile(replace(
         base, game=sdf_profile.game, name=f"{sdf_profile.display_name} MMTR",
         display_name=f"{sdf_profile.display_name} Master Material", aliases=sdf_profile.aliases,
-        sdf_profile=sdf_profile, default_for_version=False,
+        sdf_profile=sdf_profile, default_for_version=False, **changes,
     ))
 
 
-RERESISTANCE_MMTR_PROFILE = _enum_variant(RE3_MMTR_PROFILE, RERESISTANCE_SDF_PROFILE)
+# Resistance's instanced passes are not verified, so its builds keep them.
+RERESISTANCE_MMTR_PROFILE = _enum_variant(RE3_MMTR_PROFILE, RERESISTANCE_SDF_PROFILE,
+                                          shader_graph_profile=re_engine_shader_graph_profile("RE3"))
 RE3RT_MMTR_PROFILE = _enum_variant(RE_RT_MMTR_PROFILE, RE3RT_SDF_PROFILE)
 
 

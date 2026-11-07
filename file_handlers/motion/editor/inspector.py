@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable
+from functools import partial
 
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QWidget
@@ -15,6 +16,8 @@ from ..model import (
     Motion,
     MotionList,
     MotionListEntry,
+    MotionPack,
+    MotionPackEntry,
     MotionTree,
     PropertyTrack,
     Sequence,
@@ -25,6 +28,7 @@ from ..model import (
 )
 from ..pose import TRANSFORMS
 from ..rules import display_names, encoding, list_profile, mot_profile, tree_param_kinds, tree_rules
+from .outline import param_name
 from .state import EditorState
 
 _VALUE_KINDS = {"i32": "int", "u32": "int", "f32": "float", "string16": "text"}
@@ -47,7 +51,8 @@ class Inspector(FieldPanel):
         title = {MotionList: self.tr("Motion List"), MotionListEntry: self.tr("Entry"), Motion: self.tr("Motion"),
                  MotionTree: self.tr("MotTree"), JointChannels: self.tr("Joint"), PropertyTrack: self.tr("Property"),
                  Sequence: self.tr("Sequence"), TreeNode: self.tr("Node"), TreeParam: self.tr("Parameter"),
-                 TreeLink: self.tr("Link")}.get(type(item), "")
+                 TreeLink: self.tr("Link"), MotionPack: self.tr("Motion Pack"),
+                 MotionPackEntry: self.tr("Entry")}.get(type(item), "")
         self.show_fields(id(item), title, self._fields(item))
 
     def _set(self, target, text: str) -> Callable[[str], Callable[[object], None]]:
@@ -57,9 +62,17 @@ class Inspector(FieldPanel):
         providers = {MotionList: self._list_fields, MotionListEntry: self._entry_fields, Motion: self._motion_fields,
                      MotionTree: self._tree_fields, JointChannels: self._channel_fields,
                      PropertyTrack: self._property_fields, Sequence: self._sequence_fields,
-                     TreeNode: self._node_fields, TreeParam: self._param_fields, TreeLink: self._link_fields}
+                     TreeNode: self._node_fields, TreeParam: self._param_fields, TreeLink: self._link_fields,
+                     MotionPack: lambda pack: [Field(self.tr("Version"), "readonly", lambda: pack.version)],
+                     MotionPackEntry: self._pack_entry_fields}
         provider = providers.get(type(item))
         return [] if provider is None else provider(item)
+
+    def _pack_entry_fields(self, entry: MotionPackEntry) -> list[Field]:
+        return [Field(self.tr("Motion ID"), "int", lambda: entry.motion_id,
+                      self._set(entry, self.tr("Edit Entry"))("motion_id"),
+                      tooltip=self.tr("Rows find it by this ID (a binary search: the IDs must ascend).")),
+                Field(self.tr("Motion"), "section", lambda: None), *self._motion_fields(entry.item)]
 
     def _list_fields(self, motion_list: MotionList) -> list[Field]:
         setter = self._set(motion_list, self.tr("Edit Motion List"))
@@ -74,7 +87,14 @@ class Inspector(FieldPanel):
                                 setter("joint_mask_mode"), display_names("JointMaskMode")))
         if "motion_packs" in stored:
             fields.append(Field(self.tr("Motion packs"), "readonly", lambda: len(motion_list.motion_packs)))
+        if (stop := self.state.stop_of()) is not None:
+            fields.append(Field(self.tr("Setup stops at"), "readonly", lambda: self.tr("Row {0}, motion ID {1}").format(
+                motion_list.entries.index(stop), stop.motion_id), tooltip=self._stop_tip()))
         return fields
+
+    def _stop_tip(self) -> str:
+        return self.tr("The row's source lacks its key or ID: the game stops setting the list up there and leaves the "
+                       "rows from it on unset.")
 
     def _entry_fields(self, entry: MotionListEntry) -> list[Field]:
         setter = self._set(entry, self.tr("Edit Entry"))
@@ -93,6 +113,10 @@ class Inspector(FieldPanel):
                              setter("additional_sequences")),
                        Field(self.tr("Source bank"), "int", lambda: entry.source_bank, setter("source_bank")),
                        Field(self.tr("Source key"), "int", lambda: entry.source_key, setter("source_key"))]
+        entries = self.state.document.root.entries
+        if (stop := self.state.stop_of()) is not None and entries.index(entry) >= entries.index(stop):
+            fields.append(Field(self.tr("Set up"), "readonly", lambda: self.tr("No (setup stops at row {0})").format(
+                entries.index(stop)), tooltip=self._stop_tip()))
         if isinstance(entry.item, Motion):
             fields += [Field(self.tr("Motion"), "section", lambda: None), *self._motion_fields(entry.item)]
         elif isinstance(entry.item, MotionTree):
@@ -169,7 +193,10 @@ class Inspector(FieldPanel):
     def _node_fields(self, node: TreeNode) -> list[Field]:
         setter = self._set(node, self.tr("Edit Node"))
         fields = [Field(self.tr("Class"), "readonly", lambda: node.class_name),
-                  Field(self.tr("Name"), "text", lambda: node.name, setter("name")),
+                  Field(self.tr("Name"), "text", lambda: node.name, lambda name: edits.set_fields(
+                      self.state.document, node, self.tr("Edit Node"), name=name,
+                      name_hash=murmur3_hash_utf16le(name) if name else 0),
+                      tooltip=self.tr("Its name hash follows: murmur3 of the name, 0 for none.")),
                   Field(self.tr("Name hash"), "hex", lambda: node.name_hash, setter("name_hash")),
                   Field(self.tr("Node type"), "enum", lambda: node.node_type, setter("node_type"),
                         display_names("TreeNodeType")),
@@ -185,13 +212,16 @@ class Inspector(FieldPanel):
         fields = [Field(self.tr("Type"), "readonly", lambda: display_names("TreeParamType").get(param.type))]
         if param.name is not None:
             fields.append(Field(self.tr("Name"), "text", lambda: param.name, setter("name")))
+        else:
+            fields.append(Field(self.tr("Name"), "readonly", lambda: param_name(param)))
         if kind == "blob":
             return fields + [Field(self.tr("Data"), "readonly", lambda: self.tr("{0} bytes").format(len(param.value)))]
         fields.append(Field(self.tr("Name hash"), "hex", lambda: param.key, setter("key")))
+        value = partial(edits.set_param, self.state.document, param)
         if kind == "u8":
             return fields + [Field(self.tr("Value"), "bool", lambda: bool(param.value),
-                                   lambda checked: setter("value")(int(checked)))]
-        return fields + [Field(self.tr("Value"), _VALUE_KINDS[kind], lambda: param.value, setter("value"))]
+                                   lambda checked: value(int(checked)))]
+        return fields + [Field(self.tr("Value"), _VALUE_KINDS[kind], lambda: param.value, value)]
 
     def _link_fields(self, link: TreeLink) -> list[Field]:
         setter = self._set(link, self.tr("Edit Link"))
@@ -200,6 +230,14 @@ class Inspector(FieldPanel):
                   Field(self.tr("To"), "readonly", lambda: link.child.name or link.child.class_name),
                   Field(self.tr("Child pin"), "int", lambda: link.child_pin, setter("child_pin")),
                   Field(self.tr("Type"), "enum", lambda: link.type, setter("type"), display_names("TreeLinkType"))]
+        variables = list(self.state.variables_of(link.child).items()) if link.child.class_name == "VariablesNode" \
+            else []
+        if variables:
+            guids = [guid for guid, _held in variables]
+            fields.append(Field(self.tr("Variable"), "enum", lambda: guids.index(link.guid) if link.guid in guids
+                                else -1, lambda index: index >= 0 and setter("guid")(guids[index]),
+                                {index: name for index, (_guid, (name, _value)) in enumerate(variables)} |
+                                {-1: self.tr("(not in the .uvar)")}))
         if link.guid is not None:
             fields.append(Field(self.tr("GUID"), "guid", lambda: link.guid, setter("guid")))
         return fields

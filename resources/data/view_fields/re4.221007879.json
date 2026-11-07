@@ -1,0 +1,142 @@
+{
+ "format": 2,
+ "game": "re4",
+ "resource_version": 221007879,
+ "scene": "_share/appsystem/scene/appresident/camera.scn",
+ "components": {
+  "via.render.ToneMapping": {
+   "range": "TonemapRange",
+   "contrast": "Contrast",
+   "linear_begin": "LinearSectionBegin",
+   "linear_length": "LinearSectionLength",
+   "toe": "SDRToe",
+   "conversion": "DynamicRangeConversionEnable",
+   "exposure_scale": "ExposureScale",
+   "knee_start": "KneeStartNitPoint",
+   "knee": "Knee",
+   "exposure_enable": "ExposureEnable",
+   "ev": "EV",
+   "auto_exposure": "AutoExposure"
+  },
+  "via.render.RenderOutput": {
+   "output_id": "RenderOutputID"
+  },
+  "via.render.LDRHazeFilter": {
+   "haze": "v0_Enabled"
+  },
+  "via.render.LDRLensDistortion": {
+   "lens_distortion": "v0_Enabled"
+  },
+  "via.render.LDRFilmGrain": {
+   "film_grain": "v0_Enabled"
+  },
+  "via.render.LDRColorCorrect": {
+   "colour_correct": "v0_Enabled"
+  },
+  "via.render.LDRColorDeficiencySimulation": {
+   "colour_deficiency": "v0_Enabled"
+  },
+  "via.render.LDRImagePlane": {
+   "image_plane": "v0_Enabled"
+  },
+  "via.render.LDRRadialBlur": {
+   "radial_blur": "v0_Enabled"
+  }
+ },
+ "renderer": {
+  "specular_intensity": 1.0,
+  "ibl_reflectance_bias": 0.0,
+  "ibl_intensity": 1.0,
+  "range_compress": 1.0,
+  "range_decompress": 1.0,
+  "previous_range_compress": 1.0,
+  "previous_range_decompress": 1.0,
+  "display_gamma": 1.0,
+  "display_lower_limit": 0.0,
+  "display_upper_limit": 1.0
+ },
+ "effects": {
+  "lens_distortion": 1,
+  "film_grain": 2,
+  "colour_correct": 4,
+  "colour_deficiency": 8,
+  "image_plane": 16,
+  "radial_blur": 32,
+  "haze": 64
+ },
+ "buffers": {
+  "Tonemap": {
+   "exposureAdjustment": "exposure_adjustment",
+   "tonemapRange": "range",
+   "useAutoExposure": "use_auto_exposure"
+  },
+  "TonemapParam": {
+   "contrast": "contrast",
+   "linearBegin": "linear_begin",
+   "linearLength": "linear_length",
+   "toe": "toe",
+   "maxNit": "max_nit",
+   "linearStart": "linear_start",
+   "displayMaxNitSubContrastFactor": "display_max_nit_sub_contrast_factor",
+   "contrastFactor": "contrast_factor",
+   "mulLinearStartContrastFactor": "mul_linear_start_contrast_factor",
+   "invLinearBegin": "inv_linear_begin",
+   "madLinearStartContrastFactor": "mad_linear_start_contrast_factor"
+  },
+  "DynamicRangeConversionParam": {
+   "useDynamicRangeConversion": "conversion",
+   "exposureScale": "exposure_scale",
+   "kneeStartNit": "knee_start",
+   "knee": "knee",
+   "curve_HDRip": "hdr_ip",
+   "curve_k2": "k2",
+   "curve_k4": "k4"
+  },
+  "SceneInfo": {
+   "GPUVisibleMask": "visible_mask"
+  },
+  "EnvironmentInfo": {
+   "breakingPBRSpecularIntensity": "specular_intensity",
+   "breakingPBRIBLReflectanceBias": "ibl_reflectance_bias",
+   "breakingPBRIBLIntensity": "ibl_intensity"
+  },
+  "RangeCompressInfo": {
+   "rangeCompress": "range_compress",
+   "rangeDecompress": "range_decompress",
+   "prevRangeCompress": "previous_range_compress",
+   "prevRangeDecompress": "previous_range_decompress"
+  },
+  "CBControl": {
+   "cPassEnabled": "pass_enabled"
+  },
+  "OutputColorAdjustment": {
+   "fGamma": "display_gamma",
+   "fLowerLimit": "display_lower_limit",
+   "fUpperLimit": "display_upper_limit",
+   "fConvertToLimit": "display_range"
+  }
+ },
+ "unset": {
+  "DynamicRangeConversionParam": [
+   "DynamicRangeConversionParam_reserve"
+  ],
+  "EnvironmentInfo": [
+   "breakingPBR_Reserved"
+  ]
+ },
+ "texture_sizes": {
+  "ColorCorrectTexture": {
+   "texture": "tTextureMap0",
+   "size": "fTextureSize",
+   "inverse_size": "fTextureInverseSize"
+  }
+ },
+ "max_nit": 1.0,
+ "log2e": 1.4426950216293335,
+ "ln2": 0.6931471824645996,
+ "nit_scale": 0.009999999776482582,
+ "knee_most": 0.9999899864196777,
+ "visible_bit": 24,
+ "exposure_base": 2.0,
+ "automatic_exposure": 0
+}

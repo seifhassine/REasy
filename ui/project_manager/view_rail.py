@@ -35,6 +35,9 @@ class ViewRail(QWidget):
              self.tr("PAK Files\n\nPaths inside the game's .pak archives.")),
             ("bm", "bookmark", self.tr("Bookmarks"),
              self.tr("Bookmarks\n\nSaved paths and folders you visit often.")),
+            ("cat", "user", self.tr("Catalogue"),
+             self.tr("Catalogue\n\nThe game's characters by its catalogs. Double-click one to open it on its Motion "
+                     "tab.")),
         )
         self.setFixedHeight(self.RAIL_HEIGHT)
         self.setCursor(Qt.PointingHandCursor)

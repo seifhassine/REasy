@@ -1,12 +1,21 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+import struct
+from collections.abc import Sequence
+from dataclasses import dataclass, replace
 
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
-lazy from file_handlers.mmtr.wrinkle import WrinkleCatalog, component_settings
+lazy from file_handlers.mmtr.wrinkle import (
+    WrinkleCatalog, component_settings, mesh_joints, render_target_form, wrinkle_catalog_for, wrinkle_object,
+    wrinkle_proxy,
+)
 lazy from file_handlers.rsz.plain_values import plain_fields
+lazy from utils.resource_file_utils import resource_version_from_path
+
+lazy from .mesh_file import MeshFile
+lazy from .scene_lit import SceneLitObject
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,4 +55,56 @@ def scene_wrinkles(graph, catalog: WrinkleCatalog) -> list[SceneWrinkle]:
             for renderable in graph.renderables if (found := owners.get(renderable.source_object_id)) is not None]
 
 
-__all__ = ["SceneWrinkle", "scene_wrinkles"]
+def gather_wrinkles(components: Sequence[SceneWrinkle], objects: list[SceneLitObject], sources: list, meshes,
+                    gathered: dict, read: dict, profile, files: dict) -> tuple[bool, str]:
+    told = {item.key: item for item in components}
+    catalog = wrinkle_catalog_for(profile) if told else None
+    refused, proxies = [], {}
+    for number, item in enumerate(objects):
+        wrinkle = told.get(meshes[item.mesh].key)
+        if wrinkle is None:
+            continue
+        grouped, _lod = sources[number]
+        session, resolve = grouped[0], gathered[grouped].resolve
+        try:
+            if wrinkle.refused:
+                raise MaterialPreviewError(wrinkle.refused)
+            if catalog is None:
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "REasy has no catalog of the wrinkle passes of this game build."))
+            if not item.of.skinned or id(session.handler) not in read:
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "The wrinkle passes skin their proxy by the bones of a skinned mesh."))
+            if wrinkle.proxy not in proxies:
+                proxies[wrinkle.proxy] = _wrinkle_proxy(resolve, wrinkle.proxy)
+            target = resolve(wrinkle.render_target)
+            if target is None:
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "The render texture file {path} was not found."),
+                    {"path": wrinkle.render_target})
+            render_target_form(target[1])
+            files[wrinkle.render_target] = target[1]
+            joints, binds = mesh_joints(read[id(session.handler)][2].mesh)
+            objects[number] = replace(item, wrinkle=wrinkle_object(
+                proxies[wrinkle.proxy], joints, binds, wrinkle.render_target, wrinkle.spread))
+        except MaterialPreviewError as exc:
+            refused.append(str(exc))
+    return any(item.wrinkle is not None for item in objects), "; ".join(dict.fromkeys(refused))
+
+
+def _wrinkle_proxy(resolve, path: str):
+    found = resolve(path)
+    if found is None:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The wrinkle proxy mesh {path} was not found."), {"path": path})
+    mesh = MeshFile()
+    try:
+        mesh.read(found[1], file_version=resource_version_from_path(found[0], "mesh"))
+    except (ValueError, IndexError, struct.error) as exc:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The wrinkle proxy mesh {path} could not be read: {reason}"),
+            {"path": path, "reason": str(exc)}) from exc
+    return wrinkle_proxy(mesh)
+
+
+__all__ = ["SceneWrinkle", "gather_wrinkles", "scene_wrinkles"]

@@ -153,6 +153,27 @@ def buffer_component_type(scalars) -> str:
     return "float32" if kinds == {"float"} else "sint32" if kinds == {"int"} else "uint32"
 
 
+def buffer_word_types(scalars: dict) -> dict:
+    """A row may mix floats and integers, so each word takes its own stores' type; one whose stores show none (DXBC
+    literals) takes its row's."""
+    rows: dict = {}
+    for key, kinds in scalars.items():
+        rows.setdefault(key[:3], set()).update(kinds)
+    return {key: buffer_component_type((set(kinds) - {""}) or rows[key[:3]]) for key, kinds in scalars.items()}
+
+
+def store_visits(stores) -> list[list[FlowStore]]:
+    visits: list[list[FlowStore]] = []
+    stored: set[int] = set()
+    for store in sorted(stores, key=lambda item: (item.site[0], item.lane)):
+        if not visits or store.lane in stored:
+            visits.append([])
+            stored = set()
+        visits[-1].append(store)
+        stored.add(store.lane)
+    return visits
+
+
 def recovered_surface_flow(ir_kind: str, ir, contract) -> NativeFlow:
     if ir_kind == "dxbc-sm5":
         return dxbc_flow(ir, contract)
@@ -194,10 +215,11 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
         channel = SurfaceChannel(flow.stage, "read", name, 0, (0, 1, 2, 3), _vector(base, 4), _vector(base, 4))
         result.append(ChannelSplit(channel, tuple(reads)))
     for (scope, semantic, semantic_index), lanes in sorted(elements.items()):
-        component = flow.component_types.get((scope, semantic, semantic_index))
-        if component is None:
+        # A buffer's words are typed one by one; a signature row's lanes share its declared type.
+        keys = {lane: (scope, semantic, semantic_index, *((lane,) if scope == "buffer" else ())) for lane in lanes}
+        if any(key not in flow.component_types for key in keys.values()):
             raise ShaderGraphError(f"{semantic}{semantic_index} has no declared output component type.")
-        stored_base = _scalar_type(component)
+        bases = {lane: _scalar_type(flow.component_types[key]) for lane, key in keys.items()}
         # A lane stored at several sites keeps its packing; only the stored value is editable.
         single = {lane: stores[0].value for lane, stores in lanes.items()
                   if len(stores) == 1 and stores[0].value is not None}
@@ -233,7 +255,7 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
                 candidates = [(members, frontier, frozenset().union(*(part[2] for part in parts)))]
             for candidate in candidates:
                 scalars = {flow.values[item].scalar for item in candidate[1]}
-                if len(scalars) == 1 and "" not in scalars:
+                if len(scalars) == 1 and "" not in scalars and len({bases[lane] for lane in candidate[0]}) == 1:
                     splits.append(candidate)
         packed_lanes = {*group for group, _frontier, _tail in splits}
         raw: dict[object, list[int]] = {}
@@ -242,11 +264,12 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
             if len(stores) > 1:
                 identity = ("sites", lane)
             elif stores[0].value is None:
-                identity = ("constant", stores[0].constant)
+                identity = ("constant", stores[0].constant, bases[lane])
             else:
-                identity = ("value", signatures[stores[0].value])
+                identity = ("value", signatures[stores[0].value], bases[lane])
             raw.setdefault(identity, []).append(lane)
         for group, frontier, tail in splits:
+            stored_base = bases[group[0]]
             scalar = flow.values[frontier[0]].scalar
             if scalar == "integer":
                 scalar = stored_base if stored_base != "float" else "uint"
@@ -254,6 +277,7 @@ def surface_channels(flow: NativeFlow) -> tuple[ChannelSplit, ...]:
                                      _vector(scalar, len(frontier)), _vector(stored_base, len(group)), packed=True)
             result.append(ChannelSplit(channel, tuple(lanes[lane][0] for lane in group), frontier, tail))
         for identity, group in raw.items():
+            stored_base = bases[group[0]]
             stores = tuple(store for lane in group for store in lanes[lane])
             channel = SurfaceChannel(flow.stage, scope, semantic, semantic_index, tuple(group),
                                      _vector(stored_base, len(group)), _vector(stored_base, len(group)),
@@ -274,11 +298,13 @@ __all__ = [
     "SurfaceChannel",
     "TEXEL_TYPES",
     "buffer_component_type",
+    "buffer_word_types",
     "declared_component_types",
     "structured_element",
     "buffer_element",
     "constant_field",
     "parallel_signatures",
     "recovered_surface_flow",
+    "store_visits",
     "surface_channels",
 ]

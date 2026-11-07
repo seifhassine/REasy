@@ -1,0 +1,44 @@
+{
+ "format": 1,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "component": {
+  "type": "via.render.Primitive",
+  "shape": "ShapeType",
+  "color": "Color",
+  "interleave": "InterleaveGeometry",
+  "values": ["Metallic", "Roughness", "SpecularReflectance", "Translucency"]
+ },
+ "file": "systems/develop/shape.sdf",
+ "target": 2,
+ "program": "Shape",
+ "shapes": {
+  "0": "sphere",
+  "2": "cube",
+  "4": "cylinder"
+ },
+ "generators": {
+  "sphere": {"rings": 64, "ring_divisor": 63.0, "turn": 6.2831855, "steps": 64, "step_divisor": 63.0,
+             "half_turn": 3.1415927},
+  "cube": {"half_turn": 3.1415927, "quarter_turn": 1.5707964},
+  "cylinder": {"steps": 32, "step": 0.03125, "turn": 6.2831855}
+ },
+ "normal_scale": 127.5,
+ "opaque_alpha": 0.99,
+ "segment": 11,
+ "stencil_reference": 0,
+ "transparent": {
+  "program": "ShapeTransparent",
+  "segment": 0,
+  "key_scale": 100.0
+ },
+ "constants": {
+  "buffer": "Material",
+  "color": "BaseColor",
+  "values": "MetallicRoughnessReflectanceTranslucency"
+ },
+ "world": {
+  "variable": "reserveWorld",
+  "words": [null, "IgnoreDepthScale"]
+ }
+}

@@ -11,7 +11,7 @@ from itertools import product
 import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-lazy from file_handlers.mdf.mdf_file import transparent_priority_bias
+lazy from file_handlers.mdf.mdf_file import material_flag
 from file_handlers.sdf.contracts import shader_contract_for_program
 lazy from file_handlers.sdf.models import program_names
 from file_handlers.sdf.sdf_file import (
@@ -20,20 +20,27 @@ from file_handlers.sdf.sdf_file import (
 )
 
 lazy from .engine_buffers import (
-    CAMERA_BUFFERS, PLACEMENT_BUFFERS, Camera, EngineConstant, InstanceInput, Placement, engine_buffer, scene_values,
+    CAMERA_BUFFERS, PLACEMENT_BUFFERS, Camera, EngineConstant, InstanceInput, Placement, TransitionBuffer,
+    TransitionInput, engine_buffer, scene_values,
 )
 lazy from .draw_order import SORTED_ORDERS, draw_order_for
+lazy from .draw_rules import MESH_DECAL_RECEIVE, drawing_rules, program_flags
+lazy from .effect_meshes import effect_mesh_catalog_for, emitter_constants
+lazy from .frame_clock import FrameClock, follows_clock, reads_running
 lazy from .frame_constants import frame_constants_for
+from .gbuffer_order import MeshSceneGBufferOrder
+lazy from .gbuffer_order import Placing
 lazy from .material_preview import (
     RANGE_CBV, _MATERIAL_HEAP_START, RANGE_SAMPLER, RANGE_SRV, RANGE_UAV, _UAV_DIMENSIONS, VIEW_DIMENSIONS,
     SHADER_VISIBILITY,
     BufferReads, Following, MaterialPreviewError, MaterialRecord, PreviewMaterial, SharedMaterials, TextureReads,
-    _heap_fields_kept, _texture_entry, bound_record_size, gbuffer_route, material_record, resident_key, shader_bindings,
-    streamed_key,
+    _heap_fields_kept, _texture_entry, bound_record_size, gbuffer_route, material_record, missing_texture, resident_key,
+    shader_bindings, streamed_key,
 )
 from file_handlers.mesh.mesh_file import MeshFile, VertexBufferType
 from utils.native_build import ensure_fastmesh
-lazy from file_handlers.rsz.scene_joints import times
+lazy from file_handlers.engine_math import transform_product
+from file_handlers.sfur.shell_fur import SHELLS, MeshSceneShells, ShellFurObject, ShellRecord
 lazy from utils.resource_file_utils import resource_path_key
 
 from .mesh_draw import MeshBuffer, SubmeshRange, program_states, submesh_geometry
@@ -42,21 +49,26 @@ from .meshlets import (
     EXTENDED, ROUTE as MESHLET_ROUTE, LodTable, MeshletBuffer, MeshletGroup, MeshletLods, MeshletPrograms,
     RasterBatches, check_clusters, check_culled, check_shader_ids, check_transform_ids, culled_meshlets,
     extended_blocks, instance_records, material_culling_size, material_tables, material_views, meshlet_catalog_for,
-    meshlet_lods, meshlet_programs, named_meshlet_programs, receives_decals, record_handles, replace_table,
+    meshlet_lods, meshlet_programs, named_meshlet_programs, record_handles, replace_table,
     root_constant, skinning_records, special_offsets,
 )
-lazy from .pass_choice import depth_prepass_program, has_scene_program, own_passes, own_program, scene_program
+lazy from .pass_choice import depth_prepass_program, drawn_program, has_scene_program, own_passes, own_program
 lazy from .pretransform import CHAIN_BUFFERS, ROUTE, ChainStep, Deformation, Destination
 lazy from .pretransform import constant_buffer as chain_constants
 lazy from .pretransform_passes import ChainPasses, SystemPrograms, check_threads, written_entry
-lazy from .wrinkle import WrinkleObject, object_scale, proxy_bones, render_target_form, wrinkle_catalog_for
+from .shallow_water import MeshSceneShallowWater
+from .user_render_targets import MeshSceneRenderTargets
+from .wrinkle import MeshSceneWrinkles, WrinkleObject
 from .wrinkle_passes import WrinklePasses
-lazy from .resident import BUFFER, DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident
+lazy from .resident import BUFFER, DEPTH_STENCIL, RENDER_TARGET, TEXTURE_2D, UNORDERED_ACCESS, Resident, view_packing
 lazy from .sampler_states import sampler_catalog_for
 lazy from .surface_meaning import GBUFFER_PURPOSE, PREPASS_PURPOSE, TargetFormat, surface_output_catalog_for
+from .water_meshes import MeshSceneWater, water_constants, water_mesh_catalog_for
 
 # Phases drawn between the light passes (``light_passes.MeshPhase.key``).
 PHASES = ("blending", "forward")
+WATER_PURPOSE = "water"
+PHASE_DEPTHS = ("shown", "own", "none")
 PhaseKey = tuple[str, tuple[tuple[str, ...], ...]]
 # Bytes per texel of the depth plane, then the stencil plane, by depth/stencil format.
 DEPTH_PLANES = {20: (4, 1), 40: (4, 0)}
@@ -90,6 +102,7 @@ class MeshPart:
     texel_density: float | None = None
     # The mesh LOD of a meshlet part's clusters, for an object with ``lods``.
     level: int = 0
+    batch: int | None = None
 
 
 # A streamed texture keeps one mip finer than the one its nearest drawing samples.
@@ -127,8 +140,6 @@ def uv_density(positions: np.ndarray, uv_sets: Sequence[np.ndarray], indices: np
 
 @dataclass(frozen=True, slots=True)
 class MeshObject:
-    """``skins`` are undrawn parts whose masters skin the rest. An object with ``lods`` holds its meshlet parts of
-    every LOD and frames draw the LOD instance culling picks; without, every part draws."""
     parts: Sequence[MeshPart]
     placement: Placement
     skinned: bool
@@ -137,11 +148,13 @@ class MeshObject:
     deformation: Deformation | None = None
     skins: Sequence[MeshPart] = ()
     engine: Mapping[str, bytes | EngineConstant] = frozendict()
-    decal_receive_mode: int = 0
+    decal_receive: tuple[str, str | None] = MESH_DECAL_RECEIVE
     box: ObjectBox | None = None
     transparent_bias: float = 0.0
     wrinkle: WrinkleObject | None = None
     lods: MeshletLods | None = None
+    draw_state: Mapping[str, object] | None = None
+    shell_fur: ShellFurObject | None = None
 
     @property
     def route(self) -> str:
@@ -201,9 +214,11 @@ def _part_box(part: MeshPart) -> np.ndarray:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class ObjectBox:
-    """``bones``: each bone's box corners in bind pose, rows x 8 x 3."""
+    """``bones``: each bone's box corners in bind pose, rows x 8 x 3; ``joints``: each bone's own box (rows x 2 x 3)
+    and its joint's reference matrix (rows x 4 x 4, row vectors)."""
     box: np.ndarray
     bones: np.ndarray | None = None
+    joints: tuple[np.ndarray, np.ndarray] | None = None
 
 
 def object_box(mesh: MeshFile) -> ObjectBox | None:
@@ -219,7 +234,22 @@ def object_box(mesh: MeshFile) -> ObjectBox | None:
         return ObjectBox(found)
     bones = np.array([np.array([item.minimum[:3], item.maximum[:3]], np.float64)[BOX_CORNERS, range(3)]
                       @ bind[joint][:3, :3] + bind[joint][3, :3] for item, joint in zip(boxes, remap)])
-    return ObjectBox(found, bones if np.isfinite(bones).all() else None)
+    joints = (np.array([[item.minimum[:3], item.maximum[:3]] for item in boxes], np.float32),
+              bind[list(remap[:len(boxes)])].astype(np.float32))
+    return ObjectBox(found, bones if np.isfinite(bones).all() else None, joints)
+
+
+def skinned_box(joints: tuple[np.ndarray, np.ndarray], world: np.ndarray) -> np.ndarray:
+    own, references = joints
+    rows = np.zeros((4, 4), np.float32)
+    rows[:, :3] = np.asarray(world, np.float32).reshape(3, 4).T
+    rows[3, 3] = 1
+    joint = ((references[:, :, 3:4] * rows[3] + references[:, :, 2:3] * rows[2])
+             + (references[:, :, 1:2] * rows[1] + references[:, :, 0:1] * rows[0]))
+    corners = np.where(BOX_CORNERS.astype(bool), own[:, 1:2], own[:, 0:1])
+    points = ((corners[..., 1:2] * joint[:, None, 1] + corners[..., 0:1] * joint[:, None, 0])
+              + (corners[..., 2:3] * joint[:, None, 2] + joint[:, None, 3]))[..., :3]
+    return np.array([points.min(axis=(0, 1)), points.max(axis=(0, 1))], np.float32)
 
 
 def _object_box(item: MeshObject) -> np.ndarray:
@@ -269,7 +299,7 @@ def transparent_keys(camera: Camera, points: np.ndarray) -> np.ndarray:
     else:
         depth = f32(f32(-far) / f32(far - near))
         projection[2, 2], projection[2, 3], projection[3, 2] = depth, -1, f32(near * depth)
-    matrix = times(rows, projection)
+    matrix = transform_product(rows, projection)
     x, y, z = np.asarray(points, f32).reshape(-1, 3).T[:, :, None]
     clip = ((x * matrix[0]).astype(f32) + (y * matrix[1]).astype(f32)).astype(f32)
     clip = ((clip + (z * matrix[2]).astype(f32)).astype(f32) + matrix[3]).astype(f32)
@@ -279,8 +309,8 @@ def transparent_keys(camera: Camera, points: np.ndarray) -> np.ndarray:
     return np.where((clip[:, 2] > 0) & (clip[:, 3] > 0), keys, _KEY_MAX)
 
 
-def _priority_bias(material) -> int:
-    return transparent_priority_bias(getattr(material, "material_flags", 0) or 0)
+def _priority_bias(material, flag: str | None) -> int:
+    return 0 if flag is None else material_flag(material.material_flags, material.flag_version, flag)
 
 
 def boxes_seen(boxes: np.ndarray, view_projection: np.ndarray) -> np.ndarray:
@@ -368,6 +398,10 @@ class _Draw:
     purpose: str
     program: object
     prepass: object | None
+    placing: Placing | None = None
+    stamp: object | None = None
+    shell: int | None = None
+    fur: ShellRecord | None = None
 
 
 @dataclass(slots=True)
@@ -411,12 +445,19 @@ def _written(document, program) -> set[int]:
         document, program, "pixel").outputs if item.semantic_name.casefold() == "sv_target"}
 
 
-def _engine_bound(document, tables: Sequence[tuple], contracts: Iterable) -> list[tuple]:
+def _unbound(document, program, count: int) -> MaterialPreviewError | None:
+    return None if _written(document, program) <= set(range(count)) else MaterialPreviewError(QT_TRANSLATE_NOOP(
+        "MaterialPreview", "The pass writes a render target the renderer does not bind for it."))
+
+
+def _engine_bound(document, tables: Sequence[tuple], contracts: Iterable,
+                  own: Collection[str] = frozenset()) -> list[tuple]:
     declared = [(contract, resource) for contract in contracts for resource in contract.resources]
     user_buffers = document.profile.user_material_buffer_names
     return [(index, contract, resource) for index, (contract, resource) in enumerate(declared)
             if tables[index][-1] and (resource.register_class == "b" and resource.name not in user_buffers
-                                      or resource.register_class == "t" and resource.name in PLACEMENT_BUFFERS)]
+                                      or resource.register_class == "t" and (resource.name in PLACEMENT_BUFFERS
+                                                                             or resource.name in own))]
 
 
 def _program_contracts(part: MeshPart, program) -> dict[str, object]:
@@ -436,10 +477,11 @@ def _program_contracts(part: MeshPart, program) -> dict[str, object]:
 
 
 def _part_geometry(part: MeshPart, program, destination: Destination | None,
-                   engine: Mapping[str, bytes | EngineConstant]) -> dict:
+                   engine: Mapping[str, bytes | EngineConstant],
+                   shells: Mapping[tuple[str, int], tuple[int, int]] | None = None) -> dict:
     instance = {name: data for name, data in engine.items() if isinstance(data, InstanceInput)}
     return submesh_geometry(program, _program_contracts(part, program)["vertex"], part.buffer, part.submesh,
-                            destination, instance)
+                            destination, instance, shells)
 
 
 def _program_draw(part: MeshPart, program, geometry: dict, targets: int, stencil_reference: int, load_file,
@@ -448,7 +490,8 @@ def _program_draw(part: MeshPart, program, geometry: dict, targets: int, stencil
                   heap_start: int, engine_heap: Callable | None = None,
                   shared: SharedMaterials | None = None, streamed: Callable[[str], bool] | None = None,
                   resident_file: Callable | None = None,
-                  made_texture: Callable[[str], tuple] | None = None) -> tuple[dict, tuple[str, ...], list[tuple]]:
+                  made_texture: Callable[[str], tuple] | None = None,
+                  own: Collection[str] = frozenset()) -> tuple[dict, tuple[str, ...], list[tuple]]:
     """Targets, depth and MDF textures are left for the caller to bind."""
     document = part.document
     shaders = {stage: (contract, bytes(program.shader(stage).payload))
@@ -458,7 +501,7 @@ def _program_draw(part: MeshPart, program, geometry: dict, targets: int, stencil
                                            read_buffers=read_buffers, heap_start=heap_start,
                                            engine_heap=engine_heap, shared=shared, streamed=streamed,
                                            resident_file=resident_file, made_texture=made_texture)
-    engine = _engine_bound(document, tables, (contract for contract, _shader in shaders.values()))
+    engine = _engine_bound(document, tables, (contract for contract, _shader in shaders.values()), own)
     return {"vertex_shader": shaders["vertex"][1], "pixel_shader": shaders.get("pixel", (None, b""))[1],
             **{f"{stage}_shader": shaders[stage][1] for stage in ("hull", "domain") if stage in shaders},
             "tables": tables, "heap": heap, **geometry,
@@ -470,7 +513,7 @@ def draw_purpose(document, material: PreviewMaterial, shader_target: int, route:
     if catalog is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "REasy has no catalog of what the renderer binds for this game build."))
-    purpose, index = scene_program(document, shader_target, material.material_flags, route)
+    purpose, index = drawn_program(document, shader_target, program_flags(document.profile, material), route)
     program = document.sdf.targets[shader_target].programs[index]
     if purpose == GBUFFER_PURPOSE and _blends(catalog, program):
         purpose = "blending"
@@ -484,7 +527,7 @@ def _meshlet_programs(document, material: PreviewMaterial, shader_target: int,
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "REasy has no catalog of how the renderer draws meshlet meshes for this game build."))
     if names is None:
-        return meshlet_programs(document, shader_target, material.material_flags, catalog, skinned)
+        return meshlet_programs(document, shader_target, program_flags(document.profile, material), catalog, skinned)
     if catalog.deferred is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "No capture of this game build shows how the renderer transforms the triangles of "
@@ -504,7 +547,7 @@ def _compute_contract(part: MeshPart, program):
 def part_draws(document, material: PreviewMaterial, shader_target: int, route: str,
                phases: Iterable[PhaseKey], meshlet_programs: MeshletPrograms | None = None,
                skinned: bool = False) -> tuple[tuple[str, object] | None, dict[PhaseKey, object]]:
-    flags = material.material_flags
+    flags = program_flags(document.profile, material)
     if route == MESHLET_ROUTE:
         purpose, raster, shade, *_transform = _meshlet_programs(document, material, shader_target, meshlet_programs,
                                                                 skinned)
@@ -522,7 +565,8 @@ def part_draws(document, material: PreviewMaterial, shader_target: int, route: s
     return draw_purpose(document, material, shader_target, route), named
 
 
-class MeshScene:
+class MeshScene(MeshSceneGBufferOrder, MeshSceneShells, MeshSceneWater, MeshSceneShallowWater,
+                MeshSceneRenderTargets, MeshSceneWrinkles):
     """A frame is ``begin``, the steps from ``gbuffer`` and ``draw_phase`` in render order, then ``finish``, which
     raises the parts refused while the frame's draws were made."""
 
@@ -530,8 +574,8 @@ class MeshScene:
                  shader_target: int, hardware: bool = False, phases: Collection[PhaseKey] = (),
                  pass_file: Callable[[str, bytes], object] | None = None,
                  captured: Mapping[str, Mapping[str, Sequence[int]]] = frozendict(),
-                 forget_file: Callable[[str], None] | None = None):
-        """``forget_file(path)`` lets ``load_file``'s source go of a file once its texture is on the device."""
+                 forget_file: Callable[[str], None] | None = None, clock: FrameClock | None = None,
+                 prefetch: Callable[[Iterable[str]], None] | None = None):
         parts = [part for item in objects for part in (*item.parts, *item.skins)]
         if not parts:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP("MaterialPreview", "The mesh has no submesh to draw."))
@@ -548,21 +592,32 @@ class MeshScene:
                 "MaterialPreview", "REasy's catalog of this game build does not record the G-buffer's depth format."))
         self.load_file, self.camera, self.objects = load_file, camera, []
         constants = frame_constants_for(self.profile)
-        self.frame = {} if constants is None else constants.scene
-        self.captured = captured
+        self.frame = {} if constants is None else constants.fields()
+        self.captured, self.clock = captured, clock
+        self.clocked = False
+        self._running: dict[int, bool] = {}
         self._forward_order = draw_order_for(self.profile)
-        self._forget_file = forget_file
+        self._rules = drawing_rules(self.profile)
+        self._decals: list[bool] = []
+        self._order_scene()
+        self._effects = effect_mesh_catalog_for(self.profile)
+        self._water = water_mesh_catalog_for(self.profile)
+        self._water_read = self._water_texture
+        self._forget_file, self._prefetch, self._prefetched = forget_file, prefetch, set()
         # Shared with the light passes; textures go to the device as they are read.
         self.read_textures = TextureReads(lambda dimension, entry: self.device.read(dimension, entry), self._forget,
                                           self._texture_side, lambda *refilled: self.device.refill(*refilled))
-        self._sides: dict[str, float] | None = None
+        self._sides: dict[str, int | None] | None = None
         # The parts' owners, texel densities and materials, numbered; what the sides were last reckoned from.
         self._side_parts: tuple | None = None
+        self._side_lists = (0, np.zeros(0, np.int64), np.zeros(0), np.zeros(0, np.int64), {}, {},
+                            np.zeros((0, 2), np.int64))
         self._seen_from = None
         # Some streamed textures still want finer mips; how many times textures were made anew of finer ones.
         self.streaming, self.refills = False, 0
         # A GPU buffer file is read through a raw view: elements of 4 bytes.
-        self.read_buffers = BufferReads(lambda data: self.device.scene.buffer(data, 0, 4), self._forget)
+        self.read_buffers = BufferReads(lambda data: self.device.scene.buffer(data, 0, 4), self._forget,
+                                        lambda buffer, data: self.device.scene.write(buffer, data))
         self.phases, self.shader_target = frozenset(phases), shader_target
         self.size = camera.size
         self._draws: list[_Draw] = []
@@ -582,10 +637,13 @@ class MeshScene:
         self._chosen: dict[tuple[int, str], tuple[tuple | None, dict] | MaterialPreviewError] = {}
         # ``_part_geometry`` by the ids of what it reads; a part's program keeps the last object's.
         self._built: dict[tuple[int, int, int, int], dict] = {}
+        self._drawn_with: dict[tuple[int, int], object] = {}
+        self._drawn_counts: tuple[int, dict] = (0, {})
         self._adopt(objects)
         self._group_meshlets()
         self.device = Resident(hardware)
         self._placed: list[dict[tuple, tuple[int, Callable[[int], bytes]]]] = [{} for _item in objects]
+        self._given: dict[tuple[int, str], bytes] = {}
         self._jobs: dict[tuple, tuple[dict, list[tuple]]] = {}
         # By id of the part: the part and its box (``_box_of``).
         self._part_boxes: dict[int, tuple[MeshPart, np.ndarray]] = {}
@@ -601,13 +659,15 @@ class MeshScene:
         self._bounded = np.zeros(len(self.objects), bool)
         # Each owner's largest axis scale.
         self._scales = np.zeros(len(self.objects))
-        # Owners no frame draws (``hide``), as if culled.
         self._hidden = np.zeros(len(self.objects), bool)
         self._hidden_given: np.ndarray | None = None
+        self._shells_hidden = self._hidden
+        self._shells_given: np.ndarray | None = None
         self._moved = set(range(len(self.objects)))
         self._corners: tuple[np.ndarray, np.ndarray, np.ndarray] | None = None
-        self._culled: tuple[bytes, np.ndarray] | None = None
+        self._culled: tuple[bytes, np.ndarray, np.ndarray] | None = None
         self._step_owners: dict[int, int] = {}
+        self._shell_steps: set[int] = set()
         # (owner, id of the part) of the draws frames leave out (``hide_parts``), and by deformed owner the ids of its
         # parts outside its deformation's groups; ``_left``.
         self._hidden_parts: frozenset[tuple[int, int]] = frozenset()
@@ -622,7 +682,13 @@ class MeshScene:
         self._forward_at: dict[int, tuple] | None = None
         self._forward_held: dict[int, tuple] = {}
         self._chains = ChainPasses(self.device, self.profile, load_file, pass_file)
+        self._shells: dict[int, tuple[int, list[int]]] = {}
+        self._shells_drawn: dict[int, tuple[int, ...]] = {}
+        self._user_steps: list[int] = []
+        self._shallow_held: dict[str, tuple[int, int, int, int, int]] = {}
         self._stale: set[int] = set()
+        self._ran: list[int] = []
+        self._unplaced: set[int] = set()
         # Keyed by the id of the part: its first refusal.
         self._refusals: dict[int, tuple[MeshPart, MaterialPreviewError]] = {}
         # By id: parts of objects added that a frame refused, left out of every frame after (``retire``).
@@ -630,6 +696,8 @@ class MeshScene:
         for owner, item in enumerate(objects):
             if item.deformation is not None:
                 self._deform(owner, item)
+                if item.shell_fur is not None:
+                    self._shell(owner, item)
         if self._refusals:
             self.close()
             raise PartError(self._refusals.values())
@@ -642,13 +710,25 @@ class MeshScene:
     def _adopt(self, objects: Sequence[MeshObject]) -> None:
         """Appends ``objects`` and their draws; a part the pass choice refuses raises PartError with nothing kept."""
         start = len(self.objects)
+        if self._prefetch is not None:
+            # Read on the reader threads while the rest of the add runs, not one by one as jobs bind them.
+            paths = dict.fromkeys(path for item in objects for part in item.parts
+                                  for path in part.material.textures.values() if path not in self._prefetched)
+            self._prefetched.update(paths)
+            self._prefetch(paths)
         draws, named_draws, geometry, refusals = [], defaultdict(list), {}, []
         meshlets, shaders, transformed = dict(self._meshlets), dict(self._shaders), list(self._transformed)
         held = list(self._culled_held)
         for owner, item in enumerate(objects, start):
+            if self._is_water(item):
+                draws += self._water_draws(owner, item, geometry, refusals)
+                continue
+            ignores, priority = self._ordering_of(item)
             destination = None if item.deformation is None else item.deformation.destination
             for part in item.parts:
                 try:
+                    if ignores:
+                        self._check_ignored(part)
                     if isinstance(part.buffer, MeshletBuffer):
                         self._meshlet_part(owner, item, part, meshlets, shaders, transformed, held)
                         continue
@@ -659,29 +739,46 @@ class MeshScene:
                         refusals.append((part, self._chosen[id(part), route]))
                         continue
                     main, named = self._chosen[id(part), route]
+                    stamp = self._stamp(part, route, main) if ignores else None
+                    if main is not None:
+                        purpose, program, prepass = main
+                        placing, prepass = self._order_placing(item, part, route, purpose, prepass, priority)
                     read_from = destination if route == ROUTE else None
-                    for program in (*named.values(), *(() if main is None else main[1:])):
-                        if program is not None:
-                            key = id(part), id(program), id(read_from), id(item.engine)
+                    for drawn in (*named.values(), *(() if main is None else (program, prepass, stamp))):
+                        if drawn is not None:
+                            key = id(part), id(drawn), id(read_from), id(item.engine)
                             if key not in self._built:
-                                self._built[key] = _part_geometry(part, program, read_from, item.engine)
-                            geometry[id(part), id(program)] = self._built[key]
+                                self._built[key] = _part_geometry(part, drawn, read_from, item.engine)
+                            geometry[id(part), id(drawn)] = self._built[key]
+                    shells = [] if item.shell_fur is None or main is None else self._shell_draws(
+                        owner, item, part, purpose, program, prepass, geometry)
                 except MaterialPreviewError as exc:
                     refusals.append((part, exc))
                     continue
                 if main is not None:
-                    draws.append(_Draw(owner, part, *main))
+                    draws.append(_Draw(owner, part, purpose, program, prepass, placing, stamp))
+                draws += shells
                 for phase, program in named.items():
                     named_draws[phase].append(_Draw(owner, part, phase[0], program, None))
         if refusals:
             raise PartError(refusals)
         self.objects += objects
+        self._batched(objects)
         self._draws += draws
         for phase, items in named_draws.items():
             self._named[phase] += items
         self._geometry.update(geometry)
         self._meshlets, self._shaders, self._transformed = meshlets, shaders, transformed
         self._culled_held = tuple(held)
+
+    def _batched(self, objects: Sequence[MeshObject]) -> None:
+        # Water programs bind no G-buffer type, the decal flag's only reader, and the decal rules hold no water.
+        self._decals += [not self._is_water(item) and self._rules.receives_decals(item.decal_receive, item.skinned)
+                         for item in objects]
+        self._instance_keys(objects)
+
+    def _program_flags(self, material: PreviewMaterial) -> int:
+        return self._rules.program_flags(material.material_flags, material.flag_version)
 
     def _group_meshlets(self) -> None:
         """Records, visibility and shader IDs are numbered in the order of the objects, so added ones keep theirs."""
@@ -701,10 +798,11 @@ class MeshScene:
         self.meshlets = meshlet_catalog_for(self.profile) if self._meshlets else None
 
     def _programs_drawn(self) -> None:
-        # The program of each object's part's first draw, by (owner, id of the part); meshlets by (owner, material).
-        self._drawn_with: dict[tuple[int, int], object] = {}
-        for drawn in (*self._draws, *(item for named in self._named.values() for item in named)):
+        draws, named = self._drawn_counts
+        for drawn in (*self._draws[draws:], *(item for phase, items in self._named.items()
+                                              for item in items[named.get(phase, 0):])):
             self._drawn_with.setdefault((drawn.owner, id(drawn.part)), drawn.program)
+        self._drawn_counts = len(self._draws), {phase: len(items) for phase, items in self._named.items()}
         self._rastered_with = {(group.owner, group.material): group.raster for group in self._meshlet_groups}
 
     def add(self, objects: Sequence[MeshObject]) -> None:
@@ -718,7 +816,8 @@ class MeshScene:
         self._bounded = np.concatenate([self._bounded, np.zeros(count - start, bool)])
         self._scales = np.concatenate([self._scales, np.zeros(count - start)])
         self._hidden = np.concatenate([self._hidden, np.zeros(count - start, bool)])
-        self._hidden_given = None
+        self._shells_hidden = np.concatenate([self._shells_hidden, np.zeros(count - start, bool)])
+        self._hidden_given = self._shells_given = None
         self._moved.update(range(start, count))
         self._corners = self._culled = self._owner_table = self._sides = self._side_parts = self._lod_table = None
         # The textures the added parts read may want finer mips of textures already read.
@@ -729,6 +828,8 @@ class MeshScene:
         for owner in range(start, count):
             if self.objects[owner].deformation is not None:
                 self._deform(owner, self.objects[owner])
+                if self.objects[owner].shell_fur is not None:
+                    self._shell(owner, self.objects[owner])
         if len(self._refusals) != refused:
             raise PartError(list(self._refusals.values())[refused:])
         for owner in range(start, count):
@@ -743,7 +844,7 @@ class MeshScene:
             old += self._culling
         # Before they are made again: buffers of the same bytes are one.
         self.device.release(old)
-        self._gbuffer, self._phases = {}, {}
+        self._gbuffer, self._ordered, self._phases = {}, {}, {}
         self._forward_runs.clear()
         self._group_meshlets()
         self._meshlet_buffers()
@@ -756,18 +857,24 @@ class MeshScene:
                         for target, form in self.target_formats.items()}
         self.depth = self.device.texture(self.depth_resource_format, self.size, DEPTH_STENCIL)
         self.depth_before = self.device.texture(self.depth_resource_format, self.size, DEPTH_STENCIL)
+        self._own_depth: int | None = None
         self._visible: tuple[int, int] | None = None
         self._deferred: DeferredPasses | None = None
         self._meshlet_screen()
         self._scratch: dict[tuple[int, int], int] = {}
         self._coverage: dict[tuple[float, int], tuple[int, int, str, int]] = {}
         self._gbuffer: dict[bool, _Listing] = {}
+        self._ordered: dict = {}
         # By the arguments of ``draw_phase``.
         self._phases: dict[tuple, _Listing] = {}
         # By (id of the draw, id of the program, targets, depth bound): the draw, program and steps (``_steps``).
         self._made_steps: dict[tuple, tuple[_Draw, object, list[int]]] = {}
         # By the light passes' ``texture`` of a phase: what its parts read through (``draw_phase``).
         self._reads: dict[Callable, Callable] = {}
+        self._water_depth: int | None = None
+        self._water_copied = False
+        self._water_listing: tuple[tuple, list[int]] | None = None
+        self._shallow: dict[tuple, list[int]] = {}
 
     def _meshlet_screen(self) -> None:
         """Made once the scene has meshlet groups, and transforms."""
@@ -781,27 +888,31 @@ class MeshScene:
 
     def resize(self, size: Sequence[int]) -> None:
         old = [*self.targets.values(), self.depth, self.depth_before, *self._scratch.values(),
+               *(() if self._own_depth is None else (self._own_depth,)),
                *(texture for held in self._coverage.values() for texture in (held[0], held[3])),
-               *(self._visible or ()), *(() if self._deferred is None else self._deferred.resources())]
+               *(self._visible or ()), *(() if self._deferred is None else self._deferred.resources()),
+               *(() if self._water_depth is None else (self._water_depth,))]
         self.size = tuple(size)
         self._screen()
-        # Jobs bind no target; those the light passes give constants are made anew with their new steps.
-        self._jobs = {key: found for key, found in self._jobs.items() if key[-1] is None}
+        # Jobs bind no target; those the light passes give constants, and the water draws' reading the depth copied,
+        # are made anew with their new steps.
+        self._jobs = {key: found for key, found in self._jobs.items() if key[-1] is None and key[5] is not
+                      self._water_read}
         self._step_owners.clear()
+        self._shell_steps.clear()
         self._step_levels.clear()
         self._owner_table = None
         self._forward_runs.clear()
         self.device.release(old)
 
-    def hide(self, hidden: np.ndarray) -> None:
-        """Which owners frames leave out, as if culled: a scene's other LODs of an object. ``hidden`` is not to be
-        changed after."""
-        if hidden is self._hidden_given:
+    def hide(self, hidden: np.ndarray, shells: np.ndarray | None = None) -> None:
+        if hidden is self._hidden_given and shells is self._shells_given:
             return
-        self._hidden_given = hidden
+        self._hidden_given, self._shells_given = hidden, shells
         hidden = np.asarray(hidden, bool)
-        if not np.array_equal(hidden, self._hidden):
-            self._hidden, self._culled = hidden.copy(), None
+        shells = hidden if shells is None else np.asarray(shells, bool)
+        if not np.array_equal(hidden, self._hidden) or not np.array_equal(shells, self._shells_hidden):
+            self._hidden, self._shells_hidden, self._culled = hidden.copy(), shells.copy(), None
 
     def place(self, owner: int, placement: Placement) -> None:
         item = self.objects[owner] = replace(self.objects[owner], placement=placement)
@@ -811,14 +922,20 @@ class MeshScene:
         if row is not None:
             self._instance_worlds[row] = np.asarray(placement.world, np.float64).reshape(3, 4)
             self._instance_data = None
-        for buffer, make in self._placed[owner].values():
-            self.device.scene.write(buffer, make(owner))
+        self._unplaced.add(owner)
         if item.deformation is not None:
             _check_still(item)
             self._stale.add(owner)
         if item.wrinkle is not None:
             self._wrinkles.place(owner)
             self._stale.add(owner)
+
+    def give(self, owner: int, buffers: Mapping[str, bytes]) -> None:
+        for name, data in buffers.items():
+            self._given[owner, name] = data
+        for kind, (buffer, make) in self._placed[owner].items():
+            if kind[0] in buffers:
+                self.device.scene.write(buffer, make(owner))
 
     def faces(self, owner: int, part: MeshPart) -> tuple[int, bool] | None:
         """Cull mode in D3D12 numbering."""
@@ -880,36 +997,27 @@ class MeshScene:
         if hidden != self._hidden_parts:
             self._hidden_parts, self._left_out, self._owner_table = hidden, None, None
 
-    def _wrinkle(self, owner: int, wrinkle: WrinkleObject) -> None:
-        if self._wrinkles is None:
-            catalog = wrinkle_catalog_for(self.profile)
-            if catalog is None:
-                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                    "MaterialPreview", "REasy has no catalog of the wrinkle passes of this game build."))
-            self._wrinkles = WrinklePasses(self.device, self._system, catalog)
-        data = self.load_file(wrinkle.render_target)
-        if data is None:
-            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                "MaterialPreview", "The render texture file {path} was not found."), {"path": wrinkle.render_target})
-        form, size = render_target_form(data)
-        texture = self.render_texture(wrinkle.render_target, form, size)
-        self._wrinkles.add(owner, wrinkle, (form, texture, size),
-                           lambda: object_scale(self.objects[owner].placement.world),
-                           {name: partial(self._proxy_bytes, owner) for name in PLACEMENT_BUFFERS})
-        self._stale.add(owner)
+    def follows(self, name: str) -> bool:
+        return name in CAMERA_BUFFERS or follows_clock(self.clock, name)
 
-    def _proxy_bytes(self, owner: int, contract, resource) -> bytes | None:
-        item = self.objects[owner]
-        placement = item.placement
-        posed = Placement(placement.world, proxy_bones(item.wrinkle, placement.world, placement.bones))
-        return engine_buffer(contract, resource, self.camera, posed, self.frame, self.captured)
+    def _read_clock(self, program) -> None:
+        if self.clock is None or self.clocked:
+            return
+        found = self._running.get(id(program))
+        if found is None:
+            found = self._running[id(program)] = reads_running(self.clock.catalog, program)
+        self.clocked = found
 
     def _engine_buffer(self, owner: int, contract, resource) -> int | None:
         name, constant = resource.name, resource.register_class == "b"
         make = partial(self._engine_bytes, contract, resource)
         if not constant and resource.input_type == "structured-buffer" and name in PLACEMENT_BUFFERS:
             layout = contract.structured_buffer(name)
-            return self._placed_buffer(owner, (name, layout.byte_size, layout.variables, None, None), make)
+            return self._placed_buffer(owner, (name, layout.byte_size, layout.variables, None, None), make,
+                                       layout.byte_size)
+        if constant and follows_clock(self.clock, name):
+            layout = contract.buffer(name)
+            return self.device.following(("clock", name, layout.byte_size, layout.variables), partial(make, owner))
         if constant and name not in PLACEMENT_BUFFERS and name not in CAMERA_BUFFERS:
             return self.device.buffer(make(owner))
         return None
@@ -918,8 +1026,9 @@ class MeshScene:
         document, name = part.document, step.program
 
         def buffer(contract, resource, owner: int = owner) -> bytes | int | None:
-            if resource.register_class == "b" and resource.name in CHAIN_BUFFERS:
-                return chain_constants(contract.buffer(resource.name), step.constants)
+            if resource.register_class == "b" and (resource.name in CHAIN_BUFFERS
+                                                   or resource.name in step.constant_buffers):
+                return chain_constants(contract.buffer(resource.name), self._chains.constants(owner, step))
             if resource.register_class == "t" and resource.name in step.buffers:
                 return held[step.buffers[resource.name]]
             return self._engine_bytes(contract, resource, owner)
@@ -938,11 +1047,15 @@ class MeshScene:
             tables, heap, missing = shader_bindings(
                 document, {"compute": (contract, shader)}, part.material, self.load_file, buffer, self._sampler,
                 read_textures=self.read_textures, read_buffers=self.read_buffers, heap_start=self._heap_start,
-                made_texture=self._made_texture)
+                made_texture=self.made_texture)
             for index, resource in enumerate(contract.resources):
                 if resource.register_class == "u":
                     tables[index] = (*tables[index][:-1], (written_entry(resource, step, held),))
+                elif resource.register_class == "b" and resource.name in CHAIN_BUFFERS and step.target is not None:
+                    bound = self._chains.step_buffer(owner, contract.buffer(resource.name), step)
+                    tables[index] = (*tables[index][:-1], ((0, bound),))
         self._took(heap, missing)
+        self._read_clock(program)
         job, placed = self._kept({"compute_shader": shader, "tables": tables, "heap": heap},
                                  _engine_bound(document, tables, [contract]), buffer, owner)
         job = self.device.bound(job)
@@ -952,17 +1065,25 @@ class MeshScene:
         except RuntimeError as exc:
             raise PartError([(part, _not_drawn(exc))]) from exc
 
-    def _engine_bytes(self, contract, resource, owner: int) -> bytes | None:
+    def _engine_bytes(self, contract, resource, owner: int, decals: bool = False) -> bytes | None:
         item = self.objects[owner]
+        if resource.register_class == "b" and self._is_water(item) and resource.name == self._water.buffer:
+            return water_constants(contract.buffer(resource.name), self._water, item.draw_state)
         own = item.engine.get(resource.name)
         if isinstance(own, EngineConstant) and resource.register_class == "b":
             return own.laid_out(contract.buffer(resource.name), item.placement)
+        if isinstance(own, TransitionBuffer):
+            return self._given.get((owner, resource.name), bytes(own))
+        if own is None and self._effects is not None and resource.name == self._effects.buffer \
+                and resource.register_class == "b":
+            return emitter_constants(contract.buffer(resource.name), self._effects)
         return own if own is not None else engine_buffer(contract, resource, self.camera, item.placement, self.frame,
-                                                         self.captured)
+                                                         self.captured, decals, self.clock)
 
     def _placed_by(self, owner: int, name: str) -> bool:
         own = self.objects[owner].engine.get(name)
-        return name in PLACEMENT_BUFFERS or isinstance(own, EngineConstant) and own.placed
+        return name in PLACEMENT_BUFFERS or isinstance(own, EngineConstant) and own.placed \
+            or isinstance(own, TransitionBuffer) or self._is_water(self.objects[owner]) and name == self._water.buffer
 
     def _took(self, heap, missing, part: MeshPart | None = None) -> None:
         self._heap_start = max([self._heap_start, *(entry[0] + 1 for _kind, _dimension, entry in heap)])
@@ -997,14 +1118,17 @@ class MeshScene:
         return self._drawable(part for part in group.parts if not self._part_level(group.owner, part))
 
     def retire(self) -> None:
-        """Leaves the parts refused so far out of every frame after, so frames draw what a scene made without them
-        draws: added objects cannot be taken out. The frame refused is dropped."""
         self._retired.update((key, part) for key, (part, _reason) in self._refusals.items())
         self._refusals.clear()
         self.device.pending.clear()
-        self._gbuffer, self._phases = {}, {}
+        self._stale.update(self._ran)
+        if self._wrinkles is not None:
+            self._wrinkles.handed(False)
+        self._gbuffer, self._ordered, self._phases = {}, {}, {}
+        self._water_listing = None
         self._forward_runs.clear()
         self._step_owners.clear()
+        self._shell_steps.clear()
         self._step_levels.clear()
         self._owner_table = None
 
@@ -1195,8 +1319,7 @@ class MeshScene:
                                          np.float64).reshape(-1, 3, 4)
         self._instance_data = None
         fixed = ([geometry[owner] for owner in owners], [offsets[owner] for owner in owners],
-                 [receives_decals(self.objects[owner].decal_receive_mode, self.objects[owner].skinned)
-                  for owner in owners], extended, indices_skinning)
+                 [self._decals[owner] for owner in owners], extended, indices_skinning)
 
         def instances() -> bytes:
             # Asked every frame (``Resident.refresh``): made again only after an owner moved.
@@ -1241,7 +1364,7 @@ class MeshScene:
                                        read_textures=self.read_textures, read_buffers=self.read_buffers,
                                        heap_start=self._heap_start, streamed=self._streamed,
                                        resident_file=self._resident,
-                                       made_texture=self._made_texture)
+                                       made_texture=self.made_texture)
         except PartError as exc:
             self._refuse(exc)
             return exc.refusals[0][1]
@@ -1401,8 +1524,9 @@ class MeshScene:
                 heap_start=self._heap_start,
                 engine_heap=partial(self._geometry_heap, owners=list(dict.fromkeys(item.owner for item in groups))),
                 shared=self._shared(dict.fromkeys(item.record for item in groups)), streamed=self._streamed,
-                resident_file=self._resident, made_texture=self._made_texture)
+                resident_file=self._resident, made_texture=self.made_texture)
         self._took(job["heap"], missing)
+        self._read_clock(program)
         job, _placed = self._kept(job, self._not_held(engine), buffer, group.owner, answered, constant_buffer)
         return self.device.bound(job)
 
@@ -1568,7 +1692,7 @@ class MeshScene:
                 read_buffers=self.read_buffers, heap_start=self._heap_start,
                 engine_heap=partial(self._geometry_heap, owners=[group.owner]),
                 shared=self._shared(records), streamed=self._streamed, resident_file=self._resident,
-                made_texture=self._made_texture)
+                made_texture=self.made_texture)
             for index, resource in enumerate(contract.resources):
                 if resource.register_class == "u":
                     entry = deferred.entry("transform", resource)
@@ -1579,6 +1703,7 @@ class MeshScene:
                                                                           "name": resource.name}))])
                     tables[index] = (*tables[index][:-1], (entry,))
         self._took(heap, missing)
+        self._read_clock(program)
         job, _placed = self._kept({"compute_shader": shader, "tables": tables, "heap": heap},
                                   self._not_held(_engine_bound(document, tables, [contract])), buffer, group.owner)
         try:
@@ -1601,11 +1726,10 @@ class MeshScene:
             raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                 "MaterialPreview", "The master has no G-buffer program for the material: the renderer draws it "
                                    "forward, after the light passes."))
-        if purpose != "forward" and not _written(document, program) <= set(range(len(_bound_targets(
-                self.catalog, purpose == "blending")))):
-            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                "MaterialPreview", "The pass writes a render target the renderer does not bind for it."))
-        prepass = depth_prepass_program(document, self.shader_target, part.material.material_flags, route)
+        if purpose != "forward" and (error := _unbound(
+                document, program, len(_bound_targets(self.catalog, purpose == "blending")))) is not None:
+            raise error
+        prepass = depth_prepass_program(document, self.shader_target, self._program_flags(part.material), route)
         return purpose, program, None if prepass is None else document.sdf.targets[self.shader_target].programs[prepass]
 
     @property
@@ -1635,16 +1759,18 @@ class MeshScene:
         else:
             drawn.add(part)
 
-    def render_texture(self, path: str, form: int, size: Sequence[int]) -> int:
+    def render_texture(self, path: str, form: int, size: Sequence[int], flags: int = RENDER_TARGET) -> int:
         key = resource_path_key(path)
         if key not in self.render_textures:
-            self.render_textures[key] = ("texture2d", form, self.device.texture(form, size, RENDER_TARGET), tuple(size))
+            self.render_textures[key] = ("texture2d", form, self.device.texture(form, size, flags), tuple(size),
+                                         flags)
         found = self.render_textures[key]
-        if found[1] != form or found[3] != tuple(size):
-            raise ValueError(f"the render texture {path} is made {found[1]} of {found[3]}, not {form} of {size}")
+        if found[1] != form or found[3] != tuple(size) or found[4] != flags:
+            raise ValueError(f"the render texture {path} is made {found[1]} of {found[3]}, not {form} of {size}, or "
+                             f"for other views")
         return found[2]
 
-    def _made_texture(self, path: str) -> tuple[str, int, int] | None:
+    def made_texture(self, path: str) -> tuple[str, int, int] | None:
         found = self.render_textures.get(resource_path_key(path))
         return None if found is None else found[:3]
 
@@ -1684,9 +1810,7 @@ class MeshScene:
                 return None
             entry = _texture_entry(0, path, self.load_file, resource.dimension, self.read_textures)
             if entry is None:
-                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                    "MaterialPreview", "The game's texture {path} was not found, or is not the shape the pass "
-                                       "reads."), {"path": path})
+                raise missing_texture(path)
             return entry
         self._engine_textures[purpose] = texture
         return texture
@@ -1694,16 +1818,25 @@ class MeshScene:
     def _job(self, item: _Draw, program, targets: int, texture: Callable | None = None,
              constant_buffer: Callable | None = None) -> dict:
         owner = item.owner
-        key = (id(item.part), id(program), targets, self.objects[owner].stencil_reference, texture, constant_buffer)
+        drawn = self.objects[owner]
+        key = (id(item.part), id(program), targets, drawn.stencil_reference, self._decals[owner], texture,
+               item.fur, constant_buffer)
         if key not in self._jobs:
             self._jobs[key] = self._made_job(item, program, targets, texture, constant_buffer)
         job, placed = self._jobs[key]
-        job = job | {"tables": self._placed_tables(job["tables"], placed, owner)}
-        if self.objects[owner].deformation is None:
+        job = self._own_inputs(job | {"tables": self._placed_tables(job["tables"], placed, owner)}, owner)
+        if item.shell is not None:
+            job = job | {"indirect": (self.device.following(("shell arguments", owner),
+                                                            partial(self._shell_bytes, owner)), item.shell)}
+        if drawn.deformation is None:
             return job
         destination = self._chains.destination(owner)
-        return job | {"vertex_buffers": [(destination, *entry[1:]) if entry[0] is None else entry
-                                         for entry in job["vertex_buffers"]]}
+        buffers = [(destination, *entry[1:]) if entry[0] is None else entry for entry in job["vertex_buffers"]]
+        if item.shell is not None:
+            shells, total = self._shells[owner][0], drawn.shell_fur.total
+            buffers = [(shells, entry[1], entry[2] * total) if isinstance(entry[0], str) and entry[0] == SHELLS
+                       else entry for entry in buffers]
+        return job | {"vertex_buffers": buffers}
 
     def _box_of(self, part: MeshPart) -> np.ndarray:
         """``_part_box``, made once a part."""
@@ -1714,34 +1847,58 @@ class MeshScene:
     def _placed_tables(self, tables: Sequence[tuple], placed: Iterable[tuple], owner: int) -> list[tuple]:
         tables = list(tables)
         for index, entry, kind, make in placed:
-            tables[index] = (*tables[index][:-1], ((*entry, self._placed_buffer(owner, kind, make)),))
+            table = tables[index]
+            tables[index] = (*table[:-1], ((*entry, self._placed_buffer(
+                owner, kind, make, view_packing(table[0], table[4], entry))),))
         return tables
 
-    def _placed_buffer(self, owner: int, kind: tuple, make: Callable[[int], bytes]) -> int:
+    def _own_inputs(self, job: dict, owner: int) -> dict:
+        names = {name for name, value in self.objects[owner].engine.items() if isinstance(value, TransitionInput)}
+        if not names:
+            return job
+        buffers = list(job["vertex_buffers"])
+        for semantic, index, _format, slot, _offset, per_instance, _rate in job["elements"]:
+            name = f"{semantic.upper()}{index}"
+            if per_instance and name in names:
+                buffers[slot] = (self._placed_buffer(owner, (name, "instance"), partial(self._given_input, name), 1),
+                                 *buffers[slot][1:])
+        return job | {"vertex_buffers": buffers}
+
+    def _given_input(self, name: str, owner: int) -> bytes:
+        return self._given.get((owner, name), bytes(self.objects[owner].engine[name]))
+
+    def _placed_buffer(self, owner: int, kind: tuple, make: Callable[[int], bytes], packing: int) -> int:
         own = self._placed[owner]
         if kind not in own:
-            own[kind] = (self.device.scene.buffer(make(owner), 0), make)
+            own[kind] = (self.device.scene.buffer(make(owner), 0, packing), make)
         return own[kind][0]
 
     def _made_job(self, item: _Draw, program, targets: int, texture: Callable | None,
                   constant_buffer: Callable | None) -> tuple[dict, list[tuple]]:
         answered = set()
+        fur = item.fur
+        if fur is not None:
+            texture = partial(self._fur_texture, fur, texture)
 
         def buffer(contract, resource, owner: int = item.owner) -> bytes | None:
+            if fur is not None and (own := self._fur_input(fur, contract, resource)) is not None:
+                return own
             if constant_buffer is not None and resource.register_class == "b":
                 data = constant_buffer(resource.name, contract.buffer(resource.name))
                 if data is not None:
                     answered.add(resource.name)
                     return data
-            return self._engine_bytes(contract, resource, owner)
+            return self._engine_bytes(contract, resource, owner, self._decals[owner])
         drawn = self.objects[item.owner]
         with _drawing(item.part):
             job, missing, engine = _program_draw(
                 item.part, program, self._geometry[id(item.part), id(program)], targets, drawn.stencil_reference,
                 self.load_file, buffer, self._sampler, texture, self.read_textures, read_buffers=self.read_buffers,
                 heap_start=self._heap_start, streamed=self._streamed, resident_file=self._resident,
-                made_texture=self._made_texture)
+                made_texture=self.made_texture,
+                own=frozenset(name for name, own in drawn.engine.items() if isinstance(own, TransitionBuffer)))
         self._took(job["heap"], missing, item.part)
+        self._read_clock(program)
         job, placed = self._kept(job, engine, buffer, item.owner, answered, constant_buffer)
         return self.device.held(job), placed
 
@@ -1751,7 +1908,7 @@ class MeshScene:
         for index, contract, resource in engine:
             name = resource.name
             placed = self._placed_by(owner, name)
-            if name not in answered and not placed and name not in CAMERA_BUFFERS:
+            if name not in answered and not placed and not self.follows(name):
                 continue
             *entry, bound = tables[index][-1][0]
             constant = resource.register_class == "b"
@@ -1808,31 +1965,30 @@ class MeshScene:
         return self._coverage[start, function][0]
 
     def _steps(self, item: _Draw, program, job: Callable[[], dict], targets: Sequence[tuple[int, int]],
-               bound: bool = True, kept: bool = True) -> list[int]:
-        """``job()`` is the draw's job. ``kept``: ``item`` is one of the scene's draws, whose steps are made once, so a
-        phase made again draws them with the steps it had (their jobs are the same); else they are made for this
-        call."""
-        key = id(item), id(program), tuple(targets), bound
+               bound: bool = True, kept: bool = True, own_depth: int | None = None) -> list[int]:
+        key = id(item), id(program), tuple(targets), bound, own_depth
         held = self._made_steps.get(key) if kept else None
         if held is None:
             # The item and program are held, so their ids name them while the steps are kept.
-            held = item, program, self._made_steps_of(item, program, job(), targets, bound)
+            held = item, program, self._made_steps_of(item, program, job(), targets, bound, own_depth)
             if kept:
                 self._made_steps[key] = held
                 if self._left_out:
                     self._leaves(item, held[2])
         steps = held[2]
         self._step_owners.update(dict.fromkeys(steps, item.owner))
+        if item.shell is not None:
+            self._shell_steps.update(steps)
         self._owner_table = None
         return steps
 
     def _made_steps_of(self, item: _Draw, program, job: dict, targets: Sequence[tuple[int, int]],
-                       bound: bool) -> list[int]:
+                       bound: bool, own_depth: int | None = None) -> list[int]:
         scene = self.device.scene
         reads_depth = any(entry[2:] == (self.depth_before,)
                           for table in job["tables"] if table[0] == RANGE_SRV for entry in table[-1])
         steps = [scene.copy(self.depth_before, self.depth)] if reads_depth else []
-        steps.append(self._step(job, targets, self.depth if bound else None))
+        steps.append(self._step(job, targets, own_depth if own_depth is not None else self.depth if bound else None))
         state = program.depth_stencil_state
         coverage = _COVERAGE.get(state.depth_function_id if bound and state.depth_enable else COMPARE_ALWAYS)
         if (coverage is not None and item.prepass is None
@@ -1847,15 +2003,27 @@ class MeshScene:
         return steps
 
     def begin(self) -> None:
+        self._water_copied = False
         self._stream()
         self.device.refresh()
+        self.device.pending += self._user_steps
         self.device.pending += [start for _texture, start, _comparison, _source in self._coverage.values()]
+        if self._unplaced:
+            # Only the draws of owners a frame draws (``_seen_steps``) read their placed buffers.
+            seen, shells = self._seen(), self._seen(True)
+            for owner in [owner for owner in self._unplaced if seen[owner] or shells[owner]]:
+                for buffer, make in self._placed[owner].values():
+                    self.device.scene.write(buffer, make(owner))
+                self._unplaced.discard(owner)
+        self._ran = []
         if self._stale:
             seen = self._seen()
-            run = sorted(owner for owner in self._stale if seen[owner])
+            run = self._ran = sorted(owner for owner in self._stale if seen[owner])
             for owner in run:
                 if self.objects[owner].deformation is not None:
                     self.device.pending += self._chains.steps(owner)
+                    if owner in self._shells:
+                        self.device.pending += self._shells[owner][1]
                 self._stale.discard(owner)
             drawn_into = {resource_path_key(self.objects[owner].wrinkle.render_target) for owner in run
                           if self.objects[owner].wrinkle is not None}
@@ -1866,7 +2034,10 @@ class MeshScene:
     def finish(self, read: Sequence[int] = ()) -> list[bytes]:
         if self._refusals:
             raise PartError(self._refusals.values())
-        self.device.pending[:] = self._seen_steps(self._forward_sorted(self.device.pending))
+        self._ran = []
+        if self._wrinkles is not None:
+            self._wrinkles.handed(True)
+        self.device.pending[:] = self._seen_steps(self._forward_sorted(self._transparent_ordered(self.device.pending)))
         try:
             return self.device.flush(read)
         except RuntimeError as exc:
@@ -1877,8 +2048,7 @@ class MeshScene:
         every mip."""
         if self._sides is None:
             self._sides = self._texture_sides()
-        side = self._sides.get(path, np.inf)
-        return None if not np.isfinite(side) else 1 << max(0, int(np.ceil(np.log2(max(side, 1.0)))))
+        return self._sides.get(path)
 
     def _stream(self) -> None:
         """Streams finer mips in where the camera now samples them, ``_STREAM_READS`` files at a time."""
@@ -1893,8 +2063,7 @@ class MeshScene:
         self.streaming = self.read_textures.refine(_STREAM_READS)
         self.refills += sum(held[2] != streamed.get(key) for key, held in self.read_textures.streamed.items())
 
-    def _texture_sides(self) -> dict[str, float]:
-        """By texture path, the most texels a side of it spans on screen, over the parts whose materials read it."""
+    def _texture_sides(self) -> dict[str, int | None]:
         self._box_moved()
         camera = self.camera
         view = np.asarray(camera.view, np.float64).reshape(3, 4)
@@ -1907,52 +2076,57 @@ class MeshScene:
         with np.errstate(divide="ignore", invalid="ignore"):
             reach = np.where(self._bounded & (pixel > 0), _SIDE_MARGIN * self._scales / pixel, np.inf)
         if self._side_parts is None:
-            owners, densities, numbers, materials = [], [], [], {}
-            for owner, item in enumerate(self.objects):
-                for part in item.parts:
-                    owners.append(owner)
-                    densities.append(part.texel_density or 0.0)
-                    numbers.append(materials.setdefault(id(part.material), (len(materials), part.material))[0])
-            paths: dict[str, int] = {}
+            scanned, owners, densities, numbers, materials, paths, pairs = self._side_lists
+            known = len(materials)
+            parts = [(owner, part) for owner in range(scanned, len(self.objects)) for part in self.objects[owner].parts]
+            owners = np.concatenate([owners, np.array([owner for owner, _part in parts], np.int64)])
+            densities = np.concatenate([densities, [part.texel_density or 0.0 for _owner, part in parts]])
+            numbers = np.concatenate([numbers, np.array([materials.setdefault(id(part.material), (
+                len(materials), part.material))[0] for _owner, part in parts], np.int64)])
             # (texture path, material) of each texture a material reads.
-            pairs = sorted((paths.setdefault(path, len(paths)), number) for number, material in materials.values()
-                           for path in material.textures.values())
+            pairs = np.concatenate([pairs, np.array([
+                (paths.setdefault(path, len(paths)), number) for number, material in list(materials.values())[known:]
+                for path in material.textures.values()], np.int64).reshape(-1, 2)])
+            self._side_lists = len(self.objects), owners, densities, numbers, materials, paths, pairs
             # Parts by material and pairs by path, each run's start, for reductions by material and by path.
             order = np.argsort(numbers, kind="stable")
-            pair_paths, pair_materials = np.array(pairs, np.int64).reshape(-1, 2).T
-            self._side_parts = (np.array(owners, np.int64)[order], np.array(densities, np.float64)[order],
-                                np.flatnonzero(np.diff(np.array(numbers)[order], prepend=-1)), pair_materials,
-                                np.flatnonzero(np.diff(pair_paths, prepend=-1)), list(paths))
+            pair_paths, pair_materials = pairs[np.lexsort((pairs[:, 1], pairs[:, 0]))].T
+            self._side_parts = (owners[order], densities[order], np.flatnonzero(np.diff(numbers[order], prepend=-1)),
+                                pair_materials, np.flatnonzero(np.diff(pair_paths, prepend=-1)), list(paths))
         owners, densities, by_material, pair_materials, by_path, paths = self._side_parts
         with np.errstate(divide="ignore", invalid="ignore"):
             parts = np.where(densities > 0, reach[owners] / densities, np.inf)
         most = np.maximum(np.maximum.reduceat(parts, by_material), 0) if len(parts) else parts
         # A material's NaN leaves its paths to the others.
         sides = np.fmax(np.fmax.reduceat(most[pair_materials], by_path), 0) if len(by_path) else np.zeros(0)
-        return {path: side for path, side in zip(paths, sides.tolist()) if side > 0}
+        kept = np.flatnonzero(sides > 0)
+        finite = np.isfinite(sides[kept])
+        exponents = np.zeros(len(kept), np.int64)
+        exponents[finite] = np.maximum(np.ceil(np.log2(np.maximum(sides[kept][finite], 1.0))), 0)
+        return {paths[at]: 1 << exponent if shown else None
+                for at, exponent, shown in zip(kept.tolist(), exponents.tolist(), finite.tolist())}
 
-    def _seen(self) -> np.ndarray:
-        """The last entry, True, answers owner -1 (steps of no object)."""
+    def _seen(self, shells: bool = False) -> np.ndarray:
         self._box_moved()
-        hidden = self._hidden
-        if self._corners is None or self._corners[0] is not hidden:
-            # Owners hidden are not tested: they are left out all the same.
-            bounded = np.flatnonzero(self._bounded & ~hidden)
-            self._corners = hidden, bounded, self._boxes[bounded]
-        _hidden, bounded, boxes = self._corners
-        seen = np.ones(len(self._boxes) + 1, bool)
-        if not len(bounded):
-            seen[:-1] = ~hidden
-            return seen
-        matrix = scene_values(self.camera)["viewProjMat"]
-        key = matrix.tobytes()
-        if self._culled is not None and self._culled[0] == key:
-            return self._culled[1]
-        seen[bounded] = boxes_seen(boxes, matrix)
-        seen[:-1] &= ~hidden
-        seen.setflags(write=False)
-        self._culled = key, seen
-        return seen
+        hidden, shells_hidden = self._hidden, self._shells_hidden
+        if self._corners is None or self._corners[0] is not hidden or self._corners[1] is not shells_hidden:
+            bounded = np.flatnonzero(self._bounded & ~(hidden & shells_hidden))
+            self._corners = hidden, shells_hidden, bounded, self._boxes[bounded]
+        _hidden, _shells, bounded, boxes = self._corners
+        matrix = scene_values(self.camera)["viewProjMat"] if len(bounded) else None
+        key = None if matrix is None else matrix.tobytes()
+        if self._culled is None or self._culled[0] != key:
+            found = np.ones(len(self._boxes) + 1, bool)
+            if matrix is not None:
+                found[bounded] = boxes_seen(boxes, matrix)
+            made = []
+            for left_out in (hidden, shells_hidden):
+                seen = found.copy()
+                seen[:-1] &= ~left_out
+                seen.setflags(write=False)
+                made.append(seen)
+            self._culled = key, *made
+        return self._culled[2 if shells else 1]
 
     def _lods(self) -> tuple[np.ndarray, np.ndarray]:
         """Each owner's meshlet LOD and its ``CulledMeshlet`` word's high byte, as instance culling picks them from the
@@ -2035,17 +2209,52 @@ class MeshScene:
     def _seen_steps(self, steps: list[int]) -> list[int]:
         seen, left = self._seen(), self._left()
         out = left[0] if left else ()
-        if seen.all() and not self._step_levels and not out:
+        shells = self._seen(True) if self._shell_steps else seen
+        if seen.all() and shells.all() and not self._step_levels and not out:
             return steps
         if self._owner_table is None:
-            size = max([*self._step_owners, *self._step_levels, *out], default=-1) + 1
+            size = max(max(self._step_owners, default=-1), max(self._step_levels, default=-1), max(out, default=-1)) + 1
             self._owner_table = np.full(size, -1, np.int64), np.full(size, -1, np.int64)
             for table, given in zip(self._owner_table, (self._step_owners, self._step_levels)):
-                table[list(given)] = list(given.values())
+                table[np.fromiter(given, np.int64, len(given))] = np.fromiter(given.values(), np.int64, len(given))
+            # A shell step answers to its owner's shells, after every owner.
+            self._owner_table[0][list(self._shell_steps)] += len(self.objects)
             self._owner_table[0][list(out)] = -2
-        return _fastmesh.steps_kept(steps, *self._owner_table, seen, self._lods()[0] if self._step_levels else None)
+        lods = self._lods()[0] if self._step_levels else None
+        if self._shell_steps:
+            seen = np.concatenate([seen[:-1], shells])
+            lods = None if lods is None else np.concatenate([lods[:-1], lods])
+        return _fastmesh.steps_kept(steps, *self._owner_table, seen, lods)
+
+    def _gbuffer_onto(self, blending: bool, apart: bool) -> list[tuple[int, int]]:
+        textures = {row.target: (row.format, self.targets[row.target]) for row in _bound_targets(self.catalog, False)}
+        bound = _bound_targets(self.catalog, blending)
+        for row in bound if blending else ():
+            if not row.over_unblended:
+                if apart:
+                    continue
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "The renderer fills target {target} for blending passes from the others' "
+                                       "in between, which the preview does not do."), {"target": row.target})
+            if textures.get(row.target, (None,))[0] != row.format:
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "REasy's catalog of this game build gives blending passes target {target} "
+                                       "in another format."), {"target": row.target})
+        onto = [textures.get(row.target) for row in bound]
+        if not all(row.over_unblended for row in bound if blending):
+            onto = [given if row.over_unblended else spare
+                    for row, given, spare in zip(bound, onto, self.scratch(row.format for row in bound))]
+        return onto
+
+    def drawn_steps(self, program, job: dict, targets: Sequence[tuple[int, int]]) -> list[int]:
+        return self._made_steps_of(_Draw(-1, None, "", program, None), program, job, targets, True)
 
     def gbuffer(self, apart: bool = False) -> list[int]:
+        if self._order is not None:
+            listing = self._ordered.get(apart)
+            if listing is None or listing.listed != len(self._draws):
+                listing = self._listed_ordered(apart)
+            return listing.frame(self._prepass_first())
         listing = self._gbuffer.get(apart)
         if listing is not None and listing.listed == len(self._draws):
             return listing.steps
@@ -2067,51 +2276,42 @@ class MeshScene:
             slots[0] = [scene.clear(*target) for target in textures.values()] + [
                 scene.clear(self.depth_format, self.depth)], ()
             slots.append((self._meshlet_steps(), ()))
-            listing = _Listing([([], []) for _slot in range(5)], [])
+            listing = _Listing([([], []) for _slot in range(6)], [])
         else:
             slots.append(((), ()))
         drawn = [item for item in added if item.purpose == GBUFFER_PURPOSE
                  or item.purpose == "blending" and ("blending", ()) not in self.phases]
-        for blending in (False, True):
+        # Programs drawing on their pre-pass's depth draw after those writing depth: behind a nearer surface they draw
+        # nothing.
+        for blending, prepassed in ((False, False), (False, True), (True, None)):
             phase = [item for item in drawn if (item.purpose == "blending") == blending
+                     and (prepassed is None or (item.prepass is not None) == prepassed)
                      and self._drawable((item.part,))]
             made: list[int] = []
             slots.append((made, ()))
             if not phase:
                 continue
-            bound = _bound_targets(self.catalog, blending)
-            for row in bound if blending else ():
-                if not row.over_unblended:
-                    if apart:
-                        continue
-                    raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                        "MaterialPreview", "The renderer fills target {target} for blending passes from the others' "
-                                           "in between, which the preview does not do."), {"target": row.target})
-                if textures.get(row.target, (None,))[0] != row.format:
-                    raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                        "MaterialPreview", "REasy's catalog of this game build gives blending passes target {target} "
-                                           "in another format."), {"target": row.target})
-            onto = [textures.get(row.target) for row in bound]
-            if not all(row.over_unblended for row in bound if blending):
-                onto = [given if row.over_unblended else spare
-                        for row, given, spare in zip(bound, onto, self.scratch(row.format for row in bound))]
+            onto = self._gbuffer_onto(blending, apart)
             for item in phase:
                 if self._drawable((item.part,)):
                     with self._refusing():
                         made += self._steps(item, item.program, partial(
-                            self._job, item, item.program, len(bound), self._engine_texture(GBUFFER_PURPOSE)), onto)
+                            self._job, item, item.program, len(onto), self._engine_texture(GBUFFER_PURPOSE)), onto)
         self._gbuffer[apart] = listing = listing.extended(slots, (), len(self._draws))
         return listing.steps
 
-    def draw_phase(self, phase: PhaseKey, targets: Sequence[tuple[int, int | None]], bound: bool,
+    def draw_phase(self, phase: PhaseKey, targets: Sequence[tuple[int, int | None]], depth: str,
                    texture: Callable[[str, object, int], tuple | None],
                    constant_buffer: Callable[[str, object], bytes | None],
                    split: bool = False) -> tuple[list[int], list[int]]:
-        """``texture(name, resource, depth)`` returns None for a null view; ``constant_buffer(name, layout)`` is called
-        again every frame."""
-        purpose = phase[0]
+        if depth not in PHASE_DEPTHS:
+            raise ValueError(f"a phase's depth is one of {PHASE_DEPTHS}, not {depth!r}")
+        purpose, bound = phase[0], depth == "shown"
         source = self._draws if purpose in PHASES else self._named[phase]
-        key = phase, tuple(targets), bound, texture, constant_buffer, split
+        # Its depth is made with its first draw (the GUI's pass draws nothing in most scenes).
+        if depth == "own" and not source:
+            return [], []
+        key = phase, tuple(targets), depth, texture, constant_buffer, split
         listing = self._phases.get(key)
         if listing is not None and listing.listed == len(source):
             return listing.steps, listing.blended
@@ -2128,61 +2328,86 @@ class MeshScene:
         if texture not in self._reads:
             self._reads[texture] = lambda _contract, resource: texture(resource.name, resource, self.depth_before)
         read = self._reads[texture]
+        own_depth = None
+        if depth == "own":
+            if self._own_depth is None:
+                self._own_depth = self.device.texture(self.depth_resource_format, self.size, DEPTH_STENCIL)
+            own_depth = self._own_depth
+        clears = [self.device.scene.clear(self.depth_format, own_depth)] if own_depth is not None and listing is None \
+            else []
         prepasses = []
         for item in drawn:
-            if item.prepass is not None and purpose == "forward" and self._drawable((item.part,)):
+            if item.prepass is not None and purpose == "forward" and item.placing is None \
+                    and self._drawable((item.part,)):
                 with self._refusing():
                     prepasses += self._steps(item, item.prepass, partial(
                         self._job, item, item.prepass, count, self._engine_texture(PREPASS_PURPOSE), constant_buffer),
                         unread)
-        slots, runs = [(prepasses, ())], []
+        slots, runs = [(clears, ()), (prepasses, ())], []
         order = self._forward_order if purpose == "forward" else None
         blendings = (None,) if order is None else (False, True)
-        for blending in blendings:
-            steps, blended = [], []
-            slots.append((steps, blended))
-            # Meshlet groups are listed once: added ones make the scene's listings anew (``_regroup``).
-            for number, group in enumerate(self._meshlet_groups if listing is None else ()):
-                program = group.raster
-                if group.purpose != purpose or blending not in (None, _blends_first(program)):
-                    continue
-                # Every record is made, and its refusals known, before the first draw reading them.
-                self._records_made()
-                if not self._group_drawable(group):
-                    continue
-                with self._refusing(), _drawing(*group.parts):
-                    if not _written(group.part.document, program) <= set(range(len(targets))):
-                        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                            "MaterialPreview", "The pass writes a render target the renderer does not bind for it."))
-                    # A step per LOD, kept by frames at its object's (``_seen_steps``).
-                    leveled = self.objects[group.owner].lods is not None
-                    for level, clusters in group.lods:
-                        made = self._steps(_Draw(group.owner, group.part, purpose, program, None), program, partial(
-                            self._meshlet_job, [group], program, self._span_roots[number, level], count, read,
-                            (self.meshlets.vertices, clusters), constant_buffer), onto, bound, kept=False)
-                        if leveled:
-                            self._step_levels.update(dict.fromkeys(made, level))
-                        (blended if split and _blends_first(program) else steps).extend(made)
-            steps, blended, run = [], [], []
-            slots.append((steps, blended))
-            runs.append(run)
-            for item in drawn:
-                if blending not in (None, _blends_first(item.program)) or not self._drawable((item.part,)):
-                    continue
-                with self._refusing():
-                    if not _written(item.part.document, item.program) <= set(range(len(targets))):
-                        raise PartError([(item.part, MaterialPreviewError(QT_TRANSLATE_NOOP(
-                            "MaterialPreview", "The pass writes a render target the renderer does not bind for it.")))])
-                    made = self._steps(item, item.program, partial(
-                        self._job, item, item.program, count, read, constant_buffer), onto, bound)
-                    (blended if split and _blends_first(item.program) else steps).extend(made)
-                    if made:
-                        run.append((self._box_of(item.part), item.owner, tuple(made),
-                                    _priority_bias(item.part.material)))
+        # The transparent layer's draws come after the others, first the depth of meshes drawn ignoring it.
+        layers = (None,) if purpose != "forward" or self._order is None else (False, True)
+        for layer in layers:
+            if layer:
+                stamps = []
+                slots.append((stamps, ()))
+                for item in drawn:
+                    if item.stamp is not None and self._drawable((item.part,)):
+                        with self._refusing():
+                            stamps += self._steps(item, item.stamp, partial(
+                                self._job, item, item.stamp, count, read, constant_buffer), unread, bound,
+                                own_depth=own_depth)
+                slots.append(([step for steps, _ordered in (self._transparent_steps if listing is None else ())
+                               for step in steps(onto)], ()))
+            for blending in blendings:
+                steps, blended = [], []
+                slots.append((steps, blended))
+                # Meshlet groups are listed once: added ones make the scene's listings anew (``_regroup``).
+                for number, group in enumerate(self._meshlet_groups if listing is None else ()):
+                    program = group.raster
+                    if group.purpose != purpose or blending not in (None, _blends_first(program)) \
+                            or layer is not None and layer != self._transparent(group.part):
+                        continue
+                    # Every record is made, and its refusals known, before the first draw reading them.
+                    self._records_made()
+                    if not self._group_drawable(group):
+                        continue
+                    with self._refusing(), _drawing(*group.parts):
+                        if (error := _unbound(group.part.document, program, len(targets))) is not None:
+                            raise error
+                        # A step per LOD, kept by frames at its object's (``_seen_steps``).
+                        leveled = self.objects[group.owner].lods is not None
+                        for level, clusters in group.lods:
+                            made = self._steps(_Draw(group.owner, group.part, purpose, program, None), program,
+                                               partial(self._meshlet_job, [group], program,
+                                                       self._span_roots[number, level], count, read,
+                                                       (self.meshlets.vertices, clusters), constant_buffer),
+                                               onto, bound, kept=False, own_depth=own_depth)
+                            if leveled:
+                                self._step_levels.update(dict.fromkeys(made, level))
+                            (blended if split and _blends_first(program) else steps).extend(made)
+                steps, blended, run = [], [], []
+                slots.append((steps, blended))
+                runs.append(run)
+                for item in drawn:
+                    if blending not in (None, _blends_first(item.program)) or layer is not None \
+                            and layer != self._transparent(item.part) or not self._drawable((item.part,)):
+                        continue
+                    with self._refusing():
+                        if (error := _unbound(item.part.document, item.program, len(targets))) is not None:
+                            raise PartError([(item.part, error)])
+                        made = self._steps(item, item.program, partial(
+                            self._job, item, item.program, count, read, constant_buffer), onto, bound,
+                            own_depth=own_depth)
+                        (blended if split and _blends_first(item.program) else steps).extend(made)
+                        if made:
+                            run.append((self._box_of(item.part), item.owner, tuple(made),
+                                        _priority_bias(item.part.material, None if order is None else order.bias)))
         if listing is None:
             listing = _Listing([([], []) for _slot in slots], [[] for _run in runs])
         self._phases[key] = listing = listing.extended(slots, runs, len(source))
-        for blending, run in zip(blendings, listing.runs):
+        for blending, run in zip(blendings * len(layers), listing.runs):
             rule = None if order is None else order.blended if blending else order.unblended
             if rule in SORTED_ORDERS and len(run) > 1:
                 self._forward_runs[run[0][2][0]] = (SORTED_ORDERS[rule], run)
@@ -2277,5 +2502,5 @@ def render_gbuffer(parts: Sequence[MeshPart], load_file: Callable[[str], bytes |
 
 
 __all__ = ["DEPTH_PLANES", "DEPTH_VIEWS", "GBufferImage", "GBufferTarget", "MeshBounds", "MeshObject", "MeshPart",
-           "MeshScene", "ObjectBox", "PHASES", "PartError", "PhaseKey", "draw_purpose", "mesh_bounds", "object_box",
-           "part_draws", "render_gbuffer", "transparent_keys"]
+           "MeshScene", "ObjectBox", "PHASE_DEPTHS", "PHASES", "PartError", "PhaseKey", "draw_purpose", "mesh_bounds",
+           "object_box", "part_draws", "render_gbuffer", "skinned_box", "transparent_keys"]

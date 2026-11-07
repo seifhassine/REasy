@@ -7,11 +7,13 @@ from dataclasses import dataclass
 
 import numpy as np
 
+lazy from file_handlers.engine_math import crt
+
 lazy from .chain_catalog import RenderSection
 from .chain_constants import ConstantBlocks
 lazy from .direct_render import LAYOUT, ibl_count
-lazy from .render_constants import (EUMELANIN, FOUR_PI, LEAST_SHARE, LEAST_THROUGH, LINEAR, LOGF, PHEOMELANIN,
-                               SQUARE, THOUSAND, TWENTIETH)
+lazy from .render_constants import (EUMELANIN, FOUR_PI, LEAST_SHARE, LEAST_THROUGH, LINEAR, PHEOMELANIN, SQUARE,
+                               THOUSAND, TWENTIETH)
 lazy from .strands_file import StrandsFile
 
 F = np.float32
@@ -51,7 +53,7 @@ def injected_segments(segments: int, drawn: int, rate: float) -> int:
 
 def _absorption(melanin: F, redness: F) -> list:
     through = _ONE - melanin
-    length = -F(LOGF(through if LEAST_THROUGH <= through else LEAST_THROUGH))
+    length = -F(crt("logf")(through if LEAST_THROUGH <= through else LEAST_THROUGH))
     rest, red = (_ONE - redness) * length, length * redness
     return [red * pheo + rest * eu for pheo, eu in zip(PHEOMELANIN, EUMELANIN)]
 

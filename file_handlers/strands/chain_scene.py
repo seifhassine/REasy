@@ -433,7 +433,7 @@ def read_set(files: GameFiles, game: str, profile, mesh, mesh_path: str, strands
             raise refusal(QT_TRANSLATE_NOOP("MaterialPreview", "The strands' material file {path} holds {count} "
                                                                 "materials."), path=path, count=len(mdf.materials))
         drawn, = mdf.materials
-        master, material = drawn.header.mmtr_path, PreviewMaterial.from_mdf(drawn)
+        master, material = drawn.header.mmtr_path, PreviewMaterial.from_mdf(drawn, mdf.file_version)
 
     def preset(path: str) -> GpuStrandsPreset | None:
         found = files.find(path, owner)

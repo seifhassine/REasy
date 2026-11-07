@@ -6,6 +6,7 @@ import re
 import struct
 from typing import Iterable, Mapping
 
+lazy from file_handlers.sdf.aggregate_values import constant_value_fields
 lazy from file_handlers.sdf.dxbc import DxbcDisassemblyError, disassemble_dxbc
 lazy from file_handlers.sdf.hlsl_contract import resource_declaration, resource_identifier
 from file_handlers.sdf.shader_graph import (
@@ -15,6 +16,7 @@ from file_handlers.sdf.shader_graph import (
     ShaderContractResource,
     ShaderGraphError,
     _constant_buffer_identifiers,
+    _hlsl_variable_parts,
     _identifier,
     signature_declaration,
     signature_member,
@@ -656,74 +658,12 @@ def _splat(base: str, width: int, value: str) -> str:
     return f"{_width_type(base, width)}({', '.join(str(value) for _ in range(int(width)))})"
 
 
-def _recovered_buffer_aliases(
-    contract: ShaderContract,
-    semantic_buffer_bindings: frozenset[int] = frozenset(),
-) -> list[str]:
-    lines: list[str] = []
+def _recovered_buffer_aliases(contract: ShaderContract) -> list[str]:
     identifiers = _constant_buffer_identifiers(contract.constant_buffers, reserved=(item.name for item in contract.resources))
-    for buffer in contract.constant_buffers:
-        for variable in buffer.variables:
-            declaration = str(variable.hlsl_declaration or "").strip()
-            if (
-                not declaration
-                or variable.byte_offset < 0
-                or variable.byte_offset % 4
-                or variable.byte_size <= 0
-            ):
-                continue
-            name = identifiers[buffer.name, variable.name]
-            register, byte_in_register = divmod(int(variable.byte_offset), 16)
-            lane = byte_in_register // 4
-            scalar_match = re.fullmatch(
-                r"(?P<base>float|int|uint|bool)(?P<width>[1-4]?)",
-                declaration,
-                re.IGNORECASE,
-            )
-            matrix_match = re.fullmatch(
-                r"(?:row_major\s+)?float(?P<rows>[2-4])x(?P<columns>[2-4])",
-                declaration,
-                re.IGNORECASE,
-            )
-            expression = ""
-            if int(buffer.bind_point) in semantic_buffer_bindings:
-                if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", variable.name):
-                    raise ShaderGraphError(
-                        f"semantic buffer field {buffer.name}.{variable.name} is not a valid HLSL identifier"
-                    )
-                expression = variable.name
-            elif scalar_match is not None and int(variable.array_length) == 1:
-                base = scalar_match.group("base").casefold()
-                width = int(scalar_match.group("width") or "1")
-                if lane + width > 4:
-                    continue
-                swizzle = "xyzw"[lane : lane + width]
-                expression = f"REasyCB{buffer.bind_point}[{register}u].{swizzle}"
-                if base == "float":
-                    expression = f"asfloat({expression})"
-                elif base == "int":
-                    expression = f"asint({expression})"
-                elif base in {"uint", "bool"}:
-                    expression = f"asuint({expression})"
-            elif (
-                matrix_match is not None
-                and int(variable.array_length) == 1
-                and lane == 0
-            ):
-                rows = int(matrix_match.group("rows"))
-                columns = int(matrix_match.group("columns"))
-                if columns != 4 or variable.byte_size < rows * 16:
-                    continue
-                row_values = ", ".join(
-                    f"asfloat(REasyCB{buffer.bind_point}[{register + row}u])"
-                    for row in range(rows)
-                )
-                expression = f"float{rows}x{columns}({row_values})"
-            if expression:
-                lines.append(f"#define {name} ({expression})")
-    if lines:
-        lines.append("")
-    return lines
+    lines = [f"#define {identifiers[buffer.name, variable.name]} ({variable.name})"
+             for buffer in contract.constant_buffers for variable in buffer.variables
+             if identifiers[buffer.name, variable.name] != variable.name]
+    return [*lines, ""] if lines else lines
 
 
 def _min_precision(token: str) -> bool:
@@ -1166,7 +1106,6 @@ class _HlslEmitter:
         structured_overrides: Mapping[tuple[int, int], str] | None = None,
         texture_binding_overrides: Mapping[int, int] | None = None,
         instruction_hooks: DxbcHookPlan | None = None,
-        semantic_buffer_bindings: frozenset[int] = frozenset(),
         output_array: str = "",
     ) -> None:
         self.ir = ir
@@ -1191,9 +1130,6 @@ class _HlslEmitter:
         self._aliases: dict[str, list[tuple[str, str]]] = {}
         self.constant_overrides = dict(constant_overrides or {})
         self.structured_overrides = dict(structured_overrides or {})
-        self.semantic_buffer_bindings = frozenset(
-            int(value) for value in semantic_buffer_bindings
-        )
         self.output_array = output_array
         self._hooks: dict[tuple[int, str], list[str]] = {}
         self._emitted_hooks: set[tuple[int, str]] = set()
@@ -1249,10 +1185,11 @@ class _HlslEmitter:
         value = re.sub(r"\s+\{[^{}]+\}\s*$", "", token.strip())
         if value.casefold() == "null":
             return None
-        if value.casefold() in _PIXEL_OUTPUTS:
-            if not any(_output_register(field) == value.casefold() for field in self.contract.outputs):
+        special = value.casefold().removesuffix(".x")
+        if special in _PIXEL_OUTPUTS:
+            if not any(_output_register(field) == special for field in self.contract.outputs):
                 raise ShaderGraphError(f"Undeclared special pixel output {value}")
-            return value.casefold(), "x"
+            return special, "x"
         dynamic_output = re.fullmatch(r"o\[([^\]]+)\](?:\.([xyzw]+))?", value, re.I)
         if dynamic_output:
             if not self.output_array:
@@ -1433,8 +1370,7 @@ class _HlslEmitter:
         bind_point = int(cb.group("index"))
         register_text = cb.group("register").strip()
         register = self._index_expression(register_text)
-        value = (f"REasyLoadCB{bind_point}({register})" if bind_point in self.semantic_buffer_bindings
-                 else f"REasyCB{bind_point}[{register}]")
+        value = f"REasyLoadCB{bind_point}({register})"
         parts = []
         for lane in _select_lanes(cb.group("swizzle") or "xyzw", selector):
             lane_offset = "xyzw".index(lane) * 4
@@ -2412,7 +2348,7 @@ def _texture_type(resource: ShaderContractResource) -> str:
     return texture_hlsl_type(resource.dimension, resource.return_type)
 
 
-def _structured_declarations(resource: ShaderContractResource) -> list[str]:
+def _structured_declarations(resource: ShaderContractResource, layout: ShaderContractBuffer | None) -> list[str]:
     writable = resource.input_type == "rw-structured-buffer"
     prefix = "RW" if writable else ""
     stride = int(resource.sample_count)
@@ -2420,49 +2356,39 @@ def _structured_declarations(resource: ShaderContractResource) -> list[str]:
         raise ShaderGraphError(f"structured buffer {resource.name} has invalid stride {stride}")
     identifier = resource_identifier(resource)
     element = f"REasy{prefix}StructuredElement_{resource.bind_point}"
-    words = stride // 4
-    lines = [f"struct {element}", "{"]
-    for slot in range((words + 3) // 4):
-        width = min(4, words - slot * 4)
-        lines.append(f"    {_width_type('uint', width)} slot{slot};")
-    lines.extend(
-        (
-            "};",
-            f"{prefix}StructuredBuffer<{element}> {identifier} : register({resource.register_class}{resource.bind_point});",
-            f"uint REasyLoad{prefix}Structured_{resource.bind_point}(uint index, uint byteOffset)",
-            "{",
-            "    uint word = byteOffset >> 2;",
-            "    uint component = word & 3u;",
-            "    switch (word >> 2)",
-            "    {",
-        )
-    )
-    for slot in range((words + 3) // 4):
-        width = min(4, words - slot * 4)
-        if width == 1:
-            value = f"{identifier}[index].slot{slot}"
-        else:
-            value = f"{identifier}[index].slot{slot}[min(component, {width - 1}u)]"
-        lines.append(f"        case {slot}u: return {value};")
-    lines.extend(("        default: return 0u;", "    }", "}", ""))
-    if not writable:
-        return lines
-    lines.extend(
-        (
-            f"void REasyStoreRWStructuredWord_{resource.bind_point}(uint index, uint word, uint value)",
-            "{",
-            "    switch (word)",
-            "    {",
-        )
-    )
-    for word in range(words):
-        slot, component = divmod(word, 4)
-        width = min(4, words - slot * 4)
-        target = f"{identifier}[index].slot{slot}"
-        if width > 1:
-            target += f".{'xyzw'[component]}"
-        lines.append(f"        case {word}u: {target} = value; return;")
-    lines.extend(("        default: return;", "    }", "}", ""))
+    variables = sorted(layout.variables, key=lambda item: item.byte_offset) if layout is not None else []
+    if [variable.name for variable in variables] == ["$Element"]:
+        element = _declaration(variables[0], "")
+        lines, words = [], _field_words(variables[0], f"{identifier}[index]", True)
+    else:
+        lines, words, end = [f"struct {element}", "{"], {}, 0
+        for variable in [*variables, None]:
+            start = stride if variable is None else int(variable.byte_offset)
+            if start < end or start % 4:
+                raise ShaderGraphError(
+                    f"structured buffer {resource.name}'s fields do not fit its {stride}-byte stride")
+            for word in range(end // 4, start // 4):
+                lines.append(f"    uint REasyWord{word};")
+                words[word] = (f"{identifier}[index].REasyWord{word}", "uint")
+            if variable is not None:
+                lines.append(f"    {_declaration(variable, variable.name)};")
+                fields = _field_words(variable, f"{identifier}[index].{variable.name}", True)
+                words |= fields
+                end = 4 * (max(fields) + 1)
+        lines.append("};")
+    lines.extend((f"{prefix}StructuredBuffer<{element}> {identifier} : "
+                  f"register({resource.register_class}{resource.bind_point});",
+                  f"uint REasyLoad{prefix}Structured_{resource.bind_point}(uint index, uint byteOffset)", "{",
+                  "    switch (byteOffset >> 2)", "    {",
+                  *(f"        case {word}u: return {_uint_word(*words[word])};" for word in sorted(words)),
+                  "        default: return 0u;", "    }", "}", ""))
+    if writable:
+        convert = {"float": "asfloat(value)", "int": "asint(value)"}
+        lines.extend((f"void REasyStoreRWStructuredWord_{resource.bind_point}(uint index, uint word, uint value)", "{",
+                      "    switch (word)", "    {",
+                      *(f"        case {word}u: {value} = {convert.get(base, 'value')}; return;"
+                        for word, (value, base) in sorted(words.items())),
+                      "        default: return;", "    }", "}", ""))
     return lines
 
 
@@ -2566,126 +2492,63 @@ def _hull_entry_points(ir, contract, emitter_options):
     return lines + ["}", ""]
 
 
-def _semantic_cbuffer_declaration(buffer: ShaderContractBuffer) -> list[str]:
+def _field_words(variable, expression: str, structured: bool = False) -> dict[int, tuple[str, str]]:
+    return {offset // 4: (expression + field.path + (f".{'xyzw'[component]}" if len(field.offsets) > 1 else ""),
+                          re.match(r"[a-z]+", field.value_type)[0])
+            for field in constant_value_fields(variable, structured)
+            for component, offset in enumerate(field.offsets)}
+
+
+def _uint_word(value: str, base: str) -> str:
+    return value if base in ("uint", "bool") else f"asuint({value})"
+
+
+def _declaration(variable, name: str) -> str:
+    base, suffix = _hlsl_variable_parts(variable)
+    return f"{re.sub(r'\bbool(?=\d|$)', 'uint', base)} {name}{suffix}".rstrip()
+
+
+def _struct_declarations(variables, declared: dict[str, list[str]]) -> list[str]:
+    lines = []
+    for variable in variables:
+        if not variable.members:
+            continue
+        lines += _struct_declarations(variable.members, declared)
+        body = [f"    {_declaration(member, member.name)};"
+                for member in sorted(variable.members, key=lambda item: item.byte_offset)]
+        if variable.struct_name not in declared:
+            declared[variable.struct_name] = body
+            lines += [f"struct {variable.struct_name}", "{", *body, "};", ""]
+        elif declared[variable.struct_name] != body:
+            raise ShaderGraphError(f"the struct {variable.struct_name} is declared with two layouts")
+    return lines
+
+
+def _cbuffer_declaration(buffer: ShaderContractBuffer) -> list[str]:
     if int(buffer.byte_size) <= 0 or int(buffer.byte_size) % 4:
-        raise ShaderGraphError(
-            f"semantic constant buffer {buffer.name} has an invalid byte size"
-        )
-    name = _identifier(buffer.name, prefix=f"REasyBuffer{buffer.bind_point}")
-    lines = [
-        f"cbuffer {name} : register(b{int(buffer.bind_point)})",
-        "{",
-    ]
-    words: dict[int, str] = {}
-    maximum_end = 0
-    identifiers: set[str] = set()
+        raise ShaderGraphError(f"constant buffer {buffer.name} has an invalid byte size")
+    bind_point = int(buffer.bind_point)
+    lines = [f"cbuffer {_identifier(buffer.name, prefix=f'REasyBuffer{bind_point}')} : register(b{bind_point})", "{"]
+    words: dict[int, tuple[str, str]] = {}
+    end = 0
     for variable in sorted(buffer.variables, key=lambda item: item.byte_offset):
-        declaration = str(variable.hlsl_declaration or "").strip()
-        identifier = str(variable.name)
-        match = re.fullmatch(
-            r"(?:(?P<major>row_major|column_major)\s+)?"
-            r"(?P<base>float|int|uint)(?P<rows>[1-4]?)"
-            r"(?:x(?P<columns>[1-4]))?",
-            declaration,
-            re.IGNORECASE,
-        )
-        if (
-            match is None
-            or not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", identifier)
-            or identifier in identifiers
-            or int(variable.byte_offset) < 0
-            or int(variable.byte_offset) % 4
-            or int(variable.array_length) <= 0
-            or bool(match.group("columns")) != bool(variable.matrix)
-        ):
-            raise ShaderGraphError(
-                f"semantic material field {buffer.name}.{variable.name} has an unsupported declaration"
-            )
-        register, byte_in_register = divmod(int(variable.byte_offset), 16)
-        array_length = int(variable.array_length)
-        suffix = f"[{array_length}]" if array_length > 1 else ""
-        aggregate = bool(variable.matrix) or array_length > 1
-        if aggregate and byte_in_register:
-            raise ShaderGraphError(
-                f"semantic material field {buffer.name}.{variable.name} is not register-aligned"
-            )
-        lines.append(
-            f"    {declaration} {identifier}{suffix} : "
-            f"packoffset(c{register}{'' if aggregate else '.' + 'xyzw'[byte_in_register // 4]});"
-        )
-        base = match.group("base").casefold()
-        rows = int(match.group("rows") or "1")
-        columns = int(match.group("columns") or "0")
-
-        def store(word_offset: int, value: str) -> None:
-            if base != "uint":
-                value = f"asuint({value})"
-            words[int(variable.byte_offset) // 4 + word_offset] = value
-
-        if columns:
-            row_major = (match.group("major") or "column_major").casefold() == "row_major"
-            major_count = rows if row_major else columns
-            minor_count = columns if row_major else rows
-            expected_size = array_length * major_count * 16
-            if int(variable.byte_size) != expected_size:
-                raise ShaderGraphError(
-                    f"semantic material matrix {buffer.name}.{variable.name} has an inconsistent size"
-                )
-            for array_index in range(array_length):
-                prefix = f"{identifier}[{array_index}]" if array_length > 1 else identifier
-                for major in range(major_count):
-                    for minor in range(minor_count):
-                        row, column = (major, minor) if row_major else (minor, major)
-                        store(
-                            array_index * major_count * 4 + major * 4 + minor,
-                            f"{prefix}[{row}][{column}]",
-                        )
-        elif array_length > 1:
-            minimum_size = (array_length - 1) * 16 + rows * 4
-            maximum_size = array_length * 16
-            if not minimum_size <= int(variable.byte_size) <= maximum_size:
-                raise ShaderGraphError(
-                    f"semantic material array {buffer.name}.{variable.name} has an inconsistent size"
-                )
-            for array_index in range(array_length):
-                prefix = f"{identifier}[{array_index}]"
-                for component in range(rows):
-                    value = prefix if rows == 1 else f"{prefix}.{'xyzw'[component]}"
-                    store(array_index * 4 + component, value)
-        else:
-            if int(variable.byte_size) != rows * 4:
-                raise ShaderGraphError(
-                    f"semantic material field {buffer.name}.{variable.name} has an inconsistent size"
-                )
-            for component in range(rows):
-                value = identifier if rows == 1 else f"{identifier}.{'xyzw'[component]}"
-                store(component, value)
-        identifiers.add(identifier)
-        maximum_end = max(
-            maximum_end,
-            int(variable.byte_offset) + int(variable.byte_size),
-        )
-    if maximum_end < int(buffer.byte_size):
-        offset = int(buffer.byte_size) - 4
-        register, byte_in_register = divmod(offset, 16)
-        lines.append(
-            f"    uint REasyReserved_{int(buffer.bind_point)}_{offset} : "
-            f"packoffset(c{register}.{'xyzw'[byte_in_register // 4]});"
-        )
-    lines.extend(("};", ""))
-    lines.extend(
-        (
-            f"uint4 REasyLoadCB{int(buffer.bind_point)}(uint registerIndex)",
-            "{",
-            "    switch (registerIndex)",
-            "    {",
-        )
-    )
+        aggregate = bool(variable.matrix or variable.members) or int(variable.array_length) > 1
+        if variable.byte_offset % (16 if aggregate else 4):
+            raise ShaderGraphError(f"constant buffer field {buffer.name}.{variable.name} is not register-aligned")
+        register, lane = divmod(int(variable.byte_offset) // 4, 4)
+        lines.append(f"    {_declaration(variable, variable.name)} : "
+                     f"packoffset(c{register}{'' if aggregate else '.' + 'xyzw'[lane]});")
+        words.update(_field_words(variable, variable.name))
+        end = max(end, int(variable.byte_offset) + int(variable.byte_size))
+    if -(-end // 16) * 16 < int(buffer.byte_size):
+        register, lane = divmod(int(buffer.byte_size) // 4 - 1, 4)
+        lines.append(f"    uint REasyReserved_{bind_point}_{buffer.byte_size - 4} : "
+                     f"packoffset(c{register}.{'xyzw'[lane]});")
+    lines.extend(("};", "", f"uint4 REasyLoadCB{bind_point}(uint registerIndex)", "{", "    switch (registerIndex)",
+                  "    {"))
     for register in range((int(buffer.byte_size) + 15) // 16):
-        values = [words.get(register * 4 + component, "0u") for component in range(4)]
-        lines.append(
-            f"        case {register}u: return uint4({', '.join(values)});"
-        )
+        values = [_uint_word(*words[word]) if word in words else "0u" for word in range(register * 4, register * 4 + 4)]
+        lines.append(f"        case {register}u: return uint4({', '.join(values)});")
     lines.extend(("        default: return 0u;", "    }", "}", ""))
     return lines
 
@@ -2724,7 +2587,6 @@ def generate_recovered_dxbc_shader(
     texture_binding_overrides: Mapping[int, int] | None = None,
     additional_helpers: str = "",
     instruction_hooks: DxbcHookPlan | None = None,
-    semantic_buffer_names: frozenset[str] = frozenset(),
 ) -> GeneratedShaderSource:
     expected_stage = {"pixel": "ps", "vertex": "vs", "compute": "cs", "domain": "ds", "geometry": "gs", "hull": "hs"}.get(contract.stage)
     if expected_stage is None or ir.stage != expected_stage:
@@ -2801,27 +2663,10 @@ def generate_recovered_dxbc_shader(
             )
         lines.extend(("};", ""))
 
-    semantic_names = {str(value).casefold() for value in semantic_buffer_names}
-    semantic_bindings = frozenset(
-        int(buffer.bind_point)
-        for buffer in contract.constant_buffers
-        if buffer.name.casefold() in semantic_names
-    )
+    lines.extend(_struct_declarations([variable for buffer in (*contract.constant_buffers, *contract.structured_buffers)
+                                       for variable in buffer.variables], {}))
     for buffer in contract.constant_buffers:
-        if int(buffer.bind_point) in semantic_bindings:
-            lines.extend(_semantic_cbuffer_declaration(buffer))
-        else:
-            registers = max(1, (int(buffer.byte_size) + 15) // 16)
-            name = _identifier(buffer.name, prefix=f"REasyBuffer{buffer.bind_point}")
-            lines.extend(
-                (
-                    f"cbuffer {name} : register(b{buffer.bind_point})",
-                    "{",
-                    f"    uint4 REasyCB{buffer.bind_point}[{registers}];",
-                    "};",
-                    "",
-                )
-            )
+        lines.extend(_cbuffer_declaration(buffer))
     for resource in contract.resources:
         declaration_start = len(lines)
         identifier = resource_identifier(resource)
@@ -2851,7 +2696,7 @@ def generate_recovered_dxbc_shader(
                 f"{object_type}<{element}> {identifier}{suffix} : register(u{resource.bind_point});"
             )
         elif resource.input_type in {"structured-buffer", "rw-structured-buffer"}:
-            lines.extend(_structured_declarations(resource))
+            lines.extend(_structured_declarations(resource, contract.structured_buffer(resource.name)))
         else:
             raise ShaderGraphError(
                 f"unsupported recovered resource kind {resource.input_type}"
@@ -2868,7 +2713,7 @@ def generate_recovered_dxbc_shader(
             lines.append(f"groupshared uint REasyShared{register}[{count // 4}];")
     lines.append("")
 
-    lines.extend(_recovered_buffer_aliases(contract, semantic_bindings))
+    lines.extend(_recovered_buffer_aliases(contract))
 
     if contract.inputs:
         lines.extend(("struct REasyStageInput", "{"))
@@ -2899,8 +2744,7 @@ def generate_recovered_dxbc_shader(
         lines.extend((helpers, ""))
 
     emitter_options = dict(constant_overrides=constant_overrides, structured_overrides=structured_overrides,
-                           texture_binding_overrides=texture_binding_overrides, instruction_hooks=instruction_hooks,
-                           semantic_buffer_bindings=semantic_bindings)
+                           texture_binding_overrides=texture_binding_overrides, instruction_hooks=instruction_hooks)
     if ir.stage == "hs":
         lines.extend(_hull_entry_points(ir, contract, emitter_options))
         return _generated_source(lines, ir, contract, unwritten)

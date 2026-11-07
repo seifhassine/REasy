@@ -2,14 +2,14 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 
-lazy import numpy as np
 from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QFrame,
     QLineEdit,
     QSplitter,
     QTreeWidget,
@@ -18,48 +18,33 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ui.scene.scene_features import ScnSceneFeatures
+
 lazy from file_handlers.clip.editor.transport import Playback, Transport
-lazy from file_handlers.engine_math import transform_product
 lazy from file_handlers.mmtr.profiles import mmtr_profile_for_game
 lazy from file_handlers.rsz.rsz_handler import RszHandler
-lazy from file_handlers.rsz.scn_scene_graph import mesh_joints
+lazy from file_handlers.rsz.scn_scene_graph import normalize_document_id
 lazy from file_handlers.rsz.scn_scene_loader import ScnSceneSource
 lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
+lazy from file_handlers.rsz.spawn_rules import holds_spawner, spawn_choice_key
 lazy from file_handlers.strands.chain_catalog import strand_catalog_for
 lazy from file_handlers.strands.motion import MotionStrandsDialog
 lazy from settings import app_settings
-lazy from ui.editor_widgets import editor_strip, search_field, tool_button
+lazy from ui.editor_widgets import editor_strip, search_field, styled_label, tool_button
+lazy from ui.project_manager.catalogue_panel import CataloguePanel
 lazy from ui.scene.scene_view import ScenePose
 lazy from ui.styles import set_style_role
-lazy from utils.hash_util import murmur3_hash_utf16le
-lazy from utils.resource_file_utils import nearby_resource_paths, resolve_handler_resource_data
+lazy from utils.resource_file_utils import nearby_resource_paths, resolve_handler_resource_data, resource_key
 
-from .banks import bank_references, entry_motion, list_paths, names_motions, read_list
-from .model import Motion
+from .banks import (
+    bank_references, entry_mirrored, entry_motion, entry_reversed, entry_sequences, handler_reader, list_paths,
+    names_motions, read_list)
+from .model import Motion, MotionList, MotionTree
 from .pose import MotionSampler, Rig
-
-
-@dataclass(slots=True)
-class _Rig:
-    rig: Rig
-    owner: int | None
-    # Rows following the owner's joints, and the owner's rows they follow.
-    follows: tuple[np.ndarray, np.ndarray]
-    binding: tuple[np.ndarray, np.ndarray] | None = None
-    moves: bool = False
-    rest: np.ndarray | None = None
-
-
-@dataclass(slots=True)
-class _Skinned:
-    key: str
-    rig: int
-    joints: np.ndarray
-    valid: np.ndarray
-    inverse_binds: np.ndarray
-    morphs: tuple[tuple[str, int], ...]
-    start: np.ndarray | None
-    moves: bool = False
+from .preview_tracks import MotionPreviewTracks
+from .scene_poser import ScenePoser
+from .sequence_tracks import TrackPlayer
+from .tree_sampler import TreeSampler, tree_variables
 
 
 def read_prefab(owner, path: str, data: bytes) -> RszHandler:
@@ -70,131 +55,56 @@ def read_prefab(owner, path: str, data: bytes) -> RszHandler:
     return handler
 
 
-class ScenePoser:
-    def __init__(self, graphs, loaded_meshes):
-        loaded = {mesh.key: mesh for mesh in loaded_meshes}
-        meshes = {}
-        for graph in graphs:
-            for renderable in graph.renderables:
-                if renderable.key in loaded:
-                    meshes.setdefault(renderable.source_object_id, getattr(loaded[renderable.key].handler, "mesh", None))
-        built: dict[int, object] = {}
-        rows: dict[int, int] = {}
-        self.rigs: list[_Rig] = []
-        self.skinned: list[_Skinned] = []
-
-        def joints_of(document, item):
-            if (found := document.joints.get(item.id)) is not None or (mesh := meshes.get(item.id)) is None:
-                return found
-            if id(mesh) not in built:
-                built[id(mesh)] = mesh_joints(mesh)
-            return built[id(mesh)]
-
-        def rig_of(document, item) -> int | None:
-            joints = joints_of(document, item)
-            if joints is None:
-                return None
-            if id(joints) not in rows:
-                owner = None
-                if item.transform is not None and item.transform.same_joints_constraint:
-                    parent = document.objects.get(document.object_by_local_id.get(item.parent_id))
-                    owner = None if parent is None else rig_of(document, parent)
-                rig = Rig.of_joints(joints)
-                followed = {} if owner is None else {value: row for row, value in enumerate(self.rigs[owner].rig.hashes)}
-                pairs = [(row, followed[value]) for row, value in enumerate(rig.hashes) if value in followed]
-                rows[id(joints)] = len(self.rigs)
-                self.rigs.append(_Rig(rig, owner, (np.array([row for row, _ in pairs], np.int64),
-                                                   np.array([row for _, row in pairs], np.int64))))
-            return rows[id(joints)]
-
-        for graph in graphs:
-            for renderable in graph.renderables:
-                document = graph.documents.get(renderable.source_object_id.document_id)
-                item = None if document is None else document.objects.get(renderable.source_object_id)
-                if item is None or renderable.key not in loaded:
-                    continue
-                joints = joints_of(document, item)
-                if joints is None or joints.inverse_binds is None or not joints.remap:
-                    continue
-                index = rig_of(document, item)
-                remap = np.array(joints.remap, np.int64)
-                valid = (remap >= 0) & (remap < len(joints.names))
-                remap = np.where(valid, remap, 0)
-                inverse = np.asarray(joints.inverse_binds, np.float32)[remap].transpose(0, 2, 1)
-                self.skinned.append(_Skinned(renderable.key, index, remap, valid, inverse,
-                                             _morphs(loaded[renderable.key].handler), renderable.start_pose))
-
-    def bind(self, sampler: MotionSampler | None) -> None:
-        for entry in self.rigs:
-            entry.binding = None if sampler is None or entry.owner is not None else entry.rig.bind(sampler.hashes)
-            entry.moves = bool(len(entry.binding[0])) if entry.binding is not None else (
-                entry.owner is not None and self.rigs[entry.owner].moves)
-        properties = () if sampler is None else sampler.properties
-        for skinned in self.skinned:
-            skinned.moves = self.rigs[skinned.rig].moves or any(value in properties for _name, value in skinned.morphs)
-
-    def poses(self, sampler: MotionSampler | None, frame: float, lock_root: bool, everything: bool = False):
-        """(mesh key, skin matrices 3 x 4 in bone remap order, blend-shape weights by name) per skinned mesh the
-        motion moves, or per skinned mesh with ``everything``."""
-        shown = [skinned for skinned in self.skinned if everything or skinned.moves]
-        if not shown:
-            return
-        sample = None if sampler is None else sampler.sample(frame)
-        values = {} if sampler is None else sampler.property_values(frame)
-        models: list[np.ndarray | None] = [None] * len(self.rigs)
-        identity = np.eye(3, 4, dtype=np.float32)
-        for skinned in shown:
-            bones = transform_product(self._models(skinned.rig, sample, models, lock_root)[skinned.joints],
-                                      skinned.inverse_binds)[:, :3]
-            bones[~skinned.valid] = identity
-            yield skinned.key, np.ascontiguousarray(bones), tuple(
-                (name, values[value]) for name, value in skinned.morphs if value in values)
-
-    def _models(self, index: int, sample, models: list, lock_root: bool) -> np.ndarray:
-        if models[index] is None:
-            entry = self.rigs[index]
-            rig = entry.rig
-            if not entry.moves or sample is None:
-                if entry.rest is None:
-                    entry.rest = rig.models(rig.base_locals) if entry.owner is None else rig.models(
-                        rig.base_locals, (entry.follows[0], self._models(entry.owner, None, models, lock_root)[
-                            entry.follows[1]]))
-                models[index] = entry.rest
-            elif entry.owner is None:
-                rows, slots = entry.binding
-                keyed = sample[1][0][slots] | sample[1][1][slots] | sample[1][2][slots]
-                models[index] = rig.models(rig.locals(rig.posed(sample, entry.binding, lock_root), rows[keyed]))
-            else:
-                rows, followed = entry.follows
-                models[index] = rig.models(rig.base_locals, (rows, self._models(entry.owner, sample, models,
-                                                                                 lock_root)[followed]))
-        return models[index]
+def catalogue_context(handler) -> tuple[str, object]:
+    return (handler.app.settings.get("game_version", "RE4") if handler.app is not None else "RE4",
+            partial(resolve_handler_resource_data, handler, allow_selection_dialog=False))
 
 
-class MotionPreview(QWidget):
-    """``picker``: the file's handler, to choose a prefab near the file."""
+class MotionPreview(ScnSceneFeatures, QWidget, MotionPreviewTracks):
+    played = Signal()
 
     def __init__(self, parent: QWidget | None = None, picker=None, settings: dict | None = None):
         super().__init__(parent)
         self.prefab: RszHandler | None = None
         self.lock_root = True
-        self._sampler: MotionSampler | None = None
+        self._sampler: MotionSampler | TreeSampler | None = None
+        self._item: Motion | MotionTree | None = None
+        self._row: tuple[bool, bool, list | None] = (False, False, None)
+        self._runtime_parts: dict = {}
+        self._packages: dict | None = None
+        self._lists: dict[str, MotionList | None] = {}
+        self.trees: dict[int, tuple[list, dict]] = {}
+        self._played: tuple[tuple, int | None, str | None] = ((), None, None)
+        self.list_path: str | None = None
+        self._listed: tuple[tuple, int | None, str | None] = ((), None, None)
         self._frame = 0.0
         self._poser: ScenePoser | None = None
+        self._tracks: TrackPlayer | None = None
+        self.pins: list[tuple] = []
+        self.edited: tuple[str, object] | None = None
         self._strands: MotionStrandsDialog | None = None
+        self._catalogue: QFrame | None = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
         bar, row = editor_strip()
-        if picker is not None:
-            chooser = PrefabPicker(picker, bar)
-            chooser.chosen.connect(self.set_prefab)
-            row.addWidget(chooser, 1)
+        self.picker = None if picker is None else CharacterPicker(picker, bar)
+        if self.picker is not None:
+            self.picker.chosen.connect(self.set_prefab)
+            row.addWidget(self.picker, 1)
+            self.catalogue_button = tool_button("user", self.tr("Pick a character from the game's catalogs"),
+                                                self.open_catalogue, text=self.tr("Catalogue"))
+            row.addWidget(self.catalogue_button)
         lock = QCheckBox(self.tr("Lock root"))
         lock.setToolTip(self.tr("Keep root joints at their base position, without the motion's root motion"))
         lock.setChecked(True)
         lock.toggled.connect(self.set_lock_root)
         row.addWidget(lock)
+        self.layer_box, self._layer = QComboBox(bar), None
+        self.layer_box.setToolTip(self.tr("The layer of its holder's Motion the motion plays on. Game code picks it "
+                                          "at run time; by default the layer set to the motion's bank, else the first"))
+        self.layer_box.activated.connect(self._pick_layer)
+        row.addWidget(self.layer_box)
         self.strands_button = tool_button("wand", self.tr("Strands over the posed prefab"), self.open_strands,
                                           text=self.tr("Strands"))
         self.strands_button.setEnabled(False)
@@ -202,28 +112,109 @@ class MotionPreview(QWidget):
         if picker is None:
             row.addStretch(1)
         layout.addWidget(bar)
-        self.scene = ScnScenePreviewWidget(self, sources_getter=self._sources, settings=settings)
+        self.unlisted = styled_label(self.tr(
+            "No Motion of this prefab lists this file, so its motions replace the pose here and in Blender exports: "
+            "additive ones, such as face expressions, look wrong. Preview on a prefab that uses this list."), self,
+            banner="warning")
+        self.unlisted.setWordWrap(True)
+        self.unlisted.hide()
+        layout.addWidget(self.unlisted)
+        self.scene = ScnScenePreviewWidget(self, sources_getter=self._sources, settings=settings,
+                                           graphs_changed_callback=self._show_features)
+        self.scene.constraint_materials = True
         self.scene.renderables_changed.connect(self._bind)
         layout.addWidget(self.scene, 1)
         self.scene.status_label.setContentsMargins(6, 3, 6, 3)
         set_style_role(self.scene.status_label, tone="muted")
         layout.addWidget(self.scene.status_label)
+        self._build_features_panel()
         self._load_timer = QTimer(self)
         self._load_timer.setSingleShot(True)
         self._load_timer.timeout.connect(self.scene.ensure_loaded)
 
+    @property
+    def preview(self) -> ScnScenePreviewWidget:
+        return self.scene
+
     def set_prefab(self, prefab: RszHandler | None) -> None:
-        self.prefab, self._poser = prefab, None
+        self.prefab, self._poser, self.pins = prefab, None, []
         self.strands_button.setEnabled(
             prefab is not None and strand_catalog_for(mmtr_profile_for_game(prefab.game_version)) is not None)
         self.scene.preview.set_shading("game")
         self.scene.request_refresh()
 
-    def set_motion(self, motion: Motion | None) -> None:
-        self._sampler = None if motion is None else MotionSampler(motion, self._sampler)
+    def set_motion(self, motion: Motion | MotionTree | None, holders: tuple = (), bank: int | None = None,
+                   path: str | None = None, mirrored: bool = False, reverse: bool = False,
+                   sequences: list | None = None, mask: tuple | None = None) -> None:
+        self._item, self._row = motion, (mirrored, reverse, sequences, mask)
+        if isinstance(motion, MotionTree):
+            self._sampler = self._tree_sampler(motion, holders or self._listed[0])
+        else:
+            self._sampler = None if motion is None else MotionSampler(
+                motion, self._sampler if isinstance(self._sampler, MotionSampler) else None)
+        self._played = holders, bank, path
+        layers = () if self._poser is None else self._poser.layers((holders or self._listed[0] or (None,))[0])
+        self._layer = self._layer if self._layer is not None and self._layer < len(layers) else None
+        self.layer_box.clear()
+        self.layer_box.addItems([self.tr("Bank's layer"), *(self.tr("Layer {0}").format(at) for at in range(len(
+            layers)))])
+        self.layer_box.setCurrentIndex(0 if self._layer is None else self._layer + 1)
+        runtime = None if holders or self._listed[0] or self._poser is None else self._poser.runtime_holder(
+            self._sampler)
+        self._tracks = self._track_player(motion, holders or self._listed[0] or (() if runtime is None else (runtime,)))
+        changes = {} if self._tracks is None else self._tracks.changes()
+        for holder, at, pinned, motion_id in self.pins:
+            changes.setdefault(holder, {}).setdefault(at, [(0.0, pinned, motion_id, 0.0, 0, 0)])
         if self._poser is not None:
-            self._poser.bind(self._sampler)
+            self._poser.bind(self._sampler, *(self._played if holders else self._listed), mirrored, reverse, changes,
+                             *((None, None) if self._tracks is None else (self._tracks.joints, self._tracks.masks())),
+                             self._layer, mask, None if self._tracks is None else self._tracks.variables)
         self._show(everything=True)
+        self.played.emit()
+
+    def _pick_layer(self, index: int) -> None:
+        self._layer = None if index <= 0 else index - 1
+        self.set_motion(self._item, *self._played, *self._row)
+
+    def pin(self, motion_id: int) -> None:
+        holders, bank, _path = self._played
+        if not holders or self._poser is None:
+            return
+        at = self._played_layer(holders[0])
+        self.pins = [pin for pin in self.pins if pin[:2] != (holders[0], at)] + [(holders[0], at, bank, motion_id)]
+        self.set_motion(self._item, *self._played, *self._row)
+
+    def _played_layer(self, holder) -> int:
+        layers = () if self._poser is None else self._poser.layers(holder)
+        return self._layer if self._layer is not None else next(
+            (at for at, layer in enumerate(layers) if layer.bank == self._played[1]), 0)
+
+    def unpin(self) -> None:
+        self.pins = []
+        self.set_motion(self._item, *self._played, *self._row)
+
+    def _tree_sampler(self, tree: MotionTree, holders: tuple) -> TreeSampler | None:
+        if self._poser is None or self.prefab is None:
+            return None
+        if id(tree) not in self.trees:
+            rows = tree_variables(handler_reader(self.prefab), tree)
+            self.trees[id(tree)] = rows, {guid: value for guid, _name, value in rows}
+        return TreeSampler(tree, partial(self._poser.motion, holders), self.trees[id(tree)][1],
+                           mirror_of=partial(self._poser.mirrored, holders),
+                           reverse_of=partial(self._poser.reversed, holders),
+                           mask_of=partial(self._poser.masked, holders))
+
+    def tree_variables(self) -> tuple[list[tuple[bytes, str, object]], dict] | None:
+        return self.trees.get(id(self._item)) if isinstance(self._item, MotionTree) else None
+
+    def refresh_tree(self) -> None:
+        if isinstance(self._sampler, TreeSampler):
+            self._sampler.refresh()
+            self._show()
+
+    @property
+    def sampler(self) -> MotionSampler | TreeSampler | None:
+        return self._sampler
 
     def set_frame(self, frame: float) -> None:
         self._frame = frame
@@ -234,9 +225,15 @@ class MotionPreview(QWidget):
         self._show()
 
     def rig(self) -> Rig | None:
-        owners = [] if self._poser is None else [entry.rig for entry in self._poser.rigs if entry.owner is None]
+        rigs = [] if self._poser is None else self._poser.rigs
         keyed = set() if self._sampler is None else set(self._sampler.hashes)
-        return max(owners, key=lambda rig: len(keyed.intersection(rig.hashes)), default=None)
+        return next((entry.rig for entry in rigs if entry.binding is not None), None) or max(
+            (entry.rig for entry in rigs if entry.owner is None), key=lambda rig: len(keyed.intersection(rig.hashes)),
+            default=None)
+
+    def adds(self) -> bool:
+        rigs = [] if self._poser is None else self._poser.rigs
+        return next((entry.layer.add for entry in rigs if entry.binding is not None), False)
 
     def open_strands(self) -> None:
         if self._strands is None:
@@ -257,11 +254,56 @@ class MotionPreview(QWidget):
     def _sources(self) -> list[ScnSceneSource]:
         if self.prefab is None:
             return []
-        return [ScnSceneSource(self.prefab.filepath, self.prefab, Path(self.prefab.filepath).name)]
+        return [ScnSceneSource(self.prefab.filepath, self.prefab, Path(self.prefab.filepath).name,
+                               game_version=self.prefab.game_version)]
+
+    def show_spawned(self, prefab: RszHandler, instance: int | None, picks) -> None:
+        if prefab is not self.prefab:
+            self.set_prefab(prefab)
+            if self.picker is not None:
+                self.picker.set_path(prefab.filepath)
+        key = partial(spawn_choice_key, normalize_document_id(prefab.filepath), instance)
+        kept = {name: pick for name, pick in self.scene.spawn_choices.items() if not name.startswith(key(""))}
+        self.scene.set_spawn_choices(kept | {key(level): pick for level, pick in enumerate(picks)})
+
+    def open_catalogue(self) -> None:
+        if self._catalogue is None:
+            self._catalogue = QFrame(self, Qt.Popup)
+            self._catalogue.setFrameShape(QFrame.StyledPanel)
+            panel = CataloguePanel(partial(catalogue_context, self.picker.handler), self._catalogue)
+            panel.open_requested.connect(self._open_catalogued)
+            column = QVBoxLayout(self._catalogue)
+            column.setContentsMargins(0, 0, 0, 0)
+            column.addWidget(panel)
+            self._catalogue.resize(380, 460)
+        self._catalogue.move(self.catalogue_button.mapToGlobal(self.catalogue_button.rect().bottomLeft()))
+        self._catalogue.show()
+
+    def _open_catalogued(self, path: str, instance: int | None, picks) -> None:
+        self._catalogue.hide()
+        if (hit := resolve_handler_resource_data(self.picker.handler, path, self)) is not None:
+            self.show_spawned(read_prefab(self.picker.handler, *hit), instance, picks)
+
+    @property
+    def poser(self) -> ScenePoser | None:
+        return self._poser
+
+    def rebind(self) -> None:
+        if self._poser is not None:
+            self._bind()
 
     def _bind(self) -> None:
-        self._poser = ScenePoser(self.scene.graphs, self.scene.loaded_meshes())
-        self.set_motion(None if self._sampler is None else self._sampler.motion)
+        read = None if self.prefab is None else handler_reader(self.prefab)
+        self._runtime_parts = {}
+        self._poser = ScenePoser(self.scene.graphs, self.scene.loaded_meshes(),
+                                 "" if self.prefab is None else self.prefab.game_version, self.edited, read)
+        key = None if self.list_path is None or read is None else resource_key(self.list_path)
+        references = [] if key is None else bank_references(self.scene.graphs)
+        self._listed = next(((reference.holders, bank, reference.path) for reference in references
+                             for bank, listed in list_paths(read, reference.path) if resource_key(listed) == key),
+                            ((), None, None))
+        self.unlisted.setVisible(key is not None and not self._listed[0])
+        self.set_motion(self._item, *self._played, *self._row)
 
     def _show(self, everything: bool = False) -> None:
         if self._poser is None:
@@ -270,20 +312,27 @@ class MotionPreview(QWidget):
         if self._sampler is None:
             for skinned in self._poser.skinned if everything else ():
                 preview.set_mesh_pose(skinned.key, None if skinned.start is None else ScenePose(skinned.start))
+            self.scene.set_mesh_materials({}, {})
+            self.scene.set_track_state({}, {})
+            preview.set_time_buffers({})
+            preview.set_strands_gravity(None)
             return
-        for key, bones, morphs in self._poser.poses(self._sampler, self._frame, self.lock_root, everything):
+        self._poser.attach_materials(self.scene.material_surfaces)
+        state = None if self._tracks is None else self._tracks.at(self._frame)
+        for key, bones, morphs in self._poser.poses(
+                self._sampler, self._frame, self.lock_root, everything,
+                *((None, None) if state is None else (state.scales, state.shapes))):
             preview.set_mesh_pose(key, ScenePose(bones, morphs))
+        materials = self._poser.material_values()
+        self.scene.set_mesh_materials(*(({}, {}) if state is None else (state.meshes, state.flags)))
+        self._track_materials(materials, {} if state is None else state.materials)
+        self.scene.set_pose_materials(materials)
+        self.scene.set_track_state(*(({}, {}) if state is None else (state.drawn, state.parts)))
+        preview.set_time_buffers({} if state is None else state.buffers)
+        preview.set_strands_gravity(None if state is None else state.gravity)
 
 
-def _morphs(handler) -> tuple[tuple[str, int], ...]:
-    blend = getattr(getattr(handler, "mesh", None), "blend_shape_data", None)
-    names = {channel.name for body in (blend.bodies if blend is not None else ()) for channel in body.channels
-             if channel.name}
-    return tuple((name, murmur3_hash_utf16le(name)) for name in sorted(names))
-
-
-class PrefabPicker(QComboBox):
-    """``chosen`` gives the prefab read."""
+class CharacterPicker(QComboBox):
     chosen = Signal(object)
 
     def __init__(self, handler, parent: QWidget | None = None):
@@ -292,12 +341,16 @@ class PrefabPicker(QComboBox):
         self.setEditable(True)
         self.setInsertPolicy(QComboBox.NoInsert)
         self.setMinimumContentsLength(24)
-        self.lineEdit().setPlaceholderText(self.tr("Prefab to preview on (.pfb path)"))
+        self.lineEdit().setPlaceholderText(self.tr("Prefab, character file or scene to preview on"))
         self.addItems(nearby_resource_paths(handler, "pfb", parent_levels=2, child_levels=2))
         self.setCurrentIndex(-1)
         self._path = ""
         self.activated.connect(self._load)
         self.lineEdit().returnPressed.connect(self._load)
+
+    def set_path(self, path: str) -> None:
+        self._path = path
+        self.setEditText(path)
 
     def _load(self, *_args) -> None:
         path = self.currentText().strip()
@@ -308,8 +361,8 @@ class PrefabPicker(QComboBox):
             self.chosen.emit(read_prefab(self.handler, *hit))
 
 
-class PrefabMotions(QSplitter):
-    def __init__(self, handler, parent: QWidget | None = None):
+class CharacterMotions(QSplitter):
+    def __init__(self, handler, parent: QWidget | None = None, own: bool = True):
         super().__init__(Qt.Horizontal, parent)
         self.handler = handler
         self.playback = Playback(self)
@@ -322,6 +375,13 @@ class PrefabMotions(QSplitter):
         self.search.setPlaceholderText(self.tr("Filter opened lists"))
         self.search.textChanged.connect(self._filter)
         row.addWidget(self.search, 1)
+        self.pin_button = tool_button("layers", self.tr(
+            "Keep this motion playing on its layer while you pick another for a different layer"), self._pin,
+            text=self.tr("Pin"))
+        self.unpin_button = tool_button("close", self.tr("Stop the pinned motions"), self._unpin, text=self.tr("Unpin"))
+        self.unpin_button.setEnabled(False)
+        row.addWidget(self.pin_button)
+        row.addWidget(self.unpin_button)
         column.addWidget(bar)
         self.motions = QTreeWidget(browser)
         self.motions.setHeaderLabels([self.tr("Motion"), self.tr("Frames")])
@@ -333,8 +393,10 @@ class PrefabMotions(QSplitter):
         layout = QVBoxLayout(shown)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-        self.preview = MotionPreview(shown, settings=app_settings(handler.app))
-        self.preview.set_prefab(handler)
+        self.preview = MotionPreview(shown, picker=handler, settings=app_settings(handler.app))
+        if own:
+            self.preview.set_prefab(handler)
+            self.preview.picker.set_path(handler.filepath)
         self.preview.scene.renderables_changed.connect(self._list_banks)
         layout.addWidget(self.preview, 1)
         self.transport = Transport(self.playback, shown, self.preview.scene.preview)
@@ -344,16 +406,24 @@ class PrefabMotions(QSplitter):
         self.setStretchFactor(1, 1)
         self.playback.frame_changed.connect(self.preview.set_frame)
         self._lists: dict = {}
+        self._listed = None
+
+    def pick_spawned(self, instance: int | None, picks) -> None:
+        self.preview.show_spawned(self.handler, instance, picks)
 
     def _list_banks(self) -> None:
-        if self.motions.topLevelItemCount() and self.motions.topLevelItem(0).data(0, Qt.UserRole) is not None:
+        self.unpin_button.setEnabled(bool(self.preview.pins))
+        top = self.motions.topLevelItem(0)
+        if self._listed is self.preview.prefab and top is not None and top.data(0, Qt.UserRole) is not None:
             return
+        self._listed = self.preview.prefab
         self.motions.clear()
         for reference in bank_references(self.preview.scene.graphs):
-            for bank_id, path in list_paths(self.handler, reference.path):
+            for bank_id, path in list_paths(handler_reader(self.handler), reference.path):
                 item = QTreeWidgetItem([f"{reference.owner} · {bank_id} · {Path(path).name}", ""])
                 item.setToolTip(0, path)
                 item.setData(0, Qt.UserRole, path)
+                item.setData(0, Qt.UserRole + 1, (reference.holders, bank_id, reference.path))
                 item.setChildIndicatorPolicy(QTreeWidgetItem.ShowIndicator)
                 self.motions.addTopLevelItem(item)
         if not self.motions.topLevelItemCount():
@@ -363,11 +433,20 @@ class PrefabMotions(QSplitter):
         path = item.data(0, Qt.UserRole)
         if item.childCount() or not isinstance(path, str):
             return
-        motion_list = read_list(self.handler, path)
+        read = handler_reader(self.handler)
+        motion_list = read_list(read, path)
         for entry in () if motion_list is None else motion_list.entries:
-            if (motion := entry_motion(self.handler, motion_list, entry, self._lists)) is not None:
-                child = QTreeWidgetItem([f"{entry.motion_id}  {motion.name}", f"{motion.end_frame:g}"])
+            if (motion := entry_motion(read, motion_list, entry, self._lists)) is not None:
+                row = (entry_mirrored(read, motion_list, entry, self._lists),
+                       entry_reversed(read, motion_list, entry, self._lists),
+                       entry_sequences(read, motion_list, entry, self._lists),
+                       (entry.joint_mask, motion_list.joint_mask_mode))
+                child = QTreeWidgetItem([f"{entry.motion_id}  {motion.name}" + "".join(
+                    "  " + text for text, shown in ((self.tr("(mirrored)"), row[0]), (self.tr("(reversed)"), row[1]))
+                    if shown), f"{motion.end_frame:g}"])
                 child.setData(0, Qt.UserRole, motion)
+                child.setData(0, Qt.UserRole + 1, row)
+                child.setData(0, Qt.UserRole + 2, entry.motion_id)
                 if motion is not entry.item:
                     child.setToolTip(0, self.tr("Not held by this list: from its base list or a referenced file"))
                 item.addChild(child)
@@ -388,12 +467,23 @@ class PrefabMotions(QSplitter):
             self.transport.rate_spin.setValue(motion.fps or 60)
             self.playback.set_end_frame(motion.end_frame)
             self.playback.set_frame(0.0)
-            self.preview.set_motion(motion)
+            self.preview.set_motion(motion, *item.parent().data(0, Qt.UserRole + 1), *item.data(0, Qt.UserRole + 1))
+
+    def _pin(self) -> None:
+        item = self.motions.currentItem()
+        if item is not None and isinstance(item.data(0, Qt.UserRole), Motion):
+            self.preview.pin(item.data(0, Qt.UserRole + 2))
+            self.unpin_button.setEnabled(bool(self.preview.pins))
+
+    def _unpin(self) -> None:
+        self.preview.unpin()
+        self.unpin_button.setEnabled(False)
 
     def cleanup(self) -> None:
         self.transport.stop()
         self.preview.cleanup()
 
 
-def create_prefab_motion_preview(handler) -> PrefabMotions | None:
-    return PrefabMotions(handler) if handler.rsz_file.is_pfb and names_motions(handler.rsz_file) else None
+def create_motion_preview(handler) -> CharacterMotions | None:
+    rsz_file = handler.rsz_file
+    return CharacterMotions(handler) if rsz_file.is_pfb and names_motions(rsz_file) or holds_spawner(rsz_file) else None

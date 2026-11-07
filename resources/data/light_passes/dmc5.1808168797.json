@@ -1,189 +1,8 @@
 {
- "format": 6,
+ "format": 7,
  "game": "DMC5",
  "resource_version": 1808168797,
  "master_target": 0,
- "source": {
-  "sdf_files": 33,
-  "ocio_configurations": 0,
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "events": [
-     9494,
-     26738,
-     26761,
-     26782,
-     26804,
-     29314,
-     30042
-    ],
-    "programs": {
-     "9494": [
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam"
-     ],
-     "26738": [
-      "DeferredLight"
-     ],
-     "26761": [
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2",
-      "FastScreenSpaceSubsurfaceScatteringH2"
-     ],
-     "26782": [
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2",
-      "FastScreenSpaceSubsurfaceScatteringV2"
-     ],
-     "26804": [
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender",
-      "IntegrateDiffuseTestRender"
-     ],
-     "29314": [
-      "LDRPostProcessWithTonemapC4L",
-      "LDRPostProcessWithTonemapC4L",
-      "LDRPostProcessWithTonemapC4L"
-     ],
-     "30042": [
-      "ScreenOutputSRGB",
-      "ScreenOutputSRGB",
-      "ScreenOutputSRGB"
-     ]
-    },
-    "files": {
-     "26738 LightCullingVolumeSRV": [],
-     "26738 IESLightTableSRV": [],
-     "26738 ShadowMapSRV": [],
-     "26738 GIDSRV": [],
-     "26804 AmbientBRDF": [
-      "systems/rendering/ambientbrdf.tex",
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "26804 GISSRV": [],
-     "29314 tTextureMap0": [],
-     "29314 tTextureMap1": [],
-     "29314 tTextureMap2": [
-      "systems/rendering/colorcubelinear.tex"
-     ],
-     "29314 ImagePlameBase": [
-      "systems/rendering/nullwhite.tex"
-     ],
-     "29314 ImagePlameAlpha": [
-      "systems/rendering/nullwhite.tex"
-     ]
-    },
-    "heap_reads": [],
-    "moves": [
-     [
-      29290,
-      235409,
-      ""
-     ],
-     [
-      29340,
-      235409,
-      ""
-     ],
-     [
-      29361,
-      135959,
-      ""
-     ],
-     [
-      29999,
-      235409,
-      ""
-     ],
-     [
-      30021,
-      135959,
-      ""
-     ]
-    ],
-    "ambiguous": [],
-    "bakes": [],
-    "phases": {
-     "forward": [
-      26835,
-      26861,
-      26887,
-      26913,
-      26939,
-      26965,
-      26991,
-      27017,
-      28864,
-      28889,
-      28917,
-      28942,
-      28967,
-      28995,
-      29020,
-      29048,
-      29073,
-      29098,
-      29126,
-      29151,
-      29180,
-      29206,
-      29232,
-      29260
-     ]
-    }
-   }
-  ]
- },
  "passes": [
   {
    "role": "subsurface_param",
@@ -456,8 +275,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "1a8cc0b90c43897a9cf9a3834b48ac88969b3c854b8c8f4b02a47f7e727b450a"
+      "kind": "kernels",
+      "value": "render/sss_profiles/sag_sss_profile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -555,8 +374,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "1a8cc0b90c43897a9cf9a3834b48ac88969b3c854b8c8f4b02a47f7e727b450a"
+      "kind": "kernels",
+      "value": "render/sss_profiles/sag_sss_profile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -846,7 +665,7 @@
    "purpose": "forward",
    "masters": [],
    "after": 4,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -885,7 +704,5 @@
    }
   }
  ],
- "buffers": {
-  "1a8cc0b90c43897a9cf9a3834b48ac88969b3c854b8c8f4b02a47f7e727b450a": "eNo7rLjQdsLW33YGJyvtGYDg7DZT26iZEXog9pkzZ/byWPDblXJdswTx09LS9t7X47ATyl5pu5fpAitQfs/HR0J2DzX17X7edLM5febM7s9A/iMg/y+Eb30XqJ4HqP4N4wXWc2fO2IDMmwM1LzktzfYC0L5YhH22DFCwbo2frfVbLTvOlQxgd+0zybUt++4D1mdibLyvZo6SXbG+kC0rkD9j5sm9b/Yo2X1z4LJrlzczBMrvXcl+2tavs9ruw9o6OzNj4z1LgHxPIP81hG/zCaj+L1C9s4KZoYGxsW010LwUqHlzZ5603Qa0rwBhnx3MXY/L82z91nDaL59zCCz2LcbelhtI8wOxZkz/vgtrFe0OR0zVkA46obHBXXHftDeydodTVlhF3ntoBZTfe6Duqe30sGy7c+fn2qnH9O85AuTPBvIvQPg2U4DqVwLVmwHVa8f0254HmncIaJ4ExDw7NPvg7prrIW577NRi22VZL8Fi6t/m2a62mW8NYttyhe/7cMPebu6UjbaHIl6rtL7+uDfNXciu51SknWD9bgug/F7m79NsJ9fJ232x67az5grfwwrkTwXyv0L4NslA9W1A9a/qdls4cIXbgsxbDDRvXeRrlcbXH221gPatR9gHd9exz7G2GW31ds/+14PjcaHVbpvEhbukIfHtszfwu7zdwifXjSHp69kena92dv/ml9lA5ffk3L5tm5i5w05GJtb09Bmf3XlAfgqQLwfhW2sC1X+Aqj93xscmGGjeB6h5yWnPbJYC7UtF2Gc76i7y3DUKsIOVwIzIOBoMo2AUjAIyAAAS2o/X"
- }
+ "buffers": {}
 }

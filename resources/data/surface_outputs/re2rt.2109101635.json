@@ -173,52 +173,5 @@
    "name": "tNormalRoughness",
    "file": "systems/rendering/nullnormalroughness.tex"
   }
- ],
- "source": {
-  "mmtr_files": 119,
-  "passes": {
-   "colour": 16950,
-   "depth": 17140,
-   "depth-prepass": 17400,
-   "forward": 60620,
-   "gbuffer": 65650,
-   "other": 6000,
-   "pick": 4160,
-   "shadow": 18240,
-   "stencil": 15980
-  },
-  "passes_beyond_slots": 0,
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "api": "D3D12",
-    "draws": {
-     "colour": 11,
-     "forward": 18,
-     "gbuffer": 1189
-    },
-    "shaders": {
-     "colour": 1,
-     "forward": 2,
-     "gbuffer": 19
-    },
-    "gbuffers": 2,
-    "engine_texture_draws": {
-     "gbuffer": 1189,
-     "depth-prepass": 86
-    }
-   }
-  ],
-  "several_slots": [],
-  "several_slots_by_shader": [],
-  "several_formats": [],
-  "other_engine_textures": [
-   {
-    "purpose": "gbuffer",
-    "name": "ReadonlyDepth",
-    "files": [],
-    "other_contents": true
-   }
-  ]
- }
+ ]
 }

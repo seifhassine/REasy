@@ -56,6 +56,7 @@ def flag_names(members, value, bits):
     return names[::-1], rest
 
 
+@lru_cache(maxsize=None)
 def enum_file_path(game):
     key = game_key(game)
     try:

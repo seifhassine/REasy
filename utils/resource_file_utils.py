@@ -29,8 +29,6 @@ ResourceDataLoader = Callable[[str], Optional[Tuple[str, bytes]]]
 
 @dataclass(frozen=True, slots=True)
 class ResourceResolutionContext:
-    """The owning project and resource sources for an opened asset."""
-
     project_dir: str = ""
     unpacked_dir: str = ""
     path_prefix: str = "natives/stm"
@@ -86,7 +84,6 @@ _READERS = ThreadPoolExecutor(max_workers=min(8, os.process_cpu_count() or 1), t
 
 
 def submit_read(read: Callable, /, *args) -> Future:
-    """Runs a resource read on the reader threads."""
     return _READERS.submit(read, *args)
 
 
@@ -97,15 +94,10 @@ def _read_bytes(location: ResourceLocation) -> bytes | None:
 
 @dataclass(frozen=True, slots=True)
 class ReadOnUse:
-    """A file that ``PrefetchedFiles`` reads when it is first asked for, not ahead."""
     location: ResourceLocation
 
 
 class PrefetchedFiles(Mapping):
-    """Reads ``ResourceLocation`` values ahead on the reader threads: the ``AHEAD`` given after the last one asked
-    for, in the order given. One asked for before its turn is read then and the ones it passed when they are asked
-    for, so a drawing that asks in another order holds no more than that window. ``ReadOnUse`` ones are read on
-    first use."""
     AHEAD = 64
 
     def __init__(self, files: Mapping = ()):
@@ -135,10 +127,15 @@ class PrefetchedFiles(Mapping):
                 self._files[path] = ReadOnUse(location)
 
     def forget(self, path: str) -> None:
-        """Gives up one file read, as ``release`` does."""
         with self._lock:
             if path in self._locations:
                 self._files[path] = ReadOnUse(self._locations[path])
+
+    def prefetch(self, paths: Iterable[str]) -> None:
+        with self._lock:
+            unread = [path for path in paths if isinstance(self._files.get(path), (ResourceLocation, ReadOnUse))]
+            for path in unread[:self.AHEAD]:
+                self._files[path] = _READERS.submit(_read_bytes, self._locations[path])
 
     def holds(self, files: Mapping) -> bool:
         """Whether every path of ``files`` it has is the same file: located at the same place, or the same bytes."""
@@ -154,7 +151,6 @@ class PrefetchedFiles(Mapping):
         return True
 
     def add(self, files: Mapping) -> None:
-        """Reads ahead the paths of ``files`` it does not have yet."""
         added = {path: value for path, value in files.items() if path not in self._files}
         with self._lock:
             self._files.update(added)
@@ -222,8 +218,6 @@ def resource_version_from_path(path: str, extension: str) -> int | None:
 
 
 def resource_path_with_version(path: str, extension: str, version: int) -> str:
-    """Append a version unless the resource path already contains one."""
-
     if resource_version_from_path(path, extension) is not None:
         return path
     name_parts = normalize_resource_path(path).rsplit("/", 1)[-1].split(".")
@@ -268,11 +262,13 @@ def natives_relative(path) -> str | None:
 def build_resource_path(path: str, game: str) -> str:
     """Qualifying before searching keeps a stale project copy from shadowing the PAK version."""
     extension = normalize_resource_path(path).rsplit(".", 1)[-1].casefold()
-    if not game or extension not in {"mmtr", "mmtrs"}:
+    if not game or extension not in {"mmtr", "mmtrs", "mdf2"}:
         return path
 
     profile = mmtr_profile_for_game(game)
-    version = profile.build_resource_version if profile is not None else None
+    if profile is None:
+        return path
+    version = profile.mdf_resource_version if extension == "mdf2" else profile.build_resource_version
     return resource_path_with_version(path, extension, version) if version is not None else path
 
 
@@ -593,15 +589,12 @@ def resolve_resource_data(
     return next(filter(None, (location.read() for location in locations)), None)
 
 
-
-
 def resource_context_for_app(
     app,
     *,
     project_dir: str | os.PathLike | None = None,
     game: str = "",
 ) -> ResourceResolutionContext | None:
-    """Build a resolution context for the asset's owning project."""
     if app is None:
         return None
     project = getattr(app, "proj_dock", None)
@@ -697,6 +690,8 @@ def resolve_companion_resource(handler, path: str, source_path: str = '') -> Opt
     path = str(path).replace('\\', '/').rstrip('\0').removeprefix('@')
     if not path:
         return None
+    game = getattr(handler, 'game_version', '') or getattr(resource_context_for_handler(handler), 'game', '')
+    path = build_resource_path(path, game)
     local = Path(path)
     if local.is_absolute():
         return find_local_resource(local, require_unique=True)
@@ -772,8 +767,6 @@ def nearby_resource_paths(handler, extension: str, *, source_path=None, parent_l
         native = re.search(r'(?:^|/)(natives/.*)', key)
         unique.setdefault(native[1] if native else key, candidate)
     return tuple(unique.values())
-
-
 
 
 def _resolve_destination_relative_path(resource_path: str, source_path: str | None, unpacked_dir: str, path_prefix: str) -> str:

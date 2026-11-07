@@ -7,7 +7,8 @@ lazy from .profiles.constant_words import word_parts
 lazy from .profiles.re_engine_spirv_authoring import _Module
 
 
-def parameter_sources(ir_kind: str, ir, contract, flow: NativeFlow, buffer_name: str, prefix: int) -> dict[int, int]:
+def parameter_sources(ir_kind: str, ir, contract, flow: NativeFlow, buffer_name: str, prefix: int,
+                      instances: str = "") -> dict[int, int]:
     buffer = contract.buffer(buffer_name)
     result: dict[int, int] = {}
     if ir_kind == "dxbc-sm5":
@@ -30,9 +31,11 @@ def parameter_sources(ir_kind: str, ir, contract, flow: NativeFlow, buffer_name:
                 if (binding, space) == (buffer.bind_point, buffer.register_space):
                     result.update((origins[name], offset) for name in names if name in origins)
             return result
-        for access in material_record_accesses(lines, contract):
-            result.update((origins[word.value], word.byte_offset - prefix) for word in access.words
-                          if word.value in origins and word.byte_offset >= prefix)
+        for access in material_record_accesses(lines, contract, instances=instances):
+            # The copy per drawn instance holds the values alone, without the record's prefix.
+            skip = 0 if access.storage.startswith("instance-") else prefix
+            result.update((origins[word.value], word.byte_offset - skip) for word in access.words
+                          if word.value in origins and word.byte_offset >= skip)
         return result
     if buffer is None:
         return result

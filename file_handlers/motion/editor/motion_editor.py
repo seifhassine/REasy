@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from pathlib import Path
 
 from PySide6.QtCore import QItemSelection, QItemSelectionModel, QSignalBlocker, Qt, QTimer, Signal
@@ -30,16 +31,21 @@ lazy from utils.hash_util import murmur3_hash_utf16le
 from file_handlers.document_commands import Change
 
 from .. import edits
-from ..banks import entry_motion
+from ..banks import entry_mirrored, entry_motion, entry_sequences, handler_reader, stop_row
 from ..blender import action_bones, action_tracks, export_blend, read_actions
-from ..model import MotionTree, Sequence
+from ..model import MotionList, MotionListEntry, MotionTree, Sequence
 from ..pose import Rig
 from ..preview import MotionPreview
 from ..retarget import bones_of
+from ..tree_runtime import node_params
+from ..tree_sampler import TreeSampler, uvar_variables
 from .curves import TrackCurves
 from .inspector import Inspector
 from .outline import MotionOutline
 from .state import EditorState
+from .tree_variables import TreeVariables
+
+lazy from .tree_graph import TreeGraph
 
 
 class MotionEditor(QWidget):
@@ -52,7 +58,18 @@ class MotionEditor(QWidget):
         document.modified_changed.connect(self.modified_changed)
         self.state = EditorState(document, self)
         lists: dict = {}
-        self.state.inherited = lambda entry: entry_motion(handler, document.root, entry, lists)
+        read = handler_reader(handler)
+        self.state.inherited = lambda entry: entry_motion(read, document.root, entry, lists)
+        self.state.mirrored_of = lambda entry: entry_mirrored(read, document.root, entry, lists)
+        self.state.sequences_of = lambda entry: entry_sequences(read, document.root, entry, lists)
+        if isinstance(document.root, MotionList):
+            self.state.stop_of = lambda: stop_row(read, document.root, lists)
+
+        @functools.cache
+        def uvar(path: str) -> dict:
+            return uvar_variables(read(path) if path else None)
+
+        self.state.variables_of = lambda node: uvar(node_params(node).get("Asset") or "")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -83,13 +100,20 @@ class MotionEditor(QWidget):
         columns.addWidget(self.tree)
         center = QSplitter(Qt.Vertical, columns)
         self.preview = MotionPreview(center, picker=handler, settings=app_settings(handler.app))
+        if isinstance(document.root, MotionList):
+            self.preview.list_path = handler.filepath
         self.lower = QStackedWidget(center)
         self.curves = TrackCurves(self.state, self.lower)
         self.lower.addWidget(self.curves)
+        self.trees = QSplitter(Qt.Horizontal, self.lower)
+        self.graph: TreeGraph | None = None
+        self.variables = TreeVariables(self.trees)
+        self.variables.changed.connect(self.preview.refresh_tree)
+        self.variables.changed.connect(self._show_weights)
+        self.preview.played.connect(self._played)
+        self.trees.addWidget(self.variables)
+        self.lower.addWidget(self.trees)
         self._clip_editor: ClipEditor | None = None
-        motions = not isinstance(document.root, MotionTree)
-        self.preview.setVisible(motions)
-        self.lower.setVisible(motions)
         columns.addWidget(center)
         self.inspector = Inspector(self.state, columns)
         columns.addWidget(self.inspector)
@@ -97,17 +121,17 @@ class MotionEditor(QWidget):
         columns.setSizes([280, 900, 320])
         layout.addWidget(columns, 1)
         self.transport = Transport(self.state, self, self.preview.scene.preview)
-        self.transport.setVisible(motions)
         layout.addWidget(self.transport)
         self.state.motion_changed.connect(self._motion_changed)
         self.state.frame_changed.connect(self.preview.set_frame)
+        self.state.frame_changed.connect(self._show_weights)
         self.state.selection_changed.connect(self._selection_changed)
         # Edits of the shown motion pose it again once, after the edit's last change.
         self._edited = QTimer(self)
         self._edited.setSingleShot(True)
         self._edited.timeout.connect(self._repose)
         document.changed.connect(self._document_changed)
-        for pane in (self.tree, self.preview, self.curves, self.inspector, self.transport):
+        for pane in (self.tree, self.preview, self.curves, self.trees, self.inspector, self.transport):
             for keys, slot in ((QKeySequence.Undo, document.undo_stack.undo),
                                (QKeySequence.Redo, document.undo_stack.redo), ("Ctrl+D", self._duplicate)):
                 QShortcut(keys, pane, slot, context=Qt.WidgetWithChildrenShortcut)
@@ -130,9 +154,30 @@ class MotionEditor(QWidget):
                 self._clip_editor = ClipEditor(clip, self.lower)
                 self.lower.addWidget(self._clip_editor)
             self.lower.setCurrentWidget(self._clip_editor)
+        elif (tree := self.state.tree_of(current) or (
+                self.state.played if isinstance(self.state.played, MotionTree) else None)) is not None:
+            if self.graph is None:
+                self.graph = TreeGraph(self.state, self.trees)
+                self.graph.picked.connect(self._graph_picked)
+                self.trees.insertWidget(0, self.graph)
+                self.trees.setStretchFactor(0, 1)
+            self.graph.show_tree(tree)
+            self.graph.select(self.state.selection)
+            self.lower.setCurrentWidget(self.trees)
         else:
             self.lower.setCurrentWidget(self.curves)
         self._sync_tree()
+
+    def _graph_picked(self, items: list) -> None:
+        tree, root = self.graph.tree, self.document.root
+        self.state.select(items or [next((entry for entry in getattr(root, "entries", ()) if entry.item is tree),
+                                         root)])
+
+    def _show_weights(self, *_args) -> None:
+        if self.graph is not None:
+            sampler = self.preview.sampler
+            self.graph.show_weights(sampler.runtime if isinstance(sampler, TreeSampler) and
+                                    sampler.tree is self.graph.tree else None)
 
     def _sync_tree(self) -> None:
         model, selection = self.tree.model(), QItemSelection()
@@ -149,18 +194,31 @@ class MotionEditor(QWidget):
         motion = self.state.motion
         if motion is not None:
             self.transport.rate_spin.setValue(motion.fps or 60)
-        self.preview.set_motion(motion)
+        self._repose()
         self.preview.set_frame(self.state.frame)
 
     def _document_changed(self, change: Change) -> None:
-        motion = self.state.motion
-        if motion is not None and self.document.motion_of(change.target) is motion:
+        motion, played = self.state.motion, self.state.played
+        if isinstance(change.target, MotionListEntry) and change.field == "flags":
+            self.state.select(self.state.selection)
+        elif motion is not None and self.document.motion_of(change.target) is motion:
             if change.target is motion and change.field == "fps":
                 self.transport.rate_spin.setValue(motion.fps or 60)
             self._edited.start()
+        elif isinstance(played, MotionTree) and self.state.tree_of(change.target) is played:
+            self._edited.start()
 
     def _repose(self) -> None:
-        self.preview.set_motion(self.state.motion)
+        self.preview.set_motion(self.state.played, mirrored=self.state.mirrored, sequences=self.state.sequences,
+                                mask=self.state.mask)
+        self._selection_changed()
+
+    def _played(self) -> None:
+        if isinstance(self.state.played, MotionTree):
+            sampler = self.preview.sampler
+            self.state.set_end_frame(sampler.end_frame if isinstance(sampler, TreeSampler) else 0.0)
+            self.variables.show_variables(self.preview.tree_variables())
+            self._show_weights()
 
     def _delete(self) -> None:
         edits.delete(self.document, list(self.state.selection))
@@ -188,9 +246,10 @@ class MotionEditor(QWidget):
         name = Path(self.handler.filepath or "motion").name.split(".")[0]
         path, _filter = QFileDialog.getSaveFileName(self, title, name + ".blend", "Blender (*.blend)")
         blender = require_blender(self, self.handler.app) if path else None
+        add = rig is self.preview.rig() and self.preview.adds()
         if blender is not None:
             _done, error = run_busy(self, self.tr("Writing the .blend…"),
-                                    lambda: export_blend(blender, rig, motions, path, name))
+                                    lambda: export_blend(blender, rig, motions, path, name, add))
             if error:
                 QMessageBox.warning(self, title, error)
 
@@ -224,7 +283,8 @@ class MotionEditor(QWidget):
         pairs = self._pairs(manifest, number, rig, motion)
         if pairs is None:
             return
-        tracks, end = action_tracks(manifest, arrays, number, rig, motion, pairs)
+        tracks, end = action_tracks(manifest, arrays, number, rig, motion, pairs,
+                                    rig is self.preview.rig() and self.preview.adds())
         if not tracks:
             QMessageBox.information(self, title, self.tr("The action keys none of the joints its bones map onto."))
             return

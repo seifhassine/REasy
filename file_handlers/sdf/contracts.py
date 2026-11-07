@@ -373,8 +373,14 @@ def material_buffer_contract(
     )
 
 
+def program_contracts(profile: SdfGameProfile, program: SdfProgram) -> dict[str, ShaderContract]:
+    return {shader.role: shader_contract_for_program(profile, program, shader.role)
+            for shader in program.shaders if shader.present}
+
+
 __all__ = [
     "SdfContractError",
     "material_buffer_contract",
+    "program_contracts",
     "shader_contract_for_program",
 ]

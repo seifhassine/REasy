@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 6,
  "game": "RE9",
  "resource_version": 251112994,
  "target": 2,
@@ -52,44 +52,30 @@
  "static_like_skinning": true,
  "still_without_blend": true,
  "copied_skin_whole": true,
- "source": {
-  "captures": [
-   {
-    "capture": "re9_frame4686.rdc",
-    "draws": [
-     18780,
-     18970,
-     19977,
-     20167
-    ]
-   },
-   {
-    "capture": "re9_frame46687.rdc",
-    "draws": [
-     14202
-    ]
-   },
-   {
-    "capture": "re9_frame78646.rdc",
-    "draws": [
-     2105,
-     2115
-    ]
-   },
-   {
-    "capture": "re9_frame15176.rdc",
-    "draws": [
-     3302
-    ]
-   },
-   {
-    "capture": "re9_frame10984.rdc",
-    "draws": [
-     2574,
-     2609
-    ]
-   }
-  ],
-  "executable": "re9_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
- }
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "ShellFurMaterial",
+  "Standard",
+  "Transparent",
+  "TransparentStencil"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalStencil",
+  "DecalWithMetallic",
+  "Eyeball",
+  "EyeballPostProcess",
+  "SeparateAlphaDecal",
+  "VolumeDecal"
+ ],
+ "decal_no_pre_transform": false
 }

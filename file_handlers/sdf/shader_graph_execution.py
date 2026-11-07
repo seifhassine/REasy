@@ -1,5 +1,7 @@
 import hashlib
 
+import fastgraph
+
 from .shader_graph_math import NUMERIC_VALUE_TYPES
 from .shader_graph import ShaderGraphError, ShaderGraphNodeExtension, ShaderNodeEvaluation, ShaderPin, register_shader_graph_node_extension
 from PySide6.QtCore import QT_TRANSLATE_NOOP
@@ -209,22 +211,8 @@ def execution_helpers(node, contract):
 
 def execution_diagnostics(graph, pins):
     from .shader_graph import ShaderGraphDiagnostic
-    if not any(node.kind in EXECUTION_KINDS or node.properties.get('value_type') == EXECUTION_TYPE for node in graph.nodes) and not any(link.target_pin == 'execution' for link in graph.links):
-        return ()
-    nodes = {node.node_id: node for node in graph.nodes}
-    live = graph.upstream_nodes(node.node_id for node in graph.nodes if node.kind in {'output', 'function_output', 'material_surface'})
-    successors = {}
-    for link in graph.links:
-        if link.source_node not in live or link.target_node not in live:
-            continue
-        node = nodes[link.source_node]
-        if any(pin.name == link.source_pin and pin.direction == 'output' and pin.value_type == EXECUTION_TYPE for pin in pins(node)):
-            successors.setdefault(node.node_id, []).append(link)
-    def continuations(links):
-        terminals = [nodes[link.target_node].kind in {'output', 'function_output', 'material_surface'} for link in links]
-        return sum(not terminal for terminal in terminals) + any(terminals)
-    return tuple(ShaderGraphDiagnostic('error', 'execution-fork', 'Connect execution through one ordered continuation; this live operation has multiple successors.', identity)
-                 for identity, links in successors.items() if continuations(links) > 1)
+    return fastgraph.execution_diagnostics(graph.nodes, graph.links, pins,
+                                           (EXECUTION_KINDS, EXECUTION_TYPE, ShaderGraphDiagnostic))
 
 
 for _kind, _title, _properties in EXECUTION_TEMPLATES:

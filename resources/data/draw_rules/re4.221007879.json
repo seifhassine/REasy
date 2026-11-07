@@ -1,0 +1,236 @@
+{
+ "format": 3,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "material_flags": {
+  "masked": {
+   "ForcedAlphaTestEnable": "AlphaMaskUsed",
+   "ForcedAlphaTestEnableShadow": "AlphaMaskUsed"
+  },
+  "derived": {
+   "AlphaTestEnable": ["BaseAlphaTestEnable", "ForcedAlphaTestEnable"],
+   "TwoSideEnable": ["BaseTwoSideEnable", "ForcedTwoSideEnable"]
+  }
+ },
+ "program_markers": [
+  ["A", "AlphaTestEnable"],
+  ["TS", "TwoSideEnable"]
+ ],
+ "decal_receive": {
+  "via.render.Mesh": {
+   "field": "DecalReciveMode",
+   "enum": "via.render.DecalReciveMode",
+   "Enable": "always",
+   "Disable": "never",
+   "otherwise": "unskinned"
+  },
+  "via.render.CompositeMesh": {
+   "otherwise": "always"
+  },
+  "via.landscape.Foliage": {
+   "field": "DecalReciveMode",
+   "enum": "via.landscape.DecalReciveMode",
+   "Enable": "always",
+   "otherwise": "never"
+  },
+  "via.speedtree.SpeedTreeV8": {
+   "otherwise": "never"
+  },
+  "via.render.Primitive": {
+   "otherwise": "always"
+  }
+ },
+ "stencil": {
+  "via.render.Mesh": [
+   {
+    "component": ["BeautyMaskFlag"],
+    "value": "BeautyMaskChannel",
+    "shift": 5,
+    "bits": 1
+   },
+   {
+    "component": ["ReceiveSSSSSFlag"],
+    "material": "SSSProfileUsed",
+    "bits": 2
+   },
+   {
+    "component": ["IgnoreDepth"],
+    "bits": 4
+   },
+   {
+    "component": ["MaskIgnoreDepthMesh"],
+    "bits": 8
+   },
+   {
+    "value": "StencilValue",
+    "shift": 5
+   }
+  ],
+  "via.render.CompositeMesh": [
+   {
+    "setting": "CompositeMeshManager.FixSSSProfile",
+    "material": "SSSProfileUsed",
+    "bits": 2
+   },
+   {
+    "value": "StencilValue",
+    "shift": 5
+   }
+  ],
+  "via.landscape.Foliage": [
+   {
+    "setting": "MeshInstancerManager.FixSSSProfile",
+    "material": "SSSProfileUsed",
+    "bits": 2
+   },
+   {
+    "setting": "FoliageManager.UseRayOffset",
+    "bits": 224
+   }
+  ],
+  "via.speedtree.SpeedTreeV8": []
+ },
+ "component": {
+  "via.render.Mesh": {
+   "BeautyMaskFlag": false,
+   "BeautyMaskChannel": 0,
+   "ReceiveSSSSSFlag": true,
+   "IgnoreDepth": false,
+   "IgnoreDepthTransparentCorrection": false,
+   "MaskIgnoreDepthMesh": false,
+   "ViewSpaceScaling": false,
+   "DrawPriorityBias": 0,
+   "TransparentBias": 0.0,
+   "Occluder": false,
+   "DrawLaterOccluder": false,
+   "UseStencilValuePriority": false,
+   "StencilValue": 0,
+   "ShaderLod": -1,
+   "PartsCaching": false,
+   "ForceAlphaTest": false,
+   "Materials": [],
+   "LodMode": 0,
+   "LodLevel": 0,
+   "EnableLodEffectiveRange": false,
+   "SmallObjectCullingFactor": 1.0
+  },
+  "via.render.CompositeMesh": {
+   "StencilValue": 0
+  }
+ },
+ "settings": {
+  "CompositeMeshManager.FixSSSProfile": true,
+  "MeshInstancerManager.FixSSSProfile": true,
+  "FoliageManager.UseRayOffset": false
+ },
+ "material_params": {
+  "via.render.Mesh": {
+   "list": "Materials",
+   "material": "MaterialName",
+   "variable": "VariableName",
+   "scalar": "ValueF",
+   "vector": "ValueF4",
+   "texture": "ValueT",
+   "buffer": "ValueB",
+   "scalar_components": 1,
+   "vector_components": 4,
+   "locked_kept": true
+  },
+  "via.speedtree.SpeedTreeV8": {
+   "list": "Materials",
+   "material": "MaterialName",
+   "variable": "VariableName",
+   "scalar": "ValueF",
+   "vector": "ValueF4",
+   "texture": "ValueT",
+   "buffer": null,
+   "scalar_components": 1,
+   "vector_components": 4,
+   "locked_kept": true
+  },
+  "via.render.WaterMesh": {
+   "list": "MaterialParam",
+   "material": null,
+   "variable": "VariableName",
+   "scalar": "ValueF",
+   "vector": "ValueF4",
+   "texture": null,
+   "buffer": null,
+   "scalar_components": 1,
+   "vector_components": 4,
+   "locked_kept": true
+  },
+  "via.render.PartialShallowWater": {
+   "list": "MaterialParam",
+   "material": null,
+   "variable": "VariableName",
+   "scalar": "ValueF",
+   "vector": "ValueF4",
+   "texture": "ValueT",
+   "buffer": null,
+   "scalar_components": 1,
+   "vector_components": 4,
+   "locked_kept": true
+  },
+  "via.render.ShallowWater": {
+   "list": "MaterialParam",
+   "material": null,
+   "variable": "VariableName",
+   "scalar": "ValueF",
+   "vector": "ValueF4",
+   "texture": "ValueT",
+   "buffer": null,
+   "scalar_components": 1,
+   "vector_components": 4,
+   "locked_kept": true
+  }
+ },
+ "lods": {
+  "via.render.Mesh": {
+   "mode": "LodMode",
+   "modes": {
+    "automatic": 0,
+    "manual": 1,
+    "follow_parent": 2
+   },
+   "level": "LodLevel",
+   "range_enabled": "EnableLodEffectiveRange",
+   "range": "LodEffectiveRange",
+   "lod_settings": {
+    "path": "systems/rendering/meshlodsettings.lod",
+    "version": 3
+   },
+   "rate": 0.2,
+   "rate2": 1.0,
+   "size": 2.0,
+   "exponent": 0.8,
+   "offset": -1,
+   "depth_over_p00": true
+  },
+  "via.render.CompositeMesh": {
+   "lod_settings": {
+    "path": "systems/rendering/meshlodsettings.lod",
+    "version": 3
+   },
+   "rate": 0.2,
+   "rate2": 1.0,
+   "size": 2.0,
+   "exponent": 0.8,
+   "offset": 0,
+   "depth_over_p00": false
+  }
+ },
+ "small_object_culling": {
+  "ratio": 2.0,
+  "cpu": {
+   "via.render.Mesh": "SmallObjectCullingFactor"
+  },
+  "gpu": ["via.render.CompositeMesh", "via.landscape.Foliage"],
+  "gpu_bounds": 100000.0,
+  "boxes": {
+   "via.render.Mesh": "corners",
+   "via.render.CompositeMesh": "oriented_box",
+   "via.landscape.Foliage": "corners"
+  }
+ }
+}

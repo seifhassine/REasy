@@ -23,6 +23,43 @@ def structured_view_spaces(contract):
     return tuple(result)
 
 
+def coalesce_constant_views(assembly, views):
+    """``views``: (private space, slot) -> (space, slot) of the constant buffers ``assembly`` also reads through a view
+    declared at a compiler-private space; the view's reads go through the buffer's own record, and its record goes."""
+    if not views:
+        return assembly
+    lines = assembly.splitlines()
+    definitions = metadata_definitions(lines)
+    roots = definitions.get('!dx.resources', ())
+    groups = definitions.get(roots[0], ()) if len(roots) == 1 else ()
+    if len(groups) != 4 or groups[2] == 'null':
+        raise ShaderGraphError('Constant views require declared DXIL constant-buffer lists.')
+    number = lambda operand: int(operand.removeprefix('i32 '))
+    records = {ref: definitions[ref] for ref in definitions[groups[2]]}
+    at = {(number(row[3]), number(row[4])): ref for ref, row in records.items()}
+    buffers = {ref: at.get(views[key]) for key, ref in at.items() if key in views}
+    if None in buffers.values():
+        raise ShaderGraphError('A constant view reads a buffer the shader does not declare.')
+    retained = [ref for ref in records if ref not in buffers]
+    ids = {number(row[0]): retained.index(buffers.get(ref, ref)) for ref, row in records.items()}
+    changes = {groups[2]: retained, **{ref: [f'i32 {index}', *records[ref][1:]] for index, ref in enumerate(retained)}}
+    legacy = re.compile(r'(@dx\.op\.createHandle\(i32 57, i8 2, i32 )(\d+)')
+    modern = re.compile(r'(@dx\.op\.createHandleFromBinding\(i32 217, %dx\.types\.ResBind \{ i32 (-?\d+), i32 -?\d+, '
+                        r'i32 )(\d+)(, i8 2 \})')
+    result = []
+    for line in lines:
+        identity = line.split(' = ', 1)[0] if line.startswith('!') else None
+        if identity in buffers:
+            continue
+        if identity in changes:
+            line = f"{identity} = !{{{', '.join(changes[identity])}}}"
+        else:
+            line = legacy.sub(lambda m: m[1] + str(ids[int(m[2])]), line)
+            line = modern.sub(lambda m: m[1] + str(views.get((int(m[3]), int(m[2])), (m[3],))[0]) + m[4], line)
+        result.append(line)
+    return '\n'.join(result) + '\n'
+
+
 def coalesce_structured_views(bytecode, contract, spaces):
     if not spaces:
         return bytecode

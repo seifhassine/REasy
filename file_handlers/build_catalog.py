@@ -9,6 +9,13 @@ def catalog_file_name(game: str, resource_version: int) -> str:
     return f"{str(game).casefold()}.{int(resource_version)}.json"
 
 
+class NamedFields:
+    __slots__ = ()
+
+    def field(self, fields, meaning: str):
+        return fields.get(self.fields[meaning])
+
+
 def catalog_reader(directory: str, from_dict, error: type[Exception], label: str, errors: tuple = ()):
     caught = (OSError, ValueError, KeyError, TypeError, *errors)
 

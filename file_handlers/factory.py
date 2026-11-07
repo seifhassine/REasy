@@ -15,6 +15,7 @@ lazy from file_handlers.sdf.sdf_handler import SdfHandler
 lazy from file_handlers.sound.sound_handler import SoundHandler
 lazy from file_handlers.clip.clip_handler import ClipHandler
 lazy from file_handlers.motion.motion_handler import MotionHandler
+lazy from file_handlers.jcns.jcns_handler import JcnsHandler
 lazy from file_handlers.uvs.uvs_handler import UvsHandler
 lazy from file_handlers.gui.gui_handler import GuiHandler
 lazy from file_handlers.gcf.gcf_handler import GcfHandler
@@ -22,6 +23,7 @@ lazy from file_handlers.ift.ift_handler import IftHandler
 lazy from file_handlers.oft.oft_handler import OftHandler
 lazy from file_handlers.rcol.rcol_handler import RcolHandler
 lazy from file_handlers.fol.fol_handler import FolHandler
+lazy from file_handlers.rtex.rtex_handler import RtexHandler
 lazy from file_handlers.mmtr.mmtr_handler import MmtrHandler
 lazy from file_handlers.wel.wel_handler import WelHandler
 lazy from file_handlers.mov.mov_handler import MovHandler
@@ -49,6 +51,7 @@ def _handler_classes():
     yield SoundHandler
     yield ClipHandler
     yield MotionHandler
+    yield JcnsHandler
     yield UvsHandler
     yield GuiHandler
     yield GcfHandler
@@ -56,6 +59,7 @@ def _handler_classes():
     yield OftHandler
     yield RcolHandler
     yield FolHandler
+    yield RtexHandler
 
 
 def get_handler_for_data(data: bytes, filename: str = ""):

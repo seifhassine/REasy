@@ -12,15 +12,18 @@ from file_handlers.sdf.aggregate_values import (
 )
 
 from file_handlers.sdf.shader_graph import (
-    ShaderContractResource, ShaderGraphError, ShaderGraphNodeExtension, ShaderPin,
+    ShaderContractResource, ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, dxil_target,
     register_shader_graph_node_extension,
 )
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 lazy from file_handlers.mmtr.engine_inputs import engine_input_catalog_for, resource_from_dict, resource_to_dict
-lazy from file_handlers.mmtr.material_region_read import per_build, region_derived_cache
+lazy from file_handlers.mmtr.material_region_read import per_build, per_build_of, region_derived_cache
 lazy from file_handlers.mmtr.pass_purpose import pass_purpose
 lazy from file_handlers.sdf.hlsl_contract import resource_identifier
+lazy from file_handlers.sdf.shader_graph_constant_buffer import (constant_buffer_type, constant_view_identifier,
+                                                                 row_view_size)
 lazy from file_handlers.sdf.shader_graph_resource import resource_value_type
+lazy from .re_engine_bindless_material import record_address_inputs
 
 
 RENDERER_VALUE_KIND = "re_engine_renderer_value"
@@ -74,8 +77,8 @@ register_shader_graph_node_extension(ShaderGraphNodeExtension(
     expression=_where_available_expression,
     description=QT_TRANSLATE_NOOP(
         "ShaderGraphNodes",
-        "Uses Value in the rendering passes that provide every engine input and surface data it reads, and "
-        "Otherwise in the rest."),
+        "Uses Value in the rendering passes that provide every engine input, surface data and material "
+        "parameter it reads, and Otherwise in the rest."),
 ))
 
 
@@ -181,6 +184,8 @@ def _engine_input_layout(document, program, stage, name, *, resources: bool):
     backend = "Vulkan " if shader.binary_format == "spirv-module" else ""
     passes = catalog.pass_resources if resources else catalog.pass_buffers
     found = passes(shader.binary_format, program.name, stage).get(name, ())
+    routes = catalog.material_addresses.get((shader.binary_format, program.name, stage), {}) if resources else {}
+    found = found or tuple(sorted({index for _form, index in routes.values() if catalog.resources[index].name == name}))
     if not found:
         return None, f"The game never binds {name} in {backend}{program.name} {stage}."
     if len(found) > 1:
@@ -210,28 +215,41 @@ def _next_resource_id(program, stage, contract, register_class):
     return 1 + max((item.resource_id for item in contract.resources if item.register_class == register_class), default=-1)
 
 
-def add_engine_buffers(document, contract, semantics, names):
-    program = document.sdf.targets[semantics.target_index].programs[semantics.program_index]
-    stage = semantics.shader_role
-    for name in sorted(names):
-        if contract.buffer(name) is not None:
-            continue
-        layout, _reason = engine_buffer_layout(document, program, stage, name)
-        slot = free_register(document, contract, stage, "b") if layout is not None else None
+def add_engine_buffers(document, contract, semantics, names, buffers=()):
+    target = document.sdf.targets[semantics.target_index]
+    program, stage = target.programs[semantics.program_index], semantics.shader_role
+    layouts = [engine_buffer_layout(document, program, stage, name)[0] for name in sorted(names)
+               if contract.buffer(name) is None]
+    tables = per_build_of("constant_buffer_tables", (target,), None, lambda: {
+        item.name for other in target.programs for item in other.constant_buffers})
+    implicit = {name: (slot, space) for role, name, kind, slot, space
+                in document.profile.sdf_profile.implicit_resource_bindings
+                if role == stage and kind == "b" and name not in tables and dxil_target(contract)}
+    for buffer in (*(layout.buffer for layout in layouts if layout is not None), *buffers):
+        slot, space = implicit.get(buffer.name) or (free_register(document, contract, stage, "b"), 0)
         if slot is None:
             continue
         flags = {item.flags for item in contract.resources if item.input_type == "constant-buffer"}
         resource = ShaderContractResource(
-            name, "constant-buffer", "unknown", "unknown", 0, slot, 1, flags.pop() if len(flags) == 1 else 0, 0,
-            _next_resource_id(program, stage, contract, "b"),
+            buffer.name, "constant-buffer", "unknown", "unknown", 0, slot, 1, flags.pop() if len(flags) == 1 else 0,
+            space, _next_resource_id(program, stage, contract, "b"),
         )
         contract = replace(
             contract,
             resources=(*contract.resources, resource),
-            constant_buffers=tuple(sorted((*contract.constant_buffers, replace(layout.buffer, bind_point=slot)),
+            constant_buffers=tuple(sorted((*contract.constant_buffers,
+                                           replace(buffer, bind_point=slot, register_space=space)),
                                           key=lambda item: (item.register_space, item.bind_point))),
         )
     return contract
+
+
+def record_resources(document, program, stage, target) -> frozenset[str]:
+    catalog = engine_input_catalog_for(document.profile)
+    record = catalog.pass_record(program.shader(stage).binary_format, program.name, stage, target) if catalog else None
+    if record is None:
+        return frozenset()
+    return record_address_inputs(record[0], {"raw", "element"}) | {catalog.resources[record[1]].name}
 
 
 def engine_buffer_unavailable_reason(document, program, stage, contract, name):
@@ -273,11 +291,18 @@ def _graph_names(graph, kind, key):
 
 
 def graph_renderer_buffers(graph):
-    return _graph_names(graph, RENDERER_VALUE_KIND, "source_buffer")
+    return _graph_names(graph, RENDERER_VALUE_KIND, "source_buffer") | _graph_names(graph, RENDERER_RESOURCE_KIND,
+                                                                                     "source_buffer")
 
 
 def graph_renderer_resources(graph):
     return _graph_names(graph, RENDERER_RESOURCE_KIND, "source_resource")
+
+
+def graph_resource_declarations(graph):
+    return per_build("graph_engine_declarations", id(graph), lambda: {
+        str(properties["source_resource"]): _engine_resource_signature(properties)
+        for node in graph.nodes for _kind, properties in _nested_nodes(node, {RENDERER_RESOURCE_KIND})})
 
 
 def engine_input_plan(document, program, stage, buffers, resources):
@@ -314,9 +339,10 @@ def texel_components(resource):
 
 @lru_cache(maxsize=4096)
 def _shape(resource):
-    """Shaders reading one texture vary in its declared component count."""
+    """A sampler is the engine's of its name in a table or as a static sampler (space 32 on RE2 RT's DX12 targets)."""
     flags = resource.flags & ~_TEXTURE_COMPONENTS if resource.input_type == "texture" else resource.flags
-    return replace(resource, bind_point=0, resource_id=0, flags=flags)
+    space = 0 if resource.input_type == "sampler" else resource.register_space
+    return replace(resource, bind_point=0, resource_id=0, flags=flags, register_space=space)
 
 
 def _supplies(resource, declaration):
@@ -334,12 +360,21 @@ def engine_resource_declaration(catalog, name):
     return declaration if engine_resource_value_type(declaration) is not None else None
 
 
-def engine_resource_pin(declaration):
+def engine_resource_pin(declaration, buffer=None):
     signature = resource_to_dict(declaration)
     identity = hashlib.sha256(repr(sorted(signature.items())).encode("utf-8")).hexdigest()[:24]
     return dict(pin="renderer_resource_" + identity, label=declaration.name,
-                value_type=engine_resource_value_type(declaration), input_kind="renderer_resource",
-                source_resource=declaration.name, resource=signature)
+                value_type=engine_resource_value_type(declaration) if buffer is None
+                else constant_buffer_type(row_view_size(buffer.byte_size)), input_kind="renderer_resource",
+                source_resource=declaration.name, resource=signature,
+                **({} if buffer is None else {"source_buffer": buffer.name}))
+
+
+def implicit_sampler(document, stage, declaration):
+    found = declaration is not None and declaration.input_type == "sampler" and next((
+        (slot, space) for role, name, kind, slot, space in document.profile.sdf_profile.implicit_resource_bindings
+        if (role, name, kind) == (stage, declaration.name, "s")), None)
+    return replace(declaration, bind_point=found[0], register_space=found[1]) if found else None
 
 
 def engine_resource_layout(document, program, stage, name):
@@ -352,10 +387,14 @@ def _engine_resource_signature(properties):
 
 def _bound_resource(contract, properties):
     resource = contract.resource(str(properties["source_resource"]))
-    return resource if resource is not None and _supplies(resource, _engine_resource_signature(properties)) else None
+    if resource is None or not _supplies(resource, _engine_resource_signature(properties)):
+        return None
+    buffer = contract.buffer(resource.name) if resource.input_type == "constant-buffer" else None
+    return resource if buffer is None or dxil_target(contract) and constant_buffer_type(
+        row_view_size(buffer.byte_size)) == properties["value_type"] else None
 
 
-def add_engine_resources(document, contract, semantics, names):
+def add_engine_resources(document, contract, semantics, names, declarations=None):
     program = document.sdf.targets[semantics.target_index].programs[semantics.program_index]
     stage = semantics.shader_role
     for name in sorted(names):
@@ -363,6 +402,10 @@ def add_engine_resources(document, contract, semantics, names):
             continue
         layout, _reason = engine_resource_layout(document, program, stage, name)
         if layout is None:
+            sampler = implicit_sampler(document, stage, (declarations or {}).get(name))
+            if sampler is not None:
+                contract = replace(contract, resources=(*contract.resources, replace(
+                    sampler, resource_id=_next_resource_id(program, stage, contract, "s"))))
             continue
         register_class = layout.resource.register_class
         slot = free_register(document, contract, stage, register_class)
@@ -403,7 +446,8 @@ def renderer_resource_expression(contract, properties):
     resource = _bound_resource(contract, properties)
     if resource is None:
         raise RendererResourceUnavailable(properties)
-    return resource_identifier(resource), resource
+    return (constant_view_identifier(resource) if resource.input_type == "constant-buffer"
+            else resource_identifier(resource)), resource
 
 
 def recovered_structured_word(identifier, stride, index, byte_offset):
@@ -514,19 +558,9 @@ def renderer_fields(properties):
 
 
 def renderer_field_expression(contract, properties, field):
-    buffer = renderer_buffer(contract, properties)
-    if buffer is None:
+    if renderer_buffer(contract, properties) is None:
         raise RendererValueUnavailable(str(properties["label"]), str(properties["source_buffer"]))
-    if contract.model_major >= 6:
-        return str(properties["source_name"]) + field.path
-    words = [f"REasyCB{buffer.bind_point}[{offset // 16}].{'xyzw'[offset % 16 // 4]}" for offset in field.offsets]
-    if field.value_type.startswith("float"):
-        words = [f"asfloat({word})" for word in words]
-    elif field.value_type.startswith("int"):
-        words = [f"asint({word})" for word in words]
-    elif field.value_type.startswith("bool"):
-        words = [f"({word} != 0u)" for word in words]
-    return words[0] if len(words) == 1 else f"{field.value_type}({', '.join(words)})"
+    return str(properties["source_name"]) + field.path
 
 
 def renderer_value_expression(contract, properties, helpers):

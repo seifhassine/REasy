@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import time
+from collections.abc import Callable, Iterable
 from contextlib import suppress
 from dataclasses import dataclass, fields, is_dataclass, replace
 
@@ -56,7 +57,6 @@ lazy from .scene_marks import (
 lazy from .scene_model import SceneDrawBatch, SceneDrawMesh
 lazy from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
 lazy from .viewport_overlay import ViewportOverlayManager, add_overlay_header, overlay_panel_stylesheet
-
 
 
 def view_light(mode: str, ambient: float, diffuse: float) -> ViewLight | VertexLight | None:
@@ -163,7 +163,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self.strands_only = False
         self.strands_boxes: tuple = ()
         self.strands_source = None
-        self.wrinkle_source = None
+        self.component_sources: dict[str, Callable[[], Iterable]] = {}
         self.edit_tool = None
         # Picks the mesh at a texel of the frame shown, from what it drew.
         self._picker = ScenePicker()
@@ -193,9 +193,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._gizmo_hover_axis: int | None = None
         self._gizmo_drag = None
         self._gizmo_projection = None
-        self._hover_key = self._hover_block_key = ""
+        self._hover_key = self._hover_block_key = self._hover_material = ""
         self._hover_detect_down = False
-        self._material_parameters: dict[str, dict[str, float]] = {}
+        self._time_materials: dict[str, dict[str, float]] = {}
+        self._time_textures: dict[str, dict[str, str]] = {}
+        self._time_decals: dict[str, dict[str, tuple[float, ...]]] = {}
+        self._time_buffers: dict[str, dict[int, float]] = {}
+        self._strands_gravity: Callable | None = None
         self._hidden_keys: set[str] = set()
         self._hidden_parts: dict[str, frozenset[int]] = {}
 
@@ -249,8 +253,10 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._frames_asked = 0
         self._frame_callback = None
         self.stepped_time = None
+        # The scene's script time: ``time_step(seconds)`` steps it a drawn frame, ``time_running()`` says whether a
+        # later frame may change it.
+        self.time_step = self.time_running = None
         self._seconds_clock = QElapsedTimer()
-        self._stepped_seen: float | None = None
         self._strands_stepped = None
         self._overlays = ViewportOverlayManager(self, HOVER_DETECT_KEY)
         self._hud_labels: list[QLabel] = []
@@ -1025,20 +1031,69 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if refresh:
             self.update()
 
-    def set_material_parameters(self, values: dict[str, dict[str, float]]) -> None:
-        values = {str(material): {str(name): float(value) for name, value in parameters.items()}
-                  for material, parameters in values.items() if parameters}
-        if values == self._material_parameters:
+    def set_time_materials(self, values: dict[str, dict[str, float | tuple[float, ...]]]) -> None:
+        values = {str(material): {str(name): tuple(map(float, value)) if isinstance(value, tuple) else float(value)
+                                  for name, value in parameters.items()}
+                  for material, parameters in values.items()}
+        if values == self._time_materials:
             return
-        if values.keys() != self._material_parameters.keys():
+        if values.keys() != self._time_materials.keys():
             self._device_rebound()
         else:
             self._device_moved(())
-        self._material_parameters = values
+        self._time_materials = values
         self.update()
 
+    def set_time_textures(self, values: dict[str, dict[str, str]]) -> None:
+        if values != self._time_textures:
+            self._device_rebound()
+            self._time_textures = values
+            self.update()
+
+    def device_textures(self) -> dict[str, dict[str, str]]:
+        return self._time_textures
+
+    def meshes_rebound(self) -> None:
+        self._device_rebound()
+        self.update()
+
+    def set_time_decals(self, values: dict[str, dict[str, tuple[float, ...]]]) -> None:
+        values = {str(decal): {str(name): tuple(float(part) for part in value) for name, value in fields.items()}
+                  for decal, fields in values.items()}
+        if values == self._time_decals:
+            return
+        if values.keys() != self._time_decals.keys():
+            self._device_rebound()
+        else:
+            self._device_moved(())
+        self._time_decals = values
+        self.update()
+
+    def set_time_buffers(self, values: dict[str, dict[int, float]]) -> None:
+        values = {str(name): {int(index): float(value) for index, value in floats.items()}
+                  for name, floats in values.items()}
+        if values != self._time_buffers:
+            self._time_buffers = values
+            self._device_moved(())
+            self.update()
+
+    def device_buffers(self) -> dict[str, dict[int, float]]:
+        return self._time_buffers
+
+    def set_strands_gravity(self, gravity: Callable | None) -> None:
+        if gravity != self._strands_gravity:
+            self._strands_gravity = gravity
+            self._device_moved(())
+            self.update()
+
+    def device_strands_gravity(self) -> Callable | None:
+        return self._strands_gravity
+
     def device_materials(self) -> dict[str, dict[str, float]]:
-        return self._material_parameters
+        return self._time_materials
+
+    def device_decals(self) -> dict[str, dict[str, tuple[float, ...]]]:
+        return self._time_decals
 
     def materials_changed(self):
         self._device_changed()
@@ -1086,7 +1141,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             return
         buttons = event.buttons()
         if not (buttons & Qt.RightButton):
-            self._update_scene_hover(self._screen_pos(event)) if self._hover_detect_down else self._set_hover_key("")
+            self._update_scene_hover(self._screen_pos(event)) if self._hover_detect_down else self.set_hover_key("")
             self._unlock_scene_cursor()
             return event.accept()
         if self._cursor_lock_pos is None:
@@ -1160,7 +1215,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if self._controls != "mesh" and event.key() == HOVER_DETECT_KEY:
             if not event.isAutoRepeat():
                 self._hover_detect_down = False
-                self._set_hover_key("")
+                self.set_hover_key("")
             event.accept()
             return
         action = self.freecam.key_action(event)
@@ -1179,13 +1234,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def focusOutEvent(self, event):
         self._unlock_scene_cursor()
         self._finish_gizmo_drag(commit=True)
-        self._set_hover_key("")
+        self.set_hover_key("")
         self._hover_detect_down = False
         self.freecam.clear_input()
         super().focusOutEvent(event)
 
     def leaveEvent(self, event):
-        self._set_hover_key("")
+        self.set_hover_key("")
         if self.edit_tool is not None:
             self.edit_tool.leave()
         super().leaveEvent(event)
@@ -1214,25 +1269,28 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if axis is None:
             self._scene_pick("hover", pos)
         else:
-            self._set_hover_key("")
+            self.set_hover_key("")
 
     def _scene_pick(self, kind: str, pos: np.ndarray) -> None:
-        """At once, on the CPU, from what the frame shown drew."""
+        self._finish_scene_pick(kind, self.pick_at(pos)[0])
+        self.update()
+
+    def pick_at(self, pos: np.ndarray) -> tuple[str, str]:
         frame = self._device_frame
         pickable = getattr(frame, "pickable", None)
-        key = ""
-        if pickable is not None and frame.view.content == self._device_content and self._device_window is not None \
-                and not self._device_window.isHidden():
-            camera = frame.view.camera()
-            width, height = camera.size
-            ratio = width / max(self.width(), 1)
-            texel = min(max(int(pos[0] * ratio), 0), width - 1), min(max(int(pos[1] * ratio), 0), height - 1)
-            geometries, meshes = self._device_content_shown()
-            number = self._picker.pick(camera, texel, geometries, self.device_motion(), pickable, frame.view.hidden,
-                                       frame.view.hidden_parts)
-            key = "" if number is None or number >= len(meshes) else meshes[number].key
-        self._finish_scene_pick(kind, key)
-        self.update()
+        if pickable is None or frame.view.content != self._device_content or self._device_window is None \
+                or self._device_window.isHidden():
+            return "", ""
+        camera = frame.view.camera()
+        width, height = camera.size
+        ratio = width / max(self.width(), 1)
+        texel = min(max(int(pos[0] * ratio), 0), width - 1), min(max(int(pos[1] * ratio), 0), height - 1)
+        geometries, meshes = self._device_content_shown()
+        picked = self._picker.pick(camera, texel, geometries, self.device_motion(), pickable, frame.view.hidden,
+                                   frame.view.hidden_parts)
+        if picked is None or picked[0] >= len(meshes):
+            return "", ""
+        return meshes[picked[0]].key, geometries[picked[0]].batches[picked[1]].material_name
 
     def _move_scene_camera(self, dx: float, dy: float, buttons) -> None:
         if buttons & Qt.RightButton:
@@ -1394,16 +1452,15 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         best = min(hits, default=(11.0, None))
         return best[1] if best[0] <= 10.0 else None
 
-    def _set_hover_key(self, key: str) -> None:
+    def set_hover_key(self, key: str, material: str = "") -> None:
         if key and key == self._hover_block_key:
             key = ""
         elif key:
             self._hover_block_key = ""
-        key = key if key and key not in self._hidden_keys else ""
-        if key == self._hover_key:
-            return
-        self._hover_key = key
-        self.update()
+        hovered = (key, material) if key and key not in self._hidden_keys else ("", "")
+        if hovered != (self._hover_key, self._hover_material):
+            self._hover_key, self._hover_material = hovered
+            self.update()
 
     def _begin_gizmo_drag(self, event) -> bool:
         handle = self._pick_gizmo_axis(self._screen_pos(event))
@@ -1454,7 +1511,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         elif not self._gizmo_drag["matrices"] and not self._gizmo_drag["probe_matrices"]:
             self._gizmo_drag = None
             return False
-        self._set_hover_key("")
+        self.set_hover_key("")
         self._gizmo_drag["whole_scene"] = self._selection_is_whole_scene()
         self._gizmo_hover_axis = handle
         return True
@@ -1691,7 +1748,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._selection_keys.clear()
         self._hidden_keys.clear()
         self._hidden_parts.clear()
-        self._material_parameters.clear()
+        self._time_materials.clear()
+        self._time_textures.clear()
+        self._time_decals.clear()
+        self._time_buffers.clear()
+        self._strands_gravity = None
         self._light_probe_instances.clear()
         self._light_probe_status = ""
         self._preferred_selection_keys.clear()
@@ -1750,7 +1811,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._device_window.setVisible(shown)
 
     def _device_view(self) -> tuple[object, object]:
-        _geometries, meshes = self._device_content_shown()
+        geometries, meshes = self._device_content_shown()
         game = self.lighting_mode == "game"
         if self.lighting_mode == "probes":
             probes = self._device_probes()
@@ -1767,7 +1828,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                                  self._device_content, self._device_motion, frozenset(hidden), hidden_parts,
                                  game=game, strands_only=game and self.strands_only,
                                  antialiased=game and self.antialiasing)
-        return view, self._device_overlays(meshes, background)
+        return view, self._device_overlays(geometries, meshes, background)
 
     def _device_probes(self) -> ViewProbes | None:
         layers = sorted(self._probe_layers(), key=layer_order)
@@ -1776,14 +1837,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             self._device_probes_made = made, ViewProbes.of(layers) if layers else None
         return self._device_probes_made[1]
 
-    def _device_overlays(self, meshes: list[SceneDrawMesh], background: tuple[int, int, int]) -> LitOverlays:
+    def _device_overlays(self, geometries: tuple[SceneGeometry, ...], meshes: list[SceneDrawMesh],
+                         background: tuple[int, int, int]) -> LitOverlays:
         numbers = self._device_numbered(meshes)
         selected = frozenset(numbers[key] for key in self._selection_keys if key in numbers)
         pulse = round(255 * (0.22 + 0.10 * np.sin(time.perf_counter() * 3.5))) if selected else 56
         mode = self.wireframe_mode
+        hovered = numbers.get(self._hover_key) if self._hover_key else None
         scene = SceneShown(
-            NO_EDGES if mode == "off" else ALL_EDGES if mode == "xray" else VISIBLE_EDGES, 1.4,
-            hovered=numbers.get(self._hover_key) if self._hover_key else None, selected=selected,
+            NO_EDGES if mode == "off" else ALL_EDGES if mode == "xray" else VISIBLE_EDGES, 1.4, hovered=hovered,
+            hovered_parts=None if hovered is None or not self._hover_material else frozenset(
+                batch for batch, item in enumerate(geometries[hovered].batches)
+                if item.material_name == self._hover_material), selected=selected,
             selection_colour=(255, 219, 46, pulse), outline=max(1, round(2 * self._view_pixels()[0]
                                                                          / max(self.width(), 1))),
             filled=mode != "wire")
@@ -1813,11 +1878,11 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         self._presented_clock.start()
 
     def _device_frame_shows(self, view, frame) -> bool:
-        """Parts hidden are not compared: a frame of the previous ones still matches."""
+        """Meshes and parts hidden are not compared: a frame of the previous ones still matches (the scene's scripts
+        hide and show meshes as the camera moves)."""
         drawn = frame.view
         return (isinstance(view, SceneView)
-                and (drawn.content, drawn.size, drawn.hidden, drawn.game)
-                == (view.content, view.size, view.hidden, view.game))
+                and (drawn.content, drawn.size, drawn.game) == (view.content, view.size, view.game))
 
     def _device_changed(self) -> None:
         self._device_content += 1
@@ -1827,9 +1892,13 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def _device_rebound(self) -> None:
         """The device gets new content only if it differs, so keys set back before a frame keep it."""
         if self._device_scene is not None and self._device_before is None:
-            self._device_before = self._device_scene[0], frozenset(self._material_parameters)
+            self._device_before = self._device_scene[0], *self._bound()
         self._device_scene = None
         self._device_moved()
+
+    def _bound(self) -> tuple:
+        return (frozenset(self.device_materials()), frozenset(self._time_decals),
+                frozenset((key, frozenset(slots.items())) for key, slots in self._time_textures.items()))
 
     def _device_reshaped(self, mesh: SceneDrawMesh) -> None:
         geometries, meshes = self._device_scene or (None, [])
@@ -1858,7 +1927,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         if self._device_scene is None:
             self._device_scene = self._device_geometries()
             before, self._device_before = self._device_before, None
-            if before is not None and not _same(before, (self._device_scene[0], frozenset(self._material_parameters))):
+            if before is not None and not _same(before, (self._device_scene[0], *self._bound())):
                 self._device_content += 1
                 self._device_placed = None
                 self._device_shapes.clear()
@@ -1907,10 +1976,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             geometries.append(SceneGeometry(mesh.key, number, uvs, tuple(map(float, flat)),
                                             bones, weights, tuple(batches),
                                             solid=bool(mesh.force_solid), edge_excluded=mesh.edge_excluded,
-                                            decal_receive_mode=mesh.decal_receive_mode,
+                                            decal_receive=mesh.decal_receive,
                                             transparent_bias=mesh.transparent_bias,
                                             speedtree_placement=mesh.speedtree_placement,
-                                            more_uvs=tuple(sets[1:])))
+                                            blend_normal=mesh.blend_normal, chain_flags=mesh.chain_flags,
+                                            draw_state=mesh.draw_state,
+                                            lod_parent_mesh=mesh.lod_parent_mesh, more_uvs=tuple(sets[1:])))
             meshes.append(mesh)
         return tuple(geometries), meshes
 
@@ -1942,8 +2013,9 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
     def device_strands(self) -> tuple[str, object, tuple[str, str, str], dict] | None:
         return None if self.strands_source is None else self.strands_source()
 
-    def device_wrinkles(self) -> tuple:
-        return () if self.wrinkle_source is None else tuple(self.wrinkle_source())
+    def device_components(self, kind: str) -> tuple:
+        source = self.component_sources.get(kind)
+        return () if source is None else tuple(source())
 
     def set_edit_tool(self, tool) -> None:
         """``tool``'s handlers return True when they take the event; it gives ``marks()`` and, while ``gizmo()`` returns
@@ -2041,12 +2113,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
 
     def _finish_scene_pick(self, kind: str, key: str) -> None:
         if kind == "hover":
-            self._set_hover_key(key if self._hover_detect_down else "")
+            self.set_hover_key(key if self._hover_detect_down else "")
             return
         if key:
             self.object_clicked.emit(key)
             self._hover_block_key = key
-            self._set_hover_key("")
+            self.set_hover_key("")
         else:
             self.object_clicked.emit("")
 
@@ -2107,9 +2179,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         else:
             wall = 0.0
             self._seconds_clock.start()
-        stepped = None if self.stepped_time is None else self.stepped_time()
-        before, self._stepped_seen = self._stepped_seen, stepped
-        return wall if stepped is None or before is None else stepped - before
+        return 0.0 if self.stepped_time is not None and self.stepped_time() is not None else wall
 
     def _ask_next_frame(self) -> None:
         period = 1000.0 / self._fps_limit
@@ -2127,14 +2197,18 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         return 0 if self._fps_limit == 0 else max(1, round(1000 / self._fps_limit))
 
     def set_frame_callback(self, callback) -> None:
-        """``callback(seconds)`` gets the time since its last call."""
+        """``callback(seconds)`` gets each view step's seconds while the view steps, else the time since its last
+        call."""
         if callback is not None and not callable(callback):
             raise TypeError("frame callback must be callable")
         self._frame_callback = callback
         if callback is not None:
             self._seconds_clock.start()
-            self._stepped_seen = None if self.stepped_time is None else self.stepped_time()
             self._next_pass()
+
+    def step_frame(self, seconds: float) -> None:
+        if self._frame_callback is not None:
+            self._frame_callback(seconds)
 
     @property
     def fps_limit(self) -> int:

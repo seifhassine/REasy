@@ -7,12 +7,12 @@ lazy from ui.icons import line_icon
 from file_handlers.document_commands import Change
 from ui.outline_model import OutlineModel
 
-from ..document import MotionDocument, children
+from ..document import ENTRIES, MotionDocument, children
 from ..model import (
     JointChannels,
     Motion,
     MotionList,
-    MotionListEntry,
+    MotionPack,
     MotionTree,
     PropertyTrack,
     ReferencePath,
@@ -22,7 +22,7 @@ from ..model import (
     TreeParam,
 )
 from ..pose import TRANSFORMS
-from ..rules import display_names
+from ..rules import display_names, tree_param_kinds, tree_param_names
 
 _ICONS = {Motion: "layers", MotionTree: "graph", ReferencePath: "link", JointChannels: "bone",
           PropertyTrack: "variable", Sequence: "clock", TreeNode: "box", TreeLink: "link", TreeParam: "variable"}
@@ -32,6 +32,15 @@ _SHOWN_FIELDS = {"name", "motion_id", "name_hash", "category", "key", "type", "e
 
 def _node_name(node: TreeNode) -> str:
     return node.name or node.class_name
+
+
+def param_name(param: TreeParam) -> str:
+    """Its stored name (to v10), else its key's; an ExtraData parameter's key is its size ("Blob")."""
+    if param.name:
+        return param.name
+    if tree_param_kinds()[param.type] == "blob":
+        return "Blob"
+    return tree_param_names().get(param.key, f"0x{param.key:08X}")
 
 
 class MotionOutline(OutlineModel):
@@ -50,12 +59,12 @@ class MotionOutline(OutlineModel):
         if role == Qt.DisplayRole:
             return self._name(item) if column == 0 else self._kind(item)
         if role == Qt.DecorationRole and column == 0:
-            held = item.item if isinstance(item, MotionListEntry) else item
+            held = item.item if isinstance(item, ENTRIES) else item
             return line_icon(_ICONS.get(type(held), "box"))
         return None
 
     def _name(self, item) -> str:
-        if isinstance(item, MotionListEntry):
+        if isinstance(item, ENTRIES):
             held = item.item
             return f"{item.motion_id}  {held.path if isinstance(held, ReferencePath) else getattr(held, 'name', '')}"
         if isinstance(item, JointChannels):
@@ -68,10 +77,10 @@ class MotionOutline(OutlineModel):
             return _node_name(item)
         if isinstance(item, TreeLink):
             return f"{_node_name(item.parent)} > {_node_name(item.child)}"
-        return item.name or f"0x{item.key:08X}"
+        return param_name(item)
 
     def _kind(self, item) -> str:
-        if isinstance(item, MotionListEntry):
+        if isinstance(item, ENTRIES):
             return self._kind(item.item)
         if isinstance(item, Motion):
             return self.tr("{0:g} frames").format(item.end_frame)
@@ -98,7 +107,7 @@ class MotionOutline(OutlineModel):
             self.reset(self.document.root)
         elif change.field in _SHOWN_FIELDS:
             target, root = change.target, self.document.root
-            if isinstance(root, MotionList):
+            if isinstance(root, (MotionList, MotionPack)):
                 target = next((entry for entry in root.entries if entry.item is target), target)
             self.refresh(target)
             if isinstance(target, TreeNode):

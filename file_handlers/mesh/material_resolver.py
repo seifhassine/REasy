@@ -7,7 +7,9 @@ import os
 from pathlib import Path
 import sys
 from threading import RLock
-from typing import Iterable
+from typing import Callable, Iterable
+
+lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.bounded_cache import BoundedCache
 from file_handlers.mdf.mdf_file import MatData, MdfFile, TexHeader, two_sided
@@ -15,12 +17,14 @@ lazy from file_handlers.mmtr.mmtr_file import (
     _parse_preview_document, _supports_preview_without_native_reflection, parse_drawn_master,
 )
 from file_handlers.mmtr.material_context import MaterialInstanceContext
+lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
 lazy from file_handlers.mmtr.parsed_files import Lease
 from file_handlers.mmtr.profiles import MmtrGameProfile, mmtr_profile_for_game, mmtr_profile_for_resource
 from utils.garbage_collection import configure_garbage_collector
 lazy from utils.resource_file_utils import (
     ResourceLocation,
     ResourceResolutionContext,
+    build_resource_path,
     locate_handler_resource,
     locate_local_resource,
     resource_context_for_handler,
@@ -48,18 +52,22 @@ PREFERRED_ALBEDO_TEXTURE_TYPES: tuple[str, ...] = (
 class MdfTextureProfile:
     texture_type: str
     texture_path: str
+    # The header's lock word: the engine applies no component override to a locked slot.
+    locked: bool = False
 
 
 @dataclass(slots=True)
 class MdfParameterProfile:
     name: str
     values: tuple[float, ...]
+    locked: bool = False
 
 
 @dataclass(slots=True)
 class MdfGpuBufferProfile:
     name: str
     path: str
+    locked: bool = False
 
 
 @dataclass(slots=True)
@@ -75,6 +83,8 @@ class MdfSurfaceProfile:
     gpu_buffers: tuple[MdfGpuBufferProfile, ...] = ()
     instance_context: MaterialInstanceContext | None = None
     two_sided: bool = False
+    shading_type: int = 0
+    flag_version: int = 0
 
 
 @dataclass(slots=True)
@@ -138,42 +148,61 @@ def _new_mdf_parse_pool() -> ProcessPoolExecutor:
 def _extract_surface_profiles(mdf_data: bytes, actual_path: str) -> dict[str, MdfSurfaceProfile]:
     mdf = MdfFile()
     mdf.read(mdf_data, actual_path)
-    resolved: dict[str, MdfSurfaceProfile] = {}
-    for material in mdf.materials:
-        texture = MeshMaterialResolver.pick_primary_texture(material)
-        resolved[material.header.mat_name] = MdfSurfaceProfile(
-            material_name=material.header.mat_name,
-            tint=MeshMaterialResolver.base_color(material),
-            material_flags=int(material.header.material_flags),
-            mmtr_path=material.header.mmtr_path,
-            texture_type=texture.tex_type if texture else "",
-            texture_path=texture.tex_path if texture else "",
-            textures=tuple(
-                MdfTextureProfile(item.tex_type, item.tex_path)
-                for item in material.textures
-                if item.tex_type and item.tex_path
-            ),
-            parameters=tuple(
-                MdfParameterProfile(
-                    parameter.name,
-                    tuple(
-                        float(value)
-                        for value in parameter.parameter[
-                            : max(0, min(4, int(parameter.component_count)))
-                        ]
-                    ),
-                )
-                for parameter in material.parameters
-                if parameter.name
-            ),
-            gpu_buffers=tuple(
-                MdfGpuBufferProfile(name.name, data.name)
-                for name, data in material.gpu_buffers
-            ),
-            instance_context=MaterialInstanceContext.from_material(material),
-            two_sided=two_sided(material.header.material_flags, mdf.file_version),
-        )
-    return resolved
+    return {material.header.mat_name: surface_profile(material, mdf.file_version) for material in mdf.materials}
+
+
+def read_mdf(resolve: Callable[[str], tuple[str, bytes] | None], path: str) -> MdfFile:
+    found = resolve(path)
+    if found is None:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The MDF file {path} was not found."), {"path": path})
+    mdf = MdfFile()
+    try:
+        mdf.read(found[1], found[0])
+    except ValueError as exc:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The MDF file {path} is not one REasy reads."), {"path": path}) from exc
+    return mdf
+
+
+def surface_profile(material, file_version: int) -> MdfSurfaceProfile:
+    texture = MeshMaterialResolver.pick_primary_texture(material)
+    return MdfSurfaceProfile(
+        material_name=material.header.mat_name,
+        tint=MeshMaterialResolver.base_color(material),
+        material_flags=int(material.header.material_flags),
+        mmtr_path=material.header.mmtr_path,
+        texture_type=texture.tex_type if texture else "",
+        texture_path=texture.tex_path if texture else "",
+        textures=tuple(
+            MdfTextureProfile(item.tex_type, item.tex_path, bool(item.locked))
+            for item in material.textures
+            if item.tex_type and item.tex_path
+        ),
+        parameters=tuple(
+            MdfParameterProfile(
+                parameter.name,
+                tuple(
+                    float(value)
+                    for value in parameter.parameter[
+                        : max(0, min(4, int(parameter.component_count)))
+                    ]
+                ),
+                bool(parameter.component_locked),
+            )
+            for parameter in material.parameters
+            if parameter.name
+        ),
+        # The data header's first word is the buffer's lock word.
+        gpu_buffers=tuple(
+            MdfGpuBufferProfile(name.name, data.name, bool(data.utf16_hash))
+            for name, data in material.gpu_buffers
+        ),
+        instance_context=MaterialInstanceContext.from_material(material),
+        two_sided=two_sided(material.header.material_flags, file_version),
+        shading_type=int(material.header.shader_type),
+        flag_version=int(file_version),
+    )
 
 
 class MeshMaterialResolver:
@@ -211,13 +240,17 @@ class MeshMaterialResolver:
         return ".rtex" in normalized
 
     @staticmethod
-    def _material_binding(resolved_mdf: ResolvedMdf, mesh_name: str) -> MeshMaterialBinding:
-        surface = resolved_mdf.surfaces.get(mesh_name)
+    def _material_binding(resolved_mdf: ResolvedMdf, mesh_name: str,
+                          mdf_material: int | None = None) -> MeshMaterialBinding:
+        if mdf_material is None:
+            surface = resolved_mdf.surfaces.get(mesh_name)
+        else:
+            surface = next(iter(list(resolved_mdf.surfaces.values())[mdf_material:]), None)
         if surface is None:
             return MeshMaterialBinding(mesh_name, status="Missing MDF material")
         return MeshMaterialBinding(
             mesh_material_name=mesh_name,
-            mdf_material_name=mesh_name,
+            mdf_material_name=mesh_name if mdf_material is None else surface.material_name,
             texture_type=surface.texture_type,
             texture_path=surface.texture_path,
             surface=surface,
@@ -231,6 +264,7 @@ class MeshMaterialResolver:
         *,
         explicit_mdf_path: str = "",
         parse_in_subprocess: bool = False,
+        mdf_material: int | None = None,
     ) -> tuple[ResolvedMdf | None, list[MeshMaterialBinding]]:
         mesh = getattr(handler, "mesh", None)
         material_names = list(getattr(mesh, "material_names", []) or [])
@@ -248,7 +282,7 @@ class MeshMaterialResolver:
         if resolved_mdf is None:
             return None, [MeshMaterialBinding(name, status="MDF not found") for name in material_names]
 
-        return resolved_mdf, [cls._material_binding(resolved_mdf, name) for name in material_names]
+        return resolved_mdf, [cls._material_binding(resolved_mdf, name, mdf_material) for name in material_names]
 
     @classmethod
     def resolve_mdf_path_for_handler(
@@ -399,7 +433,10 @@ class MeshMaterialResolver:
                 scope = native[start:].rsplit("/", 2)[0] + "/"
                 candidates.update(item for item in known_paths()
                                   if item.casefold().startswith(scope) and ".mdf2." in item.casefold())
-        yield from sorted(candidates, key=str.casefold)
+        game = getattr(handler, "game_version", "") or getattr(context, "game", "")
+        version = getattr(mmtr_profile_for_game(game), "mdf_resource_version", None)
+        yield from sorted((item for item in candidates if version in (None, resource_version_from_path(item, "mdf2"))),
+                          key=str.casefold)
 
     @classmethod
     def _read_mdf(
@@ -647,6 +684,8 @@ class MeshMaterialResolver:
 
     @staticmethod
     def _locate_resource(handler, resource_path: str) -> ResourceLocation | None:
+        game = getattr(handler, "game_version", "") or getattr(resource_context_for_handler(handler), "game", "")
+        resource_path = build_resource_path(resource_path, game)
         found = locate_handler_resource(handler, resource_path)
         if found is not None:
             return found

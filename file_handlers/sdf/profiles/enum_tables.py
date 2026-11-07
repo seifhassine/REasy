@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from functools import cached_property
+from functools import cached_property, lru_cache
 
 lazy from utils.enum_manager import EnumDefinitionError, game_enum_definitions
 
@@ -14,7 +14,8 @@ class EngineEnumTable(Mapping):
     @cached_property
     def _values(self):
         label = f"{self.game} enum JSON: {self.enum_name}"
-        members = game_enum_definitions(self.game, namespace="via.render.").get(self.enum_name)
+        namespace = self.enum_name.rpartition('.')[0] + '.'
+        members = game_enum_definitions(self.game, namespace=namespace).get(self.enum_name)
         if not isinstance(members, list) or not members:
             raise EnumDefinitionError(f"{label} is missing or is not a non-empty member list")
         result, names = {}, set()
@@ -118,3 +119,9 @@ _DXGI_BY_MEANING = {
 
 def input_formats(game):
     return EngineEnumTable(game, 'via.render.InputElementFormat', _DXGI_BY_MEANING, maximum=0xFF)
+
+
+@lru_cache(maxsize=None)
+def decal_receive_modes(game, enum_name='via.render.DecalReciveMode'):
+    return EngineEnumTable(game, enum_name, {'Automatic': 'Automatic', 'Enable': 'Enable', 'Disable': 'Disable'},
+                           maximum=0x7FFFFFFF)

@@ -164,6 +164,15 @@ def structured_dxil_records(ir, entry):
     uses = Counter(value for records in blocks.values() for record in records
                    for value in re.findall(r'%' + LABEL, record.text.partition('=')[2] if record.result else record.text))
 
+    @lru_cache(maxsize=None)
+    def mentions():
+        found = {}
+        for other, records in blocks.items():
+            for record in records:
+                for value in re.findall(r'%' + LABEL, record.text):
+                    found.setdefault(value, set()).add(other)
+        return found
+
     def region(recurse, label, stop=None, predecessor=None, *, parent=None, ready_phis=False):
         child_loops, edges, postdominators = context(parent)
         while label != stop:
@@ -178,10 +187,9 @@ def structured_dxil_records(ir, entry):
                     if record.opcode != 'phi':
                         yield 'instruction', record
                 definitions = {record.result for member in loop['members'] for record in blocks[member] if record.result}
-                outside_uses = {value for other, records in blocks.items() if other not in loop['members']
-                                for record in records for value in re.findall(r'%' + LABEL, record.text)}
+                exports = sorted(name for name in definitions if mentions().get(name, set()) - loop['members'])
                 yield 'loop_end', dict(continuation=conditions[latch], when_true=successors[latch][0] == label,
-                                      states=incoming(label, latch), exports=tuple(sorted(definitions & outside_uses)))
+                                      states=incoming(label, latch), exports=tuple(exports))
                 predecessor, label = latch, loop['exit']
                 ready_phis = False
                 continue

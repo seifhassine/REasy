@@ -1,15 +1,11 @@
-"""Bounds-checked GUIR decoder into the semantic object graph."""
-
 from __future__ import annotations
 
 import struct
 import uuid
 
+lazy from file_handlers.clip.decode import read_motclip
+lazy from file_handlers.clip.errors import ClipFormatError
 lazy from file_handlers.clip.rules import PropertyType
-lazy from file_handlers.motion.binary import ReadContext
-lazy from file_handlers.motion.errors import MotionParseError
-from file_handlers.motion.mot_clip.model import ClipInterpolation
-lazy from file_handlers.motion.mot_clip.parser import CompactClipV27Parser
 
 lazy from ..errors import GuiFormatError
 lazy from ..model import (
@@ -32,9 +28,6 @@ lazy from .property_codec import decode_dmc5_gui_value
 
 
 MAX_RECORDS = 1_000_000
-ASCII_EVENT_MODES = frozenset(
-    {ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT}
-)
 
 class Reader:
     def __init__(self, data: bytes, source: str) -> None:
@@ -110,8 +103,6 @@ class Dmc5GuiCodec:
         self.source = source
         self.profile = profile
         self.r = Reader(self.data, source)
-        self._clip_parser = CompactClipV27Parser(profile.motion)
-        self._clip_context = ReadContext.from_bytes(self.data, source)
         self._objects: dict[int, GuiObject] = {}
         self._animations: dict[int, GuiAnimation] = {}
         self._animation_ends: dict[int, int] = {}
@@ -171,7 +162,6 @@ class Dmc5GuiCodec:
         symbol_offsets: list[int],
         metadata_offset: int,
     ) -> tuple[list[int], list[int]]:
-        """Read the native declaration stream, including unowned records."""
         r = self.r
         cursor = root_offset + 0x18 + len(symbol_offsets) * 8
         for symbol in symbol_offsets:
@@ -295,26 +285,17 @@ class Dmc5GuiCodec:
             raise GuiFormatError(f"{self.source}: animation loop flag is not Boolean")
         payload = offset + 0x28
         try:
-            result = self._clip_parser.parse_result(
-                self._clip_context,
-                payload,
-                None,
-                pointer_base=payload,
-                following_data_name="next GUI structure",
-                allow_missing_extra=True,
-                require_canonical_layout=False,
-                ascii_value_interpolations=ASCII_EVENT_MODES,
-            )
-        except MotionParseError as exc:
-            raise GuiFormatError(str(exc)) from exc
+            clip, end = read_motclip(self.data, payload, payload)
+        except ClipFormatError as exc:
+            raise GuiFormatError(f"{self.source}: {exc}") from exc
         animation = GuiAnimation(
             guid=r.guid(offset, "animation GUID"),
             name=r.utf16(r.u64(offset + 0x18, "animation name"), "animation name"),
             loop=bool(loop),
-            clip=result.clip,
+            clip=clip,
         )
         self._animations[offset] = animation
-        self._animation_ends[offset] = result.physical_end
+        self._animation_ends[offset] = end
         self._transition_offsets[offset] = r.u64(offset + 0x20, "animation transition")
         return animation
 

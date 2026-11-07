@@ -1,0 +1,65 @@
+{
+ "format": 2,
+ "game": "mhws",
+ "resource_version": 240906211,
+ "path": "mastermaterial/sss_profile/base_char_sss_prof_001.sss",
+ "file": {
+  "magic": 5460819,
+  "version": 336597248,
+  "record": 92,
+  "most": 16,
+  "clamp": {
+   "words": [8, 9],
+   "least": -0.999,
+   "most": 0.999,
+   "unordered": 0.999
+  }
+ },
+ "records": {
+  "default": [0.003921569, 0.003921569, 0.003921569, 0.0, 0.0, 0.0, 0.0001, 0.0001, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0],
+  "fixed": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.01, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+ },
+ "packing": {
+  "slots": 16,
+  "words": [0, 1, 2, 6, 3, 4, 5, 7, [16, 13], [16, 14], [16, 15], 12, 10, 11, 8, 9, 22, null, null, null],
+  "fills": [
+   {
+    "record": "default",
+    "from": "records",
+    "to": 16
+   },
+   {
+    "record": "fixed",
+    "from": 7,
+    "to": 8
+   }
+  ]
+ },
+ "bake": {
+  "slots": 16,
+  "slot": 152,
+  "half": 4,
+  "fills": [
+   {
+    "record": "default",
+    "from": "records",
+    "to": 7
+   },
+   {
+    "record": "fixed",
+    "from": 7,
+    "to": 8
+   }
+  ],
+  "falloff": [0, 1, 2],
+  "mix": [3, 4, 5],
+  "width": 6,
+  "ratio": 7,
+  "falloff_min": null,
+  "range": 2.0,
+  "exponent": 2.0,
+  "area": 0.5,
+  "variance": 2.0,
+  "norm": 6.2831855
+ }
+}

@@ -8,7 +8,7 @@ import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 lazy from file_handlers.mmtr.material_preview import MaterialPreviewError
-lazy from file_handlers.rsz.scene_joints import times
+lazy from file_handlers.engine_math import transform_product
 
 lazy from .chain_catalog import LodSection
 from .lod import (F, NO_RECORD, LodRecord, drawn_segments, extent_scaled, frustum_planes, grown_box, in_frustum,
@@ -114,7 +114,7 @@ class SetLod:
         self.latch = grown is None
         self.local = self.rest if grown is None else tuple(np.asarray(side, F) for side in grown)
         if self.lod.level == "local":
-            self.level = self._level(self.local, None if matrix is None else times(origin, matrix), size)
+            self.level = self._level(self.local, None if matrix is None else transform_product(origin, matrix), size)
         self.drawn_level = level
         return LodRun(level, box, drawn, factor, drawn_segments(factor, self.segments[level]))
 

@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-from file_handlers.base_handler import BaseFileHandler
+from file_handlers.base_handler import DocumentHandler
 
 lazy from .document import MotionDocument
 lazy from .editor import MotionEditor
 
-MAGICS = (b"mot ", b"mlst", b"mtre")
+MAGICS = (b"mot ", b"mlst", b"mtre", b"mpck")
 
 
-class MotionHandler(BaseFileHandler):
+class MotionHandler(DocumentHandler):
     def __init__(self):
         super().__init__()
         self.document: MotionDocument | None = None
@@ -22,14 +22,5 @@ class MotionHandler(BaseFileHandler):
         self.document.modified_changed.connect(self._set_modified)
         self.modified = False
 
-    def rebuild(self) -> bytes:
-        data = self.document.write()
-        self.document.mark_saved()
-        self.modified = False
-        return data
-
     def create_viewer(self):
         return MotionEditor(self)
-
-    def _set_modified(self, modified: bool) -> None:
-        self.modified = modified

@@ -43,11 +43,17 @@ def speedtree_stem(catalog: SpeedTreeCatalog | None, placement: str | None, batc
     own, kind = found
     held = {marker for marker, _bits in programs.material_markers if marker in own}
     added = {marker for marker, bits in programs.material_markers if material_flags & bits} - held
-    if added and kind not in programs.kinds_taking_material_markers:
+    if added and kind not in programs.kinds_taking_material_markers | programs.kinds_ignoring_material_markers:
         raise PassChoiceError(QT_TRANSLATE_NOOP(
             "PassChoice", "REasy has not read whether the renderer draws a SpeedTree batch of type {batch} two-sided "
                           "or alpha-tested when its material's flags say so."), {"batch": batch})
     if kind == "Billboard":
+        if drawn.billboard_stem is None and drawn.lod is not None and drawn.lod.bias < 0 and (
+                drawn.lod.narrow is None or drawn.lod.narrow[1] < 0):
+            # A negative bias holds the pick above the billboard's.
+            raise PassChoiceError(QT_TRANSLATE_NOOP(
+                "PassChoice", "This game build's renderer never draws the billboard LOD of a SpeedTree mesh placed "
+                              "this way at its highest settings."))
         if drawn.billboard_stem is None:
             raise PassChoiceError(QT_TRANSLATE_NOOP(
                 "PassChoice", "No capture of this game build shows the programs the renderer draws SpeedTree "

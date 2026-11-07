@@ -27,7 +27,7 @@ class AggregateField:
 
 
 @lru_cache(maxsize=1024)
-def constant_value_fields(variable):
+def constant_value_fields(variable, structured=False):
     def visit(value, path, offset, recurse):
         base, suffix = _hlsl_variable_parts(value)
         dimensions = tuple(int(count) for count in re.findall(r"\[(\d+)\]", suffix))
@@ -41,16 +41,19 @@ def constant_value_fields(variable):
                     children, size = recurse(member, path + "." + member.name, offset + member.byte_offset, recurse)
                     fields.extend(children)
                     end = max(end, member.byte_offset + size)
-                return fields, align(end, 16)
+                return fields, end if structured else align(end, 16)
             matrix = re.fullmatch(r"(row_major|column_major) (float|int|uint|bool)([1-4])x([1-4])", base)
             if matrix:
                 orientation, scalar, rows, columns = matrix.groups()
                 rows, columns = int(rows), int(columns)
+                row_stride, column_stride = (4 * columns if structured else 16, 4) if orientation == "row_major" \
+                    else (4, 4 * rows if structured else 16)
                 fields = [AggregateField(path + f"[{row}]", scalar + (str(columns) if columns > 1 else ""),
-                                         tuple(offset + (row * 16 + col * 4 if orientation == "row_major"
-                                                         else col * 16 + row * 4) for col in range(columns)))
+                                         tuple(offset + row * row_stride + col * column_stride
+                                               for col in range(columns)))
                           for row in range(rows)]
-                return fields, (rows if orientation == "row_major" else columns) * 16
+                return fields, rows * columns * 4 if structured else \
+                    (rows if orientation == "row_major" else columns) * 16
             scalar = _VALUE.fullmatch(base)
             if scalar is None:
                 raise ShaderGraphError(f"Renderer value has no declared 32-bit graph type: {base}")
@@ -61,7 +64,7 @@ def constant_value_fields(variable):
             if axis == len(dimensions):
                 return element(path, offset)
             first, size = descend(axis + 1, path + "[0]", offset, descend)
-            stride = align(size, 16)
+            stride = size if structured else align(size, 16)
             fields = list(first)
             for index in range(1, dimensions[axis]):
                 children, _ = descend(axis + 1, path + f"[{index}]", offset + index * stride, descend)

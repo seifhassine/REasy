@@ -9,7 +9,7 @@ from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP
 
 from file_handlers.bounded_cache import BoundedCache
 from file_handlers.sdf.shader_graph import (
-    ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, register_shader_graph_node_extension,
+    ShaderGraphError, ShaderGraphNodeExtension, ShaderPin, ShaderSignatureField, register_shader_graph_node_extension,
 )
 lazy from file_handlers.sdf.spirv import reflect_spirv
 lazy from file_handlers.sdf.spirv_contract import patch_interface_ids, spirv_interface_rows
@@ -31,6 +31,10 @@ lazy import fastsurface
 
 SURFACE_DATA_KIND = "re_engine_surface_data"
 MATERIAL_COORDINATES = "coordinates"
+# Values the rasterizer gives a pixel shader that declares them, without the stage before it; declaring one changes
+# nothing else about the pass.
+GENERATED_VALUES = {"system:front-face": ("SV_IsFrontFace", "front-face"),
+                    "system:primitive-id": ("SV_PrimitiveID", "primitive-id")}
 
 
 def _surface_data_pins(node, _contract):
@@ -52,6 +56,10 @@ register_shader_graph_node_extension(ShaderGraphNodeExtension(
 ))
 _CACHE_LIMIT = 4096
 _CACHE = BoundedCache()
+_PHI = re.compile(r"^[ \t]*(%[-$._A-Za-z0-9]+) = phi [^\[\n]*(\[.*\])[ \t]*$", re.MULTILINE)
+_INCOMING = re.compile(r"\[\s*([^,\[\]]+?)\s*,\s*(%[-$._A-Za-z0-9]+)\s*\]")
+_SPIRV_CONSTANTS = frozenset({"OpConstant", "OpConstantTrue", "OpConstantFalse", "OpConstantComposite",
+                              "OpConstantNull", "OpUndef"})
 
 
 translate = QCoreApplication.translate
@@ -173,6 +181,89 @@ def projected_position(ir_kind: str, ir, contract, flow: NativeFlow) -> ChannelS
                                        for lane, value in enumerate(values)))
 
 
+def _phi_incoming(ir_kind: str, ir, flow: NativeFlow) -> dict[int, dict]:
+    phis = {}
+    if ir_kind == "dxil":
+        # Phi lines are found by their text, which costs a tenth of matching the pattern at every line.
+        text = ir.to_assembly()
+        at = text.find(" = phi ")
+        while at >= 0:
+            start, end = text.rfind("\n", 0, at) + 1, text.find("\n", at)
+            end = len(text) if end < 0 else end
+            if (match := _PHI.match(text, start, end)) is not None:
+                phis[match[1]] = {block: value if value.startswith("%") else None
+                                  for value, block in _INCOMING.findall(match[2])}
+            at = text.find(" = phi ", end)
+        return {index: phis[value.origin] for index, value in enumerate(flow.values)
+                if value.kind == "join" and value.origin in phis}
+    constants = {row.result for row in ir.instructions if row.name in _SPIRV_CONSTANTS}
+    for row in ir.instructions:
+        if row.name == "OpPhi":
+            references = [operand.value for operand in row.operands if operand.kind == "IdRef"]
+            phis[row.result] = {block: None if value in constants else value
+                                for value, block in zip(references[0::2], references[1::2])}
+    return {index: phis[value.origin[0]] for index, value in enumerate(flow.values)
+            if value.kind == "join" and value.signature == ("phi",) and value.origin[0] in phis}
+
+
+def _drawn_values(ir_kind: str, ir, contract, flow: NativeFlow, graph, named, position) -> dict[int, int]:
+    """A vertex shader skipping vertices stores constants on the skip path; a merge whose constant joins cut the
+    position off draws nothing from skipped vertices, so a join one value on every other path is read as that value."""
+    if ir_kind == "dxbc-sm5" or not position:
+        return {}
+    incoming = _phi_incoming(ir_kind, ir, flow)
+    per_instance = {f"{item.semantic_name}{item.semantic_index}" for item in contract.inputs
+                    if item.system_value == "instance-id"}
+
+    def walk(cut):
+        reached, seen, pending = set(), set(), list(position)
+        while pending:
+            value = pending.pop()
+            if value in seen:
+                continue
+            seen.add(value)
+            if value in cut:
+                reached.add(value)
+                continue
+            source = named.get(value)
+            if source is not None and source[0] == "attribute" and source[1] not in per_instance:
+                return None
+            pending.extend((*flow.values[value].operands, *flow.values[value].controls))
+        return reached
+
+    # Merges taking a constant on some path, by their predecessors, with the joins the position's operands reach. The
+    # walk also follows conditions, so it reaches no fewer of them: a merge none of whose paths has all of these
+    # constant is no skip.
+    constant = tuple(join for join, joined in incoming.items() if None in joined.values())
+    merges: dict[frozenset, list] = {}
+    for join in graph.reaches([tuple(position)], constant)[0] if constant else ():
+        merges.setdefault(frozenset(incoming[join]), []).append(join)
+    result = {}
+    for blocks, found in merges.items():
+        if not any(all(incoming[join][block] is None for join in found) for block in blocks):
+            continue
+        cut = {join for join in constant if incoming[join].keys() == blocks}
+        reached = walk(cut)
+        # A loop's header takes a constant on entry too, and its joins are worked out from themselves.
+        if not reached or graph.reaches([tuple(item for join in reached for item in flow.values[join].operands)],
+                                        tuple(reached))[0]:
+            continue
+        skipped = {block for block in blocks if all(incoming[join][block] is None for join in reached)}
+        if not skipped or len(skipped) == len(blocks):
+            continue
+        for index in cut:
+            joined = incoming[index]
+            drawn = {joined[block] for block in joined if block not in skipped}
+            if (len(flow.values[index].operands) == 1 and all(joined[block] is None for block in skipped)
+                    and len(drawn) == 1 and None not in drawn):
+                result[index] = flow.values[index].operands[0]
+    for index, value in result.items():
+        while value in result:
+            value = result[value]
+        result[index] = value
+    return result
+
+
 def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict[str, tuple], tuple | None]:
     named = _named_sources(ir_kind, ir, contract, flow)
     graph = fastsurface.Graph(flow.values, FlowValue)
@@ -185,14 +276,17 @@ def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict
                                        & (1 << bit)][store.lane])
                   for store in stores if (store.semantic, store.semantic_index) in outputs]
     position = [store.value for store in stores if system.get((store.semantic, store.semantic_index)) == "position"]
+    drawn = _drawn_values(ir_kind, ir, contract, flow, graph, named, position)
     reach = {}
     free = [store for store in stores if system.get((store.semantic, store.semantic_index), "undefined") == "undefined"]
-    for store, reached in zip(free, graph.reaches([(store.value,) for store in free], tuple(named))):
+    for store, reached in zip(free, graph.reaches([(drawn.get(store.value, store.value),) for store in free],
+                                                  tuple(named))):
+        value = drawn.get(store.value, store.value)
         sources = {named[index] for index in reached}
         attributes = sorted({source[1] for source in sources if source[0] == "attribute"})
         data = tuple(sorted({source[1] for source in sources if source[0] == "data"}))
-        copy = named.get(store.value) if named.get(store.value, ("",))[0] == "attribute" else None
-        reach[(store.semantic, store.semantic_index, store.lane)] = (store.value, tuple(attributes), data, copy)
+        copy = named.get(value) if named.get(value, ("",))[0] == "attribute" else None
+        reach[(store.semantic, store.semantic_index, store.lane)] = (value, tuple(attributes), data, copy)
     lanes: dict[str, list] = {}
     labels: dict[str, str] = {}
     copies: dict[str, dict[int, tuple]] = {}
@@ -215,7 +309,9 @@ def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict
                          tuple(index for index, source in named.items() if source[0] == "attribute"))
     if values is None:
         return result, None
-    sources = {named[index] for index in graph.reaches([values], tuple(named))[0]}
+    # Projection inputs that are stored joins are read, like the stores, as what they hold where the pass draws.
+    projected = tuple(drawn.get(value, value) for value in values)
+    sources = {named[index] for index in graph.reaches([projected], tuple(named))[0]}
     space = tuple(sorted({source[1] for source in sources if source[0] == "data"}))
     # Attributes that place the position place everything computed like it.
     placed = [set(reach[item][1]) for where in groups.values() for item in where
@@ -223,14 +319,23 @@ def _vertex_analysis(ir_kind: str, ir, contract, flow: NativeFlow) -> tuple[dict
     placing = {source[1] for source in sources if source[0] == "attribute"}
     if len({frozenset(item) for item in placed}) > 1:
         placing &= set.intersection(*placed)
-    held = next((key for key, where in groups.items() if {reach[item][0] for item in where} == set(values)
-                 and len(where) == len(values)), None)
-    if held is not None:
-        order = {value: index for index, value in enumerate(values)}
-        result["position"] = (tuple(sorted(groups[held], key=lambda item: order[reach[item][0]])),
-                              translate("SurfaceData", "Position the pass projects"), False)
-        if held.startswith("derived:"):
+    order = {value: index for index, value in enumerate(projected)}
+    # The lanes holding the projection inputs: a group of exactly those, else the first lane holding each (meshlet
+    # passes fetch every attribute alike, so one group holds the position among other lanes).
+    held = next((key for key, where in groups.items() if {reach[item][0] for item in where} == set(projected)
+                 and len(where) == len(projected)), None)
+    holding = (sorted(groups[held], key=lambda item: order[reach[item][0]]) if held is not None else
+               [next((item for item in sorted(reach) if reach[item][0] == value), None) for value in projected])
+    if None not in holding:
+        result["position"] = (tuple(holding), translate("SurfaceData", "Position the pass projects"), False)
+        if held is not None and held.startswith("derived:"):
             del result[held]
+        for key in [key for key, where in groups.items() if held is None and set(where) & set(holding)]:
+            groups[key] = [item for item in groups[key] if item not in holding]
+            if groups[key]:
+                result[key] = (tuple(groups[key]), *result[key][1:])
+            else:
+                del groups[key], result[key]
     for key, where in groups.items():
         attributes = {tuple(sorted(set(reach[item][1]) - placing)) for item in where}
         if (key != held and len(attributes) == 1 and len(next(iter(attributes))) == 1
@@ -536,6 +641,21 @@ def graph_reads_surface_data(graph) -> bool:
     return per_build("graph_reads_surface_data", id(graph), lambda: any(surface_data_keys(node) for node in graph.nodes))
 
 
+def generated_data(nodes, data) -> tuple[SurfaceDatum, ...]:
+    wanted = {key for node in nodes for key, _value_type in surface_data_keys(node)} - {datum.key for datum in data}
+    return tuple(SurfaceDatum(key, name, "uint", ((name, 0, 0),))
+                 for key, (name, _value) in GENERATED_VALUES.items() if key in wanted)
+
+
+def add_generated_values(contract, data):
+    lacking = [GENERATED_VALUES[datum.key] for datum in data
+               if datum.key in GENERATED_VALUES and contract.input(datum.lanes[0][0], 0) is None]
+    first = 1 + max((int(item.register) for item in contract.inputs if item.register != 0xFFFFFFFF), default=-1)
+    return replace(contract, inputs=(*contract.inputs, *(
+        ShaderSignatureField(name, 0, first + index, "uint32", 1, 1, value)
+        for index, (name, value) in enumerate(lacking)))) if lacking else contract
+
+
 def surface_data_available(semantics, keys) -> bool:
     present = {(datum.key, datum.value_type) for datum in semantics.surface_data}
     return all(key in present or semantics.shader_role == "pixel" and carried_value(semantics, *key) is not None
@@ -549,7 +669,7 @@ def surface_data_value(semantics, contract, properties) -> str:
     datum = next((item for item in semantics.surface_data if item.key == key), None)
     if datum is None and contract.stage == "vertex":
         raise ShaderGraphError(f"{properties.get('label', key)} is not an input of the vertex shader of "
-                               f"{semantics.name}. Use Where Available or Drawing For for passes without it.")
+                               f"{semantics.name}. Use Where Available for passes without it.")
     if datum is None:
         carried = carried_value(semantics, key, str(properties.get("value_type", "")))
         if carried is not None:
@@ -559,7 +679,7 @@ def surface_data_value(semantics, contract, properties) -> str:
                                    "texture coordinates of its own. Connect a UV set from Surface Data, or use Where "
                                    "Available.")
         raise ShaderGraphError(f"{properties.get('label', key)} is not handed to the pixel shader of "
-                               f"{semantics.name}. Use Where Available or Drawing For for passes without it.")
+                               f"{semantics.name}. Use Where Available for passes without it.")
     if datum.value_type != properties.get("value_type"):
         raise ShaderGraphError(f"{datum.label} is {datum.value_type} in {semantics.name}, "
                                f"not {properties.get('value_type')}.")

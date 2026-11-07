@@ -6,12 +6,16 @@
   "AppendPropertyType": "via.motion.MotionAppendData.PropertyType",
   "AppendPrimitiveType": "via.motion.MotionAppendData.PrimitiveClassType",
   "JointPoseFlags": "via.motion.JointPoseData.EnableFlags",
+  "JointPoseRotation": "via.motion.JointPoseData.RotationDataType",
+  "JointPoseCalc": "via.motion.JointPoseData.RotationCalcMode",
   "ElementFlags": "via.motion.MotionListElementData.Flags",
   "DataType": "via.motion.MotionDataType",
   "JointMaskMode": "via.motion.JointMaskIDMode",
+  "BlendMode": "via.motion.BlendMode",
   "TreeParamType": "via.motion.tree.ParamType",
   "TreeLinkType": "via.motion.tree.LinkType",
-  "TreeNodeType": "via.motion.tree.NodeType"
+  "TreeNodeType": "via.motion.tree.NodeType",
+  "JointAttr": "via.motion.JointInfoRef.AttrFlags"
  },
  "mot": {
   "65": {"layout": "mot65", "keys": "mot65", "games": ["DMC5", "RE2"]},
@@ -40,5 +44,20 @@
   "1036": {"layout": "list1036", "mot": 973},
   "1047": {"layout": "list1036", "mot": 983},
   "1057": {"layout": "list1036", "mot": 993}
+ },
+ "motpack": {
+  "1001": {"mot": 973},
+  "1012": {"mot": 983},
+  "1022": {"mot": 993}
+ },
+ "jmap": {
+  "10": {"extras": 48, "type": 60, "extra": "extra32"},
+  "11": {"extras": 48, "type": 60, "extra": "extra32"},
+  "17": {"groups": 16, "count": 60, "extras": 32, "type": 56, "extra": "extra32"},
+  "19": {"groups": 16, "count": 68, "extras": 32, "type": 64, "extra": "extra40", "mirror": 48, "mirror_record": 2},
+  "26": {"groups": 16, "count": 92, "extras": 32, "type": 88, "extra": "extra40", "properties": 40,
+         "property": "property24", "mirror": 56, "mirror_record": 3},
+  "28": {"groups": 16, "count": 116, "extras": 32, "type": 112, "extra": "extra40", "mirror": 56, "mirror_record": 3},
+  "29": {"groups": 16, "count": 116, "extras": 32, "type": 112, "extra": "extra40", "mirror": 56, "mirror_record": 3}
  }
 }

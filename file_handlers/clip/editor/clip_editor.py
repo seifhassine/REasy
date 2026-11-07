@@ -31,7 +31,7 @@ from .. import edits
 from ..document import ClipDocument
 from ..model import Clip, Key, Node, Property, SequenceTrackInfo, SpeedPoint, Timeline, Track
 from ..rules import display_names, property_type
-from .curves import CurveView
+from .curves import ClipCurves
 from .inspector import Inspector
 from .lanes import LaneView
 from .outline import OutlineModel
@@ -145,7 +145,7 @@ class ClipEditor(QWidget):
         self.lanes.add_key_requested.connect(lambda prop, frame: self.state.select([edits.add_key(self.document,
                                                                                                     prop, frame)]))
         self.lanes.context_requested.connect(self._lane_menu)
-        self.curves = CurveView(self.state)
+        self.curves = ClipCurves(self.state)
         self.views = QStackedWidget()
         self.views.addWidget(self.lanes)
         self.views.addWidget(self.curves)
@@ -394,7 +394,7 @@ class ClipEditor(QWidget):
 
     def _fit(self) -> None:
         self.lanes.fit()
-        self.curves.fit_values()
+        self.curves.fit()
 
     def _copy_keys(self) -> None:
         keys = [key for key in self.state.keys() if isinstance(key, Key)]

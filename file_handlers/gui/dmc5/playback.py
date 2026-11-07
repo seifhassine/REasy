@@ -1,5 +1,3 @@
-"""Runtime-only evaluation of GUI compact clips for the live preview."""
-
 from __future__ import annotations
 
 import copy
@@ -7,38 +5,19 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 
-lazy from file_handlers.clip.evaluation import (
-    NUMERIC_TYPES,
-    bezier_value,
-    convert_number,
-    hermite_parameter,
-    hermite_value,
-    interpolation_input,
-    linear_value,
-    ordered_equal,
-    surrounding_keys,
-)
-from file_handlers.clip.rules import PropertyType
-lazy from file_handlers.motion.mot_clip.model import (
-    ClipInterpolation,
-    ClipKey,
-    ClipProperty,
-    HermiteCurve,
-)
+lazy from file_handlers.clip.evaluation import sample
+lazy from file_handlers.clip.model import Key, Property, walk_nodes
+from file_handlers.clip.rules import InterpolationType, PropertyType
 
-lazy from ..errors import GuiSceneError
 lazy from ..model import (
     COMPONENT_NAMES,
     GuiAnimation,
     GuiSymbol,
     apply_property,
-    iter_clip_nodes,
     resolve_properties,
 )
 lazy from file_handlers.native_math import f32 as _f32
 lazy from file_handlers.native_math import fadd as _fadd
-lazy from file_handlers.native_math import fdiv as _fdiv
-lazy from file_handlers.native_math import fsub as _fsub
 lazy from ..scene import GuiSceneNode
 lazy from .scene import Dmc5GuiScene
 
@@ -47,6 +26,7 @@ _CONTROL_FIELDS = {
     "Play", "PlayFrame", "PlayState", "Segment", "StatePattern",
     "NextStateEnable",
 }
+_EVENTS = (InterpolationType.EVENT, InterpolationType.PASS_EVENT)
 DMC5_SEGMENT_VALUES = {
     "Keep": -1,
     **{f"Segment{index:02d}": index for index in range(61)},
@@ -54,8 +34,6 @@ DMC5_SEGMENT_VALUES = {
 
 
 def dmc5_control_defaults(node: GuiSceneNode) -> dict[str, object]:
-    """Return the exact constructor/loader state for an animated Control."""
-
     symbol = node.prototype.symbol if node.prototype is not None else None
     if symbol is None or not symbol.animations:
         return {}
@@ -77,7 +55,7 @@ class GuiActionEvent:
     path: str
     field_name: str
     frame: float
-    interpolation: ClipInterpolation
+    interpolation: int
     value: object
 
 
@@ -133,13 +111,9 @@ class _Controller:
 
 
 class Dmc5GuiPlayback:
-    """History-sensitive preview state, kept separate from editable GUI data.
-
-    A symbol clip targets its instantiated Control and direct children.  Setter
-    assignments are consumed in serialized order, including setters that start
-    or scrub a nested Control.  The resulting dictionary is only a runtime
-    overlay; neither scene properties nor serialized animation data are changed.
-    """
+    """A runtime overlay: scene properties and serialized animation data stay unchanged. A symbol clip targets its
+    instantiated Control and direct children; setters, including those starting or scrubbing a nested Control, run in
+    serialized order."""
 
     def __init__(self, scene: Dmc5GuiScene) -> None:
         self.scene = scene
@@ -345,8 +319,6 @@ class Dmc5GuiPlayback:
         self._run_mutation(restart)
 
     def reset_runtime(self) -> None:
-        """Recreate native loader state without retaining editor playback state."""
-
         self.controllers.clear()
         self.rebuild()
 
@@ -354,8 +326,6 @@ class Dmc5GuiPlayback:
         self,
         values_by_path: dict[str, dict[str, object]],
     ) -> int:
-        """Restore one coherent Control snapshot and its evaluated properties."""
-
         captured = {
             str(path): dict(values)
             for path, values in values_by_path.items()
@@ -679,18 +649,18 @@ class Dmc5GuiPlayback:
     def _targeted_tracks(
         controller: _Controller,
         animation: GuiAnimation,
-    ) -> tuple[tuple[GuiSceneNode, ClipProperty], ...]:
+    ) -> tuple[tuple[GuiSceneNode, Property], ...]:
         candidates = (controller.node, *controller.node.children)
         by_guid: dict[bytes, list[GuiSceneNode]] = {}
         by_name: dict[str, list[GuiSceneNode]] = {}
         for item in candidates:
             by_guid.setdefault(item.object.instance_guid.bytes_le, []).append(item)
             by_name.setdefault(item.object.name, []).append(item)
-        result: list[tuple[GuiSceneNode, ClipProperty]] = []
-        for clip_node in iter_clip_nodes(animation.clip.root):
+        result: list[tuple[GuiSceneNode, Property]] = []
+        for clip_node in walk_nodes(animation.clip.roots):
             targets = (
-                by_guid.get(clip_node.root_guid)
-                or by_guid.get(clip_node.extra_guid)
+                by_guid.get(clip_node.node_id)
+                or by_guid.get(clip_node.guid)
                 or by_name.get(clip_node.name)
                 or ()
             )
@@ -704,16 +674,16 @@ class Dmc5GuiPlayback:
     def _track_value(
         self,
         target: GuiSceneNode,
-        track: ClipProperty,
+        track: Property,
         frame: float,
     ) -> tuple[str, object] | None:
         if not track.children:
             value = _sample(track, frame)
             return (track.name, value) if value is not None else None
 
-        labels = COMPONENT_NAMES.get(track.property_type, ())
+        labels = COMPONENT_NAMES.get(track.type, ())
         aliases = {name.casefold(): index for index, name in enumerate(labels)}
-        if track.property_type == PropertyType.SIZE:
+        if track.type == PropertyType.SIZE:
             aliases.update({"w": 0, "h": 1})
         current = self.overrides.get(target.path, {}).get(
             track.name, target.properties.get(track.name)
@@ -862,66 +832,32 @@ class Dmc5GuiPlayback:
 
 
 def _action_events(
-    track: ClipProperty,
+    track: Property,
     previous_frame: float,
     current_frame: float,
-) -> list[ClipKey]:
+) -> list[Key]:
     keys = track.keys
-    if (
-        track.property_type != PropertyType.ENUM
-        or not keys
-        or any(
-            key.interpolation not in (
-                ClipInterpolation.EVENT,
-                ClipInterpolation.PASS_EVENT,
-            )
-            for key in keys
-        )
-    ):
+    if track.type != PropertyType.ENUM or not keys or any(key.interpolation not in _EVENTS for key in keys):
         return []
     previous = _f32(previous_frame)
     current = _f32(current_frame)
     if math.isnan(previous) or math.isnan(current) or current < previous:
         return []
     mode = keys[0].interpolation
-    if mode == ClipInterpolation.PASS_EVENT and previous == current:
+    if mode == InterpolationType.PASS_EVENT and previous == current:
         return []
     result = []
     for key in keys:
         frame = _f32(key.frame)
         if math.isnan(frame):
             continue
-        if mode == ClipInterpolation.EVENT:
+        if mode == InterpolationType.EVENT:
             crossed = frame == current if previous == current else previous < frame <= current
         else:
             crossed = previous <= frame < current
         if crossed:
             result.append(key)
     return result
-
-
-def _native_hermite_value(
-    kind: PropertyType,
-    start: ClipKey,
-    end: ClipKey,
-    frame: float,
-) -> float:
-    curve = start.curve
-    if not isinstance(curve, HermiteCurve):
-        raise GuiSceneError("Hermite animation key has no Hermite curve")
-    out_x, out_y, in_x, in_y = curve.values
-    parameter = hermite_parameter(start.frame, end.frame, frame, out_x, in_x)
-    return hermite_value(kind, start.value, end.value, parameter, out_y, in_y)
-
-
-def _native_bezier_value(start: ClipKey, end: ClipKey, frame: float) -> float:
-    curve = start.curve
-    if not isinstance(curve, HermiteCurve):
-        raise GuiSceneError("Bezier animation key has no Hermite curve")
-    _out_x, out_y, _in_x, in_y = curve.values
-    span = _fsub(end.frame, start.frame)
-    parameter = _fdiv(_fsub(frame, start.frame), span) if span else 0.0
-    return bezier_value(start.value, end.value, parameter, out_y, in_y)
 
 
 def _ucomiss_equal(left: float, right: float) -> bool:
@@ -970,51 +906,11 @@ def _play_frame_transition(
     return play_frame, completed, tuple(intervals)
 
 
-def _sample(track: ClipProperty, frame: float) -> object | None:
-    keys = track.keys
-    if not keys:
-        return None
-    if track.property_type == PropertyType.ENUM and all(
-        key.interpolation in (ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT)
-        for key in keys
-    ):
+def _sample(track: Property, frame: float) -> object | None:
+    if track.type == PropertyType.ENUM and track.keys and all(key.interpolation in _EVENTS for key in track.keys):
         # These are setter events (Effect.Action in the DMC5 corpus), not a
         # continuously assigned reflected property.
         return None
-    frame = _f32(frame)
-    left, right = surrounding_keys(keys, frame)
-    if left is None:
-        return copy.deepcopy(right.value) if right is not None else None
-    if right is None or left is right or ordered_equal(frame, left.frame):
-        return copy.deepcopy(left.value)
-    if left.interpolation == ClipInterpolation.DISCRETE:
-        return copy.deepcopy(left.value)
-    if left.interpolation in (ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT):
-        return None
-    if track.property_type == PropertyType.BOOL or track.property_type not in NUMERIC_TYPES:
-        if left.interpolation == ClipInterpolation.LINEAR:
-            return copy.deepcopy(left.value)
-        raise GuiSceneError(
-            f"animation mode {left.interpolation.name} is unsupported for "
-            f"{track.property_type.name}"
-        )
-    if not isinstance(left.value, (int, float)) or not isinstance(right.value, (int, float)):
-        raise GuiSceneError(f"numeric track {track.name!r} contains a nonnumeric key")
-
-    if left.interpolation == ClipInterpolation.OFFSET_FRAME:
-        value = _fadd(interpolation_input(track.property_type, left.value), _fsub(frame, left.frame))
-    elif left.interpolation == ClipInterpolation.HERMITE:
-        value = _native_hermite_value(track.property_type, left, right, frame)
-    elif left.interpolation == ClipInterpolation.BEZIER:
-        if track.property_type not in (PropertyType.F32, PropertyType.F64):
-            raise GuiSceneError("Bezier animation is native-supported only for F32/F64 tracks")
-        value = _native_bezier_value(left, right, frame)
-    elif left.interpolation == ClipInterpolation.LINEAR:
-        span = _fsub(right.frame, left.frame)
-        ratio = _fdiv(_fsub(frame, left.frame), span) if span else 0.0
-        value = linear_value(track.property_type, left.value, right.value, ratio)
-    else:
-        raise GuiSceneError(f"unsupported animation evaluation mode {left.interpolation.name}")
-    return convert_number(track.property_type, value)
+    return sample(track, frame)
 
 

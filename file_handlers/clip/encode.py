@@ -76,7 +76,8 @@ class _Encoder:
         placement, position = {}, rules.header_size
         curve = self.timeline.kind is ResourceKind.USER_CURVE
         for section in rules.sections:
-            if section.user_curve and not curve and not self.timeline.sequences:
+            if (section.user_curve and not curve and not self.timeline.sequences
+                    or section.extra and self.timeline.intervals is None):
                 continue
             position = _align(position, section.align)
             placement[section.table] = position

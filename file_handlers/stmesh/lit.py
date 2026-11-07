@@ -8,12 +8,12 @@ from dataclasses import dataclass
 lazy import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
-lazy from file_handlers.mmtr.engine_buffers import EngineConstant, InstanceInput
+lazy from file_handlers.mmtr.engine_buffers import EngineConstant, InstanceInput, TransitionBuffer, TransitionInput
 from file_handlers.mmtr.material_preview import MaterialPreviewError
 lazy from file_handlers.mmtr.meshlets import EXTENDED, Cluster, MeshletBuffer, MeshletPrograms
 lazy from file_handlers.mmtr.pass_choice import PassChoiceError
 from file_handlers.mmtr.mesh_draw import MeshBuffer, SubmeshRange
-lazy from file_handlers.mmtr.speedtree_catalog import FoliageBuffers, SpeedTreeCatalog
+lazy from file_handlers.mmtr.speedtree_catalog import SpeedTreeCatalog, SpeedTreeLod, SpeedTreePlacement
 lazy from file_handlers.mmtr.speedtree_programs import (
     speedtree_cluster_route, speedtree_meshlet_programs, speedtree_placement,
 )
@@ -75,12 +75,49 @@ def drawn_chunks(handler, lod: int, submesh, material_flags: int, catalog: Speed
     return buffer, found, programs
 
 
-def billboard_threshold(mesh: StmeshFile, foliage: FoliageBuffers | None) -> float:
+@dataclass(frozen=True, slots=True)
+class SpeedTreeLevels:
+    bounds: tuple[tuple[float, float, float], tuple[float, float, float]]
+    squares: tuple[float, float, float, float]
+    solid: int
+    billboard: bool
+    rule: SpeedTreeLod
+
+
+def speedtree_levels(mesh: StmeshFile, rule: SpeedTreeLod) -> SpeedTreeLevels:
+    profile = mesh.lod_profile
+    squares = tuple(float(np.float32(value) * np.float32(value)) for value in (
+        profile.high_detail_3d_distance, profile.low_detail_3d_distance, profile.billboard_start_distance,
+        profile.billboard_final_distance))
+    billboard = mesh.billboards is not None
+    return SpeedTreeLevels(mesh.bounds, squares, mesh.lod_count - billboard, billboard, rule)
+
+
+def speedtree_picks(squared: np.ndarray, squares: np.ndarray, solid: np.ndarray, billboard: np.ndarray,
+                    bias: np.ndarray, nudge: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    f = np.float32
+    d2 = squared.astype(f)
+    near, far, start, final = (squares[:, column].astype(f) for column in range(4))
+    with np.errstate(divide="ignore", invalid="ignore"):
+        t = np.select([d2 < near, d2 < far, d2 < start, d2 < final],
+                      [f(1.0), f(1.0) - (d2 - near) / (far - near), f(0.0), -(d2 - start) / (final - start)], f(-1.0))
+        n = solid.astype(f)
+        step = f(1.0) / n
+        sign = (bias < 0).astype(f) - (bias > 0).astype(f)
+        offset = step * bias.astype(f) + np.where(bias != 0, sign * nudge.astype(f), f(0.0))
+        t = np.clip(np.where((t < 0) & (offset < 0), f(-0.0), t) - offset, f(-1.0), f(1.0))
+        part = np.fmod(np.maximum(f(0.0), t), step)
+        transition = np.where(t > 0, np.where(part == 0, f(1.0), part / step), f(0.0)).astype(f)
+    picked = np.where(t <= 0, solid - 1, np.where(t >= 1, 0, np.minimum(((f(1.0) - t) * n).astype(np.int64),
+                                                                         solid - 1)))
+    return np.where((t < 0) & billboard, solid, picked).astype(np.int64), transition
+
+
+def billboard_threshold(mesh: StmeshFile, placement: SpeedTreePlacement | None) -> float:
     """The billboard cross-fade cosine."""
     views = mesh.billboard_side_view_count
     kind = BillboardFaceCrossFadeThreshold(mesh.billboard_cross_fade).name
-    billboards = None if foliage is None else foliage.billboards
-    found = None if billboards is None else billboards.cross_fade.get(kind, {}).get(views)
+    found = None if placement is None else placement.billboard_cross_fade.get(kind, {}).get(views)
     if found is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "No capture shows how the renderer fades the billboards of a SpeedTree mesh with a "
@@ -103,19 +140,29 @@ def engine_buffers(mesh: StmeshFile, catalog: SpeedTreeCatalog | None,
     if drawn.meshlets is not None:
         return {**drawn.meshlets.instance, EXTENDED: drawn.meshlets.extended}
     if drawn.foliage is None:
+        try:
+            cosine = None if mesh.billboards is None else billboard_threshold(mesh, drawn)
+        except MaterialPreviewError:
+            cosine = None
         buffers: dict[str, bytes | EngineConstant] = {
-            item.name: EngineConstant(item.fields, item.world, item.previous_world) for item in drawn.constants}
+            item.name: EngineConstant({**item.fields, **{name: (getattr(mesh.lod_profile, value),)
+                                                         for name, value in item.profile.items()},
+                                       **({} if item.billboard_cosine is None or cosine is None
+                                          else {item.billboard_cosine: (cosine,)})},
+                                      item.world, item.previous_world) for item in drawn.constants}
         if drawn.wind_state is not None:
             name, states = drawn.wind_state
             buffers[name] = rest_state(mesh.wind) * states
-        buffers.update({name: InstanceInput(data) for name, data in drawn.instance_inputs.items()})
+        buffers.update({name: (TransitionInput if name == drawn.lod_transition_input else InstanceInput)(data)
+                        for name, data in drawn.instance_inputs.items()})
         if drawn.pivots is not None:
             buffers[drawn.pivots] = _pivots(mesh)
         return buffers
     foliage = drawn.foliage
     names = foliage.buffers
     buffers = {names.wind_state: rest_state(mesh.wind) * names.wind_states,
-               names.lod_transition: names.lod_transition_shown}
+               names.lod_transition: TransitionBuffer(names.lod_transition_shown) if names.lod_transition_float
+               else names.lod_transition_shown}
     if names.density_cull is not None:
         buffers[names.density_cull] = names.density_cull_shown
     if drawn.pivots is not None:
@@ -124,7 +171,7 @@ def engine_buffers(mesh: StmeshFile, catalog: SpeedTreeCatalog | None,
     if mesh.billboards is None or billboards is None:
         return buffers
     try:
-        threshold = billboard_threshold(mesh, foliage)
+        threshold = billboard_threshold(mesh, drawn)
     except MaterialPreviewError:
         return buffers
     fade = int(np.array(threshold, np.float16).view(np.uint16)) | billboards.cross_fading_flag
@@ -145,9 +192,10 @@ def drawn_cluster(handler, lod: int, submesh, material_flags: int, catalog: Spee
     draw = handler.cluster_draw(lod, submesh)
     route = cluster_route(handler, lod, submesh, material_flags, catalog, placement)
     if draw.batch == BatchType.BILLBOARDS:
-        billboard_threshold(handler.stmesh, speedtree_placement(catalog, placement).foliage)
+        billboard_threshold(handler.stmesh, speedtree_placement(catalog, placement))
     return draw, route
 
 
-__all__ = ["StmeshDraw", "billboard_lod", "billboard_threshold", "cluster_route", "drawn_chunks", "drawn_cluster",
-           "engine_buffers", "meshlet_buffer", "stmesh_draws"]
+__all__ = ["SpeedTreeLevels", "StmeshDraw", "billboard_lod", "billboard_threshold", "cluster_route", "drawn_chunks",
+           "drawn_cluster", "engine_buffers", "meshlet_buffer", "speedtree_levels", "speedtree_picks",
+           "stmesh_draws"]

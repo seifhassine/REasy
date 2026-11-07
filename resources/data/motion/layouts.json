@@ -305,7 +305,7 @@
     ]},
     "reference": {"size": 4, "fields": [{"at": 0, "type": "u32", "const": 1, "what": "reference type"}]}
    },
-   "rules": {"override_base": "file"}
+   "rules": {"override_base": "file", "source_key": "ignored", "reverse": false, "row_sequences": "replace"}
   },
   "list528": {
    "extends": "list85",
@@ -348,7 +348,8 @@
     [40, "u64", "base_list"],
     [48, "u32", "count"],
     [52, "u8", "joint_mask_mode"]
-   ]}
+   ]},
+   "rules": {"reverse": true, "row_sequences": "mask"}
   },
   "list1036": {
    "extends": "list528",
@@ -366,7 +367,7 @@
     [60, "u8", "motion_pack_count"],
     [61, "u8", "first_update"]
    ]},
-   "rules": {"override_base": "sequence"}
+   "rules": {"override_base": "sequence", "source_key": "bank", "reverse": true, "row_sequences": "mask"}
   },
   "list486": {
    "extends": "list85",
@@ -385,7 +386,7 @@
   },
   "list992": {
    "extends": "list653",
-   "rules": {"override_base": "sequence"}
+   "rules": {"override_base": "sequence", "source_key": "base"}
   }
  },
  "tree": {
@@ -525,6 +526,127 @@
    "rules": {"class_names": "inline", "remaps": "groups"}
   }
  },
+ "jmap": {"group": {"size": 32, "fields": [
+  [0, "u64", "hashes"],
+  [8, "u64", "masks"],
+  [16, "u64", "weights"],
+  [24, "u32", "id"],
+  [28, "u16", "count"]
+ ]},
+  "extra32": {"size": 32, "fields": [
+   [0, "u64", "parent name"],
+   [8, "u64", "name"],
+   [16, "u32", "parent hash"],
+   [20, "u32", "hash"],
+   [24, "u32", "reserved"],
+   [28, "u32", "extra_type"]
+  ]},
+  "extra40": {"size": 40, "fields": [
+   [0, "u64", "parent name"],
+   [8, "u64", "name"],
+   [16, "u32", "parent hash"],
+   [20, "u32", "hash"],
+   [24, "u64", "reserved"],
+   [32, "u32", "extra_type"],
+   [36, "u32", "reserved_b"]
+  ]},
+  "property24": {"size": 24, "fields": [
+   [0, "u64", "name"],
+   [8, "u32", "hash"],
+   [12, "u32", "parent hash"],
+   [16, "u32", "reserved"],
+   [20, "u16", "reserved_b"],
+   [22, "u16", "flags"]
+  ]}},
+ "motpack": {"header": {"size": 48, "fields": [
+  [0, "u32", "version"],
+  {"at": 4, "type": "u32", "const": 1801678957, "what": "magic"},
+  [16, "u64", "motions"],
+  [24, "u64", "ids"],
+  [32, "u32", "count"]
+ ]}},
+ "tree_param_names": {
+  "2166698608": "Always",
+  "3620651061": "Asset",
+  "1557423995": "BankID",
+  "640354462": "BankSelectMode",
+  "3772383378": "BaseNo",
+  "4039545002": "BlendMode",
+  "2370884634": "BlendRate",
+  "4114796164": "BlendType",
+  "1684015762": "CenterBlendRate",
+  "102621889": "CenterName",
+  "1311223130": "ChestBlendRate",
+  "2266762061": "ChestName",
+  "459737511": "CircledBlend",
+  "798910796": "ClampMode",
+  "743296119": "DirectID",
+  "3635188307": "Flag",
+  "2157531142": "InMax",
+  "2609214554": "InMin",
+  "2714732966": "InterpolationFrame",
+  "2204709593": "JointMaskID",
+  "2422279243": "LeftFootName",
+  "2673430856": "MotionID",
+  "762855704": "No",
+  "119573349": "No00_BankID",
+  "3714534649": "No00_MotionID",
+  "832246504": "No00_Parameter",
+  "43879613": "No01_BankID",
+  "3064692809": "No01_MotionID",
+  "2194932303": "No01_Parameter",
+  "2106658217": "No02_BankID",
+  "997690459": "No02_MotionID",
+  "597458614": "No02_Parameter",
+  "1247431348": "No03_BankID",
+  "2952910012": "No03_MotionID",
+  "215093529": "No03_Parameter",
+  "3644911457": "No04_BankID",
+  "3401255985": "No04_MotionID",
+  "569416378": "No04_Parameter",
+  "2405258189": "No05_BankID",
+  "452812079": "No05_MotionID",
+  "2783989818": "No05_Parameter",
+  "3708765824": "No06_BankID",
+  "1380573403": "No06_MotionID",
+  "4227443455": "No06_Parameter",
+  "2257339756": "No07_BankID",
+  "3608271588": "No07_MotionID",
+  "1804482016": "No07_Parameter",
+  "1442361408": "No08_BankID",
+  "631602840": "No08_MotionID",
+  "2517091292": "No08_Parameter",
+  "2758339974": "No09_BankID",
+  "491277133": "No09_MotionID",
+  "78898067": "No09_Parameter",
+  "1666226515": "No10_BankID",
+  "1678053737": "No10_MotionID",
+  "556922824": "No10_Parameter",
+  "389971553": "No11_BankID",
+  "2383168213": "No11_MotionID",
+  "3374882909": "No11_Parameter",
+  "1339797869": "No12_BankID",
+  "2232026136": "No12_MotionID",
+  "2118342836": "No12_Parameter",
+  "1222198503": "No13_BankID",
+  "1430378216": "No13_MotionID",
+  "2675596546": "No13_Parameter",
+  "1570391611": "No14_BankID",
+  "1286133883": "No14_MotionID",
+  "1921804637": "No14_Parameter",
+  "558116323": "No15_BankID",
+  "3748190535": "No15_MotionID",
+  "4078385509": "No15_Parameter",
+  "3248822590": "Operation",
+  "3667974927": "RightFootName",
+  "964257277": "RootTransPolarBlend",
+  "188750666": "RoundingMode",
+  "4102950055": "Speed",
+  "4103375258": "TargetFrame",
+  "1847845250": "ToolName",
+  "4253840158": "Value",
+  "506603": "WorldRotation"
+ },
  "tree_params": {
   "0": "u8",
   "5": "i32",
@@ -532,5 +654,63 @@
   "9": "f32",
   "12": "string16",
   "13": "blob"
+ },
+ "pose_blend": {"size": 40, "fields": [
+  [0, "u32", "mode"],
+  [4, "i32", "count"],
+  [8, "u32", "axis"],
+  [12, "f32", "coefficient"],
+  [16, "u32", "flags"],
+  [20, "i32", "limit"],
+  [24, "u32", "bank"],
+  [28, "u32", "motion"],
+  [32, "u64", "poses"]
+ ]},
+ "joint_pose": {
+  "data": {"size": 32, "fields": [
+   [0, "u64", "poses"],
+   [8, "u32", "joints"],
+   [12, "u32", "frames"],
+   [16, "u8", "rotation"],
+   [17, "u8", "calc"]
+  ]},
+  "pose": {"size": 16, "fields": [
+   [0, "u64", "frames"],
+   [8, "u32", "name_hash"]
+  ]},
+  "frame": {"size": 4, "fields": [
+   [0, "u32", "flags"]
+  ]},
+  "table": {"size": 36, "fields": [
+   [0, "u64", "hashes"],
+   [8, "u64", "flags"],
+   [16, "u64", "values"],
+   [24, "u16", "stride"],
+   [26, "u16", "joints"],
+   [28, "u16", "floats"],
+   [30, "u16", "translations"],
+   [32, "u16", "rotations"],
+   [34, "u16", "scales"]
+  ]},
+  "rotations": {"Quaternion": [4, 0, null], "ExponentialMap": [3, null, 0], "Switch": [7, 0, 4]},
+  "table_calcs": ["EulerAdd"]
+ },
+ "rotation_offset": {
+  "versions": {"19": "chain", "21": "rooted", "22": "rooted", "28": "rooted"},
+  "heads": {
+   "chain": {"size": 16, "fields": [
+    [0, "f32", "angle"],
+    [4, "f32", "ratio"],
+    [8, "u32", "joint"],
+    [12, "i32", "count"]
+   ]},
+   "rooted": {"size": 20, "fields": [
+    [0, "f32", "angle"],
+    [4, "f32", "ratio"],
+    [8, "u32", "joint"],
+    [12, "u32", "root"],
+    [16, "i32", "count"]
+   ]}
+  }
  }
 }

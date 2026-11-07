@@ -55,9 +55,10 @@ from .profiles.base import MmtrGameProfile, same_mmtr_profile
 lazy from .material_family import family_member_project, build_material_family
 lazy from .profiles.re_engine_dxil_recovery import compact_recovered_dxil_storage
 lazy from .profiles.re_engine_shader_graph import RE_ENGINE_RECOVERED_MASTER_KIND
+lazy from .profiles.material_graph_expression import PastInstanceCopy, recorded_fallbacks
 lazy from .profiles.renderer_inputs import (
     RendererResourceUnavailable, RendererValueUnavailable, engine_buffer_layout, engine_resource_layout, renderer_only,
-    free_register, engine_input_plan, graph_renderer_buffers, graph_renderer_resources,
+    free_register, engine_input_plan, graph_renderer_buffers, graph_renderer_resources, record_resources,
 )
 lazy from file_handlers.sdf.shader_graph_math import value_width
 lazy from utils.hex_util import align
@@ -1130,6 +1131,7 @@ class MmtrMaterialBuild:
     descriptor_layout: MaterialDescriptorLayout | None = None
     family_builds: tuple["MmtrMaterialBuild", ...] = ()
     pipeline_states: Mapping[str, Mapping] = field(default_factory=dict)
+    fallbacks: tuple[tuple[tuple[int, int, str], tuple[tuple[str, tuple[str, ...]], ...]], ...] = ()
 
 
 def material_parameter_abi(interface, layout: MaterialBufferLayout):
@@ -1283,9 +1285,16 @@ def apply_material_build(editor, document, build: MmtrMaterialBuild) -> None:
             mask = 1 << stage
             for kind,rows in {'shader_resource':resources,**other_resources}.items():
                 for row in rows.values():
-                    if row['stage_mask'] & mask and not any(matches_outer_resource(
-                        binding,kind,row['name'],row['bind_slots'][stage]) for binding in replacement.resource_bindings):
+                    if not row['stage_mask'] & mask:
+                        continue
+                    slot = row['bind_slots'][stage]
+                    kept = next((binding for binding in replacement.resource_bindings if matches_outer_resource(
+                        binding, kind, row['name'], int(binding.bind_point) if row['name'] else slot)), None)
+                    if kept is None:
                         row['stage_mask'] &= ~mask
+                    else:
+                        row['bind_slots'][stage] = int(kept.bind_point)
+                    if kept is None or int(kept.bind_point) != slot:
                         changed_tables.add(kind)
         stage_mask = sum(1 << STAGE_KEYS.index(item.stage) for item in replacements)
         removed = set()
@@ -1373,7 +1382,8 @@ def apply_material_build(editor, document, build: MmtrMaterialBuild) -> None:
                     changed_tables.add(binding.table)
         for key, row in buffers.items():
             if key == build.buffer_layout.name:
-                original_buffer = next((b for b in program.constant_buffers if b.name == key), None)
+                original_buffer = next((b for item in (program, *document.sdf.targets[target_index].programs)
+                                        for b in item.constant_buffers if b.name == key), None)
                 row.update(
                     byte_size=int(build.buffer_layout.byte_size),
                     variables=(_material_buffer_metadata_variables(original_buffer, build.buffer_layout)
@@ -1420,10 +1430,15 @@ class MaterialAuthoringCoverage:
     rebuildable_keys: tuple[tuple[int, int, str], ...]
     family_rows: tuple[tuple[str, int, int, int], ...]
     member_coverages: tuple["MaterialAuthoringCoverage", ...] = ()
+    stale_passes: tuple[tuple[tuple[int, int, str], tuple[str, ...]], ...] = ()
 
     @property
     def material_consumer_records(self) -> int:
         return len(self.material_consumer_keys)
+
+    @property
+    def stale_records(self) -> int:
+        return len(self.stale_passes) + sum(member.stale_records for member in self.member_coverages)
 
     @property
     def rebuildable_records(self) -> int:
@@ -1477,16 +1492,25 @@ def material_authoring_coverage(document, project=None) -> MaterialAuthoringCove
     family_totals: dict[str, int] = {}
     family_consumers: dict[str, int] = {}
     family_rebuildable: dict[str, int] = {}
+    storage = {*profile.material_instance_resource_names, profile.instanced_material_buffer} - {""}
+    unrebuilt = set(profile.unrebuilt_material_resources) - storage
+    stale: list[tuple[tuple[int, int, str], tuple[str, ...]]] = []
     for target in document.sdf.targets:
         for program in target.programs:
             key = (int(target.index), int(program.program_index))
             family = str(semantics_by_key[key].descriptor.family)
             family_totals[family] = family_totals.get(family, 0) + 1
             for shader in program.shaders:
-                if not shader.present or shader.role not in profile.authoring_roles:
+                if not shader.present:
                     continue
                 stage_bit = 1 << STAGE_KEYS.index(shader.role)
                 route = (*key, shader.role)
+                if shader.role not in profile.authoring_roles:
+                    reads = _stale_reads(program, stage_bit, user_buffers, unrebuilt | material_instance_resources,
+                                         material_textures)
+                    if reads:
+                        stale.append((route, reads))
+                    continue
                 outer_consumes_material = renderer or any(
                     item.name.casefold() in user_buffers and binding.stage_mask & stage_bit
                     for item, binding in zip(program.constant_buffers, program.bindings[0])
@@ -1511,8 +1535,13 @@ def material_authoring_coverage(document, project=None) -> MaterialAuthoringCove
                 if consumes_material:
                     consumers.add(route)
                     family_consumers[family] = family_consumers.get(family, 0) + 1
-                    if route in rebuildable:
-                        family_rebuildable[family] = family_rebuildable.get(family, 0) + 1
+                    if route not in rebuildable:
+                        continue
+                    family_rebuildable[family] = family_rebuildable.get(family, 0) + 1
+                # A pass, rebuilt or not, keeps what it reads through an input builds cannot rebuild.
+                reads = _stale_reads(program, stage_bit, set(), unrebuilt)
+                if reads:
+                    stale.append((route, reads))
     families = sorted(family_totals, key=lambda value: (value.replace("-", " ").casefold(), value))
     return MaterialAuthoringCoverage(
         total_program_records=len(document.programs),
@@ -1522,7 +1551,19 @@ def material_authoring_coverage(document, project=None) -> MaterialAuthoringCove
             (family, family_totals[family], family_consumers.get(family, 0), family_rebuildable.get(family, 0))
             for family in families
         ),
+        stale_passes=tuple(sorted(stale)),
     )
+
+
+def _stale_reads(program, stage_bit: int, buffers: set[str], resources: set[str],
+                 textures: set[str] = frozenset()) -> tuple[str, ...]:
+    reads = [item.name for item, binding in zip(program.constant_buffers, program.bindings[0])
+             if binding.stage_mask & stage_bit and item.name.casefold() in buffers]
+    for items, bindings in ((program.shader_resources, program.bindings[2]),
+                            (program.optional_resources, program.bindings[4] if len(program.bindings) > 4 else ())):
+        reads += [item.name for item, binding in zip(items, bindings)
+                  if binding.stage_mask & stage_bit and (item.name in resources or item.name.casefold() in textures)]
+    return tuple(reads)
 
 
 def _material_texture_name(definition) -> str:
@@ -1749,12 +1790,14 @@ def _augmented_contract(
     *,
     material_buffer: ShaderContractBuffer | None = None,
     augment_textures: bool = True,
+    instance_element: tuple[int, bool] | None = None,
 ) -> tuple[ShaderContract, MaterialBufferLayout]:
     from .material_region_read import per_build_of
     return per_build_of("augmented_contracts", (project, contract, profile, document),
-                        (stage, material_buffer, augment_textures),
+                        (stage, material_buffer, augment_textures, instance_element),
                         lambda: _augment_contract(project, contract, profile, document, stage,
-                                                  material_buffer=material_buffer, augment_textures=augment_textures))
+                                                  material_buffer=material_buffer, augment_textures=augment_textures,
+                                                  instance_element=instance_element))
 
 
 def _augment_contract(
@@ -1766,15 +1809,16 @@ def _augment_contract(
     *,
     material_buffer: ShaderContractBuffer | None = None,
     augment_textures: bool = True,
+    instance_element: tuple[int, bool] | None = None,
 ) -> tuple[ShaderContract, MaterialBufferLayout]:
     if augment_textures:
         contract = _augment_material_textures(project, contract, profile, document, stage)
     buffer_name = profile.user_buffer_name
     declared_buffer = contract.buffer(buffer_name)
     original = material_buffer or declared_buffer
-    instances = None
+    instances = (contract.resource(profile.instanced_material_buffer)
+                 if profile.instanced_material_buffer and declared_buffer is None else None)
     if original is None:
-        instances = contract.resource(profile.instanced_material_buffer) if profile.instanced_material_buffer else None
         if instances is None or instances.input_type != "structured-buffer" or instances.sample_count <= 0:
             return contract, MaterialBufferLayout("", 0, ())
         original = contract.structured_buffer(instances.name) or ShaderContractBuffer(
@@ -1804,15 +1848,22 @@ def _augment_contract(
         "parameter_placements", (project, profile, original), (tuple(target_names), declared_buffer is None),
         lambda: _place_parameters(project, profile, original, tuple(target_names), declared_buffer is None))
     if instances is not None:
+        # Mesh effects copy the whole material per drawn instance; primitive effects copy the size their file
+        # recorded, which the pass's shader addresses. The element holds no parameter placed past it.
+        native, fixed = instance_element or (int(instances.sample_count), False)
+        size = native if fixed else layout.byte_size
+        element = replace(replacement_buffer, name=instances.name, byte_size=size, bind_point=instances.bind_point,
+                          bind_count=instances.bind_count, register_space=instances.register_space, variables=tuple(
+            item for item in replacement_buffer.variables if item.byte_offset + item.byte_size <= size))
+        resources = contract.resources
+        if instances.input_type == "structured-buffer" and instances.sample_count != size:
+            resources = tuple(replace(item, sample_count=size) if item is instances else item for item in resources)
         adjusted = replace(
             contract,
-            resources=tuple(
-                replace(item, sample_count=replacement_buffer.byte_size) if item.name == instances.name else item
-                for item in contract.resources
-            ),
+            resources=resources,
             structured_buffers=tuple(
                 item for item in contract.structured_buffers if item.name != instances.name
-            ) + (replacement_buffer,),
+            ) + (element,),
         )
     else:
         adjusted = replace(
@@ -1996,6 +2047,7 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
     prepared: dict[str, _PreparedMaterialShader] = {}
     compiled_results: dict[str, object] = {}
     texture_layouts: dict[str, tuple[MaterialTextureSlot, ...]] = {}
+    fallbacks: dict[str, tuple] = {}
 
     engine_buffers, engine_resources = graph_renderer_buffers(project.graph), graph_renderer_resources(project.graph)
     batch, batched = profile.material_shader_batch(project), []
@@ -2051,17 +2103,21 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
             cache_key = f"{fingerprint}:{semantic_key or ''}:{plan!r}"
             cached = prepared.get(cache_key)
             if cached is None:
-                if authored is not None:
-                    # A body reads only its template's resources; added material textures would become new bindings.
-                    adjusted, candidate_layout = _augmented_contract(project, base_contract, profile, document,
-                                                                     shader_role, augment_textures=False)
-                    rebound = authored._bind_material_interface_for_compilation(base_contract, adjusted, project, profile)
-                    adjusted = rebound.contract
-                    generated = rebound.generate(adjusted, early_depth_stencil=execution.early_depth_stencil, source_profile=project.source_profile)
-                    recovered_product = (generated, adjusted, candidate_layout, semantic_key)
-                else:
-                    recovered_product = profile.generate_recovered_material_shader_source(
-                        project, document, base_contract, semantics)
+                with recorded_fallbacks() as notes:
+                    if authored is not None:
+                        # A body reads only its template's resources; added material textures would become new bindings.
+                        adjusted, candidate_layout = _augmented_contract(project, base_contract, profile, document,
+                                                                         shader_role, augment_textures=False)
+                        rebound = authored._bind_material_interface_for_compilation(base_contract, adjusted, project,
+                                                                                    profile)
+                        adjusted = rebound.contract
+                        generated = rebound.generate(adjusted, early_depth_stencil=execution.early_depth_stencil,
+                                                     source_profile=project.source_profile)
+                        recovered_product = (generated, adjusted, candidate_layout, semantic_key)
+                    else:
+                        recovered_product = profile.generate_recovered_material_shader_source(
+                            project, document, base_contract, semantics)
+                fallbacks[cache_key] = tuple(dict.fromkeys(notes))
                 recovered_semantic_key = (
                     str(recovered_product[3])
                     if recovered_product is not None and len(recovered_product) > 3
@@ -2070,6 +2126,11 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
                 if semantic_key != recovered_semantic_key:
                     raise ShaderGraphError("The material's compilation key disagrees with its semantic program.")
         except (ShaderGraphError, HlslCompileError) as exc:
+            if isinstance(exc, PastInstanceCopy):
+                raise MaterialBuildError(
+                    f"{exc.parameter} is not available in every rendering pass this graph drives.",
+                    technical_details=f"{pass_description(document, target_index, program_index, shader_role)}: {exc}",
+                ) from exc
             unavailable = _engine_input_unavailable(exc)
             if unavailable is not None:
                 from .profiles.renderer_inputs import (
@@ -2154,7 +2215,8 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
                 document,
                 semantics,
                 compiled_contract=candidate_contract,
-                required=authored is None,
+                required=authored is None and any(profile.material_texture_resource(item, adjusted)
+                                                  for item in project.textures),
             )
             used_texture_names = {
                 resource.name
@@ -2166,8 +2228,12 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
                 for item in candidate_texture_interface
                 if item.name in used_texture_names
             )
+            program = document.sdf.targets[target_index].programs[program_index]
+            rows = {item.name for item, binding in zip(program.samplers, program.bindings[1])
+                    if binding.stage_mask >> STAGE_KEYS.index(shader_role) & 1}
             candidate_engine_resource_bindings = _engine_resource_bindings(
-                candidate_contract, engine_resources, profile, document, semantics,
+                candidate_contract, engine_resources | record_resources(document, program, shader_role, target_index)
+                | ({profile.material_sampler(candidate_contract)} - rows - {""}), profile, document, semantics,
             )
             used_constant_buffers = {
                 item.name.casefold()
@@ -2193,7 +2259,9 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
                 texture_bindings=candidate_texture_bindings,
                 constant_buffer_bindings=candidate_constant_buffer_bindings,
                 diagnostics=getattr(compiled, 'diagnostics', ''),
-                resource_bindings=candidate_contract.resources,
+                resource_bindings=candidate_contract.resources if binary_format != "spirv-module" else tuple(
+                    replace(item, bind_point=profile.material_output_binding_point(
+                        document, semantics, candidate_contract, item)) for item in candidate_contract.resources),
                 engine_resource_bindings=candidate_engine_resource_bindings,
             )
             cache[cache_key] = cached
@@ -2301,6 +2369,8 @@ def _build_prepared_material_project(project: MmtrMaterialProject, document) -> 
         source_descriptor_layout=descriptor_layouts[0],
         descriptor_layout=descriptor_layouts[1],
         pipeline_states=project.pipeline_states,
+        fallbacks=tuple(((route.target_index, route.program_index, route.shader_role), fallbacks[route.cache_key])
+                        for route in staged_routes if fallbacks.get(route.cache_key)),
     )
 
 

@@ -1,20 +1,12 @@
-"""Semantic GUIR document model.
-
-"""
-
 from __future__ import annotations
 
 import copy
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Iterable, Iterator, Protocol
+from typing import Any, Iterable, Protocol
 
+lazy from file_handlers.clip.model import Timeline, walk_nodes, walk_properties
 from file_handlers.clip.rules import PropertyType
-lazy from file_handlers.motion.mot_clip.model import (
-    ClipNode,
-    ClipProperty,
-    CompactMotClip,
-)
 
 
 GUI_MAGIC = b"GUIR"
@@ -120,7 +112,7 @@ class GuiAnimation:
     guid: uuid.UUID
     name: str
     loop: bool
-    clip: CompactMotClip
+    clip: Timeline
     transition: "GuiAnimation | None" = None
 
 
@@ -155,8 +147,6 @@ def _copy(value: Any) -> Any:
 
 
 def apply_property(current: GuiValue, prop: GuiProperty) -> GuiValue:
-    """Apply a serialized component mask to the current semantic value."""
-
     value = _copy(prop.value)
     names = COMPONENT_NAMES.get(prop.type, ())
     if prop.component_mask == -1 or not names or current is None:
@@ -174,18 +164,6 @@ def resolve_properties(records: Iterable[GuiProperty]) -> dict[str, GuiValue]:
     for prop in records:
         result[prop.name] = apply_property(result.get(prop.name), prop)
     return result
-
-
-def iter_clip_nodes(root: ClipNode) -> Iterator[ClipNode]:
-    yield root
-    for child in root.children:
-        yield from iter_clip_nodes(child)
-
-
-def iter_clip_properties(properties: Iterable[ClipProperty]) -> Iterator[ClipProperty]:
-    for prop in properties:
-        yield prop
-        yield from iter_clip_properties(prop.children)
 
 
 @dataclass(slots=True, eq=False)
@@ -302,8 +280,8 @@ class GuiDocument:
                 recorder.set(prop, "value", name)
         target = obj.instance_guid.bytes_le
         for animation in self.animations:
-            for node in iter_clip_nodes(animation.clip.root):
-                if node.root_guid == target or node.extra_guid == target:
+            for node in walk_nodes(animation.clip.roots):
+                if target in (node.node_id, node.guid):
                     recorder.set(node, "name", name)
         for binding, chain in binding_targets:
             if obj not in chain:
@@ -319,8 +297,6 @@ class GuiDocument:
             recorder.set(binding, "target_path", "/".join(parts))
 
     def _local_binding_targets(self) -> list[tuple[GuiBinding, tuple[GuiObject, ...]]]:
-        """Resolve bindings through local prototype ownership without guessing."""
-
         if self.root_object is None:
             return []
         paths: dict[str, tuple[GuiObject, ...]] = {}
@@ -352,9 +328,9 @@ class GuiDocument:
     def summary(self) -> dict[str, int | str]:
         properties = [*obj.properties for obj in self.objects]
         tracks = [
-            *iter_clip_properties(node.properties)
+            *walk_properties(node.properties)
             for animation in self.animations
-            for node in iter_clip_nodes(animation.clip.root)
+            for node in walk_nodes(animation.clip.roots)
         ]
         return {
             "source": self.source,
@@ -364,7 +340,7 @@ class GuiDocument:
             "animations": len(self.animations),
             "properties": len(properties),
             "animation_tracks": len(tracks),
-            "keyframes": sum(len(item.keys) + (item.last_key is not None) for item in tracks),
+            "keyframes": sum(len(item.keys) + len(item.extra_keys) for item in tracks),
             "bindings": len(self.bindings),
             "imported_gui_paths": len(self.imported_gui_paths),
             "asset_paths": len(self.asset_paths),

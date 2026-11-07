@@ -1,0 +1,257 @@
+{
+ "format": 1,
+ "game": "RE9",
+ "resource_version": 251112994,
+ "component": {
+  "type": "via.render.ShellFurMesh",
+  "resource": "Resource",
+  "parameters": "FurParameters",
+  "shown": [
+   "Enabled",
+   "DrawDefault"
+  ],
+  "shell_type": "ShellType",
+  "simulation": "SimulationType",
+  "lod_settings": "ShellLodSettings",
+  "count_scale": "ShellCountScale",
+  "lod_limit": "ShellLodLimit"
+ },
+ "parameter_fields": {
+  "material": "MaterialName",
+  "force_two_side": "ForceTwoSide",
+  "force_alpha_test": "ForceAlphaTest",
+  "shell_count": "ShellCount",
+  "thin_type": "ShellThinType",
+  "bottom_save": "ShellBottomSave",
+  "coord_type": "GroomingTexCoordType",
+  "grooming_texture": "GroomingTexture",
+  "height": "ShellHeight",
+  "bend_rate": "BendRate",
+  "bend_root_rate": "BendRootRate",
+  "normal_transform_rate": "NormalTransformRate",
+  "stiffness": "Stiffness",
+  "stiffness_distribution": "StiffnessDistribution",
+  "spring_coefficient": "SpringCoefficient",
+  "dumping": "Dumping",
+  "gravity_scale": "GravityForceScale",
+  "wind_scale": "DirectWindForceScale",
+  "disable": "Disable"
+ },
+ "shading_type": 24,
+ "compute": {
+  "shell_types": [
+   0
+  ],
+  "simulations": [
+   0
+  ],
+  "orders": {
+   "0": "outermost_first",
+   "1": "bottom_first",
+   "2": "parity_split"
+  },
+  "programs": {
+   "skinned": "ShellFurPreTransformSkinningBasePreTransformCS"
+  },
+  "threads": 256,
+  "skinning_buffer": "cbCSSkinning",
+  "geometry_buffer": "cbShellFurGeometry",
+  "parameter_buffer": "cbShellFurParam",
+  "buffers": {
+   "bPreTransformDstVB": "shells",
+   "bOrgVB2": "source",
+   "bOrgVB4": "source",
+   "bOrgPreTransformVB0": "destination",
+   "bOrgPreTransformVB1": "destination"
+  }
+ },
+ "draw_prefix": "ShellFur",
+ "geometry": {
+  "cTransformPositionByteOffset": [
+   "shells",
+   "position"
+  ],
+  "cTransformNormalByteOffset": [
+   "shells",
+   "normal"
+  ],
+  "cTransformTexCoord0ByteOffset": [
+   "shells",
+   "texcoord0"
+  ],
+  "cTransformTexCoord1ByteOffset": [
+   "shells",
+   "texcoord1"
+  ],
+  "cTransformPreviousByteOffset": [
+   "shells",
+   "previous"
+  ],
+  "cTransformColorByteOffset": [
+   "shells",
+   "color"
+  ],
+  "cTransformHeightRateParentLenByteOffset": [
+   "shells",
+   "height"
+  ],
+  "cShellFurInfoVelocityByteOffset": [
+   "shells",
+   "velocity"
+  ],
+  "cShellFurInfoNormalTangentByteOffset": [
+   "shells",
+   "normal_tangent"
+  ],
+  "cLodShellCount": [
+   "count"
+  ]
+ },
+ "parameters": {
+  "cShellCount": {
+   "field": "shell_count"
+  },
+  "cShellHeight": {
+   "field": "height"
+  },
+  "cGroomingTexCoordType": {
+   "field": "coord_type"
+  },
+  "cBendRate": {
+   "field": "bend_rate"
+  },
+  "cBendRootRate": {
+   "field": "bend_root_rate"
+  },
+  "cNormalTransformRate": {
+   "field": "normal_transform_rate"
+  },
+  "cSoftness": {
+   "field": "stiffness",
+   "rule": "unit_line",
+   "start": 0.0,
+   "scale": 2.0
+  },
+  "cStiffness": {
+   "field": "stiffness",
+   "rule": "unit_line",
+   "start": 0.5,
+   "scale": 2.0,
+   "less": "cSoftness"
+  },
+  "cStiffnessDistribution": {
+   "field": "stiffness_distribution",
+   "rule": "reciprocal_rest"
+  },
+  "cSpringCoefficient": {
+   "field": "spring_coefficient",
+   "rule": "power",
+   "exponent": 4
+  },
+  "cDumping": {
+   "field": "dumping"
+  },
+  "cGravityScale": {
+   "field": "gravity_scale"
+  },
+  "cDirectWindScale": {
+   "field": "wind_scale"
+  }
+ },
+ "unread": [
+  "cbCSSkinningPadding0",
+  "cbCSSkinningPadding1",
+  "cbCSSkinningPadding2",
+  "cbShellFur_cPadding00",
+  "cbShellFur_cPadding10",
+  "cbShellFur_cPadding11",
+  "cbShellFur_cPadding20",
+  "cbShellFur_cPadding21",
+  "cbShellFur_cPadding23",
+  "cbShellFurParam_cPadding00",
+  "cbShellFurParam_cPadding01",
+  "cbShellFurParam_cPadding10"
+ ],
+ "setup": {
+  "file": "systems/shader/shellfur/shellfur.sdf",
+  "program": "ShellFurSetupPreTransform",
+  "texture": "GroomingTexSRV",
+  "buffers": {
+   "bOrgVB1": "source",
+   "bOrgVB2": "source",
+   "bOrgVB3": "source",
+   "bOrgVB5": "source",
+   "bPreTransformDstVB": "shells"
+  }
+ },
+ "instancing": {
+  "programs": {
+   "skinned": "Instancing"
+  },
+  "shell_info": "bShellInfo",
+  "info": [
+   "zero",
+   "shell",
+   "none",
+   "unwritten"
+  ],
+  "orders": {
+   "0": "innermost_first",
+   "1": "bottom_first",
+   "2": "parity_split_reversed"
+  },
+  "texture": "GroomingTexSRV"
+ },
+ "default_texture": "systems/rendering/NullNormal.tex",
+ "lod_count": 8,
+ "prepass": "alpha_tested",
+ "shells": [
+  [
+   "previous",
+   12
+  ],
+  [
+   "normal",
+   8
+  ],
+  [
+   "texcoord0",
+   4
+  ],
+  [
+   "texcoord1",
+   4
+  ],
+  [
+   "position",
+   12
+  ],
+  [
+   "color",
+   4
+  ],
+  [
+   "height",
+   4
+  ],
+  [
+   "velocity",
+   12
+  ],
+  [
+   "normal_tangent",
+   8
+  ]
+ ],
+ "simulation": [],
+ "views": {
+  "POSITION0": "position",
+  "NORMAL0": "normal",
+  "TANGENT0": "normal",
+  "TEXCOORD0": "texcoord0",
+  "TEXCOORD1": "texcoord1",
+  "POSITION1": "previous",
+  "COLOR0": "color",
+  "TEXCOORD2": "height"
+ }
+}

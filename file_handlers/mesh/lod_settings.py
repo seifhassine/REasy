@@ -1,5 +1,4 @@
-"""LodSettings (``.lod``) and the meshlet LOD thresholds the engine writes from them. See docs/internals/meshlets.md
-(LODs)."""
+"""See docs/internals/meshlets.md, LODs."""
 from __future__ import annotations
 
 from collections.abc import Mapping
@@ -7,6 +6,9 @@ from dataclasses import dataclass
 import struct
 
 lazy import numpy as np
+
+lazy from file_handlers.engine_math import half_bits
+lazy from utils.resource_file_utils import resource_path_with_version
 
 MAGIC = b"LOD\0"
 # Mask bits 0-6: the entries for LOD counts 2-8; bit 31: isMeshletLodParameter.
@@ -17,6 +19,10 @@ THRESHOLD_FAMILIES = ("inverse_size", "half_reciprocal")
 # "record_flag": only records flagged for meshlets are written, others get T_k = k (MH Wilds); "mesh_flag": a mesh
 # whose header byte 0x19 has bit 1 set keeps its file's (DD2).
 THRESHOLD_GATES = ("record_flag", "mesh_flag")
+
+
+def lod_settings_file(path: str, version: int) -> str:
+    return resource_path_with_version(path, "lod", version)
 
 
 class LodSettingsError(ValueError):
@@ -65,21 +71,6 @@ def read_lod_settings(data: bytes) -> LodSettings:
     return LodSettings(frozendict(records))
 
 
-def half_bits(value) -> int:
-    """The engines' software float to half: truncated, small values flushed to 0."""
-    bits = struct.unpack("<I", struct.pack("<f", float(value)))[0]
-    sign, exponent, mantissa = (bits >> 16) & 0x8000, (bits >> 23) & 0xFF, bits & 0x7FFFFF
-    if exponent <= 0x70:
-        if exponent < 0x66:
-            return 0
-        return (((mantissa | 0x800000) >> (0x71 - exponent)) >> 13) | sign
-    if exponent == 0xFF:
-        return ((mantissa >> 13) | sign | (mantissa < 0x2000) | 0x7C00) if mantissa else sign | 0x7C00
-    if exponent >= 0x8F:
-        return sign | 0x7C00
-    return (mantissa >> 13) | ((exponent - 0x70) << 10) | sign
-
-
 def _thresholds(family: str, entry, count: int) -> list:
     f32 = np.float32
     middle = range(2, count - 1)
@@ -120,5 +111,54 @@ def meshlet_thresholds(settings: LodSettings, family: str, gate: str | None, lod
     return written
 
 
-__all__ = ["LANES", "LodRecord", "LodSettings", "LodSettingsError", "MAGIC", "MESHLET_FLAG", "THRESHOLD_FAMILIES",
-           "THRESHOLD_GATES", "half_bits", "meshlet_thresholds", "read_lod_settings"]
+@dataclass(frozen=True, slots=True)
+class ClassicLevels:
+    centre: tuple[float, float, float]
+    count: int
+    scale: float
+    rules: Mapping[str, tuple[object, tuple[float, ...]]]
+
+
+def classic_table(settings: LodSettings, lod_hash: int, count: int, radius: float, rate: float, rate2: float,
+                  size: float, exponent: float) -> tuple[float, tuple[float, ...]]:
+    f32 = np.float32
+    record = settings.records.get(lod_hash) if lod_hash else None
+    if record is None or max(count, 2) not in record.entries:
+        record = settings.records.get(0)
+    if record is None or max(count, 2) not in record.entries:
+        raise LodSettingsError(f"the LodSettings file has no default record for {count} LODs")
+    entry = [f32(value) for value in record.entries[max(count, 2)]]
+    scale = f32(np.power(f32(radius) * f32(size), f32(rate) * f32(exponent), dtype=f32)) * f32(rate2)
+    near, far = scale * entry[0], scale * entry[1]
+    thresholds = [f32(0)] * max(count - 1, 0)
+    if count > 2:
+        thresholds[count - 2] = f32(1) / near
+    for k in range(count - 2, 1, -1):
+        thresholds[k - 1] = f32(1) / ((far - near) * entry[k] + near)
+    if count > 1:
+        thresholds[0] = f32(1) / far
+    return float(f32(-1) / f32(radius)), tuple(float(value) for value in thresholds)
+
+
+def classic_picks(metrics: np.ndarray, thresholds: np.ndarray) -> np.ndarray:
+    passed = thresholds < metrics.astype(np.float32)[:, None]
+    return np.where(passed.any(axis=1), passed.shape[1] - np.argmax(passed[:, ::-1], axis=1), 0).astype(np.int64)
+
+
+def classic_fractions(metrics: np.ndarray, thresholds: np.ndarray) -> np.ndarray:
+    f = np.float32
+    metrics, thresholds = metrics.astype(f), np.asarray(thresholds, f)
+    last = thresholds.shape[1]
+    picked = classic_picks(metrics, thresholds)
+    rows = np.arange(len(metrics))
+    low = thresholds[rows, np.maximum(picked - 1, 0)]
+    high = thresholds[rows, np.minimum(picked, last - 1)]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        between = ((metrics - low) / (high - low)).astype(f) + picked.astype(f)
+        below = (metrics / thresholds[:, 0]).astype(f)
+    return np.where(picked == last, f(last), np.where(picked > 0, between, below)).astype(f)
+
+
+__all__ = ["ClassicLevels", "LANES", "LodRecord", "LodSettings", "LodSettingsError", "MAGIC", "MESHLET_FLAG",
+           "THRESHOLD_FAMILIES", "THRESHOLD_GATES", "classic_fractions", "classic_picks", "classic_table",
+           "lod_settings_file", "meshlet_thresholds", "read_lod_settings"]

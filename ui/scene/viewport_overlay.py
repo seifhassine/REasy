@@ -105,6 +105,9 @@ class ViewportOverlayManager:
         overlay = getattr(obj, "_viewport_drag_overlay", None)
         if not overlay:
             return None
+        # Entering a panel is no Leave of the view.
+        if kind == QEvent.Type.Enter and obj is overlay:
+            self.view.set_hover_key("")
         if self._forward_hover_key_event(obj, kind, event):
             return True
         active = self._active_mode(overlay)

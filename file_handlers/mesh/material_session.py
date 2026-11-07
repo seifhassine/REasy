@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import MutableMapping
+from dataclasses import replace
 from typing import Protocol
 
 from PySide6.QtCore import QObject, Signal
 lazy from PySide6.QtGui import QImage
 
 from file_handlers.bounded_cache import BoundedCache
+lazy from file_handlers.mdf.mdf_file import material_flag_layout
 lazy from file_handlers.tex.qt_image_utils import decode_parsed_tex_to_qimage_with_buffer, parse_tex_bytes
 from file_handlers.tex.texture_quality import (
     DEFAULT_TEXTURE_QUALITY,
@@ -52,6 +54,14 @@ def scoped_material_key(scope: str, material_name: str) -> str:
     return f"{scope}:{material_name or '<default>'}" if scope else material_name
 
 
+def _forced(surface, names: frozenset):
+    flags = surface.material_flags
+    for item in material_flag_layout(surface.flag_version) if names else ():
+        if item.name in names:
+            flags = item.set(flags, 1)
+    return surface if flags == surface.material_flags else replace(surface, material_flags=flags)
+
+
 class MaterialViewport(Protocol):
     texture_quality: str
 
@@ -66,6 +76,8 @@ class MeshMaterialSession(QObject):
         handler,
         *,
         explicit_mdf_path: str = "",
+        forced_flags: frozenset = frozenset(),
+        mdf_material: int | None = None,
         material_scope: str = "",
         resource_scope: str | None = None,
         texture_quality: str = DEFAULT_TEXTURE_QUALITY,
@@ -78,6 +90,9 @@ class MeshMaterialSession(QObject):
         super().__init__(parent)
         self.handler = handler
         self.explicit_mdf_path = explicit_mdf_path
+        # The material flags game code forces on every material by name (Mesh.ForceAlphaTest: ForcedAlphaTestEnable).
+        self.forced_flags = forced_flags
+        self.mdf_material = mdf_material
         self.material_scope = material_scope
         self.resource_scope = (
             str(getattr(handler, "filepath", "") or "")
@@ -118,9 +133,10 @@ class MeshMaterialSession(QObject):
             self.handler,
             explicit_mdf_path=self.explicit_mdf_path,
             parse_in_subprocess=self.parse_in_subprocess,
+            mdf_material=self.mdf_material,
         )
         self.profiles = {
-            self.material_key(binding.mesh_material_name): binding.surface
+            self.material_key(binding.mesh_material_name): _forced(binding.surface, self.forced_flags)
             for binding in self.bindings
             if binding.surface is not None
         }

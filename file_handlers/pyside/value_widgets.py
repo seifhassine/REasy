@@ -92,7 +92,7 @@ def _double_validator(decimals=None):
     return validator
 
 
-def _rgba_dialog_result(parent, initial_color):
+def rgba_dialog_result(parent, initial_color, changed=None):
     dlg = QColorDialog(initial_color, parent)
     dlg.setOption(QColorDialog.DontUseNativeDialog, True)
     dlg.setOption(QColorDialog.ShowAlphaChannel, True)
@@ -120,13 +120,18 @@ def _rgba_dialog_result(parent, initial_color):
             hex_edit.blockSignals(False))
         )
 
+    def shown(color):
+        write_html(color)
+        if changed is not None:
+            changed((color.red(), color.green(), color.blue(), color.alpha()))
+
     write_html(initial_color)
-    dlg.currentColorChanged.connect(write_html)
+    dlg.currentColorChanged.connect(shown)
 
     for slider in dlg.findChildren(QSlider):
         if slider.minimum() == 0 and slider.maximum() == 255:
             slider.valueChanged.connect(
-                lambda value, d=dlg: write_html(d.currentColor().withAlpha(value))
+                lambda value, d=dlg: shown(d.currentColor().withAlpha(value))
             )
             break
 
@@ -143,7 +148,7 @@ def _rgba_dialog_result(parent, initial_color):
                 pass
         hex_edit.textChanged.connect(on_hex)
 
-    if not dlg.exec_():
+    if not dlg.exec():
         return None
 
     final = hex_edit.text() if hex_edit and len(hex_edit.text()) == 9 else None
@@ -1222,7 +1227,6 @@ class HexBytesInput(BaseValueWidget):
         return self.raw_data
     
     def _on_text_edited(self, text):
-        """Handle text editing in overwrite mode"""
         if not self.raw_data:
             return
             
@@ -2282,7 +2286,7 @@ class ColorInput(BaseValueWidget):
         if not self._data:
             return
 
-        result = _rgba_dialog_result(self, QColor(*self._channel_values()))
+        result = rgba_dialog_result(self, QColor(*self._channel_values()))
         if result is None:
             return
 
@@ -2723,7 +2727,7 @@ class AreaInput(BaseValueWidget):
             return
         try:
             vals = []
-            for i, inp in enumerate(self.inputs):
+            for inp in self.inputs:
                 t = inp.text()
                 vals.append(float(t) if t else 0.0)
 

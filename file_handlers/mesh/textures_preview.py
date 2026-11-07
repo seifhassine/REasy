@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
+lazy from file_handlers.mmtr.draw_rules import program_flags
 from file_handlers.mmtr.light_passes import light_pass_catalog_for
 from file_handlers.mmtr.material_context import MaterialInstanceContext
 from file_handlers.mmtr.material_preview import MaterialPreviewError, PreviewMaterial, _texture_texels, gbuffer_route
@@ -18,7 +19,7 @@ from file_handlers.mmtr.resident import Resident
 from file_handlers.mmtr.pass_choice import PassChoiceError
 lazy from file_handlers.mmtr.speedtree_catalog import speedtree_catalog_for
 from file_handlers.mmtr.surface_meaning import surface_output_catalog_for
-from file_handlers.mmtr.textures_states import ShownDraw, ordered, plain_draw, program_draw
+from file_handlers.mmtr.textures_states import ShownDraw, meshes_draw, ordered, plain_draw, program_draw
 from file_handlers.mmtr.textures_view import (
     CHECKER, TexturesView, UvPattern, VertexLight, ViewBatch, ViewGeometry, ViewLight,
 )
@@ -160,7 +161,10 @@ def _part_draw(part: TexturedPart, game: str, skinned: bool, masters, profile, c
     if part.material is None:
         return plain_draw(part.two_sided, part.transparent)
     document = bound_master(game, masters, part.mmtr_path, part.context, profile, lease)
-    draw = program_draw(document, part.material, catalog.master_target, part.route or gbuffer_route(skinned))
+    route = part.route or gbuffer_route(skinned)
+    if not meshes_draw(document, part.material, catalog.master_target, route):
+        return plain_draw(part.two_sided, part.transparent)
+    draw = program_draw(document, part.material, catalog.master_target, route)
     if draw is None:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The renderer does not draw the material's base colour: its program does not "
@@ -313,7 +317,7 @@ class TexturesPreview(DevicePreview):
             elif exact and isinstance(handler, StmeshHandler):
                 # SpeedTree clusters use their batch type's programs.
                 try:
-                    route = cluster_route(handler, inspection.geometry[1], submesh, int(surface.material_flags),
+                    route = cluster_route(handler, inspection.geometry[1], submesh, program_flags(profile, surface),
                                           speedtree_catalog_for(profile), None)
                 except (MaterialPreviewError, PassChoiceError):
                     programs = False

@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field, replace
 from copy import deepcopy
-from contextlib import contextmanager
-from contextvars import ContextVar
 import bisect
 import hashlib
 import importlib
@@ -16,7 +14,7 @@ from uuid import uuid4
 
 from ..material_names import resolve_material_name
 from .dxbc import DxbcShader, parse_dxbc
-from .graph_snapshot import IMMUTABLE_JSON, _INVALID, _checked_properties
+from .graph_snapshot import IMMUTABLE_JSON, MAX_GRAPH_LINKS, MAX_GRAPH_NODES, _INVALID, _checked_properties
 from .models import shader_target
 from .shader_graph_math import (BASIC_MATH_KINDS, UNARY_FUNCTIONS, unary_expression, comparison_expression, remap_expression, NUMERIC_VALUE_TYPES,
     TYPED_MATH_NODES, typed_math_signature, typed_math_expression, typed_math_helpers, math_context_error, value_width)
@@ -30,8 +28,6 @@ from .spirv_execution import ShaderVulkanExecution
 GRAPH_SCHEMA = "reasy.shader-graph"
 GRAPH_SCHEMA_VERSION = 1
 SHADER_GRAPH_STAGES = frozenset({'vertex','pixel','compute','geometry','domain','hull','mesh','amplification'})
-MAX_GRAPH_NODES = 32768
-MAX_GRAPH_LINKS = 131072
 # Editable DD2 skin regions occupy ~35 MiB.
 MAX_PROJECT_LENGTH = 64 * 1024 * 1024
 MAX_SOURCE_LENGTH = MAX_PROJECT_LENGTH
@@ -1196,18 +1192,6 @@ def shader_graph_node_extension(kind: str) -> ShaderGraphNodeExtension | None:
     return _NODE_EXTENSIONS.get(kind)
 
 
-_property_validation = ContextVar('shader_property_validation', default=None)
-
-
-@contextmanager
-def immutable_property_validation(validated=None):
-    token = _property_validation.set({} if validated is None else validated)
-    try:
-        yield
-    finally:
-        _property_validation.reset(token)
-
-
 def _json_properties(value: Any) -> bool:
     return _checked_properties(value, None) is not _INVALID
 
@@ -2291,7 +2275,7 @@ def _emit_cbuffer(
     if identifiers is None:
         identifiers = _constant_buffer_identifiers((buffer,))
     names: dict[str, str] = {}
-    for index, variable in enumerate(sorted(buffer.variables, key=lambda item: item.byte_offset)):
+    for variable in sorted(buffer.variables, key=lambda item: item.byte_offset):
         declaration = variable.hlsl_declaration
         can_declare = bool(
             declaration
@@ -2624,7 +2608,6 @@ def _fxc_target(contract) -> bool:
 
 def dxil_target(contract) -> bool:
     return contract.model_major >= 6 and contract.vulkan_execution is None
-
 
 
 def _entry_parameters(extension_nodes: dict, contract: ShaderContract) -> dict[str, tuple[str, str, str]]:

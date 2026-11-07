@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, fields, is_dataclass, replace
 import numpy as np
 from PySide6.QtCore import Qt
 
+lazy from file_handlers.mmtr.draw_rules import draw_rules_for, program_flags, with_textures
 from file_handlers.mmtr.material_preview import MaterialPreviewError
 from file_handlers.mmtr.mesh_render import BOX_CORNERS
 from file_handlers.mmtr.overlay import Overlay, view_projection
@@ -85,7 +86,6 @@ def _geometries(content: SceneContent, vertices: list[int], shapes: list[SceneSh
 
 
 def _same(value, other) -> bool:
-    """Whether two gathered values hold the same: arrays by their elements, dataclasses and tuples by their items."""
     if value is other:
         return True
     if isinstance(value, np.ndarray) or isinstance(other, np.ndarray):
@@ -146,7 +146,6 @@ class SceneTexturesDrawer(TexturesDrawer):
                    for new, old in zip(content.materials, held.materials))
 
     def _add(self, content: SceneContent) -> None:
-        """Binds the parts ``content`` adds to the content held."""
         held = self._content
         for number, materials in enumerate(content.materials):
             start = len(held.materials[number].parts) if number < len(held.materials) else 0
@@ -316,7 +315,6 @@ class SceneTexturesDrawer(TexturesDrawer):
                         + held.worlds[:, None, :, 3])
 
     def _hidden(self, content: SceneContent, view: SceneView) -> np.ndarray | bool:
-        """Whether each mesh held is hidden."""
         held = self._held
         if not view.hidden:
             return False
@@ -326,7 +324,6 @@ class SceneTexturesDrawer(TexturesDrawer):
         return self._hiding[2]
 
     def _parts_shown(self, view: SceneView) -> np.ndarray | bool:
-        """Whether each batch held is of a part shown."""
         held = self._held
         if not view.hidden_parts:
             return True
@@ -357,9 +354,11 @@ class _Gathered:
     parts: list[TexturedPart] = field(default_factory=list)
     files: dict[str, bytes] = field(default_factory=dict)
     masters: dict[str, tuple[str, bytes]] = field(default_factory=dict)
-    unusable: dict[str, str] = field(default_factory=dict)
+    unusable: dict[tuple, str] = field(default_factory=dict)
     cache: dict = field(default_factory=dict)
     prefetched: PrefetchedFiles | None = None
+    surfaces: dict[tuple, object] = field(default_factory=dict)
+    textures: Mapping[str, Mapping[str, str]] = field(default_factory=dict)
 
 
 class SceneTexturesPreview(DevicePreview):
@@ -504,15 +503,17 @@ class SceneTexturesPreview(DevicePreview):
         return self._before
 
     def _group(self, session, scopes: dict[tuple, dict], streaming: bool) -> _Gathered:
-        """The session's group as gathered before, while its mesh file and materials and the texture quality are the
-        same."""
-        state = (None, None, streaming) if session is None else (session.profiles, session.handler.mesh, streaming)
+        textures = {} if session is None else {name: slots for name, slots in self._viewport.device_textures().items()
+                                               if name in session.profiles}
+        state = (None, None, streaming, textures) if session is None else (
+            session.profiles, session.handler.mesh, streaming, textures)
         kept = self._groups.get(session)
-        if kept is not None and kept[0][0] is state[0] and kept[0][1] is state[1] and kept[0][2] == state[2]:
+        if kept is not None and kept[0][0] is state[0] and kept[0][1] is state[1] and kept[0][2:] == state[2:]:
             group = kept[1]
             group.parts = []
             return group
         group = _Gathered() if session is None else self._gathered_of(session, scopes)
+        group.textures = textures
         self._groups[session] = state, group
         return group
 
@@ -541,15 +542,18 @@ class SceneTexturesPreview(DevicePreview):
             return ""
         if group.reason:
             return group.reason
-        surface = session.profiles.get(name)
+        surface, overrides = _overridden(group, name, session.profiles.get(name), mesh.decal_receive[0],
+                                         mesh.draw_state)
+        if surface is not None and name in group.textures:
+            surface = with_textures(surface, group.textures[name])
         if surface is None or group.exact and surface.instance_context is None:
             group.parts.append(TexturedPart.unmatched(index, name, batch.indices, batch, mesh.colour))
             return ""
-        if name not in group.unusable:
-            group.unusable[name] = self._gather_material(
+        if (name, overrides) not in group.unusable:
+            group.unusable[name, overrides] = self._gather_material(
                 session.handler, surface, group.masters if group.exact else None, group.files, streaming, group.cache)
-        if group.unusable[name]:
-            return group.unusable[name]
+        if group.unusable[name, overrides]:
+            return group.unusable[name, overrides]
         route, exact = None, group.exact
         handler = session.handler
         if exact and isinstance(handler, StmeshHandler) and handler.stmesh.meshlets is not None:
@@ -558,16 +562,32 @@ class SceneTexturesPreview(DevicePreview):
         elif exact and isinstance(handler, StmeshHandler) and batch.submesh is not None:
             # SpeedTree cluster programs follow the batch type.
             lod, number = batch.submesh
+            profile = mmtr_profile_for_game(group.game)
             try:
                 route = cluster_route(handler, lod, mesh_lod_parts(handler.mesh, lod)[number][1],
-                                      int(surface.material_flags),
-                                      speedtree_catalog_for(mmtr_profile_for_game(group.game)),
+                                      program_flags(profile, surface), speedtree_catalog_for(profile),
                                       mesh.speedtree_placement)
             except (MaterialPreviewError, PassChoiceError):
                 exact = False
         group.parts.append(TexturedPart.of_surface(index, name, batch.indices, surface, batch, exact, mesh.colour,
                                                    route=route))
         return ""
+
+
+def _overridden(group: _Gathered, name: str, surface, component: str,
+                fields: Mapping[str, object] | None) -> tuple[object, tuple]:
+    if surface is None or not any(isinstance(value, tuple) for value in (fields or {}).values()):
+        return surface, ()
+    profile = mmtr_profile_for_game(group.game) if group.game else None
+    rules = None if profile is None else draw_rules_for(profile)
+    params = None if rules is None else rules.material_params.get(component)
+    overrides = () if params is None else fields.get(params.list, ())
+    if not overrides:
+        return surface, ()
+    overrides = component, overrides
+    if (name, overrides) not in group.surfaces:
+        group.surfaces[name, overrides] = rules.overridden(surface, component, fields)
+    return group.surfaces[name, overrides], overrides
 
 
 def plain_preview(viewport, parent) -> SceneTexturesPreview:

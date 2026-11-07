@@ -1,4 +1,4 @@
-"""Picking a scene's mesh at a texel on the CPU, as the overlay's rules cull (docs/internals/overlay.md, Pick)."""
+"""See docs/internals/overlay.md, Pick."""
 from __future__ import annotations
 
 from collections.abc import Callable, Sequence
@@ -31,7 +31,6 @@ class ScenePicker:
 
     def __init__(self):
         self._key: tuple | None = None
-        # By mesh: its culls, and its triangles and runs (None: no part shown).
         self._meshes: dict[int, tuple] = {}
         self._placed: tuple | None = None
         # By mesh: its bones, rest positions and posed positions.
@@ -39,8 +38,7 @@ class ScenePicker:
 
     def pick(self, camera: Camera, texel: Sequence[int], meshes: Sequence[SceneGeometry],
              placements: Sequence[ScenePlacement], pickable: ScenePickable, hidden: frozenset = frozenset(),
-             hidden_parts: frozenset = frozenset()) -> int | None:
-        """The number of the mesh nearest at ``texel`` of ``camera``'s image, of those drawn and not hidden."""
+             hidden_parts: frozenset = frozenset()) -> tuple[int, int] | None:
         if self._key is None or self._key[0] is not meshes or self._key[1] != hidden_parts:
             if self._key is None or self._key[0] is not meshes:
                 self._posed = {}
@@ -72,10 +70,10 @@ class ScenePicker:
             rotation = world[:, :3]
             back = np.linalg.inv(rotation)
             hit = _fastmesh.ray_pick(tuple(back @ (origin - world[:, 3])), tuple(back @ direction),
-                                     self._positions(number, meshes, placements), *shown,
+                                     self._positions(number, meshes, placements), *shown[:2],
                                      bool(np.linalg.det(rotation) < 0))
             if hit is not None and hit[0] < best:
-                best, found = hit[0], number
+                best, found = hit[0], (number, shown[2][int(np.searchsorted(shown[1][:, 0], hit[1], "right")) - 1])
         return found
 
     def _place(self, meshes: Sequence[SceneGeometry], placements: Sequence[ScenePlacement], pickable: ScenePickable,
@@ -95,16 +93,18 @@ class ScenePicker:
         culls = tuple(pickable.cull(offset + batch) for batch in range(len(geometry.batches)))
         held = self._meshes.get(number)
         if held is None or held[0] != culls:
-            triangles, runs, first = [], [], 0
-            for item, cull in zip(geometry.batches, culls):
+            triangles, runs, batches, first = [], [], [], 0
+            for batch, (item, cull) in enumerate(zip(geometry.batches, culls)):
                 if (geometry.key, item.part_index) in hidden_parts:
                     continue
                 indices = np.ascontiguousarray(item.indices, "<u4").reshape(-1)
                 cull, counter_clockwise = cull or (CULL_NONE, True)
                 triangles.append(indices)
                 runs.append((first, len(indices) // 3, cull, int(bool(counter_clockwise))))
+                batches.append(batch)
                 first += len(indices) // 3
-            held = self._meshes[number] = culls, (np.concatenate(triangles), np.array(runs, "<i4")) if first else None
+            held = self._meshes[number] = culls, (
+                np.concatenate(triangles), np.array(runs, "<i4"), batches) if first else None
         return held[1]
 
     def _positions(self, number: int, meshes: Sequence[SceneGeometry], placements: Sequence[ScenePlacement]):

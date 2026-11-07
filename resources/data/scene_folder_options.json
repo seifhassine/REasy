@@ -1,0 +1,9 @@
+{
+  "RE4": {
+    "chainsaw.EnvSceneController": {
+      "option": "chainsaw.RenderingUtilityManager.SettingTessellation",
+      "prefixes": {"enhanced_": true, "legacy_": false},
+      "highest": true
+    }
+  }
+}

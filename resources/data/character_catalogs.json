@@ -1,0 +1,479 @@
+{
+  "RE4": [
+    {
+      "name": "Costume presets",
+      "files": ["_Chainsaw/AppSystem/Catalog/Character/CostumePresetCatalog_1st.user",
+                "_Chainsaw/AppSystem/Catalog/Character/CostumePresetCatalog_2nd.user",
+                "_Chainsaw/AppSystem/Catalog/DLC/DLC_1001/Costume_DLC_1001.user",
+                "_Chainsaw/AppSystem/Catalog/DLC/DLC_1002/Costume_DLC_1002.user",
+                "_Chainsaw/AppSystem/Catalog/DLC/DLC_1003/Costume_DLC_1003.user",
+                "_Chainsaw/AppSystem/Catalog/DLC/DLC_1004/Costume_DLC_1004.user",
+                "_Chainsaw/AppSystem/Catalog/DLC/DLC_1005/Costume_DLC_1005.user",
+                "_Chainsaw/AppSystem/Catalog/DLC/DLC_1006/Costume_DLC_1006.user"],
+      "steps": [{"type": "chainsaw.CostumePresetCatalogUserData", "entries": ["_DataTable"],
+                 "file": "_CostumePresetUserData", "group": "_KindID", "enum": "chainsaw.CharacterKindID"}]
+    },
+    {
+      "name": "Separate Ways",
+      "files": ["_AnotherOrder/AppSystem/Catalog/MainContents/CostumePresetCatalog_AO.user",
+                "_AnotherOrder/AppSystem/Catalog/MainContents/CostumePresetCatalogCp10.user"],
+      "steps": [{"type": "chainsaw.CostumePresetCatalogUserData", "entries": ["_DataTable"],
+                 "file": "_CostumePresetUserData", "group": "_KindID", "enum": "chainsaw.CharacterKindID"}]
+    },
+    {
+      "name": "Mercenaries",
+      "files": ["_Mercenaries/AppSystem/Catalog/MainContents/CostumePresetCatalog_MC.user",
+                "_Mercenaries/AppSystem/Catalog/MainContents/CostumePresetCatalog_MC_2nd.user"],
+      "steps": [{"type": "chainsaw.CostumePresetCatalogUserData", "entries": ["_DataTable"],
+                 "file": "_CostumePresetUserData", "group": "_KindID", "enum": "chainsaw.CharacterKindID"}]
+    }
+  ],
+  "RE2": [
+    {
+      "name": "Survivors",
+      "files": ["ObjectRoot/Scene/Contents/Main/Catalog_1st.scn", "ObjectRoot/Scene/Contents/Main/Catalog.scn"],
+      "steps": []
+    },
+    {
+      "name": "Ghost Survivors",
+      "files": ["ObjectRoot/Prefab/Catalog/Rogue/SurvivorCatalog_Rogue.pfb"],
+      "steps": []
+    },
+    {
+      "name": "Enemies",
+      "files": ["ObjectRoot/Scene/Contents/Main/Catalog_1st.scn", "ObjectRoot/Scene/Contents/Main/Catalog.scn",
+                "ObjectRoot/Scene/Rogue/Contents/Catalog.scn"],
+      "steps": [{"type": "app.ropeway.enemy.EnemyDataCatalogRegister", "entries": ["PrefabDataList"],
+                 "file": "Prefab", "group": "KindID", "enum": "app.ropeway.EnemyDefine.KindID"}]
+    }
+  ],
+  "DMC5": [
+    {
+      "name": "Players",
+      "files": ["Scene/System/SystemResident.scn"],
+      "steps": []
+    },
+    {
+      "name": "Players in game",
+      "files": ["Scene/System/Players.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"]}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["Scene/System/BattleSystem.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "holding": "app.EnemyPrefabRegister"},
+                {"type": "app.EnemyPrefabRegister", "fields": ["EnemyPrefabData"], "file": "EnemyPrefab",
+                 "group": "EnemyId", "enum": "app.EnemyID"}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["Scene/System/BattleSystem.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "holding": "app.EnemyPrefabRegister"},
+                {"type": "app.EnemyPrefabRegister", "fields": ["EnemyPrefabData"], "file": "PlusCostumePrefab",
+                 "group": "EnemyId", "enum": "app.EnemyID"}]
+    }
+  ],
+  "RE2RT": [
+    {
+      "name": "Survivor costumes",
+      "files": ["SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_Catalog_1st.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_Catalog.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_Catalog_Lost.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_A.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_B.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_C.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_D.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_E.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_F.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_G.user"],
+      "steps": [{"type": "app.ropeway.SurvivorCostumeSettingUserData", "entries": ["UserDataList"]}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["ObjectRoot/Scene/Contents/Main/Catalog_1st.scn", "ObjectRoot/Scene/Contents/Main/Catalog.scn",
+                "ObjectRoot/Scene/Rogue/Contents/Catalog.scn"],
+      "steps": [{"type": "app.ropeway.enemy.EnemyDataCatalogRegister", "entries": ["PrefabDataList"],
+                 "file": "Prefab", "group": "KindID", "enum": "app.ropeway.EnemyDefine.KindID"}]
+    }
+  ],
+  "RE3": [
+    {
+      "name": "Survivor costumes",
+      "files": ["SectionRoot/UserData/Costume/SurvivorCostumeSettingUserData_Catalog_1st.user",
+                "SectionRoot/UserData/Costume/SurvivorCostumeSettingUserData_Catalog.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_A.user",
+                "SectionRoot/UserData/System/Survivor/SurvivorCostumeSettingUserData_DLC_Costume_B.user"],
+      "steps": [{"type": "offline.SurvivorCostumeSettingUserData", "entries": ["UserDataList"]}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["Escape/Scene/Contents/Main/Catalog_1st.scn", "Escape/Scene/Contents/Main/Catalog.scn"],
+      "steps": [{"type": "offline.enemy.EnemyDataCatalogRegister", "entries": ["PrefabDataList"], "file": "Prefab",
+                 "group": "KindID", "enum": "offline.EnemyDefine.KindID"}],
+      "spawned": true
+    }
+  ],
+  "RE3RT": [
+    {
+      "name": "Survivor costumes",
+      "files": ["SectionRoot/UserData/Costume/SurvivorCostumeSettingUserData_Catalog_1st.user",
+                "SectionRoot/UserData/Costume/SurvivorCostumeSettingUserData_Catalog.user"],
+      "steps": [{"type": "offline.SurvivorCostumeSettingUserData", "entries": ["UserDataList"]}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["Escape/Scene/Contents/Main/Catalog_1st.scn", "Escape/Scene/Contents/Main/Catalog.scn"],
+      "steps": [{"type": "offline.enemy.EnemyDataCatalogRegister", "entries": ["PrefabDataList"], "file": "Prefab",
+                 "group": "KindID", "enum": "offline.EnemyDefine.KindID"}],
+      "spawned": true
+    }
+  ],
+  "PRAGMATA": [
+    {
+      "name": "Costumes",
+      "files": ["SingletonUserData/Catalog/CostumeCatalogUserData_1st_MainContents.user",
+                "SingletonUserData/Catalog/CostumeCatalogUserData_2nd_MainContents.user",
+                "SingletonUserData/Catalog/DLC/CostumeCatalogUserData_DLC0001.user",
+                "SingletonUserData/Catalog/DLC/CostumeCatalogUserData_DLC0002.user",
+                "SingletonUserData/Catalog/DLC/CostumeCatalogUserData_DLC0004.user"],
+      "steps": []
+    },
+    {
+      "name": "Characters",
+      "files": ["SingletonUserData/Catalog/CharacterBodyCatalog_1st_MainContents.user",
+                "SingletonUserData/Catalog/CharacterBodyCatalog_2nd_MainContents.user"],
+      "steps": [{"type": "app.CharacterBodyCatalogUserData", "entries": ["_DataTable"], "file": "_BodyPrefab"}]
+    }
+  ],
+  "MHWILDS": [
+    {
+      "name": "Armor",
+      "files": ["GameDesign/Catalog/First/Data/PlayerArmorList_First.user",
+                "GameDesign/Catalog/00_00/Data/PlayerArmorList.user",
+                "GameDesign/Catalog/01_00/Data/PlayerArmorList_01_00.user",
+                "GameDesign/Catalog/01_10/Data/PlayerArmorList_01_10.user",
+                "GameDesign/Catalog/02_00/Data/PlayerArmorList_02_00.user",
+                "GameDesign/Catalog/03_00/Data/PlayerArmorList_03_00.user",
+                "GameDesign/Catalog/04_00/Data/PlayerArmorList_04_00.user",
+                "GameDesign/Catalog/04_10/Data/PlayerArmorList_04_10.user"],
+      "steps": []
+    },
+    {
+      "name": "NPCs",
+      "files": ["GameDesign/Catalog/First/Data/NpcPackageList_First.user",
+                "GameDesign/Catalog/00_00/Data/NpcPackageList.user",
+                "GameDesign/Catalog/01_00/Data/NpcPackageList_01.user",
+                "GameDesign/Catalog/01_10/Data/NpcPackageList_01_10.user",
+                "GameDesign/Catalog/02_00/Data/NpcPackageList_02.user",
+                "GameDesign/Catalog/03_00/Data/NpcPackageList_03.user",
+                "GameDesign/Catalog/04_00/Data/NpcPackageList_04.user",
+                "GameDesign/Catalog/04_10/Data/NpcPackageList_04_10.user"],
+      "steps": []
+    },
+    {
+      "name": "NPC outfits",
+      "files": ["GameDesign/Catalog/First/Data/NpcCustomVariList_U00001_First.user",
+                "GameDesign/Catalog/First/Data/NpcCustomVariList_U00002_First.user",
+                "GameDesign/Catalog/First/Data/NpcCustomVariList_U00010_First.user",
+                "GameDesign/Catalog/00_00/Data/NpcCustomVariList_U00001_00.user",
+                "GameDesign/Catalog/00_00/Data/NpcCustomVariList_U00002_00.user",
+                "GameDesign/Catalog/00_00/Data/NpcCustomVariList_U00010_00.user",
+                "GameDesign/Catalog/01_00/Data/NpcCustomVariList_U00001_01.user",
+                "GameDesign/Catalog/01_10/Data/NpcCustomVariList_U00001_01_10.user",
+                "GameDesign/Catalog/02_00/Data/NpcCustomVariList_U00001_02.user",
+                "GameDesign/Catalog/02_00/Data/NpcCustomVariList_U00002_02.user",
+                "GameDesign/Catalog/02_00/Data/NpcCustomVariList_U00010_02.user",
+                "GameDesign/Catalog/03_00/Data/NpcCustomVariList_U00001_03.user",
+                "GameDesign/Catalog/03_00/Data/NpcCustomVariList_U00002_03.user",
+                "GameDesign/Catalog/04_00/Data/NpcCustomVariList_U00001_04.user",
+                "GameDesign/Catalog/04_00/Data/NpcCustomVariList_U00002_04.user",
+                "GameDesign/Catalog/04_00/Data/NpcCustomVariList_U00010_04.user"],
+      "steps": [{"type": "app.user_data.NpcCustomVariList", "entries": ["_DataList"], "file": "_VisualSetting"}]
+    },
+    {
+      "name": "Monsters",
+      "files": ["GameDesign/Catalog/First/Data/EnemyPackageList_First.user",
+                "GameDesign/Catalog/00_00/Data/EnemyPackageList.user",
+                "GameDesign/Catalog/01_00/Data/EnemyPackageList_01.user",
+                "GameDesign/Catalog/02_00/Data/EnemyPackageList_02.user",
+                "GameDesign/Catalog/03_00/Data/EnemyPackageList_03.user",
+                "GameDesign/Catalog/04_00/Data/EnemyPackageList_04.user"],
+      "steps": []
+    }
+  ],
+  "DD2": [
+    {
+      "name": "Players",
+      "files": ["AppSystem/Catalog/MainContents/UserData/PlayerCatalogData.user"],
+      "steps": [{"type": "app.PlayerCatalogData", "entries": ["PlayerCatalogDataList"], "file": "PlayerPrefab",
+                 "group": "PlayerId", "enum": "app.CharacterID"}]
+    },
+    {
+      "name": "Pawns",
+      "files": ["AppSystem/Catalog/MainContents/UserData/PawnCatalogData.user"],
+      "steps": [{"type": "app.PawnCatalogData", "entries": ["PawnCatalogDataList"], "file": "PawnPrefab",
+                 "group": "PawnId", "enum": "app.CharacterID"}]
+    },
+    {
+      "name": "NPCs",
+      "files": ["AppSystem/Catalog/MainContents/UserData/NPCCatalogData.user"],
+      "steps": [{"type": "app.NPCCatalogData", "entries": ["NPCCatalogDataList"], "file": "NPCPrefab",
+                 "group": "NPCId", "enum": "app.CharacterID"}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["AppSystem/Catalog/MainContents/UserData/EnemyCatalogData_1stChunk.user",
+                "AppSystem/Catalog/MainContents/UserData/EnemyCatalogData.user",
+                "AppSystem/Catalog/MainContents/UserData/EnemyCatalogData_Contents_0014.user"],
+      "steps": [{"type": "app.EnemyCatalogData", "entries": ["EnemyCatalogDataList"], "file": "EnemyPrefab",
+                 "group": "EnemyId", "enum": "app.CharacterID"}]
+    }
+  ],
+  "RE7RT": [
+    {
+      "name": "Players",
+      "files": ["Scenes/Chapter/Chapter4/Player_c04.scn", "Scenes/Birthday/Players.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name"}]
+    },
+    {
+      "name": "Players",
+      "files": ["Scenes/Chapter/Chapter7/Chapter7_1/c07_1_Player.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/c07_2_Player.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_3/c07_3_Player.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_4/c07_4_Player.scn", "CH8/Scenes/Player.scn"],
+      "steps": []
+    },
+    {
+      "name": "Enemies",
+      "files": ["Scenes/Enemy/LoadEnemyScene.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name"}],
+      "spawned": true
+    },
+    {
+      "name": "Chapter enemies",
+      "files": ["Scenes/Chapter/Chapter0/Enemy_c00.scn", "Scenes/Chapter/Chapter1/Enemy_c01.scn",
+                "Scenes/Chapter/Chapter123/Enemy_c123_1.scn", "Scenes/Chapter/Chapter123/Enemy_c123_2.scn",
+                "Scenes/Chapter/Chapter3/Enemy_c03.scn", "Scenes/Chapter/Chapter3/Enemy_c03_1.scn",
+                "Scenes/Chapter/Chapter3/Enemy_c03_2.scn", "Scenes/Chapter/Chapter3/Enemy_c03_3.scn",
+                "Scenes/Chapter/Chapter3/Enemy_c03_4.scn", "Scenes/Chapter/Chapter3/Enemy_c03_5.scn",
+                "Scenes/Chapter/Chapter324/Enemy_c324.scn", "Scenes/Chapter/Chapter4/Enemy_c04.scn",
+                "Scenes/Chapter/Chapter4/Enemy_c04_1.scn", "Scenes/Chapter/Chapter4/Enemy_c04_2.scn",
+                "Scenes/Chapter/Chapter4/Enemy_c04_3.scn", "Scenes/Chapter/FF000/Enemy_ff000.scn",
+                "Scenes/Chapter/FF030/Enemy_ff030.scn", "Scenes/Chapter/FF040/Enemy_ff040.scn",
+                "Scenes/Chapter/FF050/Enemy_ff050.scn", "Scenes/Chapter/Chapter7/Chapter7_1/Enemy_c07_1.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/Enemy_c07_2.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/Em9800.scn", "Scenes/Chapter/Chapter7/Chapter7_2/Em9801.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/Em9802.scn", "Scenes/Chapter/Chapter7/Chapter7_2/Em9803.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/Em9804.scn", "Scenes/Chapter/Chapter7/Chapter7_2/Em9805.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/Em9806.scn", "Scenes/Chapter/Chapter7/Chapter7_2/Em9807.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_2/Em9808.scn", "Scenes/Chapter/Chapter7/Chapter7_2/Em9809.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_3/Enemy_c07_3.scn",
+                "Scenes/Chapter/Chapter7/Chapter7_4/Enemy_c07_4.scn", "Scenes/IMD/Enemy_IMD.scn",
+                "CH8/Scenes/Chapter/Chapter8/Enemy_c08.scn", "CH9/Scenes/Chapter/Enemy_c09.scn",
+                "CH9/Scenes/Chapter/Enemy/Chapter9_1/Enemy_c09_1.scn",
+                "CH9/Scenes/Chapter/Enemy/Chapter9_2/Enemy_c09_2.scn",
+                "CH9/Scenes/Chapter/Enemy/Chapter9_3/Enemy_c09_3.scn",
+                "CH9/Scenes/Chapter/Enemy/Chapter9_4/Enemy_c09_4.scn"],
+      "steps": [],
+      "spawned": true
+    },
+    {
+      "name": "NPCs",
+      "files": ["Scenes/Chapter/Chapter4/Character_c04_1_2.scn", "CH9/Scenes/Chapter/Npc/Npc_c09.scn",
+                "CH9/Scenes/Chapter/Npc/Npc_c09_1.scn"],
+      "steps": [],
+      "spawned": true
+    }
+  ],
+  "ONIMUSHAWOTS": [
+    {
+      "name": "Player parts",
+      "files": ["GameDesign/System/Scene/Chunk_1st.scn", "GameDesign/System/Scene/Chunk_2nd.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC000/DLC000_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC001/DLC001_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC003/DLC003_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC004/DLC004_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC005/DLC005_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC006/DLC006_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC007/DLC007_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC008/DLC008_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC009/DLC009_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC010/DLC010_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC011/DLC011_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC012/DLC012_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC013/DLC013_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC014/DLC014_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC016/DLC016_Catalog.scn",
+                "GameDesign/System/Scene/ExtraContents/DLC041/DLC041_Catalog.scn"],
+      "steps": [{"type": "app.PlayerPartsListCatalog",
+                 "fields": ["_BodyList", "_BodySubList", "_HeadList", "_HairList", "_GauntletList", "_CloakList",
+                            "_WeaponList", "_SheathList", "_WeaponSubList", "_SheathSubList", "_AmuletList",
+                            "_AmuletSubList", "_BowList", "_BodyListHQ", "_BodySubListHQ", "_HeadListHQ",
+                            "_HairListHQ", "_GauntletListHQ", "_CloakListHQ", "_WeaponListHQ", "_SheathListHQ",
+                            "_WeaponSubListHQ", "_SheathSubListHQ", "_AmuletListHQ", "_AmuletSubListHQ",
+                            "_BowListHQ"]}]
+    },
+    {
+      "name": "Enemies",
+      "files": ["GameDesign/System/CatalogData/EnemyList_1st.user", "GameDesign/System/CatalogData/EnemyList.user"],
+      "steps": [{"type": "app.user_data.EnemyList", "entries": ["_DataList"], "file": "_Prefab"}]
+    },
+    {
+      "name": "NPCs",
+      "files": ["GameDesign/System/CatalogData/NpcCatalogList_1st.user",
+                "GameDesign/System/CatalogData/NpcCatalogList.user",
+                "GameDesign/System/CatalogData/NpcPreviewCatalogList_1st.user",
+                "GameDesign/System/CatalogData/NpcPreviewCatalogList.user"],
+      "steps": [{"type": "app.user_data.NpcCatalogList", "entries": ["_DataList"], "file": "_Param"},
+                {"type": "app.user_data.NpcContextParamPack", "entries": ["VisualSetting"]}]
+    },
+    {
+      "name": "Archive",
+      "files": ["GameDesign/GUI/ModelPreview/EnemyPreviewModeData.user"],
+      "steps": [{"type": "app.user_data.EnemyPreviewModeData", "entries": ["_Datas"], "file": "_Prefab"}]
+    }
+  ],
+  "SF6": [
+    {
+      "name": "esf",
+      "files": ["Product/CharParam/esf/esf.scn", "Product/CharParam/esf/esf_dlc_wt.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name",
+                 "holding": "app.battle.assets.FighterVisualHolder"}]
+    },
+    {
+      "name": "wnf",
+      "files": ["Product/CharParam/wnf/wnf.scn", "Product/CharParam/wnf/wnf_dlc_wt.scn",
+                "Product/CharParam/wnf/wnf_ver_01_0100.scn", "Product/CharParam/wnf/wnf_ver_01_0400.scn",
+                "Product/CharParam/wnf/wnf_ver_01_0500.scn", "Product/CharParam/wnf/wnf_ver_01_0600.scn",
+                "Product/CharParam/wnf/wnf_ver_01_0700.scn", "Product/CharParam/wnf/wnf_ver_01_0900.scn",
+                "Product/CharParam/wnf/wnf_ver_01_1000.scn", "Product/CharParam/wnf/wnf_ver_02_0100.scn",
+                "Product/CharParam/wnf/wnf_ver_02_0200.scn", "Product/CharParam/wnf/wnf_ver_02_0300.scn",
+                "Product/CharParam/wnf/wnf_ver_02_1000.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name",
+                 "holding": "app.battle.assets.FighterVisualHolder"}]
+    },
+    {
+      "name": "wtf",
+      "files": ["Product/CharParam/wtf/wtf.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name",
+                 "holding": "app.battle.assets.FighterVisualHolder"}]
+    },
+    {
+      "name": "gmnp",
+      "files": ["Product/CharParam/gmnp/gmnp.scn", "Product/CharParam/gmnp/gmnp_dlc_fg.scn",
+                "Product/CharParam/gmnp/gmnp_dlc_wt.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name",
+                 "holding": "app.battle.assets.FighterVisualHolder"}]
+    }
+  ],
+  "RE8": [
+    {
+      "name": "Enemies",
+      "files": ["Spawn/Enemy/Scene/c01/c01_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_1/c02_1_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_1/c02_1_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_2/c02_2_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_2/c02_2_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_3/c02_3_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_4/c02_4_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_4/c02_4_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_5/c02_5_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_5/c02_5_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_6/c02_6_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_6/c02_6_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c02_7/c02_7_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c03_1/c03_1_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c03_1/c03_1_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c03_122/c03_122_CharacterPool.scn",
+                "Spawn/Enemy/Scene/c03_2/c03_2_AsyncCharacterPool.scn",
+                "Spawn/Enemy/Scene/c03_2/c03_2_CharacterPool.scn",
+                "Spawn/Enemy/Scene/Ending/Ending_CharacterPool.scn",
+                "Spawn/Enemy/Scene/Bridge_02/Bridge_02_Battle.scn",
+                "Spawn/Enemy/Scene/Bridge_02_Event/Bridge_02_Event_Battle.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name", "holding": "app.EnemyConfigure"}]
+    },
+    {
+      "name": "Shadows of Rose",
+      "files": ["_GE/Spawn/Enemy/Scene/c01/c01_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_1/c02_1_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_1/c02_1_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_2/c02_2_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_2/c02_2_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_3/c02_3_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_4/c02_4_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_4/c02_4_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_5/c02_5_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_5/c02_5_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_6/c02_6_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_6/c02_6_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c02_7/c02_7_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c03_1/c03_1_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c03_1/c03_1_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c03_122/c03_122_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c03_2/c03_2_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c03_2/c03_2_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_1/c10_1_AsyncCharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_1/c10_1_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_2/c10_2_1_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_2/c10_2_2_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_2/c10_2_3_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_2/c10_2_4_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_2/c10_2_5_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_3/c10_3_CharacterPool.scn",
+                "_GE/Spawn/Enemy/Scene/c10_4/c10_4_CharacterPool.scn",
+                "_GE/GameFlow/Chapter10_0.scn",
+                "_GE/Spawn/Enemy/Scene/Bridge_02/Bridge_02_Battle.scn",
+                "_GE/Spawn/Enemy/Scene/Bridge_02_Event/Bridge_02_Event_Battle.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name", "holding": "app.EnemyConfigure"}]
+    },
+    {
+      "name": "Mercenaries",
+      "files": ["_GE/GameFlow/Mercenaries/CharacterPool/Stage_01_CharacterPool.scn",
+                "_GE/GameFlow/Mercenaries/CharacterPool/Stage_09_CharacterPool.scn",
+                "GameFlow/Mercenaries/CharacterPool/Stage_01_CharacterPool.scn"],
+      "steps": [{"type": "via.Folder", "fields": ["ScenePath"], "group": "Name", "holding": "app.EnemyConfigure"}]
+    }
+  ],
+  "RE9": [
+    {
+      "name": "Montages",
+      "files": ["AppSystem/Character/Catalog/Montage/CharacterMontageCatalogUserData.user",
+                "AppSystem/Character/Catalog/Montage/CharacterMontageCatalogUserData_FirstChunk.user",
+                "GameAssets/Content/DLC/DLC_01/CharacterMontageCatalogUserData_DLC_01.user",
+                "GameAssets/Content/DLC/DLC_02/CharacterMontageCatalogUserData_DLC_02.user"],
+      "steps": [{"type": "app.CharacterMontageCatalogUserData", "entries": ["_CharacterCatalogs"]},
+                {"type": "app.CharacterMontagePresetCatalogUserData", "entries": ["_Presets"], "file": "_Preset",
+                 "group": "_CharacterKind"}]
+    },
+    {
+      "name": "Character pools",
+      "files": ["GameAssets/Character/Scene/chap1_01/chap1_01_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap1_10/chap1_10_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3-0304/chap3-0304_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_01/chap3_01_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_02/chap3_02_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_03/chap3_03_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_04/chap3_04_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_05/chap3_05_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_06/chap3_06_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_10/chap3_10_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_20/chap3_20_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_324/chap3_324_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap3_40/chap3_40_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_00/chap4_00_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_10/chap4_10_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_1020/chap4_1020_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_20/chap4_20_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_30/chap4_30_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_40/chap4_40_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_4050/chap4_4050_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap4_50/chap4_50_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap5_02/chap5_02_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap5_03/chap5_03_CharacterPool.scn",
+                "GameAssets/Character/Scene/chap5_10/chap5_10_CharacterPool.scn",
+                "GameAssets/Character/Scene/ff_01/ff_01_CharacterPool.scn",
+                "GameAssets/Character/Scene/ff_02/ff_02_CharacterPool.scn"],
+      "steps": []
+    }
+  ]
+}

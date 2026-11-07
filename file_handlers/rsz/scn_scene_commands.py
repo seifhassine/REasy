@@ -4,8 +4,10 @@ from dataclasses import dataclass, field
 
 lazy import numpy as np
 
+lazy from file_handlers.engine_math import transform_product
 lazy from .scn_document_store import ScnDocumentStore
 lazy from .scn_scene_adapters import CompositeMeshAdapter, TransformAdapter, decompose_trs
+lazy from .scene_startup import apply_startup_transforms
 lazy from .scn_scene_graph import (
     VIA_TRANSFORM,
     ScnLightProbeBinding,
@@ -13,7 +15,12 @@ lazy from .scn_scene_graph import (
     ScnRenderableMesh,
     ScnSceneGraph,
     ScnTransform,
-    compose_parented_transform,
+    compose_document_worlds,
+    folder_offsets,
+    instance_world,
+    joint_world,
+    linked_base,
+    placed_matrix,
 )
 
 
@@ -124,11 +131,21 @@ class TransformSelectionCommand:
         if scene_object.transform_component is None:
             raise ValueError("Object has no editable via.Transform")
         fields = document.components[scene_object.transform_component].fields
-        adapter = TransformAdapter(fields)
+        adapter = TransformAdapter(fields, graph.field_names)
         old_transform = adapter.read()
         parent_matrix = _identity()
-        if parent_id := document.object_by_local_id.get(scene_object.parent_id):
-            parent_matrix = written_worlds.get(parent_id, document.objects[parent_id].document_world_matrix)
+        parent_id = document.object_by_local_id.get(scene_object.parent_id)
+        parent = document.objects.get(parent_id)
+        if parent is not None and parent.kind != "folder":
+            parent_matrix = written_worlds.get(parent_id, parent.document_world_matrix)
+            # On a joint: the joint's world at the base pose (``joint_world``).
+            joints = document.joints.get(parent_id)
+            if joints is not None and (index := joints.index(old_transform.parent_joint)) is not None:
+                parent_matrix = joint_world(document, parent, index,
+                                            lambda owner: written_worlds.get(owner.id, owner.document_world_matrix))
+        elif offsets := folder_offsets(document, scene_object.parent_id):
+            # A root stores its position without its folders' offsets (``root_position``).
+            parent_matrix[:3, 3] = np.sum(offsets, axis=0)
         new_transform = decompose_trs(self._inverse(parent_matrix) @ document_world, old_transform)
         adapter.write(new_transform)
         written_worlds[renderable.source_object_id] = document_world.astype(np.float32)
@@ -147,8 +164,8 @@ class TransformSelectionCommand:
         owner_matrix = written_worlds.get(renderable.source_object_id, document.objects[renderable.source_object_id].document_world_matrix)
         new_transform = decompose_trs(self._inverse(owner_matrix) @ document_world, old_transform)
         adapter.write_transform(new_transform)
-        renderable.document_world_matrix = (owner_matrix @ new_transform.local_matrix).astype(np.float32)
-        renderable.world_matrix = (instance.base_world_matrix @ renderable.document_world_matrix).astype(np.float32)
+        renderable.document_world_matrix = transform_product(owner_matrix, new_transform.local_matrix)
+        renderable.world_matrix = placed_matrix(instance.base_world_matrix, renderable.document_world_matrix)
         return TransformEditRecord(graph, renderable.key, renderable.source_object_id, renderable.source_transform_instance_id, adapter.transform_fields(), old_transform, new_transform)
 
     @staticmethod
@@ -191,7 +208,8 @@ class TransformSelectionCommand:
         scene_object = document.objects[record.source_object_id]
         if scene_object.transform_component is None:
             raise ValueError("Object has no editable via.Transform")
-        TransformAdapter(document.components[scene_object.transform_component].fields).write(transform)
+        TransformAdapter(document.components[scene_object.transform_component].fields,
+                         record.graph.field_names).write(transform)
 
     @staticmethod
     def _inverse(matrix: np.ndarray) -> np.ndarray:
@@ -246,7 +264,7 @@ class RawTransformFieldCommand:
                 if component.type_name != VIA_TRANSFORM:
                     continue
                 try:
-                    adapter = TransformAdapter(component.fields)
+                    adapter = TransformAdapter(component.fields, graph.field_names)
                     if not adapter.owns_field(self.changed_field):
                         continue
                     if component.owner is not None:
@@ -281,32 +299,11 @@ def sync_graph_transforms(
             for scene_object in document.objects.values():
                 if scene_object.transform_component is not None:
                     component = document.components[scene_object.transform_component]
-                    scene_object.transform = TransformAdapter(component.fields).read()
-            _compute_worlds(document)
+                    scene_object.transform = TransformAdapter(component.fields, graph.field_names).read()
+            apply_startup_transforms(document)
+            compose_document_worlds(document)
     _refresh_instance_bases(graph)
     return _refresh_renderables(graph, old_locals, _affected_renderable_keys(graph, object_ids) if object_ids else None)
-
-
-def _compute_worlds(document) -> None:
-    visiting, visited = set(), set()
-
-    def compute(scene_object):
-        if scene_object.id in visited or scene_object.id in visiting:
-            return scene_object.document_world_matrix
-        visiting.add(scene_object.id)
-        parent = document.object_by_local_id.get(scene_object.parent_id)
-        parent_matrix = compute(document.objects[parent]) if parent in document.objects else _identity()
-        scene_object.document_world_matrix = (
-            compose_parented_transform(parent_matrix, scene_object.transform)
-            if scene_object.transform is not None
-            else parent_matrix.copy()
-        )
-        visiting.discard(scene_object.id)
-        visited.add(scene_object.id)
-        return scene_object.document_world_matrix
-
-    for scene_object in document.objects.values():
-        compute(scene_object)
 
 
 def _refresh_instance_bases(graph: ScnSceneGraph) -> None:
@@ -322,7 +319,8 @@ def _refresh_instance_bases(graph: ScnSceneGraph) -> None:
         offset = _identity()
         if link.folder_offset is not None:
             offset[:3, 3] = np.asarray(link.folder_offset, dtype=np.float32)
-        instance.base_world_matrix = (parent.base_world_matrix @ source_folder.document_world_matrix @ offset).astype(np.float32)
+        instance.base_world_matrix = linked_base(graph, instance.instance_id, instance_world(parent, source_folder),
+                                                 offset)
 
 
 def _refresh_renderables(graph: ScnSceneGraph, old_locals: dict[str, np.ndarray], keys: set[str] | None = None) -> dict[str, np.ndarray]:
@@ -336,8 +334,8 @@ def _refresh_renderables(graph: ScnSceneGraph, old_locals: dict[str, np.ndarray]
         if instance is None or scene_object is None:
             continue
         local = _renderable_local(document, renderable, old_locals)
-        renderable.document_world_matrix = (scene_object.document_world_matrix @ local).astype(np.float32)
-        renderable.world_matrix = (instance.base_world_matrix @ renderable.document_world_matrix).astype(np.float32)
+        renderable.document_world_matrix = transform_product(scene_object.document_world_matrix, local)
+        renderable.world_matrix = placed_matrix(instance.base_world_matrix, renderable.document_world_matrix)
         matrices[renderable.key] = renderable.world_matrix
     return matrices
 

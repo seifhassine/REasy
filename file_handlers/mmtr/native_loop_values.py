@@ -12,8 +12,9 @@ def prepare_loop_exports(blocks, members, dominators, fresh):
         if label in members:
             continue
         for row in rows:
-            match = re.fullmatch(r'%' + LABEL + r' = extractvalue %' + LABEL + r' (%' + LABEL + r'), (\d+)',row.text)
-            if match is None or match[1] not in definitions:
+            match = row.opcode == 'extractvalue' and re.fullmatch(
+                r'%' + LABEL + r' = extractvalue %' + LABEL + r' (%' + LABEL + r'), (\d+)', row.text)
+            if not match or match[1] not in definitions:
                 continue
             owner, definition = definitions[match[1]]
             if owner not in members:
@@ -29,8 +30,10 @@ def prepare_loop_exports(blocks, members, dominators, fresh):
             blocks[label] = [part for row in rows if row.result not in moved for part in (row,*after.get(row.result,()))]
 
     handles = {name:row for name,(label,row) in definitions.items() if label in members and
-               (re.match(r'call %dx\.types\.Handle @dx\.op\.(?:annotateHandle|createHandle|createHandleFromBinding|createHandleFromHeap)\(',row.text.partition('=')[2].strip())
-                or re.fullmatch(r'bitcast .+ to i8\*',row.text.partition('=')[2].strip()))}
+               (row.opcode == 'call' and re.match(r'call %dx\.types\.Handle @dx\.op\.(?:annotateHandle|createHandle'
+                                                  r'|createHandleFromBinding|createHandleFromHeap)\(',
+                                                  row.text.partition('=')[2].strip())
+                or row.opcode == 'bitcast' and re.fullmatch(r'bitcast .+ to i8\*', row.text.partition('=')[2].strip()))}
     if not handles:
         return
     for label,rows in tuple(blocks.items()):
@@ -55,6 +58,9 @@ def prepare_loop_exports(blocks, members, dominators, fresh):
             body = row.text.partition('=')[2] if row.result else row.text
             if row.opcode=='phi' and any(name in handles for name in re.findall(r'%'+LABEL,body)):
                 raise ShaderGraphError('A resource-valued exit phi needs explicit binding selection.')
+            if not any(name in row.text for name in handles):
+                rewritten.append(row)
+                continue
             text = re.sub(r'%'+LABEL,lambda match:materialize(match[0], materialize),row.text)
             rewritten.append(DxilSemanticRecord(row.kind,text,row.opcode,row.result))
         blocks[label] = rewritten

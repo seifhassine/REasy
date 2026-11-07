@@ -7,36 +7,28 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
+lazy from file_handlers.engine_math import make_trs_matrix, transform_product
 lazy from utils.hash_util import murmur3_hash_utf16le
 
 F = np.float32
-# A ``.fbxskel``'s joints: their offset, hash table offset and count in its header, and the bytes of each.
+# A ``.fbxskel``'s joints: their offset, hash table offset and count in its header, and the bytes of each; per file
+# version (the header's first word), where a joint holds its rotation, position and scale.
 _SKELETON_HEADER, _SKELETON_JOINT = struct.Struct("<QQI"), 64
+_SKELETON_TRANSFORMS = {version: (0x20, 0x10, 0x30) for version in (2, 3, 4)} | {
+    version: (0x10, 0x20, 0x2C) for version in (5, 6, 7, 8)}
 
 
 def trs(position: Sequence[float], rotation: Sequence[float], scale: Sequence[float]) -> np.ndarray:
-    x, y, z, w = (F(value) for value in rotation)
-    x2, y2, z2, one = x + x, y + y, z + z, F(1)
-    xx, yy, zz, xy, xz, yz, wx, wy, wz = x * x2, y * y2, z * z2, x * y2, x * z2, y * z2, w * x2, w * y2, w * z2
-    out = np.array([[(one - yy) - zz, xy + wz, xz - wy, 0], [xy - wz, (one - xx) - zz, yz + wx, 0],
-                    [xz + wy, yz - wx, (one - xx) - yy, 0], [*position, 1]], F)
-    out[:3] *= np.asarray(scale, F)[:, None]
-    return out
-
-
-def times(matrix: np.ndarray, parent: np.ndarray) -> np.ndarray:
-    """Sums the row products in the engines' order."""
-    a, p = np.asarray(matrix, F), np.asarray(parent, F)
-    return (a[..., :, 0, None] * p[..., None, 0, :] + a[..., :, 1, None] * p[..., None, 1, :]) + (
-        a[..., :, 2, None] * p[..., None, 2, :] + a[..., :, 3, None] * p[..., None, 3, :])
+    """``make_trs_matrix`` as row vectors."""
+    return make_trs_matrix(position, rotation, scale).T.copy()
 
 
 @dataclass(frozen=True, slots=True, eq=False)
 class JointSet:
-    """``parents`` hold each joint's parent index, negative for none."""
     names: tuple[str, ...]
     parents: tuple[int, ...]
     locals: np.ndarray
+    symmetry: tuple[int, ...] = ()
     _hashes: dict[int, int] = field(init=False, repr=False, compare=False)
 
     def __post_init__(self):
@@ -52,7 +44,7 @@ class JointSet:
         return self._hashes.get(key)
 
     def posed(self, locals_: np.ndarray) -> JointSet:
-        return JointSet(self.names, self.parents, np.asarray(locals_, F))
+        return JointSet(self.names, self.parents, np.asarray(locals_, F), self.symmetry)
 
     @classmethod
     def of_mesh(cls, mesh) -> JointSet | None:
@@ -61,24 +53,34 @@ class JointSet:
             return None
         return cls(tuple(mesh.names[int(mesh.bone_indices[index])] for index in range(count)),
                    tuple(int(mesh.bones[index].parent_index) for index in range(count)),
-                   np.asarray(mesh.local_matrices[:count], F).reshape(count, 4, 4))
+                   np.asarray(mesh.local_matrices[:count], F).reshape(count, 4, 4),
+                   tuple(int(mesh.bones[index].symmetry_index) for index in range(count)))
 
     @classmethod
     def of_skeleton(cls, data: bytes) -> JointSet:
         """``data`` is a ``.fbxskel`` file."""
-        start, _hashes, count = _SKELETON_HEADER.unpack_from(data, 0x10)
-        names, parents, locals_ = [], [], []
-        for at in range(start, start + count * _SKELETON_JOINT, _SKELETON_JOINT):
-            name, _hash, parent = struct.unpack_from("<QIh", data, at)
-            end = name
-            while data[end:end + 2] != b"\0\0":
-                end += 2
-            names.append(data[name:end].decode("utf-16-le"))
-            parents.append(parent)
-            rotation, position, scale = (struct.unpack_from(form, data, at + offset)
-                                         for form, offset in (("<4f", 0x10), ("<3f", 0x20), ("<3f", 0x2c)))
-            locals_.append(trs(position, rotation, scale))
-        return cls(tuple(names), tuple(parents), np.asarray(locals_, F).reshape(count, 4, 4))
+        names, parents, positions, rotations, scales, symmetry = skeleton_joint_descs(data)
+        return cls(names, parents, np.asarray([trs(position, rotation, scale) for position, rotation, scale
+                                               in zip(positions, rotations, scales)], F).reshape(len(names), 4, 4),
+                   symmetry)
+
+
+def skeleton_joint_descs(data: bytes) -> tuple[tuple[str, ...], tuple[int, ...], list, list, list, tuple[int, ...]]:
+    start, _hashes, count = _SKELETON_HEADER.unpack_from(data, 0x10)
+    rotation_at, position_at, scale_at = _SKELETON_TRANSFORMS[struct.unpack_from("<I", data, 0)[0]]
+    names, parents, positions, rotations, scales, symmetry = [], [], [], [], [], []
+    for at in range(start, start + count * _SKELETON_JOINT, _SKELETON_JOINT):
+        name, _hash, parent, mirror = struct.unpack_from("<QIhh", data, at)
+        end = name
+        while data[end:end + 2] != b"\0\0":
+            end += 2
+        names.append(data[name:end].decode("utf-16-le"))
+        parents.append(parent)
+        symmetry.append(mirror)
+        rotations.append(struct.unpack_from("<4f", data, at + rotation_at))
+        positions.append(struct.unpack_from("<3f", data, at + position_at))
+        scales.append(struct.unpack_from("<3f", data, at + scale_at))
+    return tuple(names), tuple(parents), positions, rotations, scales, tuple(symmetry)
 
 
 class Placed:
@@ -116,7 +118,7 @@ class Placed:
                 self._world = self.local
             else:
                 base = self.parent.world() if self._hanging is None else self.parent.joint_world(self._hanging)
-                self._world = times(self.local, base)
+                self._world = transform_product(self.local, base)
         return self._world
 
     def joint_world(self, index: int) -> np.ndarray:
@@ -128,8 +130,8 @@ class Placed:
                     if self._shared[joint] is not None:
                         out[joint] = self.parent.joint_world(self._shared[joint])
                 if own:
-                    out[own] = times(joints.locals[own], [out[joints.parents[joint]] if joints.parents[joint] >= 0
-                                                          else self.world() for joint in own])
+                    out[own] = transform_product(joints.locals[own], [
+                        out[joints.parents[joint]] if joints.parents[joint] >= 0 else self.world() for joint in own])
             self._joint_worlds = out
         return self._joint_worlds[index]
 
@@ -157,4 +159,4 @@ def placed_objects(document, root: Placed | None, joints_of: Callable[[object], 
     return out
 
 
-__all__ = ["JointSet", "Placed", "placed_objects", "times", "trs"]
+__all__ = ["JointSet", "Placed", "placed_objects", "skeleton_joint_descs", "trs"]

@@ -5,12 +5,14 @@ import struct
 from dataclasses import dataclass
 import os
 from pathlib import Path
+import weakref
 
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QHBoxLayout, QInputDialog, QLabel, QMessageBox, QPushButton
 
 lazy from file_handlers.mdf.mdf_file import MdfFile
 lazy from file_handlers.mdf.mdf_handler import MdfHandler
+lazy from file_handlers.mesh.material_resolver import MeshMaterialResolver
 from file_handlers.sdf.sdf_viewer import SdfViewer
 lazy from services.backup_store import create_backup
 lazy from ui.background_jobs import run_job
@@ -73,6 +75,10 @@ class MmtrViewer(SdfViewer):
         self.material_editor.project_dir = str(
             getattr(context, "project_dir", "") or ""
         )
+        owner = weakref.ref(handler)
+        self.material_editor.resource_loader = lambda path: (
+            None if owner() is None else MeshMaterialResolver._resolve_resource(owner(), path))
+        self._saved_stale = 0, ""
         self.material_editor.dirty_changed.connect(self._material_project_dirty_changed)
         self.material_editor.variant_requested.connect(
             self._material_variant_requested
@@ -170,12 +176,14 @@ class MmtrViewer(SdfViewer):
                 "This master is open to change one object's shader. Saving it in place would change every object "
                 "that uses it, so use Create Variant instead."))
             return False
+        self._saved_stale = 0, ""
         payload = self.material_editor.material_save_payload()
         if payload is None:
             return True
         build, project_data = payload
         if not self._commit_material_build(build):
             return False
+        self._saved_stale = self.material_editor._stale_passes()
         project_dir = self._project_dir_for_output(file_path)
         sidecar_path = material_project_sidecar_path(file_path, project_dir)
         self.handler.queue_material_project(sidecar_path, project_data)
@@ -190,10 +198,12 @@ class MmtrViewer(SdfViewer):
             absolute,
             self.material_editor.project_dir,
         )
-        self.material_editor.status.setText(
-            self.tr("Material saved.")
-        )
-        set_style_role(self.material_editor.status, tone="success")
+        stale, details = self._saved_stale
+        self.material_editor.status.setText(self.tr(
+            "Material saved. {count} passes reading it kept their original shaders — hover for which."
+        ).format(count=stale) if stale else self.tr("Material saved."))
+        self.material_editor.status.setToolTip(details)
+        set_style_role(self.material_editor.status, tone="warning" if stale else "success")
 
     def _project_dir_for_output(self, path: str) -> str:
         app = getattr(self.handler, "app", None)
@@ -382,23 +392,30 @@ class MmtrViewer(SdfViewer):
         matches = open_tabs_for_paths(self._all_file_tabs(), (path,), exclude=excluded)
         return matches[0][0] if matches else None
 
-    def _reload_or_open_output(self, path: str, data: bytes) -> None:
-        tab = self._output_tab(path)
-        if tab is not None:
-            tab._reload_from_data(data, path)
-            return
-        app = getattr(self.handler, "app", None)
-        if app is not None and hasattr(app, "add_tab"):
-            app.add_tab(path, data)
+    def _reload_or_open_output(self, path: str, data: bytes, scope: ObjectScope | None = None) -> None:
+        key = os.path.normcase(str(path))
+        if scope is not None:
+            _PENDING_SCOPES[key] = scope
+        try:
+            tab = self._output_tab(path)
+            if tab is not None:
+                tab._reload_from_data(data, path)
+                return
+            app = getattr(self.handler, "app", None)
+            if app is not None and hasattr(app, "add_tab"):
+                app.add_tab(path, data)
+        finally:
+            _PENDING_SCOPES.pop(key, None)
 
     def _discover_mdf_sources(self, resource_path, project_dir, unpacked_dir, pak_paths, pak_loader):
         open_sources, unwritten = self._open_mdf_sources()
+        mdf_version = self.mmtr_document.profile.mdf_resource_version
         found = run_job(
             self, self.tr("Finding MDF consumers"),
             lambda progress, _cancelled: discover_mdf_consumers(
                 mmtr_resource_path=resource_path, project_dir=project_dir, unpacked_dir=unpacked_dir,
                 pak_paths=pak_paths, pak_loader=pak_loader, open_sources=open_sources,
-                progress=lambda count, _label: progress(count, 0)),
+                progress=lambda count, _label: progress(count, 0), mdf_version=mdf_version),
             status=self.tr("Finding MDF consumers…"),
             describe=lambda count, _total: self.tr("Finding MDF consumers… {count} checked").format(count=count),
         )
@@ -583,13 +600,17 @@ class MmtrViewer(SdfViewer):
         finally:
             QApplication.restoreOverrideCursor()
 
+        mdf = MdfFile()
+        mdf.read(artifacts.mdf_data, written.mdf_path)
+        index = dialog.material_indices()[0]
+        scope = ObjectScope(mdf.materials[index], None, index, self.material_editor.resource_loader)
         if artifacts.member_files:
             for filename, payload in artifacts.member_files:
                 path = str(Path(written.mmtr_path).with_name(filename))
                 if self._output_tab(path) is not None or filename == artifacts.member_files[0][0]:
-                    self._reload_or_open_output(path, payload)
+                    self._reload_or_open_output(path, payload, scope)
         else:
-            self._reload_or_open_output(written.mmtr_path, artifacts.mmtr_data)
+            self._reload_or_open_output(written.mmtr_path, artifacts.mmtr_data, scope)
         self._reload_or_open_output(written.mdf_path, artifacts.mdf_data)
         project_manager = getattr(app, "proj_dock", None)
         refresh_project = getattr(project_manager, "_refresh_proj", None)

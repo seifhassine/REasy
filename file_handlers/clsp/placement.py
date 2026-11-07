@@ -6,23 +6,16 @@ from collections.abc import Callable, Sequence
 
 import numpy as np
 
+lazy from file_handlers.engine_math import row_lengths, transform_product
 lazy from .clsp_file import CollisionShape, ShapeKind
 
 F = np.float32
 _UNIT = np.eye(4, dtype=F)
 
 
-def pairwise(rows: np.ndarray, matrix: np.ndarray) -> np.ndarray:
-    return np.array([(r[0] * matrix[0] + r[1] * matrix[1]) + (r[2] * matrix[2] + r[3] * matrix[3]) for r in rows], F)
-
-
 def point(position: Sequence, matrix: np.ndarray) -> np.ndarray:
     x, y, z = position
     return ((x * matrix[0, :3] + y * matrix[1, :3]) + z * matrix[2, :3]) + matrix[3, :3]
-
-
-def row_lengths(matrix: np.ndarray) -> np.ndarray:
-    return np.array([np.sqrt(((a * a + b * b) + c * c) + d * d) for a, b, c, d in matrix[:3]], F)
 
 
 def transform_scale(world: np.ndarray) -> np.ndarray:
@@ -54,15 +47,15 @@ def place(shape: CollisionShape, matrix: Callable[[int], np.ndarray], scale: Seq
         t = t * (F(1) / np.sqrt((t[0] * t[0] + t[1] * t[1]) + t[2] * t[2]))
         out[0:3], out[3] = t, -((t[0] * far[0] + t[1] * far[1]) + t[2] * far[2])
     elif shape.kind == ShapeKind.BOX:
-        joint = pairwise(_UNIT, _matrix(matrix, shape.joint))
-        out[:16], out[16:19] = pairwise(v[:16].reshape(4, 4), joint).ravel(), v[16:19]
+        joint = transform_product(_UNIT, _matrix(matrix, shape.joint))
+        out[:16], out[16:19] = transform_product(v[:16].reshape(4, 4), joint).ravel(), v[16:19]
     elif shape.kind in (ShapeKind.SPHERE, ShapeKind.CAPSULE, ShapeKind.TAPERED_CAPSULE):
         size = _biggest(np.asarray(scale, F))
-        out[0:3] = point(v[0:3], pairwise(_UNIT, _matrix(matrix, shape.joint)))
+        out[0:3] = point(v[0:3], transform_product(_UNIT, _matrix(matrix, shape.joint)))
         if shape.kind == ShapeKind.SPHERE:
             out[3] = v[3] * size
         else:
-            out[4:7] = point(v[4:7], pairwise(_UNIT, _matrix(matrix, shape.end_joint)))
+            out[4:7] = point(v[4:7], transform_product(_UNIT, _matrix(matrix, shape.end_joint)))
             if shape.kind == ShapeKind.CAPSULE:
                 out[8] = v[8] * size
             else:
@@ -72,4 +65,4 @@ def place(shape: CollisionShape, matrix: Callable[[int], np.ndarray], scale: Seq
     return dataclasses.replace(shape, values=out)
 
 
-__all__ = ["hung_joints", "pairwise", "place", "point", "row_lengths", "transform_scale"]
+__all__ = ["hung_joints", "place", "point", "transform_scale"]

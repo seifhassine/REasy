@@ -7,7 +7,8 @@ lazy import numpy as np
 
 lazy from file_handlers.rsz.rsz_data_types import ArrayData, ResourceData, StringData
 
-lazy from .scn_scene_graph import ScnTransform, make_trs_matrix, normalize_scene_path
+lazy from file_handlers.engine_math import make_trs_matrix
+lazy from .scn_scene_graph import ScnTransform, normalize_scene_path
 
 
 def decompose_trs(matrix: np.ndarray, reference: ScnTransform | None = None) -> ScnTransform:
@@ -57,38 +58,18 @@ def _matrix_to_quat(m: np.ndarray) -> tuple[float, float, float, float]:
 @dataclass(slots=True)
 class TransformAdapter:
     fields: Mapping[str, object]
+    names: Mapping[str, str | None]
 
     def read(self) -> ScnTransform:
         transform = _read_transform(self.transform_fields())
-        transform.parent_joint = _strip(
-            getattr(_named_field(self.fields, "ParentJoint"), "value", "")
-        )
-        transform.same_joints_constraint = bool(
-            getattr(
-                _named_field(
-                    self.fields,
-                    "SameJointsContraint",
-                    "SameJointsConstraint",
-                ),
-                "value",
-                False,
-            )
-        )
-        transform.absolute_scaling = bool(
-            getattr(
-                _named_field(self.fields, "AbsoluteScaling"),
-                "value",
-                False,
-            )
-        )
-        transform.joint_segment_scale = bool(
-            getattr(
-                _named_field(self.fields, "JointSegmentScale"),
-                "value",
-                False,
-            )
-        )
+        transform.parent_joint = _strip(getattr(self._field("parent joint"), "value", ""))
+        transform.same_joints_constraint = bool(getattr(self._field("same joints constraint"), "value", False))
+        transform.absolute_scaling = bool(getattr(self._field("absolute scaling"), "value", False))
+        transform.joint_segment_scale = bool(getattr(self._field("joint segment scale"), "value", False))
         return transform
+
+    def _field(self, meaning: str) -> object | None:
+        return _named_field(self.fields, self.names.get(meaning))
 
     def write(self, transform: ScnTransform) -> None:
         _write_transform(self.transform_fields(), transform)
@@ -106,21 +87,14 @@ class TransformAdapter:
         )
 
     def attachment_fields(self) -> tuple[object, ...]:
-        fields = (
-            _named_field(self.fields, "ParentJoint"),
-            _named_field(
-                self.fields,
-                "SameJointsContraint",
-                "SameJointsConstraint",
-            ),
-            _named_field(self.fields, "AbsoluteScaling"),
-        )
+        fields = map(self._field, ("parent joint", "same joints constraint", "absolute scaling"))
         return tuple(field for field in fields if field is not None)
 
 
 @dataclass(slots=True)
 class MeshAdapter:
     fields: Mapping[str, object]
+    names: Mapping[str, str | None]
 
     def paths(self) -> tuple[str, str]:
         values = _resource_values(self.fields)
@@ -130,13 +104,14 @@ class MeshAdapter:
         return normalize_scene_path(values[mesh_index]), normalize_scene_path(values[mesh_index + 1]) if mesh_index + 1 < len(values) else ""
 
     def enabled_parts(self) -> tuple[bool, ...] | None:
-        field = _named_field(self.fields, "PartsEnable")
+        field = _named_field(self.fields, self.names.get("parts enable"))
         if not isinstance(field, ArrayData):
             return None
         values = tuple(getattr(item, "value", item) for item in field.values)
+        # RE8's dump types the flags as bytes.
         return (
-            tuple(values)
-            if all(isinstance(value, bool) for value in values)
+            tuple(map(bool, values))
+            if all(isinstance(value, int) for value in values)
             else None
         )
 
@@ -191,9 +166,8 @@ def _vec3(value) -> tuple[float, float, float]:
 def _quat(value) -> tuple[float, float, float, float]:
     if not _is_quat(value):
         raise ValueError("Expected quaternion field")
-    quat = np.asarray([getattr(value, name) for name in ("x", "y", "z", "w")], dtype=np.float32)
-    length = float(np.linalg.norm(quat))
-    return tuple(float(v / length) for v in quat) if length > 1e-8 else (0.0, 0.0, 0.0, 1.0)
+    # As stored: the engine does not normalize it (``make_trs_matrix``).
+    return tuple(float(getattr(value, name)) for name in ("x", "y", "z", "w"))
 
 
 def _set_vec3(value, data: tuple[float, float, float]) -> None:
@@ -214,12 +188,10 @@ def _strip(value) -> str:
     return str(value or "").strip().rstrip("\x00").strip()
 
 
-def _named_field(fields: Mapping[str, object], *names: str) -> object | None:
-    by_name = {name.casefold(): value for name, value in fields.items()}
-    return next(
-        (by_name[name.casefold()] for name in names if name.casefold() in by_name),
-        None,
-    )
+def _named_field(fields: Mapping[str, object], name: str | None) -> object | None:
+    if name is None:
+        return None
+    return {key.casefold(): value for key, value in fields.items()}.get(name.casefold())
 
 
 def _resource_values(fields: Mapping[str, object]) -> list[str]:

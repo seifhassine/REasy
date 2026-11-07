@@ -7,10 +7,11 @@ lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 lazy from file_handlers.sdf.sdf_file import CULL_BACK, CULL_NONE
 
+lazy from .draw_rules import program_flags
 lazy from .material_preview import _TRIANGLE_LIST, MaterialPreviewError, PreviewMaterial
 from .mesh_draw import program_states
 from .mesh_render import _written, draw_purpose
-from .pass_choice import depth_prepass_program, has_scene_program, own_passes
+from .pass_choice import GUI_MESH, depth_prepass_program, has_scene_program, own_passes, own_program
 from .surface_meaning import GBUFFER_PURPOSE, surface_output_catalog_for
 from .textures_view import BLENDED, DrawStates
 
@@ -19,6 +20,8 @@ BASE_COLOUR_SLOT = "BaseColorMetallicTranslucency"
 # The renderer's draw order; "blending" holds the G-buffer programs that blend.
 ORDER = (GBUFFER_PURPOSE, "blending", "forward")
 _SOLID = 3
+# Patches of three control points: the submesh's triangles before the program tessellates them.
+_TRIANGLE_PATCHES = 35
 _RED_GREEN_BLUE = 0x7
 # D3D12_BLEND's factors of a second colour the pixel shader would give.
 _SECOND_SOURCE = frozenset({16, 17, 18, 19})
@@ -36,7 +39,7 @@ def _states(program, target: int | None) -> DrawStates:
     count = 0 if program.blend_state is None else len(program.blend_state.render_targets)
     given = program_states(program, count, 0)
     fill, cull, counter_clockwise, bias, clamp, slope, clip = given["rasterizer"]
-    if fill != _SOLID or given["topology"] != _TRIANGLE_LIST:
+    if fill != _SOLID or given["topology"] not in (_TRIANGLE_LIST, _TRIANGLE_PATCHES):
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The program {name} does not draw filled triangles from a list."),
             {"name": program.name})
@@ -54,11 +57,21 @@ def _states(program, target: int | None) -> DrawStates:
                       channels, (bias, clamp, slope), bool(clip))
 
 
+def meshes_draw(document, material: PreviewMaterial, shader_target: int, route: str) -> bool:
+    flags = program_flags(document.profile, material)
+    return has_scene_program(document, shader_target, flags, route) or bool(
+        own_passes(document, shader_target, flags, route))
+
+
 def program_draw(document, material: PreviewMaterial, shader_target: int, route: str) -> ShownDraw | None:
-    flags = material.material_flags
-    if own_passes(document, shader_target, flags, route) and not has_scene_program(
-            document, shader_target, flags, route):
-        return None
+    flags = program_flags(document.profile, material)
+    if not has_scene_program(document, shader_target, flags, route):
+        if GUI_MESH not in own_passes(document, shader_target, flags, route):
+            return None
+        program = document.sdf.targets[shader_target].programs[
+            own_program(document, shader_target, flags, GUI_MESH, route)]
+        states = _states(program, 0)
+        return ShownDraw("forward", states) if states.channels else None
     purpose, program = draw_purpose(document, material, shader_target, route)
     catalog = surface_output_catalog_for(document.profile)
     target = 0 if purpose == "forward" else next(
@@ -91,4 +104,4 @@ def ordered(draws: list[tuple[ShownDraw, object]]) -> list[tuple[DrawStates, obj
     return steps
 
 
-__all__ = ["BASE_COLOUR_SLOT", "ORDER", "ShownDraw", "ordered", "plain_draw", "program_draw"]
+__all__ = ["BASE_COLOUR_SLOT", "ORDER", "ShownDraw", "meshes_draw", "ordered", "plain_draw", "program_draw"]

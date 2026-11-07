@@ -2,14 +2,6 @@
  "format": 1,
  "game": "MHRISE",
  "resource_version": 220427553,
- "source": {
-  "captures": [
-   "mhr_frame3962.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  }
- },
  "states": {
   "AutomaticWrap": {
    "filter": 85,

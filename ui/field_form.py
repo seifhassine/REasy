@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from PySide6.QtCore import QSignalBlocker, Qt
 from PySide6.QtWidgets import (
     QCheckBox,
+    QCompleter,
     QFormLayout,
     QHBoxLayout,
     QLabel,
@@ -72,7 +73,8 @@ def _quiet(widget: QWidget, setter, value) -> None:
 
 def shape(fields: list[Field]) -> tuple:
     return tuple((field.label, field.kind, shape(field.options["fields"]) if field.kind == "row" else
-                  (tuple(field.options.items()), field.get() in field.options) if field.kind == "enum" else None)
+                  (tuple(field.options.items()), field.get() in field.options) if field.kind in ("enum", "choice")
+                  else None)
                  for field in fields)
 
 
@@ -131,6 +133,8 @@ class FieldForm(QWidget):
             widget.activated.connect(lambda _index: _choose(field, widget.currentData()))
             self._updaters.append(lambda: _quiet(widget, widget.setCurrentIndex, widget.findData(int(field.get()))))
             return widget
+        if field.kind == "choice":
+            return self._choice(field)
         if field.kind == "button":
             widget = QPushButton(str(field.get()))
             set_style_role(widget, compact=True)
@@ -146,16 +150,36 @@ class FieldForm(QWidget):
         self._updaters.append(lambda: _quiet(widget, widget.setText, _format(field.kind, field.get())))
         return widget
 
+    def _choice(self, field: Field) -> QLineEdit:
+        """A name typed or completed from ``options`` ({value: name}), for lists too long for a combo box."""
+        widget = QLineEdit(field.options.get(field.get(), ""))
+        completer = QCompleter(list(field.options.values()), widget)
+        completer.setCaseSensitivity(Qt.CaseInsensitive)
+        completer.setFilterMode(Qt.MatchContains)
+        widget.setCompleter(completer)
+        values = {name.casefold(): value for value, name in field.options.items()}
+
+        def chosen() -> None:
+            value = values.get(widget.text().strip().casefold())
+            set_invalid(widget, value is None)
+            if self._live and value is not None:
+                _choose(field, value)
+        widget.editingFinished.connect(chosen)
+        self._updaters.append(lambda: _quiet(widget, widget.setText, field.options.get(field.get(), "")))
+        return widget
+
     def _row(self, field: Field) -> QWidget:
         holder = QWidget()
         row = QHBoxLayout(holder)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(4)
+        kinds = {sub.kind for sub in field.options["fields"]}
         for sub in field.options["fields"]:
             widget = self._widget(sub)
             if sub.label:
                 row.addWidget(styled_label(sub.label, tone="subtle"))
-            row.addWidget(widget, 1)
+            # A button beside other fields keeps its own width.
+            row.addWidget(widget, 0 if sub.kind == "button" and kinds != {"button"} else 1)
         return holder
 
     def _commit(self, widget: QLineEdit, field: Field) -> None:

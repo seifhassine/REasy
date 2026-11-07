@@ -1,0 +1,1066 @@
+{
+ "format": 1,
+ "header": {
+  "size": 48,
+  "fields": [
+   [0, "u32", "version"],
+   {"at": 4, "type": "u32", "const": 1936614250, "what": "magic"},
+   [8, "u32", "err_flags"],
+   [12, "u32", "master_size"],
+   [16, "u64", "type_table"],
+   [24, "u64", "lod_table"],
+   [32, "u64", "data_table"],
+   [40, "u32", "count"]
+  ]
+ },
+ "families": {
+  "v11": {
+   "rules": {"depth_first": false, "pooled": []},
+   "derived": {"ascii_name_outputs": ["ComponentProperty"]},
+   "expressions": {"15": "multi_remap"},
+   "records": {
+    "multi_remap": {
+     "size": 64,
+     "fields": [
+      [48, "u16", "cone_input_count"],
+      [50, "u16", "output_count"],
+      [52, "u16", "blend_shape_group_count"],
+      [54, "u16", "rotation_count"],
+      [56, "u16", "lod_count"],
+      [58, "u16", "multi_constraint_count"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {
+       "at": 40,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      }
+     ]
+    },
+    "cone_input": {
+     "size": 64,
+     "links": [
+      {"at": 0, "name": "input_name", "string": true},
+      {"at": 8, "name": "joint_name", "string": true},
+      {"at": 16, "name": "parent_name", "string": true}
+     ],
+     "fields": [
+      [24, "f32x4", "offset_rot"],
+      [40, "u32", "input_name_hash"],
+      [44, "u32", "joint_name_hash"],
+      [48, "u32", "parent_name_hash"],
+      [52, "f32", "cone_half_angle_rad"],
+      [56, "u8", "axis", "via.motion.JointExMultiRemapValue.ConeInputData.ConeAxis"],
+      [58, "u8", "flags", "via.motion.JointExMultiRemapValue.ConeInputData.AttrFlags"]
+     ]
+    },
+    "output": {
+     "size": 56,
+     "fields": [
+      [24, "u32", "joint_name_hash"],
+      [32, "u8", "cone_driver_count"],
+      [33, "u8", "joint_driver_count"],
+      [34, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.AttrFlags"],
+      [35, "u8", "output_type", "via.motion.JointExMultiRemapValue.OutputData.TransformElement"],
+      [36, "u8", "mode", "via.motion.JointExMultiRemapValue.OutputData.OutputMode"],
+      [37, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [38, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [39, "u8", "lod"],
+      [40, "f32x4", "output_offset_rot"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_drivers", "record": "cone_driver", "count": "cone_driver_count"},
+      {"at": 8, "name": "joint_drivers", "record": "joint_driver", "count": "joint_driver_count"},
+      {"at": 16, "name": "joint_name", "string": true}
+     ]
+    },
+    "cone_driver": {
+     "size": 12,
+     "fields": [
+      [0, "f32", "out_min"],
+      [4, "f32", "out_max"],
+      [8, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [9, "u8", "input_cone_no"]
+     ]
+    },
+    "joint_driver": {
+     "size": 64,
+     "links": [{"at": 0, "name": "joint_name", "string": true}],
+     "fields": [
+      [8, "u32", "joint_name_hash"],
+      [12, "f32", "in_min"],
+      [16, "f32", "in_mid"],
+      [20, "f32", "in_max"],
+      [24, "f32", "out_min"],
+      [28, "f32", "out_mid"],
+      [32, "f32", "out_max"],
+      [36, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.AttrFlags"],
+      [37, "u8", "input_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType"],
+      [38, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [39, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [40, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [44, "f32x4", "input_offset_rot"]
+     ]
+    },
+    "blend_shape_group": {
+     "size": 16,
+     "fields": [[8, "u16", "hash_count"], [10, "u16", "normalize_top_num"]],
+     "links": [{"at": 0, "name": "hashes", "record": "name_hash", "count": "hash_count"}]
+    },
+    "rotation": {
+     "size": 56,
+     "fields": [
+      [0, "f32x4", "in_base_quat"],
+      [16, "f32x4", "out_base_quat"],
+      [32, "u32", "target_joint_name_hash"],
+      [36, "u32", "from_joint_name_hash"],
+      {
+       "at": 40,
+       "type": "u32",
+       "bits": [
+        [0, 1, "inverse"],
+        [1, 1, "mirroring"],
+        [2, 1, "in_x"],
+        [3, 1, "in_y"],
+        [4, 1, "in_z"],
+        [5, 1, "out_x"],
+        [6, 1, "out_y"],
+        [7, 1, "out_z"],
+        [8, 3, "order"],
+        [11, 1, "enabled"],
+        [12, 1, "in_base"],
+        [13, 1, "out_base"],
+        [14, 1, "base_to_end"]
+       ]
+      },
+      [44, "f32", "x"],
+      [48, "f32", "y"],
+      [52, "f32", "z"]
+     ]
+    },
+    "lod": {
+     "size": 1,
+     "fields": [[0, "u8", "lod"]]
+    },
+    "multi_constraint": {
+     "size": 16,
+     "fields": [[8, "u32", "joint_name_hash"], [12, "u16", "weight_count"]],
+     "links": [{"at": 0, "name": "weights", "record": "constraint_weight", "count": "weight_count"}]
+    },
+    "constraint_weight": {
+     "size": 8,
+     "fields": [[0, "u32", "parent_name_hash"], [4, "f32", "weight"]]
+    },
+    "name_hash": {
+     "size": 4,
+     "fields": [[0, "u32", "hash"]]
+    }
+   }
+  },
+  "v12": {
+   "extends": "v11",
+   "records": {
+    "multi_remap": {
+     "size": 72,
+     "fields": [
+      [56, "u16", "cone_input_count"],
+      [58, "u16", "output_count"],
+      [60, "u16", "blend_shape_group_count"],
+      [62, "u16", "rotation_count"],
+      [64, "u16", "lod_count"],
+      [66, "u16", "multi_constraint_count"],
+      [68, "u16", "aim_constraint_count"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {
+       "at": 40,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 48, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"}
+     ]
+    },
+    "aim_constraint": {
+     "size": 80,
+     "fields": [
+      [8, "u32", "joint_name_hash"],
+      [12, "u32", "world_up_object_name_hash"],
+      [16, "f32x3", "rotate_offset"],
+      [28, "f32x3", "aim_vector"],
+      [40, "f32x3", "up_vector"],
+      [52, "f32x3", "world_up_vector"],
+      [64, "u8", "world_up_type", "via.motion.JointExMultiRemapValue.AimConstraintData.WorldUpType"],
+      [65, "u8", "target_count"],
+      [66, "u8", "rotate_offset_order", "via.motion.JointExMultiRemapValue.RotOrder"]
+     ],
+     "links": [{"at": 0, "name": "targets", "record": "aim_target", "count": "target_count"}]
+    },
+    "aim_target": {
+     "size": 8,
+     "fields": [[0, "u32", "joint_name_hash"], [4, "f32", "weight"]]
+    }
+   }
+  },
+  "v16": {
+   "extends": "v12",
+   "derived": {
+    "constraint_tables": {"Outputs": "outputs", "RotExpression": "rotations", "Multi": "multi_constraints",
+                          "Aim": "aim_constraints", "Material": "material_constraints",
+                          "JointExprGraph": "expression_graphs"}
+   },
+   "records": {
+    "multi_remap": {
+     "size": 80,
+     "fields": [
+      [64, "u16", "cone_input_count"],
+      [66, "u16", "output_count"],
+      [68, "u16", "blend_shape_group_count"],
+      [70, "u16", "rotation_count"],
+      [72, "u16", "lod_count"],
+      [74, "u16", "multi_constraint_count"],
+      [76, "u16", "aim_constraint_count"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {
+       "at": 40,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 48, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"},
+      {"at": 56, "name": "constraint_order", "record": "constraint_kind", "fixed": 4}
+     ]
+    },
+    "cone_input": {
+     "size": 80,
+     "links": [
+      {"at": 0, "name": "input_name", "string": true},
+      {"at": 8, "name": "joint_name", "string": true},
+      {"at": 16, "name": "parent_name", "string": true}
+     ],
+     "fields": [
+      [24, "f32x4", "offset_rot"],
+      [40, "f32x4", "target_vec"],
+      [56, "u32", "input_name_hash"],
+      [60, "u32", "joint_name_hash"],
+      [64, "u32", "parent_name_hash"],
+      [68, "f32", "cone_half_angle_rad"],
+      [72, "u8", "axis", "via.motion.JointExMultiRemapValue.ConeInputData.ConeAxis"],
+      [74, "u8", "flags", "via.motion.JointExMultiRemapValue.ConeInputData.AttrFlags"]
+     ]
+    },
+    "output": {
+     "size": 64,
+     "fields": [
+      [32, "u32", "joint_name_hash"],
+      [36, "u32", "variable_name_hash"],
+      [40, "u8", "cone_driver_count"],
+      [41, "u8", "joint_driver_count"],
+      [42, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.AttrFlags"],
+      [43, "u8", "output_type", "via.motion.JointExMultiRemapValue.OutputData.TransformElement"],
+      [44, "u8", "mode", "via.motion.JointExMultiRemapValue.OutputData.OutputMode"],
+      [45, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [46, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [47, "u8", "lod"],
+      [48, "f32x4", "output_offset_rot"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_drivers", "record": "cone_driver", "count": "cone_driver_count"},
+      {"at": 8, "name": "joint_drivers", "record": "joint_driver", "count": "joint_driver_count"},
+      {"at": 16, "name": "joint_name", "string": true},
+      {"at": 24, "name": "variable_name", "string": true}
+     ]
+    },
+    "joint_driver": {
+     "size": 72,
+     "fields": [
+      [16, "u32", "joint_name_hash"],
+      [20, "u16", "keyframe_count"],
+      [22, "u8", "curve_pre_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [23, "u8", "curve_post_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [24, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.AttrFlags"],
+      [25, "u8", "input_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType"],
+      [26, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [27, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [28, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [32, "f32", "in_min"],
+      [36, "f32", "in_mid"],
+      [40, "f32", "in_max"],
+      [44, "f32", "out_min"],
+      [48, "f32", "out_mid"],
+      [52, "f32", "out_max"],
+      [56, "f32x4", "input_offset_rot"]
+     ],
+     "links": [
+      {"at": 0, "name": "keyframes", "record": "keyframe", "count": "keyframe_count"},
+      {"at": 8, "name": "joint_name", "string": true}
+     ]
+    },
+    "keyframe": {
+     "size": 28,
+     "fields": [
+      [0, "f32", "frame"],
+      [4, "f32", "value"],
+      [8, "f32", "ix"],
+      [12, "f32", "iy"],
+      [16, "f32", "ox"],
+      [20, "f32", "oy"],
+      [24, "u8", "out_tangent_type", ["via.motion.detail.JointDriverTangentType", "via.motion.JointExMultiRemapValue.OutputData.TangentType"]]
+     ]
+    },
+    "constraint_kind": {
+     "size": 4,
+     "fields": [[0, "i32", "kind", "via.motion.JointExMultiRemapValue.ConstraintType"]]
+    }
+   }
+  },
+  "v19": {
+   "extends": "v16",
+   "rules": {
+    "pooled": [["output", "joint_name"]]
+   },
+   "derived": {
+    "pack_key": ["joint_name_hash", "variable_name_hash", "output_type"],
+    "pack_free_flags": ["ClampMin", "ClampMax"]
+   },
+   "records": {
+    "joint_driver": {
+     "size": 72,
+     "fields": [
+      [16, "u32", "joint_name_hash"],
+      [20, "u16", "keyframe_count"],
+      [22, "u8", "curve_pre_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [23, "u8", "curve_post_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [24, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.AttrFlags"],
+      [25, "u8", "input_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType"],
+      [26, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [27, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [28, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [29, "u8", "curve_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.CurveType"],
+      [32, "f32", "in_min"],
+      [36, "f32", "in_mid"],
+      [40, "f32", "in_max"],
+      [44, "f32", "out_min"],
+      [48, "f32", "out_mid"],
+      [52, "f32", "out_max"],
+      [56, "f32x4", "input_offset_rot"]
+     ],
+     "links": [
+      {"at": 0, "name": "keyframes", "record": "keyframe", "count": "keyframe_count"},
+      {"at": 8, "name": "joint_name", "string": true}
+     ]
+    },
+    "multi_remap": {
+     "size": 80,
+     "fields": [
+      [64, "u16", "cone_input_count"],
+      [66, "u16", "output_count"],
+      [68, "u16", "blend_shape_group_count"],
+      [70, "u16", "rotation_count"],
+      [72, "u16", "lod_count"],
+      [74, "u16", "multi_constraint_count"],
+      [76, "u16", "aim_constraint_count"],
+      [78, "u8", "legacy_version", "via.motion.JointConstraintsResource.LegacyVersion"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {
+       "at": 40,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 48, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"},
+      {"at": 56, "name": "constraint_order", "record": "constraint_kind", "fixed": 4}
+     ]
+    },
+    "output": {
+     "size": 72,
+     "fields": [
+      [32, "u32", "joint_name_hash"],
+      [36, "u32", "variable_name_hash"],
+      [40, "u8", "cone_driver_count"],
+      [41, "u8", "joint_driver_count"],
+      [42, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.AttrFlags"],
+      [43, "u8", "output_type", "via.motion.JointExMultiRemapValue.OutputData.TransformElement"],
+      [44, "u8", "mode", "via.motion.JointExMultiRemapValue.OutputData.OutputMode"],
+      [45, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [46, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [47, "u8", "lod"],
+      [48, "f32x4", "output_offset_rot"],
+      [64, "u8", "pack_flags", "via.motion.JointExMultiRemapValue.OutputData.PackFlags"],
+      [65, "u8", "out_pack_num"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_drivers", "record": "cone_driver", "count": "cone_driver_count"},
+      {"at": 8, "name": "joint_drivers", "record": "joint_driver", "count": "joint_driver_count"},
+      {"at": 16, "name": "joint_name", "string": true},
+      {"at": 24, "name": "variable_name", "string": true}
+     ]
+    }
+   }
+  },
+  "v22": {
+   "extends": "v19",
+   "rules": {
+    "root_order": ["cone_inputs", "outputs", "output_target_infos", "blend_shape_groups", "rotations", "lods", "multi_constraints", "aim_constraints", "material_constraints", "constraint_order"]
+   },
+   "derived": {
+    "target_names": {"Material": ".", "MaterialF4": ".", "MaterialPosF4": ".", "MaterialRotF4": ".",
+                     "ComponentProperty": ":"}
+   },
+   "records": {
+    "multi_remap": {
+     "size": 104,
+     "fields": [
+      [80, "u16", "cone_input_count"],
+      [82, "u16", "output_count"],
+      [84, "u16", "output_target_info_count"],
+      [86, "u16", "blend_shape_group_count"],
+      [88, "u16", "rotation_count"],
+      [90, "u16", "lod_count"],
+      [92, "u16", "multi_constraint_count"],
+      [94, "u16", "aim_constraint_count"],
+      [96, "u16", "material_constraint_count"],
+      [98, "u8", "legacy_version", "via.motion.JointConstraintsResource.LegacyVersion"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {
+       "at": 40,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 48, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"},
+      {
+       "at": 56,
+       "name": "material_constraints",
+       "record": "material_constraint",
+       "count": "material_constraint_count"
+      },
+      {"at": 64, "name": "constraint_order", "record": "constraint_kind", "fixed": 5},
+      {
+       "at": 72,
+       "name": "output_target_infos",
+       "record": "output_target_info",
+       "count": "output_target_info_count"
+      }
+     ]
+    },
+    "cone_input": {
+     "size": 80,
+     "fields": [
+      [24, "f32x4", "offset_rot"],
+      [40, "f32x4", "target_vec"],
+      [56, "u32", "input_name_hash"],
+      [60, "u32", "joint_name_hash"],
+      [64, "u32", "parent_name_hash"],
+      [68, "f32", "cone_half_angle_rad"],
+      [72, "u8", "axis", "via.motion.JointExMultiRemapValue.ConeInputData.ConeAxis"],
+      [74, "u8", "flags", "via.motion.JointExMultiRemapValue.ConeInputData.AttrFlags"]
+     ],
+     "links": [
+      {"at": 0, "name": "input_name", "string": true},
+      {"at": 8, "name": "joint_name", "string": true},
+      {"at": 16, "name": "parent_name", "string": true}
+     ]
+    },
+    "output": {
+     "size": 80,
+     "fields": [
+      [32, "u32", "joint_name_hash"],
+      [36, "u32", "variable_name_hash"],
+      [40, "u8", "cone_driver_count"],
+      [41, "u8", "joint_driver_count"],
+      [42, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.AttrFlags"],
+      [43, "u8", "output_type", "via.motion.JointExMultiRemapValue.OutputData.TransformElement"],
+      [44, "u8", "mode", "via.motion.JointExMultiRemapValue.OutputData.OutputMode"],
+      [45, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [46, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [47, "u8", "lod"],
+      [48, "f32x4", "output_offset_rot"],
+      [64, "f32", "min_value"],
+      [68, "f32", "max_value"],
+      [72, "u8", "pack_flags", "via.motion.JointExMultiRemapValue.OutputData.PackFlags"],
+      [73, "u8", "out_pack_num"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_drivers", "record": "cone_driver", "count": "cone_driver_count"},
+      {"at": 8, "name": "joint_drivers", "record": "joint_driver", "count": "joint_driver_count"},
+      {"at": 16, "name": "joint_name", "string": true},
+      {"at": 24, "name": "variable_name", "string": true}
+     ]
+    },
+    "cone_driver": {
+     "size": 12,
+     "fields": [
+      [0, "f32", "out_min"],
+      [4, "f32", "out_max"],
+      [8, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [9, "u8", "input_cone_no"]
+     ]
+    },
+    "joint_driver": {
+     "size": 72,
+     "fields": [
+      [16, "u32", "joint_name_hash"],
+      [20, "u16", "keyframe_count"],
+      [22, "u8", "curve_pre_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [23, "u8", "curve_post_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [24, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.AttrFlags"],
+      [25, "u8", "input_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType"],
+      [26, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [27, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [28, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [29, "u8", "curve_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.CurveType"],
+      [32, "f32", "in_min"],
+      [36, "f32", "in_mid"],
+      [40, "f32", "in_max"],
+      [44, "f32", "out_min"],
+      [48, "f32", "out_mid"],
+      [52, "f32", "out_max"],
+      [56, "f32x4", "input_offset_rot"]
+     ],
+     "links": [
+      {"at": 0, "name": "keyframes", "record": "keyframe", "count": "keyframe_count"},
+      {"at": 8, "name": "joint_name", "string": true}
+     ],
+     "order": ["joint_name", "keyframes"]
+    },
+    "keyframe": {
+     "size": 28,
+     "fields": [
+      [0, "f32", "frame"],
+      [4, "f32", "value"],
+      [8, "f32", "ix"],
+      [12, "f32", "iy"],
+      [16, "f32", "ox"],
+      [20, "f32", "oy"],
+      [24, "u8", "out_tangent_type", ["via.motion.detail.JointDriverTangentType", "via.motion.JointExMultiRemapValue.OutputData.TangentType"]]
+     ]
+    },
+    "blend_shape_group": {
+     "size": 16,
+     "fields": [[8, "u16", "hash_count"], [10, "u16", "normalize_top_num"]],
+     "links": [{"at": 0, "name": "hashes", "record": "name_hash", "count": "hash_count"}]
+    },
+    "rotation": {
+     "size": 56,
+     "fields": [
+      [0, "f32x4", "in_base_quat"],
+      [16, "f32x4", "out_base_quat"],
+      [32, "u32", "target_joint_name_hash"],
+      [36, "u32", "from_joint_name_hash"],
+      {
+       "at": 40,
+       "type": "u32",
+       "bits": [
+        [0, 1, "inverse"],
+        [1, 1, "mirroring"],
+        [2, 1, "in_x"],
+        [3, 1, "in_y"],
+        [4, 1, "in_z"],
+        [5, 1, "out_x"],
+        [6, 1, "out_y"],
+        [7, 1, "out_z"],
+        [8, 3, "order"],
+        [11, 1, "enabled"],
+        [12, 1, "in_base"],
+        [13, 1, "out_base"],
+        [14, 1, "base_to_end"]
+       ]
+      },
+      [44, "f32", "x"],
+      [48, "f32", "y"],
+      [52, "f32", "z"]
+     ]
+    },
+    "lod": {
+     "size": 1,
+     "fields": [[0, "u8", "lod"]]
+    },
+    "multi_constraint": {
+     "size": 16,
+     "fields": [[8, "u32", "joint_name_hash"], [12, "u16", "weight_count"]],
+     "links": [{"at": 0, "name": "weights", "record": "constraint_weight", "count": "weight_count"}]
+    },
+    "constraint_weight": {
+     "size": 8,
+     "fields": [[0, "u32", "parent_name_hash"], [4, "f32", "weight"]]
+    },
+    "aim_constraint": {
+     "size": 80,
+     "fields": [
+      [8, "u32", "joint_name_hash"],
+      [12, "u32", "world_up_object_name_hash"],
+      [16, "f32x3", "rotate_offset"],
+      [28, "f32x3", "aim_vector"],
+      [40, "f32x3", "up_vector"],
+      [52, "f32x3", "world_up_vector"],
+      [64, "u8", "world_up_type", "via.motion.JointExMultiRemapValue.AimConstraintData.WorldUpType"],
+      [65, "u8", "target_count"],
+      [66, "u8", "rotate_offset_order", "via.motion.JointExMultiRemapValue.RotOrder"]
+     ],
+     "links": [{"at": 0, "name": "targets", "record": "aim_target", "count": "target_count"}]
+    },
+    "aim_target": {
+     "size": 8,
+     "fields": [[0, "u32", "joint_name_hash"], [4, "f32", "weight"]]
+    },
+    "material_constraint": {
+     "size": 16,
+     "fields": [
+      [0, "u32", "joint_name_hash"],
+      [4, "u32", "material_name_hash"],
+      [8, "u32", "variable_name_hash"],
+      [12, "u8", "mode", "via.motion.JointExMultiRemapValue.MaterialConstraintData.ApplyMode"],
+      [13, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [14, "u8", "world"]
+     ]
+    },
+    "output_target_info": {
+     "size": 16,
+     "block_align": 4,
+     "fields": [[8, "u8", "depend_count"]],
+     "links": [{"at": 0, "name": "hashes", "record": "name_hash", "count": "depend_count", "add": 1, "align": 4}]
+    },
+    "name_hash": {
+     "size": 4,
+     "fields": [[0, "u32", "hash"]]
+    },
+    "constraint_kind": {
+     "size": 4,
+     "fields": [[0, "i32", "kind", "via.motion.JointExMultiRemapValue.ConstraintType"]]
+    }
+   }
+  },
+  "v35": {
+   "extends": "v22",
+   "derived": {
+    "joint_outputs": ["Trans", "Rot", "Scale", "RotRPY", "RotPYR", "ExpMap", "Rot2", "RotRPY2", "RotPYR2", "ExpMap2"]
+   },
+   "rules": {
+    "depth_first": true,
+    "root_order": ["cone_inputs", "outputs", "output_target_infos", "blend_shape_groups", "rotations", "lods", "rotation_from_joints", "rotation_target_joints", "multi_constraints", "multi_parents", "aim_constraints", "material_constraints", "expression_graphs", "constraint_order", "name_hashes"]
+   },
+   "records": {
+    "multi_remap": {
+     "size": 152,
+     "fields": [
+      [120, "u16", "name_hash_count"],
+      [124, "u16", "cone_input_count"],
+      [126, "u16", "output_count"],
+      [128, "u16", "output_target_info_count"],
+      [130, "u16", "blend_shape_group_count"],
+      [132, "u16", "rotation_count"],
+      [134, "u16", "lod_count"],
+      [136, "u16", "multi_constraint_count"],
+      [138, "u16", "multi_parent_count"],
+      [140, "u16", "aim_constraint_count"],
+      [142, "u16", "material_constraint_count"],
+      [144, "u16", "expression_graph_count"],
+      [146, "u8", "constraint_kind_count"],
+      [147, "u8", "legacy_multi_constraint_init"],
+      [148, "u8", "legacy_version", "via.motion.JointConstraintsResource.LegacyVersion"],
+      [149, "u8", "legacy_material_param"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {"at": 40, "name": "rotation_from_joints", "record": "name_index", "count": "rotation_count"},
+      {"at": 48, "name": "rotation_target_joints", "record": "name_index", "count": "rotation_count"},
+      {
+       "at": 56,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 64, "name": "multi_parents", "record": "multi_parent", "count": "multi_parent_count"},
+      {"at": 72, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"},
+      {
+       "at": 80,
+       "name": "material_constraints",
+       "record": "material_constraint",
+       "count": "material_constraint_count"
+      },
+      {
+       "at": 88,
+       "name": "expression_graphs",
+       "record": "expression_graph",
+       "count": "expression_graph_count"
+      },
+      {
+       "at": 96,
+       "name": "constraint_order",
+       "record": "constraint_kind",
+       "count": "constraint_kind_count"
+      },
+      {
+       "at": 104,
+       "name": "output_target_infos",
+       "record": "output_target_info",
+       "count": "output_target_info_count"
+      },
+      {"at": 112, "name": "name_hashes", "record": "name_hash", "count": "name_hash_count"}
+     ]
+    },
+    "cone_input": {
+     "size": 104,
+     "fields": [
+      [8, "f32x4", "offset_rot"],
+      [24, "f32x4", "cone_vec"],
+      [40, "f32x4", "target_vec"],
+      [56, "f32x4", "up_vec"],
+      [72, "u32", "input_name_hash"],
+      [76, "i32", "joint_name_index"],
+      [80, "i32", "parent_name_index"],
+      [84, "i32", "aim_name_index"],
+      [88, "f32", "cone_half_angle_rad"],
+      [92, "f32", "scale"],
+      [96, "u8", "axis", "via.motion.JointExMultiRemapValue.ConeInputData.ConeAxis"],
+      [97, "u8", "up", "via.motion.JointExMultiRemapValue.ConeInputData.ConeAxis"],
+      [98, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [99, "u8", "flags", "via.motion.JointExMultiRemapValue.ConeInputData.AttrFlags"]
+     ],
+     "links": [{"at": 0, "name": "input_name", "string": true}]
+    },
+    "output": {
+     "size": 80,
+     "fields": [
+      [32, "i32", "joint_name_index"],
+      [36, "u32", "joint_name_hash"],
+      [40, "u32", "variable_name_hash"],
+      [44, "u8", "cone_driver_count"],
+      [45, "u8", "joint_driver_count"],
+      [46, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.AttrFlags"],
+      [47, "u8", "output_type", "via.motion.JointExMultiRemapValue.OutputData.TransformElement"],
+      [48, "f32x4", "output_offset_rot"],
+      [64, "f32", "min_value"],
+      [68, "f32", "max_value"],
+      [72, "u8", "mode", "via.motion.JointExMultiRemapValue.OutputData.OutputMode"],
+      [73, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [74, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [75, "u8", "lod"],
+      [76, "u8", "pack_flags", "via.motion.JointExMultiRemapValue.OutputData.PackFlags"],
+      [77, "u8", "out_pack_num"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_drivers", "record": "cone_driver", "count": "cone_driver_count"},
+      {"at": 8, "name": "joint_drivers", "record": "joint_driver", "count": "joint_driver_count"},
+      {"at": 16, "name": "joint_name", "string": true, "align": 8},
+      {"at": 24, "name": "variable_name", "string": true, "align": 8}
+     ]
+    },
+    "cone_driver": {
+     "size": 24,
+     "fields": [
+      [8, "u16", "keyframe_count"],
+      [10, "u8", "curve_pre_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [11, "u8", "curve_post_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [12, "f32", "out_min"],
+      [16, "f32", "out_max"],
+      [20, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [21, "u8", "input_cone_no"],
+      [22, "u8", "curve_type", "via.motion.JointExMultiRemapValue.OutputData.ConeDriverData.CurveType"]
+     ],
+     "links": [{"at": 0, "name": "keyframes", "record": "keyframe", "count": "keyframe_count"}]
+    },
+    "joint_driver": {
+     "size": 72,
+     "fields": [
+      [16, "i32", "joint_name_index"],
+      [20, "u16", "keyframe_count"],
+      [22, "u8", "curve_pre_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [23, "u8", "curve_post_infinity", ["via.motion.detail.JointDriverInfinityType", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InfinityType"]],
+      [24, "u8", "flags", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.AttrFlags"],
+      [25, "u8", "input_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.InputType"],
+      [26, "u8", "axis", "via.motion.JointExMultiRemapValue.OutputData.Axis"],
+      [27, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [28, "u8", "interpolation", "via.motion.JointExMultiRemapValue.OutputData.Interpolation"],
+      [29, "u8", "curve_type", "via.motion.JointExMultiRemapValue.OutputData.JointDriverData.CurveType"],
+      [32, "f32", "in_min"],
+      [36, "f32", "in_mid"],
+      [40, "f32", "in_max"],
+      [44, "f32", "out_min"],
+      [48, "f32", "out_mid"],
+      [52, "f32", "out_max"],
+      [56, "f32x4", "input_offset_rot"]
+     ],
+     "links": [
+      {"at": 0, "name": "keyframes", "record": "keyframe", "count": "keyframe_count"},
+      {"at": 8, "name": "joint_name", "string": true}
+     ],
+     "order": ["joint_name", "keyframes"]
+    },
+    "multi_constraint": {
+     "size": 16,
+     "fields": [
+      [8, "i32", "joint_name_index"],
+      [12, "u8", "weight_count"],
+      [13, "u8", "lod"],
+      [14, "u8", "property", "via.motion.JointExMultiRemapValue.MultiConstraintData.ConstraintProperty"],
+      [15, "u8", "maintain_offset"]
+     ],
+     "links": [{"at": 0, "name": "weights", "record": "constraint_weight", "count": "weight_count"}]
+    },
+    "constraint_weight": {
+     "size": 8,
+     "fields": [[0, "i32", "parent_name_index"], [4, "f32", "weight"]]
+    },
+    "multi_parent": {
+     "size": 8,
+     "fields": [[0, "i32", "joint_name_index"], [4, "u8", "lod"]]
+    },
+    "aim_constraint": {
+     "size": 80,
+     "fields": [
+      [8, "i32", "joint_name_index"],
+      [12, "i32", "world_up_object_name_index"],
+      [16, "f32x3", "rotate_offset"],
+      [28, "f32x3", "aim_vector"],
+      [40, "f32x3", "up_vector"],
+      [52, "f32x3", "world_up_vector"],
+      [64, "u8", "world_up_type", "via.motion.JointExMultiRemapValue.AimConstraintData.WorldUpType"],
+      [65, "u8", "target_count"],
+      [66, "u8", "rotate_offset_order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [67, "u8", "lod"]
+     ],
+     "links": [{"at": 0, "name": "targets", "record": "aim_target", "count": "target_count"}]
+    },
+    "aim_target": {
+     "size": 8,
+     "fields": [[0, "i32", "joint_name_index"], [4, "f32", "weight"]]
+    },
+    "material_constraint": {
+     "size": 16,
+     "fields": [
+      [0, "i32", "joint_name_index"],
+      [4, "u32", "material_name_hash"],
+      [8, "u32", "variable_name_hash"],
+      [12, "u8", "mode", "via.motion.JointExMultiRemapValue.MaterialConstraintData.ApplyMode"],
+      [13, "u8", "order", "via.motion.JointExMultiRemapValue.RotOrder"],
+      [14, "u8", "world"]
+     ]
+    },
+    "expression_graph": {
+     "size": 8,
+     "links": [{"at": 0, "name": "path", "string": true}]
+    },
+    "name_index": {
+     "size": 4,
+     "fields": [[0, "i32", "index"]]
+    }
+   }
+  },
+  "v36": {
+   "extends": "v35",
+   "rules": {
+    "pooled": [["output", "joint_name"], ["output", "variable_name"]],
+    "root_order": ["cone_inputs", "outputs", "output_target_infos", "blend_shape_groups", "rotations", "lods", "rotation_from_joints", "rotation_target_joints", "multi_constraints", "multi_parents", "multi_joint_hashes", "aim_constraints", "material_constraints", "expression_graphs", "constraint_order", "name_hashes"]
+   },
+   "records": {
+    "multi_remap": {
+     "size": 160,
+     "fields": [
+      [128, "u16", "name_hash_count"],
+      [132, "u16", "cone_input_count"],
+      [134, "u16", "output_count"],
+      [136, "u16", "output_target_info_count"],
+      [138, "u16", "blend_shape_group_count"],
+      [140, "u16", "rotation_count"],
+      [142, "u16", "lod_count"],
+      [144, "u16", "multi_constraint_count"],
+      [146, "u16", "multi_joint_hash_count"],
+      [148, "u16", "multi_parent_count"],
+      [150, "u16", "aim_constraint_count"],
+      [152, "u16", "material_constraint_count"],
+      [156, "u8", "constraint_kind_count"],
+      [157, "u8", "legacy_multi_constraint_init"],
+      [158, "u8", "legacy_version", "via.motion.JointConstraintsResource.LegacyVersion"],
+      [159, "u8", "legacy_material_param"],
+      [154, "u16", "expression_graph_count"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {"at": 40, "name": "rotation_from_joints", "record": "name_index", "count": "rotation_count"},
+      {"at": 48, "name": "rotation_target_joints", "record": "name_index", "count": "rotation_count"},
+      {
+       "at": 56,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 64, "name": "multi_parents", "record": "multi_parent", "count": "multi_parent_count"},
+      {"at": 72, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"},
+      {
+       "at": 80,
+       "name": "material_constraints",
+       "record": "material_constraint",
+       "count": "material_constraint_count"
+      },
+      {
+       "at": 88,
+       "name": "expression_graphs",
+       "record": "expression_graph",
+       "count": "expression_graph_count"
+      },
+      {
+       "at": 96,
+       "name": "constraint_order",
+       "record": "constraint_kind",
+       "count": "constraint_kind_count"
+      },
+      {
+       "at": 104,
+       "name": "output_target_infos",
+       "record": "output_target_info",
+       "count": "output_target_info_count"
+      },
+      {"at": 112, "name": "name_hashes", "record": "name_hash", "count": "name_hash_count"},
+      {"at": 120, "name": "multi_joint_hashes", "record": "name_hash", "count": "multi_joint_hash_count"}
+     ]
+    }
+   }
+  },
+  "v102": {
+   "extends": "v36",
+   "rules": {
+    "root_order": ["cone_inputs", "outputs", "output_target_infos", "blend_shape_groups", "rotations", "lods", "rotation_from_joints", "rotation_target_joints", "multi_constraints", "multi_parents", "multi_joint_hashes", "aim_constraints", "material_constraints", "expression_graphs", "constraint_order", "name_hashes"]
+   },
+   "records": {
+    "multi_remap": {
+     "size": 160,
+     "fields": [
+      [128, "u16", "name_hash_count"],
+      [132, "u16", "cone_input_count"],
+      [134, "u16", "output_count"],
+      [136, "u16", "output_target_info_count"],
+      [138, "u16", "blend_shape_group_count"],
+      [140, "u16", "rotation_count"],
+      [142, "u16", "lod_count"],
+      [144, "u16", "multi_constraint_count"],
+      [146, "u16", "multi_joint_hash_count"],
+      [148, "u16", "multi_parent_count"],
+      [150, "u16", "aim_constraint_count"],
+      [152, "u16", "material_constraint_count"],
+      [154, "u8", "constraint_kind_count"],
+      [155, "u8", "legacy_multi_constraint_init"],
+      [156, "u8", "legacy_version", "via.motion.JointConstraintsResource.LegacyVersion"],
+      [157, "u8", "legacy_material_param"]
+     ],
+     "links": [
+      {"at": 0, "name": "cone_inputs", "record": "cone_input", "count": "cone_input_count"},
+      {"at": 8, "name": "outputs", "record": "output", "count": "output_count"},
+      {
+       "at": 16,
+       "name": "blend_shape_groups",
+       "record": "blend_shape_group",
+       "count": "blend_shape_group_count"
+      },
+      {"at": 24, "name": "rotations", "record": "rotation", "count": "rotation_count"},
+      {"at": 32, "name": "lods", "record": "lod", "count": "lod_count"},
+      {"at": 40, "name": "rotation_from_joints", "record": "name_index", "count": "rotation_count"},
+      {"at": 48, "name": "rotation_target_joints", "record": "name_index", "count": "rotation_count"},
+      {
+       "at": 56,
+       "name": "multi_constraints",
+       "record": "multi_constraint",
+       "count": "multi_constraint_count"
+      },
+      {"at": 64, "name": "multi_parents", "record": "multi_parent", "count": "multi_parent_count"},
+      {"at": 72, "name": "aim_constraints", "record": "aim_constraint", "count": "aim_constraint_count"},
+      {
+       "at": 80,
+       "name": "material_constraints",
+       "record": "material_constraint",
+       "count": "material_constraint_count"
+      },
+      {"at": 88, "name": "expression_graphs", "record": "expression_graph", "fixed": 1},
+      {
+       "at": 96,
+       "name": "constraint_order",
+       "record": "constraint_kind",
+       "count": "constraint_kind_count"
+      },
+      {
+       "at": 104,
+       "name": "output_target_infos",
+       "record": "output_target_info",
+       "count": "output_target_info_count"
+      },
+      {"at": 112, "name": "name_hashes", "record": "name_hash", "count": "name_hash_count"},
+      {"at": 120, "name": "multi_joint_hashes", "record": "name_hash", "count": "multi_joint_hash_count"}
+     ]
+    }
+   }
+  }
+ }
+}

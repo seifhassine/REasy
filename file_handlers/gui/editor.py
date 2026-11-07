@@ -1,5 +1,3 @@
-"""End-user semantic GUI editor."""
-
 from __future__ import annotations
 
 import copy
@@ -45,15 +43,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-lazy from file_handlers.clip.rules import PropertyType
-from file_handlers.motion.mot_clip.model import (
-    ASCII_VALUE_PROPERTY_TYPES,
-    CONTAINER_PROPERTY_TYPES,
-    UTF16_VALUE_PROPERTY_TYPES,
-    ClipInterpolation,
-    ClipKey,
-    ClipProperty,
-)
+lazy from file_handlers.clip.edits import default_interpolation
+lazy from file_handlers.clip.model import Key, Property
+lazy from file_handlers.clip.rules import InterpolationType, PropertyType, owns_keys, property_type
+lazy from file_handlers.clip.values import default_value
 lazy from ui.editor_widgets import editor_strip, styled_label
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
@@ -83,10 +76,6 @@ lazy from .scene import GuiSceneNode, GuiWorkspace
 
 
 ROLE_VALUE = int(Qt.ItemDataRole.UserRole)
-CLIP_STRING_TYPES = ASCII_VALUE_PROPERTY_TYPES | UTF16_VALUE_PROPERTY_TYPES
-ASCII_EVENT_MODES = frozenset(
-    {ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT}
-)
 _EDITOR_MODES = ("layout", "preview", "interact")
 _MODE_BADGES = {"layout": "neutral", "preview": "accent", "interact": "warning"}
 _SCENARIO_BADGES = {"partial": "warning", "complete": "success", "custom": "info"}
@@ -201,7 +190,7 @@ class GuiEditor(QWidget):
         self.workspace: GuiWorkspace | None = None
         self.scene = None
         self.selected_node: GuiSceneNode | None = None
-        self.selected_track: ClipProperty | None = None
+        self.selected_track: Property | None = None
         self.selected_animation: GuiAnimation | None = None
         self._preview_scenarios: tuple[GuiPreviewScenario, ...] = ()
         self._custom_preview_scenario: GuiPreviewScenario | None = None
@@ -1280,7 +1269,7 @@ class GuiEditor(QWidget):
                 self.transition_combo.addItem(candidate.name, candidate)
                 if candidate is self.selected_animation.transition:
                     self.transition_combo.setCurrentIndex(self.transition_combo.count() - 1)
-            root = self.selected_animation.clip.root
+            root = self.selected_animation.clip.roots[0]
             root_item = QTreeWidgetItem([root.name or "Animation", ""])
             self.track_tree.addTopLevelItem(root_item)
             for prop in root.properties:
@@ -1305,7 +1294,7 @@ class GuiEditor(QWidget):
                 owner.path if isinstance(owner, GuiSceneNode) else None,
             )
 
-    def _add_track_item(self, parent: QTreeWidgetItem, prop: ClipProperty) -> None:
+    def _add_track_item(self, parent: QTreeWidgetItem, prop: Property) -> None:
         item = QTreeWidgetItem([prop.name, str(len(prop.keys)) if prop.keys else ""])
         item.setData(0, ROLE_VALUE, prop)
         parent.addChild(item)
@@ -1314,30 +1303,27 @@ class GuiEditor(QWidget):
 
     def _track_changed(self, current, _previous) -> None:
         prop = current.data(0, ROLE_VALUE) if current else None
-        self.selected_track = prop if isinstance(prop, ClipProperty) else None
+        self.selected_track = prop if isinstance(prop, Property) else None
         self._populate_keys()
 
     def _populate_keys(self) -> None:
         was_updating = self._updating
         self._updating = True
         try:
-            keys = self.selected_track.keys if self.selected_track else []
+            track = self.selected_track
+            keys = track.keys if track else []
             self.key_table.setRowCount(len(keys))
             for row, key in enumerate(keys):
                 frame = QTableWidgetItem(f"{key.frame:g}")
                 value = QTableWidgetItem(_display(key.value))
                 frame.setData(ROLE_VALUE, key)
                 value.setData(ROLE_VALUE, key)
-                if (
-                    key.interpolation not in ASCII_EVENT_MODES
-                    and self.selected_track.property_type
-                    in {PropertyType.ACTION, PropertyType.UNKNOWN}
-                ):
+                if property_type(track.type).value.kind == "const":
                     value.setFlags(value.flags() & ~Qt.ItemFlag.ItemIsEditable)
                 self.key_table.setItem(row, 0, frame)
                 self.key_table.setItem(row, 1, value)
                 interpolation = QComboBox()
-                for mode in self._interpolation_options(self.selected_track, key):
+                for mode in self._interpolation_options(track, key):
                     interpolation.addItem(mode.name.replace("_", " ").title(), mode)
                     if mode == key.interpolation:
                         interpolation.setCurrentIndex(interpolation.count() - 1)
@@ -1347,66 +1333,41 @@ class GuiEditor(QWidget):
                     )
                 )
                 self.key_table.setCellWidget(row, 2, interpolation)
-            editable = bool(self.selected_track and self.selected_track.property_type not in CONTAINER_PROPERTY_TYPES)
+            editable = bool(track and owns_keys(track.type, self.selected_animation.clip.version))
             self.add_key_button.setEnabled(editable)
             self.remove_key_button.setEnabled(editable and bool(keys))
         finally:
             self._updating = was_updating
 
     @staticmethod
-    def _interpolation_options(prop: ClipProperty | None, key: ClipKey):
+    def _interpolation_options(prop: Property | None, key: Key):
+        mode = InterpolationType(key.interpolation)
         if prop is None:
-            return (key.interpolation,)
-        if prop.property_type == PropertyType.BOOL:
-            options = [ClipInterpolation.DISCRETE]
-        elif prop.property_type in CLIP_STRING_TYPES:
-            options = [ClipInterpolation.DISCRETE]
-            if prop.property_type in (PropertyType.STR8, PropertyType.ENUM):
-                options += [ClipInterpolation.EVENT, ClipInterpolation.PASS_EVENT]
+            return (mode,)
+        codec = property_type(prop.type).value
+        if codec.kind == "bool":
+            options = [InterpolationType.DISCRETE]
+        elif codec.kind == "string":
+            options = [InterpolationType.DISCRETE]
+            if codec.pool == "c8":
+                options += [InterpolationType.EVENT, InterpolationType.PASS_EVENT]
         else:
-            options = [
-                ClipInterpolation.DISCRETE,
-                ClipInterpolation.LINEAR,
-                ClipInterpolation.OFFSET_FRAME,
-            ]
-            if key.curve is not None:
-                options += [ClipInterpolation.HERMITE, ClipInterpolation.BEZIER]
-        if key.interpolation not in options:
-            options.insert(0, key.interpolation)
+            options = [InterpolationType.DISCRETE, InterpolationType.LINEAR, InterpolationType.OFFSET_FRAME]
+            if key.control is not None:
+                options += [InterpolationType.HERMITE, InterpolationType.BEZIER]
+        if mode not in options:
+            options.insert(0, mode)
         return tuple(dict.fromkeys(options))
 
-    def _interpolation_changed(
-        self,
-        key: ClipKey,
-        interpolation: ClipInterpolation,
-    ) -> None:
-        if self._updating or interpolation == key.interpolation:
-            return
-        prop = self.selected_track
-        if prop is None:
+    def _interpolation_changed(self, key: Key, interpolation: InterpolationType) -> None:
+        if self._updating or interpolation == key.interpolation or self.selected_track is None:
             return
 
         def change(_document, edit, remap):
             target_key = remap(key)
-            old_is_event = target_key.interpolation in ASCII_EVENT_MODES
-            new_is_event = interpolation in ASCII_EVENT_MODES
-            if old_is_event != new_is_event:
-                if new_is_event:
-                    value = "" if target_key.value is None else str(target_key.value)
-                else:
-                    try:
-                        value = self._parse_clip_value(
-                            prop.property_type,
-                            str(target_key.value or ""),
-                            interpolation,
-                            self.adapter.validate_property_value,
-                        )
-                    except (TypeError, ValueError, OverflowError, struct.error):
-                        value = self._default_clip_key_value(prop.property_type)
-                edit.set(target_key, "value", value)
             edit.set(target_key, "interpolation", interpolation)
-            if interpolation not in (ClipInterpolation.HERMITE, ClipInterpolation.BEZIER):
-                edit.set(target_key, "curve", None)
+            if interpolation not in (InterpolationType.HERMITE, InterpolationType.BEZIER):
+                edit.set(target_key, "control", None)
 
         if self._edit_animation_value("Change key interpolation", change):
             self._populate_keys()
@@ -1415,7 +1376,7 @@ class GuiEditor(QWidget):
         if self._updating or self.selected_track is None or item.column() not in (0, 1):
             return
         key = item.data(ROLE_VALUE)
-        if not isinstance(key, ClipKey):
+        if not isinstance(key, Key):
             return
         try:
             if item.column() == 0:
@@ -1423,6 +1384,8 @@ class GuiEditor(QWidget):
                 duration = self.selected_animation.clip.total_frame if self.selected_animation else value
                 if not 0 <= value <= duration:
                     raise ValueError(f"frame must be between 0 and {duration:g}")
+                if value == key.frame:
+                    return
 
                 def change(_document, edit, remap):
                     target_track = remap(self.selected_track)
@@ -1435,9 +1398,8 @@ class GuiEditor(QWidget):
                     )
             else:
                 value = self._parse_clip_value(
-                    self.selected_track.property_type,
+                    self.selected_track.type,
                     item.text(),
-                    key.interpolation,
                     self.adapter.validate_property_value,
                 )
 
@@ -1452,9 +1414,9 @@ class GuiEditor(QWidget):
 
     def _add_key(self) -> None:
         prop = self.selected_track
-        if prop is None or prop.property_type in CONTAINER_PROPERTY_TYPES:
+        if prop is None or not owns_keys(prop.type, self.selected_animation.clip.version):
             return
-        source = prop.keys[-1] if prop.keys else prop.last_key
+        source = prop.keys[-1] if prop.keys else prop.extra_keys.get(0)
         if source is not None:
             key = copy.deepcopy(source)
             key.frame = min(
@@ -1462,17 +1424,8 @@ class GuiEditor(QWidget):
                 source.frame + 1.0,
             )
         else:
-            interpolation = (
-                ClipInterpolation.DISCRETE
-                if prop.property_type == PropertyType.BOOL
-                or prop.property_type in CLIP_STRING_TYPES
-                or prop.property_type in {PropertyType.ACTION, PropertyType.UNKNOWN}
-                else ClipInterpolation.LINEAR
-            )
-            key = ClipKey(
-                interpolation=interpolation,
-                value=self._default_clip_key_value(prop.property_type),
-            )
+            key = Key(value=default_value(property_type(prop.type).value),
+                      interpolation=default_interpolation(prop.type))
         keys = sorted([*prop.keys, key], key=lambda item: item.frame)
         if self._edit_animation_value(
             "Add animation key",
@@ -1493,38 +1446,16 @@ class GuiEditor(QWidget):
             self._animation_changed(self.animation_combo.currentIndex())
 
     @staticmethod
-    def _default_clip_key_value(kind: PropertyType):
-        if kind == PropertyType.BOOL:
-            return False
-        if kind in GUI_INTEGER_TYPES:
-            return 0
-        if kind in GUI_FLOAT_TYPES:
-            return 0.0
-        if kind in CLIP_STRING_TYPES:
-            return ""
-        if kind == PropertyType.PATH_POINT3D:
-            return (0.0, 0.0, 0.0)
-        return None
-
-    @staticmethod
-    def _parse_clip_value(
-        kind: PropertyType,
-        text: str,
-        interpolation: ClipInterpolation,
-        validate,
-    ):
-        if interpolation in ASCII_EVENT_MODES:
-            if "\0" in text:
-                raise ValueError("event text cannot contain NUL")
-            text.encode("ascii")
-            return text
-        if kind == PropertyType.BOOL:
+    def _parse_clip_value(kind: int, text: str, validate):
+        kind = PropertyType(kind)
+        codec = property_type(kind).value
+        if codec.kind == "bool":
             return text.strip().casefold() in {"true", "on", "yes", "1"}
-        if kind in GUI_INTEGER_TYPES:
+        if codec.kind == "int":
             value = int(text.strip(), 10)
             validate(kind, value, "Animation key")
             return value
-        if kind in GUI_FLOAT_TYPES:
+        if codec.kind == "float":
             value = float(text.strip())
             if not math.isfinite(value):
                 raise ValueError("animation key must be finite")
@@ -1532,13 +1463,13 @@ class GuiEditor(QWidget):
                 struct.pack("<f", value)
             validate(kind, value, "Animation key")
             return value
-        if kind in CLIP_STRING_TYPES:
+        if codec.kind == "string":
             if "\0" in text:
                 raise ValueError("animation strings cannot contain NUL")
-            if kind in ASCII_VALUE_PROPERTY_TYPES:
+            if codec.pool == "c8":
                 text.encode("ascii")
             return text
-        if kind == PropertyType.PATH_POINT3D:
+        if codec.table == "path_points":
             values = tuple(float(part.strip()) for part in text.split(","))
             if len(values) != 3:
                 raise ValueError("PathPoint3D requires x, y, z")
@@ -1547,7 +1478,7 @@ class GuiEditor(QWidget):
             for value in values:
                 struct.pack("<f", value)
             return values
-        if kind in {PropertyType.ACTION, PropertyType.UNKNOWN}:
+        if codec.kind == "const":
             return None
         raise ValueError(f"{kind.name} cannot own compact animation keys")
 
@@ -1700,8 +1631,6 @@ class GuiEditor(QWidget):
 
     @property
     def editor_mode(self) -> str:
-        """The mode selected by the editor's exclusive mode control."""
-
         mode_id = self.mode_group.checkedId()
         if not 0 <= mode_id < len(_EDITOR_MODES):
             raise RuntimeError("GUI editor has no selected mode")

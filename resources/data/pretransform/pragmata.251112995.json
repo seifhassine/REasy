@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 6,
  "game": "PRAGMATA",
  "resource_version": 251112995,
  "target": 2,
@@ -41,21 +41,30 @@
  "static_like_skinning": true,
  "still_without_blend": null,
  "copied_skin_whole": null,
- "source": {
-  "captures": [
-   {
-    "capture": "PRAGMATA_frame12414.rdc",
-    "draws": [
-     7667
-    ]
-   },
-   {
-    "capture": "PRAGMATA_frame21308.rdc",
-    "draws": [
-     7436
-    ]
-   }
-  ],
-  "executable": "PRAGMATA_dump.exe: a mesh without bones runs the masters' Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
- }
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "ShellFurMaterial",
+  "Standard",
+  "Transparent",
+  "TransparentStencil"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalStencil",
+  "DecalWithMetallic",
+  "Eyeball",
+  "EyeballPostProcess",
+  "SeparateAlphaDecal",
+  "VolumeDecal"
+ ],
+ "decal_no_pre_transform": false
 }

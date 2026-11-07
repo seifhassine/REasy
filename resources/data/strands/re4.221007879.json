@@ -729,54 +729,5 @@
   "simulation": 1,
   "shading_quality": 0,
   "fixed_lod_mode": 1
- },
- "source": {
-  "functions": {
-   "init": "0x7ff7e240d980",
-   "init_lod": "0x7ff7e240deb0",
-   "rest_root": "0x7ff7e2412730",
-   "rest_data": "0x7ff7e2412730",
-   "rest_position": "0x7ff7e2412730",
-   "update": "0x7ff7e2413710",
-   "interp": "0x7ff7e240ea20",
-   "guide": "0x7ff7e240d470"
-  },
-  "captures": [
-   {
-    "capture": "re4_frame165489.rdc",
-    "dispatches": 6,
-    "render_events": 19
-   }
-  ],
-  "render": {
-   "functions": {
-    "ibl_dominant": "0x7ff7e21e69e0",
-    "ibl_composite": "0x7ff7e21e69e0",
-    "coarse_z": "0x7ff7e21e3493",
-    "coarse": "0x7ff7e21e3493",
-    "allocation": "0x7ff7e21e3493",
-    "coarse_alloc": "0x7ff7e21e3493",
-    "ds_arguments": "0x7ff7e21e5e40",
-    "ds_bounds": "0x7ff7e21e5e40",
-    "ds_info": "0x7ff7e21e5e40",
-    "ds_clear": "0x7ff7e21e5e40",
-    "ds_raster": "0x7ff7e21e5e40",
-    "ds_raster_depth": "0x7ff7e21e5e40",
-    "ds_mip": "0x7ff7e21e5e40",
-    "ds_lut": "0x7ff7e21e5e40",
-    "shading": "0x7ff7e21e87e0",
-    "distributor": "0x7ff7e21e3493",
-    "fill": "0x7ff7e21e3493",
-    "fine": "0x7ff7e21e3493",
-    "depth_write": "0x7ff7e21e3493"
-   },
-   "executable": "re4_dump.exe",
-   "anchors": "re4_frame165489.rdc"
-  },
-  "states": {
-   "simulation": "via.render.Strands.SimulationStatus.Simulation",
-   "shading_quality": "via.render.Strands.ShadingQuality.High",
-   "fixed_lod_mode": "via.render.LodMode.Manual"
-  }
  }
 }

@@ -45,7 +45,7 @@ lazy from ui.scene.mesh_preview import MeshPreviewScene
 from ui.scene.scene_marks import bounds_marks, unorm
 lazy from .preview_controls import MorphControls
 lazy from .attribute_controls import AttributeControls
-from .mesh_file import joint_name
+from .mesh_file import VertexBufferType, joint_name
 lazy from .viewer_navigation import MeshNavigation
 lazy from .mesh_inspector import CAMERA_VIEWS, MeshInspection, MeshInspector
 lazy from .material_session import MeshMaterialCollection, MeshMaterialSession
@@ -187,6 +187,8 @@ class MeshViewer(QWidget):
         self._device_previews = {"attributes": self.attributes_preview, "lit": self.lit_preview,
                                  "textures": self.textures_preview}
         if self.viewport is not None:
+            self.lit_preview.set_limit(self.viewport.fps_limit)
+            self.viewport.fps_limit_changed.connect(self.lit_preview.set_limit)
             self.attributes_preview.status_changed.connect(self._show_attribute_status)
             # Connected first: the attributes preview is toggled before it learns the geometry shown.
             self.viewport.geometry_changed.connect(self._sync_attributes_preview)
@@ -1335,11 +1337,8 @@ class MeshViewer(QWidget):
                         ("AABB-max padding", f"0x{mesh_data.aabb_max_padding:06X}"),
                     )
                 )
-            if not corpus_zero_legacy or mesh_data.shared_lod_bits:
-                geometry_fields.insert(
-                    2,
-                    ("sharedLodBits", f"0x{mesh_data.shared_lod_bits:02X}"),
-                )
+            if not is_modern_header and (not corpus_zero_legacy or mesh_data.reserve):
+                geometry_fields.insert(2, ("reserve", f"0x{mesh_data.reserve:02X}"))
             if mesh_data.ukn1:
                 geometry_fields.insert(
                     3,
@@ -1488,9 +1487,9 @@ class MeshViewer(QWidget):
             if not is_modern_header and not profile.resident_buffer_tail_is_corpus_zero:
                 layout_fields.extend(
                     (
-                        "buffer_index_unkn",
+                        "additional_vertex_weights_size",
                         "buffer_index",
-                        "unknown_struct",
+                        "reserved",
                     )
                 )
             if not is_modern_header and not profile.legacy_buffer_sizes_are_vertex_and_index:
@@ -1684,7 +1683,7 @@ class MeshViewer(QWidget):
                 for raw_type, blocks in payload.unknown_attributes.items():
                     self._tree_item(
                         root,
-                        f"Raw attribute {raw_type}",
+                        f"Raw {VertexBufferType(raw_type).name} stream",
                         f"{len(blocks)} block(s), {sum(map(len, blocks))} bytes",
                     )
 

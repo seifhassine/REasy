@@ -2,14 +2,6 @@
  "format": 1,
  "game": "ONIMUSHAWOTS",
  "resource_version": 260605155,
- "source": {
-  "captures": [
-   "wots_frame62290.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  }
- },
  "states": {
   "AutomaticBorder": {
    "filter": 85,
@@ -17,6 +9,27 @@
     4,
     4,
     4
+   ],
+   "mip_bias": 0.0,
+   "anisotropy": 16,
+   "comparison": 1,
+   "border": [
+    0.0,
+    0.0,
+    0.0,
+    0.0
+   ],
+   "lod": [
+    0.0,
+    3.4028234663852886e+38
+   ]
+  },
+  "AutomaticClamp": {
+   "filter": 85,
+   "address": [
+    3,
+    3,
+    3
    ],
    "mip_bias": 0.0,
    "anisotropy": 16,

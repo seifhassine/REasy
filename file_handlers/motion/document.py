@@ -11,14 +11,19 @@ lazy from file_handlers.clip.document import ClipDocument
 
 from .decode import read_file
 from .encode import write_file
-from .model import JointChannels, Motion, MotionList, MotionListEntry, MotionTree, Sequence, TreeNode
+from .model import (
+    JointChannels, Motion, MotionList, MotionListEntry, MotionPack, MotionPackEntry, MotionTree, Sequence, TreeNode)
+
+ENTRIES = (MotionListEntry, MotionPackEntry)
 
 
 def children(item: object) -> list:
-    if isinstance(item, MotionList):
+    if isinstance(item, (MotionList, MotionPack)):
         return list(item.entries)
     if isinstance(item, MotionListEntry):
         return [*children(item.item), *item.overrides]
+    if isinstance(item, MotionPackEntry):
+        return children(item.item)
     if isinstance(item, Motion):
         return [*item.channels, *item.properties, *item.sequences]
     if isinstance(item, MotionTree):
@@ -32,7 +37,7 @@ class MotionDocument(EditDocument):
     modified_changed = Signal(bool)
     clip_changed = Signal()
 
-    def __init__(self, root: Motion | MotionList | MotionTree, parent: QObject | None = None):
+    def __init__(self, root: Motion | MotionList | MotionTree | MotionPack, parent: QObject | None = None):
         super().__init__(parent)
         self.root = root
         self._parents: dict[int, object] | None = None
@@ -76,13 +81,12 @@ class MotionDocument(EditDocument):
 
     def motion_of(self, item: object) -> Motion | None:
         while item is not None and not isinstance(item, Motion):
-            item = item.item if isinstance(item, MotionListEntry) and isinstance(item.item, Motion) else \
-                self.parent(item)
+            item = item.item if isinstance(item, ENTRIES) and isinstance(item.item, Motion) else self.parent(item)
         return item
 
     def motions(self) -> list[Motion]:
         root = self.root
-        if isinstance(root, MotionList):
+        if isinstance(root, (MotionList, MotionPack)):
             return [entry.item for entry in root.entries if isinstance(entry.item, Motion)]
         return [root] if isinstance(root, Motion) else []
 

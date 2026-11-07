@@ -1,159 +1,8 @@
 {
- "format": 6,
+ "format": 7,
  "game": "RE3RT",
  "resource_version": 2109101635,
  "master_target": 3,
- "source": {
-  "sdf_files": 76,
-  "ocio_configurations": 0,
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "events": [
-     5189,
-     5402,
-     6829,
-     6834,
-     6873,
-     6894,
-     7430,
-     7460
-    ],
-    "programs": {
-     "5189": [
-      "GBufferEmissiveDecode"
-     ],
-     "5402": [
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam",
-      "FastScreenSpaceSubsurfaceScatteringParam"
-     ],
-     "6829": [
-      "DeferredLightSingleWithSSSSSMask",
-      "DeferredLightSingleWithSSSSSMask",
-      "DeferredLightSingleWithSSSSSMask"
-     ],
-     "6834": [
-      "DeferredLightWithSSSSSMask",
-      "DeferredLightWithSSSSSMask",
-      "DeferredLightWithSSSSSMask"
-     ],
-     "6873": [
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringH2WithSSSSSMask"
-     ],
-     "6894": [
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask",
-      "FastScreenSpaceSubsurfaceScatteringV2WithSSSSSMask"
-     ],
-     "7430": [
-      "LDRPostProcessWithTonemapC4L3Section"
-     ],
-     "7460": [
-      "ScreenOutputSRGB"
-     ]
-    },
-    "files": {
-     "6829 LightCullingVolumeSRV": [],
-     "6829 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "6829 StaticShadowMapSRV": [],
-     "6829 ShadowMapSRV": [],
-     "6829 IESLightTableSRV": [],
-     "6829 GIDSRV": [],
-     "6834 LightCullingVolumeSRV": [],
-     "6834 AmbientBRDF": [
-      "systems/rendering/newambientbrdf.tex"
-     ],
-     "6834 StaticShadowMapSRV": [],
-     "6834 ShadowMapSRV": [],
-     "6834 IESLightTableSRV": [],
-     "6834 GIDSRV": [],
-     "7430 tTextureMap0": [],
-     "7430 tTextureMap1": [],
-     "7430 tTextureMap2": [
-      "systems/rendering/colorcubelinear.tex"
-     ],
-     "7430 ImagePlameBase": [
-      "systems/rendering/nullwhite.tex"
-     ],
-     "7430 ImagePlameAlpha": [
-      "systems/rendering/nullwhite.tex"
-     ]
-    },
-    "heap_reads": [],
-    "moves": [
-     [
-      5326,
-      33416,
-      ""
-     ],
-     [
-      5330,
-      33416,
-      ""
-     ],
-     [
-      5351,
-      33416,
-      ""
-     ],
-     [
-      5355,
-      33416,
-      ""
-     ],
-     [
-      5359,
-      33416,
-      ""
-     ],
-     [
-      6981,
-      7618,
-      ""
-     ],
-     [
-      7452,
-      7618,
-      ""
-     ]
-    ],
-    "ambiguous": [],
-    "bakes": [],
-    "phases": {
-     "blending": [
-      5202,
-      5209,
-      5216,
-      5221,
-      5231,
-      5241,
-      5248,
-      5255,
-      5274,
-      5281,
-      5288,
-      5298
-     ],
-     "forward": [
-      7044,
-      7054,
-      7062
-     ]
-    }
-   }
-  ]
- },
  "passes": [
   {
    "role": "emissive_decode",
@@ -765,8 +614,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "237b436decc815959861d74ff78e6837e15287a02121ec98c0c01f56fbbcf4bf"
+      "kind": "kernels",
+      "value": "objectroot/system/sssprofile/sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -880,8 +729,8 @@
      "stage": "pixel",
      "name": "BakedGaussianProfiles",
      "source": {
-      "kind": "buffer",
-      "value": "237b436decc815959861d74ff78e6837e15287a02121ec98c0c01f56fbbcf4bf"
+      "kind": "kernels",
+      "value": "objectroot/system/sssprofile/sssprofile.sss"
      },
      "view_format": 0,
      "levels": []
@@ -1118,7 +967,7 @@
    "purpose": "blending",
    "masters": [],
    "after": 0,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -1175,7 +1024,7 @@
    "purpose": "forward",
    "masters": [],
    "after": 5,
-   "depth": true,
+   "depth": "shown",
    "targets": [
     {
      "key": "target 0",
@@ -1257,7 +1106,5 @@
    }
   }
  ],
- "buffers": {
-  "237b436decc815959861d74ff78e6837e15287a02121ec98c0c01f56fbbcf4bf": "eNrLSuyz/fJ7mt2l//X2DECwYUOSbfHZV5Yg9pkzPntf/eSwe73qlA2In5b2bM/rB8J2J5NKbaHyexY/YLPz+tBhZ8m80/T0GZ/dS6F8awjf+iVQ/TGo+nNnfGxeAM37ADUvOe2ZzRagfeUI+8DqQOBkspit1HU3u/NQdx1fMN/2WbM4WN2smZL7Oyc72HEeXmYDMXfNPvfDgnaf++bZQuX3rZaYZhutPseOZdNxUyB/L4xfCuRPnylp6wFU/wWh3g5kHjPUvPNn1tgdA9r3FGGfPcxdWXjD6wxaeKXtRQ2vM2jhdQYtvM6ghdcZtPBKs0UNrzPw8MqaUm/7cm6D7b/tbmCx0t3/bW5c3mizISgdyD+wP2zfH9vehaJ2mzWU7BgYIvbPEXexK/lrZvfykQaQf2Bfg91vW9F/P20LJx4Bqd+LxrdFU2+HZp49mn32o+4aXu4Csv8jMCqf67ryHmT+68Adu9Hk0fm7kPls15Wt0OStkflvAndYo8nbMIyCUTAKRsEQBwAJ8ucd"
- }
+ "buffers": {}
 }

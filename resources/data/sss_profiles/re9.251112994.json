@@ -1,0 +1,44 @@
+{
+ "format": 2,
+ "game": "re9",
+ "resource_version": 251112994,
+ "path": "character/sss_profiles.sss",
+ "file": {
+  "magic": 5460819,
+  "version": 336597248,
+  "record": 96,
+  "most": 32,
+  "clamp": {
+   "words": [8, 9],
+   "least": -0.999,
+   "most": 0.999,
+   "unordered": 0.999
+  }
+ },
+ "records": {
+  "default": [0.003921569, 0.003921569, 0.003921569, 0.0, 0.0, 0.0, 0.0001, 0.0001, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
+  "fixed": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.01, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.01, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+ },
+ "config": {
+  "path": "systems/rendering/renderconfig.rcfg",
+  "section": "MISC",
+  "key": "SSSP",
+  "least": 7
+ },
+ "packing": {
+  "slots": 32,
+  "words": [0, 1, 2, 6, [20, 17], [20, 18], [20, 19], 21, [16, 13], [16, 14], [16, 15], 12, 10, 11, 8, 9, 22, 23, null, null],
+  "fills": [
+   {
+    "record": "default",
+    "from": "records",
+    "to": "config"
+   },
+   {
+    "record": "fixed",
+    "from": "config",
+    "to": 32
+   }
+  ]
+ }
+}

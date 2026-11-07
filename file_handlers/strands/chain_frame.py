@@ -11,11 +11,11 @@ import numpy as np
 from file_handlers.clsp.clsp_file import CollisionShape
 lazy from file_handlers.mmtr.engine_buffers import Camera
 lazy from file_handlers.mmtr.light_passes import LightPasses, Source
-from file_handlers.mmtr.material_preview import VIEW_DIMENSIONS, PreviewMaterial, TexelRows
+from file_handlers.mmtr.material_preview import VIEW_DIMENSIONS, BufferReads, PreviewMaterial, TexelRows
 lazy from file_handlers.mmtr.mesh_render import DEPTH_VIEWS
 lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
 lazy from file_handlers.mmtr.resident import UNORDERED_ACCESS
-lazy from file_handlers.rsz.scene_joints import times
+lazy from file_handlers.engine_math import transform_product
 
 from .binding_skin import POSITION_BYTES, BindingSkin, skin_matrices
 lazy from .chain_catalog import BEFORE, NOW, StrandCatalog
@@ -81,6 +81,7 @@ class SetPlace:
     joints: np.ndarray | None
     wind: Sequence[float] | None = None
     turn: np.ndarray | None = None
+    gravity: Callable[[Sequence[float]], Sequence[float]] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -96,9 +97,19 @@ class Stepped:
         return None if not self.sub_steps else 1.0 / (self.simulated * self.sub_steps)
 
 
+def engine_blocks(lit, layouts: Mapping, count: int) -> dict[str, bytes]:
+    out = {name: lit.engine_block(name, layout) for name, layout in layouts.items() if lit.gives(name)}
+    if _ENVIRONMENT in layouts:
+        block = bytearray(out.get(_ENVIRONMENT, bytes(layouts[_ENVIRONMENT].byte_size)))
+        variable = next(item for item in layouts[_ENVIRONMENT].variables if item.name == _FRAME_COUNT)
+        struct.pack_into("<I", block, variable.byte_offset, count & 0xffffffff)
+        out[_ENVIRONMENT] = block.take_bytes()
+    return out
+
+
 def view_projection(camera: Camera) -> np.ndarray:
     """Single precision, as RE9's view update makes it."""
-    return times(np.asarray(camera.view_matrix(), F).T, np.asarray(camera.projection(), F))
+    return transform_product(np.asarray(camera.view_matrix(), F).T, np.asarray(camera.projection(), F))
 
 
 @dataclass(slots=True)
@@ -128,6 +139,8 @@ class StrandChain:
         self.render = RenderPasses(self.device, catalog.render, programs, states, material_target)
         self.layouts, self.bits32 = self.physics.layouts(), not self.device.scene.atomics64()
         self.user_blocks = programs.profile.user_material_buffer_names
+        self.reads = BufferReads(lambda data: self.device.scene.buffer(data, 0, 0),
+                                 write=lambda buffer, data: self.device.scene.write(buffer, data))
         self._sets: list[_Set] = []
         self._places: Sequence[SetPlace] = ()
         self._rate: float | None = None
@@ -169,9 +182,10 @@ class StrandChain:
         self._sets.append(held)
         return len(self._sets) - 1
 
-    def image(self, places: Sequence[SetPlace], rate: float) -> None:
-        """``places`` is indexed by the set numbers ``add`` returns."""
+    def image(self, places: Sequence[SetPlace], rate: float, written: Mapping | None = None) -> None:
+        """``places`` is indexed by the set numbers ``add`` returns; ``written``: ``BufferReads.rewrite``'s."""
         self._places, self._rate = places, rate
+        self.reads.rewrite(written or {})
 
     @property
     def drawn_opacity(self) -> tuple[int, int] | None:
@@ -186,15 +200,6 @@ class StrandChain:
                 else self.device.scene.buffer(bytes(data), UNORDERED_ACCESS)
                 for slot, data in strand_buffers(held.source.strands, level, held.source.first_lod).items()}
         return held.sections[level]
-
-    def _engine(self, layouts: Mapping) -> dict[str, bytes]:
-        out = {name: self.lit.engine_block(name, layout) for name, layout in layouts.items() if self.lit.gives(name)}
-        if _ENVIRONMENT in layouts:
-            block = bytearray(out.get(_ENVIRONMENT, bytes(layouts[_ENVIRONMENT].byte_size)))
-            count = next(item for item in layouts[_ENVIRONMENT].variables if item.name == _FRAME_COUNT)
-            struct.pack_into("<I", block, count.byte_offset, self._count & 0xffffffff)
-            out[_ENVIRONMENT] = block.take_bytes()
-        return out
 
     def _run(self) -> list[int]:
         odd, camera, size = bool(self._count & 1), self.lit.scene.camera, self.lit.scene.size
@@ -254,7 +259,7 @@ class StrandChain:
             offsets = (binding.uv, -POSITION_BYTES * binding.base)
         frame = SetFrame(place.origin, run.level, source.first_lod, run.segments, 1.0, self._rate, held.runs,
                          place.anchor, place.colliders, place.own_joint, offsets, (), False, place.wind,
-                         place.turn)
+                         place.turn, place.gravity)
         held.runs = min(held.runs, 2) + 1
         blocks, shape, state = held.physics.frame(source.dynamics, source.preset, frame)
         if self.stepped is None:
@@ -275,7 +280,8 @@ class StrandChain:
             self.physics.give(owner, given)
             self.render.give(owner, given)
         held.level = run.level
-        dispatches = self.physics.frame(owner, frame_steps(shape, state), blocks | self._engine(self.layouts), odd)
+        dispatches = self.physics.frame(owner, frame_steps(shape, state),
+                                        blocks | engine_blocks(self.lit, self.layouts, self._count), odd)
         return [*skinning, *dispatches, self.device.copy(held.readback[odd], self.physics.slot(owner, "bounds", odd))]
 
     def _material(self, source: SetSource, contracts: Sequence) -> dict:
@@ -285,7 +291,7 @@ class StrandChain:
         for kind, contract in contracts:
             if kind.material:
                 out |= material_given(self.device, kind.bindings, contract.resources, source.material,
-                                      source.load)[0]
+                                      source.load, self.reads)[0]
         return out
 
     def _draw(self, owner: int, held: _Set, place: SetPlace, run: LodRun, camera: Camera,
@@ -305,7 +311,8 @@ class StrandChain:
                           _VERTEX_BYTES * first.vertex_count, True, 0, 0, 0.0)
         values = {name: source.render[field] for name, field in render.arguments.items()}
         state = DrawState.of(render, values, drawn, factor, held.drawn is None, self.bits32, source.master is not None)
-        blocks = held.constants.frame(source.render, source.strands, frame) | self._engine(held.layouts) | held.user
+        blocks = (held.constants.frame(source.render, source.strands, frame)
+                  | engine_blocks(self.lit, held.layouts, self._count) | held.user)
         self.render.write(owner, blocks)
         held.drawn = state
 

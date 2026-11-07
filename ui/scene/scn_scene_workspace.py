@@ -5,7 +5,7 @@ from collections import defaultdict
 from contextlib import suppress
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QSize, QT_TRANSLATE_NOOP, QTimer, Qt
+from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, QTimer, Qt
 lazy from PySide6.QtGui import QIcon
 lazy from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -30,10 +30,10 @@ lazy from PySide6.QtWidgets import (
 )
 
 from file_handlers.rsz.scn_scene_loader import ScnSceneLoader, ScnSceneSource, holds_scene, scn_source_identity_keys
+from ui.scene.scene_features import ScnSceneFeatures, clear_layout, note_label, panel_button, text_button
 lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
 lazy from file_handlers.rsz.scn_document_store import ScnDocumentStore
 lazy from file_handlers.rsz.rsz_handler import RszHandler
-lazy from ui.editor_widgets import styled_label, tool_button
 lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
 lazy from ui.scene.scn_raw_inspector import ScnRawInspector
@@ -121,7 +121,7 @@ def _source_display_name(source: ScnSceneSource) -> str:
     return f"{_source_project_name(source)} / {_source_name(source)}"
 
 
-class ScnSceneTab:
+class ScnSceneTab(ScnSceneFeatures):
     skip_detached_menus = suppress_general_shortcuts = True
     hide_notebook_tab = True
 
@@ -156,10 +156,11 @@ class ScnSceneTab:
             self.notebook_widget,
             sources_getter=lambda: self.sources,
             graphs_changed_callback=self._on_graphs_changed,
-            edits_changed_callback=self._on_scene_edited,
             document_store=self.app.scenes.document_store,
             settings=getattr(self.app, "settings", None),
         )
+        self.preview.documents_edited.connect(self._on_scene_edited)
+        self.preview.user_edits_changed.connect(self._on_scene_edited)
         self.preview.preview.object_clicked.connect(self._select_renderable_from_view)
         self.preview.preview._external_fullscreen_owner = self
         layout.addWidget(self.preview, 1)
@@ -227,30 +228,16 @@ class ScnSceneTab:
         self.update_source_summary()
         self._refresh_controls()
         self.preview.preview.setup_viewport_overlay(panel, self.source_body, self.source_fold_button)
+        self._build_features_panel()
         self.preview.preview.place_viewport_overlays()
 
     def _tool_button(self, icon: str, tip: str, slot=None, parent: QWidget | None = None) -> QToolButton:
-        button = tool_button(icon, tip, slot, parent=parent or self.notebook_widget)
-        button.setIconSize(QSize(16, 16))
-        button.setFixedSize(24, 24)
-        button.setFocusPolicy(Qt.NoFocus)
-        return button
+        return panel_button(icon, tip, slot, parent or self.notebook_widget)
 
-    def _popup_button(self, text: str, slot=None, enabled: bool = True) -> QToolButton:
-        button = QToolButton(self._scene_popup or self.notebook_widget)
-        button.setText(text)
-        button.setToolButtonStyle(Qt.ToolButtonTextOnly)
-        button.setFocusPolicy(Qt.NoFocus)
+    def _popup_button(self, text: str, slot=None, enabled: bool = True, parent: QWidget | None = None) -> QToolButton:
+        button = text_button(text, slot, parent or self._scene_popup or self.notebook_widget)
         button.setEnabled(enabled)
-        if slot:
-            button.clicked.connect(slot)
         return button
-
-    @staticmethod
-    def _popup_note(text: str, parent: QWidget) -> QLabel:
-        label = styled_label(text, parent, tone="muted")
-        label.setWordWrap(True)
-        return label
 
     def _discard_scene_popup(self) -> None:
         if self._scene_popup is not None:
@@ -292,17 +279,8 @@ class ScnSceneTab:
             self._scene_popup = panel
         self._scene_popup_title.setText(title)
         self.preview.preview.set_viewport_overlay_folded(self._scene_popup, False)
-        self._clear_layout(self._scene_popup_body)
+        clear_layout(self._scene_popup_body)
         return self._scene_popup, self._scene_popup_body
-
-    @staticmethod
-    def _clear_layout(layout) -> None:
-        while layout.count():
-            item = layout.takeAt(0)
-            if item.widget():
-                item.widget().deleteLater()
-            elif item.layout():
-                ScnSceneTab._clear_layout(item.layout())
 
     def _popup_run(self, callback, *args):
         def run(_checked=False):
@@ -391,7 +369,7 @@ class ScnSceneTab:
             QCoreApplication.translate("ScnSceneWorkspace", "Add SCN or PFB")
         )
         if not sources:
-            body.addWidget(self._popup_note(QCoreApplication.translate(
+            body.addWidget(note_label(QCoreApplication.translate(
                 "ScnSceneWorkspace", "Open an SCN or PFB from a PAK first."
             ), panel))
         for source in sources:
@@ -546,10 +524,11 @@ class ScnSceneTab:
         if self.parent_notebook is None:
             return
         index = self.parent_notebook.indexOf(self.notebook_widget)
-        if index != -1:
+        if index != -1 and self.parent_notebook.tabText(index) != self.title:
             self.parent_notebook.setTabText(index, self.title)
 
     def _on_graphs_changed(self) -> None:
+        self._show_features()
         self.rebuild_owned_scn_paths(self.preview.graphs)
         self.app.scenes.document_store.claim_graphs(self, self.preview.graphs)
         self.update_source_summary()
@@ -559,8 +538,12 @@ class ScnSceneTab:
     def _on_scene_edited(self, document_ids=None, changed_fields=None) -> None:
         if document_ids:
             self.app.scenes.refresh_document_views(document_ids, changed_fields or ())
-        self.modified = bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs))
+        self.modified = self.unsaved()
         self.update_tab_title()
+
+    def unsaved(self) -> bool:
+        return bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs)
+                    or self.preview.loader.user_documents)
 
     def cleanup(self) -> None:
         self.leave_view_fullscreen(defer_update=False)
@@ -585,6 +568,7 @@ class ScnSceneTab:
 
     def discard_changes(self) -> None:
         self.app.scenes.document_store.discard_owner(self)
+        self.preview.loader.user_documents.clear()
         self.modified = False
         self.update_tab_title()
 
@@ -593,13 +577,13 @@ class ScnSceneTab:
 
     def direct_save(self) -> bool:
         try:
-            count = self.app.scenes.document_store.save_graphs(self.preview.graphs)
+            count = self.app.scenes.document_store.save_graphs(self.preview.graphs) + self.preview.save_user_edits()
         except Exception as exc:
             self.app.status_bar.showMessage(QCoreApplication.translate(
                 "ScnSceneWorkspace", "Scene save failed: {error}"
             ).format(error=exc), 5000)
             return False
-        self.modified = bool(self.app.scenes.document_store.dirty_documents(self.preview.graphs))
+        self.modified = self.unsaved()
         self.update_tab_title()
         saved_message = (
             QCoreApplication.translate("ScnSceneWorkspace", "Saved {count} file.")
@@ -685,7 +669,7 @@ class ScnSceneTab:
         can_add_source = self.app.scenes.can_add_source(active_source)
         scenes = self.app.scenes.tabs()
         if not scenes:
-            body.addWidget(self._popup_note(
+            body.addWidget(note_label(
                 QCoreApplication.translate("ScnSceneWorkspace", "No scenes."), panel
             ))
         for scene in scenes:
@@ -1255,7 +1239,7 @@ class ScnSceneController:
 
     def refresh_dirty_flags(self) -> None:
         for scene in self.tabs():
-            scene.modified = bool(self.document_store.dirty_documents(scene.preview.graphs))
+            scene.modified = scene.unsaved()
             scene.update_tab_title()
 
     def refresh_document_views(self, document_ids, changed_fields=()) -> None:

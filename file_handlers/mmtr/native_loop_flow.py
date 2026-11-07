@@ -68,10 +68,25 @@ def dominator_sets(blocks, predecessors, *, unreachable=False):
     positions = {label: index for index, label in enumerate(labels)}
     full = (1 << len(labels)) - 1
     dominators = {label: (1 if index == 0 else full) for index, label in enumerate(labels)}
+    following = {}
+    for label in labels[1:]:
+        for predecessor in predecessors[label]:
+            following.setdefault(predecessor, []).append(label)
+    order, visited, pending = [], set(labels[:1]), [(labels[0], iter(following.get(labels[0], ())))]
+    while pending:
+        label, targets = pending[-1]
+        target = next(targets, None)
+        if target is None:
+            order.append(pending.pop()[0])
+        elif target not in visited:
+            visited.add(target)
+            pending.append((target, iter(following.get(target, ()))))
+    order = [*reversed(order[:-1]), *(label for label in labels[1:] if label not in visited)]
     changed = True
     while changed:
         changed = False
-        for index, label in enumerate(labels[1:], 1):
+        for label in order:
+            index = positions[label]
             if predecessors[label]:
                 shared = full
                 for predecessor in predecessors[label]:
@@ -309,16 +324,18 @@ def normalize_loop_boundaries(blocks, successors, conditions, edge_origins, *, t
                 rewritten.append(_phi(name, domain, {**{edge: value for edge, value in values.items() if edge not in removed}, exit_bridges[target]: selected}))
             blocks[target] = rewritten + [record for record in blocks[target] if record.opcode != 'phi']
 
-        used = {value for label in outside for record in blocks[label]
-                for value in re.findall(r'%' + LABEL, record.text.partition('=')[2] if record.result else record.text)}
+        mentions = {label: [set(re.findall(r'%' + LABEL,
+                                           record.text.partition('=')[2] if record.result else record.text))
+                            for record in blocks[label]] for label in outside}
         renames = {name: result(_scalar_result_type(definitions[name],types),
                    {edge: name for edge in exits if definition_blocks[name] in dominators[edge[0]]}, 'reasy_export')
-                   for name in sorted(used & definitions.keys())}
+                   for name in sorted(set().union(*(used for rows in mentions.values() for used in rows))
+                                      & definitions.keys())}
         if renames:
             for label in outside:
                 blocks[label] = [DxilSemanticRecord(record.kind,
                     re.sub(r'%' + LABEL, lambda match: renames.get(match[0], match[0]), record.text), record.opcode, record.result)
-                    for record in blocks[label]]
+                    if used & renames.keys() else record for record, used in zip(blocks[label], mentions[label])]
                 if isinstance(conditions.get(label), str):
                     conditions[label] = renames.get(conditions[label], conditions[label])
                 elif label in conditions:

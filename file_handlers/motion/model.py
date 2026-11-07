@@ -230,6 +230,18 @@ class MotionListEntry:
 
 
 @dataclass(eq=False, slots=True)
+class MotionPackEntry:
+    motion_id: int
+    item: Motion
+
+
+@dataclass(eq=False, slots=True)
+class MotionPack:
+    version: int
+    entries: list[MotionPackEntry] = field(default_factory=list)
+
+
+@dataclass(eq=False, slots=True)
 class MotionList:
     version: int
     name: str

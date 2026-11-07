@@ -2,20 +2,20 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-import ctypes
 from dataclasses import dataclass
 import re
 
 import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
+lazy from file_handlers.engine_math import crt
 from utils.native_build import ensure_fastmesh
 
+lazy from .frame_clock import clock_words
+lazy from .frame_constants import Derived
 lazy from .material_preview import MaterialPreviewError
 
 _DECLARATION = re.compile(r"(?:row_major )?(float|uint|int)(\d)?(?:x(\d))?\b")
-_LOG2F = ctypes.CDLL("ucrtbase").log2f
-_LOG2F.restype, _LOG2F.argtypes = ctypes.c_float, (ctypes.c_float,)
 _SCALARS = {"float": np.float32, "uint": np.uint32, "int": np.int32}
 _fastmesh = ensure_fastmesh()
 
@@ -57,7 +57,8 @@ class Placement:
 
 
 CAMERA_BUFFERS = ("SceneInfo",)
-PLACEMENT_BUFFERS = ("World", "InstanceWorldInfo", "SkinningMatrices")
+WORLD_BUFFER, CHECKER_BOARD_BUFFER = "World", "CheckerBoardInfo"
+PLACEMENT_BUFFERS = (WORLD_BUFFER, "InstanceWorldInfo", "SkinningMatrices")
 
 
 @dataclass(frozen=True, slots=True)
@@ -83,11 +84,19 @@ class EngineConstant:
             if name not in held:
                 raise MaterialPreviewError(QT_TRANSLATE_NOOP(
                     "MaterialPreview", "The engine's buffer holds no field {name}."), {"name": name})
-        return _laid_out(layout, values, True).take_bytes()
+        return laid_out(layout, values, True).take_bytes()
 
 
 class InstanceInput(bytes):
     """A vertex input the programs read per instance, e.g. RE4 SpeedTree LOD fade."""
+    __slots__ = ()
+
+
+class TransitionBuffer(bytes):
+    __slots__ = ()
+
+
+class TransitionInput(InstanceInput):
     __slots__ = ()
 
 
@@ -138,6 +147,13 @@ def engine_inverse(matrix: np.ndarray) -> np.ndarray:
                          np.float32).reshape(4, 4).copy()
 
 
+def frustum_planes(view_projection: np.ndarray) -> np.ndarray:
+    x, y, z, w = np.asarray(view_projection, np.float32).T
+    planes = np.stack([x + w, w - x, w - y, y + w, z + np.float32(0), w - z])
+    length = np.sqrt((planes[:, 0] * planes[:, 0] + planes[:, 1] * planes[:, 1]) + planes[:, 2] * planes[:, 2])
+    return planes * (np.float32(1) / length)[:, None]
+
+
 def _scene_values(camera: Camera) -> dict[str, np.ndarray]:
     view = camera.view_matrix()
     projection = camera.projection()
@@ -151,7 +167,7 @@ def _scene_values(camera: Camera) -> dict[str, np.ndarray]:
     far = f32(p32 / p22)
     near = f32(f32(-p22 * far) / f32(f32(-1) - p22))
     ratio = f32(near / far)
-    culling = (f32(1) / near, f32(1) / f32(_LOG2F(f32(far / near))))
+    culling = (f32(1) / near, f32(1) / f32(crt("log2f")(f32(far / near))))
     return {"viewProjMat": view_projection, "prevViewProjMat": previous, "transposeViewMat": view[:3],
             "transposeViewInvMat": np.linalg.inv(view)[:3], "viewProjInvMat": engine_inverse(view_projection).astype(np.float64),
             "projElement": elements,
@@ -170,7 +186,8 @@ def _scene_info(camera: Camera, frame: Mapping[str, Sequence[float]]) -> dict[st
         return held[2]
     if values.keys() & frame.keys():
         raise ValueError(f"the frame's constants {sorted(values.keys() & frame.keys())} are the camera's fields")
-    merged = values | {name: np.asarray(items, np.float64) for name, items in frame.items()}
+    merged = values | {name: frustum_planes(values["viewProjMat"]).astype(np.float64) if isinstance(items, Derived)
+                       else np.asarray(items, np.float64) for name, items in frame.items()}
     if len(_SCENE_INFOS) >= 8:
         del _SCENE_INFOS[next(iter(_SCENE_INFOS))]
     _SCENE_INFOS[id(values), id(frame)] = values, frame, merged
@@ -191,7 +208,7 @@ def _bone_count(placement: Placement) -> int:
     return 0 if placement.bones is None else len(placement.bones)
 
 
-def _instance_values(placement: Placement) -> dict[str, np.ndarray]:
+def instance_values(placement: Placement) -> dict[str, np.ndarray]:
     world = np.asarray(placement.world, np.float64).reshape(3, 4)
     previous = world if placement.previous_world is None else np.asarray(placement.previous_world, np.float64)
     return {"worldMat": world, "prevWorldMat": previous, "jointOffset": np.array([0]),
@@ -223,7 +240,7 @@ def _encoded(variable, values: np.ndarray, constant: bool) -> tuple[int, bytes]:
     return variable.byte_offset, rows.take_bytes()
 
 
-def _laid_out(layout, values: dict[str, np.ndarray], constant: bool) -> bytearray:
+def laid_out(layout, values: dict[str, np.ndarray], constant: bool) -> bytearray:
     if not any(values is held for held in _SCENE_VALUES.values()) and not any(
             values is held[2] for held in _SCENE_INFOS.values()):
         return _laid_out_anew(layout, values, constant)
@@ -298,22 +315,29 @@ def with_words(data: bytearray, layout, words: Mapping[str, Sequence[int]]) -> b
     return data
 
 
+def checker_board_values() -> dict[str, np.ndarray]:
+    return {"cbr": np.array([1.0, 1.0])}
+
+
 def engine_buffer(contract, resource, camera: Camera, placement: Placement,
                   frame: Mapping[str, Sequence[float]] = frozendict(),
-                  captured: Mapping[str, Mapping[str, Sequence[int]]] = frozendict()) -> bytes | None:
+                  captured: Mapping[str, Mapping[str, Sequence[int]]] = frozendict(),
+                  decals: bool = False, clock=None) -> bytes | None:
     if resource.register_class == "b":
         layout = contract.buffer(resource.name)
-        values = {"SceneInfo": lambda: _scene_info(camera, frame), "World": lambda: _instance_values(placement),
-                  "CheckerBoardInfo": lambda: {"cbr": np.array([1.0, 1.0])}}.get(resource.name)
-        data = _laid_out(layout, values() if values else frame_values(resource.name), True)
+        values = {"SceneInfo": lambda: _scene_info(camera, frame), WORLD_BUFFER: lambda: instance_values(placement),
+                  CHECKER_BOARD_BUFFER: checker_board_values,
+                  "GBufferType": lambda: {"gbufferTypeFlag": np.array([float(decals)])}}.get(resource.name)
+        data = laid_out(layout, values() if values else frame_values(resource.name), True)
         if resource.name != "SceneInfo":
             with_words(data, layout, captured.get(resource.name, {}))
+            with_words(data, layout, clock_words(clock, resource.name, layout))
         return data.take_bytes()
     if resource.input_type != "structured-buffer":
         return None
     layout = contract.structured_buffer(resource.name)
     if resource.name == "InstanceWorldInfo":
-        return _laid_out(layout, _instance_values(placement), False).take_bytes()
+        return laid_out(layout, instance_values(placement), False).take_bytes()
     if resource.name == "SkinningMatrices" and placement.bones is not None:
         names = [variable.name for variable in layout.variables]
         if len(names) != 3:
@@ -326,6 +350,8 @@ def engine_buffer(contract, resource, camera: Camera, placement: Placement,
     return None
 
 
-__all__ = ["CAMERA_BUFFERS", "Camera", "EngineConstant", "FRAME_BUFFERS", "InstanceInput", "PLACEMENT_BUFFERS",
-           "Placement", "RANGE_COMPRESS_FIELDS", "engine_buffer", "engine_inverse", "frame_values", "scene_values",
-           "with_words"]
+__all__ = ["CAMERA_BUFFERS", "CHECKER_BOARD_BUFFER", "Camera", "EngineConstant", "FRAME_BUFFERS", "InstanceInput",
+           "PLACEMENT_BUFFERS", "Placement", "RANGE_COMPRESS_FIELDS", "TransitionBuffer", "TransitionInput",
+           "WORLD_BUFFER", "checker_board_values",
+           "engine_buffer", "engine_inverse", "frame_values", "frustum_planes", "instance_values", "laid_out",
+           "scene_values", "with_words"]

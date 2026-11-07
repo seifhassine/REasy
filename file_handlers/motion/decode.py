@@ -21,6 +21,8 @@ from .model import (
     Motion,
     MotionList,
     MotionListEntry,
+    MotionPack,
+    MotionPackEntry,
     MotionTree,
     PoseFrame,
     PropertyTrack,
@@ -42,6 +44,7 @@ from .rules import (
     gpu_range_floats,
     list_profile,
     mot_profile,
+    pack_profile,
     pose_flags,
     solver_kinds,
 )
@@ -63,11 +66,23 @@ def read_motlist(data: bytes) -> MotionList:
     return _ListReader(data).read()
 
 
-def read_file(data: bytes) -> Motion | MotionList | MotionTree:
+def read_motpack(data: bytes) -> MotionPack:
+    if len(data) < 8 or data[4:8] != b"mpck":
+        raise MotionFormatError("Not a MOTPACK file")
+    header = pack_profile(_U32.unpack_from(data, 0)[0])[1].decode(data, 0)
+    reader, count = _Reader(data, 0, {}), header["count"]
+    return MotionPack(header["version"], [
+        MotionPackEntry(motion_id, read_mot(data, offset, standalone=False)) for motion_id, offset in
+        zip(reader._unpack(f"{count}I", header["ids"]), reader._pointers(header["motions"], count))])
+
+
+def read_file(data: bytes) -> Motion | MotionList | MotionTree | MotionPack:
     if data[4:8] == b"mlst":
         return read_motlist(data)
     if data[4:8] == b"mtre":
         return read_tree(data)
+    if data[4:8] == b"mpck":
+        return read_motpack(data)
     return read_mot(data)
 
 

@@ -12,10 +12,8 @@ DEFAULTS_RESOURCE = "resources/data/rsz_instance_defaults.json"
 
 @functools.cache
 def type_table(resource: str) -> dict:
-    """Keys starting with ``_`` are comments."""
     with open(resource_path(resource, required=True), encoding="utf-8") as handle:
-        table = json.load(handle)
-    return {type_name: entry for type_name, entry in table.items() if not type_name.startswith("_")}
+        return json.load(handle)
 
 
 def apply_instance_defaults(fields: dict, type_info: dict) -> None:

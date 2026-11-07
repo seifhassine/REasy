@@ -1,0 +1,41 @@
+{
+ "format": 2,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "component": {
+  "type": "via.render.RenderTargetModifier",
+  "target": "DstRenderTarget",
+  "material": "Material",
+  "drawn_material": 0,
+  "parameters": "MaterialParam"
+ },
+ "texture": {
+  "dimensions": [
+   4
+  ],
+  "refused": [
+   "TextureCube",
+   "MipChain",
+   "UsageType",
+   "ResolutionType"
+  ]
+ },
+ "compute": {
+  "program": "UserRenderTargetCS",
+  "asynchronous": true,
+  "threads": [
+   8,
+   8
+  ],
+  "info": "RenderTargetInfo",
+  "info_fields": {
+   "size": "targetSize",
+   "inverse_size": "targetInverseSize"
+  },
+  "result": "RWResult"
+ },
+ "pixel": {
+  "program": "UserRenderTargetPS",
+  "vertices": 3
+ }
+}

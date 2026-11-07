@@ -7,10 +7,12 @@ from dataclasses import dataclass, field, replace
 import numpy as np
 from PySide6.QtCore import QT_TRANSLATE_NOOP
 
+lazy from file_handlers.mmtr.draw_rules import MESH_COMPONENT, drawing_rules, program_flags
 from file_handlers.mmtr.engine_buffers import Camera, Placement
+lazy from file_handlers.mmtr.frame_clock import FrameClock, frame_clock_catalog_for
 from file_handlers.mmtr.light_passes import (
-    DERIVED_READ, Light, LightPasses, captured_constants, derived_read, light_pass_catalog_for, light_pass_files,
-    parsed_pass_file,
+    DERIVED_READ, Light, LightPasses, derived_read, light_pass_catalog_for, light_pass_files, parsed_pass_file,
+    view_constants,
 )
 from file_handlers.mmtr.material_context import MaterialInstanceContext
 from file_handlers.mmtr.material_family import bind_drawn_master
@@ -27,7 +29,7 @@ from file_handlers.mmtr.overlay_scene import OverlayGeometry, OverlayPart, Overl
 from file_handlers.mmtr.parsed_files import Lease
 from file_handlers.mmtr.pretransform import (
     ROUTE, ChainLevel, Deformation, blend_weights, chain_level, deformed_route, masters_skinning_program,
-    pretransform_catalog_for,
+    pre_transformed, pretransform_catalog_for,
 )
 from file_handlers.mmtr.profiles import mmtr_profile_for_game, mmtr_profile_for_resource
 from file_handlers.mmtr.shown_image import TargetImages
@@ -38,7 +40,7 @@ lazy from file_handlers.stmesh.lit import drawn_chunks, drawn_cluster, engine_bu
 lazy from file_handlers.stmesh.stmesh_handler import StmeshHandler
 from file_handlers.sdf.sdf_file import CULL_NONE
 from file_handlers.tex.texture_quality import texture_quality_profile
-from ui.scene.device_frames import Presenter
+from ui.scene.device_frames import LIMIT_MOST, Presenter
 lazy from ui.scene.mesh_preview import MeshPreviewScene
 from ui.scene.scene_buffers import VIEW_LIGHT_DIRECTION, mesh_bounds_points
 from utils.resource_file_utils import PrefetchedFiles, resource_path_with_version, resource_version_from_path
@@ -54,9 +56,6 @@ _NEAR, _FAR = 0.1, 100.0
 # Direction towards the viewers' default light, in view space.
 _LIGHT_DIRECTION = np.array(VIEW_LIGHT_DIRECTION) / 1.5
 DEFAULT_INTENSITY = 3.0
-# MDF flag ``SSSProfileUsed``: objects using it get stencil bit value 2, which masked deferred lights test.
-_SSS_PROFILE_USED = 1 << 27
-_SSS_STENCIL = 2
 NO_LIGHT_PASSES = QT_TRANSLATE_NOOP(
     "MaterialPreview", "REasy has no catalog of the renderer's light passes for this game build.")
 UNKNOWN_SKINNING = QT_TRANSLATE_NOOP(
@@ -126,8 +125,6 @@ class LitView:
 
 @dataclass(frozen=True, slots=True)
 class LitPart:
-    """``route`` and ``meshlet_programs`` are set only for SpeedTree parts, which name their own; ``texel_density``
-    and ``level`` are ``MeshPart``'s."""
     index: int
     key: str
     mmtr_path: str
@@ -139,6 +136,7 @@ class LitPart:
     meshlet_programs: MeshletPrograms | None = None
     texel_density: float | None = None
     level: int = 0
+    batch: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,6 +170,8 @@ class LitFrame:
     failures: Mapping[int, Exception]
     missing_textures: tuple[str, ...]
     settling: bool = field(default=False, kw_only=True)
+    # A drawn program reads the frame clock: the next frames differ.
+    clocked: bool = field(default=False, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -329,7 +329,8 @@ def bind_part(game: str, masters: Mapping[str, tuple[str, bytes]], route: str, p
 def _read_prepass(route: str, part: LitPart, document, catalog) -> None:
     if route == MESHLET_ROUTE:
         return
-    prepass = depth_prepass_program(document, catalog.master_target, part.material.material_flags, route)
+    prepass = depth_prepass_program(document, catalog.master_target, program_flags(document.profile, part.material),
+                                    route)
     if prepass is not None:
         document.sdf.targets[catalog.master_target].programs[prepass]
 
@@ -391,14 +392,15 @@ def level_bounds(level: ChainLevel | None, payloads: Iterable, bones: int | None
 
 def deformed(game: str, level: ChainLevel, groups: Mapping[int, int], visible: Iterable[int],
              skins: Mapping[int, MeshPart], weights: np.ndarray | None,
-             edge_excluded: bool = False) -> tuple[Deformation, list[MeshPart]]:
+             edge_excluded: bool = False, blend_normal: bool = True) -> tuple[Deformation, list[MeshPart]]:
     enabled = frozenset(groups[index] for index in visible)
     held = [part for index, part in skins.items() if groups[index] in enabled]
     materials = {SubmeshRange(item.first_index, item.index_count, item.first): item.material
                  for item in level.submeshes if item.group in enabled}
-    unskinned = frozenset(materials[part.submesh] for part in held if part.route not in (None, ROUTE))
-    deformation = Deformation(level, pretransform_catalog_for(mmtr_profile_for_game(game)), enabled,
-                              edge_excluded, weights, unskinned)
+    catalog = pretransform_catalog_for(mmtr_profile_for_game(game))
+    unskinned = frozenset(materials[part.submesh] for part in held if part.route not in (None, ROUTE)
+                          or not pre_transformed(catalog, part.material.shading_type))
+    deformation = Deformation(level, catalog, enabled, edge_excluded, weights, unskinned, blend_normal)
     skinning = {step.material for step in deformation.steps() if step.material is not None}
     if not {materials[part.submesh] for part in held} >= skinning:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
@@ -472,6 +474,17 @@ class LitDrawer(DeviceDrawer):
         # What the image the last frame drew is of, and frames running drawn so.
         self._shown_for: tuple | None = None
         self._shown_times = 0
+        self._clock: FrameClock | None = None
+
+    def _ticked(self, profile, seconds: float) -> FrameClock | None:
+        catalog = frame_clock_catalog_for(profile)
+        if catalog is None:
+            self._clock = None
+            return None
+        if self._clock is None or self._clock.catalog is not catalog:
+            self._clock = FrameClock(catalog)
+        self._clock.step(seconds)
+        return self._clock
 
     def _antialias(self, camera: Camera, still, antialiased: bool, framed=None) -> Camera:
         """``framed`` as ``TemporalImage.steps`` takes it."""
@@ -483,9 +496,9 @@ class LitDrawer(DeviceDrawer):
         self._framed, self._jittered = framed, self._averaged
         return jittered(camera, self._averaged)
 
-    def _average(self, overlay: Overlay, shown: int, background,
+    def _average(self, overlay: Overlay, shown: int, background, passes: LightPasses,
                  responsive: tuple[int, int] | None = None) -> tuple[list[int], int]:
-        if self._still is None:
+        if self._still is None or passes.from_zeros:
             return [], shown
         if self._temporal is None:
             # Released with the overlay's scene.
@@ -528,9 +541,11 @@ class LitDrawer(DeviceDrawer):
         self._mesh = self._temporal = self._still = self._shown_for = None
 
     def draw(self, scene: LitScene, view: LitView, intensity: float, overlays: LitOverlays,
-             target: tuple[int, str] | None = None) -> LitFrame:
+             target: tuple[int, str] | None = None, rate: float = LIMIT_MOST) -> LitFrame:
+        """``rate``: frames a second, whose time the frame clock steps by."""
         profile = mmtr_profile_for_game(scene.game)
         catalog = light_pass_catalog_for(profile)
+        clock = self._ticked(profile, 1.0 / rate)
         gbuffer = self._gbuffer = target is not None
         if scene is not self._scene:
             self._leave()
@@ -551,7 +566,8 @@ class LitDrawer(DeviceDrawer):
                     route = deformed_route(document, catalog.master_target, part.route or scene.route, program,
                                            scene.skinned)
                     skins[part.index] = MeshPart(document, part.material, part.buffer, part.submesh,
-                                                 route if route != scene.route else part.route, part.meshlet_programs)
+                                                 route if route != scene.route else part.route, part.meshlet_programs,
+                                                 batch=part.batch)
                 bound[part.index] = skins[part.index] if refusal is None else refusal
             self._bound[gbuffer], self._skins = bound, skins
         camera = view.camera()
@@ -608,13 +624,14 @@ class LitDrawer(DeviceDrawer):
                     shown_object = MeshObject(tuple(parts), placement, scene.skinned, scene.stencil_reference,
                                               scene.bounds, deformation, tuple(part for part in skins
                                                                                if part not in parts), scene.engine,
-                                              box=scene.box)
+                                              box=scene.box, draw_state=frozendict())
                     # The G-buffer view draws every G-buffer program, blending ones too.
                     mesh = MeshScene([shown_object], scene.files.get, drawn_by, shader_target=catalog.master_target,
                                      hardware=True,
                                      phases=() if gbuffer else {phase.key for phase in catalog.phases},
                                      pass_file=lambda path, data: pass_file(path, data).document,
-                                     captured=captured_constants(catalog), forget_file=scene.files.forget)
+                                     captured=view_constants(catalog, profile, scene.files.get),
+                                     forget_file=scene.files.forget, clock=clock)
                     frame = TargetImages(mesh) if gbuffer else LightPasses(mesh, pass_file=pass_file)
                     overlay = Overlay(mesh.device, view.size, (DEPTH_VIEWS[mesh.depth_format][1], mesh.depth))
                     mesh.hide_parts((0, part) for index, part in shown.items()
@@ -642,7 +659,8 @@ class LitDrawer(DeviceDrawer):
             return LitFrame(view, False, shown_failures, ())
         self._count_shown((view, intensity, target, drawn[0].refills))
         return LitFrame(view, True, shown_failures, drawn[0].missing_textures,
-                        settling=self._settling or drawn[0].streaming or not self._gbuffer and self._carrying(drawn[1]))
+                        settling=self._settling or drawn[0].streaming or not self._gbuffer and self._carrying(drawn[1]),
+                        clocked=drawn[0].clocked)
 
     def _drawing(self, view: LitView, failures: Mapping[int, Exception]) -> bool:
         """Whether a part shown draws."""
@@ -688,7 +706,8 @@ class LitDrawer(DeviceDrawer):
 
         def after(shown: int) -> list[int]:
             self._streamed_in(mesh)
-            averaged, shown = self._average(overlay, shown, overlays.background) if overlays.filled else ([], shown)
+            averaged, shown = self._average(overlay, shown, overlays.background, frame) if overlays.filled \
+                else ([], shown)
             return averaged + self._shape.steps(overlay, shown, overlays, camera, visible)
         if not overlays.filled:
             mesh.device.pending += after(0)
@@ -771,7 +790,10 @@ class LitPreview(GameLighting, DevicePreview):
         return LitDrawer()
 
     def _request(self) -> tuple:
-        return self._scene, self._view, self._intensity, self._overlays, self._target
+        return self._scene, self._view, self._intensity, self._overlays, self._target, self.step_rate
+
+    def _stepping(self) -> bool:
+        return self._active and self._frame is not None and self._frame.clocked
 
     def _gather(self) -> LitScene:
         handler, session, inspection = self._handler, self._session, self._inspection()
@@ -828,15 +850,16 @@ class LitPreview(GameLighting, DevicePreview):
             if speedtree:
                 try:
                     if handler.stmesh.meshlets is not None:
-                        buffer, found, programs = drawn_chunks(handler, lod, submesh, int(surface.material_flags),
+                        buffer, found, programs = drawn_chunks(handler, lod, submesh, program_flags(profile, surface),
                                                                speedtree_catalog, None)
                         drawn = LitPart(index, key, surface.mmtr_path, surface.instance_context,
                                         preview_material(surface), buffer, found, None, programs)
                     else:
-                        draw, route = drawn_cluster(handler, lod, submesh, int(surface.material_flags),
+                        draw, route = drawn_cluster(handler, lod, submesh, program_flags(profile, surface),
                                                     speedtree_catalog, None)
                         drawn = LitPart(index, key, surface.mmtr_path, surface.instance_context,
-                                        preview_material(surface), draw.buffer, draw.submesh, route)
+                                        preview_material(surface), draw.buffer, draw.submesh, route,
+                                        batch=int(draw.batch))
                 except (MaterialPreviewError, PassChoiceError) as exc:
                     self._failures[index] = str(exc)
                     continue
@@ -853,25 +876,28 @@ class LitPreview(GameLighting, DevicePreview):
         bounds = level_bounds(level, (mesh.mesh_buffer.buffer_payloads[index] for index in sorted(payloads)),
                               bones if skinned else None)
         return LitScene(game, inspection.geometry, tuple(parts), masters, PrefetchedFiles(files), skinned, bones,
-                        stencil_reference(session), bounds, level, groups,
+                        drawing_rules(profile).stencil_reference(MESH_COMPONENT, frozendict(),
+                                                                 session_materials(session)), bounds,
+                        level, groups,
                         bool(meshlets) or speedtree and handler.stmesh.meshlets is not None,
                         frozendict(stmesh_engine_buffers(handler.stmesh, speedtree_catalog, None)) if speedtree
                         else frozendict(), None if speedtree else object_box(mesh))
 
 
-def stencil_reference(session) -> int:
+def session_materials(session) -> tuple[tuple[int, int], ...]:
     surfaces = session.resolved_mdf.surfaces.values() if session.resolved_mdf is not None else ()
-    return _SSS_STENCIL if any(int(surface.material_flags) & _SSS_PROFILE_USED for surface in surfaces) else 0
+    return tuple((surface.material_flags, surface.flag_version) for surface in surfaces)
 
 
 def pass_files(profile, catalog, chains, resolve: Callable[[str], tuple[str, bytes] | None],
-               meshlets=None, wrinkles=None) -> dict[str, bytes]:
+               meshlets=None, wrinkles=None, shell_furs=None) -> dict[str, bytes]:
     outputs = surface_output_catalog_for(profile)
     bound = () if outputs is None else outputs.engine_textures
     files = {}
-    for path in dict.fromkeys((*light_pass_files(catalog), *(() if chains is None else chains.files()),
+    for path in dict.fromkeys((*light_pass_files(catalog, profile), *(() if chains is None else chains.files()),
                                *(() if meshlets is None else meshlets.files()),
-                               *(() if wrinkles is None else wrinkles.files()), *(item.file for item in bound))):
+                               *(() if wrinkles is None else wrinkles.files()),
+                               *(() if shell_furs is None else shell_furs.files()), *(item.file for item in bound))):
         found = resolve(resource_path_with_version(path, "sdf", catalog.resource_version)
                         if path.endswith(".sdf") else path)
         if found is not None:
@@ -911,4 +937,4 @@ def thumbnail(handler, session, size: int, background: tuple[int, int, int],
 __all__ = ["DEFAULT_INTENSITY", "NO_LIGHT_PASSES", "UNKNOWN_SKINNING", "GameLighting", "LitDrawer", "LitFrame",
            "LitLabels", "LitLines", "LitOverlays", "LitPart", "LitPoints", "LitPreview", "LitScene", "LitShape",
            "LitTriangles", "LitView", "ShapeOverlay", "bind_part", "camera_light", "deformed", "engine_camera",
-           "free_camera", "gbuffer_targets", "pass_files", "scene_file", "stencil_reference", "thumbnail"]
+           "free_camera", "gbuffer_targets", "pass_files", "scene_file", "session_materials", "thumbnail"]

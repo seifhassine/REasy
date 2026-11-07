@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 6,
  "game": "RE2RT",
  "resource_version": 2109101635,
  "target": 3,
@@ -38,16 +38,23 @@
  "static_like_skinning": true,
  "still_without_blend": null,
  "copied_skin_whole": null,
- "source": {
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "draws": [
-     5471,
-     5478
-    ]
-   }
-  ],
-  "executable": "re2.exe (RE2 RT): the masters' programs run on each submesh; a mesh without bones runs the Static program of the same suffixes (setupPipelineState; scratch stage111 skinrange)"
- }
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": [
+  "ExpensiveTransparent",
+  "Forward",
+  "Standard",
+  "Transparent"
+ ],
+ "shading_by_setting": [
+  "Decal",
+  "DecalNRMR",
+  "DecalWithMetallic"
+ ],
+ "decal_no_pre_transform": true
 }

@@ -31,12 +31,14 @@ class TexCookProfile:
     enum_game: str = ""
     type_enum_offset: int = 0
     type_field_used: bool = True
-    #: bits 13-17 (``streamigMipNum``).
+    #: bits from 13 (``streamigMipNum``), as many as the loader reads.
     streaming_mips: bool = False
+    streaming_mip_bits: int = 3
     #: bit 24.
     refiltered_normal: bool = False
-    # bits 18-23 and bit 25.
-    unnamed_fields: bool = False
+    #: bits 18-23 (the resource's ``RangeCompressionExp``) and bit 25 (``HighPriorityLoadStreaming``).
+    range_compression_exp: bool = False
+    high_priority_load_streaming: bool = False
 
     @property
     def display_name(self) -> str:
@@ -61,17 +63,23 @@ _PROFILES: tuple[TexCookProfile, ...] = (
         241101895, LAYOUT_INLINE, ("SF6",), enum_game="SF6",
         streaming_mips=True, refiltered_normal=True,
     ),
-    TexCookProfile(241106027, LAYOUT_STORED, ("MHWilds",), enum_game="MHWilds", streaming_mips=True),
     TexCookProfile(
-        250813143, LAYOUT_STORED, ("RE9",), enum_game="RE9",
-        streaming_mips=True, refiltered_normal=True, unnamed_fields=True,
+        241106027, LAYOUT_STORED, ("MHWilds",), enum_game="MHWilds", streaming_mips=True, streaming_mip_bits=5,
+        range_compression_exp=True, high_priority_load_streaming=True,
     ),
     TexCookProfile(
-        251111100, LAYOUT_STORED, ("MHST3", "OnimushaWOTS", "Pragmata"),
-        enum_game="OnimushaWOTS", streaming_mips=True, refiltered_normal=True,
-        unnamed_fields=True,
+        250813143, LAYOUT_STORED, ("RE9",), enum_game="RE9", streaming_mips=True, streaming_mip_bits=5,
+        refiltered_normal=True, range_compression_exp=True, high_priority_load_streaming=True,
     ),
-    TexCookProfile(251211553, LAYOUT_INLINE, ("DD2",), enum_game="DD2", streaming_mips=True),
+    TexCookProfile(
+        251111100, LAYOUT_STORED, ("MHST3", "OnimushaWOTS", "Pragmata"), enum_game="OnimushaWOTS",
+        streaming_mips=True, streaming_mip_bits=5, refiltered_normal=True, range_compression_exp=True,
+        high_priority_load_streaming=True,
+    ),
+    TexCookProfile(
+        251211553, LAYOUT_INLINE, ("DD2",), enum_game="DD2", streaming_mips=True, streaming_mip_bits=5,
+        range_compression_exp=True, high_priority_load_streaming=True,
+    ),
     TexCookProfile(760230703, LAYOUT_INLINE, ("REVerse",)),
 )
 

@@ -7,6 +7,7 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdio>
 #include <condition_variable>
@@ -139,6 +140,8 @@ struct Job {
     UINT stencil_reference = 0;
     D3D12_RASTERIZER_DESC rasterizer{};
     D3D12_DEPTH_STENCIL_DESC depth_stencil{};
+    std::optional<std::array<float, 2>> depth_bounds;
+    std::optional<std::array<float, 4>> blend_factor;
     D3D12_BLEND_DESC blend{};
     std::vector<Table> tables;
     std::vector<HeapEntry> heap;
@@ -491,6 +494,14 @@ bool parse_job(PyObject *object, Job &job) {
     if (!(value = field(object, "rasterizer")) || !parse_rasterizer(value, job.rasterizer)) return false;
     if (!(value = field(object, "depth_stencil"))
         || !parse_depth_stencil(value, job.depth_stencil, job.stencil_reference)) return false;
+    if ((value = PyDict_GetItemString(object, "depth_bounds"))) {
+        if (!float_items(value, "depth bounds", floats, 2)) return false;
+        job.depth_bounds = std::array<float, 2>{floats[0], floats[1]};
+    }
+    if ((value = PyDict_GetItemString(object, "blend_factor"))) {
+        if (!float_items(value, "blend factor", floats, 4)) return false;
+        job.blend_factor = std::array<float, 4>{floats[0], floats[1], floats[2], floats[3]};
+    }
     if (!(value = field(object, "blend")) || !parse_blend(value, job.blend)) return false;
     return parse_resources(object, job.tables, job.heap);
 }
@@ -780,6 +791,8 @@ struct Recorded {
     std::optional<D3D12_RECT> scissor;
     std::optional<std::vector<D3D12_VERTEX_BUFFER_VIEW>> vertices;
     std::optional<D3D12_INDEX_BUFFER_VIEW> indices;
+    std::optional<std::array<float, 2>> bounds;
+    std::optional<std::array<float, 4>> factor;
 };
 
 template <typename Value>
@@ -861,6 +874,7 @@ struct Step {
     std::optional<Copied> copied;
     ID3D12DescriptorHeap *heaps[2] = {};
     std::function<void(ID3D12GraphicsCommandList *, Recorded &)> record;
+    std::shared_ptr<std::array<float, 2>> bounds;
 };
 
 struct Slots { ID3D12DescriptorHeap *heap = nullptr; UINT first = 0; };
@@ -1974,6 +1988,61 @@ struct Scene {
         return static_cast<UINT>(steps.size() - 1);
     }
 
+    // ``desc`` with its depth bounds test on, which only a pipeline state stream can ask for.
+    ComPtr<ID3D12PipelineState> bounded_pipeline(const D3D12_GRAPHICS_PIPELINE_STATE_DESC &desc) {
+        D3D12_FEATURE_DATA_D3D12_OPTIONS2 options{};
+        check(device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS2, &options, sizeof options),
+              "CheckFeatureSupport");
+        if (!options.DepthBoundsTestSupported) throw Failure{"the graphics adapter does not test depth bounds"};
+        ComPtr<ID3D12Device2> streams;
+        check(device->QueryInterface(IID_PPV_ARGS(&streams)), "Creating the pipeline (ID3D12Device2)");
+        // Each subobject is its type followed by its value, aligned to a pointer.
+        struct Stream {
+#define SUBOBJECT(name, kind, Type) \
+            struct alignas(void *) { D3D12_PIPELINE_STATE_SUBOBJECT_TYPE type = kind; Type value; } name;
+            SUBOBJECT(root, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_ROOT_SIGNATURE, ID3D12RootSignature *)
+            SUBOBJECT(vs, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_VS, D3D12_SHADER_BYTECODE)
+            SUBOBJECT(hs, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_HS, D3D12_SHADER_BYTECODE)
+            SUBOBJECT(ds, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DS, D3D12_SHADER_BYTECODE)
+            SUBOBJECT(gs, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_GS, D3D12_SHADER_BYTECODE)
+            SUBOBJECT(ps, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PS, D3D12_SHADER_BYTECODE)
+            SUBOBJECT(blend, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_BLEND, D3D12_BLEND_DESC)
+            SUBOBJECT(sample_mask, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_MASK, UINT)
+            SUBOBJECT(rasterizer, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RASTERIZER, D3D12_RASTERIZER_DESC)
+            SUBOBJECT(depth, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL1, D3D12_DEPTH_STENCIL_DESC1)
+            SUBOBJECT(layout, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_INPUT_LAYOUT, D3D12_INPUT_LAYOUT_DESC)
+            SUBOBJECT(topology, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_PRIMITIVE_TOPOLOGY,
+                      D3D12_PRIMITIVE_TOPOLOGY_TYPE)
+            SUBOBJECT(formats, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_RENDER_TARGET_FORMATS, D3D12_RT_FORMAT_ARRAY)
+            SUBOBJECT(depth_format, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_DEPTH_STENCIL_FORMAT, DXGI_FORMAT)
+            SUBOBJECT(sample, D3D12_PIPELINE_STATE_SUBOBJECT_TYPE_SAMPLE_DESC, DXGI_SAMPLE_DESC)
+#undef SUBOBJECT
+        } stream;
+        stream.root.value = desc.pRootSignature;
+        stream.vs.value = desc.VS;
+        stream.hs.value = desc.HS;
+        stream.ds.value = desc.DS;
+        stream.gs.value = desc.GS;
+        stream.ps.value = desc.PS;
+        stream.blend.value = desc.BlendState;
+        stream.sample_mask.value = desc.SampleMask;
+        stream.rasterizer.value = desc.RasterizerState;
+        const D3D12_DEPTH_STENCIL_DESC &depth = desc.DepthStencilState;
+        stream.depth.value = {depth.DepthEnable, depth.DepthWriteMask, depth.DepthFunc, depth.StencilEnable,
+                              depth.StencilReadMask, depth.StencilWriteMask, depth.FrontFace, depth.BackFace, TRUE};
+        stream.layout.value = desc.InputLayout;
+        stream.topology.value = desc.PrimitiveTopologyType;
+        stream.formats.value.NumRenderTargets = desc.NumRenderTargets;
+        std::copy(std::begin(desc.RTVFormats), std::end(desc.RTVFormats), stream.formats.value.RTFormats);
+        stream.depth_format.value = desc.DSVFormat;
+        stream.sample.value = desc.SampleDesc;
+        const D3D12_PIPELINE_STATE_STREAM_DESC given{sizeof stream, &stream};
+        ComPtr<ID3D12PipelineState> made;
+        check(streams->CreatePipelineState(&given, IID_PPV_ARGS(&made)),
+              "Creating the pipeline (the shaders do not fit together or with their resources)");
+        return made;
+    }
+
     UINT draw(Job &job) {
         Step step;
         Binding binding = bind(step, job.tables, job.heap,
@@ -2035,10 +2104,13 @@ struct Scene {
         add_part(key, &pipeline_desc.NumRenderTargets, sizeof pipeline_desc.NumRenderTargets);
         add_part(key, pipeline_desc.RTVFormats, sizeof pipeline_desc.RTVFormats);
         add_part(key, &pipeline_desc.DSVFormat, sizeof pipeline_desc.DSVFormat);
+        const bool bounded = job.depth_bounds.has_value();
+        add_part(key, &bounded, sizeof bounded);
         ComPtr<ID3D12PipelineState> pipeline = kept->one(kept->pipelines, key, [&] {
             ComPtr<ID3D12PipelineState> made;
-            check(device->CreateGraphicsPipelineState(&pipeline_desc, IID_PPV_ARGS(&made)),
-                  "Creating the pipeline (the shaders do not fit together or with their resources)");
+            if (bounded) made = bounded_pipeline(pipeline_desc);
+            else check(device->CreateGraphicsPipelineState(&pipeline_desc, IID_PPV_ARGS(&made)),
+                       "Creating the pipeline (the shaders do not fit together or with their resources)");
             return made;
         });
 
@@ -2092,6 +2164,10 @@ struct Scene {
                    instance_count = job.instance_count, first_index = job.first_index,
                    first_instance = job.first_instance;
         const INT base_vertex = job.base_vertex;
+        const std::shared_ptr<std::array<float, 2>> bounds = job.depth_bounds
+            ? std::make_shared<std::array<float, 2>>(*job.depth_bounds) : nullptr;
+        const std::optional<std::array<float, 4>> factor = job.blend_factor;
+        step.bounds = bounds;
         step.record = [=](ID3D12GraphicsCommandList *list, Recorded &was) {
             set_root(list, was, false, binding.root.Get(), binding.starts);
             if (differs(was.pipeline, pipeline.Get())) list->SetPipelineState(pipeline.Get());
@@ -2100,6 +2176,12 @@ struct Scene {
                                          has_depth ? &targets.back() : nullptr);
             }
             if (differs(was.reference, reference)) list->OMSetStencilRef(reference);
+            if (factor && differs(was.factor, *factor)) list->OMSetBlendFactor(factor->data());
+            if (bounds && differs(was.bounds, *bounds)) {
+                ComPtr<ID3D12GraphicsCommandList1> bounding;
+                check(list->QueryInterface(IID_PPV_ARGS(&bounding)), "Setting depth bounds");
+                bounding->OMSetDepthBounds((*bounds)[0], (*bounds)[1]);
+            }
             if (differs(was.viewport, viewport)) list->RSSetViewports(1, &viewport);
             if (differs(was.scissor, scissor)) list->RSSetScissorRects(1, &scissor);
             if (differs(was.topology, topology)) {
@@ -2893,6 +2975,17 @@ PyObject *scene_draw(PyObject *self, PyObject *object) {
     return number(on_scene(self, [&](Scene &scene) { id = draw_step(scene, job); }), id);
 }
 
+PyObject *scene_bound(PyObject *self, PyObject *arguments) {
+    unsigned int id;
+    float low, high;
+    if (!PyArg_ParseTuple(arguments, "Iff", &id, &low, &high)) return nullptr;
+    if (!on_scene(self, [&](Scene &scene) {
+            if (id >= scene.steps.size() || !scene.steps[id].bounds) throw Invalid{"the step tests no depth bounds"};
+            *scene.steps[id].bounds = {low, high};
+        })) return nullptr;
+    Py_RETURN_NONE;
+}
+
 PyObject *scene_dispatch(PyObject *self, PyObject *object) {
     ComputeJob job;
     UINT id = 0;
@@ -3041,6 +3134,9 @@ PyMethodDef scene_methods[] = {
      "the scene's textures. ``indices`` None draws without indices, the counts and the first index being vertices';\n"
      "``indirect`` (buffer, byte offset) in place of ``draw`` takes the counts from the buffer when the step runs, as\n"
      "Direct3D lays draw arguments out."},
+    {"bound", scene_bound, METH_VARARGS,
+     "bound(step, low, high)\n"
+     "The depth bounds a draw testing them (its job's ``depth_bounds``) tests from the next run on."},
     {"dispatch", scene_dispatch, METH_O,
      "dispatch(job) -> step\n"
      "The step of one compute dispatch. ``job`` is a dict: compute_shader (bytes); groups (x, y, z); tables and\n"
@@ -3124,7 +3220,8 @@ PyMethodDef methods[] = {
      "(width, height); viewport (x, y, width, height, min depth, max depth); scissor (left, top, right, bottom);\n"
      "targets [(DXGI format, texels before, or None to clear them to zero)]; depth (DXGI format, texels before,\n"
      "planes in turn, or None to clear depth and stencil to zero) or None;\n"
-     "rasterizer, depth_stencil and blend states in Direct3D 12's numbering; tables [(kind, register, space, count\n"
+     "rasterizer, depth_stencil and blend states in Direct3D 12's numbering, and optionally blend_factor (four\n"
+     "floats the draw's blend reads); tables [(kind, register, space, count\n"
      "or 0 for unbounded, view dimension, shader visibility, entries)]; heap [(kind, view dimension, entry)] for\n"
      "shaders indexing the descriptor heap, each entry's index its heap index, an entry of the index alone a null\n"
      "descriptor; hardware (draw on the system's\n"

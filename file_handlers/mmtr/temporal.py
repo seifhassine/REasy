@@ -15,8 +15,9 @@ lazy from .resident import TEXTURE_2D, UNORDERED_ACCESS, Resident
 
 FRAMES = 8
 _GROUP = 8
-# Blend flags: show the kept average where unchanged; keep the average; the frame is its average's first.
-_KEPT, _WHOLE, _FIRST = 1, 2, 4
+# Blend flags: show the kept average where unchanged; keep the average; the frame is its average's first; compare
+# with the frame before; keep the frame for the next to compare with.
+_KEPT, _WHOLE, _FIRST, _CHANGES, _RECORD = 1, 2, 4, 8, 16
 _BLEND = f"""Texture2D<uint> shown : register(t0);
 Texture2D<float4> before : register(t1);
 Texture2D<float> responsive : register(t2);
@@ -24,6 +25,7 @@ RWTexture2D<float4> history : register(u0);
 RWTexture2D<uint> image : register(u1);
 RWTexture2D<uint> kept : register(u2);
 RWTexture2D<uint> reference : register(u3);
+RWTexture2D<uint> previous : register(u4);
 cbuffer Blend : register(b0) {{ float weight; float3 background; uint flags; }};
 
 [numthreads({_GROUP}, {_GROUP}, 1)]
@@ -39,7 +41,10 @@ void main(uint3 id : SV_DispatchThreadID)
     float3 now = texel >> 24 != 0u ? colour : background;
     float4 earlier = before[id.xy];
     bool live = moving != 0.0 || earlier.a != 0.0;
-    float taken = live ? 1.0 : weight;
+    bool changed = (flags & {_CHANGES}u) != 0u && texel != previous[id.xy];
+    if ((flags & {_RECORD}u) != 0u)
+        previous[id.xy] = texel;
+    float taken = live ? 1.0 : changed ? {1.0 / FRAMES!r} : weight;
     float4 average = float4(taken >= 1.0 ? now : lerp(earlier.rgb, now, taken), moving);
     history[id.xy] = average;
     uint3 bytes = (uint3)round(saturate(average.rgb) * 255.0);
@@ -107,6 +112,7 @@ class TemporalImage:
         # The last whole average, its alpha cleared where a first frame since differed; the last first frame.
         self._kept, self._reference = (device.texture(DXGI_FORMAT_R32_UINT, self.size, UNORDERED_ACCESS)
                                        for _ in "ab")
+        self._previous = device.texture(DXGI_FORMAT_R32_UINT, self.size, UNORDERED_ACCESS)
         # The ``framed`` of each, and whether the average drawn shows the kept one where unchanged.
         self._kept_for = self._reference_for = None
         self._partial = False
@@ -118,8 +124,8 @@ class TemporalImage:
 
     def release(self) -> None:
         """Steps returned earlier become invalid."""
-        self.device.release([*self._history, self.image, self._kept, self._reference, self._unmasked[1],
-                             self._blend])
+        self.device.release([*self._history, self.image, self._kept, self._reference, self._previous,
+                             self._unmasked[1], self._blend])
         self._steps = {}
 
     def steps(self, shown: int, background: Sequence[int], frame: int,
@@ -133,7 +139,7 @@ class TemporalImage:
         if frame == FRAMES - 1:
             self._kept_for = framed
         flags = (_KEPT if self._partial and frame < FRAMES - 1 else 0) | (_WHOLE if frame == FRAMES - 1 else 0) \
-            | (_FIRST if frame == 0 else 0)
+            | (_FIRST if frame == 0 else 0) | (_RECORD if frame >= FRAMES else 0) | (_CHANGES if frame > FRAMES else 0)
         blend = struct.pack("<4fI12x", 1.0 / (frame + 1) if frame < FRAMES else 0.0,
                             *(value / 255.0 for value in background), flags)
         if blend != self._written:
@@ -154,6 +160,7 @@ class TemporalImage:
                            (RANGE_UAV, 1, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self.image),)),
                            (RANGE_UAV, 2, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self._kept),)),
                            (RANGE_UAV, 3, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self._reference),)),
+                           (RANGE_UAV, 4, 0, 1, TEXTURE_2D, 0, ((0, DXGI_FORMAT_R32_UINT, self._previous),)),
                            (RANGE_CBV, 0, 0, 1, 0, 0, ((0, self._blend),))],
                 "heap": [], "groups": groups})
         if not (frame == 0 and self._partial):

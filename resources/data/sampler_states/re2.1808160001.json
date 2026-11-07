@@ -2,14 +2,6 @@
  "format": 1,
  "game": "RE2",
  "resource_version": 1808160001,
- "source": {
-  "captures": [
-   "cap.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  }
- },
  "states": {
   "AutomaticWrap": {
    "filter": 85,

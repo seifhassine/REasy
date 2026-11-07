@@ -1,0 +1,582 @@
+{
+ "format": 1,
+ "games": {
+  "RE2": {
+   "reset": false,
+   "classes": {
+    "app.ropeway.track.MeshPartsControlTrack": {
+     "consumers": ["app.ropeway.MeshPartsController`1<app.ropeway.track.MeshPartsControlTrack>"],
+     "defaults": {"Index": 0, "Enabled": false},
+     "parts": {"part": "Index", "enabled": "Enabled", "default": "owner"}
+    }
+   }
+  },
+  "RE2RT": {
+   "reset": false,
+   "classes": {
+    "app.ropeway.track.MeshPartsControlTrack": {
+     "consumers": ["app.ropeway.MeshPartsController`1<app.ropeway.track.MeshPartsControlTrack>"],
+     "defaults": {"Index": 0, "Enabled": false},
+     "parts": {"part": "Index", "enabled": "Enabled", "default": "owner"}
+    }
+   }
+  },
+  "RE3": {
+   "reset": false,
+   "classes": {
+    "offline.track.MeshPartsControlTrack": {
+     "consumers": ["offline.MeshPartsController`1<offline.track.MeshPartsControlTrack>"],
+     "defaults": {"Index": 0, "Enabled": false},
+     "parts": {"part": "Index", "enabled": "Enabled", "default": "owner"}
+    }
+   }
+  },
+  "RE3RT": {
+   "reset": false,
+   "classes": {
+    "offline.track.MeshPartsControlTrack": {
+     "consumers": ["offline.MeshPartsController`1<offline.track.MeshPartsControlTrack>"],
+     "defaults": {"Index": 0, "Enabled": false},
+     "parts": {"part": "Index", "enabled": "Enabled", "default": "owner"}
+    }
+   }
+  },
+  "RE7RT": {
+   "reset": true,
+   "classes": {
+    "app.SequenceTrackObject.PartsEnableTrack": {
+     "consumers": ["app.SequenceController"],
+     "defaults": {"ChildObjName": "", "Disp": false, "PartsNo": -1},
+     "parts": {"object": "ChildObjName", "self": "Base", "empty": "keep", "find": "recursive", "part": "PartsNo", "enabled": "Disp"}
+    },
+    "app.SequenceTrackObject.DrawSelfTrack": {
+     "consumers": ["app.SequenceController"],
+     "defaults": {"DrawSelf": true},
+     "draw": {"default": "owner", "drawn": "DrawSelf"}
+    },
+    "app.SequenceTrackObject.Em8000MaterialTrack": {
+     "consumers": ["app.SequenceController"],
+     "defaults": {"Ratio": 0.0},
+     "ratio": {"value": "Ratio", "controller": "app.Em8000.Em8000MaterialController", "start": "Ratio",
+               "rows": "MaterialDataList", "material": "MaterialName", "variable": "VariableName", "target": "Target",
+               "tags": {"1": null, "2": "Em3000Head", "3": "Em8010"}, "reads": 3}
+    },
+    "app.SequenceTrackObject.Em2000Track": {
+     "driver": {"component": "app.Em2000.Em2000FaceModeController"},
+     "defaults": {"DetectSticking": false, "DropWeapon": false, "PlayChainSawMotion": false, "FaceChangeBlendToEnemy": false, "FaceChangeBlendToNpc": false, "FaceChangeBlendRate": -1.0},
+     "mode": {"enemy": "FaceChangeBlendToEnemy", "npc": "FaceChangeBlendToNpc", "rate": "FaceChangeBlendRate", "variable": "TargetMaterialVariableName", "getter": ["app.MaterialIndexGetter", "TargetName", "MaterialName", "VariableName"], "face": "app.Em2000.Em2000FaceController", "faces": [[true, false, false], [false, true, false], [false, false, true]], "blend": 2, "rates": [0.0, 1.0]}
+    }
+   }
+  },
+  "RE8": {
+   "reset": true,
+   "classes": {
+    "app.PartsEnableTrack": {
+     "consumers": ["app.CharacterCore", "app.WeaponPartsEnableTrackController"],
+     "defaults": {"_ChildObjName": null, "_Disp": false, "_PartsNo": -1},
+     "parts": {"object": "_ChildObjName", "default": "owner", "self": "Base", "empty": "none", "find": "recursive", "part": "_PartsNo", "enabled": "_Disp"}
+    },
+    "app.ValueFMaterialControlTrack": {
+     "consumers": ["app.SequenceMaterialController"],
+     "defaults": {"PartsName": "", "MaterialName": "", "VariableName": "", "ValueF": -1.0},
+     "material": {"object": "PartsName", "empty": "owner", "owner_name": true, "find": "child", "material": "MaterialName", "variable": "VariableName", "value": "ValueF"}
+    },
+    "app.OverrideDefaultFacialMotionIDTrack": {
+     "consumers": ["app.OverrideDefaultFacialMotionIDTrackController"],
+     "driver": {"component": "app.EnemyConfigure", "settings": ["configuration", "facialMotionReceiver"], "enabled": "isEnable", "facial": ["app.CharacterMeshPartsBehavior", "IsFacialParts"]},
+     "defaults": {"OverrideDefaultFacialMotionID": 0},
+     "receiver": {"start": 0, "default": "OverrideDefaultFacialMotionID", "in": "FacialInterpFrame", "out": "ToBaseFaceInterpFrame", "transition": [2, 0], "wrap": [0, 2]}
+    },
+    "app.Em4070.Em4070FacialAnimationTrack": {
+     "driver": {"component": "app.EnemyConfigure", "settings": ["configuration", "facialMotionReceiver"], "enabled": "isEnable", "facial": ["app.CharacterMeshPartsBehavior", "IsFacialParts"], "when": [["configuration", "characterCore", "TypeName"], "app.Em4070.Em4070Core"]},
+     "defaults": {"requestMotionID": -1, "startFrame": 0.0, "interFrame": -1.0, "isLoop": false, "forbiddenContinuous": false},
+     "receiver": {"start": 0, "motion": "requestMotionID", "interp": "interFrame", "loop": "isLoop", "once": "forbiddenContinuous", "in": "FacialInterpFrame", "out": "ToBaseFaceInterpFrame", "transition": [2, 0], "wrap": [0, 2]}
+    },
+    "app.Pl3000FaceChangeTrack": {
+     "driver": {"component": "app.Pl3000BodyPartsController", "settings": ["BodyPartsData", "FacePartsDatas"]},
+     "defaults": {"FacePartsID": -1, "MaterialID": -1},
+     "switch": {"part": "FacePartsID", "rows": "PartsInfoList", "id": "ID", "hash": "NameHash", "default": "IsDefault", "material": "MaterialID", "materials": "MaterialInfoList", "parts": "PartsMaterialList", "parts_id": "PartsID", "mdf": "MaterialData"}
+    },
+    "app.Pl3000ESPMaterialControlTrack": {
+     "driver": {"component": "app.pl3000.PlayerConfigurePl3000", "settings": ["configuration", "characterCore", "Param", "Pl3000ESPConfig", "GeneralConfig"]},
+     "defaults": {
+      "EmissiveIntensityCycleTrack": {"isUseEmissiveIntensityCycleAnimation": false, "EmissiveIntensityCycleAnimationMax": 1.0, "EmissiveIntensityCycleAnimationMin": 0.3, "EmissiveIntensityCycleAnimationTime": 3.0},
+      "EmissiveIntensityDirectTrack": {"isUseEmissiveIntensityDirect": false, "EmissiveIntensityDirectValue": 0.0}
+     },
+     "glow": {
+      "objects": ["Face", "HandR", "HandL"], "find": "recursive", "variable": "Emissive_Intensity", "delta": "ESPMaterialEmissiveMaxDelta", "rate": 60.0, "epsilon": 9.999999747378752e-05, "turn": 6.283185005187988,
+      "direct": ["EmissiveIntensityDirectTrack", "isUseEmissiveIntensityDirect", "EmissiveIntensityDirectValue"],
+      "cycle": ["EmissiveIntensityCycleTrack", "isUseEmissiveIntensityCycleAnimation", "EmissiveIntensityCycleAnimationMin", "EmissiveIntensityCycleAnimationMax", "EmissiveIntensityCycleAnimationTime"]
+     }
+    }
+   }
+  },
+  "RE4": {
+   "reset": true,
+   "classes": {
+    "chainsaw.WeaponMeshPartsDispTracks": {
+     "consumers": ["chainsaw.Gun"],
+     "defaults": {"PartsNo": 0},
+     "parts": {"part": "PartsNo", "default": "owner", "least": 1},
+     "weapon": {"catalogs": ["_Chainsaw/AppSystem/Weapon/WeaponCatalogUserData_1st.user", "_Chainsaw/AppSystem/Weapon/WeaponCatalogUserData_2nd.user", "_Chainsaw/AppSystem/Catalog/DLC/DLC_1401/WeaponCatalogUserData_DLC_1401.user", "_Chainsaw/AppSystem/Catalog/DLC/DLC_1402/WeaponCatalogUserData_DLC_1402.user", "_AnotherOrder/AppSystem/Weapon/WeaponCatalogUserData_AO.user", "_Mercenaries/AppSystem/Weapon/WeaponCatalogUserData_MC.user", "_Mercenaries/AppSystem/Weapon/WeaponCatalogUserData_MC_2nd.user"], "list": "_DataTable", "file": "_Prefab", "key": "_WeaponID", "off": {"4600": [1, 2, 3]}}
+    }
+   }
+  },
+  "PRAGMATA": {
+   "reset": true,
+   "filters": {"component": "app.SequenceTrackUpdater", "pages": "_FilterPages", "default": "_Default", "start": {"app.Ch06000Updater": [[0, 0]]}},
+   "classes": {
+    "app.PlayFacialMotionTrack": {
+     "driver": {
+      "component": "app.CharacterConfigure",
+      "settings": ["_ConfigurationData", "FacialAnimationDriverConfiguration"],
+      "enabled": "IsEnable",
+      "data": ["Userdata"],
+      "mode": ["BasicSetting", "InterpolationMode"],
+      "curve": ["BasicSetting", "InterpolationCurve"],
+      "base": {"rows": ["MentalStateData", "Units"], "where": {"MainMentalState": 694799716}, "bank": "MotionBankID", "motion": "MotionID", "interp": "InterpolationFrameFrom", "priority": 0}
+     },
+     "defaults": {"FacialBankID": -1, "FacialMotionID": -1, "FacialMotionInterpFrame": 20, "PlayLayerNo": -1, "ChangeToBaseState": {"_HasValue": false, "_Value": false}},
+     "play": {"child": "app.FacialWrinkleController", "layer": 0, "bank": "FacialBankID", "motion": "FacialMotionID", "interp": "FacialMotionInterpFrame", "priority": "PlayLayerNo", "none": -1, "to_base": "ChangeToBaseState"}
+    },
+    "app.Ch06000FaceMonitorTracks": {
+     "consumers": ["app.Ch06000Updater", "app.Ch06001Updater", "app.BreakableDollFaceControlDriver", "app.sm95_001_00PropDriver"],
+     "defaults": {
+      "Monitor": {"Rot": 0.0, "Alpha": 1.0, "Brightness": 5.0, "Pos": {"x": 0.0, "y": 0.0}, "Size": {"x": 882.0, "y": 882.0}},
+      "PartsArray": [
+       {"Visible": false, "Pos": {"x": 0.0, "y": 0.0}, "Rot": 0.0, "Size": {"x": 0.0, "y": 0.0}, "TextureHash": 0, "Index": 0, "Alpha": 1.0},
+       {"Visible": false, "Pos": {"x": 0.0, "y": 0.0}, "Rot": 0.0, "Size": {"x": 0.0, "y": 0.0}, "TextureHash": 0, "Index": 0, "Alpha": 1.0},
+       {"Visible": false, "Pos": {"x": 0.0, "y": 0.0}, "Rot": 0.0, "Size": {"x": 0.0, "y": 0.0}, "TextureHash": 0, "Index": 0, "Alpha": 1.0},
+       {"Visible": false, "Pos": {"x": 0.0, "y": 0.0}, "Rot": 0.0, "Size": {"x": 0.0, "y": 0.0}, "TextureHash": 0, "Index": 0, "Alpha": 1.0},
+       {"Visible": false, "Pos": {"x": 0.0, "y": 0.0}, "Rot": 0.0, "Size": {"x": 0.0, "y": 0.0}, "TextureHash": 0, "Index": 0, "Alpha": 1.0}
+      ]
+     },
+     "screen": {
+      "behavior": "app.Ch06000FaceMonitorBehavior", "data": "_UserData", "sprites": ["_SpriteDataArray", "_Texture", "_ID", "_TypeSelectHash"],
+      "material": "black", "turn": 360.0, "size": [904.0, 904.0], "position": [-904.0, -882.0],
+      "fields": {"alpha": "Alpha", "brightness": "Brightness", "rotation": "Rot", "position": "Pos", "size": "Size", "visible": "Visible", "texture": "TextureHash"},
+      "monitor": {"field": "Monitor", "alpha": "Global_Alpha", "brightness": "Global_Brightness", "rotation": "Global_Rotation", "place": "Global_Scale_Offset"},
+      "parts": {"field": "PartsArray", "prefix": "Part{}_", "texture": "Texture", "place": "Scale_Offset", "rotation": "Rotation", "alpha": "Emissive_Intensity"}
+     }
+    },
+    "app.CharacterHairUpdaterTrack": {
+     "consumers": ["app.CharacterHairUpdater"],
+     "defaults": {"GravityRate": 1.0, "ReturnGravityOverrideTime": 2.0, "EmissiveIntensityRate": 1.0, "TipPowerRate": 1.0, "TransColorRate": 1.0, "ReturnBABOverrideTime": 2.0, "GravityOverride": false, "BABOverride": false},
+     "hair": {
+      "buffer": {"component": "via.render.ByteBufferUpdater", "field": "ByteBuffer", "override": "BABOverride", "values": ["EmissiveIntensityRate", "TipPowerRate", "TransColorRate"], "return": "ReturnBABOverrideTime"},
+      "gravity": {"override": "GravityOverride", "rate": "GravityRate", "return": "ReturnGravityOverrideTime"}
+     }
+    },
+    "app.PlayerHeadLightTracks": {
+     "consumers": ["app.PlayerUpdater"],
+     "defaults": {"_Enabled": false, "_ToDefault": false},
+     "lights": {"objects": ["HandLight_Shaft", "HandLight"], "enabled": "_Enabled", "default": "_ToDefault", "before": false}
+    }
+   }
+  },
+  "DMC5": {
+   "reset": true,
+   "classes": {
+    "app.CharacterFacialMotionTrack": {
+     "driver": {"component": "app.character.CharacterFacialMotionController", "enabled": "IsFacialAnimationEnabled", "face": "FaceObject", "data": ["FaceData"]},
+     "defaults": {"ExpressionType": 0, "TargetNo": -1, "TargetMotionNo": -1, "DisableBlink": false, "LipSyncBlendRate": -1.0},
+     "enums": {"ExpressionType": "app.character.CharacterFacialMotionController.ExpressionType"},
+     "expression": {"type": "ExpressionType", "motion": "TargetMotionNo", "empty": 0, "manual": 9, "layer": "Layer", "bank": "BankID", "in": "InterpolationFrame", "out": "InterpolationOutFrame", "default": "DefaultExpressionType", "list": "FaceList", "random": "IsUseExFaceID", "choices": ["ExID", "RandomID"], "transition": [1, 0], "out_transition": [2, 0]}
+    },
+    "app.enemy.em5800.Em5800ShaderControlTrack": {
+     "consumers": ["app.enemy.em5800.Em5800"],
+     "defaults": {"LimLightEmissive": 0.0, "FeatherAnimControl": 0.1},
+     "values": {"LimLightEmissive": "LimLight_Emissive", "FeatherAnimControl": "FeatherAnimControl"}
+    },
+    "app.Em5501EmissiveTrack": {
+     "consumers": ["app.Em5501"],
+     "defaults": {"LeftArmEmissive": -1.0, "AuraEmissiveIntensity": -1.0},
+     "values": {"LeftArmEmissive": "LeftArmEmissive", "AuraEmissiveIntensity": "AuraEmissiveIntensity"},
+     "least": 0.0
+    },
+    "app.WarpShaderControllTrack": {
+     "consumers": ["app.WarpShaderController"],
+     "defaults": {"OffsetFront": 123456.0, "OffsetHeight": 123456.0, "OffsetSide": 123456.0, "Radius": -1.0},
+     "warp": {"objects": [null, "wpem5501_00"], "default": "owner", "find": "child", "unset": 123456.0, "none": -1.0, "front": "OffsetFront", "height": "OffsetHeight", "side": "OffsetSide", "radius": "Radius", "position": "Warp_SphereMask_Position", "size": "Warp_SphereMask_Radius"}
+    }
+   }
+  },
+  "MHWILDS": {
+   "reset": true,
+   "blink": {
+    "catalogs": ["GameDesign/Catalog/First/Data/EnemyPackageList_First.user", "GameDesign/Catalog/00_00/Data/EnemyPackageList.user",
+                 "GameDesign/Catalog/01_00/Data/EnemyPackageList_01.user", "GameDesign/Catalog/02_00/Data/EnemyPackageList_02.user",
+                 "GameDesign/Catalog/03_00/Data/EnemyPackageList_03.user", "GameDesign/Catalog/04_00/Data/EnemyPackageList_04.user"],
+    "list": "_DataList", "prefab": ["_PackagePrefab", "Path"], "holder": ["app.EnemyPackageHolder", "_Package"],
+    "character": ["_Prefab", "Path"], "param": ["_ParamPack", "_Visual", "_EyeBlinkParam"],
+    "type": "_BlinkType", "parts": [1, 90], "none": 4294967295, "set": [12, 4095], "layer": 1,
+    "motions": {"close": "_MotionSetIDClose", "loop": "_MotionSetIDCloseLoop", "open": "_MotionSetIDOpen"},
+    "connect": {"holder": ["app.EnemyParamHolder", "_ParamPack"], "assets": ["_MotionBankAssetsList", "_MotionConnectBank"],
+                "banks": ["_MotionConnectList", "_BankID", "_MotionConnect"], "data": ["_DataList", "_MotionID"],
+                "inherit": "_InheritMct", "change": ["_ChangeParamList", "_MotionListName", "_Default_"],
+                "fields": ["_InterpolationFrame", "_InterpolationMode", "_InterpolationCurve"], "missing": [0, 1, 0]}
+   },
+   "classes": {
+    "app.motion_track.FacialMotion": {
+     "consumers": ["app.NpcCharacterCore", "app.HunterCharacter", "app.OtomoCharacter"],
+     "defaults": {"_ID": 0, "_MotionBankID": 0, "_MotionID": 4294967295, "_JointMotionValue": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]},
+     "sequence": {
+      "controller": "app.FacialController", "wait": "_IsWaitSequenceChange",
+      "layers": {"app.NpcCharacterCore": [5, 3, 2, 0], "app.HunterCharacter": [3, 4, 13, 18, 23, 0], "app.OtomoCharacter": [0]},
+      "id": "_ID", "bank": "_MotionBankID", "motion": "_MotionID", "values": "_JointMotionValue", "none": 4294967295,
+      "common": [0, 10, 1], "eye": [4, 0, 100], "base": [9, 0, 0, 10], "joints": "fParam_{:03d}", "change": [20.0, 1, 1],
+      "masks": [[1, 2], [2, 3], [4, 4]]
+     }
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsCommonCondition": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_CondId": "00000000-0000-0000-0000-000000000000"},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 0, "enter": "_CondId"}
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsUniqueCondition": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_CondId": "00000000-0000-0000-0000-000000000000"},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "enter": "_CondId"}
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsCommonConditionRange": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_EnterCondId": "00000000-0000-0000-0000-000000000000",
+                  "_ExitCondId": "00000000-0000-0000-0000-000000000000"},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 0, "enter": "_EnterCondId",
+                   "exit": "_ExitCondId"}
+    },
+    "app.motion_track.EmMotionTrack.SetModelPartsUniqueConditionRange": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_EnterCondId": "00000000-0000-0000-0000-000000000000",
+                  "_ExitCondId": "00000000-0000-0000-0000-000000000000"},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "enter": "_EnterCondId",
+                   "exit": "_ExitCondId"}
+    },
+    "app.motion_track.Em0078_00MotionTrack.EnableRedHeat": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_Parts": "JAW"},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "by": "_Parts",
+                   "enter": {"JAW": "167464f8-6aef-48da-87c6-af00e8c50ea2", "LEFT_WING": "319d0c1c-34ca-44d8-ace6-9be44fb80d8f",
+                             "RIGHT_WING": "21da1e41-025a-4c20-a667-f424db4489ea", "TAIL": "6d8c536a-0ff8-42a7-8963-c03675bdd989"},
+                   "exit": {"JAW": "1a6f68c9-34a1-420a-b590-83fea8d6199b", "LEFT_WING": "5a5e99f4-bf07-422c-a858-1e3b1ebff9e3",
+                            "RIGHT_WING": "26718d3d-ea4c-4f44-8c04-8ec2c9ee02fe", "TAIL": "a7698abd-1491-4b8f-8b35-06ddf32304dc"}}
+    },
+    "app.motion_track.Em0161_00MotionTrack.EnableMembraneWave": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_IsEnable": false},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "by": "_IsEnable",
+                   "enter": {"True": "b7fc66e1-36c3-46f3-8e61-6a74e358a3b7", "False": "cabab706-4d89-4568-b794-c8880c9e7ab0"},
+                   "exit": ["cabab706-4d89-4568-b794-c8880c9e7ab0"]}
+    },
+    "app.motion_track.Em0166_00MotionTrack.DispFlameThrowerNozzle": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false, "_IsContinueNextMot": false},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "by": "_IsContinueNextMot",
+                   "enter": ["1a8d029f-994d-4c32-9159-655d28bd5d62", "7b5955ed-bcc7-40f0-bac7-c4f0dfb96b03"],
+                   "exit": {"True": [], "False": ["0ba7a87b-f7d8-4ada-8c4d-75afb8447c86", "3f51a5b4-6803-425e-a8f3-012470aa9f00",
+                                                  "1a367caf-8b56-456d-9c4d-4fbdd93e09f5"]}}
+    },
+    "app.motion_track.Em0158_00MotionTrack.CloseEye": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "enter": ["dbb23dfa-764e-4bfb-bbfe-d61eb438a0f3"]}
+    },
+    "app.motion_track.Em0163_00MotionTrack.ChangeMouthPartDrawTrack": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false},
+     "condition": {"field": "_IsInRange", "range": {"out": false}, "holder": 1, "enter": ["73c6c8d5-525f-4831-b2c9-226af07c9252"]}
+    },
+    "app.motion_track.EmMotionTrack.EyeClose": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false},
+     "blink": {"field": "_IsInRange", "flag": "close"}
+    },
+    "app.motion_track.EmMotionTrack.IgnoreEyeBlink": {
+     "consumers": ["app.EnemyCharacter"],
+     "defaults": {"_IsInRange": false},
+     "blink": {"field": "_IsInRange", "flag": "ignore"}
+    }
+   }
+  },
+  "RE9": {
+   "reset": true,
+   "configuration": {
+    "kind": "_CharacterKindID",
+    "catalogs": ["AppSystem/Character/Catalog/Configuration/CharacterConfigurationCatalogUserData_1stChunk.user",
+                 "AppSystem/Character/Catalog/Configuration/CharacterConfigurationCatalogUserData_DelayInstall.user"],
+    "list": "_Entries", "key": "_CharacterKindID", "file": "_CharacterConfiguration"
+   },
+   "classes": {
+    "app.PlayFacialMotionTrack": {
+     "driver": {"settings": ["_FacialAnimationConfiguration"], "enabled": "_IsEnable", "data": ["_UserData"],
+                "part": "_FacialTargetGameObjectName"},
+     "defaults": {"FacialBankID": -1, "FacialMotionID": -1},
+     "request": {"layer": 0, "bank": "FacialBankID", "motion": "FacialMotionID", "none": -1, "change": [10.0, 1, 0]}
+    },
+    "app.StopFacialMotionTrack": {
+     "driver": {"settings": ["_FacialAnimationConfiguration"], "enabled": "_IsEnable", "data": ["_UserData"],
+                "part": "_FacialTargetGameObjectName"},
+     "defaults": {"Enable": false},
+     "request": {"layer": 0, "stop": "Enable", "change": [10.0, 1, 0]}
+    },
+    "app.PlayFacialEyePoseTrack": {
+     "driver": {"settings": ["_FacialAnimationConfiguration"], "enabled": "_IsEnable", "data": ["_UserData"],
+                "part": "_FacialTargetGameObjectName", "updater": "app.PlayerUpdaterBase"},
+     "defaults": {"EyePoseMotionID": -1},
+     "set": {"layer": 2, "bank": 6, "motion": "EyePoseMotionID", "none": -1, "change": [10.0, 1, 0]}
+    },
+    "app.StopFacialEyePoseTrack": {
+     "driver": {"settings": ["_FacialAnimationConfiguration"], "enabled": "_IsEnable", "data": ["_UserData"],
+                "part": "_FacialTargetGameObjectName", "updater": "app.PlayerUpdaterBase"},
+     "defaults": {"Enable": false},
+     "set": {"layer": 2, "stop": "Enable", "row": [0, -1], "change": [20.0, 2, 0]}
+    },
+    "app.MateiralRateControllerRequestTrack": {
+     "defaults": {"MontagePartIDs": [], "RequestKey": ""},
+     "rate": {"parts": "MontagePartIDs", "key": "RequestKey", "updater": "app.CharacterUpdaterBase",
+              "component": "app.EffectCharacterPartsConfiguration", "user": "_ConfigUserData",
+              "param": "_MaterialRateController", "groups": "_ParamUserDataList", "name": "_KeyName",
+              "params": "_MaterialRateParams", "material": "_MaterialName", "variable": "_VariableName",
+              "four": "_UseValueF4", "start": "_StartValue", "end": "_EndValue", "start4": "_StartValueF4",
+              "end4": "_EndValueF4", "duration": "_DurationFrame"}
+    },
+    "app.PlayGrappleCommonFacialAnimationTrack": {
+     "driver": {"settings": ["_FacialAnimationConfiguration"], "enabled": "_IsEnable", "data": ["_UserData"],
+                "part": "_FacialTargetGameObjectName"},
+     "defaults": {"_BankID": -1, "_MotionID": -1, "_StopMotion": false},
+     "request": {"layer": 0, "bank": "_BankID", "motion": "_MotionID", "none": -1, "otherwise": "stop",
+                 "change": [10.0, 1, 0]}
+    },
+    "app.Cp_E400ActionCommonFacialMotionPlayTrack": {
+     "driver": {"settings": ["_FacialAnimationConfiguration"], "enabled": "_IsEnable", "data": ["_UserData"],
+                "part": "_FacialTargetGameObjectName"},
+     "defaults": {"_FacialBankID": -1, "_FacialMotionID": -1},
+     "request": {"layer": 0, "bank": "_FacialBankID", "motion": "_FacialMotionID", "none": -1, "change": [20.0, 1, 1]}
+    },
+    "app.Cp_C700HiddenTimingTrack": {
+     "consumers": ["app.Cp_C700Updater"],
+     "defaults": {"_Hidden": false},
+     "draw": {"name": "00", "find": "recursive", "when": "_Hidden", "drawn": false}
+    },
+    "app.Gm19_180.GimmickTracksGm19_180ScaleRate": {
+     "consumers": ["app.Gm19_180"],
+     "defaults": {"Rate": 1.0},
+     "scale": {"field": "Rate", "default": "owner"}
+    },
+    "app.Gm99_031.GimmickTracksGm99_031VisibleParts": {
+     "consumers": ["app.Gm99_031"],
+     "defaults": {"IsAction": false, "TypeVisible": 0, "TypeHidden": 0},
+     "enums": {"TypeVisible": "app.Gm99_031.GimmickTracksGm99_031VisibleParts.PartsType",
+               "TypeHidden": "app.Gm99_031.GimmickTracksGm99_031VisibleParts.PartsType"},
+     "parts": {"when": "IsAction", "masks": [["TypeHidden", false], ["TypeVisible", true]],
+               "bits": [[1, 1], [2, 2], [4, 3], [8, 4], [16, 5], [32, 6], [64, 7], [128, 8]]}
+    },
+    "app.cp_C900.Cp_C900Define.Cp_C900SwitchGrappleMeshPartsTrack": {
+     "consumers": ["app.Cp_C900Updater"],
+     "defaults": {"Enable": false},
+     "parts": {"when": "Enable", "on": [0, 5, 10]}
+    }
+   }
+  },
+  "SF6": {
+   "reset": true,
+   "muscle": {
+    "component": "app.esports.MuscleControl", "asset": "MuscleControlAsset", "parameter": "MuscleParameter",
+    "shapes": {"file": "bsd", "list": "BlendShapeDatas", "name": "_BlendShapeName", "id": "_PropId"},
+    "normals": {"file": "nsd", "list": "NormalShapeDatas", "material": "_MaterialNameHash", "id": "_PropId"},
+    "variables": ["BodySA_AnimTrans_Transtion1", "BodySA_AnimTrans_Transtion2", "BodySA_MaskRate_Red1",
+                  "BodySA_MaskRate_Red2", "BodySA_MaskRate_Red3", "BodySA_MaskRate_Red4", "BodySA_MaskRate_Green1",
+                  "BodySA_MaskRate_Green2", "BodySA_MaskRate_Green3", "BodySA_MaskRate_Green4", "BodySA_MaskRate_Blue1",
+                  "BodySA_MaskRate_Blue2", "BodySA_MaskRate_Blue3", "BodySA_MaskRate_Blue4", "BodySA_MaskRate_Alpha1",
+                  "BodySA_MaskRate_Alpha2", "BodySA_MaskRate_Alpha3", "BodySA_MaskRate_Alpha4"],
+    "slots": [0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8, 9, 9, 9, 9, 10,
+              10, 10, 10, 11, 11, 11, 11, 12, 12, 12, 12, 13, 13, 13, 13, 14, 14, 14, 14, 15, 15, 15, 15, 16, 16, 16,
+              16, 17, 17, 17, 17],
+    "components": [-1, -1, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2,
+                   3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3, 0, 1, 2, 3]
+   },
+   "classes": {
+    "app.esports.BlendShapeRequest": {
+     "consumers": ["app.PlayerBehavior"],
+     "runtime": {"below": ["app.esports.MuscleControl", "app.WrinkleControl"]},
+     "defaults": {"PlayerID": 0, "CurveValue": 0.0, "BlendShapeId": 0, "BlendShapeId_Flip": 0},
+     "shapes": {"player": ["PlayerID", 0], "value": "CurveValue", "id": "BlendShapeId"}
+    },
+    "app.esports.NormalShapeRequest": {
+     "consumers": ["app.PlayerBehavior"],
+     "runtime": {"below": ["app.esports.MuscleControl", "app.WrinkleControl"]},
+     "defaults": {"PlayerID": 0, "CurveValue": 0.0, "NormalMaterialId": 0, "NormalShapeId": 0, "NormalShapeId_Flip": 0},
+     "normals": {"player": ["PlayerID", 0], "value": "CurveValue", "material": "NormalMaterialId",
+                 "id": "NormalShapeId"}
+    },
+    "app.esports.PartsCtrlRequest": {
+     "consumers": ["app.PlayerBehavior"],
+     "runtime": {"below": ["app.esports.MuscleControl", "app.WrinkleControl"]},
+     "defaults": {"Parts": 0, "PartsNo": 0, "PartsOn": false},
+     "enums": {"Parts": "app.esports.PartsCtrlRequest.Type"},
+     "parts": {"object": "Parts", "part": "PartsNo", "enabled": "PartsOn",
+               "refs": {"component": "app.PlayerBehavior",
+                        "fields": {"1": ["_BodyObjRef", 262164], "2": ["_HeadObjRef", 262165],
+                                   "3": ["_HairObjRef", 262166], "4": ["_BoneObjRef", 262167]}}}
+    },
+    "app.worldtour.om.PartsDisplayMSTracker": {
+     "consumers": ["app.esports.om.GimmickVisualControllerMotionFSM"],
+     "defaults": {"PartsIndex": -1, "IsDisplay": true},
+     "parts": {"part": "PartsIndex", "enabled": "IsDisplay", "default": "owner"}
+    },
+    "app.worldtour.om.BirdsPartsEnableTracker": {
+     "consumers": ["app.BirdPartsEnableTrackApply", "app.esports.om.GimmickVisualControllerMotionFSM"],
+     "defaults": {"Wing_State": -1.0, "Foot_State": -1.0, "Eye_State": -1.0},
+     "states": {"first": ["Eye_State", 1.0, 100], "pairs": [["Wing_State", 0.0, 2, 1], ["Foot_State", 1.0, 3, 4]]}
+    }
+   }
+  },
+  "DD2": {
+   "reset": true,
+   "classes": {
+    "app.Ch258001MaterialParamTrack": {
+     "consumers": ["app.Ch258001MaterialController"],
+     "defaults": {"_BurnArea_BaseRate": 0.0, "_BurnArea_EmissiveRate": 0.0},
+     "floats": {"component": "app.Ch258001MaterialController", "ref": ["_WallObjectRef", 262144], "limit": 1.0,
+                "variables": {"_BurnArea_BaseRate": "BurnArea_BaseRate",
+                              "_BurnArea_EmissiveRate": "BurnArea_EmissiveRate"}}
+    },
+    "app.CharacterFacialMotionTrack": {
+     "consumers": ["app.CharacterFacialMotionController"],
+     "defaults": {"TargetIndex": 0, "Emotion": 0, "Mouth": 0, "IsOverwriteTalkAndLipSync": false},
+     "enums": {"Emotion": "app.CharacterFacialMotionController.Emotion",
+               "Mouth": "app.CharacterFacialMotionController.MouthType"},
+     "emotion": {"controller": "app.CharacterFacialMotionController",
+                 "targets": ["TargetSettings", "HeadObject", 131072],
+                 "layers": [["EmotionLayer", "EmotionBankID"], ["MouthLayer", "MouthBankID"]],
+                 "index": "TargetIndex", "emotion": "Emotion", "mouth": "Mouth", "empty": [21, "DefaultFacialEmpty"],
+                 "none": [20, "IsDefaultNoMotion"], "ignore": "IgnoreLayer", "setting": "InterpSetting",
+                 "interp": {"listed": ["EmotionInterpSettings", "Emotion", "InterpFrame", "InterpCurve"],
+                            "emotion": ["EmotionInterpFrame", "EmotionInterpCurve"],
+                            "mouth": ["MouthInterpFrame", "MouthInterpCurve"], "missing": [10.0, 1]},
+                 "mouths": [200, 250, 4, 104, 300, 301, 302, 0, 100, 1, 101, 2, 102, 3, 103],
+                 "transition": 2, "wait": 10.0}
+    }
+   }
+  },
+  "ONIMUSHAWOTS": {
+   "reset": true,
+   "uniques": {
+    "catalogs": ["GameDesign/System/CatalogData/EnemyList_1st.user", "GameDesign/System/CatalogData/EnemyList.user"],
+    "list": "_DataList", "key": "_EnemyID", "file": "_Prefab",
+    "classes": {"-1165847296": "app.Em105CharacterUnique", "-985871680": "app.Em106CharacterUnique",
+                "1224034560": "app.Em501CharacterUnique", "1886117504": "app.Em510CharacterUnique",
+                "19022": "app.Em514CharacterUnique", "-644262464": "app.Em104CharacterUnique",
+                "3391": "app.cEm102_50_ScaleSupporter"}
+   },
+   "minis": {"holder": "ace.GimmickAssetHolderBase", "field": "_MiniComponentHolder",
+             "classes": {"app.user_data.GimmickMcParamMotion": "app.mcGimmickMotion"}},
+   "lip": {"controller": "app.FacialController", "layer": 2, "bank": 50000, "motions": [200, 100], "samples": 5, "most": 1.0, "follow": 0.2, "start": [0.0, 0, 2], "stop": [1.0, 1, 2], "variables": ["LipBlend", "LipBlend2"]},
+   "classes": {
+    "app.motion_track.FacialLipMotionSwitch": {
+     "consumers": ["app.PlayerCharacter"],
+     "defaults": {"<ActiveMotionIndex>k__BackingField": -1},
+     "lip": {"field": "<ActiveMotionIndex>k__BackingField", "kind": "index"}
+    },
+    "app.motion_track.FacialLipBlendRate": {
+     "consumers": ["app.PlayerCharacter"],
+     "defaults": {"<BlendRate>k__BackingField": -1.0},
+     "lip": {"field": "<BlendRate>k__BackingField", "kind": "rate"}
+    },
+    "app.motion_track.Em105ApplyModelPartsConditionTrack": {
+     "consumers": ["app.Em105CharacterUnique", "app.Em106CharacterUnique"],
+     "defaults": {"_PartsCondition": "INVALID"},
+     "condition": {"field": "_PartsCondition", "ids": {
+      "app.Em105CharacterUnique": {"TENTACLE_OFF": "5b7d55ab-d1e9-4b4c-b0df-235259bfe001",
+                                   "TENTACLE_ON": "0533c28e-31fa-4945-995b-8ffd1fc8a0fa"},
+      "app.Em106CharacterUnique": {"TENTACLE_OFF": "d07aa306-9432-47c4-a08f-6ebf013c925e",
+                                   "TENTACLE_ON": "a466f1a0-67c2-4aed-87ec-97a1b4579475"}}}
+    },
+    "app.motion_track.Em501ApplyModelPartsConditionTrack": {
+     "consumers": ["app.Em501CharacterUnique"],
+     "defaults": {"_PartsCondition": "INVALID"},
+     "condition": {"field": "_PartsCondition", "ids": {"app.Em501CharacterUnique": {
+      "DEFAULT": "5eb989da-48a6-47b7-b6ad-f931f2339fc2", "SOUL_BOOST": "7196de50-8311-4ec9-98a1-986a08479f5b",
+      "HEAD_BREAK": "e80b4515-b723-4caa-9ae8-328d62ee8ed5", "SOUL_ENHANCED": "e29ab3df-7a2f-4eb3-930a-e17a9e3fe2e7",
+      "EFFECT_OFF": "75a8dda2-0226-4ede-b5d5-e657d8869e3d"}}}
+    },
+    "app.motion_track.Em510TransparentTrack": {
+     "consumers": ["app.Em510CharacterUnique"],
+     "defaults": {"_Mode": "NONE"},
+     "condition": {"field": "_Mode", "ids": {"app.Em510CharacterUnique": {
+      "BODY": "97043339-c8b4-402a-92aa-95519aa1e3b7", "OMEN": "e5979d82-5a84-41f6-95df-7713a7178cda",
+      "FACE_FRASH": "5a442d31-6bb9-43fa-a0d0-66a184d09d98", "DEFAULT": "a3e4afa6-fff1-4bdc-bdfc-48c45de9936c",
+      "FULL": "bf264e42-4354-4f65-af0a-3fa7255a8d53", "WARP_START": "c72d515f-497a-4f66-945f-4f73d278d1b2",
+      "WARP_FINISH": "b9a8564a-3fa8-4b0f-80c9-1a08409199aa", "TRANSPARENT_OMEN": "fe817bdd-085a-4b7e-8ec3-7cbdcffe37a2",
+      "TRANSPARENT_OMEN_FINISH": "4f840d49-3e8f-4612-83ae-9bb67deb3274"}},
+      "modes": {
+       "start": "DEFAULT", "body": "BODY", "released": "DEFAULT",
+       "alpha": {"settings": "app.MeshSetting", "flags": ["ForcedAlphaTestEnable"], "limit": 60.0},
+       "table": {
+        "DEFAULT": {"body": null, "condition": "DEFAULT", "release": true},
+        "FULL": {"alpha": true, "condition": "FULL"},
+        "ONLY_OMEN": {"body": "OMEN"},
+        "WARP_START": {"alpha": true, "condition": "WARP_START"},
+        "WARP_FINISH": {"condition": "WARP_FINISH", "release": true},
+        "TRANSPARENT_OMEN": {"alpha": true, "condition": "TRANSPARENT_OMEN"},
+        "TRANSPARENT_OMEN_FINISH": {"condition": "TRANSPARENT_OMEN_FINISH", "release": true},
+        "FACE_FRASH": {"body": "FACE_FRASH", "kept": true},
+        "FACE_FRASH_FINISH": {"body": null, "kept": true}}}}
+    },
+    "app.motion_track.Em514TattoMaterialTrack": {
+     "consumers": ["app.Em514CharacterUnique"],
+     "defaults": {"_State": "NONE"},
+     "condition": {"field": "_State", "ids": {"app.Em514CharacterUnique": {
+      "NONE": "f21ddc46-fdca-4af2-b405-fd2b6bf64e98", "ACTIVATE_FAST": "05b800b9-189c-49e2-b010-8e2a82514a0d",
+      "ACTIVATE_SLOW": "5c6e6cb4-5cac-4b3b-950a-daa943ac8c2b"}},
+      "held": {"start": "NONE", "blocked": [["ACTIVATE_SLOW", "ACTIVATE_FAST"], ["ACTIVATE_FAST", "ACTIVATE_SLOW"]]}}
+    },
+    "app.motion_track.Em503SubUnitControlFlowLightMaterial": {
+     "consumers": ["app.Em503ChildSubUnit"],
+     "defaults": {"_State": "NONE"},
+     "condition": {"field": "_State", "ids": {"app.Em503ChildSubUnit": {
+      "NONE": "59129841-5c8b-40ab-8034-e2fdd6671396", "FLOW_FLOWER_PICK_FROM_HEAD": "4670e74e-be7c-413e-86b6-88d9df0d9a02",
+      "FLOW_FLOWER_PICK_TO_HEAD": "7577aed9-fa31-4355-ad09-a15ad90bf854",
+      "FLOW_SOUL_BOOST_FROM_HEAD": "13fb43d8-3686-43ed-940e-3964b4da5e9e",
+      "FLOW_SOUL_BOOST_TO_HEAD": "0dde1798-c98d-43e4-a5c2-ec1f7d95328e"}},
+      "held": {"start": "NONE"}}
+    },
+    "app.motion_track.Em104ApplySoulBoostMaterialTrack": {
+     "consumers": ["app.Em104CharacterUnique"],
+     "defaults": {"_ApplyModelCondition": "INVALID"},
+     "condition": {"field": "_ApplyModelCondition", "delay": true, "ids": {"app.Em104CharacterUnique": {
+      "NORMAL": "117c2716-de65-4c29-ba83-7af4c5bc5f42", "SOUL_BOOST": "ebb72b26-7aa3-423c-99fd-fe5810e96323",
+      "SOUL_BOOST_START": "b0b8e0f4-133b-4856-8380-d4260340a37e",
+      "SOUL_BOOST_END": "5160c43e-c932-45b3-964f-e75d270fcbf2"}}}
+    },
+    "app.motion_track.Em501MiniTailPartsConditionTrack": {
+     "consumers": ["app.Em501CharacterUnique"],
+     "defaults": {"_IsDisconnect": false},
+     "condition": {"field": "_IsDisconnect", "range": {"out": false}, "materials": false, "ids": {
+      "app.Em501CharacterUnique": {"True": "c0705013-3538-4b8a-9d3d-a060cae420f9",
+                                   "False": "5eb989da-48a6-47b7-b6ad-f931f2339fc2"}}}
+    },
+    "app.motion_track.Eu001MeshPartsChange": {
+     "consumers": ["app.Eu001", "app.Eu020"],
+     "defaults": {"PartsCategory": "NONE"},
+     "condition": {"field": "PartsCategory", "range": {"out": "NONE"}, "materials": false, "ids": {
+      "app.Eu001": {"WING": "d1a797bc-9994-4fda-a797-a840e30bb45e", "NONE": "1afa7c41-7cf8-4571-af93-2b7a3da1a2b4"},
+      "app.Eu020": {"WING": "d1a797bc-9994-4fda-a797-a840e30bb45e", "NONE": "1afa7c41-7cf8-4571-af93-2b7a3da1a2b4"}}}
+    },
+    "app.motion_track.ChangeModelPartsCondition": {
+     "consumers": ["app.mcGimmickMotion"],
+     "defaults": {"_PartsCondition": {}},
+     "condition": {"field": "_PartsCondition", "materials": false, "pairs": {
+      "on": "_On", "none": "00000000-0000-0000-0000-000000000000",
+      "list": [["_ConditionID00", "_RequestID00"], ["_ConditionID01", "_RequestID01"],
+               ["_ConditionID02", "_RequestID02"], ["_ConditionID03", "_RequestID03"]]}}
+    },
+    "app.motion_track.Em102_50_ScaleRate": {
+     "consumers": ["app.cEm102_50_ScaleSupporter"],
+     "defaults": {"_Scale": 1.0},
+     "scale": {"field": "_Scale", "default": "owner"}
+    }
+   }
+  }
+ }
+}

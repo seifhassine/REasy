@@ -8,9 +8,10 @@ lazy from file_handlers.sdf.shader_contract_storage import variable_to_dict
 lazy from file_handlers.sdf.shader_graph import ShaderContractBuffer, ShaderContractResource, ShaderContractVariable
 from file_handlers.build_catalog import catalog_file_name, catalog_reader
 
-CATALOG_FORMAT = 3
+CATALOG_FORMAT = 6
 RESOURCE_TABLES = {"shader_resource": "t", "sampler": "s"}
 CATALOG_DIRECTORY = "resources/data/engine_inputs"
+MATERIAL_TEXTURES = "<MDF textures>"
 
 
 class EngineInputCatalogError(ValueError):
@@ -59,9 +60,18 @@ class EngineInputCatalog:
     materials: int = 0
     buffer_materials: Mapping[str, int] = field(default_factory=dict)
     resource_materials: Mapping[str, int] = field(default_factory=dict)
+    material_passes: Mapping[tuple[str, str, str], frozenset[str]] = field(default_factory=dict)
+    material_addresses: Mapping[tuple[str, str, str], Mapping[int, tuple[object, int]]] = field(default_factory=dict)
+    sampler_stages: Mapping[int, Mapping[str, frozenset[str]]] = field(default_factory=dict)
 
     def pass_buffers(self, backend: str, program: str, stage: str) -> Mapping[str, tuple[int, ...]]:
         return self.passes.get((backend, program, stage), {})
+
+    def pass_material(self, backend: str, program: str, stage: str) -> frozenset[str]:
+        return self.material_passes.get((backend, program, stage), frozenset())
+
+    def pass_record(self, backend: str, program: str, stage: str, target: int) -> tuple[object, int] | None:
+        return self.material_addresses.get((backend, program, stage), {}).get(target)
 
     def pass_layout(self, backend: str, program: str, stage: str, buffer: str) -> EngineBufferLayout | None:
         found = self.pass_buffers(backend, program, stage).get(buffer, ())
@@ -69,6 +79,10 @@ class EngineInputCatalog:
 
     def pass_resources(self, backend: str, program: str, stage: str) -> Mapping[str, tuple[int, ...]]:
         return self.resource_passes.get((backend, program, stage), {})
+
+
+def _form(item):
+    return tuple(map(_form, item)) if isinstance(item, list) else item
 
 
 def _variable(data: Mapping) -> ShaderContractVariable:
@@ -146,22 +160,39 @@ def catalog_from_dict(data: Mapping) -> EngineInputCatalog:
                                               int(item["type_code"]), int(item["reserved"])))
     resources = tuple(resources)
     resource_passes = _passes_from_dict(data["resource_passes"], _sets(data["resource_pass_sets"]), resources, "resource")
+    addresses = {(str(backend), str(program), str(stage)): {int(target): (_form(form), int(index))
+                                                           for target, (form, index) in targets.items()}
+                 for backend, programs in data["material_addresses"].items()
+                 for program, stages in programs.items() for stage, targets in stages.items()}
+    if any(not 0 <= index < len(resources) for routes in addresses.values() for _, index in routes.values()):
+        raise EngineInputCatalogError("engine input catalog material address points outside its resources")
     counts = data["materials"]
     return EngineInputCatalog(
         str(data["game"]), int(data["resource_version"]), layouts, passes, resources, resource_passes,
         int(counts["total"]), {str(name): int(count) for name, count in counts["buffers"].items()},
         {str(name): int(count) for name, count in counts["resources"].items()},
+        {(str(backend), str(program), str(stage)): frozenset(map(str, names))
+         for backend, programs in data["material_passes"].items()
+         for program, stages in programs.items() for stage, names in stages.items()},
+        addresses, {int(target): {str(stage): frozenset(map(str, names)) for stage, names in stages.items()}
+                    for target, stages in data["sampler_stages"].items()},
     )
 
 
-def catalog_to_dict(catalog: EngineInputCatalog, source: Mapping) -> dict:
+def catalog_to_dict(catalog: EngineInputCatalog) -> dict:
     pass_sets, passes = _passes_to_dict(catalog.passes)
     resource_pass_sets, resource_passes = _passes_to_dict(catalog.resource_passes)
+    material_passes: dict[str, dict[str, dict[str, list[str]]]] = {}
+    for (backend, program, stage), names in sorted(catalog.material_passes.items()):
+        material_passes.setdefault(backend, {}).setdefault(program, {})[stage] = sorted(names)
+    material_addresses: dict[str, dict[str, dict[str, dict[str, tuple]]]] = {}
+    for (backend, program, stage), routes in sorted(catalog.material_addresses.items()):
+        material_addresses.setdefault(backend, {}).setdefault(program, {})[stage] = {
+            str(target): entry for target, entry in sorted(routes.items())}
     return {
         "format": CATALOG_FORMAT,
         "game": catalog.game,
         "resource_version": catalog.resource_version,
-        "source": dict(source),
         "layouts": [
             {"backend": layout.backend, "buffer": layout.name, "byte_size": layout.buffer.byte_size,
              "register_space": layout.buffer.register_space, "table_byte_size": layout.table_byte_size,
@@ -181,6 +212,10 @@ def catalog_to_dict(catalog: EngineInputCatalog, source: Mapping) -> dict:
         "resource_passes": resource_passes,
         "materials": {"total": catalog.materials, "buffers": dict(sorted(catalog.buffer_materials.items())),
                       "resources": dict(sorted(catalog.resource_materials.items()))},
+        "material_passes": material_passes,
+        "material_addresses": material_addresses,
+        "sampler_stages": {str(target): {stage: sorted(names) for stage, names in sorted(stages.items())}
+                           for target, stages in sorted(catalog.sampler_stages.items())},
     }
 
 
@@ -189,7 +224,7 @@ engine_input_catalog_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, 
 
 
 __all__ = [
-    "CATALOG_DIRECTORY", "RESOURCE_TABLES", "EngineBufferLayout", "EngineInputCatalog", "EngineInputCatalogError",
-    "EngineResourceLayout", "catalog_file_name", "catalog_from_dict", "catalog_to_dict",
+    "CATALOG_DIRECTORY", "MATERIAL_TEXTURES", "RESOURCE_TABLES", "EngineBufferLayout", "EngineInputCatalog",
+    "EngineInputCatalogError", "EngineResourceLayout", "catalog_file_name", "catalog_from_dict", "catalog_to_dict",
     "engine_input_catalog_for", "resource_from_dict", "resource_to_dict",
 ]

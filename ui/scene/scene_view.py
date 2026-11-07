@@ -1,15 +1,16 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 
 lazy import numpy as np
 
+lazy from file_handlers.mmtr.draw_rules import MESH_DECAL_RECEIVE
 lazy from file_handlers.mmtr.engine_buffers import Camera
 lazy from file_handlers.mmtr.textures_view import ProbeLight, VertexLight, ViewLight
 lazy from utils.native_build import ensure_fastmesh
 
 lazy from .scene_model import SceneDrawBatch
-
 
 
 @dataclass(frozen=True, slots=True, eq=False)
@@ -23,9 +24,7 @@ class SceneShape:
 @dataclass(frozen=True, slots=True, eq=False)
 class SceneGeometry:
     """``vertices`` is the index of the first shown mesh with the same vertices, whose shape, UVs and influences it
-    shares. ``colour`` is white for meshes with vertex colours. ``solid`` meshes fill in every wireframe mode.
-    ``edge_excluded``, ``decal_receive_mode`` and ``transparent_bias`` come from the ``via.render.Mesh`` component.
-    ``more_uvs`` are its other UV sets."""
+    shares. ``colour`` is white for meshes with vertex colours. ``solid`` meshes fill in every wireframe mode."""
     key: str
     vertices: int
     uvs: np.ndarray | None
@@ -35,10 +34,14 @@ class SceneGeometry:
     batches: tuple[SceneDrawBatch, ...]
     solid: bool = field(default=False, kw_only=True)
     edge_excluded: bool = field(default=False, kw_only=True)
-    decal_receive_mode: int = field(default=0, kw_only=True)
+    decal_receive: tuple[str, str | None] = field(default=MESH_DECAL_RECEIVE, kw_only=True)
     transparent_bias: float = field(default=0.0, kw_only=True)
     speedtree_placement: str | None = field(default=None, kw_only=True)
     more_uvs: tuple[np.ndarray, ...] = field(default=(), kw_only=True)
+    blend_normal: bool = field(default=True, kw_only=True)
+    chain_flags: tuple[bool, bool] = field(default=(True, False), kw_only=True)
+    draw_state: Mapping[str, object] | None = field(default=None, kw_only=True)
+    lod_parent_mesh: bool = field(default=False, kw_only=True)
 
 
 @dataclass(frozen=True, slots=True, eq=False)

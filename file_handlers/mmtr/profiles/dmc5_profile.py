@@ -340,6 +340,7 @@ DMC5_MMTR_PROFILE = register_mmtr_profile(
             "DMC5", instanced_material_buffer="UserMaterialInstances",
         ),
         default_for_version=True,
+        mdf_resource_version=10,
     )
 )
 

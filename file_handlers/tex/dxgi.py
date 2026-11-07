@@ -143,7 +143,7 @@ _NAME_MAP = {
     DXGI_FORMAT_B8G8R8A8_UNORM_SRGB: "B8G8R8A8_UNORM_SRGB",
 }
 
-#: Every format word this project can size.  The shipped corpus uses 17 of them.
+#: Every format word this project can size.
 KNOWN_FORMATS = frozenset(_BC_ALL | _FORMAT_BITS.keys())
 
 
@@ -154,6 +154,18 @@ def is_known_format(dxgi_format: int) -> bool:
 def dxgi_name(dxgi_format: int) -> str:
     return _NAME_MAP.get(dxgi_format, f"DXGI_{dxgi_format}")
 
+
+def render_target_output_type(dxgi_format: int) -> str | None:
+    name = _NAME_MAP.get(dxgi_format)
+    if name is None or is_block_compressed(dxgi_format):
+        return None
+    layout, _, kind = name.partition("_")
+    scalar = {"FLOAT": "float", "UNORM": "float", "SNORM": "float", "UINT": "uint", "SINT": "int"}.get(
+        kind.split("_")[0])
+    channels = sum(layout.count(letter) for letter in "RGBA")
+    if scalar is None or not layout.startswith(("R", "B")) or not 1 <= channels <= 4:
+        return None
+    return scalar if channels == 1 else f"{scalar}{channels}"
 
 
 def describe_format(dxgi_format: int) -> dict:

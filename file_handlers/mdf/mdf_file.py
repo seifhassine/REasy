@@ -72,14 +72,16 @@ BASE_TWO_SIDE_ENABLE, BASE_ALPHA_TEST_ENABLE = (field.mask for field in _BASE_FL
 
 
 def material_flag_layout(version: int) -> tuple[MaterialFlagField, ...]:
-    """The named fields of an MDF version's ``material_flags``, by bit; the other bits have no known name."""
     return next((fields for first, fields in _FLAG_LAYOUTS if version >= first), ())
 
 
 def two_sided(flags: int, version: int) -> bool:
-    """TwoSideEnable as the engine derives it at load: BaseTwoSideEnable or ForcedTwoSideEnable."""
     return any(field.get(flags) for field in material_flag_layout(version)
                if field.name in ("BaseTwoSideEnable", "ForcedTwoSideEnable"))
+
+
+def material_flag(flags: int, version: int, name: str) -> int:
+    return next((field.get(flags) for field in material_flag_layout(version) if field.name == name), 0)
 
 
 class MaterialFlagError(ValueError):
@@ -113,11 +115,6 @@ def converted_material_flags(flags: int, source_version: int, target_version: in
     if reasons:
         raise MaterialFlagError("; ".join(reasons))
     return value
-
-
-def transparent_priority_bias(flags: int) -> int:
-    """Version 31 and later only."""
-    return _PRIORITY_BIAS.get(flags)
 
 
 SHADING_TYPE_ENUM = "via.render.MaterialShadingType"
@@ -228,7 +225,7 @@ class MatHeader:
     mat_name: str = ""
     mat_name_hash: int = 0
     ukn_re7: int = 0  # version == 6
-    ukn: int = 0  # >= 51
+    material_flags2: int = 0
     params_size: int = 0
     param_count: int = 0
     parameter_value_count: int = 0  # Onimusha WotS v51: unaligned float-buffer length
@@ -267,13 +264,13 @@ class MatHeader:
             self.gpbf_name_count = h.read_int32()
             self.gpbf_data_count = h.read_int32()
         if version >= 31:
-            self.BakeTextureArraySize = h.read_uint32()  # seems to match no structure in the file itself
+            self.BakeTextureArraySize = h.read_uint32()
             
         self.shader_type = h.read_int32()
         if version >= 31:
             self.material_flags = h.read_uint64()
             if version >= 51 and layout != "onimusha_wots":
-                self.ukn = h.read_uint64()
+                self.material_flags2 = h.read_uint64()
             self.shaderLODNum = h.read_uint32()
         else:
             self.material_flags = h.read_uint32()
@@ -316,7 +313,7 @@ class MatHeader:
         if version >= 31:
             h.write_uint64(self.material_flags)
             if version >= 51 and layout != "onimusha_wots":
-                h.write_uint64(self.ukn)
+                h.write_uint64(self.material_flags2)
             h.write_uint32(self.shaderLODNum)
         else:
             h.write_uint32(self.material_flags)
@@ -357,7 +354,6 @@ class MatHeader:
         # skip material_flags (8 bytes from v31, else 4) and shaderLODNum (>=31)
         if version >= 31:
             cur += 12
-            # v51 unknown long
             if version >= 51 and layout != "onimusha_wots":
                 cur += 8
         else:

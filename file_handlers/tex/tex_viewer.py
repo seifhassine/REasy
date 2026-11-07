@@ -350,14 +350,16 @@ class TexViewer(QWidget):
                 self.tr("This resident normal map's low mips were re-filtered, not sliced from the chain."),
                 None,
             ),
-            "field_18_23": (
-                self.tr("Value 18-23"),
-                self.tr(
-                    "A 6-bit integer of unknown meaning; the engine converts it to a float."
-                ),
+            "range_compression_exp": (
+                self.tr("Range compression exp"),
+                self.tr("The loader stores this value as the texture's float RangeCompressionExp."),
                 None,
             ),
-            "opaque_flag": (self.tr("Flag 25"), self.tr("A boolean this reversal cannot name."), None),
+            "high_priority_load_streaming": (
+                self.tr("High priority load streaming"),
+                self.tr("The texture's HighPriorityLoadStreaming switch."),
+                None,
+            ),
         }
 
     def _build_settings(self, tex):

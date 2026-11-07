@@ -1,13 +1,4 @@
 {
- "_doc": [
-  "Anatomical roles of humanoid joints, per skeleton naming family, for mapping one rig onto another.",
-  "Each family lists, per role, regular expressions matched against the whole bone name (case-sensitive, after any 'namespace:' prefix). '{side}' stands for the family's side token.",
-  "A single role takes the first bone matching its patterns in pattern order. A chain role takes every matching bone, proximal first: by pattern order, then by hierarchy, then by distance from the bone the chain hangs from.",
-  "Roles are claimed in the order listed, and a bone takes at most one role.",
-  "Chains in 'proportional' spread over each other end to end; other chains align at their tips, and a longer chain's extra proximal bones (metacarpals) take the fallback roles.",
-  "A role the other rig lacks takes its first fallback that the other rig has (the last bone of a chain).",
-  "A 'normalized' family matches the side and body-part words of a name instead ('rig:LeftUpLeg' and 'Thigh.L' both read 'l|thigh'), for rigs that follow no known convention."
- ],
  "version": 1,
  "chains": ["spine", "neck", "thumb", "index", "middle", "ring", "pinky"],
  "proportional": ["spine", "neck"],

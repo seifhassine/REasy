@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+from contextvars import ContextVar
+from dataclasses import dataclass
 import re
+from typing import Callable
 
 lazy from file_handlers.sdf.hlsl_contract import resource_identifier
 from file_handlers.sdf.shader_graph import (
@@ -13,7 +17,9 @@ from file_handlers.sdf.shader_graph import (
     mask_components,
     math_node_expression,
     node_pins,
+    node_title,
     TEXTURE_COORDINATE_TYPES,
+    _fxc_target,
     shader_value_literal,
     splat_expression,
 )
@@ -23,6 +29,9 @@ lazy from file_handlers.sdf.aggregate_values import (
 )
 lazy from file_handlers.sdf.shader_graph_buffer import BufferRead
 lazy from file_handlers.sdf.shader_graph_code import code_expression, code_helpers
+lazy from file_handlers.sdf.shader_graph_constant_buffer import (
+    constant_row_expression, constant_row_helpers, constant_view_declaration, constant_view_space,
+)
 lazy from file_handlers.sdf.shader_graph_execution import EXECUTION_KINDS
 lazy from file_handlers.sdf.shader_graph_indexed_value import indexed_expression, indexed_helpers, indexed_shape
 lazy from file_handlers.sdf.shader_graph_math import TYPED_MATH_NODES, math_context_error, typed_math_expression, typed_math_helpers
@@ -30,14 +39,160 @@ lazy from file_handlers.sdf.shader_graph_precision import precise_operation
 lazy from file_handlers.sdf.shader_graph_resource import resource_expression, resource_helpers, resource_properties
 lazy from file_handlers.sdf.shader_graph_texture import TextureOperation
 lazy from file_handlers.sdf.shader_graph_unassigned import unassigned_expression, unassigned_helpers, unassigned_type
+lazy from ..material_region_read import per_build_of
 lazy from ..pass_purpose import drawing_for
-lazy from ..surface_data import MATERIAL_COORDINATES, surface_data_available, surface_data_keys, surface_data_value
+lazy from ..surface_data import (
+    MATERIAL_COORDINATES, SURFACE_DATA_KIND, surface_data_available, surface_data_keys, surface_data_value,
+)
 lazy from ..surface_outputs import validate_output_pin
-lazy from ..vertex_values import per_vertex_value, where_available_input
+lazy from ..vertex_values import per_vertex_value, upstream, where_available_input
 lazy from .renderer_inputs import (
     engine_input_nodes, engine_inputs_available, recovered_structured_slot, recovered_structured_word,
     renderer_field_expression, renderer_fields, renderer_resource_expression, renderer_value_expression,
 )
+
+
+_FALLBACKS = ContextVar("where_available_fallbacks", default=None)
+_SURFACE_PASS = ContextVar("surface_pass", default=None)
+
+
+@dataclass(frozen=True, slots=True)
+class SurfacePass:
+    label: str
+    material: bool
+    record: bool
+    no_material: bool
+    lacking_channel: Callable[[str], str]
+
+    def unreadable(self, name: str) -> str:
+        if self.no_material:
+            return (f"{self.label}: none of its passes reads the material, so {name} cannot reach them. Constants and "
+                    "engine inputs still work.")
+        return (f"{self.label}: this pass reads nothing of the material, so {name} cannot reach it. Use Where "
+                "Available to give this pass another value.")
+
+
+@contextmanager
+def surface_pass(edit: SurfacePass):
+    token = _SURFACE_PASS.set(edit)
+    try:
+        yield edit
+    finally:
+        _SURFACE_PASS.reset(token)
+
+
+def _edit_reads(graph, links, value, provides, through_per_vertex: bool, purpose: str = "",
+                program: tuple = (-1, ""), keep=lambda node: node.kind in ("material_parameter", "material_texture"),
+                ) -> tuple[list, set]:
+    def index():
+        found: dict[str, list] = {}
+        for (target, _pin), link in links.items():
+            found.setdefault(target, []).append(link)
+        return found
+    sources = per_build_of("edit_read_sources", (links,), None, index)
+    nodes = per_build_of("edit_read_nodes", (graph,), None, lambda: {node.node_id: node for node in graph.nodes})
+    material, pins, seen, pending = [], set(), set(), [value]
+    while pending:
+        link = pending.pop()
+        node = nodes.get(link.source_node)
+        if node is None:
+            continue
+        if node.kind == "re_engine_recovered_master_material":
+            pins.add(link.source_pin)
+            continue
+        if node.node_id in seen:
+            continue
+        seen.add(node.node_id)
+        if keep(node):
+            material.append(node)
+        if node.kind == "re_engine_per_vertex" and not through_per_vertex:
+            continue
+        if node.kind == "re_engine_where_available":
+            taken = ("value", "otherwise") if provides is None else (
+                where_available_input(graph, links, node, through_per_vertex, provides),)
+            pending.extend(filter(None, (links.get((node.node_id, pin)) for pin in taken)))
+            continue
+        condition = links.get((node.node_id, "condition")) if purpose and node.kind == "select" else None
+        chooser = nodes.get(condition.source_node) if condition is not None else None
+        if chooser is not None and chooser.kind == "re_engine_drawing_for":
+            taken = links.get((node.node_id, "true" if drawing_for(chooser, purpose, *program) else "false"))
+            pending.extend((taken,) if taken else ())
+            continue
+        pending.extend(sources.get(node.node_id, ()))
+    return material, pins
+
+
+class _SharedValues(ShaderExpressionCompiler):
+    def __init__(self, shared, **kwargs):
+        super().__init__(**kwargs)
+        self.shared = shared
+
+    def emit(self, key, scope, expression, *, materialize=True, initialize=True, precise=False):
+        return super().emit(key, scope, expression, initialize=initialize, precise=precise,
+                            materialize=materialize and (key[0] in self.shared or not initialize or precise))
+
+
+def edit_expression(profile, project, contract, semantics, source, pin, links, helpers, prefix,
+                    **resolvers) -> tuple[tuple[str, ...], ShaderExpression]:
+    sources: dict[str, list[str]] = {}
+    for (target, _pin), link in links.items():
+        sources.setdefault(target, []).append(link.source_node)
+    masters = {node.node_id for node in project.graph.nodes if node.kind == "re_engine_recovered_master_material"}
+    reads, seen, pending = {}, set(), [source.node_id]
+    while pending:
+        node = pending.pop()
+        if node in seen or node in masters:
+            continue
+        seen.add(node)
+        for item in sources.get(node, ()):
+            reads[item] = reads.get(item, 0) + 1
+            pending.append(item)
+    compiler = _SharedValues({node for node, count in reads.items() if count > 1}, variable_prefix=prefix,
+                             define_unassigned=_fxc_target(contract))
+    value = recovered_graph_expression(profile, project, contract, semantics, source, pin, links, set(), helpers,
+                                       compiler=compiler, **resolvers)
+    return (*compiler.statements(compiler.shared_scope), *compiler.statements("material")), value
+
+
+def _material_name(project, node) -> str:
+    parameter = node.kind == "material_parameter"
+    definition = (project.parameter if parameter else project.texture)(
+        str(node.properties.get("parameter_id" if parameter else "texture_id", "")))
+    return str(definition.name) if definition is not None else node_title(node)
+
+
+def _material_reachable(profile, project, contract, node, texture_resolver, record: bool) -> bool:
+    if node.kind == "material_parameter":
+        definition = project.parameter(str(node.properties.get("parameter_id", "")))
+        if definition is None:
+            return False
+        try:
+            expression = _parameter_storage_expression(profile, project, definition, contract)
+        except ShaderGraphError:
+            return False
+        return record or "REasyMaterialAddress" not in expression
+    definition = project.texture(str(node.properties.get("texture_id", "")))
+    if definition is None:
+        return False
+    resource_name = profile.material_texture_resource(definition, contract)
+    resource = contract.resource(resource_name) if resource_name else None
+    if resource is not None and resource.sampleable:
+        return True
+    if texture_resolver is None:
+        return False
+    try:
+        texture_resolver(definition, check=True)
+    except ShaderGraphError:
+        return False
+    return record
+
+
+class PastInstanceCopy(ShaderGraphError):
+    def __init__(self, parameter: str):
+        super().__init__(f"{parameter} is not in the copy of the material that the game's effects keep per drawn "
+                         "instance, so passes drawn instanced cannot read it. Use Where Available to give those "
+                         "passes another value.")
+        self.parameter = parameter
 
 
 def recovered_master_pins(
@@ -105,6 +260,31 @@ def surface_channel_pins(node: ShaderGraphNode, direction: str) -> tuple[ShaderP
     return tuple(result)
 
 
+def _parameters_unreadable(profile, project, contract, nodes) -> list[str]:
+    result = []
+    for node in nodes:
+        if node.kind != "material_parameter":
+            continue
+        definition = project.parameter(str(node.properties.get("parameter_id", "")))
+        if definition is None:
+            continue
+        try:
+            _parameter_storage_expression(profile, project, definition, contract)
+        except PastInstanceCopy:
+            result.append(str(definition.name))
+    return result
+
+
+@contextmanager
+def recorded_fallbacks():
+    notes = []
+    token = _FALLBACKS.set(notes)
+    try:
+        yield notes
+    finally:
+        _FALLBACKS.reset(token)
+
+
 def _parameter_storage_expression(
     profile,
     project,
@@ -141,6 +321,8 @@ def _parameter_storage_expression(
         ]
         variable = folded[0] if len(folded) == 1 else None
     if variable is None:
+        if instances is not None:
+            raise PastInstanceCopy(definition.name)
         if buffer is not None:
             raise ShaderGraphError(f"Material parameter {definition.name} has no native field.")
         return shader_value_literal(definition.value_type, definition.default)
@@ -186,10 +368,13 @@ def _parameter_storage_expression(
     return parts[0] if width == 1 else f"{definition.value_type}({', '.join(parts)})"
 
 
-def _engine_structured_read(operation, incoming, helpers):
-    """Rebuilt shaders declare engine structured buffers as records of uint slots."""
+def _engine_structured_read(operation, incoming, helpers, loader=""):
     identifier = incoming('buffer', operation.object_type)
     index = incoming('index', 'uint')
+    if loader:
+        offset = incoming('record_byte_offset', 'uint') if operation.dynamic_offset else f"{operation.byte_offset}u"
+        words = [f"{loader}({index}, {offset} + {4 * word}u)" for word in range(operation.words)]
+        return (words[0] if len(words) == 1 else f"{operation.value_type}({', '.join(words)})"), operation.value_type
     if not operation.dynamic_offset:
         read = recovered_structured_slot if operation.words > 1 else recovered_structured_word
         return read(identifier, operation.stride, index, operation.byte_offset), operation.value_type
@@ -354,12 +539,19 @@ def recovered_graph_expression(
             return finish(renderer_value_expression(contract, node.properties, helpers),
                           node.properties["value_type"], materialize=False)
         if kind == "re_engine_renderer_resource":
-            identifier, _resource = renderer_resource_expression(contract, node.properties)
+            identifier, resource = renderer_resource_expression(contract, node.properties)
+            if resource.input_type == "constant-buffer":
+                helpers.setdefault(("constant_view", resource.name), constant_view_declaration(
+                    resource, contract.buffer(resource.name), constant_view_space(contract)))
             return finish(identifier, node.properties["value_type"], materialize=False)
+        if kind == "constant_buffer_row":
+            helpers.setdefault(("constant_row", node.properties["byte_size"]), constant_row_helpers(node, contract))
+            return finish(constant_row_expression(node, source_pin, incoming), "uint")
         if kind == "re_engine_drawing_for":
             if not program_semantics.purpose:
                 raise ShaderGraphError("Drawing For needs the pass being built.")
-            return finish("true" if drawing_for(node, program_semantics.purpose) else "false", "bool", materialize=False)
+            return finish("true" if drawing_for(node, program_semantics.purpose, program_semantics.target_index,
+                                                program_semantics.name) else "false", "bool", materialize=False)
         if kind == "code":
             text = code_helpers(node)
             helpers.setdefault(("code", text), text)
@@ -379,18 +571,41 @@ def recovered_graph_expression(
             return finish(incoming("value", value_type), value_type, materialize=False)
         if kind == "re_engine_where_available":
             computed = {value.source for value in program_semantics.vertex_values}
+            through = contract.stage != "pixel"
 
-            def provides(producers, per_vertex):
+            def lacking(producers, per_vertex, value=None):
                 # A pixel shader reads what a Computed per Vertex node computes, not what the node reads.
                 producers = [producer for producer in producers if producer not in per_vertex]
-                return (engine_inputs_available(contract, [*engine_input_nodes(producer) for producer in producers])
-                        and surface_data_available(program_semantics,
-                                                   [*surface_data_keys(producer) for producer in producers])
-                        and (contract.stage != "pixel"
-                             or all(f"node:{item.node_id}" in computed for item in per_vertex)))
+                missing = [str(properties["label"]) for producer in producers
+                           for kind, properties in engine_input_nodes(producer)
+                           if not engine_inputs_available(contract, [(kind, properties)])]
+                missing += [str(producer.kind == SURFACE_DATA_KIND and producer.properties.get("label")
+                                or node_title(producer)) for producer in producers
+                            for key in surface_data_keys(producer)
+                            if not surface_data_available(program_semantics, [key])]
+                missing += _parameters_unreadable(profile, project, contract, producers)
+                if contract.stage == "pixel":
+                    missing += [node_title(item) for item in per_vertex if f"node:{item.node_id}" not in computed]
+                edit = _SURFACE_PASS.get()
+                if edit is not None and value is not None:
+                    material, pins = _edit_reads(project.graph, links, value, provides, through)
+                    missing += [_material_name(project, item) for item in material if not edit.material
+                                or not _material_reachable(profile, project, contract, item, texture_resolver,
+                                                           edit.record)]
+                    missing += [label for label in map(edit.lacking_channel, sorted(pins)) if label]
+                return missing
+
+            def provides(producers, per_vertex, value=None):
+                return not lacking(producers, per_vertex, value)
 
             value_type = str(node.properties.get("value_type", "float"))
-            chosen = where_available_input(project.graph, links, node, contract.stage != "pixel", provides)
+            chosen = where_available_input(project.graph, links, node, through, provides)
+            notes = _FALLBACKS.get()
+            if chosen == "otherwise" and notes is not None:
+                value = links.get((node.node_id, "value"))
+                missing = lacking(*upstream(project.graph, links, [value.source_node] if value else [],
+                                            through_per_vertex=through, provides=provides), value)
+                notes.append((node.node_id, tuple(dict.fromkeys(missing))))
             return finish(incoming(chosen, value_type), value_type, materialize=False)
         if kind in {"aggregate_construct", "aggregate_extract", "aggregate_replace"}:
             fields = aggregate_fields(node.properties)
@@ -426,6 +641,9 @@ def recovered_graph_expression(
             )
             if definition is None:
                 raise ShaderGraphError("Recovered material uses a deleted parameter.")
+            edit = _SURFACE_PASS.get()
+            if edit is not None and not edit.material:
+                raise ShaderGraphError(edit.unreadable(str(definition.name)))
             return finish(
                 _parameter_storage_expression(
                     profile,
@@ -478,6 +696,9 @@ def recovered_graph_expression(
                 return resource_identifier(sampler)
             if source_pin == "sampler_object":
                 return finish(material_sampler(), "sampler", materialize=False)
+            edit = _SURFACE_PASS.get()
+            if edit is not None and not edit.material:
+                raise ShaderGraphError(edit.unreadable(str(definition.name)))
             resource_name = profile.material_texture_resource(definition, contract)
             resource = contract.resource(resource_name) if resource_name else None
             if resource is not None and resource.sampleable:
@@ -608,10 +829,13 @@ def recovered_graph_expression(
             link = links.get((node.node_id, 'buffer'))
             producer = project.graph.node(link.source_node) if link is not None else None
             if operation.stride and producer is not None and producer.kind == "re_engine_renderer_resource":
-                return finish(*_engine_structured_read(operation, incoming, helpers))
+                resource = renderer_resource_expression(contract, producer.properties)[1]
+                loader = (f"REasyLoad{'RW' if resource.register_class == 'u' else ''}Structured_{resource.bind_point}"
+                          if contract.model_major < 6 else "")
+                return finish(*_engine_structured_read(operation, incoming, helpers, loader))
             if operation.dynamic_offset:
                 helpers.setdefault(('buffer_word', operation.stride), operation.helpers())
-            return finish(operation.expression(incoming), 'uint')
+            return finish(operation.expression(incoming), operation.value_type)
 
         raise ShaderGraphError(
             f"{kind.replace('_', ' ').title()} cannot feed a recovered master-material input."

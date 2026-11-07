@@ -45,7 +45,7 @@ lazy from .utils.rsz_field_utils import (
 lazy from .utils.rsz_guid_utils import create_guid_data
 lazy from .utils.rsz_instance_defaults import apply_instance_defaults
 lazy from .rsz_lazy_loading import RszLazyNodeBuilder
-lazy from file_handlers.motion.preview import create_prefab_motion_preview
+lazy from file_handlers.motion.preview import create_motion_preview
 lazy from file_handlers.strands.pfb_preview import create_pfb_strands_preview
 lazy from .scn_scene_loader import holds_scene
 lazy import ui.scene.scn_scene_workspace as scn_scene_workspace
@@ -62,7 +62,6 @@ RESOURCE_INFO_TBL_LABEL = "Resource Info Tbl"
 PARENT_ID_LABEL = "Parent ID"
 
 class RszHandler(BaseFileHandler):
-    """Handler for SCN/PFB/USR files"""
     @staticmethod
     def needs_json_path() -> bool:
         return True
@@ -198,7 +197,7 @@ class RszHandler(BaseFileHandler):
 
         if (strands := create_pfb_strands_preview(self)) is not None:
             viewer.add_preview_tab(strands, QCoreApplication.translate("RszViewer", "3D"))
-        if (motions := create_prefab_motion_preview(self)) is not None:
+        if (motions := create_motion_preview(self)) is not None:
             viewer.add_preview_tab(motions, QCoreApplication.translate("RszViewer", "Motion"))
         viewer.destroyed.connect(viewer.cleanup)
         viewer.modified_changed.connect(self.modified_changed.emit)
@@ -295,7 +294,6 @@ class RszViewer(QWidget):
         self.lazy_builder = None
 
     def add_preview_tab(self, widget: QWidget, label: str) -> None:
-        """Add a format preview while keeping this viewer as the RSZ editor."""
         if self._preview_tabs is None:
             self._layout.removeWidget(self.tree)
             self._preview_tabs = QTabWidget(self)
@@ -307,6 +305,12 @@ class RszViewer(QWidget):
             self._layout.addWidget(self._preview_tabs)
         self._preview_tabs.addTab(widget, label)
         self._preview_widgets.append(widget)
+
+    def show_spawned(self, instance: int | None, picks) -> None:
+        for widget in self._preview_widgets:
+            if hasattr(widget, "pick_spawned"):
+                self._preview_tabs.setCurrentWidget(widget)
+                widget.pick_spawned(instance, picks)
 
     def _initialize_editor_services(self):
         """Initialize helpers shared by handler-created and directly loaded viewers."""
@@ -782,7 +786,6 @@ class RszViewer(QWidget):
         return node
     
     def _create_id_adjustment_map(self, deleted_instance_ids):
-        """Create a mapping of old instance IDs to new instance IDs after deletion"""
         original_instance_count = len(self.scn.instance_infos) + len(deleted_instance_ids)
         return RszInstanceOperations.build_deletion_id_adjustments(
             original_instance_count,
@@ -931,7 +934,7 @@ class RszViewer(QWidget):
                 settings_node["expandable"] = bool(fields)
             processed.add(folder_instance_id)
             folders_folder["children"].append(folder_dict)
-        for id_, (node_dict, parent_id) in nodes.items():
+        for node_dict, parent_id in nodes.values():
             if parent_id in nodes:
                 parent_node_dict, _ = nodes[parent_id]
                 children_node = None
@@ -952,7 +955,6 @@ class RszViewer(QWidget):
         print("added data block")
 
     def _add_headless_data_block(self, parent_dict):
-        """Build a headless RSZ hierarchy from object-table roots and parsed instance links."""
         nodes = {}
         for instance_id, _inst_info in enumerate(self.scn.instance_infos):
             if instance_id == 0:
@@ -1206,7 +1208,7 @@ class RszViewer(QWidget):
         
         reference_count = 0
         
-        for instance_id, fields in self.scn.parsed_elements.items():
+        for fields in self.scn.parsed_elements.values():
             for ref_obj in iter_field_references(fields):
                 if isinstance(ref_obj, UserDataData) and ref_obj.value == rui_id:
                     reference_count += 1
@@ -1633,7 +1635,6 @@ class RszViewer(QWidget):
             ))
 
     def manage_resource(self, resource_index, new_path):
-        """Update an existing resource path"""
         self._ensure_manual_resource_management()
         
         if resource_index < 0 or resource_index >= len(self.scn.resource_infos):

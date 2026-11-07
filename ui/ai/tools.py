@@ -6,7 +6,6 @@ import math
 import os
 import re
 import shutil
-import tempfile
 from functools import partial
 from inspect import signature
 from pathlib import Path
@@ -33,6 +32,7 @@ from ui.ai.file_tools import (
     file_management_prompt_matches,
     file_tool_definitions,
 )
+lazy from ui.ai.pak_folder_migration import create_staging
 lazy from ui.ai.tool_registry import (
     AiToolDefinition,
     AssistantToolError,
@@ -281,8 +281,6 @@ def _validate_capabilities(capabilities: Iterable[str]) -> frozenset[str]:
 
 
 def assistant_system_prompt(capabilities: Iterable[str] = ()) -> str:
-    """Build the prompt from the small base plus enabled format guidance."""
-
     enabled = _validate_capabilities(capabilities)
     parts = [
         AI_ASSISTANT_BASE_PROMPT.rstrip(),
@@ -640,8 +638,6 @@ class ReasyAssistantTools(
     RszAssistantToolMixin,
     MsgAssistantToolMixin,
 ):
-    """Expose constrained REasy and format-editor operations to chat model."""
-
     _tool_definitions_cache: tuple[AiToolDefinition, ...] | None = None
     _tool_registry_cache: dict[str, AiToolDefinition] | None = None
 
@@ -830,8 +826,6 @@ class ReasyAssistantTools(
         return inferred
 
     def begin_request(self, prompt: str = "") -> frozenset[str]:
-        """Reset format tools to those relevant to a new user request."""
-
         self._action_policy.begin_request()
         prompt = str(prompt or "")
         self._begin_file_request(prompt)
@@ -879,8 +873,6 @@ class ReasyAssistantTools(
         return self.enabled_capabilities
 
     def refresh_capabilities(self) -> frozenset[str]:
-        """Add tools for a format opened during the current request."""
-
         inferred = self._enabled_capabilities.union(
             self._inferred_capabilities()
         ).difference(self._blocked_capabilities)
@@ -1565,7 +1557,8 @@ class ReasyAssistantTools(
                             },
                             "bake_texture_array_size": {"type": "integer", "minimum": 0},
                             "unknown_64": {
-                                "description": "Integer or 0x-prefixed integer text.",
+                                "description": "MDF v51's second material flag word (material_flags2), or RE7's v6 "
+                                               "header word: integer or 0x-prefixed integer text.",
                                 "anyOf": [{"type": "string"}, {"type": "integer"}],
                             },
                         },
@@ -1933,8 +1926,6 @@ class ReasyAssistantTools(
         return self._json_tool_result(result=result)
 
     def begin_incremental_json(self, name: str, arguments_json: str):
-        """Return a cooperative execution for long-running GUI-backed tools."""
-
         definition = self.tool_definition(name)
         handler_name = (
             definition.incremental_handler_name
@@ -2346,8 +2337,6 @@ class ReasyAssistantTools(
 
     @staticmethod
     def _file_result_path(payload: dict[str, Any]) -> str | None:
-        """Return the exact usable identity for a disk or PAK-backed file."""
-
         return (
             payload.get("source_path")
             or payload.get("path")
@@ -3254,7 +3243,7 @@ class ReasyAssistantTools(
         item = mdf.materials[index]
         header = item.header
         unknown_64 = (
-            int(header.ukn)
+            int(header.material_flags2)
             if mdf.file_version >= 51
             else int(header.ukn_re7)
             if mdf.file_version == 6
@@ -3540,7 +3529,7 @@ class ReasyAssistantTools(
         mdf = viewer.handler.mdf
         version = viewer._current_file_version()
         materials: dict[str, dict[str, Any]] = {}
-        for index, item in enumerate(mdf.materials):
+        for index in range(len(mdf.materials)):
             details = self._material_details(viewer, index)
             name = str(details["name"] or "").strip()
             if not name:
@@ -3970,8 +3959,6 @@ class ReasyAssistantTools(
         target: dict[str, Any],
         changes: list[dict[str, Any]],
     ) -> list[dict[str, Any]]:
-        """Collapse normalized row edits into UI-applicable MDF operations."""
-
         desired = copy.deepcopy(target)
         for change in changes:
             self._set_migration_snapshot_value(
@@ -4928,25 +4915,6 @@ class ReasyAssistantTools(
         return output
 
     @staticmethod
-    def _create_mod_staging_folder(output: Path) -> Path:
-        try:
-            output.parent.mkdir(parents=True, exist_ok=True)
-            return Path(
-                tempfile.mkdtemp(
-                    prefix=f".{output.name}.reasy-",
-                    dir=output.parent,
-                )
-            )
-        except OSError as exc:
-            raise AssistantToolError(
-                _tr(
-                    "Could not create output_folder {path}: {error}",
-                    path=output,
-                    error=exc,
-                )
-            ) from exc
-
-    @staticmethod
     def _publish_mod_output(staging: Path, output: Path) -> None:
         removed_empty_output = False
         try:
@@ -5895,7 +5863,7 @@ class ReasyAssistantTools(
         output = self._resolve_mod_output_folder(
             mod_root, originals_root, output_folder
         )
-        output_root = self._create_mod_staging_folder(output)
+        output_root = create_staging(output)
         output_state.update(output=output, staging=output_root)
         exact: dict[str, list[Path]] = {}
         logical: dict[str, list[Path]] = {}

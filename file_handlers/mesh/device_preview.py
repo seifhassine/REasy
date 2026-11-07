@@ -110,6 +110,8 @@ class DevicePreview(QObject):
         self._asked_at = 0.0
         self.step_rate: float = self._rate
         self._stepped = 0.0
+        self._asked = False
+        self._answered = False
         self._drawing = False
         self._offering = False
         self._ticker = QTimer(self)
@@ -131,6 +133,9 @@ class DevicePreview(QObject):
 
     def _stepping(self) -> bool:
         return False
+
+    def _stepped_by(self, _seconds: float) -> None:
+        pass
 
     def _gather_strands(self, handler, mesh, game: str, profile, shown: tuple[str, str, str], lod: int,
                         level: ChainLevel | None, resolve: Callable[[str], tuple[str, bytes] | None],
@@ -341,36 +346,43 @@ class DevicePreview(QObject):
             self._ticker.stop()
             self._due = None
             self._draw()
-        elif self._due is None:
+        else:
+            self._asked = True
             self._tick()
 
-    def _tick(self, answered: bool = False) -> None:
-        """A late step is taken at the rate actually reached, as the game measures its rate."""
+    def _tick(self) -> None:
         if not self._stepping():
             self._due = None
             return
-        if self._drawing:
+        if self._drawing or not self._asked:
             return
         now = self._clock.nsecsElapsed() / 1e6
         period = 1000.0 / self._rate
         if self._due is None:
             rate, due = self._rate, now
         elif now < self._due:
+            self._answered = False
             self._ticker.start(max(1, math.ceil(self._due - now)))
             return
-        elif answered or now >= self._due + period:
+        elif self._answered or now >= self._due + period:
             rate, due = min(self._rate, 1000.0 / max(now - self._asked_at, 1e-3)), now
         else:
             rate, due = self._rate, self._due
+        self._answered = False
         self._due, self._asked_at, self.step_rate = due + period, now, rate
         self._stepped += 1 / rate
-        self._drawing = self._draw()
-        if not self._drawing:
+        self._drawing = self._draw(1 / rate)
+        if self._drawing:
+            self._asked = False
+        else:
             self._ticker.start(max(1, math.ceil(self._due - now)))
 
-    def _draw(self) -> bool:
+    def _draw(self, step: float | None = None) -> bool:
+        """``step``: the seconds of the step this frame begins."""
         if not self._drawable() or self._window is None:
             return False
+        if step is not None:
+            self._stepped_by(step)
         if self._thread is None:
             self._drawer = self._make_drawer()
             self._drawer.place(self._placed())
@@ -388,7 +400,7 @@ class DevicePreview(QObject):
 
     def _stop(self) -> None:
         self._ticker.stop()
-        self._due, self._drawing = None, False
+        self._due, self._drawing, self._asked, self._answered = None, False, False, False
         if self._thread is not None:
             self._drawer.place(None)
             self._thread.stop()
@@ -417,18 +429,19 @@ class DevicePreview(QObject):
             self.scene_changed()
             return
         stepped, self._drawing = self._drawing, False
+        self._answered = self._answered or stepped
         if isinstance(result, Exception):
             self._frame, self._error = None, str(result)
             self.frame_changed.emit(None)
         else:
             self._frame, self._error = result, ""
             self.frame_changed.emit(result if result.drawn else None)
-            # Anti-aliasing needs the next frames at once; steps request them while stepping.
+            # Anti-aliasing needs the next frames at once; while stepping, the views told next draw them.
             if getattr(result, "settling", False) and self._active and not self._stepping():
                 self._draw()
         self.status_changed.emit()
         if stepped:
-            self._tick(answered=True)
+            self._tick()
 
 
 __all__ = ["DevicePreview", "gather_master"]

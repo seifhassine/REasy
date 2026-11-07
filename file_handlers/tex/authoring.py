@@ -5,7 +5,7 @@ from typing import Optional, Sequence
 
 lazy from .dds import CUBEMAP_FACES
 lazy from .dxgi import dxgi_name, get_bits_per_pixel, is_block_compressed, is_known_format
-lazy from .flags import EV_MASK, FIELD_18_23_MASK, TYPE_MASK, TexFlags, type_choices
+lazy from .flags import EV_MASK, RANGE_COMPRESSION_EXP_MASK, TYPE_MASK, TexFlags, type_choices
 from .profiles import (
     LAYOUT_LEGACY,
     LAYOUT_STORED,
@@ -84,7 +84,6 @@ class TextureSource:
 
     def payload(self, level: int, image: int = 0) -> bytes:
         return self.subresources[image * self.mip_count + level]
-
 
 
 @dataclass(frozen=True, slots=True)
@@ -293,8 +292,10 @@ def _dropped_members(profile: TexCookProfile, flags: TexFlags) -> list[str]:
         )
     if flags.refiltered_normal and not profile.refiltered_normal:
         notes.append(f"{profile.display_name} does not record a re-filtered normal tail")
-    if (flags.field_18_23 or flags.opaque_flag) and not profile.unnamed_fields:
-        notes.append(f"{profile.display_name} does not store this cook's two unnamed flag members")
+    if flags.range_compression_exp and not profile.range_compression_exp:
+        notes.append(f"{profile.display_name} does not record a RangeCompressionExp")
+    if flags.high_priority_load_streaming and not profile.high_priority_load_streaming:
+        notes.append(f"{profile.display_name} does not record HighPriorityLoadStreaming")
     return notes
 
 
@@ -306,8 +307,8 @@ def _flags_word(
     ev: int,
     streaming_mips: int,
     refiltered_normal: bool,
-    field_18_23: int,
-    opaque_flag: bool,
+    range_compression_exp: int,
+    high_priority_load_streaming: bool,
 ) -> int:
     return TexFlags.decode(0, profile.version).encode(
         profile,
@@ -316,8 +317,9 @@ def _flags_word(
         texture_type=index,
         streaming_mips=streaming_mips if profile.streaming_mips else 0,
         refiltered_normal=1 if refiltered_normal and profile.refiltered_normal else 0,
-        field_18_23=field_18_23 & FIELD_18_23_MASK if profile.unnamed_fields else 0,
-        opaque_flag=1 if opaque_flag and profile.unnamed_fields else 0,
+        range_compression_exp=(range_compression_exp & RANGE_COMPRESSION_EXP_MASK
+                               if profile.range_compression_exp else 0),
+        high_priority_load_streaming=1 if high_priority_load_streaming and profile.high_priority_load_streaming else 0,
     )
 
 
@@ -435,8 +437,8 @@ def import_dds(
         ev=ev,
         streaming_mips=0,
         refiltered_normal=False,
-        field_18_23=0,
-        opaque_flag=False,
+        range_compression_exp=0,
+        high_priority_load_streaming=False,
     )
 
 
@@ -477,6 +479,6 @@ def convert(
         ev=flags.ev,
         streaming_mips=flags.streaming_mips,
         refiltered_normal=flags.refiltered_normal,
-        field_18_23=flags.field_18_23,
-        opaque_flag=flags.opaque_flag,
+        range_compression_exp=flags.range_compression_exp,
+        high_priority_load_streaming=flags.high_priority_load_streaming,
     )

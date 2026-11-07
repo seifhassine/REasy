@@ -1,5 +1,3 @@
-"""REasy's main application window and UI orchestration."""
-
 import os
 import sys
 import weakref
@@ -1217,8 +1215,6 @@ class REasyEditorApp(QMainWindow):
         )
 
     def open_rsz_instance(self, filepath, instance_id, type_registry):
-        """Open or activate a file and reveal one RSZ instance in its editor."""
-
         key = os.path.normcase(os.path.abspath(filepath))
         tab = next((tab for tab in self.tabs.values() if getattr(tab, "filename", None)
                     and os.path.normcase(os.path.abspath(tab.filename)) == key), None)
@@ -1274,7 +1270,6 @@ class REasyEditorApp(QMainWindow):
                 self._shared_find_dialog.set_file_tab(active)
 
     def _check_and_close_shared_find_dialog(self):
-        """Close the shared find dialog if no tabs are left in the main window"""
         has_main_tabs = any(notebook.count() for notebook in self._notebooks())
 
         if not has_main_tabs and hasattr(self, '_shared_find_dialog') and self._shared_find_dialog:
@@ -1418,7 +1413,17 @@ class REasyEditorApp(QMainWindow):
             self,
             self.tr("Open File"),
             "",
-            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.cfil* *.rcol* *.fol* *.uvs* *.motbank* *.mcambank* *.clip* *.tml* *.ucurve* *.mot.* *.motlist* *.mottree* *.gui* *.gcf* *.ift* *.oft* *.tex* *.dds *.mesh* *.stmesh* *.sdftex* *.mdf2* *.mmtr* *.sdf* *.vsdf* *.csdf* *.bnk* *.pck* *.sbnk* *.spck* *.wel* *.wcc* *.wcp* *.wcst* *.wgs* *.wss* *.wcsw* *.wcss* *.wcsa* *.wcsf* *.mov*);;SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;CFIL Files (*.cfil*);;RCOL Files (*.rcol*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;Motion Files (*.mot.* *.motlist* *.mottree*);;Texture Files (*.tex*);;DDS Files (*.dds);;Mesh Files (*.mesh* *.stmesh*);;Material Definition Files (*.mdf2*);;Master Material Files (*.mmtr*);;Sound Files (*.bnk* *.pck* *.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;All Files (*.*)"
+            "RE Files (*.uvar* *.scn* *.user* *.pfb* *.msg* *.cfil* *.rcol* *.fol* *.uvs* *.motbank* *.mcambank* "
+            "*.clip* *.tml* *.ucurve* *.mot.* *.motlist* *.mottree* *.motpack* *.jcns* *.gui* *.gcf* *.ift* *.oft* "
+            "*.tex* *.dds *.mesh* *.stmesh* *.sdftex* *.mdf2* *.mmtr* *.sdf* *.vsdf* *.csdf* *.bnk* *.pck* *.sbnk* "
+            "*.spck* *.wel* *.wcc* *.wcp* *.wcst* *.wgs* *.wss* *.wcsw* *.wcss* *.wcsa* *.wcsf* *.mov*);;"
+            "SCN Files (*.scn*);;User Files (*.user*);;UVAR Files (*.uvar*);;PFB Files (*.pfb*);;MSG Files (*.msg*);;"
+            "CFIL Files (*.cfil*);;RCOL Files (*.rcol*);;MOTBANK Files (*.motbank*);;MCAMBANK Files (*.mcambank*);;"
+            "Motion Files (*.mot.* *.motlist* *.mottree* *.motpack*);;Joint Constraint Files (*.jcns*);;"
+            "Texture Files (*.tex*);;DDS Files (*.dds);;Mesh Files (*.mesh* *.stmesh*);;"
+            "Material Definition Files (*.mdf2*);;Master Material Files (*.mmtr*);;"
+            "Sound Files (*.bnk* *.pck* *.sbnk* *.spck*);;Wwise Event List (*.wel*);;MOV Files (*.mov*);;"
+            "All Files (*.*)"
         )
         if not fn:
             return
@@ -1677,7 +1682,6 @@ class REasyEditorApp(QMainWindow):
         dialog.exec()
 
     def on_restore_backup(self):
-        """Show dialog with available backups for the current file"""
         active = self.get_active_tab()
         if not active:
             QMessageBox.critical(self, self.tr("Error"), self.tr("No active tab to restore the backup of."))

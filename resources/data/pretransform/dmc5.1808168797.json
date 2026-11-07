@@ -1,5 +1,5 @@
 {
- "format": 2,
+ "format": 6,
  "game": "DMC5",
  "resource_version": 1808168797,
  "target": 0,
@@ -129,31 +129,14 @@
  "static_like_skinning": false,
  "still_without_blend": null,
  "copied_skin_whole": null,
- "source": {
-  "captures": [
-   {
-    "capture": "newcap.rdc",
-    "draws": [
-     1137,
-     1426,
-     6902
-    ]
-   },
-   {
-    "capture": "latest1.rdc",
-    "draws": [
-     4236,
-     4370,
-     24985
-    ]
-   },
-   {
-    "capture": "latest2.rdc",
-    "draws": [
-     3143
-    ]
-   }
-  ],
-  "executable": "DevilMayCry5_dump.exe: the same system path (scratch stage111 skinrange); a target's deltas read from the sum of the earlier targets' vertex counts (scratch stage111 bsoffsets)"
- }
+ "blend_by_normals": false,
+ "blend_normals": {},
+ "blend_still_normals": null,
+ "blend_first_lod_only": false,
+ "blend_writing_normals": {},
+ "blend_vertex_normal_read": false,
+ "unblended_lods_deformed": false,
+ "shading": null,
+ "shading_by_setting": [],
+ "decal_no_pre_transform": null
 }

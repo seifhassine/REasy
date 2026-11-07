@@ -1,0 +1,22 @@
+{
+ "format": 1,
+ "game": "RE4",
+ "resource_version": 221007879,
+ "program": "EmissiveOnly",
+ "routes": [
+  "DeferredStatic"
+ ],
+ "emitter": {
+  "buffer": "PrimitiveMeshEmitterCB",
+  "values": {
+   "cbPrimMeshEmitterFlags": 0,
+   "cbPrimMeshEmitterEvPow2": 1.0
+  }
+ },
+ "dynamic_textures": [
+  "DynamicIBL",
+  "DynamicCubeMap",
+  "DynamicLocalCubeMap",
+  "DynamicTransparentHDR"
+ ]
+}

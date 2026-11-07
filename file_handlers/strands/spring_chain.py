@@ -16,7 +16,7 @@ lazy from file_handlers.mmtr.pretransform_passes import SystemPrograms
 lazy from file_handlers.mmtr.resident import RENDER_TARGET, UNORDERED_ACCESS
 
 from .chain_catalog import BEFORE, NOW, StrandCatalog
-from .chain_frame import SetPlace, SetSource, Stepped
+from .chain_frame import SetPlace, SetSource, Stepped, engine_blocks
 from .chain_passes import StrandPasses
 from .direct_constants import DirectConstants, DirectFrame, drawn_segments, injected_segments
 lazy from .direct_render import IBL_OPTIMIZED, SCATTERING, DirectState, direct_steps, ibl_count, ibl_tables
@@ -29,7 +29,6 @@ from .spring_set import SpringSet
 
 # Byte sizes, except _VIEW (a view number); the projection light record is 8 x 120 bytes, none lit.
 _VERTEX_BYTES, _PROJECTION_LIGHTS, _VIEW, _RING = 16, 960, 0, 96
-_ENVIRONMENT, _FRAME_COUNT = "EnvironmentInfo", "frameCount"
 _HAIR = "material_shading"
 # The fine raster writes these as UAVs.
 _WRITTEN = ("scene.lit", "scene.velocity")
@@ -120,15 +119,6 @@ class SpringChain:
                                     for slot, data in spring_buffers(held.source.strands, level).items()}
         return held.sections[level]
 
-    def _engine(self, layouts) -> dict[str, bytes]:
-        out = {name: self.lit.engine_block(name, layout) for name, layout in layouts.items() if self.lit.gives(name)}
-        if _ENVIRONMENT in layouts:
-            block = bytearray(out.get(_ENVIRONMENT, bytes(layouts[_ENVIRONMENT].byte_size)))
-            count = next(item for item in layouts[_ENVIRONMENT].variables if item.name == _FRAME_COUNT)
-            struct.pack_into("<I", block, count.byte_offset, self._count & 0xffffffff)
-            out[_ENVIRONMENT] = block.take_bytes()
-        return out
-
     def _run(self) -> list[int]:
         odd, size = bool(self._count & 1), self.lit.scene.size
         self._scene_view(size)
@@ -175,8 +165,8 @@ class SpringChain:
             held.drawn = drawn
         if run.state.start:
             out += self.physics.clear(owner, GRIDS)
-        out += self.physics.frame(owner, spring_steps(run.shape, run.state), run.blocks | self._engine(self.layouts),
-                                  odd)
+        out += self.physics.frame(owner, spring_steps(run.shape, run.state),
+                                  run.blocks | engine_blocks(self.lit, self.layouts, self._count), odd)
         out.append(self.device.copy(held.readback[odd], self.physics.slot(owner, "bounds", odd)))
         self._update(owner, held, place, run, level)
         return out
@@ -199,7 +189,8 @@ class SpringChain:
                                                   np.asarray(place.transform, F).reshape(4, 4))
         frame = DirectFrame(factor, segments, drawn, box, place.transform, place.own_joint, True,
                             (inverse[:3, 3], inverse[:3, 2]), tiles_of(size)[0], 0)
-        blocks = held.constants.frame(source.render, source.strands, frame) | self._engine(held.layouts) | held.user
+        blocks = (held.constants.frame(source.render, source.strands, frame)
+                  | engine_blocks(self.lit, held.layouts, self._count) | held.user)
         self.render.write(owner, blocks)
         scripted, scattering = render.scripted, int(values["scattering"])
         state = DirectState(

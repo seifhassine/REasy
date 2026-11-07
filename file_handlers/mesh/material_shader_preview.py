@@ -10,7 +10,7 @@ lazy from file_handlers.mmtr.shown_image import target_lanes
 lazy from ui.editor_widgets import styled_label
 
 
-def preview_material(surface, parameters: Callable[[], Mapping[str, float]] | None = None,
+def preview_material(surface, parameters: Callable[[], Mapping[str, float | tuple[float, ...]]] | None = None,
                      made: dict | None = None) -> PreviewMaterial:
     """``made``: a gather's cache, which keeps what is made of each surface (and the surface) for its other parts."""
     key = "preview material", id(surface)
@@ -28,15 +28,16 @@ def preview_material(surface, parameters: Callable[[], Mapping[str, float]] | No
     layout = surface.instance_context.layout
     animated = None if parameters is None else _animated(surface, offsets, parameters)
     return PreviewMaterial(layout, values, textures, surface.material_flags,
-                           0 if layout.shader_lod_redirects else None, buffers=buffers, animated=animated)
+                           0 if layout.shader_lod_redirects else None, buffers=buffers, animated=animated,
+                           shading_type=surface.shading_type, flag_version=surface.flag_version)
 
 
-def _animated(surface, offsets: Mapping[str, int], parameters: Callable[[], Mapping[str, float]]
+def _animated(surface, offsets: Mapping[str, int], parameters: Callable[[], Mapping[str, float | tuple[float, ...]]]
               ) -> Callable[[], tuple[tuple[int, tuple[float, ...]], ...]]:
     authored = {parameter.name: tuple(float(value) for value in parameter.values) for parameter in surface.parameters}
 
     def values() -> tuple[tuple[int, tuple[float, ...]], ...]:
-        return tuple((offsets[name], (float(value), *authored.get(name, ())[1:]))
+        return tuple((offsets[name], value if isinstance(value, tuple) else (float(value), *authored.get(name, ())[1:]))
                      for name, value in parameters().items() if name in offsets)
     return values
 

@@ -52,7 +52,7 @@ The interface is available in English, Chinese, Russian and Spanish.
 <summary>Game limits</summary>
 
 - **MESH**: view only for RE7, O2, MH Stories 3, Kunitsu-Gami and one older RE3/Resistance version; DRDR meshes don't open.
-- **MMTR, SDF**: not RE7 non-RT. Older DD2 and the Onimusha demo: pixel shaders only.
+- **MMTR, SDF**: not RE7 non-RT. Older DD2 and the Onimusha demo: pixel shaders only. Graph edits don't rebuild what passes read through `UserMaterialInstances` in MH Rise, MH Stories 3, O2, RE Resistance, older DD2 and the Onimusha demo. Billboard, polygon and ribbon effects copy only as many parameters as their .efx file records (REasy doesn't edit .efx files), so a parameter you add can't reach their passes: give them another value with Where Available.
 - **RCOL**: not RE7 non-RT (rcol.2) or MH Wilds rcol.38.
 - **Hair strands**: edit in RE9 and Pragmata, view in RE4.
 - **GUI**: DMC5 only.

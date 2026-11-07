@@ -52,6 +52,7 @@ class MmtrGameProfile:
     user_material_buffer_names: tuple[str, ...] = ("UserMaterial",)
     reflected_material_variable_prefixes: tuple[str, ...] = ()
     current_resource_version: int | None = None
+    mdf_resource_version: int | None = None
 
     @property
     def build_resource_version(self) -> int | None:

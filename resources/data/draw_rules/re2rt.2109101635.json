@@ -1,0 +1,63 @@
+{
+ "format": 3,
+ "game": "RE2RT",
+ "resource_version": 2109101635,
+ "material_flags": {
+  "masked": {
+   "ForcedAlphaTestEnable": "AlphaMaskUsed",
+   "ForcedAlphaTestEnableShadow": "AlphaMaskUsed"
+  },
+  "derived": {
+   "AlphaTestEnable": [
+    "BaseAlphaTestEnable",
+    "ForcedAlphaTestEnable"
+   ],
+   "TwoSideEnable": [
+    "BaseTwoSideEnable",
+    "ForcedTwoSideEnable"
+   ]
+  }
+ },
+ "program_markers": [
+  [
+   "A",
+   "AlphaTestEnable"
+  ],
+  [
+   "TS",
+   "TwoSideEnable"
+  ]
+ ],
+ "decal_receive": {
+  "via.render.Mesh": {
+   "field": "DecalReciveMode",
+   "enum": "via.render.DecalReciveMode",
+   "Enable": "always",
+   "Disable": "never",
+   "otherwise": "unskinned"
+  },
+  "via.render.CompositeMesh": {
+   "otherwise": "always"
+  },
+  "via.landscape.Foliage": {
+   "field": "DecalReciveMode",
+   "enum": "via.landscape.DecalReciveMode",
+   "Enable": "always",
+   "otherwise": "never"
+  },
+  "via.speedtree.SpeedTreeV8": {
+   "otherwise": "never"
+  }
+ },
+ "stencil": {
+  "via.render.Mesh": [
+   {
+    "material": "SSSProfileUsed",
+    "bits": 2
+   }
+  ]
+ },
+ "component": {
+  "via.render.Mesh": {}
+ }
+}

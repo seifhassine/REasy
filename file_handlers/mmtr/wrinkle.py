@@ -2,18 +2,23 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from functools import partial
 
 lazy import numpy as np
 lazy from PySide6.QtCore import QT_TRANSLATE_NOOP
 
 from file_handlers.build_catalog import catalog_reader
+lazy from file_handlers.rtex import TEXTURE_2D, RtexFormatError, read_rtex
 
+lazy from .engine_buffers import PLACEMENT_BUFFERS, Placement, engine_buffer
 lazy from .material_preview import MaterialPreviewError
+lazy from .meshlets import root_constant
 lazy from .pretransform import (
     THREADS as _SKINNING_THREADS, _POSITION as _POSITION_STREAM, _UV0, _UV1, _UV2, ChainLevel, Destination,
-    SystemProgram, _program_from_dict, _program_to_dict, _skinning, _words, system_variant, chain_level,
+    SystemProgram, _program_from_dict, _program_to_dict, _skinning, _words, system_variant,
 )
+lazy from .wrinkle_passes import WrinklePasses
 
 CATALOG_FORMAT = 1
 CATALOG_DIRECTORY = "resources/data/wrinkle"
@@ -60,7 +65,6 @@ class WrinkleCatalog:
     # Duplicates per vertex the executable allows.
     duplicate_slots: int
     component: WrinkleComponent
-    source: Mapping = field(default_factory=dict)
 
     def files(self) -> tuple[str, ...]:
         return tuple(dict.fromkeys(program.file for program in (*self.programs.values(), *self.skinning.values())))
@@ -75,8 +79,7 @@ def catalog_to_dict(catalog: WrinkleCatalog) -> dict:
             "programs": {role: _program_to_dict(catalog.programs[role]) for role in (*SETUP_ROLES, *FRAME_ROLES)},
             "skinning": {key: _program_to_dict(program) for key, program in sorted(catalog.skinning.items())},
             "duplicate_slots": catalog.duplicate_slots,
-            "component": {name: getattr(catalog.component, name) for name in _COMPONENT_FIELDS},
-            "source": dict(catalog.source)}
+            "component": {name: getattr(catalog.component, name) for name in _COMPONENT_FIELDS}}
 
 
 def catalog_from_dict(data: Mapping) -> WrinkleCatalog:
@@ -89,8 +92,7 @@ def catalog_from_dict(data: Mapping) -> WrinkleCatalog:
     return WrinkleCatalog(
         str(data["game"]), int(data["resource_version"]), int(data["target"]), programs,
         {str(key): _program_from_dict(program) for key, program in data["skinning"].items()},
-        int(data["duplicate_slots"]), WrinkleComponent(*(str(component[name]) for name in _COMPONENT_FIELDS)),
-        dict(data.get("source", {})))
+        int(data["duplicate_slots"]), WrinkleComponent(*(str(component[name]) for name in _COMPONENT_FIELDS)))
 
 
 wrinkle_catalog_for = catalog_reader(CATALOG_DIRECTORY, catalog_from_dict, WrinkleCatalogError, "wrinkle")
@@ -138,16 +140,21 @@ def mesh_joints(mesh) -> tuple[np.ndarray, np.ndarray]:
     return remap, binds[remap]
 
 
-def wrinkle_proxy(mesh, chains) -> WrinkleProxy:
-    level = chain_level(mesh, 0, chains, deformed_only=False)
-    submeshes = [] if level is None else [*group.submeshes for group in mesh.meshes[0].lods[0].mesh_groups]
-    if len(submeshes) != 1 or int(submeshes[0].faces_index_offset) or int(submeshes[0].verts_index_offset):
+def wrinkle_proxy(mesh) -> WrinkleProxy:
+    lods = mesh.meshes[0].lods
+    submeshes = [*group.submeshes for group in lods[0].mesh_groups]
+    if (len(lods) != 1 or len(submeshes) != 1 or int(submeshes[0].faces_index_offset)
+            or int(submeshes[0].verts_index_offset)):
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-            "MaterialPreview", "No capture shows the wrinkle passes on a proxy mesh other than one submesh."))
+            "MaterialPreview",
+            "No capture shows the wrinkle passes on a proxy mesh other than one LOD of one submesh."))
     submesh, = submeshes
     payload = mesh.mesh_buffer.buffer_payloads[submesh.buffer_index]
+    count = int(payload.vertex_count)
+    level = ChainLevel(bytes(payload.vertex_bytes), {int(item.type): (int(item.offset), int(item.size))
+                                                     for item in payload.buffer_headers}, count, 0, 0, (), None, None)
     joints, binds = mesh_joints(mesh)
-    return WrinkleProxy(level, level.submeshes[0].count, bytes(payload.face_bytes), payload.integer_faces is not None,
+    return WrinkleProxy(level, count, bytes(payload.face_bytes), payload.integer_faces is not None,
                         int(submesh.indices_count), joints, binds)
 
 
@@ -196,27 +203,34 @@ def object_scale(world: np.ndarray) -> np.ndarray:
 
 def component_settings(fields: Mapping[str, object], catalog: WrinkleCatalog) -> tuple[str, bool]:
     names = catalog.component
-    if int(fields.get(names.calc_mode, AVERAGE)) != AVERAGE or bool(fields.get(names.uv_gap, False)):
+    if missing := [name for name in (names.render_target, names.calc_mode, names.uv_gap, names.spread)
+                   if name not in fields]:
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "This game build's type dump does not name the wrinkle component's fields {fields}."),
+            {"fields": ", ".join(missing)})
+    if int(fields[names.calc_mode]) != AVERAGE or bool(fields[names.uv_gap]):
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "No capture shows the wrinkle passes of a component taking the maximum or closing UV "
                                "gaps."))
-    target = str(fields.get(names.render_target) or "")
+    target = str(fields[names.render_target] or "")
     if not target:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
             "MaterialPreview", "The wrinkle component names no render texture."))
-    return target, bool(fields.get(names.spread, False))
-
-
-_RTEX_MAGIC, _RTEX_VERSION = b"RTEX", 4
+    return target, bool(fields[names.spread])
 
 
 def render_target_form(data: bytes) -> tuple[int, tuple[int, int]]:
-    """The format is a DXGI_FORMAT."""
-    if len(data) < 24 or data[:4] != _RTEX_MAGIC or int.from_bytes(data[4:8], "little") != _RTEX_VERSION:
+    try:
+        texture = read_rtex(data)
+    except RtexFormatError as exc:
         raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-            "MaterialPreview", "The render texture file is not one REasy reads."))
-    form, width, height = np.frombuffer(data, "<u4", 3, 12).tolist()
-    return form, (width, height)
+            "MaterialPreview", "The render texture file is not one REasy reads.")) from exc
+    if texture.fields["Dimension"] != TEXTURE_2D or any(map(texture.set, ("TextureCube", "MipChain",
+                                                                          "ResolutionType"))):
+        raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+            "MaterialPreview", "The render texture is not one 2D image of a size of its own, which the wrinkle passes "
+                               "draw into."))
+    return texture.form, texture.size
 
 
 @dataclass(frozen=True, slots=True)
@@ -327,11 +341,40 @@ def frame_steps(proxy: WrinkleProxy, catalog: WrinkleCatalog, scale: Sequence[fl
     return steps
 
 
+class MeshSceneWrinkles:
+    def _wrinkle(self, owner: int, wrinkle: WrinkleObject) -> None:
+        if self._wrinkles is None:
+            catalog = wrinkle_catalog_for(self.profile)
+            if catalog is None:
+                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                    "MaterialPreview", "REasy has no catalog of the wrinkle passes of this game build."))
+            self._wrinkles = WrinklePasses(self.device, self._system, catalog)
+        data = self.load_file(wrinkle.render_target)
+        if data is None:
+            raise MaterialPreviewError(QT_TRANSLATE_NOOP(
+                "MaterialPreview", "The render texture file {path} was not found."), {"path": wrinkle.render_target})
+        form, size = render_target_form(data)
+        texture = self.render_texture(wrinkle.render_target, form, size)
+        # RE3's skinning reads its world from InstanceWorldInfo at RootConstant's index: the object's own, 0.
+        self._wrinkles.add(owner, wrinkle, (form, texture, size),
+                           lambda: object_scale(self.objects[owner].placement.world),
+                           {**{name: partial(self._proxy_bytes, owner) for name in PLACEMENT_BUFFERS},
+                            "RootConstant": lambda contract, resource: root_constant(
+                                contract.buffer(resource.name), 0)})
+        self._stale.add(owner)
+
+    def _proxy_bytes(self, owner: int, contract, resource) -> bytes | None:
+        item = self.objects[owner]
+        placement = item.placement
+        posed = Placement(placement.world, proxy_bones(item.wrinkle, placement.world, placement.bones))
+        return engine_buffer(contract, resource, self.camera, posed, self.frame, self.captured, clock=self.clock)
+
+
 __all__ = [
     "AREAS", "AVERAGE", "CATALOG_DIRECTORY", "CATALOG_FORMAT", "DUPLICATES", "FRAME_ROLES", "INDICES", "KEYS", "ORDER",
     "RANKS", "REFORMED", "REST", "SETUP_ROLES", "SKINNED", "SORTED", "SQUEEZED", "STRETCHED", "THREADS", "VERTICES",
-    "WrinkleCatalog", "WrinkleCatalogError", "WrinkleComponent", "WrinkleObject", "WrinkleProxy", "WrinkleStep",
-    "buffer_sizes", "catalog_from_dict", "catalog_to_dict", "component_settings", "frame_steps", "mesh_joints",
-    "object_scale", "proxy_bones", "render_target_form", "setup_steps", "sort_passes", "wrinkle_catalog_for",
-    "wrinkle_object", "wrinkle_proxy",
+    "MeshSceneWrinkles", "WrinkleCatalog", "WrinkleCatalogError", "WrinkleComponent", "WrinkleObject", "WrinkleProxy",
+    "WrinkleStep", "buffer_sizes", "catalog_from_dict", "catalog_to_dict", "component_settings", "frame_steps",
+    "mesh_joints", "object_scale", "proxy_bones", "render_target_form", "setup_steps", "sort_passes",
+    "wrinkle_catalog_for", "wrinkle_object", "wrinkle_proxy",
 ]

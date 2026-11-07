@@ -11,7 +11,7 @@ lazy from file_handlers.sdf.shader_graph import ShaderGraphError
 lazy from .native_loop_flow import dominator_sets, predecessor_map, reachable_blocks
 lazy from .profiles.re_engine_dxil_signatures import DxilEntryMetadata
 lazy from .surface_flow import (
-    TEXEL_TYPES, FlowStore, FlowValue, NativeFlow, buffer_component_type, buffer_element, constant_field,
+    TEXEL_TYPES, FlowStore, FlowValue, NativeFlow, buffer_element, buffer_word_types, constant_field,
     declared_component_types, structured_element,
 )
 lazy from .profiles.constant_words import word_parts
@@ -21,6 +21,9 @@ lazy from .profiles.re_engine_bindless_material import texture_handles
 # The first stored value's argument of rawBufferStore, bufferStore and textureStore; textureStore's are components.
 _RESOURCE_STORES = {140: 4, 69: 4, 67: 5}
 _ADDITION = re.compile(r"(?:add|or)(?: nuw| nsw| disjoint)* i32 ([^,]+), (.+)")
+_TOKEN = r"%[-$._A-Za-z0-9]+"
+_LANE_FIRST = re.compile(rf"^\s*({_TOKEN}) = call i32 @dx\.op\.waveReadLaneFirst\.i32\(i32 118, i32 ({_TOKEN})\)")
+_EQUAL = re.compile(rf"= icmp eq i32 ({_TOKEN}), ({_TOKEN})\s*$")
 
 
 def _dominators(blocks: list[str], successors: dict[str, set[str]]) -> dict[str, set[str]]:
@@ -48,22 +51,37 @@ def _control_flow(statements):
     return fastdxiltext.control_flow(statements)
 
 
-def material_records(assembly: str, contract) -> tuple[tuple[str, str, int, str, frozenset[str]], ...]:
-    """Each material record read whose address the entry defines: the address's value number, its defining block and
-    line, the address, and the blocks that definition dominates."""
+def material_records(assembly: str, contract, instances: str = "",
+                     prefix: int = 0) -> tuple[tuple[str, str, int, str, frozenset[str], bool], ...]:
     from .profiles.re_engine_bindless_material import material_record_accesses
     lines = assembly.splitlines()
-    accesses = material_record_accesses(lines, contract)
+    accesses = material_record_accesses(lines, contract, instances=instances)
     if not accesses:
         return ()
     lines, _metadata, begin, _end, statements = _assembly_entry(assembly)
-    sites = fastdxiltext.material_sites(lines, statements, begin + 1, [access.address for access in accesses])
+    # A pass making the address uniform in a loop over its lanes (waveReadLaneFirst, then the lanes whose own address
+    # equals it) reads, in each lane, at the lane's own address; that address is the record's too.
+    first, equal = {}, set()
+    for text in lines:
+        if match := _LANE_FIRST.match(text):
+            first[match[1]] = match[2]
+        elif match := _EQUAL.search(text):
+            equal.add(frozenset(match.group(1, 2)))
+    own = {access.address: first[access.address] for access in accesses
+           if access.address in first and frozenset((access.address, first[access.address])) in equal}
+    sites = fastdxiltext.material_sites(lines, statements, begin + 1,
+                                        [*(access.address for access in accesses), *own.values()])
     records = []
     for access in accesses:
         site = sites.get(access.address)
         if site is not None:
             number, block, line, dominated = site
-            records.append((number, block, line, access.address, dominated))
+            header = bool(prefix and access.words and not access.storage.startswith("instance")
+                          and all(word.byte_offset < prefix for word in access.words))
+            records.append((number, block, line, access.address, dominated, header))
+            lane = sites.get(own[access.address]) if access.address in own else None
+            if lane is not None:
+                records.append((number, lane[1], lane[2], own[access.address], lane[3], header))
     return tuple(records)
 
 
@@ -137,7 +155,7 @@ def _resource_stores(lines, contract, calls, bodies, index, component_types) -> 
         (left, left_offset), (right, right_offset) = (address_terms(item.strip()) for item in addition.groups())
         return [*left, *right], left_offset + right_offset
 
-    result, scalars, typed = [], {}, {}
+    result, words, typed = [], {}, {}
     for operation, callee, arguments, site in calls:
         name = handles.get(arguments[1])
         resource = contract.resource(name) if name is not None else None
@@ -165,10 +183,11 @@ def _resource_stores(lines, contract, calls, bodies, index, component_types) -> 
                 raise ShaderGraphError(f"DXIL stores undefined value {stored}.")
             result.append(FlowStore(semantic, word // 4, word % 4, value, "" if value is not None else stored,
                                     (*site, first_value + component), scope))
-            scalars.setdefault((scope, semantic, word // 4), []).append(
-                "float" if callee.rsplit(".", 1)[1].startswith("f") else "integer")
-    for key, kinds in scalars.items():
-        component_types[key] = typed[key[1]] if key[0] == "typed" else buffer_component_type(kinds)
+            if scope == "buffer":
+                words.setdefault((scope, semantic, word // 4, word % 4), []).append(
+                    "float" if callee.rsplit(".", 1)[1].startswith("f") else "integer")
+    component_types.update({("typed", semantic, 0): kind for semantic, kind in typed.items()})
+    component_types.update(buffer_word_types(words))
     return result
 
 

@@ -13,6 +13,7 @@ lazy from file_handlers.sdf.shader_storage import native_storage_type
 _INTERPOLATION_MODES = ("", "constant", "linear", "linear centroid", "linear noperspective",
                         "linear noperspective centroid", "linear sample", "linear noperspective sample")
 _COMPONENT_CODES = {"float32": 9, "uint32": 5, "sint32": 4}
+_ADDED_KINDS = ({"front-face": 13, "primitive-id": 10}, {"target": 16})
 
 
 @dataclass(frozen=True)
@@ -260,17 +261,20 @@ def with_signature_rows(lines: list[str], metadata: DxilEntryMetadata, *, inputs
         reference = signature[list_index]
         rows = list(metadata.definitions.get(reference, ())) if reference != "null" else []
         for item in fields:
-            if item.system_value not in {"", "undefined"} or item.component_type not in _COMPONENT_CODES:
+            kind = 0 if item.system_value in {"", "undefined"} else _ADDED_KINDS[list_index].get(item.system_value)
+            if kind is None or item.component_type not in _COMPONENT_CODES:
                 raise ShaderGraphError(f"REasy cannot add {item.semantic_name} to a DXIL signature.")
             usage = item.mask if list_index == 1 else item.read_write_mask
-            mode = item.interpolation or ("linear" if item.component_type == "float32" else "constant")
+            # A render target is not interpolated.
+            mode = ("" if kind and list_index == 1
+                    else item.interpolation or ("linear" if item.component_type == "float32" else "constant"))
             lowest = (item.mask & -item.mask).bit_length() - 1
             indices, row, properties = f"!{next_id}", f"!{next_id + 1}", f"!{next_id + 2}" if usage else "null"
             next_id += 3
             added.extend((f"{indices} = !{{i32 {item.semantic_index}}}",
                           *((f"{properties} = !{{i32 3, i32 {usage}}}",) if usage else ()),
                           f'{row} = !{{i32 {len(rows)}, !"{item.semantic_name}", i8 '
-                          f'{_COMPONENT_CODES[item.component_type]}, i8 0, {indices}, i8 '
+                          f'{_COMPONENT_CODES[item.component_type]}, i8 {kind}, {indices}, i8 '
                           f'{_INTERPOLATION_MODES.index(mode)}, i32 1, i8 {item.mask.bit_count()}, i32 '
                           f'{item.register}, i8 {lowest}, {properties}}}'))
             rows.append(row)

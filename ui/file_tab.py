@@ -1,6 +1,7 @@
 """Per-file editor tab and its handler/viewer lifecycle."""
 
 import os
+from contextlib import suppress
 
 from PySide6.QtCore import QCoreApplication, QT_TRANSLATE_NOOP, Qt
 from PySide6.QtGui import QStandardItem, QStandardItemModel
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
 )
 
 lazy from file_handlers.factory import get_handler_for_data, is_handler_type
+lazy from file_handlers.rsz.scn_scene_preview import ScnScenePreviewWidget
 lazy from services.backup_store import create_backup, find_backups
 lazy from services.file_io import write_files_atomically
 lazy from tools.shader_tools import ShaderToolDownloadCancelled
@@ -67,6 +69,7 @@ class FileTab:
         self.modified = False
         self.app = app
         self.viewer = None
+        self._scene_previews = []
         self._find_dialog = None
         self._connected_model = None
         self.pak_source_path: str | None = pak_source_path
@@ -114,6 +117,14 @@ class FileTab:
     @staticmethod
     def tr(text: str) -> str:
         return QCoreApplication.translate("FileTab", text)
+
+    @property
+    def modified(self) -> bool:
+        return self._modified or any(preview.loader.user_documents for preview in self._scene_previews)
+
+    @modified.setter
+    def modified(self, value: bool) -> None:
+        self._modified = value
 
     def _invalidate_search_dialog_tree(self):
         dialogs = []
@@ -252,6 +263,9 @@ class FileTab:
                 self.tree.hide()
                 layout.addWidget(self.viewer)
                 self.viewer.modified_changed.connect(self._on_viewer_modified)
+                self._scene_previews = self.viewer.findChildren(ScnScenePreviewWidget)
+                for preview in self._scene_previews:
+                    preview.user_edits_changed.connect(self.update_tab_title)
             else:
                 layout.addWidget(self.tree)
                 self.tree.show()
@@ -503,6 +517,7 @@ class FileTab:
             self.pak_source_path = None
             self.pak_data_loader = None
             self.modified = False
+            count = len(outputs) + self._save_user_edits()
             save_completed = getattr(self.viewer, "save_completed", None)
             if callable(save_completed):
                 save_completed(file_path)
@@ -516,9 +531,9 @@ class FileTab:
 
             if self.app and hasattr(self.app, "status_bar"):
                 self.app.status_bar.showMessage(
-                    self.tr("Saved {count} file(s). ").format(count=len(outputs))
+                    self.tr("Saved {count} file(s). ").format(count=count)
                     + self.tr("Primary: {path}").format(path=file_path)
-                    if len(outputs) > 1 else self.tr("Saved: {path}").format(path=file_path),
+                    if count > 1 else self.tr("Saved: {path}").format(path=file_path),
                     3000,
                 )
 
@@ -541,6 +556,8 @@ class FileTab:
         discard_related = getattr(self.handler, "discard_related_outputs", None)
         if callable(discard_related):
             discard_related()
+        for preview in self._scene_previews:
+            preview.discard_user_edits()
         self.modified = False
         if self.viewer and hasattr(self.viewer, "modified"):
             self.viewer.modified = False
@@ -561,6 +578,8 @@ class FileTab:
         if not self.handler:
             QMessageBox.critical(None, self.tr("Error"), self.tr(NO_FILE_LOADED_STR))
             return False
+        if self.modified and not self._modified:
+            return self._save_held_edits()
         session = self.app.project_workspace.sessions.session_for_tab(self)
         if self.pak_source_path and not self.app.proj_dock.prepare_pak_tab_direct_save(
             self, session.path if session else None
@@ -574,6 +593,8 @@ class FileTab:
         if not self.handler:
             QMessageBox.critical(None, self.tr("Error"), self.tr(NO_FILE_LOADED_STR))
             return False
+        if self.modified and not self._modified:
+            return self._save_held_edits()
 
         file_path, _ = QFileDialog.getSaveFileName(
             self.notebook_widget,
@@ -585,6 +606,19 @@ class FileTab:
         if file_path:
             return self.handle_file_save(file_path)
         return False
+
+    def _save_user_edits(self) -> int:
+        return sum(preview.save_user_edits() for preview in self._scene_previews)
+
+    def _save_held_edits(self) -> bool:
+        try:
+            count = self._save_user_edits()
+        except Exception as e:
+            QMessageBox.critical(None, self.tr("Save Error"), str(e))
+            return False
+        if self.app and hasattr(self.app, "status_bar"):
+            self.app.status_bar.showMessage(self.tr("Saved {count} file(s).").format(count=count), 3000)
+        return True
 
     def reload_file(self):
         if not self.filename:
@@ -700,6 +734,10 @@ class FileTab:
         target = viewer if viewer is not None else self.viewer
         owner = handler if handler is not None else self.handler
         try:
+            for preview in self._scene_previews:
+                with suppress(TypeError, RuntimeError):
+                    preview.user_edits_changed.disconnect(self.update_tab_title)
+            self._scene_previews = []
             if target:
                 cleanup_fn = getattr(target, "cleanup", None)
                 if callable(cleanup_fn):

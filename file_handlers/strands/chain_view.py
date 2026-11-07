@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Callable
+
 lazy import numpy as np
 
 lazy from file_handlers.mmtr.light_passes import LightPasses
@@ -27,7 +29,10 @@ class StrandView:
         self.own = self.placement.objects[scene.owner]
 
     def image(self, mesh: MeshScene, rate: float, world: np.ndarray | None = None, locals_: np.ndarray | None = None,
-              wind: np.ndarray | None = None, turn: np.ndarray | None = None) -> None:
+              wind: np.ndarray | None = None, turn: np.ndarray | None = None, written: dict | None = None,
+              gravity: Callable | None = None) -> None:
+        """``written``: the floats game code wrote into GPU buffer files (``BufferReads.rewrite``); ``gravity``: what it
+        set the dynamics' Gravity to, of their own."""
         placement, scene, source = self.placement, self.scene, self.scene.source
         placement.pose(placement.viewed.local if world is None else world, locals_)
         viewed, arguments = placement.viewed, scene.catalog.constants.arguments
@@ -46,7 +51,7 @@ class StrandView:
             placement.anchor(source.dynamics[arguments["constraint_joint"]]), placement.colliders(scene.colliders),
             BoundMesh(scene.mesh_fields, bone_union(scene.boxes, scene.remap, joints)),
             mesh.morphed(self.owner) if morphed else None, np.array(joints) if bound else None, wind,
-            turn)], rate)
+            turn, gravity)], rate, written)
 
 
 __all__ = ["StrandView"]

@@ -673,7 +673,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
             raise VanillaFunctionError(f'{op} needs an editable Vulkan behavior adapter.')
         if row.result is None or result is None:
             raise VanillaFunctionError(f'{op} did not produce its declared result.')
-        values[row.result] = result
+        values[row.result] = builder.origins[row.result] = result
 
     function_rows = module.functions[entries[0].values[1]][1:-1]
     if _hull_phase is not None:
@@ -716,6 +716,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
                 raise VanillaFunctionError('A Vulkan phi is missing its actual predecessor.')
             joined[row.result] = value(choices[predecessor])
         values.update(joined)
+        builder.origins.update(joined)
 
     def loop(header):
         nonlocal values, outputs
@@ -848,6 +849,7 @@ def recover_spirv_function(ir, contract, *, name='Vanilla Behavior', _hull_phase
                 merged_execution = builder.execution
             phi_count = len(joined_keys)
             values.update(zip(joined_keys, merged[:phi_count]))
+            builder.origins.update(zip(joined_keys, merged[:phi_count]))
             outputs.update(zip(keys, merged[phi_count:]))
             label, ready = join, True
         if not ready and label != flow.end:

@@ -2,14 +2,6 @@
  "format": 1,
  "game": "RE4",
  "resource_version": 221007879,
- "source": {
-  "captures": [
-   "re4_frame16973.rdc"
-  ],
-  "several_states": {
-   "primSampler": 2
-  }
- },
  "states": {
   "AutomaticWrap": {
    "filter": 85,

@@ -6,6 +6,7 @@ from PySide6.QtCore import QObject, Qt, Signal
 lazy from file_handlers.clsp.geometry import outline
 lazy from file_handlers.mesh.lit_preview import LitLines
 lazy from file_handlers.mmtr.overlay import view_projection
+lazy from ui.scene.screen_points import project
 
 lazy from .colliders import EVERY_TAG, SetColliders
 lazy from .editing import StrandEdit
@@ -13,7 +14,6 @@ lazy from .editing import StrandEdit
 SELECT, PAINT, COMB, SMOOTH, TRANSFORM, COLLIDERS = "select", "paint", "comb", "smooth", "transform", "colliders"
 MODES = (SELECT, PAINT, COMB, SMOOTH, TRANSFORM, COLLIDERS)
 BRUSHES = (PAINT, COMB, SMOOTH)
-# RGBA.
 _STRAND, _GUIDE, _CHOSEN = (120, 185, 235, 150), (255, 150, 40, 210), (255, 226, 60, 235)
 _BRUSH, _BOX = (255, 255, 255, 200), (255, 255, 255, 220)
 _COLLIDER, _IGNORED, _PICKED = (90, 230, 120, 190), (160, 160, 160, 80), (255, 90, 230, 255)
@@ -332,7 +332,7 @@ class StrandTool(QObject):
         camera, ratio = self.viewport.view_camera()
         key = (self.edit.revision, *self._camera_key(camera, ratio))
         if self._projected[0] != key:
-            self._projected = key, self._project(self.edit.positions, self._clip_matrix(camera), camera, ratio)
+            self._projected = key, project(self.edit.positions, self._clip_matrix(camera), camera, ratio)
         return self._projected[1]
 
     def _reproject(self, rows: np.ndarray) -> None:
@@ -344,24 +344,12 @@ class StrandTool(QObject):
             self._projected = (None, None)
             return
         screen, seen = held
-        screen[rows], seen[rows] = self._project(self.edit.positions[rows], self._clip_matrix(camera), camera, ratio)
+        screen[rows], seen[rows] = project(self.edit.positions[rows], self._clip_matrix(camera), camera, ratio)
         self._projected = (self.edit.revision, *key[1:]), held
 
     @staticmethod
     def _camera_key(camera, ratio) -> tuple:
         return np.asarray(camera.view, np.float64).tobytes(), tuple(camera.scale), tuple(camera.size), ratio
-
-    @staticmethod
-    def _project(points: np.ndarray, clip: np.ndarray, camera, ratio) -> tuple[np.ndarray, np.ndarray]:
-        """Positions in widget pixels."""
-        clip = np.asarray(clip, np.float32)
-        at = np.asarray(points, np.float32) @ clip[:3] + clip[3]
-        w = at[:, 3]
-        seen = w > camera.near * 0.5
-        safe = np.where(seen, w, 1)
-        width, height = camera.size
-        screen = np.column_stack(((at[:, 0] / safe + 1) * 0.5 * width, (1 - at[:, 1] / safe) * 0.5 * height))
-        return screen / ratio, seen
 
     def _to_world(self, points: np.ndarray) -> np.ndarray:
         return np.asarray(points, np.float64) @ self.world[:3, :3].T + self.world[:3, 3]
@@ -437,7 +425,7 @@ class StrandTool(QObject):
             if not (self.all_colliders or shape.tag & self.collision_tag or number == self.picked):
                 continue
             ends = self._outline(shape)
-            screen, seen = self._project(ends.reshape(-1, 3), view_projection(camera), camera, ratio)
+            screen, seen = project(ends.reshape(-1, 3), view_projection(camera), camera, ratio)
             a, b = screen[0::2], screen[1::2]
             span = b - a
             share = np.clip(np.einsum("ij,ij->i", pos - a, span) / np.maximum(np.einsum("ij,ij->i", span, span),
