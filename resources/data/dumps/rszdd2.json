@@ -7719,7 +7719,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -12616,7 +12616,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -15309,7 +15309,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -16413,7 +16413,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -17321,7 +17321,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -41372,9 +41372,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "_Opacity",
-				"native": false,
-				"original_type": "System.Byte",
+				"name": "v0",
+				"native": true,
+				"original_type": "app.charaedit.ch000.FurCheeksData",
 				"size": 1,
 				"type": "U8"
 			}
@@ -41745,7 +41745,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -43778,7 +43778,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -67325,7 +67325,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "ParticleRadius",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -97828,7 +97828,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -98830,7 +98830,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -98884,7 +98884,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -100618,16 +100618,16 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "TypingCondition(?)",
+				"name": "TypingTime",
 				"native": true,
-				"original_type": "via.gui.TypingCondition",
+				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "TypingCommand(?)",
+				"name": "TypingCommand",
 				"native": true,
 				"original_type": "via.gui.TypingCommand",
 				"size": 4,
@@ -100645,7 +100645,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "AnimationEnable(?)",
+				"name": "AnimationEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -107947,7 +107947,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -110579,7 +110579,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -118745,7 +118745,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -129822,7 +129822,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Operation",
 				"native": true,
 				"original_type": "via.motion.tree.CompareNode.Operation",
 				"size": 4,
@@ -140641,7 +140641,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "GyroscopeZeroDriftMode(?)",
+				"name": "GyroscopeZeroDriftMode",
 				"native": true,
 				"original_type": "via.hid.NpadGyroscopeZeroDriftMode",
 				"size": 4,
@@ -164886,7 +164886,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "IlluminanceThreshold",
+				"name": "ReferenceEffectiveRange",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -168354,7 +168354,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "RenderingMethod",
 				"native": true,
 				"original_type": "via.render.RenderConfig.RenderingMethod",
 				"size": 4,
@@ -168363,7 +168363,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "ImageQualityRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -168462,7 +168462,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "DeinterlaceType",
 				"native": true,
 				"original_type": "via.render.RenderConfig.DeinterlaceType",
 				"size": 4,
@@ -168615,7 +168615,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v31",
+				"name": "StreamingVRAMSizeLowest",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -168624,7 +168624,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v32",
+				"name": "StreamingVRAMSizeLow",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -168633,7 +168633,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v33",
+				"name": "StreamingVRAMSizeStandard",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -168642,7 +168642,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v34",
+				"name": "StreamingVRAMSizeHigh",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -168651,7 +168651,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v35",
+				"name": "StreamingVRAMSizeHighest",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -168786,7 +168786,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "LensDistortionSetting",
 				"native": true,
 				"original_type": "via.render.RenderConfig.LensDistortionSetting",
 				"size": 4,
@@ -168822,7 +168822,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v54",
+				"name": "IgnoreDOFEffectSampleMode",
 				"native": true,
 				"original_type": "via.render.RenderConfig.IgnoreDOFEffectSampleMode",
 				"size": 4,
@@ -168867,7 +168867,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "AutoRangeCompressionBaseEV",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -168876,7 +168876,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v60",
+				"name": "BaseAutoRangeCompression",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -169011,7 +169011,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v75",
+				"name": "GIPointCloudQuality",
 				"native": true,
 				"original_type": "via.render.RenderConfig.GIPointCloudQuality",
 				"size": 4,
@@ -173544,7 +173544,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "KeyboardMouseFollowGamePadAssignment",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -176517,7 +176517,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -183747,7 +183747,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -189502,7 +189502,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -191585,7 +191585,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LodNear",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -191594,7 +191594,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "LodFar",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -191603,7 +191603,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "LodBillboardStart",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -191612,7 +191612,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "LodBillboardEnd",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -191621,7 +191621,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "LodFarFadeRange",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -191630,7 +191630,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "LodCurvePower",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -191639,7 +191639,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "DrawVortexelWindSamplePosition",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -203531,7 +203531,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Max",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyCleanHit_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203540,7 +203540,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Min",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyCleanHit_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203549,7 +203549,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Max",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyScratch_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203558,7 +203558,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Min",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyScratch_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203567,7 +203567,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Max",
+				"name": "STRUCT_DamageLimit_STRUCT_Friend_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203576,7 +203576,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Min",
+				"name": "STRUCT_DamageLimit_STRUCT_Friend_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203585,7 +203585,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Max",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyCleanHit_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203594,7 +203594,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Min",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyCleanHit_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203603,7 +203603,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Max",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyScratch_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203612,7 +203612,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Min",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyScratch_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203621,7 +203621,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Max",
+				"name": "STRUCT_ReactionLimit_STRUCT_Friend_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203630,7 +203630,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Min",
+				"name": "STRUCT_ReactionLimit_STRUCT_Friend_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203639,7 +203639,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Max",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyCleanHit_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203648,7 +203648,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Min",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyCleanHit_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203657,7 +203657,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Max",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyScratch_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203666,7 +203666,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Min",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyScratch_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203675,7 +203675,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Max",
+				"name": "STRUCT_ForceLimit_STRUCT_Friend_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -203684,7 +203684,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Min",
+				"name": "STRUCT_ForceLimit_STRUCT_Friend_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -207988,7 +207988,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "LensFlareType",
 				"native": true,
 				"original_type": "via.render.WaveOpticalLensFlare.LensFlareType",
 				"size": 4,
@@ -213498,7 +213498,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -213552,7 +213552,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -221913,7 +221913,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "ExportPreTonemapImageEncodeType",
 				"native": true,
 				"original_type": "via.render.LDRPostProcess.ExportImageEncodeType",
 				"size": 4,
@@ -226293,7 +226293,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT_DataContainerID__HasValue",
+				"name": "STRUCT__LoopEffect_STRUCT_DataContainerID__HasValue",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -226302,7 +226302,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_DataContainerID__Value",
+				"name": "STRUCT__LoopEffect_STRUCT_DataContainerID__Value",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -226329,7 +226329,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT_DataContainerID__HasValue",
+				"name": "STRUCT__RecoveryEffect_STRUCT_DataContainerID__HasValue",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -226338,7 +226338,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_DataContainerID__Value",
+				"name": "STRUCT__RecoveryEffect_STRUCT_DataContainerID__Value",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -229706,7 +229706,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -237988,7 +237988,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "LightShaftType",
 				"native": true,
 				"original_type": "via.render.LightShaft.LightShaftType",
 				"size": 4,
@@ -253298,7 +253298,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -254688,7 +254688,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -255799,7 +255799,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -264346,7 +264346,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -268883,7 +268883,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -277058,7 +277058,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -291955,7 +291955,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__Common__Enabled",
+				"name": "STRUCT__Eyes_STRUCT__Common__Enabled",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -291964,7 +291964,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Common__IrisColor1",
+				"name": "STRUCT__Eyes_STRUCT__Common__IrisColor1",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -291973,7 +291973,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Common__IrisColor2",
+				"name": "STRUCT__Eyes_STRUCT__Common__IrisColor2",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -291982,7 +291982,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Common__IrisColor3",
+				"name": "STRUCT__Eyes_STRUCT__Common__IrisColor3",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -291991,7 +291991,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Common__IrisColor4",
+				"name": "STRUCT__Eyes_STRUCT__Common__IrisColor4",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292000,7 +292000,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__Common__IrisSize",
+				"name": "STRUCT__Eyes_STRUCT__Common__IrisSize",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292009,7 +292009,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__Common__PupilShape",
+				"name": "STRUCT__Eyes_STRUCT__Common__PupilShape",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -292018,7 +292018,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__Common__PupilSize",
+				"name": "STRUCT__Eyes_STRUCT__Common__PupilSize",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292027,7 +292027,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__Common__PupilWidth",
+				"name": "STRUCT__Eyes_STRUCT__Common__PupilWidth",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292036,7 +292036,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__Common__PupilHeight",
+				"name": "STRUCT__Eyes_STRUCT__Common__PupilHeight",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292045,7 +292045,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__LeftEye__Enabled",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__Enabled",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -292054,7 +292054,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__LeftEye__IrisColor1",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__IrisColor1",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292063,7 +292063,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__LeftEye__IrisColor2",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__IrisColor2",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292072,7 +292072,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__LeftEye__IrisColor3",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__IrisColor3",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292081,7 +292081,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__LeftEye__IrisColor4",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__IrisColor4",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292090,7 +292090,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__LeftEye__IrisSize",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__IrisSize",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292099,7 +292099,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__LeftEye__PupilShape",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__PupilShape",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -292108,7 +292108,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__LeftEye__PupilSize",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__PupilSize",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292117,7 +292117,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__LeftEye__PupilWidth",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__PupilWidth",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292126,7 +292126,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__LeftEye__PupilHeight",
+				"name": "STRUCT__Eyes_STRUCT__LeftEye__PupilHeight",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292135,7 +292135,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__RightEye__Enabled",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__Enabled",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -292144,7 +292144,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__RightEye__IrisColor1",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__IrisColor1",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292153,7 +292153,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__RightEye__IrisColor2",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__IrisColor2",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292162,7 +292162,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__RightEye__IrisColor3",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__IrisColor3",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292171,7 +292171,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__RightEye__IrisColor4",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__IrisColor4",
 				"native": false,
 				"original_type": "via.Color",
 				"size": 4,
@@ -292180,7 +292180,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__RightEye__IrisSize",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__IrisSize",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292189,7 +292189,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__RightEye__PupilShape",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__PupilShape",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -292198,7 +292198,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__RightEye__PupilSize",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__PupilSize",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292207,7 +292207,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__RightEye__PupilWidth",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__PupilWidth",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -292216,7 +292216,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT__RightEye__PupilHeight",
+				"name": "STRUCT__Eyes_STRUCT__RightEye__PupilHeight",
 				"native": false,
 				"original_type": "System.SByte",
 				"size": 1,
@@ -294946,7 +294946,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "ParallelLoadTaskNum",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -310894,7 +310894,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -314817,7 +314817,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "EnableLodFovAdjustment",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -314826,7 +314826,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "LodBaseFov",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -314844,7 +314844,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "EnableStatistics",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -316266,7 +316266,7 @@
 	"31865dc1": {
 		"crc": "37e3fcb",
 		"fields": [],
-		"name": "System.Collections.Generic.KeyValuePair`2[app.SpatialEvent,System.Int32][][]",
+		"name": "System.Collections.Generic.KeyValuePair`2[[app.SpatialEvent, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Int32, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]][][]",
 		"parent": "System.Array"
 	},
 	"3186fba0": {
@@ -320061,7 +320061,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v87",
+				"name": "CollisionTarget",
 				"native": true,
 				"original_type": "via.dynamics.GpuCloth.CollisionTarget",
 				"size": 4,
@@ -322870,7 +322870,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "SystemNoiseType",
 				"native": true,
 				"original_type": "via.render.Cloudscape2.SystemNoiseType",
 				"size": 4,
@@ -325962,7 +325962,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Id(?)",
+				"name": "NativeUserId",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -325971,7 +325971,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "State(?)",
+				"name": "Id",
 				"native": true,
 				"original_type": "via.network.utility.Request.State",
 				"size": 4,
@@ -325980,7 +325980,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Sequence(?)",
+				"name": "State",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -325989,7 +325989,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Phase(?)",
+				"name": "Phase",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -326909,7 +326909,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -327836,7 +327836,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -342986,7 +342986,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Value",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -346423,7 +346423,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -361477,7 +361477,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -364833,7 +364833,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -372796,7 +372796,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -379317,7 +379317,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -379636,7 +379636,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Radius",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -379645,7 +379645,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "OBBEnabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -379663,7 +379663,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Density",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -379672,7 +379672,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "Eccenticity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -379681,7 +379681,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "DensityAttenuationByHeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -379708,7 +379708,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "EmissionStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -392630,706 +392630,6 @@
 		"fields": [],
 		"name": "System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<app.MantleStyle,app.MantleSwapItem>>"
 	},
-	"3907118a": {
-		"crc": "f924133",
-		"fields": [
-			{
-				"align": 1,
-				"array": false,
-				"name": "ComponentDraw",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "DebugDraw",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v2",
-				"native": true,
-				"original_type": "",
-				"size": 2,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v3",
-				"native": true,
-				"original_type": "",
-				"size": 2,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v6",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v5",
-				"native": true,
-				"original_type": "",
-				"size": 5,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "BlurFilterScale",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "BlurFilterMipLevel",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "BlurFilterReductionRate",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v12",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "BlurFilterCuttingLuminanceLevel",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "BlurFilterRenderTarget",
-				"native": true,
-				"original_type": "via.render.RenderTargetTextureResourceHolder",
-				"size": 4,
-				"type": "Resource"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "BlurFilterKeepFrameMax",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "UseBlurIntermediateTexture",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "TexBlurReductionRate",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "TexBlurMipmapCount",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v19",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "MessageLanguage",
-				"native": true,
-				"original_type": "via.Language",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": true,
-				"name": "v21",
-				"native": true,
-				"original_type": "via.Language",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v19",
-				"native": true,
-				"original_type": "",
-				"size": 3,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "ExtraLayoutRTL",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "DelayLanguageFontLoad",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "FontBaseSize",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "FontLineHeight",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "FontBaseline",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "RubySizeRatio",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "GlyphNodeDeleteFrame",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "U8"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v27",
-				"native": true,
-				"original_type": "",
-				"size": 2,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "UseVirtualMouse",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "RepeatStartTime",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "RepeatTime",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "SoftParticleDist",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v38",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "SafeAreaRatio",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "SafeAreaRect",
-				"native": true,
-				"original_type": "via.Rect",
-				"size": 16,
-				"type": "Rect"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "CaptureResolutionAdjust",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v42",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "DebugDrawFontSlot",
-				"native": true,
-				"original_type": "via.gui.FontSlot",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "ParallelExecute",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v39",
-				"native": true,
-				"original_type": "",
-				"size": 5,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "Effect2DBufferSize",
-				"native": true,
-				"original_type": "via.Size",
-				"size": 8,
-				"type": "Size"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "EffectBufferSize",
-				"native": true,
-				"original_type": "via.Size",
-				"size": 8,
-				"type": "Size"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "PostImageCopySegment",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 16,
-				"array": false,
-				"name": "v50",
-				"native": true,
-				"original_type": "via.vec2",
-				"size": 16,
-				"type": "Vec2"
-			},
-			{
-				"align": 16,
-				"array": false,
-				"name": "v51",
-				"native": true,
-				"original_type": "via.vec2",
-				"size": 16,
-				"type": "Vec2"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "StencilNum",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v53",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v54",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v55",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v56",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "TextureSampleGradScale",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v58",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "DrawGUIBuffer",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "GUIBufferCS",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "DrawGUIBufferIgnoreAlpha",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferDrawSegment",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v63",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v64",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": true,
-				"name": "v65",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v66",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurSegment",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurROID",
-				"native": true,
-				"original_type": "via.render.RenderOutputID",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "GUIBufferBlurWithScene",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "GUIBufferBlursRGB",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurScale",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurMipLevel",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurReductionRate",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurMipmapCount",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "GUIBufferBlurCuttingLuminanceLevel",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v75",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v76",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "MaskCulling",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v72",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v73",
-				"native": true,
-				"original_type": "",
-				"size": 10,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v74",
-				"native": true,
-				"original_type": "",
-				"size": 40,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v75",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v76",
-				"native": true,
-				"original_type": "",
-				"size": 39,
-				"type": "Data"
-			}
-		],
-		"name": "via.gui.GUISystem",
-		"parent": "System.Object"
-	},
 	"39074938": {
 		"crc": "37e3fcb",
 		"fields": [],
@@ -396053,7 +395353,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ShadingQualityAdjustShading?",
+				"name": "ShadingQualityAdjustShading",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -396062,7 +395362,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ShadingQualityAdjustDensity(?)",
+				"name": "ShadingQualityAdjustDensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -396199,7 +395499,7 @@
 				"array": false,
 				"name": "DSLUT",
 				"native": true,
-				"original_type": "via.render.TextureResource",
+				"original_type": "via.render.TextureResourceHolder",
 				"size": 4,
 				"type": "Resource"
 			},
@@ -399085,7 +398385,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -405484,7 +404784,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -431680,7 +430980,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -432542,7 +431842,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -436282,7 +435582,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -436342,7 +435642,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -442214,7 +441514,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -456410,7 +455710,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "WeightOffset",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -456428,7 +455728,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "SimulationStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -456437,7 +455737,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "BlendWeight",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -456446,7 +455746,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "SimulationBlend",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -467740,7 +467040,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "NumChannels",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -471035,7 +470335,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT_DataContainerID__HasValue",
+				"name": "STRUCT__ActivateEffect_STRUCT_DataContainerID__HasValue",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -471044,7 +470344,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_DataContainerID__Value",
+				"name": "STRUCT__ActivateEffect_STRUCT_DataContainerID__Value",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -471071,7 +470371,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT_DataContainerID__HasValue",
+				"name": "STRUCT__HitEffect_STRUCT_DataContainerID__HasValue",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -471080,7 +470380,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_DataContainerID__Value",
+				"name": "STRUCT__HitEffect_STRUCT_DataContainerID__Value",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -471107,7 +470407,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "STRUCT_DataContainerID__HasValue",
+				"name": "STRUCT__BuffEffect_STRUCT_DataContainerID__HasValue",
 				"native": false,
 				"original_type": "System.Boolean",
 				"size": 1,
@@ -471116,7 +470416,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_DataContainerID__Value",
+				"name": "STRUCT__BuffEffect_STRUCT_DataContainerID__Value",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -475824,7 +475124,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -499678,7 +498978,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -505651,7 +504951,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -506592,7 +505892,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -507075,7 +506375,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v27",
+				"name": "DisableStreamingShadowCopy",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -507093,7 +506393,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "FileAccessSchedulerEnabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -507652,7 +506952,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v15",
+				"name": "EnableSpeedTreeLODFOVAdjustment",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -507661,7 +506961,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "SpeedTreeLODBaseFOV",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -511335,7 +510635,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "InstantBufferLimitSize",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -511344,7 +510644,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "InstantBufferLimit",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -511353,7 +510653,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v22",
+				"name": "ForceFailed",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -512292,7 +511592,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -517088,7 +516388,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "Operation",
 				"native": true,
 				"original_type": "via.motion.tree.CalculateNode.Operation",
 				"size": 4,
@@ -524763,18 +524063,9 @@
 				"array": false,
 				"name": "ColorPresetBlend",
 				"native": true,
-				"original_type": "System.Guid",
+				"original_type": "",
 				"size": 16,
 				"type": "Guid"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "ColorLeft",
-				"native": true,
-				"original_type": "via.Color",
-				"size": 4,
-				"type": "Color"
 			},
 			{
 				"align": 4,
@@ -524784,6 +524075,15 @@
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ColorLeft",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
 			},
 			{
 				"align": 8,
@@ -526433,11 +525733,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "BusBasePerfBusId",
+				"name": "StreamThreadPerfTimeMsec",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "U32"
+				"type": "F32"
 			}
 		],
 		"name": "via.audiorender.dev.DevInfo",
@@ -541701,7 +541001,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -554298,7 +553598,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "Speed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -558837,7 +558137,7 @@
 	"4a41ef48": {
 		"crc": "37e3fcb",
 		"fields": [],
-		"name": "app.ClassSelector`1[app.decision.process.ProcessBase][][]",
+		"name": "app.ClassSelector`1[[app.decision.process.ProcessBase, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]][][]",
 		"parent": "System.Array"
 	},
 	"4a424323": {
@@ -565261,7 +564561,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "No",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -565714,7 +565014,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -578307,7 +577607,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "MultiBounceEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -580363,7 +579663,7 @@
 	"4cb365af": {
 		"crc": "37e3fcb",
 		"fields": [],
-		"name": "System.Collections.Generic.KeyValuePair`2[System.Int32,System.Single][][]",
+		"name": "System.Collections.Generic.KeyValuePair`2[[System.Int32, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Single, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]][][]",
 		"parent": "System.Array"
 	},
 	"4cb3c990": {
@@ -593151,7 +592451,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -597306,7 +596606,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -597359,7 +596659,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -598988,7 +598288,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -611559,7 +610859,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -618718,7 +618018,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -661392,7 +660692,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -668064,7 +667364,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -669536,11 +668836,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "NumSubsteps",
+				"name": "DeltaTime",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "F32"
 			},
 			{
 				"align": 1,
@@ -677308,7 +676608,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -704748,7 +704048,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_HeadStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_HeadStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704757,7 +704057,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_HairStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_HairStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704766,7 +704066,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BeardStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_BeardStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704775,7 +704075,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyebrowStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyebrowStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704784,7 +704084,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelashStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyelashStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704793,7 +704093,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_SkinStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_SkinStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704802,7 +704102,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_NoseStyle",
+				"name": "STRUCT_EditDesign_STRUCT__Value_NoseStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704811,7 +704111,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Skeleton",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Skeleton",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704820,7 +704120,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Physique",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Physique",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704829,7 +704129,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BustPattern",
+				"name": "STRUCT_EditDesign_STRUCT__Value_BustPattern",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704838,7 +704138,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FacePattern",
+				"name": "STRUCT_EditDesign_STRUCT__Value_FacePattern",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704847,7 +704147,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyesEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyesEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704856,7 +704156,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyebrowsEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyebrowsEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704865,7 +704165,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EarsEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EarsEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704874,7 +704174,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_NoseEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_NoseEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704883,7 +704183,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_MouthEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_MouthEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704892,7 +704192,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_JawEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_JawEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704901,7 +704201,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_CheeksEdit",
+				"name": "STRUCT_EditDesign_STRUCT__Value_CheeksEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704910,7 +704210,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Eyes",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Eyes",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704919,7 +704219,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FurPattern",
+				"name": "STRUCT_EditDesign_STRUCT__Value_FurPattern",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704928,7 +704228,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_MuscleStrength",
+				"name": "STRUCT_EditDesign_STRUCT__Value_MuscleStrength",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704937,7 +704237,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BeastmanAge",
+				"name": "STRUCT_EditDesign_STRUCT__Value_BeastmanAge",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704946,7 +704246,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_WrinkleStrength",
+				"name": "STRUCT_EditDesign_STRUCT__Value_WrinkleStrength",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704955,7 +704255,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Tattoos",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Tattoos",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704964,7 +704264,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Scars",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Scars",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704973,7 +704273,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Teeth",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Teeth",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704982,7 +704282,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BodyHair",
+				"name": "STRUCT_EditDesign_STRUCT__Value_BodyHair",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -704991,7 +704291,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Makeup",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Makeup",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705000,7 +704300,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Eyebrows",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Eyebrows",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705009,7 +704309,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Eyelashes",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Eyelashes",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705018,7 +704318,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_PrimaryHairColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_PrimaryHairColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705027,7 +704327,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_SecondaryHairColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_SecondaryHairColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705036,7 +704336,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelashesColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyelashesColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705045,7 +704345,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelinerColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyelinerColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705054,7 +704354,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyeshadowColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyeshadowColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705063,7 +704363,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_CheekColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_CheekColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705072,7 +704372,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_LipsColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_LipsColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705081,7 +704381,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_IrisColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_IrisColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705090,7 +704390,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_ScleraColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_ScleraColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705099,7 +704399,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_TattoosColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_TattoosColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705108,7 +704408,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_TeethColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_TeethColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705117,7 +704417,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FurColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_FurColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705126,7 +704426,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FurPatternColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_FurPatternColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705135,7 +704435,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_ClawsColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_ClawsColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705144,7 +704444,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_NoseColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_NoseColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705153,7 +704453,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_DirtColor",
+				"name": "STRUCT_EditDesign_STRUCT__Value_DirtColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705162,7 +704462,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_SkinShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_SkinShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705171,7 +704471,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_HairShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_HairShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705180,7 +704480,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BeardShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_BeardShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705189,7 +704489,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelinerShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyelinerShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705198,7 +704498,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyeshadowShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_EyeshadowShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705207,7 +704507,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_CheekShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_CheekShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705216,7 +704516,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_LipsShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_LipsShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705225,7 +704525,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_TattoosShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_TattoosShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705234,7 +704534,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_DirtShader",
+				"name": "STRUCT_EditDesign_STRUCT__Value_DirtShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705243,7 +704543,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Pretender",
+				"name": "STRUCT_EditDesign_STRUCT__Value_Pretender",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -705633,7 +704933,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -714579,7 +713879,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -726465,7 +725765,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -733250,7 +732550,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -735991,11 +735291,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "BusBasePerfBusId(?)",
+				"name": "StreamThreadPerfTime",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "U32"
+				"type": "F32"
 			}
 		],
 		"name": "via.audiorender.AudioRenderDevelopInfo",
@@ -754211,7 +753511,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -762173,7 +761473,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -772067,7 +771367,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -777424,7 +776724,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -783206,7 +782506,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -790442,7 +789742,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -792682,7 +791982,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "UseBillboardFadeout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -792691,7 +791991,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "LegacyForceAlphaTestShadow",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -796431,7 +795731,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v14",
+				"name": "Flag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -810935,7 +810235,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -810989,7 +810289,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -827799,7 +827099,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "EditMultiBuffer",
+				"name": "EditSyncDraw",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -829134,7 +828434,7 @@
 	"67497cca": {
 		"crc": "37e3fcb",
 		"fields": [],
-		"name": "app.lod.LODProcessDefine.ClassSelector`1[app.lod.opecon.LODProcessOperatingCondition][][]",
+		"name": "app.lod.LODProcessDefine.ClassSelector`1[[app.lod.opecon.LODProcessOperatingCondition, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]][][]",
 		"parent": "System.Array"
 	},
 	"67499b6": {
@@ -847115,7 +846415,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -853015,7 +852315,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -855860,7 +855160,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -863408,7 +862708,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "No",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -878304,7 +877604,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "TargetFrame",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -879632,7 +878932,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -880391,7 +879691,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -883432,7 +882732,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Item1_Item1",
+				"name": "STRUCT_Value_STRUCT_Item1_Item1",
 				"native": false,
 				"original_type": "app.CharacterID",
 				"size": 4,
@@ -883441,7 +882741,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Item1_Item2",
+				"name": "STRUCT_Value_STRUCT_Item1_Item2",
 				"native": false,
 				"original_type": "app.Gender",
 				"size": 4,
@@ -887922,9 +887222,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "_Opacity",
-				"native": false,
-				"original_type": "System.Byte",
+				"name": "v0",
+				"native": true,
+				"original_type": "app.charaedit.ch000.FurEyesData",
 				"size": 1,
 				"type": "U8"
 			}
@@ -889863,7 +889163,7 @@
 	"6dc99c0b": {
 		"crc": "37e3fcb",
 		"fields": [],
-		"name": "System.Collections.Generic.KeyValuePair`2[[System.Byte, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[System.UInt32, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[System.UInt32, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[app.Character.JobEnum, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[app.CharacterEditDefine.WeaponFlags, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[app.PrefabController, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture[]",
+		"name": "System.Collections.Generic.KeyValuePair`2[[System.Byte, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[System.UInt32, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[System.UInt32, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[app.Character.JobEnum, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Collections.Generic.Dictionary`2[[app.CharacterEditDefine.WeaponFlags, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[app.PrefabController, System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]], System.Private.CoreLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]][]",
 		"parent": "System.Array"
 	},
 	"6dc9cbc4": {
@@ -903526,7 +902826,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -906681,7 +905981,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -912569,7 +911869,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -912623,7 +911923,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -932079,7 +931379,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -932391,7 +931691,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -933198,7 +932498,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -933252,7 +932552,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -936035,18 +935335,9 @@
 				"array": false,
 				"name": "ColorPresetBlend",
 				"native": true,
-				"original_type": "System.Guid",
+				"original_type": "",
 				"size": 16,
 				"type": "Guid"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "ColorLeft",
-				"native": true,
-				"original_type": "via.Color",
-				"size": 4,
-				"type": "Color"
 			},
 			{
 				"align": 4,
@@ -936056,6 +935347,15 @@
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ColorLeft",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
 			},
 			{
 				"align": 8,
@@ -949154,7 +948454,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -949261,7 +948561,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -960798,7 +960098,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -975198,7 +974498,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -995790,7 +995090,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Item1_Item1",
+				"name": "STRUCT_key_STRUCT_Item1_Item1",
 				"native": false,
 				"original_type": "app.CharacterID",
 				"size": 4,
@@ -995799,7 +995099,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Item1_Item2",
+				"name": "STRUCT_key_STRUCT_Item1_Item2",
 				"native": false,
 				"original_type": "app.Gender",
 				"size": 4,
@@ -996066,7 +995366,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -999886,7 +999186,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "Time",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1002241,7 +1001541,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1003543,9 +1002843,9 @@
 				"array": false,
 				"name": "Data",
 				"native": true,
-				"original_type": "via.clr.ManagedObject",
+				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			}
 		],
 		"name": "via.storage.saveService.TelemetrySaveData",
@@ -1005891,7 +1005191,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1029516,7 +1028816,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1032763,7 +1032063,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "InMin",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1032772,7 +1032072,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "InMax",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1035012,7 +1034312,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "MinNumber(?)",
+				"name": "MinNumber",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1035021,7 +1034321,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "MaxNumber(?)",
+				"name": "MaxNumber",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1048097,7 +1047397,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "No",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1061920,7 +1061220,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1063380,7 +1062680,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1071225,9 +1070525,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "_Opacity",
-				"native": false,
-				"original_type": "System.Byte",
+				"name": "v0",
+				"native": true,
+				"original_type": "app.charaedit.ch000.FurForeheadData",
 				"size": 1,
 				"type": "U8"
 			}
@@ -1085387,7 +1084687,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1097155,7 +1096455,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1106269,7 +1105569,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1106323,7 +1105623,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -1110657,7 +1109957,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1110666,7 +1109966,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1110675,7 +1109975,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1110693,7 +1109993,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1110702,7 +1110002,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1110711,7 +1110011,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1110729,7 +1110029,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1110738,7 +1110038,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1110747,7 +1110047,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1142947,7 +1142247,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1147258,7 +1146558,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1152407,7 +1151707,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "DrawResolution",
+				"name": "DrawResolusion",
 				"native": true,
 				"original_type": "via.render.RayTraceLensFlare.DrawResolusion",
 				"size": 4,
@@ -1171199,7 +1170499,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1172279,11 +1171579,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "DevProfileMode",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.motion.ProfileMode",
 				"size": 1,
-				"type": "Data"
+				"type": "U8"
 			},
 			{
 				"align": 1,
@@ -1172292,7 +1171592,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 4,
@@ -1175749,7 +1175049,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1178519,7 +1177819,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1178600,7 +1177900,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "SyncLocalTransform",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1210587,7 +1209887,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1210596,7 +1209896,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1210605,7 +1209905,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1210623,7 +1209923,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1210632,7 +1209932,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1210641,7 +1209941,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1210659,7 +1209959,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1210668,7 +1209968,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1210677,7 +1209977,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1213100,7 +1212400,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1225618,7 +1224918,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1233547,7 +1232847,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1249693,7 +1248993,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1249747,7 +1249047,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -1263509,7 +1262809,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1274155,7 +1273455,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1275512,7 +1274812,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1278580,7 +1277880,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1313061,7 +1312361,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1335902,7 +1335202,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1370136,7 +1369436,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1392089,6 +1391389,15 @@
 		"crc": "9bd6eabe",
 		"fields": [
 			{
+				"align": 1,
+				"array": true,
+				"name": "ShaderName",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "C8"
+			},
+			{
 				"align": 4,
 				"array": false,
 				"name": "Priority",
@@ -1401664,7 +1400973,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1406354,7 +1405663,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1425944,7 +1425253,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1426099,9 +1425408,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "_Opacity",
-				"native": false,
-				"original_type": "System.Byte",
+				"name": "v0",
+				"native": true,
+				"original_type": "app.charaedit.ch000.FurNoseData",
 				"size": 1,
 				"type": "U8"
 			}
@@ -1430668,7 +1429977,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1431744,7 +1431053,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "InMax",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1431753,7 +1431062,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "InMin",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1431762,7 +1431071,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "OutMax",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1431771,7 +1431080,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "OutMin",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1431780,7 +1431089,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "ClampMode",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1435745,7 +1435054,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1435754,7 +1435063,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435763,7 +1435072,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435781,7 +1435090,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1435790,7 +1435099,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435799,7 +1435108,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435817,7 +1435126,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1435826,7 +1435135,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435835,7 +1435144,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435862,7 +1435171,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffectCling_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1435871,7 +1435180,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffectCling_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435880,7 +1435189,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffectCling_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435898,7 +1435207,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffectHoldDown_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1435907,7 +1435216,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffectHoldDown_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435916,7 +1435225,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffectHoldDown_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435934,7 +1435243,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffectPossessionSmoke_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1435943,7 +1435252,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffectPossessionSmoke_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1435952,7 +1435261,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffectPossessionSmoke_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1458357,7 +1457666,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1462394,7 +1461703,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1465006,7 +1464315,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1469592,7 +1468901,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1527356,7 +1526665,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1561646,7 +1560955,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1561700,7 +1561009,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -1568128,7 +1567437,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1568624,7 +1567933,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1569838,7 +1569147,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1571075,7 +1570384,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1571968,6 +1571277,15 @@
 			{
 				"align": 4,
 				"array": false,
+				"name": "MaxLod",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
 				"name": "MaxUntouchedSurfaceThickness",
 				"native": true,
 				"original_type": "",
@@ -1572059,15 +1571377,6 @@
 				"align": 4,
 				"array": false,
 				"name": "NormalSmoothness",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "ThicknessScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1593900,7 +1593209,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1593909,7 +1593218,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1593918,7 +1593227,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__StartEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1593936,7 +1593245,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1593945,7 +1593254,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1593954,7 +1593263,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__BodyEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1593972,7 +1593281,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_DataContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_DataContainerID",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -1593981,7 +1593290,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ContainerID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ContainerID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1593990,7 +1593299,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT__Value_ElementID",
+				"name": "STRUCT__EndEffect_STRUCT__Value_ElementID",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -1602583,7 +1601892,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1609493,6 +1608802,15 @@
 			{
 				"align": 4,
 				"array": false,
+				"name": "ProbeLightBlock",
+				"native": true,
+				"original_type": "via.render.DynamicProbeGI.ProbeLightBlock",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": false,
 				"name": "VoxelResolution",
 				"native": true,
 				"original_type": "via.render.DynamicProbeGI.VoxelResolution",
@@ -1609552,15 +1608870,6 @@
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "SceneRadianceCacheHashTotalSize",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "U32"
 			},
 			{
 				"align": 4,
@@ -1609763,7 +1609072,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "ProbeVolumeBorder",
 				"native": true,
 				"original_type": "via.render.DynamicProbeGI.ProbeVolumeBorder",
 				"size": 4,
@@ -1633892,7 +1633201,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1634397,7 +1633706,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1638680,7 +1637989,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1640583,36 +1639892,36 @@
 				"array": false,
 				"name": "PreferOpaque",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.BVHOptimizeSetting",
 				"size": 1,
-				"type": "Bool"
+				"type": "U8"
 			},
 			{
 				"align": 1,
 				"array": false,
 				"name": "PreferAlphaMask",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.BVHOptimizeSetting",
 				"size": 1,
-				"type": "Bool"
+				"type": "U8"
 			},
 			{
 				"align": 1,
 				"array": false,
 				"name": "PreferShadowCast",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.BVHOptimizeSetting",
 				"size": 1,
-				"type": "Bool"
+				"type": "U8"
 			},
 			{
 				"align": 1,
 				"array": false,
 				"name": "EnableRebraiding",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.BVHOptimizeSetting",
 				"size": 1,
-				"type": "Bool"
+				"type": "U8"
 			},
 			{
 				"align": 1,
@@ -1640882,7 +1640191,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Bool"
+				"type": "U8"
 			},
 			{
 				"align": 4,
@@ -1642962,7 +1642271,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1649167,7 +1648476,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1656219,7 +1655528,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1657638,7 +1656947,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1687130,7 +1686439,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1687179,7 +1686488,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1743870,7 +1743179,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "Enabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1743951,7 +1743260,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "SyncLocalTransform",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1763285,7 +1762594,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1772263,11 +1771572,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v19",
+				"name": "EnableMemoryPoolSettingsX64",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772317,11 +1771626,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v25",
+				"name": "EnableMemoryPoolSettingsPS4",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772461,11 +1771770,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v41",
+				"name": "EnableMemoryPoolSettingsPS5",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772650,11 +1771959,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v62",
+				"name": "EnableMemoryPoolSettingsXB1",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772731,11 +1772040,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v71",
+				"name": "EnableMemoryPoolSettingsXBS",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772821,11 +1772130,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v81",
+				"name": "EnableMemoryPoolSettingsNSW",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772884,11 +1772193,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v88",
+				"name": "EnableMemoryPoolSettingsSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772938,11 +1772247,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v94",
+				"name": "EnableMemoryPoolSettingsUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1772992,11 +1772301,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v100",
+				"name": "EnableMemoryPoolSettingsAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1773064,11 +1772373,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v108",
+				"name": "EnableMemoryPoolSettingsIOS",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1773118,11 +1772427,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v114",
+				"name": "EnableMemoryPoolSettingsMac",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 8,
@@ -1787037,7 +1786346,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1788363,7 +1787672,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1802382,16 +1801691,16 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "TypingCondition(?)",
+				"name": "TypingTime",
 				"native": true,
-				"original_type": "via.gui.TypingCondition",
+				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "TypingCommand(?)",
+				"name": "TypingCommand",
 				"native": true,
 				"original_type": "via.gui.TypingCommand",
 				"size": 4,
@@ -1802409,7 +1801718,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "AnimationEnable(?)",
+				"name": "AnimationEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1834069,7 +1833378,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1839002,14 +1838311,14 @@
 				"array": false,
 				"name": "v6",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.gui.Float4ModeType",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "BoolValueInternal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1862109,7 +1861418,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1890636,9 +1889945,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "_Opacity",
-				"native": false,
-				"original_type": "System.Byte",
+				"name": "v0",
+				"native": true,
+				"original_type": "app.charaedit.ch000.FurFaceMaskData",
 				"size": 1,
 				"type": "U8"
 			}
@@ -1893827,7 +1893136,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1901935,7 +1901244,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "DrawInfluence",
+				"name": "DrawParticle",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1940112,7 +1939421,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "EnableFoliageRayTracing",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1940121,7 +1939430,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v1",
+				"name": "EnableFoliageAssetDependencyLoad",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1940130,7 +1939439,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "EnableFoliageLodComputationStrategy",
 				"native": true,
 				"original_type": "via.landscape.ProjectFoliageLodComputationStrategy",
 				"size": 4,
@@ -1940139,7 +1939448,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "FoliageUnitPropertyPriority",
 				"native": true,
 				"original_type": "via.landscape.FoliageUnitPropertyPriority",
 				"size": 4,
@@ -1956789,7 +1956098,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1965631,7 +1964940,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "DrawDepthOcclusion",
+				"name": "DrawAABB",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1965640,7 +1964949,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "ForceAlphaTest",
+				"name": "DrawDepthOcclusion",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1965724,7 +1965033,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1969368,7 +1968677,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1979458,7 +1978767,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1983485,7 +1982794,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1993739,7 +1993048,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1996309,7 +1995618,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1998371,7 +1997680,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2003985,7 +2003294,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2004039,7 +2003348,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -2008724,7 +2008033,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2009617,7 +2008926,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2009671,7 +2008980,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2013851,7 +2013160,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_HeadStyle",
+				"name": "STRUCT_design_STRUCT__Value_HeadStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013860,7 +2013169,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_HairStyle",
+				"name": "STRUCT_design_STRUCT__Value_HairStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013869,7 +2013178,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BeardStyle",
+				"name": "STRUCT_design_STRUCT__Value_BeardStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013878,7 +2013187,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyebrowStyle",
+				"name": "STRUCT_design_STRUCT__Value_EyebrowStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013887,7 +2013196,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelashStyle",
+				"name": "STRUCT_design_STRUCT__Value_EyelashStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013896,7 +2013205,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_SkinStyle",
+				"name": "STRUCT_design_STRUCT__Value_SkinStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013905,7 +2013214,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_NoseStyle",
+				"name": "STRUCT_design_STRUCT__Value_NoseStyle",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013914,7 +2013223,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Skeleton",
+				"name": "STRUCT_design_STRUCT__Value_Skeleton",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013923,7 +2013232,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Physique",
+				"name": "STRUCT_design_STRUCT__Value_Physique",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013932,7 +2013241,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BustPattern",
+				"name": "STRUCT_design_STRUCT__Value_BustPattern",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013941,7 +2013250,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FacePattern",
+				"name": "STRUCT_design_STRUCT__Value_FacePattern",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013950,7 +2013259,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyesEdit",
+				"name": "STRUCT_design_STRUCT__Value_EyesEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013959,7 +2013268,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyebrowsEdit",
+				"name": "STRUCT_design_STRUCT__Value_EyebrowsEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013968,7 +2013277,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EarsEdit",
+				"name": "STRUCT_design_STRUCT__Value_EarsEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013977,7 +2013286,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_NoseEdit",
+				"name": "STRUCT_design_STRUCT__Value_NoseEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013986,7 +2013295,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_MouthEdit",
+				"name": "STRUCT_design_STRUCT__Value_MouthEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2013995,7 +2013304,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_JawEdit",
+				"name": "STRUCT_design_STRUCT__Value_JawEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014004,7 +2013313,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_CheeksEdit",
+				"name": "STRUCT_design_STRUCT__Value_CheeksEdit",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014013,7 +2013322,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Eyes",
+				"name": "STRUCT_design_STRUCT__Value_Eyes",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014022,7 +2013331,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FurPattern",
+				"name": "STRUCT_design_STRUCT__Value_FurPattern",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014031,7 +2013340,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_MuscleStrength",
+				"name": "STRUCT_design_STRUCT__Value_MuscleStrength",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014040,7 +2013349,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BeastmanAge",
+				"name": "STRUCT_design_STRUCT__Value_BeastmanAge",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014049,7 +2013358,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_WrinkleStrength",
+				"name": "STRUCT_design_STRUCT__Value_WrinkleStrength",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014058,7 +2013367,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Tattoos",
+				"name": "STRUCT_design_STRUCT__Value_Tattoos",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014067,7 +2013376,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Scars",
+				"name": "STRUCT_design_STRUCT__Value_Scars",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014076,7 +2013385,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Teeth",
+				"name": "STRUCT_design_STRUCT__Value_Teeth",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014085,7 +2013394,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BodyHair",
+				"name": "STRUCT_design_STRUCT__Value_BodyHair",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014094,7 +2013403,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Makeup",
+				"name": "STRUCT_design_STRUCT__Value_Makeup",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014103,7 +2013412,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Eyebrows",
+				"name": "STRUCT_design_STRUCT__Value_Eyebrows",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014112,7 +2013421,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Eyelashes",
+				"name": "STRUCT_design_STRUCT__Value_Eyelashes",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014121,7 +2013430,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_PrimaryHairColor",
+				"name": "STRUCT_design_STRUCT__Value_PrimaryHairColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014130,7 +2013439,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_SecondaryHairColor",
+				"name": "STRUCT_design_STRUCT__Value_SecondaryHairColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014139,7 +2013448,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelashesColor",
+				"name": "STRUCT_design_STRUCT__Value_EyelashesColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014148,7 +2013457,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelinerColor",
+				"name": "STRUCT_design_STRUCT__Value_EyelinerColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014157,7 +2013466,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyeshadowColor",
+				"name": "STRUCT_design_STRUCT__Value_EyeshadowColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014166,7 +2013475,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_CheekColor",
+				"name": "STRUCT_design_STRUCT__Value_CheekColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014175,7 +2013484,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_LipsColor",
+				"name": "STRUCT_design_STRUCT__Value_LipsColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014184,7 +2013493,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_IrisColor",
+				"name": "STRUCT_design_STRUCT__Value_IrisColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014193,7 +2013502,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_ScleraColor",
+				"name": "STRUCT_design_STRUCT__Value_ScleraColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014202,7 +2013511,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_TattoosColor",
+				"name": "STRUCT_design_STRUCT__Value_TattoosColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014211,7 +2013520,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_TeethColor",
+				"name": "STRUCT_design_STRUCT__Value_TeethColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014220,7 +2013529,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FurColor",
+				"name": "STRUCT_design_STRUCT__Value_FurColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014229,7 +2013538,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_FurPatternColor",
+				"name": "STRUCT_design_STRUCT__Value_FurPatternColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014238,7 +2013547,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_ClawsColor",
+				"name": "STRUCT_design_STRUCT__Value_ClawsColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014247,7 +2013556,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_NoseColor",
+				"name": "STRUCT_design_STRUCT__Value_NoseColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014256,7 +2013565,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_DirtColor",
+				"name": "STRUCT_design_STRUCT__Value_DirtColor",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014265,7 +2013574,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_SkinShader",
+				"name": "STRUCT_design_STRUCT__Value_SkinShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014274,7 +2013583,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_HairShader",
+				"name": "STRUCT_design_STRUCT__Value_HairShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014283,7 +2013592,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_BeardShader",
+				"name": "STRUCT_design_STRUCT__Value_BeardShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014292,7 +2013601,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyelinerShader",
+				"name": "STRUCT_design_STRUCT__Value_EyelinerShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014301,7 +2013610,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_EyeshadowShader",
+				"name": "STRUCT_design_STRUCT__Value_EyeshadowShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014310,7 +2013619,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_CheekShader",
+				"name": "STRUCT_design_STRUCT__Value_CheekShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014319,7 +2013628,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_LipsShader",
+				"name": "STRUCT_design_STRUCT__Value_LipsShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014328,7 +2013637,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_TattoosShader",
+				"name": "STRUCT_design_STRUCT__Value_TattoosShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014337,7 +2013646,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_DirtShader",
+				"name": "STRUCT_design_STRUCT__Value_DirtShader",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2014346,7 +2013655,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "STRUCT__Value_Pretender",
+				"name": "STRUCT_design_STRUCT__Value_Pretender",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2025951,7 +2025260,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2035117,7 +2034426,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2035725,14 +2035034,14 @@
 				"array": false,
 				"name": "v6",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.gui.Float4ModeType",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "BoolValueInternal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2039527,7 +2038836,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2063285,7 +2062594,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2063339,7 +2062648,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "DevAcceptUserIndex",
 				"native": true,
 				"original_type": "via.UserIndex",
 				"size": 4,
@@ -2067270,7 +2066579,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2082553,7 +2081862,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2094241,7 +2093550,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "GyroscopeZeroDriftMode(?)",
+				"name": "GyroscopeZeroDriftMode",
 				"native": true,
 				"original_type": "via.hid.NpadGyroscopeZeroDriftMode",
 				"size": 4,
@@ -2099807,7 +2099116,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2100698,7 +2100007,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2105265,7 +2104574,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2112109,7 +2111418,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2113574,7 +2112883,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "ProfileType",
 				"native": true,
 				"original_type": "via.audiorender.ExecuteRequestType",
 				"size": 4,
@@ -2127286,7 +2126595,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "DeviceOrientation",
 				"native": true,
 				"original_type": "via.DeviceOrientation",
 				"size": 4,
@@ -2127322,7 +2126631,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "MobileStatusBarState",
 				"native": true,
 				"original_type": "via.MobileBarState",
 				"size": 4,
@@ -2127331,7 +2126640,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "MobileNavigationBarState",
 				"native": true,
 				"original_type": "via.MobileBarState",
 				"size": 4,
@@ -2127340,7 +2126649,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v25",
+				"name": "FixMobileNavigationBarBottom",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2127349,7 +2126658,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "DrawWireframe",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2138867,7 +2138176,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Max",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyCleanHit_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138876,7 +2138185,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Min",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyCleanHit_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138885,7 +2138194,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Max",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyScratch_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138894,7 +2138203,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Min",
+				"name": "STRUCT_DamageLimit_STRUCT_EnemyScratch_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138903,7 +2138212,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Max",
+				"name": "STRUCT_DamageLimit_STRUCT_Friend_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138912,7 +2138221,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Min",
+				"name": "STRUCT_DamageLimit_STRUCT_Friend_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138921,7 +2138230,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Max",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyCleanHit_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138930,7 +2138239,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Min",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyCleanHit_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138939,7 +2138248,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Max",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyScratch_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138948,7 +2138257,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Min",
+				"name": "STRUCT_ReactionLimit_STRUCT_EnemyScratch_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138957,7 +2138266,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Max",
+				"name": "STRUCT_ReactionLimit_STRUCT_Friend_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138966,7 +2138275,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Min",
+				"name": "STRUCT_ReactionLimit_STRUCT_Friend_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138975,7 +2138284,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Max",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyCleanHit_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138984,7 +2138293,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyCleanHit_Min",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyCleanHit_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2138993,7 +2138302,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Max",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyScratch_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2139002,7 +2138311,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_EnemyScratch_Min",
+				"name": "STRUCT_ForceLimit_STRUCT_EnemyScratch_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2139011,7 +2138320,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Max",
+				"name": "STRUCT_ForceLimit_STRUCT_Friend_Max",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2139020,7 +2138329,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_Friend_Min",
+				"name": "STRUCT_ForceLimit_STRUCT_Friend_Min",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2145181,7 +2144490,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v50",
+				"name": "UseUberShader",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2146315,7 +2145624,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v176",
+				"name": "StochasticTransparentCoverage",
 				"native": true,
 				"original_type": "via.effect.StochasticTransparentCoverage",
 				"size": 4,
@@ -2146324,7 +2145633,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v177",
+				"name": "StochasticTransparentResolution",
 				"native": true,
 				"original_type": "via.effect.StochasticTransparentResolution",
 				"size": 4,
@@ -2146333,7 +2145642,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v178",
+				"name": "StochasticTransparentSample",
 				"native": true,
 				"original_type": "via.effect.StochasticTransparentSample",
 				"size": 4,
@@ -2146342,7 +2145651,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v179",
+				"name": "StochasticTransparentDepthInfluence",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2155128,16 +2154437,16 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "TypingCondition(?)",
+				"name": "TypingTime",
 				"native": true,
-				"original_type": "via.gui.TypingCondition",
+				"original_type": "",
 				"size": 4,
-				"type": "S32"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "TypingCommand(?)",
+				"name": "TypingCommand",
 				"native": true,
 				"original_type": "via.gui.TypingCommand",
 				"size": 4,
@@ -2155155,7 +2154464,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "AnimationEnable(?)",
+				"name": "AnimationEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2156776,7 +2156085,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2179198,7 +2178507,7 @@
 				"array": false,
 				"name": "VariableType0",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2179360,7 +2178669,7 @@
 				"array": false,
 				"name": "VariableType2",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2179441,7 +2178750,7 @@
 				"array": false,
 				"name": "VariableType3",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2179522,7 +2178831,7 @@
 				"array": false,
 				"name": "VariableType4",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2179603,7 +2178912,7 @@
 				"array": false,
 				"name": "VariableType5",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2179684,7 +2178993,7 @@
 				"array": false,
 				"name": "VariableType6",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2179765,7 +2179074,7 @@
 				"array": false,
 				"name": "VariableType7",
 				"native": true,
-				"original_type": "via.gui.FreePolygon.MaterialParamType",
+				"original_type": "via.gui.MaterialParamType",
 				"size": 4,
 				"type": "S32"
 			},
@@ -2186742,7 +2186051,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2195537,7 +2194846,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "RenderFrame",
+				"name": "ResourceTag",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2215553,7 +2214862,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2218765,7 +2218074,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2228855,7 +2228164,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2262119,7 +2261428,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "SolverBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2271073,7 +2270382,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2271289,7 +2270598,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "EventEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
