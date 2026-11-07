@@ -88,7 +88,7 @@ UNIQUE_TEX_VARIANT_SUFFIXES = tuple(dict.fromkeys(TEX_VARIANT_SUFFIXES))
 TEX_FAMILY_ENDINGS = ('', *UNIQUE_TEX_VARIANT_SUFFIXES)
 TEX_SUFFIX_SET = frozenset(UNIQUE_TEX_VARIANT_SUFFIXES)
 TEX_SUFFIX_LENGTHS = tuple(sorted({len(suffix) for suffix in UNIQUE_TEX_VARIANT_SUFFIXES}, reverse=True))
-DIGITS = re.compile(r'\d+')
+DIGITS = re.compile(r'(?<!\d)\d{1,19}(?!\d)')
 VERSIONED_FILENAME = re.compile(r"^(.+\.([a-z][a-z0-9_]*))\.([0-9]+(?:\.[a-z0-9_]+)*)$")
 TEX_MDF2_MESH_SWAP_EXTENSIONS = ("tex", "mdf2", "mesh")
 STEM_SUFFIX_PROBE_STRINGS = (
