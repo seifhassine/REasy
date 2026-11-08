@@ -769,6 +769,22 @@ def nearby_resource_paths(handler, extension: str, *, source_path=None, parent_l
     return tuple(unique.values())
 
 
+def listed_resource_paths(handler, extension: str) -> tuple[str, ...]:
+    context = resource_context_for_handler(handler)
+    if context is None:
+        return ()
+    paths = [p.relative_to(context.project_dir).as_posix()
+             for p in Path(context.project_dir).rglob(f'*.{extension}*')] if context.project_dir else []
+    if context.pak_cached_reader is not None:
+        paths += context.pak_cached_reader.cached_known_paths()
+    pattern = re.compile(rf'natives/[^/]+/(?!streaming/)(.+\.{re.escape(extension)}){_SUFFIX}?', re.I)
+    unique = {}
+    for path in paths:
+        if found := pattern.fullmatch(normalize_resource_path(path)):
+            unique.setdefault(found[1].casefold(), found[1])
+    return tuple(sorted(unique.values(), key=str.casefold))
+
+
 def _resolve_destination_relative_path(resource_path: str, source_path: str | None, unpacked_dir: str, path_prefix: str) -> str:
     prefix = path_prefix.strip("/").lower()
     if source_path:

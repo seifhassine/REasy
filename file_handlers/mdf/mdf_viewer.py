@@ -34,6 +34,7 @@ lazy from ui.styles import current_colors, set_style_role
 lazy from ui.editor_widgets import editor_strip, search_field, styled_label, tool_button
 lazy from .material_graph import MdfMaterialGraph, layer_color_channel, pick_parameter_color
 lazy from .parameter_model import MdfParameterModel
+lazy from .texture_paths import TexturePathCompleter, TexturePathDelegate
 
 
 COPY_MATERIALS_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Copy Materials")
@@ -195,7 +196,8 @@ class MdfViewer(QWidget):
 		splitter.setStretchFactor(0, 1)
 		splitter.setStretchFactor(1, 3)
 
-		self.material_graph = MdfMaterialGraph()
+		self._texture_completer = TexturePathCompleter(self.handler, self)
+		self.material_graph = MdfMaterialGraph(texture_completer=self._texture_completer)
 		self.material_graph.material_changed.connect(self._on_graph_material_changed)
 		self.material_graph_tab_idx = self.tabs.addTab(
 			self.material_graph, self.tr("Material Graph")
@@ -278,6 +280,7 @@ class MdfViewer(QWidget):
 		self.textures_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeToContents)
 		self.textures_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
 		self.textures_table.itemChanged.connect(self._on_texture_changed)
+		self.textures_table.setItemDelegateForColumn(1, TexturePathDelegate(self._texture_completer, self.textures_table))
 		self.tex_add_btn = QPushButton(self.tr("Add"))
 		self.tex_del_btn = QPushButton(self.tr("Delete"))
 		self.tex_add_btn.clicked.connect(self._on_add_texture)

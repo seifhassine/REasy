@@ -377,8 +377,9 @@ class MaterialGraphNodeFrame(QFrame):
 class MdfMaterialGraph(QWidget):
     material_changed = Signal(str, int)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, *, texture_completer=None):
         super().__init__(parent)
+        self._texture_completer = texture_completer
         self._material = None
         self._document = None
         self._structure = None
@@ -803,6 +804,8 @@ class MdfMaterialGraph(QWidget):
         node.content.addWidget(preview)
         path = QLineEdit(texture.tex_path, node)
         path.setClearButtonEnabled(True)
+        if self._texture_completer is not None:
+            self._texture_completer.attach(path)
         path.editingFinished.connect(
             lambda i=index, editor=path: self._set_texture_path(i, editor.text())
         )
