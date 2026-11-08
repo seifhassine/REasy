@@ -88,7 +88,7 @@ class ScnRawInspector(QFrame):
         viewer.array_operations = RszArrayOperations(viewer)
         viewer.object_operations = RszObjectOperations(viewer)
         viewer.lazy_builder = RszLazyNodeBuilder(viewer)
-        viewer._configure_scene_actions = lambda: None
+        viewer._configure_toolbar = lambda: None
         viewer.modified_changed.connect(lambda changed, doc_id=document.document_id: self._on_viewer_modified(doc_id, changed))
         viewer.populate_tree()
         handler._scene_raw_viewer = viewer

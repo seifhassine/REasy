@@ -60,7 +60,6 @@ lazy from ui.breadcrumbs import BreadcrumbBar
 lazy from ui.detachable_tabs import CustomNotebook, FloatingTabWindow
 lazy from ui.editor_groups import EditorGroupHost
 lazy from ui.directory_search import search_directory_for_type
-lazy from ui.highlight_menu_controller import HighlightMenuController
 lazy from ui.homepage import RECENT_FILES_SHOWN, HomePageStack, HomePageWidget
 lazy from tools.hash_calculator import HashCalculator
 
@@ -169,8 +168,6 @@ class REasyEditorApp(QMainWindow):
 
         self.update_notification = UpdateNotificationManager(self, CURRENT_VERSION)
         self._update_menu = None
-
-        self.highlight_menu_controller = HighlightMenuController(self)
 
         self._create_menubar_corner()
         self._create_menus()
@@ -287,7 +284,7 @@ class REasyEditorApp(QMainWindow):
         self.home_stack.refresh(show_notebook, recent)
 
     def _on_active_page_changed(self, page=None):
-        self._update_highlight_menu_visibility()
+        self._update_general_shortcut_state()
         self.scenes.refresh_buttons()
         self._refresh_homepage()
         tab = self.tabs.get(page) if page is not None else self.get_active_tab()
@@ -570,22 +567,12 @@ class REasyEditorApp(QMainWindow):
         )
 
         help_menu = add_icon_menu(self.tr("Help"))
-        add_action(help_menu, self.tr("About"), self.show_about, icon="info")
+        add_action(help_menu, self.tr("About") + " (🔊)", self.show_about, icon="info")
         add_action(help_menu, self.tr("What's new?"), self.show_changelog)
         add_action(help_menu, self.tr("REasy Wiki"), self.show_wiki, icon="external")
 
         donate_menu = menubar.addMenu(self.tr("Donate"))
         add_action(donate_menu, self.tr("Support REasy"), self.show_donate_dialog)
-
-        self.highlight_menu_controller.create_menu(menubar)
-
-    def _update_highlight_menu_visibility(self):
-        current_tab = self.get_active_tab()
-        is_rsz = False
-        if current_tab and hasattr(current_tab, 'handler'):
-            is_rsz = is_handler_type(current_tab.handler, "RszHandler")
-        self.highlight_menu_controller.update_menu_visibility(is_rsz)
-        self._update_general_shortcut_state()
 
     def _update_general_shortcut_state(self):
         disabled = bool(getattr(self.get_active_tab(), "suppress_general_shortcuts", False))
@@ -1262,7 +1249,7 @@ class REasyEditorApp(QMainWindow):
             self._shared_find_dialog.activateWindow()
 
     def _on_tab_changed_for_find(self):
-        self._update_highlight_menu_visibility()
+        self._update_general_shortcut_state()
 
         if hasattr(self, '_shared_find_dialog') and self._shared_find_dialog and self._shared_find_dialog.isVisible():
             active = self.get_active_tab()
@@ -1348,7 +1335,7 @@ class REasyEditorApp(QMainWindow):
             self.project_workspace.sessions.add_tab(tab)
             notebook.setCurrentWidget(tab.notebook_widget)
             self._refresh_document_titles()
-            self._update_highlight_menu_visibility()
+            self._update_general_shortcut_state()
             self.scenes.refresh_buttons()
             self._refresh_homepage()
             self._on_active_page_changed(tab.notebook_widget)

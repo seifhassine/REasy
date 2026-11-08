@@ -22,9 +22,6 @@ lazy from services.backup_store import create_backup, find_backups
 lazy from services.file_io import write_files_atomically
 lazy from tools.shader_tools import ShaderToolDownloadCancelled
 lazy from ui.better_find_dialog import BetterFindDialog
-lazy from ui.highlight_delegate import HighlightDelegate
-lazy from ui.highlight_manager import HighlightManager
-lazy from ui.highlight_utils import model_index_row_path
 lazy from utils.resource_file_utils import (
     resolve_handler_resource_data,
     resource_context_for_app,
@@ -92,6 +89,9 @@ class FileTab:
                 margin: 0px;
                 padding: 0px;
             }
+            QTreeView::item {
+                height: 24px;
+            }
         """)
 
         self.tree.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
@@ -101,14 +101,8 @@ class FileTab:
         self.tree.doubleClicked.connect(
             self.on_double_click
         )
-        self.tree.clicked.connect(
-            self.on_tree_click
-        )
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
 
-        self.highlight_manager = HighlightManager()
-        self.highlight_delegate = HighlightDelegate(self.highlight_manager, self.tree)
-        self.tree.setItemDelegate(self.highlight_delegate)
         self.initial_load_complete = False
 
         if data is not None:
@@ -203,7 +197,6 @@ class FileTab:
                     project_dir=self.pak_project_dir,
                     game=str(getattr(handler, "game_version", "") or ""),
                 )
-            handler.highlight_manager = self.highlight_manager
 
             if hasattr(handler, "setup_tree"):
                 handler.setup_tree(self.tree)
@@ -346,21 +339,6 @@ class FileTab:
                 self.tree.setModel(model)
             except Exception as e:
                 print(f"Error populating tree: {e}")
-
-    def on_tree_click(self, index):
-        if not self.highlight_manager.enabled:
-            return
-        if not index.isValid():
-            return
-
-        item_id = model_index_row_path(index)
-
-        if self.highlight_manager.is_item_highlighted(item_id):
-            self.highlight_manager.remove_highlighted_item(item_id)
-        else:
-            self.highlight_manager.add_highlighted_item(item_id)
-
-        self.tree.viewport().update()
 
     def on_double_click(self, index):
         if not self.tree or not self.handler or not self.handler.supports_tree_editing():

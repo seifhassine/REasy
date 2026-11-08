@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (QLabel, QTreeView, QWidget, QHBoxLayout, QVBoxLay
                                QHeaderView, QMenu, QMessageBox, QStyledItemDelegate,
                                QLineEdit, QInputDialog, QApplication, QDialog, QDialogButtonBox,
                                QStyle, QStyleOptionViewItem)
-lazy from PySide6.QtGui import QCursor, QIcon, QPalette
+lazy from PySide6.QtGui import QCursor, QIcon
 from PySide6.QtCore import (
     QT_TRANSLATE_NOOP,
     Qt,
@@ -19,7 +19,6 @@ lazy from .tree_core import TreeModel
 lazy from .component_selector import ComponentSelectorDialog 
 lazy from ui.template_manager_dialog import TemplateManagerDialog
 lazy from ui.template_export_dialog import TemplateExportDialog
-lazy from ui.highlight_utils import model_index_row_path
 lazy from file_handlers.rsz.rsz_template_manager import RszTemplateManager
 
 lazy from .tree_widget_factory import TreeWidgetFactory
@@ -61,35 +60,18 @@ class AdvancedStyledDelegate(QStyledItemDelegate):
         
     def paint(self, painter, option, index):
         tree_view = self.parent()
-        should_highlight = False
-        
-        if tree_view and hasattr(tree_view, 'highlight_manager') and index.isValid():
-            highlight_manager = tree_view.highlight_manager
-            if highlight_manager:
-                item_id = model_index_row_path(index)
-                should_highlight = highlight_manager.is_item_highlighted(item_id)
-
-        if tree_view and tree_view.indexWidget(index) is not None:
+        if tree_view.indexWidget(index) is not None:
             row_option = QStyleOptionViewItem(option)
             self.initStyleOption(row_option, index)
             row_option.text = ""
             row_option.icon = QIcon()
-            if should_highlight:
-                color = tree_view.highlight_manager.highlight_color
-                row_option.palette.setColor(QPalette.Text, color)
-                row_option.palette.setColor(QPalette.HighlightedText, color)
             widget = row_option.widget
             style = widget.style() if widget is not None else QApplication.style()
             style.drawControl(QStyle.CE_ItemViewItem, row_option, painter, widget)
-            return
-        
-        if should_highlight:
-            modified_option = QStyleOptionViewItem(option)
-            modified_option.palette.setColor(QPalette.Text, tree_view.highlight_manager.highlight_color)
-            modified_option.palette.setColor(QPalette.HighlightedText, tree_view.highlight_manager.highlight_color)
-            super().paint(painter, modified_option, index)
         else:
             super().paint(painter, option, index)
+        if (color := tree_view.highlight_color(index)) is not None:
+            painter.fillRect(option.rect, color)
     
     def sizeHint(self, option, index):
         size = super().sizeHint(option, index)
@@ -114,7 +96,8 @@ class AdvancedTreeView(QTreeView):
     def __init__(self, viewer):
         super().__init__(viewer)
         self._viewer = weakref.ref(viewer)
-        self.highlight_manager = None
+        self.highlight_pen = None
+        self.highlights = weakref.WeakKeyDictionary()
         self.setItemDelegate(AdvancedStyledDelegate(self))
         self.setUniformRowHeights(False)
         self.setExpandsOnDoubleClick(True)
@@ -198,67 +181,18 @@ class AdvancedTreeView(QTreeView):
     def keyReleaseEvent(self, event):
         super().keyReleaseEvent(event)
 
-    def _on_item_click(self, index):
-        if not self.highlight_manager or not self.highlight_manager.enabled:
-            return
-        if not index.isValid():
-            return
-            
-        item_id = model_index_row_path(index)
-        
-        if self.highlight_manager.is_item_highlighted(item_id):
-            self.highlight_manager.remove_highlighted_item(item_id)
-            self._update_widget_highlight(index, False)
-        else:
-            self.highlight_manager.add_highlighted_item(item_id)
-            self._update_widget_highlight(index, True)
-        
-        self.viewport().update()
-    
-    def _update_widget_highlight(self, index, highlight):
-        if not self.highlight_manager:
-            return
-        
-        widget = self.indexWidget(index)
-        if not widget:
-            return
-        
-        self.setIndexWidget(index, None)
-        
+    def highlight_color(self, index):
         item = index.internalPointer()
-        if not item:
+        return self.highlights.get(item.raw.get("obj", item))
+
+    def _on_item_click(self, index):
+        if self.highlight_pen is None:
             return
-        
-        name_text = item.data[0] if item.data else ""
-        node_type = item.raw.get("type", "") if isinstance(item.raw, dict) else ""
-        data_obj = item.raw.get("obj", None) if isinstance(item.raw, dict) else None
-        
-        new_widget = TreeWidgetFactory.create_widget(
-            node_type, data_obj, name_text, self, self.parent_modified_callback
-        )
-        
-        if new_widget:
-            if highlight:
-                self._apply_widget_highlight(new_widget)
-
-            self.setIndexWidget(index, new_widget)
-
-    def _apply_widget_highlight(self, widget):
-        color = self.highlight_manager.highlight_color
-        color_str = (
-            f"rgb({color.red()}, {color.green()}, {color.blue()})"
-        )
-        for label in widget.findChildren(QLabel):
-            if label.textFormat() == Qt.RichText:
-                original_text = label.text()
-                label.setText(
-                    f'<span style="color: {color_str};">'
-                    f'{original_text}</span>'
-                )
-            else:
-                label.setStyleSheet(
-                    f"QLabel {{ color: {color_str}; }}"
-                )
+        item = index.internalPointer()
+        target = item.raw.get("obj", item)
+        if self.highlights.pop(target, None) != self.highlight_pen:
+            self.highlights[target] = self.highlight_pen
+        self.viewport().update()
 
     def setModelData(self, root_data):
         model = TreeModel(root_data)
@@ -374,10 +308,6 @@ class AdvancedTreeView(QTreeView):
             return
 
         self.setIndexWidget(index, widget)
-        if self.highlight_manager:
-            item_id = model_index_row_path(index)
-            if self.highlight_manager.is_item_highlighted(item_id):
-                self._update_widget_highlight(index, True)
 
         if (
             self.viewer.handler.auto_resource_management
@@ -1477,10 +1407,6 @@ class AdvancedTreeView(QTreeView):
                                                 self, self.parent_modified_callback)
         if widget:
             self.setIndexWidget(folder_index, widget)
-            if self.highlight_manager:
-                item_id = model_index_row_path(folder_index)
-                if self.highlight_manager.is_item_highlighted(item_id):
-                    self._update_widget_highlight(folder_index, True)
         self.expand(model.getIndexFromItem(parent_node))
         self.scrollTo(folder_index)
         return folder_index
@@ -1857,10 +1783,6 @@ class AdvancedTreeView(QTreeView):
             widget = TreeWidgetFactory.create_widget("resource", None, path, self, self.parent_modified_callback)
             if widget:
                 self.setIndexWidget(child_index, widget)
-                if self.highlight_manager:
-                    item_id = model_index_row_path(child_index)
-                    if self.highlight_manager.is_item_highlighted(item_id):
-                        self._update_widget_highlight(child_index, True)
             
             self.expand(resources_index)
             self.scrollTo(child_index)
@@ -2188,10 +2110,6 @@ class AdvancedTreeView(QTreeView):
         )
         if widget:
             self.setIndexWidget(go_index, widget)
-            if self.highlight_manager:
-                item_id = model_index_row_path(go_index)
-                if self.highlight_manager.is_item_highlighted(item_id):
-                    self._update_widget_highlight(go_index, True)
 
     def _add_children_recursively(self, go_index, children_data, model):
         go_item = go_index.internalPointer()
@@ -2321,10 +2239,6 @@ class AdvancedTreeView(QTreeView):
             "component", None, name_text, self, self.parent_modified_callback
         )
         self.setIndexWidget(component_index, widget)
-        if self.highlight_manager:
-            item_id = model_index_row_path(component_index)
-            if self.highlight_manager.is_item_highlighted(item_id):
-                self._update_widget_highlight(component_index, True)
                         
         self.expand(components_index)
         self.scrollTo(component_index)

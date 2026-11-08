@@ -26,6 +26,7 @@ lazy from file_handlers.rsz.rsz_data_types import (
 lazy from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 lazy from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError, RszFolderInfo, RszResourceInfo
 lazy from ui.editor_widgets import editor_strip, tool_button
+lazy from ui.highlight_button import HighlightButton
 lazy from ui.styles import current_colors, get_tree_stylesheet
 lazy from ui.qt_timers import call_later
 lazy from ..pyside.tree_model import DataTreeBuilder
@@ -191,9 +192,6 @@ class RszHandler(BaseFileHandler):
         viewer.type_registry = self.type_registry
         viewer.game_version = self.game_version
         viewer.show_advanced = self.show_advanced
-        
-        if hasattr(self, 'highlight_manager') and self.highlight_manager:
-            viewer.tree.highlight_manager = self.highlight_manager
 
         viewer.tree.setStyleSheet(get_tree_stylesheet(current_colors()))
         viewer._initialize_editor_services()
@@ -285,6 +283,7 @@ class RszViewer(QWidget):
         self.confirmation_prompt = False
         self._cleanup_pending = False
         self.tree = AdvancedTreeView(self)
+        self.highlight_button = None
         self.scene_button = None
         self._layout = QVBoxLayout(self)
         self._layout.addWidget(self.tree)
@@ -424,23 +423,24 @@ class RszViewer(QWidget):
         print("Populating tree")
         self.tree.setModelData(self._build_tree_data())
         self.embed_forms()
-        self._configure_scene_actions()
+        self._configure_toolbar()
 
-    def _configure_scene_actions(self):
-        if not holds_scene(self.scn):
+    def _configure_toolbar(self):
+        if self.highlight_button is not None:
             return
-        if self.scene_button is not None:
-            return
-        scene_bar, row = editor_strip(margins=(6, 2, 6, 2))
-        scene_bar.setObjectName("rszSceneBar")
+        toolbar, row = editor_strip(margins=(6, 2, 6, 2))
+        toolbar.setObjectName("rszToolbar")
+        self.highlight_button = HighlightButton(self.tree, toolbar)
+        row.addWidget(self.highlight_button)
         row.addStretch(1)
-        self.scene_button = tool_button("layers", parent=scene_bar)
-        self.scene_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.scene_button.setPopupMode(QToolButton.InstantPopup)
-        self.scene_button.setMenu(QMenu(self.scene_button))
-        self.scene_button.menu().aboutToShow.connect(self._populate_scene_button_menu)
-        row.addWidget(self.scene_button)
-        self.layout().insertWidget(0, scene_bar)
+        if holds_scene(self.scn):
+            self.scene_button = tool_button("layers", parent=toolbar)
+            self.scene_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+            self.scene_button.setPopupMode(QToolButton.InstantPopup)
+            self.scene_button.setMenu(QMenu(self.scene_button))
+            self.scene_button.menu().aboutToShow.connect(self._populate_scene_button_menu)
+            row.addWidget(self.scene_button)
+        self.layout().insertWidget(0, toolbar)
         self.refresh_scene_button()
 
     def _scene_source(self):
