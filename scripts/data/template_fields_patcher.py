@@ -4,7 +4,8 @@ import argparse
 import re
 from typing import Dict, Any
 
-# python template_fields_patcher.py --source "D:\RE Modding\REasy\resources\data\dumps\stripped\rszmhwilds_strip.json" --patch "D:\RE Modding\REasy\resources\data\dumps\stripped\rszre9_strip.json" --crc --force-count-mismatch --only-versioned-source-fields
+# From the project root:
+# python scripts/data/template_fields_patcher.py --source resources/data/dumps/stripped/rszmhwilds_strip.json --patch resources/data/dumps/stripped/rszre9_strip.json --crc --force-count-mismatch --only-versioned-source-fields
 
 
 class TemplatePatcher:

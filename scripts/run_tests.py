@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 TESTS = ROOT / 'tests'
 # A module that mentions one of these reads the local corpus (tests/TESTFILE),
 # an installed game, or an externally supplied sample.
-CORPUS_MARKERS = ('TESTFILE', 'find_rise_installation', 'REASY_', 'Program Files')
+CORPUS_MARKERS = ('TESTFILE', 'find_rise_installation', 'REASY_')
 HEADER = re.compile(r'^(FAIL|ERROR): (.+)$', re.MULTILINE)
 SUMMARY = re.compile(r'^Ran (\d+) tests? in ', re.MULTILINE)
 SKIPPED = re.compile(r'skipped=(\d+)')

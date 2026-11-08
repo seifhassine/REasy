@@ -19,7 +19,7 @@ Tested on *Resident Evil 2*, *Devil May Cry 5*, *Resident Evil 3*, *Resident Evi
 
 ```powershell
 pwsh -NoProfile -File "dump_il2cpp.ps1" `
-  -GamePath "D:\Path\To\Game.exe" `
+  -GamePath "path\to\Game.exe" `
   -OutputPath ".\il2cpp_dump.json" `
   -Force
 ```

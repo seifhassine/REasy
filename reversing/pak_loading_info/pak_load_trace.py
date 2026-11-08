@@ -4,7 +4,7 @@ r"""Trace RE Engine PAK mount and lookup order with Frida.
 Usage:
 
     python pak_load_trace.py re8.exe
-    python pak_load_trace.py "D:\SteamLibrary\steamapps\common\Game\game.exe"
+    python pak_load_trace.py "path\to\Game\game.exe"
 
 Press Ctrl+C, or exit the game, to print the final lookup order.
 """
