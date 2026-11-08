@@ -51,13 +51,19 @@ def bind_first_member(context: MaterialInstanceContext, mmtr_path: str, loader, 
                                  family=family, shader_lod=0)
 
 
-def bind_drawn_master(context: MaterialInstanceContext, mmtr_path: str, loader, masters):
+def drawn_master(mmtr_path: str, loader, masters):
     hit = loader(mmtr_path)
     if hit is None:
         raise FileNotFoundError(mmtr_path)
     if is_mmtrs_resource(mmtr_path, hit[0]):
-        return bind_first_member(context, mmtr_path, loader, masters)
-    return bind_material_context(masters(*hit), context, mmtr_path)
+        family = mmtrs_family(hit)
+        return masters(*family_member(family, 0, loader)), family
+    return masters(*hit), None
+
+
+def bind_drawn_master(context: MaterialInstanceContext, mmtr_path: str, loader, masters):
+    master, family = drawn_master(mmtr_path, loader, masters)
+    return bind_material_context(master, context, mmtr_path, family=family, shader_lod=None if family is None else 0)
 
 
 def load_material_family(material, loader, *, game: str):

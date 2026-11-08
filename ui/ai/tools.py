@@ -6454,14 +6454,12 @@ class ReasyAssistantTools(
 
         if row == len(parameters):
             viewer.par_add_btn.click()
-        table = viewer._get_or_create_params_table(material_index)
-        table.item(row, 0).setText(str(name))
-        table.item(row, 1).setText(str(count))
-        table.item(row, 2).setCheckState(
-            Qt.Checked if locked_value else Qt.Unchecked
-        )
+        model, table = viewer.parameter_model, viewer.params_table
+        model.setData(model.index(row, 0), str(name))
+        model.setData(model.index(row, 1), str(count))
+        model.setData(model.index(row, 2), Qt.Checked if locked_value else Qt.Unchecked, Qt.CheckStateRole)
         for component in range(count):
-            table.item(row, 3 + component).setText(str(parsed_values[component]))
+            model.setData(model.index(row, 3 + component), str(parsed_values[component]))
         table.selectRow(row)
         self._action_feedback.pulse_table_row(table, row)
         return {"material": material_index, "parameter_index": row, "action": "upserted"}
@@ -6471,7 +6469,7 @@ class ReasyAssistantTools(
         material_index = self._select_material(viewer, material, "parameters")
         parameters = viewer.handler.mdf.materials[material_index].parameters
         row = self._table_row(index, len(parameters), "Parameter")
-        table = viewer._get_or_create_params_table(material_index)
+        table = viewer.params_table
         table.clearSelection()
         table.selectRow(row)
         self._action_feedback.pulse_table_row(table, row)

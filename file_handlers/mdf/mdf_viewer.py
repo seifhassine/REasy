@@ -1,24 +1,27 @@
+from functools import partial
 import os
 from pathlib import Path
 import weakref
 
 from PySide6.QtWidgets import (
 	QWidget, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-	QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QComboBox,
+	QTableWidget, QTableWidgetItem, QTableView, QHeaderView, QAbstractItemView, QComboBox,
 	QGroupBox, QGridLayout, QCheckBox, QSpinBox, QSplitter, QTabWidget, QSizePolicy,
-	QMessageBox, QStackedWidget, QFrame
+	QMessageBox, QFrame
 )
 lazy from PySide6.QtGui import QPixmap
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal
 lazy from file_handlers.mesh.material_resolver import MeshMaterialResolver
 lazy from file_handlers.mmtr.material_context import MaterialInstanceContext
-lazy from file_handlers.mmtr.material_family import bind_drawn_master, parsed_master
+lazy from file_handlers.mmtr.material_family import bind_drawn_master, drawn_master, parsed_master
+lazy from file_handlers.mmtr.material_usage import native_input_usage
 lazy from file_handlers.mmtr.mmtr_viewer import ObjectScope, open_master_for_object
+lazy from file_handlers.mmtr.parsed_files import Lease
+lazy from ui.background_jobs import BackgroundJobs
 lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qpixmap
 lazy from file_handlers.tex.texture_quality import DEFAULT_TEXTURE_QUALITY, choose_texture_mip
 lazy from utils.enum_manager import EnumDefinitionError
 lazy from utils.hash_util import murmur3_hash_utf16le
-lazy from utils.number_format import format_display_value
 lazy from utils.resource_file_utils import resource_context_for_handler, resource_path_key, resource_version_from_path
 lazy from .mdf_clipboard import MdfClipboard
 lazy from .mdf_file import (SHADING_TYPE_ENUM, GpbfHeader, MatData, MaterialFlagError, ParamHeader, ShadingTypeError,
@@ -26,15 +29,37 @@ lazy from .mdf_file import (SHADING_TYPE_ENUM, GpbfHeader, MatData, MaterialFlag
 lazy from .mdf_template_manager import MdfTemplateManager
 lazy from ui.mdf_template_export_dialog import MdfTemplateExportDialog
 lazy from ui.mdf_template_manager_dialog import MdfTemplateManagerDialog
-lazy from ui.widgets_utils import get_color_preview_brush
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
 lazy from ui.editor_widgets import editor_strip, search_field, styled_label, tool_button
-lazy from .material_graph import MdfMaterialGraph, is_color_parameter, layer_color_channel, pick_parameter_color, unit_value
+lazy from .material_graph import MdfMaterialGraph, layer_color_channel, pick_parameter_color
+lazy from .parameter_model import MdfParameterModel
 
 
 COPY_MATERIALS_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Copy Materials")
 EXPORT_TEMPLATE_TITLE = QT_TRANSLATE_NOOP("MdfViewer", "Export Template")
+
+
+def _master_loader(handler, found: dict):
+	def load(path):
+		if found.get(path) is None:
+			found[path] = MeshMaterialResolver._resolve_resource(handler, path)
+		return found[path]
+	return load
+
+
+def _load_master(handler, game: str, path: str, found: dict):
+	parsed, lease = {}, Lease()
+
+	def master(resource, data):
+		parsed[resource] = lease.parsed(resource, data, parsed_master, game, resource_version_from_path(resource, "mmtr"),
+				resource)
+		return parsed[resource]
+	try:
+		native_input_usage(drawn_master(path, _master_loader(handler, found), master)[0])
+	finally:
+		lease.close()
+	return found, parsed
 
 
 class MdfViewer(QWidget):
@@ -47,8 +72,9 @@ class MdfViewer(QWidget):
 		self.handler = handler
 		self._modified = False
 		self._current_index = -1
-		self._mmtr_document_cache = {}
-		self._mmtr_document_errors = {}
+		self._masters = {}
+		self._loading_master = None
+		self._master_jobs = BackgroundJobs(self)
 		self._texture_preview_cache = {}
 		self._setup_ui()
 		self._populate()
@@ -269,7 +295,14 @@ class MdfViewer(QWidget):
 		set_style_role(self.params_info_label, banner="danger")
 		self.params_info_label.hide()
 
-		self.params_stack = QStackedWidget()
+		self.parameter_model = MdfParameterModel(self)
+		self.parameter_model.edited.connect(self._on_parameter_edited)
+		self.params_table = QTableView()
+		self.params_table.setModel(self.parameter_model)
+		self.params_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+		self.params_table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
+		self.params_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+		self.params_table.clicked.connect(self._on_param_clicked)
 
 		self.par_add_btn = QPushButton(self.tr("Add"))
 		self.par_add_above_btn = QPushButton(self.tr("Add Above"))
@@ -280,7 +313,7 @@ class MdfViewer(QWidget):
 		pg.addLayout(self._table_actions(
 			(self.par_add_btn, "add"), (self.par_add_above_btn, "arrow_up"), (self.par_del_btn, "delete")))
 		pg.addWidget(self.params_info_label)
-		pg.addWidget(self.params_stack, 1)
+		pg.addWidget(self.params_table, 1)
 		self.params_tab_idx = self.tabs.addTab(params_tab, self.tr("Parameters"))
 
 		gpbf_tab = QWidget()
@@ -321,6 +354,7 @@ class MdfViewer(QWidget):
 			self.shaderLODRedirects_tab, self.tr("Shader LOD Redirects")
 		)
 
+		self.tabs.setCurrentIndex(self.overview_tab_idx)
 		self.tabs.currentChanged.connect(self._on_tab_changed)
 		self.materials_table.itemSelectionChanged.connect(self._on_select_material)
 
@@ -361,10 +395,7 @@ class MdfViewer(QWidget):
 		self._refresh_materials_list()
 		if self.materials_table.rowCount() > 0:
 			self.materials_table.selectRow(0)
-			self._current_index = 0
-			self._refresh_details_for_current_material()
 		else:
-			self._current_index = -1
 			self._refresh_details_for_current_material()
 
 	def _refresh_materials_list(self):
@@ -616,7 +647,7 @@ class MdfViewer(QWidget):
 		idx = self._get_current_index()
 		if 0 <= idx < len(m.materials):
 			m.materials[idx].header.mmtr_path = text
-			self._mmtr_document_cache.pop(resource_path_key(text), None)
+			self._masters.pop(resource_path_key(text), None)
 			self.modified = True
 
 	def _on_matname_changed(self, text: str):
@@ -689,14 +720,11 @@ class MdfViewer(QWidget):
 		for offset, mat in enumerate(materials):
 			m.materials.insert(insert_at + offset, mat)
 
-		self._clear_params_cache()
 		self._refresh_materials_list()
 		if self.materials_table.rowCount() > 0:
-			target_row = min(insert_at, self.materials_table.rowCount() - 1)
-			if target_row >= 0:
-				self.materials_table.selectRow(target_row)
-				self._current_index = target_row
-				self._refresh_details_for_current_material()
+			self._current_index = min(insert_at, self.materials_table.rowCount() - 1)
+			self.materials_table.selectRow(self._current_index)
+			self._refresh_details_for_current_material()
 		self.modified = True
 		return len(materials)
 
@@ -758,48 +786,10 @@ class MdfViewer(QWidget):
 				self.tr("Imported template '{name}'.").format(name=name) + self._conversion_note(metadata),
 			)
 
-	def _clear_params_cache(self):
-		while self.params_stack.count() > 0:
-			widget = self.params_stack.widget(0)
-			self.params_stack.removeWidget(widget)
-			widget.deleteLater()
-
-	def _get_or_create_params_table(self, mat_index):
-		while self.params_stack.count() <= mat_index:
-			table = QTableWidget(0, 8)
-			table.setHorizontalHeaderLabels([
-				self.tr("Name"), self.tr("Components"), self.tr("Locked"),
-				"X", "Y", "Z", "W", self.tr("Color"),
-			])
-			table.horizontalHeaderItem(2).setIcon(line_icon("lock"))
-			self._set_header_tooltip(table, 2, self.tr(
-				"Checked: the game can't change this parameter at runtime; setFloat() is skipped and the file's value stays."))
-			table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-			for column in range(1, 8):
-				table.horizontalHeader().setSectionResizeMode(column, QHeaderView.ResizeToContents)
-			table.setEditTriggers(QAbstractItemView.DoubleClicked | QAbstractItemView.EditKeyPressed)
-			table.setSelectionBehavior(QAbstractItemView.SelectRows)
-			table.itemChanged.connect(self._on_param_changed)
-			table.itemClicked.connect(self._on_param_clicked)
-			self.params_stack.addWidget(table)
-
-		return self.params_stack.widget(mat_index)
-
-	def _refresh_params_table(self, md, mat_index: int):
-		table = self._get_or_create_params_table(mat_index)
-		table.blockSignals(True)
-		self._update_table_rows(table, len(md.parameters))
-		for row, parameter in enumerate(md.parameters):
-			self._populate_param_row_in_table(table, row, parameter)
-		table.blockSignals(False)
-		self.params_stack.setCurrentIndex(mat_index)
-		self._update_params_info(md)
-
 	def _refresh_details_for_current_material(self):
-		m = self.handler.mdf
-		mat_index = self._current_index
-
-		if not m or not (0 <= mat_index < len(m.materials)):
+		md = self._current_material()
+		self.parameter_model.set_material(md)
+		if md is None:
 			self.mmtr_edit.setText("")
 			self.matname_edit.setText("")
 			self.matname_hash_label.setText("0x00000000")
@@ -813,8 +803,12 @@ class MdfViewer(QWidget):
 			self._update_table_rows(self.shaderLODRedirects_table, 0)
 			self.material_graph.set_material(None)
 			return
+		self._refresh_overview(md)
+		self._update_params_info(md)
+		self._refresh_tab(md)
 
-		md = m.materials[mat_index]
+	def _refresh_overview(self, md):
+		m = self.handler.mdf
 		version = self._current_file_version()
 
 		self.mmtr_edit.blockSignals(True)
@@ -861,63 +855,24 @@ class MdfViewer(QWidget):
 		self.ukn_edit.blockSignals(False)
 
 		self._update_flags_ui(md.header)
-		self._refresh_params_table(md, mat_index)
 
-		current_tab = self.tabs.currentIndex()
-		if (
-			current_tab == self.material_graph_tab_idx
-			or self.material_graph._material is not md
-		):
+	def _refresh_tab(self, md):
+		tab, version = self.tabs.currentIndex(), self._current_file_version()
+		if tab == self.material_graph_tab_idx:
 			self._show_material_graph(md)
-		if current_tab == self.textures_tab_idx:
+		elif tab == self.textures_tab_idx:
 			self._refresh_textures_table(md)
-		elif current_tab == self.gpbf_tab_idx and version >= 19:
+		elif tab == self.gpbf_tab_idx and version >= 19:
 			self._refresh_gpbf_table(md)
-		elif current_tab == self.shaderLODRedirects_tab_idx and version >= 31:
+		elif tab == self.shaderLODRedirects_tab_idx and version >= 31:
 			self._refresh_shader_lod_table(md)
+
 	def _refresh_textures_table(self, md):
 		self.textures_table.blockSignals(True)
 		self._update_table_rows(self.textures_table, len(md.textures))
 		for row, texture in enumerate(md.textures):
 			self._update_texture_row(row, texture)
 		self.textures_table.blockSignals(False)
-
-	def _populate_param_row_in_table(self, table, row, parameter):
-		table.setItem(row, 0, QTableWidgetItem(parameter.name))
-		table.setItem(row, 1, QTableWidgetItem(str(parameter.component_count)))
-
-		locked = QTableWidgetItem()
-		locked.setFlags(locked.flags() | Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
-		locked.setCheckState(Qt.Checked if parameter.component_locked else Qt.Unchecked)
-		locked.setFlags(locked.flags() & ~Qt.ItemIsEditable)
-		table.setItem(row, 2, locked)
-
-		values = list(parameter.parameter)
-		for component in range(4):
-			item = QTableWidgetItem("")
-			if component < parameter.component_count:
-				item.setText(format_display_value(values[component]))
-				item.setFlags(item.flags() | Qt.ItemIsEditable | Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-			else:
-				item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-			table.setItem(row, 3 + component, item)
-		table.setItem(row, 7, self._parameter_color_item(parameter, values))
-
-	def _parameter_color_item(self, parameter, values) -> QTableWidgetItem:
-		item = QTableWidgetItem("")
-		if not is_color_parameter(parameter):
-			item.setFlags((item.flags() | Qt.ItemIsEnabled) & ~(Qt.ItemIsEditable | Qt.ItemIsSelectable))
-			return item
-		red, green, blue = (int(unit_value(value) * 255) for value in values[:3])
-		alpha = int(unit_value(values[3] if parameter.component_count == 4 else 1.0) * 255)
-		item.setBackground(get_color_preview_brush(red, green, blue, alpha))
-		item.setToolTip(
-			f"RGBA: {red},{green},{blue},{alpha}"
-			if parameter.component_count == 4
-			else f"RGB: {red},{green},{blue}"
-		)
-		item.setFlags((item.flags() | Qt.ItemIsSelectable | Qt.ItemIsEnabled) & ~Qt.ItemIsEditable)
-		return item
 
 	def _refresh_gpbf_table(self, md):
 		self.gpbf_table.blockSignals(True)
@@ -939,7 +894,10 @@ class MdfViewer(QWidget):
 		self.shaderLODRedirects_table.blockSignals(False)
 
 	def _on_tab_changed(self, index):
-		self._refresh_details_for_current_material()
+		if (md := self._current_material()) is not None:
+			if index == self.overview_tab_idx:
+				self._refresh_overview(md)
+			self._refresh_tab(md)
 
 	def _current_material(self):
 		m = self.handler.mdf
@@ -952,8 +910,7 @@ class MdfViewer(QWidget):
 		if textures:
 			self._refresh_textures_table(md)
 		else:
-			self._refresh_params_table(md, self._current_index)
-		self._refresh_material_graph(md)
+			self._update_params_info(md)
 		self.modified = True
 
 	def _on_add_texture(self):
@@ -964,11 +921,13 @@ class MdfViewer(QWidget):
 		self._material_edited(md, textures=True)
 
 	def _delete_selected_rows(self, md, items: list, table, *, textures=False):
-		selected = sorted({index.row() for index in table.selectedIndexes()}, reverse=True)
+		selected = sorted({index.row() for index in table.selectionModel().selectedIndexes()}, reverse=True)
 		for row in selected:
 			if 0 <= row < len(items):
 				del items[row]
 		if selected:
+			if not textures:
+				self.parameter_model.set_material(md)
 			self._material_edited(md, textures=textures)
 
 	def _on_delete_texture(self):
@@ -984,31 +943,29 @@ class MdfViewer(QWidget):
 		md = self._current_material()
 		if md is None:
 			return
-		table = self._get_or_create_params_table(self._current_index)
 		name = "Param"
-		row = table.currentRow()
+		row = self.params_table.currentIndex().row()
 		if 0 <= row < len(md.parameters):
 			previous = md.parameters[row - 1].name if row > 0 else ""
 			is_layer, color_index = layer_color_channel(previous)
 			if is_layer and color_index is not None and color_index < 2:
 				name = ("LayerColor_Red", "LayerColor_Green", "LayerColor_Blue")[color_index + 1]
-		md.parameters.append(self._new_parameter(name))
+		self.parameter_model.insert(len(md.parameters), self._new_parameter(name))
 		self._material_edited(md)
 
 	def _on_add_param_above(self):
 		md = self._current_material()
 		if md is None:
 			return
-		table = self._get_or_create_params_table(self._current_index)
-		insert_at = max(0, min(table.currentRow(), len(md.parameters)))
-		md.parameters.insert(insert_at, self._new_parameter())
+		insert_at = max(0, min(self.params_table.currentIndex().row(), len(md.parameters)))
+		self.parameter_model.insert(insert_at, self._new_parameter())
 		self._material_edited(md)
-		table.selectRow(insert_at)
+		self.params_table.selectRow(insert_at)
 
 	def _on_delete_param(self):
 		md = self._current_material()
 		if md is not None:
-			self._delete_selected_rows(md, md.parameters, self._get_or_create_params_table(self._current_index))
+			self._delete_selected_rows(md, md.parameters, self.params_table)
 
 	def _update_params_info(self, md):
 		segments = []
@@ -1081,32 +1038,54 @@ class MdfViewer(QWidget):
 		open_master_for_object(app, path, data, scope,
 				pak_project_dir=str(getattr(context, "project_dir", "") or "") if in_paks else "")
 
-	def _resolve_mmtr_document(self, material):
-		resource_path = str(material.header.mmtr_path or "").replace("\\", "/").strip()
-		if not resource_path:
+	def cleanup(self):
+		self._master_jobs.close()
+
+	def _master_error(self, error) -> str:
+		return self.tr("Could not resolve the compiled master material: {error}").format(error=error)
+
+	def _bound_master(self, material):
+		path = str(material.header.mmtr_path or "").replace("\\", "/").strip()
+		if not path:
+			return None, ""
+		key = resource_path_key(path)
+		if key not in self._masters and self._loading_master != key:
+			found = {}
+			if _master_loader(self.handler, found)(path) is None:
+				self._masters[key] = self._master_error(path)
+			else:
+				self._loading_master = key
+				self._master_jobs.start(partial(_load_master, self.handler, self._game(), path, found),
+						self._master_loaded, self._master_failed)
+		loaded = self._masters.get(key)
+		if loaded is None:
 			return None
-		key = resource_path_key(resource_path)
-		found, parsed = self._mmtr_document_cache.setdefault(key, ({}, {}))
-
-		def load(path):
-			if found.get(path) is None:
-				found[path] = MeshMaterialResolver._resolve_resource(self.handler, path)
-			return found[path]
-
-		def master(path, data):
-			if path not in parsed:
-				parsed[path] = parsed_master(data, self._game(), resource_version_from_path(path, "mmtr"), path)
-			return parsed[path]
-
+		if isinstance(loaded, str):
+			return None, loaded
+		found, parsed, bound = loaded
 		try:
-			document = bind_drawn_master(MaterialInstanceContext.from_material(material), resource_path, load, master)
+			context = MaterialInstanceContext.from_material(material)
+			if context not in bound:
+				bound[context] = bind_drawn_master(context, path, _master_loader(self.handler, found),
+						lambda resource, _data: parsed[resource])
+			return bound[context], ""
 		except Exception as exc:
-			self._mmtr_document_errors[key] = self.tr(
-				"Could not resolve the compiled master material: {error}"
-			).format(error=exc)
-			return None
-		self._mmtr_document_errors.pop(key, None)
-		return document
+			return None, self._master_error(exc)
+
+	def _master_loaded(self, result):
+		self._masters[self._loading_master] = *result, {}
+		self._show_loaded_master()
+
+	def _master_failed(self, error):
+		self._masters[self._loading_master] = self._master_error(error)
+		self._show_loaded_master()
+
+	def _show_loaded_master(self):
+		key, self._loading_master = self._loading_master, None
+		material = self._current_material()
+		if (material is not None and self.tabs.currentIndex() == self.material_graph_tab_idx
+				and resource_path_key(material.header.mmtr_path) == key):
+			self._show_material_graph(material)
 
 	def _resolve_texture_preview(self, texture):
 		resource_path = str(texture.tex_path or "").replace("\\", "/").strip()
@@ -1138,23 +1117,22 @@ class MdfViewer(QWidget):
 			self._texture_preview_cache.clear()
 			self._refresh_textures_table(material)
 		elif kind == "parameter" and 0 <= item_index < len(material.parameters):
-			self._refresh_params_table(material, self._current_index)
+			self.parameter_model.rows_changed()
 		elif kind == "header":
 			self._update_flags_ui(material.header)
 		self.modified = True
 
 	def _show_material_graph(self, material):
+		if (master := self._bound_master(material)) is None:
+			self.material_graph.show_loading()
+			return
+		document, error = master
 		viewer = weakref.ref(self)
-		self.material_graph.set_material(material, self._resolve_mmtr_document(material),
+		self.material_graph.set_material(material, document,
 				flag_fields=material_flag_layout(self._current_file_version()),
 				texture_preview_provider=lambda texture: viewer()._resolve_texture_preview(texture))
-		error = self._mmtr_document_errors.get(resource_path_key(material.header.mmtr_path), "")
 		if error:
 			self.material_graph.status.setToolTip(error)
-
-	def _refresh_material_graph(self, material):
-		if self.material_graph._material is material:
-			self._show_material_graph(material)
 
 
 	def _on_add_gpbf(self):
@@ -1251,56 +1229,10 @@ class MdfViewer(QWidget):
 			self._texture_preview_cache.clear()
 		elif item.column() == 2:
 			texture.locked = 1 if item.checkState() == Qt.Checked else 0
-		self._refresh_material_graph(material)
 		self.modified = True
 
-	def _param_for_item(self, item):
-		table = item.tableWidget()
-		material_index = self.params_stack.indexOf(table)
-		m = self.handler.mdf
-		if not m or not (0 <= material_index < len(m.materials)):
-			return None
-		material = m.materials[material_index]
-		row = item.row()
-		if not (0 <= row < len(material.parameters)):
-			return None
-		return table, material, row, material.parameters[row]
-
-	def _on_param_changed(self, item):
-		target = self._param_for_item(item)
-		if target is None:
-			return
-		table, material, row, parameter = target
-		column = item.column()
-		try:
-			if column == 0:
-				parameter.name = item.text()
-			elif column == 1:
-				component_count = max(1, min(4, int(item.text())))
-				parameter.component_count = component_count
-				values = list(parameter.parameter)
-				for component in range(component_count, 4):
-					values[component] = 0.0
-				parameter.parameter = tuple(values)
-			elif column == 2:
-				parameter.component_locked = 1 if item.checkState() == Qt.Checked else 0
-			elif 3 <= column <= 6:
-				component = column - 3
-				if component >= parameter.component_count:
-					return
-				values = list(parameter.parameter)
-				values[component] = float(item.text())
-				parameter.parameter = tuple(values)
-		except ValueError:
-			table.blockSignals(True)
-			self._populate_param_row_in_table(table, row, parameter)
-			table.blockSignals(False)
-			return
-		table.blockSignals(True)
-		self._populate_param_row_in_table(table, row, parameter)
-		table.blockSignals(False)
-		self._update_params_info(material)
-		self._refresh_material_graph(material)
+	def _on_parameter_edited(self, _row: int):
+		self._update_params_info(self.parameter_model.material)
 		self.modified = True
 
 
@@ -1363,18 +1295,10 @@ class MdfViewer(QWidget):
 		else:
 			item.setText(elems_str)
 
-	def _on_param_clicked(self, item):
-		if item.column() != 7:
-			return
-		target = self._param_for_item(item)
-		if target is None:
-			return
-		table, material, row, _parameter = target
-		if not pick_parameter_color(self, material, row):
-			return
-		self._refresh_params_table(material, self.params_stack.indexOf(table))
-		self._refresh_material_graph(material)
-		self.modified = True
+	def _on_param_clicked(self, index):
+		if index.column() == 7 and pick_parameter_color(self, self.parameter_model.material, index.row()):
+			self.parameter_model.rows_changed()
+			self.modified = True
 
 	def _on_gpbf_changed(self, item):
 		m = self.handler.mdf
@@ -1434,7 +1358,6 @@ class MdfViewer(QWidget):
 		mat = MatData()
 		mat.header.mat_name = new_name
 		m.materials.append(mat)
-		self._clear_params_cache()
 		self.materials_table.blockSignals(True)
 		r = self.materials_table.rowCount()
 		self.materials_table.insertRow(r)
@@ -1453,7 +1376,6 @@ class MdfViewer(QWidget):
 				del m.materials[r]
 				self.materials_table.removeRow(r)
 		if rows:
-			self._clear_params_cache()
 			self._current_index = min(rows[-1], len(m.materials) - 1)
 			if self._current_index >= 0:
 				self.materials_table.selectRow(self._current_index)

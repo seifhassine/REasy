@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import PurePosixPath
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication, QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication, QPointF, QRectF, QSignalBlocker, Qt, QTimer, Signal
 lazy from PySide6.QtGui import QColor, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
@@ -322,7 +322,7 @@ def _node_stylesheet(accent: str) -> str:
 
 
 class MaterialGraphNodeFrame(QFrame):
-    def __init__(self, title: str, subtitle: str, accent: str, width: int):
+    def __init__(self, accent: str, width: int):
         super().__init__()
         self.setObjectName("materialGraphNode")
         self.setMinimumWidth(width)
@@ -331,25 +331,27 @@ class MaterialGraphNodeFrame(QFrame):
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
-        title_label = QLabel(title)
-        title_label.setObjectName("materialGraphNodeTitle")
-        root.addWidget(title_label)
         self.content = QVBoxLayout()
         self.content.setContentsMargins(8, 6, 8, 8)
         self.content.setSpacing(6)
         root.addLayout(self.content)
+
+    def set_header(self, title: str, subtitle: str) -> None:
+        title_label = QLabel(title, self)
+        title_label.setObjectName("materialGraphNodeTitle")
+        self.layout().insertWidget(0, title_label)
         if subtitle:
-            subtitle_label = QLabel(subtitle)
+            subtitle_label = QLabel(subtitle, self)
             subtitle_label.setObjectName("materialGraphNodeSubtitle")
             subtitle_label.setWordWrap(True)
             self.content.addWidget(subtitle_label)
 
     def add_control(self, label: str, control: QWidget, tooltip: str) -> None:
-        row = QWidget()
+        row = QWidget(self)
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
-        name = QLabel(label)
+        name = QLabel(label, row)
         name.setMinimumWidth(126)
         name.setWordWrap(True)
         name.setToolTip(tooltip)
@@ -362,7 +364,7 @@ class MaterialGraphNodeFrame(QFrame):
         if not names:
             return
         warning = QLabel(
-            f"{title}\n" + "\n".join(f"• {name}" for name in names)
+            f"{title}\n" + "\n".join(f"• {name}" for name in names), self
         )
         warning.setObjectName("materialContractMismatch")
         warning.setWordWrap(True)
@@ -378,8 +380,12 @@ class MdfMaterialGraph(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self._material = None
+        self._document = None
+        self._structure = None
         self._flag_fields = {}
         self._texture_preview_provider = None
+        self._texture_previews: dict[str, tuple[QLabel, str]] = {}
+        self._columns = ((), (), ())
         self._match = MaterialContractMatch()
         self._input_usage = MaterialInputUsage()
         self.parameter_editors: dict[str, tuple[QWidget, ...]] = {}
@@ -429,9 +435,18 @@ class MdfMaterialGraph(QWidget):
         flag_fields=(),
         texture_preview_provider=None,
     ) -> None:
-        self._material = material
-        self._flag_fields = {field.name: field for field in flag_fields}
-        self._texture_preview_provider = texture_preview_provider
+        fields = {field.name: field for field in flag_fields}
+        structure = None if material is None else (
+            material.header.mmtr_path,
+            tuple((p.name, p.component_count, p.param_rel_offset) for p in material.parameters),
+            tuple(t.tex_type for t in material.textures),
+        )
+        self._material, self._texture_preview_provider = material, texture_preview_provider
+        if material is not None and document is self._document and (fields, structure) == (self._flag_fields, self._structure):
+            if self._sync_values():
+                self._layout_nodes()
+            return
+        self._document, self._flag_fields, self._structure = document, fields, structure
         self._match = match_material_contract(material, document) if material is not None else MaterialContractMatch()
         try:
             layout = MaterialDescriptorLayout.from_material(material) if material is not None else None
@@ -439,6 +454,10 @@ class MdfMaterialGraph(QWidget):
         except ValueError:
             self._input_usage = MaterialInputUsage()
         self.rebuild()
+
+    def show_loading(self) -> None:
+        self.set_material(None)
+        self.status.setText(self.tr("Loading master material…"))
 
     def rebuild(self) -> None:
         self.scene.clear()
@@ -448,6 +467,7 @@ class MdfMaterialGraph(QWidget):
         self.texture_editors.clear()
         self.texture_runtime_editors.clear()
         self.behavior_editors.clear()
+        self._texture_previews.clear()
         material = self._material
         if material is None:
             self.status.show()
@@ -466,14 +486,8 @@ class MdfMaterialGraph(QWidget):
                 (index, parameter)
             )
 
-        texture_nodes = []
-        texture_y = 20.0
-        for index, texture in enumerate(material.textures):
-            node = self._texture_node(index, texture)
-            proxy = self._add_node(node, 20.0, texture_y, ("texture", texture.tex_type))
-            texture_nodes.append(proxy)
-            texture_y += proxy.boundingRect().height() + 22.0
-
+        texture_nodes = [self._place(self._texture_node(index, texture))
+                         for index, texture in enumerate(material.textures)]
         group_order = (
             "Surface color",
             "Surface response",
@@ -483,37 +497,14 @@ class MdfMaterialGraph(QWidget):
             "Texture mapping",
             "Additional controls",
         )
-        control_nodes = []
-        control_y = 20.0
         behavior = self._behavior_node(material)
-        if behavior is not None:
-            behavior_proxy = self._add_node(behavior, 390.0, control_y, ("behavior", "material_flags"))
-            control_nodes.append(behavior_proxy)
-            control_y += behavior_proxy.boundingRect().height() + 22.0
-        for group in group_order:
-            members = parameter_groups.get(group)
-            if not members:
-                continue
-            node = self._parameter_node(group, members)
-            proxy = self._add_node(node, 390.0, control_y, ("parameter_group", group))
-            control_nodes.append(proxy)
-            control_y += proxy.boundingRect().height() + 22.0
-
-        content_height = max(texture_y, control_y, 620.0)
-        master = self._master_node(material)
-        master_proxy = self._add_node(
-            master,
-            790.0,
-            max(20.0, content_height * 0.5 - master.sizeHint().height() * 0.5),
-            ("master", material.header.mmtr_path),
-        )
-        output = self._output_node()
-        output_proxy = self._add_node(
-            output,
-            1190.0,
-            max(20.0, content_height * 0.5 - output.sizeHint().height() * 0.5),
-            ("outputs", "renderer"),
-        )
+        control_nodes = [self._place(behavior)] if behavior is not None else []
+        control_nodes += [self._place(self._parameter_node(group, parameter_groups[group]))
+                          for group in group_order if parameter_groups.get(group)]
+        master_proxy = self._place(self._master_node(material))
+        output_proxy = self._place(self._node(("outputs", "renderer"), self.tr("Renderer"), "", "#83d1a7", 250))
+        self._columns = (texture_nodes, control_nodes, (master_proxy, output_proxy))
+        self._layout_nodes()
 
         sources = texture_nodes + control_nodes
         for index, source in enumerate(sources):
@@ -530,10 +521,21 @@ class MdfMaterialGraph(QWidget):
             QColor("#75c69a"),
             width=3.0,
         )
-
-        bounds = self.scene.itemsBoundingRect().adjusted(-55, -55, 55, 55)
-        self.scene.setSceneRect(bounds)
         self._fit_timer.start()
+
+    def _layout_nodes(self) -> None:
+        texture_nodes, control_nodes, ends = self._columns
+        bottoms = []
+        for x, column in ((20.0, texture_nodes), (390.0, control_nodes)):
+            y = 20.0
+            for proxy in column:
+                proxy.setPos(x, y)
+                y += proxy.boundingRect().height() + 22.0
+            bottoms.append(y)
+        middle = max(*bottoms, 620.0) * 0.5
+        for x, proxy in zip((790.0, 1190.0), ends):
+            proxy.setPos(x, max(20.0, middle - proxy.boundingRect().height() * 0.5))
+        self.scene.setSceneRect(self.scene.itemsBoundingRect().adjusted(-55, -55, 55, 55))
 
     def _update_status(self) -> None:
         match = self._match
@@ -553,14 +555,24 @@ class MdfMaterialGraph(QWidget):
         set_style_role(self.status, badge=tone)
         self.status.setToolTip("")
 
-    def _add_node(self, widget: QWidget, x: float, y: float, tag) -> QGraphicsProxyWidget:
-        widget.adjustSize()
+    def _node(self, tag, title: str, subtitle: str, accent: str, width: int) -> MaterialGraphNodeFrame:
+        # Filled after entering the scene: with accessibility active, each change to a widget outside a shown window
+        # walks every widget in the app.
+        node = MaterialGraphNodeFrame(accent, width)
         proxy = MovableMaterialGraphNode(self._update_edges)
-        proxy.setWidget(widget)
-        self.scene.addItem(proxy)
-        proxy.setPos(x, y)
+        proxy.setWidget(node)
+        proxy.hide()
         proxy.setZValue(2)
         proxy.setData(0, tag)
+        self.scene.addItem(proxy)
+        node.set_header(title, subtitle)
+        return node
+
+    @staticmethod
+    def _place(node: MaterialGraphNodeFrame) -> QGraphicsProxyWidget:
+        node.adjustSize()
+        proxy = node.graphicsProxyWidget()
+        proxy.show()
         return proxy
 
     def _connect(self, source: QGraphicsProxyWidget, target: QGraphicsProxyWidget, color: QColor, **options) -> None:
@@ -575,40 +587,31 @@ class MdfMaterialGraph(QWidget):
     def _add_usage_label(self, layout, usage: InputUsage) -> None:
         if usage is InputUsage.USED:
             return
-        label = QLabel(usage.label)
+        label = QLabel(usage.label, layout.parentWidget())
         label.setObjectName("materialGraphNote")
         label.setWordWrap(True)
         label.setToolTip(usage.explanation)
         layout.addWidget(label)
 
     def _parameter_node(self, group: str, members) -> MaterialGraphNodeFrame:
-        node = MaterialGraphNodeFrame(
-            group,
-            "",
-            "#c6a0e8",
-            355,
-        )
+        node = self._node(("parameter_group", group), group, "", "#c6a0e8", 355)
         for index, parameter in members:
-            control, editors = self._parameter_control(index, parameter)
-            self.parameter_editors[parameter.name] = tuple(editors)
-            host = QWidget()
+            host = QWidget(node)
             layout = QVBoxLayout(host)
             layout.setContentsMargins(0, 0, 0, 0)
             layout.setSpacing(3)
+            control, editors = self._parameter_control(index, parameter, host)
+            self.parameter_editors[parameter.name] = tuple(editors)
             layout.addWidget(control)
             self._add_usage_label(layout, self._input_usage.parameter(
                 parameter.param_rel_offset, parameter.component_count * 4))
-            runtime_editable = QCheckBox(self.tr("Allow runtime changes"))
+            runtime_editable = QCheckBox(self.tr("Allow runtime changes"), host)
             runtime_editable.setChecked(not bool(parameter.component_locked))
             runtime_editable.setToolTip(
                 self.tr("Prevent the game from overriding this saved value.")
             )
             runtime_editable.toggled.connect(
-                lambda enabled, i=index, p=parameter: self._set_parameter_runtime_editable(
-                    i,
-                    p,
-                    enabled,
-                )
+                lambda enabled, i=index: self._set_parameter_runtime_editable(i, enabled)
             )
             self.parameter_runtime_editors[parameter.name] = runtime_editable
             layout.addWidget(runtime_editable)
@@ -621,20 +624,15 @@ class MdfMaterialGraph(QWidget):
                  if name in self._flag_fields]
         if not shown:
             return None
-        node = MaterialGraphNodeFrame(
-            self.tr("Rendering behavior"),
-            "",
-            "#d99173",
-            355,
-        )
+        node = self._node(("behavior", "material_flags"), self.tr("Rendering behavior"), "", "#d99173", 355)
         flags = int(getattr(material.header, "material_flags", 0))
-        host = QWidget()
+        host = QWidget(node)
         grid = QGridLayout(host)
         grid.setContentsMargins(0, 0, 0, 0)
         grid.setHorizontalSpacing(8)
         grid.setVerticalSpacing(5)
         for flag_index, (label, inverted, field) in enumerate(shown):
-            checkbox = QCheckBox(self.tr(label))
+            checkbox = QCheckBox(self.tr(label), host)
             checkbox.setChecked(bool(field.get(flags)) != inverted)
             checkbox.toggled.connect(
                 lambda enabled, f=field, inv=inverted: self._set_behavior_flag(f, enabled, inverted=inv))
@@ -649,48 +647,48 @@ class MdfMaterialGraph(QWidget):
         self._material.header.material_flags = field.set(self._material.header.material_flags, bool(enabled) != inverted)
         self.material_changed.emit("header", field.bit)
 
-    def _parameter_control(self, index: int, parameter):
+    def _parameter_control(self, index: int, parameter, parent: QWidget):
         count = max(1, min(4, int(parameter.component_count)))
         values = list(parameter.parameter[:count])
         lowered = str(parameter.name).casefold()
         if is_color_parameter(parameter):
-            button = QPushButton()
+            button = QPushButton(parent)
             self._refresh_color_button(button, values)
             button.clicked.connect(
-                lambda _checked=False, i=index, p=parameter, b=button: self._choose_parameter_color(i, p, b)
+                lambda _checked=False, i=index, b=button: self._choose_parameter_color(i, b)
             )
             return button, (button,)
         if count == 1 and lowered.startswith(("use", "enable")):
-            checkbox = QCheckBox(self.tr("Enabled"))
+            checkbox = QCheckBox(self.tr("Enabled"), parent)
             checkbox.setChecked(bool(values[0]))
             checkbox.toggled.connect(
-                lambda checked, i=index, p=parameter: self._set_parameter_component(i, p, 0, 1.0 if checked else 0.0)
+                lambda checked, i=index: self._set_parameter_component(i, 0, 1.0 if checked else 0.0)
             )
             return checkbox, (checkbox,)
         if count == 1:
-            editor = self._number_editor(parameter.name, values[0])
+            editor = self._number_editor(parameter.name, values[0], parent)
             editor.valueChanged.connect(
-                lambda value, i=index, p=parameter: self._set_parameter_component(i, p, 0, value)
+                lambda value, i=index: self._set_parameter_component(i, 0, value)
             )
             return editor, (editor,)
 
-        host = QWidget()
+        host = QWidget(parent)
         layout = QHBoxLayout(host)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(3)
         editors = []
         for component, value in enumerate(values):
-            editor = self._number_editor(parameter.name, value, compact=True)
+            editor = self._number_editor(parameter.name, value, host, compact=True)
             editor.valueChanged.connect(
-                lambda changed, c=component, i=index, p=parameter: self._set_parameter_component(i, p, c, changed)
+                lambda changed, c=component, i=index: self._set_parameter_component(i, c, changed)
             )
             layout.addWidget(editor)
             editors.append(editor)
         return host, tuple(editors)
 
     @staticmethod
-    def _number_editor(name: str, value: float, *, compact: bool = False) -> QDoubleSpinBox:
-        editor = QDoubleSpinBox()
+    def _number_editor(name: str, value: float, parent: QWidget, *, compact: bool = False) -> QDoubleSpinBox:
+        editor = QDoubleSpinBox(parent)
         editor.setDecimals(4)
         editor.setKeyboardTracking(False)
         lowered = str(name).casefold()
@@ -707,7 +705,8 @@ class MdfMaterialGraph(QWidget):
         editor.setMinimumWidth(72 if compact else 92)
         return editor
 
-    def _set_parameter_component(self, index: int, parameter, component: int, value: float) -> None:
+    def _set_parameter_component(self, index: int, component: int, value: float) -> None:
+        parameter = self._material.parameters[index]
         current = list(parameter.parameter)
         while len(current) < 4:
             current.append(0.0)
@@ -715,13 +714,8 @@ class MdfMaterialGraph(QWidget):
         parameter.parameter = tuple(current[:4])
         self.material_changed.emit("parameter", int(index))
 
-    def _set_parameter_runtime_editable(
-        self,
-        index: int,
-        parameter,
-        enabled: bool,
-    ) -> None:
-        parameter.component_locked = 0 if enabled else 1
+    def _set_parameter_runtime_editable(self, index: int, enabled: bool) -> None:
+        self._material.parameters[index].component_locked = 0 if enabled else 1
         self.material_changed.emit("parameter", int(index))
 
     @staticmethod
@@ -730,36 +724,61 @@ class MdfMaterialGraph(QWidget):
         color = _material_color(channels)
         button.setText("  ".join(f"{float(value):.2f}" for value in channels))
         text_color = "#11161a" if color.lightnessF() > 0.58 else "#f5f7f8"
-        button.setStyleSheet(
+        style = (
             "QPushButton {"
             f"background:{color.name(QColor.NameFormat.HexArgb)}; color:{text_color};"
             f"border:1px solid {current_colors()['border_strong']}; border-radius:3px; padding:3px 6px;"
             "}"
         )
+        if button.styleSheet() != style:
+            button.setStyleSheet(style)
 
-    def _choose_parameter_color(self, index: int, parameter, button: QPushButton) -> None:
+    def _choose_parameter_color(self, index: int, button: QPushButton) -> None:
         if not pick_parameter_color(self, self._material, index):
             return
+        parameter = self._material.parameters[index]
         self._refresh_color_button(button, parameter.parameter[:parameter.component_count])
         self.material_changed.emit("parameter", int(index))
 
-    def _texture_node(self, index: int, texture) -> MaterialGraphNodeFrame:
-        node = MaterialGraphNodeFrame(
-            friendly_material_name(texture.tex_type),
-            texture.tex_type,
-            "#78b9d7",
-            330,
-        )
-        self._add_usage_label(node.content, self._input_usage.texture(texture.tex_type))
-        preview = QLabel()
-        preview.setObjectName("materialGraphPreview")
-        preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        preview.setMinimumHeight(88)
+    def _sync_values(self) -> bool:
+        material, resized = self._material, False
+        for parameter in material.parameters:
+            editors = self.parameter_editors.get(parameter.name)
+            if editors is None:
+                continue
+            values = parameter.parameter[:max(1, min(4, int(parameter.component_count)))]
+            if isinstance(editors[0], QPushButton):
+                self._refresh_color_button(editors[0], values)
+            else:
+                for editor, value in zip(editors, values):
+                    with QSignalBlocker(editor):
+                        if isinstance(editor, QCheckBox):
+                            editor.setChecked(bool(value))
+                        else:
+                            editor.setValue(float(value))
+            with QSignalBlocker(runtime := self.parameter_runtime_editors[parameter.name]):
+                runtime.setChecked(not parameter.component_locked)
+        for texture in material.textures:
+            if (path := self.texture_editors[texture.tex_type]).text() != texture.tex_path:
+                path.setText(texture.tex_path)
+            with QSignalBlocker(runtime := self.texture_runtime_editors[texture.tex_type]):
+                runtime.setChecked(not texture.locked)
+            preview, shown = self._texture_previews[texture.tex_type]
+            if shown != texture.tex_path:
+                self._show_preview(preview, texture)
+                preview.parentWidget().adjustSize()
+                resized = True
+        flags = int(material.header.material_flags)
+        for _label, inverted, name in _BEHAVIOR_FLAGS:
+            if (checkbox := self.behavior_editors.get(name)) is not None:
+                with QSignalBlocker(checkbox):
+                    checkbox.setChecked(bool(self._flag_fields[name].get(flags)) != inverted)
+        return resized
+
+    def _show_preview(self, preview: QLabel, texture) -> None:
         pixmap = self._texture_preview_provider(texture) if callable(self._texture_preview_provider) else None
-        if isinstance(pixmap, str):
-            preview.setToolTip(pixmap)
-            pixmap = None
-        if pixmap is not None and not pixmap.isNull():
+        preview.setToolTip(pixmap if isinstance(pixmap, str) else "")
+        if pixmap is not None and not isinstance(pixmap, str) and not pixmap.isNull():
             preview.setPixmap(
                 pixmap.scaled(
                     290,
@@ -770,50 +789,53 @@ class MdfMaterialGraph(QWidget):
             )
         else:
             preview.setText(self.tr("No preview"))
+        self._texture_previews[texture.tex_type] = preview, texture.tex_path
+
+    def _texture_node(self, index: int, texture) -> MaterialGraphNodeFrame:
+        node = self._node(("texture", texture.tex_type), friendly_material_name(texture.tex_type), texture.tex_type,
+                          "#78b9d7", 330)
+        self._add_usage_label(node.content, self._input_usage.texture(texture.tex_type))
+        preview = QLabel(node)
+        preview.setObjectName("materialGraphPreview")
+        preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        preview.setMinimumHeight(88)
+        self._show_preview(preview, texture)
         node.content.addWidget(preview)
-        path = QLineEdit(texture.tex_path)
+        path = QLineEdit(texture.tex_path, node)
         path.setClearButtonEnabled(True)
         path.editingFinished.connect(
-            lambda i=index, t=texture, editor=path: self._set_texture_path(i, t, editor.text())
+            lambda i=index, editor=path: self._set_texture_path(i, editor.text())
         )
         node.content.addWidget(path)
-        runtime_editable = QCheckBox(self.tr("Allow runtime changes"))
+        runtime_editable = QCheckBox(self.tr("Allow runtime changes"), node)
         runtime_editable.setChecked(not bool(texture.locked))
         runtime_editable.setToolTip(
             self.tr("Prevent the game from overriding this saved texture.")
         )
         runtime_editable.toggled.connect(
-            lambda enabled, i=index, t=texture: self._set_texture_runtime_editable(
-                i,
-                t,
-                enabled,
-            )
+            lambda enabled, i=index: self._set_texture_runtime_editable(i, enabled)
         )
         self.texture_runtime_editors[texture.tex_type] = runtime_editable
         node.content.addWidget(runtime_editable)
         self.texture_editors[texture.tex_type] = path
         return node
 
-    def _set_texture_path(self, index: int, texture, value: str) -> None:
+    def _set_texture_path(self, index: int, value: str) -> None:
+        texture = self._material.textures[index]
         changed = str(value) != str(texture.tex_path)
         texture.tex_path = str(value)
         if changed:
             self.material_changed.emit("texture", int(index))
 
-    def _set_texture_runtime_editable(
-        self,
-        index: int,
-        texture,
-        enabled: bool,
-    ) -> None:
-        texture.locked = 0 if enabled else 1
+    def _set_texture_runtime_editable(self, index: int, enabled: bool) -> None:
+        self._material.textures[index].locked = 0 if enabled else 1
         self.material_changed.emit("texture", int(index))
 
     def _master_node(self, material) -> MaterialGraphNodeFrame:
         path = str(material.header.mmtr_path or "")
         filename = PurePosixPath(path.replace("\\", "/")).name
         title = filename.rsplit(".", 1)[0] if filename else self.tr("Master Material")
-        node = MaterialGraphNodeFrame(title, "", "#d7b870", 370)
+        node = self._node(("master", material.header.mmtr_path), title, "", "#d7b870", 370)
         for label, names in (
             (self.tr("Parameters missing from MDF"), self._match.missing_parameters),
             (self.tr("Parameters not in MMTR"), self._match.unmatched_parameters),
@@ -823,14 +845,6 @@ class MdfMaterialGraph(QWidget):
         ):
             node.add_mismatch(label, names)
         return node
-
-    def _output_node(self) -> MaterialGraphNodeFrame:
-        return MaterialGraphNodeFrame(
-            self.tr("Renderer"),
-            "",
-            "#83d1a7",
-            250,
-        )
 
     def fit_graph(self) -> None:
         if not self.scene.items():
