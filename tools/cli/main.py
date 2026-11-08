@@ -3,8 +3,7 @@ import argparse
 import importlib
 from pathlib import Path
 
-from tools.fsm.common import integer
-from .runtime import Parser, mutation_parser, read_parser, add_batch, main as run_cli, MHR_REGISTRY
+from .runtime import Parser, mutation_parser, read_parser, add_batch, integer, main as run_cli, MHR_REGISTRY
 
 EDIT_COMMANDS = {
     'clip': {

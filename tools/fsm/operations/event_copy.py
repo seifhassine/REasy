@@ -17,8 +17,8 @@ from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
 from file_handlers.motfsm.authoring import block_splice, clone_block_object, verify_block
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
-from tools.fsm.common import resolve_node, state_indexes
-from tools.fsm.values import assignments
+from file_handlers.motfsm.selection import resolve_node, state_indexes
+from file_handlers.motfsm.values import assignments
 
 EVENTS_BLOCK = 'transition_events'
 

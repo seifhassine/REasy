@@ -13,7 +13,7 @@ Supports RSZ files (SCN, PFB, User) from all games, as well as UVAR, MSG, MOTBAN
 REasy GUI is currently available in English and Chinese.
 
 For agent workflows, run `.\.venv\Scripts\python.exe -m tools --help` from the repository root.
-The [resource CLI](tools/cli/README.md) provides typed JSON queries, verified edits, dry runs, and batch plans for FSM, motion/CLIP, PFB/RSZ, RCOL, EFX, and audio graphs.
+The [resource CLI](docs/cli.md) provides typed JSON queries, verified edits, dry runs, and batch plans for FSM, motion/CLIP, PFB/RSZ, RCOL, EFX, and audio graphs.
 For Rise MOTLIST 528, it supports structural CLIP sequence, node, property, and key copy/delete, including slot overrides and cross-file donors.
 
 The FSM editor resolves node, condition, and transition-event references inline. All parsed array types use the same expandable property tree, including object references, structs, and nested arrays. Typed element edits and array add/duplicate/remove operations support undo/redo and verified native RSZ serialization.
@@ -22,12 +22,11 @@ The FSM editor resolves node, condition, and transition-event references inline.
 
 | Location | Responsibility |
 | --- | --- |
-| [Resource CLI](tools/cli/README.md), [FSM commands](tools/fsm/README.md) | Parameterized inspection and edits; use these instead of per-resource probe scripts |
+| [Resource CLI](docs/cli.md), [FSM commands](docs/fsm_cli.md) (`tools/`) | Parameterized inspection and edits; use these instead of per-resource probe scripts |
 | `file_handlers/` | Format models, serialization and native edits: RSZ graph copies, FSM objects/maps, PFB elements, RCOL requests, and CLIP event edits |
 | `services/mhr/` | Game recipes combining native operations: FSM branch plans, move bundles, and [motion batch builds](docs/mhr_motion_writer.md) |
 | `services/audio/` | WEM conversion, Wwise toolchain, IR conversion and playback graph batch import; native RIFF metadata lives in `file_handlers/sound/` |
 | `services/file_io.py` | Input protection and staged candidate publication shared by command-line and service callers |
-| `tools/mhr_motion_writer.py`, `tools/wem_converter.py`, `tools/wwise_*.py`, `tools/riff_metadata.py` | Existing script/import entrypoints; conversion/build implementations delegate to the services above, validation tools remain standalone |
 | `tools/audit_efx.py`, `generate_efx_schema.py` | Parameterized corpus verification and schema maintenance |
 | `tools/preview_mhw_pair.py` | World/Rise motion comparison with caller-supplied LMT, MOTLIST and mesh; `--help` lists capture options |
 | `scripts/` | Repository environment, translations and dump maintenance |
@@ -37,13 +36,12 @@ The FSM editor resolves node, condition, and transition-event references inline.
 New reusable operations belong beside their native format. Game-specific selection
 and composition belong in `services/mhr`; command modules handle arguments, loading,
 results and publication. Keep mod paths, chosen resource IDs and deployment in the
-consuming project. Existing `tools.fsm.common`, `tools.fsm.values` and
-`tools.rsz_inspection` imports remain available as compatibility entrypoints.
+consuming project.
 
 `file_handlers.rsz.graph_copy.copy_graph` copies referenced instances with alias and
 userdata remapping. `file_handlers.rsz.effect_elements.clone_element` and
 `file_handlers.rcol.editing.clone_request_set` edit native models without a viewer.
-The [FSM API guide](tools/fsm/README.md#reusable-python-apis) distinguishes generic
+The [FSM API guide](docs/fsm_cli.md#reusable-python-apis) distinguishes generic
 graph primitives from the four MHR branch recipes.
 
 Generated-resource regression tests run on Windows and Linux through

@@ -2,7 +2,7 @@
 from dataclasses import asdict
 
 from file_handlers.motfsm.graph_model import MotfsmGraph
-from .common import identity, resolve_node
+from file_handlers.motfsm.selection import identity, resolve_node
 from .editing import open_document
 from file_handlers.rsz.inspection import field_record
 

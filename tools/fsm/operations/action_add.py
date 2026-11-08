@@ -11,8 +11,8 @@ from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
 from file_handlers.motfsm.authoring import block_ids, block_splice, clone_block_object, verify_block
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
-from tools.fsm.common import resolve_node
-from tools.fsm.values import assignments
+from file_handlers.motfsm.selection import resolve_node
+from file_handlers.motfsm.values import assignments
 
 
 def configure(parser):

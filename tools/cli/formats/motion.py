@@ -8,7 +8,7 @@ from file_handlers.motion.mhr_editing import duplicate_slot, next_motion_id
 from file_handlers.motion.binary import ReadContext, align_up
 from file_handlers.motion.mot_clip.parser_v43 import CompactClipV43Parser
 from file_handlers.motion.errors import MotionCodecError
-from tools.fsm.common import integer
+from tools.cli.runtime import integer
 from tools.cli.runtime import EditResult
 
 

@@ -1,5 +1,5 @@
 """Keep request table positions, authoring IDs, and hit references distinct."""
-from tools.fsm.common import integer
+from tools.cli.runtime import integer
 
 
 def configure(parser, *, required=False):

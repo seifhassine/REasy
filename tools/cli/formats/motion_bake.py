@@ -3,7 +3,7 @@ from pathlib import Path
 import re
 from file_handlers.motion.mhr_bake import MotionSegment, PoseTransition, bake_segments
 from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from tools.fsm.common import integer
+from tools.cli.runtime import integer
 from tools.cli.runtime import EditResult
 from .wilds_import import configure_donor, load_inputs, load_target
 from file_handlers.motion.motion_root import ROOT_TRANSFORM_MODES

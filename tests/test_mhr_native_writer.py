@@ -13,7 +13,7 @@ from file_handlers.motion.mhr_structure import Owner,edit_clip,copy_sequences,de
 from file_handlers.motion.mhr_validation import document_value,assert_other_slots,motion_value
 from file_handlers.motion.mot_tree.model import TreeLink,TreeLinkType
 from file_handlers.motion.errors import MotionParseError,MotionWriteError
-from tools.mhr_motion_writer import validate_references,neutral_motion
+from services.mhr.motion_batch import validate_references,neutral_motion
 from file_handlers.motbank.motbank_file import MotbankFile,MotlistItem
 from file_handlers.uvar.uvar_file import UVarFile
 

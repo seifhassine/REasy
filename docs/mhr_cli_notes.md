@@ -1,6 +1,6 @@
 # MHR resource notes
 
-Use the [resource CLI](README.md) for current commands and the migration table.
+Use the [resource CLI](cli.md) for current commands and the migration table.
 
 ## Engine conventions these tools rely on (all measured on native files)
 
@@ -49,7 +49,7 @@ Use the [resource CLI](README.md) for current commands and the migration table.
   `--shift N` moves every copied event by N frames, `--total-frame target` sets the clip duration.
 * `tools clip sequence-delete`, `node-copy/delete`, `property-copy/delete`, `key-copy/delete` –
   structural edits with automatic count/index/pointer maintenance. Use `clip dump` for selectors;
-  see the [CLI guide](README.md#structural-clip-edits) for scope and donor options.
+  see the [CLI guide](cli.md#structural-clip-edits) for scope and donor options.
 * `tools clip events-drop` – silence events from a frame on (or exactly `--frames 109,123`) by zeroing
   the inline trigger id. Nothing moves, so the file keeps its size. **Never delete a loop's stop
   event**: skip ids that the culling (footstep/movement) tracks also use.
@@ -63,7 +63,7 @@ Use the [resource CLI](README.md) for current commands and the migration table.
 
 ### FSM (`.motfsm2.43`)
 
-Use `python -m tools.fsm --help`. See the [FSM CLI guide](../fsm/README.md) for
+Use `python -m tools fsm --help`. See the [FSM CLI guide](fsm_cli.md) for
 query/dump, node/Action/Condition/State editing, batch plans, and JSON output.
 
 ### RCOL (`.rcol.20`)
@@ -98,7 +98,7 @@ query/dump, node/Action/Condition/State editing, batch plans, and JSON output.
 **特例**：`atk_axe_element_release_main` 系列（AED）**原本就有**一条无条件 transition 和 selector，
 所以只需把 `ChainsawBuff → chainsaw_run` 插到第 0 位即可，不必另建 `normal`、也不必补 selector。
 
-工具：`python -m tools.fsm node-chainsaw SRC -o OUTPUT_FILE --node ... --template-node atk_axe_rush_strike_main --command 0 --hit-id 47`
+工具：`python -m tools fsm node-chainsaw SRC -o OUTPUT_FILE --node ... --template-node atk_axe_rush_strike_main --command 0 --hit-id 47`
 —— 它会自动判断目标是不是纯叶子节点（缺默认出口就补 `normal`）、是不是缺 selector（缺就克隆模板的）。
 
 ## Typical workflows
@@ -113,7 +113,7 @@ GAME="C:/Program Files (x86)/Steam/steamapps/common/MonsterHunterRise"
 
 # 2) give the new FSM node an attack judgment
 ./.venv/Scripts/python.exe -m tools rcol request-add "$GAME/natives/STM/player/hit/LongSword.rcol.20" -o out/LongSword.rcol.20 --name atk_620 --template-id 32
-./.venv/Scripts/python.exe -m tools.fsm hit-request "$GAME/natives/STM/player/Fsm/LongSword/LongSword.motfsm2.43" -o out/LongSword.motfsm2.43 --node atk_620 --request 72
+./.venv/Scripts/python.exe -m tools fsm hit-request "$GAME/natives/STM/player/Fsm/LongSword/LongSword.motfsm2.43" -o out/LongSword.motfsm2.43 --node atk_620 --request 72
 
 # 3) retime the judgment
 ./.venv/Scripts/python.exe -m tools rcol request-edit <rcol> -o out/edited.rcol.20 --id 72 --set _HitStartDelay=40 --set _HitEndDelay=7
@@ -147,11 +147,11 @@ reloaded by the plugin.
 
 **工具**
 
-* 给既有节点追加 action：`python -m tools.fsm action-add SRC -o OUTPUT_FILE --node 0x59A5C461 --class PlayerFsm2ActionDamageReflex --exact --from 0x… --set _Type=5 --set _EndFrame=16`
-* 给既有节点加派生 state：`python -m tools.fsm state-add SRC -o OUTPUT_FILE --node 0x… --target <node> --template-from 0x… --template-state N --events drop`
-* **改共享的 transition event**：`event-edit` 遇到多用户事件会拒绝（`Event is shared with [...]; use --allow-shared or clone it first`）。先复制成私有副本再改：`python -m tools.fsm event-copy SRC -o OUTPUT_FILE --node <state 所在节点> --states N --class PlayerFsm2EventStateInitOption --set _LimitAngle=0`（早期克隆工具会共享 `transition_events` 实例 → “我的新节点和原生节点共用同一个事件”是常见历史遗留；`--allow-shared` 会连原生一起改，慎用）
+* 给既有节点追加 action：`python -m tools fsm action-add SRC -o OUTPUT_FILE --node 0x59A5C461 --class PlayerFsm2ActionDamageReflex --exact --from 0x… --set _Type=5 --set _EndFrame=16`
+* 给既有节点加派生 state：`python -m tools fsm state-add SRC -o OUTPUT_FILE --node 0x… --target <node> --template-from 0x… --template-state N --events drop`
+* **改共享的 transition event**：`event-edit` 遇到多用户事件会拒绝（`Event is shared with [...]; use --allow-shared or clone it first`）。先复制成私有副本再改：`python -m tools fsm event-copy SRC -o OUTPUT_FILE --node <state 所在节点> --states N --class PlayerFsm2EventStateInitOption --set _LimitAngle=0`（早期克隆工具会共享 `transition_events` 实例 → “我的新节点和原生节点共用同一个事件”是常见历史遗留；`--allow-shared` 会连原生一起改，慎用）
   （`--condition-class` 只认 `PlayerFsm2Command` 系模板，别的条件类要用 `--template-state` 指定下标）
-* 查询节点：`python -m tools.fsm query <fsm> [--name/--motion/--class/--derives-to] [--actions] [--states] [--json]`
+* 查询节点：`python -m tools fsm query <fsm> [--name/--motion/--class/--derives-to] [--actions] [--states] [--json]`
 
 **坑**
 
@@ -164,7 +164,7 @@ reloaded by the plugin.
 * 判定窗口挂在**前置动作**上：`root.guard.start`（motion 430，16 帧）追加 `PlayerFsm2ActionDamageReflex(_Type=5, 0..16)` =
   wire guard 同类 reflex（GunLance `root.atk.ワイヤーガード.wireguard.start` 用的就是 `_Type=5`；`_Type` 枚举实测：1 大剑格挡反击 / 2 弓回避 / 3 片手 GuardA / 4 器械 / 5 wire guard / 8 斩击斧属性反击 / 10 ウツセミ）。
 * 触发后的跳转用 `PlayerFsm2ConditionQuestBaseDamage -> <精防后摇 node>`（同 GunLance wire guard、太刀 `atk_155` 的 `成否`）。
-* 改既有 state 的目标：`python -m tools.fsm state-target SRC -o OUTPUT_FILE --node guard_precise_m --state 10 --target atk_wait`
+* 改既有 state 的目标：`python -m tools fsm state-target SRC -o OUTPUT_FILE --node guard_precise_m --state 10 --target atk_wait`
   （`mTransitions` 是定宽字段 → 节点表长度不变、无需重定位；节点表末尾的对齐填充要原样保留）。
 * 爽解的 Lua 派生表 `dataTable` 是**按武器类型嵌套**的：`dataTable[wepType][actionId 或 nodeHash]`，并要求 `_action_bank_id == 100`；
   新增动作只要在同级加 `[<动作ID>] = { … }`。Lua 的 `targetCmd` 用的是 `constant.isCmd`（按钮），FSM 里的 `CmdType` 用的是 `constant.commandFsm`，**两套枚举不可直接互抄**。
@@ -274,7 +274,7 @@ py='./.venv/Scripts/python.exe'; M='plw_ChargeAxe_100.motlist.528'
 无条件→`normal` + 非 -1 `selector_id`；缺一项电锯判定就不触发）：
 
 ```bash
-& $py -m tools.fsm node-chainsaw ChargeAxe.motfsm2.43 -o out/f1/ChargeAxe.motfsm2.43 \
+& $py -m tools fsm node-chainsaw ChargeAxe.motfsm2.43 -o out/f1/ChargeAxe.motfsm2.43 \
       --node atk_axe_add_release_bot --template-node atk_axe_rush_strike_main --command 1 --hit-id 43
 ```
 
@@ -288,7 +288,7 @@ py='./.venv/Scripts/python.exe'; M='plw_ChargeAxe_100.motlist.528'
 `PlayerFsm2CommandChargeAxe{CmdType=1(AtkA), StartFrame=95, PreFrame=10} → atk_axe_add_release_brn`：
 
 ```bash
-& $py -m tools.fsm state-add ChargeAxe.motfsm2.43 -o out/f2/ChargeAxe.motfsm2.43 \
+& $py -m tools fsm state-add ChargeAxe.motfsm2.43 -o out/f2/ChargeAxe.motfsm2.43 \
       --node atk_axe_element_release_main --target atk_axe_add_release_brn \
       --template-from <同形命令 state 的节点> --template-state <n> --events drop
 ```

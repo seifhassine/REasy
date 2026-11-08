@@ -1,7 +1,7 @@
 """Command adapter for native CLIP event editing."""
 from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
 from file_handlers.motion.mhr_events import move_event
-from tools.fsm.common import integer
+from tools.cli.runtime import integer
 
 
 def configure(parser):

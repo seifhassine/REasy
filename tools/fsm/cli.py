@@ -1,10 +1,10 @@
-"""FSM command registration shared by both REasy CLI entrypoints."""
+"""FSM commands registered under `python -m tools fsm`."""
 import argparse
 import importlib
 from pathlib import Path
 
-from tools.cli.runtime import Parser, mutation_parser, add_batch, main as run_cli
-from .common import assignment, integer
+from tools.cli.runtime import mutation_parser, add_batch
+from file_handlers.motfsm.selection import assignment, integer
 
 STRUCTURAL = {
     'action-add': ('action_add', 'Append a cloned Action'),
@@ -98,15 +98,3 @@ def register_commands(commands, *, prefix=()):
             sub.add_argument('--container', type=integer)
             sub.add_argument('--expect-element', type=integer)
     add_batch(commands, prefix=prefix)
-
-
-def build_parser():
-    parser = Parser(prog='python -m tools.fsm', description='REasy FSM inspection and verified editing.')
-    parser.add_argument('--json', action='store_true')
-    commands = parser.add_subparsers(dest='command', required=True)
-    register_commands(commands)
-    return parser
-
-
-def main(argv=None):
-    return run_cli(build_parser, argv)

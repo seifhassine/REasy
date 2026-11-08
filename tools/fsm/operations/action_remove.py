@@ -14,7 +14,7 @@ from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
-from tools.fsm.common import resolve_node
+from file_handlers.motfsm.selection import resolve_node
 
 
 def configure(parser):

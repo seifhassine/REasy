@@ -18,7 +18,7 @@ from file_handlers.motion.mhr_structure import Owner
 from file_handlers.motion.mhr_validation import document_value,assert_other_slots
 from file_handlers.motbank.motbank_file import MotbankFile
 from file_handlers.uvar.uvar_file import UVarFile
-from tools.mhr_motion_writer import validate_references,execute_plan
+from services.mhr.motion_batch import validate_references,execute_plan
 
 BANKS={0:'00',2:'02',3:'03',4:'04',5:'05',22:'22',50:'tree'}
 def sha(data):return hashlib.sha256(data).hexdigest()

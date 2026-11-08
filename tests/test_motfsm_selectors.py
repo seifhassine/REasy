@@ -9,7 +9,7 @@ from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.graph_model import MotfsmGraph
 from file_handlers.motfsm.selectors import clone_selector, resolve_selector, validate_selectors
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
-from tools.fsm.cli import build_parser
+from tools.cli.main import build_parser
 from test_motfsm_corpus import CORPUS, unique_files
 from test_motfsm_integration import make_fixture
 
@@ -160,7 +160,7 @@ class NativeSelectorCopyTests(unittest.TestCase):
                     args += (['--copy-node', f'index:{template_index}', '--set-effect', '0']
                              if command == 'node-clone' else
                              ['--template', f'index:{template_index}', '--keep-hit-index', '0'])
-                    parsed = build_parser().parse_args(args)
+                    parsed = build_parser().parse_args(['fsm', *args])
                     output = parsed.run(parsed)
                     reopened = MotfsmFile()
                     reopened.read(output)

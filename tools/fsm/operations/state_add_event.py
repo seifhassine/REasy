@@ -14,8 +14,8 @@ from file_handlers.motfsm.authoring import block_splice, clone_block_object, ver
 
 EVENTS_BLOCK = 'transition_events'
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
-from tools.fsm.common import resolve_node
-from tools.fsm.values import assignments
+from file_handlers.motfsm.selection import resolve_node
+from file_handlers.motfsm.values import assignments
 
 
 def configure(parser):

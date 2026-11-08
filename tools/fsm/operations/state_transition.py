@@ -20,7 +20,7 @@ stay identical, and REasy's rebuild() must be stable on the candidate.
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.validation import variable_snapshot
 from file_handlers.motfsm.transitions import TransitionTables, patch_record, edit_state_transition
-from tools.fsm.common import resolve_node
+from file_handlers.motfsm.selection import resolve_node
 
 
 def configure(parser):

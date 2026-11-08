@@ -91,7 +91,7 @@
 - 格式参考：<https://github.com/kagenocookie/RE-Engine-Lib>、<https://github.com/NSACloud/MHR-EFX-Template>。
 - 编辑交互参考：<https://github.com/kagenocookie/REE-Content-Editor>、<https://github.com/Dimcirui/MHW-EFX-Editor>（后者为 World 格式）。
 - BC7 编码：<https://github.com/K0lb3/ispc_texcomp_py>，依赖 `ispc_texcomp==1.0.1` 已加入 requirements／打包入口。
-- 使用入口：运行 `run_reasy.bat`，在 EFX 页选中条目后使用 Parameters／Curves／Expressions／Sequence／Linked UVS／Preview。CLI 示例见 `tools/cli/README.md` 的 EFX 章节。
+- 使用入口：运行 `run_reasy.bat`，在 EFX 页选中条目后使用 Parameters／Curves／Expressions／Sequence／Linked UVS／Preview。CLI 示例见 `docs/cli.md` 的 EFX 章节。
 
 ## 后续接续点
 

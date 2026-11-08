@@ -1,7 +1,7 @@
 """Fixed-width edits through the document bindings used by the editor."""
 from file_handlers.motfsm.scalar_editing import open_document, save_edits
-from .common import resolve_node, state_indexes
-from .values import parse_field
+from file_handlers.motfsm.selection import resolve_node, state_indexes
+from file_handlers.motfsm.values import parse_field
 
 
 

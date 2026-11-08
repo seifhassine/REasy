@@ -2,14 +2,12 @@
 
 `services/mhr/motion_batch.py` provides the headless composition API for native
 MOTLIST 528, MOT 495, MTRE 14, CLIP 43 and MOTBANK 3. The resource CLI exposes it as
-`motion build`; `tools/mhr_motion_writer.py` retains its script and import entrypoints.
-It writes offline candidates;
+`motion build`. It writes offline candidates;
 it does not deploy them or perform World-to-Rise retargeting.
 
 ```powershell
 $env:REASY_MHR_NATIVE_CORPUS='absolute/path/to/extracted/em100/00/mot'
 & ./.venv/Scripts/python.exe -m unittest discover -s tests -p test_mhr_native_writer.py -v
-& ./.venv/Scripts/python.exe tools/mhr_motion_writer.py batch_plan.json --report report.json
 & ./.venv/Scripts/python.exe -m tools motion build batch_plan.json --report report.json --dry-run --json
 ```
 

@@ -2,7 +2,7 @@
 from file_handlers.motfsm.map_ownership import detach_state_maps
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
-from tools.fsm.common import resolve_node
+from file_handlers.motfsm.selection import resolve_node
 
 
 def configure(parser):

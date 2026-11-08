@@ -1,6 +1,6 @@
 """Reorder existing states while preserving identities and relative semantics."""
 from file_handlers.motfsm.serialization import serialize_nodes
-from tools.fsm.common import resolve_node, integer
+from file_handlers.motfsm.selection import resolve_node, integer
 from tools.fsm.editing import open_document
 
 

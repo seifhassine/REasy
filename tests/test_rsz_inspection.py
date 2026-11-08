@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from file_handlers.rsz.rsz_data_types import ArrayData, StructData, S32Data, U32Data, ObjectData
-from tools.rsz_inspection import field_record, scalar
+from file_handlers.rsz.inspection import field_record, scalar
 from utils.enum_manager import registry_enums
 
 

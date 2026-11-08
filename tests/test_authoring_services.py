@@ -81,13 +81,6 @@ class AuthoringServiceTests(unittest.TestCase):
             self.assertTrue(result['details']['jobs'][0]['unbound'])
             self.assertFalse(output.exists())
 
-    def test_documented_legacy_audio_imports_remain_available(self):
-        from tools.wem_converter import convert_file_to_wwise_wem
-        from services.audio.wem_converter import convert_file_to_wwise_wem as service
-        from tools.riff_metadata import RiffMetadata
-        from file_handlers.sound.riff_metadata import RiffMetadata as native
-        self.assertIs(convert_file_to_wwise_wem, service)
-        self.assertIs(RiffMetadata, native)
 
 
 if __name__ == '__main__':

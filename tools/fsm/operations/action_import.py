@@ -29,7 +29,7 @@ from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES, native_value_state
 from file_handlers.motfsm.authoring import block_ids, block_padding_is_zero, block_splice, clone_block_object, next_identity
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
-from tools.fsm.common import resolve_node
+from file_handlers.motfsm.selection import resolve_node
 
 
 def configure(parser):

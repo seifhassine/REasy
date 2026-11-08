@@ -30,8 +30,8 @@ from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapsho
 
 HEADER_MAP_COUNT, HEADER_DATA_COUNT = 48, 52
 from file_handlers.motfsm.serialization import serialize_nodes
-from tools.fsm.common import resolve_node
-from tools.fsm.values import assignments
+from file_handlers.motfsm.selection import resolve_node
+from file_handlers.motfsm.values import assignments
 
 
 def configure(parser):

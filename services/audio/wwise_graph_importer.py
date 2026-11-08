@@ -1,9 +1,9 @@
 """Headless World v120 playback export and native v140 batch import.
 
-python -m tools.wwise_graph_importer prepare --import-ir ... --source-dir ...
-    --template-dir ... --output-dir ... --namespace em356_00
+python -m tools audio prepare --import-ir ... --source-dir ...
+    --template-dir ... -o OUTPUT_DIR --namespace em356_00
 Fill jobs.json external_ids and field_resolutions from the reported unbound items.
-python -m tools.wwise_graph_importer build --jobs ... --output-dir ...
+python -m tools audio build OUTPUT_DIR/jobs.json -o OUTPUT_DIR
 All writes go to the explicit output directory; source banks/manifests are read-only.
 """
 from __future__ import annotations

@@ -7,7 +7,7 @@ import struct
 from file_handlers.rsz.rsz_file import RszFile
 from file_handlers.rsz.rsz_data_types import ArrayData, ObjectData, UserDataData, F32Data
 from utils.type_registry import TypeRegistry
-from tools.fsm.common import integer
+from tools.cli.runtime import integer
 from tools.cli.runtime import MHR_REGISTRY
 from file_handlers.rsz.inspection import fields_record
 

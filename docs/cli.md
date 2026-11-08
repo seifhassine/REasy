@@ -12,9 +12,9 @@ Run from the repository root with its Python environment:
 
 | Group | Commands |
 | --- | --- |
-| `fsm` | Query/dump, node/Action/Condition/State edits, cloning, derivations, events; [detailed guide](../fsm/README.md) |
+| `fsm` | Query/dump, node/Action/Condition/State edits, cloning, derivations, events; [detailed guide](fsm_cli.md) |
 | `motion` | `query`, `duplicate`, `bake`, `import-wilds`, `build` (native resource plan) |
-| `audio` | `build` (bound playback graph jobs) |
+| `audio` | `prepare`, `prepare-music` (jobs from an import IR), `build` (bound playback graph jobs) |
 | `clip` | `query`, `dump`, `layout`, `sequence-copy/delete`, `node-copy/delete`, `property-copy/delete`, `key-copy/delete`, `track-add`, `event-move`, `events-drop`, `effect-set`, `property-range`, `bool-window` |
 | `pfb` | `query`, `elements`, `element-add`, `element-edit` |
 | `rcol` | `query`, `request-add`, `request-edit` |
@@ -51,23 +51,21 @@ No command deploys a candidate to a game automatically. Read-back verification a
 .\.venv\Scripts\python.exe -m tools audio build jobs.json -o out\audio --dry-run --json
 ```
 
-`motion build` takes the [schema 1 native motion plan](../../docs/mhr_motion_writer.md).
+`motion build` takes the [schema 1 native motion plan](mhr_motion_writer.md).
 Each document/bank names its own output file; `--report` is optional. This differs
 from the argument-array `motion batch`, which chains commands against one file.
 
 `audio build` takes `{"schema":"reasy.playback-batch/1","jobs":[...]}`. Prepare
-jobs with `python -m tools.wwise_graph_importer prepare` or `prepare-music`, then
-resolve the reported media, object and external bindings. A build with unresolved
+jobs with `audio prepare` or `audio prepare-music`, which write `jobs.json` and the
+extracted graphs into `-o OUTPUT_DIR` and attempt a first build; then resolve the reported media, object and external bindings. A build with unresolved
 bindings returns exit 2 and keeps the full `unbound` report; no banks are published.
 Without `--dry-run`, that report is saved as `build-report.json` even if unbound.
 
 Both builds interpret paths inside their plans relative to the working directory,
-preserving the standalone tools' contract. They verify all resources before
+They verify all resources before
 publication and protect input files. Each output replacement is atomic; a later
 replacement failure restores previously replaced outputs. This is not a transaction
 across a process or machine crash. `--dry-run` writes neither candidates nor reports.
-The original `tools/mhr_motion_writer.py` and `tools.wwise_graph_importer` commands
-remain available.
 
 ### EFX structural editing
 
@@ -526,5 +524,4 @@ Replace positional `SOURCE OUTDIR` with `SOURCE -o OUTPUT_FILE`.
 | `dump_efx.py` | `efx query` |
 | `import_wilds_motion.py` | `motion import-wilds` (Rise target first; Wilds source becomes `--donor`) |
 
-`python -m tools.fsm` remains available and uses the same runtime as `python -m tools fsm`.
-Historical engine conventions and combined workflows are preserved in [MHR notes](MHR.md).
+Historical engine conventions and combined workflows are preserved in [MHR notes](mhr_cli_notes.md).

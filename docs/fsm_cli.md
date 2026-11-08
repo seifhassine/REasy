@@ -1,8 +1,8 @@
 # REasy FSM CLI
 
-FSM commands are also available through the shared [resource CLI](../cli/README.md): `python -m tools fsm ...`.
+FSM commands are part of the shared [resource CLI](cli.md).
 
-From the repository root, use `./.venv/Scripts/python.exe -m tools.fsm`.
+From the repository root, use `./.venv/Scripts/python.exe -m tools fsm`.
 `--help` lists the commands; each command also has `--help`.
 The MHR editing operations use the existing MOTFSM model, RSZ registry, writer,
 and native reference resolver. They produce candidates; they do not deploy to a game.
@@ -12,9 +12,9 @@ and native reference resolver. They produce candidates; they do not deploy to a 
 ```powershell
 $py = '.\.venv\Scripts\python.exe'
 $fsm = 'path\to\LongSword.motfsm2.43'
-& $py -m tools.fsm query $fsm --name atk --actions --limit 10 --json
-& $py -m tools.fsm dump $fsm --node 'root.atk.atk_101' --json
-& $py -m tools.fsm action-edit $fsm -o 'out\LongSword.motfsm2.43' --node 'atk_101' --class PlayerPlayMotion2 --exact --set v4_MotionID=620 --json
+& $py -m tools fsm query $fsm --name atk --actions --limit 10 --json
+& $py -m tools fsm dump $fsm --node 'root.atk.atk_101' --json
+& $py -m tools fsm action-edit $fsm -o 'out\LongSword.motfsm2.43' --node 'atk_101' --class PlayerPlayMotion2 --exact --set v4_MotionID=620 --json
 ```
 
 All node selectors accept a unique name, a full dotted path, `index:123`,
@@ -100,7 +100,7 @@ omit the source, `-o`, and `--dry-run` inside steps:
 ```
 
 ```powershell
-& $py -m tools.fsm batch $fsm --plan edits.json -o 'out\LongSword.motfsm2.43' --json
+& $py -m tools fsm batch $fsm --plan edits.json -o 'out\LongSword.motfsm2.43' --json
 ```
 
 Each step reads the previous verified candidate. Failure leaves the final output untouched;
@@ -132,11 +132,11 @@ retain their existing MHR assumptions and options; they are not arbitrary subtre
 cloners. Run without Python `-O` so native verification assertions remain enabled.
 Command adapters retain the same flags and feed these plans into the shared CLI
 publisher. New Python consumers should import `file_handlers.motfsm.selection`,
-`values` and `scalar_editing`; the former `tools.fsm` helper imports remain available.
+`values` and `scalar_editing`.
 
 ## Migration from `tools/mhr_edit`
 
-The standalone FSM scripts have been folded into this package. Replace `SOURCE OUTDIR`
+The standalone FSM scripts have been folded into `python -m tools fsm`. Replace `SOURCE OUTDIR`
 with `SOURCE -o OUTPUT_FILE`, and use the corresponding command:
 
 | Previous script | Command |

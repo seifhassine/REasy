@@ -16,11 +16,16 @@ from file_handlers.motfsm.motfsm_file import MotfsmFile, BHVTNode
 from file_handlers.motfsm.motfsm_viewer import MotfsmViewer
 from file_handlers.motfsm.references import References
 from file_handlers.motfsm.serialization import serialize_nodes
-from tools.fsm.cli import main, build_parser, STRUCTURAL, SCALAR
-from tools.fsm.common import resolve_node, identity, integer
+from file_handlers.motfsm.selection import resolve_node, identity, integer
+from tools.cli.main import main as cli_main, build_parser
+from tools.fsm.cli import STRUCTURAL, SCALAR
 from test_motfsm_corpus import CORPUS, unique_files
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def main(argv):
+    return cli_main(['fsm', *argv])
 
 
 def read(path):
@@ -70,7 +75,7 @@ class SelectorAndDisplayTests(unittest.TestCase):
         for name in (*STRUCTURAL, *SCALAR, 'query', 'dump', 'batch'):
             with self.subTest(command=name), redirect_stdout(io.StringIO()):
                 with self.assertRaises(SystemExit) as caught:
-                    parser.parse_args([name, '--help'])
+                    parser.parse_args(['fsm', name, '--help'])
                 self.assertEqual(caught.exception.code, 0)
 
 
@@ -103,7 +108,7 @@ class NativeCliTests(unittest.TestCase):
                 self.assertEqual(serialize_nodes(doc), doc.source[doc.bhvt.offsets['nodes']:doc.bhvt.node_data_end])
 
     def test_query_json_stdout_and_action_fields(self):
-        result = subprocess.run([sys.executable, '-m', 'tools.fsm', 'dump', str(self.path),
+        result = subprocess.run([sys.executable, '-m', 'tools', 'fsm', 'dump', str(self.path),
                                  '--node', self.selector, '--json'], cwd=ROOT, capture_output=True,
                                 text=True, encoding='utf-8')
         self.assertEqual(result.returncode, 0, result.stderr)
