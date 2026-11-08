@@ -295,10 +295,18 @@ the same resources as that command.
 
 This example appends Gunlance 620: 295 frames 38–67 at 1.6× with Root cleared, then
 296 frames 30–80 at 1.6× and 80–end at 1×, preserving relative Root transforms,
-aligning waist rotations and blending three frames on each side of the cut:
+aligning waist rotations and blending three frames on each side of the cut.
+Run it from the REasy project directory; the inputs are the local corpus under `tests/TESTFILE`:
 
 ```powershell
-.\.venv\Scripts\python.exe -m tools motion bake C:/myproj/Assets/ModSources/natives/STM/player/mot/plw_GunLance_100.motlist.528 --donor C:/myproj/Assets/ModSources/Weapon/Wp07/wp07_00/wp07_00.motlist.992 --hold-template C:/myproj/Assets/ModSources/natives/STM/player/mot/plw_GunLance_100.motlist.528 --target 620 --segment 295 38 67 1.6 --segment 296 30 80 1.6 --segment 296 80 end 1 --segment-root-transform identity relative relative --waist-rotation align --blend-frames 3 -o out/plw_GunLance_100.motlist.528 --json
+$py = '.\.venv\Scripts\python.exe'
+$target = 'tests/TESTFILE/natives/STM/player/mot/plw_GunLance_100.motlist.528'
+& $py -m tools motion bake $target `
+  --donor 'tests/TESTFILE/Weapon/gunlance/wp07_00/wp07_00.motlist.992' `
+  --hold-template $target --target 620 `
+  --segment 295 38 67 1.6 --segment 296 30 80 1.6 --segment 296 80 end 1 `
+  --segment-root-transform identity relative relative --waist-rotation align --blend-frames 3 `
+  -o 'out/plw_GunLance_100.motlist.528' --json
 ```
 
 The output ranges are 0–19, 20–52 and 52–169 at 60 FPS (2.816667 seconds). The first
@@ -325,14 +333,14 @@ From the REasy project directory, this appends a short test composite of regular
 
 ```powershell
 $py = '.\.venv\Scripts\python.exe'
-$target = 'C:/myproj/REasy/tests/TESTFILE/natives/STM/player/mot/plw_SlashAxe_100.motlist.528'
-& $py -m tools motion query 'C:/myproj/REasy/tests/TESTFILE/xx/slashaxe.lmt' --motion 122 --json
+$target = 'tests/TESTFILE/natives/STM/player/mot/plw_SlashAxe_100.motlist.528'
+& $py -m tools motion query 'tests/TESTFILE/xx/slashaxe.lmt' --motion 122 --json
 & $py -m tools motion bake $target `
-  --lmt-source base 'C:/myproj/REasy/tests/TESTFILE/xx/slashaxe.lmt' `
-  --lmt-source arts 'C:/myproj/REasy/tests/TESTFILE/xx/slashaxe_hunterart.lmt' `
+  --lmt-source base 'tests/TESTFILE/xx/slashaxe.lmt' `
+  --lmt-source arts 'tests/TESTFILE/xx/slashaxe_hunterart.lmt' `
   --segment base:122 32 36 1 --segment arts:1 0 4 2 `
   --target next --hold-template $target --blend-frames 1 `
-  -o 'C:/myproj/REasy/.cache/lmt-composite/plw_SlashAxe_100.motlist.528' --dry-run --json
+  -o '.cache/lmt-composite/plw_SlashAxe_100.motlist.528' --dry-run --json
 ```
 
 `--target next` allocates a free ID. To replace an existing animation, use its numeric

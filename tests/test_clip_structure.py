@@ -13,7 +13,7 @@ from file_handlers.motion.mhr.structure import Owner
 
 
 CORPUS = Path(__file__).parent / 'TESTFILE/natives/STM/player/mot/plw_GunLance_100.motlist.528'
-DEPLOYED = Path(r'C:\Program Files (x86)\Steam\steamapps\common\MonsterHunterRise\natives\STM\player\mot\plw_GunLance_100.motlist.528')
+DEPLOYED = 'natives/STM/player/mot/plw_GunLance_100.motlist.528'  # inside the Rise installation
 
 
 def sequence_values(sequences):
@@ -214,7 +214,12 @@ class ClipStructureTests(unittest.TestCase):
             self.assertEqual(CORPUS.read_bytes(), raw)
 
     def test_deployed_last_motion_copy_relocates_absolute_override_tail(self):
-        raw, document = self.load(DEPLOYED)
+        from file_handlers.motion.preview.mhr_assets import find_rise_installation
+        game = find_rise_installation()
+        if not game:
+            self.skipTest('Rise is not installed')
+        deployed = game / DEPLOYED
+        raw, document = self.load(deployed)
         ids = {slot.motion_id for slot in document.slots}
         if not {111, 626}.issubset(ids):
             self.skipTest('Deployed file no longer contains the regression motion pair')
@@ -229,7 +234,7 @@ class ClipStructureTests(unittest.TestCase):
         old_pointer = struct.unpack_from('<Q', raw, old_table + index * 72)[0]
         new_pointer = struct.unpack_from('<Q', output, new_table + index * 72)[0]
         self.assertEqual(new_pointer - old_pointer, new_table - old_table)
-        self.assertEqual(DEPLOYED.read_bytes(), raw)
+        self.assertEqual(deployed.read_bytes(), raw)
 
 
 if __name__ == '__main__':

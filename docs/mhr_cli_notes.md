@@ -104,7 +104,9 @@ query/dump, node/Action/Condition/State editing, batch plans, and JSON output.
 ## Typical workflows
 
 ```bash
-GAME="C:/Program Files (x86)/Steam/steamapps/common/MonsterHunterRise"
+# Run from the REasy project directory. GAME is the folder that holds the extracted
+# natives/ tree (for example an unpacked mod source), relative or absolute.
+GAME="path/to/extracted/MonsterHunterRise"
 
 # 1) import a Wilds motion into a Rise hunter motlist (native layout, IK goals, WeaponHold, contract checks)
 ./.venv/Scripts/python.exe -m tools motion import-wilds <plw_*.motlist.528> \
