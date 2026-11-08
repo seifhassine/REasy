@@ -131,7 +131,6 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self.campaign: CampaignChoice | None = None
         self.variations: dict[str, int] = {}
         self.spawn_choices: dict[str, int] = {}
-        self._loaded = False
         self._stale = False
         self._mesh_cache: dict[str, tuple[MeshHandler | None, SceneDrawMesh | None]] = {}
         # By document id: the scope of its source's meshes.
@@ -155,7 +154,6 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self._camera_stopped: frozenset[ScnObjectId] = frozenset()
         self._camera_eye: tuple | None = None
         self._retired_renderables: set[str] = set()
-        self._loading = False
         # An SCN added to the scene shown loads.
         self._adding = False
         self._refresh_queued = False
@@ -210,7 +208,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         layout.addWidget(self.preview, 1)
 
     def ensure_loaded(self) -> None:
-        if not self._loaded:
+        if not self.graphs:
             self.request_refresh()
 
     def request_refresh(self) -> None:
@@ -219,7 +217,6 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self._stop_timers()
         self._pending_renderables.clear()
         self._pending_material_renderables.clear()
-        self._loading = False
         self._refresh_queued = True
         self.status_label.setText(self.tr("Preparing scene preview..."))
         call_later(self, 0, self.refresh)
@@ -315,7 +312,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         return count
 
     def _redraw_variations(self) -> None:
-        if not self._loaded or self._loading:
+        if not self.graphs or self._pending_renderables:
             self.request_refresh()
             return
         meshes, changed = {mesh.key: mesh for mesh in self._draw_meshes}, {}
@@ -349,12 +346,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
 
     def set_stale(self) -> None:
         self._stale = True
-        if self._loaded:
-            self.status_label.setText(
-                self.tr(
-                    "Scene preview is stale. Reload the scene to rebuild from the edited SCN."
-                )
-            )
+        self._update_status()
 
     def _on_texture_quality_changed(self, quality: str) -> None:
         self._materials.set_texture_quality(quality)
@@ -455,7 +447,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self._batch_cache.clear()
         self._light_probe_cache.clear()
         self._shown_diagnostics.clear()
-        self._loaded = self._loading = self._refresh_queued = self._stale = self._adding = False
+        self._refresh_queued = self._stale = self._adding = False
         self._camera_initialized = False
         self._last_asset_counts = (0, 0, 0, 0)
         self.graphs.clear()
@@ -477,11 +469,11 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
     def _show_device_frames(self) -> None:
         """Off while loading: each new mesh and material would make new device content. While an added SCN loads, the
         device draws on what it drew, and adds the new meshes once they are all loaded."""
-        loading = self._loading or bool(self._pending_material_renderables)
+        loading = bool(self._pending_renderables or self._pending_material_renderables)
         held = loading and self._adding and self._device_preview.active
         self._device_preview.hold(held)
         if not held:
-            self._device_preview.set_active(self._loaded and not loading)
+            self._device_preview.set_active(bool(self.graphs) and not loading)
         if not loading:
             self._adding = False
             self._materials.stop_parses()
@@ -495,7 +487,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         return [ScnSceneSource(path=path, handler=self.handler, label=Path(path).name)]
 
     def add_source(self, source: ScnSceneSource) -> None:
-        if not self._loaded or self._stale or self._loading:
+        if not self.graphs or self._stale or self._pending_renderables:
             self.request_refresh()
             return
         graphs = self.loader.build_graphs([source], max_depth=16, kept=self.graphs, campaign=self.campaign,
@@ -699,9 +691,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         failed = sum(d.code == "mesh_preview_error" for graph in self.graphs for d in graph.diagnostics)
         empty = sum(d.code == "mesh_without_geometry" for graph in self.graphs for d in graph.diagnostics)
         self._last_asset_counts = (len(self._draw_meshes), missing, failed, empty)
-        self._loading = bool(self._pending_renderables)
         if not self.graphs:
-            self._loaded = False
             self._camera_initialized = False
             self._retired_renderables.clear()
             self.status_label.setText(self.tr("No SCN is loaded."))
@@ -744,7 +734,6 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self._load_light_probe_instances()
         self._start_time(self.graphs)
         self._queue_renderables(self.graphs)
-        self._loaded = True
         self.preview.set_scene([])
         self._show_time()
         self._sync_preview_materials()
@@ -851,7 +840,6 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         queued = [_RenderableQueueItem(graph, renderable) for graph in graphs for renderable in graph.renderables]
         self._pending_renderables.extend(queued)
         self._plan_mesh_reads(queued)
-        self._loading = bool(self._pending_renderables)
 
     def _scope_meshes(self, graphs: list[ScnSceneGraph]) -> None:
         """Every document of a graph shares its source's meshes; a document already shown keeps its source's."""
@@ -940,7 +928,6 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         if self._pending_renderables:
             self._mesh_timer.start(0)
         else:
-            self._loading = False
             self._retired_renderables.clear()
             self._apply_hidden_renderables(refresh=False)
             self._variation_values = {name: self._variation_values.get(name, {}) for mesh in self._draw_meshes
@@ -1244,6 +1231,8 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
         self.status_label.setText(
             " | ".join(
                 [
+                    *([self.tr("Scene preview is stale. Reload the scene to rebuild from the edited SCN.")]
+                      if self._stale else []),
                     self.tr("Sources: {count}").format(count=len(self.scene_sources())),
                     self.tr("Documents: {count}").format(count=documents),
                     self.tr("Instances: {count}").format(count=instances),
@@ -1255,7 +1244,7 @@ class ScnScenePreviewWidget(QWidget, ScnSceneTimePreview):
                     self.tr("Preview: {progress}/{total}").format(
                         progress=progress, total=renderables
                     )
-                    if self._loading
+                    if self._pending_renderables
                     else self.tr("Preview ready"),
                     self.tr("Meshes loaded: {count}").format(count=loaded),
                     self.tr("Missing: {count}").format(count=missing),

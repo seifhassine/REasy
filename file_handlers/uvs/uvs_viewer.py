@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from contextlib import contextmanager
 
 from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QTimer, QPointF, QRectF
 lazy from PySide6.QtGui import QColor, QImage, QPainter, QPen, QPixmap
@@ -402,8 +403,13 @@ class UvsViewer(QWidget):
         self.modified = True
         self.handler.modified = True
 
-    def _set_loading(self, value: bool):
-        self._loading = value
+    @contextmanager
+    def _loading_rows(self):
+        loading, self._loading = self._loading, True
+        try:
+            yield
+        finally:
+            self._loading = loading
 
     def _set_table_item(self, table: QTableWidget, row: int, col: int, txt: str, editable=True):
         item = QTableWidgetItem(txt)
@@ -416,10 +422,9 @@ class UvsViewer(QWidget):
             self._set_table_item(self.patterns_table, row, col, format_display_value(val))
 
     def _refresh_pattern_views(self):
-        self._set_loading(True)
-        self._reload_patterns()
-        self._reload_cutouts()
-        self._set_loading(False)
+        with self._loading_rows():
+            self._reload_patterns()
+            self._reload_cutouts()
 
     def _create_detail_field(self, layout: QFormLayout, label: str, placeholder: str, callback) -> QLineEdit:
         field = QLineEdit()
@@ -1030,14 +1035,13 @@ class UvsViewer(QWidget):
         return int(txt, 16) if txt.lower().startswith("0x") else int(txt)
 
     def _reload_all(self):
-        self._loading = True
-        self._reload_textures()
-        self._reload_sequences()
-        self._reload_patterns()
-        self._reload_cutouts()
-        self._sync_preview()
-        self._on_texture_selected()
-        self._loading = False
+        with self._loading_rows():
+            self._reload_textures()
+            self._reload_sequences()
+            self._reload_patterns()
+            self._reload_cutouts()
+            self._sync_preview()
+            self._on_texture_selected()
 
     def _reload_textures(self):
         self.textures_table.setRowCount(0)
@@ -1144,13 +1148,12 @@ class UvsViewer(QWidget):
         self._set_texture_detail_fields(uvs.textures[row])
 
     def _set_texture_detail_fields(self, tex: UvsTexture | None):
-        self._set_loading(True)
-        for field, attr in [(self.normal_path_edit, 'normal_path'), 
-                            (self.specular_path_edit, 'specular_path'), 
-                            (self.alpha_path_edit, 'alpha_path')]:
-            if field:
-                field.setText(getattr(tex, attr, "") if tex else "")
-        self._set_loading(False)
+        with self._loading_rows():
+            for field, attr in [(self.normal_path_edit, 'normal_path'),
+                                (self.specular_path_edit, 'specular_path'),
+                                (self.alpha_path_edit, 'alpha_path')]:
+                if field:
+                    field.setText(getattr(tex, attr, "") if tex else "")
 
     def _on_texture_detail_changed(self):
         if self._loading or not (uvs := self.handler.uvs):
@@ -1172,23 +1175,21 @@ class UvsViewer(QWidget):
         row = self.sequences_table.currentRow()
         self._selected_sequence = row
         self._selected_pattern = 0
-        self._loading = True
-        self._reload_patterns()
-        self._reload_cutouts()
-        self._sync_preview()
-        if self.patterns_table.rowCount() > 0:
-            self.patterns_table.selectRow(0)
-        self._loading = False
+        with self._loading_rows():
+            self._reload_patterns()
+            self._reload_cutouts()
+            self._sync_preview()
+            if self.patterns_table.rowCount() > 0:
+                self.patterns_table.selectRow(0)
 
     def _on_pattern_selected(self):
         self._selected_pattern = self.patterns_table.currentRow()
-        self._loading = True
-        self._reload_cutouts()
-        self._sync_preview()
-        self.frame_slider.blockSignals(True)
-        self.frame_slider.setValue(max(0, self._selected_pattern))
-        self.frame_slider.blockSignals(False)
-        self._loading = False
+        with self._loading_rows():
+            self._reload_cutouts()
+            self._sync_preview()
+            self.frame_slider.blockSignals(True)
+            self.frame_slider.setValue(max(0, self._selected_pattern))
+            self.frame_slider.blockSignals(False)
 
     def _current_sequence(self):
         uvs = self.handler.uvs
@@ -1280,9 +1281,8 @@ class UvsViewer(QWidget):
             self._sync_preview()
         except Exception as ex:
             QMessageBox.warning(self, self.tr(INVALID_VALUE_TITLE), str(ex))
-            self._set_loading(True)
-            self._reload_textures()
-            self._set_loading(False)
+            with self._loading_rows():
+                self._reload_textures()
 
     def _on_pattern_changed(self, item: QTableWidgetItem):
         if self._loading or not (pat := self._current_pattern()):
@@ -1307,9 +1307,8 @@ class UvsViewer(QWidget):
             self._sync_preview()
         except Exception as ex:
             QMessageBox.warning(self, self.tr(INVALID_VALUE_TITLE), str(ex))
-            self._set_loading(True)
-            self._reload_patterns()
-            self._set_loading(False)
+            with self._loading_rows():
+                self._reload_patterns()
 
     def _on_cutout_changed(self, item: QTableWidgetItem):
         if self._loading or not (pat := self._current_pattern()):
@@ -1329,20 +1328,16 @@ class UvsViewer(QWidget):
             self._mark_modified()
         except Exception as ex:
             QMessageBox.warning(self, self.tr(INVALID_VALUE_TITLE), str(ex))
-            self._set_loading(True)
-            self._reload_cutouts()
-            self._set_loading(False)
+            with self._loading_rows():
+                self._reload_cutouts()
 
     def _on_preview_pattern_changed(self):
         pat = self._current_pattern()
         row = self._selected_pattern
-        if pat and row >= 0 and row < self.patterns_table.rowCount():
-            self._set_loading(True)
-            self._set_pattern_row_values(row, pat)
-            self._set_loading(False)
-        self._set_loading(True)
-        self._reload_cutouts()
-        self._set_loading(False)
+        with self._loading_rows():
+            if pat and row >= 0 and row < self.patterns_table.rowCount():
+                self._set_pattern_row_values(row, pat)
+            self._reload_cutouts()
         if self.preview_focused:
             self.preview_focused.update()
         self._mark_modified()

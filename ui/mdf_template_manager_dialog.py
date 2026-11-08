@@ -286,35 +286,37 @@ class MdfTemplateManagerDialog(QDialog):
     def _show_template_details(self, info: Optional[Dict]) -> None:
         self._auto_save_timer.stop()
         self._updating_fields = True
-        if info:
-            self.name_edit.setText(info.get("name", ""))
-            self.tags_edit.setText(", ".join(info.get("tags", [])))
-            self.description_edit.setPlainText(info.get("description", ""))
-            source_file = info.get("source_file_name") or "-"
-            self.source_label.setText(self.tr("Source File: {source_file}").format(
-                source_file=source_file
-            ))
-            source_version = info.get("source_version")
-            version_str = str(source_version) if source_version else "-"
-            self.version_label.setText(self.tr("Source Version: {version}").format(
-                version=version_str
-            ))
-            self.game_label.setText(self.tr("Source Game: {game}").format(game=info.get("source_game") or "-"))
-            created = info.get("created") or "-"
-            modified = info.get("modified") or "-"
-            self.created_label.setText(self.tr("Created: {date}").format(date=created))
-            self.modified_label.setText(self.tr("Modified: {date}").format(date=modified))
-        else:
-            self.name_edit.clear()
-            self.tags_edit.clear()
-            self.description_edit.clear()
-            self.source_label.setText(self.tr("Source File: -"))
-            self.version_label.setText(self.tr("Source Version: -"))
-            self.game_label.setText(self.tr("Source Game: -"))
-            self.created_label.setText(self.tr("Created: -"))
-            self.modified_label.setText(self.tr("Modified: -"))
-            self._prefill_from_selection()
-        self._updating_fields = False
+        try:
+            if info:
+                self.name_edit.setText(info.get("name", ""))
+                self.tags_edit.setText(", ".join(info.get("tags", [])))
+                self.description_edit.setPlainText(info.get("description", ""))
+                source_file = info.get("source_file_name") or "-"
+                self.source_label.setText(self.tr("Source File: {source_file}").format(
+                    source_file=source_file
+                ))
+                source_version = info.get("source_version")
+                version_str = str(source_version) if source_version else "-"
+                self.version_label.setText(self.tr("Source Version: {version}").format(
+                    version=version_str
+                ))
+                self.game_label.setText(self.tr("Source Game: {game}").format(game=info.get("source_game") or "-"))
+                created = info.get("created") or "-"
+                modified = info.get("modified") or "-"
+                self.created_label.setText(self.tr("Created: {date}").format(date=created))
+                self.modified_label.setText(self.tr("Modified: {date}").format(date=modified))
+            else:
+                self.name_edit.clear()
+                self.tags_edit.clear()
+                self.description_edit.clear()
+                self.source_label.setText(self.tr("Source File: -"))
+                self.version_label.setText(self.tr("Source Version: -"))
+                self.game_label.setText(self.tr("Source Game: -"))
+                self.created_label.setText(self.tr("Created: -"))
+                self.modified_label.setText(self.tr("Modified: -"))
+                self._prefill_from_selection()
+        finally:
+            self._updating_fields = False
         template_id = info.get("id") if info else self._current_template_id()
         if info:
             self._loaded_metadata = self._collect_metadata()

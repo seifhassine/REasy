@@ -916,15 +916,17 @@ class RszCsvExtractorDialog(QDialog):
         if hasattr(self, "_progress") and self._progress:
             self._progress.close()
             self._progress = None
-        self._scanning = False
+        self._scanning = self._export_after_scan = False
+        self._last_signature = None
         self.status_label.setText(self.tr("Scan canceled."))
 
     def _on_error(self, msg: str):
         if hasattr(self, "_progress") and self._progress:
             self._progress.close()
             self._progress = None
+        self._scanning = self._export_after_scan = False
+        self._last_signature = None
         QMessageBox.critical(self, self.tr("Error"), msg)
-        self._scanning = False
 
     def _on_preview_ready(self):
         if self.worker:
