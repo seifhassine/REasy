@@ -139,160 +139,164 @@ class ChangelogDialog(QDialog):
         changes = [
             # New
             ("New", self.tr(
-                "<b>Master material (MMTR) editing:</b> edit a material's shaders as a node "
-                "graph from the MDF editor's Edit Shader… button, then save the result as a "
-                "variant for just the materials you choose."
+                "<b>Motion editing:</b> .mot, .motlist, .mottree and .motpack files open in a new motion editor in "
+                "every supported game except RE7 (non-RT), MH Stories 3, Onimusha 2, Kunitsu-Gami and Dead Rising "
+                "Deluxe Remaster: edit keys as curves, motion trees as a graph, and preview motions on a character."
             )),
             ("New", self.tr(
-                "Added SDF (shader definition) viewing and editing: inspect each pass's "
-                "pipeline, edit its render state, and replace or export its compiled shaders."
+                "Motions can be exported to Blender and imported back, even onto another game's characters: bones "
+                "are matched by body part and each game's joint axes are lined up."
             )),
             ("New", self.tr(
-                "MDF files have a new Material Graph tab, and now warn when their parameters "
-                "or textures don't match their master material."
+                "Prefabs that use motion banks or lists have a new Motion tab that plays their motions on the "
+                "character, with facial blend shapes, wrinkles and joint constraints."
             )),
             ("New", self.tr(
-                "<b>Game lighting:</b> meshes and scenes can be drawn with the game's own "
-                "shaders and lighting in RE2 and RE3 (RT and non-RT), RE4, RE7 RT, RE8, RE9, "
-                "DMC5, SF6, MH Wilds, Dragon's Dogma 2, Onimusha: Way of the Sword and Pragmata."
+                "Characters are now assembled from the files that list their parts, such as costume presets, "
+                "montages and armor lists, so scenes, prefabs and these files show whole characters in 3D."
             )),
             ("New", self.tr(
-                "<b>Hair strands:</b> hair prefabs now have a 3D tab that draws their strands "
-                "with the game's hair rendering and physics in RE4, RE9 and Pragmata."
+                "The Project Browser has a new Catalogue view listing the game's characters; double-click one to "
+                "open it on its Motion tab."
             )),
             ("New", self.tr(
-                "Added a hair strand editor for RE9 and Pragmata: comb, paint, smooth, grow or "
-                "trim strands, edit colliders, physics presets and LOD settings, and save the "
-                "result to your project."
+                "<b>Joint constraints:</b> .jcns files can now be edited joint by joint, with the constraints shown "
+                "live on a character and their driver curves editable."
             )),
             ("New", self.tr(
-                "<b>Mesh conversion:</b> convert meshes to another game's format, with a before "
-                "and after preview and a report of any data loss. MDF/Textures are not included for now."
+                "Added DLGTML dialogue timeline editing for MH Wilds and Onimusha: Way of the Sword."
             )),
             ("New", self.tr(
-                "<b>Blender round trip:</b> export meshes to .blend and import your edits back "
-                "(Blender 5.0 or newer), or import models from other sources onto a game's "
-                "reference mesh with automatic bone mapping. MDF/Textures are not included for now."
+                "<b>Scene features panel:</b> scenes show game-specific options over the 3D view: SF6 costume "
+                "colors (pick a part, change its colors and save the edited files to your project), the costume, "
+                "preset or outfit each spawner uses, and RE4's campaign state."
             )),
             ("New", self.tr(
-                "TEX files can now be edited: create them from DDS images, replace their image, "
-                "change their settings, or convert them to another game's version."
+                "<b>Game lighting:</b> shell fur is now drawn in RE4, Dragon's Dogma 2, MH Wilds and RE9, skin "
+                "uses each game's own subsurface scattering profiles, face wrinkles work in RE2 RT, RE3, RE3 RT and "
+                "RE7 RT, and meshes with blend shapes are drawn the game's way in RE3, RE3 RT and RE8."
             )),
             ("New", self.tr(
-                "SpeedTree meshes (.stmesh) can now be viewed, and trees and foliage now appear "
-                "in scenes, for RE4, SF6, MH Wilds, Dragon's Dogma 2, Onimusha: Way of the Sword "
-                "and Pragmata."
+                "RE4 scenes now start the way the game starts them: start-up scripts show or hide objects for the "
+                "chosen campaign state; lights, fans and pendulums animate over time; and volume decals and water "
+                "are drawn."
             )),
             ("New", self.tr(
-                "Mesh distance fields (.sdftex) can now be viewed, or baked from a mesh, for RE4, "
-                "RE9, MH Wilds, Dragon's Dogma 2, Onimusha: Way of the Sword and Pragmata."
+                "<b>Effect from Material:</b> the master material editor can copy an effect, such as a dissolve or "
+                "Fresnel, from another material into the one you are editing (Add > Effect from Material…)."
             )),
             ("New", self.tr(
-                "The mesh viewer can now show each LOD, shadow and occluder meshes, shape keys "
-                "and vertex attributes, and has a new Inspect panel for isolating and hiding "
-                "submeshes."
-            )),
-            ("New", self.tr("PFB files can now be opened in the 3D scene viewer and added to scenes.")),
-            ("New", self.tr(
-                "Added Dead Rising Deluxe Remaster support, including SCN, PFB and USER editing "
-                "and PAK browsing."
-            )),
-            ("New", self.tr("Added full sound modding support for Onimusha: Way of the Sword.")),
-            ("New", self.tr(
-                "Sound preview now has a basic editor for silencing, trimming and cropping a "
-                "sound before using it as a replacement."
+                "Sound bank editing can now create HIRC objects, edit object lists and dialogue event decision "
+                "trees, and remove media."
             )),
             ("New", self.tr(
-                "Sound preview has a Normalize option, and sounds can be played and paused "
-                "with Space or Enter."
+                "TEX images can now be replaced with PNG files, compressed with mipmaps the way the game's own "
+                "textures are."
             )),
-            ("New", self.tr("Onimusha: Way of the Sword MDF files can now be opened, edited and saved.")),
-            ("New", self.tr("Added support for WCSW, WCSS, WCSA and WCSF sound files.")),
-            ("New", self.tr("Added a file list for RE Resistance.")),
+            ("New", self.tr("MDF texture paths now autocomplete from the game's file list.")),
+            ("New", self.tr("Hovering over a tab shows a preview of its contents; 3D tabs show their last frame.")),
+            ("New", self.tr(
+                "RSZ fields holding flag enums now show each set flag by name and can be toggled from a checklist."
+            )),
+            ("New", self.tr("RE7 RT meshes can now be edited and saved.")),
+            ("New", self.tr(
+                "RCOL files from MH Wilds and Onimusha: Way of the Sword can now be opened and edited, and their "
+                "stripped names are shown where REasy can recover them."
+            )),
+            ("New", self.tr("Render texture files (.rtex) can now be viewed.")),
+            ("New", self.tr("Added support for many more headless RSZ files, such as WCBK, AMIX, WFA, WMS and WTOT.")),
 
             # Improved
             ("Improved", self.tr(
-                "<b>Fully dockable tabs:</b> drag a tab to split the editor on any side, or "
-                "float it in its own window."
+                "<b>Timeline editor:</b> CLIP, TML and UCURVE files open in a rebuilt editor with a dope sheet, "
+                "curves, undo and checks that stop invalid files from being saved."
             )),
             ("Improved", self.tr(
-                "Large scenes are much more responsive: hovering and selecting objects respond "
-                "immediately, and objects outside the view are no longer drawn."
+                "<b>Sound property pages:</b> every sound object and bank chunk is now edited in Wwise-style "
+                "property pages instead of a raw field list."
+            )),
+            ("Improved", self.tr("Master materials (MMTR) now open and build several times faster.")),
+            ("Improved", self.tr(
+                "The MDF editor is much faster with large materials and now opens on its Overview tab."
             )),
             ("Improved", self.tr(
-                "REasy starts up faster, and opening game PAKs is faster and uses less memory."
+                "The PAK Browser shows large file lists much faster, and updating its file list no longer freezes "
+                "the window."
             )),
             ("Improved", self.tr(
-                "Projects open without freezing the window, and Project Browser trees now start "
-                "directly inside the natives folder."
+                "Node highlighting in SCN, PFB and USER files moved from the Highlight menu to a brush button in "
+                "the file's toolbar, with color presets and custom colors."
             )),
             ("Improved", self.tr(
-                "Redesigned the sound preview: Play now pauses and resumes, the source list can "
-                "be sorted and filtered by Used by, and replacement options moved to a "
-                "Replacement Settings dialog."
+                "MDF shading types now use each game's own names, and material flags follow each MDF version's "
+                "own layout, with a raw value field for every bit."
             )),
             ("Improved", self.tr(
-                "Sound banks now identify many more sounds, and MSG Sound Scan finds cutscene "
-                "and event dialogue in Dragon's Dogma 2, MH Rise, MH Wilds, Pragmata and SF6."
+                "Pasting materials or importing MDF templates from another game or version now converts their "
+                "shading types and material flags by name."
             )),
             ("Improved", self.tr(
-                "The Project Browser and PAK Browser now always skip mod PAKs and warn when the "
-                "game folder contains modded PAKs."
+                "When opening a master material, the MDF files offered now say whether each comes from the "
+                "project, a PAK, system files or disk."
             )),
+            ("Improved", self.tr("Freecam keys in the scene viewer now take priority over window shortcuts.")),
             ("Improved", self.tr(
-                "Redesigned the File List Generator with new search modes, time estimates, much "
-                "faster searches and optional GPU acceleration."
+                "When Wwise cannot create its project, REasy now explains how to fix it, such as moving REasy out "
+                "of protected folders."
             )),
-            ("Improved", self.tr("GCF and IFT font files can now be viewed in every supported game.")),
 
             # Updated
             ("Updated", self.tr(
-                "<b>UI refresh:</b> restyled dark theme, line icons and more compact layouts "
-                "across viewers, dialogs and tools."
+                "Selecting objects in a scene's list no longer moves the camera unless the new focus button in the "
+                "scene header is on."
             )),
             ("Updated", self.tr(
-                "Updated file lists, RSZ dumps and enums for Dragon's Dogma 2's latest update, "
-                "the full release of Onimusha: Way of the Sword, SF6 and Pragmata, and improved "
-                "file lists for many other games."
+                "Improved RSZ dumps for Dragon's Dogma 2, DMC5, MH Wilds, Onimusha: Way of the Sword, Pragmata, "
+                "RE2 RT, RE3 RT, RE4, RE7 RT and RE8 (credit to @kagenocookie for the Dragon's Dogma 2 update)."
+            )),
+            ("Updated", self.tr("Updated enums for every supported game, and the Dragon's Dogma 2 file list.")),
+            ("Updated", self.tr(
+                "The About dialog now links the REasy Wiki, maintained by BrewedVFX, and plays music with a volume "
+                "slider."
             )),
             ("Updated", self.tr(
-                "Updated Dragon's Dogma 2 sound support for the game's latest update, and sound "
-                "data for all supported games."
-            )),
-            ("Updated", self.tr(
-                "Replacing or adding sounds now requires an open project with its game folder set."
-            )),
-            ("Updated", self.tr("3D views now render with Direct3D 12 instead of OpenGL.")),
-            ("Updated", self.tr(
-                "Added a setting to choose whether REasy restores your workspace on startup."
-            )),
-            ("Updated", self.tr(
-                "The AI Assistant and Output console now start hidden for new users and can be "
-                "turned on from the View menu."
+                "REasy now shows a message and stops if REasy.exe is started outside its folder, away from its "
+                "resources."
             )),
 
             # Fixed
             ("Fixed", self.tr(
-                "Fixed PAK browsing and extraction sometimes using an outdated copy of a file."
+                "Fixed 3D views failing on Windows 10 with a root signature error: REasy now offers to download "
+                "Microsoft's Direct3D 12 runtime when Windows' own is too old."
+            )),
+            ("Fixed", self.tr("Fixed MH Wilds meshes and materials previewing black after the game's latest update.")),
+            ("Fixed", self.tr(
+                "Fixed the start of sounds being cut off on some audio devices, such as Bluetooth headsets."
+            )),
+            ("Fixed", self.tr("Fixed the RCOL 3D view drawing nothing with Game lighting on.")),
+            ("Fixed", self.tr(
+                "Fixed the Project Browser's width and folder trees resetting when switching between project and "
+                "scene tabs."
             )),
             ("Fixed", self.tr(
-                "Fixed Dragon's Dogma 2 PAKs failing to open after the game's latest update, and "
-                "corrupted files extracted from Onimusha: Way of the Sword's main PAK."
+                "Fixed long breadcrumb paths and the hidden home page stopping the window from being made smaller."
+            )),
+            ("Fixed", self.tr("Fixed collapsed RSZ nodes showing the wrong contents after a paste.")),
+            ("Fixed", self.tr(
+                "Fixed RSZ tree ID labels and Advanced Information going stale, and scene picks selecting the wrong "
+                "node, after objects were added or removed."
+            )),
+            ("Fixed", self.tr("Fixed the hair strand editor's panel squeezing its controls.")),
+            ("Fixed", self.tr("Fixed UVS files not updating their cutout flag when cutout UVs were added or removed.")),
+            ("Fixed", self.tr(
+                "Fixed some dialogs and panels, such as mesh conversion and the material function editor, staying "
+                "in memory after being closed."
             )),
             ("Fixed", self.tr(
-                "Fixed memory build-up, freezes and occasional crashes after closing SCN, PFB "
-                "and USER tabs."
+                "Fixed the UVS editor, MDF template manager, scene preview and RSZ CSV extractor getting stuck after "
+                "an error or a cancelled operation."
             )),
-            ("Fixed", self.tr("Fixed RE4 sound replacements sometimes not updating every linked sound bank.")),
-            ("Fixed", self.tr("Fixed some sound banks with large music containers loading very slowly.")),
-            ("Fixed", self.tr("Fixed some MH Wilds CLIP files failing to open.")),
-            ("Fixed", self.tr("Fixed MDF parameters with two or three values saving only their first value.")),
-            ("Fixed", self.tr(
-                "Fixed new GameObjects, folders and Transforms being created with drawing turned "
-                "off and zero scale."
-            )),
-            ("Fixed", self.tr("Fixed a crash when switching back to a project after opening a scene.")),
-            ("Fixed", self.tr("Fixed DDS export of cubemaps and texture arrays producing broken files.")),
+            ("Fixed", self.tr("Fixed the File List Generator misreading very long numbers in file names.")),
         ]
         badges = []
         for tag, text in changes:
