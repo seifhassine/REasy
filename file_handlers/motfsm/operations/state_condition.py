@@ -7,7 +7,7 @@ node - untouched.  The new condition is appended to the RSZ `conditions` block w
 `v0_ID`; nothing else in the file changes.
 
 """
-
+from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
@@ -18,21 +18,18 @@ from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
 
 
-def configure(parser):
-    parser.add_argument('--allow-uvar-drift', action='store_true',
-                        help='skip the UVAR snapshot equality check (heuristic relation reads)')
-    parser.add_argument('--node', required=True, help='node owning the state to rewire')
-    parser.add_argument('--target', required=True, help='node the state derives to (identifies the state)')
-    parser.add_argument('--template-node', required=True)
-    parser.add_argument('--template-state', type=int, default=0)
-    parser.add_argument('--set', action='append', default=[], metavar='FIELD=VALUE')
-    parser.add_argument('--copy-fields', action='append', default=[],
-                        help='field names to take from the state being rewired instead of the template')
+@dataclass(frozen=True, kw_only=True)
+class StateConditionPlan:
+    allow_uvar_drift: bool = False
+    node: str
+    target: str
+    template_node: str
+    template_state: int = 0
+    set: tuple[str, ...] = ()
+    copy_fields: tuple[str, ...] = ()
 
 
-def run(args):
-    TARGET_FILE = args.source.resolve()
-    source = TARGET_FILE.read_bytes()
+def build(source: bytes, plan: StateConditionPlan) -> bytes:
     doc = MotfsmFile()
     doc.read(source)
     nodes = doc.bhvt.nodes
@@ -46,36 +43,36 @@ def run(args):
             return None
         return doc.references.object_instance('conditions', raw)
 
-    node = nodes[node_index(args.node)]
-    target = nodes[node_index(args.target)]
+    node = nodes[node_index(plan.node)]
+    target = nodes[node_index(plan.target)]
     states = [i for i, state in enumerate(node.states)
               if (state.mTransitions, state.mTransitionAttributes) == (target.id_hash, target.ex_id)]
     if len(states) != 1:
-        raise SystemExit(f'{node.name} has {len(states)} states pointing at {target.name}')
+        raise ValueError(f'{node.name} has {len(states)} states pointing at {target.name}')
     position = states[0]
     old_raw = node.states[position].TransitionConditions & 0xFFFFFFFF
     old_condition = condition_of(node.states[position])
-    template_node = nodes[node_index(args.template_node)]
-    if not 0 <= args.template_state < len(template_node.states):
-        raise ValueError(f'Template state index out of range: {args.template_state}')
-    template_condition = condition_of(template_node.states[args.template_state])
+    template_node = nodes[node_index(plan.template_node)]
+    if not 0 <= plan.template_state < len(template_node.states):
+        raise ValueError(f'Template state index out of range: {plan.template_state}')
+    template_condition = condition_of(template_node.states[plan.template_state])
     assert old_condition is not None and template_condition is not None
-    overrides = assignments(template_condition, args.set)
+    overrides = assignments(template_condition, plan.set)
     old_fields = {field.name: field.value for field in old_condition.fields}
     template_fields = {field.name: field.value for field in template_condition.fields}
     print(f'  {node.name}[{position}] -> {target.name}')
     print(f'    now   : {old_condition.class_name}')
-    print(f'    after : {template_condition.class_name}  (template {template_node.name}[{args.template_state}])')
+    print(f'    after : {template_condition.class_name}  (template {template_node.name}[{plan.template_state}])')
     copy_fields = {}
-    for name in args.copy_fields:
+    for name in plan.copy_fields:
         if name not in template_fields:
-            raise SystemExit(f'--copy-fields {name}: not a field of the template condition')
+            raise ValueError(f'--copy-fields {name}: not a field of the template condition')
         if name not in old_fields:
-            raise SystemExit(f'--copy-fields {name}: not a field of the current condition')
+            raise ValueError(f'--copy-fields {name}: not a field of the current condition')
         copy_fields[name] = old_fields[name]
     for name in overrides:
         if name not in template_fields:
-            raise SystemExit(f'--set {name}: not a field of the template condition '
+            raise ValueError(f'--set {name}: not a field of the template condition '
                              f'(have {sorted(template_fields)})')
     print(f'    fields: from current {copy_fields} | overrides {overrides}')
 
@@ -95,7 +92,7 @@ def run(args):
     new_fields.update(overrides)
     new_fields['v0_ID'] = new_id
     native = block.file
-    template_raw = template_node.states[args.template_state].TransitionConditions & 0xFFFFFFFF
+    template_raw = template_node.states[plan.template_state].TransitionConditions & 0xFFFFFFFF
     template_block_name = 'static_conditions' if template_raw >> 24 == 0x40 else 'conditions'
     instance_index, new_object = clone_block_object(
         block, template_condition.index, new_fields,
@@ -130,9 +127,9 @@ def run(args):
             assert source[old.offset:old.end] == output[new.offset:new.end], f'{name} changed unexpectedly'
         else:
             assert new.object_table[:len(old.object_table)] == old.object_table, 'conditions reordered'
-    assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), args.allow_uvar_drift)
+    assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), plan.allow_uvar_drift)
     assert verified.rebuild() == output, 'REasy rebuild is not stable on the candidate'
-    index = node_index(args.node)
+    index = node_index(plan.node)
     for other, previous in enumerate(original.bhvt.nodes):
         current = verified.bhvt.nodes[other]
         if other != index:
@@ -144,7 +141,7 @@ def run(args):
                         (a.mTransitions, a.TransitionMaps, a.mStates.values, a.mTransitionAttributes, a.mStatesEx)
                     assert b.TransitionConditions == new_object
                 else:
-                    assert a == b, f'{args.node} state[{i}] changed'
+                    assert a == b, f'{plan.node} state[{i}] changed'
     new_condition = verified.references.object_instance('conditions', new_object)
     fields = {field.name: field.value for field in new_condition.fields}
     expected = dict(template_fields)
@@ -155,7 +152,7 @@ def run(args):
     # the old instance must be untouched, the new one must be a fresh slot
     assert new_object >= len(original.rsz_blocks.get_block('conditions').object_table)
     assert original.references.object_instance('conditions', old_raw) is not None
-    print(f'  Verified {args.node}[{position}].TransitionConditions; other nodes and blocks unchanged')
+    print(f'  Verified {plan.node}[{position}].TransitionConditions; other nodes and blocks unchanged')
     print(f'  New condition fields: {fields}')
 
     return bytes(output)

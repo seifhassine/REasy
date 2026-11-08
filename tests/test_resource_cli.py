@@ -14,7 +14,7 @@ from tools.cli.runtime import MHR_REGISTRY, qt_application
 from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
 from file_handlers.motion.mhr_editing import next_motion_id
 from file_handlers.rcol.rcol_handler import RcolHandler
-from tools.cli.formats.rsz import load, type_name
+from file_handlers.rsz.inspection import load_rsz as load, type_name
 from utils.type_registry import TypeRegistry
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -271,7 +271,7 @@ class NativeResourceCliTests(unittest.TestCase):
                     self.assertEqual(channels(original), channels(saved))
 
     def test_hit_request_resolves_authoring_id_to_field0(self):
-        from tools.fsm.editing import open_document
+        from file_handlers.motfsm.scalar_editing import open_document
         path = next(CORPUS.rglob('ChargeAxe.rcol.20'))
         fsm_path = next(CORPUS.rglob('ChargeAxe.motfsm2.43'))
         requests = self.invoke(['rcol', 'query', path])['requests']

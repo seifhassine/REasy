@@ -18,7 +18,7 @@ from file_handlers.motfsm.references import References
 from file_handlers.motfsm.serialization import serialize_nodes
 from file_handlers.motfsm.selection import resolve_node, identity, integer
 from tools.cli.main import main as cli_main, build_parser
-from tools.fsm.cli import STRUCTURAL, SCALAR
+from tools.cli.formats.fsm.commands import STRUCTURAL, SCALAR
 from test_motfsm_corpus import CORPUS, unique_files
 
 ROOT = Path(__file__).resolve().parents[1]

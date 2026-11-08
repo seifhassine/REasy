@@ -10,6 +10,7 @@ Verification: the reopened node table matches the authored model, the removed id
 from that node only, every other node compares equal, both ex_id arrays are untouched, all
 blocks are byte-identical, the UVAR snapshot is unchanged, and REasy's ``rebuild()`` is stable.
 """
+from dataclasses import dataclass
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
@@ -17,21 +18,19 @@ from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapsho
 from file_handlers.motfsm.selection import resolve_node
 
 
-def configure(parser):
-    parser.add_argument('--node', required=True, help='node owning the Action (unique name or 0x identity hash)')
-    parser.add_argument('--class', dest='klass', required=True, help='action class substring to remove')
-    parser.add_argument('--exact', action='store_true', help='require an exact class name match')
-    parser.add_argument('--position', type=int, help='action slot to remove (required when several match)')
-    parser.add_argument('--allow-uvar-drift', action='store_true',
-                        help='skip the UVAR snapshot equality check; the UVAR relation array is sized by a '
-                             'heuristic terminator, so a tail shift can legitimately change how far it reads')
+@dataclass(frozen=True, kw_only=True)
+class ActionRemovePlan:
+    node: str
+    klass: str
+    exact: bool = False
+    position: int | None = None
+    allow_uvar_drift: bool = False
 
 
-def run(args):
-    source = args.source.resolve().read_bytes()
+def build(source: bytes, plan: ActionRemovePlan) -> bytes:
     doc = MotfsmFile()
     doc.read(source)
-    index = resolve_node(doc, args.node)
+    index = resolve_node(doc, plan.node)
     node = doc.bhvt.nodes[index]
 
     # ------------------------------------------------------------------ locate the slots
@@ -44,15 +43,15 @@ def run(args):
         if instance is None:
             continue
         name = instance.class_name or ''
-        if (name == args.klass) if args.exact else (args.klass in name):
+        if (name == plan.klass) if plan.exact else (plan.klass in name):
             matches.append((position, reference, name))
 
     if not matches:
-        raise ValueError(f'{node.name} carries no action matching {args.klass!r}')
-    if args.position is not None:
-        matches = [item for item in matches if item[0] == args.position]
+        raise ValueError(f'{node.name} carries no action matching {plan.klass!r}')
+    if plan.position is not None:
+        matches = [item for item in matches if item[0] == plan.position]
         if not matches:
-            raise ValueError(f'{node.name} action slot {args.position} does not match {args.klass!r}')
+            raise ValueError(f'{node.name} action slot {plan.position} does not match {plan.klass!r}')
     if len(matches) > 1:
         slots = ', '.join(str(position) for position, _, _ in matches)
         raise ValueError(f'{node.name} has {len(matches)} matching actions (slots {slots}); use --position')
@@ -107,6 +106,6 @@ def run(args):
             continue
         assert source[old.offset:old.end] == output[new.offset:new.end], f'{name} changed unexpectedly'
 
-    assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), args.allow_uvar_drift)
+    assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), plan.allow_uvar_drift)
     assert verified.rebuild() == output, 'REasy rebuild is not stable on the candidate'
     return output

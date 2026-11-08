@@ -22,7 +22,7 @@ equal, the reopened file resolves the new action to the source class with identi
 fields, the data/object tables keep their length invariant, and REasy's own
 ``rebuild()`` is stable on the candidate.
 """
-from pathlib import Path
+from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES, native_value_state
@@ -32,32 +32,29 @@ from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapsho
 from file_handlers.motfsm.selection import resolve_node
 
 
-def configure(parser):
-    parser.add_argument('--node', required=True, help='target node (unique name or 0x identity hash)')
-    parser.add_argument('--class', dest='klass', required=True, help='action class substring to import')
-    parser.add_argument('--exact', action='store_true', help='require an exact class name match')
-    parser.add_argument('--from-fsm', required=True, type=Path, help='FSM file owning the template instance')
-    parser.add_argument('--from-node', help='restrict the template search to this source node')
-    parser.add_argument('--position', type=int, help='action slot to insert at (default: append)')
-    parser.add_argument('--allow-uvar-drift', action='store_true',
-                        help='skip the UVAR snapshot equality check; the UVAR relation array is sized by a '
-                             'heuristic terminator, so a tail shift can legitimately change how far it reads')
+@dataclass(frozen=True, kw_only=True)
+class ActionImportPlan:
+    node: str
+    klass: str
+    exact: bool = False
+    donor_name: str = 'donor'
+    from_node: str | None = None
+    position: int | None = None
+    allow_uvar_drift: bool = False
 
 
-def run(args):
-    TARGET = args.source.resolve()
-    source = TARGET.read_bytes()
+def build(source: bytes, donor: bytes, plan: ActionImportPlan) -> bytes:
+    """Copy the template Action from ``donor`` (another FSM file's bytes) into ``source``."""
     doc = MotfsmFile()
     doc.read(source)
     nodes = doc.bhvt.nodes
-    target_index = resolve_node(doc, args.node)
+    target_index = resolve_node(doc, plan.node)
     target = nodes[target_index]
 
     # ------------------------------------------------------------------ locate the template
-    src_path = args.from_fsm.resolve()
     src_doc = MotfsmFile()
-    src_doc.read(src_path.read_bytes())
-    src_filter = resolve_node(src_doc, args.from_node) if args.from_node else None
+    src_doc.read(donor)
+    src_filter = resolve_node(src_doc, plan.from_node) if plan.from_node else None
 
     matches = []
     for index, node in enumerate(src_doc.bhvt.nodes):
@@ -71,22 +68,22 @@ def run(args):
             if instance is None:
                 continue
             name = instance.class_name or ''
-            if (name == args.klass) if args.exact else (args.klass in name):
+            if (name == plan.klass) if plan.exact else (plan.klass in name):
                 matches.append((index, node, reference, instance))
 
     if not matches:
-        raise ValueError(f'no action matching {args.klass!r} in {src_path.name}')
+        raise ValueError(f'no action matching {plan.klass!r} in {plan.donor_name}')
     identities = {(reference.id_hash, reference.ex_id) for _, _, reference, _ in matches}
     if len(identities) != 1:
         names = sorted(f'{node.name}[{index}]' for index, node, _, _ in matches)
         detail = ', '.join(names[:6]) + (f' … (+{len(names) - 6} more)' if len(names) > 6 else '')
-        raise ValueError(f'{len(identities)} distinct templates match {args.klass!r} in {src_path.name}; '
+        raise ValueError(f'{len(identities)} distinct templates match {plan.klass!r} in {plan.donor_name}; '
                          f'narrow it with --from-node ({detail})')
 
     src_index, src_node, src_ref, src_instance = matches[0]
     klass = src_instance.class_name or ''
     src_block_name, src_instance_index = src_doc.references.action_identities()[(src_ref.id_hash, src_ref.ex_id)]
-    print(f'  template {klass} from {src_path.name}: {src_node.name}[{src_index}] '
+    print(f'  template {klass} from {plan.donor_name}: {src_node.name}[{src_index}] '
           f'(0x{src_ref.id_hash:08X}) {src_block_name}[{src_instance_index}]')
 
     # ------------------------------------------------------------------ guards on the target
@@ -117,7 +114,7 @@ def run(args):
                                        source_block=src_block)
     assert target_block.object_table[:-1] == old_objects, 'cloning reordered the action table'
     reference = Action(new_action_id, new_ex_id)
-    position = len(target.actions) if args.position is None else args.position
+    position = len(target.actions) if plan.position is None else plan.position
     if not 0 <= position <= len(target.actions):
         raise ValueError(f'--position {position} outside 0..{len(target.actions)}')
     new_ex_ids = old_ex_ids + [new_ex_id]
@@ -172,8 +169,8 @@ def run(args):
         f'{src_block_name} object table and {ex_ids_attribute} lengths diverged'
     assert reopened_block.object_table[:len(old_objects)] == old_objects, 'object table reordered'
 
-    if not args.allow_uvar_drift:
-        assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), args.allow_uvar_drift)
+    if not plan.allow_uvar_drift:
+        assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), plan.allow_uvar_drift)
     assert verified.rebuild() == output, 'REasy rebuild is not stable on the candidate'
 
     for name in BLOCK_NAMES:

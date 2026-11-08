@@ -6,7 +6,7 @@ turn limit in degrees, e.g. 180).  A state's `mStates.values` holds **object ind
 `transition_events` block, so a new event is one cloned instance plus one index appended there.
 
 """
-
+from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
@@ -18,18 +18,17 @@ from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
 
 
-def configure(parser):
-    parser.add_argument('--node', required=True, help='target node (unique name or 0x hash)')
-    parser.add_argument('--state', type=int, required=True)
-    parser.add_argument('--from-node', required=True, help='node owning the template state')
-    parser.add_argument('--from-state', type=int, required=True)
-    parser.add_argument('--from-event', type=int, default=0, help='index inside the template event list')
-    parser.add_argument('--set', action='append', default=[], metavar='FIELD=VALUE')
+@dataclass(frozen=True, kw_only=True)
+class StateAddEventPlan:
+    node: str
+    state: int
+    from_node: str
+    from_state: int
+    from_event: int = 0
+    set: tuple[str, ...] = ()
 
 
-def run(args):
-    TARGET = args.source.resolve()
-    source = TARGET.read_bytes()
+def build(source: bytes, plan: StateAddEventPlan) -> bytes:
     doc = MotfsmFile()
     doc.read(source)
     nodes = doc.bhvt.nodes
@@ -39,15 +38,15 @@ def run(args):
         return resolve_node(doc, text)
 
 
-    node = nodes[node_index(args.node)]
-    template_node = nodes[node_index(args.from_node)]
-    assert 0 <= args.state < len(node.states), f'state index out of range: {args.state}'
-    assert 0 <= args.from_state < len(template_node.states), 'template state index out of range'
-    values = list(getattr(template_node.states[args.from_state].mStates, 'values', []) or [])
-    assert values, f'{template_node.name}.state[{args.from_state}] has no transition event'
-    if not 0 <= args.from_event < len(values):
-        raise ValueError(f'Template event index out of range: {args.from_event}')
-    template_object = values[args.from_event]
+    node = nodes[node_index(plan.node)]
+    template_node = nodes[node_index(plan.from_node)]
+    assert 0 <= plan.state < len(node.states), f'state index out of range: {plan.state}'
+    assert 0 <= plan.from_state < len(template_node.states), 'template state index out of range'
+    values = list(getattr(template_node.states[plan.from_state].mStates, 'values', []) or [])
+    assert values, f'{template_node.name}.state[{plan.from_state}] has no transition event'
+    if not 0 <= plan.from_event < len(values):
+        raise ValueError(f'Template event index out of range: {plan.from_event}')
+    template_object = values[plan.from_event]
 
     events_block = doc.rsz_blocks.get_block(EVENTS_BLOCK)
     template_instance = doc.references.object_instance(EVENTS_BLOCK, template_object)
@@ -56,7 +55,7 @@ def run(args):
     template_block_name = 'static_transition_events' if (template_object & 0xFFFFFFFF) >> 24 == 0x40 else EVENTS_BLOCK
     print(f'  template event: {template_instance.class_name}')
 
-    overrides = assignments(template_instance, args.set)
+    overrides = assignments(template_instance, plan.set)
     used_uids = set()
     for object_index in events_block.object_table:
         inst = events_block.get_instance(object_index)
@@ -78,14 +77,14 @@ def run(args):
 
 
     events_splice = block_splice(events_block)
-    node.states[args.state].mStates.values.append(new_object)
+    node.states[plan.state].mStates.values.append(new_object)
 
 
     nodes_start = doc.bhvt.offsets['nodes']
     node_tail = min(offset for offset in doc.bhvt.offsets.values() if offset >= doc.bhvt.node_data_end)
-    node.states[args.state].mStates.values.pop()
+    node.states[plan.state].mStates.values.pop()
     assert serialize_nodes(doc) == source[nodes_start:doc.bhvt.node_data_end], 'node writer does not reproduce the source'
-    node.states[args.state].mStates.values.append(new_object)
+    node.states[plan.state].mStates.values.append(new_object)
 
     nodes_data = serialize_nodes(doc)
     nodes_data += bytes((node_tail - nodes_start - len(nodes_data)) % 16)
@@ -107,8 +106,8 @@ def run(args):
             assert len(new.object_table) == len(old.object_table) + 1
         else:
             assert source[old.offset:old.end] == output[new.offset:new.end], f'{name} changed unexpectedly'
-    check = verified.bhvt.nodes[node_index(args.node)]
-    assert list(check.states[args.state].mStates.values)[-1] == new_object
+    check = verified.bhvt.nodes[node_index(plan.node)]
+    assert list(check.states[plan.state].mStates.values)[-1] == new_object
     new_event = verified.references.object_instance(EVENTS_BLOCK, new_object)
     assert new_event.class_name == template_instance.class_name
     verify_block(doc, verified, EVENTS_BLOCK)

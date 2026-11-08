@@ -1,9 +1,7 @@
 """Map ownership preserves every transition record across native FSM layouts."""
 import copy
-from pathlib import Path
 import struct
 import tempfile
-from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -88,19 +86,17 @@ class MapOwnershipTests(unittest.TestCase):
         self.assertEqual(detach_state_maps(doc.source, [], doc.type_registry), doc.source)
 
     def test_cli_selects_the_exact_target_extension(self):
-        from tools.fsm.operations import state_own_map
+        from file_handlers.motfsm.operations import state_own_map
         doc = mapped_fixture(self.folder.name)
-        path = Path(self.folder.name) / 'fixture.motfsm2.43'
-        path.write_bytes(doc.source)
 
         def document():
             result = MotfsmFile()
             result.set_rsz_type_info_path(doc.type_registry.json_path)
             return result
 
-        args = SimpleNamespace(source=path, node='index:0', target='0xA:1', allow_uvar_drift=False)
+        plan = state_own_map.StateOwnMapPlan(node='index:0', target='0xA:1')
         with patch.object(state_own_map, 'MotfsmFile', side_effect=document):
-            output = state_own_map.run(args)
+            output = state_own_map.build(doc.source, plan)
         saved = self.reopen(doc, output)
         self.assertEqual(saved.bhvt.nodes[0].states[0], doc.bhvt.nodes[0].states[0])
         self.assertNotEqual(saved.bhvt.nodes[0].states[1].TransitionMaps, 5)

@@ -14,7 +14,8 @@ from file_handlers.efx.efx_file import EfxParseError, EfxFile
 from file_handlers.efx.format_registry import identify_efx, read_efx
 from file_handlers.efx.mhw_efx_file import MhwEfxFile
 from file_handlers.factory import get_handler_for_data
-from tools.cli.formats.efx import document_data, query
+from file_handlers.efx.inspection import document_data
+from tools.cli.formats.efx import query
 from types import SimpleNamespace
 
 

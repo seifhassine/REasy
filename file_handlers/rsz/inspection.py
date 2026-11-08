@@ -1,4 +1,7 @@
 """JSON field views of the client's RSZ data, without UI/global game state."""
+import re
+
+from file_handlers.rsz.rsz_file import RszFile
 from file_handlers.rsz.rsz_data_types import ArrayData, StructData, ObjectData, UserDataData
 from file_handlers.rsz.utils.rsz_field_utils import VALUE_COMPONENTS
 from utils.enum_manager import registry_enums
@@ -107,3 +110,46 @@ def graph_value(rsz, root):
         return scalar(field)
 
     return instance(root)
+
+
+def load_rsz(path, registry) -> RszFile:
+    """Read a PFB/SCN/USER file, rejecting a registry that does not match its types."""
+    rsz = RszFile()
+    rsz.filepath = str(path)
+    rsz.type_registry = registry
+    rsz.read(path.read_bytes(), validate_type_registry=True)
+    return rsz
+
+
+def type_name(rsz, index):
+    type_id = rsz.instance_infos[index].type_id
+    definition = rsz.type_registry.get_type_info(type_id)
+    return definition['name'] if definition else f'0x{type_id:08X}'
+
+
+def instance_records(rsz, enums, *, class_contains=None, type_id=None, instance=None, field=None, strings=None):
+    """Instances matching every given filter, with typed field records; ``enums`` collects used enum types."""
+    pattern = re.compile(strings) if strings else None
+    found = []
+    for index in range(1, len(rsz.instance_infos)):
+        name = type_name(rsz, index)
+        if class_contains and class_contains.casefold() not in name.casefold():
+            continue
+        if type_id is not None and rsz.instance_infos[index].type_id != type_id:
+            continue
+        if instance is not None and instance != index:
+            continue
+        fields = rsz.parsed_elements.get(index, {})
+        if field:
+            fields = {k: v for k, v in fields.items() if k == field}
+            if not fields:
+                continue
+        row = fields_record(fields, rsz.type_registry, enums)
+        if pattern:
+            row = {k: v for k, v in row.items() if any(isinstance(item, str) and pattern.search(item)
+                   for item in (v['value'] if isinstance(v['value'], list) else [v['value']]))}
+            if not row:
+                continue
+        found.append({'instance': index, 'class': name, 'type_id': f'0x{rsz.instance_infos[index].type_id:08X}',
+                      'fields': row})
+    return found

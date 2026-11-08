@@ -115,8 +115,18 @@ and external userdata. Callers supply the source registry; incompatible schemas
 are rejected. `file_handlers.motfsm.transitions.TransitionCopies` allocates private
 map identities with shared or independently copied transition data.
 
-MHR branch policy lives in four modules under `services.mhr.fsm`: `node_clone`,
-`attack_clone`, `node_action_child` and `node_chainsaw`. Each exports a frozen plan
+Every structural command has a native module under `file_handlers.motfsm.operations`
+(`action_add`, `action_import`, `action_remove`, `event_copy`, `state_add`,
+`state_add_event`, `state_condition`, `state_order`, `state_own_map`,
+`state_transition`). Each exports a frozen, keyword-only `<Name>Plan` whose fields
+match the command options, and `build(source: bytes, plan) -> bytes`
+(`action_import.build` also takes the donor FSM bytes). Scalar commands map to
+`file_handlers.motfsm.scalar_editing` (`edit_action`, `edit_condition`, `edit_event`,
+`retarget_state`), and `query`/`dump` to `file_handlers.motfsm.query.query_nodes`.
+
+MHR branch policy lives under `services.mhr.fsm`: the four recipes `node_clone`,
+`attack_clone`, `node_action_child` and `node_chainsaw`, plus `point_action`
+(`set_hit_request`, `set_effect`) for `hit-request` and `effect`. Each recipe exports a frozen plan
 dataclass and `build(source: bytes, recipe, *, registry=None) -> bytes`. Builds reopen
 and verify the candidate; they do not read or publish resource files. For example:
 

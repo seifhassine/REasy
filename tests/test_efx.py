@@ -14,7 +14,7 @@ from file_handlers.efx.efx_file import (
 )
 from file_handlers.efx.efx_handler import EfxHandler
 from file_handlers.factory import get_handler_for_data
-from tools.cli.formats.efx import document_data
+from file_handlers.efx.inspection import document_data
 from utils.hash_util import murmur3_hash_utf16le
 
 

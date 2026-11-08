@@ -10,7 +10,8 @@ import struct
 import sys
 import tempfile
 from services.file_io import publish_bytes as publish, check_output
-from file_handlers.motfsm.selection import integer, assignment  # CLI argument types
+from file_handlers.motfsm.selection import assignment
+from utils.number_format import parse_integer as integer  # CLI argument type
 
 from services.mhr.context import MHR_REGISTRY
 _application = None

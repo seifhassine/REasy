@@ -1,24 +1,24 @@
 """Give an existing state an independent map ID, reusing its transition data."""
+from dataclasses import dataclass
 from file_handlers.motfsm.map_ownership import detach_state_maps
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
 from file_handlers.motfsm.selection import resolve_node
 
 
-def configure(parser):
-    parser.add_argument('--allow-uvar-drift', action='store_true',
-                        help='skip the UVAR snapshot equality check (heuristic relation reads)')
-    parser.add_argument('--node', required=True, help='node owning the state')
-    parser.add_argument('--target', required=True, help='node the state derives to (identifies the state)')
+@dataclass(frozen=True, kw_only=True)
+class StateOwnMapPlan:
+    allow_uvar_drift: bool = False
+    node: str
+    target: str
 
 
-def run(args):
-    source = args.source.resolve().read_bytes()
+def build(source: bytes, plan: StateOwnMapPlan) -> bytes:
     doc = MotfsmFile()
     doc.read(source)
-    node_index = resolve_node(doc, args.node)
+    node_index = resolve_node(doc, plan.node)
     node = doc.bhvt.nodes[node_index]
-    target = doc.bhvt.nodes[resolve_node(doc, args.target)]
+    target = doc.bhvt.nodes[resolve_node(doc, plan.target)]
     states = [i for i, state in enumerate(node.states)
               if (state.mTransitions, state.mTransitionAttributes) == (target.id_hash, target.ex_id)]
     if len(states) != 1:
@@ -27,5 +27,5 @@ def run(args):
     verified = MotfsmFile()
     verified.set_rsz_type_info_path(doc.type_registry.json_path)
     verified.read(output)
-    assert_uvar_stable(variable_snapshot(doc), variable_snapshot(verified), args.allow_uvar_drift)
+    assert_uvar_stable(variable_snapshot(doc), variable_snapshot(verified), plan.allow_uvar_drift)
     return output

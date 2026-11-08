@@ -1,29 +1,16 @@
 """Structured RSZ inspection without presentation-layer parsing."""
 from collections import Counter
 from pathlib import Path
-import re
-import struct
 
-from file_handlers.rsz.rsz_file import RszFile
-from file_handlers.rsz.rsz_data_types import ArrayData, ObjectData, UserDataData, F32Data
+from file_handlers.rsz.inspection import fields_record, instance_records, load_rsz, type_name
+from file_handlers.rsz.scalar_editing import set_scalar_fields
 from utils.type_registry import TypeRegistry
 from tools.cli.runtime import integer
 from tools.cli.runtime import MHR_REGISTRY
-from file_handlers.rsz.inspection import fields_record
 
 
 def load(path, registry):
-    rsz = RszFile()
-    rsz.filepath = str(path)
-    rsz.type_registry = registry
-    rsz.read(path.read_bytes(), validate_type_registry=True)
-    return rsz
-
-
-def type_name(rsz, index):
-    type_id = rsz.instance_infos[index].type_id
-    definition = rsz.type_registry.get_type_info(type_id)
-    return definition['name'] if definition else f'0x{type_id:08X}'
+    return load_rsz(path, registry)
 
 
 def configure_query(parser):
@@ -39,30 +26,8 @@ def configure_query(parser):
 def records(rsz, args, enums):
     if args.limit < 0:
         raise ValueError('--limit must be nonnegative')
-    pattern = re.compile(args.strings) if args.strings else None
-    found = []
-    for index in range(1, len(rsz.instance_infos)):
-        name = type_name(rsz, index)
-        if args.klass and args.klass.casefold() not in name.casefold():
-            continue
-        if args.type_id is not None and rsz.instance_infos[index].type_id != args.type_id:
-            continue
-        if args.instance is not None and args.instance != index:
-            continue
-        fields = rsz.parsed_elements.get(index, {})
-        if args.field:
-            fields = {k: v for k, v in fields.items() if k == args.field}
-            if not fields:
-                continue
-        row = fields_record(fields, rsz.type_registry, enums)
-        if pattern:
-            row = {k: v for k, v in row.items() if any(isinstance(item, str) and pattern.search(item)
-                   for item in (v['value'] if isinstance(v['value'], list) else [v['value']]))}
-            if not row:
-                continue
-        found.append({'instance': index, 'class': name, 'type_id': f'0x{rsz.instance_infos[index].type_id:08X}',
-                      'fields': row})
-    return found
+    return instance_records(rsz, enums, class_contains=args.klass, type_id=args.type_id, instance=args.instance,
+                            field=args.field, strings=args.strings)
 
 
 def query(args):
@@ -123,41 +88,5 @@ def references(args):
 
 
 def field_edit(args):
-    registry = TypeRegistry(str(args.registry))
-    rsz = load(args.source, registry)
-    if args.instance not in rsz.parsed_elements:
-        raise ValueError(f'Unknown instance: {args.instance}')
-    fields = rsz.parsed_elements[args.instance]
-    for assignment in args.assignments:
-        name, separator, text = assignment.partition('=')
-        name = name.strip()
-        if not separator or name not in fields:
-            raise ValueError(f'Expected an existing FIELD=VALUE, got {assignment!r}')
-        item = fields[name]
-        if isinstance(item, (ArrayData, ObjectData, UserDataData)) or not hasattr(item, 'value'):
-            raise ValueError(f'{name} is not an editable scalar')
-        value = item.value
-        if isinstance(value, bool):
-            if text.casefold() not in ('true', 'false'):
-                raise ValueError(f'{name} expects true or false')
-            item.value = text.casefold() == 'true'
-        elif isinstance(value, int):
-            item.value = integer(text)
-        elif isinstance(value, float):
-            item.value = float(text)
-            if isinstance(item, F32Data):
-                item.value = struct.unpack('<f', struct.pack('<f', item.value))[0]
-        elif isinstance(value, str):
-            item.value = text
-        else:
-            raise ValueError(f'Unsupported scalar type for {name}')
-    expected = {index: fields_record(values) for index, values in rsz.parsed_elements.items()}
-    output = rsz.build_validated()
-    reopened = RszFile()
-    reopened.filepath = str(args.source)
-    reopened.type_registry = registry
-    reopened.read(output, validate_type_registry=True)
-    actual = {index: fields_record(values) for index, values in reopened.parsed_elements.items()}
-    if actual != expected or reopened.object_table != rsz.object_table:
-        raise ValueError('Reopened RSZ graph differs from the authored fields')
-    return output
+    rsz = load(args.source, TypeRegistry(str(args.registry)))
+    return set_scalar_fields(rsz, args.instance, args.assignments)

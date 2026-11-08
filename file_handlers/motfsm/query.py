@@ -1,10 +1,12 @@
-"""Structured inspection with native identities, references, and field types."""
+"""Structured FSM node inspection with native identities, references and field metadata."""
 from dataclasses import asdict
 
 from file_handlers.motfsm.graph_model import MotfsmGraph
 from file_handlers.motfsm.selection import identity, resolve_node
-from .editing import open_document
 from file_handlers.rsz.inspection import field_record
+
+# The Rise motion-playing Action; its v4_MotionID is reported as the node's motion IDs.
+MOTION_ACTION_CLASS = 'snow.PlayerPlayMotion2'
 
 
 def instance_record(instance, enums):
@@ -22,13 +24,16 @@ def instance_record(instance, enums):
     }
 
 
-def inspect(args):
-    if args.limit is not None and args.limit < 0:
+def query_nodes(doc, *, selectors=(), name_contains=None, motion_id=None, action_class=None, derives_to=None,
+                include_actions=False, include_states=False, limit=None, detail=False) -> dict:
+    """Select nodes by name/motion/action class/target and describe them with native identities.
+
+    ``detail`` adds full node records, events and incoming edges (the CLI ``dump`` command).
+    """
+    if limit is not None and limit < 0:
         raise ValueError('--limit must be nonnegative')
-    doc = open_document(args.source)
     graph = MotfsmGraph(doc)
-    detail = args.command == 'dump'
-    selected = {resolve_node(doc, s) for s in args.node} if args.node else None
+    selected = {resolve_node(doc, s) for s in selectors} if selectors else None
     users, enums = {}, {}
     for index, node in enumerate(graph.nodes):
         for position, ref in enumerate(node.actions):
@@ -37,33 +42,33 @@ def inspect(args):
     for index, node in enumerate(graph.nodes):
         if selected is not None and index not in selected:
             continue
-        if args.name and args.name.casefold() not in node.name.casefold():
+        if name_contains and name_contains.casefold() not in node.name.casefold():
             continue
         actions = [(ref, doc.references.action(ref.id_hash, ref.ex_id)) for ref in node.actions]
         motion_ids = [field.value for _, instance in actions if instance is not None
-                      and instance.class_name == 'snow.PlayerPlayMotion2'
+                      and instance.class_name == MOTION_ACTION_CLASS
                       for field in instance.fields if field.name == 'v4_MotionID']
-        if args.motion is not None and args.motion not in motion_ids:
+        if motion_id is not None and motion_id not in motion_ids:
             continue
-        if args.klass and not any(instance is not None and args.klass.casefold() in instance.class_name.casefold()
+        if action_class and not any(instance is not None and action_class.casefold() in instance.class_name.casefold()
                                   for _, instance in actions):
             continue
         edges = graph.outgoing[index]
-        if args.derives_to and not any(edge.target is not None and
-                args.derives_to.casefold() in graph.nodes[edge.target].name.casefold() for edge in edges):
+        if derives_to and not any(edge.target is not None and
+                derives_to.casefold() in graph.nodes[edge.target].name.casefold() for edge in edges):
             continue
         record = {'index': index, 'name': node.name, 'path': graph.path(index), 'identity': identity(node),
                   'motion_ids': motion_ids, 'selector': node.selector_id,
                   'counts': {name: len(getattr(node, name)) for name in
                              ('actions', 'states', 'children', 'transitions', 'all_states')},
                   'issues': graph.issues[index]}
-        if args.actions or detail:
+        if include_actions or detail:
             record['actions'] = []
             for position, (ref, instance) in enumerate(actions):
                 row = {'position': position, 'identity': identity(ref),
                        'users': users[(ref.id_hash, ref.ex_id)], 'instance': instance_record(instance, enums)}
                 record['actions'].append(row)
-        if args.states or detail:
+        if include_states or detail:
             record['relations'] = []
             for edge in edges:
                 row = asdict(edge)
@@ -87,27 +92,7 @@ def inspect(args):
             record['incoming'] = [asdict(edge) for edge in graph.incoming[index]]
         matches.append(record)
     count = len(matches)
-    if args.limit is not None:
-        matches = matches[:args.limit]
-    return {'source': str(args.source.resolve()), 'total_nodes': len(graph.nodes),
+    if limit is not None:
+        matches = matches[:limit]
+    return {'total_nodes': len(graph.nodes),
             'matched': count, 'returned': len(matches), 'nodes': matches, 'enums': enums}
-
-
-def render(result):
-    print(f'{result["matched"]} match(es) of {result["total_nodes"]} nodes')
-    for node in result['nodes']:
-        print(f'[{node["index"]}] {node["path"]}  {node["identity"]}  motion={node["motion_ids"]}')
-        for action in node.get('actions', []):
-            instance = action['instance']
-            print(f'  action[{action["position"]}] {action["identity"]} {instance["class"] if instance else "None"}')
-            if instance:
-                for name, value in instance['fields'].items():
-                    detail = instance['field_details'][name]
-                    label = detail.get('enum_name')
-                    print(f'    {name} = {label} ({value})' if label is not None else f'    {name} = {value}')
-        for edge in node.get('relations', []):
-            condition = edge['condition_instance']
-            print(f'  {edge["kind"]}[{edge["position"]}] -> {edge["target_path"]} '
-                  f'condition={condition["class"] if condition else "always"}')
-        for issue in node['issues']:
-            print(f'  issue: {issue}')

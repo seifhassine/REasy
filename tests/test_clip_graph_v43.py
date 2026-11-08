@@ -161,7 +161,7 @@ class ClipGraphTests(unittest.TestCase):
         _, reopened = self.reopen(graph)
         self.assertEqual(len(reopened.properties[0].prop.children), 2)
         self.assertEqual(len(reopened.keys), 4)
-        from tools.cli.formats.motion import node_record
+        from file_handlers.motion.inspection import node_record
         tree = node_record(reopened.clip.root, reopened)
         children = tree['children'][0]['properties'][0]['children']
         self.assertEqual([p['property_index'] for p in children], [1, 2])

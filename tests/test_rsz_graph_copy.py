@@ -3,7 +3,6 @@ import tempfile
 import unittest
 import json
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from file_handlers.rsz.graph_copy import copy_graph
@@ -65,14 +64,12 @@ class GraphCopyTests(unittest.TestCase):
         return doc
 
     def test_action_add_command_copies_nested_instances(self):
-        from tools.fsm.operations import action_add
+        from file_handlers.motfsm.operations import action_add
         self.doc.bhvt.nodes[0].actions = [Action(0x100, 0)]
-        path = Path(self.folder.name) / 'source.motfsm2.43'
-        path.write_bytes(self.doc.build_validated())
-        args = SimpleNamespace(source=path, node='root', source_node='root',
-                               klass='Action', exact=True, set=['Frame=12.5'])
+        plan = action_add.ActionAddPlan(node='root', source_node='root', klass='Action', exact=True,
+                                        set=('Frame=12.5',))
         with patch.object(action_add, 'MotfsmFile', side_effect=self._reader):
-            output = action_add.run(args)
+            output = action_add.build(self.doc.build_validated(), plan)
         saved = self._reader(); saved.read(output)
         native = saved.rsz_blocks.get_block('actions').file
         reference = saved.bhvt.nodes[0].actions[-1]
@@ -178,16 +175,15 @@ class GraphCopyTests(unittest.TestCase):
         self.assertEqual(saved.build_validated(), output)
 
     def test_static_event_shared_by_two_states_on_one_node_is_detached(self):
-        from tools.fsm.operations import event_copy
+        from file_handlers.motfsm.operations import event_copy
         from test_motfsm_map_ownership import mapped_fixture
         self.doc = mapped_fixture(self.folder.name)
         for state in self.doc.bhvt.nodes[0].states:
             state.mStates.values = [0x40000000]
         source = self.doc.build_validated()
-        path = Path(self.folder.name) / 'events.motfsm2.43'; path.write_bytes(source)
-        args = SimpleNamespace(source=path, node='root', states='0', klass='Fixture.Event', set=[], clear=False)
+        plan = event_copy.EventCopyPlan(node='root', states='0', klass='Fixture.Event')
         with patch.object(event_copy, 'MotfsmFile', side_effect=self._reader):
-            output = event_copy.run(args)
+            output = event_copy.build(source, plan)
         saved = self._reader(); saved.read(output)
         self.assertEqual(saved.bhvt.nodes[0].states[1].mStates.values, [0x40000000])
         copied = saved.bhvt.nodes[0].states[0].mStates.values[0]
@@ -196,17 +192,14 @@ class GraphCopyTests(unittest.TestCase):
         self.assertEqual(saved.build_validated(), output)
 
     def test_action_import_command_remaps_cross_file_userdata_and_static_extensions(self):
-        from tools.fsm.operations import action_import
+        from file_handlers.motfsm.operations import action_import
         source = self._reader(); source.read(self.doc.source)
         source.bhvt.static_action_ex_ids[0] = 7
         source.bhvt.nodes[0].actions = [Action(0x200, 7)]
-        donor = Path(self.folder.name) / 'donor.motfsm2.43'
-        target = Path(self.folder.name) / 'target.motfsm2.43'
-        donor.write_bytes(source.build_validated()); target.write_bytes(self.doc.source)
-        args = SimpleNamespace(source=target, from_fsm=donor, from_node='root', node='root',
-                               klass='Fixture.Action', exact=True, position=None, allow_uvar_drift=False)
+        plan = action_import.ActionImportPlan(from_node='root', node='root', klass='Fixture.Action', exact=True,
+                                              donor_name='donor.motfsm2.43')
         with patch.object(action_import, 'MotfsmFile', side_effect=self._reader):
-            output = action_import.run(args)
+            output = action_import.build(self.doc.source, source.build_validated(), plan)
         saved = self._reader(); saved.read(output)
         self.assertEqual(saved.bhvt.static_action_ex_ids, [0, 7])
         reference = saved.bhvt.nodes[0].actions[-1]

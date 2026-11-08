@@ -1,10 +1,7 @@
 """Node selection and scalar input shared by all FSM commands."""
 import re
 
-
-def integer(text):
-    text = str(text).strip()
-    return int(text, 16 if text.lower().lstrip('+-').startswith('0x') else 10)
+from utils.number_format import parse_integer as integer
 
 
 def parse_value(text):

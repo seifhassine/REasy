@@ -46,3 +46,9 @@ def _expand_exponent(text: str) -> str:
         return format(Decimal(text), "f")
     except (InvalidOperation, ValueError):
         return text
+
+
+def parse_integer(text) -> int:
+    """Parse decimal or 0x-prefixed hexadecimal text; leading zeros stay decimal."""
+    text = str(text).strip()
+    return int(text, 16 if text.lower().lstrip('+-').startswith('0x') else 10)

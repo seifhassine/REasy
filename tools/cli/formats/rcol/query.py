@@ -1,6 +1,6 @@
 """Resolve RCOL request IDs through their native object-table slots."""
 from file_handlers.rcol.rcol_handler import RcolHandler
-from ..rsz import fields_record
+from file_handlers.rsz.inspection import fields_record
 from utils.hex_util import guid_le_to_str
 from .selection import select
 

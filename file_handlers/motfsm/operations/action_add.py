@@ -5,7 +5,7 @@ are all `_Type/_StartFrame/_EndFrame` windows, so "give node X a reflex window" 
 appended to that node - no new node, no new state.
 
 """
-
+from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
@@ -15,17 +15,16 @@ from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
 
 
-def configure(parser):
-    parser.add_argument('--node', required=True, help='target node (unique name or 0x identity hash)')
-    parser.add_argument('--class', dest='klass', required=True, help='template action class substring')
-    parser.add_argument('--from', dest='source_node', help='node owning the template action')
-    parser.add_argument('--exact', action='store_true', help='require an exact class name match')
-    parser.add_argument('--set', action='append', default=[], metavar='FIELD=VALUE')
+@dataclass(frozen=True, kw_only=True)
+class ActionAddPlan:
+    node: str
+    klass: str
+    source_node: str | None = None
+    exact: bool = False
+    set: tuple[str, ...] = ()
 
 
-def run(args):
-    TARGET = args.source.resolve()
-    source = TARGET.read_bytes()
+def build(source: bytes, plan: ActionAddPlan) -> bytes:
     doc = MotfsmFile()
     doc.read(source)
     nodes = doc.bhvt.nodes
@@ -35,11 +34,11 @@ def run(args):
         return resolve_node(doc, text)
 
 
-    target = nodes[node_index(args.node)]
+    target = nodes[node_index(plan.node)]
 
     # ---------------------------------------------------------------- pick the template instance
     template = None
-    owners = [nodes[node_index(args.source_node)]] if args.source_node else nodes
+    owners = [nodes[node_index(plan.source_node)]] if plan.source_node else nodes
     for owner in owners:
         for reference in owner.actions:
             try:
@@ -47,13 +46,13 @@ def run(args):
             except (IndexError, ValueError):
                 continue
             name = instance.class_name.split('.')[-1] if instance is not None else ''
-            if instance is not None and (name == args.klass if args.exact else args.klass.lower() in name.lower()):
+            if instance is not None and (name == plan.klass if plan.exact else plan.klass.lower() in name.lower()):
                 template, template_owner, template_ref = instance, owner, reference
                 break
         if template is not None:
             break
     if template is None:
-        raise SystemExit(f'no action containing {args.klass!r} found')
+        raise ValueError(f'no action containing {plan.klass!r} found')
 
     # `v1_ID` is a per-block namespace, so the owning block must come from the reference resolver.
     resolved = doc.references.action_identities().get((template_ref.id_hash, template_ref.ex_id))
@@ -71,7 +70,7 @@ def run(args):
     new_action_id = 1
     while new_action_id != 0xFFFFFFFF and new_action_id in used_ids:
         new_action_id += 1
-    overrides = {'v1_ID': new_action_id, **assignments(template, args.set)}
+    overrides = {'v1_ID': new_action_id, **assignments(template, plan.set)}
     clone_block_object(actions_block, template_index, overrides, source_block=template_block)
     print(f'  new action v1_ID={new_action_id} on {target.name}: '
           + ', '.join(f'{k}={v}' for k, v in overrides.items() if k != 'v1_ID'))
@@ -117,7 +116,7 @@ def run(args):
     assert len(new_block.file.instance_infos) == len(actions_block.file.instance_infos)
     verify_block(doc, verified, 'actions')
     assert len(verified.bhvt.nodes) == len(original.bhvt.nodes), 'node count changed'
-    check = verified.bhvt.nodes[node_index(args.node)]
-    assert len(check.actions) == len(original.bhvt.nodes[node_index(args.node)].actions) + 1
+    check = verified.bhvt.nodes[node_index(plan.node)]
+    assert len(check.actions) == len(original.bhvt.nodes[node_index(plan.node)].actions) + 1
 
     return bytes(output)

@@ -18,6 +18,7 @@ New objects: one Condition instance (clone of the template state's condition) an
 other block and the whole tail stays byte-identical.
 
 """
+from dataclasses import dataclass
 import copy
 import struct
 import zlib
@@ -34,26 +35,21 @@ from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
 
 
-def configure(parser):
-    parser.add_argument('--allow-uvar-drift', action='store_true',
-                        help='skip the UVAR snapshot equality check (heuristic relation reads)')
-    parser.add_argument('--node', required=True, help='node that gains the derivation, e.g. atk_135')
-    parser.add_argument('--target', required=True, help='node the new derivation goes to, e.g. atk_621')
-    parser.add_argument('--template-from', help='node the template state is copied from (default: --node)')
-    parser.add_argument('--template-state', type=int, help='state index to copy (default: auto)')
-    parser.add_argument('--template-target', help="pick the template state that already goes to this node")
-    parser.add_argument('--condition-class', default='PlayerFsm2Command',
-                        help='text the template state condition class must contain')
-    parser.add_argument('--set', action='append', default=[], metavar='FIELD=VALUE',
-                        help='override a condition field, e.g. --set CmdType=51')
-    parser.add_argument('--events', choices=('copy', 'share', 'drop'), default='copy',
-                        help='what to do with the template state transition events')
-    parser.add_argument('--insert-before', type=int, help='insert before this state position (default: append)')
+@dataclass(frozen=True, kw_only=True)
+class StateAddPlan:
+    allow_uvar_drift: bool = False
+    node: str
+    target: str
+    template_from: str | None = None
+    template_state: int | None = None
+    template_target: str | None = None
+    condition_class: str = 'PlayerFsm2Command'
+    set: tuple[str, ...] = ()
+    events: str = 'copy'
+    insert_before: int | None = None
 
 
-def run(args):
-    TARGET_FILE = args.source.resolve()
-    source = TARGET_FILE.read_bytes()
+def build(source: bytes, plan: StateAddPlan) -> bytes:
     doc = MotfsmFile()
     doc.read(source)
     nodes = doc.bhvt.nodes
@@ -63,8 +59,8 @@ def run(args):
         return resolve_node(doc, text)
 
 
-    node = nodes[node_index(args.node)]
-    target = nodes[node_index(args.target)]
+    node = nodes[node_index(plan.node)]
+    target = nodes[node_index(plan.target)]
     assert target.id_hash not in (0, 0xFFFFFFFF)
     assert all((state.mTransitions, state.mTransitionAttributes) != (target.id_hash, target.ex_id) for state in node.states), \
         f'{node.name} already derives to {target.name}'
@@ -81,20 +77,20 @@ def run(args):
         return doc.references.object_instance('conditions', raw)
 
 
-    template_node = nodes[node_index(args.template_from)] if args.template_from else node
-    template_state = args.template_state
-    if template_state is None and args.template_target:
-        wanted = nodes[node_index(args.template_target)]
+    template_node = nodes[node_index(plan.template_from)] if plan.template_from else node
+    template_state = plan.template_state
+    if template_state is None and plan.template_target:
+        wanted = nodes[node_index(plan.template_target)]
         matches = [i for i, state in enumerate(template_node.states)
                    if (state.mTransitions, state.mTransitionAttributes) == (wanted.id_hash, wanted.ex_id)]
         if len(matches) != 1:
-            raise SystemExit(f'{template_node.name} has {len(matches)} derivations to {args.template_target}')
+            raise ValueError(f'{template_node.name} has {len(matches)} derivations to {plan.template_target}')
         template_state = matches[0]
     if template_state is None:
         candidates = []
         for position, state in enumerate(template_node.states):
             instance = condition_of(state)
-            if instance is None or args.condition_class.lower() not in instance.class_name.lower():
+            if instance is None or plan.condition_class.lower() not in instance.class_name.lower():
                 continue
             values = fields_of(instance)
             if values.get('atkType') is None:                     # not a PlayerFsm2Command-style condition
@@ -105,21 +101,21 @@ def run(args):
                 continue
             candidates.append((values['StartFrame'].value, position))
         if not candidates:
-            raise SystemExit(f'{template_node.name} has no derivable {args.condition_class} state to copy')
+            raise ValueError(f'{template_node.name} has no derivable {plan.condition_class} state to copy')
         template_state = min(candidates)[1]
     assert 0 <= template_state < len(template_node.states), f'state index out of range: {template_state}'
     template = template_node.states[template_state]
     template_condition = condition_of(template)
     assert template_condition is not None, 'the template state has no condition'
-    overrides = assignments(template_condition, args.set)
-    insertion = len(node.states) if args.insert_before is None else args.insert_before
+    overrides = assignments(template_condition, plan.set)
+    insertion = len(node.states) if plan.insert_before is None else plan.insert_before
     if not 0 <= insertion <= len(node.states):
         raise ValueError('Insertion position is outside the state list')
     raw = template.TransitionConditions & 0xFFFFFFFF
     tag = raw >> 24
     block_name = 'static_conditions' if tag == 0x40 else 'conditions'
     if tag not in (0, 0x40):
-        raise SystemExit(f'unsupported condition reference 0x{raw:08X}')
+        raise ValueError(f'unsupported condition reference 0x{raw:08X}')
     print(f'  template {template_node.name}.state[{template_state}] condition {template_condition.class_name} '
           f'({block_name}) -> target 0x{template.mTransitions:08X}')
     for name, value in fields_of(template_condition).items():
@@ -152,9 +148,9 @@ def run(args):
           f'(v0_ID={new_condition_id}, raw=0x{new_condition_raw:08X})')
 
     new_event_objects, events_splice = [], None
-    if args.events != 'drop' and template.mStates.values:
+    if plan.events != 'drop' and template.mStates.values:
         events_block = doc.rsz_blocks.get_block('transition_events')
-        if args.events == 'copy':
+        if plan.events == 'copy':
             assert block_padding_is_zero(events_block), 'transition_events block has non-zero padding'
             for value in template.mStates.values:
                 template_event = doc.references.object_instance('transition_events', value)
@@ -173,7 +169,7 @@ def run(args):
             events_splice = block_splice(events_block)
         else:
             new_event_objects = list(template.mStates.values)
-        print(f'  transition events {list(template.mStates.values)} -> {new_event_objects} ({args.events})')
+        print(f'  transition events {list(template.mStates.values)} -> {new_event_objects} ({plan.events})')
 
     # ---------------------------------------------------------------- the new state owns a fresh map id
     from file_handlers.motfsm.transitions import TransitionCopies
@@ -225,7 +221,7 @@ def run(args):
     assert verified.bhvt.nodes == doc.bhvt.nodes, 'reopened node table differs from the authored model'
     assert verified.bhvt.action_ex_ids == original.bhvt.action_ex_ids
     assert verified.bhvt.static_action_ex_ids == original.bhvt.static_action_ex_ids
-    touched = {block_name} | ({'transition_events'} if args.events == 'copy' and template.mStates.values else set())
+    touched = {block_name} | ({'transition_events'} if plan.events == 'copy' and template.mStates.values else set())
     for name in BLOCK_NAMES:
         old, new = original.rsz_blocks.get_block(name), verified.rsz_blocks.get_block(name)
         if name not in touched:
@@ -233,10 +229,10 @@ def run(args):
         else:
             assert new.object_table[:len(old.object_table)] == old.object_table, f'{name} object table reordered'
     # the map table gains exactly one entry; the data table is only shifted
-    assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), args.allow_uvar_drift)
+    assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), plan.allow_uvar_drift)
     assert verified.rebuild() == output, 'REasy rebuild is not stable on the candidate'
 
-    node_index_verified = node_index(args.node)
+    node_index_verified = node_index(plan.node)
     for index, previous in enumerate(original.bhvt.nodes):
         current = verified.bhvt.nodes[index]
         if index == node_index_verified:
@@ -300,7 +296,7 @@ def run(args):
         assert verified_fields[field_name] == field.value, f'{field_name} was not copied from the template'
     for field_name, value in overrides.items():
         assert verified_fields[field_name] == value, f'{field_name} override did not stick'
-    if args.events == 'copy' and template.mStates.values:
+    if plan.events == 'copy' and template.mStates.values:
         old_events = original.rsz_blocks.get_block('transition_events')
         for value in new_event_objects:
             assert value >= len(old_events.object_table), f'event object {value} is not a new slot'

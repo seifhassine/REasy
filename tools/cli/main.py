@@ -53,7 +53,7 @@ def build_parser():
         group.add_argument('--json', action='store_true', default=argparse.SUPPRESS)
         commands = group.add_subparsers(dest='command', required=True)
         if domain == 'fsm':
-            from tools.fsm.cli import register_commands
+            from .formats.fsm.commands import register_commands
             register_commands(commands, prefix=('fsm',))
             continue
         for command, (module_name, description) in EDIT_COMMANDS.get(domain, {}).items():
