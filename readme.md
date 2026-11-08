@@ -24,6 +24,7 @@ The FSM editor resolves node, condition, and transition-event references inline.
 | --- | --- |
 | `tools/` | The [resource CLI](docs/cli.md) (`python -m tools`), including [FSM commands](docs/fsm_cli.md); only argument handling, loading, results and publication |
 | `file_handlers/` | Format models, serialization and native edits: RSZ graph copies and scalar edits, FSM operations (`motfsm/operations`), PFB elements, RCOL requests, CLIP event edits, and JSON inspection views (`<format>/inspection.py`) |
+| `file_handlers/motion/` | Shared MOTLIST models (`mot*`, `sequence`), `evaluation` and `runtime`; per-game dialects in `mhr/` (Rise codec and native authoring), `wilds/`, `lmt/` (XX and World LMT), shared bake helpers in `baking/`, and the Qt viewers in `preview/` |
 | `services/mhr/` | Game recipes combining native operations: FSM branch plans and Action pointers, move bundles, and [motion batch builds](docs/mhr_motion_writer.md) |
 | `services/audio/` | WEM conversion, Wwise toolchain, IR conversion, playback graph batch import and wwiser XML cross-checks; native RIFF metadata lives in `file_handlers/sound/` |
 | `services/pak/`, `services/rsz/` | GUI tool backends: PAK/Fluffy export, file lists and tool downloads; RSZ value search, data matching, PFB references and outdated-file detection |

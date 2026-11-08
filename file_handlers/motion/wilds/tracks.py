@@ -6,9 +6,9 @@ the native full-precision Rise tracks shared by the Wilds corpus.
 """
 import numpy as np
 
-from .mhr_tracks import decode_values as decode_495_values, decode_track as read_track
-from .mot.model import TrackFamily
-from .errors import MotionParseError
+from ..mhr.tracks import decode_values as decode_495_values, decode_track as read_track
+from ..mot.model import TrackFamily
+from ..errors import MotionParseError
 
 
 def _codes(c, offset, count, width, endian):

@@ -1,7 +1,7 @@
 """CLI selectors for native node, property, and key copy/delete operations."""
 from pathlib import Path
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
 from tools.cli.runtime import EditResult
 from .sequence_copy import extra_inputs
 
@@ -44,7 +44,7 @@ def configure(parser):
 
 
 def run(args):
-    from file_handlers.motion.mhr_clip_editing import edit_clip
+    from file_handlers.motion.mhr.clip_editing import edit_clip
     document = RISE.parse(args.source.read_bytes(), label=str(args.source))
     donor_path = getattr(args, 'donor', None)
     donor = RISE.parse(donor_path.read_bytes(), label=str(donor_path)) if donor_path else None

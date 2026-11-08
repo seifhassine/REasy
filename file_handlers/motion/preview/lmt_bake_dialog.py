@@ -4,8 +4,8 @@ from pathlib import Path
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QLabel, QPushButton, QComboBox, QSpinBox, QMessageBox
 from PySide6.QtCore import Qt
 
-from ..lmt_codec import LMT_MOTION_FORMAT_CODEC
-from ..mhr_editing import next_motion_id
+from ..lmt.codec import LMT_MOTION_FORMAT_CODEC
+from ..mhr.editing import next_motion_id
 from .mhr_bake_dialog import MotionBakeDialog
 
 

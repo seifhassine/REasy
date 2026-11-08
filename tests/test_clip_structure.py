@@ -7,9 +7,9 @@ import struct
 import tempfile
 import unittest
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_clip_editing import copy_sequences, delete_sequences, edit_clip
-from file_handlers.motion.mhr_structure import Owner
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.clip_editing import copy_sequences, delete_sequences, edit_clip
+from file_handlers.motion.mhr.structure import Owner
 
 
 CORPUS = Path(__file__).parent / 'TESTFILE/natives/STM/player/mot/plw_GunLance_100.motlist.528'

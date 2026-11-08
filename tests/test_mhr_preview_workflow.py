@@ -6,13 +6,13 @@ import unittest
 
 import numpy as np
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC
 from file_handlers.motion.mot_clip.model import ClipKey, ClipProperty, ClipPropertyType
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.preview.clip_timeline import ClipLane, ClipTimelineView, move_timeline_item, sequence_lanes
 from file_handlers.motion.preview.mhr_assets import (MhrPreviewAssets, WEAPON_PRESETS,
     find_rise_installation, preview_context, weapon_family, attachment_transform)
-from file_handlers.motion.preview.mhr_attachments import weapon_attachment, weapon_hold_properties
+from file_handlers.motion.mhr.attachments import weapon_attachment, weapon_hold_properties
 from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE
 from file_handlers.motion.preview.controller import MotionPreviewController
 from file_handlers.motion.preview.skinning import build_shared_rig_deformer

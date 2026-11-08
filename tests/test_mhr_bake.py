@@ -10,10 +10,10 @@ import unittest
 from unittest.mock import patch
 
 from file_handlers.motion.errors import MotionWriteError
-from file_handlers.motion.mhr_bake import MotionSegment, bake_segments, sample_segments
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_editing import next_motion_id
-from file_handlers.motion.mhr_storage import MhrJoint, MhrMotion
+from file_handlers.motion.mhr.bake import MotionSegment, bake_segments, sample_segments
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.editing import next_motion_id
+from file_handlers.motion.mhr.storage import MhrJoint, MhrMotion
 from file_handlers.motion.mot.model import AnimationNode, KeyTrack, Skeleton, TrackFamily
 from file_handlers.motion.evaluation.sampling import sample_track
 

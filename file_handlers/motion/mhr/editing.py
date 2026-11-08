@@ -2,9 +2,9 @@
 from bisect import bisect_right
 import struct
 
-from .binary import align_up
-from .errors import MotionWriteError
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from ..binary import align_up
+from ..errors import MotionWriteError
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC
 
 
 def validate_slot_order(document):
@@ -86,10 +86,10 @@ def duplicate_slot(document, source_index, motion_id, *, name=None):
     slot = model.slots[source_index]
     if slot.payload is None:
         raise MotionWriteError('Source slot has no embedded motion')
-    from .mhr_tree import RiseTree,build_tree
+    from .tree import RiseTree,build_tree
     if isinstance(slot.payload.value,RiseTree):
         from copy import deepcopy
-        from .mhr_batch import install_payload
+        from .batch import install_payload
         tree=deepcopy(slot.payload.value)
         if name is not None:tree.name=name
         return install_payload(model,build_tree(tree),motion_id,template_id=slot.motion_id)

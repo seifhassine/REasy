@@ -1,6 +1,6 @@
 from dataclasses import dataclass, replace
 
-from ..mhr_storage import MhrJoint, MhrMotion
+from ..mhr.storage import MhrJoint, MhrMotion
 from .profiles import DMC5_EVALUATION_PROFILE, Dmc5JointBindingStrategy
 
 

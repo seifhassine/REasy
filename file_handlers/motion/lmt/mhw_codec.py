@@ -10,13 +10,13 @@ from pathlib import Path
 import math
 import struct
 
-from .binary import ReadContext
-from .errors import MotionParseError, MotionWriteError
-from .lmt_codec import LmtDocument, decode_lmt_keys
-from .mhr_codec import MHR_PROFILE
-from .mot.model import Motion, Joint, Skeleton, AnimationNode, KeyTrack
-from .mot_list.model import MotionSlot, MotionSlotType, EmbeddedPayload
-from .evaluation.math3d import decompose_row_srt
+from ..binary import ReadContext
+from ..errors import MotionParseError, MotionWriteError
+from .codec import LmtDocument, decode_lmt_keys
+from ..mhr.codec import MHR_PROFILE
+from ..mot.model import Motion, Joint, Skeleton, AnimationNode, KeyTrack
+from ..mot_list.model import MotionSlot, MotionSlotType, EmbeddedPayload
+from ..evaluation.math3d import decompose_row_srt
 from .mhw_timeline import MhwTimeline, read_mhw_timeline
 
 

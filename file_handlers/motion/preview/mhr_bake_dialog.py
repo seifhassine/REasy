@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QTableWidget,
                                QHeaderView, QMessageBox, QApplication, QSpinBox, QCheckBox, QLabel)
 from PySide6.QtCore import Qt
 
-from ..mhr_bake import MotionSegment
+from ..mhr.bake import MotionSegment
 
 
 class MotionBakeDialog(QDialog):

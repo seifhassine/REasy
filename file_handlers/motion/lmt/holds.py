@@ -1,10 +1,10 @@
 """Convert known XX hold states while preserving unrelated native CLIP data."""
 import struct
-from .errors import MotionWriteError
-from .mot_clip.model import ClipInterpolation, ClipPropertyType
-from .mot_clip.edit_v43 import ClipGraph
-from .mhr_structure import Owner, Layout, Splice, materialize
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from ..errors import MotionWriteError
+from ..mot_clip.model import ClipInterpolation, ClipPropertyType
+from ..mot_clip.edit_v43 import ClipGraph
+from ..mhr.structure import Owner, Layout, Splice, materialize
+from ..mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
 
 
 def is_weapon_hold(node):
@@ -22,7 +22,7 @@ def rewrite_hold_clips(document, motion_id, keys, end_frame):
             if not any(is_weapon_hold(r.node) for r in record.parsed.nodes):
                 continue
             # Detach a shared MOT before editing its CLIP.
-            from .mhr_structure import private_motion
+            from ..mhr.structure import private_motion
             document = private_motion(document, motion_id, scope)
             owner = Owner(document, motion_id, scope)
             record = owner.records[index]
@@ -63,7 +63,7 @@ def rewrite_hold_clips(document, motion_id, keys, end_frame):
 
 
 def verify_weapon_hold(source_motion, imported_motion, hold_document):
-    from .mhr_import import lmt_hold_keys
+    from ..mhr.importing import lmt_hold_keys
     expected = lmt_hold_keys(source_motion, hold_document)
     if expected is None:
         return

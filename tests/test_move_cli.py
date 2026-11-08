@@ -12,9 +12,9 @@ from tools.cli.main import main
 from tools.cli.runtime import qt_application
 from file_handlers.motfsm.scalar_editing import open_document
 from file_handlers.motfsm.values import enums
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_editing import next_motion_id
-from file_handlers.motion.mhr_retime import properties, round_frame, retime_motion
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.editing import next_motion_id
+from file_handlers.motion.mhr.retime import properties, round_frame, retime_motion
 
 CORPUS = Path(__file__).parent / 'TESTFILE'
 

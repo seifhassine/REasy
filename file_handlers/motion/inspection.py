@@ -3,7 +3,7 @@ from dataclasses import asdict
 import struct
 
 from file_handlers.motion.motlist_file import MotListFile
-from file_handlers.motion.mhr_codec import MHR_PROFILE
+from file_handlers.motion.mhr.codec import MHR_PROFILE
 from file_handlers.motion.binary import ReadContext, align_up
 from file_handlers.motion.mot_clip.parser_v43 import CompactClipV43Parser
 from file_handlers.motion.errors import MotionCodecError

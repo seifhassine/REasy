@@ -2,14 +2,14 @@
 import struct
 import unittest
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_events import set_bool_window, extend_property_range, set_effect, silence_events, move_event
-from file_handlers.motion.mhr_generate import build_motion
-from file_handlers.motion.mhr_storage import MhrMotion, MhrJoint
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.events import set_bool_window, extend_property_range, set_effect, silence_events, move_event
+from file_handlers.motion.mhr.generate import build_motion
+from file_handlers.motion.mhr.storage import MhrMotion, MhrJoint
 from file_handlers.motion.mot.model import Skeleton
 from file_handlers.motion.mot_clip.edit_v43 import ClipGraph
 from file_handlers.motion.mot_clip.model import ClipPropertyType
-from file_handlers.motion.mhr_structure import Owner
+from file_handlers.motion.mhr.structure import Owner
 from test_clip_graph_v43 import fixture as clip_fixture, parse
 
 

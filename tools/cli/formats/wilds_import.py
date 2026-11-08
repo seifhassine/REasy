@@ -14,15 +14,15 @@ import sys
 
 
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC as WILDS
-from file_handlers.motion.lmt_codec import LMT_MOTION_FORMAT_CODEC as LMT
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.wilds.codec import WILDS_MOTION_FORMAT_CODEC as WILDS
+from file_handlers.motion.lmt.codec import LMT_MOTION_FORMAT_CODEC as LMT
 from file_handlers.motion.format_registry import require_motion_format
-from file_handlers.motion.mhr_editing import next_motion_id
-from file_handlers.motion.mhr_import import import_motion, verify_imported_motion, verify_native_contract
+from file_handlers.motion.mhr.editing import next_motion_id
+from file_handlers.motion.mhr.importing import import_motion, verify_imported_motion, verify_native_contract
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.preview.mhr_assets import MhrPreviewAssets, preview_context, weapon_family
-from file_handlers.motion.wilds_weapons import wilds_weapon_family
+from file_handlers.motion.wilds.weapons import wilds_weapon_family
 
 
 def motion_mapping(value):
@@ -121,7 +121,7 @@ def run(args):
                            end_frame=result.end_frame, fps=result.frames_per_second,
                            looping=result.looping, max_matrix_error=error,
                            max_ik_goal_error=contract))
-    from file_handlers.motion.lmt_codec import LmtDocument
+    from file_handlers.motion.lmt.codec import LmtDocument
     events = ('LMT main-weapon events converted to WeaponHold; other target CLIP tracks preserved on replacement'
               if isinstance(source, LmtDocument) else 'Only native 001_Loop WeaponHold; source events are not converted')
     return EditResult(data, dict(mode='replace' if args.replace else 'append', hold_template=hold_path, imported=report,

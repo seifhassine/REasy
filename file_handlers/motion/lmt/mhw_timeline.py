@@ -8,7 +8,7 @@ import math
 import struct
 import zlib
 
-from .errors import MotionParseError
+from ..errors import MotionParseError
 
 
 def property_hash(name):

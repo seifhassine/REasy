@@ -460,7 +460,7 @@ Group-local batches such as `tools clip batch` and `tools fsm batch` omit the gr
 - `property-range` extends a selected property's end and last key; it does not shorten the range.
 - `bool-window` retimes a four-key BOOL track in place: keys become `(0,False) (on,True) (off,True) (off+1,False)`
   and the property range becomes `0 .. off+1`; the file size does not change.
-- Fixed-size event edits use `file_handlers.motion.mhr_events` and reject changes
+- Fixed-size event edits use `file_handlers.motion.mhr.events` and reject changes
   that would also change another motion slot sharing the same storage. Structural
   CLIP operations can detach shared payloads before such edits.
 - RCOL request `id`, table position, and `field0` are distinct. Inspect `rcol query` before editing.

@@ -37,7 +37,7 @@ def sampled_weapon_hold_keys(samples, properties):
 
 
 def _hold_keys(states, properties):
-    from .errors import MotionWriteError
+    from ..errors import MotionWriteError
     defaults = {}
     for hand, prop in properties.items():
         if not prop.keys or any(k.value != prop.keys[0].value for k in prop.keys):

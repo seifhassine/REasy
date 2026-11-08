@@ -5,13 +5,13 @@ import json
 from pathlib import Path
 import struct
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_storage import MhrMotion,MhrJoint,MhrSyncPointGrid,MhrFrameCurve
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.storage import MhrMotion,MhrJoint,MhrSyncPointGrid,MhrFrameCurve
 from file_handlers.motion.mot.model import Skeleton,AnimationNode,KeyTrack,TrackFamily
-from file_handlers.motion.mhr_generate import build_motion
-from file_handlers.motion.mhr_tree import build_tree,set_leaf,RiseMotionReference
-from file_handlers.motion.mhr_structure import Owner,copy_sequences,delete_sequences,edit_clip
-from file_handlers.motion.mhr_batch import (slot_index,install_payload,delete_slot,bind_slot,copy_event,audit_shared_payloads,audit_shared_sequences)
+from file_handlers.motion.mhr.generate import build_motion
+from file_handlers.motion.mhr.tree import build_tree,set_leaf,RiseMotionReference
+from file_handlers.motion.mhr.structure import Owner,copy_sequences,delete_sequences,edit_clip
+from file_handlers.motion.mhr.batch import (slot_index,install_payload,delete_slot,bind_slot,copy_event,audit_shared_payloads,audit_shared_sequences)
 from file_handlers.motion.errors import MotionWriteError
 from file_handlers.motion.mot_tree.model import TreeLink,TreeLinkType
 from file_handlers.motbank.motbank_file import MotbankFile,MotlistItem

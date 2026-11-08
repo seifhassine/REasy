@@ -1,6 +1,6 @@
 """Copy CLIP sequences through the native structural editor."""
 from pathlib import Path
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
 from tools.cli.runtime import EditResult
 
 
@@ -31,7 +31,7 @@ def configure(parser):
 
 
 def run(args):
-    from file_handlers.motion.mhr_clip_editing import copy_sequences
+    from file_handlers.motion.mhr.clip_editing import copy_sequences
     document = RISE.parse(args.source.read_bytes(), label=str(args.source))
     donor = RISE.parse(args.donor.read_bytes(), label=str(args.donor)) if args.donor else None
     selected = args.categories if args.categories is not None else (None if args.positions is not None else ['SOUND', 'VFX'])

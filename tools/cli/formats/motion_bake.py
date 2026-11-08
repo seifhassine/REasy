@@ -1,14 +1,14 @@
 """Bake inclusive source ranges into a single MOT 495 animation."""
 from pathlib import Path
 import re
-from file_handlers.motion.mhr_bake import MotionSegment, PoseTransition, bake_segments
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.bake import MotionSegment, PoseTransition, bake_segments
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
 from tools.cli.runtime import integer
 from tools.cli.runtime import EditResult
 from .wilds_import import configure_donor, load_inputs, load_target
-from file_handlers.motion.motion_root import ROOT_TRANSFORM_MODES
-from file_handlers.motion.motion_bake_blend import seam_windows
-from file_handlers.motion.mhr_editing import next_motion_id
+from file_handlers.motion.baking.root import ROOT_TRANSFORM_MODES
+from file_handlers.motion.baking.blend import seam_windows
+from file_handlers.motion.mhr.editing import next_motion_id
 
 
 def parse_target(value):
@@ -66,7 +66,7 @@ def lmt_sources(args):
         if not separator or name not in aliases:
             raise ValueError(f'Use a declared NAME:MOTION for every LMT segment: {motion}')
         integer(motion_id)
-    from file_handlers.motion.lmt_codec import LMT_MOTION_FORMAT_CODEC
+    from file_handlers.motion.lmt.codec import LMT_MOTION_FORMAT_CODEC
     skeleton = args.skeleton.read_bytes() if args.skeleton is not None else None
     sources = {path: LMT_MOTION_FORMAT_CODEC.parse(Path(path).read_bytes(), label=path, skeleton_data=skeleton)
                for path in dict.fromkeys(aliases.values())}
@@ -102,7 +102,7 @@ def run(args):
         segments.append(MotionSegment(integer(motion), float(start), None if end.lower() == 'end' else float(end),
                                       float(speed), mode, scale, source))
     if sources is not None:
-        from file_handlers.motion.wilds_bake import bake_lmt_segments
+        from file_handlers.motion.wilds.bake import bake_lmt_segments
         document, rig, hold, family, hold_path = load_target(args)
         result, details = bake_lmt_segments(document, sources, segments, rig, hold, target_id(args, document),
                                             replace_existing=args.replace, name=args.name, family=family,
@@ -112,7 +112,7 @@ def run(args):
                        mode='replace' if args.replace else 'append')
         return EditResult(CODEC.write(result), details)
     if args.donor is not None:
-        from file_handlers.motion.wilds_bake import bake_wilds_segments
+        from file_handlers.motion.wilds.bake import bake_wilds_segments
         donor, document, rig, hold, family, hold_path = load_inputs(args)
         result, details = bake_wilds_segments(document, donor, segments, rig, hold, target_id(args, document),
                                              replace_existing=args.replace, name=args.name, family=family,

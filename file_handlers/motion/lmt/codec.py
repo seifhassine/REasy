@@ -11,12 +11,12 @@ import struct
 
 from utils.app_paths import resource_path
 
-from .binary import ReadContext
-from .errors import MotionParseError, MotionWriteError
-from .mhr_codec import MHR_PROFILE
-from .mot.model import Motion, Joint, Skeleton, AnimationNode, KeyTrack, TrackFamily
-from .mot_list.model import MotList, MotionSlot, MotionSlotType, EmbeddedPayload
-from .evaluation.math3d import decompose_row_srt
+from ..binary import ReadContext
+from ..errors import MotionParseError, MotionWriteError
+from ..mhr.codec import MHR_PROFILE
+from ..mot.model import Motion, Joint, Skeleton, AnimationNode, KeyTrack, TrackFamily
+from ..mot_list.model import MotList, MotionSlot, MotionSlotType, EmbeddedPayload
+from ..evaluation.math3d import decompose_row_srt
 
 
 LMT_PROFILE = replace(MHR_PROFILE, name='Monster Hunter XX (MT Framework)',

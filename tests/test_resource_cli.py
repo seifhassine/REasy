@@ -11,8 +11,8 @@ import unittest
 
 from tools.cli.main import main, build_parser, EDIT_COMMANDS
 from tools.cli.runtime import MHR_REGISTRY, qt_application
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from file_handlers.motion.mhr_editing import next_motion_id
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.editing import next_motion_id
 from file_handlers.rcol.rcol_handler import RcolHandler
 from file_handlers.rsz.inspection import load_rsz as load, type_name
 from utils.type_registry import TypeRegistry
@@ -242,7 +242,7 @@ class NativeResourceCliTests(unittest.TestCase):
 
     def test_motion_duplicate_inserts_gap_id_in_native_order(self):
         import struct
-        from file_handlers.motion.mhr_editing import validate_slot_order
+        from file_handlers.motion.mhr.editing import validate_slot_order
         path = next(CORPUS.rglob('plw_ShortSword_100.motlist.528'))
         before = RISE.parse(path.read_bytes())
         ids = {s.motion_id for s in before.slots}
@@ -351,7 +351,7 @@ class NativeResourceCliTests(unittest.TestCase):
             self.assertEqual(donor.read_bytes(), b'unchanged input')
 
     def test_wilds_import_cli_uses_native_verifiers(self):
-        from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC as WILDS
+        from file_handlers.motion.wilds.codec import WILDS_MOTION_FORMAT_CODEC as WILDS
         from file_handlers.motion.preview.mhr_assets import find_rise_installation
         game = find_rise_installation()
         if not game:

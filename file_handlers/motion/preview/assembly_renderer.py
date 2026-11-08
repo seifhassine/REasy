@@ -7,7 +7,7 @@ from ui.scene.mesh_scene import build_mesh_scene
 from .renderer import MotionPreviewRenderer
 from .scene import SkeletonScene
 from .skinning import build_shared_rig_deformer
-from .mhr_attachments import weapon_hold_properties, weapon_attachment
+from ..mhr.attachments import weapon_hold_properties, weapon_attachment
 from .weapon_motion import WeaponMotionPlayer, select_weapon_motion
 
 

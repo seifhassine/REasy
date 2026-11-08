@@ -2,10 +2,10 @@
 import numpy as np
 from dataclasses import replace
 
-from .errors import MotionWriteError
-from .evaluation.composition import compose_evaluated_pose
-from .evaluation.math3d import transform_matrix, decompose_row_srt
-from .evaluation.model import Transform
+from ..errors import MotionWriteError
+from ..evaluation.composition import compose_evaluated_pose
+from ..evaluation.math3d import transform_matrix, decompose_row_srt
+from ..evaluation.model import Transform
 
 
 ROOT_TRANSFORM_MODES = ('relative', 'identity', 'authored')

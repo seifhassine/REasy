@@ -15,7 +15,7 @@ from file_handlers.motfsm.motfsm_handler import MotfsmHandler
 from file_handlers.motfsm.motion_link import (ActionMotion, MotionLinkResolver, default_bank_path,
                                              linked_context, node_motions, motion_entry_index)
 from file_handlers.motfsm.motion_preview import FsmMotionPreview
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC
 from file_handlers.motion.errors import MotionParseError
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.preview.clip_timeline import ClipTimelineView, ClipLane

@@ -4,7 +4,7 @@ import unittest
 import numpy as np
 
 from file_handlers.motion.errors import MotionWriteError
-from file_handlers.motion.motion_bake_blend import blend_poses, seam_windows
+from file_handlers.motion.baking.blend import blend_poses, seam_windows
 from file_handlers.motion.evaluation.composition import compose_evaluated_pose
 from file_handlers.motion.evaluation.math3d import transform_matrix, multiply_quaternions
 from file_handlers.motion.evaluation.model import Rig, RigJoint, Transform

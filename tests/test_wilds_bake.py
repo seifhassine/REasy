@@ -11,11 +11,11 @@ import unittest
 import numpy as np
 
 from file_handlers.motion.errors import MotionWriteError
-from file_handlers.motion.mhr_bake import MotionSegment
-from file_handlers.motion.mhr_storage import MhrMotion
+from file_handlers.motion.mhr.bake import MotionSegment
+from file_handlers.motion.mhr.storage import MhrMotion
 from file_handlers.motion.mot_list.model import MotList, MotionSlot, MotionSlotType, EmbeddedPayload
-from file_handlers.motion.wilds_bake import segment_timeline
-from file_handlers.motion.motion_root import root_transforms
+from file_handlers.motion.wilds.bake import segment_timeline
+from file_handlers.motion.baking.root import root_transforms
 from file_handlers.motion.evaluation.model import Transform
 from file_handlers.motion.evaluation.math3d import transform_matrix
 
@@ -129,9 +129,9 @@ WILDS_PATH = CORPUS / 'Weapon/Wp07/wp07_00/wp07_00.motlist.992'
 class Wp07BakeTests(unittest.TestCase):
     def test_cli_bakes_requested_ranges_root_transforms_and_preserves_other_slots(self):
         from tools.cli.main import main
-        from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-        from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC as WILDS
-        from file_handlers.motion.mhr_editing import next_motion_id
+        from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+        from file_handlers.motion.wilds.codec import WILDS_MOTION_FORMAT_CODEC as WILDS
+        from file_handlers.motion.mhr.editing import next_motion_id
         from file_handlers.motion.motlist_handler import MotListHandler
         from file_handlers.motion.preview.mhr_assets import MhrPreviewAssets, preview_context, find_rise_installation
         from file_handlers.motion.evaluation.wilds_retarget import wilds_to_rise

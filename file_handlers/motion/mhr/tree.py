@@ -9,9 +9,9 @@ import math
 import struct
 
 from utils.hash_util import murmur3_hash_utf16le
-from .binary import pad_to_alignment, align_up
-from .errors import MotionParseError, MotionWriteError
-from .mot_tree.model import (MotTree, TreeNode, TreeParameter, TreeParameterType,
+from ..binary import pad_to_alignment, align_up
+from ..errors import MotionParseError, MotionWriteError
+from ..mot_tree.model import (MotTree, TreeNode, TreeParameter, TreeParameterType,
                              TreeLink, TreeLinkType, TreeNodeType)
 
 CLASS_HASHES = {'MotionNode': 0x92d04ffd, 'OctSyncBlendNode': 0x0be629a9,

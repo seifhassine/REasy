@@ -11,9 +11,9 @@ import struct
 
 import numpy as np
 
-from .binary import ReadContext
-from .errors import MotionParseError, MotionWriteError
-from .mot.model import KeyTrack, TrackFamily
+from ..binary import ReadContext
+from ..errors import MotionParseError, MotionWriteError
+from ..mot.model import KeyTrack, TrackFamily
 
 
 def decode_values(c: ReadContext, offset: int, count: int, family: TrackFamily,

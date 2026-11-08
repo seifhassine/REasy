@@ -11,13 +11,13 @@ import numpy as np
 from file_handlers.motion.binary import ReadContext
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
 from file_handlers.motion.format_registry import require_motion_format
-from file_handlers.motion.lmt_codec import (LMT_MOTION_FORMAT_CODEC as XX, decode_track,
+from file_handlers.motion.lmt.codec import (LMT_MOTION_FORMAT_CODEC as XX, decode_track,
                                           read_mod_skeleton, xx_weapon_family, XX_HUNTER_MOD)
 from utils.app_paths import resource_path
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from file_handlers.motion.mhr_import import (idle_template, import_motion, source_retarget,
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.importing import (idle_template, import_motion, source_retarget,
                                             verify_imported_motion, verify_native_contract)
-from file_handlers.motion.mhr_editing import next_motion_id
+from file_handlers.motion.mhr.editing import next_motion_id
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.evaluation.binding import bind_motion
 from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
@@ -33,8 +33,8 @@ RISE_PATH = CORPUS/'natives/STM/player/mot/plw_GreatSword_100.motlist.528'
 
 class LmtTrackTests(unittest.TestCase):
     def test_weapon_hold_conversion_preserves_sub_weapon(self):
-        from file_handlers.motion.lmt_codec import LmtMotion
-        from file_handlers.motion.lmt_events import weapon_hold_keys
+        from file_handlers.motion.lmt.codec import LmtMotion
+        from file_handlers.motion.lmt.events import weapon_hold_keys
         motion = LmtMotion('test', end_frame=40, events=(((3, 1, 2, 17), ((1, 10), (2, 10), (4, 10), (8, 10))),))
         props = {hand: SimpleNamespace(keys=[SimpleNamespace(value=value)]) for hand, value in (('left', 2), ('right', 3))}
         keys = weapon_hold_keys(motion, props)
@@ -42,8 +42,8 @@ class LmtTrackTests(unittest.TestCase):
         self.assertEqual(keys['_rightWp'], [(0, 3), (10, 4), (20, 3), (40, 3)])
 
     def test_sampled_hold_tracks_follow_cut_timing(self):
-        from file_handlers.motion.lmt_codec import LmtMotion
-        from file_handlers.motion.lmt_events import sampled_weapon_hold_keys
+        from file_handlers.motion.lmt.codec import LmtMotion
+        from file_handlers.motion.lmt.events import sampled_weapon_hold_keys
         motion = LmtMotion('test', end_frame=30, events=(((3, 1, 2), ((1, 10), (2, 10), (4, 10))),))
         props = {hand: SimpleNamespace(keys=[SimpleNamespace(value=value)]) for hand, value in (('left', 2), ('right', 1))}
         keys = sampled_weapon_hold_keys([(motion, frame) for frame in (5, 10, 15, 20)], props)
@@ -98,7 +98,7 @@ class LmtTrackTests(unittest.TestCase):
         self.assertEqual(xx_weapon_family('w03'), 'lance')
         self.assertEqual(xx_weapon_family('w13'), 'insectglaive')
         self.assertIsNone(xx_weapon_family('wp03_00'))
-        from file_handlers.motion.lmt_codec import XX_WEAPONS
+        from file_handlers.motion.lmt.codec import XX_WEAPONS
         for family in XX_WEAPONS.values():
             self.assertEqual(xx_weapon_family(family), family)
             self.assertEqual(xx_weapon_family(family.upper()+'_HUNTERART'), family)
@@ -107,7 +107,7 @@ class LmtTrackTests(unittest.TestCase):
 @unittest.skipUnless((XX_DIR/'greatsword.lmt').is_file(), 'XX corpus absent')
 class LmtCorpusTests(unittest.TestCase):
     def test_slashaxe_sheath_event_boundary_and_backward_seeking(self):
-        from file_handlers.motion.preview.lmt_attachments import lmt_attachment_state, lmt_weapon_attachment
+        from file_handlers.motion.lmt.attachments import lmt_attachment_state, lmt_weapon_attachment
         path = XX_DIR/'slashaxe.lmt'
         doc = XX.parse(path.read_bytes(), label=str(path))
         motion = next(s.payload.value for s in doc.slots if s.motion_id == 195)
@@ -121,7 +121,7 @@ class LmtCorpusTests(unittest.TestCase):
                              ('Spine_01', body) if state == 'body' else ('L_Weapon_00', hand))
 
     def test_unconfirmed_weapon_events_keep_default_attachment(self):
-        from file_handlers.motion.preview.lmt_attachments import lmt_attachment_state
+        from file_handlers.motion.lmt.attachments import lmt_attachment_state
         from dataclasses import replace
         path = XX_DIR/'slashaxe.lmt'
         doc = XX.parse(path.read_bytes(), label=str(path))
@@ -133,7 +133,7 @@ class LmtCorpusTests(unittest.TestCase):
 
     def test_slashaxe_hand_transfer_then_sheath(self):
         from dataclasses import replace
-        from file_handlers.motion.preview.lmt_attachments import lmt_attachment_state, lmt_weapon_attachment
+        from file_handlers.motion.lmt.attachments import lmt_attachment_state, lmt_weapon_attachment
         path = XX_DIR/'slashaxe.lmt'
         doc = XX.parse(path.read_bytes(), label=str(path))
         motion = next(s.payload.value for s in doc.slots if s.motion_id == 194)
@@ -147,8 +147,8 @@ class LmtCorpusTests(unittest.TestCase):
         self.assertEqual(lmt_attachment_state(replace(motion, name='w08_194'), 20), 'right')
 
     def test_all_weapon_sheath_events_include_combined_values(self):
-        from file_handlers.motion.preview.lmt_attachments import lmt_attachment_state, lmt_weapon_attachment
-        from file_handlers.motion.lmt_codec import XX_WEAPONS
+        from file_handlers.motion.lmt.attachments import lmt_attachment_state, lmt_weapon_attachment
+        from file_handlers.motion.lmt.codec import XX_WEAPONS
         hand, body, right = object(), object(), object()
         for family in XX_WEAPONS.values():
             path = XX_DIR/(family+'.lmt')
@@ -174,8 +174,8 @@ class LmtCorpusTests(unittest.TestCase):
                 frame += duration
 
     def test_longsword_sheath_stays_on_native_body_attachment(self):
-        from file_handlers.motion.preview.lmt_attachments import lmt_weapon_attachment
-        from file_handlers.motion.preview.mhr_attachments import weapon_hold_properties
+        from file_handlers.motion.lmt.attachments import lmt_weapon_attachment
+        from file_handlers.motion.mhr.attachments import weapon_hold_properties
         path = XX_DIR/'longsword_hunterart.lmt'
         doc = XX.parse(path.read_bytes(), label=str(path))
         motion = next(s.payload.value for s in doc.slots if s.motion_id == 3)
@@ -189,7 +189,7 @@ class LmtCorpusTests(unittest.TestCase):
             self.assertEqual(lmt_weapon_attachment(part, motion, frame, default_properties=hold.items()), ('Spine_01', body))
 
     def test_longsword_hunterart_hand_events_with_unknown_flags(self):
-        from file_handlers.motion.preview.lmt_attachments import lmt_attachment_state
+        from file_handlers.motion.lmt.attachments import lmt_attachment_state
         from dataclasses import replace
         path = XX_DIR/'longsword_hunterart.lmt'
         doc = XX.parse(path.read_bytes(), label=str(path))
@@ -343,9 +343,9 @@ class LmtRetargetTests(unittest.TestCase):
     def test_lmt_replace_preserves_other_clips_and_overrides(self):
         from dataclasses import replace, asdict
         from copy import deepcopy
-        from file_handlers.motion.mhr_structure import copy_sequences
-        from file_handlers.motion.lmt_import import verify_weapon_hold
-        from file_handlers.motion.preview.mhr_attachments import weapon_hold_properties
+        from file_handlers.motion.mhr.structure import copy_sequences
+        from file_handlers.motion.lmt.holds import verify_weapon_hold
+        from file_handlers.motion.mhr.attachments import weapon_hold_properties
         path = XX_DIR/'slashaxe.lmt'
         source = XX.parse(path.read_bytes(), label=str(path))
         motion = replace(next(s.payload.value for s in source.slots if s.motion_id == 122),
@@ -383,12 +383,12 @@ class LmtRetargetTests(unittest.TestCase):
         self.assertLess(verify_native_contract(reopened, 116, after.payload.value, self.rig), 4e-3)
 
     def test_partial_loop_requires_explicit_range_for_rise_export(self):
-        from file_handlers.motion.mhr_bake import MotionSegment
-        from file_handlers.motion.wilds_bake import bake_wilds_segments
+        from file_handlers.motion.mhr.bake import MotionSegment
+        from file_handlers.motion.wilds.bake import bake_wilds_segments
         motion = next(s.payload.value for s in self.doc.slots if s.payload.value.loop_start_frame > 0)
         slot_id = next(s.motion_id for s in self.doc.slots if s.payload.value is motion)
         motion_id = next_motion_id(self.hold)
-        from file_handlers.motion.mhr_import import bake_evaluated_motion
+        from file_handlers.motion.mhr.importing import bake_evaluated_motion
         with self.assertRaisesRegex(MotionWriteError, 'loop starting after frame zero'):
             bake_evaluated_motion(motion, [], self.rig, self.hold)
         start = motion.loop_start_frame

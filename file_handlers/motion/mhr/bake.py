@@ -3,19 +3,19 @@ from dataclasses import dataclass, replace
 import math
 import struct
 
-from .binary import align_up
-from .errors import MotionWriteError
-from .evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
-from .evaluation.sampling import sample_track
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from .mhr_editing import duplicate_slot, validate_slot_order
-from .mhr_structure import Layout, Splice, Owner, materialize, private_motion
-from .mhr_tracks import encode_track
-from .mot.model import AnimationNode, KeyTrack, TrackFamily, Skeleton
-from .motion_root import root_index, root_transforms, ROOT_TRANSFORM_MODES
-from .evaluation.model import Transform
-from .motion_bake_timing import BAKE_FPS, sample_schedule
-from .motion_bake_blend import align_waist_rotations, blend_values, seam_windows
+from ..binary import align_up
+from ..errors import MotionWriteError
+from ..evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
+from ..evaluation.sampling import sample_track
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from .editing import duplicate_slot, validate_slot_order
+from .structure import Layout, Splice, Owner, materialize, private_motion
+from .tracks import encode_track
+from ..mot.model import AnimationNode, KeyTrack, TrackFamily, Skeleton
+from ..baking.root import root_index, root_transforms, ROOT_TRANSFORM_MODES
+from ..evaluation.model import Transform
+from ..baking.timing import BAKE_FPS, sample_schedule
+from ..baking.blend import align_waist_rotations, blend_values, seam_windows
 
 
 @dataclass(frozen=True)
@@ -157,10 +157,10 @@ def _process_seams(nodes, target, ranges, end_frame, *, align_waist, blend_frame
             values = [sample_track(track, frame) for frame in range(end_frame+1)]
             _set_values(node, attr, family, blend_values(values, windows, rotation=attr == 'rotation'))
     # FK changed; author the limb goals from that FK instead of blending stale IK.
-    from .evaluation.source_adapter import rig_from_motion_skeleton
-    from .evaluation.binding import bind_motion
-    from .evaluation.sampling import MotionEvaluator
-    from .mhr_import import bake_ik_goal_tracks, IK_ROTATION_GOALS, IDENTITY_ROTATION
+    from ..evaluation.source_adapter import rig_from_motion_skeleton
+    from ..evaluation.binding import bind_motion
+    from ..evaluation.sampling import MotionEvaluator
+    from .importing import bake_ik_goal_tracks, IK_ROTATION_GOALS, IDENTITY_ROTATION
     known = [j for j in target.skeleton.joints if all(math.isfinite(v) for v in (*j.translation, *j.rotation))]
     by_hash = {j.binding_hash: j for j in known}
     evaluation_motion = replace(target, end_frame=end_frame, skeleton=Skeleton(known),

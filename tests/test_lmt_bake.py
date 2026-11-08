@@ -10,11 +10,11 @@ import math
 from contextlib import redirect_stdout, redirect_stderr
 
 from file_handlers.motion.errors import MotionWriteError
-from file_handlers.motion.lmt_codec import LmtDocument, LmtMotion, LMT_MOTION_FORMAT_CODEC as XX
+from file_handlers.motion.lmt.codec import LmtDocument, LmtMotion, LMT_MOTION_FORMAT_CODEC as XX
 from file_handlers.motion.mot_list.model import MotionSlot, MotionSlotType, EmbeddedPayload
-from file_handlers.motion.mhr_bake import MotionSegment
-from file_handlers.motion.wilds_bake import segment_timeline, bake_lmt_segments
-from file_handlers.motion.mhr_editing import next_motion_id
+from file_handlers.motion.mhr.bake import MotionSegment
+from file_handlers.motion.wilds.bake import segment_timeline, bake_lmt_segments
+from file_handlers.motion.mhr.editing import next_motion_id
 
 
 def source(name):
@@ -48,7 +48,7 @@ class TransitionTests(unittest.TestCase):
     def test_appends_exact_frame_count_with_root_fixed_and_exact_target_pose(self):
         from file_handlers.motion.evaluation.model import Rig, RigJoint, Transform
         from file_handlers.motion.evaluation.composition import compose_evaluated_pose
-        from file_handlers.motion.motion_bake_blend import append_pose_transition
+        from file_handlers.motion.baking.blend import append_pose_transition
         rig = Rig([RigJoint('Root'), RigJoint('Waist_00', parent_index=0)])
         root = Transform((5., 2., 7.), (0., math.sin(.2), 0., math.cos(.2)))
         start = compose_evaluated_pose(rig, 1, (root, Transform((0., 1., 0.))), (1., 1.))
@@ -176,7 +176,7 @@ class NativeBakeTests(unittest.TestCase):
     def test_cli_multifile_dry_run_reports_ranges_without_publishing(self):
         from tools.cli.main import build_parser
         from tools.cli.runtime import main
-        from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
+        from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
         from file_handlers.motion.preview.mhr_assets import find_rise_installation
         if not find_rise_installation():
             self.skipTest('Rise installation absent')
@@ -202,14 +202,14 @@ class NativeBakeTests(unittest.TestCase):
             self.assertEqual(TARGET.read_bytes(), before)
 
     def test_two_lmt_files_bake_with_weaponhold_and_stable_roundtrip(self):
-        from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
+        from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
         from file_handlers.motion.preview.mhr_assets import MhrPreviewAssets, preview_context, find_rise_installation
         from file_handlers.motion.motlist_handler import MotListHandler
-        from file_handlers.motion.mhr_import import verify_native_contract
-        from file_handlers.motion.lmt_events import sampled_weapon_hold_keys
-        from file_handlers.motion.lmt_import import verify_hold_keys
-        from file_handlers.motion.preview.mhr_attachments import weapon_hold_properties
-        from file_handlers.motion.mhr_import import idle_template
+        from file_handlers.motion.mhr.importing import verify_native_contract
+        from file_handlers.motion.lmt.events import sampled_weapon_hold_keys
+        from file_handlers.motion.lmt.holds import verify_hold_keys
+        from file_handlers.motion.mhr.attachments import weapon_hold_properties
+        from file_handlers.motion.mhr.importing import idle_template
         if not find_rise_installation():
             self.skipTest('Rise installation absent')
         sources = {}

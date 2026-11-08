@@ -1,5 +1,5 @@
 """Delete selected native CLIP sequences."""
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
 from tools.cli.runtime import EditResult
 from .sequence_copy import categories
 
@@ -13,7 +13,7 @@ def configure(parser):
 
 
 def run(args):
-    from file_handlers.motion.mhr_clip_editing import delete_sequences
+    from file_handlers.motion.mhr.clip_editing import delete_sequences
     document = RISE.parse(args.source.read_bytes(), label=str(args.source))
     result = delete_sequences(document, args.motion, categories=args.categories,
                               positions=args.positions, scope=args.scope)

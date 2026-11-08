@@ -3,11 +3,11 @@ from dataclasses import asdict, dataclass
 import math
 import struct
 
-from .binary import ReadContext, align_up
-from .errors import MotionWriteError
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC, MHR_PROFILE
-from .mot_clip.parser_v43 import CompactClipV43Parser
-from .sequence.model import SequenceCategory
+from ..binary import ReadContext, align_up
+from ..errors import MotionWriteError
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC, MHR_PROFILE
+from ..mot_clip.parser_v43 import CompactClipV43Parser
+from ..sequence.model import SequenceCategory
 
 
 def snapshot(value):
@@ -359,7 +359,7 @@ def copy_sequences(document, source_id, target_id, *, categories=None, positions
     document = materialize(document)
     donor = materialize(donor) if donor is not None else document
     document = private_motion(document, target_id, target_scope)
-    from .mhr_batch import detach_sequence
+    from .batch import detach_sequence
     for index in range(len(Owner(document,target_id,target_scope).records)):
         document=detach_sequence(document,target_id,sequence=index,scope=target_scope)
     source, target = Owner(donor, source_id, source_scope), Owner(document, target_id, target_scope)
@@ -397,7 +397,7 @@ def copy_sequences(document, source_id, target_id, *, categories=None, positions
 def delete_sequences(document, motion_id, *, categories=None, positions=None, scope='motion'):
     document = materialize(document)
     document = private_motion(document, motion_id, scope)
-    from .mhr_batch import detach_sequence
+    from .batch import detach_sequence
     for index in range(len(Owner(document,motion_id,scope).records)):
         document=detach_sequence(document,motion_id,sequence=index,scope=scope)
     owner = Owner(document, motion_id, scope)
@@ -410,11 +410,11 @@ def edit_clip(document, motion_id, *, sequence=None, category=None, scope='motio
               donor=None, source_id=None, source_sequence=None, source_category=None, source_scope='motion',
               node_index=None, property_index=None, key_index=None, target_node_index=None,
               target_property_index=None, shift=0.0, frame=None):
-    from .mot_clip.edit_v43 import ClipGraph
+    from ..mot_clip.edit_v43 import ClipGraph
     document = materialize(document)
     original = document
     document = private_motion(document, motion_id, scope)
-    from .mhr_batch import detach_sequence
+    from .batch import detach_sequence
     document=detach_sequence(document,motion_id,sequence=sequence,category=category,scope=scope)
     owner = Owner(document, motion_id, scope)
     record = owner.one(sequence=sequence, category=category)

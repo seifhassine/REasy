@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QSplitter, QTreeView,
                                QMessageBox, QPushButton, QComboBox, QFileDialog,
                                QDialog, QDialogButtonBox, QFormLayout, QLineEdit, QSpinBox, QApplication)
 
-from ..mhr_storage import Field, Group
-from ..mhr_editing import duplicate_slot, next_motion_id
-from ..mhr_import import default_motion_name
-from ..mhr_bake import bake_segments
+from ..mhr.storage import Field, Group
+from ..mhr.editing import duplicate_slot, next_motion_id
+from ..mhr.importing import default_motion_name
+from ..mhr.bake import bake_segments
 from .mhr_bake_dialog import MotionBakeDialog
 from .resolution import MotionListDocument
 from .widget import MotListPreviewWidget
@@ -359,8 +359,8 @@ class MhrMotListEditor(QWidget):
         dialog.deleteLater()
 
     def bake_lmt_motion(self, sources, segments, motion_id, *, replace_existing=False, align_waist=True, blend_frames=3):
-        from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
-        from ..wilds_bake import bake_lmt_segments
+        from ..mhr.codec import MHR_MOTION_FORMAT_CODEC
+        from ..wilds.bake import bake_lmt_segments
         family = weapon_family(self.document.name)
         if self.read_only or not self.document.name.lower().startswith('plw_') or family is None:
             raise ValueError('LMT baking requires an editable Rise hunter motion list')

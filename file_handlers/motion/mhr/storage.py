@@ -7,12 +7,12 @@ from itertools import accumulate
 import struct
 import math
 
-from .binary import align_up
-from .errors import MotionWriteError
-from .mot_list.model import MotList
-from .mot.model import Joint, Motion, SyncPointGrid
-from .sequence.model import SequenceTrack
-from .mhr_tracks import encode_track
+from ..binary import align_up
+from ..errors import MotionWriteError
+from ..mot_list.model import MotList
+from ..mot.model import Joint, Motion, SyncPointGrid
+from ..sequence.model import SequenceTrack
+from .tracks import encode_track
 from utils.hash_util import murmur3_hash, murmur3_hash_utf16le
 
 
@@ -144,7 +144,7 @@ def auxiliary_shape(motion):
 
 def clip_shape(clip):
     """Identity and unbound fields; scalar/name edits remain source-bound."""
-    from .mot_clip.model import ClipPropertyType
+    from ..mot_clip.model import ClipPropertyType
     def flatten(roots, label):
         items=list(roots);seen=set()
         for item in items:
@@ -204,8 +204,8 @@ def slot_shape(model):
 
 def write_document(model: MhrMotList) -> bytes:
     validate_bound_model(model)
-    from .mhr_tree import build_tree, validate_tree
-    from .mhr_structure import Layout, Splice
+    from .tree import build_tree, validate_tree
+    from .structure import Layout, Splice
     changed = []
     for start,end,tree in model.tree_spans:
         validate_tree(tree)
@@ -214,7 +214,7 @@ def write_document(model: MhrMotList) -> bytes:
     raw = _write_fields_tracks(model)
     if not changed:
         return raw
-    from .mhr_codec import MHR_MOTION_FORMAT_CODEC as codec
+    from .codec import MHR_MOTION_FORMAT_CODEC as codec
     current = codec.parse(raw)
     # Field/track edits can move payloads. Their order and sharing remain fixed.
     original_index = {start:i for i,(start,_,_) in enumerate(model.tree_spans)}

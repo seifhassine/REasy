@@ -2,12 +2,12 @@
 import math
 import struct
 
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from .evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
-from .mhr_editing import validate_slot_order
-from .errors import MotionWriteError
-from .evaluation.sampling import sample_track
-from .mot.model import TrackFamily
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from ..evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
+from .editing import validate_slot_order
+from ..errors import MotionWriteError
+from ..evaluation.sampling import sample_track
+from ..mot.model import TrackFamily
 
 
 def round_frame(value):

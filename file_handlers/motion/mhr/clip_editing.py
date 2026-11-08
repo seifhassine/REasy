@@ -2,12 +2,12 @@
 from dataclasses import asdict
 import struct
 
-from .binary import ReadContext, align_up
-from .errors import MotionWriteError
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC, MHR_PROFILE
-from .mot_clip.parser_v43 import CompactClipV43Parser
-from .mot_clip.model import ClipPropertyType
-from .mhr_structure import copy_sequences, delete_sequences, edit_clip
+from ..binary import ReadContext, align_up
+from ..errors import MotionWriteError
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC, MHR_PROFILE
+from ..mot_clip.parser_v43 import CompactClipV43Parser
+from ..mot_clip.model import ClipPropertyType
+from .structure import copy_sequences, delete_sequences, edit_clip
 
 
 def clone_bool_track(document, source_id, target_id, category, track_name, property_name, start, end):

@@ -12,10 +12,10 @@ import time
 
 REASY=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REASY))
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as C
-from file_handlers.motion.mhr_batch import RiseEditSession,copy_event,audit_shared_payloads,audit_shared_sequences
-from file_handlers.motion.mhr_structure import Owner
-from file_handlers.motion.mhr_validation import document_value,assert_other_slots
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as C
+from file_handlers.motion.mhr.batch import RiseEditSession,copy_event,audit_shared_payloads,audit_shared_sequences
+from file_handlers.motion.mhr.structure import Owner
+from file_handlers.motion.mhr.validation import document_value,assert_other_slots
 from file_handlers.motbank.motbank_file import MotbankFile
 from file_handlers.uvar.uvar_file import UVarFile
 from services.mhr.motion_batch import validate_references,execute_plan

@@ -3,8 +3,8 @@ from dataclasses import replace
 from fractions import Fraction
 import math
 
-from .errors import MotionWriteError
-from .motion_root import ROOT_TRANSFORM_MODES
+from ..errors import MotionWriteError
+from .root import ROOT_TRANSFORM_MODES
 
 
 BAKE_FPS = 60

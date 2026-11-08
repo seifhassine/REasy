@@ -1,10 +1,10 @@
 """Headless Rise operations. Every structural operation returns fresh bindings."""
 import struct
 
-from .binary import align_up
-from .errors import MotionWriteError
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from .mhr_structure import Layout,Splice,materialize,Owner,private_motion
+from ..binary import align_up
+from ..errors import MotionWriteError
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from .structure import Layout,Splice,materialize,Owner,private_motion
 
 
 def slot_index(document,motion_id):
@@ -73,7 +73,7 @@ def rewrite_slots(document, records, *, append_payload=None, payload_sources=Non
                 for next_start,next_end,shared in following:
                     if not shared:break
                     if next_start in retained:
-                        from .mhr_editing import _copy_skeleton
+                        from .editing import _copy_skeleton
                         data=bytearray(raw[next_start:next_end])
                         skeleton,joints=_copy_skeleton(raw,start,len(data))
                         struct.pack_into('<IQ',data,12,len(data)+len(skeleton),len(data))
@@ -156,7 +156,7 @@ def replace_clip(document,motion_id,graph,metadata,*,sequence=None,category=None
 
 def detach_sequence(document,motion_id,*,sequence=None,category=None,scope='motion'):
     """Give the selected wrapper, CLIP, metadata and override table private ownership."""
-    from .mhr_structure import _clone
+    from .structure import _clone
     document=private_motion(materialize(document),motion_id,scope)
     owner=Owner(document,motion_id,scope);record=owner.one(sequence=sequence,category=category)
     selected=owner.records.index(record);raw=document.source
@@ -185,8 +185,8 @@ def copy_event(document,motion_id,*,donor,source_id,node_index,authored_id,
     properties maps a unique leaf name to {frames, values, start, end}. It does
     not infer hit-data IDs, audio trigger IDs, enum equivalence or loop behavior.
     """
-    from .mot_clip.edit_v43 import ClipGraph
-    from .mot_clip.model import CONTAINER_PROPERTY_TYPES
+    from ..mot_clip.edit_v43 import ClipGraph
+    from ..mot_clip.model import CONTAINER_PROPERTY_TYPES
     document=materialize(document);donor=materialize(donor)
     target=Owner(document,motion_id,scope).one(sequence=sequence,category=category)
     source=Owner(donor,source_id,source_scope).one(sequence=source_sequence,category=source_category)

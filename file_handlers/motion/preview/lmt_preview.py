@@ -3,11 +3,11 @@ from dataclasses import replace
 
 from .wilds_preview import WildsPreview
 from .widget import MotListPreviewWidget
-from ..lmt_codec import xx_weapon_family
-from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
-from ..mhr_import import idle_template
+from ..lmt.codec import xx_weapon_family
+from ..mhr.codec import MHR_MOTION_FORMAT_CODEC
+from ..mhr.importing import idle_template
 from ..evaluation.lmt_retarget import LmtToRise
-from .lmt_attachments import lmt_weapon_attachment
+from ..lmt.attachments import lmt_weapon_attachment
 
 
 class LmtPreview(WildsPreview):

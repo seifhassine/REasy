@@ -1,6 +1,6 @@
 """Provisional XX weapon attachments from event group zero."""
-from .mhr_attachments import weapon_attachment
-from ..lmt_events import lmt_attachment_state
+from ..mhr.attachments import weapon_attachment
+from .events import lmt_attachment_state
 
 
 def lmt_weapon_attachment(part, motion, frame, *, default_properties=()):

@@ -1,6 +1,6 @@
 """Clone a four-key BOOL track using the source-preserving compact CLIP writer."""
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from file_handlers.motion.mhr_clip_editing import clone_bool_track
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.clip_editing import clone_bool_track
 
 
 def configure(parser):

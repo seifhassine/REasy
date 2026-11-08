@@ -3,11 +3,11 @@ from dataclasses import asdict
 import math
 import struct
 
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from .mhr_structure import Owner, materialize
-from .mhr_validation import assert_other_slots
-from .errors import MotionWriteError
-from .mot_clip.model import ClipPropertyType, ASCII_VALUE_PROPERTY_TYPES, UTF16_VALUE_PROPERTY_TYPES
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from .structure import Owner, materialize
+from .validation import assert_other_slots
+from ..errors import MotionWriteError
+from ..mot_clip.model import ClipPropertyType, ASCII_VALUE_PROPERTY_TYPES, UTF16_VALUE_PROPERTY_TYPES
 
 
 class _Edit:

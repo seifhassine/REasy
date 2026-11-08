@@ -8,18 +8,18 @@ from bisect import bisect_right
 import numpy as np
 
 from utils.hash_util import murmur3_hash_utf16le
-from .binary import ReadContext, pad_to_alignment
-from .errors import MotionWriteError
-from .evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
-from .evaluation.wilds_retarget import wilds_to_rise
-from .evaluation.binding import bind_motion
-from .evaluation.sampling import MotionEvaluator
-from .evaluation.math3d import decompose_row_srt
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC, MHR_PROFILE
-from .mhr_editing import _copy_skeleton
-from .mhr_tracks import encode_track
-from .mot.model import KeyTrack, TrackFamily
-from .mot_clip.parser_v43 import CompactClipV43Parser
+from ..binary import ReadContext, pad_to_alignment
+from ..errors import MotionWriteError
+from ..evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
+from ..evaluation.wilds_retarget import wilds_to_rise
+from ..evaluation.binding import bind_motion
+from ..evaluation.sampling import MotionEvaluator
+from ..evaluation.math3d import decompose_row_srt
+from .codec import MHR_MOTION_FORMAT_CODEC as CODEC, MHR_PROFILE
+from .editing import _copy_skeleton
+from .tracks import encode_track
+from ..mot.model import KeyTrack, TrackFamily
+from ..mot_clip.parser_v43 import CompactClipV43Parser
 
 # Native Rise motions drive inverse kinematics through these control joints, and
 # the runtime solves each limb toward the world transform stored in them.  The
@@ -205,9 +205,9 @@ def bake_motion(source_motion, rig, hold_document, *, name=None, family=None, se
 
 
 def source_retarget(motion, hold_document, family=None):
-    from .lmt_codec import LmtMotion
+    from ..lmt.codec import LmtMotion
     if isinstance(motion, LmtMotion):
-        from .evaluation.lmt_retarget import LmtToRise
+        from ..evaluation.lmt_retarget import LmtToRise
         if hold_document is None:
             raise MotionWriteError('XX retargeting requires a native 001_Loop hold template')
         return LmtToRise(hold_document.slots[idle_template(hold_document)].payload.value)
@@ -276,10 +276,10 @@ def bake_evaluated_motion(source_motion, poses, rig, hold_document, *, name=None
     sequence_table = len(out)
     records = []
     if sequence_source is not None:
-        from .mhr_structure import Owner, _clone
+        from .structure import Owner, _clone
         donor, donor_id = sequence_source
         records = Owner(donor, donor_id, 'motion').records
-    from .lmt_import import is_weapon_hold
+    from ..lmt.holds import is_weapon_hold
     has_hold = any(is_weapon_hold(node.node) for record in records for node in record.parsed.nodes)
     sequence_count = len(records) + int(not has_hold)
     if sequence_count > 255:
@@ -311,7 +311,7 @@ def import_motion(document, source_motion, rig, hold_document, motion_id, *, rep
     hold_keys = lmt_hold_keys(source_motion, hold_document)
     preserve_clips = replace_existing and hold_keys is not None
     if preserve_clips:
-        from .lmt_import import rewrite_hold_clips
+        from ..lmt.holds import rewrite_hold_clips
         document = rewrite_hold_clips(document, motion_id, hold_keys, source_motion.end_frame)
     payload = bake_motion(source_motion, rig, hold_document, family=family,
                           name=default_motion_name(document, motion_id) if name is None else name,
@@ -321,11 +321,11 @@ def import_motion(document, source_motion, rig, hold_document, motion_id, *, rep
 
 
 def lmt_hold_keys(motion, hold_document):
-    from .lmt_codec import LmtMotion
+    from ..lmt.codec import LmtMotion
     if not isinstance(motion, LmtMotion):
         return None
-    from .lmt_events import weapon_hold_keys
-    from .preview.mhr_attachments import weapon_hold_properties
+    from ..lmt.events import weapon_hold_keys
+    from .attachments import weapon_hold_properties
     hold = hold_document.slots[idle_template(hold_document)].payload.value
     return weapon_hold_keys(motion, weapon_hold_properties(hold))
 
@@ -422,7 +422,7 @@ def install_motion(document, payload, hold_document, motion_id, *, replace_exist
     else:
         struct.pack_into('<I', output, 48, count+1)
         struct.pack_into('<Q', output, blocks['pointer'], blocks['motion'])
-    from .mhr_editing import order_slots
+    from .editing import order_slots
     return order_slots(CODEC.parse(bytes(output), label='imported MOTLIST 528'))
 
 
@@ -433,7 +433,7 @@ def verify_imported_motion(source_motion, imported_motion, rig, *, family=None, 
     authored values with the native goal convention, so they are excluded here
     and covered by :func:`verify_native_contract` instead.
     """
-    from .lmt_import import verify_weapon_hold
+    from ..lmt.holds import verify_weapon_hold
     verify_weapon_hold(source_motion, imported_motion, hold_document)
     retarget = source_retarget(source_motion, hold_document, family)
     source = retarget.evaluator(retarget.bind(source_motion, rig), PROFILE.sampling_policy,
@@ -469,7 +469,7 @@ def verify_native_contract(document, motion_id, imported_motion, rig, *, goals=I
     or confirmed in game; the preview evaluator checks none of them, which is why
     an import can look perfect in REasy and still collapse to a T-pose.
     """
-    from .mhr_editing import validate_slot_order
+    from .editing import validate_slot_order
     validate_slot_order(document)
     pointers, rows = struct.unpack_from('<QQ', document.source, 16)
     slots = [index for index, slot in enumerate(document.slots) if slot.motion_id == motion_id]

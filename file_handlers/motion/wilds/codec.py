@@ -6,10 +6,10 @@ Writing is deliberately unavailable until those sections have relocation support
 from dataclasses import dataclass, field, replace
 import struct
 
-from .mhr_codec import MhrParser, MHR_PROFILE
-from .mhr_storage import MhrMotList
-from .wilds_tracks import decode_track
-from .errors import MotionWriteError
+from ..mhr.codec import MhrParser, MHR_PROFILE
+from ..mhr.storage import MhrMotList
+from .tracks import decode_track
+from ..errors import MotionWriteError
 
 
 WILDS_PROFILE = replace(MHR_PROFILE, name='Monster Hunter Wilds',

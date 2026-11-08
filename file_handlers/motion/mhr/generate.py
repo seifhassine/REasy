@@ -3,10 +3,10 @@ import math
 import struct
 
 from utils.hash_util import murmur3_hash_utf16le
-from .binary import pad_to_alignment
-from .errors import MotionWriteError
-from .mhr_tracks import encode_track
-from .mot.model import TrackFamily
+from ..binary import pad_to_alignment
+from ..errors import MotionWriteError
+from .tracks import encode_track
+from ..mot.model import TrackFamily
 
 
 def finite(values,label):
@@ -71,12 +71,12 @@ def build_motion(motion, *, sequence_templates=(), translation_w=(), joint_unkno
     if sequence_templates:
         if len(sequence_templates)>255:raise MotionWriteError('Too many MOT sequences')
         st=len(out);out.extend(bytes(len(sequence_templates)*8));pad_to_alignment(out,16)
-        from .mhr_structure import _clone
+        from .structure import _clone
         for i,(document,record) in enumerate(sequence_templates):
             struct.pack_into('<Q',out,st+i*8,len(out));out.extend(_clone(document,record,len(out),0))
     ap=0
     if motion.append is not None:
-        from .mot.writer import MotV65Writer
+        from ..mot.writer import MotV65Writer
         ap=len(out);MotV65Writer._write_append(None,out,motion);pad_to_alignment(out,16)
     sync=0
     if motion.sync_points:

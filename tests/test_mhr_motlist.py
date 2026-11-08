@@ -10,14 +10,14 @@ import numpy as np
 
 from file_handlers.motion.binary import ReadContext
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_tracks import decode_values, decode_track, encode_track
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.tracks import decode_values, decode_track, encode_track
 from file_handlers.motion.mot.model import TrackFamily, KeyTrack
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.evaluation import rig_from_motion_skeleton
 from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE
 from file_handlers.motion.preview.controller import MotionPreviewController
-from file_handlers.motion.mhr_editing import duplicate_slot, next_motion_id
+from file_handlers.motion.mhr.editing import duplicate_slot, next_motion_id
 from file_handlers.motion.preview.clip_timeline import sequence_lanes
 
 

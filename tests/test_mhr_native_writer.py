@@ -5,12 +5,12 @@ from pathlib import Path
 import struct
 import unittest
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as C
-from file_handlers.motion.mhr_batch import (RiseEditSession,install_payload,delete_slot,bind_slot,copy_event,audit_shared_payloads)
-from file_handlers.motion.mhr_tree import build_tree,set_leaf,RiseMotionReference
-from file_handlers.motion.mhr_generate import build_motion
-from file_handlers.motion.mhr_structure import Owner,edit_clip,copy_sequences,delete_sequences
-from file_handlers.motion.mhr_validation import document_value,assert_other_slots,motion_value
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as C
+from file_handlers.motion.mhr.batch import (RiseEditSession,install_payload,delete_slot,bind_slot,copy_event,audit_shared_payloads)
+from file_handlers.motion.mhr.tree import build_tree,set_leaf,RiseMotionReference
+from file_handlers.motion.mhr.generate import build_motion
+from file_handlers.motion.mhr.structure import Owner,edit_clip,copy_sequences,delete_sequences
+from file_handlers.motion.mhr.validation import document_value,assert_other_slots,motion_value
 from file_handlers.motion.mot_tree.model import TreeLink,TreeLinkType
 from file_handlers.motion.errors import MotionParseError,MotionWriteError
 from services.mhr.motion_batch import validate_references,neutral_motion

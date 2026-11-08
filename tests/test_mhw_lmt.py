@@ -9,8 +9,8 @@ import numpy as np
 from file_handlers.motion.binary import ReadContext
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
 from file_handlers.motion.format_registry import require_motion_format
-from file_handlers.motion.lmt_codec import LMT_MOTION_FORMAT_CODEC, LmtMotion
-from file_handlers.motion.mhw_lmt_codec import (
+from file_handlers.motion.lmt.codec import LMT_MOTION_FORMAT_CODEC, LmtMotion
+from file_handlers.motion.lmt.mhw_codec import (
     MHW_LMT_MOTION_FORMAT_CODEC as MHW, MhwLmtMotion,
     decode_mhw_track, read_mod3_skeleton,
 )
@@ -19,7 +19,7 @@ from file_handlers.motion.evaluation.binding import bind_motion
 from file_handlers.motion.evaluation.sampling import MotionEvaluator
 from file_handlers.motion.preview.support_registry import MHW_LMT_MOTION_PREVIEW_SUPPORT
 from file_handlers.motion.motlist_handler import MotListHandler
-from file_handlers.motion.mhw_timeline import property_hash
+from file_handlers.motion.lmt.mhw_timeline import property_hash
 
 
 def mod3(*, parents=(255, 0)):

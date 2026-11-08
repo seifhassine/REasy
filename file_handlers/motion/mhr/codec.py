@@ -4,18 +4,18 @@ from __future__ import annotations
 from dataclasses import replace
 import struct
 
-from .binary import ReadContext
-from .errors import MotionParseError
-from .profiles import DMC5_PROFILE
-from .mot.model import Motion, Skeleton, Joint, AnimationNode, TrackFamily
-from .mot_list.model import EmbeddedPayload, MotionSlot, MotionSlotType, MotionSlotFlags
-from .sequence.model import SequenceData, SequenceCategory, SequenceTrack
-from .mot_clip.model import (CONTAINER_PROPERTY_TYPES, ASCII_VALUE_PROPERTY_TYPES,
+from ..binary import ReadContext
+from ..errors import MotionParseError
+from ..profiles import DMC5_PROFILE
+from ..mot.model import Motion, Skeleton, Joint, AnimationNode, TrackFamily
+from ..mot_list.model import EmbeddedPayload, MotionSlot, MotionSlotType, MotionSlotFlags
+from ..sequence.model import SequenceData, SequenceCategory, SequenceTrack
+from ..mot_clip.model import (CONTAINER_PROPERTY_TYPES, ASCII_VALUE_PROPERTY_TYPES,
                              UTF16_VALUE_PROPERTY_TYPES, ClipPropertyType)
-from .mot_clip.parser_v43 import CompactClipV43Parser
-from .mhr_storage import (MhrMotList, MhrJoint, MhrMotion, MhrSyncPointGrid, MhrFrameCurve, MhrSequenceTrack,
+from ..mot_clip.parser_v43 import CompactClipV43Parser
+from .storage import (MhrMotList, MhrJoint, MhrMotion, MhrSyncPointGrid, MhrFrameCurve, MhrSequenceTrack,
                           Relocation, Field, Group, TrackBinding, write_document, auxiliary_shape, motion_shape, clip_shape, slot_shape)
-from .mhr_tracks import decode_track
+from .tracks import decode_track
 
 
 MHR_PROFILE = replace(DMC5_PROFILE, name='Monster Hunter Rise / Sunbreak',
@@ -185,7 +185,7 @@ class MhrParser:
                 self.array_field(c, group, f'Frame curve {i} frame {j}', r+4+j*8, 'f', point, 0)
                 self.array_field(c, group, f'Frame curve {i} scalar {j}', r+8+j*8, 'f', point, 1)
         if pointers[8]:
-            from .mot.parser import MotV65Parser
+            from ..mot.parser import MotV65Parser
             # MotionAppend retains its own pointer base in both versions.
             append_base = base+pointers[8]
             motion.append, _ = MotV65Parser._parse_append(self, c, append_base)
@@ -220,12 +220,12 @@ class MhrParser:
                 self.field(c, group, 'Stored hash', remaps+i*8+4, 'I', owner=remap, attr='stored_hash')
 
     def array_field(self, c, group, name, offset, fmt, values, index):
-        from .mhr_auxiliary import ArrayValue
+        from .auxiliary import ArrayValue
         return self.field(c, group, name, offset, fmt, owner=ArrayValue(values, index), attr='value')
 
     def motion(self, c, base, end, group):
         if c.bytes(base+4, 4) == b'mtre':
-            from .mhr_tree import parse_tree
+            from .tree import parse_tree
             return parse_tree(self, c, base, end, group)
         mot_version = c.u32(base)
         c.require(base, 128, f'MOT {mot_version} header')

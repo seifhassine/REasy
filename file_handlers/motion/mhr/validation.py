@@ -2,7 +2,7 @@
 from dataclasses import asdict
 import struct
 
-from .mhr_tree import RiseTree
+from .tree import RiseTree
 
 
 def motion_value(motion):

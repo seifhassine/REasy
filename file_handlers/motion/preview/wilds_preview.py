@@ -8,7 +8,7 @@ from .widget import MotListPreviewWidget
 from .mhr_assets import MhrAssetLoader
 from .assembly_renderer import MotionAssemblyRenderer
 from ..evaluation.wilds_retarget import wilds_to_rise
-from ..wilds_weapons import WILDS_WEAPONS, wilds_weapon_family  # WILDS_WEAPONS stays importable here
+from ..wilds.weapons import WILDS_WEAPONS, wilds_weapon_family  # WILDS_WEAPONS stays importable here
 
 
 class WildsPreview(MotListPreviewWidget):

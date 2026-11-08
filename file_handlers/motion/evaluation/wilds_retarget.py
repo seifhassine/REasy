@@ -5,7 +5,7 @@ are an authored pose, not a mesh bind pose: subtracting them would turn the firs
 animation pose into the target T pose. Transfer anatomical world rotations and
 solve target-local rotations, composing Wilds' extra Spine/Knee/Palm joints.
 
-Weapon carriers are family specific (:mod:`file_handlers.motion.wilds_weapons`).
+Weapon carriers are family specific (:mod:`file_handlers.motion.wilds.weapons`).
 A shielded model's Rise part hangs off ``R_Weapon_00`` while its Wilds driver is
 ``R_Shield``, a child of the forearm: that carrier reproduces the source *world*
 transform instead of the source local translation, so the shield stays on the arm.
@@ -14,7 +14,7 @@ from functools import lru_cache
 
 import numpy as np
 
-from ..wilds_weapons import weapon_attach
+from ..wilds.weapons import weapon_attach
 from .binding import bind_motion
 from .composition import compose_evaluated_pose
 from .math3d import decompose_row_srt, transform_matrix

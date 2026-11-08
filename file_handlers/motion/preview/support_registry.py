@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from ..dmc5_codec import DMC5_MOTION_FORMAT_CODEC
-from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
-from ..wilds_codec import WILDS_MOTION_FORMAT_CODEC
-from ..lmt_codec import LMT_MOTION_FORMAT_CODEC
-from ..mhw_lmt_codec import MHW_LMT_MOTION_FORMAT_CODEC
+from ..mhr.codec import MHR_MOTION_FORMAT_CODEC
+from ..wilds.codec import WILDS_MOTION_FORMAT_CODEC
+from ..lmt.codec import LMT_MOTION_FORMAT_CODEC
+from ..lmt.mhw_codec import MHW_LMT_MOTION_FORMAT_CODEC
 from dataclasses import replace
 from ..evaluation.mhr import MHR_EVALUATION_PROFILE
 from ..evaluation.sampling import RotationInterpolation

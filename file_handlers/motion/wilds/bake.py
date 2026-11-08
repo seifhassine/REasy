@@ -2,16 +2,16 @@
 from dataclasses import replace
 import math
 
-from .errors import MotionWriteError
-from .evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
-from .mhr_bake import _slot
-from .mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from .mhr_import import (bake_evaluated_motion, default_motion_name, install_motion,
+from ..errors import MotionWriteError
+from ..evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
+from ..mhr.bake import _slot
+from ..mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from ..mhr.importing import (bake_evaluated_motion, default_motion_name, install_motion,
                          validate_import_target, verify_evaluated_motion, verify_native_contract, source_retarget)
-from .mhr_storage import MhrMotion
-from .motion_root import adjust_root_poses
-from .motion_bake_timing import BAKE_FPS, sample_schedule
-from .motion_bake_blend import blend_poses, append_pose_transition
+from ..mhr.storage import MhrMotion
+from ..baking.root import adjust_root_poses
+from ..baking.timing import BAKE_FPS, sample_schedule
+from ..baking.blend import blend_poses, append_pose_transition
 
 
 def _source_document(document, source, sources):
@@ -74,12 +74,12 @@ def bake_wilds_segments(document, donor, segments, rig, hold_document, motion_id
                        frames_per_second=fps, looping=False)
     hold_keys = None
     sequence_source = None
-    from .lmt_codec import LmtMotion
+    from ..lmt.codec import LmtMotion
     if isinstance(samples[0][0], LmtMotion):
-        from .lmt_events import sampled_weapon_hold_keys
-        from .preview.mhr_attachments import weapon_hold_properties
-        from .mhr_import import idle_template
-        from .lmt_import import rewrite_hold_clips
+        from ..lmt.events import sampled_weapon_hold_keys
+        from ..mhr.attachments import weapon_hold_properties
+        from ..mhr.importing import idle_template
+        from ..lmt.holds import rewrite_hold_clips
         hold = hold_document.slots[idle_template(hold_document)].payload.value
         hold_keys = sampled_weapon_hold_keys(samples, weapon_hold_properties(hold))
         if replace_existing:
@@ -94,7 +94,7 @@ def bake_wilds_segments(document, donor, segments, rig, hold_document, motion_id
         raise MotionWriteError('Baked MOTLIST did not roundtrip stably')
     actual = _slot(reopened, motion_id).payload.value
     if hold_keys is not None:
-        from .lmt_import import verify_hold_keys
+        from ..lmt.holds import verify_hold_keys
         verify_hold_keys(actual, hold_keys)
     error = verify_evaluated_motion(motion, poses, actual, rig)
     goals = verify_native_contract(reopened, motion_id, actual, rig)
@@ -111,7 +111,7 @@ def bake_wilds_segments(document, donor, segments, rig, hold_document, motion_id
 
 
 def bake_lmt_segments(document, sources, segments, rig, hold_document, motion_id, **options):
-    from .lmt_codec import LmtDocument
+    from ..lmt.codec import LmtDocument
     if not sources or any(not isinstance(source, LmtDocument) for source in sources.values()):
         raise MotionWriteError('LMT segment baking requires one or more LMT source documents')
     return bake_wilds_segments(document, next(iter(sources.values())), segments, rig, hold_document,

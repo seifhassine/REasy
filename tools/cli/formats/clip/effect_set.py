@@ -1,6 +1,6 @@
 """Command adapter for native CLIP event editing."""
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_events import set_effect
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.events import set_effect
 
 
 def configure(parser):

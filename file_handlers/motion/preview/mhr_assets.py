@@ -24,8 +24,8 @@ from utils.hash_util import murmur3_hash_utf16le
 from ..evaluation.mesh_adapter import rig_from_re_engine_mesh
 from .target import PreviewMeshPart, RigPreviewTarget
 from .weapon_motion import WeaponMotion
-from .mhr_attachments import weapon_hold_properties
-from ..mhr_codec import MHR_MOTION_FORMAT_CODEC
+from ..mhr.attachments import weapon_hold_properties
+from ..mhr.codec import MHR_MOTION_FORMAT_CODEC
 
 
 # Native prefab identities; attachment transforms come from PlayerWeaponCtrl.

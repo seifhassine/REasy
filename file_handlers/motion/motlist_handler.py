@@ -22,9 +22,9 @@ class MotListHandler(BaseFileHandler):
         return MotListFile.can_handle(data)
 
     def supports_editing(self) -> bool:
-        from .wilds_codec import WILDS_MOTION_FORMAT_CODEC
-        from .lmt_codec import LMT_MOTION_FORMAT_CODEC
-        from .mhw_lmt_codec import MHW_LMT_MOTION_FORMAT_CODEC
+        from .wilds.codec import WILDS_MOTION_FORMAT_CODEC
+        from .lmt.codec import LMT_MOTION_FORMAT_CODEC
+        from .lmt.mhw_codec import MHW_LMT_MOTION_FORMAT_CODEC
         return self.motlist_file is not None and self.motlist_file.codec not in (WILDS_MOTION_FORMAT_CODEC, LMT_MOTION_FORMAT_CODEC, MHW_LMT_MOTION_FORMAT_CODEC)
 
     def read(self, data: bytes) -> None:
@@ -61,19 +61,19 @@ class MotListHandler(BaseFileHandler):
         return result
 
     def create_viewer(self):
-        from .mhw_lmt_codec import MHW_LMT_MOTION_FORMAT_CODEC
+        from .lmt.mhw_codec import MHW_LMT_MOTION_FORMAT_CODEC
         if self.motlist_file.codec is MHW_LMT_MOTION_FORMAT_CODEC:
             from .preview.mhw_lmt_preview import MhwLmtPreview
             return MhwLmtPreview(self)
-        from .lmt_codec import LMT_MOTION_FORMAT_CODEC
+        from .lmt.codec import LMT_MOTION_FORMAT_CODEC
         if self.motlist_file.codec is LMT_MOTION_FORMAT_CODEC:
             from .preview.lmt_preview import LmtPreview
             return LmtPreview(self)
-        from .wilds_codec import WILDS_MOTION_FORMAT_CODEC
+        from .wilds.codec import WILDS_MOTION_FORMAT_CODEC
         if self.motlist_file.codec is WILDS_MOTION_FORMAT_CODEC:
             from .preview.wilds_preview import WildsPreview
             return WildsPreview(self)
-        from .mhr_storage import MhrMotList
+        from .mhr.storage import MhrMotList
         if isinstance(self.model, MhrMotList):
             from .preview.mhr_editor import MhrMotListEditor
             viewer = MhrMotListEditor(self)

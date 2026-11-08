@@ -1,10 +1,10 @@
 """Rotation-only waist alignment and bounded seam interpolation."""
 from dataclasses import replace
 
-from .errors import MotionWriteError
-from .evaluation.composition import compose_evaluated_pose
-from .evaluation.math3d import inverse_quaternion, multiply_quaternions
-from .evaluation.sampling import interpolate_quaternion, RotationInterpolation
+from ..errors import MotionWriteError
+from ..evaluation.composition import compose_evaluated_pose
+from ..evaluation.math3d import inverse_quaternion, multiply_quaternions
+from ..evaluation.sampling import interpolate_quaternion, RotationInterpolation
 
 
 def align_waist_rotations(rotations, ranges):
@@ -83,7 +83,7 @@ def blend_poses(poses, rig, ranges, *, align_waist=True, blend_frames=3):
 
 def append_pose_transition(poses, rig, target, frame_count):
     """Append new frames approaching a pose, keeping Root at the current endpoint."""
-    from .motion_root import root_index
+    from .root import root_index
     if isinstance(frame_count, bool) or not isinstance(frame_count, int) or frame_count <= 0:
         raise MotionWriteError('Transition frames must be a positive integer')
     start = poses[-1]

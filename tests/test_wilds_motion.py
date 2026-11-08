@@ -10,10 +10,10 @@ import numpy as np
 from file_handlers.motion.binary import ReadContext
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
 from file_handlers.motion.format_registry import require_motion_format
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC
-from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC
-from file_handlers.motion.wilds_tracks import decode_values
-from file_handlers.motion.mhr_tracks import decode_values as decode_495
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC
+from file_handlers.motion.wilds.codec import WILDS_MOTION_FORMAT_CODEC
+from file_handlers.motion.wilds.tracks import decode_values
+from file_handlers.motion.mhr.tracks import decode_values as decode_495
 from file_handlers.motion.mot.model import Joint, Skeleton, Motion, AnimationNode, KeyTrack, TrackFamily
 from file_handlers.motion.evaluation.binding import bind_motion
 from file_handlers.motion.evaluation.model import Rig, RigJoint, Transform

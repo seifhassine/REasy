@@ -1,7 +1,7 @@
 """Motion catalog/CLIP inspection and native slot duplication."""
 from file_handlers.motion.inspection import describe_motion_list
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from file_handlers.motion.mhr_editing import duplicate_slot, next_motion_id
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.mhr.editing import duplicate_slot, next_motion_id
 from tools.cli.runtime import integer
 from tools.cli.runtime import EditResult
 

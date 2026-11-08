@@ -8,7 +8,7 @@ from file_handlers.motion.evaluation.model import Rig
 from file_handlers.motion.evaluation.source_adapter import rig_from_motion_skeleton
 from file_handlers.motion.preview.controller import MotionPreviewController
 from file_handlers.motion.preview.support_registry import MHW_LMT_MOTION_PREVIEW_SUPPORT
-from file_handlers.motion.mhw_lmt_codec import MHW_LMT_MOTION_FORMAT_CODEC
+from file_handlers.motion.lmt.mhw_codec import MHW_LMT_MOTION_FORMAT_CODEC
 from test_mhw_lmt import lmt, mod3
 
 

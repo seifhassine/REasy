@@ -4,9 +4,9 @@ import struct
 from pathlib import Path
 import tempfile
 
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as CODEC
-from file_handlers.motion.mhr_editing import validate_slot_order
-from file_handlers.motion.mhr_retime import retime_motion, round_frame, properties
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
+from file_handlers.motion.mhr.editing import validate_slot_order
+from file_handlers.motion.mhr.retime import retime_motion, round_frame, properties
 from file_handlers.rcol.rcol_handler import RcolHandler
 from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.scalar_editing import open_document, save_edits

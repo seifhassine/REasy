@@ -7,14 +7,14 @@ import unittest
 import numpy as np
 
 from file_handlers.motion.errors import MotionWriteError
-from file_handlers.motion.mhr_codec import MHR_MOTION_FORMAT_CODEC as RISE
-from file_handlers.motion.wilds_codec import WILDS_MOTION_FORMAT_CODEC as WILDS
-from file_handlers.motion.mhr_editing import next_motion_id, duplicate_slot
-from file_handlers.motion.mhr_import import (import_motion, verify_imported_motion, verify_native_contract,
+from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as RISE
+from file_handlers.motion.wilds.codec import WILDS_MOTION_FORMAT_CODEC as WILDS
+from file_handlers.motion.mhr.editing import next_motion_id, duplicate_slot
+from file_handlers.motion.mhr.importing import (import_motion, verify_imported_motion, verify_native_contract,
                                              default_motion_name, idle_template, IK_GOAL_SOURCES, _hold_sequence)
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.preview.mhr_assets import MhrPreviewAssets, preview_context, find_rise_installation
-from file_handlers.motion.preview.mhr_attachments import weapon_hold_properties
+from file_handlers.motion.mhr.attachments import weapon_hold_properties
 from file_handlers.motion.evaluation.binding import bind_motion
 from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE as PROFILE
 from file_handlers.motion.evaluation.sampling import MotionEvaluator
@@ -271,8 +271,8 @@ class ImportTests(unittest.TestCase):
 
     def test_native_idle_hold_templates_export_for_each_weapon_family(self):
         from file_handlers.motion.binary import ReadContext
-        from file_handlers.motion.mhr_codec import MhrParser
-        from file_handlers.motion.mhr_storage import Group
+        from file_handlers.motion.mhr.codec import MhrParser
+        from file_handlers.motion.mhr.storage import Group
         for path in sorted((CORPUS/'natives/STM/player/mot').glob('plw_*_100.motlist.528')):
             with self.subTest(path=path.name):
                 document = RISE.parse(path.read_bytes())
