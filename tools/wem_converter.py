@@ -570,12 +570,20 @@ def _valid_project_dir(project_dir: Path) -> bool:
 
 def _create_project(project_dir: Path, installation: WwiseInstallation) -> None:
     project_path = project_dir / "REasyWem.wproj"
-    _run_wwise_cli(
-        _wwise_command(
-            installation.cli_path, project_path, "create-new-project"
-        ),
-        "project creation",
-    )
+    try:
+        _run_wwise_cli(
+            _wwise_command(
+                installation.cli_path, project_path, "create-new-project"
+            ),
+            "project creation",
+        )
+    except ValueError as exc:
+        raise ValueError(
+            f"Wwise could not write its project in {project_dir.parent}. "
+            "Move REasy's folder to a folder outside Program Files, Documents, Desktop "
+            "and OneDrive, or allow WwiseConsole.exe in Windows Security's "
+            f"Controlled folder access or your antivirus.\n\n{exc}"
+        ) from exc
     if not _valid_project_dir(project_dir):
         raise ValueError("Wwise project creation did not produce a complete project.")
 
