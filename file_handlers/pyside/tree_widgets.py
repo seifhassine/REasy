@@ -913,15 +913,14 @@ class AdvancedTreeView(QTreeView):
         self.add_gameobject_to_ui_direct(template_data, parent_index)
 
     def _find_node_by_object_id(self, model, start_index, object_id):
-        item = start_index.internalPointer()
+        raw = start_index.internalPointer().raw
+        if (
+            isinstance(raw, dict)
+            and raw.get("type") in ("gameobject", "folder")
+            and self.viewer.handler.id_manager.get_instance_id(raw["reasy_id"]) == self.viewer.scn.object_table[object_id]
+        ):
+            return start_index
 
-        if hasattr(item, 'raw') and isinstance(item.raw, dict):
-            instance_id = item.raw.get('instance_id')
-            if instance_id:
-                for i, obj_id in enumerate(self.viewer.scn.object_table):
-                    if obj_id == instance_id and i == object_id:
-                        return start_index
-        
         for row in range(model.rowCount(start_index)):
             child_index = model.index(row, 0, start_index)
             result = self._find_node_by_object_id(model, child_index, object_id)

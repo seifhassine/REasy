@@ -45,14 +45,16 @@ class ScnRawInspector(QFrame):
         self.clear()
 
     def set_record(self, document, scene_object, renderable) -> None:
-        instance_id = scene_object.instance_id if scene_object else renderable.source_component_id.instance_id
+        fields = (scene_object or document.components[renderable.source_component_id]).fields
+        instance_id = next((key for key, value in document.rsz_file.parsed_elements.items() if value is fields), None)
         if (self.viewer is None or self.document_id != document.document_id) and not self._mount(document):
             return
         raw_name = Path((document.source_path or document.document_id).replace("\\", "/")).name
         self.title.setText(self.tr("Raw SCN | {name} | ID {instance_id}").format(
             name=raw_name, instance_id=instance_id
         ))
-        call_later(self, 0, lambda iid=instance_id: select_instance_in_tree(getattr(self.viewer, "tree", None), iid, self._instance_indexes))
+        if instance_id is not None:
+            call_later(self, 0, lambda iid=instance_id, key=id(fields): select_instance_in_tree(getattr(self.viewer, "tree", None), iid, self._instance_indexes, key))
 
     def clear(self, text: str | None = None) -> None:
         if text is None:
@@ -118,13 +120,13 @@ class ScnRawInspector(QFrame):
                 widget.deleteLater()
 
 
-def select_instance_in_tree(tree, instance_id: int, cache: dict[int, QPersistentModelIndex] | None = None) -> None:
+def select_instance_in_tree(tree, instance_id: int, cache: dict[int, QPersistentModelIndex] | None = None, key: int | None = None) -> None:
     model = tree.model() if tree is not None else None
-    index = QModelIndex(cache.get(instance_id)) if cache and cache.get(instance_id) else QModelIndex()
+    index = QModelIndex(cache.get(key)) if cache and cache.get(key) else QModelIndex()
     if model is None or not (index.isValid() or (index := _find_instance_index(model, instance_id)).isValid()):
         return
     if cache is not None:
-        cache[instance_id] = QPersistentModelIndex(index)
+        cache[key] = QPersistentModelIndex(index)
     parent = index.parent()
     while parent.isValid():
         tree.expand(parent)
@@ -151,12 +153,12 @@ def _instance_rows(item, instance_id: int, needle: str, visited: set, build: boo
         child = item.child(row)
         data = child.data
         text = format_display_value(data[0] if isinstance(data, (list, tuple)) else data)
-        if text == "Advanced Information":
-            continue
         raw = child.raw or {}
+        if text == "Advanced Information" or raw.get("embedded") or raw.get("embedded_context"):
+            continue
         obj = raw.get("obj")
         node_id = obj.value if is_reference_type(obj) else raw.get("instance_id")
-        if node_id == instance_id or needle in text:
+        if node_id == instance_id or (node_id is None and needle in text):
             return [row]
         if node_id is not None and node_id in visited:
             continue

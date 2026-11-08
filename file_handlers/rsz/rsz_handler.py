@@ -1,9 +1,11 @@
 import functools
+import re
 import weakref
 from PySide6.QtCore import QCoreApplication, Signal, QModelIndex, Qt
 from PySide6.QtWidgets import (
     QWidget,
     QVBoxLayout,
+    QLabel,
     QMessageBox,
     QToolButton,
     QMenu,
@@ -25,6 +27,7 @@ lazy from file_handlers.rsz.pfb_16.pfb_structure import create_pfb16_resource
 lazy from .rsz_file import RszFile, RszInstanceInfo, TypeRegistryValidationError, RszFolderInfo, RszResourceInfo
 lazy from ui.editor_widgets import editor_strip, tool_button
 lazy from ui.styles import current_colors, get_tree_stylesheet
+lazy from ui.qt_timers import call_later
 lazy from ..pyside.tree_model import DataTreeBuilder
 lazy from ..pyside.tree_core import DeferredChildBuilder
 lazy from ..pyside.tree_widgets import AdvancedTreeView
@@ -53,6 +56,7 @@ lazy from file_handlers.rsz.rsz_embedded_array_operations import RszEmbeddedArra
 
 ADVANCED_SECTION_TITLE = "Advanced Information"
 DATA_BLOCK_TITLE = "Data Block"
+_ID_LABEL = re.compile(r"\(ID: \d+\)$")
 USERDATA_INFO_TBL_LABEL = "UserData Info Tbl"
 DATA_OFFSET_LABEL = "Data Offset"
 INFO_COUNT_LABEL = "Info Count"
@@ -273,6 +277,7 @@ class RszViewer(QWidget):
         self.setObjectName("rszViewer")
         self.setAttribute(Qt.WidgetAttribute.WA_StyledBackground, True)
         self._modified = False
+        self._views_refresh_queued = False
         self.scn = RszFile()
         self.handler = None
         self.type_registry = None
@@ -328,6 +333,52 @@ class RszViewer(QWidget):
             app = getattr(self.handler, "app", None)
             if app is not None and hasattr(app, "scenes"):
                 app.scenes.mark_stale(self.handler, changed_obj)
+            if changed_obj is None and not self._views_refresh_queued:
+                self._views_refresh_queued = True
+                call_later(self, 0, self._refresh_instance_views)
+
+    def _relabel_instances(self, model, item, index, raws):
+        for row, raw in enumerate(raws):
+            child = item._children.get(row) if item is not None else None
+            instance_id = None if raw.get("embedded") else self.handler.id_manager.get_instance_id(raw.get("reasy_id"))
+            if instance_id is not None:
+                raw["instance_id"] = instance_id
+                text = _ID_LABEL.sub(f"(ID: {instance_id})", raw["data"][0])
+                if text != raw["data"][0]:
+                    raw["data"][0] = text
+                    if child is not None:
+                        child_index = model.index(row, 0, index)
+                        if widget := self.tree.indexWidget(child_index):
+                            widget.findChildren(QLabel)[-1].setText(text)
+                        model.dataChanged.emit(child_index, child_index)
+            if child is not None and child.built and child._raw_children:
+                self._relabel_instances(model, child, model.index(row, 0, index), child._raw_children)
+            elif child is None and "deferred_builder" not in raw:
+                self._relabel_instances(model, None, None, raw.get("children", ()))
+
+    def _refresh_instance_views(self):
+        self._views_refresh_queued = False
+        model = self.tree.model()
+        if model is None:
+            return
+        root = model.rootItem
+        for row, raw in enumerate(root._raw_children):
+            section = root.child(row)
+            index = model.index(row, 0)
+            if raw["data"][0] != ADVANCED_SECTION_TITLE:
+                self._relabel_instances(model, section, index, section._raw_children)
+            elif section.built and not self.tree.isExpanded(index):
+                model.removeRows(0, section.child_count(), index)
+                section._deferred_builder.reset()
+                section._children_built = False
+            elif section.built:
+                expanded = {child.data[0] for child in section.children if self.tree.isExpanded(model.getIndexFromItem(child))}
+                model.removeRows(0, section.child_count(), index)
+                model.addChildren(section, [node for node in self._iter_advanced_sections() if node is not None])
+                self.tree.create_widgets_for_children(index)
+                for child in section.children:
+                    if child.data[0] in expanded:
+                        self.tree.expand(model.getIndexFromItem(child))
 
     @property
     def modified(self):
@@ -807,6 +858,7 @@ class RszViewer(QWidget):
                     )
                     root_dict = {
                         "data": [f"{type_name} (ID: {root_instance_id})", ""],
+                        "reasy_id": self.handler.id_manager.register_instance(root_instance_id),
                         "children": [],
                     }
                     fields = self.scn.parsed_elements[root_instance_id]
