@@ -158,6 +158,9 @@ class TrackPlayer:
         self.eyes = next((rule["eyes"] for rule in rules.values() if "eyes" in rule), None)
         self.lips = next((rule["lips"] for rule in rules.values() if "lips" in rule), None)
         self._last: tuple[float, TrackState] | None = None
+        self._mark: tuple[float, TrackState] | None = None
+        self._partial: tuple[float, TrackState] | None = None
+        self._variables: dict[float, dict] = {}
 
     def changes(self) -> dict:
         found = {}
@@ -221,7 +224,10 @@ class TrackPlayer:
         return self.at(frame).joints
 
     def variables(self, frame: float) -> dict:
-        return self.at(frame).variables
+        frame = f32(frame)
+        if frame not in self._variables:
+            self._variables[frame] = dict(self.at(frame).variables)
+        return self._variables[frame]
 
     def masks(self) -> dict:
         return {rule["target"]: dict(rule["sequence"]["masks"]) for rule in self.rules.values()
@@ -229,10 +235,17 @@ class TrackPlayer:
 
     def at(self, frame: float) -> TrackState:
         frame = f32(frame)
+        if self._partial is not None and self._partial[0] == frame:
+            return self._partial[1]
         if self._last is None or frame < self._last[0]:
-            self._last = f32(0.0), self._fresh()
-            self._update(f32(0.0), f32(0.0), True, self._last[1])
+            if self._mark is not None and self._mark[0] <= frame:
+                self._last = self._mark[0], deepcopy(self._mark[1])
+            else:
+                self._last, self._variables = (f32(0.0), self._fresh()), {}
+                self._update(f32(0.0), f32(0.0), True, self._last[1])
         previous, state = self._last
+        if fadd(fadd(previous, self.step), self.step) <= frame:
+            self._mark = previous, deepcopy(state)
         while (reached := fadd(previous, self.step)) <= frame:
             self._update(previous, reached, False, state)
             previous = reached
@@ -240,6 +253,7 @@ class TrackPlayer:
         if previous < frame:
             state = deepcopy(state)
             self._update(previous, frame, False, state)
+            self._partial = frame, state
         return state
 
     def _update(self, previous: float, frame: float, first: bool, state: TrackState) -> None:
