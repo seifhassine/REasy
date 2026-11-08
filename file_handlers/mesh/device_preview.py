@@ -79,7 +79,7 @@ class DevicePreview(QObject):
     status_changed = Signal()
     image_read = Signal(object)
     _finished = Signal(object, object, object)
-    _read = Signal(object, object)
+    _read_back = Signal(object, object)
 
     def __init__(self, handler, session, inspection: Callable[[], object], parent=None):
         from file_handlers.mmtr.resident import warm_up
@@ -101,7 +101,7 @@ class DevicePreview(QObject):
         self._told_failures: list[tuple[Mapping | None, dict[int, str]]] = []
         self._error = ""
         self._finished.connect(self._on_finished)
-        self._read.connect(self._on_read)
+        self._read_back.connect(self._on_read)
         self._image_of = None
         self._rate = LIMIT_MOST
         self._clock = QElapsedTimer()
@@ -387,7 +387,7 @@ class DevicePreview(QObject):
             self._drawer = self._make_drawer()
             self._drawer.place(self._placed())
             thread = RenderThread(self._drawer, lambda request, result: self._finished.emit(thread, request, result),
-                                  lambda image: self._read.emit(thread, preview_image(image)))
+                                  lambda image: self._read_back.emit(thread, preview_image(image)))
             self._thread = thread
             thread.start()
         self._thread.ask(self._request())
