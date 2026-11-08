@@ -1567,7 +1567,8 @@ class SceneLitPreview(SceneLitPreviewLods, GameLighting, SceneTexturesPreview):
                 self._objects.append(mesh.key)
                 if session is None:
                     self._labels.append(name or mesh.key)
-                    self._failures[index] = self.tr("No MDF material.")
+                    if name:
+                        self._failures[index] = self.tr("No MDF material.")
                     continue
                 grouped = (session, mesh.speedtree_placement, _object_lists(mesh.decal_receive[0], mesh.draw_state),
                            mesh.chain_flags)

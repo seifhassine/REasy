@@ -52,7 +52,8 @@ lazy from .scene_buffers import (
 lazy from .lightprobe_preview import SceneLightProbeInstance
 lazy from .lightprobe_shading import ProbeShadeLayer, layer_order, snapshot_probe_boxes
 lazy from .scene_marks import (
-    GIZMO_AXES, GIZMO_PLANES, bounds_marks, gizmo_circle_points, gizmo_marks, gizmo_plane_corners, probe_marks, unorm,
+    GIZMO_AXES, GIZMO_PLANES, bounds_marks, gizmo_circle_points, gizmo_marks, gizmo_plane_corners, probe_marks,
+    shape_marks, unorm,
 )
 lazy from .scene_model import SceneDrawBatch, SceneDrawMesh
 lazy from .scene_view import SceneGeometry, ScenePlacement, ScenePose, SceneShape, SceneView
@@ -1828,7 +1829,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
                                  self._device_content, self._device_motion, frozenset(hidden), hidden_parts,
                                  game=game, strands_only=game and self.strands_only,
                                  antialiased=game and self.antialiasing)
-        return view, self._device_overlays(geometries, meshes, background)
+        return view, self._device_overlays(geometries, meshes, background, view)
 
     def _device_probes(self) -> ViewProbes | None:
         layers = sorted(self._probe_layers(), key=layer_order)
@@ -1838,7 +1839,7 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
         return self._device_probes_made[1]
 
     def _device_overlays(self, geometries: tuple[SceneGeometry, ...], meshes: list[SceneDrawMesh],
-                         background: tuple[int, int, int]) -> LitOverlays:
+                         background: tuple[int, int, int], view: SceneView) -> LitOverlays:
         numbers = self._device_numbered(meshes)
         selected = frozenset(numbers[key] for key in self._selection_keys if key in numbers)
         pulse = round(255 * (0.22 + 0.10 * np.sin(time.perf_counter() * 3.5))) if selected else 56
@@ -1863,11 +1864,12 @@ class ScenePreviewWidget(OrbitCameraMixin, QWidget):
             tuple((key, np.asarray(box.corners(), np.float64).tobytes()) for key, box in boxes),
             keys, id(points) if len(points) else None,
             tuple((minimum.tobytes(), maximum.tobytes(), colour) for minimum, maximum, colour in self.strands_boxes),
-            edited := (() if self.edit_tool is None else self.edit_tool.marks()))
+            edited := (() if self.edit_tool is None else self.edit_tool.marks()),
+            view.game and (view.content, view.hidden))
         if self._device_overlays_made[0] != made:
             self._device_overlays_made = made, LitOverlays(
-                background, (*probe_marks(boxes, keys, points, colours), *bounds_marks(self.strands_boxes),
-                             *edited, *self._gizmo_marks()),
+                background, (*shape_marks(meshes, view), *probe_marks(boxes, keys, points, colours),
+                             *bounds_marks(self.strands_boxes), *edited, *self._gizmo_marks()),
                 scene=scene)
         return self._device_overlays_made[1]
 

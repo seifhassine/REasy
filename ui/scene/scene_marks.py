@@ -5,6 +5,9 @@ from collections.abc import Iterable, Set
 import numpy as np
 
 lazy from file_handlers.mesh.lit_preview import LitLines, LitPoints, LitTriangles
+lazy from .scene_buffers import SOFTWARE_LIGHT_DIRECTION
+lazy from .scene_model import SceneDrawMesh
+lazy from .scene_view import SceneView
 
 GIZMO_AXES = np.identity(3, dtype=np.float32)
 GIZMO_COLORS = ((1.0, 0.18, 0.12), (0.2, 0.9, 0.25), (0.25, 0.45, 1.0))
@@ -119,6 +122,19 @@ def probe_marks(boxes: Iterable[tuple[str, object]], selected: Set[str], points:
     return tuple(marks)
 
 
+def shape_marks(meshes: Iterable[SceneDrawMesh], view: SceneView) -> tuple:
+    marks = []
+    for mesh in meshes:
+        if view.game and not (mesh.material_name or mesh.batches) and mesh.key not in view.hidden:
+            corners = np.asarray(mesh.vertices, np.float64)[np.asarray(mesh.indices).reshape(-1, 3)]
+            normals = np.cross(corners[:, 1] - corners[:, 0], corners[:, 2] - corners[:, 0])
+            normals /= np.maximum(np.linalg.norm(normals, axis=1, keepdims=True), 1e-12)
+            lit = np.column_stack([np.outer(0.6 + 0.4 * np.abs(normals @ SOFTWARE_LIGHT_DIRECTION), mesh.color[:3]),
+                                   np.full(len(normals), 0.35)])
+            marks.append(LitTriangles(corners, np.rint(lit * 255).astype(np.int64)))
+    return tuple(marks)
+
+
 def bounds_marks(boxes: Iterable[tuple]) -> tuple:
     marks = []
     for minimum, maximum, colour in boxes:
@@ -129,4 +145,5 @@ def bounds_marks(boxes: Iterable[tuple]) -> tuple:
 
 
 __all__ = ["ALIGNED_EDGES", "BOX_EDGES", "GIZMO_AXES", "GIZMO_BOX_FACES", "GIZMO_COLORS", "GIZMO_PLANES",
-           "bounds_marks", "gizmo_circle_points", "gizmo_marks", "gizmo_plane_corners", "probe_marks", "unorm"]
+           "bounds_marks", "gizmo_circle_points", "gizmo_marks", "gizmo_plane_corners", "probe_marks", "shape_marks",
+           "unorm"]

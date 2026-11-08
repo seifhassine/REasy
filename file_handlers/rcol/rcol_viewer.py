@@ -591,10 +591,12 @@ class RcolViewer(QWidget):
         if self._scene_preview is None or not self.rcol:
             return
         highlighted = self._highlight_keys_for_payload(payload)
+        attachments = self._active_attachments()
         self._scene_preview.set_scene(
-            build_scene_meshes(self.rcol, attachments=self._active_attachments()),
+            build_scene_meshes(self.rcol, attachments=attachments),
             highlighted_keys=highlighted,
         )
+        self._scene_preview.refuse_game_lighting("" if attachments else self.tr("Load a mesh for Game lighting."))
         if self._preview_hint is not None:
             if payload and payload.kind == "request_set":
                 self._preview_hint.setText(
@@ -775,7 +777,7 @@ class RcolViewer(QWidget):
             app=getattr(self.handler, "app", None),
             resource_context=getattr(self.handler, "resource_context", None),
             game_version=getattr(self.handler, "game_version", ""),
-            load_mode=MeshLoadMode.LIGHT,
+            load_mode=MeshLoadMode.SCENE,
         )
         mesh = getattr(handler, "mesh", None)
         if mesh is None:

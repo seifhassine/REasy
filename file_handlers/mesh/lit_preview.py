@@ -194,9 +194,9 @@ class LitPoints:
 
 @dataclass(frozen=True, slots=True, eq=False)
 class LitTriangles:
-    """``corners`` is n x 3 x 3; ``colour`` RGBA."""
+    """``corners`` is n x 3 x 3; ``colour`` RGBA, one or one per triangle."""
     corners: np.ndarray
-    colour: tuple[int, int, int, int]
+    colour: tuple[int, int, int, int] | np.ndarray
     tested: bool = True
 
 
