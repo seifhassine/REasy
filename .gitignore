@@ -1,92 +1,37 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
-**/node_modules/
 *$py.class
+*.egg-info/
+**/node_modules/
+
+# Build and packaging output
+build/
+dist/
+*.spec
+
+# Local settings, caches and secrets
 settings.json
 .cache/
-myevn/
 .sonar/**
-tools/reasy_tex_gdeflate_helper/bin/
-tools/diff_lists.py
-tools/reasy_tex_gdeflate_helper/obj/
+.vscode/
+secrets
+resources/i18n/REasy_zh-CN.qm
 
-# Distribution / packaging
-build/
-scn/
-dist/
-*.egg-info/
-*.spec
-/tests/personal
+# Runtime data written by the application
 backups/
 .clipboard
-src
-templates
 downloads
 projects
-Mods
+templates
 exports
+Mods
 
-# VS Code settings (if you don't want to share them)
-.vscode/
+# Local test data: native game corpus and personal experiments
+/tests/TESTFILE/
+/tests/personal/
 
-# OS-specific files
+# OS and logs
 .DS_Store
 Thumbs.db
-
-# Log files
 *.log
-
-# Local Tests
-/tests/**
-!/tests/fixtures/
-!/tests/fixtures/*.py
-!/tests/fixtures/*.lua
-!/tests/test_userdata_dependencies.py
-!/tests/test_rsz_graph_copy.py
-!/tests/test_mhr_events.py
-!/tests/test_authoring_services.py
-!/tests/test_motfsm_map_ownership.py
-!/tests/test_scn_parser.py
-!/tests/test_motbank_roundtrip.py
-!/tests/test_mhr_motlist.py
-!/tests/test_wilds_motion.py
-!/tests/test_wilds_import.py
-!/tests/test_lmt_motion.py
-!/tests/test_mhw_lmt.py
-!/tests/test_mhw_mesh.py
-!/tests/test_lmt_bake.py
-!/tests/test_mhr_preview_workflow.py
-!/tests/test_motfsm_integration.py
-!/tests/test_motfsm_graph.py
-!/tests/test_motfsm_motion_link.py
-!/tests/test_motfsm_editor.py
-!/tests/test_editor_shell.py
-!/tests/test_motfsm_corpus.py
-!/tests/test_motfsm_rebuild.py
-!/tests/test_motfsm_root_uvar.py
-!/tests/test_fsm_cli.py
-!/tests/test_resource_cli.py
-!/tests/test_efx*.py
-!/tests/test_mhw_efx.py
-!/tests/test_move_cli.py
-!/tests/test_clip_cli.py
-!/tests/test_clip_graph_v43.py
-!/tests/test_clip_structure.py
-!/tests/test_file_live_reload.py
-!/tests/test_motion_reload_preview.py
-!/tests/test_rcol_editing.py
-!/tests/test_scn_scene_editing.py
-resources/i18n/REasy_zh-CN.qm
-secrets
-tests/test_scn_scene_editing.py
-extracted_mesh_samples/**
-MESH.bt
-Murmur3.1sc
-tools/audit_extracted_mesh_samples.py
-tools/audit_mesh_blendshape_remaps.py
-tools/audit_mesh_external_buffers.py
-tools/check_pak_codec_metadata.py
-tools/dump_mesh_blendshape_remap_case.py
-tools/extract_all_mesh_samples.py
-tools/validate_mesh_bt_python.py
