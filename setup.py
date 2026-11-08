@@ -18,6 +18,7 @@ for module_name in ('fast_pakresolve', 'fast_path_search', 'fast_string_scan', '
         )
 
 if os.name == 'nt':
+    ext_modules.append(Extension('fastaudio', sources=['native/fastaudio.c'], extra_compile_args=['/O2']))
     ext_modules.append(
         Extension(
             'fastmatpreview',

@@ -128,3 +128,7 @@ def ensure_fastsdftex():
 
 def ensure_fastkey():
     return _build_native_module('fastkey')
+
+
+def ensure_fastaudio():
+    return _build_native_module('fastaudio')

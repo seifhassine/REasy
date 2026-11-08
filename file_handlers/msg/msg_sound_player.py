@@ -14,9 +14,9 @@ lazy from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, QUrl, Signal, Slot
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtCore import QObject, Qt, Signal, Slot
 
+from file_handlers.sound.audio_player import AudioPlayer, playback_unavailable
 from file_handlers.sound.bnk_parser import (
     BnkTrack,
     extract_embedded_wem,
@@ -26,7 +26,6 @@ from file_handlers.sound.sound_metadata import MessageSoundReference, SoundMetad
 from file_handlers.sound.sound_resources import read_sound_resource, resource_key
 from file_handlers.sound.sound_waveform import (
     analyze_wave_activity,
-    playback_unavailable,
     write_wave_segment,
 )
 lazy from file_handlers.sound.runtime_sound_index import (
@@ -121,16 +120,14 @@ class MsgSoundPreviewSession(QObject):
         ] = {}
         self._temp_dir = tempfile.mkdtemp(prefix="reasy_msg_sound_")
 
-        self._player = QMediaPlayer(self)
-        self._audio = QAudioOutput(self)
-        self._audio.setVolume(0.7)
-        self._player.setAudioOutput(self._audio)
+        self._player = AudioPlayer(self)
+        self._player.setVolume(0.7)
         self._active_message_id = ""
 
         queued = Qt.ConnectionType.QueuedConnection
         self._worker_done.connect(self._deliver_worker_result, queued)
-        self._player.mediaStatusChanged.connect(self._on_media_status)
-        self._player.errorOccurred.connect(self._on_player_error)
+        self._player.finished.connect(self.stop)
+        self._player.errorOccurred.connect(self._on_player_error, queued)
         self._player.positionChanged.connect(self._emit_position)
 
     @property
@@ -199,7 +196,7 @@ class MsgSoundPreviewSession(QObject):
             self._play_token += 1
         self._active_message_id = ""
         self._player.stop()
-        self._player.setSource(QUrl())
+        self._player.setSource(None)
         if was_active:
             self.playback_stopped.emit()
 
@@ -219,7 +216,7 @@ class MsgSoundPreviewSession(QObject):
             self._play_token += 1
         self._active_message_id = ""
         self._player.stop()
-        self._player.setSource(QUrl())
+        self._player.setSource(None)
         try:
             self._executor.submit(self._cleanup_worker)
         except RuntimeError:
@@ -629,28 +626,23 @@ class MsgSoundPreviewSession(QObject):
             self.playback_failed.emit(error)
             return
         candidate, wav_path, waveform = result
-        if reason := playback_unavailable(self._player):
+        if reason := playback_unavailable():
             self._active_message_id = ""
             self.playback_failed.emit(reason)
             return
-        self._player.setSource(QUrl.fromLocalFile(wav_path))
+        self._player.setSource(wav_path)
         self._player.play()
         self.waveform_ready.emit(waveform)
         self.playback_started.emit(candidate)
 
-    @Slot(QMediaPlayer.MediaStatus)
-    def _on_media_status(self, status) -> None:
-        if status == QMediaPlayer.MediaStatus.EndOfMedia:
-            self.stop()
-
-    @Slot(QMediaPlayer.Error, str)
-    def _on_player_error(self, _error, message: str) -> None:
-        if not self._active_message_id or self._player.source().isEmpty():
+    @Slot(str)
+    def _on_player_error(self, message: str) -> None:
+        if not self._active_message_id or self._player.source() is None:
             return
         self._active_message_id = ""
         self._player.stop()
-        self._player.setSource(QUrl())
-        self.playback_failed.emit(message or "Qt could not play the decoded audio.")
+        self._player.setSource(None)
+        self.playback_failed.emit(message)
 
     @Slot(int)
     def _emit_position(self, position: int) -> None:

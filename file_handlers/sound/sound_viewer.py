@@ -15,9 +15,8 @@ from dataclasses import replace
 from functools import partial
 from pathlib import Path
 
-from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, QUrl, Signal
+from PySide6.QtCore import QEventLoop, QPoint, QRect, QSize, QT_TRANSLATE_NOOP, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontMetrics, QKeySequence, QPainter, QShortcut
-lazy from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -123,10 +122,10 @@ lazy from .sound_resources import (
     open_sound_resource,
     resource_key,
 )
+lazy from .audio_player import AudioPlayer, PlaybackState, playback_unavailable, wake_output
 lazy from .sound_waveform import (
     WaveformWidget,
     analyze_wave_activity,
-    playback_unavailable,
     write_wave_preview,
     write_wave_edit,
 )
@@ -1308,11 +1307,9 @@ class SoundViewer(QWidget):
         return self.table
 
     def _setup_player(self):
-        self.player = QMediaPlayer(self)
-        self.audio_out = QAudioOutput(self)
-        self.audio_out.setVolume(0.7)
-        self.player.setAudioOutput(self.audio_out)
-        self.vol_slider.valueChanged.connect(lambda value: self.audio_out.setVolume(value / 100))
+        self.player = AudioPlayer(self)
+        self.player.setVolume(0.7)
+        self.vol_slider.valueChanged.connect(lambda value: self.player.setVolume(value / 100))
         self.speed_slider.valueChanged.connect(self._on_speed_changed)
         self.channel_combo.currentIndexChanged.connect(self._on_preview_option_changed)
         self.normalize_check.toggled.connect(self._on_preview_option_changed)
@@ -1326,10 +1323,10 @@ class SoundViewer(QWidget):
         self.player.playbackStateChanged.connect(self._on_state)
         self.player.errorOccurred.connect(self._on_player_error)
 
-    def _on_player_error(self, _error, message):
+    def _on_player_error(self, message):
         if self._cleanup_done:
             return
-        QMessageBox.warning(self, self.tr("Playback Error"), message or self.tr("Qt could not play the decoded audio."))
+        QMessageBox.warning(self, self.tr("Playback Error"), message)
 
     def _on_duration(self, milliseconds):
         if self._cleanup_done:
@@ -1362,7 +1359,7 @@ class SoundViewer(QWidget):
         if self._duration_ms:
             position = permille * self._duration_ms // 1000
             self.player.setPosition(position)
-            if self.player.playbackState() == QMediaPlayer.PlaybackState.StoppedState:
+            if self.player.playbackState() == PlaybackState.StoppedState:
                 self._resume_position_ms = position
 
     def _on_skip(self):
@@ -1381,9 +1378,9 @@ class SoundViewer(QWidget):
     def _on_state(self, state):
         if self._cleanup_done:
             return
-        active = state != QMediaPlayer.PlaybackState.StoppedState
+        active = state != PlaybackState.StoppedState
         self.stop_btn.setEnabled(active)
-        playing = state == QMediaPlayer.PlaybackState.PlayingState
+        playing = state == PlaybackState.PlayingState
         self.play_btn.setIcon(
             self.style().standardIcon(
                 QStyle.SP_MediaPause if playing else QStyle.SP_MediaPlay
@@ -1418,6 +1415,8 @@ class SoundViewer(QWidget):
     def _on_sel(self):
         self._update_source_card()
         self._update_wave_edit_buttons()
+        if self._selected()[1]:
+            wake_output()
 
     def _play_highlighted(self, _item=None):
         if self.play_btn.isEnabled():
@@ -1438,7 +1437,7 @@ class SoundViewer(QWidget):
         self.waveform.clear()
         try:
             self.player.stop()
-            self.player.setSource(QUrl())
+            self.player.setSource(None)
         except RuntimeError:
             pass
         # Decoded media lives in _decoded_cache until the file is re-parsed or
@@ -1562,11 +1561,11 @@ class SoundViewer(QWidget):
 
     def _start_preview(self, wav_path, *, start_ms=0):
         self._preview_audio_path = wav_path
-        if reason := playback_unavailable(self.player):
+        if reason := playback_unavailable():
             self._queue_waveform(wav_path)
             QMessageBox.warning(self, self.tr("Playback"), reason)
             return
-        self.player.setSource(QUrl.fromLocalFile(wav_path))
+        self.player.setSource(wav_path)
         self.player.setPosition(start_ms)
         self.player.play()
         self._queue_waveform(wav_path)
@@ -1619,9 +1618,9 @@ class SoundViewer(QWidget):
         if not selected:
             return
         _, track = selected
-        active = self.player.playbackState() != QMediaPlayer.PlaybackState.StoppedState
+        active = self.player.playbackState() != PlaybackState.StoppedState
         if self._preview_source_id == track.source_id and active:
-            paused = self.player.playbackState() == QMediaPlayer.PlaybackState.PausedState
+            paused = self.player.playbackState() == PlaybackState.PausedState
             self.player.play() if paused else self.player.pause()
             return
         if self._preview_source_id != track.source_id:

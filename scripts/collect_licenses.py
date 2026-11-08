@@ -18,6 +18,7 @@ UNRECORDED = {
     "GDeflate": ("", [GDEFLATE / "LICENSE", GDEFLATE / "subprojects" / "GDeflate" / "COPYING"]),
     "bc7e": ("basis_universal 073eb6a", [VENDORED / "bc7e" / "LICENSE", VENDORED / "bc7e" / "NOTICE"]),
     "rgbcx": ("bc7enc_rdo b943862", [VENDORED / "rgbcx" / "LICENSE"]),
+    "miniaudio": ("0.11.25", [VENDORED / "miniaudio" / "LICENSE"]),
     "DirectXShaderCompiler": (DXC_VERSION, [DXC / name for name in DXC_FILES.values() if name.endswith(".txt")]),
 }
 QT_DISTRIBUTIONS = ("pyside6", "shiboken6")

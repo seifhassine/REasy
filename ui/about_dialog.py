@@ -8,11 +8,11 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from PySide6.QtCore import Qt, QUrl
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QIcon
-from PySide6.QtMultimedia import QSoundEffect
 
 lazy from app_config import CURRENT_VERSION
+lazy from file_handlers.sound.audio_player import AudioPlayer
 lazy from ui.editor_widgets import styled_label
 lazy from ui.icons import line_icon
 lazy from utils.app_paths import resource_path
@@ -58,10 +58,9 @@ class AboutDialog(QDialog):
         header.addWidget(text)
         layout.addLayout(header)
 
-        theme = QSoundEffect(self)
-        theme.setSource(QUrl.fromLocalFile(str(resource_path("resources/audio/credits.wav"))))
-        theme.setLoopCount(QSoundEffect.Infinite.value)
-        theme.play()
+        theme = AudioPlayer(self)
+        theme.setSource(resource_path("resources/audio/credits.wav"))
+        theme.setLoops(True)
 
         footer = QHBoxLayout()
         layout.addLayout(footer)
@@ -73,8 +72,9 @@ class AboutDialog(QDialog):
         volume.setFixedWidth(90)
         volume.setToolTip(self.tr("Music volume"))
         volume.valueChanged.connect(lambda value: theme.setVolume(value / 100))
-        volume.setValue(25)
+        volume.setValue(10)
         footer.addWidget(volume)
         buttons = QDialogButtonBox(QDialogButtonBox.Close)
         buttons.rejected.connect(self.reject)
         footer.addWidget(buttons)
+        theme.play()

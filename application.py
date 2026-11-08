@@ -50,8 +50,6 @@ def main(argv=None) -> int:
     configure_garbage_collector()
     _prepare_native_modules()
 
-    # The exe ships without FFmpeg; play audio the same way from source.
-    os.environ.setdefault("QT_MEDIA_BACKEND", "windows")
     QLocale.setDefault(QLocale.c())
     app = QApplication(argv)
     app.setStyle(ReasyStyle())
