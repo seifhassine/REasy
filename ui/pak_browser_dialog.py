@@ -9,7 +9,7 @@ from PySide6.QtCore import (
 )
 
 
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtGui import QStandardItemModel
 
 from PySide6.QtWidgets import (
 	QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QListWidget,
@@ -36,12 +36,35 @@ lazy from ui.pak_icon_view import PakIconEntry, PakIconModel, PakThumbnailProvid
 lazy from utils.resource_file_utils import ResourceResolutionContext, get_path_prefix_for_game, resource_context_for_app
 lazy from file_handlers.pak.utils import any_pak_modded
 lazy from ui.extraction_progress_dialog import ExtractionProgressDialog
+lazy from ui.background_jobs import run_job
+lazy from ui.project_manager.trees import PakPathModel
 lazy from threading import Thread
 
 
 DUMP_VALID_PATHS_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Dump Valid Paths")
 INDEX_FAILED_TITLE = QT_TRANSLATE_NOOP("PakBrowserDialog", "Index failed")
 UNKNOWN_PATH_PREFIX = "__Unknown/"
+
+
+class _PakTreeModel(PakPathModel):
+	@staticmethod
+	def _native_prefix(paths) -> str:
+		return ""
+
+	def data(self, index, role=Qt.DisplayRole):
+		if not index.isValid():
+			return None
+		node = index.internalPointer()
+		directory = node.path.endswith("/")
+		path = node.path.rstrip("/")
+		if role == Qt.DisplayRole:
+			name = path.rsplit("/", 1)[-1]
+			return f"{name} ({node.end - node.start:,})" if directory and node.parent is self.root else name
+		if role == PakBrowserDialog._ITEM_EXTRACT_PATH_ROLE:
+			return path
+		if role == PakBrowserDialog._ITEM_IS_DIR_ROLE:
+			return directory
+		return None
 
 
 class PakBrowserDialog(QDialog):
@@ -464,55 +487,7 @@ class PakBrowserDialog(QDialog):
 				self._rebuild_icon_model()
 				return
 		
-		model = QStandardItemModel()
-		model.setHorizontalHeaderLabels([self.tr("Paths")])
-		
-		root = {}
-		for p in self._all_manifest_paths:
-			p_lower = p.lower()
-			if self.show_only_valid_cb.isChecked():
-				if not p.startswith(UNKNOWN_PATH_PREFIX) and p_lower not in self._valid_paths:
-					continue
-			parts = p.split('/')
-			node = root
-			for part in parts:
-				node = node.setdefault(part, {})
-		
-
-		count_cache = {}
-		def compute_counts(node):
-			if id(node) in count_cache:
-				return count_cache[id(node)]
-			if not node:
-				count = 1
-			else:
-				count = sum(compute_counts(child) for child in node.values())
-			count_cache[id(node)] = count
-			return count
-		
-
-		compute_counts(root)
-		
-		def build(parent, node, prefix="", is_root=False):
-			for name, child in node.items():
-				display_name = name
-				if child:
-					file_count = count_cache.get(id(child), 0)
-					if is_root or (parent == model.invisibleRootItem()):
-						display_name = f"{name} ({file_count:,})"
-				
-				item = QStandardItem(display_name)
-				item.setEditable(False)
-				full = prefix + name
-				item.setData(full, self._ITEM_EXTRACT_PATH_ROLE)
-				item.setData(bool(child), self._ITEM_IS_DIR_ROLE)
-				parent.appendRow(item)
-				if child:
-					build(item, child, full + "/", False)
-		
-		build(model.invisibleRootItem(), root, "", True)
-		# The recursive closure holds self and the model in a cycle; empty its cell.
-		del build
+		model = _PakTreeModel(sorted(self._iter_display_paths()), None, None)
 		self.tree.setModel(model)
 		self._tree_model = model
 		
@@ -648,6 +623,8 @@ class PakBrowserDialog(QDialog):
 		return entries
 
 	def _rebuild_icon_model(self):
+		if self.view_stack.currentWidget() is not self.icon_view:
+			return
 		paths = list(self._iter_display_paths())
 		text = self.filter_edit.text().strip()
 		if text:
@@ -755,16 +732,13 @@ class PakBrowserDialog(QDialog):
 			return None
 
 		known = sorted(set(self._base_paths))
-		if full:
-			self._ensure_full_cache(r, known)
-		elif validate:
-			if not known:
-				self._valid_paths = set()
-				return r
-			self._ensure_validation_cache(r, known)
-
-		if full or validate:
-			self._valid_paths = {p.lower() for p in r.cached_paths(include_unknown=False)}
+		if validate and not full and not known:
+			self._valid_paths = set()
+		elif full or validate:
+			def index(_progress, _cancelled):
+				(self._ensure_full_cache if full else self._ensure_validation_cache)(r, known)
+				return {p.lower() for p in r.cached_paths(include_unknown=False)}
+			self._valid_paths = run_job(self, self.tr("Updating file list..."), index)
 		return r
 
 	@staticmethod
@@ -905,7 +879,7 @@ class PakBrowserDialog(QDialog):
 			return []
 		if isinstance(model, (QSortFilterProxyModel, QStringListModel)):
 			return self._selected_flat_paths()
-		if isinstance(model, QStandardItemModel):
+		if isinstance(model, _PakTreeModel):
 			return self._selected_tree_paths()
 		return []
 
