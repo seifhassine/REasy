@@ -28,6 +28,7 @@ class BreadcrumbBar(QFrame):
         self.setObjectName("editorBreadcrumbs")
         self.setFrameShape(QFrame.NoFrame)
         self.setFixedHeight(26)
+        self.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Fixed)
         self._layout = QHBoxLayout(self)
         self._layout.setContentsMargins(6, 0, 6, 0)
         self._layout.setSpacing(0)
@@ -47,6 +48,8 @@ class BreadcrumbBar(QFrame):
         self._tab = None
         self._tree = None
         self._selection_model = None
+        self._crumbs = []
+        self._folded = []
         self.hide()
 
     def bind_tab(self, tab) -> None:
@@ -75,20 +78,39 @@ class BreadcrumbBar(QFrame):
             if widget := item.widget():
                 widget.deleteLater()
 
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._fit()
+
+    def _fit(self) -> None:
+        if not self._crumbs:
+            return
+        for folded in range(len(self._crumbs)):
+            for index, (widgets, _entries) in enumerate(self._crumbs):
+                for widget in widgets:
+                    widget.setVisible(index >= folded)
+            self._fold.setVisible(folded > 0)
+            if self._layout.minimumSize().width() <= self.width():
+                break
+        self._folded[:] = [entry for _widgets, entries in self._crumbs[:folded] for entry in entries]
+
     def _rebuild(self, current=None, _previous=None) -> None:
         self._clear()
+        self._crumbs = []
         file_segments = self._file_segments()
         if not file_segments:
             self.hide()
             return
         self.show()
+        self._fold = self._overflow_button(self._folded)
         for position, (label, callback, tooltip) in enumerate(file_segments):
-            if position:
-                self._separator()
+            widgets = [self._separator()] if position else []
             if label is None:
-                self._overflow_button(callback)
+                self._crumbs[-1][0].extend([*widgets, self._overflow_button(callback)])
+                self._crumbs[-1][1].extend(callback)
             else:
-                self._button(label, callback, tooltip, "current" if position == len(file_segments) - 1 else None)
+                widgets.append(self._button(label, callback, tooltip, "current" if position == len(file_segments) - 1 else None))
+                self._crumbs.append((widgets, [(label, callback, tooltip)]))
 
         current = current if current is not None and current.isValid() else (
             self._selection_model.currentIndex() if self._selection_model is not None else None
@@ -101,15 +123,13 @@ class BreadcrumbBar(QFrame):
             self._layout.addWidget(divider)
             self._layout.addSpacing(6)
             for position, (label, persistent) in enumerate(object_segments):
-                if position:
-                    self._separator()
-                self._button(
-                    label,
-                    lambda idx=persistent: self._select_index(idx),
-                    label,
-                    "current" if position == len(object_segments) - 1 else None,
-                )
+                entry = (label, lambda idx=persistent: self._select_index(idx), label)
+                widgets = [self._button(*entry, "current" if position == len(object_segments) - 1 else None)]
+                if position < len(object_segments) - 1:
+                    widgets.append(self._separator())
+                self._crumbs.append((widgets, [entry]))
         self._layout.addStretch(1)
+        self._fit()
 
     def _file_segments(self):
         tab = self._tab
@@ -195,6 +215,7 @@ class BreadcrumbBar(QFrame):
         if callback is not None:
             button.clicked.connect(lambda _checked=False: callback())
         self._layout.addWidget(button)
+        return button
 
     def _overflow_button(self, hidden):
         button = tool_button("more", self.tr("Show hidden path segments"), parent=self)
@@ -203,17 +224,24 @@ class BreadcrumbBar(QFrame):
         button.setIconSize(QSize(14, 14))
         button.setPopupMode(QToolButton.InstantPopup)
         menu = QMenu(button)
-        for label, callback, tooltip in hidden:
-            action = menu.addAction(str(label))
-            action.setToolTip(str(tooltip or label))
-            action.setEnabled(callback is not None)
-            if callback is not None:
-                action.triggered.connect(lambda _checked=False, callback=callback: callback())
+
+        def fill():
+            menu.clear()
+            for label, callback, tooltip in hidden:
+                action = menu.addAction(str(label))
+                action.setToolTip(str(tooltip or label))
+                action.setEnabled(callback is not None)
+                if callback is not None:
+                    action.triggered.connect(lambda _checked=False, callback=callback: callback())
+
+        menu.aboutToShow.connect(fill)
         button.setMenu(menu)
         self._layout.addWidget(button)
+        return button
 
     def _separator(self):
-        self._layout.addWidget(breadcrumb_separator(self))
+        self._layout.addWidget(separator := breadcrumb_separator(self))
+        return separator
 
     def _select_index(self, persistent) -> None:
         if self._tree is None or not persistent.isValid():

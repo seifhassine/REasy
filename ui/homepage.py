@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QTreeWidget,
     QTreeWidgetItem,
@@ -250,5 +251,7 @@ class HomePageStack:
         self.widget.addWidget(self.notebook)
 
     def refresh(self, show_notebook: bool, recent_entries=()):
+        policy = QSizePolicy.Ignored if show_notebook else QSizePolicy.Preferred
+        self.homepage.setSizePolicy(policy, policy)
         self.widget.setCurrentWidget(self.notebook if show_notebook else self.homepage)
         self.homepage.set_recent_files(list(recent_entries))

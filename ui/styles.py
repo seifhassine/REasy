@@ -26,6 +26,7 @@ _STANDARD_ICONS = {
     QStyle.SP_ArrowUp: "arrow_up",
     QStyle.SP_FileDialogToParent: "arrow_up",
     QStyle.SP_ArrowDown: "arrow_down",
+    QStyle.SP_ToolBarHorizontalExtensionButton: "chevron_right",
     QStyle.SP_DialogResetButton: "reset",
     QStyle.SP_RestoreDefaultsButton: "reset",
     QStyle.SP_BrowserReload: "refresh",
@@ -460,6 +461,7 @@ def get_main_stylesheet(colors: dict) -> str:
         QPushButton::menu-indicator:disabled {{ image: url(theme:chevron_down_disabled.svg); }}
         QToolButton[popupMode="2"] {{ padding-right: 18px; }}
         QToolButton[popupMode="2"]::menu-indicator {{ subcontrol-position: center right; right: 5px; }}
+        QToolButton#qt_menubar_ext_button, QToolButton#qt_toolbar_ext_button {{ padding: 0px; }}
         QGraphicsView {{ border: none; }}
 
         /* Check boxes and radio buttons */
