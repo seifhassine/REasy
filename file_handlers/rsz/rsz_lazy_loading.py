@@ -281,6 +281,7 @@ class RszLazyNodeBuilder:
         
         if has_content:
             def build_reference_children():
+                ref_id = data_obj.value
                 children = []
                 if embedded_context and hasattr(embedded_context, 'embedded_instances'):
                     if ref_id in embedded_context.embedded_instances:
