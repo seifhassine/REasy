@@ -120,3 +120,4 @@ tools/surface_output_catalog.py
 tools/system_textures.py
 tools/type_analysis.py
 tools/validate_mesh_bt_python.py
+tools/reasy_music.py
