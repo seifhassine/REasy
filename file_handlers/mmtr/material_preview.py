@@ -6,7 +6,6 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass, field
 from functools import lru_cache
 import math
-import re
 import struct
 from typing import NamedTuple
 
@@ -86,6 +85,8 @@ class PreviewMaterial:
     animated: Callable[[], tuple[tuple[int, tuple[float, ...]], ...]] | None = field(default=None, compare=False)
     shading_type: int = 0
     flag_version: int = 0
+    components: int = 0
+    floats: int = 0
 
     @classmethod
     def from_mdf(cls, material, version: int) -> "PreviewMaterial":
@@ -95,7 +96,9 @@ class PreviewMaterial:
                    {str(texture.tex_type): str(texture.tex_path) for texture in material.textures},
                    int(material.header.material_flags),
                    buffers={str(name.name): str(data.name) for name, data in material.gpu_buffers},
-                   shading_type=int(material.header.shader_type), flag_version=int(version))
+                   shading_type=int(material.header.shader_type), flag_version=int(version),
+                   components=sum(int(field.component_count) for field in material.parameters),
+                   floats=int(material.header.parameter_value_count))
 
     def record(self) -> bytearray:
         result = bytearray(self.layout.allocation_size(self.shader_lod))
@@ -105,8 +108,9 @@ class PreviewMaterial:
 
 
 def bound_record_size(document, material: PreviewMaterial) -> int:
-    return (int(document.profile.shader_graph_profile.material_record_prefix_size)
-            + material.layout.allocation_size(material.shader_lod))
+    profile = document.profile.shader_graph_profile
+    return (int(profile.material_record_prefix_size) + material.layout.allocation_size(material.shader_lod)
+            + int(profile.material_record_suffix_size))
 
 
 def _holder_bytes(record: bytes, stride: int) -> bytes:
@@ -429,27 +433,10 @@ def _texture_texels(data: bytes | None, dimension: str, largest_mip: int | None,
             len(levels), TexelRows(rows))
 
 
-def _record_tags(lines, accesses, prefix: int) -> dict[int, int]:
-    tags = {}
-    for access in accesses:
-        for word in access.words:
-            if word.byte_offset >= prefix:
-                continue
-            pattern = re.compile(rf"= icmp eq i32 (?:{re.escape(word.value)}, (-?\d+)|(-?\d+), {re.escape(word.value)})$")
-            found = {int(match[1] or match[2]) for line in lines if (match := pattern.search(line.strip()))}
-            if len(found) > 1:
-                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                    "MaterialPreview", "The pixel shader accepts several material record kinds."))
-            if found:
-                tags[word.byte_offset] = found.pop() & 0xFFFFFFFF
-    return tags
-
-
 @dataclass(frozen=True)
 class _MaterialReads:
     holders: frozenset[str]
     tables: Mapping[str, int]
-    tags: Mapping[int, int]
     textures: tuple
     buffers: tuple[int, ...]
     engine: tuple
@@ -461,7 +448,7 @@ def _dxil_lines(shader: bytes) -> tuple[str, ...]:
 
 
 @lru_cache(maxsize=128)
-def _material_reads(contract, shader: bytes, prefix: int) -> _MaterialReads:
+def _material_reads(contract, shader: bytes) -> _MaterialReads:
     from .profiles.re_engine_bindless_material import (engine_heap_handles, material_buffer_reads,
                                                        material_input_accesses)
     lines = list(_dxil_lines(shader))
@@ -482,8 +469,7 @@ def _material_reads(contract, shader: bytes, prefix: int) -> _MaterialReads:
                 "MaterialPreview", "The pass names its material constant buffer through a table the preview does not "
                 "lay out."))
         tables[table.name] = max(tables.get(table.name, 0), access.constant_buffer_size)
-    return _MaterialReads(frozenset(holders), frozendict(tables),
-                          frozendict(_record_tags(lines, accesses, prefix)), texture_reads,
+    return _MaterialReads(frozenset(holders), frozendict(tables), texture_reads,
                           material_buffer_reads(lines, accesses), engine_heap_handles(lines, contract, accesses))
 
 
@@ -582,17 +568,8 @@ def material_record(document, stages: Sequence[tuple[str, object, bytes]], mater
         raise ValueError(f"the material's heap indices start at {heap_start}, before {_MATERIAL_HEAP_START}")
     profile = document.profile.shader_graph_profile
     record, prefix = material.record(), int(profile.material_record_prefix_size)
-    reads: list[tuple[str, _MaterialReads]] = []
-    tags: dict[int, int] = {}
-    for stage, contract, shader in stages:
-        if int(contract.model_major) < 6:
-            continue
-        found = _material_reads(contract, shader, prefix)
-        reads.append((stage, found))
-        for offset, value in found.tags.items():
-            if tags.setdefault(offset, value) != value:
-                raise MaterialPreviewError(QT_TRANSLATE_NOOP(
-                    "MaterialPreview", "The shaders accept different material record kinds."))
+    reads = [(stage, _material_reads(contract, shader)) for stage, contract, shader in stages
+             if int(contract.model_major) >= 6]
     words = {(kind, offset + prefix): name for (kind, name), offset in
              material.layout.word_offsets(material.shader_lod).items()}
     slots = {offset: name for (kind, offset), name in words.items() if kind == "texture"}
@@ -668,10 +645,11 @@ def material_record(document, stages: Sequence[tuple[str, object, bytes]], mater
             heap[index] = (RANGE_SRV, VIEW_DIMENSIONS["buffer"], (index, 0, 0, _gpu_buffer(
                 name, material.buffers.get(name, ""), load_file, read_buffers)))
         struct.pack_into("<I", record, offset - prefix, buffers[name])
-    header = bytearray(prefix)
-    for offset, value in tags.items():
-        struct.pack_into("<I", header, offset, value)
-    held = bytes(header) + bytes(record)
+    laid = bytearray(prefix) + record + bytearray(int(profile.material_record_suffix_size))
+    if profile.material_record_tag:
+        struct.pack_into("<I", laid, prefix + len(record) if profile.material_record_suffix_size else 0,
+                         profile.record_tag(material.components, material.floats, material.layout))
+    held = bytes(laid)
 
     def given(shape: Callable[[bytes], bytes], place: Hashable) -> bytes | Following:
         bound = shape(held)
@@ -682,10 +660,10 @@ def material_record(document, stages: Sequence[tuple[str, object, bytes]], mater
             animated = material.animated()
             if not animated:
                 return bound
-            now = bytearray(record)
+            now = bytearray(held)
             for offset, values in animated:
-                struct.pack_into(f"<{len(values)}f", now, offset, *values)
-            return shape(bytes(header) + now.take_bytes())
+                struct.pack_into(f"<{len(values)}f", now, prefix + offset, *values)
+            return shape(now.take_bytes())
         return Following((material.animated, place, held), make)
     sizes = [*found.tables.values() for _stage, found in reads]
     view = None
@@ -718,7 +696,7 @@ def shader_bindings(document, shaders: Mapping[str, tuple], material: PreviewMat
         reads, heap, missing = dict(owned.reads), owned.heap, owned.missing
     else:
         owned, heap, missing = None, dict(shared.heap), []
-        reads = {stage: _material_reads(contract, shader, prefix) for stage, contract, shader in stages
+        reads = {stage: _material_reads(contract, shader) for stage, contract, shader in stages
                  if int(contract.model_major) >= 6}
         if any(read.resource is not None and not read.resource.bind_count
                for found in reads.values() for read in found.textures):

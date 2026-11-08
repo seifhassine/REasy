@@ -19,6 +19,7 @@ lazy import fastdxiltext
 
 _VALUE = r"%[-$._A-Za-z0-9]+"
 _ASSIGN = re.compile(rf"^(?P<result>{_VALUE})\s*=\s*(?P<body>.+)$")
+_TAG_TEST = re.compile(r"= icmp eq i32 (%[\w.]+|-?\d+), (%[\w.]+|-?\d+)$")
 _LEGACY = re.compile(
     r"@dx\.op\.createHandle\(i32 57, i8 (\d+), i32 (\d+),"
 )
@@ -747,7 +748,24 @@ def relocate_material_record_words(
     return [*replacements.get(index, (line,)) for index, line in enumerate(lines)]
 
 
+def retag_material_record(lines: list[str], contract: ShaderContract, tags: dict[int, int],
+                          *, entry_metadata: DxilEntryMetadata | None = None) -> list[str]:
+    if not tags:
+        return lines
+    values = {word.value: tags[word.byte_offset]
+              for access in material_record_accesses(lines, contract, entry_metadata=entry_metadata)
+              for word in access.words if word.byte_offset in tags}
+
+    def retagged(line: str) -> str:
+        match = _TAG_TEST.search(line.rstrip())
+        for word, number in ((1, 2), (2, 1)):
+            if match and match[word] in values and not match[number].startswith("%"):
+                return line[:match.start(number)] + str(values[match[word]]) + line[match.end(number):]
+        return line
+    return [retagged(line) for line in lines]
+
+
 __all__ = ["BindlessMaterialAccess", "EngineHeapHandle", "HeapIndices", "MaterialWordRead", "MaterialTextureAccess",
            "bound_resource", "engine_heap_handles", "material_buffer_reads", "material_record_accesses",
            "material_input_accesses", "material_texture_accesses", "record_address_form", "record_address_inputs",
-           "record_address_source", "relocate_material_record_words", "texture_handles"]
+           "record_address_source", "relocate_material_record_words", "retag_material_record", "texture_handles"]

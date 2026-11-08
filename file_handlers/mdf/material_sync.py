@@ -122,6 +122,7 @@ def synchronize_material_parameters(material: MatData, layout: MaterialBufferLay
     material.parameters = synchronized
     material.header.param_count = len(synchronized)
     material.header.params_size = layout.byte_size
+    material.header.parameter_value_count = previous_end // 4
     material.parameter_layout_size = layout.byte_size
     return MaterialSyncResult(
         preserved=tuple(preserved),

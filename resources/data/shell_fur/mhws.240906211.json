@@ -17,14 +17,14 @@
   "lod_limit": "ShellLodLimit"
  },
  "parameter_fields": {
-  "material": "v0_MaterialName",
+  "material": "MaterialName",
   "force_two_side": "ForceTwoSide",
   "force_alpha_test": "ForceAlphaTest",
   "shell_count": "ShellCount",
-  "thin_type": "v4_ShellThinType",
+  "thin_type": "ShellThinType",
   "bottom_save": "ShellBottomSave",
-  "coord_type": "v6_GroomingTexCoordType",
-  "grooming_texture": "v7_GroomingTexture",
+  "coord_type": "GroomingTexCoordType",
+  "grooming_texture": "GroomingTexture",
   "height": "ShellHeight",
   "bend_rate": "BendRate",
   "bend_root_rate": "BendRootRate",

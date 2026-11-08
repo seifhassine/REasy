@@ -69,16 +69,17 @@ def _components(value_type: str) -> list[str]:
     return [""] if value_width(value_type) == 1 else [f".{'xyzw'[item]}" for item in range(value_width(value_type))]
 
 
-def dxil_surface_plan(flow: NativeFlow, edits, assembly: str = "", contract=None,
-                      instances: str = "", prefix: int = 0, record_address: str = "") -> tuple[DxilSurfaceEdit, ...]:
+def dxil_surface_plan(flow: NativeFlow, edits, assembly: str = "", contract=None, instances: str = "",
+                      prefix: int = 0, record_address: str = "", tail: range = range(0)) -> tuple[DxilSurfaceEdit, ...]:
     """Edits reading the material record need ``assembly`` and ``contract``."""
-    return _DxilPlanner(flow, assembly, contract, instances, prefix, record_address).plan(edits)
+    return _DxilPlanner(flow, assembly, contract, instances, prefix, record_address, tail).plan(edits)
 
 
 class _DxilPlanner:
-    def __init__(self, flow: NativeFlow, assembly: str, contract, instances: str, prefix: int, record_address: str):
+    def __init__(self, flow: NativeFlow, assembly: str, contract, instances: str, prefix: int, record_address: str,
+                 tail: range):
         self.flow, self.assembly, self.contract = flow, assembly, contract
-        self.instances, self.prefix, self.record_address = instances, prefix, record_address
+        self.instances, self.prefix, self.record_address, self.tail = instances, prefix, record_address, tail
         self.computed, self._reaching = [], {}
 
     def plan(self, edits) -> tuple[DxilSurfaceEdit, ...]:
@@ -192,12 +193,14 @@ class _DxilPlanner:
 
     @cached_property
     def reads(self):
-        return per_build("material_records", (self.assembly, self.contract.fingerprint, self.instances, self.prefix),
-                         lambda: material_records(self.assembly, self.contract, self.instances, self.prefix))
+        return per_build("material_records", (self.assembly, self.contract.fingerprint, self.instances, self.prefix,
+                                              self.tail),
+                         lambda: material_records(self.assembly, self.contract, self.instances, self.prefix, self.tail))
 
     def unread(self, block, ahead=True) -> bool:
-        """The master's tag (Onimusha's record prefix) is tested before ``block`` and no path reaching it (nor,
-        ``ahead``, leaving it) reads the values: the exit for another master's record, which keeps the game's value."""
+        """The record's tag (Onimusha's prefix, MH Wilds' tail) is tested before ``block`` and no path reaching it
+        (nor, ``ahead``, leaving it) reads the values: the exit for another master's record, which keeps the game's
+        value."""
         values = [read[1] for read in self.reads if not read[5]]
         return (not self.record_address and bool(values) and any(block in read[4] for read in self.reads if read[5])
                 and not any(block in self.reaching(item) or ahead and item in self.reaching(block) for item in values))
@@ -212,8 +215,8 @@ class _DxilPlanner:
                 records.setdefault(number, []).append((defined_line, address))
                 header[number] = header.get(number, True) and prefix_only
         values = {read[0] for read in self.reads if not read[5]}
-        # A read of the prefix alone (Onimusha's master tag, tested before the values) is the values' record where the
-        # values are read at its address.
+        # A read of the tag alone (Onimusha's prefix, MH Wilds' tail, tested before the values) is the values' record
+        # where the values are read at its address.
         if any(header.values()) and not all(header.values()):
             records = {number: found for number, found in records.items() if not header[number]}
         elif values and not values & records.keys():

@@ -51,8 +51,8 @@ def _control_flow(statements):
     return fastdxiltext.control_flow(statements)
 
 
-def material_records(assembly: str, contract, instances: str = "",
-                     prefix: int = 0) -> tuple[tuple[str, str, int, str, frozenset[str], bool], ...]:
+def material_records(assembly: str, contract, instances: str = "", prefix: int = 0,
+                     tail: range = range(0)) -> tuple[tuple[str, str, int, str, frozenset[str], bool], ...]:
     from .profiles.re_engine_bindless_material import material_record_accesses
     lines = assembly.splitlines()
     accesses = material_record_accesses(lines, contract, instances=instances)
@@ -76,8 +76,8 @@ def material_records(assembly: str, contract, instances: str = "",
         site = sites.get(access.address)
         if site is not None:
             number, block, line, dominated = site
-            header = bool(prefix and access.words and not access.storage.startswith("instance")
-                          and all(word.byte_offset < prefix for word in access.words))
+            header = bool(access.words and not access.storage.startswith("instance")
+                          and all(word.byte_offset < prefix or word.byte_offset in tail for word in access.words))
             records.append((number, block, line, access.address, dominated, header))
             lane = sites.get(own[access.address]) if access.address in own else None
             if lane is not None:

@@ -29,7 +29,8 @@ def preview_material(surface, parameters: Callable[[], Mapping[str, float | tupl
     animated = None if parameters is None else _animated(surface, offsets, parameters)
     return PreviewMaterial(layout, values, textures, surface.material_flags,
                            0 if layout.shader_lod_redirects else None, buffers=buffers, animated=animated,
-                           shading_type=surface.shading_type, flag_version=surface.flag_version)
+                           shading_type=surface.shading_type, flag_version=surface.flag_version,
+                           components=surface.components, floats=surface.floats)
 
 
 def _animated(surface, offsets: Mapping[str, int], parameters: Callable[[], Mapping[str, float | tuple[float, ...]]]

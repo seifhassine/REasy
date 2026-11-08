@@ -219,6 +219,9 @@ def _profile(
     mdf_resource_version: int | None = None,
     bindless_materials: bool = False,
     material_record_prefix_size: int = 0,
+    material_record_suffix_size: int = 0,
+    material_record_tag: tuple[tuple[int, int], ...] = (),
+    material_record_tag_floats: bool = False,
     full_authoring: bool = True,
     shader_graph_id: str = "",
     instanced_material_buffer: str = "",
@@ -240,6 +243,9 @@ def _profile(
                 bindless_materials=bindless_materials,
                 instanced_material_buffer=instanced_material_buffer,
                 material_record_prefix_size=material_record_prefix_size,
+                material_record_suffix_size=material_record_suffix_size,
+                material_record_tag=material_record_tag,
+                material_record_tag_floats=material_record_tag_floats,
                 full_authoring=full_authoring,
             ),
             default_for_version=True,
@@ -337,6 +343,8 @@ MHWS_MMTR_PROFILE = _profile(
     # The version the game's executable registers.
     current_resource_version=240906211,
     bindless_materials=True,
+    material_record_suffix_size=16,
+    material_record_tag=((0x3FF, 0), (0xFF, 10), (0x3F, 18), (0x3F, 24)),
     instanced_material_buffer="UserMaterialInstances",
 )
 RE9_MMTR_PROFILE = _profile(
@@ -365,6 +373,8 @@ ONIMUSHA_WOTS_MMTR_PROFILE = _profile(
     mdf_resource_version=51,
     bindless_materials=True,
     material_record_prefix_size=16,
+    material_record_tag=((0x3FF, 0), (0xFF, 10), (0x3F, 18), (0x3F, 24)),
+    material_record_tag_floats=True,
     instanced_material_buffer="UserMaterialInstances",
 )
 ONIMUSHA_WOTS_DEMO_MMTR_PROFILE = _profile(

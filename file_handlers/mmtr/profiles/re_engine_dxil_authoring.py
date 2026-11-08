@@ -37,7 +37,7 @@ lazy from file_handlers.sdf.shader_graph_constant_buffer import constant_view_ov
 lazy from file_handlers.sdf.shader_graph_texture import texture_coordinate_width
 lazy from file_handlers.sdf.hlsl_contract import (resource_identifier, resource_declaration as _resource_declaration, contract_structures as _contract_structures, contract_cbuffer as _contract_cbuffer)
 from .re_engine_dxil_recovery import LLVM_NAME, ReEngineDxilSemanticIr
-from .re_engine_bindless_material import material_record_accesses, relocate_material_record_words
+from .re_engine_bindless_material import material_record_accesses, relocate_material_record_words, retag_material_record
 from .re_engine_dxil_signatures import DxilEntryMetadata, carrier_input_rows, with_signature_rows
 from .material_stage_inputs import stage_input_library
 from ..native_build_cache import NativeBuildCache, native_build_key
@@ -930,14 +930,16 @@ def _merge_entry(
     carrier_metadata: DxilEntryMetadata | None = None,
     surface_plan: tuple = (),
     material_instances: str = "",
+    material_tags: Mapping[int, int] | None = None,
 ) -> str:
     def overridden(body, carrier_entry, metadata):
         body = _apply_constant_overrides(body, carrier_entry, candidate_contract, scalar_expressions)
         body = _apply_material_overrides(body, carrier_entry, candidate_contract, material_expressions, metadata,
                                          material_instances)
+        body = retag_material_record(body, candidate_contract, dict(material_tags or {}), entry_metadata=metadata)
         return relocate_material_record_words(body, candidate_contract, dict(material_word_offsets),
                                               entry_metadata=metadata)
-    steps = overridden if scalar_expressions or material_expressions or any(
+    steps = overridden if scalar_expressions or material_expressions or material_tags or any(
         source != target for source, target in material_word_offsets.items()) else None
     # Carrier code the surface plan splices into the native entry keeps its instruction metadata (the alias scopes DXC
     # gives an inlined helper's returned resource, branch and loop hints), which names the carrier's own metadata, kept
@@ -992,6 +994,7 @@ class _NativeDxilJob:
     configuration: tuple
     surface_plan: tuple = ()
     material_instances: str = ""
+    material_tags: tuple = ()
 
 
 def _dxil_job_key(runtime, job):
@@ -1000,7 +1003,7 @@ def _dxil_job_key(runtime, job):
         job.expressions, job.texture_overrides, job.material_expressions,
         job.material_word_offsets, job.indexed_reads, job.entry_point,
         job.material_buffer_size, job.carrier_arguments, job.optimizer_passes,
-        job.configuration, job.surface_plan, job.material_instances)
+        job.configuration, job.surface_plan, job.material_instances, job.material_tags)
 
 
 def _prepare_dxil_job(
@@ -1016,6 +1019,7 @@ def _prepare_dxil_job(
     material_word_offsets: Mapping[int, int] | None = None,
     surface_plan: tuple = (),
     material_instances: str = "",
+    material_tags: Mapping[int, int] | None = None,
 ):
     expressions = normalize_word_expressions(scalar_expressions)
     texture_overrides = dict(texture_binding_overrides or {})
@@ -1089,7 +1093,7 @@ def _prepare_dxil_job(
         tuple(material_expressions.items()), tuple(material_word_offsets.items()),
         tuple(indexed_reads), entry_point, material_buffer_size,
         tuple(_CARRIER_ARGUMENTS), tuple(passes), tuple(_DXIL_BUILD_CONFIGURATION), tuple(surface_plan),
-        material_instances,
+        material_instances, tuple(sorted((material_tags or {}).items())),
     )
     runtime = _native_build_runtime()
     return job, _dxil_job_key(runtime, job), runtime
@@ -1135,6 +1139,7 @@ def _execute_dxil_job(job: _NativeDxilJob) -> ReEngineDxilBuild:
         carrier_metadata=prepared.metadata,
         surface_plan=job.surface_plan,
         material_instances=job.material_instances,
+        material_tags=dict(job.material_tags),
     )
     try:
         merged = _collected_flags_cleared(fastdxiltext.always_inline(merged))
@@ -1171,6 +1176,7 @@ def rebuild_re_engine_dxil(
     constant_view_overrides: Mapping[tuple[int, int], tuple[int, int]] | None = None,
     surface_plan: tuple = (),
     material_instances: str = "",
+    material_tags: Mapping[int, int] | None = None,
 ) -> ReEngineDxilBuild:
     overrides = dict(texture_binding_overrides or {})
     overrides.update({('b', *view): target for view, target in (constant_view_overrides or {}).items()})
@@ -1179,7 +1185,7 @@ def rebuild_re_engine_dxil(
         texture_binding_overrides=overrides, helpers=helpers,
         material_expressions=material_expressions, material_buffer_size=material_buffer_size,
         material_word_offsets=material_word_offsets, surface_plan=surface_plan,
-        material_instances=material_instances,
+        material_instances=material_instances, material_tags=material_tags,
     )
     cached = _NATIVE_BUILD_CACHE.get(cache_key)
     if cached is not None:

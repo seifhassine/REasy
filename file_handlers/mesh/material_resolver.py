@@ -85,6 +85,8 @@ class MdfSurfaceProfile:
     two_sided: bool = False
     shading_type: int = 0
     flag_version: int = 0
+    components: int = 0
+    floats: int = 0
 
 
 @dataclass(slots=True)
@@ -202,6 +204,8 @@ def surface_profile(material, file_version: int) -> MdfSurfaceProfile:
         two_sided=two_sided(material.header.material_flags, file_version),
         shading_type=int(material.header.shader_type),
         flag_version=int(file_version),
+        components=sum(int(parameter.component_count) for parameter in material.parameters),
+        floats=int(material.header.parameter_value_count),
     )
 
 

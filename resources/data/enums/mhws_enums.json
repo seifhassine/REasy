@@ -248278,6 +248278,10 @@
 			"value": 2147483648
 		},
 		{
+			"name": "GraphicsFeatures_Gen6",
+			"value": 34359738368
+		},
+		{
 			"name": "GraphicsFeatures_GL_Family",
 			"value": 134217728
 		},

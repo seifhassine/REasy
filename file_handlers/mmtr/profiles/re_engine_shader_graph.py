@@ -189,6 +189,7 @@ class _DxilProduct:
     material_word_offsets: Mapping[int, int] | None = None
     surface_plan: tuple = ()
     material_instances: str = ""
+    material_tags: Mapping[int, int] | None = None
 
     def rebuild_options(self) -> dict[str, object]:
         return {
@@ -200,6 +201,7 @@ class _DxilProduct:
             "material_word_offsets": self.material_word_offsets,
             "surface_plan": self.surface_plan,
             "material_instances": self.material_instances,
+            "material_tags": self.material_tags,
         }
 
 
@@ -2048,8 +2050,17 @@ class ReEngineShaderGraphProfile:
     unrebuilt_material_resources: tuple[str, ...] = ("UserMaterialInstances",)
     # Runtime arena/CBV prefix, not part of the named UserMaterial/MDF buffer.
     material_record_prefix_size: int = 0
+    material_record_suffix_size: int = 0
+    material_record_tag: tuple[tuple[int, int], ...] = ()
+    material_record_tag_floats: bool = False
     authoring_roles: tuple[str, ...] = STAGE_KEYS
     descriptor_layout_editing: bool = True
+
+    def record_tag(self, components: int, floats: int, layout: MaterialDescriptorLayout) -> int:
+        counts = (floats if self.material_record_tag_floats else components, len(layout.textures),
+                  len(layout.gpu_buffers), layout.baked_texture_array_size)
+        return sum((count & mask) << shift
+                   for count, (mask, shift) in zip(counts, self.material_record_tag, strict=True))
 
     def supplement_material_interface(
         self,
@@ -2502,9 +2513,14 @@ class ReEngineShaderGraphProfile:
         recovered = _program(project, semantics, document, self)
         master = _master(project)
         bindless = master.properties.get("parameter_storage") in BINDLESS_PARAMETER_STORAGES
-        material_word_offsets = {}
+        material_word_offsets, material_tags, tail = {}, {}, range(0)
         descriptor_layout = None
         source_descriptor_layout = None
+        layouts = master.properties.get("descriptor_layouts", ())
+        if bindless and self.material_record_suffix_size and layouts:
+            end = self.material_record_prefix_size + MaterialDescriptorLayout.from_dict(layouts[0]).allocation_size(
+                master.properties.get("shader_lod"))
+            tail = range(end, end + self.material_record_suffix_size)
         program = document.sdf.targets[semantics.target_index].programs[semantics.program_index]
         element = (_copy_element(self, recovered, program) if recovered.ir_kind in {"dxil", "dxbc-sm5", "spirv"}
                    else None)
@@ -2546,6 +2562,19 @@ class ReEngineShaderGraphProfile:
                 source_descriptor_layout, descriptor_layout, material_word_offsets = _descriptor_plan(project, layout)
                 prefix = self.material_record_prefix_size
                 material_word_offsets = {source + prefix: target + prefix for source, target in material_word_offsets.items()}
+                if tail:
+                    material_word_offsets[tail.start] = prefix + descriptor_layout.allocation_size(
+                        master.properties.get("shader_lod"))
+                if self.material_record_tag:
+                    pins = [pin for pin in master.properties.get("input_pins", ())
+                            if pin.get("input_kind") == "parameter"]
+                    tag = self.record_tag(sum(value_width(item.value_type) for item in project.parameters),
+                                          max((v.byte_offset + v.byte_size for v in layout.variables), default=0) // 4,
+                                          descriptor_layout)
+                    if tag != self.record_tag(sum(value_width(pin["value_type"]) for pin in pins), max(
+                            (int(pin["source_byte_offset"]) + 4 * value_width(pin["value_type"]) for pin in pins),
+                            default=0) // 4, source_descriptor_layout):
+                        material_tags = {tail.start if tail else 0: tag}
             elif bindless:
                 _validate_fixed_descriptor_interface(project)
         else:
@@ -2628,7 +2657,7 @@ class ReEngineShaderGraphProfile:
         if edits:
             surface_plan = dxil_surface_plan(flow, edits, recovered.ir.to_assembly(), recovered.contract,
                                              self.instanced_material_buffer, self.material_record_prefix_size,
-                                             record_address)
+                                             record_address, tail)
             helpers = "\n\n".join(filter(None, (helpers, *surface_helpers.values())))
             added = tuple(added_target_field(edit.split.channel) for edit in edits
                           if edit.split.channel.scope == "added" and edit.split.channel.stage == "pixel")
@@ -2649,6 +2678,7 @@ class ReEngineShaderGraphProfile:
             material_word_offsets=material_word_offsets,
             surface_plan=surface_plan,
             material_instances=self.instanced_material_buffer,
+            material_tags=material_tags,
         )
         return product, adjusted, layout, semantic_key
 
@@ -2856,6 +2886,9 @@ def re_engine_shader_graph_profile(
     bindless_materials: bool = False,
     instanced_material_buffer: str = "",
     material_record_prefix_size: int = 0,
+    material_record_suffix_size: int = 0,
+    material_record_tag: tuple[tuple[int, int], ...] = (),
+    material_record_tag_floats: bool = False,
     full_authoring: bool = True,
 ) -> ReEngineShaderGraphProfile:
     """``full_authoring`` is off for unverified builds."""
@@ -2864,6 +2897,9 @@ def re_engine_shader_graph_profile(
         instanced_material_buffer=instanced_material_buffer,
         material_instance_resource_names=BINDLESS_MATERIAL_RESOURCES if bindless_materials else (),
         material_record_prefix_size=material_record_prefix_size,
+        material_record_suffix_size=material_record_suffix_size,
+        material_record_tag=material_record_tag,
+        material_record_tag_floats=material_record_tag_floats,
         authoring_roles=STAGE_KEYS if full_authoring else ("pixel",),
         descriptor_layout_editing=full_authoring,
     )
