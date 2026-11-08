@@ -10,12 +10,15 @@ Verification: the reopened node table matches the authored model, the removed id
 from that node only, every other node compares equal, both ex_id arrays are untouched, all
 blocks are byte-identical, the UVAR snapshot is unchanged, and REasy's ``rebuild()`` is stable.
 """
+import logging
 from dataclasses import dataclass
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
 from file_handlers.motfsm.selection import resolve_node
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -59,7 +62,7 @@ def build(source: bytes, plan: ActionRemovePlan) -> bytes:
     position, reference, klass = matches[0]
     old_actions = list(node.actions)
     new_actions = old_actions[:position] + old_actions[position + 1:]
-    print(f'  {node.name}[{index}] drop action slot {position}: {klass} '
+    log.info(f'  {node.name}[{index}] drop action slot {position}: {klass} '
           f'(0x{reference.id_hash:08X}, ex={reference.ex_id}); actions {len(old_actions)} -> {len(new_actions)}')
 
     # ------------------------------------------------------------------ node table

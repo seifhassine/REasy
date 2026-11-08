@@ -18,6 +18,7 @@ New objects: one Condition instance (clone of the template state's condition) an
 other block and the whole tail stays byte-identical.
 
 """
+import logging
 from dataclasses import dataclass
 import copy
 import struct
@@ -33,6 +34,8 @@ HEADER_MAP_COUNT, HEADER_DATA_COUNT = 48, 52
 from file_handlers.motfsm.serialization import serialize_nodes
 from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -116,10 +119,10 @@ def build(source: bytes, plan: StateAddPlan) -> bytes:
     block_name = 'static_conditions' if tag == 0x40 else 'conditions'
     if tag not in (0, 0x40):
         raise ValueError(f'unsupported condition reference 0x{raw:08X}')
-    print(f'  template {template_node.name}.state[{template_state}] condition {template_condition.class_name} '
+    log.info(f'  template {template_node.name}.state[{template_state}] condition {template_condition.class_name} '
           f'({block_name}) -> target 0x{template.mTransitions:08X}')
     for name, value in fields_of(template_condition).items():
-        print(f'      {name} = {value.value}')
+        log.info(f'      {name} = {value.value}')
     assert not overrides or set(overrides) <= set(fields_of(template_condition)), \
         f'unknown field(s): {sorted(set(overrides) - set(fields_of(template_condition)))}'
 
@@ -144,7 +147,7 @@ def build(source: bytes, plan: StateAddPlan) -> bytes:
     new_condition_instance, new_condition_object = clone_block_object(
         condition_block, template_condition.index, {'v0_ID': new_condition_id, **overrides})
     new_condition_raw = new_condition_object | 0x40000000 if tag == 0x40 else new_condition_object
-    print(f'  new condition instance {template_condition.index} -> {new_condition_object} '
+    log.info(f'  new condition instance {template_condition.index} -> {new_condition_object} '
           f'(v0_ID={new_condition_id}, raw=0x{new_condition_raw:08X})')
 
     new_event_objects, events_splice = [], None
@@ -169,7 +172,7 @@ def build(source: bytes, plan: StateAddPlan) -> bytes:
             events_splice = block_splice(events_block)
         else:
             new_event_objects = list(template.mStates.values)
-        print(f'  transition events {list(template.mStates.values)} -> {new_event_objects} ({plan.events})')
+        log.info(f'  transition events {list(template.mStates.values)} -> {new_event_objects} ({plan.events})')
 
     # ---------------------------------------------------------------- the new state owns a fresh map id
     from file_handlers.motfsm.transitions import TransitionCopies
@@ -190,7 +193,7 @@ def build(source: bytes, plan: StateAddPlan) -> bytes:
     new_state.TransitionMaps = new_map_id
     new_state.mStates.values = new_event_objects
     node.states.insert(insertion, new_state)
-    print(f'  {node.name}: states {len(node.states) - 1} -> {len(node.states)}; '
+    log.info(f'  {node.name}: states {len(node.states) - 1} -> {len(node.states)}; '
           f'new state target 0x{target.id_hash:08X} ({target.name}), own map {new_map_id}')
 
 

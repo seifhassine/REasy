@@ -6,6 +6,7 @@ turn limit in degrees, e.g. 180).  A state's `mStates.values` holds **object ind
 `transition_events` block, so a new event is one cloned instance plus one index appended there.
 
 """
+import logging
 from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
@@ -16,6 +17,8 @@ EVENTS_BLOCK = 'transition_events'
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -53,7 +56,7 @@ def build(source: bytes, plan: StateAddEventPlan) -> bytes:
     assert template_instance is not None, f'event object {template_object} does not resolve'
     file_index = template_instance.index
     template_block_name = 'static_transition_events' if (template_object & 0xFFFFFFFF) >> 24 == 0x40 else EVENTS_BLOCK
-    print(f'  template event: {template_instance.class_name}')
+    log.info(f'  template event: {template_instance.class_name}')
 
     overrides = assignments(template_instance, plan.set)
     used_uids = set()
@@ -73,7 +76,7 @@ def build(source: bytes, plan: StateAddEventPlan) -> bytes:
     _, new_object = clone_block_object(
         events_block, file_index, overrides,
         source_block=doc.rsz_blocks.get_block(template_block_name))
-    print(f'  new event instance={new_object} ' + ', '.join(f'{k}={v}' for k, v in overrides.items()))
+    log.info(f'  new event instance={new_object} ' + ', '.join(f'{k}={v}' for k, v in overrides.items()))
 
 
     events_splice = block_splice(events_block)

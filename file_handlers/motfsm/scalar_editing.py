@@ -2,9 +2,12 @@
 
 Every edit function takes the source bytes and returns verified candidate bytes.
 """
+import logging
 from .motfsm_file import MotfsmFile
 from .selection import resolve_node, state_indexes
 from .values import parse_field
+
+log = logging.getLogger(__name__)
 
 
 def read_document(data: bytes) -> MotfsmFile:
@@ -19,7 +22,7 @@ def open_document(path):
 def save_edits(document, edits):
     edits = list(edits)
     for binding, value in edits:
-        print(f'{binding.name}: {binding.value} -> {value}')
+        log.info(f'{binding.name}: {binding.value} -> {value}')
         document.edit_field(binding, value)
     output = document.rebuild()
     expected = bytearray(document.source)

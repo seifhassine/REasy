@@ -17,11 +17,14 @@ Values are accepted as enum member names or raw numbers ("EndType=2", "exitFrame
 Verification mirrors the GUI path: only the addressed record may change, UVAR data must
 stay identical, and REasy's rebuild() must be stable on the candidate.
 """
+import logging
 from dataclasses import dataclass
 from file_handlers.motfsm.motfsm_file import MotfsmFile
 from file_handlers.motfsm.validation import variable_snapshot
 from file_handlers.motfsm.transitions import TransitionTables, patch_record, edit_state_transition
 from file_handlers.motfsm.selection import resolve_node
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -49,7 +52,7 @@ def build(source: bytes, plan: StateTransitionPlan) -> bytes:
         raise ValueError(f'{node.name} has {len(node.states)} states; --state {plan.state} is out of range')
     _, _, data_index = resolve_on(document)
     before_fields = {field.name: field.value for field in TransitionTables(document).fields(data_index)}
-    print(f'  {node.name} state[{plan.state}] transition-data #{data_index}')
+    log.info(f'  {node.name} state[{plan.state}] transition-data #{data_index}')
 
     after = source
     for item in plan.set:
@@ -77,7 +80,7 @@ def build(source: bytes, plan: StateTransitionPlan) -> bytes:
             raise ValueError(f'{name}: rebuild is not stable')
         after = updated
         now = saved_tables.fields(saved_index)
-        print(f'  {name}: {before_fields.get(name)} -> '
+        log.info(f'  {name}: {before_fields.get(name)} -> '
               f'{[f.value for f in now if f.name == name]}')
 
     verified = MotfsmFile()

@@ -17,6 +17,7 @@ Verification: source node table is reproduced byte-exactly before the edit, ever
 untouched block keeps its bytes, the reopened node table matches the authored model,
 and REasy's own rebuild() is stable on the candidate.
 """
+import logging
 import struct
 from dataclasses import dataclass
 
@@ -27,6 +28,8 @@ from utils.hash_util import murmur3_hash
 from file_handlers.motfsm.selection import resolve_node, node_string
 from file_handlers.motfsm.values import parse_field
 from file_handlers.motfsm.authoring import block_ids, block_padding_is_zero, block_splice, clone_block_object, next_identity, read_document
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -77,7 +80,7 @@ def build(source: bytes, recipe: NodeActionChildPlan, *, registry=None) -> bytes
     actions_block = None
     action_splice = None
     if recipe.no_action:
-        print('  --no-action: the new node carries no Actions (pure shell)')
+        log.info('  --no-action: the new node carries no Actions (pure shell)')
     else:
         identity_map = doc.references.action_identities()
         block_name, instance_index = identity_map[(reference.id_hash, reference.ex_id)]
@@ -90,7 +93,7 @@ def build(source: bytes, recipe: NodeActionChildPlan, *, registry=None) -> bytes
         new_action_refs = [Action(new_action_id, reference.ex_id)]
         assert actions_block.object_table[:-1] == old_objects, 'cloning reordered the action table'
         action_splice = block_splice(actions_block)
-        print(f'  move action[{position:2d}] {instance.class_name}  v1_ID {reference.id_hash} -> {new_action_id} '
+        log.info(f'  move action[{position:2d}] {instance.class_name}  v1_ID {reference.id_hash} -> {new_action_id} '
               f'({block_name} object {instance_index} -> {new_object})')
 
     # ------------------------------------------------------------------ selector for the parent
@@ -107,7 +110,7 @@ def build(source: bytes, recipe: NodeActionChildPlan, *, registry=None) -> bytes
         assert block_padding_is_zero(selectors_block), 'selectors block has non-zero padding'
         template_selector = doc.references.object_instance('selectors', template_node.selector_id & 0xFFFFFFFF)
         _, new_selector_object = clone_block_object(selectors_block, template_selector.index)
-        print(f'  {parent.name}: selector -1 -> {new_selector_object} '
+        log.info(f'  {parent.name}: selector -1 -> {new_selector_object} '
               f'(clone of {template_selector.class_name} from {template_node.name})')
 
     # ------------------------------------------------------------------ transition condition
@@ -138,10 +141,10 @@ def build(source: bytes, recipe: NodeActionChildPlan, *, registry=None) -> bytes
             overrides[key] = parse_field(field_map[key], text)
         _, new_condition_object = clone_block_object(condition_block, template_condition.index, overrides)
         new_condition_raw = (new_condition_object | 0x40000000) if tag == 0x40 else new_condition_object
-        print(f'  transition condition: clone of {template_condition.class_name} (state '
+        log.info(f'  transition condition: clone of {template_condition.class_name} (state '
               f'{recipe.transition_condition_from}) v0_ID={new_condition_id} raw=0x{new_condition_raw:08X}')
         for item in recipe.transition_set:
-            print(f'      set {item}')
+            log.info(f'      set {item}')
 
     # ------------------------------------------------------------------ new node record
     strings_start = doc.bhvt.offsets['strings']
@@ -216,7 +219,7 @@ def build(source: bytes, recipe: NodeActionChildPlan, *, registry=None) -> bytes
         splices.append(block_splice(selectors_block))
     splices.sort()
     output = bytes(splice_document(doc, splices))
-    print(f'  new node 0x{new_node_id:08X} "{recipe.name}" under {parent.name}; '
+    log.info(f'  new node 0x{new_node_id:08X} "{recipe.name}" under {parent.name}; '
           f'{parent.name} actions {len(old_actions)} -> {len(parent.actions)}')
 
     # ------------------------------------------------------------------ verification
@@ -228,7 +231,7 @@ def build(source: bytes, recipe: NodeActionChildPlan, *, registry=None) -> bytes
     if not recipe.allow_uvar_drift:
         assert_uvar_stable(variable_snapshot(original), variable_snapshot(verified), recipe.allow_uvar_drift)
     else:
-        print('  note: UVAR snapshot equality skipped (--allow-uvar-drift)')
+        log.info('  note: UVAR snapshot equality skipped (--allow-uvar-drift)')
     assert verified.rebuild() == output, 'REasy rebuild is not stable on the candidate'
     from file_handlers.motfsm.rsz_adapter import BLOCK_NAMES
     touched = set() if action_splice is None else {block_name}

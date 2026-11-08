@@ -27,9 +27,10 @@ templates
 exports
 Mods
 
-# Local test data: native game corpus and personal experiments
-/tests/TESTFILE/
-/tests/personal/
+# Local test data: native corpus, per-game samples (build.yml extracts into
+# tests/<game>/), logs and personal checks. Only fixtures/ is versioned.
+/tests/*/
+!/tests/fixtures/
 
 # OS and logs
 .DS_Store

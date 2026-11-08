@@ -62,9 +62,8 @@ extracted graphs into `-o OUTPUT_DIR` and attempt a first build; then resolve th
 bindings returns exit 2 and keeps the full `unbound` report; no banks are published.
 Without `--dry-run`, that report is saved as `build-report.json` even if unbound.
 
-Both builds interpret paths inside their plans relative to the working directory,
-They verify all resources before
-publication and protect input files. Each output replacement is atomic; a later
+Both builds interpret paths inside their plans relative to the working directory.
+They verify all resources before publication and protect input files. Each output replacement is atomic; a later
 replacement failure restores previously replaced outputs. This is not a transaction
 across a process or machine crash. `--dry-run` writes neither candidates nor reports.
 

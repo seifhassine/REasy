@@ -1,16 +1,16 @@
 """Shared parsing, diagnostics, verification staging, and atomic candidate publication."""
 import argparse
-from contextlib import redirect_stdout
+from contextlib import contextmanager, redirect_stdout
 from dataclasses import dataclass, field
 import hashlib
 import json
+import logging
 import os
 from pathlib import Path
 import struct
 import sys
 import tempfile
 from services.file_io import publish_bytes as publish, check_output
-from file_handlers.motfsm.selection import assignment
 from utils.number_format import parse_integer as integer  # CLI argument type
 
 from services.mhr.context import MHR_REGISTRY
@@ -107,7 +107,36 @@ def run_batch(args, parser):
         return EditResult(result.data, {'operations': reports}), len(plan)
 
 
+# Library operations report their steps through these loggers.
+PROGRESS_LOGGERS = ('file_handlers.motfsm', 'services.mhr.fsm')
+
+
+@contextmanager
+def progress_to_stderr():
+    """Show library progress messages on the stderr current at entry, for this call only."""
+    handler = logging.StreamHandler(sys.stderr)
+    handler.setFormatter(logging.Formatter('%(message)s'))
+    loggers = [logging.getLogger(name) for name in PROGRESS_LOGGERS]
+    saved = [(logger.level, logger.propagate) for logger in loggers]
+    for logger in loggers:
+        logger.addHandler(handler)
+        logger.setLevel(logging.INFO)
+        logger.propagate = False
+    try:
+        yield
+    finally:
+        for logger, (level, propagate) in zip(loggers, saved):
+            logger.removeHandler(handler)
+            logger.setLevel(level)
+            logger.propagate = propagate
+
+
 def main(build_parser, argv=None):
+    with progress_to_stderr():
+        return _run(build_parser, argv)
+
+
+def _run(build_parser, argv):
     argv = list(sys.argv[1:] if argv is None else argv)
     json_mode = '--json' in argv
     try:

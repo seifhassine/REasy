@@ -22,6 +22,7 @@ equal, the reopened file resolves the new action to the source class with identi
 fields, the data/object tables keep their length invariant, and REasy's own
 ``rebuild()`` is stable on the candidate.
 """
+import logging
 from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
@@ -30,6 +31,8 @@ from file_handlers.motfsm.authoring import block_ids, block_padding_is_zero, blo
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapshot
 from file_handlers.motfsm.selection import resolve_node
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -83,7 +86,7 @@ def build(source: bytes, donor: bytes, plan: ActionImportPlan) -> bytes:
     src_index, src_node, src_ref, src_instance = matches[0]
     klass = src_instance.class_name or ''
     src_block_name, src_instance_index = src_doc.references.action_identities()[(src_ref.id_hash, src_ref.ex_id)]
-    print(f'  template {klass} from {plan.donor_name}: {src_node.name}[{src_index}] '
+    log.info(f'  template {klass} from {plan.donor_name}: {src_node.name}[{src_index}] '
           f'(0x{src_ref.id_hash:08X}) {src_block_name}[{src_instance_index}]')
 
     # ------------------------------------------------------------------ guards on the target
@@ -119,7 +122,7 @@ def build(source: bytes, donor: bytes, plan: ActionImportPlan) -> bytes:
         raise ValueError(f'--position {position} outside 0..{len(target.actions)}')
     new_ex_ids = old_ex_ids + [new_ex_id]
     action_splice = block_splice(target_block)
-    print(f'  {target.name}[{target_index}] action slot {position}: {klass} '
+    log.info(f'  {target.name}[{target_index}] action slot {position}: {klass} '
           f'v1_ID {new_action_id} ex_id {new_ex_id} ({src_block_name} object {new_object})')
 
     # ------------------------------------------------------------------ node section

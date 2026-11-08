@@ -123,6 +123,8 @@ match the command options, and `build(source: bytes, plan) -> bytes`
 (`action_import.build` also takes the donor FSM bytes). Scalar commands map to
 `file_handlers.motfsm.scalar_editing` (`edit_action`, `edit_condition`, `edit_event`,
 `retarget_state`), and `query`/`dump` to `file_handlers.motfsm.query.query_nodes`.
+These functions write nothing to stdout: step descriptions go to INFO records on the
+`file_handlers.motfsm` and `services.mhr.fsm` loggers, which the CLI prints to stderr.
 
 MHR branch policy lives under `services.mhr.fsm`: the four recipes `node_clone`,
 `attack_clone`, `node_action_child` and `node_chainsaw`, plus `point_action`

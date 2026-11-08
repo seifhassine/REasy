@@ -9,10 +9,6 @@ from tools.cli.runtime import integer
 from tools.cli.runtime import MHR_REGISTRY
 
 
-def load(path, registry):
-    return load_rsz(path, registry)
-
-
 def configure_query(parser):
     parser.add_argument('--registry', type=Path, default=MHR_REGISTRY)
     parser.add_argument('--class', dest='klass', help='class name substring')
@@ -31,7 +27,7 @@ def records(rsz, args, enums):
 
 
 def query(args):
-    rsz = load(args.source, TypeRegistry(str(args.registry)))
+    rsz = load_rsz(args.source, TypeRegistry(str(args.registry)))
     enums = {}
     found = records(rsz, args, enums)
     return {'source': str(args.source.resolve()), 'instance_count': len(rsz.instance_infos),
@@ -52,14 +48,14 @@ def scan(args):
     registry = TypeRegistry(str(args.registry))
     matched, found, enums = 0, [], {}
     for path in paths:
-        rows = records(load(path, registry), args, enums)
+        rows = records(load_rsz(path, registry), args, enums)
         matched += len(rows)
         found.extend(dict(row, file=str(path.resolve())) for row in rows[:max(0, args.limit - len(found))])
     return {'source': str(args.source.resolve()), 'files_scanned': len(paths), 'matched': matched, 'instances': found, 'enums': enums}
 
 
 def elements(args):
-    rsz = load(args.source, TypeRegistry(str(args.registry)))
+    rsz = load_rsz(args.source, TypeRegistry(str(args.registry)))
     roots = [i for i in rsz.parsed_elements if type_name(rsz, i) == 'via.effect.script.EPVStandardData']
     if len(roots) != 1:
         raise ValueError(f'Expected one effect container, found {len(roots)}')
@@ -88,5 +84,5 @@ def references(args):
 
 
 def field_edit(args):
-    rsz = load(args.source, TypeRegistry(str(args.registry)))
+    rsz = load_rsz(args.source, TypeRegistry(str(args.registry)))
     return set_scalar_fields(rsz, args.instance, args.assignments)

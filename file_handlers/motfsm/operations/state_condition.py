@@ -7,6 +7,7 @@ node - untouched.  The new condition is appended to the RSZ `conditions` block w
 `v0_ID`; nothing else in the file changes.
 
 """
+import logging
 from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
@@ -16,6 +17,8 @@ from file_handlers.motfsm.validation import assert_uvar_stable, variable_snapsho
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -60,9 +63,9 @@ def build(source: bytes, plan: StateConditionPlan) -> bytes:
     overrides = assignments(template_condition, plan.set)
     old_fields = {field.name: field.value for field in old_condition.fields}
     template_fields = {field.name: field.value for field in template_condition.fields}
-    print(f'  {node.name}[{position}] -> {target.name}')
-    print(f'    now   : {old_condition.class_name}')
-    print(f'    after : {template_condition.class_name}  (template {template_node.name}[{plan.template_state}])')
+    log.info(f'  {node.name}[{position}] -> {target.name}')
+    log.info(f'    now   : {old_condition.class_name}')
+    log.info(f'    after : {template_condition.class_name}  (template {template_node.name}[{plan.template_state}])')
     copy_fields = {}
     for name in plan.copy_fields:
         if name not in template_fields:
@@ -74,7 +77,7 @@ def build(source: bytes, plan: StateConditionPlan) -> bytes:
         if name not in template_fields:
             raise ValueError(f'--set {name}: not a field of the template condition '
                              f'(have {sorted(template_fields)})')
-    print(f'    fields: from current {copy_fields} | overrides {overrides}')
+    log.info(f'    fields: from current {copy_fields} | overrides {overrides}')
 
     # ---------------------------------------------------------------- new condition instance
     block = doc.rsz_blocks.get_block('conditions')
@@ -99,7 +102,7 @@ def build(source: bytes, plan: StateConditionPlan) -> bytes:
         source_block=doc.rsz_blocks.get_block(template_block_name))
     block_data = native.build_validated()
     block_data += bytes((-len(block_data)) % 16)
-    print(f'  new condition instance {instance_index} object {new_object} v0_ID={new_id}')
+    log.info(f'  new condition instance {instance_index} object {new_object} v0_ID={new_id}')
 
     # ---------------------------------------------------------------- node table
     node.states[position].TransitionConditions = new_object
@@ -152,7 +155,7 @@ def build(source: bytes, plan: StateConditionPlan) -> bytes:
     # the old instance must be untouched, the new one must be a fresh slot
     assert new_object >= len(original.rsz_blocks.get_block('conditions').object_table)
     assert original.references.object_instance('conditions', old_raw) is not None
-    print(f'  Verified {plan.node}[{position}].TransitionConditions; other nodes and blocks unchanged')
-    print(f'  New condition fields: {fields}')
+    log.info(f'  Verified {plan.node}[{position}].TransitionConditions; other nodes and blocks unchanged')
+    log.info(f'  New condition fields: {fields}')
 
     return bytes(output)

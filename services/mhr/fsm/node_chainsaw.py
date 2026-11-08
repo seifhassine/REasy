@@ -5,6 +5,7 @@ transition, an unconditional normal exit, and a selector. ChainsawHit._HitId
 selects RCOL field0, as does PlayerHitAction2._hitIndex.
 Existing default transitions and selectors are retained.
 """
+import logging
 import copy
 import struct
 from dataclasses import dataclass
@@ -25,6 +26,8 @@ BUFF_CONDITION = 'ChainsawBuff'
 END_CONDITION = 'ChainsawAttackEnd'
 from file_handlers.motfsm.serialization import serialize_nodes
 from file_handlers.motfsm.selection import resolve_node
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -108,10 +111,10 @@ def build(source: bytes, recipe: NodeChainsawPlan, *, registry=None) -> bytes:
               '_RefWorkId': recipe.ref_work_id, '_WorkId': recipe.work_id, '_PadType': recipe.pad_type}
     hit_values = {name: (wanted[name] if wanted[name] is not None else hit_fields[name].value)
                   for name in wanted}
-    print(f'template {template.name}: chainsaw_run action {hit_instance.class_name}')
+    log.info(f'template {template.name}: chainsaw_run action {hit_instance.class_name}')
     for name in ('_Command', '_RefWorkId', '_HitId', '_WorkId', '_PadType'):
         star = ' (override)' if wanted[name] is not None else ''
-        print(f'  {name:12s} = {hit_values[name]}{star}')
+        log.info(f'  {name:12s} = {hit_values[name]}{star}')
 
     targets = []
     for name in recipe.node:
@@ -173,7 +176,7 @@ def build(source: bytes, recipe: NodeChainsawPlan, *, registry=None) -> bytes:
                     previous = fields['v4_MotionID'].value
                     fields['v4_MotionID'].value = recipe.motion_id
                     retargeted_blocks.add(block_name)
-                    print(f'  {node.name}: v4_MotionID {previous} -> {recipe.motion_id}')
+                    log.info(f'  {node.name}: v4_MotionID {previous} -> {recipe.motion_id}')
                     retargeted.append((node.name, previous, recipe.motion_id))
                     done = True
                     break
@@ -184,7 +187,7 @@ def build(source: bytes, recipe: NodeChainsawPlan, *, registry=None) -> bytes:
         extra = {'v1_ID': new_action_id}
         extra.update(hit_values)
         clone_block_object(actions_block, hit_instance.index, extra, hit_instance.block)
-        print(f'  new action {HIT_ACTION} for {target_name}: v1_ID={new_action_id}')
+        log.info(f'  new action {HIT_ACTION} for {target_name}: v1_ID={new_action_id}')
     action_splice = block_splice(actions_block)
     if len(actions_block.object_table) != len(old_action_objects) + len(targets):
         raise ValueError('unexpected actions object count')
@@ -200,7 +203,7 @@ def build(source: bytes, recipe: NodeChainsawPlan, *, registry=None) -> bytes:
         end_objects.append(end_object)
     condition_splice = block_splice(conditions_block)
     for buff_object, end_object, (buff_id, end_id) in zip(buff_objects, end_objects, condition_ids):
-        print(f'  new conditions {BUFF_CONDITION} v0_ID={buff_id} object={buff_object}; '
+        log.info(f'  new conditions {BUFF_CONDITION} v0_ID={buff_id} object={buff_object}; '
               f'{END_CONDITION} v0_ID={end_id} object={end_object}')
 
     # ---------------------------------------------------------------- transition map table
@@ -229,7 +232,7 @@ def build(source: bytes, recipe: NodeChainsawPlan, *, registry=None) -> bytes:
         for index, node in needing_selector:
             _, new_selector = clone_block_object(selectors_block, template_selector.index)
             selector_clones.append((node, new_selector))
-            print(f'  {node.name}: selector -1 -> {new_selector} (clone of {template_selector.class_name})')
+            log.info(f'  {node.name}: selector -1 -> {new_selector} (clone of {template_selector.class_name})')
 
     # ---------------------------------------------------------------- new node records
     new_runs, planned = [], []
@@ -306,11 +309,11 @@ def build(source: bytes, recipe: NodeChainsawPlan, *, registry=None) -> bytes:
         nodes.append(new_end)
         if new_normal is not None:
             nodes.append(new_normal)
-        print(f'  {node.name}: children {before_children} -> {len(node.children)}, '
+        log.info(f'  {node.name}: children {before_children} -> {len(node.children)}, '
               f'transitions {before_transitions} -> {len(node.transitions)} (ChainsawBuff first{", normal default appended" if new_normal else ""})')
     for _node, _selector in selector_clones:
         _node.selector_id = _selector
-        print(f'  {_node.name}: selector = {_selector}')
+        log.info(f'  {_node.name}: selector = {_selector}')
     doc.bhvt.action_ex_ids = list(doc.bhvt.action_ex_ids) + [0] * len(targets)
 
     node_tail = min(offset for offset in doc.bhvt.offsets.values() if offset >= doc.bhvt.node_data_end)

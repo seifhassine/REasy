@@ -11,6 +11,7 @@ With `--clear` it instead **removes** the matching events from the selected stat
 options it inherited from its template.
 
 """
+import logging
 from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile
@@ -19,6 +20,8 @@ from file_handlers.motfsm.authoring import block_splice, clone_block_object, ver
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.selection import resolve_node, state_indexes
 from file_handlers.motfsm.values import assignments
+
+log = logging.getLogger(__name__)
 
 EVENTS_BLOCK = 'transition_events'
 
@@ -53,7 +56,7 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
                 event = doc.references.object_instance(EVENTS_BLOCK, raw)
                 if event is not None:
                     users.setdefault((event.block.name, event.index), set()).add((node_index, kind, position, slot))
-    print(f'  {node.name}: {len(users)} distinct transition events in use')
+    log.info(f'  {node.name}: {len(users)} distinct transition events in use')
 
     copies = []
     for position in positions:
@@ -64,7 +67,7 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
                        event.class_name, (event.class_name or '').rsplit('.', 1)[-1]))(
                        doc.references.object_instance(EVENTS_BLOCK, raw))]
         if not matches:
-            print(f'  {node.name}[{position}]: no {plan.klass} event, skipped')
+            log.info(f'  {node.name}[{position}]: no {plan.klass} event, skipped')
             continue
         if len(matches) > 1:
             raise ValueError(f'{node.name}[{position}] has {len(matches)} matching events; not supported')
@@ -73,7 +76,7 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
         old_instance = doc.references.object_instance(EVENTS_BLOCK, old_object)
         shared = users.get((old_instance.block.name, old_instance.index), set())
         if len(shared) <= 1 and not plan.clear:
-            print(f'  {node.name}[{position}]: {old_instance.class_name.rsplit(".", 1)[-1]} is already private, skipped')
+            log.info(f'  {node.name}[{position}]: {old_instance.class_name.rsplit(".", 1)[-1]} is already private, skipped')
             continue
         if plan.clear:
             copies.append((position, slot, old_object, old_instance, sorted(shared)))
@@ -85,7 +88,7 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
             values = list(node.states[position].mStates.values)
             values = [raw for raw in values if raw != old_object]
             node.states[position].mStates.values = values
-            print(f'  {node.name}[{position}]: removed {old_instance.class_name.rsplit(".", 1)[-1]} '
+            log.info(f'  {node.name}[{position}]: removed {old_instance.class_name.rsplit(".", 1)[-1]} '
                   f'(object {old_object}), {len(values)} event(s) left')
             removed += 1
         nodes_start = doc.bhvt.offsets['nodes']
@@ -107,7 +110,7 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
         for name in BLOCK_NAMES:
             old_block, new_block = original.rsz_blocks.get_block(name), verified.rsz_blocks.get_block(name)
             assert output[new_block.offset:new_block.end] == source[old_block.offset:old_block.end],                 f'{name} changed unexpectedly'
-        print(f'  verified {removed} event(s) cleared; every other block unchanged')
+        log.info(f'  verified {removed} event(s) cleared; every other block unchanged')
         return output
 
     if not copies:
@@ -133,7 +136,7 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
                 uid += 1
             overrides.setdefault('v0_UID', uid)
         description = ', '.join(f'{name}={value}' for name, value in overrides.items()) or 'no overrides'
-        print(f'  {node.name}[{position}]: shared with {shared} -> private copy ({description})')
+        log.info(f'  {node.name}[{position}]: shared with {shared} -> private copy ({description})')
         origin = doc.rsz_blocks.get_block(
             'static_transition_events' if (old_object & 0xFFFFFFFF) >> 24 == 0x40 else EVENTS_BLOCK)
         instance_index, new_object = clone_block_object(events_block, old_instance.index, overrides, origin)
@@ -187,5 +190,5 @@ def build(source: bytes, plan: EventCopyPlan) -> bytes:
             continue
         old_block, new_block = original.rsz_blocks.get_block(name), verified.rsz_blocks.get_block(name)
         assert output[new_block.offset:new_block.end] == source[old_block.offset:old_block.end], f'{name} changed unexpectedly'
-    print(f'  verified {len(created)} private event copies; other blocks unchanged')
+    log.info(f'  verified {len(created)} private event copies; other blocks unchanged')
     return output

@@ -56,7 +56,11 @@ def run_module(path: Path, timeout: int):
                                    encoding='utf-8', errors='replace')
         output, code = completed.stderr + completed.stdout, completed.returncode
     except subprocess.TimeoutExpired as error:
-        output, code = f'ERROR: {path.stem} (timeout after {timeout}s)\n{error.stderr or ""}', -1
+        # Partial output is str on Windows but bytes on POSIX, whatever encoding= says.
+        captured = ''.join(part.decode('utf-8', 'replace') if isinstance(part, bytes) else part
+                           for part in (error.stderr, error.output) if part)
+        output = f'ERROR: {path.stem} (timeout after {timeout}s)\n{captured}'
+        code = -1
     ran = SUMMARY.search(output)
     skipped = SKIPPED.search(output)
     problems = [f'{kind}: {name.strip()}' for kind, name in HEADER.findall(output)]
@@ -74,14 +78,15 @@ def run_module(path: Path, timeout: int):
 def compare(results, baseline_path: Path):
     baseline = json.loads(baseline_path.read_text(encoding='utf-8'))
     shared = results.keys() & baseline.keys()
-    before = {p for m in shared for p in baseline[m]['problems']}
-    after = {p for m in shared for p in results[m]['problems']}
+    # Problems are keyed by module, so an identical header elsewhere cannot hide one.
+    before = {(m, p) for m in shared for p in baseline[m]['problems']}
+    after = {(m, p) for m in shared for p in results[m]['problems']}
     new, fixed = sorted(after - before), sorted(before - after)
     print(f'\nCompared {len(shared)} modules with {baseline_path}')
     for title, items in (('New problems', new), ('No longer failing', fixed)):
         print(f'{title}: {len(items)}')
-        for item in items:
-            print('  ' + item)
+        for module, problem in items:
+            print(f'  {module}: {problem}')
     for name in sorted(results.keys() - baseline.keys()):
         print(f'  (not in baseline) {name}')
     return not new

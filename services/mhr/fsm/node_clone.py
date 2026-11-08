@@ -15,6 +15,7 @@ the candidate). Each copied state owns a fresh transition map ID, referencing th
 template data record. Existing nodes and their instances are not modified.
 
 """
+import logging
 import copy
 import struct
 from dataclasses import dataclass
@@ -36,6 +37,8 @@ TRANSITION_DATA_SIZE = 36
 from file_handlers.motfsm.serialization import serialize_nodes
 from file_handlers.motfsm.selection import resolve_node, node_string
 from file_handlers.motfsm.selectors import clone_selector
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -179,7 +182,7 @@ def build(source: bytes, recipe: NodeClonePlan, *, registry=None) -> bytes:
             clone_block_object(actions_block, calc_template_block, {'v1_ID': new_id, 'addLv': recipe.calc_lv})
             new_action_refs.append(Action(new_id, 0))
             plan_instances.append(len(native_actions.instance_infos) - 1)
-            print(f'  add  action {CALC_LV_SUFFIX:35s} new v1_ID={new_id} addLv={recipe.calc_lv} '
+            log.info(f'  add  action {CALC_LV_SUFFIX:35s} new v1_ID={new_id} addLv={recipe.calc_lv} '
                   f'(template {calc_owner})')
             continue
         position, reference, instance = item
@@ -187,7 +190,7 @@ def build(source: bytes, recipe: NodeClonePlan, *, registry=None) -> bytes:
             clone_block_object(actions_block, first_effect_instance, {'v1_ID': new_id})
             new_action_refs.append(Action(new_id, 0))
             plan_instances.append(len(native_actions.instance_infos) - 1)
-            print(f'  add  action [{position:2d}] {instance.class_name:52s} new v1_ID={new_id} (copy)')
+            log.info(f'  add  action [{position:2d}] {instance.class_name:52s} new v1_ID={new_id} (copy)')
             continue
         # Locate the template instance by its own identity inside this document, remembering which
         # block's instance table the index belongs to.
@@ -204,9 +207,9 @@ def build(source: bytes, recipe: NodeClonePlan, *, registry=None) -> bytes:
         if instance.class_name.endswith(EFFECT_SUFFIX) and first_effect_instance is None:
             first_effect_instance = new_index
         new_action_refs.append(Action(new_id, 0))
-        print(f'  keep action[{position:2d}] {instance.class_name:52s} new v1_ID={new_id}')
+        log.info(f'  keep action[{position:2d}] {instance.class_name:52s} new v1_ID={new_id}')
     for position, class_name, reason in dropped:
-        print(f'  drop action[{position:2d}] {class_name:52s} {reason}')
+        log.info(f'  drop action[{position:2d}] {class_name:52s} {reason}')
     assert recipe.allow_no_motion or motion_instance is not None, 'template has no PlayerPlayMotion2 action'
 
     # ---------------------------------------------------------------- retarget the SetEffect actions
@@ -218,7 +221,7 @@ def build(source: bytes, recipe: NodeClonePlan, *, registry=None) -> bytes:
         container, element, frame = (int(part) for part in recipe.effect[order].split(':'))
         fields = native_actions.parsed_elements[plan_instances[plan_index]]
         fields['containerID'].value, fields['_ElementID'].value, fields['_Frame'].value = container, element, float(frame)
-        print(f'  point SetEffect[{order}] containerID={container} _ElementID={element} _Frame={frame}')
+        log.info(f'  point SetEffect[{order}] containerID={container} _ElementID={element} _Frame={frame}')
     action_splice = block_splice(actions_block)
 
     # ---------------------------------------------------------------- new Condition instances
@@ -237,7 +240,7 @@ def build(source: bytes, recipe: NodeClonePlan, *, registry=None) -> bytes:
         template_instance = doc.references.object_instance('conditions', raw)
         _, new_object = clone_block_object(block, template_instance.index, {'v0_ID': new_id})
         new_state_conditions.append(new_object | 0x40000000 if tag == 0x40 else new_object)
-        print(f'  new condition {template_instance.class_name:44s} ({block_name}) v0_ID={new_id} '
+        log.info(f'  new condition {template_instance.class_name:44s} ({block_name}) v0_ID={new_id} '
               f'object={new_object} raw=0x{new_state_conditions[-1]:08X}')
 
     # ---------------------------------------------------------------- independent maps, shared transition data
@@ -255,7 +258,7 @@ def build(source: bytes, recipe: NodeClonePlan, *, registry=None) -> bytes:
         selectors_block = doc.rsz_blocks.get_block('selectors')
         assert block_padding_is_zero(selectors_block), 'selectors block has non-zero padding'
         new_selector_id = clone_selector(doc, template.selector_id)
-        print(f'  new selector object={new_selector_id}')
+        log.info(f'  new selector object={new_selector_id}')
 
     # ---------------------------------------------------------------- new node record
     strings_start = doc.bhvt.offsets['strings']

@@ -1,7 +1,10 @@
 """Independent native UVAR snapshot used when verifying BHVT relocation."""
+import logging
 import struct
 from file_handlers.uvar.base_model import FileHandler
 from file_handlers.uvar.uvar_file import UVarFile
+
+log = logging.getLogger(__name__)
 
 
 def variable_snapshot(document):
@@ -172,9 +175,9 @@ def snapshot_without_relations(snapshot):
 def assert_uvar_stable(before, after, allow_drift=False):
     """Strict UVAR comparison, with the known heuristic-relation false alarm distinguished."""
     if allow_drift:
-        print('  note: UVAR snapshot equality skipped (--allow-uvar-drift)')
+        log.info('  note: UVAR snapshot equality skipped (--allow-uvar-drift)')
         return
     if before == after:
         return
     assert snapshot_without_relations(before) == snapshot_without_relations(after), 'UVAR data changed'
-    print('  note: UVAR snapshot differs only in the heuristic relation reads; data is identical')
+    log.info('  note: UVAR snapshot differs only in the heuristic relation reads; data is identical')

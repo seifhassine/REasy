@@ -9,6 +9,7 @@ Children and start transitions are dropped by request (leaf-node shape, like the
 attack leaves such as atk_109_1).
 
 """
+import logging
 import copy
 import struct
 from dataclasses import dataclass
@@ -30,6 +31,8 @@ TRANSITION_DATA_SIZE = 36          # id, data, exitFrame, startFrame, interpolat
 from file_handlers.motfsm.serialization import serialize_nodes
 from file_handlers.motfsm.selection import resolve_node, node_string
 from file_handlers.motfsm.selectors import clone_selector
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -108,9 +111,9 @@ def build(source: bytes, recipe: AttackClonePlan, *, registry=None) -> bytes:
         if instance.class_name == MOTION_CLASS:
             motion_instance = new_index
         new_action_refs.append(Action(new_id, 0))
-        print(f'  keep action[{position:2d}] {instance.class_name:52s} new v1_ID={new_id}')
+        log.info(f'  keep action[{position:2d}] {instance.class_name:52s} new v1_ID={new_id}')
     for position, class_name, reason in dropped:
-        print(f'  drop action[{position:2d}] {class_name:52s} {reason}')
+        log.info(f'  drop action[{position:2d}] {class_name:52s} {reason}')
     assert motion_instance is not None, 'template has no PlayerPlayMotion2 action'
     action_splice = block_splice(actions_block)
 
@@ -130,7 +133,7 @@ def build(source: bytes, recipe: AttackClonePlan, *, registry=None) -> bytes:
         template_instance = doc.references.object_instance('conditions', raw)
         _, new_object = clone_block_object(block, template_instance.index, {'v0_ID': new_id})
         new_state_conditions.append(new_object | 0x40000000 if tag == 0x40 else new_object)
-        print(f'  new condition {template_instance.class_name:44s} ({block_name}) v0_ID={new_id} '
+        log.info(f'  new condition {template_instance.class_name:44s} ({block_name}) v0_ID={new_id} '
               f'object={new_object} raw=0x{new_state_conditions[-1]:08X}')
 
     # ---------------------------------------------------------------- new transition events
@@ -146,7 +149,7 @@ def build(source: bytes, recipe: AttackClonePlan, *, registry=None) -> bytes:
             indices.append(new_object)
         new_state_events.append(indices)
         if indices:
-            print(f'  new transition event(s) {template_instance.class_name:44s} '
+            log.info(f'  new transition event(s) {template_instance.class_name:44s} '
                   f'{state.mStates.values} -> {indices}')
 
     # ---------------------------------------------------------------- new transition maps + data
@@ -166,7 +169,7 @@ def build(source: bytes, recipe: AttackClonePlan, *, registry=None) -> bytes:
         selectors_block = doc.rsz_blocks.get_block('selectors')
         assert block_padding_is_zero(selectors_block), 'selectors block has non-zero padding'
         new_selector_id = clone_selector(doc, template.selector_id)
-        print(f'  new selector object={new_selector_id}')
+        log.info(f'  new selector object={new_selector_id}')
 
     # ---------------------------------------------------------------- new node record
     strings_start = doc.bhvt.offsets['strings']

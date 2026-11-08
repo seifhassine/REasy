@@ -5,6 +5,7 @@ are all `_Type/_StartFrame/_EndFrame` windows, so "give node X a reflex window" 
 appended to that node - no new node, no new state.
 
 """
+import logging
 from dataclasses import dataclass
 
 from file_handlers.motfsm.motfsm_file import MotfsmFile, Action
@@ -13,6 +14,8 @@ from file_handlers.motfsm.authoring import block_ids, block_splice, clone_block_
 from file_handlers.motfsm.serialization import serialize_nodes, splice_document
 from file_handlers.motfsm.selection import resolve_node
 from file_handlers.motfsm.values import assignments
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -59,7 +62,7 @@ def build(source: bytes, plan: ActionAddPlan) -> bytes:
     assert resolved is not None, f'action 0x{template_ref.id_hash:08X} is not in any block'
     block_name, template_index = resolved
     template_block = doc.rsz_blocks.get_block(block_name)
-    print(f'  target {target.name}  template {template.class_name} ({template_owner.name})')
+    log.info(f'  target {target.name}  template {template.class_name} ({template_owner.name})')
 
     # ---------------------------------------------------------------- new Action instance
     actions_block = doc.rsz_blocks.get_block('actions')
@@ -72,7 +75,7 @@ def build(source: bytes, plan: ActionAddPlan) -> bytes:
         new_action_id += 1
     overrides = {'v1_ID': new_action_id, **assignments(template, plan.set)}
     clone_block_object(actions_block, template_index, overrides, source_block=template_block)
-    print(f'  new action v1_ID={new_action_id} on {target.name}: '
+    log.info(f'  new action v1_ID={new_action_id} on {target.name}: '
           + ', '.join(f'{k}={v}' for k, v in overrides.items() if k != 'v1_ID'))
 
 
