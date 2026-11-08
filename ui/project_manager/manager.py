@@ -1091,6 +1091,7 @@ class ProjectManager(QDockWidget):
                 self._update_tab_controls_state()
                 self._update_placeholders()
                 self.bookmarks.refresh()
+                self.catalogue.sources_changed()
                 self._set_loading_overlay(False)
                 self.restore_view_state(self._project_views.pop(self._path_key(proj_dir), None))
                 if on_loaded:
