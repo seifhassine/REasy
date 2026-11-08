@@ -617306,17 +617306,7 @@
 	},
 	"3237260d": {
 		"crc": "c7015288",
-		"fields": [
-			{
-				"align": 1,
-				"array": true,
-				"name": "v0",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "U8"
-			}
-		],
+		"fields": [],
 		"name": "via.render.CustomComputeShader.ConstantCS",
 		"parent": "System.Object"
 	},
