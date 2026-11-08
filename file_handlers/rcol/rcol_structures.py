@@ -4,8 +4,34 @@ from .base_model import BaseModel, FileHandler
 lazy from .shape_types import ShapeType, read_shape, write_shape
 lazy from utils.hash_util import murmur3_hash
 
+class StrippedName(str):
+
+    def __new__(cls, name_hash: int, text: str = ""):
+        name = super().__new__(cls)
+        name.name_hash, name.text = name_hash, text
+        return name
+
+    def __eq__(self, other):
+        if isinstance(other, StrippedName):
+            return (other.name_hash, other.text) == (self.name_hash, self.text)
+        return bool(self.text) and other == self.text
+
+    def __ne__(self, other):
+        return not self == other
+
+    def __hash__(self):
+        return hash(self.text) if self.text else self.name_hash
+
+
 def calc_hash(text: str) -> int:
+    if isinstance(text, StrippedName):
+        return text.name_hash
     return murmur3_hash((text or "").encode('utf-16le'))
+
+
+def stored_name(text: str, name_hash: int) -> str:
+    return text if text or name_hash == calc_hash("") else StrippedName(name_hash)
+
 
 RCOL_MAGIC = 0x4C4F4352  # 'RCOL'
 
@@ -156,9 +182,9 @@ class GroupInfo(BaseModel):
         
         self.guid = handler.read_guid()
         
-        self.name = handler.read_offset_wstring()
-            
+        name = handler.read_offset_wstring()
         self.name_hash = handler.read_uint32()
+        self.name = stored_name(name, self.name_hash)
         
         if handler.file_version >= 25:
             self.num_shapes = handler.read_int32()
@@ -240,8 +266,9 @@ class RcolShapeInfo(BaseModel):
     def do_read(self, handler: FileHandler) -> bool:
         self.guid = handler.read_guid()
         
-        self.name = handler.read_offset_wstring()
+        name = handler.read_offset_wstring()
         self.name_hash = handler.read_uint32()
+        self.name = stored_name(name, self.name_hash)
         # ????  via.physics.RequestSetColliderResource.ShapeState
         if handler.file_version >= 25:
             self.status = handler.read_int32()
@@ -257,7 +284,7 @@ class RcolShapeInfo(BaseModel):
             self.secondary_joint_name_str = handler.read_offset_wstring()
             self.primary_joint_name_hash = handler.read_uint32()
             self.secondary_joint_name_hash = handler.read_uint32()
-            if handler.file_version >= 28:
+            if 28 <= handler.file_version <= 37:
                 cmat_offset = handler.read_uint64()
                 if cmat_offset > 0:
                     with handler.seek_jump_back(cmat_offset):
@@ -274,6 +301,8 @@ class RcolShapeInfo(BaseModel):
             self.secondary_joint_name_hash = handler.read_uint32()
             self.shape_type = handler.read_int32()
             handler.skip(4)
+        self.primary_joint_name_str = stored_name(self.primary_joint_name_str, self.primary_joint_name_hash)
+        self.secondary_joint_name_str = stored_name(self.secondary_joint_name_str, self.secondary_joint_name_hash)
             
         return True
         
@@ -284,7 +313,7 @@ class RcolShapeInfo(BaseModel):
         
         handler.write_guid(self.guid)
         
-        handler.write_offset_wstring(self.name or "")
+        handler.write_offset_wstring(self.name)
             
         handler.write_uint32(self.name_hash)
         if handler.file_version >= 25:
@@ -298,11 +327,11 @@ class RcolShapeInfo(BaseModel):
             handler.write_uint32(self.skip_id_bits)
             handler.write_int32(self.shape_type)
             handler.write_uint64(self.ignore_tag_bits)
-            handler.write_offset_wstring(self.primary_joint_name_str or "", context="joint_name")
-            handler.write_offset_wstring(self.secondary_joint_name_str or "", context="joint_name")
+            handler.write_offset_wstring(self.primary_joint_name_str, context="joint_name")
+            handler.write_offset_wstring(self.secondary_joint_name_str, context="joint_name")
             handler.write_uint32(self.primary_joint_name_hash)
             handler.write_uint32(self.secondary_joint_name_hash)
-            if handler.file_version >= 28:
+            if 28 <= handler.file_version <= 37:
                 if self.cmat_path:
                     handler.write_offset_wstring(self.cmat_path, context="cmat")
                 else:
@@ -311,8 +340,8 @@ class RcolShapeInfo(BaseModel):
         else:
             handler.write_uint32(self.skip_id_bits)
             handler.write_uint32(self.ignore_tag_bits)
-            handler.write_offset_wstring(self.primary_joint_name_str or "", context="joint_name")
-            handler.write_offset_wstring(self.secondary_joint_name_str or "", context="joint_name")
+            handler.write_offset_wstring(self.primary_joint_name_str, context="joint_name")
+            handler.write_offset_wstring(self.secondary_joint_name_str, context="joint_name")
             handler.write_uint32(self.primary_joint_name_hash)
             handler.write_uint32(self.secondary_joint_name_hash)
             handler.write_int32(self.shape_type)

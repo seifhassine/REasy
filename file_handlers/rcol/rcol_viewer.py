@@ -6,7 +6,8 @@ import os
 import uuid
 
 lazy import numpy as np
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, Signal, QSignalBlocker
+from PySide6.QtCore import QT_TRANSLATE_NOOP, QRegularExpression, Qt, Signal, QSignalBlocker
+from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QComboBox,
     QDockWidget,
@@ -42,8 +43,9 @@ lazy from file_handlers.rsz.rsz_object_operations import RszObjectOperations
 lazy from file_handlers.pyside.component_selector import ComponentSelectorDialog
 lazy from utils.id_manager import IdManager
 
+lazy from .names import reversed_names
 lazy from .request_set import IgnoreTag, RequestSet
-lazy from .rcol_structures import RcolGroup, RcolShape
+lazy from .rcol_structures import RcolGroup, RcolShape, StrippedName, calc_hash, stored_name
 lazy from .shape_types import ShapeType, create_shape
 from .rcol_scene import SceneAttachment, build_scene_meshes
 lazy from file_handlers.mesh.mesh_file import MeshFile, MeshLoadMode
@@ -100,6 +102,7 @@ class RcolViewer(QWidget):
     def __init__(self, handler):
         super().__init__()
         self.handler = handler
+        self._reversed_names = reversed_names(handler.app.settings.get("game_version", ""))
         self._modified = False
         self.nav_tabs: QTabWidget | None = None
         self.nav_trees: dict[str, QTreeWidget] = {}
@@ -358,7 +361,7 @@ class RcolViewer(QWidget):
             NavPayload(kind="groups"),
         )
         for g_idx, group in enumerate(self.rcol.groups):
-            group_name = group.info.name or self.tr(GROUP_NUMBER_TEXT).format(
+            group_name = self._shown_name(group.info.name) or self.tr(GROUP_NUMBER_TEXT).format(
                 number=g_idx + 1
             )
             group_item = self._add_item(tree, f"[{g_idx}] {group_name}", NavPayload(kind="group", group_index=g_idx), parent=groups_root)
@@ -371,7 +374,7 @@ class RcolViewer(QWidget):
             for s_idx, shape in enumerate(group.shapes):
                 self._add_item(
                     tree,
-                    f"[{s_idx}] {shape.info.name or self.tr('Shape {number}').format(number=s_idx + 1)}",
+                    f"[{s_idx}] {self._shown_name(shape.info.name) or self.tr('Shape {number}').format(number=s_idx + 1)}",
                     NavPayload(kind="shape", group_index=g_idx, shape_index=s_idx, mirror=False),
                     parent=regular_root,
                 ).setIcon(0, line_icon("box"))
@@ -386,7 +389,7 @@ class RcolViewer(QWidget):
                 for s_idx, shape in enumerate(mirror_shapes):
                     self._add_item(
                         tree,
-                        f"[{s_idx}] {shape.info.name or self.tr('Mirror Shape {number}').format(number=s_idx + 1)}",
+                        f"[{s_idx}] {self._shown_name(shape.info.name) or self.tr('Mirror Shape {number}').format(number=s_idx + 1)}",
                         NavPayload(kind="shape", group_index=g_idx, shape_index=s_idx, mirror=True),
                         parent=mirror_root,
                     ).setIcon(0, line_icon("compare"))
@@ -412,7 +415,7 @@ class RcolViewer(QWidget):
             NavPayload(kind="ignore_tags"),
         )
         for idx, tag in enumerate(ignore_tags):
-            self._add_item(tree, f"[{idx}] {tag.tag or self.tr('(empty)')}", NavPayload(kind="ignore_tag", ignore_index=idx), parent=root)
+            self._add_item(tree, f"[{idx}] {self._shown_name(tag.tag) or self.tr('(empty)')}", NavPayload(kind="ignore_tag", ignore_index=idx), parent=root)
         tree.expandToDepth(0)
 
     def _populate_auto_joints_section(self, tree: QTreeWidget):
@@ -512,15 +515,20 @@ class RcolViewer(QWidget):
         if cfg:
             getattr(self, cfg["remove_fn"])()
 
+    def _shown_name(self, name: str) -> str:
+        if isinstance(name, StrippedName):
+            return name.text or self._reversed_names.get(name.name_hash) or f"0x{name.name_hash:08X}"
+        return name
+
     def _request_set_label(self, request_index: int) -> str:
         req = self.rcol.request_sets[request_index]
-        name = req.info.name or self.tr("Request Set {number}").format(
+        name = self._shown_name(req.info.name) or self.tr("Request Set {number}").format(
             number=request_index + 1
         )
-        key = req.info.key_name or self.tr("(no key)")
+        key = self._shown_name(req.info.key_name) or self.tr("(no key)")
         group_name = self.tr("(unassigned)")
         if 0 <= req.info.group_index < len(self.rcol.groups):
-            group_name = self.rcol.groups[req.info.group_index].info.name or self.tr(
+            group_name = self._shown_name(self.rcol.groups[req.info.group_index].info.name) or self.tr(
                 GROUP_NUMBER_TEXT
             ).format(number=req.info.group_index)
         return self.tr(
@@ -1106,7 +1114,7 @@ class RcolViewer(QWidget):
 
         group_labels = []
         for group_index, group in enumerate(self.rcol.groups):
-            group_name = (group.info.name or "").strip() or self.tr(
+            group_name = self._shown_name(group.info.name).strip() or self.tr(
                 GROUP_NUMBER_TEXT
             ).format(number=group_index + 1)
             group_labels.append(f"[{group_index}] {group_name}")
@@ -1407,9 +1415,20 @@ class RcolViewer(QWidget):
 
     def _line_edit(self, label: str, value: str, on_commit):
         edit = QLineEdit(value)
-        edit.editingFinished.connect(lambda: on_commit(edit.text()))
+        edit.editingFinished.connect(lambda: edit.isModified() and on_commit(edit.text()))
         self.detail_form.addRow(label, edit)
         return edit
+
+    def _name_edit(self, label: str, name: str, on_commit):
+        edit = self._line_edit(label, name, on_commit)
+        if isinstance(name, StrippedName):
+            edit.setPlaceholderText(self._shown_name(name))
+        hash_edit = self._line_edit(
+            f"{label} Hash",
+            f"{calc_hash(name):08X}",
+            lambda text: int(text, 16) != calc_hash(name) and on_commit(stored_name("", int(text, 16))),
+        )
+        hash_edit.setValidator(QRegularExpressionValidator(QRegularExpression("[0-9A-Fa-f]{1,8}"), hash_edit))
 
     def _float_spin(self, label: str, value: float, on_change, *, minimum: float = -1000000.0, maximum: float = 1000000.0, step: float = 0.05):
         spin = QDoubleSpinBox()
@@ -1525,7 +1544,7 @@ class RcolViewer(QWidget):
             default_name = self.tr(GROUP_NUMBER_TEXT).format(
                 number=payload.group_index + 1
             )
-            item.setText(0, f"[{payload.group_index}] {group.info.name or default_name}")
+            item.setText(0, f"[{payload.group_index}] {self._shown_name(group.info.name) or default_name}")
         elif payload.kind == "shape" and payload.group_index is not None and payload.shape_index is not None:
             shape = self._get_shape(payload)
             default_name = (
@@ -1533,12 +1552,12 @@ class RcolViewer(QWidget):
                 if payload.mirror
                 else self.tr("Shape {number}")
             ).format(number=payload.shape_index + 1)
-            item.setText(0, f"[{payload.shape_index}] {shape.info.name or default_name}")
+            item.setText(0, f"[{payload.shape_index}] {self._shown_name(shape.info.name) or default_name}")
         elif payload.kind == "request_set" and payload.request_index is not None:
             item.setText(0, self._request_set_label(payload.request_index))
         elif payload.kind == "ignore_tag" and payload.ignore_index is not None:
             tag = self.rcol.ignore_tags[payload.ignore_index]
-            item.setText(0, f"[{payload.ignore_index}] {tag.tag or self.tr('(empty)')}")
+            item.setText(0, f"[{payload.ignore_index}] {self._shown_name(tag.tag) or self.tr('(empty)')}")
         elif payload.kind == "auto_joint" and payload.auto_joint_index is not None:
             name = self.rcol.auto_generate_joint_descs[payload.auto_joint_index]
             item.setText(0, f"[{payload.auto_joint_index}] {name or self.tr('(empty)')}")
@@ -1628,7 +1647,7 @@ class RcolViewer(QWidget):
             self.tr("Group [{index}]").format(index=payload.group_index)
         )
 
-        self._line_edit("Name", group.info.name or "", lambda text: self._set_group_name(payload.group_index, text))
+        self._name_edit("Name", group.info.name, lambda text: self._set_group_name(payload.group_index, text))
         self._row_text("GUID", self._format_guid(group.info.guid))
         self._row_text("Layer GUID", self._format_guid(group.info.layer_guid))
         mask_guid_lines = [self._format_guid(mask_guid) for mask_guid in (group.info.mask_guids or [])]
@@ -1660,7 +1679,7 @@ class RcolViewer(QWidget):
         count = len(self._shape_list(payload.group_index, payload.mirror))
         self._row_text(
             "Group",
-            group.info.name
+            self._shown_name(group.info.name)
             or self.tr(GROUP_NUMBER_TEXT).format(number=payload.group_index),
         )
         self._row_text("Count", str(count))
@@ -1679,16 +1698,16 @@ class RcolViewer(QWidget):
             ).format(index=payload.shape_index)
         )
 
-        self._line_edit("Name", shape.info.name or "", lambda text: self._set_shape_name(payload, text))
+        self._name_edit("Name", shape.info.name, lambda text: self._set_shape_name(payload, text))
         self._row_text("GUID", self._format_guid(shape.info.guid))
-        self._line_edit(
+        self._name_edit(
             "Primary Joint",
-            shape.info.primary_joint_name_str or "",
+            shape.info.primary_joint_name_str,
             lambda text: self._set_primary_joint(payload, text),
         )
-        self._line_edit(
+        self._name_edit(
             "Secondary Joint",
-            shape.info.secondary_joint_name_str or "",
+            shape.info.secondary_joint_name_str,
             lambda text: self._set_secondary_joint(payload, text),
         )
 
@@ -1771,8 +1790,8 @@ class RcolViewer(QWidget):
             self.tr("Request Set [{index}]").format(index=payload.request_index)
         )
 
-        self._line_edit("Name", request_set.info.name or "", lambda text: self._set_request_name(payload.request_index, text))
-        self._line_edit("Key", request_set.info.key_name or "", lambda text: self._set_request_key(payload.request_index, text))
+        self._name_edit("Name", request_set.info.name, lambda text: self._set_request_name(payload.request_index, text))
+        self._name_edit("Key", request_set.info.key_name, lambda text: self._set_request_key(payload.request_index, text))
 
         linked_group = request_set.group
         self._row_text("Linked Shape Count", str(len(linked_group.shapes) if linked_group else 0))
@@ -1789,8 +1808,7 @@ class RcolViewer(QWidget):
         self.detail_title.setText(
             self.tr("Ignore Tag [{index}]").format(index=payload.ignore_index)
         )
-        self._line_edit("Tag", tag.tag or "", lambda text: self._set_ignore_tag(payload.ignore_index, text))
-        self._row_text("Note", self.tr("Tag hash is auto-managed on save."))
+        self._name_edit("Tag", tag.tag, lambda text: self._set_ignore_tag(payload.ignore_index, text))
 
     def _render_auto_joints_overview(self, _payload: NavPayload):
         self.detail_title.setText(self.tr("Auto Generate Joints"))

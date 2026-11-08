@@ -1,7 +1,8 @@
+from functools import cache
 from typing import List, Optional
 import struct
 from .base_model import FileHandler
-from .rcol_structures import Header, RcolGroup, RCOL_MAGIC, calc_hash
+from .rcol_structures import Header, RcolGroup, RCOL_MAGIC, StrippedName, calc_hash
 lazy from .request_set import RequestSet, RequestSetInfo, IgnoreTag
 lazy from file_handlers.rsz.rsz_file import RszFile as RSZFile
 from io import BytesIO
@@ -27,6 +28,7 @@ class RcolFile:
         self.auto_generate_joint_descs: Optional[List[str]] = None
         self.auto_generate_joint_entry_meta: List[dict] = []
         self.auto_generate_joint_entry_size = 8
+        self.resource_infos: List[tuple[int, str]] = []
         self.option = option
         self.file_handler = file_handler
         self.file_version = 25
@@ -41,8 +43,8 @@ class RcolFile:
     def read(self, data: bytes | bytearray, file_version: int = 0, file_path: str = "") -> bool:
         """Read RCOL file from bytes"""
         self.file_version = file_version if file_version > 0 else 25
-        if self.file_version < 10 or self.file_version == 38:
-            raise ValueError(f"Unsupported RCOL version {self.file_version}; rcol 2 and 38 are not supported")
+        if self.file_version < 10:
+            raise ValueError(f"Unsupported RCOL version {self.file_version}; rcol 2 is not supported")
         handler = FileHandler(data, file_version=self.file_version, file_path=file_path)
         return self.do_read(handler)
         
@@ -56,6 +58,7 @@ class RcolFile:
             self.auto_generate_joint_descs.clear()
         self.auto_generate_joint_entry_meta.clear()
         self.auto_generate_joint_entry_size = 8
+        self.resource_infos.clear()
         self._source_file_size = len(handler.data)
             
         if len(handler.data) < 100:
@@ -178,9 +181,42 @@ class RcolFile:
                         print(f"Error reading auto generate joint {i}: {e}")
                         break
                 
+        handler.seek(header.resourceInfoTbl)
+        for _ in range(header.numResourceInfos):
+            type_hash = handler.read_uint32()
+            handler.skip(4)
+            self.resource_infos.append((type_hash, handler.read_offset_wstring()))
+
+        self._restore_texts(handler.data, handler.tell)
         self.setup_references(handler.file_version)
         
         return True
+
+    def _restore_texts(self, data: bytes, start: int):
+        @cache
+        def texts() -> dict[int, str]:
+            strings = bytes(data[start:start + (len(data) - start) // 2 * 2]).decode("utf-16le", "replace")
+            return {calc_hash(text): text for text in strings.split("\0") if text}
+
+        def kept(name):
+            return texts().get(name.name_hash, name) if isinstance(name, StrippedName) else name
+
+        def stripped(name):
+            if isinstance(name, StrippedName):
+                return StrippedName(name.name_hash, texts().get(name.name_hash, ""))
+            return name
+
+        for group in self.groups:
+            group.info.name = stripped(group.info.name)
+            for shape in (*group.shapes, *group.extra_shapes):
+                shape.info.name = stripped(shape.info.name)
+                shape.info.primary_joint_name_str = kept(shape.info.primary_joint_name_str)
+                shape.info.secondary_joint_name_str = kept(shape.info.secondary_joint_name_str)
+        for request_set in self.request_sets:
+            request_set.info.name = stripped(request_set.info.name)
+            request_set.info.key_name = kept(request_set.info.key_name)
+        for tag in self.ignore_tags or ():
+            tag.tag = kept(tag.tag)
 
     def _get_request_set_guid_block_bounds(self, handler: FileHandler, header: Header) -> tuple[int, int]:
         """Return (start, end) bounds for the request-set GUID block."""
@@ -254,7 +290,7 @@ class RcolFile:
         header.status = self.header.status
         header.ukn_re3_a = self.header.ukn_re3_a
         header.ukn_re3_b = self.header.ukn_re3_b
-        header.numResourceInfos = self.header.numResourceInfos
+        header.numResourceInfos = len(self.resource_infos)
         header.numUserDataInfos = self.header.numUserDataInfos
         header.num_user_data = self.header.num_user_data
         header.ukn_re3_tbl = self.header.ukn_re3_tbl
@@ -377,15 +413,15 @@ class RcolFile:
             # 3: collect joint names
             for group in self.groups:
                 for shape in [*group.shapes, *group.extra_shapes]:
-                    collector.collect_string(shape.info.primary_joint_name_str or "", 'joint_name')
-                    collector.collect_string(shape.info.secondary_joint_name_str or "", 'joint_name')
+                    collector.collect_string(shape.info.primary_joint_name_str, 'joint_name')
+                    collector.collect_string(shape.info.secondary_joint_name_str, 'joint_name')
             
             # 4: request set strings
             for req in self.request_sets:
                 if req.info.name is not None:
                     collector.collect_string(req.info.name, 'request_name')
                 if req.info.key_name is not None:
-                    collector.collect_string(req.info.key_name or "", 'request_key')
+                    collector.collect_string(req.info.key_name, 'request_key')
             
             # 5: build string priority map
             string_priority = {}
@@ -403,14 +439,11 @@ class RcolFile:
                 request_key_empty_ref_positions = []
                 joint_ref_positions_by_string = {}
                 for offset_pos, string in handler.string_table_offsets:
-                    if string not in string_refs:
-                        string_refs[string] = []
-                    string_refs[string].append(offset_pos)
                     context = handler.string_table_contexts.get(offset_pos)
                     if use_joint_name_context_override and context == "joint_name":
-                        if string not in joint_ref_positions_by_string:
-                            joint_ref_positions_by_string[string] = []
-                        joint_ref_positions_by_string[string].append(offset_pos)
+                        joint_ref_positions_by_string.setdefault(string, []).append(offset_pos)
+                    else:
+                        string_refs.setdefault(string, []).append(offset_pos)
                     if use_joint_empty_override and string == "":
                         if context == "joint_name":
                             joint_empty_ref_positions.append(offset_pos)
@@ -443,7 +476,7 @@ class RcolFile:
                             if not joint_empty_written:
                                 joint_empty_written = True
                                 joint_empty_offset = handler.tell
-                                if "" not in string_first_offset:
+                                if not use_joint_empty_override and "" not in string_first_offset:
                                     string_first_offset[""] = handler.tell
                                 handler.write_wstring(string)
                         elif context == 'request_key':
@@ -471,9 +504,6 @@ class RcolFile:
                             offset = handler.tell
                             handler.write_wstring(string)
                             if use_joint_name_context_override:
-                                # Keep the global first-occurrence mapping for non-joint contexts.
-                                if string not in string_first_offset:
-                                    string_first_offset[string] = offset
                                 # Joint-name references should resolve to the first joint-context occurrence,
                                 # not to an earlier occurrence from other contexts
                                 for offset_pos in joint_ref_positions_by_string.get(string, []):
@@ -652,7 +682,7 @@ class RcolFile:
                 offset_pos = handler.tell
                 handler.write_int64(0)  # Placeholder for string offset
                 ignore_tag_string_offsets.append((offset_pos, tag.tag))
-                handler.write_uint32(tag.hash)
+                handler.write_uint32(calc_hash(tag.tag))
                 handler.write_int32(0)
                 
         # Write auto generate joints
@@ -688,13 +718,19 @@ class RcolFile:
             # We'll update them after string table flush
             header.auto_generate_joint_desc_offset = 0
             
-        header.resourceInfoTbl = 0 
-        header.userDataInfoTbl = 0 
+        first_string_section_start = handler.tell
+        resource_paths = []
+        for type_hash, path in self.resource_infos:
+            handler.write_uint32(type_hash)
+            handler.write_uint32(0)
+            resource_paths.append((handler.tell, path))
+            handler.write_int64(0)
+        for offset_pos, path in resource_paths:
+            handler.write_at(offset_pos, '<q', preseed_first_string_offsets.setdefault(path, handler.tell))
+            handler.write_wstring(path)
                 
         # Auto-joint strings should be emitted before the main string table.
-        auto_joint_strings_start = None
         if auto_joint_string_offsets:
-            auto_joint_strings_start = handler.tell
             for offset_pos, joint_string in auto_joint_string_offsets:
                 normalized_joint_string = joint_string or ""
                 string_offset = handler.tell
@@ -707,8 +743,6 @@ class RcolFile:
                 )
                 handler.write_at(offset_pos, '<q', ref_offset)
                 
-        string_table_start = handler.tell
-        first_string_section_start = auto_joint_strings_start if auto_joint_strings_start is not None else string_table_start
         handler.string_table_flush()
         handler.offset_content_table_flush()
         

@@ -1,10 +1,6 @@
 from typing import List, Optional
 from .base_model import BaseModel, FileHandler
-lazy from utils.hash_util import murmur3_hash
-
-def calc_hash(text: str) -> int:
-    """Calculate murmur3 hash for UTF-16LE encoded string"""
-    return murmur3_hash(text.encode('utf-16le'))
+from .rcol_structures import calc_hash, stored_name
 
 class RequestSetInfo(BaseModel):
     """Request set information"""
@@ -58,6 +54,8 @@ class RequestSetInfo(BaseModel):
             self.key_name = handler.read_offset_wstring()
             self.key_hash = handler.read_uint32()
             handler.skip(4)
+        self.name = stored_name(self.name, self.name_hash)
+        self.key_name = stored_name(self.key_name, self.key_hash)
             
         return True
         
@@ -129,12 +127,14 @@ class IgnoreTag(BaseModel):
         self.hash = 0
         
     def do_read(self, handler: FileHandler) -> bool:
-        self.tag = handler.read_offset_wstring()
+        tag = handler.read_offset_wstring()
         self.hash = handler.read_uint32()
+        self.tag = stored_name(tag, self.hash)
         handler.read_int32() # reserved
         return True
         
     def do_write(self, handler: FileHandler) -> bool:
+        self.hash = calc_hash(self.tag)
         handler.write_offset_wstring(self.tag)
         handler.write_uint32(self.hash)
         handler.write_int32(0)
