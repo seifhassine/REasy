@@ -23,8 +23,7 @@ class EditRefused(ValueError):
     pass
 
 
-def _tr(text: str) -> str:
-    return QCoreApplication.translate("JcnsEditor", text)
+translate = QCoreApplication.translate
 
 
 @contextmanager
@@ -59,8 +58,9 @@ class JointEdits:
         with _swapped(replacements):
             tables = derived_changes(self.document.model, self.enums)
         if not raw and (refused := [name for name, before in kept.items() if not _alike(before, tables[name])]):
-            raise EditRefused(_tr("This file's {0} do not follow the exporter's rule, so REasy keeps them as they are "
-                                  "and cannot make this edit.").format(", ".join(refused)))
+            raise EditRefused(translate(
+                "JcnsEditor", "This file's {0} do not follow the exporter's rule, so REasy keeps them as they are and "
+                "cannot make this edit.").format(", ".join(refused)))
         set_here = {(id(record), field) for record, where, new in replacements
                     for field, value in new.items() if value is not getattr(record, where).get(field)}
         contents = {(id(record), where): (record, where, dict(new)) for record, where, new in replacements}
@@ -101,7 +101,8 @@ class JointEdits:
         values, links = dict(record.values), dict(record.links)
         if prefix in links:
             if not name:
-                raise EditRefused(_tr("REasy needs this joint's name to write it here: choose a character with it."))
+                raise EditRefused(translate(
+                    "JcnsEditor", "REasy needs this joint's name to write it here: choose a character with it."))
             links[prefix] = Text(name)
         if prefix + "_hash" in values:
             values[prefix + "_hash"] = joint
@@ -132,19 +133,19 @@ class JointEdits:
     def set_joint(self, record: Record, prefix: str, joint: int, name: str | None) -> None:
         root_links = dict(self.root.links)
         values, links = self.joint(record, prefix, joint, name, root_links)
-        self.commit(_tr("Set {0}").format(prefix), [(record, "values", values), (record, "links", links),
-                                                    (self.root, "links", root_links)])
+        self.commit(translate("JcnsEditor", "Set {0}").format(prefix),
+                    [(record, "values", values), (record, "links", links), (self.root, "links", root_links)])
 
     def set_value(self, records: Record | tuple[Record, ...], name: str, value, raw: bool = False) -> None:
         records = records if isinstance(records, tuple) else (records,)
         value = stored(self.layouts[records[0].kind], name, value)
         if changes := [(record, "values", {**record.values, name: value}) for record in records
                        if record.values[name] != value]:
-            self.commit(_tr("Set {0}").format(name), changes, raw)
+            self.commit(translate("JcnsEditor", "Set {0}").format(name), changes, raw)
 
     def set_text(self, record: Record, name: str, text: str, raw: bool = False) -> None:
         if (current.value if isinstance(current := record.links.get(name), Text) else "") != text:
-            self.commit(_tr("Set {0}").format(name),
+            self.commit(translate("JcnsEditor", "Set {0}").format(name),
                         [(record, "links", {**record.links, name: Text(text) if text else None})], raw)
 
     def set_rows(self, owner: Record, link: str, records: list[Record], text: str, raw: bool = False) -> None:
@@ -154,7 +155,7 @@ class JointEdits:
         record = record or new_record(self.document.model.version, table.kind)
         listed = list(rows(table.owner, table.name))
         listed.insert(index, record)
-        self.set_rows(table.owner, table.name, listed, _tr("Add {0}").format(table.kind), raw=True)
+        self.set_rows(table.owner, table.name, listed, translate("JcnsEditor", "Add {0}").format(table.kind), raw=True)
         return record
 
     def duplicate(self, record: Record) -> Record | None:
@@ -169,16 +170,17 @@ class JointEdits:
                 links = owners.setdefault(id(table.owner), (table.owner, dict(table.owner.links)))[1]
                 links[table.name] = [row for row in links[table.name] if row is not record]
         if owners:
-            self.commit(_tr("Delete"), [(owner, "links", links) for owner, links in owners.values()], raw=True)
+            self.commit(translate("JcnsEditor", "Delete"),
+                        [(owner, "links", links) for owner, links in owners.values()], raw=True)
 
     def add_row(self, owner: Record, link: str, kind: str) -> Record:
         record = self.new(kind)
-        self.set_rows(owner, link, [*rows(owner, link), record], _tr("Add {0}").format(kind))
+        self.set_rows(owner, link, [*rows(owner, link), record], translate("JcnsEditor", "Add {0}").format(kind))
         return record
 
     def remove_row(self, owner: Record, link: str, record: Record) -> None:
         self.set_rows(owner, link, [row for row in rows(owner, link) if row is not record],
-                      _tr("Delete {0}").format(record.kind))
+                      translate("JcnsEditor", "Delete {0}").format(record.kind))
 
     def add_card(self, kind: str, target: tuple, names: dict[int, str]) -> Record:
         spec, table, (group, *hashes) = joint_view()["cards"][kind], self.tables[kind], target
@@ -188,7 +190,7 @@ class JointEdits:
         else:
             if group == "material":
                 if not names.get(hashes[1]):
-                    raise EditRefused(_tr("REasy needs the variable's name to write it here."))
+                    raise EditRefused(translate("JcnsEditor", "REasy needs the variable's name to write it here."))
                 record.links["variable_name"] = Text(names[hashes[1]])
             record.values, record.links = self.joint(record, spec.get("target", "joint_name"), hashes[0],
                                                      names.get(hashes[0]), root_links)
@@ -196,7 +198,7 @@ class JointEdits:
             record.values["from_joint_name_hash"] = hashes[0]
             root_links["lods"] = [*rows(self.root, "lods"), self.new("lod")]
         root_links[table] = [*rows(self.root, table), record]
-        self.commit(_tr("Add {0}").format(spec["title"]), [(self.root, "links", root_links)])
+        self.commit(translate("JcnsEditor", "Add {0}").format(spec["title"]), [(self.root, "links", root_links)])
         return record
 
     def add_axis(self, card: Card) -> Record:
@@ -205,7 +207,7 @@ class JointEdits:
         record = Record(last.kind, {**last.values, "axis": free[0] if free else last.values["axis"]},
                         {**last.links, "cone_drivers": [], "joint_drivers": []})
         at = outputs.index(last) + 1
-        self.set_rows(self.root, "outputs", [*outputs[:at], record, *outputs[at:]], _tr("Add axis"))
+        self.set_rows(self.root, "outputs", [*outputs[:at], record, *outputs[at:]], translate("JcnsEditor", "Add axis"))
         return record
 
     def remove_card(self, card: Card) -> None:
@@ -216,7 +218,7 @@ class JointEdits:
             root_links["lods"] = [row for number, row in enumerate(rows(self.root, "lods")) if number != at]
         elif card.kind == "cone_input":
             changes = self._renumbered(records.index(card.records[0]))
-        self.commit(_tr("Delete {0}").format(joint_view()["cards"][card.kind]["title"]),
+        self.commit(translate("JcnsEditor", "Delete {0}").format(joint_view()["cards"][card.kind]["title"]),
                     [(self.root, "links", root_links), *changes])
 
     def _renumbered(self, removed: int) -> list[Replacement]:
@@ -224,7 +226,8 @@ class JointEdits:
         for driver in (driver for output in rows(self.root, "outputs") for driver in rows(output, "cone_drivers")):
             number = driver.values["input_cone_no"]
             if number == removed:
-                raise EditRefused(_tr("Driven keys read this cone: delete them or point them at another cone first."))
+                raise EditRefused(translate(
+                    "JcnsEditor", "Driven keys read this cone: delete them or point them at another cone first."))
             if removed < number != NO_CONE:
                 changes.append((driver, "values", {**driver.values, "input_cone_no": number - 1}))
         return changes
@@ -240,7 +243,7 @@ class JointEdits:
         if card.kind == "rotation":
             lods = root_links["lods"] = list(rows(self.root, "lods"))
             lods[at], lods[at + step] = lods[at + step], lods[at]
-        self.commit(_tr("Move {0}").format(joint_view()["cards"][card.kind]["title"]),
+        self.commit(translate("JcnsEditor", "Move {0}").format(joint_view()["cards"][card.kind]["title"]),
                     [(self.root, "links", root_links)])
 
     def move_kind(self, kind: int, step: int) -> None:
@@ -248,4 +251,4 @@ class JointEdits:
         at = next(number for number, row in enumerate(order) if row.values["kind"] == kind)
         if 0 <= at + step < len(order):
             order[at], order[at + step] = order[at + step], order[at]
-            self.set_rows(self.root, "constraint_order", order, _tr("Move constraint kind"))
+            self.set_rows(self.root, "constraint_order", order, translate("JcnsEditor", "Move constraint kind"))

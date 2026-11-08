@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtCore import QCoreApplication, QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QPainter, QPainterPathStroker, QPen
 from PySide6.QtWidgets import QGraphicsItem, QGraphicsObject, QGraphicsPathItem, QGraphicsScene, QMenu
 
@@ -44,7 +44,8 @@ class _Card(QGraphicsObject):
                 (palette["text_muted"], graph.caption(self.node), _ROW)]
         for kind, pin in self.pins:
             link = self.links.get((kind, pin))
-            label = (graph.tr("Motion {0}") if kind == _MOTION else graph.tr("Param {0}")).format(pin)
+            label = (QCoreApplication.translate("TreeGraph", "Motion {0}") if kind == _MOTION else
+                     QCoreApplication.translate("TreeGraph", "Param {0}")).format(pin)
             variable = None if link is None or link.child.class_name != "VariablesNode" else \
                 graph.state.variables_of(link.child).get(link.guid)
             rows.append((palette["text_muted"], label if variable is None else f"{label}: {variable[0]}", _ROW))

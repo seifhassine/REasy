@@ -17,8 +17,7 @@ from ..rules import evaluation_rules, stored
 MIN_MAX = (("in_min", "out_min"), ("in_mid", "out_mid"), ("in_max", "out_max"))
 
 
-def _tr(text: str) -> str:
-    return QCoreApplication.translate("JcnsEditor", text)
+translate = QCoreApplication.translate
 
 
 class _Curve:
@@ -126,14 +125,15 @@ class DriverCurves(CurveSource):
             for key in keys:
                 _at, (x, y) = curve.points()[key]
                 fields.update({y: values[key]} if curve.cone else {x: frames[key], y: values[key]})
-            self._merged(merge, lambda: self.edits.set_fields(curve.driver, fields, _tr("Move points")))
+            self._merged(merge, lambda: self.edits.set_fields(curve.driver, fields,
+                                                              translate("JcnsEditor", "Move points")))
             return keys
         order = sorted(range(len(frames)), key=lambda at: frames[at])
 
         def moved() -> None:
             original = rows(curve.driver, "keyframes")
             self.edits.set_rows(curve.driver, "keyframes", [self._key(original[at], frame=frames[at], value=values[at])
-                                                            for at in order], _tr("Move keys"))
+                                                            for at in order], translate("JcnsEditor", "Move keys"))
         self._merged(merge, moved)
         return [order.index(key) for key in keys]
 
@@ -141,7 +141,7 @@ class DriverCurves(CurveSource):
         keyframe = self.shown[track].keyframes[key]
         (frame, value), sign = (keyframe.values["frame"], keyframe.values["value"]), 1 if handle else -1
         fields = dict(zip(("ox", "oy") if handle else ("ix", "iy"), ((x - frame) * 3 * sign, (y - value) * 3 * sign)))
-        self._merged(merge, lambda: self.edits.set_fields(keyframe, fields, _tr("Move tangent")))
+        self._merged(merge, lambda: self.edits.set_fields(keyframe, fields, translate("JcnsEditor", "Move tangent")))
 
     def _key(self, key: Record, **values) -> Record:
         layout = self.edits.layouts[key.kind]
@@ -160,12 +160,14 @@ class DriverCurves(CurveSource):
             keys[at - 1] = self._key(keys[at - 1], ox=before)
         if at < len(keys):
             keys[at] = self._key(keys[at], ix=after)
-        self.edits.set_rows(curve.driver, "keyframes", [*keys[:at], added, *keys[at:]], _tr("Add key"))
+        self.edits.set_rows(curve.driver, "keyframes", [*keys[:at], added, *keys[at:]],
+                            translate("JcnsEditor", "Add key"))
 
     def delete_keys(self, picked: dict[int, list[int]]) -> None:
-        with self.edits.document.macro(_tr("Delete keys")):
+        with self.edits.document.macro(translate("JcnsEditor", "Delete keys")):
             for track, keys in picked.items():
                 curve = self.shown[track]
                 if curve.keyframes is not None:
                     self.edits.set_rows(curve.driver, "keyframes", [key for at, key in enumerate(curve.keyframes)
-                                                                    if at not in keys], _tr("Delete keys"))
+                                                                    if at not in keys],
+                                        translate("JcnsEditor", "Delete keys"))
