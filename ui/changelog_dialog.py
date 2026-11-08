@@ -1,6 +1,6 @@
-import os
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtGui import QPixmap, QDesktopServices
+import math
+from PySide6.QtCore import QElapsedTimer, QPointF, Qt, QTimer, QUrl
+from PySide6.QtGui import QCursor, QDesktopServices, QPainter, QPainterPath, QPixmap
 from PySide6.QtWidgets import (QDialog, QWidget, QLabel, QVBoxLayout, QHBoxLayout, QFrame, QPushButton,
                                QScrollArea, QSizePolicy)
 lazy from ui.editor_widgets import styled_label
@@ -15,6 +15,7 @@ _TAG_BADGES = {
     "fixed": "warning",
     "planned": "neutral",
 }
+_HEAD = (521.5, 360.0, 259.0)
 
 
 class _IllustrationPanel(QFrame):
@@ -25,68 +26,79 @@ class _IllustrationPanel(QFrame):
         self.setMinimumWidth(200)
         self.setMaximumWidth(260)
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self._source = QPixmap(image_path)
+        self._parts = None
+        self._look = self._hop = -10.0
+        self._clock = QElapsedTimer()
+        self._clock.start()
+        self._timer = QTimer(self, interval=16, timeout=self.update)
 
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+    def showEvent(self, event):
+        super().showEvent(event)
+        self._timer.start()
 
-        self._orig_pixmap = QPixmap(image_path) if image_path and os.path.exists(image_path) else QPixmap()
-        self.image_label = QLabel()
-        self.image_label.setAlignment(Qt.AlignCenter)
-        self.image_label.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
-        layout.addStretch(1)
-        layout.addWidget(self.image_label, 0, Qt.AlignHCenter | Qt.AlignVCenter)
-        layout.addStretch(1)
-
-        self._update_scaled_pixmap()
+    def hideEvent(self, event):
+        super().hideEvent(event)
+        self._timer.stop()
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self._update_scaled_pixmap()
+        self._parts = None
 
-    def _update_scaled_pixmap(self):
-        if self._orig_pixmap.isNull():
-            self.image_label.clear()
+    def mousePressEvent(self, event):
+        self._hop = self._clock.elapsed() / 1000
+
+    def _split(self):
+        scale = min(0.8 * self.width() / self._source.width(), 0.8 * self.height() / self._source.height(), 1.0)
+        ratio = self.devicePixelRatioF()
+        body = self._source.scaled(self._source.size() * scale * ratio, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        body.setDevicePixelRatio(ratio)
+        cx, cy, radius = (value * scale for value in _HEAD)
+        disc = QPainterPath()
+        disc.addEllipse(QPointF(cx, cy), radius, radius)
+        head = QPixmap(body.size())
+        head.setDevicePixelRatio(ratio)
+        head.fill(Qt.transparent)
+        painter = QPainter(head)
+        painter.setClipPath(disc)
+        painter.drawPixmap(0, 0, body)
+        painter.end()
+        painter = QPainter(body)
+        painter.setCompositionMode(QPainter.CompositionMode_Clear)
+        painter.fillPath(disc, Qt.black)
+        painter.end()
+        size = body.deviceIndependentSize()
+        origin = QPointF((self.width() - size.width()) / 2, (self.height() - size.height()) / 2)
+        return head, body, origin, QPointF(cx, cy + radius), QPointF(cx, cy), size.height()
+
+    def paintEvent(self, event):
+        super().paintEvent(event)
+        if self._source.isNull():
             return
-            
-        margins = self.layout().contentsMargins()
-        avail_width = max(80, self.width() - (margins.left() + margins.right()) - 20)
-        avail_height = max(80, self.height() - (margins.top() + margins.bottom()) - 20)
-        
-        orig_width = self._orig_pixmap.width()
-        orig_height = self._orig_pixmap.height()
-        
-        if orig_width == 0 or orig_height == 0:
-            return
-            
-        min_display_width = 150
-        min_display_height = 200
-        
-        target_width = max(min_display_width, int(avail_width * 0.8))
-        target_height = max(min_display_height, int(avail_height * 0.8))
-        
-        scale_x = target_width / orig_width
-        scale_y = target_height / orig_height
-        scale_factor = min(scale_x, scale_y, 1.0) 
-        
-        min_scale = min(min_display_width / orig_width, min_display_height / orig_height)
-        scale_factor = max(scale_factor, min_scale)
-        
-        final_width = int(orig_width * scale_factor)
-        final_height = int(orig_height * scale_factor)
-        
-        scaled = self._orig_pixmap.scaled(
-            final_width, 
-            final_height, 
-            Qt.KeepAspectRatio, 
-            Qt.SmoothTransformation
-        )
-        
-        scaled.setDevicePixelRatio(self.devicePixelRatio())
-        
-        self.image_label.setPixmap(scaled)
-        self.image_label.setFixedSize(scaled.size())
+        if self._parts is None:
+            self._parts = self._split()
+        head, body, origin, neck, center, height = self._parts
+        now = self._clock.elapsed() / 1000
+        gaze = max(-1.0, min(1.0, (self.mapFromGlobal(QCursor.pos()).x() - origin.x() - neck.x()) / self.width()))
+        self._look = gaze if self._look < -1 else self._look + (gaze - self._look) * 0.08
+        hop = min(1.0, now - self._hop) * 2
+        lift = 24 * math.sin(math.pi * hop) if hop < 1 else 0.0
+        breath = 0.008 * math.sin(now * 2.2)
+        painter = QPainter(self)
+        painter.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
+        painter.translate(origin.x(), origin.y() - lift)
+        painter.save()
+        painter.translate(0, height)
+        painter.scale(1, 1 + breath)
+        painter.translate(0, -height)
+        painter.drawPixmap(0, 0, body)
+        painter.restore()
+        painter.translate(neck.x(), neck.y() - (height - neck.y()) * breath)
+        painter.rotate(7 * self._look + 1.5 * math.sin(now * 1.3))
+        painter.translate(center - neck)
+        painter.rotate(360 * hop * hop if hop < 1 else 0)
+        painter.translate(-center)
+        painter.drawPixmap(0, 0, head)
 
 
 class ChangelogDialog(QDialog):
@@ -98,19 +110,11 @@ class ChangelogDialog(QDialog):
         self.setMinimumSize(720, 480)
         self._apply_stylesheet(current_colors())
 
-        base_dir = application_root()
-        image_path_candidates = [
-            base_dir / "resources" / "images" / "reasy_guy.png",
-            base_dir / "resources" / "images" / "reasy_editor_logo.png",
-            base_dir / "resources" / "icons" / "reasy_editor_logo.ico",
-        ]
-        image_path = next((str(p) for p in image_path_candidates if p.exists()), "")
-
         root = QHBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
         root.setSpacing(0)
 
-        left = _IllustrationPanel(image_path)
+        left = _IllustrationPanel(str(application_root() / "resources" / "images" / "reasy_guy.png"))
         root.addWidget(left)
 
         right_container = QWidget()
