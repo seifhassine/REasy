@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.wwise_graph_validation import verify_wwiser_xml
+from services.audio.wwise_graph_validation import verify_wwiser_xml
 
 
 class ScalarValidationTests(unittest.TestCase):

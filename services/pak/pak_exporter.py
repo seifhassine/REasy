@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Tuple
 
-from tools.github_downloader import GitHubToolDownloader
+from services.pak.github_downloader import GitHubToolDownloader
 
 _OWNER_REPO = "seifhassine/REE.PAK.Tool"
 
@@ -31,15 +31,15 @@ def packer_status() -> Tuple[bool, str | None]:
     return _downloader.status()
 
 
-def _ensure_packer(*, auto_download=True, parent_window=None) -> Path:
-    return _downloader.ensure(auto_download=auto_download, parent_window=parent_window)
+def _ensure_packer(*, auto_download=True, progress_runner=None) -> Path:
+    return _downloader.ensure(auto_download=auto_download, progress_runner=progress_runner)
 
 
 def run_packer(
     src_dir: str | Path, dest_pak: str | Path,
-    *, parent=None, auto_download=True
+    *, progress_runner=None, auto_download=True
 ) -> Tuple[int, str]:
-    exe = _ensure_packer(auto_download=auto_download, parent_window=parent)
+    exe = _ensure_packer(auto_download=auto_download, progress_runner=progress_runner)
     cmd = [str(exe), str(src_dir), str(dest_pak)]
     proc = subprocess.Popen(
         cmd, cwd=exe.parent,
@@ -52,7 +52,7 @@ def run_packer(
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("usage: python -m tools.pak_exporter <src_dir> <dest.pak>")
+        print("usage: python -m services.pak.pak_exporter <src_dir> <dest.pak>")
         sys.exit(1)
     code, out = run_packer(sys.argv[1], sys.argv[2])
     print(out)

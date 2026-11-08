@@ -13,8 +13,23 @@ import requests
 
 from utils.app_paths import application_root
 
-# Kept as a compatibility alias for tools.pak_exporter and third-party callers.
-_get_base_dir = application_root
+# A progress runner takes (title, download_fn) and calls download_fn(bridge), where
+# bridge.text.emit(str) and bridge.prog.emit(int) report progress. The UI supplies a
+# dialog-backed runner; without one, downloads run silently in the calling thread.
+ProgressRunner = Callable[[str, Callable], None]
+
+
+class _Ignored:
+    def emit(self, *_):
+        pass
+
+
+class _SilentBridge:
+    text = prog = _Ignored()
+
+
+def run_silently(title: str, download_fn: Callable) -> None:
+    download_fn(_SilentBridge())
 
 
 def _http_json(url: str, timeout: int = 20) -> dict:
@@ -22,9 +37,8 @@ def _http_json(url: str, timeout: int = 20) -> dict:
         return json.load(r)
 
 
-def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name: str, *, parent_window=None):
-    from ui.project_manager.pak_status_dialog import run_with_progress
-
+def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name: str, *,
+                                  progress_runner: Optional[ProgressRunner] = None):
     def _do_download(br):
         br.text.emit(f"Connecting to {display_name}…")
         with requests.get(asset_url, stream=True, timeout=60) as r:
@@ -51,7 +65,7 @@ def _download_and_extract_archive(asset_url: str, cache_dir: Path, display_name:
             with zipfile.ZipFile(buf) as zf:
                 zf.extractall(cache_dir)
 
-    run_with_progress(parent_window, f"Download {display_name}", _do_download)
+    (progress_runner or run_silently)(f"Download {display_name}", _do_download)
 
 
 class GitHubToolDownloader:
@@ -83,12 +97,12 @@ class GitHubToolDownloader:
             return True, latest
         return False, latest
 
-    def ensure(self, *, auto_download: bool = True, parent_window=None) -> Path:
+    def ensure(self, *, auto_download: bool = True, progress_runner: Optional[ProgressRunner] = None) -> Path:
         need, latest = self.status()
         if need:
             if not auto_download:
                 raise RuntimeError(f"{self.display_name} not present or outdated")
-            self._download(latest, parent_window=parent_window)
+            self._download(latest, progress_runner=progress_runner)
         return self.exe_path
 
     def _resolve_asset_url(self, tag: Optional[str]) -> str:
@@ -100,13 +114,13 @@ class GitHubToolDownloader:
             assets = []
         return self._asset_url_fn(tag, assets)
 
-    def _download(self, tag: Optional[str], *, parent_window=None) -> Path:
+    def _download(self, tag: Optional[str], *, progress_runner: Optional[ProgressRunner] = None) -> Path:
         asset_url = self._resolve_asset_url(tag)
         _download_and_extract_archive(
             asset_url,
             self.cache_dir,
             f"{self.display_name} {tag or 'latest'}",
-            parent_window=parent_window,
+            progress_runner=progress_runner,
         )
         if self.exe_path.exists() and os.name != "nt":
             self.exe_path.chmod(self.exe_path.stat().st_mode | 0o755)

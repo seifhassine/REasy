@@ -4,7 +4,7 @@ import psutil
 import argparse
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 from file_handlers.rsz.rsz_file import RszFile
 from utils.app_paths import resolve_cli_path
 

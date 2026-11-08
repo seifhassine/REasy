@@ -41,7 +41,7 @@ def query(args):
 
 
 def scan(args):
-    from tools.rsz_field_value_finder import is_rsz_path
+    from services.rsz.rsz_field_value_finder import is_rsz_path
     if args.source.is_file():
         paths = [args.source]
     elif args.source.is_dir():
@@ -74,7 +74,7 @@ def elements(args):
 
 def references(args):
     from collections import defaultdict
-    from tools.pfb_refinfos_extractor import iter_pfb_like_files, build_property_map_for_file, _serialize_mapping
+    from services.rsz.pfb_refinfos_extractor import iter_pfb_like_files, build_property_map_for_file, _serialize_mapping
     registry = TypeRegistry(str(args.registry))
     if not args.source.exists():
         raise ValueError(f'Input does not exist: {args.source}')

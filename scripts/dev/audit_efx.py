@@ -8,7 +8,7 @@ import random
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from file_handlers.efx.efx_file import EfxFile
 from file_handlers.pak.reader import CachedPakReader
 

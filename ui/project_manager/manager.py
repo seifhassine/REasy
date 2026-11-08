@@ -28,8 +28,9 @@ from file_handlers.pak import scan_pak_files
 from file_handlers.pak.reader import CachedPakReader
 from file_handlers.pak.utils import guess_extension_from_header
 from services.file_operations import FileOperationError, FolderFileOperations
-from tools.fluffy_exporter import create_fluffy_zip
-from tools.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
+from services.pak.fluffy_exporter import create_fluffy_zip
+from services.pak.pak_exporter import _EXE_PATH, _ensure_packer, packer_status, run_packer
+from ui.project_manager.pak_status_dialog import progress_runner
 from utils.app_paths import application_root
 
 from .bookmark_panel import BookmarksPanel
@@ -2007,7 +2008,7 @@ class ProjectManager(QDockWidget):
         zip_path = mods_folder / f"{name}.zip"
 
         try:
-            create_fluffy_zip(proj, zip_path)
+            create_fluffy_zip(proj, zip_path, progress_runner=progress_runner(self))
             self._show_export_done_dialog(
                 self.tr("Fluffy mod ZIP created.\nSaved to:\n{}").format(zip_path),
                 zip_path,
@@ -2041,7 +2042,7 @@ class ProjectManager(QDockWidget):
                                     QMessageBox.Yes | QMessageBox.No) != QMessageBox.Yes:
                 return
             try:
-                _ensure_packer(auto_download=True)
+                _ensure_packer(auto_download=True, progress_runner=progress_runner(self))
             except Exception as e:
                 QMessageBox.critical(self, self.tr("Download failed"), str(e))
                 return

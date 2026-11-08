@@ -37,7 +37,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from tools.rsz_field_value_finder import (
+from services.rsz.rsz_field_value_finder import (
     format_value,
     is_rsz_path,
     replace_file_values,

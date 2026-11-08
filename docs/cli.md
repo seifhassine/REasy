@@ -27,8 +27,9 @@ Motion/CLIP and effect/attack recipes target MHR MOTLIST 528, MOT 495, CLIP 43,
 PFB 17, and RCOL 20. Wilds import reads MOTLIST 992 and writes a Rise target.
 RSZ commands accept `--registry PATH`; the default is the bundled MHRise registry.
 They use the existing format handlers and reject registry mismatches.
-Native edit APIs live under `file_handlers`; MHR composition and audio toolchain
-APIs live under `services/mhr` and `services/audio`. CLI modules adapt those APIs.
+Native edit APIs and JSON inspection views live under `file_handlers`; MHR composition
+and audio toolchain APIs live under `services/mhr` and `services/audio`. CLI modules
+under `tools/cli/formats` adapt those APIs.
 Offline format-validation generators and manual Lua checks live under `tests/fixtures`.
 
 ## Agent contract
@@ -204,7 +205,7 @@ half-open ranges (equal endpoints retain a fixed selection). Deleting referenced
 or splitting a random range into non-contiguous positions is rejected. Linked edits
 save EFX and UVS together, with optional dependency copying.
 
-For corpus verification, `tools/audit_efx.py --exercise-edits` clones/removes an emitter
+For corpus verification, `scripts/dev/audit_efx.py --exercise-edits` clones/removes an emitter
 and undoes back to the original bytes. `--exercise-construction` reconstructs an example
 of every encountered attribute type and validates curve/expression structures;
 `--exercise-imports` imports representative native entries with their dependencies.

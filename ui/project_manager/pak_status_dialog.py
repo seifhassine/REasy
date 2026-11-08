@@ -50,6 +50,11 @@ class DownloadStatusDialog(QDialog):
         self._lbl.setText(self._lbl.text() + self.tr(" – finished."))
 
 
+def progress_runner(parent):
+    """Adapt run_with_progress to the services' progress_runner(title, download_fn) contract."""
+    return lambda title, download_fn: run_with_progress(parent, title, download_fn)
+
+
 def run_with_progress(parent, title: str,
                       download_fn: Callable[[_Bridge], None]) -> None:
     dlg = DownloadStatusDialog(title, parent)

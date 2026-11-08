@@ -60,7 +60,7 @@ from ui.directory_search import search_project
 from ui.highlight_menu_controller import HighlightMenuController
 from ui.homepage import HomePageStack, HomePageWidget
 from ui.scene.opengl_setup import create_surface_anchor
-from tools.hash_calculator import HashCalculator
+from ui.hash_calculator import HashCalculator
 
 from ui.project_manager.project_picker_dialog import ProjectPickerDialog  # noqa: E402
 from ui.project_manager.source_dialog import SelectSourceDialog  # noqa: E402

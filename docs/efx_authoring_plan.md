@@ -86,7 +86,7 @@
 - `file_handlers/efx/efx_viewer.py`：界面。
 - `file_handlers/efx/sunbreak_schema.py`：曙光补充布局。
 - `file_handlers/uvs/`、`file_handlers/tex/`：序列帧和贴图。
-- `tools/cli/formats/efx.py`、`tools/audit_efx.py`、`tests/test_efx*.py`。
+- `tools/cli/formats/efx.py`、`scripts/dev/audit_efx.py`、`tests/test_efx*.py`。
 - 消费项目示例：斩龙项目 `vfx_world/rise_prototype/build_tail_flame.py` 使用公共资源 API 维护专属素材。
 - 格式参考：<https://github.com/kagenocookie/RE-Engine-Lib>、<https://github.com/NSACloud/MHR-EFX-Template>。
 - 编辑交互参考：<https://github.com/kagenocookie/REE-Content-Editor>、<https://github.com/Dimcirui/MHW-EFX-Editor>（后者为 World 格式）。

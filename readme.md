@@ -22,15 +22,16 @@ The FSM editor resolves node, condition, and transition-event references inline.
 
 | Location | Responsibility |
 | --- | --- |
-| [Resource CLI](docs/cli.md), [FSM commands](docs/fsm_cli.md) (`tools/`) | Parameterized inspection and edits; use these instead of per-resource probe scripts |
-| `file_handlers/` | Format models, serialization and native edits: RSZ graph copies, FSM objects/maps, PFB elements, RCOL requests, and CLIP event edits |
-| `services/mhr/` | Game recipes combining native operations: FSM branch plans, move bundles, and [motion batch builds](docs/mhr_motion_writer.md) |
-| `services/audio/` | WEM conversion, Wwise toolchain, IR conversion and playback graph batch import; native RIFF metadata lives in `file_handlers/sound/` |
+| `tools/` | The [resource CLI](docs/cli.md) (`python -m tools`), including [FSM commands](docs/fsm_cli.md); only argument handling, loading, results and publication |
+| `file_handlers/` | Format models, serialization and native edits: RSZ graph copies and scalar edits, FSM operations (`motfsm/operations`), PFB elements, RCOL requests, CLIP event edits, and JSON inspection views (`<format>/inspection.py`) |
+| `services/mhr/` | Game recipes combining native operations: FSM branch plans and Action pointers, move bundles, and [motion batch builds](docs/mhr_motion_writer.md) |
+| `services/audio/` | WEM conversion, Wwise toolchain, IR conversion, playback graph batch import and wwiser XML cross-checks; native RIFF metadata lives in `file_handlers/sound/` |
+| `services/pak/`, `services/rsz/` | GUI tool backends: PAK/Fluffy export, file lists and tool downloads; RSZ value search, data matching, PFB references and outdated-file detection |
 | `services/file_io.py` | Input protection and staged candidate publication shared by command-line and service callers |
-| `tools/audit_efx.py`, `generate_efx_schema.py` | Parameterized corpus verification and schema maintenance |
-| `tools/preview_mhw_pair.py` | World/Rise motion comparison with caller-supplied LMT, MOTLIST and mesh; `--help` lists capture options |
-| `scripts/` | Repository environment, translations and dump maintenance |
-| `tests/test_*.py` | Automated regressions; native corpus files remain local |
+| `scripts/` | Repository environment, translations, dump maintenance and `run_tests.py` |
+| `scripts/data/` | Data generation: EFX schemas (`generate_efx_schema.py`), RSZ string lists, template field patches |
+| `scripts/dev/` | Corpus audits (`audit_efx.py`), World/Rise motion comparison (`preview_mhw_pair.py`), SCN benchmark |
+| `tests/test_*.py` | Automated regressions (`python scripts/run_tests.py [--fast]`); native corpus files remain local |
 | `tests/fixtures/` | Explicit offline candidate generators and manual Lua checks; fixed sample identities are test data |
 
 New reusable operations belong beside their native format. Game-specific selection
@@ -42,7 +43,7 @@ consuming project.
 userdata remapping. `file_handlers.rsz.effect_elements.clone_element` and
 `file_handlers.rcol.editing.clone_request_set` edit native models without a viewer.
 The [FSM API guide](docs/fsm_cli.md#reusable-python-apis) distinguishes generic
-graph primitives from the four MHR branch recipes.
+graph primitives and operations from the MHR branch recipes.
 
 Generated-resource regression tests run on Windows and Linux through
 `.github/workflows/authoring-tests.yml`. Tests needing extracted game corpora remain

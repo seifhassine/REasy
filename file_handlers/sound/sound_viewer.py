@@ -171,7 +171,7 @@ def _vgmstream_asset_url(tag, assets):
 def _get_vgmstream_downloader():
     global _vgmstream_downloader
     if _vgmstream_downloader is None:
-        from tools.github_downloader import GitHubToolDownloader
+        from services.pak.github_downloader import GitHubToolDownloader
 
         _vgmstream_downloader = GitHubToolDownloader(
             owner_repo="vgmstream/vgmstream",
@@ -1161,7 +1161,8 @@ class SoundViewer(QWidget):
         ) != QMessageBox.Yes:
             return None
         try:
-            executable = downloader.ensure(auto_download=True, parent_window=self)
+            from ui.project_manager.pak_status_dialog import progress_runner
+            executable = downloader.ensure(auto_download=True, progress_runner=progress_runner(self))
         except Exception as exc:
             QMessageBox.critical(self, self.tr("Download Failed"), str(exc))
             return None

@@ -4,7 +4,7 @@ import zipfile
 import tempfile
 from pathlib import Path
 
-from tools.pak_exporter import _ensure_packer, run_packer
+from services.pak.pak_exporter import _ensure_packer, run_packer
 
 _MODINFO_NAME = "modinfo.ini"
 _PROJECT_CONFIG_NAME = ".reasy_project.json"
@@ -47,8 +47,8 @@ def _write_screenshot(zf: zipfile.ZipFile, project_dir: Path, cfg: dict) -> None
         zf.write(screenshot_path, screenshot_path.name)
 
 
-def _write_bundled_pak(zf: zipfile.ZipFile, project_dir: Path, pak_name: str) -> None:
-    _ensure_packer(auto_download=True)
+def _write_bundled_pak(zf: zipfile.ZipFile, project_dir: Path, pak_name: str, progress_runner=None) -> None:
+    _ensure_packer(auto_download=True, progress_runner=progress_runner)
     with tempfile.TemporaryDirectory() as temp_dir:
         pak_tmp = Path(temp_dir) / f"{pak_name}.pak"
         code, output = run_packer(str(project_dir), str(pak_tmp))
@@ -64,7 +64,7 @@ def _write_project_files(zf: zipfile.ZipFile, project_dir: Path) -> None:
         zf.write(path, str(path.relative_to(project_dir)))
 
 
-def create_fluffy_zip(project_dir: Path, zip_path: Path):
+def create_fluffy_zip(project_dir: Path, zip_path: Path, *, progress_runner=None):
     project_dir = Path(project_dir)
     cfg = _load_project_config(project_dir)
     if zip_path.suffix.lower() != ".zip":
@@ -74,6 +74,6 @@ def create_fluffy_zip(project_dir: Path, zip_path: Path):
         _write_modinfo(zf, project_dir, cfg)
         _write_screenshot(zf, project_dir, cfg)
         if cfg.get("bundle_pak", False):
-            _write_bundled_pak(zf, project_dir, cfg.get("pak_name", project_dir.name))
+            _write_bundled_pak(zf, project_dir, cfg.get("pak_name", project_dir.name), progress_runner)
         else:
             _write_project_files(zf, project_dir)

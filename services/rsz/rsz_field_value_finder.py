@@ -11,7 +11,7 @@ import argparse
 import re
 from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).resolve().parents[2]))
 
 from file_handlers.rsz.rsz_data_types import _ValueData
 from services.backup_store import create_backup

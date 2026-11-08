@@ -17,7 +17,7 @@ from file_handlers.sound.playback_graph import (
     register_v140_rtpc_defaults,
 )
 from file_handlers.sound.wwise_v132 import parse_structured_object
-from tools.wwise_graph_validation import verify_wwiser_xml
+from services.audio.wwise_graph_validation import verify_wwiser_xml
 from services.audio.wwise_graph_importer import import_batch
 
 

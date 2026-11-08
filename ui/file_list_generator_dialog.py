@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QMessageBox, QProgressDialog, QApplication, QGroupBox, QFrame,
     QLineEdit, QInputDialog, QCheckBox
 )
-from tools.file_list_generator import (
+from services.pak.file_list_generator import (
     ExePathExtractor,
     ExtensionAnalyzer,
     ImproverMode,

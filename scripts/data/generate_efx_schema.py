@@ -16,7 +16,7 @@ REVISION = "ceb0d2fbe9d76f29c552e4c56f4fd8cd87a165ef"
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("assembly", type=Path)
-    parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parents[1] / "resources/data/efx")
+    parser.add_argument("--output", type=Path, default=Path(__file__).resolve().parents[2] / "resources/data/efx")
     args = parser.parse_args()
     from pythonnet import load
     load("coreclr")
