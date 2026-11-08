@@ -4,21 +4,24 @@ import ctypes
 import os
 import threading
 lazy from concurrent.futures import ThreadPoolExecutor
+from itertools import accumulate
 from pathlib import Path
 
 
 GDEFLATE_MAGIC = 0xFB04
 _GDEFLATE_ID = 4
 _TILE_SIZE = 0x10000
+_TILE_SIZE_INDEX = 1
+_COMPRESSION_LEVEL = 12
 _MIN_PARALLEL_TILES = 16
 _MAX_WORKERS = 16
 _DLL_NAME = "libGDeflate.dll"
 _LOCK = threading.RLock()
-_DLL = _DECOMPRESSOR = _DLL_DIR = None
+_DLL = _DECOMPRESSOR = _COMPRESSOR = _DLL_DIR = None
 
 
 class _Page(ctypes.Structure):
-    _fields_ = [("data", ctypes.c_void_p), ("size", ctypes.c_int)]
+    _fields_ = [("data", ctypes.c_void_p), ("size", ctypes.c_size_t)]
 
 
 def is_gdeflate_payload(data: bytes | bytearray | memoryview) -> bool:
@@ -66,6 +69,16 @@ def _load_library():
             dll.libdeflate_gdeflate_decompress.restype = ctypes.c_int
             dll.libdeflate_free_gdeflate_decompressor.argtypes = [ctypes.c_void_p]
             dll.libdeflate_free_gdeflate_decompressor.restype = None
+            dll.libdeflate_alloc_gdeflate_compressor.argtypes = [ctypes.c_int]
+            dll.libdeflate_alloc_gdeflate_compressor.restype = ctypes.c_void_p
+            dll.libdeflate_gdeflate_compress_bound.argtypes = [
+                ctypes.c_void_p, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t)
+            ]
+            dll.libdeflate_gdeflate_compress_bound.restype = ctypes.c_size_t
+            dll.libdeflate_gdeflate_compress.argtypes = [
+                ctypes.c_void_p, ctypes.c_char_p, ctypes.c_size_t, ctypes.POINTER(_Page), ctypes.c_size_t
+            ]
+            dll.libdeflate_gdeflate_compress.restype = ctypes.c_size_t
             _DLL = dll
             return dll
         except OSError as exc:
@@ -211,6 +224,29 @@ def gdeflate_uncompressed_size(data: bytes | bytearray | memoryview, fallback_si
     last_tile_size = (flags >> 2) & 0x3FFFF
     size = tile_count * _TILE_SIZE - (0 if last_tile_size == 0 else _TILE_SIZE - last_tile_size)
     return size if size > 0 else fallback_size
+
+
+def compress_gdeflate(data: bytes) -> bytes:
+    global _COMPRESSOR
+    dll = _load_library()
+    count = ctypes.c_size_t()
+    with _LOCK:
+        if _COMPRESSOR is None:
+            _COMPRESSOR = dll.libdeflate_alloc_gdeflate_compressor(_COMPRESSION_LEVEL)
+            if not _COMPRESSOR:
+                raise RuntimeError("Unable to allocate GDeflate compressor")
+        bound = dll.libdeflate_gdeflate_compress_bound(_COMPRESSOR, len(data), ctypes.byref(count))
+        buffer = ctypes.create_string_buffer(bound * count.value)
+        pages = (_Page * count.value)(
+            *(_Page(ctypes.addressof(buffer) + index * bound, bound) for index in range(count.value))
+        )
+        if not dll.libdeflate_gdeflate_compress(_COMPRESSOR, data, len(data), pages, count.value):
+            raise RuntimeError("GDeflate compression failed")
+    tiles = [ctypes.string_at(page.data, page.size) for page in pages]
+    starts = accumulate(map(len, tiles[:-1]))
+    header = bytes((_GDEFLATE_ID, 0xFF ^ _GDEFLATE_ID)) + len(tiles).to_bytes(2, "little")
+    header += (_TILE_SIZE_INDEX | len(data) % _TILE_SIZE << 2).to_bytes(4, "little")
+    return header + b"".join(value.to_bytes(4, "little") for value in (len(tiles[-1]), *starts)) + b"".join(tiles)
 
 
 def decompress_gdeflate(data: bytes | bytearray | memoryview, expected_size: int) -> bytes:

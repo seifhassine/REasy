@@ -1,11 +1,14 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from itertools import accumulate
 from typing import Optional, Sequence
 
+from . import encoding, images
 lazy from .dds import CUBEMAP_FACES
 lazy from .dxgi import dxgi_name, get_bits_per_pixel, is_block_compressed, is_known_format
 lazy from .flags import EV_MASK, RANGE_COMPRESSION_EXP_MASK, TYPE_MASK, TexFlags, type_choices
+lazy from .gdeflate import compress_gdeflate
 from .profiles import (
     LAYOUT_LEGACY,
     LAYOUT_STORED,
@@ -27,6 +30,7 @@ lazy from .tex_file import (
 lazy from .texture_decoder import dds_info, dds_subresources
 
 MAX_AXIS = 0xFFFF
+RAW_CHUNK_LIMIT = 512
 
 _NAME_HINTS = (
     ("nrmr", "NormalRoughness"),
@@ -276,11 +280,9 @@ def _check(profile: TexCookProfile, source: TextureSource) -> None:
         )
 
 
-def _raw_payload_note(profile: TexCookProfile, stored_chunks: bool) -> list[str]:
-    if profile.layout != LAYOUT_STORED:
-        return []
-    table = "a chunk table recording them raw" if stored_chunks else "no chunk table, as the source has none"
-    return [f"mip payloads are written uncompressed (no GDeflate writer here): {table}"]
+def _pitches(profile: TexCookProfile, dxgi_format: int, sizes) -> tuple[int, ...]:
+    align = profile.pitch_alignment
+    return tuple(-(-natural_mip_layout(dxgi_format, *size)[1] // align) * align for size in sizes)
 
 
 def _dropped_members(profile: TexCookProfile, flags: TexFlags) -> list[str]:
@@ -355,10 +357,10 @@ def _container(profile: TexCookProfile, source: TextureSource, flags_word: int) 
         )
     stored: list[StoredMipHeader] = []
     if profile.layout == LAYOUT_STORED and source.stored_chunks:
-        running = 0
-        for span in spans:
-            stored.append(StoredMipHeader(span, running))
-            running += span
+        payloads = [chunk if len(chunk) <= RAW_CHUNK_LIMIT else min(chunk, compress_gdeflate(chunk), key=len)
+                    for chunk in payloads]
+        stored = [StoredMipHeader(len(chunk), offset)
+                  for chunk, offset in zip(payloads, accumulate(map(len, payloads), initial=0))]
     header = TexHeader(
         version=profile.version,
         width=source.width,
@@ -412,6 +414,8 @@ def import_dds(
 ) -> Authored:
     profile = tex_profile(version)
     source = source_from_dds(data)
+    source = replace(source, row_pitches=_pitches(profile, source.dxgi_format, (
+        source.dimensions(level) for _image in range(source.image_count) for level in range(source.mip_count))))
     notes: list[str] = []
     if type_name is not None or type_index is not None:
         index = _resolve_type(profile, name=type_name, index=type_index, explicit=True, notes=notes)
@@ -432,13 +436,49 @@ def import_dds(
         profile,
         source,
         index=index,
-        notes=_raw_payload_note(profile, source.stored_chunks) + notes,
+        notes=notes,
         resident=resident,
         ev=ev,
         streaming_mips=0,
         refiltered_normal=False,
         range_compression_exp=0,
         high_priority_load_streaming=False,
+    )
+
+
+def _carried(
+    profile: TexCookProfile,
+    tex: TexFile,
+    *,
+    type_name: Optional[str],
+    type_index: Optional[int],
+    notes: list[str],
+) -> dict:
+    flags = tex.header.tex_flags
+    if type_index is not None or type_name is not None:
+        index = _resolve_type(profile, name=type_name, index=type_index, explicit=True, notes=notes)
+    elif profile.version == tex.header.version:
+        index = flags.texture_type
+    else:
+        source_profile = tex_profile(tex.header.version)
+        name = texture_type_name(source_profile, flags.texture_type)
+        if name is None:
+            raise TypeNeedsChoice(
+                f"{source_profile.display_name} names no texture type for index "
+                f"{flags.texture_type}, so the target's type has to be chosen",
+                options=type_choices(profile),
+            )
+        index = _resolve_type(profile, name=name, explicit=False, notes=notes)
+
+    notes.extend(_dropped_members(profile, flags))
+    return dict(
+        index=index,
+        resident=flags.resident,
+        ev=flags.ev,
+        streaming_mips=flags.streaming_mips,
+        refiltered_normal=flags.refiltered_normal,
+        range_compression_exp=flags.range_compression_exp,
+        high_priority_load_streaming=flags.high_priority_load_streaming,
     )
 
 
@@ -450,35 +490,81 @@ def convert(
     type_index: Optional[int] = None,
 ) -> Authored:
     profile = tex_profile(version)
-    source_profile = tex_profile(tex.header.version)
-    source = source_from_tex(tex)
-    flags = tex.header.tex_flags
     notes: list[str] = []
+    members = _carried(profile, tex, type_name=type_name, type_index=type_index, notes=notes)
+    return _author(profile, source_from_tex(tex), notes=notes, **members)
 
-    if type_index is not None or type_name is not None:
-        index = _resolve_type(profile, name=type_name, index=type_index, explicit=True, notes=notes)
-    elif version == tex.header.version:
-        index = flags.texture_type
-    else:
-        name = texture_type_name(source_profile, flags.texture_type)
-        if name is None:
-            raise TypeNeedsChoice(
-                f"{source_profile.display_name} names no texture type for index "
-                f"{flags.texture_type}, so the target's type has to be chosen",
-                options=type_choices(profile),
-            )
-        index = _resolve_type(profile, name=name, explicit=False, notes=notes)
 
-    notes.extend(_dropped_members(profile, flags))
-    return _author(
-        profile,
-        source,
-        index=index,
-        notes=_raw_payload_note(profile, source.stored_chunks) + notes,
-        resident=flags.resident,
-        ev=flags.ev,
-        streaming_mips=flags.streaming_mips,
-        refiltered_normal=flags.refiltered_normal,
-        range_compression_exp=flags.range_compression_exp,
-        high_priority_load_streaming=flags.high_priority_load_streaming,
-    )
+def import_png(
+    data: bytes,
+    chain: TexFile,
+    *,
+    version: int,
+    tail: Optional[TexFile] = None,
+    type_name: Optional[str] = None,
+    type_index: Optional[int] = None,
+) -> tuple[Authored, Optional[Authored]]:
+    profile = tex_profile(version)
+    header = chain.header
+    if header.image_count != 1 or header.depth != 1:
+        raise AuthoringError(
+            f"a PNG holds one 2D image, and this texture holds {header.image_count} of depth {header.depth}"
+        )
+    if header.format not in encoding.ENCODABLE:
+        raise AuthoringError(
+            f"REasy has no encoder for {dxgi_name(header.format)}; import a DDS in that format instead"
+        )
+    try:
+        image = images.read_png(data)
+    except ValueError as error:
+        raise AuthoringError(str(error)) from None
+    height, width = image.shape[:2]
+    split = 0 if tail is None else (header.width // tail.header.width).bit_length() - 1
+    if tail is not None and (
+        split < 0 or tail.header.format != header.format
+        or (tail.header.width << split, tail.header.height) != (header.width, max(1, header.height >> split))
+    ):
+        raise AuthoringError(
+            f"the resident copy ({tail.header.width}x{tail.header.height}) is not a power-of-two reduction of the "
+            f"streaming copy ({header.width}x{header.height})"
+        )
+    multiple = (4 if is_block_compressed(header.format) else 1) << split
+    if width % multiple or height % multiple:
+        raise AuthoringError(
+            f"{dxgi_name(header.format)} needs a width and height divisible by {multiple}, and the PNG is "
+            f"{width}x{height}"
+        )
+
+    def length(original: TexFile, first: int) -> int:
+        shipped = original.header
+        side, full = min(width, height) >> first, max(width, height).bit_length() - first
+        floor = min(shipped.width, shipped.height) >> shipped.mip_count - 1
+        return 1 if shipped.mip_count == 1 else next((level for level in range(1, full) if side >> level < floor), full)
+
+    def chain_of(count: int, first: int = 0) -> list[bytes]:
+        return [encoding.encode(level, header.format) for level in encoding.mip_levels(
+            image, count, srgb=dxgi_name(header.format).endswith("_SRGB"), type_name=header.tex_flags.type_name,
+            first=first)]
+
+    def author(original: TexFile, first: int, chunks: list[bytes], whole: bool) -> Authored:
+        notes: list[str] = []
+        members = _carried(profile, original, type_name=type_name, type_index=type_index, notes=notes)
+        if whole:
+            members.update(resident=False, streaming_mips=0, refiltered_normal=False)
+            notes.append("its streaming copy was not found, so the whole chain is written here as one texture")
+        sizes = [(max(1, width >> level), max(1, height >> level)) for level in range(first, first + len(chunks))]
+        source = TextureSource(
+            *sizes[0], 1, 1, len(chunks), header.format, False, _pitches(profile, header.format, sizes),
+            tuple(chunks), original.uses_stored_mips,
+        )
+        return _author(profile, source, notes=notes, **members)
+
+    count = length(chain, 0)
+    payloads = chain_of(count)
+    resident = None
+    if tail is not None:
+        tail_count = length(tail, split)
+        sliced = tail.header.mip_count == header.mip_count - split and not tail.header.tex_flags.refiltered_normal
+        tail_payloads = payloads[split:split + tail_count] if sliced else chain_of(split + tail_count, split)
+        resident = author(tail, split, tail_payloads, False)
+    return author(chain, 0, payloads, tail is None and header.tex_flags.resident), resident

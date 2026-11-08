@@ -12,9 +12,12 @@ from fetch_dxc import FILES as DXC_FILES, OUT as DXC, VERSION as DXC_VERSION
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 GDEFLATE = PROJECT_ROOT / ".cache" / "gdeflate" / "GDeflateCore"
+VENDORED = PROJECT_ROOT / "native" / "third_party"
 UNRECORDED = {
     "Python": (sys.version.split()[0], [Path(sys.base_prefix) / "LICENSE.txt"]),
     "GDeflate": ("", [GDEFLATE / "LICENSE", GDEFLATE / "subprojects" / "GDeflate" / "COPYING"]),
+    "bc7e": ("basis_universal 073eb6a", [VENDORED / "bc7e" / "LICENSE", VENDORED / "bc7e" / "NOTICE"]),
+    "rgbcx": ("bc7enc_rdo b943862", [VENDORED / "rgbcx" / "LICENSE"]),
     "DirectXShaderCompiler": (DXC_VERSION, [DXC / name for name in DXC_FILES.values() if name.endswith(".txt")]),
 }
 QT_DISTRIBUTIONS = ("pyside6", "shiboken6")

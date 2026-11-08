@@ -11,6 +11,7 @@ from PySide6.QtWidgets import (
     QGroupBox, QScrollArea, QFileDialog, QInputDialog, QMessageBox, QSlider
 )
 
+lazy from ui.background_jobs import run_job
 lazy from ui.editor_widgets import editor_strip, styled_label, toolbar_separator
 lazy from ui.icons import line_icon
 lazy from ui.qt_timers import call_later
@@ -19,6 +20,7 @@ lazy from ui.styles import current_colors, set_style_role
 from . import authoring
 lazy from .dxgi import describe_format
 lazy from .flags import CHOICE, SWITCH, TYPE_MASK, TexSetting
+lazy from .images import PNG_SIGNATURE
 lazy from .profiles import tex_profile, tex_profiles, tex_version_for_game
 lazy from .texture_decoder import decode_dds_mip, decode_tex_mip, dds_info
 lazy from .dds import DDS_MAGIC
@@ -253,10 +255,10 @@ class TexViewer(QWidget):
         for profile in tex_profiles():
             self.cook_box.addItem(f"{profile.display_name} ({profile.version})", profile.version)
         author.addWidget(self.cook_box)
-        self.import_dds_btn = QPushButton(self.tr("Import DDS..."))
-        self.import_dds_btn.setIcon(line_icon("import"))
-        self.import_dds_btn.clicked.connect(self._import_dds)
-        author.addWidget(self.import_dds_btn)
+        self.import_btn = QPushButton()
+        self.import_btn.setIcon(line_icon("import"))
+        self.import_btn.clicked.connect(self._import)
+        author.addWidget(self.import_btn)
         self.convert_btn = QPushButton(self.tr("Convert to this cook"))
         self.convert_btn.clicked.connect(self._convert_to_cook)
         author.addWidget(self.convert_btn)
@@ -297,6 +299,7 @@ class TexViewer(QWidget):
 
         self.export_dds_btn.setVisible(tex is not None)
         self.export_label.setText(self._export_description(tex, info))
+        self.import_btn.setText(self.tr("Import DDS/PNG...") if tex is not None else self.tr("Import DDS..."))
         self.convert_btn.setVisible(tex is not None)
         self._default_cook()
         self._build_settings(tex)
@@ -611,11 +614,14 @@ class TexViewer(QWidget):
     def _chosen_cook(self) -> Optional[int]:
         version = self.cook_box.currentData()
         if version is None:
-            self._show_failure(self.tr("Choose a game before importing a DDS."))
+            self._show_failure(self.tr("Choose a game before importing."))
         return version
 
-    def _import_dds(self):
-        path, _ = QFileDialog.getOpenFileName(self, self.tr("Import DDS"), "", "DDS files (*.dds)")
+    def _import(self):
+        tex = getattr(self.handler, "tex", None)
+        path, _ = QFileDialog.getOpenFileName(
+            self, self.tr("Import"), "", "Textures (*.dds *.png)" if tex is not None else "DDS files (*.dds)"
+        )
         if not path:
             return
         try:
@@ -627,7 +633,10 @@ class TexViewer(QWidget):
         if version is None:
             return
         stem = Path(path).stem
-        if getattr(self.handler, "tex", None) is not None:
+        if tex is not None and data.startswith(PNG_SIGNATURE):
+            self._author(self.handler.import_png, data, version=version, run=lambda work: run_job(
+                self, self.tr("Import PNG"), lambda _progress, _cancelled: work()))
+        elif tex is not None:
             self._author(self.handler.import_dds, data, version=version, name=Path(path).name)
         else:
             self._write_new_tex(lambda **type_choice: authoring.import_dds(

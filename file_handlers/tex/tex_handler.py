@@ -1,4 +1,5 @@
 import struct
+from collections.abc import Callable
 from typing import Optional
 
 lazy from utils.resource_file_utils import (
@@ -17,6 +18,13 @@ from .texture_handler import TextureViewerHandler
 
 def _is_streamed(path: str) -> bool:
     return "streaming" in (part.casefold() for part in path.replace("\\", "/").split("/"))
+
+
+def _container(data: bytes, declared: int) -> TexFile:
+    container = TexFile()
+    if not container.read(data, file_version=declared):
+        raise authoring.AuthoringError("it is not a .tex container")
+    return container
 
 
 class TexHandler(TextureViewerHandler):
@@ -94,29 +102,62 @@ class TexHandler(TextureViewerHandler):
         self._companion = companion
         return (*authored.notes, *notes)
 
+    def import_png(
+        self,
+        data: bytes,
+        *,
+        version: Optional[int] = None,
+        type_name: Optional[str] = None,
+        type_index: Optional[int] = None,
+        run: Callable = lambda work: work(),
+    ) -> tuple[str, ...]:
+        if self.tex is None:
+            raise authoring.AuthoringError("no .tex is open")
+        resource_path, partner_path, source, declared = self._partner()
+        streamed = _is_streamed(resource_path)
+        copy = "resident copy" if streamed else "streamed copy"
+        try:
+            partner = _container(source, declared) if source else None
+        except ValueError as error:
+            raise authoring.AuthoringError(f"its {copy} cannot be read: {error}") from None
+        swapped = partner is not None and not streamed
+        chain, tail = (partner, self.tex) if swapped else (self.tex, partner)
+        target = int(self.tex.header.version if version is None else version)
+        full, resident = run(lambda: authoring.import_png(
+            data, chain, version=target, tail=tail, type_name=type_name, type_index=type_index
+        ))
+        main, companion = (resident, full) if swapped else (full, resident)
+        self._adopt(main)
+        self._companion = None if companion is None else (partner_path, companion.data)
+        pair = (
+            [f"its {copy} is rebuilt from the PNG and written beside this file"] if companion
+            else [f"its {copy} was not found, so only this file is written"] if streamed else []
+        )
+        return tuple(dict.fromkeys((*main.notes, *(companion.notes if companion else ()), *pair)))
+
+    def _partner(self) -> tuple[str, Optional[str], bytes, int]:
+        context = resource_context_for_handler(self)
+        resource_path = self._resource_path(context) if context is not None else (self.filepath or "")
+        if self._companion is not None:
+            return resource_path, *self._companion, 0
+        path = streaming_companion_path(resource_path)
+        found = context.resolve(path, allow_selection_dialog=False) if path and context else None
+        if found is None:
+            return resource_path, None, b"", 0
+        return resource_path, *found, resource_version_from_path(found[0], "tex") or 0
+
     def _convert_companion(
         self, version: int, type_name: Optional[str], type_index: Optional[int]
     ) -> tuple[Optional[tuple[str, bytes]], list[str]]:
-        context = resource_context_for_handler(self)
-        resource_path = self._resource_path(context) if context is not None else (self.filepath or "")
-        source_path, source = self._companion or (None, b"")
-        declared = 0
+        resource_path, source_path, source, declared = self._partner()
         if not source:
-            path = streaming_companion_path(resource_path)
-            found = context.resolve(path, allow_selection_dialog=False) if path and context else None
-            if found is None:
-                return None, []
-            source_path, source = found
-            declared = resource_version_from_path(source_path, "tex") or 0
+            return None, []
         copy = "resident copy" if _is_streamed(resource_path) else "streamed copy"
         try:
-            container = TexFile()
-            if not container.read(source, file_version=declared):
-                raise authoring.AuthoringError("it is not a .tex container")
             authored = authoring.convert(
-                container, version=version, type_name=type_name, type_index=type_index
+                _container(source, declared), version=version, type_name=type_name, type_index=type_index
             )
-        except (authoring.AuthoringError, ValueError) as error:
+        except ValueError as error:
             name = str(source_path).replace("\\", "/").rsplit("/", 1)[-1]
             return None, [f"its {copy} ({name}) is left as it is: {error}"]
         return (source_path, authored.data), [f"its {copy} is converted with it and written beside this file"]

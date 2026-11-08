@@ -39,6 +39,7 @@ class TexCookProfile:
     #: bits 18-23 (the resource's ``RangeCompressionExp``) and bit 25 (``HighPriorityLoadStreaming``).
     range_compression_exp: bool = False
     high_priority_load_streaming: bool = False
+    pitch_alignment: int = 1
 
     @property
     def display_name(self) -> str:
@@ -53,32 +54,32 @@ _PROFILES: tuple[TexCookProfile, ...] = (
     TexCookProfile(30, LAYOUT_INLINE, ("RE8",), enum_game="RE8"),
     TexCookProfile(34, LAYOUT_INLINE, ("RE2RT", "RE3RT"), enum_game="RE3RT"),
     TexCookProfile(35, LAYOUT_INLINE, ("RE7RT",), enum_game="RE7RT"),
-    TexCookProfile(143221013, LAYOUT_INLINE, ("RE4",), enum_game="RE4"),
-    TexCookProfile(143230113, LAYOUT_INLINE, ("SF6",), enum_game="SF6"),
+    TexCookProfile(143221013, LAYOUT_INLINE, ("RE4",), enum_game="RE4", pitch_alignment=256),
+    TexCookProfile(143230113, LAYOUT_INLINE, ("SF6",), enum_game="SF6", pitch_alignment=256),
     TexCookProfile(190820018, LAYOUT_LEGACY, ("RE3", "REResistance"), enum_game="RE3", type_enum_offset=1),
-    TexCookProfile(231106777, LAYOUT_INLINE, ("KunitsuGami",), enum_game="KunitsuGami"),
+    TexCookProfile(231106777, LAYOUT_INLINE, ("KunitsuGami",), enum_game="KunitsuGami", pitch_alignment=256),
     TexCookProfile(240606151, LAYOUT_INLINE, ("DRDR",), enum_game="DRDR"),
-    TexCookProfile(240701001, LAYOUT_INLINE, ("O2",), enum_game="O2"),
+    TexCookProfile(240701001, LAYOUT_INLINE, ("O2",), enum_game="O2", pitch_alignment=256),
     TexCookProfile(
         241101895, LAYOUT_INLINE, ("SF6",), enum_game="SF6",
-        streaming_mips=True, refiltered_normal=True,
+        streaming_mips=True, refiltered_normal=True, pitch_alignment=256,
     ),
     TexCookProfile(
         241106027, LAYOUT_STORED, ("MHWilds",), enum_game="MHWilds", streaming_mips=True, streaming_mip_bits=5,
-        range_compression_exp=True, high_priority_load_streaming=True,
+        range_compression_exp=True, high_priority_load_streaming=True, pitch_alignment=256,
     ),
     TexCookProfile(
         250813143, LAYOUT_STORED, ("RE9",), enum_game="RE9", streaming_mips=True, streaming_mip_bits=5,
-        refiltered_normal=True, range_compression_exp=True, high_priority_load_streaming=True,
+        refiltered_normal=True, range_compression_exp=True, high_priority_load_streaming=True, pitch_alignment=256,
     ),
     TexCookProfile(
         251111100, LAYOUT_STORED, ("MHST3", "OnimushaWOTS", "Pragmata"), enum_game="OnimushaWOTS",
         streaming_mips=True, streaming_mip_bits=5, refiltered_normal=True, range_compression_exp=True,
-        high_priority_load_streaming=True,
+        high_priority_load_streaming=True, pitch_alignment=256,
     ),
     TexCookProfile(
         251211553, LAYOUT_INLINE, ("DD2",), enum_game="DD2", streaming_mips=True, streaming_mip_bits=5,
-        range_compression_exp=True, high_priority_load_streaming=True,
+        range_compression_exp=True, high_priority_load_streaming=True, pitch_alignment=256,
     ),
     TexCookProfile(760230703, LAYOUT_INLINE, ("REVerse",)),
 )
