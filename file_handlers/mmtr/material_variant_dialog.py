@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
@@ -36,14 +36,6 @@ lazy from .material_variant_sources import (
     MdfVariantSourceChoice,
     make_mdf_source_choice,
 )
-
-
-_ORIGIN_LABELS = {
-    "project": QT_TRANSLATE_NOOP("MaterialVariantDialog", "Project"),
-    "pak": QT_TRANSLATE_NOOP("MaterialVariantDialog", "PAK"),
-    "system": QT_TRANSLATE_NOOP("MaterialVariantDialog", "System"),
-    "disk": QT_TRANSLATE_NOOP("MaterialVariantDialog", "Disk"),
-}
 
 
 class MaterialVariantDialog(QDialog):
@@ -184,10 +176,9 @@ class MaterialVariantDialog(QDialog):
         self._populate_sources(preferred_source)
 
     def _source_text(self, choice: MdfVariantSourceChoice) -> str:
-        origin = self.tr(_ORIGIN_LABELS.get(choice.origin, choice.origin.title()))
         count = len(choice.matching_material_indices)
         return self.tr("{origin}  ·  {path}  ·  {count} matching material(s)").format(
-            origin=origin,
+            origin=choice.origin_label,
             path=choice.suggested_output_path or choice.label,
             count=count,
         )

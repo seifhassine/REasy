@@ -124,9 +124,9 @@ class MmtrViewer(SdfViewer):
     def _show_master_users(self) -> None:
         _mmtr_path, resource_path = self._variant_source_paths()
         sources = self._discover_mdf_sources(resource_path, *self._variant_asset_context())
-        rows = [f"{source.label} · {len(source.matching_material_indices)}" for source in sources]
+        rows = [f"{source.origin_label} · {source.label} · {len(source.matching_material_indices)}" for source in sources]
         QMessageBox.information(self, self.tr("Objects using this master"), self.tr(
-            "{count} MDF files have materials that use this master (file · materials):\n\n{list}").format(
+            "{count} MDF files have materials that use this master (source · file · materials):\n\n{list}").format(
             count=len(sources), list="\n".join(rows[:60]) + ("\n…" if len(rows) > 60 else "")))
 
     @property
@@ -455,7 +455,7 @@ class MmtrViewer(SdfViewer):
                     bind_material_instance(document, material)
                 except ValueError:
                     continue
-                candidates.append((f"{material.header.mat_name}  ·  {source.label}", material))
+                candidates.append((f"{material.header.mat_name}  ·  {source.origin_label}  ·  {source.label}", material))
         parent = QApplication.activeWindow() or self
         if not candidates:
             QMessageBox.information(

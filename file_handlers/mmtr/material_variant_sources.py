@@ -6,9 +6,19 @@ import os
 from pathlib import Path
 from typing import Callable, Iterable
 
+from PySide6.QtCore import QT_TRANSLATE_NOOP, QCoreApplication
+
 lazy from file_handlers.mdf.mdf_file import MdfFile
 lazy from utils.app_paths import PROJECT_METADATA_FOLDER
 lazy from utils.resource_file_utils import normalize_resource_path, resource_version_from_path
+
+
+_ORIGIN_LABELS = {
+    "project": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "Project"),
+    "pak": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "PAK"),
+    "system": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "System Files"),
+    "disk": QT_TRANSLATE_NOOP("MdfVariantSourceChoice", "Disk"),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -30,6 +40,10 @@ class MdfVariantSourceChoice:
     @property
     def suggested_output_path(self) -> str:
         return normalize_resource_path(self.relative_path or Path(self.path).name)
+
+    @property
+    def origin_label(self) -> str:
+        return QCoreApplication.translate("MdfVariantSourceChoice", _ORIGIN_LABELS.get(self.origin, self.origin.title()))
 
 
 def _path_key(origin: str, relative_path: str) -> tuple[str, str]:
