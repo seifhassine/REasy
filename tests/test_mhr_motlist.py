@@ -10,9 +10,13 @@ import numpy as np
 
 from file_handlers.motion.binary import ReadContext
 from file_handlers.motion.errors import MotionParseError, MotionWriteError
+from file_handlers.motion.inspection import describe_motion_list
 from file_handlers.motion.mhr.codec import MHR_MOTION_FORMAT_CODEC as CODEC
 from file_handlers.motion.mhr.tracks import decode_values, decode_track, encode_track
+from file_handlers.motion.mhr.tree import RiseTree
+from file_handlers.motion.mhr.validation import assert_other_slots
 from file_handlers.motion.mot.model import TrackFamily, KeyTrack
+from file_handlers.motion.mot_tree.model import TreeLinkType
 from file_handlers.motion.motlist_handler import MotListHandler
 from file_handlers.motion.evaluation import rig_from_motion_skeleton
 from file_handlers.motion.evaluation.mhr import MHR_EVALUATION_PROFILE
@@ -30,23 +34,14 @@ def sequences_value(sequences):
     return [asdict(sequence) for sequence in sequences]
 
 
-def contains_motion_tree(data):
-    pointers = struct.unpack_from('<Q', data, 16)[0]
-    count = struct.unpack_from('<I', data, 48)[0]
-    offsets = struct.unpack_from(f'<{count}Q', data, pointers)
-    return any(offset and data[offset+4:offset+8] == b'mtre' for offset in offsets)
-
-
 def find_corpus_slot(predicate):
     for path in sorted(CORPUS.glob('*.motlist.528'), key=lambda path: path.stat().st_size):
         source = path.read_bytes()
-        if contains_motion_tree(source):
-            continue
         model = CODEC.parse(source, label=path.name)
         pointers = struct.unpack_from('<Q', source, 16)[0]
         shared = {start for start, _, is_shared in model.motion_spans if is_shared}
         for index, slot in enumerate(model.slots):
-            if slot.payload is None:
+            if slot.payload is None or isinstance(slot.payload.value, RiseTree):
                 continue
             is_shared = struct.unpack_from('<Q', source, pointers+index*8)[0] in shared
             if predicate(slot, is_shared):
@@ -225,14 +220,10 @@ class MhrCorpusTests(unittest.TestCase):
             with self.subTest(file=path.name):
                 source = path.read_bytes()
                 self.assertTrue(MotListHandler.can_handle(source))
-                if contains_motion_tree(source):
-                    with self.assertRaisesRegex(MotionParseError, 'Motion Tree .* is not supported'):
-                        CODEC.parse(source, label=path.name)
-                    continue
                 model = CODEC.parse(source, label=path.name)
                 self.assertEqual(CODEC.write(model), source)
                 if not model.tracks:
-                    self.assertTrue(model.base_motion_list_path)
+                    self.assertTrue(model.base_motion_list_path or model.tree_spans)
                     continue
                 chosen = {0, len(model.tracks)//2, len(model.tracks)-1}
                 expected = {}
@@ -264,9 +255,58 @@ class MhrCorpusTests(unittest.TestCase):
                                  [sequences_value(s.overrides) for s in reopened.slots])
                 for old_slot, new_slot in zip(model.slots, reopened.slots):
                     if old_slot.payload:
-                        self.assertEqual(sequences_value(old_slot.payload.value.sequences),
-                                         sequences_value(new_slot.payload.value.sequences))
+                        old_payload, new_payload = old_slot.payload.value, new_slot.payload.value
+                        if isinstance(old_payload, RiseTree):
+                            self.assertEqual(old_payload.signature(), new_payload.signature())
+                        else:
+                            self.assertEqual(sequences_value(old_payload.sequences), sequences_value(new_payload.sequences))
                 self.assertEqual(path.read_bytes(), source)
+
+    def test_common_motion_tree_parameter_links_survive_edit_and_reopen(self):
+        from PySide6.QtWidgets import QApplication
+
+        path = CORPUS / 'plc_Common_Tree_50.motlist.528'
+        if not path.is_file():
+            self.skipTest('Common Motion Tree fixture unavailable')
+        source = path.read_bytes()
+        original = CODEC.parse(source, label=path.name)
+        model = CODEC.parse(source, label=path.name)
+        index = next(i for i, slot in enumerate(model.slots) if slot.payload.value.root.class_name == 'PlaySpeedNode')
+        slot = model.slots[index]
+        tree = slot.payload.value
+        parameters = [link for link in tree.links if link.link_type == TreeLinkType.PARAMETER]
+        self.assertEqual({link.output_node.class_name for link in parameters if link.output_guid is None},
+                         {'CalculateNode', 'ParameterNode', 'RangeNormalizeNode'})
+        external = next(link for link in parameters if link.output_node.class_name == 'VariablesNode')
+        self.assertEqual(len(external.output_guid), 16)
+
+        rows = describe_motion_list(source, path.name, motion_ids=[slot.motion_id])['motions']
+        self.assertEqual([(row['name'], row['supported'], row['sequences']) for row in rows], [(tree.name, True, [])])
+        app = QApplication.instance() or QApplication(['motion-tree-test', '-platform', 'offscreen'])
+        handler = MotListHandler()
+        handler.filepath = str(path)
+        handler.read(source)
+        editor = handler.create_viewer()
+        try:
+            refs = editor.preview._catalog.resolution.tree_references
+            self.assertEqual([(ref.bank_id, ref.motion_id) for ref in refs if ref.tree_motion_id == slot.motion_id],
+                             [(ref.bank_id, ref.motion_id) for ref in tree.motion_references])
+        finally:
+            editor.close()
+            app.processEvents()
+
+        tree.name += '_edited_motion_tree'
+        tree.root.parameters[0].value = 1.25
+        output = CODEC.write(model)
+        reopened = CODEC.parse(output)
+        self.assertNotEqual(len(output), len(source))
+        self.assertEqual(reopened.slots[index].payload.value.signature(), tree.signature())
+        self.assertEqual(CODEC.write(reopened), output)
+        assert_other_slots(original, reopened, {slot.motion_id})
+
+        external.output_guid = None
+        with self.assertRaisesRegex(MotionWriteError, 'parameter link target or GUID'):
+            CODEC.write(model)
 
     def test_string_growth_hashes_aliasing_and_edit_after_save(self):
         path = CORPUS / 'plw_GunLance_100.motlist.528'

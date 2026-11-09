@@ -6,6 +6,7 @@ from file_handlers.motion.motlist_file import MotListFile
 from file_handlers.motion.mhr.codec import MHR_PROFILE
 from file_handlers.motion.binary import ReadContext, align_up
 from file_handlers.motion.mot_clip.parser_v43 import CompactClipV43Parser
+from file_handlers.motion.mot_tree.model import MotTree
 from file_handlers.motion.errors import MotionCodecError
 
 
@@ -67,19 +68,20 @@ def describe_motion_list(raw: bytes, label: str, *, motion_ids=None, name_contai
                 continue
             if name_contains and name_contains.casefold() not in motion.name.casefold():
                 continue
-            row.update(supported=True, name=motion.name, end_frame=motion.end_frame,
-                       fps=motion.frames_per_second, sequences=[])
-            base, table = 0, None
-            if struct.unpack_from('<I', raw)[0] == 528:
-                pointers = struct.unpack_from('<Q', raw, 16)[0]
-                base = struct.unpack_from('<Q', raw, pointers + index * 8)[0]
-                if struct.unpack_from('<I', raw, base)[0] == 495:
-                    table = base + struct.unpack_from('<Q', raw, base + 48)[0]
-            row['sequences'] = sequence_records(raw, motion.sequences, base, table, detail, 'motion')
-            if detail == 'layout':
-                if table is None:
-                    raise ValueError('Sequence layout inspection requires a Rise MOT 495 payload')
-                row.update(payload_offset=base, payload_size=struct.unpack_from('<I', raw, base + 12)[0])
+            row.update(supported=True, name=motion.name, end_frame=None, fps=None, sequences=[])
+            if not isinstance(motion, MotTree):
+                row.update(end_frame=motion.end_frame, fps=motion.frames_per_second)
+                base, table = 0, None
+                if struct.unpack_from('<I', raw)[0] == 528:
+                    pointers = struct.unpack_from('<Q', raw, 16)[0]
+                    base = struct.unpack_from('<Q', raw, pointers + index * 8)[0]
+                    if struct.unpack_from('<I', raw, base)[0] == 495:
+                        table = base + struct.unpack_from('<Q', raw, base + 48)[0]
+                row['sequences'] = sequence_records(raw, motion.sequences, base, table, detail, 'motion')
+                if detail == 'layout':
+                    if table is None:
+                        raise ValueError('Sequence layout inspection requires a Rise MOT 495 payload')
+                    row.update(payload_offset=base, payload_size=struct.unpack_from('<I', raw, base + 12)[0])
         overrides = slot.overrides
         override_table = None
         if struct.unpack_from('<I', raw)[0] == 528 and overrides:

@@ -15,13 +15,21 @@ from ..mot_tree.model import (MotTree, TreeNode, TreeParameter, TreeParameterTyp
                              TreeLink, TreeLinkType, TreeNodeType)
 
 CLASS_HASHES = {'MotionNode': 0x92d04ffd, 'OctSyncBlendNode': 0x0be629a9,
-                'VariablesNode': 0x4e9d884a, 'SyncBlendNode': 0x2aef3a2e}
+                'VariablesNode': 0x4e9d884a, 'SyncBlendNode': 0x2aef3a2e,
+                'PlaySpeedNode': 0x729afb75, 'CalculateNode': 0x4626e042,
+                'ParameterNode': 0x343a525a, 'RangeNormalizeNode': 0xa77c187a}
+COMPONENT_NODES = {'VariablesNode', 'CalculateNode', 'ParameterNode', 'RangeNormalizeNode'}
+TYPE_NAME_HASH_OVERRIDES = {'RangeNormalizeNode': 0xc5d19f29}
 BANK_HASH, MOTION_HASH = 0x5cd4677b, 0x9f595148
 PARAMETER_LAYOUTS = {
     'MotionNode': ((12,0xd7cec035),(6,BANK_HASH),(6,MOTION_HASH)),
     'VariablesNode': ((12,0xd7cec035),),
     'OctSyncBlendNode': ((0,0x397965fd),(9,0x8d50d41a),(0,0x1b6709a7),(6,0xf542ce84)),
     'SyncBlendNode': ((0,0x397965fd),(9,0x8d50d41a),(0,0x1b6709a7),(6,0xf542ce84)),
+    'PlaySpeedNode': ((9, 0xf48e0ca7),),
+    'CalculateNode': ((6, 0xc1a5193e),),
+    'ParameterNode': ((9, 0xfd8c731e),),
+    'RangeNormalizeNode': ((9, 0x9b85745a), (9, 0x80995006), (0, 0x2f9e694c)),
 }
 
 
@@ -72,11 +80,13 @@ def validate_tree(tree, error=MotionWriteError):
     for node in tree.nodes:
         require(node.name is None or (isinstance(node.name,str) and node.name and '\0' not in node.name),'Invalid v14 node name')
         require(node.class_name in CLASS_HASHES and node.class_hash==CLASS_HASHES[node.class_name], 'Unsupported v14 node class/hash')
-        require(node.node_type==(TreeNodeType.COMPONENT if node.class_name=='VariablesNode' else TreeNodeType.GAME_OBJECT),
+        require(node.node_type==(TreeNodeType.COMPONENT if node.class_name in COMPONENT_NODES else TreeNodeType.GAME_OBJECT),
                 'Unsupported v14 class/node type pairing')
         require(not node.tags and not tree.motion_id_remaps, 'Unsupported v14 tags/legacy remaps')
         require(type(node.authored_id) is int and 0<=node.authored_id<=0xffffffff,'Invalid v14 authored node identity')
-        require(node.type_name_hash==murmur3_hash_utf16le(node.class_name.removesuffix('Node')), 'Invalid v14 type-name hash')
+        type_name_hash = TYPE_NAME_HASH_OVERRIDES.get(node.class_name,
+                                                     murmur3_hash_utf16le(node.class_name.removesuffix('Node')))
+        require(node.type_name_hash==type_name_hash, 'Invalid v14 type-name hash')
         require(len(node.parameters)<=255, 'Too many v14 parameters')
         require(tuple((int(p.parameter_type),p.name_hash) for p in node.parameters)==PARAMETER_LAYOUTS[node.class_name],
                 'Unsupported v14 class parameter layout')
@@ -96,8 +106,9 @@ def validate_tree(tree, error=MotionWriteError):
         require(link.link_type in (TreeLinkType.MOTION,TreeLinkType.PARAMETER), 'Unsupported v14 link type')
         require(link.output_guid is None or len(link.output_guid)==16,'v14 GUID must contain 16 bytes')
         if link.link_type==TreeLinkType.PARAMETER:
-            require(link.output_node.class_name=='VariablesNode' and link.output_guid is not None,
-                    'v14 parameter link requires a VariablesNode and GUID')
+            target = link.output_node.class_name
+            require(target in COMPONENT_NODES and (link.output_guid is not None) == (target == 'VariablesNode'),
+                    'Invalid v14 parameter link target or GUID')
     visiting,visited=set(),set()
     def visit(node):
         key=id(node)

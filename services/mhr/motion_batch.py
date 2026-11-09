@@ -92,11 +92,12 @@ def validate_references(bank,documents,uvar=None,paths=None):
                 if ref.bank_id not in slots or ref.motion_id not in slots[ref.bank_id]:
                     raise MotionWriteError(f'Unresolved MTRE leaf BankID={ref.bank_id} MotionID={ref.motion_id}')
             for link in tree.links:
-                if link.link_type==TreeLinkType.PARAMETER and link.output_guid not in variables:
+                if link.link_type != TreeLinkType.PARAMETER or link.output_node.class_name != 'VariablesNode':
+                    continue
+                if link.output_guid not in variables:
                     raise MotionWriteError('Unresolved MTRE parameter GUID; supply the bank UVAR dependency')
-                if link.link_type==TreeLinkType.PARAMETER:
-                    label=link.output_node.parameters[0].value.replace('\\','/').rsplit('/',1)[-1].removesuffix('.uvar')
-                    if variables[link.output_guid][0]!=label:raise MotionWriteError('MTRE variable group disagrees with bank UVAR group')
+                label=link.output_node.parameters[0].value.replace('\\','/').rsplit('/',1)[-1].removesuffix('.uvar')
+                if variables[link.output_guid][0]!=label:raise MotionWriteError('MTRE variable group disagrees with bank UVAR group')
 
 
 def execute_plan(plan):

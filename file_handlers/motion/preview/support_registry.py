@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from ..dmc5_codec import DMC5_MOTION_FORMAT_CODEC
 from ..mhr.codec import MHR_MOTION_FORMAT_CODEC
+from ..mhr.tree import RiseTree
 from ..wilds.codec import WILDS_MOTION_FORMAT_CODEC
 from ..lmt.codec import LMT_MOTION_FORMAT_CODEC
 from ..lmt.mhw_codec import MHW_LMT_MOTION_FORMAT_CODEC
@@ -12,7 +13,7 @@ from ..evaluation import DMC5_EVALUATION_PROFILE
 from ..format_codec import MotionFormatCodec
 from ..runtime.dmc5 import DMC5_ENTITY_MOTION_BACKEND
 from .catalog_reader import Dmc5MotionListCatalogReader
-from .resolution import DMC5_TREE_MOTION_REFERENCES
+from .resolution import DMC5_TREE_MOTION_REFERENCES, TreeMotionTarget
 from .support import EntityMotionSupport, MotionPreviewSupport
 
 
@@ -29,7 +30,10 @@ ENTITY_MOTION_SUPPORTS = (DMC5_ENTITY_MOTION_SUPPORT,)
 
 class MhrTreeMotionReferences:
     def extract(self, tree):
-        raise ValueError('MHR MotTree payloads are not supported by the MOT 495 codec')
+        if not isinstance(tree, RiseTree):
+            raise ValueError('Unsupported Motion Tree format for this preview')
+        return tuple(TreeMotionTarget(ref.node.name or ref.node.class_name, ref.bank_id, ref.motion_id)
+                     for ref in tree.motion_references), ()
 
 
 MHR_MOTION_PREVIEW_SUPPORT = MotionPreviewSupport(

@@ -400,7 +400,7 @@ class MotfsmViewer(QWidget):
         if node.states:
             states = _Item(parent, [f"States ({len(node.states)})", "", ""])
             for i, state in enumerate(node.states):
-                item = self._lazy(states, f"[{i}]", lambda item, state=state, node=node: self._load_state(item, state, node))
+                item = self._lazy(states, f"[{i}]", lambda item, state=state: self._load_state(item, state))
                 item.summary = lambda state=state, node=node, i=i: (f"[{i}] → " + self._node_name(
                     self.motfsm.references.state_target(state.mTransitions, state.mTransitionAttributes)), "")
                 item.update_summary()
@@ -449,7 +449,7 @@ class MotfsmViewer(QWidget):
         self._transition_settings(item, state, 'mAllTransitionID')
         self._fields(item, state, ('mAllStateEx', 'mAllTransitionAttributes'))
 
-    def _load_state(self, parent, state, owner):
+    def _load_state(self, parent, state):
         self._list(parent, 'mStates · TransitionEvents', state.mStates.values, 'transition_events')
         target = self._field(parent, state, 'mTransitions')
         self._attach_reference(target, lambda: self.motfsm.references.state_target(state.mTransitions, state.mTransitionAttributes), 'node')
