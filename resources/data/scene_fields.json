@@ -30,7 +30,7 @@
   "layer joint mask": "JointMaskID",
   "layer joint mask mode": "JointMaskIDMode",
   "layer enabled": "Enabled",
-  "layer stop update": null,
+  "layer stop update": "StopUpdate",
   "layer frame": "Frame",
   "layer speed": "Speed"
  },
@@ -240,7 +240,7 @@
   "layer joint mask": "JointMaskID",
   "layer joint mask mode": "JointMaskIDMode",
   "layer enabled": "Enabled",
-  "layer stop update": null,
+  "layer stop update": "StopUpdate",
   "layer frame": "Frame",
   "layer speed": "Speed"
  },

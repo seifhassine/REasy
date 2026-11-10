@@ -66,6 +66,7 @@ Murmur3.1sc
 /reversing/mesh_blendshapes/readme.md
 /reversing/re3_sound/files/
 reversing/pak_loading_info/*
+/reversing/rsz_runtime_probe/
 *.bt
 !/MESH.bt
 

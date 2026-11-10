@@ -19834,7 +19834,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v79",
+				"name": "GSSShadowBias",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -19843,7 +19843,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v80",
+				"name": "GSSShadowVariance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -19852,7 +19852,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v81",
+				"name": "GSSPCSSKernel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -19861,7 +19861,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v82",
+				"name": "GSSUseCascadeShadow",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -41372,9 +41372,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "_Opacity",
 				"native": true,
-				"original_type": "app.charaedit.ch000.FurCheeksData",
+				"original_type": "System.Byte",
 				"size": 1,
 				"type": "U8"
 			}
@@ -41727,7 +41727,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -48610,7 +48610,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "UlimitPeer(?)",
+				"name": "UlimitMember",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -56812,7 +56812,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -56821,7 +56821,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -57163,7 +57163,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -57172,7 +57172,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -61219,7 +61219,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "NeiborSearchMethod",
 				"native": true,
 				"original_type": "via.fluidflock.FluidFlockSimulationModelBase.NeiborSearchMethod",
 				"size": 4,
@@ -100654,7 +100654,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "AnimationCommand(?)",
+				"name": "AnimationCommand",
 				"native": true,
 				"original_type": "via.gui.TextAnimationCommand",
 				"size": 4,
@@ -111487,7 +111487,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "NeiborSearchMethod",
 				"native": true,
 				"original_type": "via.fluidflock.FluidFlockSimulationModelBase.NeiborSearchMethod",
 				"size": 4,
@@ -135799,7 +135799,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "PriorityExtensionLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -135826,7 +135826,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ProbeColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -135835,7 +135835,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "AmbientColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -135862,7 +135862,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "TopHemisphereColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -135871,7 +135871,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "BottomHemisphereColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -146869,7 +146869,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "RigidBodyIdA",
 				"native": true,
 				"original_type": "via.dynamics.RigidBodyId",
 				"size": 4,
@@ -146896,7 +146896,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "RigidBodyIdB",
 				"native": true,
 				"original_type": "via.dynamics.RigidBodyId",
 				"size": 4,
@@ -168975,7 +168975,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v71",
+				"name": "UpscaleAlgorithm",
 				"native": true,
 				"original_type": "via.render.RenderConfig.UpscaleAlgorithm",
 				"size": 4,
@@ -176499,7 +176499,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -191531,7 +191531,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LodType",
 				"native": true,
 				"original_type": "via.speedtree.SpeedTreeV8LodType",
 				"size": 4,
@@ -204668,7 +204668,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Segment",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -212775,7 +212775,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "u",
+				"name": "f",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -220416,7 +220416,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "PriorityExtensionLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -220443,7 +220443,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ProbeColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -220452,7 +220452,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "AmbientColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -220479,7 +220479,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "TopHemisphereColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -220488,7 +220488,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "BottomHemisphereColor",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -229688,7 +229688,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -235510,7 +235510,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "BrushPrimitive",
 				"native": true,
 				"original_type": "via.geometry.BrushPrimitive",
 				"size": 4,
@@ -235780,7 +235780,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "UVScaleX",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -235789,7 +235789,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "UVScaleY",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -248881,7 +248881,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "BrushType",
 				"native": true,
 				"original_type": "via.render.MeshVertexPaint.PaintBrushType",
 				"size": 4,
@@ -267531,7 +267531,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "f",
+				"name": "u",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -267540,7 +267540,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "f",
+				"name": "i",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -267549,7 +267549,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "f",
+				"name": "s",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -303979,7 +303979,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "ForceVirtualBackBuffer",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -319521,7 +319521,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "SimulationCalculateType",
 				"native": true,
 				"original_type": "via.dynamics.ClothSimulationCalculateType",
 				"size": 4,
@@ -322618,7 +322618,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "UseTransmittanceMap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -322627,7 +322627,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "UseRaymarchCache",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -322663,7 +322663,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "CheckerboardRaymarchCache",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -322681,7 +322681,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "WeatherType",
 				"native": true,
 				"original_type": "via.render.Cloudscape2.WeatherType",
 				"size": 4,
@@ -323041,7 +323041,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v52",
+				"name": "ExponentialShadowRay",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -323248,7 +323248,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v75",
+				"name": "RenderShadow",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -323392,7 +323392,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v91",
+				"name": "IBLButAlsoScene",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -330473,7 +330473,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Resolution",
 				"native": true,
 				"original_type": "via.effect.VolumeSolidBufferResolution",
 				"size": 4,
@@ -330482,7 +330482,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "Precision",
 				"native": true,
 				"original_type": "via.effect.VolumeSolidBufferPrecision",
 				"size": 4,
@@ -337044,7 +337044,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v68",
+				"name": "CursorDrivenScrollEaseType",
 				"native": true,
 				"original_type": "via.curve.EaseType",
 				"size": 4,
@@ -337251,7 +337251,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v91",
+				"name": "PadOrKybdScrollType",
 				"native": true,
 				"original_type": "via.gui.FICScrollType",
 				"size": 4,
@@ -337305,7 +337305,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v97",
+				"name": "WheelScrollType",
 				"native": true,
 				"original_type": "via.gui.FICScrollType",
 				"size": 4,
@@ -337341,7 +337341,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v101",
+				"name": "MouseSelectionType",
 				"native": true,
 				"original_type": "via.gui.FICMouseSelectionType",
 				"size": 4,
@@ -337422,7 +337422,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v110",
+				"name": "UseMouseShake",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -359142,7 +359142,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "DependencyLoad",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -379289,7 +379289,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -392620,6 +392620,958 @@
 		"fields": [],
 		"name": "System.Collections.Generic.IEnumerable`1<System.Collections.Generic.KeyValuePair`2<app.MantleStyle,app.MantleSwapItem>>"
 	},
+	"3907118a": {
+		"crc": "f924133",
+		"fields": [
+			{
+				"align": 1,
+				"array": false,
+				"name": "ComponentDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DebugDraw",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v2",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v3",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v4",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DebugDrawCulling",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v6",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v7",
+				"native": true,
+				"original_type": "via.gui.EditSceneDraw3DLayerType",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v8",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BlurFilterScale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BlurFilterMipLevel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BlurFilterReductionRate",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v12",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BlurFilterCuttingLuminanceLevel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v14",
+				"native": true,
+				"original_type": "via.render.RenderTargetTextureResourceHolder",
+				"size": 4,
+				"type": "Resource"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "BlurFilterKeepFrameMax",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v16",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TexBlurReductionRate",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TexBlurMipmapCount",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v19",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "MessageLanguage",
+				"native": true,
+				"original_type": "via.Language",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v21",
+				"native": true,
+				"original_type": "via.Language",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v22",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v23",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseFontSlotAsset",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ExtraLayoutRTL",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DelayLanguageFontLoad",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FontBaseSize",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FontLineHeight",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "FontBaseline",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RubySizeRatio",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "GlyphNodeDeleteFrame",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v32",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseMouseEvent",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseVirtualMouse",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RepeatStartTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RepeatTime",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SoftParticleDist",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v38",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SafeAreaRatio",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "SafeAreaRect",
+				"native": true,
+				"original_type": "via.Rect",
+				"size": 16,
+				"type": "Rect"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "CaptureResolutionAdjust",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v42",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "DebugDrawFontSlot",
+				"native": true,
+				"original_type": "via.gui.FontSlot",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "ParallelExecute",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v45",
+				"native": true,
+				"original_type": "via.Color",
+				"size": 4,
+				"type": "Color"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v46",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "Effect2DBufferSize",
+				"native": true,
+				"original_type": "via.Size",
+				"size": 8,
+				"type": "Size"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "EffectBufferSize",
+				"native": true,
+				"original_type": "via.Size",
+				"size": 8,
+				"type": "Size"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "PostImageCopySegment",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v50",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 16,
+				"array": false,
+				"name": "v51",
+				"native": true,
+				"original_type": "via.vec2",
+				"size": 16,
+				"type": "Vec2"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "StencilNum",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v53",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v54",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v55",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v56",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "TextureSampleGradScale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v58",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawGUIBuffer",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "GUIBufferCS",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "DrawGUIBufferIgnoreAlpha",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferDrawSegment",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v63",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v64",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": true,
+				"name": "v65",
+				"native": true,
+				"original_type": "via.gui.MaterialVariablesInfo",
+				"size": 4,
+				"type": "Object"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v66",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferBlurSegment",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferBlurROID",
+				"native": true,
+				"original_type": "via.render.RenderOutputID",
+				"size": 4,
+				"type": "S32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "GUIBufferBlurWithScene",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "GUIBufferBlursRGB",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferBlurScale",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferBlurMipLevel",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferBlurReductionRate",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "GUIBufferBlurMipmapCount",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v75",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v76",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "F32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v77",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "MaskCulling",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "NswInlineSoftwareKeyboardROID",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v80",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v81",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v82",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v83",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "U8"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v84",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v85",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "U32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v86",
+				"native": true,
+				"original_type": "via.Uint2",
+				"size": 8,
+				"type": "Uint2"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v87",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v88",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v89",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v90",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v91",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v92",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v93",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v94",
+				"native": true,
+				"original_type": "via.Float2",
+				"size": 8,
+				"type": "Float2"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v95",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v96",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v97",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v98",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v99",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v100",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "v101",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseLegacySameRootExternParamName",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 1,
+				"array": false,
+				"name": "UseLegacyMaskTexture",
+				"native": true,
+				"original_type": "",
+				"size": 1,
+				"type": "Bool"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "v104",
+				"native": true,
+				"original_type": "",
+				"size": 39,
+				"type": "Data"
+			}
+		],
+		"name": "via.gui.GUISystem",
+		"parent": "System.Object"
+	},
 	"39074938": {
 		"crc": "37e3fcb",
 		"fields": [],
@@ -398357,7 +399309,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -404756,7 +405708,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -407283,7 +408235,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "RTLHorizontalReverse",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -407301,7 +408253,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "RiskyMessageSetErrorLevel",
 				"native": true,
 				"original_type": "via.gui.RiskyMessageSetErrorLevel",
 				"size": 4,
@@ -407319,7 +408271,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "RiskyParameterSetErrorLevel",
 				"native": true,
 				"original_type": "via.gui.RiskyParameterSetErrorLevel",
 				"size": 4,
@@ -407490,7 +408442,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "RefMessageCharCountEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -407553,7 +408505,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v33",
+				"name": "UseSystemSafeArea",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -407616,7 +408568,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v40",
+				"name": "CaptureResolutionAdjust",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -407643,7 +408595,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "TexBlurCuttingLuminanceLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -407895,7 +408847,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v71",
+				"name": "UseGUILight",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -407994,7 +408946,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v82",
+				"name": "SortDebugDrawObject",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408165,7 +409117,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v101",
+				"name": "VariableType0",
 				"native": true,
 				"original_type": "via.gui.GUIEntry.MaterialParamType",
 				"size": 4,
@@ -408210,7 +409162,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v106",
+				"name": "VariableType1",
 				"native": true,
 				"original_type": "via.gui.GUIEntry.MaterialParamType",
 				"size": 4,
@@ -408255,7 +409207,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v111",
+				"name": "VariableType2",
 				"native": true,
 				"original_type": "via.gui.GUIEntry.MaterialParamType",
 				"size": 4,
@@ -408300,7 +409252,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v116",
+				"name": "VariableType3",
 				"native": true,
 				"original_type": "via.gui.GUIEntry.MaterialParamType",
 				"size": 4,
@@ -408354,7 +409306,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v122",
+				"name": "TargetStencil1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -408426,7 +409378,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v130",
+				"name": "UseLegacyMaterialTextGlowShadowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408435,7 +409387,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v131",
+				"name": "UseLegacyMaterialTextUV",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408444,7 +409396,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v132",
+				"name": "UseLegacyLinearAlphaBlend",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408471,7 +409423,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v135",
+				"name": "UseLegacyClipPlayer",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408480,7 +409432,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v136",
+				"name": "UseLegacyDebugString",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408498,7 +409450,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v138",
+				"name": "UseLegacyFluentItemsControlInit",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408507,7 +409459,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v139",
+				"name": "UseLegacySameRootExternParamName",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -408516,7 +409468,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v140",
+				"name": "UseLegacyMaskTexture",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -447857,20 +448809,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v139",
+				"name": "ApuSmallMemoryPoolElementSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v140",
+				"name": "ApuSmallMemoryPoolLength",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -447884,20 +448836,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v142",
+				"name": "ApuSmallMemoryPoolElementSizeXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v143",
+				"name": "ApuSmallMemoryPoolLengthXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			}
 		],
 		"name": "via.wwiselib.WwiselibEntry"
@@ -466814,7 +467766,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "CalcDistanceDecayAtPlayerPos",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -466823,7 +467775,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "CalcPriorityAtPlayerPos",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -466832,34 +467784,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v8",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v9",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v10",
+				"name": "UpdatePlayerPosSetListenerPos",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -623471,7 +624396,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -623480,7 +624405,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -626403,15 +627328,6 @@
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
-			},
-			{
-				"align": 16,
-				"array": false,
-				"name": "v3",
-				"native": true,
-				"original_type": "",
-				"size": 16,
-				"type": "Data"
 			}
 		],
 		"name": "via.physics.PreciseSphereShape",
@@ -887212,9 +888128,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "_Opacity",
 				"native": true,
-				"original_type": "app.charaedit.ch000.FurEyesData",
+				"original_type": "System.Byte",
 				"size": 1,
 				"type": "U8"
 			}
@@ -942011,7 +942927,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v192",
+				"name": "VFXSpecularDenoiserMedian",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -942020,7 +942936,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v193",
+				"name": "VFXSpecularDenoiserSpatial",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -942038,7 +942954,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v195",
+				"name": "VFXSpecularDenoiserTemporal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -973582,7 +974498,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "ShapeKey",
 				"native": true,
 				"original_type": "via.physics.ShapeKey",
 				"size": 4,
@@ -1070515,9 +1071431,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "_Opacity",
 				"native": true,
-				"original_type": "app.charaedit.ch000.FurForeheadData",
+				"original_type": "System.Byte",
 				"size": 1,
 				"type": "U8"
 			}
@@ -1192678,15 +1193594,6 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "EnableReleaseHijackVirtualByKeyPress",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
-			},
-			{
-				"align": 1,
-				"array": false,
 				"name": "TextCheckEnabled",
 				"native": true,
 				"original_type": "",
@@ -1243581,11 +1244488,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "DeviceCreated",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -1243617,16 +1244524,16 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "FrameGenerationGenerateFramesCount",
+				"name": "OutputTargetOptionType",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.OutputTargetOptionType",
 				"size": 4,
 				"type": "U32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "DLSSGModeAuto(?)",
+				"name": "DLSSGModeAuto",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1270011,7 +1270918,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "StopUpdate(?)",
+				"name": "StopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1270020,7 +1270927,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "AutoStopUpdate(?)",
+				"name": "AutoStopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1315858,7 +1316765,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "ui",
+				"name": "type",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -1403959,11 +1404866,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "DisableStreamingShadowCopy",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -1409930,11 +1410837,11 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "MaterialIdColors",
+				"name": "v31",
 				"native": true,
-				"original_type": "via.Color",
+				"original_type": "",
 				"size": 4,
-				"type": "Color"
+				"type": "Object"
 			},
 			{
 				"align": 4,
@@ -1425398,9 +1426305,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "_Opacity",
 				"native": true,
-				"original_type": "app.charaedit.ch000.FurNoseData",
+				"original_type": "System.Byte",
 				"size": 1,
 				"type": "U8"
 			}
@@ -1458419,20 +1459326,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v82",
+				"name": "ApuSmallMemoryPoolElementSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v83",
+				"name": "ApuSmallMemoryPoolLength",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1483890,7 +1484797,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "UserDefineCollectionName",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1494180,6 +1495087,7 @@
 				"type": "Object"
 			},
 			{
+				"align": 16,
 				"array": false,
 				"name": "STRUCT_ContactPoint_Position",
 				"native": true,
@@ -1532335,7 +1533243,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "ui",
+				"name": "y",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -1762438,15 +1763346,6 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
 				"name": "Source",
 				"native": true,
 				"original_type": "",
@@ -1771436,29 +1772335,29 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v5",
+				"name": "MaxSourceNum",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v6",
+				"name": "MaxFileStreamNum",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v7",
+				"name": "MaxBusNum",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -1771481,47 +1772380,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v10",
+				"name": "MemoryPoolSize4KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v11",
+				"name": "MemoryPoolSize16KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v12",
+				"name": "MemoryPoolSize64KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v13",
+				"name": "MemoryPoolSize256KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v14",
+				"name": "MemoryPoolSize1024KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -1771544,20 +1772443,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v17",
+				"name": "ExtSrcPoolFrames",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v18",
+				"name": "ExtSrcPoolWaitFrames",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1771571,47 +1772470,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v20",
+				"name": "MemoryPoolSize4KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v21",
+				"name": "MemoryPoolSize16KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v22",
+				"name": "MemoryPoolSize64KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v23",
+				"name": "MemoryPoolSize256KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v24",
+				"name": "MemoryPoolSize1024KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1771625,47 +1772524,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v26",
+				"name": "MemoryPoolSize4KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v27",
+				"name": "MemoryPoolSize16KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v28",
+				"name": "MemoryPoolSize64KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v29",
+				"name": "MemoryPoolSize256KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v30",
+				"name": "MemoryPoolSize1024KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1771769,47 +1772668,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v42",
+				"name": "MemoryPoolSize4KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v43",
+				"name": "MemoryPoolSize16KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v44",
+				"name": "MemoryPoolSize64KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v45",
+				"name": "MemoryPoolSize256KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v46",
+				"name": "MemoryPoolSize1024KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1771958,47 +1772857,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v63",
+				"name": "MemoryPoolSize4KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v64",
+				"name": "MemoryPoolSize16KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v65",
+				"name": "MemoryPoolSize64KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v66",
+				"name": "MemoryPoolSize256KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v67",
+				"name": "MemoryPoolSize1024KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1772039,47 +1772938,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v72",
+				"name": "MemoryPoolSize4KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v73",
+				"name": "MemoryPoolSize16KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v74",
+				"name": "MemoryPoolSize64KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v75",
+				"name": "MemoryPoolSize256KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v76",
+				"name": "MemoryPoolSize1024KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1772129,47 +1773028,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v82",
+				"name": "MemoryPoolSize4KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v83",
+				"name": "MemoryPoolSize16KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v84",
+				"name": "MemoryPoolSize64KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v85",
+				"name": "MemoryPoolSize256KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v86",
+				"name": "MemoryPoolSize1024KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -1772192,47 +1773091,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v89",
+				"name": "MemoryPoolSize4KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v90",
+				"name": "MemoryPoolSize16KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v91",
+				"name": "MemoryPoolSize64KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v92",
+				"name": "MemoryPoolSize256KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v93",
+				"name": "MemoryPoolSize1024KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1772246,47 +1773145,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v95",
+				"name": "MemoryPoolSize4KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v96",
+				"name": "MemoryPoolSize16KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v97",
+				"name": "MemoryPoolSize64KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v98",
+				"name": "MemoryPoolSize256KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v99",
+				"name": "MemoryPoolSize1024KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1772300,47 +1773199,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v101",
+				"name": "MemoryPoolSize4KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v102",
+				"name": "MemoryPoolSize16KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v103",
+				"name": "MemoryPoolSize64KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v104",
+				"name": "MemoryPoolSize256KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v105",
+				"name": "MemoryPoolSize1024KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -1772372,47 +1773271,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v109",
+				"name": "MemoryPoolSize4KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v110",
+				"name": "MemoryPoolSize16KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v111",
+				"name": "MemoryPoolSize64KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v112",
+				"name": "MemoryPoolSize256KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v113",
+				"name": "MemoryPoolSize1024KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1772426,47 +1773325,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v115",
+				"name": "MemoryPoolSize4KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v116",
+				"name": "MemoryPoolSize16KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v117",
+				"name": "MemoryPoolSize64KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v118",
+				"name": "MemoryPoolSize256KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v119",
+				"name": "MemoryPoolSize1024KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1772525,7 +1773424,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "(?)",
+				"name": "AsioAssignedChannelNameList",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1786468,11 +1787367,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "MeshletStreamingThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			}
 		],
 		"name": "via.render.MeshResource"
@@ -1801717,7 +1802616,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "AnimationCommand(?)",
+				"name": "AnimationCommand",
 				"native": true,
 				"original_type": "via.gui.TextAnimationCommand",
 				"size": 4,
@@ -1889935,9 +1890834,9 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "_Opacity",
 				"native": true,
-				"original_type": "app.charaedit.ch000.FurFaceMaskData",
+				"original_type": "System.Byte",
 				"size": 1,
 				"type": "U8"
 			}
@@ -1901660,7 +1902559,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "GradingPassOpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901669,7 +1902568,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "OutputPassOpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901678,7 +1902577,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "OutputPassForTVOpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1901687,7 +1902586,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "OutputPassHDROpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1905377,20 +1906276,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v420",
+				"name": "NVNVirtualMemorySize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v421",
+				"name": "NVNVirtualized4MiBPageAddressSpaceSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -1905404,7 +1906303,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v423",
+				"name": "UseNVNAdaptiveZCull",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905413,7 +1906312,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v424",
+				"name": "UseNVPA",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905422,7 +1906321,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v425",
+				"name": "DisableNVNSharedMemory",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905431,7 +1906330,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v426",
+				"name": "UseVirtualized4MiBPage",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905719,7 +1906618,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v458",
+				"name": "UseNVNGpuCrashReportSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905728,7 +1906627,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v459",
+				"name": "UseNVNGpuFullMemoryDumpSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905737,7 +1906636,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v460",
+				"name": "UseNVNShaderExceptionsSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1905773,7 +1906672,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v464",
+				"name": "CommandBufferAssertMac",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1906007,7 +1906906,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v490",
+				"name": "CommandBufferAssertiOS",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1906421,7 +1907320,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v536",
+				"name": "StrandsLodSettingsPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1906547,7 +1907446,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v550",
+				"name": "GrassFallPushBufferPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1906862,7 +1907761,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v585",
+				"name": "LodSettingsPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -1945321,7 +1946220,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v2",
+				"name": "key",
 				"native": true,
 				"original_type": "via.dynamics.RigidBodyId",
 				"size": 4,
@@ -2009932,7 +2010831,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "ExitDialogEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2009959,7 +2010858,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "WindowCloseShortcutEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2015899,7 +2016798,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "StopUpdate(?)",
+				"name": "StopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2015908,7 +2016807,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "AutoStopUpdate(?)",
+				"name": "AutoStopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2030609,7 +2031508,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v37",
+				"name": "TwoWheelerAutoRollGyroAndFrontWheelControl",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2030618,7 +2031517,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v38",
+				"name": "TwoWheelerLeanAngleControlType",
 				"native": true,
 				"original_type": "via.dynamics.TwoWheelerLeanAngleControlType",
 				"size": 4,
@@ -2030627,7 +2031526,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v39",
+				"name": "TwoWheelerUseFakeCenterOfMass",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2130800,7 +2131699,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v53",
+				"name": "StandardMinNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130818,7 +2131717,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v55",
+				"name": "SecondaryStandardMinNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130836,7 +2131735,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v57",
+				"name": "DisplayMinNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130854,7 +2131753,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "SecondaryDisplayMinNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130872,7 +2131771,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v61",
+				"name": "StandardMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130890,7 +2131789,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v63",
+				"name": "SecondaryStandardMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130908,7 +2131807,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "DisplayMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130926,7 +2131825,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v67",
+				"name": "SecondaryDisplayMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130944,7 +2131843,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v69",
+				"name": "HDRTexRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2130971,7 +2131870,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v72",
+				"name": "MDROutRangeRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -2136282,11 +2137181,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v1",
+				"name": "UlimitMember",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -2154463,7 +2155362,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "AnimationCommand(?)",
+				"name": "AnimationCommand",
 				"native": true,
 				"original_type": "via.gui.TextAnimationCommand",
 				"size": 4,
@@ -2246767,11 +2247666,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v3",
+				"name": "SoundAllocatorMemorySizeXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -2246785,11 +2247684,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v5",
+				"name": "SoundAllocatorMemorySizeXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,

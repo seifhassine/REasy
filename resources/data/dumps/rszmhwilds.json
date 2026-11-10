@@ -1283,7 +1283,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1310,7 +1310,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1319,7 +1319,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1373,7 +1373,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1382,7 +1382,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1391,7 +1391,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -1400,7 +1400,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1436,7 +1436,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -23337,7 +23337,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -23364,7 +23364,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -23373,7 +23373,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -23427,7 +23427,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -23436,7 +23436,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -23445,7 +23445,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -23454,7 +23454,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -23490,7 +23490,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -84196,7 +84196,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -99250,7 +99250,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "UlimitPeer(?)",
+				"name": "UlimitMember",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -115459,7 +115459,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "RegionSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -115819,7 +115819,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -115828,7 +115828,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -116393,7 +116393,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v40",
+				"name": "RayCastSkipDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -193714,7 +193714,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -197960,7 +197960,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "RegionSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -197978,7 +197978,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -198023,7 +198023,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "FontSlot",
 				"native": true,
 				"original_type": "via.gui.FontSlot",
 				"size": 4,
@@ -198041,7 +198041,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "RasterSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -198059,7 +198059,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "PageAlignment",
 				"native": true,
 				"original_type": "via.gui.PageAlignment",
 				"size": 4,
@@ -198068,7 +198068,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LetterAlignment",
 				"native": true,
 				"original_type": "via.gui.LetterAlignment",
 				"size": 4,
@@ -198077,7 +198077,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198086,7 +198086,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LineSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198104,7 +198104,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v24",
+				"name": "ForceAutoWrap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198113,7 +198113,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v25",
+				"name": "JpnPunctuationForceAutoWrap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198122,7 +198122,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "AutoEraseHeadSpace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198149,7 +198149,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "AutoArabicLayout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198158,7 +198158,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v30",
+				"name": "ExtraLayoutRTL",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198176,7 +198176,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v32",
+				"name": "Monospace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198185,7 +198185,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v33",
+				"name": "VerticalLayout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198221,7 +198221,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v37",
+				"name": "IconFontAutoRegionFitEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198230,7 +198230,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v38",
+				"name": "Italic",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198239,7 +198239,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v39",
+				"name": "Bold",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198248,7 +198248,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v40",
+				"name": "DisableMessageTag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198257,7 +198257,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v41",
+				"name": "UseRubyFontSlot",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198284,7 +198284,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "UseRubyLetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198293,7 +198293,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "RubyLetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198302,7 +198302,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "RubySizeRatio",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198311,7 +198311,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "RubyLineSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198320,7 +198320,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "RubyLineSpaceB",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198329,7 +198329,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v49",
+				"name": "HideRuby",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198338,7 +198338,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v50",
+				"name": "RubyHeightAlways",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198347,7 +198347,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v51",
+				"name": "RubyRTMonospace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198356,7 +198356,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -198482,7 +198482,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "ColorPresetBlendRateBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198491,7 +198491,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v67",
+				"name": "EffectAlphaType",
 				"native": true,
 				"original_type": "via.gui.EffectAlphaType",
 				"size": 4,
@@ -198500,7 +198500,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v68",
+				"name": "GlowEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198509,7 +198509,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v69",
+				"name": "GlowInner",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198518,7 +198518,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v70",
+				"name": "GlowKnockout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198536,7 +198536,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v72",
+				"name": "GlowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198572,7 +198572,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v76",
+				"name": "GlowColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198581,7 +198581,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v77",
+				"name": "ShadowEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198599,7 +198599,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v79",
+				"name": "ShadowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198608,7 +198608,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v80",
+				"name": "ShadowRotation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198617,7 +198617,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v81",
+				"name": "ShadowDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198626,7 +198626,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v82",
+				"name": "ShadowDistanceZ",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198662,7 +198662,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v86",
+				"name": "ShadowColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -198671,7 +198671,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v87",
+				"name": "UseDistanceField",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -198932,7 +198932,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v116",
+				"name": "TypingCommand",
 				"native": true,
 				"original_type": "via.gui.TypingCommand",
 				"size": 4,
@@ -198959,11 +198959,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v119",
+				"name": "AnimationCommand",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.gui.TextAnimationCommand",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 16,
@@ -204670,7 +204670,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ResetPoseMode",
 				"native": true,
 				"original_type": "via.motion.IkTrain.ResetPoseMode",
 				"size": 4,
@@ -321236,7 +321236,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321245,7 +321245,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321254,7 +321254,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321263,7 +321263,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321272,7 +321272,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321281,7 +321281,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321290,7 +321290,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321299,7 +321299,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -321317,7 +321317,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -327197,7 +327197,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v68",
+				"name": "UpscaleAlgorithm",
 				"native": true,
 				"original_type": "via.render.RenderConfig.UpscaleAlgorithm",
 				"size": 4,
@@ -346152,7 +346152,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -371527,7 +371527,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LodType",
 				"native": true,
 				"original_type": "via.speedtree.SpeedTreeV8LodType",
 				"size": 4,
@@ -392861,7 +392861,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v3",
+				"name": "Segment",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -392888,7 +392888,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "RenderOutputID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -392906,7 +392906,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v8",
+				"name": "RenderTargetClear",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -407646,7 +407646,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "u",
+				"name": "f",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -436179,7 +436179,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -445805,7 +445805,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "BrushPrimitive",
 				"native": true,
 				"original_type": "via.geometry.BrushPrimitive",
 				"size": 4,
@@ -446075,7 +446075,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "UVScaleX",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -446084,7 +446084,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "UVScaleY",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -472061,7 +472061,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "BrushType",
 				"native": true,
 				"original_type": "via.render.MeshVertexPaint.PaintBrushType",
 				"size": 4,
@@ -497348,7 +497348,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v11",
+				"name": "Action",
 				"native": true,
 				"original_type": "via.effect.PlayerAction",
 				"size": 4,
@@ -497366,7 +497366,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "ExternParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497384,7 +497384,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ExternType0",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497393,7 +497393,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "ExternFloat0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497402,7 +497402,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "ExternColor0",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497411,7 +497411,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v18",
+				"name": "ExternColorPreset0",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497420,7 +497420,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v19",
+				"name": "ExternColorPresetBlend0",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497429,7 +497429,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "ExternColorPresetBlendRate0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497447,7 +497447,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "ExternType1",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497456,7 +497456,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "ExternFloat1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497465,7 +497465,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "ExternColor1",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497474,7 +497474,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v25",
+				"name": "ExternColorPreset1",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497483,7 +497483,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v26",
+				"name": "ExternColorPresetBlend1",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497492,7 +497492,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ExternColorPresetBlendRate1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497510,7 +497510,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ExternType2",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497519,7 +497519,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "ExternFloat2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497528,7 +497528,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v31",
+				"name": "ExternColor2",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497537,7 +497537,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v32",
+				"name": "ExternColorPreset2",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497546,7 +497546,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v33",
+				"name": "ExternColorPresetBlend2",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497555,7 +497555,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "ExternColorPresetBlendRate2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497573,7 +497573,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "ExternType3",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497582,7 +497582,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "ExternFloat3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497591,7 +497591,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v38",
+				"name": "ExternColor3",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497600,7 +497600,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v39",
+				"name": "ExternColorPreset3",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497609,7 +497609,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v40",
+				"name": "ExternColorPresetBlend3",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497618,7 +497618,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v41",
+				"name": "ExternColorPresetBlendRate3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497636,7 +497636,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "ExternType4",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497645,7 +497645,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v44",
+				"name": "ExternFloat4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497654,7 +497654,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "ExternColor4",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497663,7 +497663,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v46",
+				"name": "ExternColorPreset4",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497672,7 +497672,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v47",
+				"name": "ExternColorPresetBlend4",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497681,7 +497681,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ExternColorPresetBlendRate4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497699,7 +497699,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "ExternType5",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497708,7 +497708,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "ExternFloat5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497717,7 +497717,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "ExternColor5",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497726,7 +497726,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v53",
+				"name": "ExternColorPreset5",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497735,7 +497735,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v54",
+				"name": "ExternColorPresetBlend5",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497744,7 +497744,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v55",
+				"name": "ExternColorPresetBlendRate5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497762,7 +497762,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v57",
+				"name": "ExternType6",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497771,7 +497771,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v58",
+				"name": "ExternFloat6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497780,7 +497780,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "ExternColor6",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497789,7 +497789,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v60",
+				"name": "ExternColorPreset6",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497798,7 +497798,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v61",
+				"name": "ExternColorPresetBlend6",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497807,7 +497807,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v62",
+				"name": "ExternColorPresetBlendRate6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497825,7 +497825,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v64",
+				"name": "ExternType7",
 				"native": true,
 				"original_type": "via.gui.Effect2D.ExternType",
 				"size": 4,
@@ -497834,7 +497834,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "ExternFloat7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -497843,7 +497843,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "ExternColor7",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -497852,7 +497852,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v67",
+				"name": "ExternColorPreset7",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497861,7 +497861,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v68",
+				"name": "ExternColorPresetBlend7",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -497870,7 +497870,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v69",
+				"name": "ExternColorPresetBlendRate7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -510097,7 +510097,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "f",
+				"name": "u",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -510106,7 +510106,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "f",
+				"name": "i",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -510115,7 +510115,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "f",
+				"name": "s",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -569488,20 +569488,20 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "AxisLDeadZone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v1",
+				"name": "AxisRDeadZone",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			},
 			{
 				"align": 1,
@@ -569515,7 +569515,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "ForceFeedbackEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -577595,7 +577595,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "ForceVirtualBackBuffer",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -622702,7 +622702,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "_Value",
+				"name": "_Range",
 				"native": false,
 				"original_type": "via.RangeI",
 				"size": 8,
@@ -628471,7 +628471,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Resolution",
 				"native": true,
 				"original_type": "via.effect.VolumeSolidBufferResolution",
 				"size": 4,
@@ -640872,7 +640872,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -640899,7 +640899,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -640908,7 +640908,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -640962,7 +640962,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -640971,7 +640971,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -640980,7 +640980,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -640989,7 +640989,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -641025,7 +641025,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -641106,7 +641106,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "OversizeItemAlignmentV",
 				"native": true,
 				"original_type": "via.gui.FSGOversizeItemAlignmentV",
 				"size": 4,
@@ -641115,7 +641115,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v44",
+				"name": "FixedCursorAlignmentV",
 				"native": true,
 				"original_type": "via.gui.FSGFixedCursorAlignmentV",
 				"size": 4,
@@ -641133,7 +641133,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "OversizeItemAlignmentH",
 				"native": true,
 				"original_type": "via.gui.FSGOversizeItemAlignmentH",
 				"size": 4,
@@ -641142,7 +641142,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "FixedCursorAlignmentH",
 				"native": true,
 				"original_type": "via.gui.FSGFixedCursorAlignmentH",
 				"size": 4,
@@ -641160,7 +641160,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "LoopTypeV",
 				"native": true,
 				"original_type": "via.gui.FICLoopType",
 				"size": 4,
@@ -641169,7 +641169,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "LoopTypeH",
 				"native": true,
 				"original_type": "via.gui.FICLoopType",
 				"size": 4,
@@ -641178,7 +641178,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v51",
+				"name": "StopLoopWhenInputRepeat",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -641313,7 +641313,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "CursorDrivenScrollEaseType",
 				"native": true,
 				"original_type": "via.curve.EaseType",
 				"size": 4,
@@ -641448,7 +641448,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v81",
+				"name": "PadOrKybdScrollType",
 				"native": true,
 				"original_type": "via.gui.FICScrollType",
 				"size": 4,
@@ -641475,7 +641475,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v84",
+				"name": "WheelScrollDirection",
 				"native": true,
 				"original_type": "via.gui.FSGWheelScrollDirection",
 				"size": 4,
@@ -641502,7 +641502,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v87",
+				"name": "WheelScrollType",
 				"native": true,
 				"original_type": "via.gui.FICScrollType",
 				"size": 4,
@@ -641538,7 +641538,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v91",
+				"name": "MouseSelectionType",
 				"native": true,
 				"original_type": "via.gui.FICMouseSelectionType",
 				"size": 4,
@@ -641619,7 +641619,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v100",
+				"name": "UseMouseShake",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -680273,7 +680273,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "DependencyLoad",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -711608,7 +711608,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -724416,7 +724416,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "_Value",
+				"name": "_Range",
 				"native": false,
 				"original_type": "via.Range",
 				"size": 8,
@@ -734221,7 +734221,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "TexBlurCuttingLuminanceLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -734590,7 +734590,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v55",
+				"name": "MaskTextureScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -746698,7 +746698,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -756887,7 +756887,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -762052,7 +762052,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "RiskyMessageSetErrorLevel",
 				"native": true,
 				"original_type": "via.gui.RiskyMessageSetErrorLevel",
 				"size": 4,
@@ -762070,7 +762070,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v6",
+				"name": "RiskyParameterSetErrorLevel",
 				"native": true,
 				"original_type": "via.gui.RiskyParameterSetErrorLevel",
 				"size": 4,
@@ -762349,7 +762349,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v37",
+				"name": "CaptureResolutionAdjust",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -762376,7 +762376,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v40",
+				"name": "TexBlurCuttingLuminanceLevel",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -762394,7 +762394,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v42",
+				"name": "PipelineResourceCache",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -762403,7 +762403,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v43",
+				"name": "MeshPipelineResourceCache",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -762736,7 +762736,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v80",
+				"name": "SortDebugDrawObject",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -762808,7 +762808,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v88",
+				"name": "GUIBufferColor16Bit",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -762862,7 +762862,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v94",
+				"name": "TargetStencil1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -762961,7 +762961,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v105",
+				"name": "UseLegacyBlurFilterKernel",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -814697,7 +814697,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -823953,7 +823953,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -823991,7 +823991,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -881742,16 +881742,16 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "CalcDistanceDecayAtPlayerPos",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "CalcPriorityAtPlayerPos",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -894219,7 +894219,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "SteamAppId",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -910620,11 +910620,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "GlobalColliderAreaLimitScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			}
 		],
 		"name": "app.ChainSub",
@@ -917721,7 +917721,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917730,7 +917730,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917739,7 +917739,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917748,7 +917748,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917757,7 +917757,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917766,7 +917766,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917775,7 +917775,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917784,7 +917784,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -917802,7 +917802,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -941399,7 +941399,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -941426,7 +941426,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -941435,7 +941435,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -941489,7 +941489,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -941498,7 +941498,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -941507,7 +941507,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -941516,7 +941516,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -941552,7 +941552,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -968701,7 +968701,7 @@
 				"native": true,
 				"original_type": "via.effect.detail.PrimitiveRayTracingMode",
 				"size": 4,
-				"type": "Object"
+				"type": "S32"
 			},
 			{
 				"align": 1,
@@ -969399,7 +969399,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1004764,7 +1004764,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004773,7 +1004773,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004782,7 +1004782,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004791,7 +1004791,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004800,7 +1004800,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004809,7 +1004809,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004818,7 +1004818,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004827,7 +1004827,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004845,7 +1004845,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1004917,7 +1004917,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v32",
+				"name": "ShadowDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1022358,7 +1022358,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1022385,7 +1022385,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1022394,7 +1022394,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1022448,7 +1022448,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1022457,7 +1022457,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1022466,7 +1022466,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -1022475,7 +1022475,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1022511,7 +1022511,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1033711,7 +1033711,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -1066751,7 +1066751,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1101782,7 +1101782,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1120369,7 +1120369,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1148797,7 +1148797,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "s32",
+				"name": "f32",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -1168614,7 +1168614,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1178635,7 +1178635,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -1178680,7 +1178680,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1178689,7 +1178689,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -1243357,7 +1243357,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -1243411,7 +1243411,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v36",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1243564,7 +1243564,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v53",
+				"name": "ReverseType",
 				"native": true,
 				"original_type": "via.gui.UVReverseType",
 				"size": 4,
@@ -1243627,7 +1243627,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v60",
+				"name": "RelayPointColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1252307,7 +1252307,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Size",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1252316,7 +1252316,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -1252325,7 +1252325,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -1252370,7 +1252370,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1252379,7 +1252379,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -1273660,7 +1273660,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1273687,7 +1273687,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1273696,7 +1273696,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1273750,7 +1273750,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1273759,7 +1273759,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1273768,7 +1273768,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -1273777,7 +1273777,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1273813,7 +1273813,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1278471,7 +1278471,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -1278813,7 +1278813,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1278822,7 +1278822,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -1294600,7 +1294600,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "CorrectScale(?)",
+				"name": "CorrectScale",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1341732,7 +1341732,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1361838,7 +1361838,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1474416,7 +1474416,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474425,7 +1474425,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474434,7 +1474434,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474443,7 +1474443,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474452,7 +1474452,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474461,7 +1474461,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474470,7 +1474470,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474479,7 +1474479,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474497,7 +1474497,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1474677,7 +1474677,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "UniformShadowEnbale",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1492156,7 +1492156,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492165,7 +1492165,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492174,7 +1492174,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492183,7 +1492183,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492192,7 +1492192,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492201,7 +1492201,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492210,7 +1492210,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492219,7 +1492219,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1492237,7 +1492237,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1493001,7 +1493001,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1522306,7 +1522306,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1522333,7 +1522333,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "BehaviorParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1522630,7 +1522630,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "MaterialParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1522648,7 +1522648,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "VariableType0",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1522729,7 +1522729,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v60",
+				"name": "VariableType1",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1522810,7 +1522810,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v69",
+				"name": "VariableType2",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1522891,7 +1522891,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v78",
+				"name": "VariableType3",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1522972,7 +1522972,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v87",
+				"name": "VariableType4",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1523053,7 +1523053,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v96",
+				"name": "VariableType5",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1523134,7 +1523134,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v105",
+				"name": "VariableType6",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1523215,7 +1523215,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v114",
+				"name": "VariableType7",
 				"native": true,
 				"original_type": "via.gui.FreePolygon.MaterialParamType",
 				"size": 4,
@@ -1551788,7 +1551788,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "FuncType",
 				"native": true,
 				"original_type": "via.audiorender.fx.tremolo.FuncType",
 				"size": 4,
@@ -1598925,7 +1598925,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamInt",
+				"name": "ParamFloat",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -1658114,7 +1658114,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658123,7 +1658123,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658132,7 +1658132,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658141,7 +1658141,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658150,7 +1658150,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658159,7 +1658159,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658168,7 +1658168,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658177,7 +1658177,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658195,7 +1658195,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1658375,7 +1658375,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "UniformShadowEnbale",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1664966,7 +1664966,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1718230,7 +1718230,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1718257,7 +1718257,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1718266,7 +1718266,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1718320,7 +1718320,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1718329,7 +1718329,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1718338,7 +1718338,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -1718347,7 +1718347,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1718383,7 +1718383,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1718600,7 +1718600,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1777401,7 +1777401,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "Size",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1777761,7 +1777761,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1777770,7 +1777770,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -1777878,7 +1777878,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v62",
+				"name": "LTTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1777905,7 +1777905,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "CTTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1777932,7 +1777932,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v68",
+				"name": "RTTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1777959,7 +1777959,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v71",
+				"name": "LCTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1777986,7 +1777986,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v74",
+				"name": "CCTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1778013,7 +1778013,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v77",
+				"name": "RCTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1778040,7 +1778040,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v80",
+				"name": "LBTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1778067,7 +1778067,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v83",
+				"name": "CBTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1778094,7 +1778094,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v86",
+				"name": "RBTilingSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1784057,7 +1784057,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "RaytracingMode",
 				"native": true,
 				"original_type": "via.render.ExperimentalRayTrace.Raytracing",
 				"size": 4,
@@ -1784948,7 +1784948,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v112",
+				"name": "VFXSpecularDenoiserMedian",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1784957,7 +1784957,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v113",
+				"name": "VFXSpecularDenoiserSpatial",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1784975,7 +1784975,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v115",
+				"name": "VFXSpecularDenoiserTemporal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1824751,7 +1824751,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1834911,7 +1834911,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834920,7 +1834920,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834929,7 +1834929,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834938,7 +1834938,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834947,7 +1834947,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834956,7 +1834956,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834965,7 +1834965,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834974,7 +1834974,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1834992,7 +1834992,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1908891,7 +1908891,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -1911735,7 +1911735,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "Size",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -1911744,7 +1911744,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -1976103,7 +1976103,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1976130,7 +1976130,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1976139,7 +1976139,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1976193,7 +1976193,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1976202,7 +1976202,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -1976211,7 +1976211,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -1976220,7 +1976220,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -1976256,7 +1976256,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2005262,7 +2005262,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "Byte0",
+				"name": "Short0",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -2005271,7 +2005271,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "Byte2",
+				"name": "Short1",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -2005280,7 +2005280,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "Byte0",
+				"name": "UShort0",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2005289,7 +2005289,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "Byte2",
+				"name": "UShort1",
 				"native": false,
 				"original_type": "System.UInt16",
 				"size": 2,
@@ -2005298,7 +2005298,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Byte0",
+				"name": "Int",
 				"native": false,
 				"original_type": "System.Int32",
 				"size": 4,
@@ -2005307,7 +2005307,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "Byte0",
+				"name": "UInt",
 				"native": false,
 				"original_type": "System.UInt32",
 				"size": 4,
@@ -2005316,7 +2005316,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "Byte0",
+				"name": "Half0",
 				"native": false,
 				"original_type": "via.f16",
 				"size": 2,
@@ -2005325,7 +2005325,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "Byte2",
+				"name": "Half1",
 				"native": false,
 				"original_type": "via.f16",
 				"size": 2,
@@ -2028901,7 +2028901,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2028928,7 +2028928,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2028937,7 +2028937,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2028991,7 +2028991,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2029000,7 +2029000,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2029009,7 +2029009,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -2029018,7 +2029018,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2029054,7 +2029054,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2029072,7 +2029072,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v36",
+				"name": "LoopAcrossRows",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2035158,7 +2035158,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -2099712,7 +2099712,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -2185128,7 +2185128,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v54",
+				"name": "ShaderType",
 				"native": true,
 				"original_type": "via.effect.VolumeDecalVfx.ShaderType",
 				"size": 4,
@@ -2185407,7 +2185407,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v85",
+				"name": "ApplyToBaseColor",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2185416,7 +2185416,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v86",
+				"name": "ApplyToNormal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2185425,7 +2185425,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v87",
+				"name": "ApplyToRoughness",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2185434,7 +2185434,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v88",
+				"name": "ApplyToEmissive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2185452,7 +2185452,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v90",
+				"name": "Strength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2185470,7 +2185470,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v92",
+				"name": "Speed",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2187356,7 +2187356,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "ManualDisableDrawControl",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2192991,7 +2192991,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -2255512,7 +2255512,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2255539,7 +2255539,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2255548,7 +2255548,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2255602,7 +2255602,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2255611,7 +2255611,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2255620,7 +2255620,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -2255629,7 +2255629,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2255665,7 +2255665,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2267208,7 +2267208,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2267235,7 +2267235,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2267244,7 +2267244,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2267298,7 +2267298,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2267307,7 +2267307,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2267316,7 +2267316,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -2267325,7 +2267325,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2267361,7 +2267361,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2267388,7 +2267388,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "CursorType",
 				"native": true,
 				"original_type": "via.gui.GridCursorType",
 				"size": 4,
@@ -2267487,7 +2267487,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v48",
+				"name": "CursorFixedInMoveType",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2271996,7 +2271996,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272005,7 +2272005,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272014,7 +2272014,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272023,7 +2272023,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272032,7 +2272032,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272041,7 +2272041,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272050,7 +2272050,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272059,7 +2272059,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272077,7 +2272077,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2272257,7 +2272257,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "UniformShadowEnbale",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2285723,15 +2285723,6 @@
 				"original_type": "",
 				"size": 1,
 				"type": "Bool"
-			},
-			{
-				"align": 1,
-				"array": false,
-				"name": "v1",
-				"native": true,
-				"original_type": "",
-				"size": 1,
-				"type": "Data"
 			},
 			{
 				"align": 1,
@@ -2299238,7 +2299229,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "EnableParallelEmitterInitialization",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2299337,7 +2299328,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v14",
+				"name": "DrawGpuBillboard",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2299364,7 +2299355,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "EnableHaze",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2325705,29 +2325696,29 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "UpdateFrameSkipTarget",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v11",
+				"name": "AddBlend",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "StencilTest",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -2329625,7 +2329616,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "OverwritePosture",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2344689,7 +2344680,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -2358061,7 +2358052,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -2365984,7 +2365975,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "InheritThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2379638,11 +2379629,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v0",
+				"name": "DeviceCreated",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -2379656,7 +2379647,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v2",
+				"name": "AvailableVramSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -2379665,7 +2379656,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v3",
+				"name": "UsedVramSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
@@ -2379674,16 +2379665,16 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "OutputTargetOptionType",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.render.OutputTargetOptionType",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "DLSSGModeAuto",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2379692,7 +2379683,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "HdrEnabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2379701,7 +2379692,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v7",
+				"name": "WindowMode",
 				"native": true,
 				"original_type": "via.render.WindowMode",
 				"size": 4,
@@ -2432393,7 +2432384,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v18",
+				"name": "StopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2432402,7 +2432393,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v19",
+				"name": "AutoStopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2488463,7 +2488454,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v13",
+				"name": "OverwritePosition",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2488553,7 +2488544,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v23",
+				"name": "IgnoreBackfaceTriangle",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2516727,7 +2516718,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "ui",
+				"name": "type",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -2560999,11 +2560990,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "GlobalColliderAreaLimitScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "F32"
 			}
 		],
 		"name": "via.motion.Chain",
@@ -2653764,7 +2653755,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v2",
+				"name": "ForceLodEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2695218,11 +2695209,11 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "DisableStreamingShadowCopy",
 				"native": true,
 				"original_type": "",
 				"size": 1,
-				"type": "Data"
+				"type": "Bool"
 			},
 			{
 				"align": 1,
@@ -2708254,7 +2708245,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
@@ -2788326,7 +2788317,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2795211,7 +2795202,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "MaskTarget",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2795238,7 +2795229,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v15",
+				"name": "StencilValue",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2795274,7 +2795265,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "MaterialParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2800072,7 +2800063,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -2800932,20 +2800923,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v80",
+				"name": "ApuSmallMemoryPoolElementSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v81",
+				"name": "ApuSmallMemoryPoolLength",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -2853868,7 +2853859,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "UserDefineCollectionName",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -2903493,11 +2903484,11 @@
 			{
 				"align": 16,
 				"array": false,
-				"name": "v2",
+				"name": "TransformedSphere",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.Sphere",
 				"size": 16,
-				"type": "Data"
+				"type": "Sphere"
 			}
 		],
 		"name": "via.physics.SphereShape",
@@ -2914721,7 +2914712,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v4",
+				"name": "Action",
 				"native": true,
 				"original_type": "via.effect.PlayerAction",
 				"size": 4,
@@ -2914730,38 +2914721,38 @@
 			{
 				"align": 4,
 				"array": true,
-				"name": "v5",
+				"name": "BindingParameters",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.effect.BindingParameter",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v6",
+				"name": "ExternParameters",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.effect.ExternParameter",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v7",
+				"name": "GroupNames",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.effect.GroupName",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
 				"array": true,
-				"name": "v8",
+				"name": "GroupParameters",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.effect.GroupParameter",
 				"size": 4,
-				"type": "Data"
+				"type": "Object"
 			},
 			{
 				"align": 4,
@@ -2914793,7 +2914784,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v12",
+				"name": "GroupEnabled",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2914847,7 +2914838,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v18",
+				"name": "AutoStart",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2940022,7 +2940013,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2940049,7 +2940040,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2940058,7 +2940049,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2940112,7 +2940103,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2940121,7 +2940112,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2940130,7 +2940121,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -2940139,7 +2940130,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2940175,7 +2940166,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2940283,7 +2940274,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v46",
+				"name": "GUIBuffer",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2940418,7 +2940409,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v61",
+				"name": "SortTargetGUICameraID",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2946450,7 +2946441,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "ui",
+				"name": "y",
 				"native": false,
 				"original_type": "System.Int16",
 				"size": 2,
@@ -2966562,7 +2966553,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "STRUCT_ParamValue_ParamInt",
+				"name": "STRUCT_ParamValue_ParamLong",
 				"native": false,
 				"original_type": "System.Int64",
 				"size": 8,
@@ -2966571,7 +2966562,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "STRUCT_ParamValue_ParamInt",
+				"name": "STRUCT_ParamValue_ParamFloat",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -2969412,7 +2969403,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2969439,7 +2969430,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2969448,7 +2969439,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2969502,7 +2969493,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2969511,7 +2969502,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -2969520,7 +2969511,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -2969529,7 +2969520,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2969565,7 +2969556,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976204,7 +2976195,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976213,7 +2976204,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976222,7 +2976213,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976231,7 +2976222,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976240,7 +2976231,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976249,7 +2976240,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976258,7 +2976249,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976267,7 +2976258,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2976285,7 +2976276,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -2981506,7 +2981497,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "OverwritePosture",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3020532,7 +3020523,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -3074831,7 +3074822,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "SkinningNormal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3107808,7 +3107799,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3107862,7 +3107853,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v54",
+				"name": "CaptureControlType",
 				"native": true,
 				"original_type": "via.gui.ImageFilter.CaptureType",
 				"size": 4,
@@ -3107889,7 +3107880,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v57",
+				"name": "BlurEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3107916,7 +3107907,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v60",
+				"name": "BlurUpdateAction",
 				"native": true,
 				"original_type": "via.gui.BlurUpdateAction",
 				"size": 4,
@@ -3108984,7 +3108975,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3167462,7 +3167453,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v59",
+				"name": "EnableLodEffectiveRange",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3167498,7 +3167489,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v63",
+				"name": "EnableShadowLodEffectiveRange",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3196817,7 +3196808,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -3200815,7 +3200806,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -3209301,7 +3209292,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Size",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -3209310,7 +3209301,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -3209319,7 +3209310,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -3209364,7 +3209355,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3209400,7 +3209391,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "MaterialParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3249363,7 +3249354,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -3249372,7 +3249363,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -3249444,7 +3249435,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "StrokeRangeType",
 				"native": true,
 				"original_type": "via.gui.SVGStrokeRangeType",
 				"size": 4,
@@ -3249507,7 +3249498,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v25",
+				"name": "ColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3249516,7 +3249507,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "GroupParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3249588,7 +3249579,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "StrokeColorPresetBlendRate0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3249696,7 +3249687,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "StrokeColorPresetBlendRate1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3249804,7 +3249795,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v58",
+				"name": "StrokeColorPresetBlendRate2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3249912,7 +3249903,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v70",
+				"name": "StrokeColorPresetBlendRate3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316109,7 +3316100,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316118,7 +3316109,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316127,7 +3316118,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316136,7 +3316127,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316145,7 +3316136,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316154,7 +3316145,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316163,7 +3316154,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316172,7 +3316163,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3316190,7 +3316181,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3388034,7 +3388025,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3388061,7 +3388052,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3388070,7 +3388061,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3388124,7 +3388115,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3388133,7 +3388124,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3388142,7 +3388133,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -3388151,7 +3388142,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3388187,7 +3388178,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3388196,7 +3388187,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v35",
+				"name": "LoopV",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3397490,7 +3397481,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "ShootingStarDuration",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3427733,74 +3427724,74 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v4",
+				"name": "MaxSourceNum",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v5",
+				"name": "MaxFileStreamNum",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v6",
+				"name": "MaxBusNum",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v7",
+				"name": "MemoryPoolSize4KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v8",
+				"name": "MemoryPoolSize16KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v9",
+				"name": "MemoryPoolSize64KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v10",
+				"name": "MemoryPoolSize256KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v11",
+				"name": "MemoryPoolSize1024KiB",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -3427823,20 +3427814,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v14",
+				"name": "ExtSrcPoolFrames",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v15",
+				"name": "ExtSrcPoolWaitFrames",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3427850,47 +3427841,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v17",
+				"name": "MemoryPoolSize4KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v18",
+				"name": "MemoryPoolSize16KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v19",
+				"name": "MemoryPoolSize64KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v20",
+				"name": "MemoryPoolSize256KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v21",
+				"name": "MemoryPoolSize1024KiBX64",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3427904,47 +3427895,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v23",
+				"name": "MemoryPoolSize4KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v24",
+				"name": "MemoryPoolSize16KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v25",
+				"name": "MemoryPoolSize64KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v26",
+				"name": "MemoryPoolSize256KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v27",
+				"name": "MemoryPoolSize1024KiBPS4",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428048,47 +3428039,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v39",
+				"name": "MemoryPoolSize4KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v40",
+				"name": "MemoryPoolSize16KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v41",
+				"name": "MemoryPoolSize64KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v42",
+				"name": "MemoryPoolSize256KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v43",
+				"name": "MemoryPoolSize1024KiBPS5",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428237,47 +3428228,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v60",
+				"name": "MemoryPoolSize4KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v61",
+				"name": "MemoryPoolSize16KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v62",
+				"name": "MemoryPoolSize64KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v63",
+				"name": "MemoryPoolSize256KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v64",
+				"name": "MemoryPoolSize1024KiBXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428318,47 +3428309,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v69",
+				"name": "MemoryPoolSize4KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v70",
+				"name": "MemoryPoolSize16KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v71",
+				"name": "MemoryPoolSize64KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v72",
+				"name": "MemoryPoolSize256KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v73",
+				"name": "MemoryPoolSize1024KiBXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428408,47 +3428399,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v79",
+				"name": "MemoryPoolSize4KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v80",
+				"name": "MemoryPoolSize16KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v81",
+				"name": "MemoryPoolSize64KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v82",
+				"name": "MemoryPoolSize256KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v83",
+				"name": "MemoryPoolSize1024KiBNSW",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -3428471,47 +3428462,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v86",
+				"name": "MemoryPoolSize4KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v87",
+				"name": "MemoryPoolSize16KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v88",
+				"name": "MemoryPoolSize64KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v89",
+				"name": "MemoryPoolSize256KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v90",
+				"name": "MemoryPoolSize1024KiBSolstice",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428525,47 +3428516,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v92",
+				"name": "MemoryPoolSize4KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v93",
+				"name": "MemoryPoolSize16KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v94",
+				"name": "MemoryPoolSize64KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v95",
+				"name": "MemoryPoolSize256KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v96",
+				"name": "MemoryPoolSize1024KiBUbitus",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428579,47 +3428570,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v98",
+				"name": "MemoryPoolSize4KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v99",
+				"name": "MemoryPoolSize16KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v100",
+				"name": "MemoryPoolSize64KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v101",
+				"name": "MemoryPoolSize256KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v102",
+				"name": "MemoryPoolSize1024KiBAndroid",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 4,
@@ -3428651,47 +3428642,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v106",
+				"name": "MemoryPoolSize4KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v107",
+				"name": "MemoryPoolSize16KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v108",
+				"name": "MemoryPoolSize64KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v109",
+				"name": "MemoryPoolSize256KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v110",
+				"name": "MemoryPoolSize1024KiBIOS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428705,47 +3428696,47 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v112",
+				"name": "MemoryPoolSize4KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v113",
+				"name": "MemoryPoolSize16KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v114",
+				"name": "MemoryPoolSize64KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v115",
+				"name": "MemoryPoolSize256KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v116",
+				"name": "MemoryPoolSize1024KiBMac",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3428804,7 +3428795,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "AsioAssignedChannelNameList",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3448839,7 +3448830,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -3449183,11 +3449174,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "MeshletStreamingThreshold",
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "Data"
+				"type": "U32"
 			}
 		],
 		"name": "via.render.MeshResource"
@@ -3475328,7 +3475319,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "RegionSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -3475346,7 +3475337,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -3475391,7 +3475382,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "FontSlot",
 				"native": true,
 				"original_type": "via.gui.FontSlot",
 				"size": 4,
@@ -3475409,7 +3475400,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "RasterSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -3475427,7 +3475418,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "PageAlignment",
 				"native": true,
 				"original_type": "via.gui.PageAlignment",
 				"size": 4,
@@ -3475436,7 +3475427,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LetterAlignment",
 				"native": true,
 				"original_type": "via.gui.LetterAlignment",
 				"size": 4,
@@ -3475445,7 +3475436,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475454,7 +3475445,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LineSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475472,7 +3475463,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v24",
+				"name": "ForceAutoWrap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475481,7 +3475472,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v25",
+				"name": "JpnPunctuationForceAutoWrap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475490,7 +3475481,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "AutoEraseHeadSpace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475517,7 +3475508,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "AutoArabicLayout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475526,7 +3475517,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v30",
+				"name": "ExtraLayoutRTL",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475544,7 +3475535,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v32",
+				"name": "Monospace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475553,7 +3475544,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v33",
+				"name": "VerticalLayout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475589,7 +3475580,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v37",
+				"name": "IconFontAutoRegionFitEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475598,7 +3475589,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v38",
+				"name": "Italic",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475607,7 +3475598,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v39",
+				"name": "Bold",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475616,7 +3475607,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v40",
+				"name": "DisableMessageTag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475625,7 +3475616,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v41",
+				"name": "UseRubyFontSlot",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475652,7 +3475643,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "UseRubyLetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475661,7 +3475652,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "RubyLetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475670,7 +3475661,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "RubySizeRatio",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475679,7 +3475670,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "RubyLineSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475688,7 +3475679,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "RubyLineSpaceB",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475697,7 +3475688,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v49",
+				"name": "HideRuby",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475706,7 +3475697,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v50",
+				"name": "RubyHeightAlways",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475715,7 +3475706,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v51",
+				"name": "RubyRTMonospace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475724,7 +3475715,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -3475850,7 +3475841,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "ColorPresetBlendRateBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475859,7 +3475850,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v67",
+				"name": "EffectAlphaType",
 				"native": true,
 				"original_type": "via.gui.EffectAlphaType",
 				"size": 4,
@@ -3475868,7 +3475859,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v68",
+				"name": "GlowEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475877,7 +3475868,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v69",
+				"name": "GlowInner",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475886,7 +3475877,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v70",
+				"name": "GlowKnockout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475904,7 +3475895,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v72",
+				"name": "GlowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475940,7 +3475931,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v76",
+				"name": "GlowColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475949,7 +3475940,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v77",
+				"name": "ShadowEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3475967,7 +3475958,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v79",
+				"name": "ShadowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475976,7 +3475967,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v80",
+				"name": "ShadowRotation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475985,7 +3475976,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v81",
+				"name": "ShadowDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3475994,7 +3475985,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v82",
+				"name": "ShadowDistanceZ",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3476030,7 +3476021,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v86",
+				"name": "ShadowColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3476039,7 +3476030,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v87",
+				"name": "UseDistanceField",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3476300,7 +3476291,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v116",
+				"name": "TypingCommand",
 				"native": true,
 				"original_type": "via.gui.TypingCommand",
 				"size": 4,
@@ -3476327,11 +3476318,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v119",
+				"name": "AnimationCommand",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.gui.TextAnimationCommand",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -3476363,7 +3476354,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v123",
+				"name": "MaterialParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3476381,7 +3476372,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v125",
+				"name": "VariableType0",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476462,7 +3476453,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v134",
+				"name": "VariableType1",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476543,7 +3476534,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v143",
+				"name": "VariableType2",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476624,7 +3476615,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v152",
+				"name": "VariableType3",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476705,7 +3476696,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v161",
+				"name": "VariableType4",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476786,7 +3476777,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v170",
+				"name": "VariableType5",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476867,7 +3476858,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v179",
+				"name": "VariableType6",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3476948,7 +3476939,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v188",
+				"name": "VariableType7",
 				"native": true,
 				"original_type": "via.gui.MaterialText.ParamType",
 				"size": 4,
@@ -3551950,7 +3551941,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3551977,7 +3551968,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3551986,7 +3551977,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3552040,7 +3552031,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3552049,7 +3552040,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3552058,7 +3552049,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -3552067,7 +3552058,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3552103,7 +3552094,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3552184,7 +3552175,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v43",
+				"name": "LoopType",
 				"native": true,
 				"original_type": "via.gui.FICLoopType",
 				"size": 4,
@@ -3552193,7 +3552184,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "StopLoopWhenInputRepeat",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3552328,7 +3552319,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "CursorDrivenScrollEaseType",
 				"native": true,
 				"original_type": "via.curve.EaseType",
 				"size": 4,
@@ -3552427,7 +3552418,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v70",
+				"name": "PadOrKybdScrollType",
 				"native": true,
 				"original_type": "via.gui.FICScrollType",
 				"size": 4,
@@ -3552472,7 +3552463,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v75",
+				"name": "WheelScrollType",
 				"native": true,
 				"original_type": "via.gui.FICScrollType",
 				"size": 4,
@@ -3552508,7 +3552499,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v79",
+				"name": "MouseSelectionType",
 				"native": true,
 				"original_type": "via.gui.FICMouseSelectionType",
 				"size": 4,
@@ -3552589,7 +3552580,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v88",
+				"name": "UseMouseShake",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603217,7 +3603208,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v4",
+				"name": "LightingPathDebugDiffuse",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603226,7 +3603217,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v5",
+				"name": "LightingPathDebugSpecular",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603235,7 +3603226,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "LightingPathDebugDirectLight",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603244,7 +3603235,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "LightingPathDebugProbe",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603253,7 +3603244,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v8",
+				"name": "LightingPathDebugIBL",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603262,7 +3603253,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v9",
+				"name": "LightingPathDebugSSAO",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603271,7 +3603262,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "LightingPathDebugLocalCubeMap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3603280,7 +3603271,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v11",
+				"name": "LightingPathDebugSSR",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3630724,7 +3630715,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v31",
+				"name": "RayCastSkipDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3679250,16 +3679241,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
-				"native": true,
-				"original_type": "",
-				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "ukn",
+				"name": "PSOPatchPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3679268,7 +3679250,16 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "PSOWhiteListPath",
+				"native": true,
+				"original_type": "via.string",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "RayTraceMaterialRedirectPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3679304,7 +3679295,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "GradingPassOpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3679313,7 +3679304,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "OutputPassOpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3679322,7 +3679313,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "OutputPassForTVOpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3679331,7 +3679322,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "OutputPassHDROpenColorIOConfigPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3679754,7 +3679745,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "ShaderTimerPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3682796,20 +3682787,20 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v395",
+				"name": "NVNVirtualMemorySize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 8,
 				"array": false,
-				"name": "v396",
+				"name": "NVNVirtualized4MiBPageAddressSpaceSize",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -3682823,7 +3682814,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v398",
+				"name": "UseNVNAdaptiveZCull",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3682832,7 +3682823,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v399",
+				"name": "UseNVPA",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3682841,7 +3682832,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v400",
+				"name": "DisableNVNSharedMemory",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3682850,7 +3682841,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v401",
+				"name": "UseVirtualized4MiBPage",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3683129,7 +3683120,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v432",
+				"name": "UseNVNGpuCrashReportSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3683138,7 +3683129,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v433",
+				"name": "UseNVNGpuFullMemoryDumpSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3683147,7 +3683138,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v434",
+				"name": "UseNVNShaderExceptionsSwitch2",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3683174,7 +3683165,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v437",
+				"name": "CommandBufferAssertMac",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3683408,7 +3683399,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v463",
+				"name": "CommandBufferAssertiOS",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3683885,7 +3683876,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "GrassFallPushBufferPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3684164,7 +3684155,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "LodSettingsPath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3684515,7 +3684506,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ukn",
+				"name": "DefaultSSSProfilePath",
 				"native": true,
 				"original_type": "via.string",
 				"size": 4,
@@ -3744319,7 +3744310,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v9",
+				"name": "RegionSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -3744679,7 +3744670,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v49",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3744688,7 +3744679,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "SamplerType",
 				"native": true,
 				"original_type": "via.gui.SamplerType",
 				"size": 4,
@@ -3744733,7 +3744724,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "TextureInfoCount(?)",
+				"name": "TextureInfoCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3774505,7 +3774496,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3774532,7 +3774523,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3774541,7 +3774532,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3774595,7 +3774586,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3774604,7 +3774595,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3774613,7 +3774604,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -3774622,7 +3774613,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3774658,7 +3774649,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3783074,7 +3783065,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "ColorPresetBlendRateRightBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3806153,7 +3806144,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -3880827,7 +3880818,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -3883768,7 +3883759,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v7",
+				"name": "ExitDialogEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3883795,7 +3883786,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v10",
+				"name": "WindowCloseShortcutEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3894562,7 +3894553,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v3",
+				"name": "UseMaskUITarget",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3894580,7 +3894571,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v5",
+				"name": "UIRegion",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -3896238,7 +3896229,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v18",
+				"name": "StopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3896247,7 +3896238,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v19",
+				"name": "AutoStopUpdate",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3921775,7 +3921766,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "OverwritePosture",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3956190,7 +3956181,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseCPUDelayedBoundingBox",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3974502,7 +3974493,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3974529,7 +3974520,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3974538,7 +3974529,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3974592,7 +3974583,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3974601,7 +3974592,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -3974610,7 +3974601,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -3974619,7 +3974610,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -3974655,7 +3974646,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4038523,7 +4038514,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "Size",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -4038703,7 +4038694,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v28",
+				"name": "InnerColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4043367,7 +4043358,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "ExternParamsCount",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4043376,7 +4043367,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ExternFloat0",
+				"name": "ExternName0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4043385,7 +4043376,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v14",
+				"name": "ExternType0",
 				"native": true,
 				"original_type": "via.gui.ExternType",
 				"size": 4,
@@ -4043394,7 +4043385,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "ExternFloat0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4043403,7 +4043394,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "ExternColor0",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043412,7 +4043403,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v17",
+				"name": "ExternColorPreset0",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043421,7 +4043412,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v18",
+				"name": "ExternColorPresetBlend0",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043430,11 +4043421,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "ExternColorPresetBlendRate0",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName1",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType1",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043443,30 +4043452,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v21",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v22",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v23",
+				"name": "ExternColor1",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043475,7 +4043466,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v24",
+				"name": "ExternColorPreset1",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043484,7 +4043475,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v25",
+				"name": "ExternColorPresetBlend1",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043493,11 +4043484,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v26",
+				"name": "ExternColorPresetBlendRate1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName2",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType2",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043506,30 +4043515,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v28",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v29",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "ExternColor2",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043538,7 +4043529,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v31",
+				"name": "ExternColorPreset2",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043547,7 +4043538,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v32",
+				"name": "ExternColorPresetBlend2",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043556,11 +4043547,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v33",
+				"name": "ExternColorPresetBlendRate2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName3",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType3",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043569,30 +4043578,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v35",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v36",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v37",
+				"name": "ExternColor3",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043601,7 +4043592,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v38",
+				"name": "ExternColorPreset3",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043610,7 +4043601,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v39",
+				"name": "ExternColorPresetBlend3",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043619,11 +4043610,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v40",
+				"name": "ExternColorPresetBlendRate3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName4",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType4",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043632,30 +4043641,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v42",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v43",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v44",
+				"name": "ExternColor4",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043664,7 +4043655,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v45",
+				"name": "ExternColorPreset4",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043673,7 +4043664,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v46",
+				"name": "ExternColorPresetBlend4",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043682,11 +4043673,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "ExternColorPresetBlendRate4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName5",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType5",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043695,30 +4043704,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v49",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v50",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "ExternColor5",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043727,7 +4043718,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v52",
+				"name": "ExternColorPreset5",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043736,7 +4043727,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v53",
+				"name": "ExternColorPresetBlend5",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043745,11 +4043736,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v54",
+				"name": "ExternColorPresetBlendRate5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName6",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType6",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043758,30 +4043767,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v56",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v57",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v58",
+				"name": "ExternColor6",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043790,7 +4043781,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v59",
+				"name": "ExternColorPreset6",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043799,7 +4043790,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v60",
+				"name": "ExternColorPresetBlend6",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043808,11 +4043799,29 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v61",
+				"name": "ExternColorPresetBlendRate6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
 				"type": "F32"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternName7",
+				"native": true,
+				"original_type": "",
+				"size": 4,
+				"type": "String"
+			},
+			{
+				"align": 4,
+				"array": false,
+				"name": "ExternType7",
+				"native": true,
+				"original_type": "via.gui.ExternType",
+				"size": 4,
+				"type": "S32"
 			},
 			{
 				"align": 4,
@@ -4043821,30 +4043830,12 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v63",
-				"native": true,
-				"original_type": "via.gui.ExternType",
-				"size": 4,
-				"type": "S32"
-			},
-			{
-				"align": 4,
-				"array": false,
-				"name": "v64",
-				"native": true,
-				"original_type": "",
-				"size": 4,
 				"type": "F32"
 			},
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "ExternColor7",
 				"native": true,
 				"original_type": "via.Color",
 				"size": 4,
@@ -4043853,7 +4043844,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v66",
+				"name": "ExternColorPreset7",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043862,7 +4043853,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v67",
+				"name": "ExternColorPresetBlend7",
 				"native": true,
 				"original_type": "",
 				"size": 16,
@@ -4043871,7 +4043862,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v68",
+				"name": "ExternColorPresetBlendRate7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060163,7 +4060154,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060172,7 +4060163,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060181,7 +4060172,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060190,7 +4060181,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060199,7 +4060190,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060208,7 +4060199,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060217,7 +4060208,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060226,7 +4060217,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4060244,7 +4060235,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4062531,11 +4062522,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v1",
+				"name": "UlimitMember",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -4094602,7 +4094593,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "LightChannelIntensityScale",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094611,7 +4094602,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v16",
+				"name": "LightChannelIntensityScale1",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094620,7 +4094611,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "LightChannelIntensityScale2",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094629,7 +4094620,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v18",
+				"name": "LightChannelIntensityScale3",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094638,7 +4094629,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "LightChannelIntensityScale4",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094647,7 +4094638,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LightChannelIntensityScale5",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094656,7 +4094647,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LightChannelIntensityScale6",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094665,7 +4094656,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LightChannelIntensityScale7",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4094683,7 +4094674,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v24",
+				"name": "VolumetricScatteringIntensity",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4111866,7 +4111857,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v12",
+				"name": "OutputLimitConfigRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4111875,7 +4111866,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v13",
+				"name": "SecondaryOutputLimitConfigRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4112217,7 +4112208,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v51",
+				"name": "StandardMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4112235,7 +4112226,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v53",
+				"name": "SecondaryStandardMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4112253,7 +4112244,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v55",
+				"name": "DisplayMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4112271,7 +4112262,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v57",
+				"name": "SecondaryDisplayMaxNitsRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4112289,7 +4112280,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v59",
+				"name": "HDRTexRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4112316,7 +4112307,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v62",
+				"name": "MDROutRangeRect",
 				"native": true,
 				"original_type": "via.Rect",
 				"size": 16,
@@ -4124799,11 +4124790,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v1",
+				"name": "UlimitMember",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -4160126,7 +4160117,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v8",
+				"name": "RegionSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -4160144,7 +4160135,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v10",
+				"name": "ControlPoint",
 				"native": true,
 				"original_type": "via.gui.ControlPoint",
 				"size": 4,
@@ -4160189,7 +4160180,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v15",
+				"name": "FontSlot",
 				"native": true,
 				"original_type": "via.gui.FontSlot",
 				"size": 4,
@@ -4160207,7 +4160198,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v17",
+				"name": "RasterSize",
 				"native": true,
 				"original_type": "via.Size",
 				"size": 8,
@@ -4160225,7 +4160216,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v19",
+				"name": "PageAlignment",
 				"native": true,
 				"original_type": "via.gui.PageAlignment",
 				"size": 4,
@@ -4160234,7 +4160225,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v20",
+				"name": "LetterAlignment",
 				"native": true,
 				"original_type": "via.gui.LetterAlignment",
 				"size": 4,
@@ -4160243,7 +4160234,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v21",
+				"name": "LetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160252,7 +4160243,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v22",
+				"name": "LineSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160270,7 +4160261,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v24",
+				"name": "ForceAutoWrap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160279,7 +4160270,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v25",
+				"name": "JpnPunctuationForceAutoWrap",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160288,7 +4160279,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v26",
+				"name": "AutoEraseHeadSpace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160315,7 +4160306,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v29",
+				"name": "AutoArabicLayout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160324,7 +4160315,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v30",
+				"name": "ExtraLayoutRTL",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160342,7 +4160333,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v32",
+				"name": "Monospace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160351,7 +4160342,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v33",
+				"name": "VerticalLayout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160387,7 +4160378,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v37",
+				"name": "IconFontAutoRegionFitEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160396,7 +4160387,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v38",
+				"name": "Italic",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160405,7 +4160396,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v39",
+				"name": "Bold",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160414,7 +4160405,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v40",
+				"name": "DisableMessageTag",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160423,7 +4160414,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v41",
+				"name": "UseRubyFontSlot",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160450,7 +4160441,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v44",
+				"name": "UseRubyLetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160459,7 +4160450,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v45",
+				"name": "RubyLetterSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160468,7 +4160459,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v46",
+				"name": "RubySizeRatio",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160477,7 +4160468,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v47",
+				"name": "RubyLineSpace",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160486,7 +4160477,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v48",
+				"name": "RubyLineSpaceB",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160495,7 +4160486,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v49",
+				"name": "HideRuby",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160504,7 +4160495,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v50",
+				"name": "RubyHeightAlways",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160513,7 +4160504,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v51",
+				"name": "RubyRTMonospace",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160522,7 +4160513,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v52",
+				"name": "BlendType",
 				"native": true,
 				"original_type": "via.gui.BlendType",
 				"size": 4,
@@ -4160648,7 +4160639,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v66",
+				"name": "ColorPresetBlendRateBottom",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160657,7 +4160648,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v67",
+				"name": "EffectAlphaType",
 				"native": true,
 				"original_type": "via.gui.EffectAlphaType",
 				"size": 4,
@@ -4160666,7 +4160657,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v68",
+				"name": "GlowEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160675,7 +4160666,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v69",
+				"name": "GlowInner",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160684,7 +4160675,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v70",
+				"name": "GlowKnockout",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160702,7 +4160693,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v72",
+				"name": "GlowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160738,7 +4160729,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v76",
+				"name": "GlowColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160747,7 +4160738,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v77",
+				"name": "ShadowEnable",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4160765,7 +4160756,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v79",
+				"name": "ShadowStrength",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160774,7 +4160765,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v80",
+				"name": "ShadowRotation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160783,7 +4160774,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v81",
+				"name": "ShadowDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160792,7 +4160783,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v82",
+				"name": "ShadowDistanceZ",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160828,7 +4160819,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v86",
+				"name": "ShadowColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4160837,7 +4160828,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v87",
+				"name": "UseDistanceField",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4161098,7 +4161089,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v116",
+				"name": "TypingCommand",
 				"native": true,
 				"original_type": "via.gui.TypingCommand",
 				"size": 4,
@@ -4161125,11 +4161116,11 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v119",
+				"name": "AnimationCommand",
 				"native": true,
-				"original_type": "",
+				"original_type": "via.gui.TextAnimationCommand",
 				"size": 4,
-				"type": "Data"
+				"type": "S32"
 			}
 		],
 		"name": "via.gui.Text",
@@ -4172923,7 +4172914,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "ParamInt",
+				"name": "ParamLong",
 				"native": false,
 				"original_type": "System.Int64",
 				"size": 8,
@@ -4172932,7 +4172923,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "ParamInt",
+				"name": "ParamFloat",
 				"native": false,
 				"original_type": "System.Single",
 				"size": 4,
@@ -4187820,7 +4187811,7 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v3",
+				"name": "TargetGameObject",
 				"native": true,
 				"original_type": "via.GameObjectRef",
 				"size": 16,
@@ -4197437,7 +4197428,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v0",
+				"name": "Id",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4217194,7 +4217185,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -4234636,7 +4234627,7 @@
 			{
 				"align": 2,
 				"array": false,
-				"name": "v0",
+				"name": "SectionID",
 				"native": true,
 				"original_type": "",
 				"size": 2,
@@ -4266972,7 +4266963,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v17",
+				"name": "Play",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4266999,7 +4266990,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v20",
+				"name": "Interactive",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4267008,7 +4266999,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v21",
+				"name": "UseInput",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4267062,7 +4267053,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v27",
+				"name": "ColorScalePresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4267071,7 +4267062,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v28",
+				"name": "UseColorScaleSrgb",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4267080,7 +4267071,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v29",
+				"name": "ColorOffset",
 				"native": true,
 				"original_type": "via.Float3",
 				"size": 12,
@@ -4267089,7 +4267080,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v30",
+				"name": "Saturation",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4267125,7 +4267116,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v34",
+				"name": "AdjustAddColorPresetBlendRate",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4267197,7 +4267188,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v42",
+				"name": "EnableLayoutUpdateFromExternal",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4315412,7 +4315403,7 @@
 			{
 				"align": 1,
 				"array": false,
-				"name": "v6",
+				"name": "OverwritePosture",
 				"native": true,
 				"original_type": "",
 				"size": 1,
@@ -4339669,11 +4339660,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v3",
+				"name": "SoundAllocatorMemorySizeXB1",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -4339687,11 +4339678,11 @@
 			{
 				"align": 8,
 				"array": false,
-				"name": "v5",
+				"name": "SoundAllocatorMemorySizeXBS",
 				"native": true,
 				"original_type": "",
 				"size": 8,
-				"type": "Data"
+				"type": "U64"
 			},
 			{
 				"align": 1,
@@ -4359017,7 +4359008,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v54",
+				"name": "FootTiltLimitUpRad",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4359026,7 +4359017,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v55",
+				"name": "FootTiltLimitDownRad",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4359116,7 +4359107,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v65",
+				"name": "RayCastSkipDistance",
 				"native": true,
 				"original_type": "",
 				"size": 4,
@@ -4371700,7 +4371691,7 @@
 				"native": true,
 				"original_type": "",
 				"size": 4,
-				"type": "String"
+				"type": "RuntimeType"
 			}
 		],
 		"name": "via.DevDebugDrawRecPlayer",
@@ -4385788,7 +4385779,7 @@
 			{
 				"align": 4,
 				"array": false,
-				"name": "v50",
+				"name": "AgentShapeType",
 				"native": true,
 				"original_type": "via.navigation.NavigationVolumeSpace.ShapeType",
 				"size": 4,
