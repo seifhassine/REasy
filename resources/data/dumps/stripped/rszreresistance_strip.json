@@ -57732,7 +57732,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Lounge, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Lounge>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -90007,7 +90007,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Creep_L, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Creep_L>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -100988,7 +100988,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "app.ropeway.Percentable`1[[via.vec2, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.Percentable`1<via.vec2>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -147351,7 +147351,7 @@
 				"array": true,
 				"name": "ItemPositions",
 				"native": false,
-				"original_type": "System.Collections.Generic.Dictionary`2[[System.Guid, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[app.ropeway.item.ItemPositions, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "System.Collections.Generic.Dictionary`2<System.Guid,app.ropeway.item.ItemPositions>",
 				"size": 4,
 				"type": "Object"
 			},
@@ -162626,7 +162626,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Capture, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Capture>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -170318,7 +170318,7 @@
 				"array": true,
 				"name": "Elements",
 				"native": false,
-				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1[[app.ropeway.gamemastering.BuffManagerUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1<app.ropeway.gamemastering.BuffManagerUserData>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -262018,7 +262018,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Eaten, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Eaten>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -279493,7 +279493,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.WalkKindID, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.WalkKindID>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -282807,7 +282807,7 @@
 				"array": true,
 				"name": "CoupleList",
 				"native": false,
-				"original_type": "app.ropeway.VersatileValueBase`2.Couple[[app.ropeway.weapon.generator.BulletPusType, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[app.ropeway.weapon.shell.ShellPrefabSetting`1[[app.ropeway.weapon.shell.BulletPusShellUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.VersatileValueBase`2.Couple<app.ropeway.weapon.generator.BulletPusType,app.ropeway.weapon.shell.ShellPrefabSetting`1<app.ropeway.weapon.shell.BulletPusShellUserData>>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -284441,7 +284441,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "app.ropeway.Percentable`1[[System.Single, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.Percentable`1<System.Single>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -317458,7 +317458,7 @@
 				"array": true,
 				"name": "Elements",
 				"native": false,
-				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1[[app.ropeway.VendingMachineLocationIDUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1<app.ropeway.VendingMachineLocationIDUserData>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -317493,7 +317493,7 @@
 				"array": true,
 				"name": "memberInfo",
 				"native": false,
-				"original_type": "System.ValueTuple`3[[System.UInt64, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Int32, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Int32, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "System.ValueTuple`3<System.UInt64,System.Int32,System.Int32>",
 				"size": 1,
 				"type": "Struct"
 			}
@@ -362340,7 +362340,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Shredder, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Shredder>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -380196,7 +380196,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.FakeDead, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.FakeDead>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -415983,7 +415983,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Creep, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Creep>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -420107,7 +420107,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Idle, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Idle>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -485439,7 +485439,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Eat, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Eat>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -504029,7 +504029,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "app.ropeway.Percentable`1[[app.ropeway.enemy.em0000.CreepKindID, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.Percentable`1<app.ropeway.enemy.em0000.CreepKindID>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -520258,7 +520258,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Knock, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Knock>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -535785,7 +535785,7 @@
 				"array": true,
 				"name": "CandidateListArray",
 				"native": false,
-				"original_type": "System.Collections.Generic.List`1[[app.ropeway.NoticePointSelector.CandidateContainer, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "System.Collections.Generic.List`1<app.ropeway.NoticePointSelector.CandidateContainer>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -596730,7 +596730,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.GestureKind, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.GestureKind>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -607744,7 +607744,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Nailer, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Nailer>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -626629,7 +626629,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Dead, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Dead>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -638295,7 +638295,7 @@
 				"array": true,
 				"name": "Elements",
 				"native": false,
-				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1[[app.ropeway.gamemastering.RankUpRewardUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1<app.ropeway.gamemastering.RankUpRewardUserData>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -662673,7 +662673,7 @@
 				"array": true,
 				"name": "memberInfo",
 				"native": false,
-				"original_type": "System.ValueTuple`2[[System.UInt64, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[System.Int32, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "System.ValueTuple`2<System.UInt64,System.Int32>",
 				"size": 1,
 				"type": "Struct"
 			}
@@ -666664,7 +666664,7 @@
 				"array": true,
 				"name": "Elements",
 				"native": false,
-				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1[[app.escape.skill.SkillManagerEquipmentUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1<app.escape.skill.SkillManagerEquipmentUserData>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -700219,7 +700219,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.RailingFall, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.RailingFall>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -715602,7 +715602,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.DeadIdle, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.DeadIdle>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -736334,7 +736334,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "app.ropeway.Percentable`1[[app.ropeway.enemy.em0000.BreakLevel, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.Percentable`1<app.ropeway.enemy.em0000.BreakLevel>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -797062,7 +797062,7 @@
 				"array": true,
 				"name": "Elements",
 				"native": false,
-				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1[[app.ropeway.gamemastering.SkillManagerUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.catalog.RegisterUserDataElement`1<app.ropeway.gamemastering.SkillManagerUserData>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -824971,7 +824971,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1[[app.ropeway.enemy.em0000.RoleMotionID.Creep_R, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.enemy.userdata.MotionUserDataBase.MotionInfo`1<app.ropeway.enemy.em0000.RoleMotionID.Creep_R>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -855059,7 +855059,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "app.ropeway.Percentable`1[[app.ropeway.enemy.em0000.LiftArmKindID, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "app.ropeway.Percentable`1<app.ropeway.enemy.em0000.LiftArmKindID>",
 				"size": 4,
 				"type": "Object"
 			}

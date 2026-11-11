@@ -36262,7 +36262,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Eaten, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Eaten>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -80587,7 +80587,7 @@
 				"array": true,
 				"name": "CoupleList",
 				"native": false,
-				"original_type": "offline.VersatileValueBase`2.Couple[[offline.weapon.generator.BulletPusType, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[offline.weapon.shell.ShellPrefabSetting`1[[offline.weapon.shell.BulletPusShellUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.VersatileValueBase`2.Couple<offline.weapon.generator.BulletPusType,offline.weapon.shell.ShellPrefabSetting`1<offline.weapon.shell.BulletPusShellUserData>>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -148130,7 +148130,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Eat, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Eat>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -177635,7 +177635,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.DeadIdle, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.DeadIdle>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -188603,7 +188603,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "offline.Percentable`1[[offline.enemy.em0000.BreakLevel, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.Percentable`1<offline.enemy.em0000.BreakLevel>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -204656,7 +204656,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Pose, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Pose>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -267341,7 +267341,7 @@
 				"array": true,
 				"name": "TakeOverPrevLayerLinearParams",
 				"native": false,
-				"original_type": "System.Nullable`1[[System.Boolean, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]][]",
+				"original_type": "System.Nullable`1<System.Boolean>",
 				"size": 1,
 				"type": "Struct"
 			}
@@ -297458,7 +297458,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.RailingFall, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.RailingFall>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -300403,7 +300403,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Knock, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Knock>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -413221,7 +413221,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.OneShot, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.OneShot>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -461736,7 +461736,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.DeadAction, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.DeadAction>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -464375,7 +464375,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.EventSetAction, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.EventSetAction>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -464755,7 +464755,7 @@
 				"array": true,
 				"name": "CandidateListArray",
 				"native": false,
-				"original_type": "System.Collections.Generic.List`1[[offline.NoticePointSelector.CandidateContainer, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "System.Collections.Generic.List`1<offline.NoticePointSelector.CandidateContainer>",
 				"size": 4,
 				"type": "Object"
 			},
@@ -468051,7 +468051,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Lounge, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Lounge>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -539757,7 +539757,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "offline.Percentable`1[[offline.enemy.em0000.LiftArmKindID, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.Percentable`1<offline.enemy.em0000.LiftArmKindID>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -610373,7 +610373,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.WalkDetailKindID, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.WalkDetailKindID>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -673700,7 +673700,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Capture, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Capture>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -687358,7 +687358,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Grill, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Grill>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -744035,7 +744035,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Dead, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Dead>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -785958,7 +785958,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.HandsState, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.HandsState>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -790350,7 +790350,7 @@
 				"array": true,
 				"name": "ValueList",
 				"native": false,
-				"original_type": "offline.Percentable`1[[System.Single, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.Percentable`1<System.Single>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -797848,7 +797848,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.FakeDead, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.FakeDead>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -832560,7 +832560,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.SlantingFence, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.SlantingFence>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -841920,7 +841920,7 @@
 				"array": true,
 				"name": "ItemPositionsDic",
 				"native": false,
-				"original_type": "System.Collections.Generic.Dictionary`2[[System.Guid, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null],[offline.item.ItemPositions, mscorlib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "System.Collections.Generic.Dictionary`2<System.Guid,offline.item.ItemPositions>",
 				"size": 4,
 				"type": "Object"
 			},
@@ -883506,7 +883506,7 @@
 				"array": true,
 				"name": "CoupleList",
 				"native": false,
-				"original_type": "offline.VersatileValueBase`2.Couple[[offline.weapon.generator.BulletPusType, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null],[offline.weapon.shell.ShellPrefabSetting`1[[offline.weapon.shell.BulletPusShellUserData, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]], application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.VersatileValueBase`2.Couple<offline.weapon.generator.BulletPusType,offline.weapon.shell.ShellPrefabSetting`1<offline.weapon.shell.BulletPusShellUserData>>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -891149,7 +891149,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Preparation, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Preparation>",
 				"size": 4,
 				"type": "Object"
 			}
@@ -897157,7 +897157,7 @@
 				"array": true,
 				"name": "MotionList",
 				"native": false,
-				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1[[offline.enemy.em0000.RoleMotionID.Idle, application, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+				"original_type": "offline.enemy.userdata.MotionUserDataBase.MotionInfo`1<offline.enemy.em0000.RoleMotionID.Idle>",
 				"size": 4,
 				"type": "Object"
 			}
