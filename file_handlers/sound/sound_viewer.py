@@ -103,6 +103,7 @@ from .bnk_parser import (
     embedded_wem_view,
     extract_embedded_wem,
     format_bnk_property_value,
+    HircReference,
     object_users,
     parse_wem_metadata,
     patch_hirc_reference,
@@ -3684,10 +3685,7 @@ class SoundViewer(QWidget):
         )
 
     def _child_candidates(self, parent):
-        allowed = (
-            {0x0B} if parent.type_id == 0x0A else
-            {0x02, 0x05, 0x06, 0x07, 0x09}
-        )
+        allowed = compatible_hirc_reference_types(parent, HircReference(0, 0, "child"))
         return [
             obj for obj in self._parse_result.objects
             if obj.object_id != parent.object_id
