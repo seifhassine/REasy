@@ -31,13 +31,14 @@ class ClipCurves(CurveView):
 
 
 class _Curve:
-    def __init__(self, prop: Property, offset: float, color: str):
-        self.prop, self.offset, self.colors = prop, offset, (color,)
+    def __init__(self, prop: Property, offset: float, color: str, rules: dict):
+        self.prop, self.offset, self.colors, self.rules = prop, offset, (color,), rules
         self.frames = np.array([key.frame + offset for key in prop.keys], np.float64)
         self.values = np.array([float(key.value) for key in prop.keys], np.float64).reshape(-1, 1)
 
     def sample_many(self, frames) -> np.ndarray:
-        found = (sample(self.prop, frame - self.offset) for frame in np.asarray(frames, np.float64).tolist())
+        found = (sample(self.prop, frame - self.offset, self.rules)
+                 for frame in np.asarray(frames, np.float64).tolist())
         return np.array([math.nan if value is None else float(value) for value in found]).reshape(-1, 1)
 
     def handles(self, at: int) -> list[tuple[float, float, float, float]]:
@@ -109,7 +110,8 @@ class _PropertyCurves(CurveSource):
         return found
 
     def curves(self) -> list[_Curve]:
-        return [_Curve(prop, self.state.document.time_offset(prop), CURVE_COLORS[at % len(CURVE_COLORS)])
+        document = self.state.document
+        return [_Curve(prop, document.time_offset(prop), CURVE_COLORS[at % len(CURVE_COLORS)], document.profile.player)
                 for at, prop in enumerate(self.properties)]
 
     def picked(self) -> set[tuple[int, int]]:

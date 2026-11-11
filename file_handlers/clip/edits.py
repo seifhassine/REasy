@@ -326,7 +326,7 @@ def make_key(document: ClipDocument, prop: Property, frame: float) -> Key:
     keys = prop.keys
     before = [key for key in keys if key.frame <= frame]
     mode = (before[-1] if before else keys[0]).interpolation if keys else default_interpolation(prop.type)
-    value = sample(prop, frame) if keys else None
+    value = sample(prop, frame, document.profile.player) if keys else None
     if value is None:
         value = default_value(property_type(prop.type).value)
     key = Key(frame=frame, value=value, interpolation=mode, width=document.rules.width_default,

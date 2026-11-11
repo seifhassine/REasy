@@ -7,13 +7,13 @@ from dataclasses import dataclass, replace
 from functools import lru_cache
 from pathlib import Path
 
-lazy from ui.project_manager.rsz_jsons import find_default_rsz_json_path
-lazy from utils.app_paths import application_root, resource_path
+lazy from file_handlers.rsz.game_registry import game_type_registry
+lazy from utils.app_paths import resource_path
 lazy from utils.resource_file_utils import ResourceDataLoader
 lazy from utils.type_registry import TypeRegistry
 
 lazy from ..adapter import GuiPreviewScenario
-lazy from ..profiles import GuiFormatProfile
+lazy from ..profiles import GuiRuntimeProfile
 lazy from ..scene import GuiScene, GuiSceneNode, normalize_gui_resource_path
 lazy from .runtime_scenarios import (
     Dmc5CapturedPreview,
@@ -400,14 +400,15 @@ def build_dmc5_preview_scenarios(
     context: Dmc5GuiControllerContext,
     scene: GuiScene,
     gui_path: str,
-    profile: GuiFormatProfile,
+    profile: GuiRuntimeProfile,
 ) -> tuple[GuiPreviewScenario, ...]:
     """Enumerate coherent contexts without exposing native pointer controls."""
 
     captures, capture_errors = captured_dmc5_previews(
         gui_path,
         profile.preview_scenario_catalog_path,
-        profile.version,
+        scene.resource.document.version,
+        profile.game,
     )
     authored_context = replace(
         context,
@@ -491,11 +492,6 @@ def build_dmc5_preview_scenarios(
 
 
 @lru_cache(maxsize=1)
-def _dmc5_registry() -> TypeRegistry | None:
-    path = find_default_rsz_json_path("DMC5", application_root())
-    return TypeRegistry(str(path)) if path else None
-
-
 def _value(value: object) -> object:
     scalar = getattr(value, "value", value)
     return scalar.rstrip("\0") if isinstance(scalar, str) else scalar
@@ -600,6 +596,7 @@ def _runtime_list_behavior(
 def _controller_catalog(
     path: str,
     gui_version: int,
+    game: str,
 ) -> tuple[_Dmc5ControllerCatalog, str | None]:
     empty = _Dmc5ControllerCatalog({}, {})
     source = resource_path(path)
@@ -607,7 +604,7 @@ def _controller_catalog(
         return empty, "GUI controller catalog is unavailable"
     try:
         payload = json.loads(source.read_text(encoding="utf-8"))
-        if payload.get("schema") != 2 or payload.get("game") != "DMC5":
+        if payload.get("schema") != 2 or payload.get("game") != game:
             raise ValueError("unsupported catalog identity or schema")
         if int(payload.get("gui_version", -1)) != int(gui_version):
             raise ValueError("catalog GUI version does not match the active profile")
@@ -670,7 +667,8 @@ def _controller_catalog(
 def discover_dmc5_controller_context(
     gui_path: str,
     loader: ResourceDataLoader | None,
-    profile: GuiFormatProfile,
+    profile: GuiRuntimeProfile,
+    gui_version: int,
 ) -> Dmc5GuiControllerContext:
     """Find prefabs whose serialized GUI asset exactly matches ``gui_path``.
 
@@ -682,11 +680,6 @@ def discover_dmc5_controller_context(
 
     if loader is None:
         return Dmc5GuiControllerContext()
-    registry = _dmc5_registry()
-    if registry is None:
-        return Dmc5GuiControllerContext(
-            errors=("DMC5 RSZ type registry is unavailable",)
-        )
     if not profile.controller_index_path:
         return Dmc5GuiControllerContext(
             errors=("GUI controller catalog is not configured",)
@@ -698,10 +691,16 @@ def discover_dmc5_controller_context(
     expected = normalize_gui_resource_path(gui_path)
     catalog, index_error = _controller_catalog(
         profile.controller_index_path,
-        profile.version,
+        gui_version,
+        profile.game,
     )
     if index_error:
         return Dmc5GuiControllerContext(errors=(index_error,))
+    registry = game_type_registry(profile.game)
+    if registry is None:
+        return Dmc5GuiControllerContext(
+            errors=(f"{profile.game} RSZ type registry is unavailable",)
+        )
     candidates = catalog.paths_by_gui.get(expected, ())
     hosts: list[Dmc5ControllerHost] = []
     errors: list[str] = []
@@ -715,7 +714,7 @@ def discover_dmc5_controller_context(
         try:
             parsed = RszFile()
             parsed.type_registry = registry
-            parsed.game_version = "DMC5"
+            parsed.game_version = profile.game
             parsed.filepath = candidate
             parsed.read(bytes(data))
             names: list[str] = []

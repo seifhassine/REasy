@@ -1,21 +1,16 @@
-"""Exact DMC5 GUIR 270020 format/runtime adapter."""
+"""See docs/internals/gui-format.md."""
 
 from __future__ import annotations
 
 from typing import Any
 
 from ..adapter import GuiPreviewControl, GuiPreviewScenario, GuiRuntimeEditorConfig
-lazy from ..errors import GuiFormatError
 
-lazy from file_handlers.clip.rules import PropertyType
 lazy from utils.resource_file_utils import ResourceDataLoader
 
 lazy from ..dependencies import GuiDependencyCatalog
-lazy from ..model import GuiDocument
-lazy from ..profiles import GuiFormatProfile
+lazy from ..profiles import GuiRuntimeProfile
 lazy from ..scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
-lazy from .codec import Dmc5GuiCodec
-lazy from .serializer import Dmc5GuiSerializer
 lazy from .scene import Dmc5GuiScene
 lazy from .preview_widget import Dmc5GuiCanvas
 lazy from .controllers import build_dmc5_preview_scenarios, discover_dmc5_controller_context, Dmc5PreviewState
@@ -23,23 +18,13 @@ lazy from .custom_preview import (
     dmc5_preview_controls, set_dmc5_preview_control, rebase_dmc5_custom_preview, export_dmc5_preview_preset,
     import_dmc5_preview_preset,
 )
-lazy from .property_codec import encode_dmc5_gui_value
-
-
-DMC5_GUI_VERSION = 270020
-DMC5_DEFAULT_SAFE_AREA_RATIO = 0.9
-DMC5_DEFAULT_LANGUAGE = 1
 
 
 class Dmc5GuiAdapter:
-    version = DMC5_GUI_VERSION
-    name = f"DMC5 GUIR {DMC5_GUI_VERSION}"
     editor = GuiRuntimeEditorConfig(
-        default_safe_area_ratio=DMC5_DEFAULT_SAFE_AREA_RATIO,
         safe_area_tooltip=(
             "DMC5 GUISystem.SafeAreaRatio runtime value (native default 0.9)"
         ),
-        default_language=DMC5_DEFAULT_LANGUAGE,
         input_devices=("Keyboard", "Gamepad"),
         input_tooltip=(
             "Runtime input device; action bindings are external, while DMC5's "
@@ -55,53 +40,29 @@ class Dmc5GuiAdapter:
         ),
     )
 
-    def require_profile(self, profile: "GuiFormatProfile", source: str) -> None:
-        if profile.adapter is not self or profile.version != self.version:
-            raise GuiFormatError(
-                f"{source}: {self.name} cannot use profile {profile.name!r}"
-            )
-
-    def parse(
-        self,
-        data: bytes,
-        source: str,
-        profile: "GuiFormatProfile",
-    ) -> "GuiDocument":
-        return Dmc5GuiCodec(data, source, profile).parse()
-
-    def serialize(
-        self,
-        document: "GuiDocument",
-        profile: "GuiFormatProfile",
-    ) -> bytes:
-        return Dmc5GuiSerializer(profile).build(document)
-
     def create_scene(
         self,
         workspace: "GuiWorkspace",
         resource: "GuiResource",
         root: "GuiSceneNode",
     ) -> "GuiScene":
-        self.require_profile(workspace.profile, resource.source)
-
         return Dmc5GuiScene(workspace, resource, root)
 
     def create_canvas(
         self,
-        dependencies: "GuiDependencyCatalog | None" = None,
+        dependencies: "GuiDependencyCatalog",
+        game: str,
     ) -> Any:
-        return Dmc5GuiCanvas(dependencies)
+        return Dmc5GuiCanvas(dependencies, game=game)
 
     def preview_scenarios(
         self,
         gui_path: str,
         loader: "ResourceDataLoader | None",
-        profile: "GuiFormatProfile",
+        profile: "GuiRuntimeProfile",
         scene: "GuiScene",
     ) -> tuple[GuiPreviewScenario, ...]:
-        self.require_profile(profile, gui_path)
-
-        context = discover_dmc5_controller_context(gui_path, loader, profile)
+        context = discover_dmc5_controller_context(gui_path, loader, profile, scene.resource.document.version)
         return build_dmc5_preview_scenarios(context, scene, gui_path, profile)
 
     def apply_preview_scenario(
@@ -165,32 +126,26 @@ class Dmc5GuiAdapter:
     def export_preview_preset(
         self,
         gui_path: str,
+        gui_version: int,
         scenario: GuiPreviewScenario,
     ) -> dict[str, Any]:
-        return export_dmc5_preview_preset(gui_path, self.version, scenario)
+        return export_dmc5_preview_preset(gui_path, gui_version, scenario)
 
     def import_preview_preset(
         self,
         gui_path: str,
+        gui_version: int,
         payload: dict[str, Any],
         scenarios: tuple[GuiPreviewScenario, ...],
         scene: "GuiScene",
     ) -> GuiPreviewScenario:
         return import_dmc5_preview_preset(
             gui_path,
-            self.version,
+            gui_version,
             payload,
             scenarios,
             scene,
         )
-
-    def validate_property_value(
-        self,
-        kind: "PropertyType",
-        value: Any,
-        name: str,
-    ) -> None:
-        encode_dmc5_gui_value(kind, value, name)
 
 
 DMC5_GUI_ADAPTER = Dmc5GuiAdapter()

@@ -56,11 +56,14 @@ def flag_names(members, value, bits):
     return names[::-1], rest
 
 
+def enum_game(game):
+    return _ENUM_GAME_KEYS[game_key(game)]
+
+
 @lru_cache(maxsize=None)
 def enum_file_path(game):
-    key = game_key(game)
     try:
-        return resource_path(_ENUM_PATHS[_ENUM_GAME_KEYS[key]], required=True)
+        return resource_path(_ENUM_PATHS[enum_game(game)], required=True)
     except (KeyError, FileNotFoundError) as exc:
         raise EnumDefinitionError(f"No enum JSON available for game {game!r}: {exc}") from exc
 

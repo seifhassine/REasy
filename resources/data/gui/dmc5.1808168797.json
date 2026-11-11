@@ -1,0 +1,908 @@
+{
+ "format": 1,
+ "game": "DMC5",
+ "resource_version": 1808168797,
+ "config_resource_paths": ["ui/guiconfig.gcf", "systems/gui/config.gcf"],
+ "runtime_target": "stm",
+ "safe_area_ratio": 0.9,
+ "preview_language": "English",
+ "mesh_pixels_per_unit": 100.0,
+ "controller_index_path": "resources/data/gui/dmc5_controller_index.json",
+ "preview_scenario_catalog_path": "resources/data/gui/dmc5_preview_scenarios.json",
+ "degree_factors": [0.0055555556900799274, 3.1415927410125732],
+ "srgb_to_linear": [0.04045, 12.92, 0.055, 1.055, 2.4],
+ "uv_orientations": [["LT", "RT", "LB", "RB"], ["LB", "LT", "RB", "RT"], ["RB", "LB", "RT", "LT"], ["RT", "RB", "LT", "LB"], ["RT", "LT", "RB", "LB"], ["RB", "RT", "LB", "LT"], ["LB", "RB", "LT", "RT"], ["LT", "LB", "RT", "RB"]],
+ "draw_order": {
+  "mask_classes": [0, 0, 1073741824, 2147483648, 3221225472],
+  "apply_to_parent": 2147483648,
+  "base": 3221225472,
+  "priority_mask": 65535,
+  "priority_shift": 17,
+  "order_base": 32767
+ },
+ "undeclared": {"MaskType": "Target", "MaskMode": "Keep", "ControlPoint": "LeftTop", "Segment": "Keep"},
+ "control_fields": {"play": "Play", "frame": "PlayFrame", "state": "PlayState", "segment": "Segment", "pattern": "StatePattern", "next_state": "NextStateEnable"},
+ "clip_mode": 0,
+ "track_aliases": {
+  "Size": {"w": 0, "h": 1}
+ },
+ "list_input": {
+  "UpDown": [8, 9],
+  "LeftRight": [10, 11],
+  "LBRB": [16, 4]
+ },
+ "types": {
+  "via.gui.BlurFilter": {
+   "parent": "via.gui.DrawableElement",
+   "program_names": "blur",
+   "program_family": "blur",
+   "size": "Size",
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "Position", "Rotation", "Size", "ControlPoint",
+    "LinearAlphaBlend", "Color", "SamplerType", "UVSequence", "BlurType", "BlurScale", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Size": [100.0, 100.0],
+    "ControlPoint": "LeftTop",
+    "LinearAlphaBlend": false,
+    "Color": [255, 255, 255, 255],
+    "SamplerType": "BilinearClamp",
+    "UVSequence": "",
+    "BlurScale": 2.0,
+    "BlurType": "Instant"
+   }
+  },
+  "via.gui.Capture": {
+   "parent": "via.gui.Control",
+   "properties": [
+    "CaptureAction", "CaptureStartPosition", "CaptureSize", "RenderTargetResource", "CaptureTextureId", "Capturable",
+    "CaptureRequest", "CaptureTexture"
+   ]
+  },
+  "via.gui.Circle": {
+   "parent": "via.gui.MaskableElement",
+   "program_family": "poly",
+   "size": "Size",
+   "ring_colors": {"Fill": ["Color", "Color"], "InOut": ["OuterColor", "InnerColor"]},
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "Subdiv", "InnerRatio",
+    "ArcAngle", "ArcStart", "ControlPoint", "BlendType", "LinearAlphaBlend", "ColorType", "Color", "OuterColor",
+    "InnerColor", "SamplerType", "UVSequence", "UVSequenceNo", "UVPatternNo", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Size": [100.0, 100.0],
+    "Subdiv": 32,
+    "InnerRatio": 0.0,
+    "ArcAngle": [0.0, 360.0],
+    "ArcStart": 0.0,
+    "ControlPoint": "LeftTop",
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false,
+    "ColorType": "Fill",
+    "Color": [255, 255, 255, 255],
+    "OuterColor": [255, 255, 255, 255],
+    "InnerColor": [255, 255, 255, 255],
+    "SamplerType": "BilinearClamp",
+    "UVSequence": "",
+    "UVSequenceNo": 0,
+    "UVPatternNo": 0
+   }
+  },
+  "via.gui.Control": {
+   "parent": "via.gui.TransformObject",
+   "color_offset_broadcast": true,
+   "properties": [
+    "Segment", "Play", "PlayFrame", "PlayState", "StatePattern", "Interactive", "ColorScale", "ColorOffset",
+    "Saturation", "StateFinished", "StateFinishFrame", "NextStateEnable", "UseGUISound", "MouseEvent", "StateName",
+    "ToolStateName", "ToolStateLock"
+   ],
+   "defaults": {
+    "Segment": "Keep",
+    "Play": true,
+    "PlayFrame": 0.0,
+    "PlayState": "",
+    "StatePattern": 0,
+    "Interactive": true,
+    "ColorScale": [1.0, 1.0, 1.0, 1.0],
+    "ColorOffset": [0.0, 0.0, 0.0],
+    "Saturation": 1.0,
+    "NextStateEnable": true,
+    "UseGUISound": true
+   }
+  },
+  "via.gui.DebugText": {
+   "parent": "via.gui.Text",
+   "properties": ["WorldRotation"]
+  },
+  "via.gui.DrawableElement": {
+   "parent": "via.gui.Element",
+   "drawable": true,
+   "properties": ["ManipPosition", "ManipRotation"]
+  },
+  "via.gui.Effect": {
+   "parent": "via.gui.DrawableElement",
+   "scale": "Scale",
+   "properties": [
+    "Position", "Rotation", "Scale", "Effect", "PlaySpeed", "Action", "ExternName0", "ExternName1", "ExternName2",
+    "ExternName3", "ExternName4", "ExternName5", "ExternName6", "ExternName7", "ExternType0", "ExternType1",
+    "ExternType2", "ExternType3", "ExternType4", "ExternType5", "ExternType6", "ExternType7", "ExternFloat0",
+    "ExternFloat1", "ExternFloat2", "ExternFloat3", "ExternFloat4", "ExternFloat5", "ExternFloat6", "ExternFloat7",
+    "ExternColor0", "ExternColor1", "ExternColor2", "ExternColor3", "ExternColor4", "ExternColor5", "ExternColor6",
+    "ExternColor7", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Scale": [1.0, 1.0, 1.0],
+    "PlaySpeed": 1.0,
+    "Action": "Idle",
+    "ExternFloat0": 0.0,
+    "ExternFloat1": 0.0,
+    "ExternFloat2": 0.0,
+    "ExternFloat3": 0.0,
+    "ExternFloat4": 0.0,
+    "ExternFloat5": 0.0,
+    "ExternFloat6": 0.0,
+    "ExternFloat7": 0.0,
+    "ExternColor0": [255, 255, 255, 255],
+    "ExternColor1": [255, 255, 255, 255],
+    "ExternColor2": [255, 255, 255, 255],
+    "ExternColor3": [255, 255, 255, 255],
+    "ExternColor4": [255, 255, 255, 255],
+    "ExternColor5": [255, 255, 255, 255],
+    "ExternColor6": [255, 255, 255, 255],
+    "ExternColor7": [255, 255, 255, 255]
+   }
+  },
+  "via.gui.Element": {
+   "parent": "via.gui.PlayObject",
+   "properties": ["ManipPosition", "ManipRotation", "GlobalPosition"]
+  },
+  "via.gui.HitArea": {
+   "parent": "via.gui.Element",
+   "size": "Size",
+   "polygons": {
+    "Hexagon": {"sides": 6, "offset": 0.0, "step": 1.0471975803375244},
+    "Octagon": {"sides": 8, "offset": 0.5, "step": 0.7853981852531433}
+   },
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "ControlPoint", "Shape",
+    "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Size": [100.0, 100.0],
+    "ControlPoint": "LeftTop",
+    "Shape": "Rect"
+   }
+  },
+  "via.gui.ImageFilter": {
+   "parent": "via.gui.Rect",
+   "properties": ["SamplerType", "CaptureTextureId", "CaptureControlName", "CaptureControlNames", "CaptureTexture"]
+  },
+  "via.gui.MaskableElement": {
+   "parent": "via.gui.DrawableElement",
+   "program_names": "element",
+   "properties": ["ManipPosition", "ManipRotation", "MaskType", "MaskElement"],
+   "defaults": {"MaskType": "Target"}
+  },
+  "via.gui.Material": {
+   "parent": "via.gui.MaskableElement",
+   "program_family": "poly",
+   "material_property": "Material",
+   "size": "Size",
+   "material_uv_rects": [[0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0]],
+   "material_variables": {"slots": 8, "name": "VariableName", "type": "VariableType", "enum": "Material.ParamType",
+    "values": {"Float": "VariableFloat", "Float4": "VariableVec", "Color": "VariableColor", "Texture": "VariableTexture"},
+    "components": {"Float": 1, "Float4": 4, "Color": 4}, "color_divisor": 255.0, "loaded_textures": true},
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "ControlPoint", "BlendType",
+    "LinearAlphaBlend", "Color", "Material", "GlobalPosition", "VariableName0", "VariableName1", "VariableName2",
+    "VariableName3", "VariableName4", "VariableName5", "VariableName6", "VariableName7", "VariableType0",
+    "VariableType1", "VariableType2", "VariableType3", "VariableType4", "VariableType5", "VariableType6",
+    "VariableType7", "VariableFloat0", "VariableFloat1", "VariableFloat2", "VariableFloat3", "VariableFloat4",
+    "VariableFloat5", "VariableFloat6", "VariableFloat7", "VariableVec0", "VariableVec1", "VariableVec2",
+    "VariableVec3", "VariableVec4", "VariableVec5", "VariableVec6", "VariableVec7", "VariableColor0",
+    "VariableColor1", "VariableColor2", "VariableColor3", "VariableColor4", "VariableColor5", "VariableColor6",
+    "VariableColor7", "VariableTexture0", "VariableTexture1", "VariableTexture2", "VariableTexture3",
+    "VariableTexture4", "VariableTexture5", "VariableTexture6", "VariableTexture7"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Size": [100.0, 100.0],
+    "ControlPoint": "LeftTop",
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false,
+    "Color": [255, 255, 255, 255],
+    "VariableName0": "",
+    "VariableName1": "",
+    "VariableName2": "",
+    "VariableName3": "",
+    "VariableName4": "",
+    "VariableName5": "",
+    "VariableName6": "",
+    "VariableName7": "",
+    "VariableType0": "Unknown",
+    "VariableType1": "Unknown",
+    "VariableType2": "Unknown",
+    "VariableType3": "Unknown",
+    "VariableType4": "Unknown",
+    "VariableType5": "Unknown",
+    "VariableType6": "Unknown",
+    "VariableType7": "Unknown",
+    "VariableFloat0": 0.0,
+    "VariableFloat1": 0.0,
+    "VariableFloat2": 0.0,
+    "VariableFloat3": 0.0,
+    "VariableFloat4": 0.0,
+    "VariableFloat5": 0.0,
+    "VariableFloat6": 0.0,
+    "VariableFloat7": 0.0,
+    "VariableVec0": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec1": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec2": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec3": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec4": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec5": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec6": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec7": [0.0, 0.0, 0.0, 0.0],
+    "VariableColor0": [255, 255, 255, 255],
+    "VariableColor1": [255, 255, 255, 255],
+    "VariableColor2": [255, 255, 255, 255],
+    "VariableColor3": [255, 255, 255, 255],
+    "VariableColor4": [255, 255, 255, 255],
+    "VariableColor5": [255, 255, 255, 255],
+    "VariableColor6": [255, 255, 255, 255],
+    "VariableColor7": [255, 255, 255, 255],
+    "VariableTexture0": "",
+    "VariableTexture1": "",
+    "VariableTexture2": "",
+    "VariableTexture3": "",
+    "VariableTexture4": "",
+    "VariableTexture5": "",
+    "VariableTexture6": "",
+    "VariableTexture7": "",
+    "Material": ""
+   }
+  },
+  "via.gui.MaterialText": {
+   "parent": "via.gui.Text",
+   "glow_family": "glyph_glow",
+   "material_property": "Material",
+   "material_uv_span": 2.0,
+   "material_variables": {"slots": 8, "name": "VariableName", "type": "VariableType", "enum": "MaterialText.ParamType",
+    "values": {"Float": "VariableFloat", "Float4": "VariableVec", "Color": "VariableColor", "Texture": "VariableTexture"},
+    "components": {"Float": 1, "Float4": 4, "Color": 4}, "color_divisor": 255.0, "loaded_textures": false},
+   "properties": [
+    "Material", "VariableName0", "VariableName1", "VariableName2", "VariableName3", "VariableName4", "VariableName5",
+    "VariableName6", "VariableName7", "VariableType0", "VariableType1", "VariableType2", "VariableType3",
+    "VariableType4", "VariableType5", "VariableType6", "VariableType7", "VariableFloat0", "VariableFloat1",
+    "VariableFloat2", "VariableFloat3", "VariableFloat4", "VariableFloat5", "VariableFloat6", "VariableFloat7",
+    "VariableVec0", "VariableVec1", "VariableVec2", "VariableVec3", "VariableVec4", "VariableVec5", "VariableVec6",
+    "VariableVec7", "VariableColor0", "VariableColor1", "VariableColor2", "VariableColor3", "VariableColor4",
+    "VariableColor5", "VariableColor6", "VariableColor7", "VariableTexture0", "VariableTexture1", "VariableTexture2",
+    "VariableTexture3", "VariableTexture4", "VariableTexture5", "VariableTexture6", "VariableTexture7"
+   ],
+   "defaults": {
+    "Material": "",
+    "VariableName0": "",
+    "VariableName1": "",
+    "VariableName2": "",
+    "VariableName3": "",
+    "VariableName4": "",
+    "VariableName5": "",
+    "VariableName6": "",
+    "VariableName7": "",
+    "VariableType0": "Unknown",
+    "VariableType1": "Unknown",
+    "VariableType2": "Unknown",
+    "VariableType3": "Unknown",
+    "VariableType4": "Unknown",
+    "VariableType5": "Unknown",
+    "VariableType6": "Unknown",
+    "VariableType7": "Unknown",
+    "VariableFloat0": 0.0,
+    "VariableFloat1": 0.0,
+    "VariableFloat2": 0.0,
+    "VariableFloat3": 0.0,
+    "VariableFloat4": 0.0,
+    "VariableFloat5": 0.0,
+    "VariableFloat6": 0.0,
+    "VariableFloat7": 0.0,
+    "VariableVec0": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec1": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec2": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec3": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec4": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec5": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec6": [0.0, 0.0, 0.0, 0.0],
+    "VariableVec7": [0.0, 0.0, 0.0, 0.0],
+    "VariableColor0": [255, 255, 255, 255],
+    "VariableColor1": [255, 255, 255, 255],
+    "VariableColor2": [255, 255, 255, 255],
+    "VariableColor3": [255, 255, 255, 255],
+    "VariableColor4": [255, 255, 255, 255],
+    "VariableColor5": [255, 255, 255, 255],
+    "VariableColor6": [255, 255, 255, 255],
+    "VariableColor7": [255, 255, 255, 255],
+    "VariableTexture0": "",
+    "VariableTexture1": "",
+    "VariableTexture2": "",
+    "VariableTexture3": "",
+    "VariableTexture4": "",
+    "VariableTexture5": "",
+    "VariableTexture6": "",
+    "VariableTexture7": ""
+   }
+  },
+  "via.gui.Mesh": {
+   "parent": "via.gui.DrawableElement",
+   "scale": "Scale",
+   "properties": [
+    "Position", "Rotation", "Scale", "Mesh", "Material", "LightGroup", "LightGroupID", "MaterialName0",
+    "MaterialName1", "MaterialName2", "MaterialName3", "MaterialName4", "MaterialName5", "MaterialName6",
+    "MaterialName7", "VariableName0", "VariableName1", "VariableName2", "VariableName3", "VariableName4",
+    "VariableName5", "VariableName6", "VariableName7", "VariableType0", "VariableType1", "VariableType2",
+    "VariableType3", "VariableType4", "VariableType5", "VariableType6", "VariableType7", "VariableFloat0",
+    "VariableFloat1", "VariableFloat2", "VariableFloat3", "VariableFloat4", "VariableFloat5", "VariableFloat6",
+    "VariableFloat7", "VariableVec0", "VariableVec1", "VariableVec2", "VariableVec3", "VariableVec4", "VariableVec5",
+    "VariableVec6", "VariableVec7", "VariableColor0", "VariableColor1", "VariableColor2", "VariableColor3",
+    "VariableColor4", "VariableColor5", "VariableColor6", "VariableColor7", "VariableTexture0", "VariableTexture1",
+    "VariableTexture2", "VariableTexture3", "VariableTexture4", "VariableTexture5", "VariableTexture6",
+    "VariableTexture7", "Materials", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Scale": [1.0, 1.0, 1.0],
+    "Material": "",
+    "LightGroupID": 255,
+    "Mesh": ""
+   }
+  },
+  "via.gui.Panel": {
+   "parent": "via.gui.Control",
+   "properties": ["Play", "PlayFrame", "PlayState"],
+   "defaults": {"Play": true, "PlayFrame": 0.0, "PlayState": ""}
+  },
+  "via.gui.PlayObject": {
+   "properties": [
+    "Name", "Visible", "ToolVisible", "ToolMaskEnable", "HitVisible", "DataBind", "Priority", "Parent", "Next",
+    "Prev", "ViewMatrix", "Component"
+   ],
+   "defaults": {"Visible": true, "HitVisible": true, "DataBind": true, "Priority": 0}
+  },
+  "via.gui.Rect": {
+   "parent": "via.gui.MaskableElement",
+   "program_family": "poly",
+   "size": "Size",
+   "corner_colors": {
+    "Fill": ["Color", "Color", "Color", "Color"],
+    "Vertical": ["ColorTop", "ColorTop", "ColorBottom", "ColorBottom"],
+    "Horizontal": ["ColorLeft", "ColorRight", "ColorLeft", "ColorRight"],
+    "EachVertex": ["ColorLeftTop", "ColorRightTop", "ColorLeftBottom", "ColorRightBottom"]
+   },
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "ControlPoint", "BlendType",
+    "LinearAlphaBlend", "ColorType", "Color", "ColorLeft", "ColorRight", "ColorTop", "ColorBottom", "ColorLeftTop",
+    "ColorLeftBottom", "ColorRightTop", "ColorRightBottom", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Size": [100.0, 100.0],
+    "ControlPoint": "LeftTop",
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false,
+    "ColorType": "Fill",
+    "Color": [255, 255, 255, 255],
+    "ColorLeft": [255, 255, 255, 255],
+    "ColorRight": [255, 255, 255, 255],
+    "ColorTop": [255, 255, 255, 255],
+    "ColorBottom": [255, 255, 255, 255],
+    "ColorLeftTop": [255, 255, 255, 255],
+    "ColorLeftBottom": [255, 255, 255, 255],
+    "ColorRightTop": [255, 255, 255, 255],
+    "ColorRightBottom": [255, 255, 255, 255]
+   }
+  },
+  "via.gui.Scale9Grid": {
+   "parent": "via.gui.MaskableElement",
+   "program_family": "poly",
+   "size": "Size",
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Size", "ControlPoint", "BlendType",
+    "LinearAlphaBlend", "Color", "SamplerType", "UVSequence", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Size": [100.0, 100.0],
+    "ControlPoint": "LeftTop",
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false,
+    "Color": [255, 255, 255, 255],
+    "SamplerType": "BilinearClamp",
+    "UVSequence": ""
+   }
+  },
+  "via.gui.ScrollBar": {
+   "parent": "via.gui.Control",
+   "size": "BarFullSize",
+   "properties": [
+    "AutoScroll", "Direction", "BarFullSize", "BarVisibility", "ItemCount", "ItemMax", "ScrollIndex", "CursorType"
+   ],
+   "defaults": {
+    "AutoScroll": true,
+    "Direction": "Horizontal",
+    "BarFullSize": [0.0, 0.0],
+    "BarVisibility": "Always",
+    "ItemCount": 0,
+    "ItemMax": 0,
+    "ScrollIndex": 0,
+    "CursorType": "Move"
+   }
+  },
+  "via.gui.ScrollGrid": {
+   "parent": "via.gui.Control",
+   "properties": [
+    "InputType", "MouseSelectType", "LoopTypeColumn", "LoopTypeRow", "ItemCount", "ItemMax", "ItemOffset",
+    "ScrollEase", "ScrollTime", "Items", "SelectedIndex", "SelectedItem", "SelectionChanged", "UpdateCanSelectEvent",
+    "ScrollEvent", "InputCheckEvent", "UseFocus"
+   ],
+   "defaults": {
+    "InputType": "None",
+    "MouseSelectType": "None",
+    "LoopTypeColumn": "Clamp",
+    "LoopTypeRow": "Clamp",
+    "ItemCount": [1, 1],
+    "ItemMax": [1, 1],
+    "ScrollEase": "Linear",
+    "ScrollTime": 0.0,
+    "SelectedIndex": 0,
+    "UseFocus": true
+   }
+  },
+  "via.gui.ScrollList": {
+   "parent": "via.gui.Control",
+   "properties": [
+    "InputType", "MouseSelectType", "Loop", "ItemCount", "ItemMax", "ItemOffset", "CursorType", "CursorIndex",
+    "ScrollEase", "ScrollTime", "Items", "SelectedIndex", "SelectedItem", "ScrollIndex", "SelectionChanged",
+    "SearchSelectEvent", "UpdateCanSelectEvent", "ScrollEvent", "InputCheckEvent", "UseFocus", "CursorRangeBegin",
+    "CursorRangeEnd"
+   ],
+   "defaults": {
+    "InputType": "None",
+    "MouseSelectType": "None",
+    "Loop": false,
+    "ItemCount": 1,
+    "ItemMax": 1,
+    "ItemOffset": [0.0, 0.0, 0.0],
+    "CursorType": "Fix",
+    "CursorIndex": 0,
+    "ScrollEase": "Linear",
+    "ScrollTime": 0.0,
+    "SelectedIndex": 0,
+    "UseFocus": true,
+    "CursorRangeBegin": 0,
+    "CursorRangeEnd": 0
+   }
+  },
+  "via.gui.SelectItem": {
+   "parent": "via.gui.Control",
+   "properties": ["Selected", "CanSelect", "Enabled", "ListIndex", "DefaultStateName"],
+   "defaults": {"Selected": false, "CanSelect": true, "Enabled": true, "ListIndex": 0}
+  },
+  "via.gui.SimpleList": {
+   "parent": "via.gui.Control",
+   "properties": [
+    "InputType", "MouseSelectType", "SelectedIndex", "SelectedItem", "Loop", "Items", "SelectionChanged",
+    "InputCheckEvent", "UseFocus"
+   ],
+   "defaults": {
+    "InputType": "None",
+    "MouseSelectType": "None",
+    "SelectedIndex": 0,
+    "Loop": false,
+    "UseFocus": true
+   }
+  },
+  "via.gui.SpriteSet": {
+   "parent": "via.gui.MaskableElement",
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "Position", "Rotation", "BlendType", "LinearAlphaBlend",
+    "SamplerType", "UVSequence", "GlobalPosition"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false
+   }
+  },
+  "via.gui.Text": {
+   "parent": "via.gui.MaskableElement",
+   "program_family": "glyph",
+   "icon_family": "poly",
+   "size": "RegionSize",
+   "hit_layout_size": true,
+   "glyph_colors": {"Fill": ["Color", "Color"], "Vertical": ["ColorTop", "ColorBottom"]},
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "RegionSize", "ScissorRect",
+    "ControlPoint", "MessageType", "Message", "MessageId", "FontSlot", "FontSize", "RasterSize", "PageIndex",
+    "PageAlignment", "LetterAlignment", "LetterSpace", "LineSpace", "AutoWrap", "AutoRegionFit", "AutoRTL",
+    "Kerning", "VerticalLayout", "IconColorType", "IconFontSize", "RubySizeRatio", "RubyLineSpace",
+    "RubyHeightAlways", "BlendType", "LinearAlphaBlend", "ColorType", "Color", "ColorTop", "ColorBottom",
+    "EffectAlphaType", "GlowEnable", "GlowInner", "GlowBlurSize", "GlowStrength", "GlowColor", "ShadowEnable",
+    "ShadowBlurSize", "ShadowStrength", "ShadowRotation", "ShadowDistance", "ShadowDistanceZ", "ShadowColor",
+    "Language", "DisplaySize", "GlobalPosition", "UseTyping", "TypingTime", "TypingCondition", "TypingCommand",
+    "TypingEvent", "TextAnimation", "AnimationEnable", "AnimationCommand"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "RegionSize": [0.0, 0.0],
+    "ScissorRect": [0.0, 0.0, -1.0, -1.0],
+    "ControlPoint": "LeftTop",
+    "Message": "",
+    "MessageId": "00000000-0000-0000-0000-000000000000",
+    "FontSlot": "Slot0",
+    "FontSize": [64.0, 64.0],
+    "RasterSize": [64.0, 64.0],
+    "PageIndex": 0,
+    "PageAlignment": "LeftTop",
+    "LetterAlignment": "LeftTop",
+    "LetterSpace": 0.0,
+    "LineSpace": 0.0,
+    "AutoWrap": false,
+    "AutoRegionFit": "None",
+    "AutoRTL": true,
+    "Kerning": false,
+    "VerticalLayout": false,
+    "IconColorType": "AlphaOnly",
+    "IconFontSize": 0,
+    "RubySizeRatio": 0.0,
+    "RubyLineSpace": 0.0,
+    "RubyHeightAlways": false,
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false,
+    "ColorType": "Fill",
+    "Color": [255, 255, 255, 255],
+    "ColorTop": [255, 255, 255, 255],
+    "ColorBottom": [255, 255, 255, 255],
+    "EffectAlphaType": "MultiplyTextColorAlpha",
+    "GlowEnable": false,
+    "GlowInner": false,
+    "GlowBlurSize": [5.0, 5.0],
+    "GlowStrength": 1.0,
+    "GlowColor": [255, 0, 0, 255],
+    "ShadowEnable": false,
+    "ShadowBlurSize": [5.0, 5.0],
+    "ShadowStrength": 2.0,
+    "ShadowRotation": 30.0,
+    "ShadowDistance": 10.0,
+    "ShadowDistanceZ": 0.1,
+    "ShadowColor": [0, 0, 0, 255],
+    "Language": "Max",
+    "UseTyping": false,
+    "TypingTime": 1.0,
+    "AnimationEnable": false
+   }
+  },
+  "via.gui.Texture": {
+   "parent": "via.gui.Rect",
+   "properties": [
+    "TilingSize", "SamplerType", "AssetType", "Texture", "UVSequence", "UVSequenceNo", "UVPatternNo", "U0", "V0",
+    "U1", "V1"
+   ],
+   "defaults": {
+    "TilingSize": [0.0, 0.0],
+    "SamplerType": "BilinearClamp",
+    "AssetType": "UVSequence",
+    "UVSequence": "",
+    "UVSequenceNo": 0,
+    "UVPatternNo": 0,
+    "U0": 0,
+    "V0": 0,
+    "U1": 0,
+    "V1": 0,
+    "Texture": ""
+   }
+  },
+  "via.gui.TextureSet": {
+   "parent": "via.gui.MaskableElement",
+   "program_family": "poly",
+   "size": "RegionSize",
+   "cell_scale": "Scale",
+   "properties": [
+    "ManipPosition", "ManipRotation", "ManipPositionScreen", "ManipPositionLeftTop", "ManipPositionLeftBottom",
+    "ManipPositionRightTop", "ManipPositionRightBottom", "Position", "Rotation", "Scale", "RegionSize",
+    "ControlPoint", "BlendType", "LinearAlphaBlend", "Color", "SamplerType", "UVSequence", "GlobalPosition",
+    "TextureInfoList"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Scale": [1.0, 1.0],
+    "RegionSize": [0.0, 0.0],
+    "ControlPoint": "LeftTop",
+    "BlendType": "Alpha",
+    "LinearAlphaBlend": false,
+    "Color": [255, 255, 255, 255],
+    "SamplerType": "BilinearClamp",
+    "UVSequence": ""
+   }
+  },
+  "via.gui.TransformObject": {
+   "parent": "via.gui.PlayObject",
+   "scale": "Scale",
+   "properties": [
+    "ManipPosition", "ManipPositionScreen", "ManipRotation", "ViewMatrix", "Position", "Rotation", "Scale",
+    "ResolutionAdjust", "ResAdjustCondition", "ResAdjustScale", "ResAdjustAnchor", "MaskMode", "WorldMatrix",
+    "Child", "GlobalPosition", "SafeAreaAdjust"
+   ],
+   "defaults": {
+    "Position": [0.0, 0.0, 0.0],
+    "Rotation": [0.0, 0.0, 0.0],
+    "Scale": [1.0, 1.0, 1.0],
+    "ResolutionAdjust": false,
+    "ResAdjustCondition": "Always",
+    "ResAdjustScale": "Stretch",
+    "ResAdjustAnchor": "LeftTop",
+    "MaskMode": "Keep",
+    "SafeAreaAdjust": false
+   }
+  },
+  "via.gui.View": {
+   "parent": "via.gui.Window",
+   "size": "ScreenSize",
+   "properties": [
+    "BaseFps", "UseGUICamera", "StencilZeroFill", "ToolViewType", "ViewType", "ScreenSize", "Overlay", "DepthTest",
+    "Detonemap", "ReprojectionType", "Play", "PlayFrame", "PlayState", "ToolButtonRepeatStart",
+    "ToolButtonRepeatInterval"
+   ],
+   "defaults": {
+    "PlayFrame": -1.0,
+    "PlayState": "DEFAULT",
+    "BaseFps": 60.0,
+    "ViewType": "Screen",
+    "ScreenSize": [1920.0, 1080.0],
+    "Overlay": true,
+    "DepthTest": false,
+    "Detonemap": false,
+    "ReprojectionType": "Default",
+    "Play": true,
+    "UseGUICamera": false,
+    "StencilZeroFill": false
+   }
+  },
+  "via.gui.Window": {
+   "parent": "via.gui.Control",
+   "properties": ["Open"],
+   "defaults": {"Open": true}
+  }
+ },
+ "text": {
+  "stem_darkening": [500, 400, 1000, 275, 1667, 275, 2333, 0],
+  "ruby_size_ratio": 0.5,
+  "follow_system_language": "Unknown",
+  "ruby_height_language": "Japanese",
+  "overflow_tolerance": 0.001,
+  "region_fit": {"axes": {"None": [false, false], "Horizontal": [true, false], "Vertical": [false, true],
+   "Both": [true, true]}, "margin": 0.01, "upper": 0.9999998807907104, "steps": 20},
+  "rtl_language": "Arabic",
+  "rtl_ranges": [
+   [1470, 1470], [1472, 1472], [1475, 1475], [1478, 1478], [1488, 1514], [1520, 1524], [1536, 1541], [1544, 1544],
+   [1547, 1547], [1549, 1549], [1563, 1564], [1566, 1610], [1632, 1641], [1643, 1647], [1649, 1749], [1757, 1757],
+   [1765, 1766], [1774, 1775], [1786, 1805], [1807, 1808], [1810, 1839], [1869, 1957], [1969, 1969], [1984, 2026],
+   [2036, 2037], [2042, 2042], [2048, 2069], [2074, 2074], [2084, 2084], [2088, 2088], [2096, 2110], [2112, 2136],
+   [2142, 2142], [2208, 2228], [8207, 8207], [8235, 8235], [8238, 8238], [64285, 64285], [64287, 64296], [64298,
+   64310], [64312, 64316], [64318, 64318], [64320, 64321], [64323, 64324], [64326, 64449], [64467, 64829], [64848,
+   64911], [64914, 64967], [65008, 65020], [65136, 65140], [65142, 65276], [67584, 67589], [67592, 67592], [67594,
+   67637], [67639, 67640], [67644, 67644], [67647, 67669], [67671, 67742], [67751, 67759], [67808, 67826], [67828,
+   67829], [67835, 67867], [67872, 67897], [67903, 67903], [67968, 68023], [68028, 68047], [68050, 68096], [68112,
+   68115], [68117, 68119], [68121, 68147], [68160, 68167], [68176, 68184], [68192, 68255], [68288, 68324], [68331,
+   68342], [68352, 68405], [68416, 68437], [68440, 68466], [68472, 68497], [68505, 68508], [68521, 68527], [68608,
+   68680], [68736, 68786], [68800, 68850], [68858, 68863], [69216, 69246], [124928, 125124], [125127, 125135],
+   [126464, 126467], [126469, 126495], [126497, 126498], [126500, 126500], [126503, 126503], [126505, 126514],
+   [126516, 126519], [126521, 126521], [126523, 126523], [126530, 126530], [126535, 126535], [126537, 126537],
+   [126539, 126539], [126541, 126543], [126545, 126546], [126548, 126548], [126551, 126551], [126553, 126553],
+   [126555, 126555], [126557, 126557], [126559, 126559], [126561, 126562], [126564, 126564], [126567, 126570],
+   [126572, 126578], [126580, 126583], [126585, 126588], [126590, 126590], [126592, 126601], [126603, 126619],
+   [126625, 126627], [126629, 126633], [126635, 126651]
+  ],
+  "space_delimiters": [9, 32, 12288],
+  "line_end_openers": [
+   40, 91, 123, 171, 8216, 8220, 12296, 12298, 12300, 12302, 12304, 12308, 12310, 12312, 12317, 65288, 65339, 65371,
+   65375
+  ],
+  "line_starters": [
+   33, 41, 44, 46, 47, 58, 59, 63, 93, 125, 187, 8208, 8211, 8217, 8221, 8252, 8263, 8264, 8265, 12289, 12290, 12293,
+   12297, 12299, 12301, 12303, 12305, 12309, 12311, 12313, 12316, 12319, 12347, 12353, 12355, 12357, 12359, 12361,
+   12387, 12419, 12421, 12423, 12430, 12437, 12438, 12442, 12445, 12446, 12448, 12449, 12451, 12453, 12455, 12457,
+   12483, 12515, 12517, 12519, 12526, 12533, 12534, 12539, 12540, 12784, 12785, 12786, 12787, 12788, 12789, 12790,
+   12791, 12792, 12793, 12794, 12795, 12796, 12797, 12798, 12799, 65289, 65341, 65373, 65374, 65376
+  ],
+  "non_break_before": [8212, 8229, 8230, 12339, 12340, 12341],
+  "overflow_punctuation": [12289, 12290],
+  "cjk_break_ranges": [
+   [11904, 12287], [12352, 12543], [12784, 12799], [65281, 65370], [65377, 65439], [19968, 40911], [13312, 19903],
+   [131072, 173791], [63744, 64255], [194560, 195103], [40960, 42191], [65122, 65126], [44032, 55215]
+  ]
+ },
+ "message_tags": {
+  "parameter": "id=\"([0-9]+)\"",
+  "tags": {
+   "KEY": {"message": "KeyAssign_{index:03d}0"},
+   "TRC": {
+    "message": "TRC_{index:04d}",
+    "group_step": 1000,
+    "index_step": 10,
+    "groups": {"ps4": 0, "xb": 1, "xb1": 1, "pc": 2, "stm": 2, "uwp": 3}
+   }
+  }
+ },
+ "icons": {
+  "pad": {
+   "1": "DirU",
+   "2": "DirD",
+   "3": "DirL",
+   "4": "DirR",
+   "5": "BtnU",
+   "6": "BtnD",
+   "7": "BtnL",
+   "8": "BtnR",
+   "9": "LB",
+   "10": "LT",
+   "11": "RB",
+   "12": "RT",
+   "13": "LStP",
+   "14": "RStP",
+   "15": "CenL",
+   "16": "CenR",
+   "17": "CenC",
+   "21": "Dir"
+  },
+  "keys": {
+   "1": "MOUSE_1",
+   "2": "MOUSE_2",
+   "4": "MOUSE_3",
+   "5": "MOUSE_5",
+   "6": "MOUSE_4",
+   "8": "KEY_BS",
+   "9": "KEY_TAB",
+   "13": "KEY_ENTER_L",
+   "27": "KEY_ESC",
+   "32": "KEY_SPACE",
+   "33": "KEY_PAGE_U",
+   "34": "KEY_PAGE_D",
+   "35": "KEY_END",
+   "36": "KEY_HOME",
+   "37": "KEY_CURSOR_L",
+   "38": "KEY_CURSOR_U",
+   "39": "KEY_CURSOR_R",
+   "40": "KEY_CURSOR_D",
+   "45": "KEY_INS",
+   "46": "KEY_DEL",
+   "106": "KEY_ASTERISK",
+   "107": "KEY_PLUS_SIGN",
+   "109": "KEY_HYPHEN_R",
+   "110": "KEY_PERIOD_R",
+   "111": "KEY_SLASH_R",
+   "146": "KEY_ENTER_R",
+   "160": "KEY_SHIFT_L",
+   "161": "KEY_SHIFT_R",
+   "162": "KEY_CTRL_L",
+   "163": "KEY_CTRL_R",
+   "164": "KEY_ALT_L",
+   "165": "KEY_ALT_R",
+   "186": "KEY_COLON",
+   "187": "KEY_SEMICOLON",
+   "188": "KEY_COMMA",
+   "189": "KEY_HYPHEN_L",
+   "190": "KEY_PERIOD_L",
+   "191": "KEY_SLASH_L",
+   "192": "KEY_AT_SIGN",
+   "219": "KEY_BRACKET_L",
+   "220": "KEY_YEN_SIGN",
+   "221": "KEY_BRACKET_R",
+   "222": "KEY_CARET",
+   "226": "KEY_UNDERSCORE"
+  },
+  "key_ranges": [
+   [48, 57, "KEY_{char}_L", 0], [65, 90, "KEY_{char}", 0], [96, 105, "KEY_{number}_R", 96], [112, 123,
+   "KEY_F{number}", 111]
+  ],
+  "key_fallback": "KEY",
+  "swapped_buttons": [1, 2],
+  "fixed": {
+   "BtnD": "BtnD",
+   "BtnR": "BtnR",
+   "CenL": "CenL",
+   "CenC": "CenC",
+   "Dir": "Dir",
+   "ACT_LS": "LS",
+   "CFG_BtnD": "BtnD",
+   "CFG_BtnR": "BtnR",
+   "CFG_BtnL": "BtnL",
+   "CFG_BtnU": "BtnU",
+   "CFG_LB": "LB",
+   "CFG_RB": "RB",
+   "CFG_LT": "LT",
+   "CFG_RT": "RT",
+   "CFG_LStP": "LStP",
+   "CFG_RStP": "RStP",
+   "CFG_CenL": "CenL",
+   "CFG_CenR": "CenR",
+   "CFG_DirU": "DirU",
+   "CFG_DirD": "DirD",
+   "CFG_DirL": "DirL",
+   "CFG_DirR": "DirR"
+  },
+  "device": {
+   "BtnL": [66, "BtnL", false],
+   "BtnU": [86, "BtnU", false],
+   "LBtn": [9, "LB", false],
+   "LB": [9, "LB", false],
+   "RBtn": [9, "RB", false],
+   "RB": [9, "RB", false],
+   "LTrg": [37, "LT", false],
+   "LT": [37, "LT", false],
+   "RTrg": [39, "RT", false],
+   "RT": [39, "RT", false],
+   "LStP": [115, "LStP", false],
+   "RStP": [120, "RStP", false],
+   "CenR": [27, "CenR", false],
+   "DirU": [38, "DirU", false],
+   "DirD": [40, "DirD", false],
+   "DirL": [37, "DirL", false],
+   "DirR": [39, "DirR", false]
+  },
+  "actions": {
+   "ACT_BtnD": [2, 6],
+   "ACT_BtnU": [0, 5],
+   "ACT_BtnL": [1, 7],
+   "ACT_BtnR": [12, 8],
+   "ACT_RT": [13, 12],
+   "ACT_LT": [14, 10],
+   "ACT_RB": [4, 11],
+   "ACT_LB": [16, 9],
+   "ACT_CenL": [3, 15],
+   "ACT_DirU": [8, 1],
+   "ACT_DirL": [10, 3],
+   "ACT_DirR": [11, 4],
+   "ACT_DirD": [9, 2],
+   "ACT_Dir": [6, 21],
+   "ACT_LStP": [5, 13],
+   "ACT_RStP": [15, 14]
+  },
+  "by_mode": {
+   "LS_UD": ["MOUSE_SCR_UD", "LS_UD"],
+   "ACT_RS": ["MOUSE", "RS"],
+   "DirLR": ["KEY_LR", "DirLR"]
+  },
+  "menu": {
+   "DECIDE": [69, false, 8],
+   "CANCEL": [2, true, 6]
+  },
+  "keyed": {
+   "CHECK": [66, 7],
+   "SORT": [86, 5]
+  },
+  "by_swap": {
+   "KEY_DRAG": ["MOUSE_DRAG_1", "MOUSE_DRAG_2"]
+  }
+ }
+}

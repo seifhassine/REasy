@@ -66,6 +66,13 @@ if os.name == 'nt':
     )
     ext_modules.append(
         Extension(
+            'fastglyph',
+            sources=['native/fastglyph.cpp'],
+            extra_compile_args=['/O2', '/EHsc', '/std:c++17'],
+        )
+    )
+    ext_modules.append(
+        Extension(
             'fasttexenc',
             sources=['native/fasttexenc.cpp', 'native/third_party/bc7e/basisu_bc7e_scalar.cpp',
                      'native/third_party/rgbcx/rgbcx.cpp'],

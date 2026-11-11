@@ -13,11 +13,11 @@ class FontSlotMapping:
     asset_paths: tuple[str | None, ...]
     adjust_scale: tuple[float, ...]
 
-    def scale_for(self, candidate_index: int) -> float:
+    def scale_for(self, axis: int) -> float:
         if not self.adjust_scale:
             return 1.0
-        if candidate_index < len(self.adjust_scale):
-            return self.adjust_scale[candidate_index]
+        if axis < len(self.adjust_scale):
+            return self.adjust_scale[axis]
         return self.adjust_scale[-1]
 
 

@@ -5,9 +5,9 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 
-lazy from file_handlers.clip.evaluation import sample
-lazy from file_handlers.clip.model import Key, Property, walk_nodes
-from file_handlers.clip.rules import InterpolationType, PropertyType
+lazy from file_handlers.clip.model import Property
+lazy from file_handlers.clip.play import play
+from file_handlers.clip.rules import PropertyType, display_names, game_player
 
 lazy from ..model import (
     COMPONENT_NAMES,
@@ -22,41 +22,20 @@ lazy from ..scene import GuiSceneNode
 lazy from .scene import Dmc5GuiScene
 
 
-_CONTROL_FIELDS = {
-    "Play", "PlayFrame", "PlayState", "Segment", "StatePattern",
-    "NextStateEnable",
-}
-_EVENTS = (InterpolationType.EVENT, InterpolationType.PASS_EVENT)
-DMC5_SEGMENT_VALUES = {
-    "Keep": -1,
-    **{f"Segment{index:02d}": index for index in range(61)},
-}
-
-
-def dmc5_control_defaults(node: GuiSceneNode) -> dict[str, object]:
+def dmc5_control_defaults(scene: Dmc5GuiScene, node: GuiSceneNode) -> dict[str, object]:
     symbol = node.prototype.symbol if node.prototype is not None else None
     if symbol is None or not symbol.animations:
         return {}
-    properties = resolve_properties(node.object.properties)
+    properties = scene.type_properties(node.object.type_name, resolve_properties(node.object.properties))
+    fields = scene.workspace.profile.control_fields
     return {
-        "Play": bool(properties.get("Play", True)),
-        "PlayFrame": 0.0,
-        "PlayState": symbol.animations[0].name,
-        "Segment": properties.get("Segment", "Keep"),
-        "StatePattern": int(properties.get("StatePattern", 0)),
-        "NextStateEnable": bool(properties.get("NextStateEnable", True)),
+        fields["play"]: bool(properties[fields["play"]]),
+        fields["frame"]: 0.0,
+        fields["state"]: symbol.animations[0].name,
+        fields["segment"]: properties[fields["segment"]],
+        fields["pattern"]: int(properties[fields["pattern"]]),
+        fields["next_state"]: bool(properties[fields["next_state"]]),
     }
-
-
-@dataclass(frozen=True, slots=True)
-class GuiActionEvent:
-    """One native EVENT/PASS_EVENT setter dispatch."""
-
-    path: str
-    field_name: str
-    frame: float
-    interpolation: int
-    value: object
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,7 +77,7 @@ class _Controller:
     frame: float = 0.0
     playing: bool = True
     pattern: int = 0
-    segment: object = "Keep"
+    segment: object = None
     next_state_enable: bool = True
     completed: bool = False
     completion_callback: (
@@ -111,12 +90,14 @@ class _Controller:
 
 
 class Dmc5GuiPlayback:
-    """A runtime overlay: scene properties and serialized animation data stay unchanged. A symbol clip targets its
-    instantiated Control and direct children; setters, including those starting or scrubbing a nested Control, run in
-    serialized order."""
 
     def __init__(self, scene: Dmc5GuiScene) -> None:
         self.scene = scene
+        profile = scene.workspace.profile
+        self._fields, self._mode = profile.control_fields, profile.clip_mode
+        self._control_fields = frozenset(self._fields.values())
+        self._track_aliases = {code: profile.track_aliases[name] for code, name in display_names("PropertyType").items()
+                               if name in profile.track_aliases}
         self.controllers: dict[str, _Controller] = {}
         self.overrides: dict[str, dict[str, object]] = {}
         self.selected_paths: tuple[str, ...] = ()
@@ -124,12 +105,10 @@ class Dmc5GuiPlayback:
         self.selected_symbol: GuiSymbol | None = None
         self.selected_animation: GuiAnimation | None = None
         self.initial_events: tuple[object, ...] = ()
-        self.initial_action_events: tuple[GuiActionEvent, ...] = ()
         self.initial_completion_events: tuple[GuiCompletionEvent, ...] = ()
         self.initial_transitions: tuple[GuiTransitionEvent, ...] = ()
         self.initial_assignments: tuple[GuiPropertyAssignment, ...] = ()
         self.last_events: tuple[object, ...] = ()
-        self.last_action_events: tuple[GuiActionEvent, ...] = ()
         self.last_completion_events: tuple[GuiCompletionEvent, ...] = ()
         self.last_transitions: tuple[GuiTransitionEvent, ...] = ()
         self.last_assignments: tuple[GuiPropertyAssignment, ...] = ()
@@ -168,15 +147,15 @@ class Dmc5GuiPlayback:
             symbol = node.prototype.symbol if node.prototype is not None else None
             if symbol is None or not symbol.animations:
                 continue
-            properties = dmc5_control_defaults(node)
+            properties, fields = dmc5_control_defaults(self.scene, node), self._fields
             previous = retained.get(node.path)
             self.controllers[node.path] = _Controller(
                 node=node,
                 symbol=symbol,
-                playing=bool(properties.get("Play", True)),
-                pattern=int(properties.get("StatePattern", 0)),
-                segment=properties.get("Segment", "Keep"),
-                next_state_enable=bool(properties.get("NextStateEnable", True)),
+                playing=properties[fields["play"]],
+                pattern=properties[fields["pattern"]],
+                segment=properties[fields["segment"]],
+                next_state_enable=properties[fields["next_state"]],
                 completion_callback=previous[6] if previous is not None else None,
             )
 
@@ -238,9 +217,6 @@ class Dmc5GuiPlayback:
 
         self.initial_events = tuple(events)
         self.initial_assignments = tuple(assignments)
-        self.initial_action_events = tuple(
-            item for item in events if isinstance(item, GuiActionEvent)
-        )
         self.initial_completion_events = tuple(
             item for item in events if isinstance(item, GuiCompletionEvent)
         )
@@ -333,14 +309,8 @@ class Dmc5GuiPlayback:
         }
         if not captured:
             return 0
-        order = (
-            "StatePattern",
-            "Segment",
-            "NextStateEnable",
-            "PlayState",
-            "PlayFrame",
-            "Play",
-        )
+        fields = self._fields
+        order = tuple(fields[role] for role in ("pattern", "segment", "next_state", "state", "frame", "play"))
 
         def apply(events, assignments, stack) -> None:
             # Dispatch captured setters by property across the whole graph.
@@ -365,19 +335,19 @@ class Dmc5GuiPlayback:
             # descriptor authoritative once propagation has settled.
             for path, values in captured.items():
                 controller = self.controllers[path]
-                if "StatePattern" in values:
-                    controller.pattern = int(values["StatePattern"])
-                if "Segment" in values:
-                    controller.segment = values["Segment"]
-                if "NextStateEnable" in values:
-                    controller.next_state_enable = bool(values["NextStateEnable"])
-                if "PlayState" in values:
-                    state = str(values["PlayState"] or "")
+                if fields["pattern"] in values:
+                    controller.pattern = int(values[fields["pattern"]])
+                if fields["segment"] in values:
+                    controller.segment = values[fields["segment"]]
+                if fields["next_state"] in values:
+                    controller.next_state_enable = bool(values[fields["next_state"]])
+                if fields["state"] in values:
+                    state = str(values[fields["state"]] or "")
                     controller.animation = self._state(controller, state) if state else None
-                if "PlayFrame" in values:
-                    controller.frame = float(values["PlayFrame"])
-                if "Play" in values:
-                    controller.playing = bool(values["Play"])
+                if fields["frame"] in values:
+                    controller.frame = float(values[fields["frame"]])
+                if fields["play"] in values:
+                    controller.playing = bool(values[fields["play"]])
                 animation = controller.animation
                 controller.completed = (
                     animation is None
@@ -408,19 +378,14 @@ class Dmc5GuiPlayback:
         animation = controller.animation
         if animation is None:
             return
-        for target, track in self._targeted_tracks(controller, animation):
-            assignment = self._track_value(target, track, controller.frame)
-            if assignment is None or assignment[0] in _CONTROL_FIELDS:
+        rules = game_player(animation.clip.version, self.scene.workspace.profile.game)
+        for target, track in self._tracks(controller, animation):
+            if track.name in self._control_fields:
                 continue
-            name, value = assignment
-            copied = copy.deepcopy(value)
-            self.overrides.setdefault(target.path, {})[name] = copied
-            assignments.append(GuiPropertyAssignment(
-                target.path,
-                name,
-                copied,
-                "runtime scenario",
-            ))
+            for value in self._played(target, track, -1.0, controller.frame, rules, events=False):
+                copied = copy.deepcopy(value)
+                self.overrides.setdefault(target.path, {})[track.name] = copied
+                assignments.append(GuiPropertyAssignment(target.path, track.name, copied, "runtime scenario"))
 
     def play_state(
         self,
@@ -620,84 +585,41 @@ class Dmc5GuiPlayback:
         animation: GuiAnimation | None = None,
     ) -> None:
         animation = animation or controller.animation
-        if animation is None or not intervals:
+        if animation is None:
             return
-        targeted_tracks = self._targeted_tracks(controller, animation)
-        for interval_start, interval_end in intervals:
-            for target, track in targeted_tracks:
-                assignment = self._track_value(target, track, interval_end)
-                if assignment is not None:
-                    name, value = assignment
-                    self._assign(
-                        target.path, name, value, "track",
-                        events, assignments, stack,
-                    )
-                for event in _action_events(
-                    track, interval_start, interval_end
-                ):
-                    events.append(
-                        GuiActionEvent(
-                            target.path,
-                            track.name,
-                            event.frame,
-                            event.interpolation,
-                            copy.deepcopy(event.value),
-                        )
-                    )
+        rules = game_player(animation.clip.version, self.scene.workspace.profile.game)
+        for start, end in intervals:
+            for target, track in self._tracks(controller, animation):
+                for value in self._played(target, track, start, end, rules):
+                    self._assign(target.path, track.name, value, "track", events, assignments, stack)
 
-    @staticmethod
-    def _targeted_tracks(
-        controller: _Controller,
-        animation: GuiAnimation,
-    ) -> tuple[tuple[GuiSceneNode, Property], ...]:
-        candidates = (controller.node, *controller.node.children)
-        by_guid: dict[bytes, list[GuiSceneNode]] = {}
-        by_name: dict[str, list[GuiSceneNode]] = {}
-        for item in candidates:
-            by_guid.setdefault(item.object.instance_guid.bytes_le, []).append(item)
-            by_name.setdefault(item.object.name, []).append(item)
-        result: list[tuple[GuiSceneNode, Property]] = []
-        for clip_node in walk_nodes(animation.clip.roots):
-            targets = (
-                by_guid.get(clip_node.node_id)
-                or by_guid.get(clip_node.guid)
-                or by_name.get(clip_node.name)
-                or ()
-            )
-            result.extend(
-                (target, track)
-                for target in targets
-                for track in clip_node.properties
-            )
-        return tuple(result)
+    def _tracks(self, controller: _Controller, animation: GuiAnimation):
+        children = self.scene.native_children(controller.node, self.overrides)
+        for clip_node in (node for root in animation.clip.roots[:1] for node in root.children):
+            target = next((child for child in children if child.object.name == clip_node.name), None)
+            yield from (() if target is None else ((target, track) for track in clip_node.properties))
 
-    def _track_value(
-        self,
-        target: GuiSceneNode,
-        track: Property,
-        frame: float,
-    ) -> tuple[str, object] | None:
-        if not track.children:
-            value = _sample(track, frame)
-            return (track.name, value) if value is not None else None
-
+    def _played(self, target: GuiSceneNode, track: Property, start: float, end: float, rules: dict,
+                events: bool = True) -> list:
+        if track.type in rules["key_reads"].no_case:
+            return []
+        current = self.overrides.get(target.path, {}).get(track.name, target.properties.get(track.name))
+        if current is None:
+            current = self.scene.workspace.profile.runtime_type(target.object.type_name).defaults.get(track.name)
+        if not track.children or track.type == PropertyType.QUATERNION:
+            return play(track, start, end, rules, current, events=events, mode=self._mode)
         labels = COMPONENT_NAMES.get(track.type, ())
         aliases = {name.casefold(): index for index, name in enumerate(labels)}
-        if track.type == PropertyType.SIZE:
-            aliases.update({"w": 0, "h": 1})
-        current = self.overrides.get(target.path, {}).get(
-            track.name, target.properties.get(track.name)
-        )
+        aliases.update(self._track_aliases.get(track.type, {}))
         result = list(current) if isinstance(current, (list, tuple)) else [0.0] * len(labels)
-        changed = False
+        written, last = False, None
         for child in track.children:
             index = aliases.get(child.name.casefold())
-            value = _sample(child, frame)
-            if index is None or value is None or index >= len(result):
-                continue
-            result[index] = value
-            changed = True
-        return (track.name, result) if changed else None
+            for value in () if index is None or index >= len(result) else play(
+                    child, start, end, rules, result[index], events=events, mode=self._mode, reader="member",
+                    unset=result[index] if rules["element_unset"] == "current" else last):
+                result[index], written, last = value, True, value
+        return [result] if written else []
 
     def _assign(
         self,
@@ -712,7 +634,7 @@ class Dmc5GuiPlayback:
         copied = copy.deepcopy(value)
         self.overrides.setdefault(path, {})[name] = copied
         assignments.append(GuiPropertyAssignment(path, name, copied, source))
-        if name not in _CONTROL_FIELDS:
+        if name not in self._control_fields:
             return
         token = (path, name, repr(value), source)
         if token in stack:
@@ -734,27 +656,27 @@ class Dmc5GuiPlayback:
         assignments: list[GuiPropertyAssignment],
         stack: set[tuple[str, str, str, str]],
     ) -> None:
-        controller = self.controllers.get(path)
+        controller, fields = self.controllers.get(path), self._fields
         if controller is None:
             return
-        if name == "Play":
+        if name == fields["play"]:
             controller.playing = bool(value)
-        elif name == "PlayState":
+        elif name == fields["state"]:
             self._activate_name(
                 controller, str(value or ""), False,
                 events, assignments, stack,
             )
-        elif name == "PlayFrame":
+        elif name == fields["frame"]:
             self._set_frame(
                 controller, float(value), events, assignments, stack
             )
-        elif name == "StatePattern":
+        elif name == fields["pattern"]:
             self._set_pattern(
                 controller, int(value), events, assignments, stack
             )
-        elif name == "NextStateEnable":
+        elif name == fields["next_state"]:
             controller.next_state_enable = bool(value)
-        elif name == "Segment":
+        elif name == fields["segment"]:
             controller.segment = value
         self._sync_controller(controller)
 
@@ -778,14 +700,15 @@ class Dmc5GuiPlayback:
             self._sync_controller(controller)
 
     def _sync_controller(self, controller: _Controller) -> None:
+        fields = self._fields
         self.overrides.setdefault(controller.node.path, {}).update(
             {
-                "Play": controller.playing,
-                "PlayFrame": controller.frame,
-                "PlayState": controller.play_state,
-                "Segment": controller.segment,
-                "StatePattern": controller.pattern,
-                "NextStateEnable": controller.next_state_enable,
+                fields["play"]: controller.playing,
+                fields["frame"]: controller.frame,
+                fields["state"]: controller.play_state,
+                fields["segment"]: controller.segment,
+                fields["pattern"]: controller.pattern,
+                fields["next_state"]: controller.next_state_enable,
             }
         )
 
@@ -820,44 +743,12 @@ class Dmc5GuiPlayback:
     ) -> None:
         self.last_events = tuple(events)
         self.last_assignments = tuple(assignments)
-        self.last_action_events = tuple(
-            item for item in events if isinstance(item, GuiActionEvent)
-        )
         self.last_completion_events = tuple(
             item for item in events if isinstance(item, GuiCompletionEvent)
         )
         self.last_transitions = tuple(
             item for item in events if isinstance(item, GuiTransitionEvent)
         )
-
-
-def _action_events(
-    track: Property,
-    previous_frame: float,
-    current_frame: float,
-) -> list[Key]:
-    keys = track.keys
-    if track.type != PropertyType.ENUM or not keys or any(key.interpolation not in _EVENTS for key in keys):
-        return []
-    previous = _f32(previous_frame)
-    current = _f32(current_frame)
-    if math.isnan(previous) or math.isnan(current) or current < previous:
-        return []
-    mode = keys[0].interpolation
-    if mode == InterpolationType.PASS_EVENT and previous == current:
-        return []
-    result = []
-    for key in keys:
-        frame = _f32(key.frame)
-        if math.isnan(frame):
-            continue
-        if mode == InterpolationType.EVENT:
-            crossed = frame == current if previous == current else previous < frame <= current
-        else:
-            crossed = previous <= frame < current
-        if crossed:
-            result.append(key)
-    return result
 
 
 def _ucomiss_equal(left: float, right: float) -> bool:
@@ -904,13 +795,5 @@ def _play_frame_transition(
             start = -1.0
         intervals.append((start, play_frame))
     return play_frame, completed, tuple(intervals)
-
-
-def _sample(track: Property, frame: float) -> object | None:
-    if track.type == PropertyType.ENUM and track.keys and all(key.interpolation in _EVENTS for key in track.keys):
-        # These are setter events (Effect.Action in the DMC5 corpus), not a
-        # continuously assigned reflected property.
-        return None
-    return sample(track, frame)
 
 

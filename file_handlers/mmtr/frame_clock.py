@@ -25,6 +25,8 @@ class Timer:
     word: int
     per_second: float | None
     period: float
+    subtract: bool = False
+    fraction: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,7 +52,8 @@ def catalog_from_dict(data: Mapping) -> FrameClockCatalog:
     if data.get("format") != CATALOG_FORMAT:
         raise FrameClockCatalogError(f"frame clock catalog format {data.get('format')!r} is not {CATALOG_FORMAT}")
     timers = tuple(Timer(int(item["word"]), None if item.get("per_second") is None else float(item["per_second"]),
-                         float(item["period"])) for item in data["timers"])
+                         float(item["period"]), bool(item.get("subtract", False)), bool(item.get("fraction", False)))
+                   for item in data["timers"])
     catalog = FrameClockCatalog(
         str(data["game"]), int(data["resource_version"]), str(data["buffer"]), str(data["time"]), int(data["day"]),
         float(data["scale"]), str(data["frame"]), str(data["odd"]), str(data["parameters"]), timers,
@@ -93,14 +96,17 @@ class FrameClock:
             if timer.per_second is None:
                 self.values[index] = (self.values[index] + 1) % int(timer.period)
             else:
-                total = float(np.float32(elapsed * timer.per_second + self.values[index]))
-                self.values[index] = crt("fmodf")(total, float(np.float32(timer.period)))
+                total, period = float(np.float32(elapsed * timer.per_second + self.values[index])), float(
+                    np.float32(timer.period))
+                self.values[index] = (float(np.float32(total - period)) if total > period else total) if (
+                    timer.subtract) else crt("fmodf")(total, period)
 
     def parameter_words(self, count: int) -> tuple[int, ...]:
         words = [0] * count
         for timer, value in zip(self.catalog.timers, self.values):
             if timer.word < count:
-                words[timer.word] = struct.unpack("<I", struct.pack("<f", float(value)))[0]
+                words[timer.word] = struct.unpack("<I", struct.pack("<f", float(value) / float(np.float32(
+                    timer.period)) if timer.fraction else float(value)))[0]
         return tuple(words)
 
     def words(self, count: int) -> dict[str, dict[str, tuple[int, ...]]]:

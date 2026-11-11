@@ -1,0 +1,6 @@
+{
+ "format": 1,
+ "versions": {
+  "270020": {"layout": "v270020", "games": ["DMC5", "RE2"], "runtime": "DMC5"}
+ }
+}

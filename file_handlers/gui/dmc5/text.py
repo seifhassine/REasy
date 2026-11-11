@@ -15,61 +15,54 @@ from collections.abc import Callable, Sequence
 from bisect import bisect_right
 from dataclasses import dataclass
 from enum import Enum, IntEnum
-import math
+from functools import cache, partial
 import re
 import struct
 
+import numpy as np
+
 from file_handlers.ift.model import IconGlyph
 
+lazy from ..profiles import runtime_for_game
 
-DMC5_ARABIC_LANGUAGE_INDEX = 21
-DMC5_DEFAULT_RUBY_SIZE_RATIO = 0.375
 
-# Exact output of DMC5's embedded Unicode property trie at RVA 0x27F9610.
-# Keeping the compact positive ranges makes preview behavior independent from
-# the host Python Unicode version (which disagrees with this build at 519
-# codepoints).
-DMC5_RTL_TRIGGER_RANGES = (
-    (0x5BE, 0x5BE), (0x5C0, 0x5C0), (0x5C3, 0x5C3), (0x5C6, 0x5C6),
-    (0x5D0, 0x5EA), (0x5F0, 0x5F4), (0x600, 0x605), (0x608, 0x608),
-    (0x60B, 0x60B), (0x60D, 0x60D), (0x61B, 0x61C), (0x61E, 0x64A),
-    (0x660, 0x669), (0x66B, 0x66F), (0x671, 0x6D5), (0x6DD, 0x6DD),
-    (0x6E5, 0x6E6), (0x6EE, 0x6EF), (0x6FA, 0x70D), (0x70F, 0x710),
-    (0x712, 0x72F), (0x74D, 0x7A5), (0x7B1, 0x7B1), (0x7C0, 0x7EA),
-    (0x7F4, 0x7F5), (0x7FA, 0x7FA), (0x800, 0x815), (0x81A, 0x81A),
-    (0x824, 0x824), (0x828, 0x828), (0x830, 0x83E), (0x840, 0x858),
-    (0x85E, 0x85E), (0x8A0, 0x8B4), (0x200F, 0x200F),
-    (0x202B, 0x202B), (0x202E, 0x202E), (0xFB1D, 0xFB1D),
-    (0xFB1F, 0xFB28), (0xFB2A, 0xFB36), (0xFB38, 0xFB3C),
-    (0xFB3E, 0xFB3E), (0xFB40, 0xFB41), (0xFB43, 0xFB44),
-    (0xFB46, 0xFBC1), (0xFBD3, 0xFD3D), (0xFD50, 0xFD8F),
-    (0xFD92, 0xFDC7), (0xFDF0, 0xFDFC), (0xFE70, 0xFE74),
-    (0xFE76, 0xFEFC), (0x10800, 0x10805), (0x10808, 0x10808),
-    (0x1080A, 0x10835), (0x10837, 0x10838), (0x1083C, 0x1083C),
-    (0x1083F, 0x10855), (0x10857, 0x1089E), (0x108A7, 0x108AF),
-    (0x108E0, 0x108F2), (0x108F4, 0x108F5), (0x108FB, 0x1091B),
-    (0x10920, 0x10939), (0x1093F, 0x1093F), (0x10980, 0x109B7),
-    (0x109BC, 0x109CF), (0x109D2, 0x10A00), (0x10A10, 0x10A13),
-    (0x10A15, 0x10A17), (0x10A19, 0x10A33), (0x10A40, 0x10A47),
-    (0x10A50, 0x10A58), (0x10A60, 0x10A9F), (0x10AC0, 0x10AE4),
-    (0x10AEB, 0x10AF6), (0x10B00, 0x10B35), (0x10B40, 0x10B55),
-    (0x10B58, 0x10B72), (0x10B78, 0x10B91), (0x10B99, 0x10B9C),
-    (0x10BA9, 0x10BAF), (0x10C00, 0x10C48), (0x10C80, 0x10CB2),
-    (0x10CC0, 0x10CF2), (0x10CFA, 0x10CFF), (0x10E60, 0x10E7E),
-    (0x1E800, 0x1E8C4), (0x1E8C7, 0x1E8CF), (0x1EE00, 0x1EE03),
-    (0x1EE05, 0x1EE1F), (0x1EE21, 0x1EE22), (0x1EE24, 0x1EE24),
-    (0x1EE27, 0x1EE27), (0x1EE29, 0x1EE32), (0x1EE34, 0x1EE37),
-    (0x1EE39, 0x1EE39), (0x1EE3B, 0x1EE3B), (0x1EE42, 0x1EE42),
-    (0x1EE47, 0x1EE47), (0x1EE49, 0x1EE49), (0x1EE4B, 0x1EE4B),
-    (0x1EE4D, 0x1EE4F), (0x1EE51, 0x1EE52), (0x1EE54, 0x1EE54),
-    (0x1EE57, 0x1EE57), (0x1EE59, 0x1EE59), (0x1EE5B, 0x1EE5B),
-    (0x1EE5D, 0x1EE5D), (0x1EE5F, 0x1EE5F), (0x1EE61, 0x1EE62),
-    (0x1EE64, 0x1EE64), (0x1EE67, 0x1EE6A), (0x1EE6C, 0x1EE72),
-    (0x1EE74, 0x1EE77), (0x1EE79, 0x1EE7C), (0x1EE7E, 0x1EE7E),
-    (0x1EE80, 0x1EE89), (0x1EE8B, 0x1EE9B), (0x1EEA1, 0x1EEA3),
-    (0x1EEA5, 0x1EEA9), (0x1EEAB, 0x1EEBB),
-)
-_DMC5_RTL_RANGE_STARTS = tuple(start for start, _end in DMC5_RTL_TRIGGER_RANGES)
+@dataclass(frozen=True, slots=True)
+class Dmc5TextRules:
+    rtl_language: int
+    rtl_ranges: tuple[tuple[int, int], ...]
+    rtl_starts: tuple[int, ...]
+    space_delimiters: frozenset[int]
+    line_end_openers: frozenset[int]
+    line_starters: frozenset[int]
+    non_break_before: frozenset[int]
+    overflow_punctuation: frozenset[int]
+    cjk_break_ranges: tuple[tuple[int, int], ...]
+    follow_system_language: int
+    ruby_height_language: int
+    overflow_tolerance: np.float32
+    fit_axes: dict[int, tuple[bool, bool]]
+    fit_margin: np.float32
+    fit_upper: np.float32
+    fit_steps: int
+
+
+@cache
+def dmc5_text_rules(game: str) -> Dmc5TextRules:
+    profile = runtime_for_game(game)
+    rules, fit = profile.text, profile.text["region_fit"]
+    return Dmc5TextRules(
+        profile.language(rules["rtl_language"]),
+        rules["rtl_ranges"],
+        tuple(start for start, _end in rules["rtl_ranges"]),
+        *(frozenset(rules[name]) for name in (
+            "space_delimiters", "line_end_openers", "line_starters", "non_break_before", "overflow_punctuation")),
+        rules["cjk_break_ranges"],
+        profile.language(rules["follow_system_language"]),
+        profile.language(rules["ruby_height_language"]),
+        np.float32(rules["overflow_tolerance"]),
+        {profile.enum("RegionFitType")[label]: tuple(axes) for label, axes in fit["axes"].items()},
+        np.float32(fit["margin"]), np.float32(fit["upper"]), fit["steps"],
+    )
 
 
 class MarkupTokenKind(Enum):
@@ -182,140 +175,11 @@ class Dmc5TextProgram:
     page_timings: tuple[PageTiming, ...]
     final_ruby_state: RubyState
     direction: Dmc5TextDirection
+    flushes: tuple[int, ...]
 
 
-@dataclass(frozen=True)
-class RubyLayoutPlan:
-    base_width: float
-    measured_reading_width: float
-    reading_advances: tuple[float, ...]
-    reading_alignment_metrics: tuple[float, ...]
-    assigned_advances: tuple[float, ...]
-    marker_offset: float
-    reading_wider_than_base: bool
-
-
-# Data at RVAs 0x4641730, 0x4641738, 0x4641760, 0x464180C, and
-# 0x4641818.  The duplicate U+31F7 in the native starter array is naturally
-# irrelevant to membership testing.
-DMC5_SPACE_DELIMITERS = frozenset((0x0020, 0x3000, 0x0009))
-DMC5_PROHIBITED_LINE_END_OPENERS = frozenset(
-    (
-        0x0028,
-        0xFF08,
-        0x005B,
-        0xFF3B,
-        0x007B,
-        0xFF5B,
-        0x3014,
-        0x3008,
-        0x300A,
-        0x300C,
-        0x300E,
-        0x3010,
-        0x3018,
-        0x3016,
-        0x301D,
-        0x2018,
-        0x201C,
-        0xFF5F,
-        0x00AB,
-    )
-)
-DMC5_PROHIBITED_LINE_STARTERS = frozenset(
-    (
-        0x002C,
-        0x3001,
-        0x0029,
-        0xFF09,
-        0x005D,
-        0xFF3D,
-        0x007D,
-        0xFF5D,
-        0x3015,
-        0x3009,
-        0x300B,
-        0x300D,
-        0x300F,
-        0x3011,
-        0x3019,
-        0x3017,
-        0x301F,
-        0x2019,
-        0x201D,
-        0xFF60,
-        0x00BB,
-        0x2010,
-        0x30A0,
-        0x2013,
-        0x301C,
-        0xFF5E,
-        0x003F,
-        0x0021,
-        0x203C,
-        0x2047,
-        0x2048,
-        0x2049,
-        0x30FB,
-        0x003A,
-        0x003B,
-        0x002F,
-        0x3002,
-        0x002E,
-        0x309D,
-        0x309E,
-        0x30FC,
-        0x30A1,
-        0x30A3,
-        0x30A5,
-        0x30A7,
-        0x30A9,
-        0x30C3,
-        0x30E3,
-        0x30E5,
-        0x30E7,
-        0x30EE,
-        0x30F5,
-        0x30F6,
-        0x3041,
-        0x3043,
-        0x3045,
-        0x3047,
-        0x3049,
-        0x3063,
-        0x3083,
-        0x3085,
-        0x3087,
-        0x308E,
-        0x3095,
-        0x3096,
-        0x31F0,
-        0x31F1,
-        0x31F2,
-        0x31F3,
-        0x31F4,
-        0x31F5,
-        0x31F6,
-        0x31F7,
-        0x31F8,
-        0x31F9,
-        0x309A,
-        0x31FA,
-        0x31FB,
-        0x31FC,
-        0x31FD,
-        0x31FE,
-        0x31FF,
-        0x3005,
-        0x303B,
-    )
-)
-DMC5_NON_BREAK_BEFORE = frozenset(
-    (0x2014, 0x2026, 0x2025, 0x3033, 0x3034, 0x3035)
-)
-DMC5_OVERFLOW_PUNCTUATION = frozenset((0x3001, 0x3002))
-
-
+_FLUSHING_TAGS = frozenset({"FONT", "PAGE", "SIZE", "ICON", "RUBY", "COLOR"})
+_OTHER_PAGE_TAGS = frozenset({"PAGE", "TIME", "SIZE", "FONT", "COLOR"})
 _FLOAT_PREFIX = re.compile(
     r"^[\t\n\v\f\r ]*([+-]?(?:(?:\d+(?:\.\d*)?)|(?:\.\d+))"
     r"(?:[eE][+-]?\d+)?|[+-]?(?:inf(?:inity)?|nan))",
@@ -562,11 +426,11 @@ def dmc5_float_to_half_bits(value: float) -> int:
     return sign | ((exponent & 0x1F) << 10) | (mantissa >> 13)
 
 
-def _default_language_21_predicate(codepoint: int) -> bool:
+def _rtl_trigger(rules: Dmc5TextRules, codepoint: int) -> bool:
     if codepoint < 0 or codepoint > 0x10FFFF:
         return False
-    index = bisect_right(_DMC5_RTL_RANGE_STARTS, codepoint) - 1
-    return index >= 0 and codepoint <= DMC5_RTL_TRIGGER_RANGES[index][1]
+    index = bisect_right(rules.rtl_starts, codepoint) - 1
+    return index >= 0 and codepoint <= rules.rtl_ranges[index][1]
 
 
 def _utf16_codepoints(text: str) -> tuple[int, ...]:
@@ -583,13 +447,14 @@ def dmc5_text_direction(
     *,
     auto_rtl: bool,
     vertical_layout: bool,
+    rules: Dmc5TextRules,
     language_21_predicate: Callable[[int], bool] | None = None,
 ) -> Dmc5TextDirection:
     """Compute native context bytes +0x2F5, +0x2F6, and +0x2F7."""
 
-    predicate = language_21_predicate or _default_language_21_predicate
+    predicate = language_21_predicate or partial(_rtl_trigger, rules)
     present = any(predicate(codepoint) for codepoint in _utf16_codepoints(text))
-    is_language_21 = language_index == DMC5_ARABIC_LANGUAGE_INDEX
+    is_language_21 = language_index == rules.rtl_language
     effective_rtl = is_language_21 and present
     auto_flip = is_language_21 and auto_rtl
     effective_vertical = vertical_layout and not effective_rtl
@@ -615,6 +480,7 @@ class _Compiler:
         language_index: int,
         auto_rtl: bool,
         vertical_layout: bool,
+        rules: Dmc5TextRules,
         language_21_predicate: Callable[[int], bool] | None,
         font_slot: int,
         size: tuple[float, float],
@@ -624,13 +490,16 @@ class _Compiler:
         icon_resolver: IconResolver | None,
         time_scale: float,
         include_initial_state: bool,
+        page: int,
     ) -> None:
         self.text = text
+        self.page, self.page_counter, self.pending, self.flushes = page, 0, 0, []
         self.direction = dmc5_text_direction(
             text,
             language_index,
             auto_rtl=auto_rtl,
             vertical_layout=vertical_layout,
+            rules=rules,
             language_21_predicate=language_21_predicate,
         )
         self.size_scale = size_scale
@@ -708,7 +577,7 @@ class _Compiler:
         if not token.closing:
             if self.ruby_state != RubyState.NONE:
                 return
-            ratio = _parse_float_prefix(token.parameter)
+            ratio = float(np.float32(_parse_float_prefix(token.parameter)))
             if not ratio > 0.0:
                 ratio = self.default_ruby_size_ratio
             self.ruby_ratio = ratio
@@ -782,19 +651,19 @@ class _Compiler:
                 )
             return
         first, separator, second_text = token.parameter.partition(" ")
-        x = _parse_float_prefix(first)
+        x = np.float32(_parse_float_prefix(first))
         if not x > 0.0:
             self.diagnostics.append(
                 f"offset {token.source_start}: SIZE requires a positive first value"
             )
             return
-        y = _parse_float_prefix(second_text) if separator else x
+        y = np.float32(_parse_float_prefix(second_text)) if separator else x
         if not y > 0.0:
             y = x
         if self.size_scale is not None:
-            x *= self.size_scale[0]
-            y *= self.size_scale[1]
-        value = (x, y)
+            x *= np.float32(self.size_scale[0])
+            y *= np.float32(self.size_scale[1])
+        value = (float(x), float(y))
         self._append(
             TextOpcode.SIZE,
             source_start=token.source_start,
@@ -982,8 +851,14 @@ class _Compiler:
         if replacement is not None:
             self._compile_fragment(replacement, recursion_suppressed=True)
 
+    def _flush(self) -> None:
+        self.flushes.append(len(self.instructions))
+        self.pending = 0
+
     def _tag(self, token: MarkupToken, *, recursion_suppressed: bool) -> None:
         name = token.name or ""
+        if self.ruby_state == RubyState.NONE and name in _FLUSHING_TAGS and self.page_counter == self.page:
+            self._flush()
         if name == "PAGE":
             self._page(token)
         elif name == "TOP":
@@ -1030,22 +905,44 @@ class _Compiler:
     ) -> None:
         scan = scan_dmc5_markup(fragment)
         self.diagnostics.extend(scan.diagnostics)
+        after_page = False
         for token in scan.tokens:
+            if after_page and token.kind == MarkupTokenKind.NEWLINE:
+                after_page = False
+                continue
+            after_page = False
+            if self.page_counter != self.page and (
+                token.kind != MarkupTokenKind.TAG or token.name not in _OTHER_PAGE_TAGS
+            ):
+                continue
             if token.kind == MarkupTokenKind.MALFORMED_TAG:
                 continue
             if token.kind == MarkupTokenKind.TAG:
                 self._tag(token, recursion_suppressed=recursion_suppressed)
+                if token.name == "PAGE":
+                    self.page_counter += 1
+                    if self.page_counter > self.page:
+                        break
+                    after_page = True
                 continue
             if token.kind == MarkupTokenKind.NEWLINE:
                 if self.ruby_state == RubyState.NONE:
+                    self._flush()
                     self._line_break(token)
                 continue
+            if not token.codepoint:
+                break
+            if token.codepoint < 0x20 and token.codepoint not in (9, 10) or self.ruby_state == RubyState.RUBY:
+                continue
+            self.pending += self.ruby_state == RubyState.NONE
             self._append(
                 TextOpcode.GLYPH,
                 source_start=token.source_start,
                 source_end=token.source_end,
                 codepoint=token.codepoint,
             )
+        if self.pending and self.ruby_state == RubyState.NONE:
+            self._flush()
 
     def compile(self) -> Dmc5TextProgram:
         self._compile_fragment(self.text, recursion_suppressed=False)
@@ -1060,24 +957,27 @@ class _Compiler:
             tuple(self.timings),
             self.ruby_state,
             self.direction,
+            tuple(self.flushes),
         )
 
 
 def compile_dmc5_markup(
     text: str,
     *,
-    language_index: int = 1,
-    auto_rtl: bool = True,
-    vertical_layout: bool = False,
+    rules: Dmc5TextRules,
+    language_index: int,
+    auto_rtl: bool,
+    vertical_layout: bool,
     language_21_predicate: Callable[[int], bool] | None = None,
-    font_slot: int = 0,
-    size: tuple[float, float] = (32.0, 32.0),
+    font_slot: int,
+    size: tuple[float, float],
     size_scale: tuple[float, float] | None = None,
-    ruby_size_ratio: float = DMC5_DEFAULT_RUBY_SIZE_RATIO,
+    ruby_size_ratio: float,
     tag_resolver: TagResolver | None = None,
     icon_resolver: IconResolver | None = None,
     time_scale: float = 1.0,
     include_initial_state: bool = True,
+    page: int,
 ) -> Dmc5TextProgram:
     """Compile message text into the native DMC5 instruction-node model."""
 
@@ -1086,6 +986,7 @@ def compile_dmc5_markup(
         language_index=language_index,
         auto_rtl=auto_rtl,
         vertical_layout=vertical_layout,
+        rules=rules,
         language_21_predicate=language_21_predicate,
         font_slot=font_slot,
         size=size,
@@ -1095,116 +996,9 @@ def compile_dmc5_markup(
         icon_resolver=icon_resolver,
         time_scale=time_scale,
         include_initial_state=include_initial_state,
+        page=page,
     ).compile()
 
 
-def is_dmc5_cjk_break_character(codepoint: int) -> bool:
-    """Transcribe the range predicate at native RVA ``0x27D1590``."""
-
-    return any(
-        start <= codepoint <= end
-        for start, end in (
-            (0x2E80, 0x2FFF),
-            (0x3040, 0x30FF),
-            (0x31F0, 0x31FF),
-            (0xFF01, 0xFF5A),
-            (0xFF61, 0xFF9F),
-            (0x4E00, 0x9FCF),
-            (0x3400, 0x4DBF),
-            (0x20000, 0x2A6DF),
-            (0xF900, 0xFAFF),
-            (0x2F800, 0x2FA1F),
-            (0xA000, 0xA4CF),
-            (0xFE62, 0xFE66),
-            (0xAC00, 0xD7AF),
-        )
-    )
-
-
-def dmc5_break_opportunity(previous: int | None, current: int) -> bool:
-    """Return whether RVA ``0x27D1230`` records a break before ``current``."""
-
-    if previous is None:
-        return False
-    if previous in DMC5_PROHIBITED_LINE_END_OPENERS:
-        return False
-    if current in DMC5_PROHIBITED_LINE_STARTERS:
-        return False
-    if current in DMC5_NON_BREAK_BEFORE:
-        return False
-    if current in DMC5_SPACE_DELIMITERS:
-        return True
-    if is_dmc5_cjk_break_character(current):
-        return True
-    if is_dmc5_cjk_break_character(previous):
-        return True
-    if current in DMC5_PROHIBITED_LINE_END_OPENERS:
-        return True
-    if previous in DMC5_PROHIBITED_LINE_STARTERS:
-        return True
-    return False
-
-
-def find_dmc5_wrap_break(
-    codepoints: Sequence[int], widths: Sequence[float], maximum_width: float
-) -> int | None:
-    """Return the glyph index after which DMC5 inserts its wrap line node.
-
-    ``widths`` contains the already measured per-glyph contribution used by the
-    native loop.  Ruby sub-runs are laid out separately and should be supplied
-    as their resolved base-run contributions.
-    """
-
-    if len(codepoints) != len(widths):
-        raise ValueError("codepoints and widths must have equal lengths")
-    accumulated = 0.0
-    candidate: int | None = None
-    previous: int | None = None
-    for index, (codepoint, width) in enumerate(zip(codepoints, widths)):
-        if dmc5_break_opportunity(previous, codepoint):
-            candidate = index - 1
-        accumulated += width
-        if accumulated > maximum_width and codepoint not in DMC5_OVERFLOW_PUNCTUATION:
-            return candidate
-        previous = codepoint
-    return None
-
-
-def ruby_layout_plan(
-    base_width: float,
-    reading_advances: Sequence[float],
-    *,
-    reading_alignment_metrics: Sequence[float] | None = None,
-) -> RubyLayoutPlan:
-    """Transcribe the width distribution branch at RVAs 0x27D3049..30DC."""
-
-    advances = tuple(float(value) for value in reading_advances)
-    if reading_alignment_metrics is None:
-        metrics = advances
-    else:
-        metrics = tuple(float(value) for value in reading_alignment_metrics)
-        if len(metrics) != len(advances):
-            raise ValueError("reading metrics and advances must have equal lengths")
-    measured = math.fsum(advances)
-    if measured > base_width:
-        assigned = advances
-        offset = -0.5 * (measured - base_width)
-        wider = True
-    elif advances:
-        assigned = (base_width / len(advances),) * len(advances)
-        offset = 0.5 * (base_width - math.fsum(metrics))
-        wider = False
-    else:
-        assigned = ()
-        offset = 0.0
-        wider = False
-    return RubyLayoutPlan(
-        float(base_width),
-        measured,
-        advances,
-        metrics,
-        assigned,
-        offset,
-        wider,
-    )
-
+def is_cjk_break_character(codepoint: int, rules: Dmc5TextRules) -> bool:
+    return any(start <= codepoint <= end for start, end in rules.cjk_break_ranges)

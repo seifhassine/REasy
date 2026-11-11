@@ -1,0 +1,2678 @@
+{
+ "format": 1,
+ "games": {
+  "DD2": {
+   "app.CutSceneUniversalPositionWrapper": {
+    "UniversalPositionRoot": {
+     "delayed": true
+    }
+   },
+   "app.WwiseClipDynamicObjectTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "DMC5": {
+   "app.Em5300Track": {
+    "PositionDriftMove": {
+     "diff": [
+      null,
+      "nextPositionDriftMoveFrame"
+     ]
+    }
+   },
+   "app.EnemyDeadTrack": {
+    "ShaderKey": {
+     "diff": [
+      "prevFrame",
+      "nextFrame"
+     ]
+    }
+   },
+   "app.Pl0200FinishTrack": {
+    "PositionInterpolation": {
+     "diff": [
+      "prevFrame",
+      "nextFrame"
+     ]
+    }
+   },
+   "app.TriggerTrack": {
+    "Index": {
+     "diff": [
+      "prevFrame",
+      "nextFrame"
+     ]
+    }
+   },
+   "app.WwiseSealClipParameter": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "MHST3": {
+   "ace.PostEffect.PostEffectTrackPolynomialLens": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackAberration": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBaseColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cAberrationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cBaseColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cColorCollectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cColorDeficiencySimulationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFCircularParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFDefaultParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFTessellationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDirtMaskParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDynamicRangeConversionParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cEchoParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cExposureParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cExtraColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cFilmGrainParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cGeometryAOParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cHazeFilterParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cImagePlaneParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cLocalExposureParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cMotionBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cPaniniParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cPolynomialLens>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cRadialBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSSAOParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSSRParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSoftBloomParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cTemporalAAParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cToneMappingParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cTonemapParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVignetteParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVolumetricFogControlParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVolumetricFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cWaveOpticalLensFlareParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cColorCorrectLinearParams>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cDOFAutoFocusParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cDefaultLensDistortionParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectCloudSeaParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectCrossFadeParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectCustomFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectCustomRadialBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectShadowColorParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cShockEffectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackColorCollect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackColorDeficiencySimulation": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFCirclar": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFDefault": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFTessellation": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDirtMask": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDynamicRangeConversion": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackEcho": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackExposure": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackExtraColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackFilmGrain": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackGeometryAO": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackHazeFilter": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackImagePlane": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackLocalExposure": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackMotionBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackPanini": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackRadialBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSSAO": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSSR": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSoftBloom": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackTemporalAA": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackToneMapping": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackTonemap": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVignette": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVolumetricFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVolumetricFogControl": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackWaveOpticalLensFlare": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.motion_track.IkHand2SkipTrack": {
+    "_GroupInfo": {
+     "count": "_GroupCount"
+    }
+   },
+   "ace.motion_track.IkLegSpineFootSkipTrack": {
+    "_ExtraFootSkip": {
+     "count": "_ExtraFootCount"
+    }
+   },
+   "ace.motion_track.IkLegsFootLockTrack": {
+    "_ExtraFoot": {
+     "count": "_ExtraFootCount"
+    }
+   },
+   "app.AppEffectTrackCommon": {
+    "EffectId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.AppEffectTrackGround": {
+    "EffectId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.AutoAttributeEffectTrack": {
+    "EffectId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.AutoSetKinshipAttriTrack": {
+    "EffectId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.AutoSetMoAttriTrack": {
+    "EffectId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.AutoSetSkillAttriTrack": {
+    "EffectId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.CutSceneSubCameraController.cMotionCameraInfo": {
+    "OffsetFrame": {
+     "delayed": true
+    }
+   },
+   "app.CutsceneCameraController.cMotionCameraInfo": {
+    "OffsetFrame": {
+     "delayed": true
+    }
+   },
+   "app.DTBodyMotionElement": {
+    "AddMotionPackList": {
+     "count": "AddMotionPackCount"
+    }
+   },
+   "app.DTCommonParam": {
+    "TextDataList": {
+     "count": "TextParamCount"
+    }
+   },
+   "app.DTEnemyParam.DTMonsterpcBodyMotionElement": {
+    "AddMotionPackList": {
+     "count": "AddMotionPackCount"
+    }
+   },
+   "app.DTNpcParam.DTNpcBodyMotionElement": {
+    "AddMotionPackList": {
+     "count": "AddMotionPackCount"
+    }
+   },
+   "app.DTOtomonParam.DTOtomonBodyMotionElement": {
+    "AddMotionPackList": {
+     "count": "AddMotionPackCount"
+    }
+   },
+   "app.DTPlayerParam.DTPlayerBodyMotionElement": {
+    "AddMotionPackList": {
+     "count": "AddMotionPackCount"
+    }
+   },
+   "app.PostEffect.PostEffectTrackCloudSea": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackColorCorrectLinearParams": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackCrossFade": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackCustomFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackCustomRadialBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackDOFAutoFocus": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackDefaultLensDistotion": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackShadowColor": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffect.PostEffectTrackShockEffect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.snd_mot_track.SoundTriggerMuteTracks": {
+    "TriggerIds": {
+     "count": "MuteTriggerCount"
+    }
+   },
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "MHWilds": {
+   "ace.PostEffectTrackAberration": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBaseColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cAberrationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cBaseColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cColorCollectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cColorDeficiencySimulationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFCircularParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFDefaultParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFTessellationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDirtMaskParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDynamicRangeConversionParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cEchoParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cExposureParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cExtraColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cFilmGrainParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cGeometryAOParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cHazeFilterParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cImagePlaneParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cLocalExposureParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cMotionBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cPaniniParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cRadialBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSSAOParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSSRParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSoftBloomParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cTemporalAAParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cToneMappingParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cTonemapParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVignetteParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVolumetricFogControlParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVolumetricFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cWaveOpticalLensFlareParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cColorCorrectLinearParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackColorCollect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackColorDeficiencySimulation": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFCirclar": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFDefault": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFTessellation": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDirtMask": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDynamicRangeConversion": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackEcho": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackExposure": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackExtraColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackFilmGrain": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackGeometryAO": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackHazeFilter": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackImagePlane": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackLocalExposure": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackMotionBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackPanini": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackRadialBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSSAO": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSSR": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSoftBloom": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackTemporalAA": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackToneMapping": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackTonemap": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVignette": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVolumetricFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVolumetricFogControl": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackWaveOpticalLensFlare": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.motion_track.IkHand2SkipTrack": {
+    "_GroupInfo": {
+     "count": "_GroupCount"
+    }
+   },
+   "ace.motion_track.IkLegSpineFootSkipTrack": {
+    "_ExtraFootSkip": {
+     "count": "_ExtraFootCount"
+    }
+   },
+   "ace.motion_track.IkLegsFootLockTrack": {
+    "_ExtraFoot": {
+     "count": "_ExtraFootCount"
+    }
+   },
+   "app.CutsceneCameraController.cMotionCameraInfo": {
+    "OffsetFrame": {
+     "delayed": true
+    }
+   },
+   "app.DTBodyMotionElement": {
+    "AddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.DTCommonParam": {
+    "TextDataList": {
+     "count": "TextParamCount"
+    }
+   },
+   "app.DTNpcParam.DTNpcParamElement": {
+    "AccessoryParamList": {
+     "count": "AccessoryParamCount"
+    }
+   },
+   "app.IkSwordAbsorbTrack": {
+    "_AbsorbBlendRateKey": {
+     "diff": [
+      "AbsorbStartDiffFrame",
+      "AbsorbEndDiffFrame"
+     ]
+    },
+    "_ChainBlendRateKey": {
+     "diff": [
+      "ChainStartDiffFrame",
+      "ChainEndDiffFrame"
+     ]
+    },
+    "_FollowBlendRateKey": {
+     "diff": [
+      "FollowStartDiffFrame",
+      "FollowEndDiffFrame"
+     ]
+    }
+   },
+   "app.IkSwordLockTrack": {
+    "_LockBoxKey": {
+     "diff": [
+      "LockStartDiffFrame",
+      "LockEndDiffFrame"
+     ]
+    }
+   },
+   "app.IkSwordSkipTrack": {
+    "_SkipBoxKey": {
+     "diff": [
+      "SkipStartDiffFrame",
+      "SkipEndDiffFrame"
+     ]
+    }
+   },
+   "app.IkSwordTrack": {
+    "_ChainBlendRateKey": {
+     "diff": [
+      "ChainStartDiffFrame",
+      "ChainEndDiffFrame"
+     ]
+    },
+    "_FollowBlendRateKey": {
+     "diff": [
+      "FollowStartDiffFrame",
+      "FollowEndDiffFrame"
+     ]
+    },
+    "_GroundBlendRateKey": {
+     "diff": [
+      "GroundStartDiffFrame",
+      "GroundEndDiffFrame"
+     ]
+    },
+    "_WallBlendRateKey": {
+     "diff": [
+      "WallStartDiffFrame",
+      "WallEndDiffFrame"
+     ]
+    }
+   },
+   "app.PostEffectTrackColorCorrectLinear": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.motion_track.Em0151_00MotionTrack.StoryNaviDiveMoveRequestSubAction": {
+    "_RequestSubActionSettings": {
+     "count": "_DefaultIndexCount"
+    }
+   },
+   "app.motion_track.Em0151_00MotionTrack.StoryNaviDiveMoveScale": {
+    "_ScaleSettings": {
+     "count": "_DefaultIndexCount"
+    }
+   },
+   "app.motion_track.Em1154_00MotionTrack.StoryGlideFlipRequestSubAction": {
+    "_RequestSubActionSettings": {
+     "count": "_DefaultIndexCount"
+    }
+   },
+   "app.motion_track.EmMotionTrack.EnableBlurWing": {
+    "_DefaultWingPartsIndices": {
+     "count": "_DefaultWingPartsIndexCount"
+    }
+   },
+   "app.motion_track.HunterVisual": {
+    "_RetargetApplySettings": {
+     "count": "_RetargetApplySettingsCount"
+    }
+   },
+   "app.motion_track.HunterVisualSub": {
+    "_RetargetApplySettings": {
+     "count": "_RetargetApplySettingsCount"
+    }
+   },
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "OnimushaWOTS": {
+   "ace.PostEffect.PostEffectTrackPolynomialLens": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackAberration": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBaseColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cAberrationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cBaseColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cColorCollectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cColorDeficiencySimulationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFCircularParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFDefaultParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDOFTessellationParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDirtMaskParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cDynamicRangeConversionParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cEchoParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cExposureParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cExtraColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cFilmGrainParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cGeometryAOParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cHazeFilterParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cImagePlaneParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cLocalExposureParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cMotionBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cPaniniParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cPolynomialLens>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cRadialBlurParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSSAOParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSSRParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cSoftBloomParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cTemporalAAParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cToneMappingParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cTonemapParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVignetteParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVolumetricFogControlParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cVolumetricFogParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<ace.PostEffect.cWaveOpticalLensFlareParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cColorCorrectLinearParamsExParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cColorCorrectLinearParamsParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cColorCorrectLinearParamsPhotoParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectColorSupportParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectCustomColorCorrectParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectHighlightTargetParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cPostEffectKompiraTripParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackBase`1<app.PostEffect.cRayTraceParam>": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackColorCollect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackColorDeficiencySimulation": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFCirclar": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFDefault": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDOFTessellation": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDirtMask": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackDynamicRangeConversion": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackEcho": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackExposure": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackExtraColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackFilmGrain": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackGeometryAO": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackHazeFilter": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackImagePlane": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackLocalExposure": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackMotionBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackPanini": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackRadialBlur": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSSAO": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSSR": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackSoftBloom": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackTemporalAA": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackToneMapping": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackTonemap": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVignette": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVolumetricFog": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackVolumetricFogControl": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.PostEffectTrackWaveOpticalLensFlare": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "ace.motion_track.IkHand2SkipTrack": {
+    "_GroupInfo": {
+     "count": "_GroupCount"
+    }
+   },
+   "ace.motion_track.IkLegSpineFootSkipTrack": {
+    "_ExtraFootSkip": {
+     "count": "_ExtraFootCount"
+    }
+   },
+   "ace.motion_track.IkLegsFootLockTrack": {
+    "_ExtraFoot": {
+     "count": "_ExtraFootCount"
+    }
+   },
+   "app.AppDTActorElement": {
+    "ModelConditionInfo": {
+     "count": "ModelConditionInfoCount"
+    }
+   },
+   "app.AppDTActorParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.AppDTBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.CutsceneCameraController.cMotionCameraInfo": {
+    "OffsetFrame": {
+     "delayed": true
+    }
+   },
+   "app.DTCommonParam": {
+    "TextDataList": {
+     "count": "TextParamCount"
+    }
+   },
+   "app.DTEnemyParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.DTEnemyParam.DTEnemyBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.DTEnvUnitParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.DTEnvUnitParam.DTEnvUnitBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.DTEventObjectParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.DTEventObjectParam.DTEventObjectBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.DTGimmickParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.DTGimmickParam.DTGimmickBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.DTNpcParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.DTNpcParam.DTNpcBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.DTPlayerParam": {
+    "VFXTrigger": {
+     "count": "VFXTriggerCount"
+    }
+   },
+   "app.DTPlayerParam.DTPlayerBodyMotionElement": {
+    "AppAddMotionPackList": {
+     "count": "AddMotionPackCount"
+    },
+    "JointsOffset": {
+     "count": "JointsOffsetCount"
+    }
+   },
+   "app.PostEffectTrackColorSupport": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackCustomColorCorrect": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackHighlightTarget": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackKompiraTrip": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackLinearParams": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackLinearParamsEx": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackLinearParamsPhoto": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.PostEffectTrackRayTrace": {
+    "_Param": {
+     "delayed": true
+    }
+   },
+   "app.motion_track.PlayerSoulBoostTrack": {
+    "_ParamList": {
+     "count": "ParamNum"
+    }
+   },
+   "app.motion_track.SpawnShellRandom": {
+    "_RandPatterns": {
+     "count": "RandPatternOffsetCount"
+    },
+    "_RandShells": {
+     "count": "RandShellOffsetCount"
+    }
+   },
+   "app.motion_track.SpawnShellRandom.cRandPatternSet": {
+    "Sets": {
+     "count": "SetsOffsetCount"
+    }
+   },
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "Pragmata": {
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "RE2": {
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "RE2RT": {
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "RE3": {
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "RE3RT": {
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "RE4": {
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "RE7RT": {
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "RE8": {
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveGameParameterParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "GameParameterIdName": {
+     "diff": [
+      "PrevDiffFrameGameParameterIdName",
+      null
+     ]
+    },
+    "Global": {
+     "diff": [
+      "PrevDiffFrameGlobal",
+      null
+     ]
+    },
+    "Value": {
+     "diff": [
+      "PrevDiffFrameValue",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveStateParam": {
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "StateGroupIdName": {
+     "diff": [
+      "PrevDiffFrameStateGroupIdName",
+      null
+     ]
+    },
+    "StateIdName": {
+     "diff": [
+      "PrevDiffFrameStateIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseEffectiveSwitchParam": {
+    "AllJoint": {
+     "diff": [
+      "PrevDiffFrameAllJoint",
+      null
+     ]
+    },
+    "Bool": {
+     "diff": [
+      "PrevDiffFrameBool",
+      null
+     ]
+    },
+    "SwitchGroupIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchGroupIdName",
+      null
+     ]
+    },
+    "SwitchIdName": {
+     "diff": [
+      "PrevDiffFrameSwitchIdName",
+      null
+     ]
+    }
+   },
+   "via.wwise.WwiseSeqTriggerParam": {
+    "TriggerIdName": {
+     "diff": [
+      "PrevDiffFrameTriggerIdName",
+      null
+     ]
+    }
+   }
+  },
+  "RE9": {
+   "app.SeverBodyPartTrack": {
+    "InitialVelocities": {
+     "count": "InitialVelocitiesOffset"
+    }
+   },
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  },
+  "SF6": {
+   "app.esports.ChainPartsTrack": {
+    "Requests": {
+     "count": "OffsetCount"
+    }
+   },
+   "app.esports.DrawPartsTrack": {
+    "PartsEnable": {
+     "count": "OffsetCount"
+    }
+   },
+   "app.esports.FighterSelectObjTrack": {
+    "PartsEnable": {
+     "count": "OffsetCount"
+    }
+   },
+   "app.sound.SeqConditionalStateKeyParam": {
+    "IsTrigger": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.sound.SeqStateParam": {
+    "IsTrigger": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "app.sound.SeqTriggerParam": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "soundlib.SoundClipTrigger": {
+    "TriggerId": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.ActorLayer": {
+    "Frame": {
+     "previous": "StartFrame"
+    }
+   },
+   "via.motion.CppSampleTracks": {
+    "BoolEvent": {
+     "diff": [
+      "PrevDiffFrame",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeCameraLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   },
+   "via.motion.TreeLayer": {
+    "NextStartFrameByClip": {
+     "diff": [
+      "NextElapsedFrameByClip",
+      null
+     ]
+    }
+   }
+  }
+ }
+}

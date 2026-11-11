@@ -7,10 +7,10 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-lazy from .codec import parse_gui
+lazy from .codec import gui_version, parse_gui
 lazy from .errors import GuiFormatError
-from .model import GUI_MAGIC, GuiAnimation, GuiDocument, GuiObject, GuiSymbol
-lazy from .profiles import GuiFormatProfile, gui_profile_from_data
+from .model import GuiAnimation, GuiDocument, GuiObject, GuiSymbol
+lazy from .rules import gui_layout
 lazy from .serializer import serialize_gui
 
 
@@ -77,7 +77,6 @@ class GuiFile:
 
     def __init__(self) -> None:
         self.source = "<bytes>"
-        self.profile: GuiFormatProfile | None = None
         self.document: GuiDocument | None = None
         self._saved_bytes = b""
         self._state = 0
@@ -88,11 +87,9 @@ class GuiFile:
 
     @classmethod
     def can_handle(cls, data: bytes) -> bool:
-        if len(data) < 8 or data[4:8] != GUI_MAGIC:
-            return False
         try:
-            gui_profile_from_data(data)
-        except ValueError:
+            gui_layout(gui_version(data))
+        except GuiFormatError:
             return False
         return True
 
@@ -109,13 +106,8 @@ class GuiFile:
 
     def read(self, data: bytes, source: str = "<bytes>") -> None:
         payload = bytes(data)
-        try:
-            profile = gui_profile_from_data(payload)
-        except ValueError as exc:
-            raise GuiFormatError(f"{source}: {exc}") from exc
-        self.document = parse_gui(payload, source, profile=profile)
+        self.document = parse_gui(payload, source)
         self.source = source
-        self.profile = profile
         self._saved_bytes = payload
         self._state = self._saved_state = 0
         self._next_state = 1
@@ -192,8 +184,7 @@ class GuiFile:
     def reset(self) -> bool:
         if not self.modified:
             return False
-        assert self.profile is not None
-        self.document = parse_gui(self._saved_bytes, self.source, profile=self.profile)
+        self.document = parse_gui(self._saved_bytes, self.source)
         self._state = self._saved_state = 0
         self._next_state = 1
         self._undo.clear()
@@ -201,9 +192,7 @@ class GuiFile:
         return True
 
     def serialize(self) -> bytes:
-        if self.profile is None:
-            raise GuiFormatError("no GUI profile is loaded")
-        return serialize_gui(self.require_document(), profile=self.profile)
+        return serialize_gui(self.require_document())
 
     def write(self) -> bytes:
         result = self.serialize()

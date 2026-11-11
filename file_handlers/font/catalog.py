@@ -66,28 +66,17 @@ class FontFaceAsset:
     normalized_asset_path: str
     platform_variant: bool
     resource_name: str
-    adjustment_scale: float
     font: SfntFont
 
     def glyph_metric(self, glyph_id: int, *, vertical: bool = False) -> SfntGlyphMetric:
         return self.font.glyph_metric(glyph_id, vertical=vertical)
-
-    def scaled_advance(
-        self, glyph_id: int, em_size: float, *, vertical: bool = False
-    ) -> float:
-        metric = self.glyph_metric(glyph_id, vertical=vertical)
-        return (
-            float(metric.advance)
-            * float(em_size)
-            * self.adjustment_scale
-            / self.font.units_per_em
-        )
 
 
 @dataclass(frozen=True, slots=True)
 class FontSlotFaces:
     mapping: FontSlotMapping
     faces: tuple[FontFaceAsset, ...]
+    scale: tuple[float, float]
 
 
 @dataclass(frozen=True, slots=True)
@@ -107,15 +96,6 @@ class ResolvedGlyph:
         if self.vertical and self.resolution.vertical_glyph_id is not None:
             return self.resolution.vertical_glyph_id
         return self.resolution.glyph_id
-
-    def advance(self, pixel_size: float) -> float:
-        """Pixel advance at ``pixel_size`` (height for vertical text)."""
-
-        if self.missing or self.face is None:
-            return 0.0
-        return self.face.scaled_advance(
-            self.glyph_id, pixel_size, vertical=self.vertical
-        )
 
 
 class GuiFontCatalog:
@@ -205,7 +185,6 @@ class GuiFontCatalog:
             loaded = self._load_font(asset_path)
             if loaded is None:
                 continue
-            adjustment = mapping.scale_for(candidate_index)
             normalized, platform_variant = normalize_font_resource_path(asset_path)
             resource_name, font = loaded
             faces.append(
@@ -215,11 +194,10 @@ class GuiFontCatalog:
                     normalized,
                     platform_variant,
                     resource_name,
-                    float(adjustment),
                     font,
                 )
             )
-        result = FontSlotFaces(mapping, tuple(faces))
+        result = FontSlotFaces(mapping, tuple(faces), (mapping.scale_for(0), mapping.scale_for(1)))
         self._slot_cache[key] = result
         return result
 

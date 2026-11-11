@@ -72,6 +72,7 @@ class RecordCodec:
         self._struct = struct.Struct("".join(fmt))
         self._slots = tuple(slots)
         self.fields = {slot[2]: slot[3] for slot in slots if slot[0] == "field"}
+        self.offsets = {slot[2]: slot[1] for slot in slots if slot[0] in ("field", "array")}
         self.strings = tuple((name, kind) for name, kind in self.fields.items() if kind in ("c8", "c16"))
         self.names = frozenset([*self.fields, *(slot[2] for slot in slots if slot[0] == "array"),
                                 *(bit[2] for slot in slots if slot[0] == "bits" for bit in slot[2])])

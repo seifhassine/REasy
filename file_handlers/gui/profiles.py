@@ -1,57 +1,152 @@
+"""See docs/internals/gui-format.md."""
+
 from __future__ import annotations
 
-import struct
+from collections.abc import Mapping
 from dataclasses import dataclass
+from functools import cache
+from typing import Any
 
-lazy from .adapter import GuiFormatAdapter
+lazy from file_handlers.build_catalog import catalog_reader
+lazy from file_handlers.mmtr.profiles.base import mmtr_profile_for_game
+lazy from utils.enum_manager import game_enum_definitions
+
+lazy from .adapter import GuiRuntimeAdapter
+from .errors import GuiFormatError, GuiSceneError
+lazy from .rules import DATA_DIRECTORY, gui_layout
+
+CATALOG_FORMAT = 1
 
 
 @dataclass(frozen=True, slots=True)
-class GuiFormatProfile:
-    name: str
-    version: int
-    adapter: GuiFormatAdapter
-    runtime_target: str
-    default_uvs_version: int
-    default_tex_version: int
-    default_mesh_version: int
-    default_mdf_version: int
-    default_gcf_version: int
-    mesh_pixels_per_unit: float
+class GuiRuntimeType:
+    classes: tuple[str, ...]
+    declared: frozenset[str]
+    defaults: Mapping[str, Any]
+    facts: Mapping[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class GuiRuntimeProfile:
+    adapter: GuiRuntimeAdapter
+    game: str
+    resource_version: int
     config_resource_paths: tuple[str, ...]
-    controller_index_path: str | None = None
-    preview_scenario_catalog_path: str | None = None
+    runtime_target: str
+    safe_area_ratio: float
+    preview_language: str
+    mesh_pixels_per_unit: float
+    controller_index_path: str
+    preview_scenario_catalog_path: str
+    degree_factors: tuple[float, float]
+    srgb_to_linear: tuple[float, float, float, float, float]
+    uv_orientations: tuple[tuple[str, str, str, str], ...]
+    draw_order: Mapping[str, Any]
+    undeclared: Mapping[str, str]
+    control_fields: Mapping[str, str]
+    clip_mode: int
+    track_aliases: Mapping[str, Mapping[str, int]]
+    list_input: Mapping[str, tuple[int, int]]
+    types: Mapping[str, Mapping[str, Any]]
+    text: Mapping[str, Any]
+    message_tags: Mapping[str, Any]
+    icons: Mapping[str, Any]
+
+    def runtime_type(self, type_name: str) -> GuiRuntimeType:
+        return _runtime_type(self.game, type_name)
+
+    def language(self, label: str) -> int:
+        return _languages(self.game)[label]
+
+    def enum(self, name: str) -> Mapping[str, int]:
+        return _enums(self.game)[name]
+
+    def enum_value(self, properties: Mapping[str, Any], name: str, enum: str | None = None) -> int:
+        enum, value = enum or name, properties[name] if name in properties else self.undeclared[name]
+        labels = self.enum(enum)
+        if isinstance(value, str):
+            if value not in labels:
+                raise GuiSceneError(f"unknown {enum} label {value!r}")
+            return labels[value]
+        try:
+            result = int(value)
+        except (TypeError, ValueError) as exc:
+            raise GuiSceneError(f"invalid {enum} value {value!r}") from exc
+        if result not in _labels(self.game, enum):
+            raise GuiSceneError(f"unknown {enum} value {result}")
+        return result
+
+    def enum_label(self, properties: Mapping[str, Any], name: str, enum: str | None = None) -> str:
+        return _labels(self.game, enum or name)[self.enum_value(properties, name, enum)]
 
 
-GUI_PROFILES: dict[int, GuiFormatProfile] = {}
+def _frozen(value):
+    if isinstance(value, list):
+        return tuple(_frozen(item) for item in value)
+    if isinstance(value, dict):
+        return {key: _frozen(item) for key, item in value.items()}
+    return value
 
 
-def register_gui_profile(profile: GuiFormatProfile) -> None:
-    version = int(profile.version)
-    if version in GUI_PROFILES:
-        raise ValueError(f"GUIR version {version} is already registered")
-    GUI_PROFILES[version] = profile
+def _profile(data: Mapping) -> GuiRuntimeProfile:
+    if data.get("format") != CATALOG_FORMAT:
+        raise GuiFormatError(f"GUI runtime catalog format {data.get('format')!r} is not {CATALOG_FORMAT}")
+    fields = {key: _frozen(value) for key, value in data.items() if key != "format"}
+    return GuiRuntimeProfile(adapter=GUI_ADAPTERS[data["game"]], **fields)
 
 
-def gui_profile(version: int) -> GuiFormatProfile:
-    try:
-        return GUI_PROFILES[int(version)]
-    except KeyError as exc:
-        supported = ", ".join(map(str, sorted(GUI_PROFILES)))
-        raise ValueError(
-            f"unsupported GUIR version {version}; supported versions: {supported}"
-        ) from exc
+_catalog_for = catalog_reader(DATA_DIRECTORY, _profile, GuiFormatError, "GUI runtime")
 
 
-def gui_profile_from_data(
-    data: bytes | bytearray | memoryview,
-) -> GuiFormatProfile:
+@cache
+def runtime_for_game(game: str) -> GuiRuntimeProfile:
+    profile = _catalog_for(mmtr_profile_for_game(game))
+    if profile is None:
+        raise GuiFormatError(f"there is no GUI runtime catalog for {game}")
+    return profile
 
-    if len(data) < 4:
-        raise ValueError("file is too small for a GUIR version")
-    return gui_profile(struct.unpack_from("<I", data, 0)[0])
+
+def gui_runtime(version: int) -> GuiRuntimeProfile:
+    return runtime_for_game(gui_layout(version).runtime)
 
 
-from .dmc5.profile import DMC5_GUI_PROFILE
+@cache
+def _runtime_type(game: str, type_name: str) -> GuiRuntimeType:
+    types = runtime_for_game(game).types
+    if type_name not in types:
+        raise GuiSceneError(f"the {game} GUI runtime has no class {type_name}")
+    names = []
+    while type_name is not None:
+        names.append(type_name)
+        type_name = types[type_name].get("parent")
+    names.reverse()
+    chain = [types[name] for name in names]
+    return GuiRuntimeType(
+        tuple(names),
+        frozenset(name for kind in chain for name in kind["properties"]),
+        {key: value for kind in chain for key, value in kind.get("defaults", {}).items()},
+        {key: value for kind in chain for key, value in kind.items()
+         if key not in ("parent", "properties", "defaults")},
+    )
 
-register_gui_profile(DMC5_GUI_PROFILE)
+
+@cache
+def _languages(game: str) -> dict[str, int]:
+    return {item["name"]: item["value"]
+            for item in game_enum_definitions(game, namespace="via.Language")["via.Language"]}
+
+
+@cache
+def _enums(game: str) -> dict[str, dict[str, int]]:
+    return {name.removeprefix("via.gui."): {item["name"]: item["value"] for item in members}
+            for name, members in game_enum_definitions(game, namespace="via.gui.").items()}
+
+
+@cache
+def _labels(game: str, enum: str) -> dict[int, str]:
+    return {value: label for label, value in _enums(game)[enum].items()}
+
+
+from .dmc5.adapter import DMC5_GUI_ADAPTER
+
+GUI_ADAPTERS: dict[str, GuiRuntimeAdapter] = {"DMC5": DMC5_GUI_ADAPTER}

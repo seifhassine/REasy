@@ -12,12 +12,10 @@ lazy from file_handlers.uvs.uvs_file import UvsFile, UvsPattern
 lazy from utils.resource_file_utils import (
     ResourceDataLoader,
     normalize_resource_path,
-    resource_path_with_version,
     resource_version_from_path,
 )
 
 lazy from .errors import GuiAssetError
-lazy from .profiles import GuiFormatProfile
 
 
 @dataclass(frozen=True, slots=True)
@@ -47,45 +45,22 @@ class ResolvedUvPattern:
 class GuiAssetCatalog:
     """Resolve GUI-owned UVS/TEX references without a separate file index."""
 
-    def __init__(
-        self,
-        resource_data_loader: ResourceDataLoader,
-        profile: GuiFormatProfile,
-    ) -> None:
+    def __init__(self, resource_data_loader: ResourceDataLoader) -> None:
         self.resource_data_loader = resource_data_loader
-        self.profile = profile
 
-    def _load_resource(
-        self,
-        reference: str,
-        extension: str,
-        version: int,
-    ) -> tuple[str, bytes]:
-        candidate = resource_path_with_version(
-            normalize_resource_path(reference),
-            extension,
-            version,
-        )
-        resolved = self.resource_data_loader(candidate)
+    def _load_resource(self, reference: str, extension: str) -> tuple[str, bytes, int]:
+        resolved = self.resource_data_loader(normalize_resource_path(reference))
         if resolved is None:
-            raise GuiAssetError(
-                f"unable to resolve {extension.upper()} resource {candidate!r}"
-            )
-        source, data = resolved
-        return str(source), bytes(data)
+            raise GuiAssetError(f"unable to resolve {extension.upper()} resource {reference!r}")
+        source = str(resolved[0])
+        version = resource_version_from_path(source, extension)
+        if version is None:
+            raise GuiAssetError(f"{source} names no {extension.upper()} version")
+        return source, bytes(resolved[1]), version
 
     @lru_cache(maxsize=None)
     def load_uvs(self, reference: str) -> tuple[str, UvsFile]:
-        source, data = self._load_resource(
-            reference,
-            "uvs",
-            self.profile.default_uvs_version,
-        )
-        version = (
-            resource_version_from_path(source, "uvs")
-            or resource_version_from_path(reference, "uvs")
-            or self.profile.default_uvs_version
-        )
+        source, data, version = self._load_resource(reference, "uvs")
         uvs = UvsFile()
         try:
             uvs.read(data, version=version)
@@ -95,16 +70,7 @@ class GuiAssetCatalog:
 
     @lru_cache(maxsize=None)
     def load_tex(self, reference: str) -> tuple[str, TexFile]:
-        source, data = self._load_resource(
-            reference,
-            "tex",
-            self.profile.default_tex_version,
-        )
-        version = (
-            resource_version_from_path(source, "tex")
-            or resource_version_from_path(reference, "tex")
-            or self.profile.default_tex_version
-        )
+        source, data, version = self._load_resource(reference, "tex")
         texture = TexFile()
         try:
             if not texture.read(data, file_version=version):
@@ -117,39 +83,17 @@ class GuiAssetCatalog:
 
     @lru_cache(maxsize=None)
     def load_mdf(self, reference: str) -> tuple[str, MdfFile]:
-        source, data = self._load_resource(
-            reference,
-            "mdf2",
-            self.profile.default_mdf_version,
-        )
-        versioned = resource_path_with_version(
-            reference,
-            "mdf2",
-            resource_version_from_path(source, "mdf2")
-            or self.profile.default_mdf_version,
-        )
+        source, data, _version = self._load_resource(reference, "mdf2")
         material = MdfFile()
         try:
-            material.read(
-                data,
-                source if resource_version_from_path(source, "mdf2") else versioned,
-            )
+            material.read(data, source)
         except Exception as exc:
             raise GuiAssetError(f"failed to parse {source}: {exc}") from exc
         return source, material
 
     @lru_cache(maxsize=None)
     def load_mesh(self, reference: str) -> tuple[str, MeshFile]:
-        source, data = self._load_resource(
-            reference,
-            "mesh",
-            self.profile.default_mesh_version,
-        )
-        version = (
-            resource_version_from_path(source, "mesh")
-            or resource_version_from_path(reference, "mesh")
-            or self.profile.default_mesh_version
-        )
+        source, data, version = self._load_resource(reference, "mesh")
         mesh = MeshFile()
         try:
             mesh.read(

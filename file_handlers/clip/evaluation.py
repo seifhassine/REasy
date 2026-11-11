@@ -6,15 +6,17 @@ import math
 import struct
 from collections.abc import Sequence
 
-from file_handlers.native_math import f32, fadd, fdiv, fsub
+from file_handlers.native_math import f32, fadd, fdiv, fmul, fsub
 
 from .model import Property
 from .rules import InterpolationType, PropertyType, property_type
 
 INTEGER_TYPES = frozenset(kind for kind in PropertyType if (info := property_type(kind)) is not None
                           and info.value is not None and info.value.numeric and info.value.kind == "int")
+PLAYED_AS = {kind: PropertyType[info.plays_as] for kind in PropertyType
+             if (info := property_type(kind)) is not None and info.plays_as}
 NUMERIC_TYPES = frozenset(kind for kind in PropertyType if (info := property_type(kind)) is not None
-                          and info.value is not None and info.value.numeric)
+                          and info.value is not None and info.value.numeric) | frozenset(PLAYED_AS)
 
 
 def f32_negate(value: float) -> float:
@@ -35,38 +37,52 @@ def ordered_greater_equal(left: float, right: float) -> bool:
     return not (math.isnan(left) or math.isnan(right)) and left >= right
 
 
-def sample(prop: Property, frame: float) -> object | None:
+def stored(kind: PropertyType, value: object) -> object:
+    if kind == PropertyType.BOOL:
+        return bool(value)
+    if kind == PropertyType.F32:
+        return f32(value)
+    played = PLAYED_AS.get(kind)
+    return value if played is None else value & (1 << property_type(played).value.bits) - 1
+
+
+def sample(prop: Property, frame: float, rules: dict) -> object | None:
     keys = prop.keys
     if not keys:
         return None
     frame = f32(frame)
     left, right = surrounding_keys(keys, frame)
     if left is None:
-        return right.value
-    if right is None or left is right or ordered_equal(frame, left.frame):
-        return left.value
+        return stored(prop.type, right.value)
+    if right is None or left is right:
+        return stored(prop.type, left.value)
     mode, kind = left.interpolation, prop.type
-    if mode in (InterpolationType.EVENT, InterpolationType.PASS_EVENT):
+    reads = rules["key_reads"]
+    read = reads.types.get(kind)
+    if mode in (InterpolationType.EVENT, InterpolationType.PASS_EVENT) or read is None or (
+            mode not in reads.tested and mode not in read.held and mode not in read.interpolated):
         return None
-    if kind not in NUMERIC_TYPES or not isinstance(right.value, (int, float)):
-        return left.value
+    if mode not in read.interpolated or kind not in NUMERIC_TYPES or not isinstance(right.value, (int, float)):
+        return stored(kind, left.value)
+    played = PLAYED_AS.get(kind, kind)
+    bits = property_type(played).value.bits if played != kind else 0
+    value0, value1 = ((((key.value + (1 << bits - 1)) & (1 << bits) - 1) - (1 << bits - 1) if bits else key.value)
+                      for key in (left, right))
     if mode == InterpolationType.OFFSET_FRAME:
-        value = fadd(interpolation_input(kind, left.value), fsub(frame, left.frame))
+        value = fadd(interpolation_input(played, value0, rules), fsub(frame, left.frame))
     elif mode in (InterpolationType.HERMITE, InterpolationType.BEZIER) and left.control is not None:
         out_x, out_y, in_x, in_y = left.control
         if mode == InterpolationType.HERMITE:
-            parameter = hermite_parameter(left.frame, right.frame, frame, out_x, in_x)
-            value = hermite_value(kind, left.value, right.value, parameter, out_y, in_y)
+            parameter = hermite_parameter(left.frame, right.frame, frame, out_x, in_x, rules["hermite"])
+            value = hermite_value(played, value0, value1, parameter, out_y, in_y, rules)
         else:
             span = fsub(right.frame, left.frame)
-            value = bezier_value(left.value, right.value, fdiv(fsub(frame, left.frame), span) if span else 0.0,
-                                 out_y, in_y)
+            value = bezier_value(value0, value1, fdiv(fsub(frame, left.frame), span) if span else 0.0, out_y, in_y)
     elif mode == InterpolationType.LINEAR:
-        span = fsub(right.frame, left.frame)
-        value = linear_value(kind, left.value, right.value, fdiv(fsub(frame, left.frame), span) if span else 0.0)
+        value = linear_value(played, value0, value1, fsub(frame, left.frame), fsub(right.frame, left.frame), rules)
     else:
-        return left.value
-    return convert_number(kind, value)
+        return stored(kind, left.value)
+    return convert_number(played, value) & (1 << bits) - 1 if bits else convert_number(played, value)
 
 
 def surrounding_keys(
@@ -99,6 +115,7 @@ def hermite_parameter(
     frame: float,
     outgoing_tangent: float,
     incoming_tangent: float,
+    variant: str,
 ) -> float:
     """DMC5's binary32 Newton solve for compact-CLIP mode 5."""
 
@@ -113,9 +130,11 @@ def hermite_parameter(
         return 1.0
     parameter = fdiv(fsub(target, x0), fsub(x1, x0))
     coefficient_a = fadd(fadd(fsub(f32(x0 * 2.0), f32(x1 * 2.0)), tangent0), tangent1)
+    coefficient_b = fsub(fsub(fsub(f32(x1 * 3.0), f32(x0 * 3.0)), f32(tangent0 * 2.0)), tangent1)
+    if not coefficient_a and variant != "linear":
+        return _hermite_quadratic(fsub(x0, target), tangent0, coefficient_b, parameter, variant)
     if not coefficient_a or math.isnan(coefficient_a):
         return parameter
-    coefficient_b = fsub(fsub(fsub(f32(x1 * 3.0), f32(x0 * 3.0)), f32(tangent0 * 2.0)), tangent1)
     b_over_a = fdiv(coefficient_b, coefficient_a)
     c_over_a = fdiv(tangent0, coefficient_a)
     constant = fdiv(fsub(x0, target), coefficient_a)
@@ -150,8 +169,27 @@ def hermite_parameter(
     return parameter
 
 
+def _hermite_quadratic(offset: float, tangent0: float, coefficient_b: float, parameter: float, variant: str) -> float:
+    if not coefficient_b:
+        return fdiv(f32_negate(offset), tangent0) if tangent0 else offset
+    square = fsub(f32(tangent0 * tangent0), f32(f32(coefficient_b * 4.0) * offset))
+    root, twice = f32(math.sqrt(square)) if square >= 0.0 else math.nan, f32(coefficient_b * 2.0)
+    if variant == "quadratic":
+        first, second = fdiv(fsub(root, tangent0), twice), fdiv(fsub(f32_negate(tangent0), root), twice)
+    elif tangent0 <= 0.0:
+        first, second = fdiv(fsub(root, tangent0), twice), fdiv(f32(offset * 2.0), fsub(root, tangent0))
+    else:
+        lower = fsub(f32_negate(tangent0), root)
+        first, second = fdiv(f32(offset * 2.0), lower), fdiv(lower, twice)
+    if not (first < 0.0 or first > 1.0):
+        return first
+    if variant == "quadratic":
+        return second if 0.0 <= second <= 1.0 else parameter
+    return parameter if second < 0.0 or second > 1.0 else second
+
+
 def hermite_value(kind: PropertyType, value0: float, value1: float, parameter: float, out_y: float,
-                  in_y: float) -> float:
+                  in_y: float, rules: dict) -> float:
     squared = f32(parameter * parameter)
     cubed = f32(squared * parameter)
     tangent0, tangent1 = f32(out_y), f32_negate(in_y)
@@ -164,8 +202,8 @@ def hermite_value(kind: PropertyType, value0: float, value1: float, parameter: f
         coefficient_b -= float(f32(tangent0 * 2.0)) + float(tangent1)
         return coefficient_a * float(cubed) + coefficient_b * float(squared) + float(tangent_term) + value0
 
-    value0 = interpolation_input(kind, value0)
-    value1 = interpolation_input(kind, value1)
+    value0 = interpolation_input(kind, value0, rules)
+    value1 = interpolation_input(kind, value1, rules)
     coefficient_a = fadd(fsub(f32(value0 * 2.0), f32(value1 * 2.0)), tangent0)
     coefficient_a = fadd(coefficient_a, tangent1)
     coefficient_b = fsub(f32(value1 * 3.0), f32(value0 * 3.0))
@@ -173,6 +211,36 @@ def hermite_value(kind: PropertyType, value0: float, value1: float, parameter: f
     coefficient_b = fsub(coefficient_b, tangent1)
     value = fadd(f32(coefficient_a * cubed), f32(coefficient_b * squared))
     return fadd(fadd(value, tangent_term), value0)
+
+
+def hermite_curve(value0: float, tangent0: float, value1: float, tangent1: float, parameter: float) -> float:
+    squared = fmul(parameter, parameter)
+    cubed = fmul(squared, parameter)
+    coefficient_a = fadd(fsub(fadd(fmul(value0, 2.0), tangent0), fmul(value1, 2.0)), tangent1)
+    coefficient_b = fsub(fsub(fmul(value1, 3.0), fadd(fmul(value0, 3.0), fmul(tangent0, 2.0))), tangent1)
+    value = fadd(fmul(coefficient_b, squared), fmul(coefficient_a, cubed))
+    return fadd(fadd(value, fmul(tangent0, parameter)), value0)
+
+
+BEZIER3D_BASIS = ((-1.0, 3.0, -3.0, 1.0), (3.0, -6.0, 3.0, 0.0), (-3.0, 3.0, 0.0, 0.0), (1.0, 0.0, 0.0, 0.0))
+
+
+def bezier_point(start: Sequence[float], control0: Sequence[float], control1: Sequence[float],
+                 end: Sequence[float], parameter: float, variant: str) -> tuple[float, ...]:
+    if variant == "nested":
+        blend, points = fmul(fsub(1.0, parameter), parameter), []
+        for a, b, c, d in zip(start, control0, control1, end):
+            total = fadd(a, d)
+            low, high = fsub(fmul(3.0, b), total), fsub(fmul(3.0, c), total)
+            line = fadd(a, fmul(parameter, fsub(d, a)))
+            points.append(fadd(line, fmul(blend, fsub(fadd(low, fmul(parameter, fsub(high, low))), line))))
+        return tuple(points)
+    squared = fmul(parameter, parameter)
+    powers = (fmul(squared, parameter), squared, parameter)
+    weights = [fadd(fadd(fadd(fmul(cubic, powers[0]), fmul(square, powers[1])), fmul(linear, powers[2])), constant)
+               for cubic, square, linear, constant in zip(*BEZIER3D_BASIS)]
+    return tuple(fadd(fadd(fadd(fmul(weights[0], a), fmul(weights[1], b)), fmul(weights[2], c)), fmul(weights[3], d))
+                 for a, b, c, d in zip(start, control0, control1, end))
 
 
 def bezier_value(value0: float, value1: float, parameter: float, out_y: float, in_y: float) -> float:
@@ -189,11 +257,19 @@ def bezier_value(value0: float, value1: float, parameter: float, out_y: float, i
     return fadd(fadd(value, f32(basis2 * incoming)), f32(basis3 * outgoing))
 
 
-def linear_value(kind: PropertyType, value0: float, value1: float, ratio: float) -> float:
-    inverse = fsub(1.0, ratio)
-    start = interpolation_input(kind, value0)
-    end = interpolation_input(kind, value1)
-    return fadd(f32(inverse * start), f32(ratio * end))
+def linear_value(kind: PropertyType, value0: float, value1: float, offset: float, span: float, rules: dict) -> float:
+    double = kind in (PropertyType.F32, PropertyType.F64) and rules["linear"] == "double"
+    wide = double and kind == PropertyType.F64
+    start, end = (float(value0), float(value1)) if wide else (interpolation_input(kind, value0, rules),
+                                                               interpolation_input(kind, value1, rules))
+    if start == end if wide else ordered_equal(start, end):
+        return start
+    if double:
+        ratio = offset / span if span else 0.0
+        value = (1.0 - ratio) * start + end * ratio
+        return value if wide else f32(value)
+    ratio = fdiv(offset, span) if span else 0.0
+    return fadd(f32(fsub(1.0, ratio) * start), f32(ratio * end))
 
 
 def convert_number(kind: PropertyType, value: float) -> int | float:
@@ -218,11 +294,11 @@ def convert_number(kind: PropertyType, value: float) -> int | float:
     return raw - (1 << width) if signed and raw & (1 << (width - 1)) else raw
 
 
-def interpolation_input(kind: PropertyType, value: int | float) -> float:
+def interpolation_input(kind: PropertyType, value: int | float, rules: dict) -> float:
     if kind == PropertyType.S64:
         return _native_integer_to_f32(int(value))
     if kind == PropertyType.U64:
-        return _native_u64_to_f32(int(value))
+        return _native_u64_to_f32(int(value), rules["u64"])
     return f32(float(value))
 
 
@@ -259,8 +335,11 @@ def _native_integer_to_f32(value: int) -> float:
     return struct.unpack("<f", struct.pack("<I", bits))[0]
 
 
-def _native_u64_to_f32(value: int) -> float:
+def _native_u64_to_f32(value: int, variant: str) -> float:
     raw = int(value) & 0xFFFF_FFFF_FFFF_FFFF
+    if raw >> 63 and variant == "halved":
+        half = _native_integer_to_f32((raw >> 1) | (raw & 1))
+        return fadd(half, half)
     signed = raw - (1 << 64) if raw & (1 << 63) else raw
     result = _native_integer_to_f32(signed)
     return fadd(result, f32(float(1 << 64))) if raw & (1 << 63) else result

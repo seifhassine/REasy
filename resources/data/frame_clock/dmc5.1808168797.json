@@ -1,0 +1,17 @@
+{
+ "format": 1,
+ "game": "dmc5",
+ "resource_version": 1808168797,
+ "buffer": "EnvironmentInfo",
+ "time": "timeMillisecond",
+ "day": 86400000,
+ "scale": 1.0,
+ "frame": "frameCount",
+ "odd": "isOddFrame",
+ "parameters": "userGlobalParams",
+ "timers": [
+  {"word": 0, "per_second": 1.0, "period": 600.0, "subtract": true, "fraction": true},
+  {"word": 12, "per_second": 1.0, "period": 600.0, "subtract": true, "fraction": true}
+ ],
+ "mirrors": {}
+}

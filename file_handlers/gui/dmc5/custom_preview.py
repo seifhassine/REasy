@@ -17,18 +17,12 @@ lazy from .controllers import (
     Dmc5GuiControllerContext,
     Dmc5PreviewState,
 )
-lazy from .playback import DMC5_SEGMENT_VALUES, dmc5_control_defaults
-lazy from .property_codec import encode_dmc5_gui_value
+lazy from .playback import dmc5_control_defaults
+lazy from ..profiles import gui_runtime
+lazy from ..rules import gui_layout
+lazy from ..serializer import encode_value
 
 
-_CONTROL_FIELDS = (
-    "PlayState",
-    "StatePattern",
-    "PlayFrame",
-    "Play",
-    "NextStateEnable",
-    "Segment",
-)
 _IDENTITY_FIELDS = frozenset({"Name"})
 
 
@@ -222,7 +216,7 @@ def _property_controls(
             *scene.property_records(node, name)
             for name in node.properties
         )
-        if prop.name not in _IDENTITY_FIELDS and prop.name not in _CONTROL_FIELDS
+        if prop.name not in _IDENTITY_FIELDS and prop.name not in scene.workspace.profile.control_fields.values()
     }
     for name in sorted(records, key=str.casefold):
         prop = records[name]
@@ -251,7 +245,7 @@ def _playback_controls(
     node = _selected_node(scene, path)
     if node is None:
         return []
-    defaults = dmc5_control_defaults(node)
+    defaults, fields = dmc5_control_defaults(scene, node), scene.workspace.profile.control_fields
     if not defaults:
         return []
     overrides = _state_map(state.playback).get(node.path, {})
@@ -277,8 +271,8 @@ def _playback_controls(
     ) -> GuiPreviewControl:
         inherited = name not in overrides
         value = defaults[name] if inherited else overrides[name]
-        if name == "Segment" and isinstance(value, str):
-            value = DMC5_SEGMENT_VALUES.get(value, value)
+        if name == fields["segment"] and isinstance(value, str):
+            value = scene.workspace.profile.enum("Segment").get(value, value)
         return GuiPreviewControl(
             key=_ControlKey("playback", node.path, name),
             group="Animation runtime",
@@ -296,7 +290,7 @@ def _playback_controls(
 
     return [
         control(
-            "PlayState",
+            fields["state"],
             PropertyType.ENUM,
             options=(
                 GuiPreviewOption("", "No state"),
@@ -304,27 +298,27 @@ def _playback_controls(
             ),
         ),
         control(
-            "StatePattern",
+            fields["pattern"],
             PropertyType.S32,
             minimum=0,
             maximum=max_pattern,
             decimals=0,
         ),
         control(
-            "PlayFrame",
+            fields["frame"],
             PropertyType.F32,
             minimum=-1.0,
             maximum=max_frame,
             decimals=3,
         ),
-        control("Play", PropertyType.BOOL),
-        control("NextStateEnable", PropertyType.BOOL),
+        control(fields["play"], PropertyType.BOOL),
+        control(fields["next_state"], PropertyType.BOOL),
         control(
-            "Segment",
+            fields["segment"],
             PropertyType.S32,
             options=tuple(
                 GuiPreviewOption(value, name)
-                for name, value in DMC5_SEGMENT_VALUES.items()
+                for name, value in scene.workspace.profile.enum("Segment").items()
             ),
         ),
     ]
@@ -344,14 +338,14 @@ def dmc5_preview_controls(
     ))
 
 
-def _validate_control(control: GuiPreviewControl, value: object) -> None:
+def _validate_control(control: GuiPreviewControl, value: object, scene: GuiScene) -> None:
     if control.options:
         if not any(value == option.value for option in control.options):
             raise ValueError(f"{control.label}: unsupported choice")
         return
     if control.value_type is None:
         raise ValueError(f"{control.label}: control has no value type")
-    encode_dmc5_gui_value(control.value_type, value, control.label)
+    encode_value(gui_layout(scene.resource.document.version), control.value_type, value, control.label)
     if control.minimum is not None and float(value) < control.minimum:
         raise ValueError(f"{control.label}: value is below {control.minimum:g}")
     if control.maximum is not None and float(value) > control.maximum:
@@ -374,7 +368,7 @@ def set_dmc5_preview_control(
     if inherit and not control.can_inherit:
         raise ValueError(f"{control.label} cannot inherit a value")
     if not inherit:
-        _validate_control(control, value)
+        _validate_control(control, value, scene)
 
     base = _base_scenario(scenarios, scenario)
     state = _state(scenario)
@@ -468,9 +462,9 @@ def rebase_dmc5_custom_preview(
         for name, value in fields.items():
             kind = types.get(name)
             try:
-                if kind is None or name in _IDENTITY_FIELDS or name in _CONTROL_FIELDS:
+                if kind is None or name in _IDENTITY_FIELDS or name in scene.workspace.profile.control_fields.values():
                     raise ValueError
-                encode_dmc5_gui_value(kind, value, name)
+                encode_value(gui_layout(scene.resource.document.version), kind, value, name)
             except (TypeError, ValueError):
                 issues.append(f"custom property {path}.{name} is unavailable")
                 continue
@@ -488,7 +482,7 @@ def rebase_dmc5_custom_preview(
     playback: dict[str, dict[str, object]] = {}
     for path, fields in _state_map(state.playback).items():
         node = scene.nodes_by_path.get(path)
-        if node is None or not dmc5_control_defaults(node):
+        if node is None or not dmc5_control_defaults(scene, node):
             issues.append(f"custom animation target {path!r} is unavailable")
             continue
         valid = {
@@ -498,7 +492,7 @@ def rebase_dmc5_custom_preview(
         }
         for name, value in fields.items():
             try:
-                _validate_control(valid[name], value)
+                _validate_control(valid[name], value, scene)
             except (KeyError, TypeError, ValueError):
                 issues.append(f"custom animation value {path}.{name} is unavailable")
                 continue
@@ -558,7 +552,7 @@ def export_dmc5_preview_preset(
     host = state.controller.active_host
     return {
         "schema": 1,
-        "game": "DMC5",
+        "game": gui_runtime(gui_version).game,
         "gui_version": gui_version,
         "gui_path": normalize_gui_resource_path(gui_path),
         "base_scenario": scenario.base_key,
@@ -595,7 +589,7 @@ def import_dmc5_preview_preset(
 ) -> GuiPreviewScenario:
     if (
         payload.get("schema") != 1
-        or payload.get("game") != "DMC5"
+        or payload.get("game") != scene.workspace.profile.game
         or int(payload.get("gui_version", -1)) != gui_version
         or normalize_gui_resource_path(str(payload.get("gui_path", "")))
         != normalize_gui_resource_path(gui_path)

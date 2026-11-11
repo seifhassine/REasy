@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 
 from file_handlers.clip.play import play_node
+from file_handlers.clip.rules import game_player
 lazy from file_handlers.engine_math import crt
 from file_handlers.native_math import f32, fadd, fdiv, fmul, fsub
 from utils.hash_util import murmur3_hash_utf16le
@@ -144,7 +145,7 @@ class TrackTargets:
 
 
 class TrackPlayer:
-    def __init__(self, motion: Motion, rules: dict, targets: TrackTargets, reset: bool = True,
+    def __init__(self, motion: Motion, rules: dict, targets: TrackTargets, game: str, reset: bool = True,
                  filters: list[int] | None = None, sequences: list[Sequence] | None = None):
         self.rules, self.targets, self.reset = rules, targets, reset
         self.nodes = []
@@ -152,7 +153,8 @@ class TrackPlayer:
             nodes = [node for root in sequence.clip.roots for node in root.children]
             rows = sequence.tracks if filters is not None and len(sequence.tracks) == len(nodes) \
                 else [None] * len(nodes)
-            self.nodes += [(rules[node.name], node) for node, row in zip(nodes, rows)
+            player = game_player(sequence.clip.version, game)
+            self.nodes += [(rules[node.name], node, player) for node, row in zip(nodes, rows)
                            if node.name in rules and (row is None or passes(row, filters))]
         self.fps, self.step, self.end = motion.fps, f32(motion.fps / UPDATES), f32(motion.end_frame)
         self.eyes = next((rule["eyes"] for rule in rules.values() if "eyes" in rule), None)
@@ -273,11 +275,11 @@ class TrackPlayer:
                     dict.fromkeys((part["override"] for part in rule["hair"].values()), False))
             if "faces" in rule:
                 self._emotions(track, rule, state, previous)
-        for index, (rule, node) in enumerate(self.nodes):
+        for index, (rule, node, player) in enumerate(self.nodes):
             fields = deepcopy(rule["defaults"]) if self.reset else state.fields.setdefault(
                 index, deepcopy(rule["defaults"]))
             for start, end, events, mode in frame_plays(previous, frame, self.end, first):
-                play_node(node, start, end, fields, events=events, mode=mode)
+                play_node(node, start, end, fields, player, events=events, mode=mode)
             for name, values in rule.get("enums", {}).items():
                 fields[name] = values.get(fields[name], fields[name]) if isinstance(fields.get(name), str) else \
                     fields.get(name)

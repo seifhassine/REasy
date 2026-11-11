@@ -9,10 +9,10 @@ lazy from file_handlers.gcf.gcf_file import GcfFile
 lazy from file_handlers.gcf.model import GcfData
 lazy from file_handlers.ift.catalog import IconFontCatalog
 lazy from file_handlers.msg.msg_handler import MsgHandler
-lazy from utils.resource_file_utils import ResourceDataLoader, resource_path_with_version
+lazy from utils.resource_file_utils import ResourceDataLoader
 
 lazy from .assets import GuiAssetCatalog
-lazy from .profiles import GuiFormatProfile
+lazy from .profiles import GuiRuntimeProfile
 
 
 @dataclass(frozen=True, slots=True)
@@ -40,11 +40,11 @@ class GuiDependencyCatalog:
     def __init__(
         self,
         resource_data_loader: ResourceDataLoader,
-        profile: GuiFormatProfile,
+        profile: GuiRuntimeProfile,
     ) -> None:
         self.resource_data_loader = resource_data_loader
         self.profile = profile
-        self.assets = GuiAssetCatalog(resource_data_loader, profile)
+        self.assets = GuiAssetCatalog(resource_data_loader)
         self.errors: list[str] = []
         self._config: GcfData | None = None
         self._config_loaded = False
@@ -63,12 +63,7 @@ class GuiDependencyCatalog:
     def _load_config(self) -> None:
         self._config_loaded = True
         for path in self.profile.config_resource_paths:
-            versioned = resource_path_with_version(
-                path,
-                "gcf",
-                self.profile.default_gcf_version,
-            )
-            resolved = self.resource_data_loader(versioned)
+            resolved = self.resource_data_loader(path)
             if resolved is None:
                 continue
             source, data = resolved

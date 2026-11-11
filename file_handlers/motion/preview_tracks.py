@@ -76,7 +76,8 @@ class MotionPreviewTracks:
             for kind, bits in filters["start"].items():
                 for page, bit in bits if kind in kinds else ():
                     masks[page] |= 1 << bit
-        return TrackPlayer(motion, read, targets, game["reset"], masks, self._row[2]) if read else None
+        return TrackPlayer(motion, read, targets, self.prefab.game_version, game["reset"], masks,
+                           self._row[2]) if read else None
 
     def _class_read(self, kind: str, rule: dict, scene: _TrackScene) -> dict | None:
         game, document, item, holder, held, registry, targets, users, kinds, present, nodes = scene

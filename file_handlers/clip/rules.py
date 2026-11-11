@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import functools
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import IntEnum
 
 lazy from file_handlers.layout_codec import RecordCodec, game_enums, load_table, merged
+lazy from utils.enum_manager import enum_game
 
 from .errors import ClipFormatError
 from .model import ResourceKind
@@ -37,6 +38,7 @@ class PropertyTypeInfo:
     speed_points: bool
     children: str
     members: tuple[tuple[str, int], ...]
+    plays_as: str
 
     def owns_keys(self, version: int) -> bool:
         return self.keys_since is not None and version >= self.keys_since
@@ -99,11 +101,27 @@ class FormatRules:
 
 
 @dataclass(frozen=True, slots=True)
+class KeyRead:
+    held: frozenset
+    interpolated: frozenset
+
+
+@dataclass(frozen=True, slots=True)
+class KeyReads:
+    tested: frozenset
+    first_key_events: frozenset
+    unset_zero: frozenset
+    no_case: frozenset
+    types: dict
+
+
+@dataclass(frozen=True, slots=True)
 class VersionProfile:
     version: int
     games: tuple[str, ...]
     checked: bool
     rules: FormatRules
+    player: dict
     motclip: FormatRules | None = None
 
 
@@ -150,9 +168,30 @@ def profile(version: int) -> VersionProfile:
     if entry is None:
         raise ClipFormatError(f"CLIP version {version} is not supported "
                               f"(supported: {', '.join(map(str, supported_versions()))})")
+    reads, kind = entry["player"]["key_reads"], InterpolationType.__getitem__
+    key_reads = KeyReads(frozenset(map(kind, reads["tested"])),
+                         frozenset(map(PropertyType.__getitem__, reads["first_key_events"])),
+                         frozenset(map(PropertyType.__getitem__, reads["unset_zero"])),
+                         frozenset(map(PropertyType.__getitem__, reads["no_case"])),
+                         {PropertyType[name]: KeyRead(frozenset(map(kind, group["held"])),
+                                                      frozenset(map(kind, group["interpolated"])))
+                          for group in reads["groups"] for name in group["types"]})
+    player = entry["player"] | {"key_reads": key_reads, "attributes": {}} | {
+        key: frozenset(map(PropertyType.__getitem__, entry["player"][key]))
+        for key in ("delayed_last", "array_no_case", "array_mode_unset", "animatable_cases", "previous_key")}
     return VersionProfile(version, tuple(entry.get("games", ())), entry.get("checked", True),
-                          format_rules(entry["layout"]),
+                          format_rules(entry["layout"]), player,
                           format_rules(entry["motclip"]) if "motclip" in entry else None)
+
+
+@functools.cache
+def game_player(version: int, game: str) -> dict:
+    player, known = profile(version).player, _game_enums(game)["PropertyType"]
+    reads, missing = player["key_reads"], frozenset(kind for kind in PropertyType if kind not in known)
+    return player | {"array_no_case": player["array_no_case"] | missing, "key_reads": replace(
+        reads, no_case=reads.no_case | missing, types={kind: read for kind, read in reads.types.items()
+                                                       if kind not in missing}),
+                     "attributes": _load("attributes")["games"].get(enum_game(game), {})}
 
 
 def rules_for(version: int, kind: ResourceKind) -> FormatRules:
@@ -192,7 +231,7 @@ def _property_types() -> dict[int, PropertyTypeInfo]:
     return {codes[name]: PropertyTypeInfo(
         codes[name], name, spec.get("keys"), codecs.get(spec.get("value", "")), spec.get("key_storage", ""),
         spec.get("speed_points", False), "members" if "members" in spec else spec.get("children", "fields"),
-        tuple((member, codes[kind]) for member, kind in spec.get("members", ())))
+        tuple((member, codes[kind]) for member, kind in spec.get("members", ())), spec.get("plays_as", ""))
         for name, spec in data["types"].items()}
 
 

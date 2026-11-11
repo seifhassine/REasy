@@ -1,4 +1,4 @@
-"""Format boundary for semantic GUI parsing, runtime evaluation, and preview."""
+"""See docs/internals/gui-format.md."""
 
 from __future__ import annotations
 
@@ -9,8 +9,7 @@ lazy from file_handlers.clip.rules import PropertyType
 lazy from utils.resource_file_utils import ResourceDataLoader
 
 lazy from .dependencies import GuiDependencyCatalog
-lazy from .model import GuiDocument
-lazy from .profiles import GuiFormatProfile
+lazy from .profiles import GuiRuntimeProfile
 lazy from .scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
 
 
@@ -18,9 +17,7 @@ lazy from .scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
 class GuiRuntimeEditorConfig:
     """Runtime controls exposed by the generic editor for one exact format."""
 
-    default_safe_area_ratio: float
     safe_area_tooltip: str
-    default_language: int
     input_devices: tuple[str, ...]
     input_tooltip: str
     interaction_tooltip: str
@@ -70,24 +67,10 @@ class GuiPreviewControl:
     decimals: int | None = None
 
 
-class GuiFormatAdapter(Protocol):
-    """All semantics that vary with the serialized GUI format/runtime."""
+class GuiRuntimeAdapter(Protocol):
+    """All semantics that vary with a game's GUI runtime."""
 
-    name: str
     editor: GuiRuntimeEditorConfig
-
-    def parse(
-        self,
-        data: bytes,
-        source: str,
-        profile: "GuiFormatProfile",
-    ) -> "GuiDocument": ...
-
-    def serialize(
-        self,
-        document: "GuiDocument",
-        profile: "GuiFormatProfile",
-    ) -> bytes: ...
 
     def create_scene(
         self,
@@ -98,14 +81,15 @@ class GuiFormatAdapter(Protocol):
 
     def create_canvas(
         self,
-        dependencies: "GuiDependencyCatalog | None" = None,
+        dependencies: "GuiDependencyCatalog",
+        game: str,
     ) -> Any: ...
 
     def preview_scenarios(
         self,
         gui_path: str,
         loader: "ResourceDataLoader | None",
-        profile: "GuiFormatProfile",
+        profile: "GuiRuntimeProfile",
         scene: "GuiScene",
     ) -> tuple[GuiPreviewScenario, ...]: ...
 
@@ -144,20 +128,15 @@ class GuiFormatAdapter(Protocol):
     def export_preview_preset(
         self,
         gui_path: str,
+        gui_version: int,
         scenario: GuiPreviewScenario,
     ) -> dict[str, Any]: ...
 
     def import_preview_preset(
         self,
         gui_path: str,
+        gui_version: int,
         payload: dict[str, Any],
         scenarios: tuple[GuiPreviewScenario, ...],
         scene: "GuiScene",
     ) -> GuiPreviewScenario: ...
-
-    def validate_property_value(
-        self,
-        kind: "PropertyType",
-        value: Any,
-        name: str,
-    ) -> None: ...

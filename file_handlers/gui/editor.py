@@ -5,7 +5,9 @@ import json
 import math
 import struct
 import uuid
+import weakref
 from collections import defaultdict
+from functools import partial
 from pathlib import Path
 from typing import Any
 
@@ -50,6 +52,7 @@ lazy from file_handlers.clip.values import default_value
 lazy from ui.editor_widgets import editor_strip, styled_label
 lazy from ui.icons import line_icon
 lazy from ui.styles import current_colors, set_style_role
+lazy from utils.resource_file_utils import resource_context_for_handler
 
 lazy from .adapter import GuiPreviewControl, GuiPreviewScenario
 lazy from .dependencies import GuiDependencyCatalog
@@ -72,7 +75,10 @@ lazy from .property_types import (
     SIGNED_VECTOR_COUNTS,
     UNSIGNED_VECTOR_COUNTS,
 )
+lazy from .profiles import gui_runtime
+lazy from .rules import gui_layout
 lazy from .scene import GuiSceneNode, GuiWorkspace
+lazy from .serializer import encode_value
 
 
 ROLE_VALUE = int(Qt.ItemDataRole.UserRole)
@@ -176,15 +182,17 @@ class GuiEditor(QWidget):
 
     def __init__(self, handler, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.handler = handler
+        owner = weakref.ref(handler)
+        self._handler = owner
+        self.resolve_resource = lambda path: owner().resolve_resource(path)
         self.gui_file: GuiFile = handler.gui_file
         self.document: GuiDocument = self.gui_file.require_document()
-        assert self.gui_file.profile is not None
-        self.profile = self.gui_file.profile
+        self.profile = gui_runtime(self.document.version)
         self.adapter = self.profile.adapter
+        self.validate_value = partial(encode_value, gui_layout(self.document.version))
         self.runtime_editor = self.adapter.editor
         self.dependencies = GuiDependencyCatalog(
-            self.handler.resolve_resource,
+            self.resolve_resource,
             self.profile,
         )
         self.workspace: GuiWorkspace | None = None
@@ -200,6 +208,10 @@ class GuiEditor(QWidget):
         self._build_ui()
         self._build_workspace()
         self._refresh_document()
+
+    @property
+    def handler(self):
+        return self._handler()
 
     def _build_ui(self) -> None:
         self.setObjectName("guiEditor")
@@ -376,7 +388,7 @@ class GuiEditor(QWidget):
         self.safe_area_ratio.setRange(0.01, 1.0)
         self.safe_area_ratio.setSingleStep(0.01)
         self.safe_area_ratio.setValue(
-            self.runtime_editor.default_safe_area_ratio
+            self.profile.safe_area_ratio
         )
         self.safe_area_ratio.setMaximumWidth(68)
         self.safe_area_ratio.setToolTip(self.runtime_editor.safe_area_tooltip)
@@ -385,7 +397,7 @@ class GuiEditor(QWidget):
         settings.addWidget(styled_label("Language ID", tone="muted"), 0, 7)
         self.preview_language = QSpinBox()
         self.preview_language.setRange(0, 255)
-        self.preview_language.setValue(self.runtime_editor.default_language)
+        self.preview_language.setValue(self.profile.language(self.profile.preview_language))
         self.preview_language.setMaximumWidth(55)
         self.preview_language.setToolTip(
             "Runtime message language; it is not serialized in this GUI"
@@ -441,7 +453,8 @@ class GuiEditor(QWidget):
         self.tree.currentItemChanged.connect(self._tree_selection)
         splitter.addWidget(self.tree)
 
-        self.canvas = self.adapter.create_canvas(self.dependencies)
+        context = resource_context_for_handler(self.handler)
+        self.canvas = self.adapter.create_canvas(self.dependencies, context.game if context is not None else "")
         self.canvas.node_selected.connect(self._canvas_selection)
         self.canvas.node_moved.connect(self._canvas_move)
         self.canvas.frame_changed.connect(self._preview_frame_changed)
@@ -587,13 +600,13 @@ class GuiEditor(QWidget):
         self.workspace = GuiWorkspace.from_document(
             source,
             self.document,
-            self.handler.resolve_resource,
+            self.resolve_resource,
             profile=self.profile,
         )
         self.scene = self.workspace.instantiate()
         self._preview_scenarios = self.adapter.preview_scenarios(
             self.workspace.root_key,
-            self.handler.resolve_resource,
+            self.resolve_resource,
             self.profile,
             self.scene,
         )
@@ -1059,7 +1072,7 @@ class GuiEditor(QWidget):
     ) -> None:
         try:
             value = self._parse_value(kind, field.text(), current)
-            self.adapter.validate_property_value(kind, value, "Value")
+            self.validate_value(kind, value, "Value")
         except Exception as exc:
             QMessageBox.warning(self, "Invalid property value", str(exc))
             field.setText(_display(current))
@@ -1400,7 +1413,7 @@ class GuiEditor(QWidget):
                 value = self._parse_clip_value(
                     self.selected_track.type,
                     item.text(),
-                    self.adapter.validate_property_value,
+                    self.validate_value,
                 )
 
                 def change(_document, edit, remap):
@@ -1955,6 +1968,7 @@ class GuiEditor(QWidget):
         try:
             payload = self.adapter.export_preview_preset(
                 self.workspace.root_key,
+                self.document.version,
                 scenario,
             )
             Path(filename).write_text(
@@ -1979,6 +1993,7 @@ class GuiEditor(QWidget):
                 raise ValueError("preview preset root must be an object")
             custom = self.adapter.import_preview_preset(
                 self.workspace.root_key,
+                self.document.version,
                 payload,
                 self._preview_scenarios,
                 self.scene,

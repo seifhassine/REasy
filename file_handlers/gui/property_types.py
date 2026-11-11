@@ -15,18 +15,6 @@ UNSIGNED_FORMATS = {
     PropertyType.U32: "I",
     PropertyType.U64: "Q",
 }
-FLOAT_VECTOR_COUNTS = {
-    PropertyType.QUATERNION: 4,
-    PropertyType.VEC2: 2,
-    PropertyType.VEC3: 3,
-    PropertyType.VEC4: 4,
-    PropertyType.RANGE: 2,
-    PropertyType.FLOAT2: 2,
-    PropertyType.FLOAT3: 3,
-    PropertyType.FLOAT4: 4,
-    PropertyType.SIZE: 2,
-    PropertyType.RECT: 4,
-}
 SIGNED_VECTOR_COUNTS = {
     PropertyType.RANGEI: 2,
     PropertyType.POINT: 2,

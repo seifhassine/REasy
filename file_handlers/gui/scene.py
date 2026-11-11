@@ -24,7 +24,7 @@ lazy from .model import (
     apply_property,
     resolve_properties,
 )
-lazy from .profiles import GuiFormatProfile, gui_profile
+lazy from .profiles import GuiRuntimeProfile, gui_runtime
 
 
 def normalize_gui_resource_path(value: str) -> str:
@@ -59,6 +59,7 @@ class GuiSceneNode:
     resource: GuiResource
     object: GuiObject
     prototype: GuiSymbolReference | None
+    runtime: GuiRuntimeProfile
     parent: "GuiSceneNode | None" = None
     children: list["GuiSceneNode"] = field(default_factory=list)
     properties: dict[str, object] = field(default_factory=dict)
@@ -104,7 +105,7 @@ class GuiWorkspace:
         self,
         resources: list[GuiResource],
         root_key: str,
-        profile: GuiFormatProfile,
+        profile: GuiRuntimeProfile,
     ) -> None:
         self.resources = {item.key: item for item in resources}
         self.root_key = root_key
@@ -119,9 +120,9 @@ class GuiWorkspace:
         document: GuiDocument,
         loader: ResourceDataLoader | None = None,
         *,
-        profile: GuiFormatProfile | None = None,
+        profile: GuiRuntimeProfile | None = None,
     ) -> "GuiWorkspace":
-        selected = profile or gui_profile(document.version)
+        selected = profile or gui_runtime(document.version)
         root_key = normalize_gui_resource_path(resource_path)
         resources = [GuiResource(root_key, document.source, document)]
         loaded = {root_key}
@@ -133,14 +134,13 @@ class GuiWorkspace:
                 key = normalize_gui_resource_path(path)
                 if key in loaded or key in missing:
                     continue
-                versioned = resource_path_with_version(path, "gui", selected.version)
-                resolved = loader(versioned) or loader(path)
+                resolved = loader(resource_path_with_version(path, "gui", document.version))
                 if resolved is None:
                     missing[key] = f"{owner.key} imports unresolved {path!r}"
                     continue
                 source, data = resolved
                 try:
-                    dependency = parse_gui(bytes(data), str(source), profile=selected)
+                    dependency = parse_gui(bytes(data), str(source))
                 except GuiFormatError as exc:
                     missing[key] = str(exc)
                     continue
@@ -210,7 +210,7 @@ class GuiWorkspace:
                 path = f"{base}#{suffix}"
                 suffix += 1
             paths.add(path)
-            node = GuiSceneNode(path, owner, obj, prototype, parent)
+            node = GuiSceneNode(path, owner, obj, prototype, self.profile, parent)
             if prototype is None:
                 return node
             identity = prototype.resource.key, prototype.symbol.guid

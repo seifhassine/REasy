@@ -1,0 +1,86 @@
+{
+ "format": 1,
+ "families": {
+  "v270020": {
+   "header": {
+    "size": 48,
+    "fields": [
+     [0, "u32", "version"],
+     {"at": 4, "type": "u32", "const": 1380537671, "what": "magic"},
+     [8, "u64", "root"],
+     [16, "u64", "metadata"],
+     [24, "u64", "bindings"],
+     [32, "u64", "imports"],
+     [40, "u64", "assets"]
+    ]
+   },
+   "records": {
+    "list": {"size": 8, "fields": [[0, "u32", "count"], {"at": 4, "type": "u32", "zero": "padding"}]},
+    "pointer": {"size": 8, "fields": [[0, "u64", "at"]]},
+    "path": {"size": 8, "fields": [[0, "c16", "path"]]},
+    "root": {
+     "size": 24,
+     "fields": [
+      [0, "u64", "first_symbol"],
+      [8, "u64", "root_object"],
+      [16, "u32", "count"],
+      {"at": 20, "type": "u32", "zero": "padding"}
+     ]
+    },
+    "symbol": {
+     "size": 48,
+     "fields": [[0, "guid", "guid"], [16, "c16", "name"], [24, "c8", "type"], [32, "u64", "objects"], [40, "u64", "animations"]]
+    },
+    "animation_list": {"size": 8, "fields": [[0, "u32", "count"], [4, "u32", "states"]]},
+    "object": {
+     "size": 72,
+     "fields": [
+      [0, "guid", "guid"],
+      [16, "guid", "prototype"],
+      [32, "c16", "name"],
+      [40, "c8", "type"],
+      [48, "u64", "properties"],
+      [56, "u64", "defaults"],
+      [64, "u64", "special"]
+     ]
+    },
+    "property": {"size": 24, "fields": [[0, "u32", "type"], [4, "i32", "mask"], [8, "c8", "name"], [16, "u64", "value"]]},
+    "animation": {
+     "size": 40,
+     "fields": [
+      [0, "guid", "guid"],
+      {"at": 16, "type": "u64", "bits": [[0, 1, "loop"]]},
+      [24, "c16", "name"],
+      [32, "u64", "transition"]
+     ]
+    },
+    "binding": {"size": 16, "fields": [[0, "c16", "path"], [8, "c8", "type"]]},
+    "texture_set": {"size": 4, "fields": [[0, "u32", "count"]]},
+    "texture_entry": {
+     "size": 24,
+     "fields": [
+      {"at": 0, "type": "u32", "bits": [[0, 31, "sequence"], [31, 1, "tagged"]]},
+      [4, "u32", "pattern"],
+      [8, "f32x4", "bounds"]
+     ]
+    },
+    "nine_slice": {"size": 16, "fields": [[0, "f32x4", "borders"]]},
+    "nine_slice_cell": {"size": 8, "fields": [[0, "u32", "sequence"], [4, "u32", "pattern"]]},
+    "nine_slice_repeat": {"size": 8, "fields": [[0, "f32", "width"], [4, "f32", "height"]]}
+   },
+   "special": {"via.gui.TextureSet": "texture_set", "via.gui.Scale9Grid": "nine_slice", "via.gui.BlurFilter": "nine_slice"},
+   "pools": ["c16", "c8", "guid", "uint2", "float2", "float3", "float4", "color", "special"],
+   "payloads": {"guid": "16s", "uint2": "2I", "float2": "2f", "float3": "3f", "float4": "4f", "color": "4B"},
+   "values": {
+    "Bool": "?", "S8": "b", "U8": "B", "S16": "h", "U16": "H", "S32": "i", "U32": "I", "S64": "q", "U64": "Q",
+    "F32": "d", "F64": "d",
+    "Str8": "c8", "Enum": "c8",
+    "Str16": "c16", "Asset": "c16",
+    "Guid": "guid", "Uint2": "uint2", "Color": "color",
+    "Vec2": "float2", "Float2": "float2", "Size": "float2",
+    "Vec3": "float3", "Float3": "float3",
+    "Vec4": "float4", "Float4": "float4", "Rect": "float4"
+   }
+  }
+ }
+}

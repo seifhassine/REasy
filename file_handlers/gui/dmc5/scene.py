@@ -12,7 +12,6 @@ lazy from file_handlers.native_math import fdiv as _fdiv
 lazy from file_handlers.native_math import fmul as _fmul
 lazy from file_handlers.native_math import fsub as _fsub
 from ..scene import GuiResource, GuiScene, GuiSceneNode, GuiWorkspace
-from .adapter import DMC5_DEFAULT_SAFE_AREA_RATIO
 
 
 _ORDER_FIELDS = frozenset({"Priority", "MaskType", "MaskMode"})
@@ -27,8 +26,7 @@ class Dmc5GuiScene(GuiScene):
     ) -> None:
         super().__init__(workspace, resource, root)
         self.draw_nodes = list(self.nodes)
-        self.display_size = (1920.0, 1080.0)
-        self.viewport_size = (1920.0, 1080.0)
+        self.display_size = self.viewport_size = self.screen_size
         self._order_dirty = True
         self._order_override_signature: tuple[
             tuple[str, tuple[tuple[str, str], ...]], ...
@@ -36,13 +34,19 @@ class Dmc5GuiScene(GuiScene):
 
     @property
     def screen_size(self) -> tuple[float, float]:
-        value = self.root.properties.get("ScreenSize", (1920.0, 1080.0))
-        width, height = _pair(value, (1920.0, 1080.0))
+        width, height = self.runtime_properties(self.root)["ScreenSize"]
         # View's native setter clamps each ordinary component to at least one.
         return max(1.0, width), max(1.0, height)
 
     def _invalidate_runtime(self) -> None:
         self._order_dirty = True
+
+    def runtime_properties(self, item: GuiSceneNode, overrides: dict[str, object] | None = None) -> dict[str, object]:
+        return self.type_properties(item.object.type_name, {**item.properties, **(overrides or {})})
+
+    def type_properties(self, type_name: str, authored: dict[str, object]) -> dict[str, object]:
+        kind = self.workspace.profile.runtime_type(type_name)
+        return {**kind.defaults, **{name: value for name, value in authored.items() if name in kind.declared}}
 
     def native_children(
         self,
@@ -54,9 +58,8 @@ class Dmc5GuiScene(GuiScene):
         overrides = properties_by_path or {}
         decorated = []
         for insertion_order, child in enumerate(node.children, start=1):
-            properties = dict(child.properties)
-            properties.update(overrides.get(child.path, {}))
-            decorated.append((_child_sort_key(properties, insertion_order), child))
+            properties = self.runtime_properties(child, overrides.get(child.path))
+            decorated.append((_child_sort_key(properties, insertion_order, self.workspace.profile), child))
         decorated.sort(key=lambda item: item[0])
         return tuple(child for _key, child in decorated)
 
@@ -65,65 +68,39 @@ class Dmc5GuiScene(GuiScene):
         overrides: dict[str, dict[str, object]] | None = None,
         *,
         output_size: tuple[float, float] | None = None,
-        safe_area_ratio: float = DMC5_DEFAULT_SAFE_AREA_RATIO,
+        safe_area_ratio: float | None = None,
         transient: tuple[GuiSceneNode, float, float] | None = None,
     ) -> None:
         """Lay out a runtime projection without changing authored properties."""
 
+        profile = self.workspace.profile
+        if safe_area_ratio is None:
+            safe_area_ratio = profile.safe_area_ratio
         self._preview_overrides = overrides or {}
-        root_override = self._preview_overrides.get(self.root.path, {})
-        component_output_size = _pair(
-            root_override.get("ScreenSize", self.screen_size),
-            self.screen_size,
-        )
-        component_output_size = tuple(
-            max(_f32(1.0), _f32(value)) for value in component_output_size
-        )
+        root_properties = self.runtime_properties(self.root, self._preview_overrides.get(self.root.path))
+        component_output_size = tuple(max(_f32(1.0), _f32(value)) for value in root_properties["ScreenSize"])
         self.display_size = output_size or component_output_size
-        viewport_size = _logical_viewport_size(
-            self.display_size,
-            component_output_size,
-        )
+        viewport_size = _logical_viewport_size(self.display_size, component_output_size)
         self.viewport_size = viewport_size
         transient_node = transient[0] if transient else None
 
-        def visit(
-            item: GuiSceneNode,
-            parent_world: Matrix4,
-            parent_raw: Matrix4,
-            parent_visible: bool,
-            parent_scale: tuple[float, float, float, float],
-            parent_offset: tuple[float, float, float],
-            parent_saturation: float,
-            safe_area: bool,
-        ) -> None:
-            properties = dict(item.properties)
-            properties.update(self._preview_overrides.get(item.path, {}))
+        def visit(item: GuiSceneNode, parent_world: Matrix4, parent_raw: Matrix4, parent_visible: bool,
+                  parent_scale: tuple[float, float, float, float], parent_offset: tuple[float, float, float],
+                  parent_saturation: float, safe_area: bool) -> None:
+            facts = profile.runtime_type(item.object.type_name).facts
+            properties = self.runtime_properties(item, self._preview_overrides.get(item.path))
             if item is transient_node and transient is not None:
-                position = list(_triple(properties.get("Position"), (0.0, 0.0, 0.0)))
-                position[:2] = transient[1:]
-                properties["Position"] = position
+                properties["Position"] = (*transient[1:], properties["Position"][2])
             item.render_properties = properties
-            position = _triple(properties.get("Position"), (0.0, 0.0, 0.0))
-            rotation = _triple(properties.get("Rotation"), (0.0, 0.0, 0.0))
-            scale = _triple(properties.get("Scale"), (1.0, 1.0, 1.0))
-            if item.object.type_name == "via.gui.TextureSet":
-                scale = (1.0, 1.0, 1.0)
-            raw_local = _local_matrix(position, rotation, scale)
+            position = tuple(properties["Position"])
+            rotation = tuple(properties["Rotation"])
+            scale = tuple(properties[facts["scale"]]) if "scale" in facts else (1.0, 1.0, 1.0)
+            raw_local = _local_matrix(position, rotation, scale, profile.degree_factors)
             raw_world = _multiply4(raw_local, parent_raw)
-            safe_area = safe_area or bool(properties.get("SafeAreaAdjust", False))
-            if bool(properties.get("ResolutionAdjust", False)):
-                world = _resolution_world(
-                    position,
-                    rotation,
-                    scale,
-                    parent_raw,
-                    component_output_size,
-                    self.display_size,
-                    properties,
-                    safe_area,
-                    safe_area_ratio,
-                )
+            safe_area = safe_area or bool(properties.get("SafeAreaAdjust"))
+            if properties.get("ResolutionAdjust"):
+                world = _resolution_world(position, rotation, scale, parent_raw, component_output_size,
+                                          self.display_size, properties, safe_area, safe_area_ratio, profile)
             elif parent_world is parent_raw:
                 world = raw_world
             else:
@@ -132,97 +109,41 @@ class Dmc5GuiScene(GuiScene):
             item.world_matrix = world
             item.world_transform = _matrix2(world)
             item.world_position = world[3][:2]
-            item.effective_visible = parent_visible and bool(properties.get("Visible", True))
+            item.effective_visible = parent_visible and bool(properties["Visible"])
 
-            local_scale = tuple(
-                _f32(value)
-                for value in _quad(
-                    properties.get("ColorScale"), (1.0, 1.0, 1.0, 1.0)
-                )
-            )
-            local_offset = tuple(
-                _f32(value)
-                for value in _triple(
-                    properties.get("ColorOffset"), (0.0, 0.0, 0.0)
-                )
-            )
-            try:
-                local_saturation = _f32(properties.get("Saturation", 1.0))
-            except (TypeError, ValueError):
-                local_saturation = 1.0
-            if not math.isnan(local_saturation) and local_saturation < 0.0:
-                local_saturation = 0.0
-            item.color_scale = tuple(
-                _fmul(parent_scale[index], local_scale[index])
-                for index in range(4)
-            )
-            item.color_offset = tuple(
-                _fadd(
-                    _fmul(parent_scale[index], local_offset[index]),
-                    _fmul(local_scale[index], parent_offset[index]),
-                )
-                for index in range(3)
-            )
-            item.saturation = _fmul(parent_saturation, local_saturation)
-
-            for candidate in ("Size", "RegionSize", "BarFullSize", "ScreenSize"):
-                size = _pair(properties.get(candidate), (0.0, 0.0))
-                if size[0] > 0 and size[1] > 0:
-                    item.size = size
-                    break
+            if "ColorScale" in properties:
+                local_scale = tuple(_f32(value) for value in properties["ColorScale"])
+                offset = properties["ColorOffset"]
+                local_offset = tuple(_f32(offset[0] if facts.get("color_offset_broadcast") else value)
+                                     for value in offset)
+                local_saturation = _f32(properties["Saturation"])
+                if not math.isnan(local_saturation) and local_saturation < 0.0:
+                    local_saturation = 0.0
+                item.color_scale = tuple(_fmul(parent_scale[index], local_scale[index]) for index in range(4))
+                item.color_offset = tuple(_fadd(_fmul(parent_scale[index], local_offset[index]),
+                                                _fmul(local_scale[index], parent_offset[index])) for index in range(3))
+                item.saturation = _fmul(parent_saturation, local_saturation)
             else:
-                # Containers have no native local draw/hit quad. Every DMC5
-                # drawable in the corpus supplies Size or RegionSize, so a
-                # fabricated editor rectangle would only corrupt hit routing.
-                item.size = (0.0, 0.0)
-            item.anchor = _anchor(properties.get("ControlPoint"), item.size)
-            for child in item.children:
-                visit(
-                    child,
-                    world,
-                    raw_world,
-                    item.effective_visible,
-                    item.color_scale,
-                    item.color_offset,
-                    item.saturation,
-                    safe_area,
-                )
+                item.color_scale, item.color_offset, item.saturation = parent_scale, parent_offset, parent_saturation
 
-        visit(
-            self.root,
-            _IDENTITY4,
-            _IDENTITY4,
-            True,
-            (1.0, 1.0, 1.0, 1.0),
-            (0.0, 0.0, 0.0),
-            1.0,
-            False,
-        )
+            size = tuple(properties[facts["size"]]) if "size" in facts else (0.0, 0.0)
+            item.size = size if size[0] > 0 and size[1] > 0 else (0.0, 0.0)
+            item.anchor = _anchor(profile.enum_value(properties, "ControlPoint"), item.size)
+            for child in item.children:
+                visit(child, world, raw_world, item.effective_visible, item.color_scale, item.color_offset,
+                      item.saturation, safe_area)
+
+        visit(self.root, _IDENTITY4, _IDENTITY4, True, (1.0, 1.0, 1.0, 1.0), (0.0, 0.0, 0.0), 1.0, False)
         order_override_signature = tuple(
-            (
-                path,
-                tuple(
-                    (name, repr(values[name]))
-                    for name in sorted(_ORDER_FIELDS.intersection(values))
-                ),
-            )
-            for path, values in sorted(self._preview_overrides.items())
-            if _ORDER_FIELDS.intersection(values)
-        )
-        if (
-            self._order_dirty
-            or order_override_signature != self._order_override_signature
-        ):
+            (path, tuple((name, repr(values[name])) for name in sorted(_ORDER_FIELDS.intersection(values))))
+            for path, values in sorted(self._preview_overrides.items()) if _ORDER_FIELDS.intersection(values))
+        if self._order_dirty or order_override_signature != self._order_override_signature:
             self.draw_nodes = []
 
             def order(item: GuiSceneNode) -> None:
                 self.draw_nodes.append(item)
-                children = sorted(
-                    enumerate(item.children, start=1),
-                    key=lambda pair: _child_sort_key(
-                        pair[1].render_properties, pair[0]
-                    ),
-                )
+                children = sorted(enumerate(item.children, start=1), key=lambda pair: _child_sort_key(
+                    pair[1].render_properties, pair[0], profile))
                 for _index, child in children:
                     order(child)
 
@@ -244,43 +165,13 @@ class Dmc5GuiScene(GuiScene):
         x, y = x - tx, y - ty
         return (d * x - c * y) / determinant, (-b * x + a * y) / determinant
 
-def _pair(value, default: tuple[float, float]) -> tuple[float, float]:
-    if isinstance(value, (list, tuple)) and len(value) >= 2:
-        try:
-            return float(value[0]), float(value[1])
-        except (TypeError, ValueError):
-            pass
-    return default
-
-
-def _triple(value, default: tuple[float, float, float]) -> tuple[float, float, float]:
-    if isinstance(value, (list, tuple)) and len(value) >= 3:
-        try:
-            return float(value[0]), float(value[1]), float(value[2])
-        except (TypeError, ValueError):
-            pass
-    return default
-
-
-def _quad(
-    value,
-    default: tuple[float, float, float, float],
-) -> tuple[float, float, float, float]:
-    if isinstance(value, (list, tuple)) and len(value) >= 4:
-        try:
-            return tuple(float(item) for item in value[:4])
-        except (TypeError, ValueError):
-            pass
-    return default
-
-
 def _logical_viewport_size(
     display_size: tuple[float, float],
     component_output_size: tuple[float, float],
 ) -> tuple[float, float]:
     """Convert physical pixels to the logical GUI viewport used by RE Engine."""
 
-    display_width, display_height = _pair(display_size, component_output_size)
+    display_width, display_height = display_size
     output_height = component_output_size[1]
     display_width = max(1.0, display_width)
     display_height = max(1.0, display_height)
@@ -304,13 +195,13 @@ _IDENTITY4: Matrix4 = (
 
 
 @lru_cache(maxsize=16_384)
-def _local_matrix(position, rotation, scale) -> Matrix4:
+def _local_matrix(position, rotation, scale, degree_factors) -> Matrix4:
     px, py, pz = (_f32(value) for value in position)
     rx, ry, rz = (_f32(value) for value in rotation)
     scale_x, scale_y, scale_z = (_f32(value) for value in scale)
 
     def to_radians(value: float) -> float:
-        return _fmul(_fmul(value, 0.0055555556900799274), 3.1415927410125732)
+        return _fmul(_fmul(value, degree_factors[0]), degree_factors[1])
 
     rx, ry, rz = (to_radians(value) for value in (rx, ry, rz))
     sx, sy, sz = (_f32(math.sin(value)) for value in (rx, ry, rz))
@@ -408,6 +299,7 @@ def _resolution_world(
     properties,
     safe_area: bool,
     safe_area_ratio: float,
+    runtime,
 ) -> Matrix4:
     ratio = _f32(safe_area_ratio)
     divisor = _f32(1.0) if safe_area else ratio
@@ -415,27 +307,10 @@ def _resolution_world(
         _fdiv(screen_size[0], _fmul(output_size[0], divisor)),
         _fdiv(screen_size[1], _fmul(output_size[1], divisor)),
     )
-    condition = _enum_index(
-        properties.get("ResAdjustCondition"),
-        {"Always": 0, "Expanding": 1, "Shrinking": 2},
-        0,
-    )
-    policy = _enum_index(
-        properties.get("ResAdjustScale"),
-        {"None": 0, "Stretch": 1, "FitSmallRatioAxis": 2, "FitLargeRatioAxis": 3},
-        1,
-    )
+    condition = runtime.enum_label(properties, "ResAdjustCondition", "ResolutionAdjustCondition")
+    policy = runtime.enum_label(properties, "ResAdjustScale", "ResolutionAdjustScale")
     selected = _resolution_scale(source, policy, condition)
-    anchor_index = _enum_index(
-        properties.get("ResAdjustAnchor"),
-        {
-            "LeftTop": 0, "LeftCenter": 1, "LeftBottom": 2,
-            "CenterTop": 3, "CenterCenter": 4, "CenterBottom": 5,
-            "RightTop": 6, "RightCenter": 7, "RightBottom": 8,
-        },
-        0,
-    )
-    column, row = divmod(anchor_index, 3)
+    column, row = divmod(runtime.enum_value(properties, "ResAdjustAnchor", "ResolutionAdjustAnchor"), 3)
     anchor = (
         _fmul(screen_size[0], _fmul(float(column), 0.5)),
         _fmul(screen_size[1], _fmul(float(row), 0.5)),
@@ -450,6 +325,7 @@ def _resolution_world(
         adjusted,
         rotation,
         (_fmul(selected[0], scale[0]), _fmul(selected[1], scale[1]), scale[2]),
+        runtime.degree_factors,
     )
     anchored_parent: Matrix4 = (
         raw_parent[0], raw_parent[1], raw_parent[2], (*anchor, 0.0, 1.0)
@@ -468,71 +344,39 @@ def _resolution_world(
     return world
 
 
-def _resolution_scale(source, policy: int, condition: int) -> tuple[float, float]:
+def _resolution_scale(source, policy: str, condition: str) -> tuple[float, float]:
     x_ratio, y_ratio = (_f32(value) for value in source)
-    if policy == 0:
+    if policy == "None":
         return x_ratio, y_ratio
-    if policy == 1:
+    if policy == "Stretch":
         selected = (_f32(1.0), _f32(1.0))
-        if condition == 1:
+        if condition == "Expanding":
             selected = max(1.0, x_ratio), max(1.0, y_ratio)
-        elif condition == 2:
+        elif condition == "Shrinking":
             selected = min(1.0, x_ratio), min(1.0, y_ratio)
         return selected
-    axis = max(x_ratio, y_ratio) if policy == 2 else min(x_ratio, y_ratio)
+    axis = max(x_ratio, y_ratio) if policy == "FitSmallRatioAxis" else min(x_ratio, y_ratio)
     fitted = _fdiv(x_ratio, axis), _fdiv(y_ratio, axis)
-    if condition == 0:
+    if condition == "Always":
         return fitted
     expands = axis > 1.0
-    return (source if expands == (condition == 1) else fitted)
+    return (source if expands == (condition == "Expanding") else fitted)
 
 
-def _enum_index(value, labels: dict[str, int], default: int) -> int:
-    if value is None:
-        return default
-    if isinstance(value, str):
-        try:
-            return labels[value]
-        except KeyError as exc:
-            raise GuiSceneError(f"unknown GUI enum label {value!r}") from exc
-    try:
-        result = int(value)
-    except (TypeError, ValueError) as exc:
-        raise GuiSceneError(f"invalid GUI enum value {value!r}") from exc
-    if result not in labels.values():
-        raise GuiSceneError(f"unknown GUI enum value {result}")
-    return result
+def _child_sort_key(properties: dict[str, object], insertion_order: int, runtime) -> int:
+    draw_order, classes = runtime.draw_order, runtime.draw_order["mask_classes"]
+    mask_class = classes[min(len(classes) - 1, max(0, runtime.enum_value(properties, "MaskType")))]
+    if runtime.enum_label(properties, "MaskMode") == "ApplyToParent":
+        mask_class |= draw_order["apply_to_parent"]
+    priority = int(properties["Priority"]) & draw_order["priority_mask"]
+    return (
+        (draw_order["base"] - mask_class)
+        | (priority << draw_order["priority_shift"])
+        | (draw_order["order_base"] - insertion_order)
+    ) & 0xFFFFFFFF
 
 
-def _child_sort_key(properties: dict[str, object], insertion_order: int) -> int:
-    mask_type = _enum_index(
-        properties.get("MaskType"),
-        {"Target": 0, "NonTarget": 1, "Mask": 2, "MaskTop": 3, "MaskTopMost": 4},
-        0,
-    )
-    mask_mode = _enum_index(
-        properties.get("MaskMode"),
-        {"Keep": 0, "Default": 1, "Reverse": 2, "Disable": 3, "ApplyToParent": 4},
-        0,
-    )
-    mask_class = (0, 0, 0x40000000, 0x80000000, 0xC0000000)[
-        min(4, max(0, mask_type))
-    ]
-    category = (0xC0000000 - (mask_class | (0x80000000 if mask_mode & 4 else 0)))
-    priority = int(properties.get("Priority", 0)) & 0xFFFF
-    return (category | (priority << 17) | (0x7FFF - insertion_order)) & 0xFFFFFFFF
-
-
-def _anchor(value, size: tuple[float, float]) -> tuple[float, float]:
-    control = _enum_index(
-        value,
-        {
-            "LeftTop": 0, "CenterTop": 1, "RightTop": 2,
-            "LeftCenter": 4, "CenterCenter": 5, "RightCenter": 6,
-            "LeftBottom": 8, "CenterBottom": 9, "RightBottom": 10,
-        },
-        0,
-    )
+def _anchor(control: int, size: tuple[float, float]) -> tuple[float, float]:
     horizontal = (0.0, 0.5, 1.0)[control & 3]
     vertical = (0.0, 0.5, 1.0)[control >> 2]
     return size[0] * horizontal, size[1] * vertical

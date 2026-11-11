@@ -204,6 +204,7 @@ def _record(value: object, asset: str, index: int) -> Dmc5CapturedPreview:
 def _catalog(
     path: str,
     gui_version: int,
+    game: str,
 ) -> tuple[dict[str, tuple[Dmc5CapturedPreview, ...]], str | None]:
     source = resource_path(path)
     if not source.is_file():
@@ -214,7 +215,7 @@ def _catalog(
             raise ValueError("catalog root must be an object")
         if (
             payload.get("schema") != 2
-            or payload.get("game") != "DMC5"
+            or payload.get("game") != game
             or int(payload.get("gui_version", -1)) != int(gui_version)
         ):
             raise ValueError("unsupported catalog identity, schema, or GUI version")
@@ -272,12 +273,13 @@ def captured_dmc5_previews(
     gui_path: str,
     catalog_path: str | None,
     gui_version: int,
+    game: str,
 ) -> tuple[tuple[Dmc5CapturedPreview, ...], tuple[str, ...]]:
     """Return exact-build captures for ``gui_path`` without guessing state."""
 
     if not catalog_path:
         return (), ()
-    catalog, error = _catalog(catalog_path, gui_version)
+    catalog, error = _catalog(catalog_path, gui_version, game)
     if error is not None:
         return (), (error,)
     return catalog.get(normalize_gui_resource_path(gui_path), ()), ()
