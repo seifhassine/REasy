@@ -29,10 +29,7 @@ class RszClipboardUtils:
     
     @staticmethod
     def get_json_name(widget):
-        parent_getter = getattr(widget, 'parent', None)
-        parent = parent_getter() if callable(parent_getter) else None
-
-        for candidate in (parent, widget):
+        for candidate in (getattr(widget, 'viewer', None), widget):
             handler = getattr(candidate, 'handler', None)
             type_registry = getattr(handler, 'type_registry', None)
             if type_registry is None or not hasattr(type_registry, 'json_path'):

@@ -88,7 +88,7 @@ class RszArrayClipboard:
         
     @staticmethod
     def copy_to_clipboard(widget, element, array_type, embedded_context=None):
-        parent_viewer = widget.parent()
+        parent_viewer = widget.viewer
         
         if not embedded_context and hasattr(widget, 'embedded_context'):
             embedded_context = widget.embedded_context
@@ -1692,7 +1692,7 @@ class RszArrayClipboard:
         if not items_data:
             return None
 
-        viewer = widget.parent()
+        viewer = widget.viewer
         added = []
         if not embedded_context and hasattr(widget, 'embedded_context'):
             embedded_context = widget.embedded_context
@@ -1717,7 +1717,7 @@ class RszArrayClipboard:
     
     @staticmethod
     def copy_multiple_to_clipboard(widget, elements, array_type, embedded_context=None):
-        parent_viewer = widget.parent()
+        parent_viewer = widget.viewer
         serialised_items = []
         
         if not embedded_context and hasattr(widget, 'embedded_context'):
@@ -2202,7 +2202,7 @@ class RszArrayClipboard:
     def _add_element_to_ui_direct(widget, array_item, element):
         """Add a new element directly to the tree using the provided array item"""
 
-        parent_viewer = widget.parent()
+        parent_viewer = widget.viewer
         if not parent_viewer:
             return False
         def create_node(index, value, embedded_context):
