@@ -14,6 +14,7 @@ lazy from file_handlers.mesh.mesh_handler import MeshHandler
 lazy from file_handlers.mesh.material_session import MeshMaterialSession
 lazy from file_handlers.mesh.lit_preview import thumbnail
 lazy from file_handlers.tex.qt_image_utils import decode_tex_bytes_to_qimage
+lazy from ui.asset_families import FAMILIES, asset_family, resource_extension
 lazy from ui.icons import line_pixmap
 lazy from ui.styles import current_colors
 lazy from utils.app_paths import application_root
@@ -22,38 +23,10 @@ lazy from utils.resource_file_utils import ResourceResolutionContext
 
 THUMBNAIL_SIZE = 160
 MESH_BACKGROUND = (26, 26, 26)
-SOUND_EXTENSIONS = {"spck", "sbnk", "pck", "bnk"}
-THUMBNAIL_EXTENSIONS = SOUND_EXTENSIONS | {"mesh", "tex"}
-_TILE_FAMILIES = {
-	"mesh": ("cube", "#3fb6d6"),
-	"tex": ("image", "#d6604f"),
-	"material": ("palette", "#5fbf5f"),
-	"scene": ("layers", "#e09a3a"),
-	"prefab": ("gameobject", "#e09a3a"),
-	"data": ("variable", "#b07fd6"),
-	"sound": ("sound", "#5f8ad9"),
-	"text": ("text", "#a0a3aa"),
-	"file": ("file", None),
-}
-_TILE_FAMILY_BY_EXTENSION = {
-	"mesh": "mesh", "tex": "tex", "mdf2": "material", "scn": "scene", "pfb": "prefab",
-	"user": "data", "msg": "text", **{extension: "sound" for extension in SOUND_EXTENSIONS},
-}
 
 
 def thumbnail_cache_directory() -> Path:
 	return application_root() / ".cache" / "pak_thumbnails"
-
-
-def resource_extension(path: str) -> str:
-	"""Return the meaningful extension from version-suffixed RE files."""
-	parts = path.rsplit("/", 1)[-1].lower().split(".")
-	for extension in reversed(parts[1:]):
-		if extension in THUMBNAIL_EXTENSIONS:
-			return extension
-	if len(parts) > 2 and parts[-1].isdigit():
-		return parts[-2]
-	return parts[-1] if len(parts) > 1 else ""
 
 
 def is_streaming_mesh(path: str) -> bool:
@@ -61,13 +34,9 @@ def is_streaming_mesh(path: str) -> bool:
 	return "streaming" in parts and resource_extension(path) == "mesh"
 
 
-def _tile_family(path: str) -> str:
-	return _TILE_FAMILY_BY_EXTENSION.get(resource_extension(path), "file")
-
-
-def _asset_tile(family: str, image: QImage | None = None, caption: str = "") -> QIcon:
+def _asset_tile(family: str | None, image: QImage | None = None, caption: str = "") -> QIcon:
 	colors = current_colors()
-	icon_name, strip = _TILE_FAMILIES[family]
+	icon_name, strip = FAMILIES[family][:2] if family else ("file", None)
 	size = THUMBNAIL_SIZE
 	pixmap = QPixmap(size, size)
 	pixmap.fill(Qt.transparent)
@@ -337,7 +306,7 @@ class PakThumbnailProvider(QObject):
 		icon = self._icons.get(path)
 		if icon is not None:
 			return icon
-		family = _tile_family(path)
+		family = asset_family(path)
 		tile = self._type_tiles.get(family)
 		if tile is None:
 			tile = self._type_tiles[family] = _asset_tile(family)
@@ -352,7 +321,7 @@ class PakThumbnailProvider(QObject):
 			return
 		cache_path = self._cache_path(path)
 		if cache_path.is_file():
-			self._icons[path] = _asset_tile(_tile_family(path), QImage(str(cache_path)))
+			self._icons[path] = _asset_tile(asset_family(path), QImage(str(cache_path)))
 			self.ready.emit(path)
 			return
 		self._pending.add(path)
@@ -378,7 +347,7 @@ class PakThumbnailProvider(QObject):
 			return
 		self._pending.discard(path)
 		if not result.isNull():
-			self._icons[path] = _asset_tile(_tile_family(path), result)
+			self._icons[path] = _asset_tile(asset_family(path), result)
 		else:
 			self._failed.add(path)
 		self.ready.emit(path)

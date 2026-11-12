@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from functools import cache
 from typing import NamedTuple
 
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt
@@ -12,7 +13,8 @@ from PySide6.QtWidgets import (
     QToolTip,
 )
 
-lazy from ui.icons import line_icon
+lazy from ui.asset_families import FAMILIES, asset_family
+lazy from ui.icons import DISABLED, line_icon
 lazy from ui.styles import current_colors
 
 lazy from .bookmarks import display_bookmark_path, normalize_tag
@@ -37,6 +39,11 @@ def _event_point(event) -> QPoint:
     """``pos()`` is deprecated on mouse events; help events have only ``pos()``."""
     position = getattr(event, "position", None)
     return position().toPoint() if callable(position) else event.pos()
+
+
+@cache
+def _file_icon(family: str | None) -> QIcon:
+    return line_icon(*FAMILIES[family][:2]) if family else line_icon("file", DISABLED)
 
 
 def _tag_color(tag: str) -> QColor:
@@ -78,6 +85,18 @@ class _ActionIconsDelegate(QStyledItemDelegate):
 
     def _row_actions(self, index) -> list[_Action]:
         raise NotImplementedError
+
+    def _file_name(self, index) -> str:
+        return ""
+
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        if name := self._file_name(index):
+            family = asset_family(name)
+            option.features |= QStyleOptionViewItem.HasDecoration
+            option.icon = _file_icon(family)
+            if family is None:
+                option.palette.setColor(QPalette.Text, QColor(current_colors()["text_subtle"]))
 
     def _action_layout(self, option, count: int) -> tuple[bool, int]:
         action_space = count * _ACTION_HIT_SIZE + max(0, count - 1) * _ACTION_SPACING
@@ -146,14 +165,13 @@ class _ActionIconsDelegate(QStyledItemDelegate):
             return super().helpEvent(event, view, option, index)
         actions = self._row_actions(index)
         action_index = self._action_at(event, option, len(actions))
-        if action_index is None:
+        if action_index is not None:
+            tooltip = self._action_tooltip(actions[action_index][1], index)
+        elif (name := self._file_name(index)) and asset_family(name) is None:
+            tooltip = self.tr("REasy has no editor for this file type")
+        else:
             return super().helpEvent(event, view, option, index)
-        QToolTip.showText(
-            event.globalPos(),
-            self._action_tooltip(actions[action_index][1], index),
-            view,
-            option.rect,
-        )
+        QToolTip.showText(event.globalPos(), tooltip, view, option.rect)
         return True
 
     def editorEvent(self, ev, model, option, index):
@@ -195,6 +213,9 @@ class _ActionsDelegate(_ActionIconsDelegate):
 
     def _row_actions(self, index):
         return self._row_state(index)[0]
+
+    def _file_name(self, index) -> str:
+        return "" if self.mgr._index_is_dir(index) else index.data()
 
     def _action_tooltip(self, action_id: str, index) -> str:
         if action_id == "bookmark":
@@ -262,6 +283,9 @@ class _PakActionsDelegate(_ActionIconsDelegate):
 
     def _row_actions(self, index):
         return self._row_state(index)[0]
+
+    def _file_name(self, index) -> str:
+        return "" if self._folder_path(index) else self._leaf_path(index)
 
     def _action_tooltip(self, action_id: str, index) -> str:
         return {
