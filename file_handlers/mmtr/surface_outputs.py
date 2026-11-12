@@ -142,7 +142,7 @@ def program_flow(ir_kind: str, ir, contract):
     cache = region_derived_cache("program_flows") if ir_kind == "dxil" else None
     key = (ir.to_assembly(), contract.fingerprint) if cache is not None else None
     found = cache.get(key) if cache is not None else None
-    if type(found) is Pending:
+    if isinstance(found, Pending):
         found = found.result() if found.done() else None
         if found is not None:
             found, records, instances, prefix = found

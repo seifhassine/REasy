@@ -143,7 +143,7 @@ def path_point(prop: Property, start: float, end: float, rules: dict, forced: bo
     else:
         return keys[0].value
     if distance in (0.0, 1.0):
-        return keys[0 if distance == 0.0 else -1].value
+        return keys[-1 if distance else 0].value
     index = next((index for index in range(len(keys) - 1) if distance < f32(keys[index + 1].rate)), None)
     if index is None:
         return None

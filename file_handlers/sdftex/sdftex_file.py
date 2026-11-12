@@ -267,7 +267,7 @@ class SdfTexFile:
         _check(profile.table or len(self.levels) == 1, "RE4 requires exactly one level")
         _check(math.isfinite(self.shadow_offset_scale) and self.shadow_offset_scale > 0,
                "invalid shadow offset scale")
-        _check(profile.shadow_offset_scale or self.shadow_offset_scale == 1.0,
+        _check(profile.shadow_offset_scale or self.shadow_offset_scale == 1,
                "this version has no shadow offset scale field")
         for level in self.levels:
             level.validate(profile)

@@ -940,7 +940,7 @@ def _facial_interp(spec: dict, interp: dict | None, kind: str, motion: int) -> t
 def _change_allowed(guard: list, frame: float, wait: float) -> bool:
     count, waited, changed, frames = guard
     rate = 0.0 if changed is None else max(fsub(1.0, fdiv(fsub(frame, changed), fadd(f32(frames), SHORTEST))), 0.0)
-    if rate == 0.0:
+    if not rate:
         guard[:2] = 0, 0.0
         return True
     if waited > (1.0 - rate) * frames:
@@ -973,8 +973,8 @@ def _xy(value) -> tuple[float, float]:
 def _expression(face: dict, data: dict, kind: int, motion: int) -> tuple:
     if kind != face["manual"]:
         listed, choices = data.get(face["list"]) or (), data.get(face["choices"][0]) or ()
-        motion = (choices[kind][face["choices"][1]] or [-1])[0] if data.get(face["random"]) and kind < len(
-            choices) else listed[kind] if kind < len(listed) else -1
+        motion = (choices[kind][face["choices"][1]] or [-1])[0] if data.get(face["random"]) and 0 <= kind < len(
+            choices) else listed[kind] if 0 <= kind < len(listed) else -1
     if motion < 0:
         return data[face["bank"]], -1, float(data[face["out"]]), *face["out_transition"]
     return data[face["bank"]], motion, float(data[face["in"]]), *face["transition"]

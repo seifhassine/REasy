@@ -149,7 +149,7 @@ class JcnsEditor(QWidget):
     def _live(self, *_args) -> None:
         poser, index, evaluation = self.preview.constrained() or (None, None, None)
         self.driver_curves.set_live(([], []) if evaluation is None else evaluation.program.driver_values)
-        if poser is None:
+        if evaluation is None:
             self.tool.set_pose((), None, self.names)
         else:
             self.tool.set_pose(poser.rigs[index].rig.hashes, poser.joint_worlds(index), self.names,

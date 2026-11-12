@@ -63,7 +63,7 @@ def scene_shell_furs(graph, catalog: ShellFurCatalog, mesh_component: str) -> li
                     "MaterialPreview", "No capture shows what a shell fur component's own shell count other than 0 "
                                        "does."))))
                 continue
-            if names.count_scale and float(fields[names.count_scale]) != 1.0:
+            if names.count_scale and float(fields[names.count_scale]) != 1:
                 owners[owner.id] = SceneShellFur("", refused=str(MaterialPreviewError(QT_TRANSLATE_NOOP(
                     "MaterialPreview", "No capture shows what a shell count scale other than 1 does."))))
                 continue

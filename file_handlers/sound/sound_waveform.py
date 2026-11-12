@@ -92,7 +92,7 @@ def write_wave_preview(source_path, output_path, channel=-1, normalize=False):
         samples = samples[:, channel:channel + 1]
     peak = int(np.abs(samples.astype(np.int32)).max(initial=0))
     gain = 32767 / peak if normalize and peak else 1.0
-    if gain != 1.0:
+    if gain != 1:
         samples = np.round(samples * gain).clip(-32768, 32767).astype("<i2")
     with wave.open(str(output_path), "wb") as output:
         output.setparams(params._replace(nchannels=samples.shape[1]))

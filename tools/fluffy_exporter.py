@@ -50,11 +50,11 @@ def _write_screenshot(zf: zipfile.ZipFile, project_dir: Path, cfg: dict) -> None
 def _write_bundled_pak(zf: zipfile.ZipFile, project_dir: Path, pak_name: str) -> None:
     _ensure_packer(auto_download=True)
     with tempfile.TemporaryDirectory() as temp_dir:
-        pak_tmp = Path(temp_dir) / f"{pak_name}.pak"
+        pak_tmp = Path(temp_dir) / "bundle.pak"
         code, output = run_packer(str(project_dir), str(pak_tmp))
         if code != 0:
             raise RuntimeError(f"PAK build failed:\n{output}")
-        zf.writestr(pak_tmp.name, pak_tmp.read_bytes())
+        zf.writestr(Path(f"{pak_name}.pak").name, pak_tmp.read_bytes())
 
 
 def _write_project_files(zf: zipfile.ZipFile, project_dir: Path) -> None:

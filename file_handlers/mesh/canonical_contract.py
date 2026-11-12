@@ -166,8 +166,8 @@ def _assert_topology_domains(mesh: object) -> None:
             )
         else:
             _require(
-                float(mesh_data.bounding_box[0][3]) == 1.0
-                and float(mesh_data.bounding_box[1][3]) == 1.0,
+                float(mesh_data.bounding_box[0][3]) == 1
+                and float(mesh_data.bounding_box[1][3]) == 1,
                 "MeshData AABB homogeneous W lanes must both equal 1.0",
             )
         _require(

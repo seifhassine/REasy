@@ -305,7 +305,7 @@ def _assert_meshlet_runtime_contract(mesh: object, mesh_buffer: object) -> None:
         if flags.is_meshlet_no_tangent:
             _require_equal(
                 f"MPLY chunk[{chunk_index}] no-tangent default XYZ",
-                chunk.tangents.shape == (chunk.vert_count, 3) and bool(np.all(chunk.tangents == 1.0)),
+                chunk.tangents.shape == (chunk.vert_count, 3) and bool(np.all(chunk.tangents == 1)),
                 True,
             )
             _require_equal(

@@ -201,7 +201,7 @@ class ClipEditor(QWidget):
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
-        if self.state.view_scale == 4.0 and self.lanes.width() > 100:
+        if self.state.view_scale == 4 and self.lanes.width() > 100:
             self.lanes.fit()
 
     def _tree_selection(self, *_args) -> None:

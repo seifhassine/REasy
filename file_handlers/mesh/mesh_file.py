@@ -972,7 +972,7 @@ def _decode_mhwilds_skin_weights(
             units,
             totals,
             out=np.zeros_like(units),
-            where=totals != 0.0,
+            where=totals != 0,
         )
         ignored = primary[:, 11:16].tobytes()
         packed_tags = primary_tags.tobytes()

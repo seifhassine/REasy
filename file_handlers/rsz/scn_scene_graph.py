@@ -289,7 +289,7 @@ def camera_shows(switch: ScnCameraSwitch | ScnCameraArea, view, scale, orthograp
         return False
     point = rotation @ np.asarray(switch.frustum_center, np.float64) + translation
     depth = float(-point[2])
-    if depth == 0.0:
+    if not depth:
         return False
     x, y = float(scale[0] * point[0] / depth), float(scale[1] * point[1] / depth)
     return -1.0 <= x <= 1.0 and -1.0 <= y <= 1.0

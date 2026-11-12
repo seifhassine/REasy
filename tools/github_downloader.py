@@ -9,6 +9,7 @@ lazy import urllib.request
 lazy import zipfile
 from pathlib import Path
 from typing import Callable, Optional, Tuple
+from urllib.parse import quote
 
 import requests
 
@@ -118,7 +119,7 @@ class GitHubToolDownloader:
 
     def _resolve_asset_url(self, tag: Optional[str]) -> str:
         try:
-            url = (f"https://api.github.com/repos/{self.owner_repo}/releases/tags/{tag}"
+            url = (f"https://api.github.com/repos/{self.owner_repo}/releases/tags/{quote(tag, safe='')}"
                    if tag else self._api_latest)
             assets = _http_json(url).get("assets", [])
         except Exception:

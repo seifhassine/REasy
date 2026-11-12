@@ -45,7 +45,7 @@ class AboutDialog(QDialog):
         for line, url in (
             (self.tr("REasy Editor is a quality of life toolkit for modders."), ""),
             (self.tr("It supports viewing and full editing of RE Engine files with 3D capabilities."), ""),
-            (self.tr("For more information, visit my GitHub page:"), "http://github.com/seifhassine"),
+            (self.tr("For more information, visit my GitHub page:"), "https://github.com/seifhassine"),
             (self.tr("The REasy Wiki is maintained by BrewedVFX:"), "https://github.com/seifhassine/REasy-Wiki"),
         ):
             info_label = styled_label(line, tone="muted")

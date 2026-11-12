@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 import ctypes
+import math
 
 lazy from file_handlers.rsz.rsz_data_types import ArrayData, F64Data, ObjectData, StructData, UserDataData, _DataValue
 lazy from file_handlers.rsz.rsz_file import RSZUserDataInfo, RszInstanceInfo
@@ -48,7 +49,7 @@ def commit(document: BhvtDocument, data, before: dict, text: str, merge_key=None
     edits: dict[int, tuple[object, dict]] = {}
     for key, (target, name, value) in snapshot(data).items():
         old, value = before[key][2], _stored(target, value)
-        if old != value and not (old != old and value != value):
+        if old != value and not (isinstance(old, float) and math.isnan(old) and math.isnan(value)):
             edits.setdefault(id(target), (target, {}))[1][name] = value
     restore(before)
     if edits:

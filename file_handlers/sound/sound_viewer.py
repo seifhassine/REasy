@@ -3624,10 +3624,11 @@ class SoundViewer(QWidget):
         lines = [self.tr("Banks: {banks}").format(banks=", ".join(banks[:6]))] if banks else []
         if len(banks) > 6:
             lines.append(self.tr("and {count} more banks").format(count=len(banks) - 6))
-        contexts = metadata.event_context_lines(obj.object_id) if obj.type_id == 0x04 else ()
-        lines.extend(contexts[:6])
-        if len(contexts) > 6:
-            lines.append(self.tr("and {count} more game files").format(count=len(contexts) - 6))
+        if obj.type_id == 0x04:
+            contexts = metadata.event_context_lines(obj.object_id)
+            lines.extend(contexts[:6])
+            if len(contexts) > 6:
+                lines.append(self.tr("and {count} more game files").format(count=len(contexts) - 6))
         return lines
 
     def _on_delete_hirc(self):

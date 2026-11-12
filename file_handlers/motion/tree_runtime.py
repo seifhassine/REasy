@@ -1529,13 +1529,13 @@ class SyncBlendNode(BlendNode):
 
     def pose(self, out: TreePose) -> None:
         first, second = self.pair
-        rate = _ONE if first is None and second is not None else self.segment
-        if (first is not None and second is None) or rate == 0:
+        rate = self.segment
+        if second is None or (first is not None and rate == 0):
             if first is not None:
                 first.pose(out)
             if second is not None:
                 second.tick()
-        elif rate == 1:
+        elif first is None or rate == 1:
             second.pose(out)
             if first is not None:
                 first.tick()

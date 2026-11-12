@@ -197,9 +197,9 @@ def _pack(read, motion_list: MotionList, entry: MotionListEntry, lists: dict) ->
 
 def _packed(pack: MotionPack | None, key: int) -> MotionPackEntry | None:
     """Binary search, as the engine looks IDs up: an unsorted pack misses as it does in game."""
-    ids = [] if pack is None else [held.motion_id for held in pack.entries]
-    at = bisect_left(ids, key)
-    return pack.entries[at] if at < len(ids) and ids[at] == key else None
+    entries = [] if pack is None else pack.entries
+    at = bisect_left(entries, key, key=lambda held: held.motion_id)
+    return entries[at] if at < len(entries) and entries[at].motion_id == key else None
 
 
 def _base_row(read, motion_list: MotionList, motion_id: int, lists: dict) -> tuple[MotionList | None,

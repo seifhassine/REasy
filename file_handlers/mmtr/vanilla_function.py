@@ -434,13 +434,6 @@ class _Builder:
         if structured != (record_offset is not None):
             raise VanillaFunctionError('The write address does not match its raw/structured resource.')
         word_bits = 64 if structured and kind == 'memory_atomic' and value.value_type.endswith('64_t') else 32
-        arguments = {'buffer': self.resource_value(resource, word_bits=word_bits), 'byte_offset': address}
-        if structured:
-            arguments.update(index=address, byte_offset=self.integer(record_offset) if isinstance(record_offset, int) else record_offset)
-        if value is not None:
-            arguments['value'] = value
-        if compare is not None:
-            arguments['compare'] = compare
         properties = {'globally_coherent': bool(getattr(resource, 'globally_coherent', False))}
         if words > 1:
             properties['words'] = words
@@ -448,6 +441,13 @@ class _Builder:
             properties['stride'] = resource.sample_count
         if kind == 'memory_atomic':
             properties.update(operation=operation, value_type=value.value_type)
+        arguments = {'buffer': self.resource_value(resource, word_bits=word_bits), 'byte_offset': address}
+        if structured:
+            arguments.update(index=address, byte_offset=self.integer(record_offset) if isinstance(record_offset, int) else record_offset)
+        if value is not None:
+            arguments['value'] = value
+        if compare is not None:
+            arguments['compare'] = compare
         return self.execute(kind, properties=properties, **arguments)
 
     def image(self, kind, resource, coordinates, *, operation='add', value=None, compare=None):

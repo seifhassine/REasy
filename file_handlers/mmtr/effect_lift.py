@@ -256,7 +256,8 @@ class _Fold:
     def __call__(self, ref):
         if ref not in self.memo:
             self.memo[ref] = None
-            self.memo[ref] = self._fold(ref, self.source.flat.nodes[ref[0]])
+            node = self.source.flat.nodes[ref[0]]
+            self.memo[ref] = self._fold(ref, node)
         return self.memo[ref]
 
     def _fold(self, ref, node):
@@ -822,8 +823,9 @@ def _added_target(source, forward, fold, lanes, clear):
     def material(ref, material):
         if ref not in derived:
             derived[ref] = False
-            derived[ref] = ref in source.reads or ref[0] in source.textures or any(
+            found = ref in source.reads or ref[0] in source.textures or any(
                 material(item, material) for pin, item in source.flat.inputs[ref[0]].items() if pin != "exec")
+            derived[ref] = found
         return derived[ref]
 
     unknowns, pending, seen = set(), list(lanes.values()), set()
